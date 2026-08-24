@@ -1,20 +1,138 @@
 import { ENEMIES } from './content';
 import { Rng } from './rng';
-import type { Enemy, GameState, Point } from './types';
+import type { Enemy, GameState, Point, Tile } from './types';
 import { at, updateVisibility } from './world';
+
 const dist=(a:Point,b:Point)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const dirs=[[1,0],[-1,0],[0,1],[0,-1]] as const;
-export function push(state:GameState,text:string,tone?:'good'|'bad'|'odd'){state.messages.push({text,tone});if(state.messages.length>8)state.messages.shift()}
-function enemyAt(s:GameState,x:number,y:number){return s.enemies.find(e=>e.x===x&&e.y===y)}
-function passable(s:GameState,x:number,y:number){const t=at(s,{x,y});return !!t&&t.kind!=='wall'&&!t.blocks}
-function hurtPlayer(s:GameState,n:number,msg:string){const dmg=Math.max(0,n-s.player.guard);s.player.guard=0;s.player.hp-=dmg;push(s,`${msg} (${dmg})`,'bad');if(s.player.hp<=0){s.player.hp=0;s.over=true;push(s,'You die among the shuttered shops.','bad')}}
-function hurtEnemy(s:GameState,e:Enemy,n:number){e.hp-=n;push(s,`${ENEMIES[e.kind].name} takes ${n}.`,'good');if(e.hp<=0){s.enemies=s.enemies.filter(x=>x!==e);push(s,`${ENEMIES[e.kind].name} breaks apart.`,'good');if(e.kind==='glass-mite'){for(const [dx,dy] of dirs){if(dist({x:e.x+dx,y:e.y+dy},s.player)===0)hurtPlayer(s,2,'Glass splinters cut you')}}}}
-function environmentalTick(s:GameState){const t=at(s,s.player);if(t?.kind==='acid')hurtPlayer(s,2,'Acid eats through your boots');if(t?.kind==='fire')hurtPlayer(s,3,'Flame catches your clothes');for(const e of [...s.enemies]){const et=at(s,e);if(et?.kind==='fire')hurtEnemy(s,e,3);else if(et?.kind==='acid')hurtEnemy(s,e,1)}}
-function stepToward(s:GameState,e:Enemy,target:Point,rng:Rng){const choices=[...dirs].sort((a,b)=>dist({x:e.x+a[0],y:e.y+a[1]},target)-dist({x:e.x+b[0],y:e.y+b[1]},target)+(rng.next()-.5)*.2);for(const [dx,dy] of choices){const x=e.x+dx,y=e.y+dy;if(!passable(s,x,y)||enemyAt(s,x,y)||(s.player.x===x&&s.player.y===y))continue;e.x=x;e.y=y;return}}
-function enemyTurn(s:GameState,e:Enemy,rng:Rng){if(!s.enemies.includes(e)||s.over)return;const d=dist(e,s.player),def=ENEMIES[e.kind];if(e.kind==='vapor-hound'){if(e.telegraph){const p=e.telegraph;e.telegraph=undefined;if(p.x===s.player.x&&p.y===s.player.y)hurtPlayer(s,def.damage,'Corrosive vapor burns you');const t=at(s,p);if(t&&t.kind==='floor'&&!t.blocks)t.kind='acid';e.cooldown=3;return}if(e.cooldown<=0&&d<=6){e.telegraph={x:s.player.x,y:s.player.y};push(s,'The Vapor Hound lowers its head. A sour haze gathers around your feet.','bad');return}}if(d===1){hurtPlayer(s,def.damage,`${def.name} hits you`);return}if(e.kind==='distiller-rat'){const onFire=dirs.some(([dx,dy])=>at(s,{x:e.x+dx,y:e.y+dy})?.kind==='fire');if(onFire){stepToward(s,e,{x:e.x+(e.x-s.player.x),y:e.y+(e.y-s.player.y)},rng);return}}if(d<=9)stepToward(s,e,s.player,rng)}
-function advance(s:GameState,rng:Rng){s.turn++;environmentalTick(s);for(const e of [...s.enemies]){e.cooldown=Math.max(0,e.cooldown-1);enemyTurn(s,e,rng)}for(const st of s.player.statuses)st.turns--;s.player.statuses=s.player.statuses.filter(x=>x.turns>0);updateVisibility(s)}
-export function move(s:GameState,dx:number,dy:number){if(s.over)return;const rng=new Rng((s.seed+s.turn*2654435761)>>>0),x=s.player.x+dx,y=s.player.y+dy;if(!passable(s,x,y))return;const enemy=enemyAt(s,x,y);if(enemy)hurtEnemy(s,enemy,4);else{s.player.x=x;s.player.y=y;const item=s.items.find(i=>i.x===x&&i.y===y);if(item){s.player.inventory.push(item.kind);s.items=s.items.filter(i=>i!==item);push(s,`Picked up ${item.kind.replaceAll('-',' ')}.`,'good')}const t=at(s,s.player);if(t?.kind==='stairs'&&s.enemies.length===0){s.won=true;s.over=true;push(s,'The brass stair turns beneath your weight. The lower market is open.','odd')}}advance(s,rng)}
-function rayTarget(s:GameState,dx:number,dy:number,range=5):Point{let p={x:s.player.x,y:s.player.y};for(let i=0;i<range;i++){const n={x:p.x+dx,y:p.y+dy},t=at(s,n);if(!t||t.kind==='wall'||t.blocks)break;p=n;if(enemyAt(s,p.x,p.y))break}return p}
-export function useItem(s:GameState,index:number,dir:Point={x:0,y:-1}){if(s.over)return;const kind=s.player.inventory[index];if(!kind)return;const rng=new Rng((s.seed^s.turn^index)>>>0);if(kind==='blue-tonic'){s.player.hp=Math.min(s.player.maxHp,s.player.hp+6);push(s,'The tonic closes the worst cuts. Something medicinal follows you.','odd');s.player.statuses.push({id:'marked',turns:8})}else if(kind==='red-phial'){const p=rayTarget(s,dir.x,dir.y),t=at(s,p);if(t&&!t.blocks){t.kind='fire';push(s,'The red phial bursts into a low, hungry flame.','odd');for(const [dx,dy] of [[0,0],...dirs] as const){const q={x:p.x+dx,y:p.y+dy},qt=at(s,q);if(qt?.kind==='acid'&&!qt.blocks)qt.kind='fire';const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,3)}}}else if(kind==='salt-bomb'){const p=rayTarget(s,dir.x,dir.y);push(s,'Salt cracks outward in a white ring.','good');for(const [dx,dy] of [[0,0],...dirs] as const){const q={x:p.x+dx,y:p.y+dy},t=at(s,q);if(t&&(t.kind==='acid'||t.kind==='fire'))t.kind='floor';const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,4)}}else if(kind==='chalk'){const t=at(s,s.player);if(t){t.variant=15;push(s,'You draw a clean white line across the grime.','odd')}}s.player.inventory.splice(index,1);advance(s,rng)}
-export function wait(s:GameState){if(s.over)return;s.player.guard=1;push(s,'You listen and brace.');advance(s,new Rng((s.seed+s.turn)>>>0))}
-export function inspectAt(s:GameState,p:Point):string{const e=enemyAt(s,p.x,p.y);if(e)return`${ENEMIES[e.kind].name} — ${ENEMIES[e.kind].note}`;const t=at(s,p);if(!t)return'';return `${t.room??'stone'} / ${t.fixture??t.kind}`}
+const flammable=new Set<Tile['fixture']>(['crate','barrel','awning','herbs','planter','counter','table','cart']);
+
+export function push(state:GameState,text:string,tone?:'good'|'bad'|'odd'){
+  state.messages.push({text,tone});
+  if(state.messages.length>8)state.messages.shift();
+}
+function enemyAt(s:GameState,x:number,y:number){return s.enemies.find(e=>e.x===x&&e.y===y);}
+function passable(s:GameState,x:number,y:number){const t=at(s,{x,y});return !!t&&t.kind!=='wall'&&!t.blocks;}
+function hurtPlayer(s:GameState,n:number,msg:string){
+  const dmg=Math.max(0,n-s.player.guard);s.player.guard=0;s.player.hp-=dmg;push(s,`${msg} (${dmg})`,'bad');
+  if(s.player.hp<=0){s.player.hp=0;s.over=true;push(s,'You die among the shuttered shops.','bad');}
+}
+function hurtEnemy(s:GameState,e:Enemy,n:number){
+  e.hp-=n;push(s,`${ENEMIES[e.kind].name} takes ${n}.`,'good');
+  if(e.hp<=0){
+    s.enemies=s.enemies.filter(x=>x!==e);push(s,`${ENEMIES[e.kind].name} breaks apart.`,'good');
+    if(e.kind==='glass-mite')for(const [dx,dy] of dirs)if(dist({x:e.x+dx,y:e.y+dy},s.player)===0)hurtPlayer(s,2,'Glass splinters cut you');
+  }
+}
+function burnFixture(t:Tile){if(t.fixture&&flammable.has(t.fixture)){t.fixture=undefined;t.blocks=false;}}
+function ignite(t:Tile,turns=4){if(t.kind==='wall')return;t.kind='fire';t.variant=Math.max(t.variant,turns);burnFixture(t);}
+function explodeBarrel(s:GameState,p:Point){
+  push(s,'The spirit barrel bursts with a flat copper boom.','odd');
+  for(const [dx,dy] of [[0,0],...dirs] as const){
+    const q={x:p.x+dx,y:p.y+dy},t=at(s,q);if(t)ignite(t,4);
+    const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,5);
+    if(s.player.x===q.x&&s.player.y===q.y)hurtPlayer(s,4,'Burning spirit washes over you');
+  }
+}
+function environmentalTick(s:GameState){
+  const under=at(s,s.player);if(under?.kind==='acid')hurtPlayer(s,2,'Acid eats through your boots');if(under?.kind==='fire')hurtPlayer(s,3,'Flame catches your clothes');
+  for(const e of [...s.enemies]){const t=at(s,e);if(t?.kind==='fire')hurtEnemy(s,e,3);else if(t?.kind==='acid')hurtEnemy(s,e,1);}
+  for(const t of s.tiles){
+    if(t.kind!=='fire')continue;
+    burnFixture(t);t.variant=Math.max(0,t.variant-1);
+    if(t.variant===0)t.kind='floor';
+  }
+}
+function stepToward(s:GameState,e:Enemy,target:Point,rng:Rng){
+  const choices=[...dirs].sort((a,b)=>{
+    const ta=at(s,{x:e.x+a[0],y:e.y+a[1]}),tb=at(s,{x:e.x+b[0],y:e.y+b[1]});
+    const chalkA=e.kind==='vapor-hound'&&ta?.variant===15?7:0;
+    const chalkB=e.kind==='vapor-hound'&&tb?.variant===15?7:0;
+    return dist({x:e.x+a[0],y:e.y+a[1]},target)+chalkA-dist({x:e.x+b[0],y:e.y+b[1]},target)-chalkB+(rng.next()-.5)*.2;
+  });
+  for(const [dx,dy] of choices){
+    const x=e.x+dx,y=e.y+dy;if(!passable(s,x,y)||enemyAt(s,x,y)||(s.player.x===x&&s.player.y===y))continue;e.x=x;e.y=y;return;
+  }
+}
+function enemyAware(s:GameState,e:Enemy){
+  const d=dist(e,s.player),tile=at(s,e);
+  const scented=s.player.statuses.some(x=>x.id==='marked');
+  return d<=2||!!tile?.visible||(scented&&d<=12);
+}
+function enemyTurn(s:GameState,e:Enemy,rng:Rng){
+  if(!s.enemies.includes(e)||s.over||!enemyAware(s,e))return;
+  const d=dist(e,s.player),def=ENEMIES[e.kind];
+  if(e.kind==='vapor-hound'){
+    if(e.telegraph){
+      const p=e.telegraph;e.telegraph=undefined;
+      if(p.x===s.player.x&&p.y===s.player.y)hurtPlayer(s,def.damage,'Corrosive vapor burns you');
+      const t=at(s,p);if(t&&t.kind==='floor'&&!t.blocks){t.kind='acid';t.variant=1;}
+      e.cooldown=3;return;
+    }
+    if(e.cooldown<=0&&d<=6){e.telegraph={x:s.player.x,y:s.player.y};push(s,'The Vapor Hound lowers its head. A sour haze gathers around your feet.','bad');return;}
+  }
+  if(d===1){hurtPlayer(s,def.damage,`${def.name} hits you`);return;}
+  if(e.kind==='distiller-rat'){
+    const nearFire=dirs.some(([dx,dy])=>at(s,{x:e.x+dx,y:e.y+dy})?.kind==='fire');
+    if(nearFire){stepToward(s,e,{x:e.x+(e.x-s.player.x)*2,y:e.y+(e.y-s.player.y)*2},rng);return;}
+  }
+  if(d<=9||s.player.statuses.some(x=>x.id==='marked'))stepToward(s,e,s.player,rng);
+}
+function advance(s:GameState,rng:Rng){
+  s.turn++;environmentalTick(s);
+  for(const e of [...s.enemies]){e.cooldown=Math.max(0,e.cooldown-1);enemyTurn(s,e,rng);}
+  for(const st of s.player.statuses)st.turns--;
+  s.player.statuses=s.player.statuses.filter(x=>x.turns>0);updateVisibility(s);
+}
+export function move(s:GameState,dx:number,dy:number){
+  if(s.over)return;const rng=new Rng((s.seed+s.turn*2654435761)>>>0),x=s.player.x+dx,y=s.player.y+dy;
+  if(!passable(s,x,y))return;
+  const enemy=enemyAt(s,x,y);
+  if(enemy)hurtEnemy(s,enemy,4);
+  else{
+    s.player.x=x;s.player.y=y;
+    const item=s.items.find(i=>i.x===x&&i.y===y);
+    if(item){s.player.inventory.push(item.kind);s.items=s.items.filter(i=>i!==item);push(s,`Picked up ${item.kind.replaceAll('-',' ')}.`,'good');}
+    const t=at(s,s.player);if(t?.kind==='stairs'&&s.enemies.length===0){s.won=true;s.over=true;push(s,'The brass stair turns beneath your weight. The lower market is open.','odd');}
+  }
+  advance(s,rng);
+}
+function rayTarget(s:GameState,dx:number,dy:number,range=5):Point{
+  let p={x:s.player.x,y:s.player.y};
+  for(let i=0;i<range;i++){
+    const n={x:p.x+dx,y:p.y+dy},t=at(s,n);if(!t||t.kind==='wall')break;
+    p=n;if(t.blocks||enemyAt(s,p.x,p.y))break;
+  }
+  return p;
+}
+export function useItem(s:GameState,index:number,dir:Point={x:0,y:-1}){
+  if(s.over)return;const kind=s.player.inventory[index];if(!kind)return;const rng=new Rng((s.seed^s.turn^index)>>>0);
+  if(kind==='blue-tonic'){
+    s.player.hp=Math.min(s.player.maxHp,s.player.hp+6);push(s,'The tonic closes the worst cuts. Its sharp medicinal scent clings to you.','odd');
+    const marked=s.player.statuses.find(x=>x.id==='marked');if(marked)marked.turns=Math.max(marked.turns,8);else s.player.statuses.push({id:'marked',turns:8});
+  }else if(kind==='red-phial'){
+    const p=rayTarget(s,dir.x,dir.y),t=at(s,p);
+    if(t){
+      const wasBarrel=t.fixture==='barrel';ignite(t,5);push(s,'The red phial bursts into a low, hungry flame.','odd');
+      if(wasBarrel)explodeBarrel(s,p);
+      else for(const [dx,dy] of [[0,0],...dirs] as const){const q={x:p.x+dx,y:p.y+dy},qt=at(s,q);if(qt?.kind==='acid')ignite(qt,4);const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,3);}
+    }
+  }else if(kind==='salt-bomb'){
+    const p=rayTarget(s,dir.x,dir.y);push(s,'Salt cracks outward in a white ring.','good');
+    for(const [dx,dy] of [[0,0],...dirs] as const){
+      const q={x:p.x+dx,y:p.y+dy},t=at(s,q);if(t&&(t.kind==='acid'||t.kind==='fire')){t.kind='floor';t.variant=0;}
+      const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,4);
+    }
+  }else if(kind==='chalk'){
+    const t=at(s,s.player);if(t){t.variant=15;push(s,'You draw a clean white line across the grime. The hound hesitates at it.','odd');}
+  }
+  s.player.inventory.splice(index,1);advance(s,rng);
+}
+export function wait(s:GameState){if(s.over)return;s.player.guard=1;push(s,'You listen and brace.');advance(s,new Rng((s.seed+s.turn)>>>0));}
+export function inspectAt(s:GameState,p:Point):string{
+  const e=enemyAt(s,p.x,p.y);if(e)return`${ENEMIES[e.kind].name} — ${ENEMIES[e.kind].note}`;
+  const t=at(s,p);if(!t)return'';
+  if(t.fixture)return`${t.room??'stone'} / ${t.fixture}${t.blocks?' · blocks movement':''}`;
+  if(t.kind==='fire')return`${t.room??'stone'} / fire · ${t.variant} turns`;
+  return`${t.room??'stone'} / ${t.kind}`;
+}
