@@ -1,0 +1,15 @@
+=== source integration ===
+file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:18
+  s=once(s,`      <footer class="mobile-dock">
+           ^
+
+ReferenceError: tr is not defined
+    at file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:18:12
+    at patch (file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:2:79)
+    at file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:5:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.2
+statuses source=0 ui=1 install=99 test=99 build=99
