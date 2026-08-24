@@ -12,7 +12,7 @@ This project treats architecture rules as correctness constraints, not style pre
 
 ## No one-off hardcoding
 
-New content should be expressed with existing data components and effect operations first. A unique monster, item, dungeon theme, or story beat does not earn a private execution path. If a genuinely new mechanic is required, add a reusable primitive with tests and then compose content from it.
+New content should be expressed with existing data components and effect operations first. A unique monster, item, dungeon theme, settlement, shop, or story beat does not earn a private execution path. If a genuinely new mechanic is required, add a reusable primitive with tests and then compose content from it.
 
 Theme data selects generator archetypes, palettes, ecology tags, ambience, feature weights, and content affinities. Map algorithms are shared primitives. This prevents one theme from becoming a forked mini-engine.
 
@@ -20,12 +20,32 @@ Theme data selects generator archetypes, palettes, ecology tags, ambience, featu
 
 The game should get depth from rules that interact, not from long lists of isolated scripted exceptions.
 
-- damage type, resistance, vulnerability, status, terrain, reach, movement, summons, traps, and identification are reusable systems
+- damage type, resistance, vulnerability, status, terrain, reach, movement, summons, traps, identification, trade, and services are reusable systems
 - an item should preferably combine existing systems in a new way rather than introduce an item-specific executor
-- dungeon features are entities in canonical state, not decorative renderer-only marks
+- dungeon features and non-combat sites are entities in canonical state, not decorative renderer-only marks
 - unidentified appearances are deterministic per run and identification knowledge belongs to `GameState`
 - environment effects apply to monsters as well as the player whenever the underlying rule permits it
 - adding the 126th item or 91st monster should normally be content data, not another branch in the simulation core
+
+## Non-combat world rule
+
+Towns and services extend the same dungeon simulation rather than switching to a separate minigame or one-off scene engine.
+
+- settlements are deterministic clusters of reusable `NonCombatSite` entities placed on ordinary generated floors
+- merchant stock, gold, service usage, and site identity live in `GameState` and therefore save/restore with the run
+- buy, sell, heal, cleanse, identify, map, bless, rest, and rumor all enter through the canonical `GameAction` dispatcher
+- settlement generation may be weighted by theme and depth, but individual named towns do not get private gameplay code
+- settlement pockets are protected from ordinary monster population/movement so they function as genuine breathing spaces without creating a second combat engine
+- roadside services reuse the exact same site definitions and service resolver as settlement services
+
+## Localization rule
+
+Simulation state is language-neutral. Localization belongs to presentation.
+
+- canonical item/theme/site IDs and English rule messages remain stable identifiers/data; locale is not part of simulation ownership
+- English/Korean rendering uses the same state and action paths
+- unidentified items must remain unidentified in every language; localization must never leak hidden effects
+- adding a language must extend translation tables/formatters rather than fork gameplay or save data
 
 ## Tactical transparency rule
 
@@ -41,7 +61,7 @@ Strategy should come from meaningful choices, not hidden arbitrary punishment.
 
 Progression is primarily vertical (`depth`). Each descent may also change `lane`. Lane 0 is the central route, side lanes blend toward alternate ecologies, and `abs(lane) >= 4` crosses into the Abyss.
 
-Theme transitions are communicated twice: gradually through palette/ecology/layout blending, then once through a major popup when the primary theme actually changes. Ordinary floors, loot, combat, traps, and minor encounters never create popups.
+Theme transitions are communicated twice: gradually through palette/ecology/layout blending, then once through a major popup when the primary theme actually changes. Ordinary floors, loot, combat, traps, settlements, shops, and minor encounters never create popups.
 
 ## Map diversity gate
 
