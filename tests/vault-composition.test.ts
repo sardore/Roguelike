@@ -13,7 +13,7 @@ function reachable(map:FloorMap):Set<string>{
 }
 
 describe('Crawl-like level composition',()=>{
-  it('keeps a substantial randomized minivault catalog',()=>{expect(vaultCatalogSize()).toBeGreaterThanOrEqual(14);});
+  it('keeps a substantial randomized minivault catalog',()=>{expect(vaultCatalogSize()).toBeGreaterThanOrEqual(28);});
 
   it('mixes macro layouts with multiple vault families across same-theme floors',()=>{
     const coord={depth:47,lane:0},context=resolveThemeContext(coord),structures=new Set<string>(),families=new Set<string>();let floorsWithVaults=0;
