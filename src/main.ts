@@ -8,6 +8,7 @@ import { isMysteryItem } from './core/item-knowledge';
 import { describeState, renderCanvas } from './ui/render';
 import { siteAt, siteDefinition, servicePrice, sellPrice } from './world/sites';
 import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';
+import { canCarryDefinition, carryCapacity, encumbranceStage, hungerPercent, hungerStage, inventoryWeight, isRangedWeapon, itemWeight } from './core/foundations';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 if (!appElement) throw new Error('missing #app');
@@ -83,9 +84,11 @@ function gameScreen(): void {
           <strong id="place"></strong>
           <span id="drift"></span>
         </div>
-        <div class="hp-block" aria-label="health">
-          <span id="hp-text"></span>
+        <div class="vitals-block" aria-label="health and hunger">
+          <div class="vital-labels"><span id="hp-text"></span><b id="level-text"></b></div>
           <div class="hp-track"><i id="hp-fill"></i></div>
+          <div class="hunger-line"><span id="hunger-text"></span><small id="ammo-text"></small></div>
+          <div class="hunger-track"><i id="hunger-fill"></i></div>
         </div>
         <button class="icon-button" id="menu-button" aria-label="menu">≡</button>
       </header>
@@ -97,13 +100,20 @@ function gameScreen(): void {
       </button>
 
       <footer class="mobile-dock">
-        <button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>${tr(locale,'bag')}</span><b id="bag-count">0</b></button>
+        <div class="utility-dock"><button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>${tr(locale,'bag')}</span><b id="bag-count">0</b></button></div>
+        <section class="action-pad" aria-label="action controls">
+          <button data-command="explore"><strong>◎</strong><small>${tr(locale,'explore')}</small></button>
+          <button data-command="search"><strong>⌕</strong><small>${tr(locale,'search')}</small></button>
+          <button data-command="rest"><strong>+</strong><small>${tr(locale,'rest')}</small></button>
+          <button data-command="fire" id="fire-button"><strong>›</strong><small>${tr(locale,'fire')}</small></button>
+          <button class="brace-action" data-wait><strong>•</strong><small>${tr(locale,'brace')}</small></button>
+          <div id="context-slot" class="context-slot"></div>
+        </section>
         <section class="controls" aria-label="movement controls">
           <span></span><button data-move="0,-1" aria-label="move up">▲</button><span></span>
-          <button data-move="-1,0" aria-label="move left">◀</button><button class="wait" data-wait aria-label="wait">·</button><button data-move="1,0" aria-label="move right">▶</button>
+          <button data-move="-1,0" aria-label="move left">◀</button><span class="dpad-core">•</span><button data-move="1,0" aria-label="move right">▶</button>
           <span></span><button data-move="0,1" aria-label="move down">▼</button><span></span>
         </section>
-        <div id="context-slot" class="context-slot"></div>
       </footer>
       <div id="sheet-layer"></div>
     </section>`;
@@ -112,7 +122,8 @@ function gameScreen(): void {
     const [dx, dy] = button.dataset.move!.split(',').map(Number) as [number, number];
     doAction({ type: 'move', dx, dy });
   }));
-  document.querySelector<HTMLButtonElement>('[data-wait]')?.addEventListener('click', () => doAction({ type: 'wait' }));
+  document.querySelectorAll<HTMLButtonElement>('[data-wait]').forEach((button)=>button.addEventListener('click', () => doAction({ type: 'wait' })));
+  document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach((button)=>button.addEventListener('click',()=>{const type=button.dataset.command as 'explore'|'search'|'rest'|'fire';doAction({type});}));
   document.querySelector<HTMLButtonElement>('#bag-button')?.addEventListener('click', () => toggleSheet('bag'));
   document.querySelector<HTMLButtonElement>('#menu-button')?.addEventListener('click', () => toggleSheet('menu'));
   document.querySelector<HTMLButtonElement>('#message-button')?.addEventListener('click', () => toggleSheet('menu'));
@@ -151,7 +162,7 @@ function tooltipMarkup(current:GameState,def:ReturnType<typeof itemById>):string
   const tip=itemTooltip(current,def,locale);
   return `<div class="item-tooltip" data-tooltip-for="${def.id}">
     <div class="tooltip-title"><span style="color:${def.color}">${def.glyph}</span><strong>${tip.name}</strong><em>${tip.rarity}</em></div>
-    <div class="tooltip-meta">${tip.category}${tip.unknown?` · ${tr(locale,'unknown')}`:''}</div>
+    <div class="tooltip-meta">${tip.category} · ${tr(locale,'load')} ${itemWeight(def)}${tip.unknown?` · ${tr(locale,'unknown')}`:''}</div>
     <div class="tooltip-section"><b>${tr(locale,'effects')}</b>${tip.effects.map((effect)=>`<span>${effect}</span>`).join('')}</div>
     <div class="tooltip-tags"><b>${tr(locale,'tags')}</b> ${tip.tags.join(' · ')}</div>
   </div>`;
@@ -188,13 +199,13 @@ function serviceButton(site:NonCombatSite,service:SiteServiceKind,label?:string)
 }
 
 function merchantMarkup(current:GameState,site:NonCombatSite):string{
-  const stock=site.stock.length?site.stock.map((offer)=>{const def=itemById(offer.defId);const name=localizedItemName(current,def,locale);return `<div class="trade-row"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${name}</strong><small>${categoryName(def.category,locale)} · ${'★'.repeat(def.rarity)}</small></span><button data-site-service="buy" data-offer-id="${offer.id}" ${current.player.gold<offer.price?'disabled':''}>${offer.price}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noStock')}</p>`;
+  const stock=site.stock.length?site.stock.map((offer)=>{const def=itemById(offer.defId);const name=localizedItemName(current,def,locale);return `<div class="trade-row"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${name}</strong><small>${categoryName(def.category,locale)} · ${'★'.repeat(def.rarity)}</small></span><button data-site-service="buy" data-offer-id="${offer.id}" ${current.player.gold<offer.price||!canCarryDefinition(current,def)?'disabled':''}>${offer.price}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noStock')}</p>`;
   const sell=current.player.inventory.length?current.player.inventory.map((entry)=>{const def=itemById(entry.defId);return `<div class="trade-row sell"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${localizedItemName(current,def,locale)}</strong><small>${tr(locale,'sell')}</small></span><button data-site-service="sell" data-item-id="${entry.id}">+${sellPrice(def.id)}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noItems')}</p>`;
   return `<h3>${tr(locale,'buy')}</h3><div class="trade-list">${stock}</div><h3>${tr(locale,'sell')}</h3><div class="trade-list">${sell}</div>`;
 }
 
 function siteMarkup(current:GameState,site:NonCombatSite):string{
-  if(site.kind==='merchant')return merchantMarkup(current,site);
+  if(site.kind==='merchant'||site.kind==='provisioner')return `${merchantMarkup(current,site)}${site.kind==='provisioner'?serviceButton(site,'meal'):''}`;
   if(site.kind==='appraiser'){
     const candidates=current.player.inventory.filter((entry)=>{const def=itemById(entry.defId);return isMysteryItem(def)&&!current.identifiedItemDefs.includes(def.id);});
     return candidates.length?candidates.map((entry)=>{const def=itemById(entry.defId);return `<div class="trade-row"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${localizedItemName(current,def,locale)}</strong><small>${tr(locale,'unknown')}</small></span><button data-site-service="identify" data-item-id="${entry.id}" ${current.player.gold<servicePrice('identify')?'disabled':''}>${servicePrice('identify')}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noItems')}</p>`;
@@ -203,6 +214,8 @@ function siteMarkup(current:GameState,site:NonCombatSite):string{
   if(site.kind==='cartographer')return serviceButton(site,'map');
   if(site.kind==='shrine')return serviceButton(site,'bless');
   if(site.kind==='camp')return serviceButton(site,'rest');
+  if(site.kind==='trainer')return `${serviceButton(site,'train-attack')}${serviceButton(site,'train-defense')}${serviceButton(site,'train-vigor')}`;
+  if(site.kind==='inn')return `${serviceButton(site,'inn-rest')}${serviceButton(site,'meal')}`;
   return serviceButton(site,'rumor');
 }
 
@@ -235,7 +248,7 @@ function renderSheet(): void {
       <div class="sheet-backdrop" data-close-sheet></div>
       <section class="bottom-sheet" aria-label="inventory">
         <div class="sheet-handle"></div>
-        <header class="sheet-header"><strong>${tr(locale,'bag')}</strong><span>${state.player.inventory.length} · ${state.player.gold}g</span><button data-close-sheet>${tr(locale,'done')}</button></header>
+        <header class="sheet-header"><strong>${tr(locale,'bag')}</strong><span>${state.player.inventory.length} · ${tr(locale,'load')} ${inventoryWeight(state)}/${carryCapacity(state)} · ${state.player.gold}g</span><button data-close-sheet>${tr(locale,'done')}</button></header>
         <div class="sheet-scroll">${inventoryMarkup(state)}</div>
       </section>`;
   } else if(openSheet==='site'){
@@ -281,15 +294,26 @@ function redraw(): void {
   const drift = document.querySelector<HTMLElement>('#drift');
   const hpText = document.querySelector<HTMLElement>('#hp-text');
   const hpFill = document.querySelector<HTMLElement>('#hp-fill');
+  const hungerText=document.querySelector<HTMLElement>('#hunger-text');
+  const hungerFill=document.querySelector<HTMLElement>('#hunger-fill');
+  const levelText=document.querySelector<HTMLElement>('#level-text');
+  const ammoText=document.querySelector<HTMLElement>('#ammo-text');
+  const fireButton=document.querySelector<HTMLButtonElement>('#fire-button');
   const messageText = document.querySelector<HTMLElement>('#message-text');
   const bagCount = document.querySelector<HTMLElement>('#bag-count');
   const contextSlot=document.querySelector<HTMLElement>('#context-slot');
 
   if (canvas) renderCanvas(canvas, state);
   if (place) place.textContent = describeState(state,locale);
-  if (drift) drift.textContent = driftLabel(state);
-  if (hpText) hpText.textContent = `${state.player.hp}/${state.player.maxHp}`;
+  if (drift) {const lane=driftLabel(state),burden=encumbranceStage(state);drift.textContent=`${lane?lane+' · ':''}${state.player.gold}g · ${state.player.kills}${locale==='ko'?'처치':' kills'}${burden==='light'?'':` · ${tr(locale,burden)}`}`;}
+  if (hpText) hpText.textContent = `HP ${state.player.hp}/${state.player.maxHp}`;
   if (hpFill) hpFill.style.width = `${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%`;
+  const hungerKey=hungerStage(state.player.hunger,state.player.maxHunger);
+  if(hungerText)hungerText.textContent=`${tr(locale,hungerKey)} ${hungerPercent(state)}%`;
+  if(hungerFill)hungerFill.style.width=`${hungerPercent(state)}%`;
+  if(levelText)levelText.textContent=`L${state.player.level}`;
+  if(ammoText)ammoText.textContent=`${tr(locale,'ammo')} ${state.player.ammo}`;
+  if(fireButton){const equippedWeaponId=state.player.equippedWeaponId;const equipped=state.player.inventory.find((entry)=>entry.id===equippedWeaponId);fireButton.disabled=!equipped||!isRangedWeapon(itemById(equipped.defId))||state.player.ammo<=0;}
   if (messageText) messageText.textContent = localizeMessage(state.messages.at(-1) ?? '',locale);
   if (bagCount) bagCount.textContent = `${state.player.inventory.length}`;
   if(contextSlot){const site=currentSite(state);if(site){const def=siteDefinition(site.kind);contextSlot.innerHTML=`<button class="site-dock-button" id="site-button"><span style="color:${def.color}">${def.glyph}</span><small>${siteKindName(site.kind,locale)}</small></button>`;contextSlot.querySelector('#site-button')?.addEventListener('click',()=>toggleSheet('site'));}else contextSlot.innerHTML='';}
@@ -318,6 +342,10 @@ window.addEventListener('keydown', (event) => {
   const delta = movement[event.key];
   if (delta) { event.preventDefault(); doAction({ type: 'move', dx: delta[0], dy: delta[1] }); return; }
   if (event.key === '.' || event.key === ' ') { event.preventDefault(); doAction({ type: 'wait' }); return; }
+  if(event.key==='f'||event.key==='F'){event.preventDefault();doAction({type:'fire'});return;}
+  if(event.key==='x'||event.key==='X'){event.preventDefault();doAction({type:'explore'});return;}
+  if(event.key==='r'||event.key==='R'){event.preventDefault();doAction({type:'rest'});return;}
+  if(event.key==='/'){event.preventDefault();doAction({type:'search'});return;}
   if (event.key.toLowerCase() === 'i') { event.preventDefault(); toggleSheet('bag'); return; }
   if (event.key.toLowerCase() === 'e'&&currentSite(state)){event.preventDefault();toggleSheet('site');return;}
   if (/^[1-9]$/.test(event.key)) {

@@ -13,12 +13,14 @@ Current scale gates and systems:
 
 - 18 normal dungeon themes + the infinite Abyss
 - at least 8 floor archetype choices per normal theme
-- 90+ monsters, with at least 5 native monsters for every normal theme
-- 125+ items across weapons, armor, consumables, tools, and relics
+- 145+ monsters, with multiple tactical roles native to every normal theme
+- 195+ items across weapons, armor, food, ammunition, consumables, tools, and relics
+- hunger/nutrition with food scarcity, starvation, and action-based metabolism
+- experience levels, permanent combat growth, ammunition, ranged weapons, resting, searching, auto-explore, and carry-weight/encumbrance
 - run-specific unidentified potion/scroll appearances with persistent identification knowledge
 - inline mobile item tooltips showing category, rarity, effects, and traits without revealing unidentified effects
-- hidden traps plus visible springs, altars, and caches generated as real floor entities
-- procedural non-combat sites using the same floor/state framework: settlements, shops, healers, appraisers, cartographers, shrines, camps, rumors, and roadside services
+- 15+ systemic dungeon feature kinds including hidden traps, springs, caches, graves, shelves, anvils, forage patches, memory stones, and blood wells
+- procedural non-combat sites using the same floor/state framework: settlements, general shops, provisioners, healers, appraisers, cartographers, shrines, camps, trainers, inns, rumors, and roadside services
 - gold economy with deterministic shop stock, buying/selling, paid services, and protected settlement pockets
 - physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation

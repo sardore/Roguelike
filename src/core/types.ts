@@ -28,14 +28,39 @@ export type EffectSpec =
   | { op: 'teleport'; radius: number }
   | { op: 'reveal'; radius: number }
   | { op: 'spawn-terrain'; tile: TileKind; radius: number; duration?: number }
-  | { op: 'summon'; tag: string; count: number };
-export interface PlayerState extends Point { id: EntityId; hp: number; maxHp: number; attack: number; defense: number; gold: number; inventory: InventoryItem[]; statuses: StatusInstance[]; equippedWeaponId?: EntityId | undefined; equippedArmorId?: EntityId | undefined; }
+  | { op: 'summon'; tag: string; count: number }
+  | { op: 'nutrition'; amount: number }
+  | { op: 'ammo'; amount: number };
+export interface PlayerState extends Point {
+  id: EntityId;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  gold: number;
+  level: number;
+  xp: number;
+  xpToNext: number;
+  hunger: number;
+  maxHunger: number;
+  ammo: number;
+  kills: number;
+  floorsVisited: number;
+  inventory: InventoryItem[];
+  statuses: StatusInstance[];
+  equippedWeaponId?: EntityId | undefined;
+  equippedArmorId?: EntityId | undefined;
+}
 export interface TemporaryTerrain { id: EntityId; points: Array<Point & { original: TileKind }>; replacement: TileKind; expiresTurn: number; }
-export type DungeonFeatureKind = 'spike-trap' | 'snare-rune' | 'teleport-rune' | 'alarm-rune' | 'healing-spring' | 'warding-altar' | 'unstable-cache';
+export type DungeonFeatureKind =
+  | 'spike-trap' | 'snare-rune' | 'teleport-rune' | 'alarm-rune'
+  | 'healing-spring' | 'warding-altar' | 'unstable-cache'
+  | 'food-cache' | 'ammo-crate' | 'ancient-grave' | 'bookshelf'
+  | 'forge-anvil' | 'mushroom-patch' | 'memory-stone' | 'blood-well';
 export interface DungeonFeature extends Point { id: EntityId; kind: DungeonFeatureKind; revealed: boolean; spent: boolean; }
 
-export type SiteKind = 'town-square' | 'merchant' | 'healer' | 'appraiser' | 'cartographer' | 'shrine' | 'camp';
-export type SiteServiceKind = 'rumor' | 'buy' | 'sell' | 'heal' | 'cleanse' | 'identify' | 'map' | 'bless' | 'rest';
+export type SiteKind = 'town-square' | 'merchant' | 'healer' | 'appraiser' | 'cartographer' | 'shrine' | 'camp' | 'provisioner' | 'trainer' | 'inn';
+export type SiteServiceKind = 'rumor' | 'buy' | 'sell' | 'heal' | 'cleanse' | 'identify' | 'map' | 'bless' | 'rest' | 'meal' | 'train-attack' | 'train-defense' | 'train-vigor' | 'inn-rest';
 export interface SiteStockEntry { id: EntityId; defId: string; price: number; }
 export interface NonCombatSite extends Point {
   id: EntityId;
@@ -48,7 +73,7 @@ export interface NonCombatSite extends Point {
 
 export interface StoryEvent { id: string; title: string; body: string; severity: 'major'; }
 export interface GameState {
-  schemaVersion: 4;
+  schemaVersion: 5;
   runId: string;
   runSeed: number;
   turn: number;
@@ -73,6 +98,10 @@ export interface GameState {
 export type GameAction =
   | { type: 'move'; dx: number; dy: number }
   | { type: 'wait' }
+  | { type: 'search' }
+  | { type: 'rest' }
+  | { type: 'explore' }
+  | { type: 'fire' }
   | { type: 'use-item'; itemId: EntityId }
   | { type: 'drop-item'; itemId: EntityId }
   | { type: 'site-service'; siteId: EntityId; service: SiteServiceKind; itemId?: EntityId; offerId?: EntityId };

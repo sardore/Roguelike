@@ -1,5 +1,6 @@
 import type { AiProfile, EffectSpec, MonsterDefinition, ThemeDefinition } from '../core/types';
 import { EXTRA_MONSTERS } from './extra-monsters';
+import { FOUNDATION_MONSTERS } from './foundation-monsters';
 interface MonsterSeed { name:string; glyph:string; color:string; hp:number; attack:number; defense:number; ai:AiProfile; tags:string[]; ability?:EffectSpec; }
 const seed=(name:string,glyph:string,color:string,hp:number,attack:number,defense:number,ai:AiProfile,tags:string[],ability?:EffectSpec):MonsterSeed=>({name,glyph,color,hp,attack,defense,ai,tags,...(ability?{ability}:{})});
 const CATALOG:Array<{themeId:string;entries:MonsterSeed[]}>= [
@@ -27,6 +28,6 @@ MONSTERS.push(
 {id:'abyss-folded-witness',name:'Folded Witness',glyph:'W',color:'#d39ae8',maxHp:42,attack:15,defense:4,ai:'caster',tags:['void','aberrant','theme:abyss'],minDepth:1,abilities:[{op:'teleport',radius:6}]},
 {id:'abyss-edge-eater',name:'Edge Eater',glyph:'E',color:'#ef7ba6',maxHp:56,attack:18,defense:6,ai:'brute',tags:['void','aberrant','theme:abyss'],minDepth:1,abilities:[{op:'damage',amount:9,damageType:'void'}]},
 {id:'abyss-unperson',name:'Unperson',glyph:'@',color:'#b28ac8',maxHp:34,attack:14,defense:3,ai:'stalker',tags:['void','spirit','theme:abyss'],minDepth:1,abilities:[{op:'status',id:'unmoored',duration:3}]});
-MONSTERS.push(...EXTRA_MONSTERS);
+MONSTERS.push(...EXTRA_MONSTERS,...FOUNDATION_MONSTERS);
 export function monstersForTheme(theme:ThemeDefinition,depth:number):MonsterDefinition[]{const direct=MONSTERS.filter((m)=>m.tags.includes(`theme:${theme.id}`)&&m.minDepth<=depth+20);if(direct.length)return direct;return MONSTERS.filter((m)=>m.tags.some((tag)=>theme.monsterTags.includes(tag))&&m.minDepth<=depth+20);}
 export function monsterById(id:string):MonsterDefinition{const found=MONSTERS.find((m)=>m.id===id);if(!found)throw new Error(`unknown monster: ${id}`);return found;}
