@@ -97,28 +97,39 @@ export function move(s:GameState,dx:number,dy:number){
   }
   advance(s,rng);
 }
-function rayTarget(s:GameState,dx:number,dy:number,range=5):Point{
-  let p={x:s.player.x,y:s.player.y};
-  for(let i=0;i<range;i++){
-    const n={x:p.x+dx,y:p.y+dy},t=at(s,n);if(!t||t.kind==='wall')break;
-    p=n;if(t.blocks||enemyAt(s,p.x,p.y))break;
+
+function throwTarget(s:GameState,target:Point,range=5):Point{
+  let x=s.player.x,y=s.player.y;
+  const tx=target.x,ty=target.y;
+  const dx=Math.abs(tx-x),sx=x<tx?1:-1;
+  const dy=-Math.abs(ty-y),sy=y<ty?1:-1;
+  let err=dx+dy,steps=0,last={x,y};
+  while(!(x===tx&&y===ty)&&steps<range){
+    const e2=2*err;
+    if(e2>=dy){err+=dy;x+=sx;}
+    if(e2<=dx){err+=dx;y+=sy;}
+    const t=at(s,{x,y});
+    if(!t||t.kind==='wall')break;
+    last={x,y};steps++;
+    if(t.blocks||enemyAt(s,x,y))break;
   }
-  return p;
+  return last;
 }
-export function useItem(s:GameState,index:number,dir:Point={x:0,y:-1}){
+
+export function useItem(s:GameState,index:number,target:Point={x:s.player.x,y:s.player.y-1}){
   if(s.over)return;const kind=s.player.inventory[index];if(!kind)return;const rng=new Rng((s.seed^s.turn^index)>>>0);
   if(kind==='blue-tonic'){
     s.player.hp=Math.min(s.player.maxHp,s.player.hp+6);push(s,'The tonic closes the worst cuts. Its sharp medicinal scent clings to you.','odd');
     const marked=s.player.statuses.find(x=>x.id==='marked');if(marked)marked.turns=Math.max(marked.turns,8);else s.player.statuses.push({id:'marked',turns:8});
   }else if(kind==='red-phial'){
-    const p=rayTarget(s,dir.x,dir.y),t=at(s,p);
+    const p=throwTarget(s,target),t=at(s,p);
     if(t){
       const wasBarrel=t.fixture==='barrel';ignite(t,5);push(s,'The red phial bursts into a low, hungry flame.','odd');
       if(wasBarrel)explodeBarrel(s,p);
       else for(const [dx,dy] of [[0,0],...dirs] as const){const q={x:p.x+dx,y:p.y+dy},qt=at(s,q);if(qt?.kind==='acid')ignite(qt,4);const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,3);}
     }
   }else if(kind==='salt-bomb'){
-    const p=rayTarget(s,dir.x,dir.y);push(s,'Salt cracks outward in a white ring.','good');
+    const p=throwTarget(s,target);push(s,'Salt cracks outward in a white ring.','good');
     for(const [dx,dy] of [[0,0],...dirs] as const){
       const q={x:p.x+dx,y:p.y+dy},t=at(s,q);if(t&&(t.kind==='acid'||t.kind==='fire')){t.kind='floor';t.variant=0;}
       const e=enemyAt(s,q.x,q.y);if(e)hurtEnemy(s,e,4);
