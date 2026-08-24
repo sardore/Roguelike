@@ -22,10 +22,10 @@ function viewportFor(canvas:HTMLCanvasElement,state:GameState):Viewport{
   const cell=Math.max(14,Math.floor(Math.min(width/cols,height/rows)));
   return{x,y,cols,rows,cell};
 }
-function chargeTarget(monster:GameState['monsters'][number]):Point|null{
-  const charge=monster.statuses.find((status)=>status.id==='charging');
-  if(!charge?.sourceId)return null;
-  const [x,y]=charge.sourceId.split(',').map(Number);
+function threatTarget(monster:GameState['monsters'][number]):Point|null{
+  const threat=monster.statuses.find((status)=>status.id==='charging'||status.id==='winding');
+  if(!threat?.sourceId)return null;
+  const [x,y]=threat.sourceId.split(',').map(Number);
   return Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null;
 }
 
@@ -50,7 +50,7 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   }
   for(const monster of state.monsters){
     if(!visible.has(`${monster.x},${monster.y}`))continue;
-    const target=chargeTarget(monster);if(!target)continue;
+    const target=threatTarget(monster);if(!target)continue;
     if(target.x<view.x||target.y<view.y||target.x>=view.x+view.cols||target.y>=view.y+view.rows)continue;
     const p=screen(target.x,target.y);
     ctx.globalAlpha=.28;ctx.fillStyle=palette.danger;ctx.fillRect(p.x+1,p.y+1,view.cell-2,view.cell-2);ctx.globalAlpha=1;
