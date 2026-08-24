@@ -2,13 +2,16 @@ export type Point = { x:number; y:number };
 
 export type TileKind =
   | 'wall' | 'floor' | 'door' | 'water' | 'acid' | 'fire' | 'stairs'
-  | 'steam' | 'sludge' | 'glass' | 'oil' | 'rune';
+  | 'steam' | 'sludge' | 'glass' | 'oil' | 'rune'
+  | 'brine' | 'miasma' | 'embers' | 'crystal';
 
 export type FixtureKind =
   | 'shelf' | 'still' | 'crate' | 'lamp' | 'planter' | 'boards' | 'herbs' | 'grate'
   | 'counter' | 'vat' | 'table' | 'awning' | 'pipe' | 'barrel' | 'cart' | 'sign'
   | 'fountain' | 'rubble' | 'cabinet' | 'boiler' | 'sealed-cache' | 'lever'
-  | 'brass-gate' | 'retort' | 'ward-pylon' | 'cage' | 'incinerator';
+  | 'brass-gate' | 'retort' | 'ward-pylon' | 'cage' | 'incinerator'
+  | 'stall' | 'valve' | 'reagent-pump' | 'bell' | 'transmuter'
+  | 'crucible' | 'furnace' | 'silver-mirror' | 'archive-desk';
 
 export type Tile = {
   kind: TileKind;
@@ -23,7 +26,8 @@ export type Tile = {
 
 export type EnemyKind =
   | 'glass-mite' | 'distiller-rat' | 'vapor-hound'
-  | 'retort-leech' | 'soot-sprite' | 'brine-warden' | 'gutter-alchemist';
+  | 'retort-leech' | 'soot-sprite' | 'brine-warden' | 'gutter-alchemist'
+  | 'homunculus' | 'glass-sentinel' | 'miasma-moth' | 'crucible-knight';
 
 export type Enemy = {
   id:string;
@@ -38,7 +42,8 @@ export type Enemy = {
 
 export type ItemKind =
   | 'red-phial' | 'salt-bomb' | 'blue-tonic' | 'chalk'
-  | 'smoke-ampoule' | 'neutralizer' | 'copper-key' | 'black-catalyst';
+  | 'smoke-ampoule' | 'neutralizer' | 'copper-key' | 'black-catalyst'
+  | 'frost-salts' | 'solvent' | 'amber-elixir';
 
 export type GroundItem = { id:string; kind:ItemKind; x:number; y:number };
 export type Status = 'bleeding' | 'poisoned' | 'marked' | 'sluggish' | 'warded';
