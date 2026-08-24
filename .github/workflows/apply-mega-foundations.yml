@@ -1,0 +1,35 @@
+name: Apply mega foundations
+
+on:
+  push:
+    branches: [dev/mega-foundations]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: dev/mega-foundations
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply source integration
+        run: |
+          node scripts/apply-mega-foundations.mjs
+          node scripts/apply-mobile-command-ui.mjs
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - name: Commit integrated source
+        run: |
+          rm scripts/apply-mega-foundations.mjs scripts/apply-mobile-command-ui.mjs .github/workflows/apply-mega-foundations.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "gameplay: integrate survival progression commands and mobile deck"
+          git push origin HEAD:dev/mega-foundations
