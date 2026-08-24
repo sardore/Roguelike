@@ -4,33 +4,33 @@ function once(s,a,b,label){if(s.includes(b))return s;if(!s.includes(a))throw new
 
 patch('src/main.ts',(s)=>{
   s=once(s,"import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';","import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';\nimport { hungerPercent, hungerStage, isRangedWeapon } from './core/foundations';",'foundation ui import');
-  s=once(s,`        <div class="hp-block" aria-label="health">
+  s=once(s,String.raw`        <div class="hp-block" aria-label="health">
           <span id="hp-text"></span>
           <div class="hp-track"><i id="hp-fill"></i></div>
         </div>
-        <button class="icon-button" id="menu-button" aria-label="menu">≡</button>`,`        <div class="vitals-block" aria-label="health and hunger">
+        <button class="icon-button" id="menu-button" aria-label="menu">≡</button>`,String.raw`        <div class="vitals-block" aria-label="health and hunger">
           <div class="vital-labels"><span id="hp-text"></span><b id="level-text"></b></div>
           <div class="hp-track"><i id="hp-fill"></i></div>
           <div class="hunger-line"><span id="hunger-text"></span><small id="ammo-text"></small></div>
           <div class="hunger-track"><i id="hunger-fill"></i></div>
         </div>
         <button class="icon-button" id="menu-button" aria-label="menu">≡</button>`,'vitals hud');
-  s=once(s,`      <footer class="mobile-dock">
-        <button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>${tr(locale,'bag')}</span><b id="bag-count">0</b></button>
+  s=once(s,String.raw`      <footer class="mobile-dock">
+        <button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>\${tr(locale,'bag')}</span><b id="bag-count">0</b></button>
         <section class="controls" aria-label="movement controls">
           <span></span><button data-move="0,-1" aria-label="move up">▲</button><span></span>
           <button data-move="-1,0" aria-label="move left">◀</button><button class="wait" data-wait aria-label="wait">·</button><button data-move="1,0" aria-label="move right">▶</button>
           <span></span><button data-move="0,1" aria-label="move down">▼</button><span></span>
         </section>
         <div id="context-slot" class="context-slot"></div>
-      </footer>`,`      <footer class="mobile-dock">
-        <div class="utility-dock"><button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>${tr(locale,'bag')}</span><b id="bag-count">0</b></button></div>
+      </footer>`,String.raw`      <footer class="mobile-dock">
+        <div class="utility-dock"><button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>\${tr(locale,'bag')}</span><b id="bag-count">0</b></button></div>
         <section class="action-pad" aria-label="action controls">
-          <button data-command="explore"><strong>◎</strong><small>${tr(locale,'explore')}</small></button>
-          <button data-command="search"><strong>⌕</strong><small>${tr(locale,'search')}</small></button>
-          <button data-command="rest"><strong>+</strong><small>${tr(locale,'rest')}</small></button>
-          <button data-command="fire" id="fire-button"><strong>›</strong><small>${tr(locale,'fire')}</small></button>
-          <button class="brace-action" data-wait><strong>•</strong><small>${tr(locale,'brace')}</small></button>
+          <button data-command="explore"><strong>◎</strong><small>\${tr(locale,'explore')}</small></button>
+          <button data-command="search"><strong>⌕</strong><small>\${tr(locale,'search')}</small></button>
+          <button data-command="rest"><strong>+</strong><small>\${tr(locale,'rest')}</small></button>
+          <button data-command="fire" id="fire-button"><strong>›</strong><small>\${tr(locale,'fire')}</small></button>
+          <button class="brace-action" data-wait><strong>•</strong><small>\${tr(locale,'brace')}</small></button>
           <div id="context-slot" class="context-slot"></div>
         </section>
         <section class="controls" aria-label="movement controls">
@@ -43,7 +43,17 @@ patch('src/main.ts',(s)=>{
   s=once(s,"  if(site.kind==='merchant')return merchantMarkup(current,site);","  if(site.kind==='merchant'||site.kind==='provisioner')return `${merchantMarkup(current,site)}${site.kind==='provisioner'?serviceButton(site,'meal'):''}`;",'provision merchant');
   s=once(s,"  if(site.kind==='camp')return serviceButton(site,'rest');\n  return serviceButton(site,'rumor');","  if(site.kind==='camp')return serviceButton(site,'rest');\n  if(site.kind==='trainer')return `${serviceButton(site,'train-attack')}${serviceButton(site,'train-defense')}${serviceButton(site,'train-vigor')}`;\n  if(site.kind==='inn')return `${serviceButton(site,'inn-rest')}${serviceButton(site,'meal')}`;\n  return serviceButton(site,'rumor');",'new site ui');
   s=once(s,"  const hpFill = document.querySelector<HTMLElement>('#hp-fill');\n  const messageText", "  const hpFill = document.querySelector<HTMLElement>('#hp-fill');\n  const hungerText=document.querySelector<HTMLElement>('#hunger-text');\n  const hungerFill=document.querySelector<HTMLElement>('#hunger-fill');\n  const levelText=document.querySelector<HTMLElement>('#level-text');\n  const ammoText=document.querySelector<HTMLElement>('#ammo-text');\n  const fireButton=document.querySelector<HTMLButtonElement>('#fire-button');\n  const messageText",'redraw queries');
-  s=once(s,"  if (drift) drift.textContent = driftLabel(state);\n  if (hpText) hpText.textContent = `${state.player.hp}/${state.player.maxHp}`;\n  if (hpFill) hpFill.style.width = `${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%`;","  if (drift) {const lane=driftLabel(state);drift.textContent=`${lane?lane+' · ':''}${state.player.gold}g · ${state.player.kills}${locale==='ko'?'처치':' kills'}`;}\n  if (hpText) hpText.textContent = `HP ${state.player.hp}/${state.player.maxHp}`;\n  if (hpFill) hpFill.style.width = `${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%`;\n  const hungerKey=hungerStage(state.player.hunger,state.player.maxHunger);\n  if(hungerText)hungerText.textContent=`${tr(locale,hungerKey)} ${hungerPercent(state)}%`;\n  if(hungerFill)hungerFill.style.width=`${hungerPercent(state)}%`;\n  if(levelText)levelText.textContent=`L${state.player.level}`;\n  if(ammoText)ammoText.textContent=`${tr(locale,'ammo')} ${state.player.ammo}`;\n  if(fireButton){const equipped=state.player.inventory.find((entry)=>entry.id===state.player.equippedWeaponId);fireButton.disabled=!equipped||!isRangedWeapon(itemById(equipped.defId))||state.player.ammo<=0;}", 'redraw survival');
+  s=once(s,String.raw`  if (drift) drift.textContent = driftLabel(state);
+  if (hpText) hpText.textContent = ` + "`" + `\${state.player.hp}/\${state.player.maxHp}` + "`" + `;
+  if (hpFill) hpFill.style.width = ` + "`" + `\${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%` + "`" + `;`,String.raw`  if (drift) {const lane=driftLabel(state);drift.textContent=` + "`" + `\${lane?lane+' · ':''}\${state.player.gold}g · \${state.player.kills}\${locale==='ko'?'처치':' kills'}` + "`" + `;}
+  if (hpText) hpText.textContent = ` + "`" + `HP \${state.player.hp}/\${state.player.maxHp}` + "`" + `;
+  if (hpFill) hpFill.style.width = ` + "`" + `\${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%` + "`" + `;
+  const hungerKey=hungerStage(state.player.hunger,state.player.maxHunger);
+  if(hungerText)hungerText.textContent=` + "`" + `\${tr(locale,hungerKey)} \${hungerPercent(state)}%` + "`" + `;
+  if(hungerFill)hungerFill.style.width=` + "`" + `\${hungerPercent(state)}%` + "`" + `;
+  if(levelText)levelText.textContent=` + "`" + `L\${state.player.level}` + "`" + `;
+  if(ammoText)ammoText.textContent=` + "`" + `\${tr(locale,'ammo')} \${state.player.ammo}` + "`" + `;
+  if(fireButton){const equipped=state.player.inventory.find((entry)=>entry.id===state.player.equippedWeaponId);fireButton.disabled=!equipped||!isRangedWeapon(itemById(equipped.defId))||state.player.ammo<=0;}`,'redraw survival');
   s=once(s,"  if (event.key === '.' || event.key === ' ') { event.preventDefault(); doAction({ type: 'wait' }); return; }","  if (event.key === '.' || event.key === ' ') { event.preventDefault(); doAction({ type: 'wait' }); return; }\n  if(event.key==='f'||event.key==='F'){event.preventDefault();doAction({type:'fire'});return;}\n  if(event.key==='x'||event.key==='X'){event.preventDefault();doAction({type:'explore'});return;}\n  if(event.key==='r'||event.key==='R'){event.preventDefault();doAction({type:'rest'});return;}\n  if(event.key==='/'){event.preventDefault();doAction({type:'search'});return;}", 'keyboard commands');
   return s;
 });
