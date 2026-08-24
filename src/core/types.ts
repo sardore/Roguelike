@@ -1,6 +1,7 @@
 export type EntityId = string;
 export type ThemeId = string;
 export type ArchetypeId = string;
+export type Locale = 'en' | 'ko';
 export interface Point { x: number; y: number; }
 export type TileKind = 'wall' | 'floor' | 'water' | 'lava' | 'bridge' | 'rubble';
 export interface Tile { kind: TileKind; glyph: string; walkable: boolean; transparent: boolean; }
@@ -28,13 +29,26 @@ export type EffectSpec =
   | { op: 'reveal'; radius: number }
   | { op: 'spawn-terrain'; tile: TileKind; radius: number; duration?: number }
   | { op: 'summon'; tag: string; count: number };
-export interface PlayerState extends Point { id: EntityId; hp: number; maxHp: number; attack: number; defense: number; inventory: InventoryItem[]; statuses: StatusInstance[]; equippedWeaponId?: EntityId | undefined; equippedArmorId?: EntityId | undefined; }
+export interface PlayerState extends Point { id: EntityId; hp: number; maxHp: number; attack: number; defense: number; gold: number; inventory: InventoryItem[]; statuses: StatusInstance[]; equippedWeaponId?: EntityId | undefined; equippedArmorId?: EntityId | undefined; }
 export interface TemporaryTerrain { id: EntityId; points: Array<Point & { original: TileKind }>; replacement: TileKind; expiresTurn: number; }
 export type DungeonFeatureKind = 'spike-trap' | 'snare-rune' | 'teleport-rune' | 'alarm-rune' | 'healing-spring' | 'warding-altar' | 'unstable-cache';
 export interface DungeonFeature extends Point { id: EntityId; kind: DungeonFeatureKind; revealed: boolean; spent: boolean; }
+
+export type SiteKind = 'town-square' | 'merchant' | 'healer' | 'appraiser' | 'cartographer' | 'shrine' | 'camp';
+export type SiteServiceKind = 'rumor' | 'buy' | 'sell' | 'heal' | 'cleanse' | 'identify' | 'map' | 'bless' | 'rest';
+export interface SiteStockEntry { id: EntityId; defId: string; price: number; }
+export interface NonCombatSite extends Point {
+  id: EntityId;
+  kind: SiteKind;
+  settlementId?: string;
+  settlementName?: string;
+  stock: SiteStockEntry[];
+  usedServices: SiteServiceKind[];
+}
+
 export interface StoryEvent { id: string; title: string; body: string; severity: 'major'; }
 export interface GameState {
-  schemaVersion: 3;
+  schemaVersion: 4;
   runId: string;
   runSeed: number;
   turn: number;
@@ -49,6 +63,7 @@ export interface GameState {
   monsters: MonsterEntity[];
   items: GroundItem[];
   features: DungeonFeature[];
+  sites: NonCombatSite[];
   explored: string[];
   visible: string[];
   temporaryTerrain: TemporaryTerrain[];
@@ -59,5 +74,6 @@ export type GameAction =
   | { type: 'move'; dx: number; dy: number }
   | { type: 'wait' }
   | { type: 'use-item'; itemId: EntityId }
-  | { type: 'drop-item'; itemId: EntityId };
+  | { type: 'drop-item'; itemId: EntityId }
+  | { type: 'site-service'; siteId: EntityId; service: SiteServiceKind; itemId?: EntityId; offerId?: EntityId };
 export interface ActionResult { accepted: boolean; event: StoryEvent | null; }
