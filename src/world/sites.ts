@@ -136,19 +136,32 @@ function pickSettlementKinds(rng: DeterministicRng, count: number): SiteKind[] {
   return out;
 }
 
+function civilizationAffinity(theme: ThemeDefinition): number {
+  let affinity = 0;
+  if (theme.monsterTags.includes('humanoid')) affinity += 1;
+  if (theme.monsterTags.includes('construct')) affinity += 1;
+  if (theme.monsterTags.includes('undead')) affinity += 0.25;
+  if (theme.monsterTags.includes('aberrant') || theme.monsterTags.includes('void')) affinity -= 0.7;
+  return affinity;
+}
 function settlementChance(theme: ThemeDefinition, coord: WorldCoord): number {
-  let chance = 0.13;
-  if (theme.monsterTags.includes('humanoid') || theme.monsterTags.includes('construct')) chance += 0.08;
-  if (theme.id === 'ember-mine' || theme.id === 'ironwarren' || theme.id === 'storm-archive' || theme.id === 'royal-chasm') chance += 0.12;
-  if (coord.depth % 12 === 0) chance += 0.12;
-  return Math.min(0.48, chance);
+  const affinity = civilizationAffinity(theme);
+  let chance = 0.10 + Math.max(0, affinity) * 0.08;
+  if (theme.monsterTags.includes('plant') || theme.monsterTags.includes('fungal') || theme.monsterTags.includes('aquatic')) chance += 0.04;
+  if (coord.depth % 12 === 0) chance += 0.10;
+  chance -= Math.max(0, -affinity) * 0.06;
+  return Math.max(0.04, Math.min(0.42, chance));
+}
+function isHubDepth(theme: ThemeDefinition, coord: WorldCoord): boolean {
+  return coord.depth % 15 === 6 && civilizationAffinity(theme) >= 1;
 }
 
 export function generateSites(floor: FloorMap, theme: ThemeDefinition, coord: WorldCoord, rng: DeterministicRng): NonCombatSite[] {
   if (theme.id === 'abyss') return [];
   const out: NonCombatSite[] = [];
   const used = new Set<string>();
-  const cluster = (coord.depth === 6 && theme.id === 'ember-mine') || rng.chance(settlementChance(theme, coord)) ? chooseTownCluster(floor, rng) : [];
+  const shouldHaveSettlement = isHubDepth(theme, coord) || rng.chance(settlementChance(theme, coord));
+  const cluster = shouldHaveSettlement ? chooseTownCluster(floor, rng) : [];
   if (cluster.length >= 4) {
     const settlementId = `settlement-${coord.depth}-${coord.lane}-${rng.nextU32().toString(36)}`;
     const name = settlementName(theme, rng);
