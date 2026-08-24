@@ -26,16 +26,24 @@ function equippedArmor(state: GameState): ItemDefinition | null {
   return entry ? itemById(entry.defId) : null;
 }
 
+function armorGrants(armor: ItemDefinition | null, statusId: string): boolean {
+  return Boolean(armor?.effects.some((effect) => effect.op === 'status' && effect.id === statusId));
+}
+
+function playerHas(state: GameState, armor: ItemDefinition | null, statusId: string): boolean {
+  return state.player.statuses.some((status) => status.id === statusId && status.duration > 0) || armorGrants(armor, statusId);
+}
+
 export function playerDamageMultiplier(state: GameState, damageType: DamageType): number {
   const armor = equippedArmor(state);
   const tags = armor?.tags ?? [];
   const explicit = explicitMultiplier(tags, damageType);
   if (explicit !== null) return explicit;
-  if (damageType === 'fire' && state.player.statuses.some((status) => status.id === 'fire-ward')) return 0.5;
-  if (damageType === 'cold' && state.player.statuses.some((status) => status.id === 'cold-ward')) return 0.5;
-  if (damageType === 'poison' && (state.player.statuses.some((status) => status.id === 'poison-ward') || state.player.statuses.some((status) => status.id === 'antivenom'))) return 0.35;
+  if (damageType === 'fire' && playerHas(state, armor, 'fire-ward')) return 0.5;
+  if (damageType === 'cold' && playerHas(state, armor, 'cold-ward')) return 0.5;
+  if (damageType === 'poison' && (playerHas(state, armor, 'poison-ward') || playerHas(state, armor, 'antivenom'))) return 0.35;
   if (damageType === 'shock' && tags.includes('aquatic')) return 1.25;
-  if (damageType === 'void' && state.player.statuses.some((status) => status.id === 'lucid')) return 0.7;
+  if (damageType === 'void' && playerHas(state, armor, 'lucid')) return 0.7;
   return 1;
 }
 
