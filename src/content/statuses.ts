@@ -25,6 +25,7 @@ const defs: StatusDefinition[] = [
   { id: 'armor-break', name: 'Armor Broken', harmful: true, defenseDelta: -1 },
   { id: 'guarding', name: 'Guarding', defenseDelta: 4 },
   { id: 'charging', name: 'Charging' },
+  { id: 'winding', name: 'Winding Up' },
   { id: 'hasted', name: 'Hasted' },
   { id: 'fire-brand', name: 'Fire Brand' },
   { id: 'water-step', name: 'Water Step' },
