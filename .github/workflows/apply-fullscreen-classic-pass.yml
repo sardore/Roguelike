@@ -27,6 +27,7 @@ jobs:
           const path='scripts/apply-fullscreen-classic-pass.mjs';
           let s=fs.readFileSync(path,'utf8');
           s=s.replace("pushMessage(state,`A named presence haunts this floor: ${def.name}.`);","pushMessage(state,'A named presence haunts this floor: '+def.name+'.');");
+          s=s.replaceAll("import { hungerPercent, hungerStage, isRangedWeapon } from './core/foundations';","import { canCarryDefinition, carryCapacity, encumbranceStage, hungerPercent, hungerStage, inventoryWeight, isRangedWeapon, itemWeight } from './core/foundations';");
           fs.writeFileSync(path,s);
           NODE
           {
