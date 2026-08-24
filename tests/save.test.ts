@@ -1,0 +1,5 @@
+import { describe, expect, it } from 'vitest';
+import { createNewGame } from '../src/core/game';
+import { RunSaveStore, type StorageLike } from '../src/core/save';
+class MemoryStorage implements StorageLike{private readonly data=new Map<string,string>();getItem(key:string):string|null{return this.data.get(key)??null;}setItem(key:string,value:string):void{this.data.set(key,value);}removeItem(key:string):void{this.data.delete(key);}}
+describe('anti save-scum lease',()=>{it('rejects a dirty active run',()=>{const store=new RunSaveStore(new MemoryStorage()),{state}=createNewGame('dirty-test');store.beginNewRun(state);expect(store.claimCleanSave()).toEqual({ok:false,reason:'dirty'});});it('only resumes after a clean quit and dirties before returning',()=>{const store=new RunSaveStore(new MemoryStorage()),{state}=createNewGame('clean-test'),nonce=store.beginNewRun(state);expect(store.saveAndQuitClean(state,nonce)).toBe(true);const loaded=store.claimCleanSave();expect(loaded.ok).toBe(true);expect(store.claimCleanSave()).toEqual({ok:false,reason:'dirty'});});});
