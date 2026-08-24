@@ -1,4 +1,5 @@
 import { hash } from './rng';
+import { applyStageDetails } from './stageDetails';
 import { createWorld } from './world';
 import { interactAt, move, useItem, wait } from './systems';
 import type { GameState, Point } from './types';
@@ -11,11 +12,11 @@ const OBSERVATIONS:Record<string,string>={
 
 export class Game{
   state:GameState;listeners=new Set<()=>void>();private rootSeed:number;
-  constructor(seed='apothecaries-row'){this.rootSeed=hash(seed);this.state=createWorld(this.rootSeed,1)}
+  constructor(seed='apothecaries-row'){this.rootSeed=hash(seed);this.state=createWorld(this.rootSeed,1);applyStageDetails(this.state)}
   sub(fn:()=>void){this.listeners.add(fn);return()=>this.listeners.delete(fn)}emit(){for(const fn of this.listeners)fn()}
   private observe(beforeX:number,beforeY:number){if(this.state.player.x===beforeX&&this.state.player.y===beforeY)return;const tile=this.state.tiles[this.state.player.y*this.state.width+this.state.player.x],room=tile?.room;if(room&&!this.state.enteredRooms.includes(room)){this.state.enteredRooms.push(room);const text=OBSERVATIONS[room];if(text){this.state.messages.push({text,tone:'odd'});if(this.state.messages.length>9)this.state.messages.shift()}}}
-  private descendIfNeeded(){if(!this.state.won||!this.state.over||this.state.districtStage>=3)return;const old=this.state,nextStage=old.districtStage+1,next=createWorld(this.rootSeed,nextStage);next.player.hp=old.player.hp;next.player.maxHp=old.player.maxHp;next.player.inventory=[...old.player.inventory];next.player.statuses=old.player.statuses.filter(st=>st.id!=='marked'&&st.id!=='sluggish').map(st=>({...st,turns:Math.min(st.turns,4)}));next.turn=old.turn;next.messages=[{text:nextStage===2?'You descend into the Tincture Bazaar. The air becomes wetter.':'You descend again. Somewhere below, a furnace door closes by itself.',tone:'odd'}];this.state=next}
+  private descendIfNeeded(){if(!this.state.won||!this.state.over||this.state.districtStage>=3)return;const old=this.state,nextStage=old.districtStage+1,next=createWorld(this.rootSeed,nextStage);applyStageDetails(next);next.player.hp=old.player.hp;next.player.maxHp=old.player.maxHp;next.player.inventory=[...old.player.inventory];next.player.statuses=old.player.statuses.filter(st=>st.id!=='marked'&&st.id!=='sluggish').map(st=>({...st,turns:Math.min(st.turns,4)}));next.turn=old.turn;next.messages=[{text:nextStage===2?'You descend into the Tincture Bazaar. The air becomes wetter.':'You descend again. Somewhere below, a furnace door closes by itself.',tone:'odd'}];this.state=next}
   move(dx:number,dy:number){const x=this.state.player.x,y=this.state.player.y;move(this.state,dx,dy);this.observe(x,y);this.descendIfNeeded();this.emit()}
   wait(){wait(this.state);this.emit()}use(index:number,target?:Point){useItem(this.state,index,target);this.emit()}interact(target:Point){interactAt(this.state,target);this.emit()}
-  restart(seed=`run-${Date.now()}`){this.rootSeed=hash(seed);this.state=createWorld(this.rootSeed,1);this.emit()}
+  restart(seed=`run-${Date.now()}`){this.rootSeed=hash(seed);this.state=createWorld(this.rootSeed,1);applyStageDetails(this.state);this.emit()}
 }
