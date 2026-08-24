@@ -3,6 +3,7 @@ import { assertGameInvariants, createNewGame, dispatchAction } from './core/game
 import { RunSaveStore } from './core/save';
 import type { GameAction, GameState, StoryEvent } from './core/types';
 import { itemById } from './content/items';
+import { displayItemName } from './core/item-knowledge';
 import { describeState, renderCanvas } from './ui/render';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -134,16 +135,17 @@ function inventoryMarkup(current: GameState): string {
   if (!current.player.inventory.length) return '<p class="sheet-empty">Your bag is empty.</p>';
   return current.player.inventory.map((entry) => {
     const def = itemById(entry.defId);
+    const name = displayItemName(current, def);
     const equipped = current.player.equippedWeaponId === entry.id || current.player.equippedArmorId === entry.id;
     const verb = def.category === 'weapon' ? 'Ready' : def.category === 'armor' ? 'Wear' : def.category === 'consumable' ? 'Use' : 'Activate';
     return `
       <div class="simple-item-row">
         <button class="item-main" data-item-action="use" data-item-id="${entry.id}">
           <span class="item-glyph" style="color:${def.color}">${def.glyph}</span>
-          <span class="item-name"><strong>${def.name}</strong><small>${equipped ? 'Equipped · ' : ''}${def.category}</small></span>
+          <span class="item-name"><strong>${name}</strong><small>${equipped ? 'Equipped · ' : ''}${def.category}</small></span>
           <span class="item-verb">${verb}</span>
         </button>
-        <button class="item-drop" data-item-action="drop" data-item-id="${entry.id}" aria-label="drop ${def.name}">×</button>
+        <button class="item-drop" data-item-action="drop" data-item-id="${entry.id}" aria-label="drop ${name}">×</button>
       </div>`;
   }).join('');
 }

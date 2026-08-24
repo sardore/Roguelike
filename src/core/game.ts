@@ -20,6 +20,9 @@ import { MONSTERS, monsterById, monstersForTheme } from '../content/monsters';
 import { ITEMS, itemById } from '../content/items';
 import { statusById } from '../content/statuses';
 import { milestoneEvent, themeDiscoveryEvent } from './story';
+import { featureAt, featureDefinition, generateFeatures } from '../world/features';
+import { displayItemName, identifyItem } from './item-knowledge';
+import { monsterDamageMultiplier, playerDamageMultiplier, scaleTypedDamage, weaponDamageType } from './combat-rules';
 
 const MAX_MESSAGES = 9;
 const BASE_VISION = 9;
@@ -93,7 +96,7 @@ function refreshVisibility(state: GameState): void {
 }
 
 function walkableFreePoints(state: GameState): Point[] {
-  const occupied = new Set<string>([pointKey(state.player), ...state.floor.exits.map(pointKey)]);
+  const occupied = new Set<string>([pointKey(state.player), ...state.floor.exits.map(pointKey), ...state.features.map(pointKey)]);
   return state.floor.tiles.flatMap((tile, index) => {
     if (!tile.walkable) return [];
     const point = { x: index % state.floor.width, y: Math.floor(index / state.floor.width) };
@@ -147,6 +150,7 @@ function createFloorState(state: GameState): void {
   state.temporaryTerrain = [];
   state.explored = [];
   state.visible = [];
+  state.features = generateFeatures(state.floor, context.primary, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'features')));
   populateFloor(state, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'population')));
   refreshVisibility(state);
 }
@@ -154,7 +158,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
   const runSeed = hashString32(seedText.trim() || `${Date.now()}`), runRng = new DeterministicRng(deriveSeed(runSeed, 'run'));
   const coord: WorldCoord = { depth: 1, lane: 0 }, context = resolveThemeContext(coord), floor = generateFloor(runSeed, coord, context);
   const state: GameState = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     runId: `run-${runSeed.toString(16)}-${runRng.nextU32().toString(36)}`,
     runSeed,
     turn: 0,
@@ -163,16 +167,19 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
     themeId: context.primary.id,
     discoveredThemes: [],
     seenStoryEvents: [],
+    identifiedItemDefs: [],
     floor,
     player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, inventory: [], statuses: [] },
     monsters: [],
     items: [],
+    features: [],
     explored: [],
     visible: [],
     temporaryTerrain: [],
     messages: ['You descend beneath the cistern.'],
     gameOver: false,
   };
+  state.features = generateFeatures(floor, context.primary, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'features')));
   populateFloor(state, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'population')));
   refreshVisibility(state);
   const event = themeDiscoveryEvent(state, context.primary);
@@ -303,17 +310,28 @@ function applyEffect(state: GameState, effect: EffectSpec, source: Point & { id:
   const targetEntity = target === 'player' ? state.player : target;
   if (effect.op === 'damage') {
     if (target === 'player') {
-      const damage = Math.max(1, effect.amount - Math.floor(playerDefense(state) / 3));
-      damagePlayer(state, damage, `${source.id === 'player' ? 'The effect' : 'A hostile effect'} hits you for ${damage}.`);
+      const type = effect.damageType ?? 'physical';
+      const base = Math.max(1, effect.amount - Math.floor(playerDefense(state) / 3));
+      const damage = scaleTypedDamage(base, playerDamageMultiplier(state, type));
+      if (damage <= 0) pushMessage(state, `The ${type} effect cannot harm you.`);
+      else damagePlayer(state, damage, `${source.id === 'player' ? 'The effect' : 'A hostile effect'} hits you for ${damage} ${type}.`);
     } else {
-      const damage = Math.max(1, effect.amount - Math.floor(monsterDefense(target) / 3));
-      target.hp -= damage; pushMessage(state, `${monsterById(target.defId).name} takes ${damage}.`); killMonsterIfNeeded(state, target);
+      const targetDef = monsterById(target.defId), type = effect.damageType ?? 'physical';
+      const base = Math.max(1, effect.amount - Math.floor(monsterDefense(target) / 3));
+      const damage = scaleTypedDamage(base, monsterDamageMultiplier(targetDef, type));
+      if (damage <= 0) pushMessage(state, `${targetDef.name} ignores the ${type} effect.`);
+      else { target.hp -= damage; pushMessage(state, `${targetDef.name} takes ${damage} ${type}.`); killMonsterIfNeeded(state, target); }
     }
   } else if (effect.op === 'heal') {
     if (target === 'player') state.player.hp = Math.min(state.player.maxHp, state.player.hp + effect.amount); else target.hp += effect.amount;
   } else if (effect.op === 'status') {
     if (target === 'player' && effect.id === 'cleansed') state.player.statuses = state.player.statuses.filter((status) => !statusById(status.id).harmful);
-    else addStatus(target === 'player' ? state.player.statuses : target.statuses, effect, source.id);
+    else {
+      const statusType = effect.id === 'poisoned' ? 'poison' : effect.id === 'burning' ? 'fire' : effect.id === 'chilled' ? 'cold' : null;
+      const resistance = statusType ? (target === 'player' ? playerDamageMultiplier(state, statusType) : monsterDamageMultiplier(monsterById(target.defId), statusType)) : 1;
+      if (statusType && resistance <= 0.55) pushMessage(state, `${target === 'player' ? 'You resist' : monsterById(target.defId).name + ' resists'} ${effect.id}.`);
+      else addStatus(target === 'player' ? state.player.statuses : target.statuses, effect, source.id);
+    }
   } else if (effect.op === 'push') pushEntity(state, target, source, effect.distance);
   else if (effect.op === 'teleport') teleportEntity(state, target, effect.radius, rng);
   else if (effect.op === 'reveal' && target === 'player') {
@@ -324,14 +342,18 @@ function applyEffect(state: GameState, effect: EffectSpec, source: Point & { id:
   else if (effect.op === 'summon') summonNear(state, source, effect.tag, effect.count, rng);
 }
 function attackMonster(state: GameState, monster: MonsterEntity, rng: DeterministicRng): void {
-  const def = monsterById(monster.defId), damage = Math.max(1, playerAttackPower(state) + rng.int(-1, 2) - monsterDefense(monster));
-  monster.hp -= damage; pushMessage(state, `You hit ${def.name} for ${damage}.`);
-  const weapon = equippedWeapon(state);
-  if (!killMonsterIfNeeded(state, monster) && weapon) for (const effect of weapon.effects) if (effect.op === 'status' || effect.op === 'push') applyEffect(state, effect, state.player, monster, rng);
+  const def = monsterById(monster.defId), weapon = equippedWeapon(state), damageType = weaponDamageType(weapon);
+  const base = Math.max(1, playerAttackPower(state) + rng.int(-1, 2) - monsterDefense(monster));
+  const damage = scaleTypedDamage(base, monsterDamageMultiplier(def, damageType));
+  if (damage <= 0) pushMessage(state, `${def.name} ignores your ${damageType} strike.`);
+  else { monster.hp -= damage; pushMessage(state, `You hit ${def.name} for ${damage} ${damageType}.`); }
+  const weaponAfter = weapon;
+  if (!killMonsterIfNeeded(state, monster) && weaponAfter) for (const effect of weaponAfter.effects) if (effect.op === 'status' || effect.op === 'push') applyEffect(state, effect, state.player, monster, rng);
 }
 function meleePlayer(state: GameState, monster: MonsterEntity, rng: DeterministicRng): void {
-  const def = monsterById(monster.defId), damage = Math.max(1, monsterAttack(monster) + rng.int(-1, 1) - playerDefense(state));
-  damagePlayer(state, damage, `${def.name} hits you for ${damage}.`);
+  const def = monsterById(monster.defId), base = Math.max(1, monsterAttack(monster) + rng.int(-1, 1) - playerDefense(state));
+  const damage = scaleTypedDamage(base, playerDamageMultiplier(state, 'physical'));
+  if (damage > 0) damagePlayer(state, damage, `${def.name} hits you for ${damage}.`); else pushMessage(state, `${def.name} cannot penetrate your protection.`);
 }
 function tryMoveMonster(state: GameState, monster: MonsterEntity, target: Point): boolean {
   const tile = tileAt(state.floor, target.x, target.y);
@@ -435,12 +457,50 @@ function expireTerrain(state: GameState): void {
 }
 function applyStandingTerrain(state: GameState): void {
   const playerTile = tileAt(state.floor, state.player.x, state.player.y);
-  if (playerTile?.kind === 'lava' && !hasStatus(state.player.statuses, 'fire-ward')) damagePlayer(state, 3, 'The lava burns you for 3.');
+  if (playerTile?.kind === 'lava') { const damage = scaleTypedDamage(3, playerDamageMultiplier(state, 'fire')); if (damage > 0) damagePlayer(state, damage, `The lava burns you for ${damage}.`); }
   for (const monster of [...state.monsters]) {
     if (tileAt(state.floor, monster.x, monster.y)?.kind !== 'lava') continue;
     const def = monsterById(monster.defId); if (def.tags.includes('fire')) continue;
     monster.hp -= 3; if (!killMonsterIfNeeded(state, monster)) pushMessage(state, `${def.name} burns in lava.`);
   }
+}
+function searchNearbyFeatures(state: GameState, rng: DeterministicRng): void {
+  for (const feature of state.features) {
+    if (feature.revealed || feature.spent || manhattan(state.player, feature) > 2) continue;
+    if (!rng.chance(0.45)) continue;
+    feature.revealed = true;
+    pushMessage(state, `You notice a ${featureDefinition(feature.kind).label}.`);
+    break;
+  }
+}
+function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
+  const feature = featureAt(state.features, state.player.x, state.player.y);
+  if (!feature) return;
+  const def = featureDefinition(feature.kind);
+  if (!feature.revealed) { feature.revealed = true; pushMessage(state, `You discover a ${def.label}!`); }
+  if (feature.kind === 'spike-trap') {
+    const base = 4 + Math.floor(state.coord.depth / 35), damage = scaleTypedDamage(base, playerDamageMultiplier(state, 'physical'));
+    if (damage > 0) damagePlayer(state, damage, `Spikes tear into you for ${damage}.`);
+  } else if (feature.kind === 'snare-rune') {
+    addStatus(state.player.statuses, { op: 'status', id: 'pinned', duration: 2, magnitude: 1 }, feature.id);
+    pushMessage(state, 'A snare rune locks your feet.');
+  } else if (feature.kind === 'teleport-rune') {
+    teleportEntity(state, 'player', 9, rng); pushMessage(state, 'Space folds and throws you elsewhere.');
+  } else if (feature.kind === 'alarm-rune') {
+    const tag = resolveThemeContext(state.coord).primary.monsterTags[0] ?? 'beast';
+    summonNear(state, state.player, tag, 2, rng); pushMessage(state, 'The rune calls hunters into the level.');
+  } else if (feature.kind === 'healing-spring') {
+    const before = state.player.hp; state.player.hp = Math.min(state.player.maxHp, state.player.hp + 12);
+    pushMessage(state, `The spring restores ${state.player.hp - before} HP.`);
+  } else if (feature.kind === 'warding-altar') {
+    addStatus(state.player.statuses, { op: 'status', id: 'focused', duration: 10, magnitude: 1 }, feature.id);
+    addStatus(state.player.statuses, { op: 'status', id: 'guarding', duration: 3, magnitude: 1 }, feature.id);
+    pushMessage(state, 'The altar sharpens your senses and hardens your stance.');
+  } else if (feature.kind === 'unstable-cache') {
+    for (let i = 0; i < 2; i += 1) { const found = weightedItem(state, rng); state.player.inventory.push({ id: makeId('cache', rng), defId: found.id }); }
+    pushMessage(state, 'You crack the cache and recover two objects.');
+  }
+  if (!def.repeatable) feature.spent = true;
 }
 function endAcceptedTurn(state: GameState, rng: DeterministicRng): void {
   state.turn += 1; expireTerrain(state); applyStandingTerrain(state); if (!state.gameOver) moveMonsters(state, rng); if (!state.gameOver) tickStatuses(state); refreshVisibility(state); state.rngState = rng.state;
@@ -458,8 +518,10 @@ function useInventoryItem(state: GameState, itemId: string, rng: DeterministicRn
   const needsHostile = def.effects.some(harmfulItemEffect), hostile = needsHostile ? nearestVisibleMonster(state, 7) : null;
   if (needsHostile && !hostile) { pushMessage(state, `${def.name} has no valid target.`); return false; }
   for (const effect of def.effects) applyEffect(state, effect, state.player, harmfulItemEffect(effect) ? hostile! : 'player', rng);
+  const newlyIdentified = identifyItem(state, def);
   if (def.category === 'consumable') { state.player.inventory = state.player.inventory.filter((item) => item.id !== itemId); pushMessage(state, `You use ${def.name}.`); }
   else pushMessage(state, `You activate ${def.name}.`);
+  if (newlyIdentified) pushMessage(state, `You identify it as ${def.name}.`);
   return true;
 }
 function dropInventoryItem(state: GameState, itemId: string): boolean {
@@ -467,7 +529,7 @@ function dropInventoryItem(state: GameState, itemId: string): boolean {
   if (state.player.equippedWeaponId === itemId) state.player.equippedWeaponId = undefined;
   if (state.player.equippedArmorId === itemId) state.player.equippedArmorId = undefined;
   state.player.inventory = state.player.inventory.filter((item) => item.id !== itemId);
-  state.items.push({ id: entry.id, defId: entry.defId, x: state.player.x, y: state.player.y }); pushMessage(state, `You drop ${itemById(entry.defId).name}.`); return true;
+  const def = itemById(entry.defId); state.items.push({ id: entry.id, defId: entry.defId, x: state.player.x, y: state.player.y }); pushMessage(state, `You drop ${displayItemName(state, def)}.`); return true;
 }
 
 export function dispatchAction(state: GameState, action: GameAction): ActionResult {
@@ -488,14 +550,17 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
       else {
         state.player.x = target.x; state.player.y = target.y;
         const item = itemAt(state, target.x, target.y);
-        if (item) { state.player.inventory.push({ id: item.id, defId: item.defId }); state.items = state.items.filter((entry) => entry.id !== item.id); pushMessage(state, `You pick up ${itemById(item.defId).name}.`); }
+        if (item) { const itemDef = itemById(item.defId); state.player.inventory.push({ id: item.id, defId: item.defId }); state.items = state.items.filter((entry) => entry.id !== item.id); pushMessage(state, `You pick up ${displayItemName(state, itemDef)}.`); }
+        resolveFeatureAtPlayer(state, rng);
         pendingExit = exitAt(state.floor, state.player.x, state.player.y);
       }
     }
     accepted = true;
   } else if (action.type === 'wait') {
     addStatus(state.player.statuses, { op: 'status', id: 'guarding', duration: 1, magnitude: 1 }, state.player.id);
-    pushMessage(state, 'You brace for the next attack.'); accepted = true;
+    searchNearbyFeatures(state, rng);
+    resolveFeatureAtPlayer(state, rng);
+    pushMessage(state, 'You brace and search the nearby stonework.'); accepted = true;
   } else if (action.type === 'use-item') accepted = useInventoryItem(state, action.itemId, rng);
   else if (action.type === 'drop-item') accepted = dropInventoryItem(state, action.itemId);
   if (!accepted) return { accepted: false, event: null };
@@ -521,4 +586,6 @@ export function assertGameInvariants(state: GameState): void {
     if (samePoint(monster, state.player)) throw new Error(`invariant: monster overlaps player ${monster.id}`);
     const key = pointKey(monster); if (occupied.has(key)) throw new Error(`invariant: monsters overlap at ${key}`); occupied.add(key);
   }
+  for (const feature of state.features) if (!tileAt(state.floor, feature.x, feature.y)?.walkable) throw new Error(`invariant: feature in wall ${feature.id}`);
 }
+
