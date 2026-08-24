@@ -33,4 +33,5 @@ export type GameState = {
   over: boolean;
   won: boolean;
   noise: Point[];
+  enteredRooms: string[];
 };
