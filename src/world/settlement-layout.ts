@@ -50,6 +50,7 @@ function streetPlan(floor:FloorMap,center:Point,count:number,rng:DeterministicRn
   const halfLong=10,halfShort=6;
   if(horizontal){
     for(let x=center.x-halfLong;x<=center.x+halfLong;x+=1){set(floor,x,center.y,'floor');if(rng.chance(.25))set(floor,x,center.y+1,'grass');}
+    for(let y=center.y-halfShort;y<=center.y+halfShort;y+=1)set(floor,center.x,y,'floor');
     const slots=[-8,-4,0,4,8];
     for(const offset of slots){
       for(const side of [-1,1]){
@@ -60,6 +61,7 @@ function streetPlan(floor:FloorMap,center:Point,count:number,rng:DeterministicRn
     }
   }else{
     for(let y=center.y-halfLong;y<=center.y+halfLong;y+=1){set(floor,center.x,y,'floor');if(rng.chance(.25))set(floor,center.x+1,y,'grass');}
+    for(let x=center.x-halfShort;x<=center.x+halfShort;x+=1)set(floor,x,center.y,'floor');
     const slots=[-8,-4,0,4,8];
     for(const offset of slots){
       for(const side of [-1,1]){

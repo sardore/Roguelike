@@ -74,7 +74,7 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
     const specialColor=terrainColor(tile.kind,palette);
     let fg=exit?palette.accent:specialColor??(tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:tile.kind==='rubble'?blendHex(palette.wall,palette.floor,.55):palette.floor);
     const tileBase=specialColor??(tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:palette.floor);
-    const baseAlpha=isVisible?(tile.kind==='wall'||tile.kind==='pillar'||tile.kind==='tree'?.09:.04)+(n*.02):.012;
+    const baseAlpha=isVisible?((tile.kind==='wall'||tile.kind==='pillar'||tile.kind==='tree')?.09:.04)+(n*.02):.012;
     ctx.fillStyle=rgba(tileBase,baseAlpha);ctx.fillRect(sx*view.cell,sy*view.cell,view.cell,view.cell);
     if(tile.kind==='water'&&isVisible){ctx.fillStyle=rgba(palette.water,.075+.025*Math.sin((state.turn+x+y)*.28));ctx.fillRect(sx*view.cell+1,sy*view.cell+1,view.cell-2,view.cell-2);}
     if(tile.kind==='lava'&&isVisible){ctx.shadowColor=palette.danger;ctx.shadowBlur=view.cell*.42;}

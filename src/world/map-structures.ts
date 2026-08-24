@@ -164,6 +164,9 @@ function structurePool(theme: ThemeDefinition): Array<{ value: StructureKind; we
   const tags = new Set(theme.monsterTags), out: Array<{ value: StructureKind; weight: number }> = [];
   const add = (value: StructureKind, weight: number) => out.push({ value, weight });
   add('ruined-court', 1.4);
+  add('grove', 1.15);
+  add('shrine-yard', .65);
+  add('reed-basin', .35);
   if (tags.has('plant')) add('grove', 6);
   if (tags.has('aquatic')) add('reed-basin', 5);
   if (tags.has('crystal')) add('crystal-garden', 6);
