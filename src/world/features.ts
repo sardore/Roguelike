@@ -13,7 +13,7 @@ export interface FeatureDefinition {
 
 const defs: FeatureDefinition[] = [
   { kind: 'spike-trap', glyph: '^', color: '#b77f75', hidden: true, repeatable: true, label: 'spike trap', tags: ['trap','physical'] },
-  { kind: 'snare-rune', glyph: '^', color: '#aaa07c', hidden: true, repeatable: true, label: 'snare rune', tags: ['trap','control'] },
+  { kind: 'snare-rune', glyph: '^', color: '#aaa07c', hidden: true, repeatable: false, label: 'snare rune', tags: ['trap','control'] },
   { kind: 'teleport-rune', glyph: '^', color: '#a78ac7', hidden: true, repeatable: true, label: 'teleport rune', tags: ['trap','void'] },
   { kind: 'alarm-rune', glyph: '^', color: '#c58b72', hidden: true, repeatable: false, label: 'alarm rune', tags: ['trap','summon'] },
   { kind: 'healing-spring', glyph: '{', color: '#74b8b4', hidden: false, repeatable: false, label: 'healing spring', tags: ['boon','water'] },
