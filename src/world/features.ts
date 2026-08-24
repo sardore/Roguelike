@@ -44,8 +44,8 @@ function weightedKinds(theme: ThemeDefinition): Array<{ value: DungeonFeatureKin
   });
 }
 
-export function generateFeatures(floor: FloorMap, theme: ThemeDefinition, rng: DeterministicRng): DungeonFeature[] {
-  const reserved = new Set<string>([pointKey(floor.spawn), ...floor.exits.map(pointKey)]);
+export function generateFeatures(floor: FloorMap, theme: ThemeDefinition, rng: DeterministicRng, extraReserved: Point[] = []): DungeonFeature[] {
+  const reserved = new Set<string>([pointKey(floor.spawn), ...floor.exits.map(pointKey), ...extraReserved.map(pointKey)]);
   const candidates: Point[] = [];
   for (let index = 0; index < floor.tiles.length; index += 1) {
     const tile = floor.tiles[index]!;
