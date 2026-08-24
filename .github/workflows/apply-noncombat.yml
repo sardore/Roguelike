@@ -1,0 +1,32 @@
+name: Apply noncombat integration
+
+on:
+  push:
+    branches: [dev/noncombat-i18n]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev/noncombat-i18n
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/apply-noncombat.mjs
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - name: Commit integration
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/core/game.ts
+          git commit -m "gameplay: integrate settlements, shops, and services"
+          git push origin HEAD:dev/noncombat-i18n
