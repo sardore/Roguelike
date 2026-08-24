@@ -1,9 +1,11 @@
 import '../tactical.css';
-import type { FloorMap, GameState, Point, ThemePalette } from '../core/types';
+import type { FloorMap, GameState, Locale, Point, ThemePalette } from '../core/types';
 import { itemById } from '../content/items';
 import { monsterById } from '../content/monsters';
 import { resolveThemeContext, themeById } from '../world/themes';
 import { featureDefinition } from '../world/features';
+import { siteDefinition } from '../world/sites';
+import { localizedThemeName } from '../i18n';
 
 function blendHex(a:string,b:string,t:number):string{const parse=(hex:string)=>[1,3,5].map((offset)=>Number.parseInt(hex.slice(offset,offset+2),16));const aa=parse(a),bb=parse(b),out=aa.map((value,index)=>Math.round(value+(bb[index]!-value)*t));return `#${out.map((value)=>value.toString(16).padStart(2,'0')).join('')}`;}
 function paletteForState(state:GameState):ThemePalette{const context=resolveThemeContext(state.coord);if(!context.blend)return context.primary.palette;const t=context.blend.weight;return{wall:blendHex(context.primary.palette.wall,context.blend.target.palette.wall,t),floor:blendHex(context.primary.palette.floor,context.blend.target.palette.floor,t),accent:blendHex(context.primary.palette.accent,context.blend.target.palette.accent,t),danger:blendHex(context.primary.palette.danger,context.blend.target.palette.danger,t),water:blendHex(context.primary.palette.water,context.blend.target.palette.water,t)};}
@@ -54,6 +56,13 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
     if(feature.x<view.x||feature.y<view.y||feature.x>=view.x+view.cols||feature.y>=view.y+view.rows)continue;
     const def=featureDefinition(feature.kind),p=screen(feature.x,feature.y);ctx.fillStyle=visible.has(key)?def.color:blendHex(def.color,'#07090d',.6);ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);
   }
+  for(const site of state.sites){
+    const key=`${site.x},${site.y}`;if(!explored.has(key))continue;
+    if(site.x<view.x||site.y<view.y||site.x>=view.x+view.cols||site.y>=view.y+view.rows)continue;
+    const def=siteDefinition(site.kind),p=screen(site.x,site.y);
+    if(site.settlementId){ctx.globalAlpha=.14;ctx.fillStyle=def.color;ctx.fillRect(p.x+1,p.y+1,view.cell-2,view.cell-2);ctx.globalAlpha=1;}
+    ctx.fillStyle=visible.has(key)?def.color:blendHex(def.color,'#07090d',.58);ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);
+  }
   for(const monster of state.monsters){
     if(!visible.has(`${monster.x},${monster.y}`))continue;
     const target=threatTarget(monster);if(!target)continue;
@@ -67,4 +76,4 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   const player=screen(state.player.x,state.player.y);ctx.fillStyle='#f4f4f1';ctx.fillText('@',player.x+view.cell/2,player.y+view.cell/2);
 }
 
-export function describeState(state:GameState):string{const theme=themeById(state.themeId);return `${theme.name} · ${state.coord.depth}F`;}
+export function describeState(state:GameState,locale:Locale='en'):string{const theme=themeById(state.themeId);return `${localizedThemeName(theme.id,theme.name,locale)} · ${state.coord.depth}F`;}
