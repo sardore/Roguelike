@@ -1,6 +1,7 @@
 import type { FloorMap, NonCombatSite, Point, SiteKind, SiteServiceKind, ThemeDefinition, WorldCoord } from '../core/types';
 import { DeterministicRng } from '../core/rng';
 import { ITEMS } from '../content/items';
+import { stampSettlement } from './settlement-layout';
 
 export interface SiteDefinition {
   kind: SiteKind;
@@ -117,7 +118,7 @@ function availablePoints(floor: FloorMap): Point[] {
   const out: Point[] = [];
   for (let index = 0; index < floor.tiles.length; index += 1) {
     const tile = floor.tiles[index]!;
-    if (!tile.walkable || !['floor','bridge','rubble','holy'].includes(tile.kind)) continue;
+    if (!tile.walkable || ['water','lava','miasma','void-rift','bramble'].includes(tile.kind)) continue;
     const point = { x: index % floor.width, y: Math.floor(index / floor.width) };
     if (reserved.has(pointKey(point)) || manhattan(point, floor.spawn) < 6 || floor.exits.some((exit) => manhattan(point, exit) < 4)) continue;
     out.push(point);
@@ -125,24 +126,10 @@ function availablePoints(floor: FloorMap): Point[] {
   return out;
 }
 
-function chooseTownCluster(floor: FloorMap, rng: DeterministicRng): Point[] {
-  const points = availablePoints(floor);
-  const pointSet = new Set(points.map(pointKey));
-  const centers = rng.shuffle(points).filter((center) => {
-    let count = 0;
-    for (let y = center.y - 3; y <= center.y + 3; y += 1) for (let x = center.x - 3; x <= center.x + 3; x += 1) if (Math.abs(x - center.x) + Math.abs(y - center.y) <= 3 && pointSet.has(`${x},${y}`)) count += 1;
-    return count >= 14;
-  });
-  const center = centers[0];
-  if (!center) return [];
-  const nearby = points.filter((point) => manhattan(point, center) <= 3 && pointKey(point) !== pointKey(center));
-  return [center, ...rng.shuffle(nearby)];
-}
-
 function pickSettlementKinds(rng: DeterministicRng, count: number): SiteKind[] {
-  const out: SiteKind[] = ['town-square', 'merchant'];
-  if(count>=5&&rng.chance(.72))out.push('provisioner');
-  const candidates = SITE_DEFS.filter((def) => !out.includes(def.kind) && def.settlementWeight > 0);
+  const out: SiteKind[] = ['merchant'];
+  if(count>=4&&rng.chance(.8))out.push('provisioner');
+  const candidates = SITE_DEFS.filter((def) => def.kind!=='town-square'&&!out.includes(def.kind) && def.settlementWeight > 0);
   while (out.length < count && candidates.length) {
     const picked = rng.weighted(candidates.map((def) => ({ value: def, weight: def.settlementWeight })));
     out.push(picked.kind);
@@ -179,15 +166,19 @@ export function generateSites(floor: FloorMap, theme: ThemeDefinition, coord: Wo
   const out: NonCombatSite[] = [];
   const used = new Set<string>();
   const shouldHaveSettlement = isHubDepth(theme, coord) || rng.chance(settlementChance(theme, coord));
-  const cluster = shouldHaveSettlement ? chooseTownCluster(floor, rng) : [];
-  if (cluster.length >= 4) {
-    const settlementId = `settlement-${coord.depth}-${coord.lane}-${rng.nextU32().toString(36)}`;
-    const name = settlementName(theme, rng);
-    const count = Math.min(cluster.length, rng.int(4, 7));
-    const kinds = pickSettlementKinds(rng, count);
-    for (let index = 0; index < kinds.length; index += 1) {
-      const point=cluster[index]!;const kind=kinds[index]!;used.add(pointKey(point));
-      out.push(makeSite(kind,point,`site-${rng.nextU32().toString(36)}-${index}`,name,settlementId,theme,rng));
+  if (shouldHaveSettlement) {
+    const totalSites=rng.int(5,8);
+    const plan=stampSettlement(floor,theme,coord,rng.fork('layout'),totalSites-1);
+    if(plan&&plan.points.length>=4){
+      const settlementId = `settlement-${coord.depth}-${coord.lane}-${rng.nextU32().toString(36)}`;
+      const name = settlementName(theme, rng);
+      out.push(makeSite('town-square',plan.square,`square-${rng.nextU32().toString(36)}`,name,settlementId,theme,rng));
+      used.add(pointKey(plan.square));
+      const kinds=pickSettlementKinds(rng,Math.min(plan.points.length,totalSites-1));
+      for(let index=0;index<kinds.length;index+=1){
+        const point=plan.points[index]!;const kind=kinds[index]!;used.add(pointKey(point));
+        out.push(makeSite(kind,point,`site-${rng.nextU32().toString(36)}-${index}`,name,settlementId,theme,rng));
+      }
     }
   }
   if (rng.chance(0.4)) {
