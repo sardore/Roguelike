@@ -1,18 +1,26 @@
 # Below the Lateral Edge
 
-A large deterministic ASCII roguelike built around deep vertical progression and lateral theme drift.
+A large deterministic ASCII roguelike built around deep vertical progression, lateral theme drift, systemic dungeon interactions, and position-heavy tactical combat.
 
-The main route descends through a sequence of large dungeon ecologies. Every floor also offers ways to drift sideways. Side routes gradually change palette, architecture, ambience, and enemy ecology before becoming a different named theme. Drift too far and stable world generation gives way to the infinite Abyss.
+The main route descends through a sequence of large dungeon ecologies. Every floor also offers ways to drift sideways. Side routes gradually change palette, architecture, ambience, enemy ecology, hazards, and loot before becoming a different named theme. Drift too far and stable world generation gives way to the infinite Abyss.
 
-Current foundation already enforces the intended scale gates:
+The design target combines two strengths without copying either game's names, text, layouts, or other expressive content:
 
-- 18 normal dungeon themes + the Abyss
+- systemic roguelike play: unidentified consumables, reusable environment rules, traps/boons/caches, equipment interactions, typed resistances, and emergent combinations
+- tactical roguelike play: readable enemy intentions, positioning, reach, terrain control, resistance matching, escape resources, and meaningful side-route risk
+
+Current scale gates:
+
+- 18 normal dungeon themes + the infinite Abyss
 - at least 8 floor archetype choices per normal theme
-- 57 monsters at foundation stage
-- 78 items at foundation stage
+- 90+ monsters, with at least 5 native monsters for every normal theme
+- 125+ items across weapons, armor, consumables, tools, and relics
+- run-specific unidentified potion/scroll appearances with persistent identification knowledge
+- hidden traps plus visible springs, altars, and caches generated as real floor entities
+- physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation
-- mobile + keyboard ASCII canvas renderer
-- rare major-event popup system
+- mobile-first player-centered ASCII viewport
+- rare major-event popup system; ordinary interactions stay in the compact message feed
 - dirty-lease Save & Quit protocol that rejects ordinary mid-run save/load retries
 
 ## Run locally

@@ -14,19 +14,52 @@ This project treats architecture rules as correctness constraints, not style pre
 
 New content should be expressed with existing data components and effect operations first. A unique monster, item, dungeon theme, or story beat does not earn a private execution path. If a genuinely new mechanic is required, add a reusable primitive with tests and then compose content from it.
 
-Theme data selects generator archetypes, palettes, ecology tags, and ambience. Map algorithms are shared primitives. This prevents one theme from becoming a forked mini-engine.
+Theme data selects generator archetypes, palettes, ecology tags, ambience, feature weights, and content affinities. Map algorithms are shared primitives. This prevents one theme from becoming a forked mini-engine.
+
+## Systemic gameplay rule
+
+The game should get depth from rules that interact, not from long lists of isolated scripted exceptions.
+
+- damage type, resistance, vulnerability, status, terrain, reach, movement, summons, traps, and identification are reusable systems
+- an item should preferably combine existing systems in a new way rather than introduce an item-specific executor
+- dungeon features are entities in canonical state, not decorative renderer-only marks
+- unidentified appearances are deterministic per run and identification knowledge belongs to `GameState`
+- environment effects apply to monsters as well as the player whenever the underlying rule permits it
+- adding the 126th item or 91st monster should normally be content data, not another branch in the simulation core
+
+## Tactical transparency rule
+
+Strategy should come from meaningful choices, not hidden arbitrary punishment.
+
+- dangerous committed attacks are telegraphed when evasion is intended to be a counterplay
+- enemy families must differ in positioning pressure, target range, movement behavior, resistance profile, or utility
+- terrain must affect routing or combat outcomes; palette-only terrain does not count as tactical depth
+- consumables and escape tools are scarce tactical resources, not mandatory UI buttons
+- mobile UI stays sparse: tactical information should appear on the map or in the one-line message feed before adding persistent panels
 
 ## World geometry
 
 Progression is primarily vertical (`depth`). Each descent may also change `lane`. Lane 0 is the central route, side lanes blend toward alternate ecologies, and `abs(lane) >= 4` crosses into the Abyss.
 
-Theme transitions are communicated twice: gradually through palette/ecology/layout blending, then once through a major popup when the primary theme actually changes. Ordinary floors, loot, combat, and minor encounters never create popups.
+Theme transitions are communicated twice: gradually through palette/ecology/layout blending, then once through a major popup when the primary theme actually changes. Ordinary floors, loot, combat, traps, and minor encounters never create popups.
 
 ## Map diversity gate
 
 Every normal theme exposes at least eight floor archetype choices. Current primitives include bent room networks, tight BSP structures, dense cellular caverns, mazes with chambers, mine tunnels, catacombs, river-cut layouts, ring sanctums, and fractured maps.
 
 Generated floors are rejected when they are too empty, too open, too disconnected, or too small. This is deliberate: broad featureless rectangles do not count as procedural variety.
+
+## Content volume gate
+
+Volume gates are regression constraints, not targets to satisfy with meaningless variants.
+
+- 18 normal themes + the Abyss
+- at least 8 map archetype choices per normal theme
+- at least 5 native monster definitions per normal theme
+- at least 90 monsters overall
+- at least 125 items overall
+
+A numeric variant that only changes HP/damage without changing tactical role should not be used merely to satisfy these gates.
 
 ## Save / load anti-scumming
 

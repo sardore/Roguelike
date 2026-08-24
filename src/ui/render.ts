@@ -3,6 +3,7 @@ import type { FloorMap, GameState, Point, ThemePalette } from '../core/types';
 import { itemById } from '../content/items';
 import { monsterById } from '../content/monsters';
 import { resolveThemeContext, themeById } from '../world/themes';
+import { featureDefinition } from '../world/features';
 
 function blendHex(a:string,b:string,t:number):string{const parse=(hex:string)=>[1,3,5].map((offset)=>Number.parseInt(hex.slice(offset,offset+2),16));const aa=parse(a),bb=parse(b),out=aa.map((value,index)=>Math.round(value+(bb[index]!-value)*t));return `#${out.map((value)=>value.toString(16).padStart(2,'0')).join('')}`;}
 function paletteForState(state:GameState):ThemePalette{const context=resolveThemeContext(state.coord);if(!context.blend)return context.primary.palette;const t=context.blend.weight;return{wall:blendHex(context.primary.palette.wall,context.blend.target.palette.wall,t),floor:blendHex(context.primary.palette.floor,context.blend.target.palette.floor,t),accent:blendHex(context.primary.palette.accent,context.blend.target.palette.accent,t),danger:blendHex(context.primary.palette.danger,context.blend.target.palette.danger,t),water:blendHex(context.primary.palette.water,context.blend.target.palette.water,t)};}
@@ -47,6 +48,11 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
     let color=exit?palette.accent:tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:tile.kind==='rubble'?blendHex(palette.wall,palette.floor,.55):palette.floor;
     if(!visible.has(key))color=blendHex(color,'#07090d',.68);
     ctx.fillStyle=color;ctx.fillText(glyph,sx*view.cell+view.cell/2,sy*view.cell+view.cell/2);
+  }
+  for(const feature of state.features){
+    if(feature.spent||!feature.revealed)continue;const key=`${feature.x},${feature.y}`;if(!explored.has(key))continue;
+    if(feature.x<view.x||feature.y<view.y||feature.x>=view.x+view.cols||feature.y>=view.y+view.rows)continue;
+    const def=featureDefinition(feature.kind),p=screen(feature.x,feature.y);ctx.fillStyle=visible.has(key)?def.color:blendHex(def.color,'#07090d',.6);ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);
   }
   for(const monster of state.monsters){
     if(!visible.has(`${monster.x},${monster.y}`))continue;
