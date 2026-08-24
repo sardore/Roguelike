@@ -69,8 +69,8 @@ patch('src/content/items.ts',
 "import { FOUNDATION_ITEMS } from './foundation-items';\nimport { DEPTH_ITEMS } from './depth-items';",
 'depth item import')
 patch('src/content/items.ts',
-'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS);',
-'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...DEPTH_ITEMS);',
+'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS);',
+'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS,...DEPTH_ITEMS);',
 'depth item append')
 
 # ---------- features ----------
