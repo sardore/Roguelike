@@ -3,7 +3,7 @@ export type ThemeId = string;
 export type ArchetypeId = string;
 export type Locale = 'en' | 'ko';
 export interface Point { x: number; y: number; }
-export type TileKind = 'wall' | 'floor' | 'water' | 'lava' | 'bridge' | 'rubble' | 'ice' | 'miasma' | 'bramble' | 'void-rift' | 'oil' | 'holy';
+export type TileKind = 'wall' | 'floor' | 'water' | 'lava' | 'bridge' | 'rubble' | 'ice' | 'miasma' | 'bramble' | 'void-rift' | 'oil' | 'holy' | 'tree' | 'grass' | 'reed' | 'fungus' | 'crystal' | 'bones' | 'pillar' | 'door';
 export interface Tile { kind: TileKind; glyph: string; walkable: boolean; transparent: boolean; }
 export type ExitKind = 'down' | 'drift-left' | 'drift-right';
 export interface FloorExit extends Point { kind: ExitKind; glyph: string; }
