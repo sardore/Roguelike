@@ -15,7 +15,6 @@ let walkToken=0;
 const shortName=(name:string)=>name.replace(' Phial','').replace(' Bomb','').replace(' Tonic','').replace('White ','');
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 function cancelWalk(){walkToken++;}
-function dirFromTarget(x:number,y:number){const dx=x-game.state.player.x,dy=y-game.state.player.y;return Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};}
 
 async function walkTo(target:Point){
   cancelWalk();
@@ -67,7 +66,7 @@ function render(){
   });
   canvas.onpointerdown=e=>{
     const p=screenToTile(canvas,e.clientX,e.clientY);
-    if(aimIndex!==null){cancelWalk();const i=aimIndex;aimIndex=null;inspect='';game.use(i,dirFromTarget(p.x,p.y));return;}
+    if(aimIndex!==null){cancelWalk();const i=aimIndex;aimIndex=null;inspect='';game.use(i,p);return;}
     const dx=p.x-s.player.x,dy=p.y-s.player.y;
     if(Math.abs(dx)+Math.abs(dy)===1){cancelWalk();inspect='';game.move(Math.sign(dx),Math.sign(dy));return;}
     const t=s.tiles[p.y*s.width+p.x];
