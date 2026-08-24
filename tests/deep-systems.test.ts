@@ -34,7 +34,7 @@ describe('deep systems volume gates', () => {
 
   it('generates systemic dungeon features on every fresh floor', () => {
     const { state } = createNewGame('feature-volume');
-    expect(state.schemaVersion).toBe(5);
+    expect(state.schemaVersion).toBe(6);
     expect(state.features.length).toBeGreaterThanOrEqual(6);
     expect(state.features.length).toBeLessThanOrEqual(10);
     for (const feature of state.features) expect(tileAt(state.floor, feature.x, feature.y)?.walkable).toBe(true);
@@ -50,12 +50,15 @@ describe('deep systems volume gates', () => {
     expect(identifyItem(state, def)).toBe(false);
   });
 
-  it('turns visible dungeon features into actual tactical resources and hazards', () => {
+  it('turns visible dungeon features into explicit tactical resources while traps remain step-triggered', () => {
     const { state } = createNewGame('feature-resolution');
     state.monsters = [];
     state.features = [{ id: 'spring-test', kind: 'healing-spring', x: state.player.x, y: state.player.y, revealed: true, spent: false }];
     state.player.hp = 10;
     dispatchAction(state, { type: 'wait' });
+    expect(state.player.hp).toBe(10);
+    expect(state.features[0]?.spent).toBe(false);
+    dispatchAction(state, { type: 'interact' });
     expect(state.player.hp).toBeGreaterThan(10);
     expect(state.features[0]?.spent).toBe(true);
 

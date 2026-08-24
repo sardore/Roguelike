@@ -14,8 +14,13 @@ Current scale gates and systems:
 - 18 normal dungeon themes + the infinite Abyss
 - at least 8 floor archetype choices per normal theme
 - 160+ monsters, including named unique encounters layered over each theme
-- 230+ items across weapons, armor, food, ammunition, consumables, tools, relics, and classic utility archetypes
-- five starting origins with genuinely different opening kits and stat profiles
+- 270+ items across weapons, armor, food, ammunition, consumables, tools, relics, jewelry, grimoires, and ritual utility
+- five starting origins with genuinely different opening kits, stat profiles, mana pools, and opening spells
+- 16 reusable spells with mana, targeting, terrain creation, control, escape, healing, and elemental interactions
+- rings + amulets, deterministic curse/blessing, equipment enchantment, smithing, and curse removal
+- four patron factions with devotion, piety, and reusable invocation boons
+- guild contracts with hunt, descent, and named-foe objectives
+- edible corpses and explicit interactable dungeon features instead of accidental auto-consumption
 - hunger/nutrition with food scarcity, starvation, and action-based metabolism
 - experience levels, permanent combat growth, ammunition, ranged weapons, resting, searching, auto-explore, and carry-weight/encumbrance
 - run-specific unidentified potion/scroll appearances with persistent identification knowledge
@@ -25,8 +30,10 @@ Current scale gates and systems:
 - gold economy with deterministic shop stock, buying/selling, paid services, and protected settlement pockets
 - physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation
+- systemic special terrain patches: ice, miasma, bramble, void rifts, oil, holy ground, water, lava, bridges, and rubble
 - named unique-monster floors with deterministic warning, telegraphed abilities, and enhanced rewards
 - full-bleed mobile viewport: the ASCII dungeon fills the available play surface instead of sitting in a small centered rectangle
+- non-clickable in-map combat log overlay, square right-side d-pad, context interaction button, and high-feedback combat/spell/level visual effects
 - mobile-first player-centered ASCII viewport
 - English and Korean UI modes, including item/effect/site labels and core event/message localization
 - rare major-event popup system; ordinary interactions stay in the compact message feed

@@ -27,6 +27,10 @@ import { monsterDamageMultiplier, playerDamageMultiplier, scaleTypedDamage, weap
 import { generateSites, siteAt, siteDefinition } from '../world/sites';
 import { resolveSiteService } from './site-actions';
 import { DEFAULT_AMMO, DEFAULT_MAX_HUNGER, addAmmo, applyMetabolism, autoExploreStep, canCarryDefinition, canRestSafely, encumbranceDefensePenalty, feedPlayer, grantKillProgress, hardCarryLimit, hungerAttackPenalty, hungerDefensePenalty, inventoryWeight, isRangedWeapon, weaponRange, xpThreshold } from './foundations';
+import { SPELLS, spellById } from '../content/spells';
+import { applyThemedTerrain, terrainDefinition, terrainTile } from '../world/terrain-rules';
+import { canUnequip, equipAccessory, isEquipped, passiveAttackBonus, passiveDefenseBonus, sanctityFor } from './item-state';
+import { recordDescent, recordMonsterKill } from './quests';
 
 const MAX_MESSAGES = 9;
 const BASE_VISION = 9;
@@ -169,6 +173,7 @@ function createFloorState(state: GameState): void {
   state.visible = [];
   state.sites = generateSites(state.floor, context.primary, state.coord, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'sites')));
   state.features = generateFeatures(state.floor, context.primary, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'features')), state.sites);
+  applyThemedTerrain(state.floor,context.primary,state.coord,new DeterministicRng(deriveSeed(state.runSeed,state.coord.depth,state.coord.lane,'terrain')),[...state.sites,...state.features]);
   populateFloor(state, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'population')));
   refreshVisibility(state);
 }
@@ -180,7 +185,7 @@ export function createNewGame(seedText: string, originId = 'delver'): { state: G
   const weaponEntry=startInventory.find((entry)=>entry.defId===origin.equippedWeapon);
   const armorEntry=startInventory.find((entry)=>entry.defId===origin.equippedArmor);
   const state: GameState = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     runId: `run-${runSeed.toString(16)}-${runRng.nextU32().toString(36)}`,
     runSeed,
     turn: 0,
@@ -190,8 +195,11 @@ export function createNewGame(seedText: string, originId = 'delver'): { state: G
     discoveredThemes: [],
     seenStoryEvents: [],
     identifiedItemDefs: [],
+    itemSanctityOverrides: {},
+    itemEnchantments: {},
+    quests: [],
     floor,
-    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: origin.hp, maxHp: origin.hp, attack: origin.attack, defense: origin.defense, gold: origin.gold, level: 1, xp: 0, xpToNext: xpThreshold(1), hunger: DEFAULT_MAX_HUNGER, maxHunger: DEFAULT_MAX_HUNGER, ammo: origin.ammo ?? DEFAULT_AMMO, kills: 0, floorsVisited: 1, inventory: startInventory, statuses: [], ...(weaponEntry?{equippedWeaponId:weaponEntry.id}:{}), ...(armorEntry?{equippedArmorId:armorEntry.id}:{}) },
+    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: origin.hp, maxHp: origin.hp, attack: origin.attack, defense: origin.defense, gold: origin.gold, level: 1, xp: 0, xpToNext: xpThreshold(1), hunger: DEFAULT_MAX_HUNGER, maxHunger: DEFAULT_MAX_HUNGER, ammo: origin.ammo ?? DEFAULT_AMMO, mana: origin.mana, maxMana: origin.mana, knownSpells:[...origin.spells], preparedSpellId:origin.spells[0], kills: 0, floorsVisited: 1, inventory: startInventory, statuses: [], equippedRingIds:[], piety:0, ...(weaponEntry?{equippedWeaponId:weaponEntry.id}:{}), ...(armorEntry?{equippedArmorId:armorEntry.id}:{}) },
     monsters: [],
     items: [],
     features: [],
@@ -204,6 +212,7 @@ export function createNewGame(seedText: string, originId = 'delver'): { state: G
   };
   state.sites = generateSites(floor, context.primary, coord, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'sites')));
   state.features = generateFeatures(floor, context.primary, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'features')), state.sites);
+  applyThemedTerrain(floor,context.primary,coord,new DeterministicRng(deriveSeed(runSeed,coord.depth,coord.lane,'terrain')),[...state.sites,...state.features]);
   populateFloor(state, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'population')));
   refreshVisibility(state);
   const event = themeDiscoveryEvent(state, context.primary);
@@ -225,6 +234,7 @@ function transition(state: GameState, kind: 'down' | 'drift-left' | 'drift-right
   const previousTheme = state.themeId;
   createFloorState(state);
   state.player.floorsVisited += 1;
+  recordDescent(state);
   pushMessage(state, kind === 'down' ? 'You descend.' : kind === 'drift-left' ? 'You take the western descent.' : 'You take the eastern descent.');
   const context = resolveThemeContext(state.coord);
   const themeEvent = context.primary.id !== previousTheme ? themeDiscoveryEvent(state, context.primary) : null;
@@ -248,12 +258,12 @@ function equippedArmor(state: GameState) {
 function playerAttackPower(state: GameState): number {
   const weapon = equippedWeapon(state);
   const bonus = weapon?.effects.filter((effect): effect is Extract<EffectSpec, { op: 'damage' }> => effect.op === 'damage').reduce((sum, effect) => sum + effect.amount, 0) ?? 0;
-  return Math.max(1, state.player.attack + bonus + statusMagnitude(state.player.statuses, 'attackDelta') - hungerAttackPenalty(state));
+  return Math.max(1, state.player.attack + bonus + passiveAttackBonus(state) + statusMagnitude(state.player.statuses, 'attackDelta') - hungerAttackPenalty(state));
 }
 function playerDefense(state: GameState): number {
   const armor = equippedArmor(state);
   const armorBonus = armor?.effects.filter((effect): effect is Extract<EffectSpec, { op: 'status' }> => effect.op === 'status' && effect.id === 'armor').reduce((sum, effect) => sum + (effect.magnitude ?? 1), 0) ?? 0;
-  return Math.max(0, state.player.defense + armorBonus + statusMagnitude(state.player.statuses, 'defenseDelta') - hungerDefensePenalty(state) - encumbranceDefensePenalty(state));
+  return Math.max(0, state.player.defense + armorBonus + passiveDefenseBonus(state) + statusMagnitude(state.player.statuses, 'defenseDelta') - hungerDefensePenalty(state) - encumbranceDefensePenalty(state));
 }
 function monsterDefense(monster: MonsterEntity): number {
   const def = monsterById(monster.defId);
@@ -269,6 +279,9 @@ function killMonsterIfNeeded(state: GameState, monster: MonsterEntity): boolean 
   state.monsters = state.monsters.filter((entry) => entry.id !== monster.id);
   grantKillProgress(state,def,monster.power,(message)=>pushMessage(state,message));
   const isUnique=def.tags.includes('unique');
+  recordMonsterKill(state,isUnique);
+  if(state.player.patronId&&isUnique)state.player.piety+=3;
+  if(!def.tags.some((tag)=>['construct','spirit','ooze'].includes(tag))&&!state.features.some((feature)=>feature.x===monster.x&&feature.y===monster.y)&&!state.sites.some((site)=>site.x===monster.x&&site.y===monster.y))state.features.push({id:`corpse-${monster.id}`,kind:'corpse',x:monster.x,y:monster.y,revealed:true,spent:false,sourceDefId:def.id});
   const coin = isUnique ? 14+Math.floor(state.coord.depth/8) : def.tags.includes('humanoid') ? 2 : def.tags.includes('construct') ? 1 : 0;
   if (coin) state.player.gold += coin;
   pushMessage(state, isUnique ? `${def.name} falls. The dungeon goes briefly silent. You recover ${coin} gold.` : `${def.name} dies.${coin ? ` You recover ${coin} gold.` : ''}`);
@@ -279,14 +292,7 @@ function damagePlayer(state: GameState, amount: number, message?: string): void 
   if (message) pushMessage(state, message);
   if (state.player.hp <= 0) { state.gameOver = true; pushMessage(state, 'You die beneath the world.'); }
 }
-function tileForKind(kind: TileKind): Tile {
-  if (kind === 'wall') return { kind, glyph: '#', walkable: false, transparent: false };
-  if (kind === 'water') return { kind, glyph: '~', walkable: true, transparent: true };
-  if (kind === 'lava') return { kind, glyph: '~', walkable: true, transparent: true };
-  if (kind === 'bridge') return { kind, glyph: '=', walkable: true, transparent: true };
-  if (kind === 'rubble') return { kind, glyph: ':', walkable: true, transparent: true };
-  return { kind: 'floor', glyph: '.', walkable: true, transparent: true };
-}
+function tileForKind(kind: TileKind): Tile { return terrainTile(kind); }
 function nearbyFreePoint(state: GameState, center: Point, radius: number, rng: DeterministicRng): Point | null {
   const occupied = new Set(state.monsters.map(pointKey)); occupied.add(pointKey(state.player)); for (const site of state.sites) occupied.add(pointKey(site));
   const options: Point[] = [];
@@ -488,13 +494,9 @@ function expireTerrain(state: GameState): void {
   state.temporaryTerrain = remaining;
 }
 function applyStandingTerrain(state: GameState): void {
-  const playerTile = tileAt(state.floor, state.player.x, state.player.y);
-  if (playerTile?.kind === 'lava') { const damage = scaleTypedDamage(3, playerDamageMultiplier(state, 'fire')); if (damage > 0) damagePlayer(state, damage, `The lava burns you for ${damage}.`); }
-  for (const monster of [...state.monsters]) {
-    if (tileAt(state.floor, monster.x, monster.y)?.kind !== 'lava') continue;
-    const def = monsterById(monster.defId); if (def.tags.includes('fire')) continue;
-    monster.hp -= 3; if (!killMonsterIfNeeded(state, monster)) pushMessage(state, `${def.name} burns in lava.`);
-  }
+  const applyPlayer=(kind:TileKind)=>{const rule=terrainDefinition(kind);if(rule.damage&&rule.damageType){const damage=scaleTypedDamage(rule.damage,playerDamageMultiplier(state,rule.damageType));if(damage>0)damagePlayer(state,damage,`The ${kind} harms you for ${damage} ${rule.damageType}.`);}if(rule.statusId)addStatus(state.player.statuses,{op:'status',id:rule.statusId,duration:rule.statusDuration??1,magnitude:1},`terrain:${kind}`);if(rule.manaPulse&&state.turn%3===0)state.player.mana=Math.min(state.player.maxMana,state.player.mana+rule.manaPulse);};
+  const playerTile=tileAt(state.floor,state.player.x,state.player.y);if(playerTile)applyPlayer(playerTile.kind);
+  for(const monster of [...state.monsters]){const tile=tileAt(state.floor,monster.x,monster.y);if(!tile)continue;const rule=terrainDefinition(tile.kind),def=monsterById(monster.defId);if(tile.kind==='holy'&&def.tags.includes('undead')){monster.hp-=2;if(!killMonsterIfNeeded(state,monster))pushMessage(state,`${def.name} recoils from consecrated ground.`);continue;}if(!rule.damage||!rule.damageType||rule.monsterImmuneTags?.some((tag)=>def.tags.includes(tag)))continue;const damage=scaleTypedDamage(rule.damage,monsterDamageMultiplier(def,rule.damageType));monster.hp-=damage;if(!killMonsterIfNeeded(state,monster))pushMessage(state,`${def.name} suffers ${damage} ${rule.damageType} from ${tile.kind}.`);}
 }
 function searchNearbyFeatures(state: GameState, rng: DeterministicRng): void {
   for (const feature of state.features) {
@@ -505,10 +507,11 @@ function searchNearbyFeatures(state: GameState, rng: DeterministicRng): void {
     break;
   }
 }
-function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
+function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng, forceInteract=false): void {
   const feature = featureAt(state.features, state.player.x, state.player.y);
   if (!feature) return;
   const def = featureDefinition(feature.kind);
+  if(def.trigger==='interact'&&!forceInteract)return;
   if (!feature.revealed) { feature.revealed = true; pushMessage(state, `You discover a ${def.label}!`); }
   if (feature.kind === 'spike-trap') {
     const base = 4 + Math.floor(state.coord.depth / 35), damage = scaleTypedDamage(base, playerDamageMultiplier(state, 'physical'));
@@ -540,13 +543,15 @@ function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
   else if(feature.kind==='mushroom-patch'){const restored=feedPlayer(state,260);pushMessage(state,`You forage ${restored} nutrition.`);if(rng.chance(.22))addStatus(state.player.statuses,{op:'status',id:'poisoned',duration:3,magnitude:1},feature.id);}
   else if(feature.kind==='memory-stone'){applyEffect(state,{op:'reveal',radius:15},state.player,'player',rng);addStatus(state.player.statuses,{op:'status',id:'focused',duration:10,magnitude:1},feature.id);pushMessage(state,'The stone returns a fragment of the old route.');}
   else if(feature.kind==='blood-well'){const before=state.player.hp;state.player.hp=Math.min(state.player.maxHp,state.player.hp+14);state.player.hunger=Math.max(0,state.player.hunger-80);pushMessage(state,`The blood well restores ${state.player.hp-before} HP, but leaves you hollow.`);}
+  else if(feature.kind==='corpse'){const source=feature.sourceDefId?monsterById(feature.sourceDefId):null;if(!source){pushMessage(state,'The remains have spoiled beyond use.');}else{const nutrition=Math.max(90,Math.min(520,source.maxHp*11));feedPlayer(state,nutrition);if(source.tags.includes('venom')||source.tags.includes('fungal'))addStatus(state.player.statuses,{op:'status',id:'poisoned',duration:3,magnitude:1},feature.id);pushMessage(state,`You butcher the ${source.name} corpse and recover ${nutrition} nutrition.`);}}
   if (!def.repeatable) feature.spent = true;
 }
 function endAcceptedTurn(state: GameState, rng: DeterministicRng, action:GameAction): void {
   state.turn += 1; expireTerrain(state); applyStandingTerrain(state); if (!state.gameOver) moveMonsters(state, rng); if (!state.gameOver) tickStatuses(state); if(!state.gameOver)applyMetabolism(state,action,(message)=>pushMessage(state,message)); refreshVisibility(state); state.rngState = rng.state;
 }
+function castSpell(state:GameState,spellId:string,rng:DeterministicRng):boolean{if(!state.player.knownSpells.includes(spellId)){pushMessage(state,'You do not know that spell.');return false;}const spell=spellById(spellId);if(state.player.mana<spell.mana){pushMessage(state,'You do not have enough mana.');return false;}const target=spell.target==='enemy'?nearestVisibleMonster(state,spell.range):'player';if(spell.target==='enemy'&&!target){pushMessage(state,`${spell.name} has no visible target.`);return false;}state.player.mana-=spell.mana;state.player.preparedSpellId=spell.id;for(const effect of spell.effects)applyEffect(state,effect,state.player,spell.target==='enemy'?target as MonsterEntity:'player',rng);pushMessage(state,`You cast ${spell.name}.`);return true;}
 function fireRanged(state:GameState,rng:DeterministicRng):boolean{const weapon=equippedWeapon(state);if(!isRangedWeapon(weapon)){pushMessage(state,'You need a ranged weapon ready.');return false;}if(state.player.ammo<=0){pushMessage(state,'You are out of ammunition.');return false;}const target=nearestVisibleMonster(state,weaponRange(weapon));if(!target){pushMessage(state,'There is no visible target in range.');return false;}state.player.ammo-=1;attackMonster(state,target,rng);return true;}
-function restTurn(state:GameState):boolean{if(!canRestSafely(state)){pushMessage(state,'Enemies are too close to rest.');return false;}if(state.player.hp>=state.player.maxHp){pushMessage(state,'You are already fully rested.');return false;}const recovered=Math.max(1,Math.floor(state.player.maxHp/24));state.player.hp=Math.min(state.player.maxHp,state.player.hp+recovered);pushMessage(state,`You rest and recover ${recovered} HP.`);return true;}
+function restTurn(state:GameState):boolean{if(!canRestSafely(state)){pushMessage(state,'Enemies are too close to rest.');return false;}if(state.player.hp>=state.player.maxHp&&state.player.mana>=state.player.maxMana){pushMessage(state,'You are already fully rested.');return false;}const recovered=Math.max(1,Math.floor(state.player.maxHp/24)),manaRecovered=Math.min(2,state.player.maxMana-state.player.mana);state.player.hp=Math.min(state.player.maxHp,state.player.hp+recovered);state.player.mana=Math.min(state.player.maxMana,state.player.mana+Math.max(0,manaRecovered));pushMessage(state,`You rest and recover ${recovered} HP${manaRecovered>0?` and ${manaRecovered} mana`:''}.`);return true;}
 function movementBlocked(state: GameState): boolean { return state.player.statuses.some((status) => statusById(status.id).movementBlocked); }
 function harmfulItemEffect(effect: EffectSpec): boolean { return effect.op === 'damage' || effect.op === 'push' || (effect.op === 'status' && Boolean(statusById(effect.id).harmful)); }
 function nearestVisibleMonster(state: GameState, range: number): MonsterEntity | null {
@@ -555,8 +560,10 @@ function nearestVisibleMonster(state: GameState, range: number): MonsterEntity |
 }
 function useInventoryItem(state: GameState, itemId: string, rng: DeterministicRng): boolean {
   const entry = inventoryEntry(state, itemId); if (!entry) return false; const def = itemById(entry.defId);
-  if (def.category === 'weapon') { state.player.equippedWeaponId = state.player.equippedWeaponId === itemId ? undefined : itemId; pushMessage(state, state.player.equippedWeaponId === itemId ? `You ready ${def.name}.` : `You lower ${def.name}.`); return true; }
-  if (def.category === 'armor') { state.player.equippedArmorId = state.player.equippedArmorId === itemId ? undefined : itemId; pushMessage(state, state.player.equippedArmorId === itemId ? `You wear ${def.name}.` : `You remove ${def.name}.`); return true; }
+  if (def.category === 'weapon') { if(state.player.equippedWeaponId===itemId){if(!canUnequip(state,itemId)){pushMessage(state,'The cursed weapon will not leave your hand.');return false;}state.player.equippedWeaponId=undefined;}else{if(state.player.equippedWeaponId&&!canUnequip(state,state.player.equippedWeaponId)){pushMessage(state,'Your cursed weapon refuses to be replaced.');return false;}state.player.equippedWeaponId=itemId;}pushMessage(state,state.player.equippedWeaponId===itemId?`You ready ${def.name}${sanctityFor(state,itemId)==='cursed'?'—and feel it bind to you.':''}.`:`You lower ${def.name}.`);return true;}
+  if (def.category === 'armor') { if(state.player.equippedArmorId===itemId){if(!canUnequip(state,itemId)){pushMessage(state,'The cursed armor clings to you.');return false;}state.player.equippedArmorId=undefined;}else{if(state.player.equippedArmorId&&!canUnequip(state,state.player.equippedArmorId)){pushMessage(state,'Your cursed armor refuses to be replaced.');return false;}state.player.equippedArmorId=itemId;}pushMessage(state,state.player.equippedArmorId===itemId?`You wear ${def.name}${sanctityFor(state,itemId)==='cursed'?'—and the straps tighten by themselves.':''}.`:`You remove ${def.name}.`);return true;}
+  if(def.tags.includes('slot:ring')||def.tags.includes('slot:amulet')){const result=equipAccessory(state,itemId,def);if(result==='blocked'){pushMessage(state,'A cursed accessory refuses to come free.');return false;}pushMessage(state,result==='equipped'?`You equip ${def.name}.`:`You remove ${def.name}.`);return result!=='unsupported';}
+  const teaches=def.tags.find((tag)=>tag.startsWith('teaches:'));if(teaches){const spellId=teaches.slice(8);spellById(spellId);if(!state.player.knownSpells.includes(spellId))state.player.knownSpells.push(spellId);state.player.preparedSpellId=spellId;state.player.inventory=state.player.inventory.filter((item)=>item.id!==itemId);pushMessage(state,`You study ${def.name} and learn ${spellById(spellId).name}.`);return true;}
   const needsHostile = def.effects.some(harmfulItemEffect), hostile = needsHostile ? nearestVisibleMonster(state, 7) : null;
   if (needsHostile && !hostile) { pushMessage(state, `${def.name} has no valid target.`); return false; }
   for (const effect of def.effects) applyEffect(state, effect, state.player, harmfulItemEffect(effect) ? hostile! : 'player', rng);
@@ -568,8 +575,10 @@ function useInventoryItem(state: GameState, itemId: string, rng: DeterministicRn
 }
 function dropInventoryItem(state: GameState, itemId: string): boolean {
   const entry = inventoryEntry(state, itemId); if (!entry) return false;
+  if(isEquipped(state,itemId)&&!canUnequip(state,itemId)){pushMessage(state,'The cursed item refuses to be discarded.');return false;}
   if (state.player.equippedWeaponId === itemId) state.player.equippedWeaponId = undefined;
   if (state.player.equippedArmorId === itemId) state.player.equippedArmorId = undefined;
+  state.player.equippedRingIds=state.player.equippedRingIds.filter((id)=>id!==itemId);if(state.player.equippedAmuletId===itemId)state.player.equippedAmuletId=undefined;
   state.player.inventory = state.player.inventory.filter((item) => item.id !== itemId);
   const def = itemById(entry.defId); state.items.push({ id: entry.id, defId: entry.defId, x: state.player.x, y: state.player.y }); pushMessage(state, `You drop ${displayItemName(state, def)}.`); return true;
 }
@@ -603,10 +612,12 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
     accepted = true;
   } else if (action.type === 'wait') {
     addStatus(state.player.statuses, { op: 'status', id: 'guarding', duration: 1, magnitude: 1 }, state.player.id);
-    resolveFeatureAtPlayer(state, rng);pushMessage(state, 'You brace for the next exchange.'); accepted = true;
-  } else if(action.type==='search'){searchNearbyFeatures(state,rng);resolveFeatureAtPlayer(state,rng);pushMessage(state,'You carefully search nearby terrain.');accepted=true;
+    pushMessage(state, 'You brace for the next exchange.'); accepted = true;
+  } else if(action.type==='search'){searchNearbyFeatures(state,rng);pushMessage(state,'You carefully search nearby terrain.');accepted=true;
   } else if(action.type==='rest'){accepted=restTurn(state);
   } else if(action.type==='fire'){accepted=fireRanged(state,rng);
+  } else if(action.type==='interact'){resolveFeatureAtPlayer(state,rng,true);accepted=true;
+  } else if(action.type==='cast-spell'){accepted=castSpell(state,action.spellId,rng);
   } else if (action.type === 'use-item') accepted = useInventoryItem(state, action.itemId, rng);
   else if (action.type === 'drop-item') accepted = dropInventoryItem(state, action.itemId);
   else if (action.type === 'site-service') accepted = resolveSiteService(state, action);
@@ -625,12 +636,17 @@ export function assertGameInvariants(state: GameState): void {
   if (state.player.gold < 0) throw new Error('invariant: player gold cannot be negative');
   if(state.player.hunger<0||state.player.hunger>state.player.maxHunger*1.2)throw new Error('invariant: invalid hunger');
   if(state.player.ammo<0)throw new Error('invariant: negative ammunition');
+  if(state.player.mana<0||state.player.mana>state.player.maxMana||state.player.maxMana<0)throw new Error('invariant: invalid mana');
+  if(state.player.equippedRingIds.length>2)throw new Error('invariant: too many rings equipped');
+  for(const spellId of state.player.knownSpells)if(!SPELLS.some((spell)=>spell.id===spellId))throw new Error(`invariant: unknown known spell ${spellId}`);
   if(state.player.level<1||state.player.xp<0||state.player.xpToNext<=0)throw new Error('invariant: invalid progression');
   if(inventoryWeight(state)>hardCarryLimit(state))throw new Error('invariant: inventory exceeds hard carry limit');
   const ids = new Set<string>(), inventoryIds = state.player.inventory.map((entry) => entry.id);
   for (const entity of [state.player, ...state.monsters, ...state.items, ...state.player.inventory, ...state.sites, ...state.sites.flatMap((site) => site.stock)]) { if (ids.has(entity.id)) throw new Error(`invariant: duplicate entity id ${entity.id}`); ids.add(entity.id); }
   if (state.player.equippedWeaponId && !inventoryIds.includes(state.player.equippedWeaponId)) throw new Error('invariant: equipped weapon not in inventory');
   if (state.player.equippedArmorId && !inventoryIds.includes(state.player.equippedArmorId)) throw new Error('invariant: equipped armor not in inventory');
+  if (state.player.equippedAmuletId && !inventoryIds.includes(state.player.equippedAmuletId)) throw new Error('invariant: equipped amulet not in inventory');
+  for(const ringId of state.player.equippedRingIds)if(!inventoryIds.includes(ringId))throw new Error('invariant: equipped ring not in inventory');
   const occupied = new Set<string>();
   for (const monster of state.monsters) {
     if (monster.hp <= 0) throw new Error(`invariant: dead monster retained ${monster.id}`);

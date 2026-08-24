@@ -18,10 +18,12 @@ const SITE_DEFS: SiteDefinition[] = [
   { kind: 'healer', glyph: '+', color: '#8fc5a0', services: ['heal', 'cleanse'], settlementWeight: 4, roadsideWeight: 1 },
   { kind: 'appraiser', glyph: '?', color: '#b9a5d6', services: ['identify'], settlementWeight: 4, roadsideWeight: 1 },
   { kind: 'cartographer', glyph: '¶', color: '#8db7cc', services: ['map'], settlementWeight: 3, roadsideWeight: 1 },
-  { kind: 'shrine', glyph: '_', color: '#d7cfaf', services: ['bless'], settlementWeight: 3, roadsideWeight: 2 },
+  { kind: 'shrine', glyph: '_', color: '#d7cfaf', services: ['bless','devote','invoke'], settlementWeight: 3, roadsideWeight: 2 },
   { kind: 'camp', glyph: 'c', color: '#c49974', services: ['rest'], settlementWeight: 3, roadsideWeight: 3 },
   { kind: 'trainer', glyph: '&', color: '#cb9470', services: ['train-attack','train-defense','train-vigor'], settlementWeight: 3, roadsideWeight: 0 },
   { kind: 'inn', glyph: 'I', color: '#d2b18a', services: ['inn-rest','meal'], settlementWeight: 4, roadsideWeight: 1 },
+  { kind: 'guildhall', glyph: 'G', color: '#9fb6d6', services: ['contract','claim-contract'], settlementWeight: 3, roadsideWeight: 0 },
+  { kind: 'smithy', glyph: 'F', color: '#d49a70', services: ['temper-weapon','temper-armor','uncurse'], settlementWeight: 3, roadsideWeight: 0 },
 ];
 
 const byKind = new Map(SITE_DEFS.map((def) => [def.kind, def]));
@@ -57,6 +59,8 @@ export function servicePrice(service: SiteServiceKind): number {
   if (service === 'inn-rest') return 12;
   if (service === 'train-attack' || service === 'train-defense') return 45;
   if (service === 'train-vigor') return 40;
+  if (service === 'temper-weapon' || service === 'temper-armor') return 28;
+  if (service === 'uncurse') return 18;
   return 0;
 }
 
@@ -113,7 +117,7 @@ function availablePoints(floor: FloorMap): Point[] {
   const out: Point[] = [];
   for (let index = 0; index < floor.tiles.length; index += 1) {
     const tile = floor.tiles[index]!;
-    if (!tile.walkable || tile.kind === 'water' || tile.kind === 'lava') continue;
+    if (!tile.walkable || !['floor','bridge','rubble','holy'].includes(tile.kind)) continue;
     const point = { x: index % floor.width, y: Math.floor(index / floor.width) };
     if (reserved.has(pointKey(point)) || manhattan(point, floor.spawn) < 6 || floor.exits.some((exit) => manhattan(point, exit) < 4)) continue;
     out.push(point);

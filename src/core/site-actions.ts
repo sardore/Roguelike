@@ -5,6 +5,9 @@ import { statusById } from '../content/statuses';
 import { sellPrice, servicePrice, siteDefinition } from '../world/sites';
 import { canCarryDefinition } from './foundations';
 import { feedPlayer } from './foundations';
+import { PATRONS, patronById } from '../content/patrons';
+import { addEnchantment, equippedItemIds, sanctityFor, setSanctity } from './item-state';
+import { claimContract, createContract } from './quests';
 
 function inventoryEntry(state:GameState,itemId:string):InventoryItem|undefined{return state.player.inventory.find((entry)=>entry.id===itemId);}
 function pushMessage(state:GameState,message:string):void{state.messages.push(message);if(state.messages.length>9)state.messages.splice(0,state.messages.length-9);}
@@ -26,10 +29,31 @@ export function resolveSiteService(state:GameState,action:Extract<GameAction,{ty
   }
   if(action.service==='sell'){
     const entry=action.itemId?inventoryEntry(state,action.itemId):undefined;if(!entry)return false;
-    if(state.player.equippedWeaponId===entry.id)state.player.equippedWeaponId=undefined;if(state.player.equippedArmorId===entry.id)state.player.equippedArmorId=undefined;
+    if(equippedItemIds(state).includes(entry.id)&&sanctityFor(state,entry.id)==='cursed'){pushMessage(state,'The cursed item will not leave you.');return false;}
+    if(state.player.equippedWeaponId===entry.id)state.player.equippedWeaponId=undefined;if(state.player.equippedArmorId===entry.id)state.player.equippedArmorId=undefined;state.player.equippedRingIds=state.player.equippedRingIds.filter((id)=>id!==entry.id);if(state.player.equippedAmuletId===entry.id)state.player.equippedAmuletId=undefined;
     const price=sellPrice(entry.defId);state.player.inventory=state.player.inventory.filter((item)=>item.id!==entry.id);state.player.gold+=price;pushMessage(state,`You sell ${itemById(entry.defId).name} for ${price} gold.`);return true;
   }
+  if(action.service==='devote'){
+    const patron=action.offerId?PATRONS.find((entry)=>entry.id===action.offerId):undefined;if(!patron)return false;
+    state.player.patronId=patron.id;state.player.piety=Math.max(3,state.player.piety);pushMessage(state,`You devote yourself to ${patron.name}.`);return true;
+  }
+  if(action.service==='invoke'){
+    if(!state.player.patronId){pushMessage(state,'You have sworn to no patron.');return false;}const patron=patronById(state.player.patronId);if(state.player.piety<patron.invokeCost){pushMessage(state,'Your piety is too weak for an invocation.');return false;}state.player.piety-=patron.invokeCost;
+    if(patron.invoke.heal)state.player.hp=Math.min(state.player.maxHp,state.player.hp+patron.invoke.heal);if(patron.invoke.mana)state.player.mana=Math.min(state.player.maxMana,state.player.mana+patron.invoke.mana);if(patron.invoke.nutrition)feedPlayer(state,patron.invoke.nutrition);for(const status of patron.invoke.statuses)addStatus(state,status.id,status.duration,status.magnitude,site.id);pushMessage(state,`${patron.name} answers your invocation.`);return true;
+  }
+  if(action.service==='contract'){
+    const kind=action.offerId as 'hunt'|'delve'|'unique'|undefined;if(!kind)return false;const quest=createContract(state,site.id,kind);if(!quest){pushMessage(state,'You already carry a similar contract.');return false;}state.quests.push(quest);pushMessage(state,`You accept a ${kind} contract.`);return true;
+  }
+  if(action.service==='claim-contract'){
+    if(!action.offerId)return false;const quest=claimContract(state,action.offerId);if(!quest){pushMessage(state,'That contract is not ready to claim.');return false;}state.player.gold+=quest.rewardGold;if(state.player.patronId)state.player.piety+=2;pushMessage(state,`The guild pays ${quest.rewardGold} gold for the completed contract.`);return true;
+  }
   const price=servicePrice(action.service);if(price&&!pay(state,price))return false;
+  if(action.service==='temper-weapon'||action.service==='temper-armor'){
+    const itemId=action.service==='temper-weapon'?state.player.equippedWeaponId:state.player.equippedArmorId;if(!itemId){pushMessage(state,'You have nothing suitable equipped.');return refund(state,price);}const next=addEnchantment(state,itemId,1);pushMessage(state,`The smith tempers your equipment to +${next}.`);return true;
+  }
+  if(action.service==='uncurse'){
+    const target=equippedItemIds(state).find((id)=>sanctityFor(state,id)==='cursed');if(!target){pushMessage(state,'No equipped item is cursed.');return refund(state,price);}setSanctity(state,target,'mundane');pushMessage(state,'The binding curse breaks with a metallic sigh.');return true;
+  }
   if(action.service==='heal'){
     if(state.player.hp>=state.player.maxHp){pushMessage(state,'You are already fully healed.');return refund(state,price);}
     state.player.hp=state.player.maxHp;pushMessage(state,'The healer restores you completely.');return true;
@@ -45,10 +69,10 @@ export function resolveSiteService(state:GameState,action:Extract<GameAction,{ty
     pushMessage(state,`The appraiser identifies ${item.name}.`);return true;
   }
   if(action.service==='map'){revealWholeFloor(state);markUsed(state,site.id,'map');pushMessage(state,'The cartographer marks the entire reachable level.');return true;}
-  if(action.service==='bless'){addStatus(state,'focused',28,1,site.id);addStatus(state,'guarding',5,1,site.id);markUsed(state,site.id,'bless');pushMessage(state,'The shrine grants a long blessing.');return true;}
+  if(action.service==='bless'){addStatus(state,'focused',28,1,site.id);addStatus(state,'guarding',5,1,site.id);const target=equippedItemIds(state)[0];if(target)setSanctity(state,target,'blessed');markUsed(state,site.id,'bless');pushMessage(state,'The shrine grants a long blessing and sanctifies your readied gear.');return true;}
   if(action.service==='rest'){const amount=Math.max(6,Math.floor(state.player.maxHp*.35));state.player.hp=Math.min(state.player.maxHp,state.player.hp+amount);markUsed(state,site.id,'rest');pushMessage(state,`You rest and recover ${amount} HP.`);return true;}
   if(action.service==='meal'){const restored=feedPlayer(state,Math.floor(state.player.maxHunger*.42));state.player.hp=Math.min(state.player.maxHp,state.player.hp+2);pushMessage(state,`A hot meal restores ${restored} nutrition.`);return true;}
-  if(action.service==='inn-rest'){state.player.hp=state.player.maxHp;feedPlayer(state,Math.floor(state.player.maxHunger*.7));state.player.statuses=state.player.statuses.filter((status)=>!statusById(status.id).harmful);markUsed(state,site.id,'inn-rest');pushMessage(state,'You sleep safely, eat well, and wake restored.');return true;}
+  if(action.service==='inn-rest'){state.player.hp=state.player.maxHp;state.player.mana=state.player.maxMana;feedPlayer(state,Math.floor(state.player.maxHunger*.7));state.player.statuses=state.player.statuses.filter((status)=>!statusById(status.id).harmful);markUsed(state,site.id,'inn-rest');pushMessage(state,'You sleep safely, eat well, and wake restored.');return true;}
   if(action.service==='train-attack'){state.player.attack+=1;markUsed(state,site.id,'train-attack');pushMessage(state,'Training permanently improves your attack.');return true;}
   if(action.service==='train-defense'){state.player.defense+=1;markUsed(state,site.id,'train-defense');pushMessage(state,'Training permanently improves your defense.');return true;}
   if(action.service==='train-vigor'){state.player.maxHp+=5;state.player.hp=Math.min(state.player.maxHp,state.player.hp+5);markUsed(state,site.id,'train-vigor');pushMessage(state,'Training permanently improves your vigor.');return true;}

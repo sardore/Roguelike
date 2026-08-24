@@ -9,24 +9,26 @@ export interface FeatureDefinition {
   repeatable: boolean;
   label: string;
   tags: string[];
+  trigger: 'step' | 'interact';
 }
 
 const defs: FeatureDefinition[] = [
-  { kind: 'spike-trap', glyph: '^', color: '#b77f75', hidden: true, repeatable: true, label: 'spike trap', tags: ['trap','physical'] },
-  { kind: 'snare-rune', glyph: '^', color: '#aaa07c', hidden: true, repeatable: false, label: 'snare rune', tags: ['trap','control'] },
-  { kind: 'teleport-rune', glyph: '^', color: '#a78ac7', hidden: true, repeatable: true, label: 'teleport rune', tags: ['trap','void'] },
-  { kind: 'alarm-rune', glyph: '^', color: '#c58b72', hidden: true, repeatable: false, label: 'alarm rune', tags: ['trap','summon'] },
-  { kind: 'healing-spring', glyph: '{', color: '#74b8b4', hidden: false, repeatable: false, label: 'healing spring', tags: ['boon','water'] },
-  { kind: 'warding-altar', glyph: '_', color: '#d0c79f', hidden: false, repeatable: false, label: 'warding altar', tags: ['boon','ward'] },
-  { kind: 'unstable-cache', glyph: '&', color: '#c8a76d', hidden: false, repeatable: false, label: 'unstable cache', tags: ['loot'] },
-  { kind: 'food-cache', glyph: '%', color: '#d3ab73', hidden: false, repeatable: false, label: 'provision cache', tags: ['loot','food'] },
-  { kind: 'ammo-crate', glyph: ';', color: '#a9a49c', hidden: false, repeatable: false, label: 'ammunition crate', tags: ['loot','ammo'] },
-  { kind: 'ancient-grave', glyph: '†', color: '#bdb29d', hidden: false, repeatable: false, label: 'ancient grave', tags: ['lore','undead','risk'] },
-  { kind: 'bookshelf', glyph: '≡', color: '#bba985', hidden: false, repeatable: false, label: 'sealed bookshelf', tags: ['lore','knowledge'] },
-  { kind: 'forge-anvil', glyph: '∩', color: '#cb966a', hidden: false, repeatable: false, label: 'field anvil', tags: ['craft','fire','construct'] },
-  { kind: 'mushroom-patch', glyph: ';', color: '#a8a564', hidden: false, repeatable: false, label: 'mushroom patch', tags: ['food','fungal','risk'] },
-  { kind: 'memory-stone', glyph: '♦', color: '#a4a7d1', hidden: false, repeatable: false, label: 'memory stone', tags: ['lore','spirit'] },
-  { kind: 'blood-well', glyph: '{', color: '#bb6872', hidden: false, repeatable: false, label: 'blood well', tags: ['boon','flesh','risk'] },
+  { kind: 'spike-trap', glyph: '^', color: '#b77f75', hidden: true, repeatable: true, label: 'spike trap', tags: ['trap','physical'], trigger:'step' },
+  { kind: 'snare-rune', glyph: '^', color: '#aaa07c', hidden: true, repeatable: false, label: 'snare rune', tags: ['trap','control'], trigger:'step' },
+  { kind: 'teleport-rune', glyph: '^', color: '#a78ac7', hidden: true, repeatable: true, label: 'teleport rune', tags: ['trap','void'], trigger:'step' },
+  { kind: 'alarm-rune', glyph: '^', color: '#c58b72', hidden: true, repeatable: false, label: 'alarm rune', tags: ['trap','summon'], trigger:'step' },
+  { kind: 'healing-spring', glyph: '{', color: '#74b8b4', hidden: false, repeatable: false, label: 'healing spring', tags: ['boon','water'], trigger:'interact' },
+  { kind: 'warding-altar', glyph: '_', color: '#d0c79f', hidden: false, repeatable: false, label: 'warding altar', tags: ['boon','ward'], trigger:'interact' },
+  { kind: 'unstable-cache', glyph: '&', color: '#c8a76d', hidden: false, repeatable: false, label: 'unstable cache', tags: ['loot'], trigger:'interact' },
+  { kind: 'food-cache', glyph: '%', color: '#d3ab73', hidden: false, repeatable: false, label: 'provision cache', tags: ['loot','food'], trigger:'interact' },
+  { kind: 'ammo-crate', glyph: ';', color: '#a9a49c', hidden: false, repeatable: false, label: 'ammunition crate', tags: ['loot','ammo'], trigger:'interact' },
+  { kind: 'ancient-grave', glyph: '†', color: '#bdb29d', hidden: false, repeatable: false, label: 'ancient grave', tags: ['lore','undead','risk'], trigger:'interact' },
+  { kind: 'bookshelf', glyph: '≡', color: '#bba985', hidden: false, repeatable: false, label: 'sealed bookshelf', tags: ['lore','knowledge'], trigger:'interact' },
+  { kind: 'forge-anvil', glyph: '∩', color: '#cb966a', hidden: false, repeatable: false, label: 'field anvil', tags: ['craft','fire','construct'], trigger:'interact' },
+  { kind: 'mushroom-patch', glyph: ';', color: '#a8a564', hidden: false, repeatable: false, label: 'mushroom patch', tags: ['food','fungal','risk'], trigger:'interact' },
+  { kind: 'memory-stone', glyph: '♦', color: '#a4a7d1', hidden: false, repeatable: false, label: 'memory stone', tags: ['lore','spirit'], trigger:'interact' },
+  { kind: 'blood-well', glyph: '{', color: '#bb6872', hidden: false, repeatable: false, label: 'blood well', tags: ['boon','flesh','risk'], trigger:'interact' },
+  { kind: 'corpse', glyph: '%', color: '#9a776b', hidden: false, repeatable: false, label: 'corpse', tags: ['corpse','food','risk'], trigger:'interact' },
 ];
 
 const byKind = new Map(defs.map((def) => [def.kind, def]));
@@ -41,7 +43,7 @@ function pointKey(point: Point): string { return `${point.x},${point.y}`; }
 
 function weightedKinds(theme: ThemeDefinition): Array<{ value: DungeonFeatureKind; weight: number }> {
   const tags = new Set(theme.monsterTags);
-  return defs.map((def) => {
+  return defs.filter((def)=>def.kind!=='corpse').map((def) => {
     let weight = def.hidden ? 2.7 : 1.05;
     if (def.kind === 'healing-spring' && (tags.has('aquatic') || tags.has('plant') || tags.has('fungal'))) weight *= 1.9;
     if (def.kind === 'teleport-rune' && (tags.has('spirit') || tags.has('aberrant') || tags.has('caster'))) weight *= 1.7;
