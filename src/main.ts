@@ -1,5 +1,6 @@
 import './style.css';
 import './noncombat.css';
+import './fx.css';
 import { assertGameInvariants, createNewGame, dispatchAction } from './core/game';
 import { RunSaveStore } from './core/save';
 import type { GameAction, GameState, Locale, NonCombatSite, SiteServiceKind, StoryEvent } from './core/types';
@@ -10,6 +11,12 @@ import { siteAt, siteDefinition, servicePrice, sellPrice } from './world/sites';
 import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';
 import { canCarryDefinition, carryCapacity, encumbranceStage, hungerPercent, hungerStage, inventoryWeight, isRangedWeapon, itemWeight } from './core/foundations';
 import { ORIGINS } from './content/origins';
+import { SPELLS, spellById, spellDescription, spellName } from './content/spells';
+import { PATRONS, patronById } from './content/patrons';
+import { featureAt, featureDefinition } from './world/features';
+import { isEquipped, sanctityFor, enchantmentFor } from './core/item-state';
+import { questLabel } from './core/quests';
+import { captureFx, playActionFx } from './ui/fx';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 if (!appElement) throw new Error('missing #app');
@@ -19,7 +26,7 @@ const LOCALE_KEY='abyssal-roguelike:locale';
 let locale:Locale=localStorage.getItem(LOCALE_KEY)==='ko'?'ko':'en';
 let state: GameState | null = null;
 let sessionNonce: string | null = null;
-let openSheet: 'bag' | 'menu' | 'site' | null = null;
+let openSheet: 'bag' | 'menu' | 'site' | 'spells' | null = null;
 let selectedOrigin='delver';
 
 function toggleLocale():void{
@@ -99,11 +106,7 @@ function gameScreen(): void {
         <button class="icon-button" id="menu-button" aria-label="menu">≡</button>
       </header>
 
-      <div class="map-wrap"><canvas id="game-canvas"></canvas></div>
-
-      <button class="message-strip" id="message-button" aria-label="recent messages">
-        <span id="message-text"></span>
-      </button>
+      <div class="map-wrap"><canvas id="game-canvas"></canvas><div class="message-strip" aria-live="polite"><span id="message-text"></span></div><div id="context-slot" class="context-slot context-float"></div></div>
 
       <footer class="mobile-dock">
         <div class="utility-dock"><button class="bag-button" id="bag-button"><span class="bag-glyph">▣</span><span>${tr(locale,'bag')}</span><b id="bag-count">0</b></button></div>
@@ -112,8 +115,8 @@ function gameScreen(): void {
           <button data-command="search"><strong>⌕</strong><small>${tr(locale,'search')}</small></button>
           <button data-command="rest"><strong>+</strong><small>${tr(locale,'rest')}</small></button>
           <button data-command="fire" id="fire-button"><strong>›</strong><small>${tr(locale,'fire')}</small></button>
+          <button id="spell-button"><strong>✦</strong><small>${tr(locale,'spell')}</small></button>
           <button class="brace-action" data-wait><strong>•</strong><small>${tr(locale,'brace')}</small></button>
-          <div id="context-slot" class="context-slot"></div>
         </section>
         <section class="controls" aria-label="movement controls">
           <span></span><button data-move="0,-1" aria-label="move up">▲</button><span></span>
@@ -132,18 +135,20 @@ function gameScreen(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach((button)=>button.addEventListener('click',()=>{const type=button.dataset.command as 'explore'|'search'|'rest'|'fire';doAction({type});}));
   document.querySelector<HTMLButtonElement>('#bag-button')?.addEventListener('click', () => toggleSheet('bag'));
   document.querySelector<HTMLButtonElement>('#menu-button')?.addEventListener('click', () => toggleSheet('menu'));
-  document.querySelector<HTMLButtonElement>('#message-button')?.addEventListener('click', () => toggleSheet('menu'));
+  document.querySelector<HTMLButtonElement>('#spell-button')?.addEventListener('click', () => toggleSheet('spells'));
   window.onresize=redraw;
   redraw();
 }
 
 function doAction(action: GameAction): void {
   if (!state || !sessionNonce) return;
+  const beforeFx=captureFx(state);
   const result = dispatchAction(state, action);
   assertGameInvariants(state);
   saveStore.checkpointDirty(state, sessionNonce);
   if(openSheet==='site'&&!currentSite(state))openSheet=null;
   redraw();
+  if(result.accepted){const shell=document.querySelector<HTMLElement>('.game-shell');if(shell)playActionFx(shell,action,beforeFx,state);}
   if (state.gameOver) {
     saveStore.invalidateRun();
     setTimeout(() => titleScreen(tr(locale,'runEnded')), 650);
@@ -179,13 +184,13 @@ function inventoryMarkup(current: GameState): string {
   return current.player.inventory.map((entry) => {
     const def = itemById(entry.defId);
     const name = localizedItemName(current, def,locale);
-    const equipped = current.player.equippedWeaponId === entry.id || current.player.equippedArmorId === entry.id;
+    const equipped = isEquipped(current,entry.id);const sanctity=sanctityFor(current,entry.id),enchant=enchantmentFor(current,entry.id);
     const verb = def.category === 'weapon' ? tr(locale,'ready') : def.category === 'armor' ? tr(locale,'wear') : def.category === 'consumable' ? tr(locale,'use') : tr(locale,'activate');
     return `
       <div class="simple-item-row">
         <button class="item-main" data-item-action="use" data-item-id="${entry.id}">
           <span class="item-glyph" style="color:${def.color}">${def.glyph}</span>
-          <span class="item-name"><strong>${name}</strong><small>${equipped ? `${tr(locale,'equipped')} · ` : ''}${categoryName(def.category,locale)}</small></span>
+          <span class="item-name"><strong>${name}${enchant?` ${enchant>0?'+':''}${enchant}`:''}</strong><small>${equipped ? `${tr(locale,'equipped')} · ${sanctity} · ` : ''}${categoryName(def.category,locale)}</small></span>
           <span class="item-verb">${verb}</span>
         </button>
         <button class="item-info" data-item-info="${entry.id}" aria-label="${tr(locale,'itemInfo')}">ⓘ</button>
@@ -218,14 +223,16 @@ function siteMarkup(current:GameState,site:NonCombatSite):string{
   }
   if(site.kind==='healer')return `${serviceButton(site,'heal')}${serviceButton(site,'cleanse')}`;
   if(site.kind==='cartographer')return serviceButton(site,'map');
-  if(site.kind==='shrine')return serviceButton(site,'bless');
+  if(site.kind==='shrine'){const patron=current.player.patronId?patronById(current.player.patronId):null;return `${serviceButton(site,'bless')}<h3>${tr(locale,'patron')}</h3>${patron?`<p class="site-copy"><strong style="color:${patron.color}">${locale==='ko'?patron.nameKo:patron.name}</strong> · ${tr(locale,'piety')} ${current.player.piety}</p><button class="site-action" data-site-service="invoke"><span>${tr(locale,'invoke')}</span><b>${patron.invokeCost}</b></button>`:PATRONS.map((entry)=>`<button class="site-action" data-site-service="devote" data-offer-id="${entry.id}"><span style="color:${entry.color}">${locale==='ko'?entry.nameKo:entry.name}</span></button>`).join('')}`;}
   if(site.kind==='camp')return serviceButton(site,'rest');
   if(site.kind==='trainer')return `${serviceButton(site,'train-attack')}${serviceButton(site,'train-defense')}${serviceButton(site,'train-vigor')}`;
   if(site.kind==='inn')return `${serviceButton(site,'inn-rest')}${serviceButton(site,'meal')}`;
+  if(site.kind==='guildhall'){const active=current.quests.filter((quest)=>quest.status!=='claimed');return `<h3>${tr(locale,'quests')}</h3>${active.map((quest)=>`<div class="contract-row"><span>${questLabel(quest,locale)}</span>${quest.status==='complete'?`<button data-site-service="claim-contract" data-offer-id="${quest.id}">+${quest.rewardGold}g</button>`:`<b>${quest.rewardGold}g</b>`}</div>`).join('')||'<p class="site-copy">No active contracts.</p>'}<h3>New</h3>${(['hunt','delve','unique'] as const).map((kind)=>`<button class="site-action" data-site-service="contract" data-offer-id="${kind}"><span>${kind}</span></button>`).join('')}`;}
+  if(site.kind==='smithy')return `${serviceButton(site,'temper-weapon')}${serviceButton(site,'temper-armor')}${serviceButton(site,'uncurse')}`;
   return serviceButton(site,'rumor');
 }
 
-function toggleSheet(kind: 'bag' | 'menu' | 'site'): void {
+function toggleSheet(kind: 'bag' | 'menu' | 'site' | 'spells'): void {
   if(kind==='site'&&state&&!currentSite(state))return;
   openSheet = openSheet === kind ? null : kind;
   renderSheet();
@@ -257,6 +264,9 @@ function renderSheet(): void {
         <header class="sheet-header"><strong>${tr(locale,'bag')}</strong><span>${state.player.inventory.length} · ${tr(locale,'load')} ${inventoryWeight(state)}/${carryCapacity(state)} · ${state.player.gold}g</span><button data-close-sheet>${tr(locale,'done')}</button></header>
         <div class="sheet-scroll">${inventoryMarkup(state)}</div>
       </section>`;
+  } else if(openSheet==='spells'){
+    const activeState=state;const known=activeState.player.knownSpells.map(spellById);
+    layer.innerHTML=`<div class="sheet-backdrop" data-close-sheet></div><section class="bottom-sheet spell-sheet"><div class="sheet-handle"></div><header class="sheet-header"><strong>✦ ${tr(locale,'spell')}</strong><span>MP ${state.player.mana}/${state.player.maxMana}</span><button data-close-sheet>${tr(locale,'done')}</button></header><div class="spell-list">${known.map((spell)=>`<button class="spell-row" data-spell-id="${spell.id}" ${activeState.player.mana<spell.mana?'disabled':''}><span style="color:${spell.color}">${spell.glyph}</span><strong>${spellName(spell,locale)}</strong><small>${spellDescription(spell,locale)}</small><b>${spell.mana} MP</b></button>`).join('')}</div></section>`;
   } else if(openSheet==='site'){
     const site=currentSite(state);if(!site){openSheet=null;layer.innerHTML='';return;}
     const def=siteDefinition(site.kind),title=site.settlementName?`${site.settlementName} · ${siteKindName(site.kind,locale)}`:siteKindName(site.kind,locale);
@@ -267,7 +277,7 @@ function renderSheet(): void {
       <section class="bottom-sheet menu-sheet" aria-label="menu">
         <div class="sheet-handle"></div>
         <header class="sheet-header"><strong>${tr(locale,'recent')}</strong><button data-close-sheet>${tr(locale,'done')}</button></header>
-        <div class="recent-messages">${recentMessagesMarkup(state)}</div>
+        <div class="run-summary">${state.player.patronId?`<span>${tr(locale,'patron')}: ${locale==='ko'?patronById(state.player.patronId).nameKo:patronById(state.player.patronId).name} · ${tr(locale,'piety')} ${state.player.piety}</span>`:''}${state.quests.filter((quest)=>quest.status!=='claimed').map((quest)=>`<span>${questLabel(quest,locale)}</span>`).join('')}</div><div class="recent-messages">${recentMessagesMarkup(state)}</div>
         <button class="language-menu-button" id="language-menu">${tr(locale,'language')}</button>
         <button class="save-quit-button" id="save-quit">${tr(locale,'saveQuit')}</button>
       </section>`;
@@ -276,6 +286,7 @@ function renderSheet(): void {
   layer.querySelectorAll<HTMLElement>('[data-close-sheet]').forEach((element) => element.addEventListener('click', closeSheet));
   layer.querySelector<HTMLButtonElement>('#save-quit')?.addEventListener('click', cleanQuit);
   layer.querySelector<HTMLButtonElement>('#language-menu')?.addEventListener('click',toggleLocale);
+  layer.querySelectorAll<HTMLButtonElement>('[data-spell-id]').forEach((button)=>button.addEventListener('click',()=>{const spellId=button.dataset.spellId;if(!spellId)return;closeSheet();doAction({type:'cast-spell',spellId});}));
   bindItemInfo(layer);
   layer.querySelector('.sheet-scroll')?.addEventListener('click', (event) => {
     const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-item-action]');
@@ -318,11 +329,11 @@ function redraw(): void {
   if(hungerText)hungerText.textContent=`${tr(locale,hungerKey)} ${hungerPercent(state)}%`;
   if(hungerFill)hungerFill.style.width=`${hungerPercent(state)}%`;
   if(levelText)levelText.textContent=`L${state.player.level}`;
-  if(ammoText)ammoText.textContent=`${tr(locale,'ammo')} ${state.player.ammo}`;
+  if(ammoText)ammoText.textContent=`MP ${state.player.mana}/${state.player.maxMana} · ${tr(locale,'ammo')} ${state.player.ammo}`;
   if(fireButton){const equippedWeaponId=state.player.equippedWeaponId;const equipped=state.player.inventory.find((entry)=>entry.id===equippedWeaponId);fireButton.disabled=!equipped||!isRangedWeapon(itemById(equipped.defId))||state.player.ammo<=0;}
   if (messageText) messageText.textContent = localizeMessage(state.messages.at(-1) ?? '',locale);
   if (bagCount) bagCount.textContent = `${state.player.inventory.length}`;
-  if(contextSlot){const site=currentSite(state);if(site){const def=siteDefinition(site.kind);contextSlot.innerHTML=`<button class="site-dock-button" id="site-button"><span style="color:${def.color}">${def.glyph}</span><small>${siteKindName(site.kind,locale)}</small></button>`;contextSlot.querySelector('#site-button')?.addEventListener('click',()=>toggleSheet('site'));}else contextSlot.innerHTML='';}
+  if(contextSlot){const site=currentSite(state),feature=featureAt(state.features,state.player.x,state.player.y);if(site){const def=siteDefinition(site.kind);contextSlot.innerHTML=`<button class="site-dock-button" id="site-button"><span style="color:${def.color}">${def.glyph}</span><small>${siteKindName(site.kind,locale)}</small></button>`;contextSlot.querySelector('#site-button')?.addEventListener('click',()=>toggleSheet('site'));}else if(feature&&featureDefinition(feature.kind).trigger==='interact'){const def=featureDefinition(feature.kind);contextSlot.innerHTML=`<button class="site-dock-button" id="interact-button"><span style="color:${def.color}">${def.glyph}</span><small>${tr(locale,'interact')}</small></button>`;contextSlot.querySelector('#interact-button')?.addEventListener('click',()=>doAction({type:'interact'}));}else contextSlot.innerHTML='';}
   if (openSheet) renderSheet();
 }
 

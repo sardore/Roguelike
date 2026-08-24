@@ -113,3 +113,12 @@ This blocks ordinary save/load retry abuse. A purely offline browser game cannot
 - Fix the owner/path/invariant that allowed the bad state.
 - When one bug exposes a class of failures, audit the whole class rather than patching the observed instance.
 - A passing happy-path test is not release evidence. Property tests, long random runs, transitions, save/restore, and invariants are required.
+
+
+## Presentation-effects rule
+
+Combat shake, flashes, particles, floating text, log placement, and other spectacle are presentation-only projections. They may inspect action results and state deltas but never mutate simulation state or decide outcomes.
+
+## Interactive-world rule
+
+Visible boons, corpses, graves, caches, altars, and similar features use an explicit reusable interact action. Hidden traps remain step-triggered. This prevents accidental consumption while keeping all feature resolution inside the canonical dispatcher.

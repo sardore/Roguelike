@@ -6,6 +6,7 @@ import { resolveThemeContext, themeById } from '../world/themes';
 import { featureDefinition } from '../world/features';
 import { siteDefinition } from '../world/sites';
 import { localizedThemeName } from '../i18n';
+import { terrainDefinition } from '../world/terrain-rules';
 
 function blendHex(a:string,b:string,t:number):string{const parse=(hex:string)=>[1,3,5].map((offset)=>Number.parseInt(hex.slice(offset,offset+2),16));const aa=parse(a),bb=parse(b),out=aa.map((value,index)=>Math.round(value+(bb[index]!-value)*t));return `#${out.map((value)=>value.toString(16).padStart(2,'0')).join('')}`;}
 function rgba(hex:string,alpha:number):string{const rgb=[1,3,5].map((offset)=>Number.parseInt(hex.slice(offset,offset+2),16));return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;}
@@ -54,11 +55,16 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   for(let sy=0;sy<view.rows;sy+=1)for(let sx=0;sx<view.cols;sx+=1){
     const x=view.x+sx,y=view.y+sy,key=`${x},${y}`;if(!explored.has(key))continue;
     const tile=state.floor.tiles[y*state.floor.width+x]!,glyph=tileGlyph(state.floor,x,y),exit=exitByPos.get(key),isVisible=visible.has(key),n=noise01(x,y,state.floor.generation.seed);
-    let fg=exit?palette.accent:tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:tile.kind==='rubble'?blendHex(palette.wall,palette.floor,.55):palette.floor;
-    const tileBase=tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:palette.floor;
+    const specialColor=tile.kind==='ice'?blendHex(palette.water,'#e7f6ff',.52):tile.kind==='miasma'?blendHex(palette.danger,'#8da55c',.48):tile.kind==='bramble'?blendHex(palette.accent,'#6f9257',.55):tile.kind==='void-rift'?'#b184d2':tile.kind==='oil'?'#76634b':tile.kind==='holy'?'#d8cf9f':null;
+    let fg=exit?palette.accent:specialColor??(tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:tile.kind==='rubble'?blendHex(palette.wall,palette.floor,.55):palette.floor);
+    const tileBase=specialColor??(tile.kind==='wall'?palette.wall:tile.kind==='water'?palette.water:tile.kind==='lava'?palette.danger:palette.floor);
     ctx.fillStyle=rgba(tileBase,isVisible?(tile.kind==='wall'?.075:.035)+(n*.018):.012);ctx.fillRect(sx*view.cell,sy*view.cell,view.cell,view.cell);
     if(tile.kind==='water'&&isVisible){ctx.fillStyle=rgba(palette.water,.075+.025*Math.sin((state.turn+x+y)*.28));ctx.fillRect(sx*view.cell+1,sy*view.cell+1,view.cell-2,view.cell-2);}
     if(tile.kind==='lava'&&isVisible){ctx.shadowColor=palette.danger;ctx.shadowBlur=view.cell*.42;}
+    if(tile.kind==='miasma'&&isVisible){ctx.fillStyle=rgba('#91a75e',.07+.035*Math.sin((state.turn+x*2+y)*.38));ctx.fillRect(sx*view.cell,sy*view.cell,view.cell,view.cell);ctx.shadowColor='#9dbd67';ctx.shadowBlur=4;}
+    if(tile.kind==='void-rift'&&isVisible){ctx.fillStyle=rgba('#b184d2',.1+.04*Math.sin((state.turn+x+y)*.44));ctx.fillRect(sx*view.cell+1,sy*view.cell+1,view.cell-2,view.cell-2);ctx.shadowColor='#bd8fe3';ctx.shadowBlur=8;}
+    if(tile.kind==='holy'&&isVisible){ctx.fillStyle=rgba('#e6dcae',.08);ctx.fillRect(sx*view.cell+2,sy*view.cell+2,view.cell-4,view.cell-4);ctx.shadowColor='#e8dca6';ctx.shadowBlur=5;}
+    if(tile.kind==='ice'&&isVisible&&((x+y+state.turn)%5===0)){ctx.fillStyle='#eefaff';ctx.fillText('·',sx*view.cell+view.cell*.72,sy*view.cell+view.cell*.28);}
     if(exit&&isVisible){ctx.fillStyle=rgba(palette.accent,.11);ctx.fillRect(sx*view.cell+1,sy*view.cell+1,view.cell-2,view.cell-2);ctx.shadowColor=palette.accent;ctx.shadowBlur=5;}
     if(!isVisible)fg=blendHex(fg,'#07090d',.68);
     ctx.fillStyle=fg;ctx.fillText(glyph,sx*view.cell+view.cell/2,sy*view.cell+view.cell/2);ctx.shadowBlur=0;
@@ -80,7 +86,7 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
     ctx.fillStyle=rgba(palette.danger,.22+.06*Math.sin(state.turn*.7));ctx.fillRect(p.x+1,p.y+1,view.cell-2,view.cell-2);ctx.shadowColor=palette.danger;ctx.shadowBlur=7;ctx.fillStyle=palette.danger;ctx.fillText('!',p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;
   }
   for(const entry of state.items){if(!visible.has(`${entry.x},${entry.y}`)||!inView(entry,view))continue;const def=itemById(entry.defId),p=screen(entry.x,entry.y);ctx.shadowColor=def.color;ctx.shadowBlur=3;ctx.fillStyle=def.color;ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;}
-  for(const monster of state.monsters){if(!visible.has(`${monster.x},${monster.y}`)||!inView(monster,view))continue;const def=monsterById(monster.defId),p=screen(monster.x,monster.y);if(monster.power>1){ctx.fillStyle=rgba(def.color,.09);ctx.fillRect(p.x+2,p.y+2,view.cell-4,view.cell-4);}ctx.shadowColor=def.color;ctx.shadowBlur=monster.power>2?6:2;ctx.fillStyle=def.color;ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;}
+  for(const monster of state.monsters){if(!visible.has(`${monster.x},${monster.y}`)||!inView(monster,view))continue;const def=monsterById(monster.defId),p=screen(monster.x,monster.y),unique=def.tags.includes('unique');if(monster.power>1||unique){ctx.fillStyle=rgba(def.color,unique?.18:.09);ctx.beginPath();ctx.arc(p.x+view.cell/2,p.y+view.cell/2,view.cell*(unique?.62:.46),0,Math.PI*2);ctx.fill();}if(unique){ctx.strokeStyle=rgba(def.color,.6);ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(p.x+view.cell/2,p.y+view.cell/2,view.cell*.68,0,Math.PI*2);ctx.stroke();}ctx.shadowColor=def.color;ctx.shadowBlur=unique?11:monster.power>2?6:2;ctx.fillStyle=def.color;ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;}
   const player=screen(state.player.x,state.player.y);ctx.fillStyle=rgba(palette.accent,.16);ctx.beginPath();ctx.arc(player.x+view.cell/2,player.y+view.cell/2,view.cell*.58,0,Math.PI*2);ctx.fill();ctx.shadowColor='#ffffff';ctx.shadowBlur=8;ctx.fillStyle='#f5f5f1';ctx.fillText('@',player.x+view.cell/2,player.y+view.cell/2);ctx.shadowBlur=0;
   ctx.restore();
 

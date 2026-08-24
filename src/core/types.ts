@@ -3,7 +3,7 @@ export type ThemeId = string;
 export type ArchetypeId = string;
 export type Locale = 'en' | 'ko';
 export interface Point { x: number; y: number; }
-export type TileKind = 'wall' | 'floor' | 'water' | 'lava' | 'bridge' | 'rubble';
+export type TileKind = 'wall' | 'floor' | 'water' | 'lava' | 'bridge' | 'rubble' | 'ice' | 'miasma' | 'bramble' | 'void-rift' | 'oil' | 'holy';
 export interface Tile { kind: TileKind; glyph: string; walkable: boolean; transparent: boolean; }
 export type ExitKind = 'down' | 'drift-left' | 'drift-right';
 export interface FloorExit extends Point { kind: ExitKind; glyph: string; }
@@ -44,23 +44,31 @@ export interface PlayerState extends Point {
   hunger: number;
   maxHunger: number;
   ammo: number;
+  mana: number;
+  maxMana: number;
+  knownSpells: string[];
+  preparedSpellId?: string | undefined;
   kills: number;
   floorsVisited: number;
   inventory: InventoryItem[];
   statuses: StatusInstance[];
   equippedWeaponId?: EntityId | undefined;
   equippedArmorId?: EntityId | undefined;
+  equippedRingIds: EntityId[];
+  equippedAmuletId?: EntityId | undefined;
+  patronId?: string | undefined;
+  piety: number;
 }
 export interface TemporaryTerrain { id: EntityId; points: Array<Point & { original: TileKind }>; replacement: TileKind; expiresTurn: number; }
 export type DungeonFeatureKind =
   | 'spike-trap' | 'snare-rune' | 'teleport-rune' | 'alarm-rune'
   | 'healing-spring' | 'warding-altar' | 'unstable-cache'
   | 'food-cache' | 'ammo-crate' | 'ancient-grave' | 'bookshelf'
-  | 'forge-anvil' | 'mushroom-patch' | 'memory-stone' | 'blood-well';
-export interface DungeonFeature extends Point { id: EntityId; kind: DungeonFeatureKind; revealed: boolean; spent: boolean; }
+  | 'forge-anvil' | 'mushroom-patch' | 'memory-stone' | 'blood-well' | 'corpse';
+export interface DungeonFeature extends Point { id: EntityId; kind: DungeonFeatureKind; revealed: boolean; spent: boolean; sourceDefId?: string; }
 
-export type SiteKind = 'town-square' | 'merchant' | 'healer' | 'appraiser' | 'cartographer' | 'shrine' | 'camp' | 'provisioner' | 'trainer' | 'inn';
-export type SiteServiceKind = 'rumor' | 'buy' | 'sell' | 'heal' | 'cleanse' | 'identify' | 'map' | 'bless' | 'rest' | 'meal' | 'train-attack' | 'train-defense' | 'train-vigor' | 'inn-rest';
+export type SiteKind = 'town-square' | 'merchant' | 'healer' | 'appraiser' | 'cartographer' | 'shrine' | 'camp' | 'provisioner' | 'trainer' | 'inn' | 'guildhall' | 'smithy';
+export type SiteServiceKind = 'rumor' | 'buy' | 'sell' | 'heal' | 'cleanse' | 'identify' | 'map' | 'bless' | 'rest' | 'meal' | 'train-attack' | 'train-defense' | 'train-vigor' | 'inn-rest' | 'devote' | 'invoke' | 'contract' | 'claim-contract' | 'temper-weapon' | 'temper-armor' | 'uncurse';
 export interface SiteStockEntry { id: EntityId; defId: string; price: number; }
 export interface NonCombatSite extends Point {
   id: EntityId;
@@ -71,9 +79,11 @@ export interface NonCombatSite extends Point {
   usedServices: SiteServiceKind[];
 }
 
+export type QuestKind = 'hunt' | 'delve' | 'unique';
+export interface QuestState { id:string; kind:QuestKind; status:'active'|'complete'|'claimed'; progress:number; goal:number; rewardGold:number; sourceSiteId:string; startDepth?:number; }
 export interface StoryEvent { id: string; title: string; body: string; severity: 'major'; }
 export interface GameState {
-  schemaVersion: 5;
+  schemaVersion: 6;
   runId: string;
   runSeed: number;
   turn: number;
@@ -83,6 +93,9 @@ export interface GameState {
   discoveredThemes: ThemeId[];
   seenStoryEvents: string[];
   identifiedItemDefs: string[];
+  itemSanctityOverrides: Record<EntityId,'cursed'|'mundane'|'blessed'>;
+  itemEnchantments: Record<EntityId,number>;
+  quests: QuestState[];
   floor: FloorMap;
   player: PlayerState;
   monsters: MonsterEntity[];
@@ -102,6 +115,8 @@ export type GameAction =
   | { type: 'rest' }
   | { type: 'explore' }
   | { type: 'fire' }
+  | { type: 'interact' }
+  | { type: 'cast-spell'; spellId: string }
   | { type: 'use-item'; itemId: EntityId }
   | { type: 'drop-item'; itemId: EntityId }
   | { type: 'site-service'; siteId: EntityId; service: SiteServiceKind; itemId?: EntityId; offerId?: EntityId };
