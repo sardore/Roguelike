@@ -1,22 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { hash } from './rng';
-import { move, useItem, wait } from './systems';
+import { interactAt, move, useItem, wait } from './systems';
 import { createWorld } from './world';
-
-describe('alchemical interactions',()=>{
-  it('throws a red phial onto the tapped tile instead of maximum range',()=>{
-    const s=createWorld(hash('exact-throw'));const target={x:16,y:12};useItem(s,0,target);expect(s.tiles[target.y*s.width+target.x]?.kind).toBe('fire');
-  });
-  it('burns a flammable fixture when hit',()=>{
-    const s=createWorld(hash('burn-fixture'));const t=s.tiles[12*s.width+16]!;t.fixture='crate';t.blocks=true;useItem(s,0,{x:16,y:12});expect(t.kind).toBe('fire');expect(t.fixture).toBeUndefined();expect(t.blocks).toBe(false);
-  });
-  it('makes healing tonic scent mechanically persist',()=>{
-    const s=createWorld(hash('tonic-scent'));s.player.inventory=['blue-tonic'];s.player.hp=10;useItem(s,0);expect(s.player.hp).toBeGreaterThan(10);expect(s.player.statuses.some(st=>st.id==='marked'&&st.turns>0)).toBe(true);
-  });
-  it('allows escape without clearing every enemy',()=>{
-    const s=createWorld(hash('nonlethal-exit'));s.player.x=32;s.player.y=22;expect(s.enemies.length).toBeGreaterThan(0);move(s,1,0);expect(s.won).toBe(true);expect(s.over).toBe(true);
-  });
-  it('makes waiting a real defensive choice',()=>{
-    const s=createWorld(hash('brace'));wait(s);expect(s.player.guard).toBe(2);
-  });
-});
+describe('alchemical interactions',()=>{it('lets red fire ignite an oil tile',()=>{const s=createWorld(hash('oil-fire'));s.player.inventory=['red-phial'];const target={x:s.player.x+1,y:s.player.y};const t=s.tiles[target.y*s.width+target.x]!;t.kind='oil';useItem(s,0,target);expect(t.kind).toBe('fire')});it('opens the district gate from its lever',()=>{const s=createWorld(hash('lever'));const li=s.tiles.findIndex(t=>t.fixture==='lever');const lx=li%s.width,ly=Math.floor(li/s.width);s.player.x=lx-1;s.player.y=ly;interactAt(s,{x:lx,y:ly});expect(s.tiles.some(t=>t.fixture==='brass-gate')).toBe(false)});it('turns boiler surroundings into temporary steam',()=>{const s=createWorld(hash('boiler'));const bi=s.tiles.findIndex(t=>t.fixture==='boiler');const bx=bi%s.width,by=Math.floor(bi/s.width);s.player.x=bx-1;s.player.y=by;interactAt(s,{x:bx,y:by});const steam=s.tiles.filter(t=>t.kind==='steam');expect(steam.length).toBeGreaterThan(0)});it('smoke ampoule interrupts telegraphs',()=>{const s=createWorld(hash('smoke'));s.player.inventory=['smoke-ampoule'];s.enemies[0]!.telegraph={x:s.player.x,y:s.player.y};useItem(s,0,{x:s.player.x+1,y:s.player.y});expect(s.enemies.every(e=>!e.telegraph)).toBe(true)});it('makes waiting a real defensive choice',()=>{const s=createWorld(hash('brace'));wait(s);expect(s.player.guard).toBe(2)});it('allows escape without killing every enemy',()=>{const s=createWorld(hash('exit'));const si=s.tiles.findIndex(t=>t.kind==='stairs');const sx=si%s.width,sy=Math.floor(si/s.width);s.player.x=sx-1;s.player.y=sy;move(s,1,0);expect(s.over).toBe(true);expect(s.won).toBe(true);expect(s.enemies.length).toBeGreaterThan(0)})});
