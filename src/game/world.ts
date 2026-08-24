@@ -40,7 +40,7 @@ export function createWorld(seed:number):GameState {
     player:{x:18,y:12,hp:20,maxHp:20,guard:0,inventory:['red-phial','salt-bomb'],statuses:[]},
     enemies:[{id:'mite-a',kind:'glass-mite',x:9,y:4,hp:5,cooldown:0},{id:'rat-a',kind:'distiller-rat',x:24,y:4,hp:9,cooldown:0},{id:'hound-a',kind:'vapor-hound',x:31,y:21,hp:13,cooldown:1}],
     items:[{id:'tonic-a',kind:'blue-tonic',x:4,y:4},{id:'chalk-a',kind:'chalk',x:18,y:6},{id:'salt-b',kind:'salt-bomb',x:31,y:18}],
-    turn:0,messages:[{text:'Apothecaries’ Row is quiet. Copper pipes click somewhere behind the shutters.',tone:'odd'}],seed,over:false,won:false,noise:[]
+    turn:0,messages:[{text:'Apothecaries’ Row is quiet. Copper pipes click somewhere behind the shutters.',tone:'odd'}],seed,over:false,won:false,noise:[],enteredRooms:['apothecaries-row']
   };
   updateVisibility(state);return state;
 }
