@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/runner/work/Roguelike/Roguelike/scripts/apply-grand-classic-depth.py", line 71, in <module>
+    patch('src/content/items.ts',
+  File "/home/runner/work/Roguelike/Roguelike/scripts/apply-grand-classic-depth.py", line 10, in patch
+    raise RuntimeError(f'missing anchor {label} in {path}')
+RuntimeError: missing anchor depth item append in src/content/items.ts
+statuses patch=1 install=99 test=99 build=99
