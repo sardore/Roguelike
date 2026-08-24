@@ -51,10 +51,9 @@ export function createWorld(seed:number):GameState {
   set(tiles,6,5,'door','herbalist-door',2);
   set(tiles,7,9,'door','herbalist-door',1);
 
-  // Distillery: broader industrial room with a rear hot-work alcove.
+  // Distillery: broad industrial room with an intact outer envelope.
   fillRect(tiles,17,2,11,7,'floor','distillery',rng);
   wallRect(tiles,16,1,13,9,'distillery-wall',rng);
-  fillRect(tiles,19,1,5,2,'floor','distillery',rng);
   set(tiles,22,9,'door','distillery-door',3);
 
   // Courtyard and physic garden.
@@ -115,7 +114,7 @@ export function createWorld(seed:number):GameState {
     enemies:[
       {id:'mite-a',kind:'glass-mite',x:9,y:3,hp:5,cooldown:0},
       {id:'rat-a',kind:'distiller-rat',x:24,y:4,hp:9,cooldown:0},
-      {id:'hound-a',kind:'vapor-hound',x:32,y:19,hp:13,cooldown:1}
+      {id:'hound-a',kind:'vapor-hound',x:31,y:19,hp:13,cooldown:1}
     ],
     items:[
       {id:'tonic-a',kind:'blue-tonic',x:4,y:3},
