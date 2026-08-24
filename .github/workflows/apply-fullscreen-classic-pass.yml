@@ -22,6 +22,13 @@ jobs:
       - name: Integrate and verify
         run: |
           set +e
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path='scripts/apply-fullscreen-classic-pass.mjs';
+          let s=fs.readFileSync(path,'utf8');
+          s=s.replace("pushMessage(state,`A named presence haunts this floor: ${def.name}.`);","pushMessage(state,'A named presence haunts this floor: '+def.name+'.');");
+          fs.writeFileSync(path,s);
+          NODE
           {
             node scripts/apply-fullscreen-classic-pass.mjs
             A=$?
