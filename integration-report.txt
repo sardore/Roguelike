@@ -1,10 +1,11 @@
 === source integration ===
-file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:18
-  s=once(s,`      <footer class="mobile-dock">
-           ^
+file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:3
+function once(s,a,b,label){if(s.includes(b))return s;if(!s.includes(a))throw new Error(`missing ${label}`);return s.replace(a,b);}
+                                                                             ^
 
-ReferenceError: tr is not defined
-    at file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:18:12
+Error: missing mobile command deck
+    at once (file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:3:78)
+    at file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:18:5
     at patch (file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:2:79)
     at file:///home/runner/work/Roguelike/Roguelike/scripts/apply-mobile-command-ui.mjs:5:1
     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
