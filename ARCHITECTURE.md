@@ -86,11 +86,11 @@ Volume gates are regression constraints, not targets to satisfy with meaningless
 - 18 normal themes + the Abyss
 - at least 8 map archetype choices per normal theme
 - at least 5 native monster definitions per normal theme
-- at least 145 monsters overall
-- at least 195 items overall
+- at least 160 monsters overall, with named uniques excluded from ordinary ecology sampling
+- at least 230 items overall
 - at least 15 reusable dungeon feature kinds
 
-A numeric variant that only changes HP/damage without changing tactical role should not be used merely to satisfy these gates.
+A numeric variant that only changes HP/damage without changing tactical role should not be used merely to satisfy these gates. Starting origins must be data packages over the same canonical player state, and named uniques must reuse ordinary AI/effect primitives rather than private boss executors.
 
 ## Save / load anti-scumming
 

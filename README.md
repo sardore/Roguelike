@@ -13,8 +13,9 @@ Current scale gates and systems:
 
 - 18 normal dungeon themes + the infinite Abyss
 - at least 8 floor archetype choices per normal theme
-- 145+ monsters, with multiple tactical roles native to every normal theme
-- 195+ items across weapons, armor, food, ammunition, consumables, tools, and relics
+- 160+ monsters, including named unique encounters layered over each theme
+- 230+ items across weapons, armor, food, ammunition, consumables, tools, relics, and classic utility archetypes
+- five starting origins with genuinely different opening kits and stat profiles
 - hunger/nutrition with food scarcity, starvation, and action-based metabolism
 - experience levels, permanent combat growth, ammunition, ranged weapons, resting, searching, auto-explore, and carry-weight/encumbrance
 - run-specific unidentified potion/scroll appearances with persistent identification knowledge
@@ -24,6 +25,8 @@ Current scale gates and systems:
 - gold economy with deterministic shop stock, buying/selling, paid services, and protected settlement pockets
 - physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation
+- named unique-monster floors with deterministic warning, telegraphed abilities, and enhanced rewards
+- full-bleed mobile viewport: the ASCII dungeon fills the available play surface instead of sitting in a small centered rectangle
 - mobile-first player-centered ASCII viewport
 - English and Korean UI modes, including item/effect/site labels and core event/message localization
 - rare major-event popup system; ordinary interactions stay in the compact message feed

@@ -15,17 +15,18 @@ function oddFloor(value:number,min:number,max:number):number{let out=Math.max(mi
 function clamp(value:number,min:number,max:number):number{return Math.max(min,Math.min(max,value));}
 function noise01(x:number,y:number,seed:number):number{let n=(x*374761393+y*668265263+seed*69069)>>>0;n=(n^(n>>>13))*1274126177>>>0;return((n^(n>>>16))>>>0)/4294967295;}
 
-interface Viewport { x:number; y:number; cols:number; rows:number; cell:number; }
+interface Viewport { x:number; y:number; cols:number; rows:number; cell:number; width:number; height:number; offsetX:number; offsetY:number; }
 function viewportFor(canvas:HTMLCanvasElement,state:GameState):Viewport{
-  const width=Math.max(300,canvas.clientWidth||canvas.parentElement?.clientWidth||300);
-  const height=Math.max(250,canvas.clientHeight||canvas.parentElement?.clientHeight||250);
-  const targetCell=width<430?17:19;
-  const cols=Math.min(state.floor.width,oddFloor(width/targetCell,17,31));
-  const rows=Math.min(state.floor.height,oddFloor(height/targetCell,15,31));
+  const parent=canvas.parentElement;
+  const width=Math.max(320,parent?.clientWidth||canvas.clientWidth||320);
+  const height=Math.max(280,parent?.clientHeight||canvas.clientHeight||280);
+  const cell=width<430?20:22;
+  const cols=Math.min(state.floor.width,Math.max(19,Math.ceil(width/cell)+1));
+  const rows=Math.min(state.floor.height,Math.max(17,Math.ceil(height/cell)+1));
   const x=clamp(state.player.x-Math.floor(cols/2),0,Math.max(0,state.floor.width-cols));
   const y=clamp(state.player.y-Math.floor(rows/2),0,Math.max(0,state.floor.height-rows));
-  const cell=Math.max(15,Math.floor(Math.min(width/cols,height/rows)));
-  return{x,y,cols,rows,cell};
+  const drawWidth=cols*cell,drawHeight=rows*cell;
+  return{x,y,cols,rows,cell,width,height,offsetX:(width-drawWidth)/2,offsetY:(height-drawHeight)/2};
 }
 function threatTarget(monster:GameState['monsters'][number]):Point|null{
   const threat=monster.statuses.find((status)=>status.id==='charging'||status.id==='winding');
@@ -38,8 +39,8 @@ function inView(point:Point,view:Viewport):boolean{return point.x>=view.x&&point
 export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   const ctx=canvas.getContext('2d');if(!ctx)return;
   const palette=paletteForState(state),view=viewportFor(canvas,state),dpr=Math.max(1,Math.min(2,globalThis.devicePixelRatio||1));
-  const cssWidth=view.cols*view.cell,cssHeight=view.rows*view.cell;
-  canvas.style.width=`${cssWidth}px`;canvas.style.height=`${cssHeight}px`;
+  const cssWidth=view.width,cssHeight=view.height;
+  canvas.style.width='100%';canvas.style.height='100%';
   canvas.width=Math.round(cssWidth*dpr);canvas.height=Math.round(cssHeight*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
   const backdrop=ctx.createRadialGradient(cssWidth*.5,cssHeight*.48,0,cssWidth*.5,cssHeight*.48,Math.max(cssWidth,cssHeight)*.7);
@@ -48,6 +49,7 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   ctx.textAlign='center';ctx.textBaseline='middle';
   const exitByPos=new Map(state.floor.exits.map((exit)=>[`${exit.x},${exit.y}`,exit])),visible=new Set(state.visible),explored=new Set(state.explored);
   const screen=(x:number,y:number)=>({x:(x-view.x)*view.cell,y:(y-view.y)*view.cell});
+  ctx.save();ctx.translate(view.offsetX,view.offsetY);
 
   for(let sy=0;sy<view.rows;sy+=1)for(let sx=0;sx<view.cols;sx+=1){
     const x=view.x+sx,y=view.y+sy,key=`${x},${y}`;if(!explored.has(key))continue;
@@ -79,7 +81,8 @@ export function renderCanvas(canvas:HTMLCanvasElement,state:GameState):void{
   }
   for(const entry of state.items){if(!visible.has(`${entry.x},${entry.y}`)||!inView(entry,view))continue;const def=itemById(entry.defId),p=screen(entry.x,entry.y);ctx.shadowColor=def.color;ctx.shadowBlur=3;ctx.fillStyle=def.color;ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;}
   for(const monster of state.monsters){if(!visible.has(`${monster.x},${monster.y}`)||!inView(monster,view))continue;const def=monsterById(monster.defId),p=screen(monster.x,monster.y);if(monster.power>1){ctx.fillStyle=rgba(def.color,.09);ctx.fillRect(p.x+2,p.y+2,view.cell-4,view.cell-4);}ctx.shadowColor=def.color;ctx.shadowBlur=monster.power>2?6:2;ctx.fillStyle=def.color;ctx.fillText(def.glyph,p.x+view.cell/2,p.y+view.cell/2);ctx.shadowBlur=0;}
-  const player=screen(state.player.x,state.player.y);ctx.fillStyle=rgba(palette.accent,.14);ctx.beginPath();ctx.arc(player.x+view.cell/2,player.y+view.cell/2,view.cell*.52,0,Math.PI*2);ctx.fill();ctx.shadowColor='#ffffff';ctx.shadowBlur=7;ctx.fillStyle='#f5f5f1';ctx.fillText('@',player.x+view.cell/2,player.y+view.cell/2);ctx.shadowBlur=0;
+  const player=screen(state.player.x,state.player.y);ctx.fillStyle=rgba(palette.accent,.16);ctx.beginPath();ctx.arc(player.x+view.cell/2,player.y+view.cell/2,view.cell*.58,0,Math.PI*2);ctx.fill();ctx.shadowColor='#ffffff';ctx.shadowBlur=8;ctx.fillStyle='#f5f5f1';ctx.fillText('@',player.x+view.cell/2,player.y+view.cell/2);ctx.shadowBlur=0;
+  ctx.restore();
 
   const vignette=ctx.createRadialGradient(cssWidth/2,cssHeight/2,Math.min(cssWidth,cssHeight)*.28,cssWidth/2,cssHeight/2,Math.max(cssWidth,cssHeight)*.68);vignette.addColorStop(0,'rgba(0,0,0,0)');vignette.addColorStop(1,'rgba(0,0,0,.28)');ctx.fillStyle=vignette;ctx.fillRect(0,0,cssWidth,cssHeight);
 }

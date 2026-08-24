@@ -9,6 +9,7 @@ import { describeState, renderCanvas } from './ui/render';
 import { siteAt, siteDefinition, servicePrice, sellPrice } from './world/sites';
 import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';
 import { canCarryDefinition, carryCapacity, encumbranceStage, hungerPercent, hungerStage, inventoryWeight, isRangedWeapon, itemWeight } from './core/foundations';
+import { ORIGINS } from './content/origins';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 if (!appElement) throw new Error('missing #app');
@@ -19,6 +20,7 @@ let locale:Locale=localStorage.getItem(LOCALE_KEY)==='ko'?'ko':'en';
 let state: GameState | null = null;
 let sessionNonce: string | null = null;
 let openSheet: 'bag' | 'menu' | 'site' | null = null;
+let selectedOrigin='delver';
 
 function toggleLocale():void{
   locale=locale==='en'?'ko':'en';
@@ -39,6 +41,7 @@ function titleScreen(note = ''): void {
         <p class="subtitle">${tr(locale,'subtitle')}</p>
         ${note ? `<p class="notice">${note}</p>` : ''}
         <label class="seed-field">${tr(locale,'seed')}<input id="seed" autocomplete="off" value="${Math.random().toString(36).slice(2, 10)}" /></label>
+        <section class="origin-picker"><div class="origin-heading">${locale==='ko'?'출신':'Origin'}</div><div class="origin-grid">${ORIGINS.map((origin)=>`<button class="origin-chip ${origin.id===selectedOrigin?'selected':''}" data-origin="${origin.id}"><strong>${locale==='ko'?origin.nameKo:origin.name}</strong></button>`).join('')}</div><p id="origin-description" class="origin-description"></p></section>
         <button class="primary-title-action" id="new-run">${tr(locale,'newRun')}</button>
         <button class="secondary-title-action" id="continue" ${saveStore.hasSave() ? '' : 'disabled'}>${tr(locale,'continue')}</button>
         <p class="save-warning">${tr(locale,'saveWarning')}</p>
@@ -46,9 +49,12 @@ function titleScreen(note = ''): void {
     </section>`;
 
   document.querySelector<HTMLButtonElement>('#language-button')?.addEventListener('click',toggleLocale);
+  const describeOrigin=()=>{const origin=ORIGINS.find((entry)=>entry.id===selectedOrigin)??ORIGINS[0]!;const element=document.querySelector<HTMLElement>('#origin-description');if(element)element.textContent=locale==='ko'?origin.descriptionKo:origin.description;};
+  document.querySelectorAll<HTMLButtonElement>('[data-origin]').forEach((button)=>button.addEventListener('click',()=>{selectedOrigin=button.dataset.origin??'delver';document.querySelectorAll('[data-origin]').forEach((entry)=>entry.classList.toggle('selected',(entry as HTMLElement).dataset.origin===selectedOrigin));describeOrigin();}));
+  describeOrigin();
   document.querySelector<HTMLButtonElement>('#new-run')?.addEventListener('click', () => {
     const seed = document.querySelector<HTMLInputElement>('#seed')?.value ?? '';
-    const created = createNewGame(seed);
+    const created = createNewGame(seed, selectedOrigin);
     state = created.state;
     sessionNonce = saveStore.beginNewRun(state);
     gameScreen();
