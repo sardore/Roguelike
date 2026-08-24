@@ -1,6 +1,6 @@
 === source integration ===
 
-added 56 packages in 8s
+added 56 packages in 10s
 
 > abyssal-roguelike@0.1.0 test
 > vitest run
@@ -8,42 +8,24 @@ added 56 packages in 8s
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90m/home/runner/work/Roguelike/Roguelike[39m
 
- [31m❯[39m tests/deep-systems.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 99[2mms[22m[39m
-   [32m✓[39m deep systems volume gates[2m > [22mships a materially larger content catalog[32m 3[2mms[22m[39m
-[31m   [31m×[31m deep systems volume gates[2m > [22mgenerates systemic dungeon features on every fresh floor[39m[32m 27[2mms[22m[39m
-[31m     → expected 9 to be less than or equal to 7[39m
-   [32m✓[39m deep systems volume gates[2m > [22muses run-specific unidentified appearances until an item is learned[32m 33[2mms[22m[39m
-   [32m✓[39m deep systems volume gates[2m > [22mturns visible dungeon features into actual tactical resources and hazards[32m 22[2mms[22m[39m
-   [32m✓[39m deep systems volume gates[2m > [22mmakes damage type and equipment choice matter[32m 13[2mms[22m[39m
- [32m✓[39m tests/noncombat.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 88[2mms[22m[39m
- [32m✓[39m tests/gameplay.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 148[2mms[22m[39m
- [32m✓[39m tests/foundations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 73[2mms[22m[39m
- [32m✓[39m tests/tactics.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 75[2mms[22m[39m
- [32m✓[39m tests/catalog.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/generation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 567[2mms[22m[39m
-   [33m[2m✓[22m[39m floor generation[2m > [22mactually exercises many different layout families rather than cosmetic variants [33m 357[2mms[22m[39m
- [32m✓[39m tests/save.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m tests/deep-systems.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m tests/noncombat.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m tests/gameplay.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m tests/foundations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m tests/tactics.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m tests/catalog.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/save.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m tests/generation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 499[2mms[22m[39m
+   [33m[2m✓[22m[39m floor generation[2m > [22mactually exercises many different layout families rather than cosmetic variants [33m 338[2mms[22m[39m
 
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
-
-[41m[1m FAIL [22m[49m tests/deep-systems.test.ts[2m > [22mdeep systems volume gates[2m > [22mgenerates systemic dungeon features on every fresh floor
-[31m[1mAssertionError[22m: expected 9 to be less than or equal to 7[39m
-[36m [2m❯[22m tests/deep-systems.test.ts:[2m39:35[22m[39m
-    [90m 37| [39m    [34mexpect[39m(state[33m.[39mschemaVersion)[33m.[39m[34mtoBe[39m([34m5[39m)[33m;[39m
-    [90m 38| [39m    [34mexpect[39m(state[33m.[39mfeatures[33m.[39mlength)[33m.[39m[34mtoBeGreaterThanOrEqual[39m([34m4[39m)[33m;[39m
-    [90m 39| [39m    [34mexpect[39m(state[33m.[39mfeatures[33m.[39mlength)[33m.[39m[34mtoBeLessThanOrEqual[39m([34m7[39m)[33m;[39m
-    [90m   | [39m                                  [31m^[39m
-    [90m 40| [39m    for (const feature of state.features) expect(tileAt(state.floor, f…
-    [90m 41| [39m  })[33m;[39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+[2m Test Files [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[32m28 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 12:26:31
+[2m   Duration [22m 1.50s[2m (transform 491ms, setup 0ms, collect 1.25s, tests 985ms, environment 1ms, prepare 718ms)[22m
 
 
-[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (8)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m27 passed[39m[22m[90m (28)[39m
-[2m   Start at [22m 12:25:20
-[2m   Duration [22m 1.77s[2m (transform 641ms, setup 0ms, collect 1.52s, tests 1.12s, environment 2ms, prepare 966ms)[22m
+> abyssal-roguelike@0.1.0 build
+> tsc --noEmit && vite build
 
-
-::error file=/home/runner/work/Roguelike/Roguelike/tests/deep-systems.test.ts,title=tests/deep-systems.test.ts > deep systems volume gates > generates systemic dungeon features on every fresh floor,line=39,column=35::AssertionError: expected 9 to be less than or equal to 7%0A ❯ tests/deep-systems.test.ts:39:35%0A%0A
-statuses source=0 ui=0 install=0 test=1 build=99
+src/main.ts(316,81): error TS18047: 'state' is possibly 'null'.
+statuses source=0 ui=0 install=0 test=0 build=2
