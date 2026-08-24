@@ -52,10 +52,10 @@ function render(){
   const canvas=app.querySelector<HTMLCanvasElement>('canvas')!;drawMap(canvas,s);
   const cam=canvas.parentElement!;
   const fit=Math.min(cam.clientWidth/canvas.width,cam.clientHeight/canvas.height);
-  const scale=fit*(cam.clientWidth<700?2.9:2.45);
+  const scale=fit*(cam.clientWidth<700?3.2:2.55);
   canvas.style.width=`${canvas.width*scale}px`;canvas.style.height=`${canvas.height*scale}px`;
   const x=(s.width/2-s.player.x)*32*scale;
-  const y=(s.height/2-s.player.y)*32*scale+cam.clientHeight*.08;
+  const y=(s.height/2-s.player.y)*32*scale-cam.clientHeight*.04;
   canvas.style.transform=`translate(${x}px,${y}px)`;
 
   app.querySelectorAll<HTMLButtonElement>('[data-m]').forEach(b=>b.onclick=()=>{cancelWalk();aimIndex=null;inspect='';const [dx,dy]=b.dataset.m!.split(',').map(Number);game.move(dx!,dy!)});
