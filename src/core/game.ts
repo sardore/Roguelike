@@ -25,6 +25,7 @@ import { displayItemName, identifyItem } from './item-knowledge';
 import { monsterDamageMultiplier, playerDamageMultiplier, scaleTypedDamage, weaponDamageType } from './combat-rules';
 import { generateSites, siteAt, siteDefinition } from '../world/sites';
 import { resolveSiteService } from './site-actions';
+import { DEFAULT_AMMO, DEFAULT_MAX_HUNGER, addAmmo, applyMetabolism, autoExploreStep, canRestSafely, feedPlayer, grantKillProgress, hungerAttackPenalty, hungerDefensePenalty, isRangedWeapon, weaponRange, xpThreshold } from './foundations';
 
 const MAX_MESSAGES = 9;
 const BASE_VISION = 9;
@@ -141,11 +142,13 @@ function populateFloor(state: GameState, rng: DeterministicRng): void {
     state.monsters.push({ id: makeId('m', rng), defId: def.id, hp: Math.max(1, Math.round(def.maxHp * hpScale)), statuses: [], power, abilityCooldown: 0, ...point });
   }
   state.items = [];
-  for (let i = 0; i < rng.int(3, 6); i += 1) {
+  for (let i = 0; i < rng.int(4, 7); i += 1) {
     const def = weightedItem(state, rng), point = points.pop();
     if (!point) break;
     state.items.push({ id: makeId('i', rng), defId: def.id, ...point });
   }
+  if (!state.items.some((entry)=>itemById(entry.defId).tags.includes('food')) && rng.chance(.62)) { const point=points.pop(),foods=ITEMS.filter((entry)=>entry.tags.includes('food')); if(point&&foods.length){const def=rng.pick(foods);state.items.push({id:makeId('food',rng),defId:def.id,...point});} }
+  if (state.coord.depth>2 && !state.items.some((entry)=>itemById(entry.defId).tags.includes('ammo')) && rng.chance(.38)) { const point=points.pop(),ammo=ITEMS.filter((entry)=>entry.tags.includes('ammo')); if(point&&ammo.length){const def=rng.pick(ammo);state.items.push({id:makeId('ammo',rng),defId:def.id,...point});} }
 }
 function createFloorState(state: GameState): void {
   const context = resolveThemeContext(state.coord);
@@ -165,7 +168,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
   const runSeed = hashString32(seedText.trim() || `${Date.now()}`), runRng = new DeterministicRng(deriveSeed(runSeed, 'run'));
   const coord: WorldCoord = { depth: 1, lane: 0 }, context = resolveThemeContext(coord), floor = generateFloor(runSeed, coord, context);
   const state: GameState = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     runId: `run-${runSeed.toString(16)}-${runRng.nextU32().toString(36)}`,
     runSeed,
     turn: 0,
@@ -176,7 +179,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
     seenStoryEvents: [],
     identifiedItemDefs: [],
     floor,
-    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, gold: 24, inventory: [], statuses: [] },
+    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, gold: 24, level: 1, xp: 0, xpToNext: xpThreshold(1), hunger: DEFAULT_MAX_HUNGER, maxHunger: DEFAULT_MAX_HUNGER, ammo: DEFAULT_AMMO, kills: 0, floorsVisited: 1, inventory: [{id:'start-sling',defId:'sling'},{id:'start-food',defId:'hard-biscuit'},{id:'start-bandage',defId:'field-bandage'}], statuses: [], equippedWeaponId: 'start-sling' },
     monsters: [],
     items: [],
     features: [],
@@ -209,6 +212,7 @@ function transition(state: GameState, kind: 'down' | 'drift-left' | 'drift-right
   if (kind === 'drift-right') state.coord.lane += 1;
   const previousTheme = state.themeId;
   createFloorState(state);
+  state.player.floorsVisited += 1;
   pushMessage(state, kind === 'down' ? 'You descend.' : kind === 'drift-left' ? 'You take the western descent.' : 'You take the eastern descent.');
   const context = resolveThemeContext(state.coord);
   const themeEvent = context.primary.id !== previousTheme ? themeDiscoveryEvent(state, context.primary) : null;
@@ -231,12 +235,12 @@ function equippedArmor(state: GameState) {
 function playerAttackPower(state: GameState): number {
   const weapon = equippedWeapon(state);
   const bonus = weapon?.effects.filter((effect): effect is Extract<EffectSpec, { op: 'damage' }> => effect.op === 'damage').reduce((sum, effect) => sum + effect.amount, 0) ?? 0;
-  return Math.max(1, state.player.attack + bonus + statusMagnitude(state.player.statuses, 'attackDelta'));
+  return Math.max(1, state.player.attack + bonus + statusMagnitude(state.player.statuses, 'attackDelta') - hungerAttackPenalty(state));
 }
 function playerDefense(state: GameState): number {
   const armor = equippedArmor(state);
   const armorBonus = armor?.effects.filter((effect): effect is Extract<EffectSpec, { op: 'status' }> => effect.op === 'status' && effect.id === 'armor').reduce((sum, effect) => sum + (effect.magnitude ?? 1), 0) ?? 0;
-  return Math.max(0, state.player.defense + armorBonus + statusMagnitude(state.player.statuses, 'defenseDelta'));
+  return Math.max(0, state.player.defense + armorBonus + statusMagnitude(state.player.statuses, 'defenseDelta') - hungerDefensePenalty(state));
 }
 function monsterDefense(monster: MonsterEntity): number {
   const def = monsterById(monster.defId);
@@ -250,6 +254,7 @@ function killMonsterIfNeeded(state: GameState, monster: MonsterEntity): boolean 
   if (monster.hp > 0) return false;
   const def = monsterById(monster.defId);
   state.monsters = state.monsters.filter((entry) => entry.id !== monster.id);
+  grantKillProgress(state,def,monster.power,(message)=>pushMessage(state,message));
   const coin = def.tags.includes('humanoid') ? 2 : def.tags.includes('construct') ? 1 : 0;
   if (coin) state.player.gold += coin;
   pushMessage(state, `${def.name} dies.${coin ? ` You recover ${coin} gold.` : ''}`);
@@ -351,6 +356,8 @@ function applyEffect(state: GameState, effect: EffectSpec, source: Point & { id:
     state.explored = [...explored];
   } else if (effect.op === 'spawn-terrain') spawnTerrain(state, targetEntity, effect.tile, effect.radius, effect.duration ?? 4, rng);
   else if (effect.op === 'summon') summonNear(state, source, effect.tag, effect.count, rng);
+  else if (effect.op === 'nutrition' && target === 'player') { const restored=feedPlayer(state,effect.amount); pushMessage(state,`You recover ${restored} nutrition.`); }
+  else if (effect.op === 'ammo' && target === 'player') { const restored=addAmmo(state,effect.amount); pushMessage(state,`You recover ${restored} ammunition.`); }
 }
 function attackMonster(state: GameState, monster: MonsterEntity, rng: DeterministicRng): void {
   const def = monsterById(monster.defId), weapon = equippedWeapon(state), damageType = weaponDamageType(weapon);
@@ -511,12 +518,21 @@ function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
     for (let i = 0; i < 2; i += 1) { const found = weightedItem(state, rng); state.player.inventory.push({ id: makeId('cache', rng), defId: found.id }); }
     const coins = rng.int(4, 12); state.player.gold += coins;
     pushMessage(state, `You crack the cache and recover two objects and ${coins} gold.`);
-  }
+  } else if(feature.kind==='food-cache'){const foods=ITEMS.filter((entry)=>entry.tags.includes('food'));if(foods.length){const found=rng.pick(foods);state.player.inventory.push({id:makeId('food',rng),defId:found.id});pushMessage(state,`You recover ${found.name} from the provisions.`);}}
+  else if(feature.kind==='ammo-crate'){const amount=rng.int(6,13);addAmmo(state,amount);pushMessage(state,`You salvage ${amount} ammunition.`);}
+  else if(feature.kind==='ancient-grave'){if(rng.chance(.42)){summonNear(state,state.player,'undead',1,rng);pushMessage(state,'The disturbed grave answers with movement.');}else{const found=weightedItem(state,rng);state.player.inventory.push({id:makeId('grave',rng),defId:found.id});pushMessage(state,`The grave still holds ${found.name}.`);}}
+  else if(feature.kind==='bookshelf'){const unknown=state.player.inventory.map((entry)=>itemById(entry.defId)).find((entry)=>!state.identifiedItemDefs.includes(entry.id));if(unknown&&identifyItem(state,unknown))pushMessage(state,`The old notes identify ${unknown.name}.`);else applyEffect(state,{op:'reveal',radius:10},state.player,'player',rng);}
+  else if(feature.kind==='forge-anvil'){addStatus(state.player.statuses,{op:'status',id:'focused',duration:16,magnitude:1},feature.id);addStatus(state.player.statuses,{op:'status',id:'guarding',duration:4,magnitude:1},feature.id);pushMessage(state,'You tune your equipment at the old anvil.');}
+  else if(feature.kind==='mushroom-patch'){const restored=feedPlayer(state,260);pushMessage(state,`You forage ${restored} nutrition.`);if(rng.chance(.22))addStatus(state.player.statuses,{op:'status',id:'poisoned',duration:3,magnitude:1},feature.id);}
+  else if(feature.kind==='memory-stone'){applyEffect(state,{op:'reveal',radius:15},state.player,'player',rng);addStatus(state.player.statuses,{op:'status',id:'focused',duration:10,magnitude:1},feature.id);pushMessage(state,'The stone returns a fragment of the old route.');}
+  else if(feature.kind==='blood-well'){const before=state.player.hp;state.player.hp=Math.min(state.player.maxHp,state.player.hp+14);state.player.hunger=Math.max(0,state.player.hunger-80);pushMessage(state,`The blood well restores ${state.player.hp-before} HP, but leaves you hollow.`);}
   if (!def.repeatable) feature.spent = true;
 }
-function endAcceptedTurn(state: GameState, rng: DeterministicRng): void {
-  state.turn += 1; expireTerrain(state); applyStandingTerrain(state); if (!state.gameOver) moveMonsters(state, rng); if (!state.gameOver) tickStatuses(state); refreshVisibility(state); state.rngState = rng.state;
+function endAcceptedTurn(state: GameState, rng: DeterministicRng, action:GameAction): void {
+  state.turn += 1; expireTerrain(state); applyStandingTerrain(state); if (!state.gameOver) moveMonsters(state, rng); if (!state.gameOver) tickStatuses(state); if(!state.gameOver)applyMetabolism(state,action,(message)=>pushMessage(state,message)); refreshVisibility(state); state.rngState = rng.state;
 }
+function fireRanged(state:GameState,rng:DeterministicRng):boolean{const weapon=equippedWeapon(state);if(!isRangedWeapon(weapon)){pushMessage(state,'You need a ranged weapon ready.');return false;}if(state.player.ammo<=0){pushMessage(state,'You are out of ammunition.');return false;}const target=nearestVisibleMonster(state,weaponRange(weapon));if(!target){pushMessage(state,'There is no visible target in range.');return false;}state.player.ammo-=1;attackMonster(state,target,rng);return true;}
+function restTurn(state:GameState):boolean{if(!canRestSafely(state)){pushMessage(state,'Enemies are too close to rest.');return false;}if(state.player.hp>=state.player.maxHp){pushMessage(state,'You are already fully rested.');return false;}const recovered=Math.max(1,Math.floor(state.player.maxHp/24));state.player.hp=Math.min(state.player.maxHp,state.player.hp+recovered);pushMessage(state,`You rest and recover ${recovered} HP.`);return true;}
 function movementBlocked(state: GameState): boolean { return state.player.statuses.some((status) => statusById(status.id).movementBlocked); }
 function harmfulItemEffect(effect: EffectSpec): boolean { return effect.op === 'damage' || effect.op === 'push' || (effect.op === 'status' && Boolean(statusById(effect.id).harmful)); }
 function nearestVisibleMonster(state: GameState, range: number): MonsterEntity | null {
@@ -546,6 +562,7 @@ function dropInventoryItem(state: GameState, itemId: string): boolean {
 
 export function dispatchAction(state: GameState, action: GameAction): ActionResult {
   if (state.gameOver) return { accepted: false, event: null };
+  if(action.type==='explore'){const step=autoExploreStep(state);if(!step){pushMessage(state,'Auto-explore stops: no safe unexplored route.');return {accepted:false,event:null};}action={type:'move',...step};}
   const rng = new DeterministicRng(state.rngState); let accepted = false; let pendingExit: ReturnType<typeof exitAt> = undefined;
   if (action.type === 'move') {
     if (Math.abs(action.dx) + Math.abs(action.dy) !== 1) throw new Error('movement must be cardinal and one tile');
@@ -572,14 +589,15 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
     accepted = true;
   } else if (action.type === 'wait') {
     addStatus(state.player.statuses, { op: 'status', id: 'guarding', duration: 1, magnitude: 1 }, state.player.id);
-    searchNearbyFeatures(state, rng);
-    resolveFeatureAtPlayer(state, rng);
-    pushMessage(state, 'You brace and search the nearby stonework.'); accepted = true;
+    resolveFeatureAtPlayer(state, rng);pushMessage(state, 'You brace for the next exchange.'); accepted = true;
+  } else if(action.type==='search'){searchNearbyFeatures(state,rng);resolveFeatureAtPlayer(state,rng);pushMessage(state,'You carefully search nearby terrain.');accepted=true;
+  } else if(action.type==='rest'){accepted=restTurn(state);
+  } else if(action.type==='fire'){accepted=fireRanged(state,rng);
   } else if (action.type === 'use-item') accepted = useInventoryItem(state, action.itemId, rng);
   else if (action.type === 'drop-item') accepted = dropInventoryItem(state, action.itemId);
   else if (action.type === 'site-service') accepted = resolveSiteService(state, action);
   if (!accepted) return { accepted: false, event: null };
-  endAcceptedTurn(state, rng);
+  endAcceptedTurn(state, rng, action);
   if (state.gameOver) return { accepted: true, event: null };
   return { accepted: true, event: pendingExit ? transition(state, pendingExit.kind) : null };
 }
@@ -591,6 +609,9 @@ export function actDropInventory(state: GameState, itemId: string): StoryEvent |
 export function assertGameInvariants(state: GameState): void {
   if (!tileAt(state.floor, state.player.x, state.player.y)?.walkable) throw new Error('invariant: player must stand on walkable tile');
   if (state.player.gold < 0) throw new Error('invariant: player gold cannot be negative');
+  if(state.player.hunger<0||state.player.hunger>state.player.maxHunger*1.2)throw new Error('invariant: invalid hunger');
+  if(state.player.ammo<0)throw new Error('invariant: negative ammunition');
+  if(state.player.level<1||state.player.xp<0||state.player.xpToNext<=0)throw new Error('invariant: invalid progression');
   const ids = new Set<string>(), inventoryIds = state.player.inventory.map((entry) => entry.id);
   for (const entity of [state.player, ...state.monsters, ...state.items, ...state.player.inventory, ...state.sites, ...state.sites.flatMap((site) => site.stock)]) { if (ids.has(entity.id)) throw new Error(`invariant: duplicate entity id ${entity.id}`); ids.add(entity.id); }
   if (state.player.equippedWeaponId && !inventoryIds.includes(state.player.equippedWeaponId)) throw new Error('invariant: equipped weapon not in inventory');

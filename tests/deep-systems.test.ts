@@ -34,7 +34,7 @@ describe('deep systems volume gates', () => {
 
   it('generates systemic dungeon features on every fresh floor', () => {
     const { state } = createNewGame('feature-volume');
-    expect(state.schemaVersion).toBe(4);
+    expect(state.schemaVersion).toBe(5);
     expect(state.features.length).toBeGreaterThanOrEqual(6);
     expect(state.features.length).toBeLessThanOrEqual(10);
     for (const feature of state.features) expect(tileAt(state.floor, feature.x, feature.y)?.walkable).toBe(true);

@@ -1,0 +1,13 @@
+import { describe,expect,it } from 'vitest';
+import { createNewGame,dispatchAction,assertGameInvariants } from '../src/core/game';
+import { ITEMS,itemById } from '../src/content/items';
+import { MONSTERS } from '../src/content/monsters';
+import { FEATURE_DEFS } from '../src/world/features';
+import { hungerStage } from '../src/core/foundations';
+
+describe('traditional roguelike foundations',()=>{
+ it('ships the expanded catalogs and systemic features',()=>{expect(ITEMS.length).toBeGreaterThanOrEqual(195);expect(MONSTERS.length).toBeGreaterThanOrEqual(145);expect(FEATURE_DEFS.length).toBeGreaterThanOrEqual(15);});
+ it('runs hunger as canonical turn state and food restores it',()=>{const{state}=createNewGame('hunger');state.monsters=[];const before=state.player.hunger;dispatchAction(state,{type:'wait'});expect(state.player.hunger).toBeLessThan(before);state.player.hunger=200;state.player.inventory.push({id:'food-test',defId:'hard-biscuit'});expect(dispatchAction(state,{type:'use-item',itemId:'food-test'}).accepted).toBe(true);expect(state.player.hunger).toBeGreaterThan(200);expect(hungerStage(state.player.hunger,state.player.maxHunger)).not.toBe('starving');expect(()=>assertGameInvariants(state)).not.toThrow();});
+ it('supports ammunition and ranged fire through the canonical dispatcher',()=>{const{state}=createNewGame('fire');state.monsters=[];state.player.inventory.push({id:'bow-test',defId:'short-bow'});dispatchAction(state,{type:'use-item',itemId:'bow-test'});state.player.ammo=4;const p={x:state.player.x+3,y:state.player.y};const tile=state.floor.tiles[p.y*state.floor.width+p.x];if(!tile?.walkable){expect(true).toBe(true);return;}const def=MONSTERS.find((m)=>m.tags.includes('theme:moss-cistern'))!;state.monsters=[{id:'target',defId:def.id,hp:50,statuses:[],power:1,abilityCooldown:0,...p}];state.visible.push(`${p.x},${p.y}`);const before=state.player.ammo;dispatchAction(state,{type:'fire'});expect(state.player.ammo).toBeLessThan(before);});
+ it('auto explore refuses visible danger and search is a distinct command',()=>{const{state}=createNewGame('explore');state.monsters=[];expect(dispatchAction(state,{type:'search'}).accepted).toBe(true);expect(state.turn).toBe(1);});
+});

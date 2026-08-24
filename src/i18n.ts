@@ -3,10 +3,10 @@ import { displayItemName, isMysteryItem } from './core/item-knowledge';
 
 const UI: Record<Locale, Record<string, string>> = {
   en: {
-    newRun:'New Run',continue:'Continue',seed:'Seed',saveWarning:'Only Save & Quit creates a resumable save.',bag:'Bag',done:'Done',recent:'Recent',saveQuit:'Save & Quit',gold:'Gold',site:'Place',language:'한국어',itemInfo:'Info',drop:'Drop',buy:'Buy',sell:'Sell',heal:'Heal',cleanse:'Cleanse',identify:'Identify',map:'Map',bless:'Bless',rest:'Rest',rumor:'Listen',equipped:'Equipped',unknown:'Unidentified',effects:'Effects',tags:'Traits',rarity:'Rarity',price:'Price',close:'Close',noStock:'Nothing useful is for sale.',noItems:'You have nothing suitable.',fullHp:'You are already fully healed.',storyEvent:'EXCEPTIONAL EVENT',titleEyebrow:'COLOR ASCII ROGUELIKE',subtitle:'Descend. Drift. Do not go too far sideways.',loadDirty:'The previous run did not end cleanly.',loadOld:'That save belongs to an older build.',runSaved:'Run saved.',saveFailed:'Save failed; the run remains active.',runEnded:'The run ended.',emptyBag:'Your bag is empty.',use:'Use',activate:'Activate',ready:'Ready',wear:'Wear',settlement:'Settlement',serviceUsed:'Already used here.',notEnoughGold:'Not enough gold.',siteHint:'Stand here and choose a service.'
+    newRun:'New Run',continue:'Continue',seed:'Seed',saveWarning:'Only Save & Quit creates a resumable save.',bag:'Bag',done:'Done',recent:'Recent',saveQuit:'Save & Quit',gold:'Gold',site:'Place',language:'한국어',itemInfo:'Info',drop:'Drop',buy:'Buy',sell:'Sell',heal:'Heal',cleanse:'Cleanse',identify:'Identify',map:'Map',bless:'Bless',rest:'Rest',rumor:'Listen',equipped:'Equipped',unknown:'Unidentified',effects:'Effects',tags:'Traits',rarity:'Rarity',price:'Price',close:'Close',noStock:'Nothing useful is for sale.',noItems:'You have nothing suitable.',fullHp:'You are already fully healed.',storyEvent:'EXCEPTIONAL EVENT',titleEyebrow:'COLOR ASCII ROGUELIKE',subtitle:'Descend. Drift. Do not go too far sideways.',loadDirty:'The previous run did not end cleanly.',loadOld:'That save belongs to an older build.',runSaved:'Run saved.',saveFailed:'Save failed; the run remains active.',runEnded:'The run ended.',emptyBag:'Your bag is empty.',use:'Use',activate:'Activate',ready:'Ready',wear:'Wear',settlement:'Settlement',serviceUsed:'Already used here.',notEnoughGold:'Not enough gold.',siteHint:'Stand here and choose a service.',explore:'Explore',search:'Search',brace:'Brace',fire:'Fire',ammo:'Ammo',level:'Level',hunger:'Hunger',sated:'Sated',fed:'Fed',hungry:'Hungry',weak:'Weak',starving:'Starving',meal:'Meal',innRest:'Sleep',trainAttack:'Train ATK',trainDefense:'Train DEF',trainVigor:'Train Vigor'
   },
   ko: {
-    newRun:'새 게임',continue:'이어하기',seed:'시드',saveWarning:'이어할 수 있는 세이브는 「저장 후 종료」로만 만들어집니다.',bag:'가방',done:'완료',recent:'최근 기록',saveQuit:'저장 후 종료',gold:'골드',site:'장소',language:'English',itemInfo:'정보',drop:'버리기',buy:'구매',sell:'판매',heal:'치료',cleanse:'정화',identify:'감정',map:'지도',bless:'축복',rest:'휴식',rumor:'소문 듣기',equipped:'장착 중',unknown:'미확인',effects:'효과',tags:'특성',rarity:'희귀도',price:'가격',close:'닫기',noStock:'살 만한 물건이 없습니다.',noItems:'대상으로 삼을 물건이 없습니다.',fullHp:'이미 체력이 가득합니다.',storyEvent:'특별한 사건',titleEyebrow:'컬러 ASCII 로그라이크',subtitle:'내려가라. 옆으로 틀어라. 하지만 너무 멀리 가지 마라.',loadDirty:'이전 플레이가 정상적으로 종료되지 않았습니다.',loadOld:'이 세이브는 이전 버전에서 만들어졌습니다.',runSaved:'게임을 저장했습니다.',saveFailed:'저장에 실패했습니다. 현재 런은 계속 활성 상태입니다.',runEnded:'이번 런이 끝났습니다.',emptyBag:'가방이 비어 있습니다.',use:'사용',activate:'작동',ready:'장착',wear:'착용',settlement:'정착지',serviceUsed:'이 장소의 서비스는 이미 사용했습니다.',notEnoughGold:'골드가 부족합니다.',siteHint:'이 칸에 서서 서비스를 선택할 수 있습니다.'
+    newRun:'새 게임',continue:'이어하기',seed:'시드',saveWarning:'이어할 수 있는 세이브는 「저장 후 종료」로만 만들어집니다.',bag:'가방',done:'완료',recent:'최근 기록',saveQuit:'저장 후 종료',gold:'골드',site:'장소',language:'English',itemInfo:'정보',drop:'버리기',buy:'구매',sell:'판매',heal:'치료',cleanse:'정화',identify:'감정',map:'지도',bless:'축복',rest:'휴식',rumor:'소문 듣기',equipped:'장착 중',unknown:'미확인',effects:'효과',tags:'특성',rarity:'희귀도',price:'가격',close:'닫기',noStock:'살 만한 물건이 없습니다.',noItems:'대상으로 삼을 물건이 없습니다.',fullHp:'이미 체력이 가득합니다.',storyEvent:'특별한 사건',titleEyebrow:'컬러 ASCII 로그라이크',subtitle:'내려가라. 옆으로 틀어라. 하지만 너무 멀리 가지 마라.',loadDirty:'이전 플레이가 정상적으로 종료되지 않았습니다.',loadOld:'이 세이브는 이전 버전에서 만들어졌습니다.',runSaved:'게임을 저장했습니다.',saveFailed:'저장에 실패했습니다. 현재 런은 계속 활성 상태입니다.',runEnded:'이번 런이 끝났습니다.',emptyBag:'가방이 비어 있습니다.',use:'사용',activate:'작동',ready:'장착',wear:'착용',settlement:'정착지',serviceUsed:'이 장소의 서비스는 이미 사용했습니다.',notEnoughGold:'골드가 부족합니다.',siteHint:'이 칸에 서서 서비스를 선택할 수 있습니다.',explore:'탐색',search:'수색',brace:'방어',fire:'사격',ammo:'탄약',level:'레벨',hunger:'포만도',sated:'배부름',fed:'든든함',hungry:'배고픔',weak:'허기짐',starving:'굶주림',meal:'식사',innRest:'숙박',trainAttack:'공격 훈련',trainDefense:'방어 훈련',trainVigor:'체력 훈련'
   }
 };
 
@@ -18,15 +18,15 @@ const THEME_KO: Record<string,string> = {
 export function localizedThemeName(id:string, fallback:string, locale:Locale):string { return locale === 'ko' ? THEME_KO[id] ?? fallback : fallback; }
 
 const SITE_KO: Record<SiteKind,string> = {
-  'town-square':'마을 광장',merchant:'상점',healer:'치료소',appraiser:'감정소',cartographer:'지도상',shrine:'성소',camp:'야영지'
+  'town-square':'마을 광장',merchant:'상점',provisioner:'식량상',healer:'치료소',appraiser:'감정소',cartographer:'지도상',shrine:'성소',camp:'야영지',trainer:'훈련소',inn:'여관'
 };
 const SITE_EN: Record<SiteKind,string> = {
-  'town-square':'Town Square',merchant:'Shop',healer:'Healer',appraiser:'Appraiser',cartographer:'Cartographer',shrine:'Shrine',camp:'Camp'
+  'town-square':'Town Square',merchant:'Shop',provisioner:'Provisioner',healer:'Healer',appraiser:'Appraiser',cartographer:'Cartographer',shrine:'Shrine',camp:'Camp',trainer:'Trainer',inn:'Inn'
 };
 export function siteKindName(kind:SiteKind, locale:Locale):string { return locale === 'ko' ? SITE_KO[kind] : SITE_EN[kind]; }
 
-const SERVICE_EN: Record<SiteServiceKind,string>={rumor:'Hear rumor',buy:'Buy',sell:'Sell',heal:'Heal',cleanse:'Cleanse',identify:'Identify',map:'Buy map',bless:'Receive blessing',rest:'Rest'};
-const SERVICE_KO: Record<SiteServiceKind,string>={rumor:'소문 듣기',buy:'구매',sell:'판매',heal:'치료',cleanse:'정화',identify:'감정',map:'지도 구매',bless:'축복 받기',rest:'휴식'};
+const SERVICE_EN: Record<SiteServiceKind,string>={rumor:'Hear rumor',buy:'Buy',sell:'Sell',heal:'Heal',cleanse:'Cleanse',identify:'Identify',map:'Buy map',bless:'Receive blessing',rest:'Rest',meal:'Hot meal','train-attack':'Train attack','train-defense':'Train defense','train-vigor':'Train vigor','inn-rest':'Sleep safely'};
+const SERVICE_KO: Record<SiteServiceKind,string>={rumor:'소문 듣기',buy:'구매',sell:'판매',heal:'치료',cleanse:'정화',identify:'감정',map:'지도 구매',bless:'축복 받기',rest:'휴식',meal:'따뜻한 식사','train-attack':'공격 훈련','train-defense':'방어 훈련','train-vigor':'체력 훈련','inn-rest':'안전한 숙박'};
 export function serviceName(service:SiteServiceKind,locale:Locale):string{return locale==='ko'?SERVICE_KO[service]:SERVICE_EN[service];}
 
 const CATEGORY_KO:Record<ItemCategory,string>={weapon:'무기',armor:'방어구',consumable:'소모품',tool:'도구',relic:'유물'};
@@ -63,7 +63,9 @@ export function effectText(effect:EffectSpec,locale:Locale):string{
     if(effect.op==='teleport')return `Teleport within ${effect.radius}`;
     if(effect.op==='reveal')return `Reveal radius ${effect.radius}`;
     if(effect.op==='spawn-terrain')return `Create ${effect.tile} terrain · ${effect.duration??4} turns`;
-    return `Summon ${effect.count} ${effect.tag}`;
+    if(effect.op==='summon')return `Summon ${effect.count} ${effect.tag}`;
+    if(effect.op==='nutrition')return `Restore ${effect.amount} nutrition`;
+    return `Recover ${effect.amount} ammunition`;
   }
   if(effect.op==='damage')return `${DAMAGE_KO[effect.damageType??'physical']??effect.damageType??'물리'} 피해 ${effect.amount}`;
   if(effect.op==='heal')return `HP ${effect.amount} 회복`;
@@ -72,7 +74,9 @@ export function effectText(effect:EffectSpec,locale:Locale):string{
   if(effect.op==='teleport')return `반경 ${effect.radius} 내 순간이동`;
   if(effect.op==='reveal')return `반경 ${effect.radius} 지도 공개`;
   if(effect.op==='spawn-terrain')return `${effect.tile} 지형 생성 · ${effect.duration??4}턴`;
-  return `${effect.tag} 계열 ${effect.count}체 소환`;
+  if(effect.op==='summon')return `${effect.tag} 계열 ${effect.count}체 소환`;
+  if(effect.op==='nutrition')return `포만도 ${effect.amount} 회복`;
+  return `탄약 ${effect.amount} 회수`;
 }
 
 export function itemTooltip(state:Pick<GameState,'runSeed'|'identifiedItemDefs'>,def:ItemDefinition,locale:Locale):{name:string;category:string;rarity:string;effects:string[];tags:string[];unknown:boolean}{
@@ -113,6 +117,16 @@ export function localizeMessage(message:string,locale:Locale):string{
   if(m==='You take the western descent.')return '서쪽으로 치우친 하강로를 택한다.';
   if(m==='You take the eastern descent.')return '동쪽으로 치우친 하강로를 택한다.';
   if(m==='You brace and search the nearby stonework.')return '방어 태세를 취하며 주변 구조물을 살핀다.';
+  if(m==='You brace for the next exchange.')return '다음 공격에 대비해 방어 태세를 취한다.';
+  if(m==='You carefully search nearby terrain.')return '주변 지형을 주의 깊게 수색한다.';
+  if(m==='You are getting hungry.')return '배가 고파지기 시작한다.';
+  if(m==='Hunger is making you weak.')return '허기로 몸에 힘이 빠진다.';
+  if(m==='You are starving.')return '굶주리고 있다.';
+  if(m==='You need a ranged weapon ready.')return '원거리 무기를 장착해야 한다.';
+  if(m==='You are out of ammunition.')return '탄약이 없다.';
+  if(m==='There is no visible target in range.')return '사거리 안에 보이는 대상이 없다.';
+  if(m==='Enemies are too close to rest.')return '적이 너무 가까워 쉴 수 없다.';
+  if(m==='You are already fully rested.')return '이미 체력이 가득하다.';
   if(m==='You die beneath the world.')return '세계 아래에서 죽었다.';
   const patterns:Array<[RegExp,(x:RegExpMatchArray)=>string]>=[
     [/^You pick up (.+)\.$/,(x)=>`${x[1]}을(를) 주웠다.`],[/^You drop (.+)\.$/,(x)=>`${x[1]}을(를) 버렸다.`],[/^You use (.+)\.$/,(x)=>`${x[1]}을(를) 사용했다.`],[/^You activate (.+)\.$/,(x)=>`${x[1]}을(를) 작동시켰다.`],[/^You ready (.+)\.$/,(x)=>`${x[1]}을(를) 장착했다.`],[/^You wear (.+)\.$/,(x)=>`${x[1]}을(를) 착용했다.`],[/^You remove (.+)\.$/,(x)=>`${x[1]}을(를) 벗었다.`],[/^(.+) dies\.$/,(x)=>`${x[1]}이(가) 죽었다.`],[/^You hit (.+) for (\d+) (.+)\.$/,(x)=>`${x[1]}에게 ${x[2]} ${DAMAGE_KO[x[3]??'']??x[3]} 피해를 입혔다.`],[/^(.+) hits you for (\d+)\.$/,(x)=>`${x[1]}에게 ${x[2]} 피해를 받았다.`],[/^The spring restores (\d+) HP\.$/,(x)=>`샘이 HP를 ${x[1]} 회복시켰다.`],[/^You notice a (.+)\.$/,(x)=>`${x[1]}의 흔적을 발견했다.`],[/^You discover a (.+)!$/,(x)=>`${x[1]}을(를) 발견했다!`],[/^You identify it as (.+)\.$/,(x)=>`정체는 ${x[1]}이었다.`],[/^You buy (.+) for (\d+) gold\.$/,(x)=>`${x[1]}을(를) ${x[2]}골드에 샀다.`],[/^You sell (.+) for (\d+) gold\.$/,(x)=>`${x[1]}을(를) ${x[2]}골드에 팔았다.`],[/^You enter (.+)\.$/,(x)=>`${x[1]}에 들어섰다.`]
