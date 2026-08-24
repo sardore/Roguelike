@@ -21,6 +21,14 @@ jobs:
           node-version: 22
       - name: Apply, test, and build
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/apply-grand-classic-depth.py')
+          s=p.read_text()
+          s=s.replace("'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS);'", "'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS);'")
+          s=s.replace("'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...DEPTH_ITEMS);'", "'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS,...DEPTH_ITEMS);'")
+          p.write_text(s)
+          PY
           set +e
           {
             python scripts/apply-grand-classic-depth.py
@@ -35,7 +43,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           if [ "$STATUS" -ne 0 ]; then
-            git add grand-depth-report.txt
+            git add grand-depth-report.txt scripts/apply-grand-classic-depth.py
             git commit -m "ci: record grand depth integration failure" || true
             git push origin HEAD:dev/grand-classic-depth
             cat grand-depth-report.txt
