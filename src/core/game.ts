@@ -16,7 +16,8 @@ import type {
 } from './types';
 import { generateFloor, exitAt, tileAt } from '../world/generation';
 import { resolveThemeContext } from '../world/themes';
-import { MONSTERS, monsterById, monstersForTheme } from '../content/monsters';
+import { MONSTERS, monsterById, monstersForTheme, uniqueMonstersForTheme } from '../content/monsters';
+import { originById } from '../content/origins';
 import { ITEMS, itemById } from '../content/items';
 import { statusById } from '../content/statuses';
 import { milestoneEvent, themeDiscoveryEvent } from './story';
@@ -141,6 +142,13 @@ function populateFloor(state: GameState, rng: DeterministicRng): void {
     const hpScale = 1 + Math.max(0, power - 1) * 0.14;
     state.monsters.push({ id: makeId('m', rng), defId: def.id, hp: Math.max(1, Math.round(def.maxHp * hpScale)), statuses: [], power, abilityCooldown: 0, ...point });
   }
+  const uniquePool=uniqueMonstersForTheme(resolveThemeContext(state.coord).primary,state.coord.depth);
+  const uniqueFloor=state.coord.depth>=4&&(state.coord.depth%7===0||rng.chance(Math.min(.16,.055+state.coord.depth/1800)));
+  if(uniqueFloor&&uniquePool.length&&points.length){
+    const farIndex=points.findIndex((point)=>manhattan(point,state.player)>=11);
+    const point=farIndex>=0?points.splice(farIndex,1)[0]:points.pop();
+    if(point){const def=rng.pick(uniquePool),scale=1.12+Math.max(0,power-1)*.12;state.monsters.push({id:makeId('unique',rng),defId:def.id,hp:Math.round(def.maxHp*scale),statuses:[],power:power+.75,abilityCooldown:1,...point});pushMessage(state,'A named presence haunts this floor: '+def.name+'.');}
+  }
   state.items = [];
   for (let i = 0; i < rng.int(4, 7); i += 1) {
     const def = weightedItem(state, rng), point = points.pop();
@@ -164,9 +172,13 @@ function createFloorState(state: GameState): void {
   populateFloor(state, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'population')));
   refreshVisibility(state);
 }
-export function createNewGame(seedText: string): { state: GameState; event: StoryEvent | null } {
+export function createNewGame(seedText: string, originId = 'delver'): { state: GameState; event: StoryEvent | null } {
   const runSeed = hashString32(seedText.trim() || `${Date.now()}`), runRng = new DeterministicRng(deriveSeed(runSeed, 'run'));
   const coord: WorldCoord = { depth: 1, lane: 0 }, context = resolveThemeContext(coord), floor = generateFloor(runSeed, coord, context);
+  const origin=originById(originId);
+  const startInventory=origin.inventory.map((defId,index)=>({id:`start-${origin.id}-${index}`,defId}));
+  const weaponEntry=startInventory.find((entry)=>entry.defId===origin.equippedWeapon);
+  const armorEntry=startInventory.find((entry)=>entry.defId===origin.equippedArmor);
   const state: GameState = {
     schemaVersion: 5,
     runId: `run-${runSeed.toString(16)}-${runRng.nextU32().toString(36)}`,
@@ -179,7 +191,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
     seenStoryEvents: [],
     identifiedItemDefs: [],
     floor,
-    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, gold: 24, level: 1, xp: 0, xpToNext: xpThreshold(1), hunger: DEFAULT_MAX_HUNGER, maxHunger: DEFAULT_MAX_HUNGER, ammo: DEFAULT_AMMO, kills: 0, floorsVisited: 1, inventory: [{id:'start-sling',defId:'sling'},{id:'start-food',defId:'hard-biscuit'},{id:'start-bandage',defId:'field-bandage'}], statuses: [], equippedWeaponId: 'start-sling' },
+    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: origin.hp, maxHp: origin.hp, attack: origin.attack, defense: origin.defense, gold: origin.gold, level: 1, xp: 0, xpToNext: xpThreshold(1), hunger: DEFAULT_MAX_HUNGER, maxHunger: DEFAULT_MAX_HUNGER, ammo: origin.ammo ?? DEFAULT_AMMO, kills: 0, floorsVisited: 1, inventory: startInventory, statuses: [], ...(weaponEntry?{equippedWeaponId:weaponEntry.id}:{}), ...(armorEntry?{equippedArmorId:armorEntry.id}:{}) },
     monsters: [],
     items: [],
     features: [],
@@ -187,7 +199,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
     explored: [],
     visible: [],
     temporaryTerrain: [],
-    messages: ['You descend beneath the cistern.'],
+    messages: [`You descend beneath the cistern as a ${origin.name}.`],
     gameOver: false,
   };
   state.sites = generateSites(floor, context.primary, coord, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'sites')));
@@ -256,9 +268,10 @@ function killMonsterIfNeeded(state: GameState, monster: MonsterEntity): boolean 
   const def = monsterById(monster.defId);
   state.monsters = state.monsters.filter((entry) => entry.id !== monster.id);
   grantKillProgress(state,def,monster.power,(message)=>pushMessage(state,message));
-  const coin = def.tags.includes('humanoid') ? 2 : def.tags.includes('construct') ? 1 : 0;
+  const isUnique=def.tags.includes('unique');
+  const coin = isUnique ? 14+Math.floor(state.coord.depth/8) : def.tags.includes('humanoid') ? 2 : def.tags.includes('construct') ? 1 : 0;
   if (coin) state.player.gold += coin;
-  pushMessage(state, `${def.name} dies.${coin ? ` You recover ${coin} gold.` : ''}`);
+  pushMessage(state, isUnique ? `${def.name} falls. The dungeon goes briefly silent. You recover ${coin} gold.` : `${def.name} dies.${coin ? ` You recover ${coin} gold.` : ''}`);
   return true;
 }
 function damagePlayer(state: GameState, amount: number, message?: string): void {
