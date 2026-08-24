@@ -27,6 +27,8 @@ jobs:
           s=p.read_text()
           s=s.replace("'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS);'", "'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS);'")
           s=s.replace("'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...DEPTH_ITEMS);'", "'ITEMS.push(...EXTRA_ITEMS,...FOUNDATION_ITEMS,...CLASSIC_ITEMS,...DEPTH_ITEMS);'")
+          s=s.replace("const known=state.player.knownSpells.map(spellById);", "const activeState=state;const known=activeState.player.knownSpells.map(spellById);")
+          s=s.replace("${state.player.mana<spell.mana?'disabled':''}", "${activeState.player.mana<spell.mana?'disabled':''}")
           p.write_text(s)
           PY
           set +e
