@@ -1,9 +1,10 @@
 import type { FloorMap, Point, ThemeDefinition, TileKind, WorldCoord } from '../core/types';
 import { DeterministicRng } from '../core/rng';
 import { terrainTile } from './terrain-rules';
+import { layoutProfileFor, type VaultFamily } from './layout-profiles';
 
 export interface VaultStamp { id:string; family:string; center:Point; }
-interface VaultDefinition { id:string; family:string; weight:number; minDepth:number; tags:string[]; rows:string[]; rotate?:boolean; reflect?:boolean; }
+interface VaultDefinition { id:string; family:VaultFamily; weight:number; minDepth:number; tags:string[]; rows:string[]; rotate?:boolean; reflect?:boolean; }
 
 const LEGEND:Record<string,TileKind>={'#':'wall','.':'floor','+':'door','~':'water','=':'bridge','T':'tree','g':'grass','P':'pillar','b':'bones','c':'crystal','m':'miasma','o':'oil','_':'holy',':':'rubble','i':'ice','v':'void-rift'};
 
@@ -51,7 +52,10 @@ function inBounds(floor:FloorMap,x:number,y:number):boolean{return x>=1&&y>=1&&x
 function rotateRows(rows:string[]):string[]{const h=rows.length,w=Math.max(...rows.map((row)=>row.length)),padded=rows.map((row)=>row.padEnd(w,' ')),out:string[]=[];for(let x=0;x<w;x+=1){let row='';for(let y=h-1;y>=0;y-=1)row+=padded[y]![x]??' ';out.push(row);}return out;}
 function reflectRows(rows:string[]):string[]{return rows.map((row)=>[...row].reverse().join(''));}
 function transformed(def:VaultDefinition,rng:DeterministicRng):string[]{let rows=[...def.rows];if(def.rotate){for(let i=0,n=rng.int(0,3);i<n;i+=1)rows=rotateRows(rows);}if(def.reflect&&rng.chance(.5))rows=reflectRows(rows);return rows;}
-function eligible(theme:ThemeDefinition,coord:WorldCoord):Array<{value:VaultDefinition;weight:number}>{const themeTags=new Set(theme.monsterTags);return VAULTS.filter((def)=>coord.depth>=def.minDepth).map((def)=>{const matches=def.tags.filter((tag)=>themeTags.has(tag)).length;return{value:def,weight:def.weight*(matches?1+matches*1.8:.12)};});}
+function eligible(theme:ThemeDefinition,coord:WorldCoord):Array<{value:VaultDefinition;weight:number}>{
+  const themeTags=new Set(theme.monsterTags),profile=layoutProfileFor(theme),familyWeight=new Map(profile.vaultFamilies.map((entry)=>[entry.value,entry.weight]));
+  return VAULTS.filter((def)=>coord.depth>=def.minDepth).map((def)=>{const matches=def.tags.filter((tag)=>themeTags.has(tag)).length,familyAffinity=familyWeight.get(def.family)??.12,tagAffinity=matches?1+matches*.55:.36;return{value:def,weight:def.weight*familyAffinity*tagAffinity};});
+}
 function occupiedNear(point:Point,reserved:Set<string>,floor:FloorMap):boolean{return reserved.has(key(point))||manhattan(point,floor.spawn)<7||floor.exits.some((exit)=>manhattan(point,exit)<5);}
 function fitScore(floor:FloorMap,rows:string[],left:number,top:number,reserved:Set<string>):number{let used=0,compatible=0;for(let y=0;y<rows.length;y+=1)for(let x=0;x<rows[y]!.length;x+=1){const ch=rows[y]![x]!;if(ch===' ')continue;used+=1;const wx=left+x,wy=top+y;if(!inBounds(floor,wx,wy)||occupiedNear({x:wx,y:wy},reserved,floor))continue;const tile=floor.tiles[idx(floor,wx,wy)];if(tile&&(tile.walkable||tile.kind==='wall'))compatible+=1;}return used?compatible/used:0;}
 function candidatePlacements(floor:FloorMap,rows:string[],rng:DeterministicRng,reserved:Set<string>):Array<{left:number;top:number;center:Point;score:number}>{const h=rows.length,w=Math.max(...rows.map((row)=>row.length)),out:Array<{left:number;top:number;center:Point;score:number}>=[];for(let attempt=0;attempt<96;attempt+=1){const left=rng.int(2,Math.max(2,floor.width-w-3)),top=rng.int(2,Math.max(2,floor.height-h-3)),center={x:left+Math.floor(w/2),y:top+Math.floor(h/2)};if(occupiedNear(center,reserved,floor))continue;const score=fitScore(floor,rows,left,top,reserved);if(score>=.86)out.push({left,top,center,score});}return out.sort((a,b)=>b.score-a.score);}
@@ -64,7 +68,8 @@ function placeOne(floor:FloorMap,def:VaultDefinition,rng:DeterministicRng,reserv
 export function applyVaultLayer(floor:FloorMap,theme:ThemeDefinition,coord:WorldCoord,rng:DeterministicRng,extraReserved:Point[]=[]):VaultStamp[]{
   const reserved=new Set([key(floor.spawn),...floor.exits.map(key),...extraReserved.map(key)]),choices=eligible(theme,coord),stamps:VaultStamp[]=[];if(!choices.length)return stamps;
   const baseCount=coord.depth<8?1:rng.int(1,2);for(let i=0;i<baseCount;i+=1){const def=rng.weighted(choices);placeOne(floor,def,rng.fork(`vault:${i}:${def.id}`),reserved,stamps);}
-  if(coord.depth>=5&&rng.chance(.50)){
+  const profile=layoutProfileFor(theme);
+  if(coord.depth>=5&&rng.chance(profile.serialChance)){
     const familySeed=rng.weighted(choices).family,family=choices.filter((entry)=>entry.value.family===familySeed);const serialCount=2;
     for(let i=0;i<serialCount&&family.length;i+=1){const def=rng.weighted(family);placeOne(floor,def,rng.fork(`serial:${familySeed}:${i}:${def.id}`),reserved,stamps);}
   }
