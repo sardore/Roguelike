@@ -25,7 +25,7 @@ function viewportFor(canvas:HTMLCanvasElement,state:GameState):Viewport{
 function threatTarget(monster:GameState['monsters'][number]):Point|null{
   const threat=monster.statuses.find((status)=>status.id==='charging'||status.id==='winding');
   if(!threat?.sourceId)return null;
-  const [x,y]=threat.sourceId.split(',').map(Number);
+  const parts=threat.sourceId.split(',');const x=Number(parts[0]),y=Number(parts[1]);
   return Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null;
 }
 

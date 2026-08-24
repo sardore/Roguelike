@@ -109,7 +109,8 @@ function weightedItem(state: GameState, rng: DeterministicRng) {
   const context = resolveThemeContext(state.coord);
   return rng.weighted(ITEMS.map((def) => {
     const primary = def.tags.some((tag) => context.primary.monsterTags.includes(tag)) ? 1.8 : 1;
-    const blend = context.blend && def.tags.some((tag) => context.blend.target.monsterTags.includes(tag)) ? 1 + context.blend.weight : 1;
+    const blendContext = context.blend;
+    const blend = blendContext && def.tags.some((tag) => blendContext.target.monsterTags.includes(tag)) ? 1 + blendContext.weight : 1;
     return { value: def, weight: primary * blend / Math.max(1, def.rarity) };
   }));
 }
@@ -353,7 +354,8 @@ function randomMoveOptions(monster: MonsterEntity, rng: DeterministicRng): Point
 }
 function parseThreatTarget(status: StatusInstance): Point | null {
   if (!status.sourceId) return null;
-  const [x, y] = status.sourceId.split(',').map(Number);
+  const parts = status.sourceId.split(',');
+  const x = Number(parts[0]), y = Number(parts[1]);
   return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
 }
 function executeMonsterAbility(state: GameState, monster: MonsterEntity, rng: DeterministicRng): boolean {
