@@ -7,7 +7,12 @@ describe('live-run smoke coverage', () => {
   it('can render derived HUD state and accept a first turn across many seeds and origins', () => {
     for (const origin of ORIGINS) {
       for (let seed = 0; seed < 160; seed += 1) {
-        const { state } = createNewGame(`runtime-${origin.id}-${seed}`, origin.id);
+        const seedText = `runtime-${origin.id}-${seed}`;
+        const { state } = createNewGame(seedText, origin.id);
+        for (const site of state.sites) {
+          const tile = state.floor.tiles[site.y * state.floor.width + site.x];
+          expect(tile?.walkable, `${seedText}: ${site.id}/${site.kind} at ${site.x},${site.y} is ${tile?.kind ?? 'missing'}`).toBe(true);
+        }
         assertGameInvariants(state);
         expect(() => inventoryWeight(state)).not.toThrow();
         expect(() => encumbranceStage(state)).not.toThrow();
