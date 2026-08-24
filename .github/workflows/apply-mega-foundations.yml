@@ -23,6 +23,7 @@ jobs:
           set +e
           {
             echo '=== source integration ==='
+            sed -i 's/String\.raw`/`/g' scripts/apply-mobile-command-ui.mjs
             node scripts/apply-mega-foundations.mjs
             A=$?
             if [ "$A" -eq 0 ]; then node scripts/apply-mobile-command-ui.mjs; B=$?; else B=99; fi
