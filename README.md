@@ -12,7 +12,10 @@ The design target combines two strengths without copying either game's names, te
 Current scale gates and systems:
 
 - 18 normal dungeon themes + the infinite Abyss
-- at least 8 floor archetype choices per normal theme
+- at least 8 base floor archetype choices per normal theme
+- layered level composition after base topology: 9 coherent macro blueprint families + 28+ randomized, rotated/reflected minivaults + optional serial motifs
+- branch-weighted vault families so a theme develops a recognizable structural identity instead of selecting every decoration equally
+- one dominant environmental terrain accent per floor with only occasional secondary material, reducing visual salad while preserving tactical variety
 - 160+ monsters, including named unique encounters layered over each theme
 - 270+ items across weapons, armor, food, ammunition, consumables, tools, relics, jewelry, grimoires, and ritual utility
 - five starting origins with genuinely different opening kits, stat profiles, mana pools, and opening spells
@@ -31,11 +34,12 @@ Current scale gates and systems:
 - physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation
 - systemic special terrain patches: ice, miasma, bramble, void rifts, oil, holy ground, water, lava, bridges, and rubble
-- persistent structural terrain composition inside themes: groves/trees, grass, reeds, fungal beds, crystal gardens, ossuary aisles, pillars, ruined courts, forge trenches, shrine yards, and void scars
-- settlement floors stamp real streets, plazas, doors, and separate shop/service rooms instead of clustering site markers in one chamber
+- persistent structural terrain composition inside themes: woodland lanes, canals, mines, ruins, burial terraces, fungal zones, crystal galleries, shrine axes, and void fractures
+- settlement floors stamp readable streets/crossroads/courtyards, doors, and separate shop/service rooms instead of clustering site markers in one chamber
 - named unique-monster floors with deterministic warning, telegraphed abilities, and enhanced rewards
 - full-bleed mobile viewport: the ASCII dungeon fills the available play surface instead of sitting in a small centered rectangle
-- non-clickable in-map combat log overlay, square right-side d-pad, context interaction button, and high-feedback combat/spell/level visual effects
+- non-clickable in-map combat log overlay, square right-side d-pad, context interaction button, and actor-anchored combat/spell/level effects
+- restrained glyph-first presentation: flatter UI surfaces, reduced always-on glow, and classic structural glyphs while active danger still receives strong feedback
 - mobile-first player-centered ASCII viewport
 - English and Korean UI modes, including item/effect/site labels and core event/message localization
 - rare major-event popup system; ordinary interactions stay in the compact message feed
@@ -55,4 +59,4 @@ npm test
 npm run build
 ```
 
-Architecture constraints and save semantics are documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+Architecture constraints and save semantics are documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md). The layered floor-generation model and external-reference scope are documented in [`docs/LEVEL_GENERATION.md`](./docs/LEVEL_GENERATION.md).
