@@ -1,6 +1,7 @@
 export interface StatusDefinition {
   id: string;
   name: string;
+  harmful?: boolean;
   periodicDamage?: number;
   attackDelta?: number;
   defenseDelta?: number;
@@ -11,17 +12,17 @@ export interface StatusDefinition {
 }
 
 const defs: StatusDefinition[] = [
-  { id: 'poisoned', name: 'Poisoned', periodicDamage: 1, tickEvery: 1 },
-  { id: 'burning', name: 'Burning', periodicDamage: 2, tickEvery: 1 },
-  { id: 'chilled', name: 'Chilled', attackDelta: -1 },
-  { id: 'slowed', name: 'Slowed' },
-  { id: 'dazed', name: 'Dazed', attackDelta: -1 },
-  { id: 'confused', name: 'Confused', confused: true },
-  { id: 'pinned', name: 'Pinned', movementBlocked: true },
-  { id: 'blinded', name: 'Blinded', visionDelta: -4 },
-  { id: 'unmoored', name: 'Unmoored', defenseDelta: -2 },
+  { id: 'poisoned', name: 'Poisoned', harmful: true, periodicDamage: 1, tickEvery: 1 },
+  { id: 'burning', name: 'Burning', harmful: true, periodicDamage: 2, tickEvery: 1 },
+  { id: 'chilled', name: 'Chilled', harmful: true, attackDelta: -1 },
+  { id: 'slowed', name: 'Slowed', harmful: true },
+  { id: 'dazed', name: 'Dazed', harmful: true, attackDelta: -1 },
+  { id: 'confused', name: 'Confused', harmful: true, confused: true },
+  { id: 'pinned', name: 'Pinned', harmful: true, movementBlocked: true },
+  { id: 'blinded', name: 'Blinded', harmful: true, visionDelta: -4 },
+  { id: 'unmoored', name: 'Unmoored', harmful: true, defenseDelta: -2 },
   { id: 'armor', name: 'Armored', defenseDelta: 1 },
-  { id: 'armor-break', name: 'Armor Broken', defenseDelta: -1 },
+  { id: 'armor-break', name: 'Armor Broken', harmful: true, defenseDelta: -1 },
   { id: 'hasted', name: 'Hasted' },
   { id: 'fire-brand', name: 'Fire Brand' },
   { id: 'water-step', name: 'Water Step' },
