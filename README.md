@@ -31,6 +31,8 @@ Current scale gates and systems:
 - physical/fire/cold/shock/poison/void resistance and vulnerability rules
 - deterministic procedural floors with connectivity/open-area validation
 - systemic special terrain patches: ice, miasma, bramble, void rifts, oil, holy ground, water, lava, bridges, and rubble
+- persistent structural terrain composition inside themes: groves/trees, grass, reeds, fungal beds, crystal gardens, ossuary aisles, pillars, ruined courts, forge trenches, shrine yards, and void scars
+- settlement floors stamp real streets, plazas, doors, and separate shop/service rooms instead of clustering site markers in one chamber
 - named unique-monster floors with deterministic warning, telegraphed abilities, and enhanced rewards
 - full-bleed mobile viewport: the ASCII dungeon fills the available play surface instead of sitting in a small centered rectangle
 - non-clickable in-map combat log overlay, square right-side d-pad, context interaction button, and high-feedback combat/spell/level visual effects

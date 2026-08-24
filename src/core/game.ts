@@ -29,6 +29,7 @@ import { resolveSiteService } from './site-actions';
 import { DEFAULT_AMMO, DEFAULT_MAX_HUNGER, addAmmo, applyMetabolism, autoExploreStep, canCarryDefinition, canRestSafely, encumbranceDefensePenalty, feedPlayer, grantKillProgress, hardCarryLimit, hungerAttackPenalty, hungerDefensePenalty, inventoryWeight, isRangedWeapon, weaponRange, xpThreshold } from './foundations';
 import { SPELLS, spellById } from '../content/spells';
 import { applyThemedTerrain, terrainDefinition, terrainTile } from '../world/terrain-rules';
+import { applyMapStructures } from '../world/map-structures';
 import { canUnequip, equipAccessory, isEquipped, passiveAttackBonus, passiveDefenseBonus, sanctityFor } from './item-state';
 import { recordDescent, recordMonsterKill } from './quests';
 
@@ -104,7 +105,9 @@ function refreshVisibility(state: GameState): void {
 }
 
 function settlementProtected(state: GameState, point: Point): boolean {
-  return state.sites.some((site) => site.settlementId && manhattan(site, point) <= 3);
+  const ids=[...new Set(state.sites.flatMap((site)=>site.settlementId?[site.settlementId]:[]))];
+  for(const id of ids){const sites=state.sites.filter((site)=>site.settlementId===id);if(!sites.length)continue;const xs=sites.map((site)=>site.x),ys=sites.map((site)=>site.y);const minX=Math.min(...xs)-3,maxX=Math.max(...xs)+3,minY=Math.min(...ys)-3,maxY=Math.max(...ys)+3;if(point.x>=minX&&point.x<=maxX&&point.y>=minY&&point.y<=maxY)return true;}
+  return false;
 }
 function walkableFreePoints(state: GameState): Point[] {
   const occupied = new Set<string>([pointKey(state.player), ...state.floor.exits.map(pointKey), ...state.features.map(pointKey), ...state.sites.map(pointKey)]);
@@ -166,6 +169,7 @@ function createFloorState(state: GameState): void {
   const context = resolveThemeContext(state.coord);
   state.themeId = context.primary.id;
   state.floor = generateFloor(state.runSeed, state.coord, context);
+  applyMapStructures(state.floor,context.primary,state.coord,new DeterministicRng(deriveSeed(state.runSeed,state.coord.depth,state.coord.lane,'structures')));
   state.player.x = state.floor.spawn.x;
   state.player.y = state.floor.spawn.y;
   state.temporaryTerrain = [];
@@ -180,6 +184,7 @@ function createFloorState(state: GameState): void {
 export function createNewGame(seedText: string, originId = 'delver'): { state: GameState; event: StoryEvent | null } {
   const runSeed = hashString32(seedText.trim() || `${Date.now()}`), runRng = new DeterministicRng(deriveSeed(runSeed, 'run'));
   const coord: WorldCoord = { depth: 1, lane: 0 }, context = resolveThemeContext(coord), floor = generateFloor(runSeed, coord, context);
+  applyMapStructures(floor,context.primary,coord,new DeterministicRng(deriveSeed(runSeed,coord.depth,coord.lane,'structures')));
   const origin=originById(originId);
   const startInventory=origin.inventory.map((defId,index)=>({id:`start-${origin.id}-${index}`,defId}));
   const weaponEntry=startInventory.find((entry)=>entry.defId===origin.equippedWeapon);
