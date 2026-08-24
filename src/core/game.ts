@@ -23,6 +23,8 @@ import { milestoneEvent, themeDiscoveryEvent } from './story';
 import { featureAt, featureDefinition, generateFeatures } from '../world/features';
 import { displayItemName, identifyItem } from './item-knowledge';
 import { monsterDamageMultiplier, playerDamageMultiplier, scaleTypedDamage, weaponDamageType } from './combat-rules';
+import { generateSites, siteAt, siteDefinition } from '../world/sites';
+import { resolveSiteService } from './site-actions';
 
 const MAX_MESSAGES = 9;
 const BASE_VISION = 9;
@@ -95,12 +97,16 @@ function refreshVisibility(state: GameState): void {
   state.explored = [...explored];
 }
 
+function settlementProtected(state: GameState, point: Point): boolean {
+  return state.sites.some((site) => site.settlementId && manhattan(site, point) <= 3);
+}
 function walkableFreePoints(state: GameState): Point[] {
-  const occupied = new Set<string>([pointKey(state.player), ...state.floor.exits.map(pointKey), ...state.features.map(pointKey)]);
+  const occupied = new Set<string>([pointKey(state.player), ...state.floor.exits.map(pointKey), ...state.features.map(pointKey), ...state.sites.map(pointKey)]);
   return state.floor.tiles.flatMap((tile, index) => {
     if (!tile.walkable) return [];
     const point = { x: index % state.floor.width, y: Math.floor(index / state.floor.width) };
-    return occupied.has(pointKey(point)) ? [] : [point];
+    if (occupied.has(pointKey(point)) || settlementProtected(state, point)) return [];
+    return [point];
   });
 }
 function monsterPower(state: GameState): number {
@@ -150,7 +156,8 @@ function createFloorState(state: GameState): void {
   state.temporaryTerrain = [];
   state.explored = [];
   state.visible = [];
-  state.features = generateFeatures(state.floor, context.primary, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'features')));
+  state.sites = generateSites(state.floor, context.primary, state.coord, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'sites')));
+  state.features = generateFeatures(state.floor, context.primary, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'features')), state.sites);
   populateFloor(state, new DeterministicRng(deriveSeed(state.runSeed, state.coord.depth, state.coord.lane, 'population')));
   refreshVisibility(state);
 }
@@ -158,7 +165,7 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
   const runSeed = hashString32(seedText.trim() || `${Date.now()}`), runRng = new DeterministicRng(deriveSeed(runSeed, 'run'));
   const coord: WorldCoord = { depth: 1, lane: 0 }, context = resolveThemeContext(coord), floor = generateFloor(runSeed, coord, context);
   const state: GameState = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     runId: `run-${runSeed.toString(16)}-${runRng.nextU32().toString(36)}`,
     runSeed,
     turn: 0,
@@ -169,17 +176,19 @@ export function createNewGame(seedText: string): { state: GameState; event: Stor
     seenStoryEvents: [],
     identifiedItemDefs: [],
     floor,
-    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, inventory: [], statuses: [] },
+    player: { id: 'player', x: floor.spawn.x, y: floor.spawn.y, hp: 34, maxHp: 34, attack: 5, defense: 1, gold: 24, inventory: [], statuses: [] },
     monsters: [],
     items: [],
     features: [],
+    sites: [],
     explored: [],
     visible: [],
     temporaryTerrain: [],
     messages: ['You descend beneath the cistern.'],
     gameOver: false,
   };
-  state.features = generateFeatures(floor, context.primary, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'features')));
+  state.sites = generateSites(floor, context.primary, coord, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'sites')));
+  state.features = generateFeatures(floor, context.primary, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'features')), state.sites);
   populateFloor(state, new DeterministicRng(deriveSeed(runSeed, coord.depth, coord.lane, 'population')));
   refreshVisibility(state);
   const event = themeDiscoveryEvent(state, context.primary);
@@ -241,7 +250,9 @@ function killMonsterIfNeeded(state: GameState, monster: MonsterEntity): boolean 
   if (monster.hp > 0) return false;
   const def = monsterById(monster.defId);
   state.monsters = state.monsters.filter((entry) => entry.id !== monster.id);
-  pushMessage(state, `${def.name} dies.`);
+  const coin = def.tags.includes('humanoid') ? 2 : def.tags.includes('construct') ? 1 : 0;
+  if (coin) state.player.gold += coin;
+  pushMessage(state, `${def.name} dies.${coin ? ` You recover ${coin} gold.` : ''}`);
   return true;
 }
 function damagePlayer(state: GameState, amount: number, message?: string): void {
@@ -258,13 +269,13 @@ function tileForKind(kind: TileKind): Tile {
   return { kind: 'floor', glyph: '.', walkable: true, transparent: true };
 }
 function nearbyFreePoint(state: GameState, center: Point, radius: number, rng: DeterministicRng): Point | null {
-  const occupied = new Set(state.monsters.map(pointKey)); occupied.add(pointKey(state.player));
+  const occupied = new Set(state.monsters.map(pointKey)); occupied.add(pointKey(state.player)); for (const site of state.sites) occupied.add(pointKey(site));
   const options: Point[] = [];
   for (let y = Math.max(0, center.y - radius); y <= Math.min(state.floor.height - 1, center.y + radius); y += 1) {
     for (let x = Math.max(0, center.x - radius); x <= Math.min(state.floor.width - 1, center.x + radius); x += 1) {
       const point = { x, y };
       if (manhattan(point, center) > radius || occupied.has(pointKey(point))) continue;
-      if (tileAt(state.floor, x, y)?.walkable) options.push(point);
+      if (tileAt(state.floor, x, y)?.walkable && !settlementProtected(state, point)) options.push(point);
     }
   }
   return options.length ? rng.pick(options) : null;
@@ -290,7 +301,7 @@ function spawnTerrain(state: GameState, center: Point, kind: TileKind, radius: n
     for (let x = Math.max(0, center.x - radius); x <= Math.min(state.floor.width - 1, center.x + radius); x += 1) {
       if (manhattan(center, { x, y }) > radius) continue;
       const index = y * state.floor.width + x, tile = state.floor.tiles[index]!;
-      if (!tile.walkable || state.floor.exits.some((exit) => exit.x === x && exit.y === y)) continue;
+      if (!tile.walkable || state.floor.exits.some((exit) => exit.x === x && exit.y === y) || state.sites.some((site) => site.x === x && site.y === y)) continue;
       points.push({ x, y, original: tile.kind });
       state.floor.tiles[index] = tileForKind(kind);
     }
@@ -357,7 +368,7 @@ function meleePlayer(state: GameState, monster: MonsterEntity, rng: Deterministi
 }
 function tryMoveMonster(state: GameState, monster: MonsterEntity, target: Point): boolean {
   const tile = tileAt(state.floor, target.x, target.y);
-  if (!tile?.walkable || samePoint(state.player, target)) return false;
+  if (!tile?.walkable || samePoint(state.player, target) || settlementProtected(state, target)) return false;
   if (state.monsters.some((other) => other.id !== monster.id && samePoint(other, target))) return false;
   monster.x = target.x; monster.y = target.y; return true;
 }
@@ -498,7 +509,8 @@ function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
     pushMessage(state, 'The altar sharpens your senses and hardens your stance.');
   } else if (feature.kind === 'unstable-cache') {
     for (let i = 0; i < 2; i += 1) { const found = weightedItem(state, rng); state.player.inventory.push({ id: makeId('cache', rng), defId: found.id }); }
-    pushMessage(state, 'You crack the cache and recover two objects.');
+    const coins = rng.int(4, 12); state.player.gold += coins;
+    pushMessage(state, `You crack the cache and recover two objects and ${coins} gold.`);
   }
   if (!def.repeatable) feature.spent = true;
 }
@@ -552,6 +564,8 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
         const item = itemAt(state, target.x, target.y);
         if (item) { const itemDef = itemById(item.defId); state.player.inventory.push({ id: item.id, defId: item.defId }); state.items = state.items.filter((entry) => entry.id !== item.id); pushMessage(state, `You pick up ${displayItemName(state, itemDef)}.`); }
         resolveFeatureAtPlayer(state, rng);
+        const arrivedSite = siteAt(state.sites, state.player.x, state.player.y);
+        if (arrivedSite) pushMessage(state, `You enter ${arrivedSite.settlementName ?? siteDefinition(arrivedSite.kind).kind}.`);
         pendingExit = exitAt(state.floor, state.player.x, state.player.y);
       }
     }
@@ -563,6 +577,7 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
     pushMessage(state, 'You brace and search the nearby stonework.'); accepted = true;
   } else if (action.type === 'use-item') accepted = useInventoryItem(state, action.itemId, rng);
   else if (action.type === 'drop-item') accepted = dropInventoryItem(state, action.itemId);
+  else if (action.type === 'site-service') accepted = resolveSiteService(state, action);
   if (!accepted) return { accepted: false, event: null };
   endAcceptedTurn(state, rng);
   if (state.gameOver) return { accepted: true, event: null };
@@ -575,8 +590,9 @@ export function actDropInventory(state: GameState, itemId: string): StoryEvent |
 
 export function assertGameInvariants(state: GameState): void {
   if (!tileAt(state.floor, state.player.x, state.player.y)?.walkable) throw new Error('invariant: player must stand on walkable tile');
+  if (state.player.gold < 0) throw new Error('invariant: player gold cannot be negative');
   const ids = new Set<string>(), inventoryIds = state.player.inventory.map((entry) => entry.id);
-  for (const entity of [state.player, ...state.monsters, ...state.items, ...state.player.inventory]) { if (ids.has(entity.id)) throw new Error(`invariant: duplicate entity id ${entity.id}`); ids.add(entity.id); }
+  for (const entity of [state.player, ...state.monsters, ...state.items, ...state.player.inventory, ...state.sites, ...state.sites.flatMap((site) => site.stock)]) { if (ids.has(entity.id)) throw new Error(`invariant: duplicate entity id ${entity.id}`); ids.add(entity.id); }
   if (state.player.equippedWeaponId && !inventoryIds.includes(state.player.equippedWeaponId)) throw new Error('invariant: equipped weapon not in inventory');
   if (state.player.equippedArmorId && !inventoryIds.includes(state.player.equippedArmorId)) throw new Error('invariant: equipped armor not in inventory');
   const occupied = new Set<string>();
@@ -584,8 +600,14 @@ export function assertGameInvariants(state: GameState): void {
     if (monster.hp <= 0) throw new Error(`invariant: dead monster retained ${monster.id}`);
     if (!tileAt(state.floor, monster.x, monster.y)?.walkable) throw new Error(`invariant: monster in wall ${monster.id}`);
     if (samePoint(monster, state.player)) throw new Error(`invariant: monster overlaps player ${monster.id}`);
+    if (settlementProtected(state, monster)) throw new Error(`invariant: monster inside protected settlement ${monster.id}`);
     const key = pointKey(monster); if (occupied.has(key)) throw new Error(`invariant: monsters overlap at ${key}`); occupied.add(key);
   }
   for (const feature of state.features) if (!tileAt(state.floor, feature.x, feature.y)?.walkable) throw new Error(`invariant: feature in wall ${feature.id}`);
+  const sitePositions = new Set<string>();
+  for (const site of state.sites) {
+    if (!tileAt(state.floor, site.x, site.y)?.walkable) throw new Error(`invariant: site in wall ${site.id}`);
+    const key = pointKey(site); if (sitePositions.has(key)) throw new Error(`invariant: sites overlap at ${key}`); sitePositions.add(key);
+    if (state.features.some((feature) => samePoint(feature, site))) throw new Error(`invariant: site overlaps feature ${site.id}`);
+  }
 }
-
