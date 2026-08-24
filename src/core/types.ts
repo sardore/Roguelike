@@ -28,7 +28,7 @@ export type EffectSpec =
   | { op: 'reveal'; radius: number }
   | { op: 'spawn-terrain'; tile: TileKind; radius: number; duration?: number }
   | { op: 'summon'; tag: string; count: number };
-export interface PlayerState extends Point { id: EntityId; hp: number; maxHp: number; attack: number; defense: number; inventory: InventoryItem[]; statuses: StatusInstance[]; equippedWeaponId?: EntityId; equippedArmorId?: EntityId; }
+export interface PlayerState extends Point { id: EntityId; hp: number; maxHp: number; attack: number; defense: number; inventory: InventoryItem[]; statuses: StatusInstance[]; equippedWeaponId: EntityId | undefined; equippedArmorId: EntityId | undefined; }
 export interface TemporaryTerrain { id: EntityId; points: Array<Point & { original: TileKind }>; replacement: TileKind; expiresTurn: number; }
 export interface StoryEvent { id: string; title: string; body: string; severity: 'major'; }
 export interface GameState { schemaVersion: 2; runId: string; runSeed: number; turn: number; rngState: number; coord: WorldCoord; themeId: ThemeId; discoveredThemes: ThemeId[]; seenStoryEvents: string[]; floor: FloorMap; player: PlayerState; monsters: MonsterEntity[]; items: GroundItem[]; explored: string[]; visible: string[]; temporaryTerrain: TemporaryTerrain[]; messages: string[]; gameOver: boolean; }
