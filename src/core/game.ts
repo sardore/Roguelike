@@ -25,7 +25,7 @@ import { displayItemName, identifyItem } from './item-knowledge';
 import { monsterDamageMultiplier, playerDamageMultiplier, scaleTypedDamage, weaponDamageType } from './combat-rules';
 import { generateSites, siteAt, siteDefinition } from '../world/sites';
 import { resolveSiteService } from './site-actions';
-import { DEFAULT_AMMO, DEFAULT_MAX_HUNGER, addAmmo, applyMetabolism, autoExploreStep, canRestSafely, feedPlayer, grantKillProgress, hungerAttackPenalty, hungerDefensePenalty, isRangedWeapon, weaponRange, xpThreshold } from './foundations';
+import { DEFAULT_AMMO, DEFAULT_MAX_HUNGER, addAmmo, applyMetabolism, autoExploreStep, canCarryDefinition, canRestSafely, encumbranceDefensePenalty, feedPlayer, grantKillProgress, hardCarryLimit, hungerAttackPenalty, hungerDefensePenalty, inventoryWeight, isRangedWeapon, weaponRange, xpThreshold } from './foundations';
 
 const MAX_MESSAGES = 9;
 const BASE_VISION = 9;
@@ -224,6 +224,7 @@ function transition(state: GameState, kind: 'down' | 'drift-left' | 'drift-right
 function monsterAt(state: GameState, x: number, y: number): MonsterEntity | undefined { return state.monsters.find((monster) => monster.x === x && monster.y === y); }
 function itemAt(state: GameState, x: number, y: number): GroundItem | undefined { return state.items.find((item) => item.x === x && item.y === y); }
 function inventoryEntry(state: GameState, itemId: string): InventoryItem | undefined { return state.player.inventory.find((entry) => entry.id === itemId); }
+function carryOrDrop(state:GameState,id:string,defId:string):boolean{const def=itemById(defId);if(!canCarryDefinition(state,def)){state.items.push({id,defId,x:state.player.x,y:state.player.y});pushMessage(state,`Your pack cannot carry ${def.name}; it falls at your feet.`);return false;}state.player.inventory.push({id,defId});return true;}
 function equippedWeapon(state: GameState) {
   const entry = state.player.inventory.find((item) => item.id === state.player.equippedWeaponId);
   return entry ? itemById(entry.defId) : null;
@@ -240,7 +241,7 @@ function playerAttackPower(state: GameState): number {
 function playerDefense(state: GameState): number {
   const armor = equippedArmor(state);
   const armorBonus = armor?.effects.filter((effect): effect is Extract<EffectSpec, { op: 'status' }> => effect.op === 'status' && effect.id === 'armor').reduce((sum, effect) => sum + (effect.magnitude ?? 1), 0) ?? 0;
-  return Math.max(0, state.player.defense + armorBonus + statusMagnitude(state.player.statuses, 'defenseDelta') - hungerDefensePenalty(state));
+  return Math.max(0, state.player.defense + armorBonus + statusMagnitude(state.player.statuses, 'defenseDelta') - hungerDefensePenalty(state) - encumbranceDefensePenalty(state));
 }
 function monsterDefense(monster: MonsterEntity): number {
   const def = monsterById(monster.defId);
@@ -515,12 +516,12 @@ function resolveFeatureAtPlayer(state: GameState, rng: DeterministicRng): void {
     addStatus(state.player.statuses, { op: 'status', id: 'guarding', duration: 3, magnitude: 1 }, feature.id);
     pushMessage(state, 'The altar sharpens your senses and hardens your stance.');
   } else if (feature.kind === 'unstable-cache') {
-    for (let i = 0; i < 2; i += 1) { const found = weightedItem(state, rng); state.player.inventory.push({ id: makeId('cache', rng), defId: found.id }); }
+    for (let i = 0; i < 2; i += 1) { const found = weightedItem(state, rng); carryOrDrop(state,makeId('cache',rng),found.id); }
     const coins = rng.int(4, 12); state.player.gold += coins;
     pushMessage(state, `You crack the cache and recover two objects and ${coins} gold.`);
-  } else if(feature.kind==='food-cache'){const foods=ITEMS.filter((entry)=>entry.tags.includes('food'));if(foods.length){const found=rng.pick(foods);state.player.inventory.push({id:makeId('food',rng),defId:found.id});pushMessage(state,`You recover ${found.name} from the provisions.`);}}
+  } else if(feature.kind==='food-cache'){const foods=ITEMS.filter((entry)=>entry.tags.includes('food'));if(foods.length){const found=rng.pick(foods);carryOrDrop(state,makeId('food',rng),found.id);pushMessage(state,`You recover ${found.name} from the provisions.`);}}
   else if(feature.kind==='ammo-crate'){const amount=rng.int(6,13);addAmmo(state,amount);pushMessage(state,`You salvage ${amount} ammunition.`);}
-  else if(feature.kind==='ancient-grave'){if(rng.chance(.42)){summonNear(state,state.player,'undead',1,rng);pushMessage(state,'The disturbed grave answers with movement.');}else{const found=weightedItem(state,rng);state.player.inventory.push({id:makeId('grave',rng),defId:found.id});pushMessage(state,`The grave still holds ${found.name}.`);}}
+  else if(feature.kind==='ancient-grave'){if(rng.chance(.42)){summonNear(state,state.player,'undead',1,rng);pushMessage(state,'The disturbed grave answers with movement.');}else{const found=weightedItem(state,rng);carryOrDrop(state,makeId('grave',rng),found.id);pushMessage(state,`The grave still holds ${found.name}.`);}}
   else if(feature.kind==='bookshelf'){const unknown=state.player.inventory.map((entry)=>itemById(entry.defId)).find((entry)=>!state.identifiedItemDefs.includes(entry.id));if(unknown&&identifyItem(state,unknown))pushMessage(state,`The old notes identify ${unknown.name}.`);else applyEffect(state,{op:'reveal',radius:10},state.player,'player',rng);}
   else if(feature.kind==='forge-anvil'){addStatus(state.player.statuses,{op:'status',id:'focused',duration:16,magnitude:1},feature.id);addStatus(state.player.statuses,{op:'status',id:'guarding',duration:4,magnitude:1},feature.id);pushMessage(state,'You tune your equipment at the old anvil.');}
   else if(feature.kind==='mushroom-patch'){const restored=feedPlayer(state,260);pushMessage(state,`You forage ${restored} nutrition.`);if(rng.chance(.22))addStatus(state.player.statuses,{op:'status',id:'poisoned',duration:3,magnitude:1},feature.id);}
@@ -579,7 +580,7 @@ export function dispatchAction(state: GameState, action: GameAction): ActionResu
       else {
         state.player.x = target.x; state.player.y = target.y;
         const item = itemAt(state, target.x, target.y);
-        if (item) { const itemDef = itemById(item.defId); state.player.inventory.push({ id: item.id, defId: item.defId }); state.items = state.items.filter((entry) => entry.id !== item.id); pushMessage(state, `You pick up ${displayItemName(state, itemDef)}.`); }
+        if (item) { const itemDef = itemById(item.defId); if(canCarryDefinition(state,itemDef)){state.player.inventory.push({ id: item.id, defId: item.defId }); state.items = state.items.filter((entry) => entry.id !== item.id); pushMessage(state, `You pick up ${displayItemName(state, itemDef)}.`);}else pushMessage(state,`Your pack cannot carry ${displayItemName(state,itemDef)}.`); }
         resolveFeatureAtPlayer(state, rng);
         const arrivedSite = siteAt(state.sites, state.player.x, state.player.y);
         if (arrivedSite) pushMessage(state, `You enter ${arrivedSite.settlementName ?? siteDefinition(arrivedSite.kind).kind}.`);
@@ -612,6 +613,7 @@ export function assertGameInvariants(state: GameState): void {
   if(state.player.hunger<0||state.player.hunger>state.player.maxHunger*1.2)throw new Error('invariant: invalid hunger');
   if(state.player.ammo<0)throw new Error('invariant: negative ammunition');
   if(state.player.level<1||state.player.xp<0||state.player.xpToNext<=0)throw new Error('invariant: invalid progression');
+  if(inventoryWeight(state)>hardCarryLimit(state))throw new Error('invariant: inventory exceeds hard carry limit');
   const ids = new Set<string>(), inventoryIds = state.player.inventory.map((entry) => entry.id);
   for (const entity of [state.player, ...state.monsters, ...state.items, ...state.player.inventory, ...state.sites, ...state.sites.flatMap((site) => site.stock)]) { if (ids.has(entity.id)) throw new Error(`invariant: duplicate entity id ${entity.id}`); ids.add(entity.id); }
   if (state.player.equippedWeaponId && !inventoryIds.includes(state.player.equippedWeaponId)) throw new Error('invariant: equipped weapon not in inventory');

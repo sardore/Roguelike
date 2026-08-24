@@ -1,10 +1,29 @@
 import type { GameAction, GameState, ItemDefinition, MonsterDefinition, Point } from './types';
 import { tileAt } from '../world/generation';
+import { itemById } from '../content/items';
 
 export type HungerStage = 'sated' | 'fed' | 'hungry' | 'weak' | 'starving';
+export type EncumbranceStage = 'light' | 'burdened' | 'overloaded';
 export const DEFAULT_MAX_HUNGER = 2400;
 export const DEFAULT_AMMO = 8;
 export const MAX_AMMO = 60;
+
+export function itemWeight(def:ItemDefinition):number{
+  const explicit=def.tags.find((tag)=>tag.startsWith('weight:'));
+  if(explicit){const parsed=Number(explicit.slice(7));if(Number.isFinite(parsed)&&parsed>0)return parsed;}
+  if(def.category==='armor'){if(def.tags.includes('heavy'))return 8;if(def.tags.includes('medium'))return 5;return 3;}
+  if(def.category==='weapon')return 4+(def.tags.includes('polearm')||def.tags.includes('blunt')?1:0);
+  if(def.category==='relic')return 2;
+  if(def.category==='tool')return 2;
+  return 1;
+}
+export function inventoryWeight(state:Pick<GameState,'player'>):number{return state.player.inventory.reduce((sum,entry)=>sum+itemWeight(itemById(entry.defId)),0);}
+export function carryCapacity(state:Pick<GameState,'player'>):number{return 24+state.player.level*2+Math.floor(state.player.maxHp/12);}
+export function hardCarryLimit(state:Pick<GameState,'player'>):number{return Math.floor(carryCapacity(state)*1.5);}
+export function encumbranceStage(state:Pick<GameState,'player'>):EncumbranceStage{const load=inventoryWeight(state),cap=carryCapacity(state);if(load<=cap)return 'light';if(load<=Math.floor(cap*1.25))return 'burdened';return 'overloaded';}
+export function canCarryDefinition(state:Pick<GameState,'player'>,def:ItemDefinition):boolean{return inventoryWeight(state)+itemWeight(def)<=hardCarryLimit(state);}
+export function encumbranceDefensePenalty(state:Pick<GameState,'player'>):number{return encumbranceStage(state)==='overloaded'?1:0;}
+export function encumbranceMetabolismSurcharge(state:Pick<GameState,'player'>,action:GameAction):number{const stage=encumbranceStage(state);if(stage==='light')return 0;const active=action.type==='move'||action.type==='explore'||action.type==='fire'||action.type==='rest';if(!active)return stage==='overloaded'?1:0;return stage==='burdened'?1:3;}
 
 export function hungerStage(hunger:number,maxHunger:number):HungerStage{
   const ratio=maxHunger<=0?0:hunger/maxHunger;
@@ -31,7 +50,7 @@ export function metabolismCost(action:GameAction):number{
 
 export function applyMetabolism(state:GameState,action:GameAction,push:(message:string)=>void):void{
   const before=hungerStage(state.player.hunger,state.player.maxHunger);
-  state.player.hunger=Math.max(0,state.player.hunger-metabolismCost(action));
+  state.player.hunger=Math.max(0,state.player.hunger-metabolismCost(action)-encumbranceMetabolismSurcharge(state,action));
   const after=hungerStage(state.player.hunger,state.player.maxHunger);
   if(before!==after){
     if(after==='hungry')push('You are getting hungry.');

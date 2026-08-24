@@ -20,7 +20,7 @@ Theme data selects generator archetypes, palettes, ecology tags, ambience, featu
 
 The game should get depth from rules that interact, not from long lists of isolated scripted exceptions.
 
-- damage type, resistance, vulnerability, status, terrain, reach, movement, summons, traps, identification, trade, and services are reusable systems
+- damage type, resistance, vulnerability, status, terrain, reach, movement, summons, traps, identification, trade, services, hunger, ammunition, experience, and encumbrance are reusable systems
 - an item should preferably combine existing systems in a new way rather than introduce an item-specific executor
 - dungeon features and non-combat sites are entities in canonical state, not decorative renderer-only marks
 - unidentified appearances are deterministic per run and identification knowledge belongs to `GameState`
@@ -33,7 +33,7 @@ Towns and services extend the same dungeon simulation rather than switching to a
 
 - settlements are deterministic clusters of reusable `NonCombatSite` entities placed on ordinary generated floors
 - merchant stock, gold, service usage, and site identity live in `GameState` and therefore save/restore with the run
-- buy, sell, heal, cleanse, identify, map, bless, rest, and rumor all enter through the canonical `GameAction` dispatcher
+- buy, sell, heal, cleanse, identify, map, bless, rest, meals, training, inn recovery, and rumor all enter through the canonical `GameAction` dispatcher
 - settlement generation may be weighted by theme and depth, but individual named towns do not get private gameplay code
 - settlement pockets are protected from ordinary monster population/movement so they function as genuine breathing spaces without creating a second combat engine
 - roadside services reuse the exact same site definitions and service resolver as settlement services
@@ -46,6 +46,16 @@ Simulation state is language-neutral. Localization belongs to presentation.
 - English/Korean rendering uses the same state and action paths
 - unidentified items must remain unidentified in every language; localization must never leak hidden effects
 - adding a language must extend translation tables/formatters rather than fork gameplay or save data
+
+## Survival and inventory rule
+
+Long-run pressure must come from reusable state, not one-off scripted hunger checks or inventory exceptions.
+
+- nutrition changes only through canonical turn metabolism, food effects, or reusable services/features
+- ranged attacks consume the shared ammunition resource through the same action dispatcher
+- carry load is derived from stable item definitions and player state; shops, floor pickup, and generated rewards respect the same hard carry rule
+- soft encumbrance increases metabolism and eventually reduces defense instead of silently disabling arbitrary actions
+- experience and permanent growth are owned by `GameState` and awarded from canonical monster deaths
 
 ## Tactical transparency rule
 
@@ -76,8 +86,9 @@ Volume gates are regression constraints, not targets to satisfy with meaningless
 - 18 normal themes + the Abyss
 - at least 8 map archetype choices per normal theme
 - at least 5 native monster definitions per normal theme
-- at least 90 monsters overall
-- at least 125 items overall
+- at least 145 monsters overall
+- at least 195 items overall
+- at least 15 reusable dungeon feature kinds
 
 A numeric variant that only changes HP/damage without changing tactical role should not be used merely to satisfy these gates.
 

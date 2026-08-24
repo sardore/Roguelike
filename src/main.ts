@@ -8,7 +8,7 @@ import { isMysteryItem } from './core/item-knowledge';
 import { describeState, renderCanvas } from './ui/render';
 import { siteAt, siteDefinition, servicePrice, sellPrice } from './world/sites';
 import { categoryName, itemTooltip, localizeMessage, localizedItemName, localizedStory, serviceName, siteKindName, tr } from './i18n';
-import { hungerPercent, hungerStage, isRangedWeapon } from './core/foundations';
+import { canCarryDefinition, carryCapacity, encumbranceStage, hungerPercent, hungerStage, inventoryWeight, isRangedWeapon, itemWeight } from './core/foundations';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 if (!appElement) throw new Error('missing #app');
@@ -162,7 +162,7 @@ function tooltipMarkup(current:GameState,def:ReturnType<typeof itemById>):string
   const tip=itemTooltip(current,def,locale);
   return `<div class="item-tooltip" data-tooltip-for="${def.id}">
     <div class="tooltip-title"><span style="color:${def.color}">${def.glyph}</span><strong>${tip.name}</strong><em>${tip.rarity}</em></div>
-    <div class="tooltip-meta">${tip.category}${tip.unknown?` · ${tr(locale,'unknown')}`:''}</div>
+    <div class="tooltip-meta">${tip.category} · ${tr(locale,'load')} ${itemWeight(def)}${tip.unknown?` · ${tr(locale,'unknown')}`:''}</div>
     <div class="tooltip-section"><b>${tr(locale,'effects')}</b>${tip.effects.map((effect)=>`<span>${effect}</span>`).join('')}</div>
     <div class="tooltip-tags"><b>${tr(locale,'tags')}</b> ${tip.tags.join(' · ')}</div>
   </div>`;
@@ -199,7 +199,7 @@ function serviceButton(site:NonCombatSite,service:SiteServiceKind,label?:string)
 }
 
 function merchantMarkup(current:GameState,site:NonCombatSite):string{
-  const stock=site.stock.length?site.stock.map((offer)=>{const def=itemById(offer.defId);const name=localizedItemName(current,def,locale);return `<div class="trade-row"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${name}</strong><small>${categoryName(def.category,locale)} · ${'★'.repeat(def.rarity)}</small></span><button data-site-service="buy" data-offer-id="${offer.id}" ${current.player.gold<offer.price?'disabled':''}>${offer.price}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noStock')}</p>`;
+  const stock=site.stock.length?site.stock.map((offer)=>{const def=itemById(offer.defId);const name=localizedItemName(current,def,locale);return `<div class="trade-row"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${name}</strong><small>${categoryName(def.category,locale)} · ${'★'.repeat(def.rarity)}</small></span><button data-site-service="buy" data-offer-id="${offer.id}" ${current.player.gold<offer.price||!canCarryDefinition(current,def)?'disabled':''}>${offer.price}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noStock')}</p>`;
   const sell=current.player.inventory.length?current.player.inventory.map((entry)=>{const def=itemById(entry.defId);return `<div class="trade-row sell"><span class="trade-glyph" style="color:${def.color}">${def.glyph}</span><span><strong>${localizedItemName(current,def,locale)}</strong><small>${tr(locale,'sell')}</small></span><button data-site-service="sell" data-item-id="${entry.id}">+${sellPrice(def.id)}g</button></div>`;}).join(''):`<p class="sheet-empty">${tr(locale,'noItems')}</p>`;
   return `<h3>${tr(locale,'buy')}</h3><div class="trade-list">${stock}</div><h3>${tr(locale,'sell')}</h3><div class="trade-list">${sell}</div>`;
 }
@@ -248,7 +248,7 @@ function renderSheet(): void {
       <div class="sheet-backdrop" data-close-sheet></div>
       <section class="bottom-sheet" aria-label="inventory">
         <div class="sheet-handle"></div>
-        <header class="sheet-header"><strong>${tr(locale,'bag')}</strong><span>${state.player.inventory.length} · ${state.player.gold}g</span><button data-close-sheet>${tr(locale,'done')}</button></header>
+        <header class="sheet-header"><strong>${tr(locale,'bag')}</strong><span>${state.player.inventory.length} · ${tr(locale,'load')} ${inventoryWeight(state)}/${carryCapacity(state)} · ${state.player.gold}g</span><button data-close-sheet>${tr(locale,'done')}</button></header>
         <div class="sheet-scroll">${inventoryMarkup(state)}</div>
       </section>`;
   } else if(openSheet==='site'){
@@ -305,7 +305,7 @@ function redraw(): void {
 
   if (canvas) renderCanvas(canvas, state);
   if (place) place.textContent = describeState(state,locale);
-  if (drift) {const lane=driftLabel(state);drift.textContent=`${lane?lane+' · ':''}${state.player.gold}g · ${state.player.kills}${locale==='ko'?'처치':' kills'}`;}
+  if (drift) {const lane=driftLabel(state),burden=encumbranceStage(state);drift.textContent=`${lane?lane+' · ':''}${state.player.gold}g · ${state.player.kills}${locale==='ko'?'처치':' kills'}${burden==='light'?'':` · ${tr(locale,burden)}`}`;}
   if (hpText) hpText.textContent = `HP ${state.player.hp}/${state.player.maxHp}`;
   if (hpFill) hpFill.style.width = `${Math.max(0, Math.min(100, state.player.hp / state.player.maxHp * 100))}%`;
   const hungerKey=hungerStage(state.player.hunger,state.player.maxHunger);

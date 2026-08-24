@@ -3,6 +3,7 @@ import { itemById } from '../content/items';
 import { identifyItem } from './item-knowledge';
 import { statusById } from '../content/statuses';
 import { sellPrice, servicePrice, siteDefinition } from '../world/sites';
+import { canCarryDefinition } from './foundations';
 import { feedPlayer } from './foundations';
 
 function inventoryEntry(state:GameState,itemId:string):InventoryItem|undefined{return state.player.inventory.find((entry)=>entry.id===itemId);}
@@ -20,8 +21,8 @@ export function resolveSiteService(state:GameState,action:Extract<GameAction,{ty
   const singleUse=['rumor','map','bless','rest','train-attack','train-defense','train-vigor','inn-rest'].includes(action.service);
   if(singleUse&&site.usedServices.includes(action.service)){pushMessage(state,'That service has already been used here.');return false;}
   if(action.service==='buy'){
-    const offer=site.stock.find((entry)=>entry.id===action.offerId);if(!offer||!pay(state,offer.price))return false;
-    state.player.inventory.push({id:offer.id,defId:offer.defId});site.stock=site.stock.filter((entry)=>entry.id!==offer.id);pushMessage(state,`You buy ${itemById(offer.defId).name} for ${offer.price} gold.`);return true;
+    const offer=site.stock.find((entry)=>entry.id===action.offerId);if(!offer)return false;const def=itemById(offer.defId);if(!canCarryDefinition(state,def)){pushMessage(state,`Your pack cannot carry ${def.name}.`);return false;}if(!pay(state,offer.price))return false;
+    state.player.inventory.push({id:offer.id,defId:offer.defId});site.stock=site.stock.filter((entry)=>entry.id!==offer.id);pushMessage(state,`You buy ${def.name} for ${offer.price} gold.`);return true;
   }
   if(action.service==='sell'){
     const entry=action.itemId?inventoryEntry(state,action.itemId):undefined;if(!entry)return false;
