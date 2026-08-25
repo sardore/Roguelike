@@ -22,12 +22,27 @@ function protectedCells(s:GameState){
   return out;
 }
 
+function routeOpen(s:GameState){
+  const goal=s.tiles.findIndex(t=>t.kind==='stairs');if(goal<0)return true;
+  const start=idx(s,s.player.x,s.player.y),seen=new Uint8Array(s.tiles.length),q=[start];seen[start]=1;
+  for(let h=0;h<q.length;h++){
+    const i=q[h]!;if(i===goal)return true;const x=i%s.width,y=Math.floor(i/s.width);
+    for(const d of DIRS){const nx=x+d.dx,ny=y+d.dy;if(nx<0||ny<0||nx>=s.width||ny>=s.height)continue;const ni=idx(s,nx,ny);if(seen[ni]||s.tiles[ni]?.kind==='wall')continue;seen[ni]=1;q.push(ni)}
+  }
+  return false;
+}
 function openAround(s:GameState,x:number,y:number,r=1){let n=0;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(dx===0&&dy===0)continue;const t=s.tiles[idx(s,x+dx,y+dy)];if(walkable(t))n++}return n}
 function wallishAround(s:GameState,x:number,y:number){let wall=0,open=0;for(const [dx,dy] of CARDINAL){const t=s.tiles[idx(s,x+dx,y+dy)];if(!t||t.kind==='wall')wall++;else open++}return{wall,open}}
 function roomBase(room?:string){if(!room)return'';return room.replace(/-(wall|door|divider)$/,'')}
 function plainFloor(t?:Tile){return !!t&&t.kind==='floor'&&!t.fixture}
 function wallTile(room:string,variant:number):Tile{return{kind:'wall',variant,room:`${room}-organic-wall`,discovered:false,visible:false}}
 function floorTile(room:string,variant:number):Tile{return{kind:'floor',variant,room,discovered:false,visible:false}}
+function tryWall(s:GameState,x:number,y:number,room:string,variant:number){
+  const k=idx(s,x,y),old=s.tiles[k];if(!old||!plainFloor(old))return false;
+  s.tiles[k]=wallTile(room,variant);
+  if(routeOpen(s))return true;
+  s.tiles[k]=old;return false;
+}
 
 function groups(s:GameState){
   const m=new Map<string,Point[]>();
@@ -81,7 +96,11 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
   for(const c of corners){
     if(!rng.chance(.72))continue;
     const shape=rng.chance(.48)?[[0,0],[1,0],[0,1]]:[[0,0],[1,0]];
-    for(const [ox,oy] of shape){const x=c.x+ox*c.sx,y=c.y+oy*c.sy,k=idx(s,x,y),t=s.tiles[k];if(protectedSet.has(k)||!plainFloor(t)||openAround(s,x,y,1)<4)continue;s.tiles[k]=wallTile(room,rng.int(0,15));cuts++}
+    for(const [ox,oy] of shape){
+      const x=c.x+ox*c.sx,y=c.y+oy*c.sy,k=idx(s,x,y),t=s.tiles[k];
+      if(protectedSet.has(k)||!plainFloor(t)||openAround(s,x,y,1)<4)continue;
+      if(tryWall(s,x,y,room,rng.int(0,15)))cuts++;
+    }
   }
 
   // A few shallow wall intrusions break ruler-straight edges without turning the room into noise.
@@ -92,7 +111,7 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
   });
   for(let n=0;n<Math.min(2,Math.floor((w+h)/18));n++){
     if(!edges.length)break;const q=edges.splice(rng.int(0,edges.length-1),1)[0]!,k=idx(s,q.p.x,q.p.y),t=s.tiles[k];
-    if(plainFloor(t)&&!protectedSet.has(k)){s.tiles[k]=wallTile(room,rng.int(0,15));cuts++}
+    if(plainFloor(t)&&!protectedSet.has(k)&&tryWall(s,q.p.x,q.p.y,room,rng.int(0,15)))cuts++;
   }
 
   // Purposeful bulb alcove: narrow neck -> wider pocket, borrowing the maze's corridor/pool rhythm.
