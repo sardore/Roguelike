@@ -6,9 +6,10 @@ import { applyExpansionContent } from './expansion';
 import { applyDistrictSetpiece, setpieceSignature } from './setpieces';
 import { createWorld } from './world';
 
-function world(stage:number){
+function world(stage:number,floor=1){
   const seed=0x51a7c0de;
   const s=stage<=3?createWorld(seed,stage):createLateWorld(seed,stage);
+  s.floorInDistrict=floor;
   applyStageDetails(s);applySpecialFeatures(s);applyExpansionContent(s);applyDistrictSetpiece(s);
   return s;
 }
@@ -19,8 +20,12 @@ describe('district setpieces',()=>{
       const s=world(stage),sig=setpieceSignature(s);
       expect(sig).not.toBe('|');
       expect(s.enemies.some(e=>e.id.startsWith('setpiece-')&&!!e.elite)).toBe(true);
-      expect(s.expansionFlags).toContain(`setpiece-${stage}`);
+      expect(s.expansionFlags).toContain(`setpiece-${stage}-1`);
     }
+  });
+
+  it('adds a district master on every second floor',()=>{
+    for(let stage=1;stage<=5;stage++)expect(world(stage,2).enemies.some(e=>e.id===`district-boss-${stage}`&&!!e.elite)).toBe(true);
   });
 
   it('never occupies the start or stair tile',()=>{
