@@ -1,4 +1,4 @@
-const scale=1.28;
+const scale=1.18;
 const widthDesc=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,'width');
 const heightDesc=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,'height');
 if(widthDesc?.get&&widthDesc.set&&heightDesc?.get&&heightDesc.set){
