@@ -1,4 +1,5 @@
 import { Rng } from './rng';
+import { sculptFlowGeometry } from './flowGeometry';
 import type { GameState, Point, Tile } from './types';
 import { updateVisibility } from './world';
 
@@ -110,5 +111,7 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
 export function applyOrganicArchitecture(s:GameState){
   const rng=new Rng((s.seed^Math.imul(s.districtStage,0x45d9f3b)^Math.imul(s.floorInDistrict??1,0x27d4eb2d)^0x51a7c0de)>>>0),protectedSet=protectedCells(s);let cuts=0,carved=0,rooms=0;
   for(const g of groups(s)){const r=softenRoom(s,g.room,g.cells,rng,protectedSet);if(r.cuts||r.carved)rooms++;cuts+=r.cuts;carved+=r.carved}
-  s.expansionFlags??=[];s.expansionFlags=s.expansionFlags.filter(f=>!f.startsWith('organic-geometry:'));s.expansionFlags.push(`organic-geometry:${rooms}:${cuts}:${carved}`);updateVisibility(s);return{rooms,cuts,carved};
+  s.expansionFlags??=[];s.expansionFlags=s.expansionFlags.filter(f=>!f.startsWith('organic-geometry:'));s.expansionFlags.push(`organic-geometry:${rooms}:${cuts}:${carved}`);
+  sculptFlowGeometry(s);
+  updateVisibility(s);return{rooms,cuts,carved};
 }
