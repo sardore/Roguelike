@@ -11,5 +11,5 @@
     "types": ["node"],
     "lib": ["ESNext", "DOM", "DOM.Iterable"]
   },
-  "include": ["src"]
+  "include": ["src/main.ts", "src/tower.ts", "src/tower.test.ts"]
 }
