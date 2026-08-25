@@ -8,5 +8,11 @@ describe('room observations',()=>{
 });
 
 describe('full run progression',()=>{
-  it('descends through five distinct districts while carrying run state',()=>{const g=new Game('five-floor-run');g.state.player.hp=17;g.state.player.inventory=['chalk'];for(const expected of[2,3,4,5]){stepOntoExit(g);expect(g.state.districtStage).toBe(expected);expect(g.state.player.hp).toBe(17);expect(g.state.player.inventory).toEqual(['chalk']);expect(g.state.over).toBe(false);expect(g.state.won).toBe(false)}stepOntoExit(g);expect(g.state.districtStage).toBe(5);expect(g.state.over).toBe(true);expect(g.state.won).toBe(true)});
+  it('crosses ten floors in five districts while carrying run state',()=>{
+    const g=new Game('ten-floor-run');g.state.player.hp=17;g.state.player.inventory=['chalk'];
+    const expected:[[number,number],[number,number],[number,number],[number,number],[number,number],[number,number],[number,number],[number,number],[number,number]]=[[1,2],[2,1],[2,2],[3,1],[3,2],[4,1],[4,2],[5,1],[5,2]];
+    for(const [stage,floor] of expected){stepOntoExit(g);expect(g.state.districtStage).toBe(stage);expect(g.state.floorInDistrict).toBe(floor);expect(g.state.player.hp).toBe(17);expect(g.state.player.inventory).toEqual(['chalk']);expect(g.state.over).toBe(false);expect(g.state.won).toBe(false)}
+    stepOntoExit(g);expect(g.state.districtStage).toBe(5);expect(g.state.floorInDistrict).toBe(2);expect(g.state.over).toBe(true);expect(g.state.won).toBe(true)
+  });
+  it('applies distinct starting kits',()=>{const g=new Game('kit');g.start('breaker','breaker-kit');expect(g.state.player.maxHp).toBe(26);expect(g.state.player.guard).toBe(2);expect(g.state.player.inventory).toEqual(['salt-bomb','solvent','copper-key'])});
 });
