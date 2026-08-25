@@ -4,6 +4,7 @@ import { applySpecialFeatures } from './specials';
 import { applyStageDetails } from './stageDetails';
 import { applyExpansionContent, handleExpansionInteract, runExpansionTick } from './expansion';
 import { applyDistrictSetpiece } from './setpieces';
+import { applyOrganicArchitecture } from './organicArchitecture';
 import { createWorld } from './world';
 import { interactAt, move, useItem, wait } from './systems';
 import type { GameState, Point } from './types';
@@ -22,7 +23,7 @@ const DESCENT:Record<number,string>={2:'You descend into the Tincture Bazaar. Th
 const DEEPER:Record<number,string>={1:'The second street lies below the first, built from older stone.',2:'The lower market is still stocked. Nothing here is for sale.',3:'The lower works throb with a furnace rhythm you can feel through your boots.',4:'The deeper catacomb walls contain shapes that were never meant to be windows.',5:'The second core level is hotter, quieter, and very close to the central mechanism.'};
 
 function rawWorld(seed:number,stage:number){return stage<=3?createWorld(seed,stage):createLateWorld(seed,stage)}
-function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state);applyExpansionContent(state);applyDistrictSetpiece(state)}
+function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state);applyExpansionContent(state);applyDistrictSetpiece(state);applyOrganicArchitecture(state)}
 function floorSeed(root:number,stage:number,floor:number){return hash(`${root}:${stage}:${floor}`)}
 function makeWorld(root:number,stage:number,floor:number){const state=rawWorld(floorSeed(root,stage,floor),stage);state.floorInDistrict=floor;decorate(state);return state}
 function districtBossAlive(s:GameState){return s.enemies.some(e=>e.id.startsWith('district-boss-'))}
