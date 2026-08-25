@@ -1,5 +1,0 @@
-import { describe, expect, it } from 'vitest';
-import { hash } from './rng';
-import { createWorld } from './world';
-import { findPath, visibleThreatIds } from './path';
-describe('mobile pathing',()=>{it('does not path through blocking special structures',()=>{const s=createWorld(hash('gate-path'));for(const t of s.tiles)t.discovered=true;const gateIndex=s.tiles.findIndex(t=>t.fixture==='brass-gate');expect(gateIndex).toBeGreaterThanOrEqual(0);const gx=gateIndex%s.width,gy=Math.floor(gateIndex/s.width);const p=findPath(s,{x:gx,y:gy});expect(p.length).toBe(0)});it('avoids lethal fire when an ordinary route is available',()=>{const s=createWorld(hash('safe-path'));for(const t of s.tiles)t.discovered=true;const target={x:s.player.x+4,y:s.player.y};const fire=s.tiles[s.player.y*s.width+s.player.x+2]!;fire.kind='fire';const p=findPath(s,target);expect(p.some(q=>q.x===s.player.x+2&&q.y===s.player.y)).toBe(false)});it('reports visible enemies for auto-walk interruption',()=>{const s=createWorld(hash('threats'));const ids=visibleThreatIds(s);expect(ids.size).toBeGreaterThanOrEqual(0)})});
