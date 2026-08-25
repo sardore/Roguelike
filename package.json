@@ -1,12 +1,12 @@
 {
   "name": "tower-of-the-first-king",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "vitest run src/tower.test.ts"
+    "test": "vitest run src/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.18.0",
