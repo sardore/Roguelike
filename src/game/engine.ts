@@ -3,6 +3,7 @@ import { createLateWorld } from './lateStages';
 import { applySpecialFeatures } from './specials';
 import { applyStageDetails } from './stageDetails';
 import { applyExpansionContent, handleExpansionInteract, runExpansionTick } from './expansion';
+import { applyDistrictSetpiece } from './setpieces';
 import { createWorld } from './world';
 import { interactAt, move, useItem, wait } from './systems';
 import type { GameState, Point } from './types';
@@ -16,7 +17,7 @@ const OBSERVATIONS:Record<string,string>={
 };
 
 function makeWorld(seed:number,stage:number){return stage<=3?createWorld(seed,stage):createLateWorld(seed,stage)}
-function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state);applyExpansionContent(state)}
+function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state);applyExpansionContent(state);applyDistrictSetpiece(state)}
 const DESCENT:Record<number,string>={2:'You descend into the Tincture Bazaar. The air becomes wetter.',3:'You descend again. Somewhere below, a furnace door closes by itself.',4:'The stair enters glasswork that predates the street above.',5:'Below the catacombs, the whole city narrows into one working machine.'};
 
 export class Game{
