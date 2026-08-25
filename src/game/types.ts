@@ -76,5 +76,6 @@ export type GameState = {
   noise:Point[];
   enteredRooms:string[];
   districtStage:number;
+  floorInDistrict?:number;
   expansionFlags?:string[];
 };
