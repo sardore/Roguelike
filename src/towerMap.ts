@@ -41,7 +41,7 @@ function doorify(s:TowerState,band:number,rng:Rng){
   if(band===3||band===5)return;for(let y=2;y<s.h-2;y++)for(let x=2;x<s.w-2;x++){if(get(s,x,y)?.kind!=='floor')continue;const l=get(s,x-1,y)?.kind,r=get(s,x+1,y)?.kind,u=get(s,x,y-1)?.kind,d=get(s,x,y+1)?.kind;const vert=(l==='wall'||l==='void')&&(r==='wall'||r==='void')&&u==='floor'&&d==='floor';const hor=(u==='wall'||u==='void')&&(d==='wall'||d==='void')&&l==='floor'&&r==='floor';if((vert||hor)&&rng.chance(.48))set(s,x,y,'door',rng.int(0,3))}
 }
 function decorateBand(s:TowerState,rooms:Room[],band:number,rng:Rng,start:P,stairs:P){
-  const floors: P[]=[];for(let y=2;y<s.h-2;y++)for(let x=2;x<s.w-2;x++)if(get(s,x,y)?.kind==='floor')floors.push({x,y});
+  const floors:P[]=[];for(let y=2;y<s.h-2;y++)for(let x=2;x<s.w-2;x++)if(get(s,x,y)?.kind==='floor')floors.push({x,y});
   const safe=(p:P)=>Math.abs(p.x-start.x)+Math.abs(p.y-start.y)>4&&Math.abs(p.x-stairs.x)+Math.abs(p.y-stairs.y)>2;
   for(const p of floors){if(!safe(p))continue;const q=rng.next();if(band===1){if(q<.015)set(s,p.x,p.y,'rubble',rng.int(0,3));else if(q<.024)set(s,p.x,p.y,'trap',rng.int(0,3))}
     else if(band===2){if(q<.025)set(s,p.x,p.y,'pillar',rng.int(0,3));else if(q<.040)set(s,p.x,p.y,'gear',rng.int(0,3));else if(q<.050)set(s,p.x,p.y,'rubble',rng.int(0,3))}
@@ -65,7 +65,9 @@ function repositionActors(s:TowerState,rng:Rng,start:P,stairs:P){
   for(const d of s.drops){const p=pick(4);d.x=p.x;d.y=p.y}
 }
 export function reshapeTowerFloor(s:TowerState){
-  const band=bandFor(s.floor),rng=new Rng((s.seed^Math.imul(s.floor,0x9e3779b1)^0x51f15e7)>>>0);s.tiles=Array.from({length:s.w*s.h},()=>tile());const rooms=roomPlan(s,band,rng);for(const room of rooms)carveRoom(s,room,band,rng);connectRooms(s,rooms,band,rng);wallify(s,band,rng);doorify(s,band,rng);const {start,stairs}=chooseEndpoints(rooms);s.hero.x=start.x;s.hero.y=start.y;set(s,stairs.x,stairs.y,'stairs',0);decorateBand(s,rooms,band,rng,start,stairs);set(s,start.x,start.y,'floor',0);set(s,stairs.x,stairs.y,'stairs',0);repositionActors(s,rng,start,stairs);return{rooms:rooms.length,start,stairs};
+  const band=bandFor(s.floor),rng=new Rng((s.seed^Math.imul(s.floor,0x9e3779b1)^0x51f15e7)>>>0);s.tiles=Array.from({length:s.w*s.h},()=>tile());const rooms=roomPlan(s,band,rng);for(const room of rooms)carveRoom(s,room,band,rng);connectRooms(s,rooms,band,rng);wallify(s,band,rng);doorify(s,band,rng);const {start,stairs}=chooseEndpoints(rooms);s.hero.x=start.x;s.hero.y=start.y;set(s,stairs.x,stairs.y,'stairs',0);decorateBand(s,rooms,band,rng,start,stairs);set(s,start.x,start.y,'floor',0);set(s,stairs.x,stairs.y,'stairs',0);
+  if(!debugConnected(s)){carveLine(s,start,stairs,1,rng);wallify(s,band,rng);doorify(s,band,rng);set(s,start.x,start.y,'floor',0);set(s,stairs.x,stairs.y,'stairs',0)}
+  repositionActors(s,rng,start,stairs);return{rooms:rooms.length,start,stairs};
 }
 
 export function debugConnected(s:TowerState){const start=id(s,s.hero.x,s.hero.y),goal=s.tiles.findIndex(t=>t.kind==='stairs');if(goal<0)return false;const q=[start],seen=new Set<number>(q);while(q.length){const cur=q.shift()!,x=cur%s.w,y=Math.floor(cur/s.w);if(cur===goal)return true;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]] as const){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=s.w||ny>=s.h)continue;const ni=id(s,nx,ny),t=s.tiles[ni];if(seen.has(ni)||!t||!openKind(t.kind))continue;seen.add(ni);q.push(ni)}}return false}
