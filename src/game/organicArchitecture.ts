@@ -65,7 +65,7 @@ function edgeCandidates(s:GameState,cells:Point[]){
 
 function carvePocket(s:GameState,room:string,start:Point,d:{dx:number;dy:number},rng:Rng,protectedSet:Set<number>){
   const side={dx:-d.dy,dy:d.dx};
-  const cells=[
+  const cells:Point[]=[
     {x:start.x+d.dx,y:start.y+d.dy},
     {x:start.x+d.dx*2,y:start.y+d.dy*2},
     {x:start.x+d.dx*3,y:start.y+d.dy*3},
@@ -75,9 +75,9 @@ function carvePocket(s:GameState,room:string,start:Point,d:{dx:number;dy:number}
   ];
   if(cells.some(p=>!inside(s,p.x,p.y)||protectedSet.has(idx(s,p.x,p.y))))return 0;
   for(let i=0;i<cells.length;i++){
-    const p=cells[i],t=s.tiles[idx(s,p.x,p.y)];if(!t||t.kind!=='wall')return 0;
+    const p=cells[i]!,t=s.tiles[idx(s,p.x,p.y)];if(!t||t.kind!=='wall')return 0;
     const n=wallishAround(s,p.x,p.y);
-    if(i>0&&n.open>1)return 0; // never punch through into another room/corridor
+    if(i>0&&n.open>1)return 0;
   }
   for(const p of cells)s.tiles[idx(s,p.x,p.y)]=floorTile(room,rng.int(0,15));
   return cells.length;
@@ -87,23 +87,19 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
   let cuts=0,carved=0;
   const xs=cells.map(p=>p.x),ys=cells.map(p=>p.y),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),w=maxX-minX+1,h=maxY-minY+1;
   if(w<6||h<6||cells.length<28)return{cuts,carved};
-
-  // Sap-maze lesson: room silhouettes should have bites/recesses, not four perfect corners.
   const corners=[
     {x:minX,y:minY,sx:1,sy:1},{x:maxX,y:minY,sx:-1,sy:1},
     {x:minX,y:maxY,sx:1,sy:-1},{x:maxX,y:maxY,sx:-1,sy:-1}
   ];
   for(const c of corners){
     if(!rng.chance(.72))continue;
-    const shape=rng.chance(.48)?[[0,0],[1,0],[0,1]]:[[0,0],[1,0]];
+    const shape:ReadonlyArray<readonly [number,number]>=rng.chance(.48)?[[0,0],[1,0],[0,1]]:[[0,0],[1,0]];
     for(const [ox,oy] of shape){
       const x=c.x+ox*c.sx,y=c.y+oy*c.sy,k=idx(s,x,y),t=s.tiles[k];
       if(protectedSet.has(k)||!plainFloor(t)||openAround(s,x,y,1)<4)continue;
       if(tryWall(s,x,y,room,rng.int(0,15)))cuts++;
     }
   }
-
-  // A few shallow wall intrusions break ruler-straight edges without turning the room into noise.
   const edges=edgeCandidates(s,cells).filter(q=>{
     const {x,y}=q.p,k=idx(s,x,y);if(protectedSet.has(k)||openAround(s,x,y,1)<5)return false;
     const marginX=Math.min(Math.abs(x-minX),Math.abs(maxX-x)),marginY=Math.min(Math.abs(y-minY),Math.abs(maxY-y));
@@ -113,8 +109,6 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
     if(!edges.length)break;const q=edges.splice(rng.int(0,edges.length-1),1)[0]!,k=idx(s,q.p.x,q.p.y),t=s.tiles[k];
     if(plainFloor(t)&&!protectedSet.has(k)&&tryWall(s,q.p.x,q.p.y,room,rng.int(0,15)))cuts++;
   }
-
-  // Purposeful bulb alcove: narrow neck -> wider pocket, borrowing the maze's corridor/pool rhythm.
   const pocketEdges=edgeCandidates(s,cells).filter(q=>{
     const x=q.p.x+q.d.dx,y=q.p.y+q.d.dy;return inside(s,x,y)&&s.tiles[idx(s,x,y)]?.kind==='wall'&&!protectedSet.has(idx(s,q.p.x,q.p.y));
   });
