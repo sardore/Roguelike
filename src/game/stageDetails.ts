@@ -9,7 +9,7 @@ export function applyStageDetails(s:GameState){
     fixture(s,19,14,'awning',false);fixture(s,20,17,'lamp',false);fixture(s,21,16,'stall',true,1);fixture(s,27,17,'stall',true,2);fixture(s,29,14,'sign',false);fixture(s,31,17,'cart',true);fixture(s,18,16,'barrel',true);fixture(s,33,15,'lamp',false);
     fixture(s,20,14,'shelf',true);fixture(s,23,14,'pipe',false);fixture(s,26,14,'still',true);fixture(s,22,17,'crate',true);fixture(s,25,17,'grate',false);fixture(s,28,17,'barrel',true);
     terrain(s,22,14,'glass',1);terrain(s,28,15,'oil',2);terrain(s,30,16,'sludge',1);terrain(s,17,17,'water',1);terrain(s,26,17,'water',1);
-    const rat=s.enemies.find(e=>e.id==='rat-a');if(rat){rat.x=29;rat.y=16}
+    const rat=s.enemies.find(e=>e.id==='rat-a');if(rat){rat.x=28;rat.y=16}
     const tonic=s.items.find(i=>i.id==='tonic-a');if(tonic){tonic.x=19;tonic.y=15}
   }
   if(s.districtStage===2){
