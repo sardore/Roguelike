@@ -39,7 +39,6 @@ function floorTile(room:string,variant:number):Tile{return{kind:'floor',variant,
 function tryWall(s:GameState,x:number,y:number,room:string,variant:number){
   const k=idx(s,x,y),old=s.tiles[k];if(!old||!plainFloor(old))return false;
   const before=flood(s),goalWas=routeOpen(s);s.tiles[k]=wallTile(room,variant);const after=flood(s),goalNow=routeOpen(s);
-  // Removing one floor cell is okay; splitting a whole reachable wing is not.
   if(after.count>=before.count-1&&(!goalWas||goalNow))return true;
   s.tiles[k]=old;return false;
 }
@@ -75,7 +74,7 @@ function meanderLongRoom(s:GameState,room:string,cells:Point[],w:number,h:number
       const span=rng.chance(.45)?2:1;
       for(let j=0;j<span;j++){
         const xx=x+j,column=cells.filter(p=>p.x===xx);if(!column.length)continue;const ys=column.map(p=>p.y),y=top?Math.min(...ys):Math.max(...ys),k=idx(s,xx,y),t=s.tiles[k];
-        if(protectedSet.has(k)||!plainFloor(t)||roomBase(t.room)!==room||openAround(s,xx,y,1)<5)continue;
+        if(protectedSet.has(k)||!t||!plainFloor(t)||roomBase(t.room)!==room||openAround(s,xx,y,1)<5)continue;
         if(tryWall(s,xx,y,room,rng.int(0,15)))cuts++;
       }
       top=!top;
@@ -86,7 +85,7 @@ function meanderLongRoom(s:GameState,room:string,cells:Point[],w:number,h:number
       const span=rng.chance(.45)?2:1;
       for(let j=0;j<span;j++){
         const yy=y+j,row=cells.filter(p=>p.y===yy);if(!row.length)continue;const xs=row.map(p=>p.x),x=left?Math.min(...xs):Math.max(...xs),k=idx(s,x,yy),t=s.tiles[k];
-        if(protectedSet.has(k)||!plainFloor(t)||roomBase(t.room)!==room||openAround(s,x,yy,1)<5)continue;
+        if(protectedSet.has(k)||!t||!plainFloor(t)||roomBase(t.room)!==room||openAround(s,x,yy,1)<5)continue;
         if(tryWall(s,x,yy,room,rng.int(0,15)))cuts++;
       }
       left=!left;
@@ -100,10 +99,7 @@ function softenRoom(s:GameState,room:string,cells:Point[],rng:Rng,protectedSet:S
   if(w<5||h<5||cells.length<24)return{cuts,carved};
   cuts+=meanderLongRoom(s,room,cells,w,h,rng,protectedSet);
   const corners=[{x:minX,y:minY,sx:1,sy:1},{x:maxX,y:minY,sx:-1,sy:1},{x:minX,y:maxY,sx:1,sy:-1},{x:maxX,y:maxY,sx:-1,sy:-1}];
-  for(const c of corners){
-    if(!rng.chance(.72))continue;const shape:ReadonlyArray<readonly [number,number]>=rng.chance(.48)?[[0,0],[1,0],[0,1]]:[[0,0],[1,0]];
-    for(const [ox,oy] of shape){const x=c.x+ox*c.sx,y=c.y+oy*c.sy,k=idx(s,x,y),t=s.tiles[k];if(protectedSet.has(k)||!plainFloor(t)||openAround(s,x,y,1)<4)continue;if(tryWall(s,x,y,room,rng.int(0,15)))cuts++}
-  }
+  for(const c of corners){if(!rng.chance(.72))continue;const shape:ReadonlyArray<readonly [number,number]>=rng.chance(.48)?[[0,0],[1,0],[0,1]]:[[0,0],[1,0]];for(const [ox,oy] of shape){const x=c.x+ox*c.sx,y=c.y+oy*c.sy,k=idx(s,x,y),t=s.tiles[k];if(protectedSet.has(k)||!plainFloor(t)||openAround(s,x,y,1)<4)continue;if(tryWall(s,x,y,room,rng.int(0,15)))cuts++}}
   const edges=edgeCandidates(s,cells).filter(q=>{const {x,y}=q.p,k=idx(s,x,y);if(protectedSet.has(k)||openAround(s,x,y,1)<5)return false;const marginX=Math.min(Math.abs(x-minX),Math.abs(maxX-x)),marginY=Math.min(Math.abs(y-minY),Math.abs(maxY-y));return Math.max(marginX,marginY)>=2});
   for(let n=0;n<Math.min(2,Math.floor((w+h)/18));n++){if(!edges.length)break;const q=edges.splice(rng.int(0,edges.length-1),1)[0]!,k=idx(s,q.p.x,q.p.y),t=s.tiles[k];if(plainFloor(t)&&!protectedSet.has(k)&&tryWall(s,q.p.x,q.p.y,room,rng.int(0,15)))cuts++}
   const pocketEdges=edgeCandidates(s,cells).filter(q=>{const x=q.p.x+q.d.dx,y=q.p.y+q.d.dy;return inside(s,x,y)&&s.tiles[idx(s,x,y)]?.kind==='wall'&&!protectedSet.has(idx(s,q.p.x,q.p.y))});
