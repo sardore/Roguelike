@@ -2,6 +2,7 @@ import { hash } from './rng';
 import { createLateWorld } from './lateStages';
 import { applySpecialFeatures } from './specials';
 import { applyStageDetails } from './stageDetails';
+import { applyExpansionContent, handleExpansionInteract, runExpansionTick } from './expansion';
 import { createWorld } from './world';
 import { interactAt, move, useItem, wait } from './systems';
 import type { GameState, Point } from './types';
@@ -15,7 +16,7 @@ const OBSERVATIONS:Record<string,string>={
 };
 
 function makeWorld(seed:number,stage:number){return stage<=3?createWorld(seed,stage):createLateWorld(seed,stage)}
-function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state)}
+function decorate(state:GameState){applyStageDetails(state);applySpecialFeatures(state);applyExpansionContent(state)}
 const DESCENT:Record<number,string>={2:'You descend into the Tincture Bazaar. The air becomes wetter.',3:'You descend again. Somewhere below, a furnace door closes by itself.',4:'The stair enters glasswork that predates the street above.',5:'Below the catacombs, the whole city narrows into one working machine.'};
 
 export class Game{
@@ -24,7 +25,9 @@ export class Game{
   sub(fn:()=>void){this.listeners.add(fn);return()=>this.listeners.delete(fn)}emit(){for(const fn of this.listeners)fn()}
   private observe(beforeX:number,beforeY:number){if(this.state.player.x===beforeX&&this.state.player.y===beforeY)return;const tile=this.state.tiles[this.state.player.y*this.state.width+this.state.player.x],room=tile?.room;if(room&&!this.state.enteredRooms.includes(room)){this.state.enteredRooms.push(room);const text=OBSERVATIONS[room];if(text){this.state.messages.push({text,tone:'odd'});if(this.state.messages.length>9)this.state.messages.shift()}}}
   private descendIfNeeded(){if(!this.state.won||!this.state.over||this.state.districtStage>=5)return;const old=this.state,nextStage=old.districtStage+1,next=makeWorld(this.rootSeed,nextStage);decorate(next);next.player.hp=old.player.hp;next.player.maxHp=old.player.maxHp;next.player.inventory=[...old.player.inventory];next.player.statuses=old.player.statuses.filter(st=>st.id!=='marked'&&st.id!=='sluggish').map(st=>({...st,turns:Math.min(st.turns,4)}));next.turn=old.turn;next.messages=[{text:DESCENT[nextStage]??'The stair continues downward.',tone:'odd'}];this.state=next}
-  move(dx:number,dy:number){const x=this.state.player.x,y=this.state.player.y;move(this.state,dx,dy);this.observe(x,y);this.descendIfNeeded();this.emit()}
-  wait(){wait(this.state);this.emit()}use(index:number,target?:Point){useItem(this.state,index,target);this.emit()}interact(target:Point){interactAt(this.state,target);this.emit()}
+  move(dx:number,dy:number){const x=this.state.player.x,y=this.state.player.y;move(this.state,dx,dy);runExpansionTick(this.state);this.observe(x,y);this.descendIfNeeded();this.emit()}
+  wait(){wait(this.state);runExpansionTick(this.state);this.emit()}
+  use(index:number,target?:Point){useItem(this.state,index,target);runExpansionTick(this.state);this.emit()}
+  interact(target:Point){if(!handleExpansionInteract(this.state,target))interactAt(this.state,target);runExpansionTick(this.state);this.emit()}
   restart(seed=`run-${Date.now()}`){this.rootSeed=hash(seed);this.state=makeWorld(this.rootSeed,1);decorate(this.state);this.emit()}
 }
