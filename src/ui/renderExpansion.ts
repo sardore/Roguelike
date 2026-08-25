@@ -1,4 +1,4 @@
-import { drawMap as baseDrawMap, screenToTile } from './renderFinal';
+import { drawMap as baseDrawMap, screenToTile } from './render2';
 import type { EliteKind, GameState, Tile } from '../game/types';
 
 const TS=32;
@@ -31,7 +31,7 @@ function specialFixture(c:CanvasRenderingContext2D,x:number,y:number,t:Tile){
   }else if(k==='sealed-urn'){
     px(c,X+12,Y+7,8,4,'#b18a55');rr(c,X+8,Y+11,16,16,6,'#4b3d34');rr(c,X+10,Y+13,12,12,5,'#72584a');px(c,X+14,Y+14,4,7,'#9ab0a0',.42);
   }else if(k==='chain-hoist'){
-    for(let i=0;i<5;i++)c.strokeRect(X+14,Y+4+i*5,4,5);px(c,X+7,Y+23,18,4,'#5b4c37');ln(c,X+10,Y+25,X+7,Y+20,'#9a7a4c',2,.7);ln(c,X+22,Y+25,X+25,Y+20,'#9a7a4c',2,.7);
+    c.strokeStyle='#8d7550';c.lineWidth=1;for(let i=0;i<5;i++)c.strokeRect(X+14,Y+4+i*5,4,5);px(c,X+7,Y+23,18,4,'#5b4c37');ln(c,X+10,Y+25,X+7,Y+20,'#9a7a4c',2,.7);ln(c,X+22,Y+25,X+25,Y+20,'#9a7a4c',2,.7);
   }else if(k==='observation-desk'){
     px(c,X+4,Y+15,24,11,'#5a422f');px(c,X+6,Y+17,20,4,'#8a6543');px(c,X+8,Y+9,16,8,'#c1b58e');ln(c,X+10,Y+12,X+21,Y+12,'#71684f',1,.75);ln(c,X+10,Y+15,X+18,Y+15,'#71684f',1,.65);
   }else if(k==='resonator'){
@@ -45,8 +45,8 @@ function specialFixtures(c:CanvasRenderingContext2D,s:GameState){for(let y=0;y<s
 function eliteMarks(c:CanvasRenderingContext2D,s:GameState){for(const e of s.enemies){if(!e.elite||!s.tiles[e.y*s.width+e.x]?.visible)continue;const X=e.x*TS,Y=e.y*TS,col=ELITE_COL[e.elite];px(c,X+8,Y+29,16,2,'#050705',.80);px(c,X+10,Y+29,12,2,col,.72);px(c,X+14,Y+2,4,3,col,.88);px(c,X+12,Y+4,8,2,'#090b08',.86);ln(c,X+12,Y+4,X+16,Y+7,col,1,.65);ln(c,X+20,Y+4,X+16,Y+7,col,1,.65)}}
 
 function roomMass(c:CanvasRenderingContext2D,s:GameState){
-  // One broad floor tint per visible room cluster gives depth without returning to per-tile clutter.
-  for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){const t=s.tiles[y*s.width+x];if(!t?.visible||t.kind!=='floor'||t.fixture)continue;if(((x>>1)+(y>>1)+s.districtStage)%11!==0)continue;const X=x*TS,Y=y*TS;px(c,X+4,Y+22,24,4,s.districtStage===4?'#4d6865':s.districtStage===3||s.districtStage===5?'#6b4d35':'#4f5342',.10)}
+  // Keep the old material-rich base. This is only a sparse, low-alpha room tint so gameplay overlays stay legible.
+  for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){const t=s.tiles[y*s.width+x];if(!t?.visible||t.kind!=='floor'||t.fixture)continue;if(((x>>1)+(y>>1)+s.districtStage)%13!==0)continue;const X=x*TS,Y=y*TS;px(c,X+4,Y+23,24,3,s.districtStage===4?'#4d6865':s.districtStage===3||s.districtStage===5?'#6b4d35':'#4f5342',.07)}
 }
 
 export function drawMap(canvas:HTMLCanvasElement,s:GameState){baseDrawMap(canvas,s);const c=canvas.getContext('2d')!;roomMass(c,s);specialFixtures(c,s);eliteMarks(c,s)}
