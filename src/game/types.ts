@@ -11,7 +11,9 @@ export type FixtureKind =
   | 'fountain' | 'rubble' | 'cabinet' | 'boiler' | 'sealed-cache' | 'lever'
   | 'brass-gate' | 'retort' | 'ward-pylon' | 'cage' | 'incinerator'
   | 'stall' | 'valve' | 'reagent-pump' | 'bell' | 'transmuter'
-  | 'crucible' | 'furnace' | 'silver-mirror' | 'archive-desk';
+  | 'crucible' | 'furnace' | 'silver-mirror' | 'archive-desk'
+  | 'relic-pedestal' | 'pressure-console' | 'scent-burner' | 'field-kit'
+  | 'glass-organ' | 'sealed-urn' | 'chain-hoist' | 'observation-desk' | 'resonator';
 
 export type Tile = {
   kind: TileKind;
@@ -29,6 +31,10 @@ export type EnemyKind =
   | 'retort-leech' | 'soot-sprite' | 'brine-warden' | 'gutter-alchemist'
   | 'homunculus' | 'glass-sentinel' | 'miasma-moth' | 'crucible-knight';
 
+export type EliteKind =
+  | 'acid-seer' | 'mirror-hunter' | 'furnace-heart' | 'embalmer'
+  | 'brass-executor' | 'salt-abbot';
+
 export type Enemy = {
   id:string;
   kind:EnemyKind;
@@ -38,6 +44,7 @@ export type Enemy = {
   cooldown:number;
   telegraph?:Point;
   alert?:Point;
+  elite?:EliteKind;
 };
 
 export type ItemKind =
@@ -69,4 +76,5 @@ export type GameState = {
   noise:Point[];
   enteredRooms:string[];
   districtStage:number;
+  expansionFlags?:string[];
 };
