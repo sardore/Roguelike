@@ -4,7 +4,7 @@ import { Game } from './game/engine';
 import { ITEMS } from './game/content';
 import { findPath, visibleThreatIds } from './game/path';
 import { inspectAt, isAimedItem } from './game/systems';
-import { drawMap, screenToTile } from './ui/renderExpansion';
+import { drawMap, screenToTile } from './ui/renderPolish';
 import type { ItemKind, Point } from './game/types';
 
 const app=document.querySelector<HTMLDivElement>('#app')!;const game=new Game();let inspect='',aimIndex:number|null=null,walkToken=0;
