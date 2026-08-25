@@ -1,134 +1,112 @@
-import './readability.css';
 import './style.css';
-import { Game, type RunKit } from './game/engine';
-import { ITEMS } from './game/content';
-import { findPath, visibleThreatIds } from './game/path';
-import { inspectAt, isAimedItem } from './game/systems';
-import { drawMap, screenToTile } from './ui/renderGame';
-import type { ItemKind, Point } from './game/types';
+import { BAND_NAMES, FLOOR_NAMES, bandFor, createRun, labelEnemy, labelItem, moveHero, type HeroClass, type ItemKind, type TowerState, useItem, waitTurn } from './tower';
 
 const app=document.querySelector<HTMLDivElement>('#app')!;
-const game=new Game();
-type Mode='title'|'guide'|'game';
-let mode:Mode='title',selectedKit:RunKit='apothecary',inspect='',aimIndex:number|null=null,walkToken=0,introOpen=false,lastDepth='',bagOpen=false,menuOpen=false,inspectMode=false;
+let state:TowerState|null=null;
+let selected:HeroClass='vanguard';
+let canvas:HTMLCanvasElement|null=null;
+let autoTimer:number|undefined;
 
-const DISTRICTS=[['01','APOTHECARIES’ ROW'],['02','TINCTURE BAZAAR'],['03','CRUCIBLE WARD'],['04','VITREOUS CATACOMBS'],['05','GRAND ALEMBIC']] as const;
-const DISTRICT_COPY=[
-  'Medicinal shops, drains and narrow still-houses crowd the old street.',
-  'Tinctures, dyes and sealed exchanges sit half-drowned beneath the market.',
-  'Hot stone, assay rooms and furnaces turn the lower city into a working machine.',
-  'Glass masonry and preservation rooms make distance and reflection unreliable.',
-  'Every pipe and reagent route converges on the mechanism at the city’s core.'
-] as const;
-const ROOM_LABELS:Record<string,string>={'apothecaries-row':'APOTHECARIES’ ROW',herbalist:'HERBALIST',distillery:'DISTILLERY','north-alley':'SERVICE ALLEY',glassworks:'GLASSWORKS',courtyard:'PHYSIC COURT','service-passage':'BACK PASSAGE',underworks:'UNDERWORKS','sealed-shop':'SEALED APOTHECARY','tincture-bazaar':'TINCTURE BAZAAR','spice-arcade':'SPICE ARCADE','dye-vats':'DYE VATS','counting-house':'COUNTING HOUSE','black-market':'BLACK MARKET',cistern:'CISTERN','market-passages':'MARKET PASSAGES',wayhouse:'WAYHOUSE','old-exchange':'OLD EXCHANGE','crucible-ward':'CRUCIBLE WARD','furnace-court':'FURNACE COURT','assay-lab':'ASSAY LAB','kiln-hall':'KILN HALL','old-mint':'OLD MINT','ash-gallery':'ASH GALLERY','cooling-vault':'COOLING VAULT','master-lab':'MASTER LAB','final-vault':'FINAL VAULT','vitreous-catacombs':'VITREOUS CATACOMBS','mirror-ossuary':'MIRROR OSSUARY','crystal-vault':'CRYSTAL VAULT','preservation-hall':'PRESERVATION HALL','drain-chapel':'DRAIN CHAPEL','specimen-crypt':'SPECIMEN CRYPT','sealed-archive':'SEALED ARCHIVE','catacomb-passages':'CATACOMB PASSAGES','grand-alembic':'GRAND ALEMBIC','reaction-gallery':'REACTION GALLERY','furnace-nave':'FURNACE NAVE','catalyst-library':'CATALYST LIBRARY','cooling-core':'COOLING CORE','master-vault':'MASTER VAULT','central-lab':'CENTRAL LAB','condenser-hall':'CONDENSER HALL','final-sanctum':'FINAL SANCTUM'};
-const STATUS_LABELS:Record<string,string>={marked:'SCENT',bleeding:'BLEED',poisoned:'POISON',sluggish:'SLOW',warded:'WARD'};
-const KITS:Record<RunKit,{name:string,tag:string,desc:string,items:string,glyph:string}>={
-  apothecary:{name:'APOTHECARY',tag:'CONTROL',desc:'22 HP · healing + neutralization',items:'PHIAL · TONIC · NEUTRALIZER',glyph:'⚗'},
-  surveyor:{name:'SURVEYOR',tag:'UTILITY',desc:'20 HP · route control + scouting',items:'CHALK · SMOKE · FROST',glyph:'◇'},
-  breaker:{name:'BREAKER',tag:'DIRECT',desc:'26 HP · guard + forced entry',items:'SALT · SOLVENT · KEY',glyph:'◆'}
+const classInfo:Record<HeroClass,{name:string;tag:string;desc:string;glyph:string}>={
+  vanguard:{name:'VANGUARD',tag:'ARMOR · FORCE',desc:'High vitality. Breaks through bad positions.',glyph:'◆'},
+  ranger:{name:'RANGER',tag:'MOBILITY · TOOLS',desc:'Lean and quick. Starts with a cinder bomb.',glyph:'➶'},
+  arcanist:{name:'ARCANIST',tag:'POWER · WARDS',desc:'Fragile, but every clean hit matters.',glyph:'✦'}
 };
-const shortName=(name:string)=>name.replace(' Phial','').replace(' Bomb','').replace(' Tonic','').replace('White ','').replace(' Ampoule','').replace(' Flask','').replace(' Elixir','');
-const itemIcon=(kind:ItemKind)=>`<span class="item-icon icon-${kind}" aria-hidden="true"><i></i></span>`;
-const depthNumber=()=>((game.state.districtStage-1)*2+(game.state.floorInDistrict??1));
-const depthKey=()=>`${game.state.districtStage}-${game.state.floorInDistrict??1}`;
-const districtBossAlive=()=>game.state.enemies.some(e=>e.id.startsWith('district-boss-'));
-const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
-function cancelWalk(){walkToken++}
 
-function titleMarkup(){
-  const kit=KITS[selectedKit];
-  return `<main class="title-screen">
-    <div class="title-world" aria-hidden="true"><div class="arch a1"></div><div class="arch a2"></div><div class="arch a3"></div><div class="tower t1"></div><div class="tower t2"></div><div class="copper-line l1"></div><div class="copper-line l2"></div></div>
-    <section class="title-panel">
-      <div class="title-mark"><span>A</span></div>
-      <div class="eyebrow">A TURN-BASED ALCHEMICAL ROGUELIKE</div>
-      <h1>ALCHEMY <span>CITY</span></h1>
-      <p class="title-copy">Ten hostile depths. Five districts. One persistent inventory.</p>
-      <div class="kit-heading"><b>CHOOSE YOUR FIELD KIT</b><span>${kit.tag}</span></div>
-      <div class="kit-select">${(Object.keys(KITS) as RunKit[]).map(k=>{const q=KITS[k];return `<button class="kit-card ${selectedKit===k?'selected':''}" data-kit="${k}"><span class="kit-glyph">${q.glyph}</span><strong>${q.name}</strong><small>${q.desc}</small><em>${q.items}</em></button>`}).join('')}</div>
-      <button id="begin" class="begin">ENTER THE CITY</button>
-      <button id="guide" class="text-button">FIELD MANUAL</button>
+function towerMark(){return `<div class="tower-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><b></b></div>`}
+
+function showTitle(){
+  stopAuto();state=null;
+  app.innerHTML=`<main class="title-screen">
+    <div class="title-fog fog-a"></div><div class="title-fog fog-b"></div>
+    <section class="title-copy">
+      <div class="eyebrow">A TURN-BASED ROGUELIKE</div>
+      <h1>TOWER OF<br><span>THE FIRST KING</span></h1>
+      <p class="title-line">Twenty floors. Five forgotten ages. One open sky.</p>
     </section>
-  </main>`
-}
-
-function guideMarkup(){return `<main class="guide-screen"><section class="guide-card"><div class="eyebrow">FIELD MANUAL</div><h1>HOW TO READ THE CITY</h1><div class="guide-grid"><article><b>MOVE / ATTACK</b><p>Tap a visible floor tile to walk there. Tap an adjacent enemy to attack. Auto-walk stops when danger appears.</p></article><article><b>QUICKSLOTS</b><p>The four large slots are your immediate tools. Tap the satchel to reach the rest of your inventory.</p></article><article><b>LOOK</b><p>Tap LOOK, then any visible tile, monster or fixture. LOOK never spends a turn.</p></article><article><b>CHEMISTRY</b><p>Fire spreads through oil. Salt suppresses volatile terrain. Frost, solvent and catalyst can alter the battlefield.</p></article><article><b>DISTRICT MASTERS</b><p>Every second depth has a master that pressure-locks the exit. Kill it before trying to descend.</p></article><article><b>SURVIVAL</b><p>HP and carried reagents persist between depths. There is no free reset between floors.</p></article></div><button id="back-title" class="begin secondary">BACK</button></section></main>`}
-
-function startRun(){mode='game';introOpen=true;lastDepth='';inspect='';aimIndex=null;bagOpen=false;menuOpen=false;inspectMode=false;cancelWalk();game.start(selectedKit,`alchemy-${Date.now()}`)}
-function titleHandlers(){app.querySelectorAll<HTMLButtonElement>('[data-kit]').forEach(b=>b.onclick=()=>{selectedKit=b.dataset.kit as RunKit;render()});app.querySelector<HTMLButtonElement>('#begin')!.onclick=startRun;app.querySelector<HTMLButtonElement>('#guide')!.onclick=()=>{mode='guide';render()}}
-function guideHandlers(){app.querySelector<HTMLButtonElement>('#back-title')!.onclick=()=>{mode='title';render()}}
-
-async function walkTo(target:Point){
-  cancelWalk();const token=walkToken;inspect='';
-  if(visibleThreatIds(game.state).size){inspect='Enemy in sight — move manually.';render();return}
-  let known=visibleThreatIds(game.state);
-  while(token===walkToken&&!game.state.over&&mode==='game'&&!introOpen&&!bagOpen&&!menuOpen){
-    const path=findPath(game.state,target);if(path.length<2)break;const next=path[1]!,hp=game.state.player.hp,inv=game.state.player.inventory.length,stage=game.state.districtStage,floor=game.state.floorInDistrict;
-    game.move(next.x-game.state.player.x,next.y-game.state.player.y);await sleep(55);
-    if(token!==walkToken||game.state.over||game.state.districtStage!==stage||game.state.floorInDistrict!==floor)break;
-    if(game.state.player.hp!==hp||game.state.player.inventory.length!==inv)break;
-    const threats=visibleThreatIds(game.state);if([...threats].some(id=>!known.has(id)))break;known=threats;
-    if(game.state.player.x===target.x&&game.state.player.y===target.y)break;
-  }
-}
-
-function quickSlots(){const inv=game.state.player.inventory;return Array.from({length:4},(_,i)=>{const k=inv[i];return k?`<button class="quickslot item ${aimIndex===i?'aiming':''}" data-item="${i}" aria-label="${ITEMS[k].name}">${itemIcon(k)}<span>${shortName(ITEMS[k].name)}</span></button>`:`<div class="quickslot empty"><i></i></div>`}).join('')}
-function bagMarkup(){const s=game.state;if(!bagOpen)return'';return `<div class="sheet-backdrop" id="bag-close"><section class="bag-sheet" onclick="event.stopPropagation()"><header><div><small>INVENTORY</small><b>FIELD SATCHEL</b></div><span>${s.player.inventory.length} ITEMS</span></header><div class="bag-grid">${s.player.inventory.length?s.player.inventory.map((k,i)=>`<button class="bag-item item ${aimIndex===i?'aiming':''}" data-item="${i}">${itemIcon(k)}<strong>${ITEMS[k].name}</strong><small>${ITEMS[k].desc}</small></button>`).join(''):'<p class="empty-bag">The satchel is empty.</p>'}</div><button id="bag-done" class="sheet-done">CLOSE</button></section></div>`}
-function menuMarkup(){if(!menuOpen)return'';return `<div class="sheet-backdrop"><section class="pause-sheet"><div class="eyebrow">PAUSED</div><h2>ALCHEMY CITY</h2><button id="resume" class="begin">CONTINUE</button><button id="manual" class="sheet-row">FIELD MANUAL</button><button id="to-title" class="sheet-row danger-row">RETURN TO TITLE</button></section></div>`}
-
-function gameMarkup(){
-  const s=game.state,here=s.tiles[s.player.y*s.width+s.player.x],room=ROOM_LABELS[here?.room??'']??'OLD CITY',threats=visibleThreatIds(s).size,district=DISTRICTS[Math.max(0,Math.min(4,s.districtStage-1))]!,floor=s.floorInDistrict??1,statuses=s.player.statuses.map(st=>`<span class="status ${st.id}">${STATUS_LABELS[st.id]??st.id} ${st.turns}</span>`).join(''),boss=districtBossAlive(),depth=depthNumber();
-  const objective=boss?'MASTER LOCK':s.districtStage===5&&floor===2?'FINAL EXIT':'FIND STAIR';
-  const latest=s.messages.slice(-2);
-  const intro=introOpen?`<div class="depth-intro"><div class="depth-no">DEPTH ${String(depth).padStart(2,'0')} / 10</div><small>${district[1]} · ${floor===1?'UPPER':'LOWER'} LEVEL</small><h2>${district[1]}</h2><p>${DISTRICT_COPY[s.districtStage-1]}</p>${floor===2?'<b>THE DISTRICT MASTER CONTROLS THE EXIT.</b>':''}<button id="enter-depth">ENTER</button></div>`:'';
-  const ending=s.over?`<div class="overlay"><div class="card"><em>DEPTH ${depth}</em><h2>${s.won?'The city releases you':'Run ended'}</h2><p>${s.won?'Cold air arrives from somewhere that should be sealed.':'The city keeps what it is given.'}</p><button id="return-title">RETURN TO TITLE</button></div></div>`:'';
-  return `<main class="shell">
-    <section class="game"><div class="camera"><canvas class="map"></canvas></div>
-      <div class="hero-hud"><button class="portrait" id="hero-info" aria-label="hero status"><i class="head"></i><i class="coat"></i></button><div class="hero-bars"><div class="hp-line"><b>${s.player.hp}</b><span>/${s.player.maxHp}</span>${s.player.guard?`<em>+${s.player.guard}</em>`:''}</div><div class="hp-bar"><i style="width:${Math.max(0,s.player.hp/s.player.maxHp*100)}%"></i></div><div class="status-row">${statuses}</div></div></div>
-      <div class="location-hud"><small>DEPTH ${String(depth).padStart(2,'0')}</small><b>${room}</b><span class="${boss||threats?'danger':''}">${boss?objective:threats?`${threats} THREAT${threats===1?'':'S'}`:objective}</span></div>
-      <div class="utility-rail"><button id="inspect-toggle" class="utility ${inspectMode?'active':''}"><i class="look-icon"></i><span>LOOK</span></button><button id="wait" class="utility"><i class="wait-icon"></i><span>WAIT</span></button><button id="menu" class="utility"><i class="menu-icon"></i><span>MENU</span></button></div>
-      <div class="message-toast">${latest.map(m=>`<div class="${m.tone??''}">${m.text}</div>`).join('')}</div>
-      ${inspect?`<div class="inspect-card">${inspect}</div>`:''}
-      ${aimIndex!==null?`<div class="aim-banner">SELECT A TARGET TILE</div>`:''}
-      <div class="quickbar"><div class="quickslots">${quickSlots()}</div><button id="bag" class="bag-button"><i class="bag-icon"></i><span>${s.player.inventory.length}</span></button></div>
-      <div class="tap-hint">TAP FLOOR TO MOVE · TAP ADJACENT ENEMY TO ATTACK</div>
-      ${intro}${ending}${bagMarkup()}${menuMarkup()}
+    ${towerMark()}
+    <section class="start-panel">
+      <div class="class-strip">
+        ${(Object.keys(classInfo) as HeroClass[]).map(k=>{const v=classInfo[k];return `<button class="class-card ${k===selected?'selected':''}" data-class="${k}"><strong>${v.glyph}</strong><span>${v.name}</span><small>${v.tag}</small></button>`}).join('')}
+      </div>
+      <p id="classDesc" class="class-desc">${classInfo[selected].desc}</p>
+      <button id="newRun" class="new-run"><span>ENTER THE TOWER</span><b>↑</b></button>
+      <div class="title-foot"><span>tap to move · tap enemies to strike</span><span>v0.1 — new foundation</span></div>
     </section>
-  </main>`
+  </main>`;
+  app.querySelectorAll<HTMLButtonElement>('[data-class]').forEach(btn=>btn.onclick=()=>{selected=btn.dataset.class as HeroClass;showTitle()});
+  document.querySelector<HTMLButtonElement>('#newRun')!.onclick=()=>startRun(selected);
 }
 
-function gameHandlers(){
-  const s=game.state,canvas=app.querySelector<HTMLCanvasElement>('canvas')!;drawMap(canvas,s);const cam=canvas.parentElement!,fit=Math.min(cam.clientWidth/canvas.width,cam.clientHeight/canvas.height),scale=fit*(cam.clientWidth<700?5.15:3.25);canvas.style.width=`${canvas.width*scale}px`;canvas.style.height=`${canvas.height*scale}px`;canvas.style.transform=`translate(${(s.width/2-s.player.x)*32*scale}px,${(s.height/2-s.player.y)*32*scale-cam.clientHeight*.015}px)`;
-  app.querySelector<HTMLButtonElement>('#enter-depth')?.addEventListener('click',()=>{introOpen=false;render()});
-  app.querySelector<HTMLButtonElement>('#return-title')?.addEventListener('click',()=>{mode='title';introOpen=false;render()});
-  app.querySelector<HTMLButtonElement>('#inspect-toggle')?.addEventListener('click',()=>{if(introOpen)return;inspectMode=!inspectMode;inspect=inspectMode?'LOOK: tap any visible tile.':'';render()});
-  app.querySelector<HTMLButtonElement>('#wait')?.addEventListener('click',()=>{if(introOpen||bagOpen||menuOpen)return;cancelWalk();aimIndex=null;inspect='';inspectMode=false;game.wait()});
-  app.querySelector<HTMLButtonElement>('#menu')?.addEventListener('click',()=>{if(introOpen)return;menuOpen=true;cancelWalk();render()});
-  app.querySelector<HTMLButtonElement>('#resume')?.addEventListener('click',()=>{menuOpen=false;render()});
-  app.querySelector<HTMLButtonElement>('#manual')?.addEventListener('click',()=>{menuOpen=false;mode='guide';render()});
-  app.querySelector<HTMLButtonElement>('#to-title')?.addEventListener('click',()=>{menuOpen=false;mode='title';introOpen=false;render()});
-  app.querySelector<HTMLButtonElement>('#bag')?.addEventListener('click',()=>{if(introOpen)return;bagOpen=true;cancelWalk();render()});
-  app.querySelector<HTMLDivElement>('#bag-close')?.addEventListener('click',()=>{bagOpen=false;render()});
-  app.querySelector<HTMLButtonElement>('#bag-done')?.addEventListener('click',()=>{bagOpen=false;render()});
-  app.querySelectorAll<HTMLButtonElement>('[data-item]').forEach(b=>b.onclick=()=>{if(introOpen||menuOpen)return;cancelWalk();const i=Number(b.dataset.item),kind=s.player.inventory[i];if(!kind)return;bagOpen=false;inspectMode=false;if(isAimedItem(kind)){aimIndex=aimIndex===i?null:i;inspect=aimIndex===null?'':`${ITEMS[kind].name}: tap a visible target tile.`;render()}else{aimIndex=null;inspect='';game.use(i)}});
-  canvas.onpointerdown=e=>{if(introOpen||bagOpen||menuOpen)return;const p=screenToTile(canvas,e.clientX,e.clientY);if(p.x<0||p.y<0||p.x>=s.width||p.y>=s.height)return;
-    if(inspectMode){cancelWalk();inspect=inspectAt(s,p);render();return}
-    if(aimIndex!==null){cancelWalk();const i=aimIndex;aimIndex=null;inspect='';game.use(i,p);return}
-    const dx=p.x-s.player.x,dy=p.y-s.player.y,t=s.tiles[p.y*s.width+p.x],enemy=s.enemies.find(e2=>e2.x===p.x&&e2.y===p.y);
-    if(Math.abs(dx)+Math.abs(dy)===1){cancelWalk();inspect='';if(t?.fixture&&t.blocks){game.interact(p);return}game.move(Math.sign(dx),Math.sign(dy));return}
-    if(enemy){cancelWalk();inspect=`${enemy.id.includes('boss')?'DISTRICT MASTER · ':''}${enemy.kind.replaceAll('-',' ').toUpperCase()} · HP ${enemy.hp}`;render();return}
-    const occupied=s.enemies.some(e2=>e2.x===p.x&&e2.y===p.y);if(t?.discovered&&t.kind!=='wall'&&!t.blocks&&!occupied){void walkTo(p);return}
-    cancelWalk();inspect=inspectAt(s,p);render()
-  }
+function startRun(cls:HeroClass){state=createRun(`first-king-${Date.now()}`,cls);showGame()}
+
+function showGame(){
+  app.innerHTML=`<main class="game-shell">
+    <canvas id="game"></canvas>
+    <div class="vignette"></div>
+    <header class="hud-top">
+      <div class="hero-badge"><div class="portrait" id="portrait"></div><div class="hero-bars"><div class="hp-row"><b id="hpText">0/0</b><span id="guardText"></span></div><div class="hp-track"><i id="hpFill"></i></div></div></div>
+      <div class="floor-card"><small id="bandName"></small><strong id="floorName"></strong><span id="floorNo"></span></div>
+      <button id="menuBtn" class="round-btn" aria-label="menu">☰</button>
+    </header>
+    <div id="bossBanner" class="boss-banner"></div>
+    <div id="message" class="message"></div>
+    <footer class="quickbar">
+      <button class="wait-btn" id="waitBtn"><span>◌</span><small>WAIT</small></button>
+      <div id="items" class="item-slots"></div>
+      <button class="bag-btn" id="bagBtn"><span>▣</span><small>PACK</small></button>
+    </footer>
+    <div id="overlay" class="overlay hidden"></div>
+  </main>`;
+  canvas=document.querySelector<HTMLCanvasElement>('#game')!;
+  resize();window.onresize=resize;
+  canvas.addEventListener('pointerdown',onMapTap);
+  document.querySelector<HTMLButtonElement>('#waitBtn')!.onclick=()=>{if(state){stopAuto();waitTurn(state);afterAction()}};
+  document.querySelector<HTMLButtonElement>('#bagBtn')!.onclick=showPack;
+  document.querySelector<HTMLButtonElement>('#menuBtn')!.onclick=showMenu;
+  window.onkeydown=e=>{if(!state)return;const k=e.key.toLowerCase();if(['arrowup','w'].includes(k))moveBy(0,-1);if(['arrowdown','s'].includes(k))moveBy(0,1);if(['arrowleft','a'].includes(k))moveBy(-1,0);if(['arrowright','d'].includes(k))moveBy(1,0);if(k===' '){waitTurn(state);afterAction()}};
+  render();updateHud();
 }
 
-function render(){
-  if(mode==='title'){app.innerHTML=titleMarkup();titleHandlers();return}
-  if(mode==='guide'){app.innerHTML=guideMarkup();guideHandlers();return}
-  const key=depthKey();if(key!==lastDepth){lastDepth=key;introOpen=true}app.innerHTML=gameMarkup();gameHandlers()
-}
+function resize(){if(!canvas)return;const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.floor(innerWidth*dpr);canvas.height=Math.floor(innerHeight*dpr);canvas.style.width=`${innerWidth}px`;canvas.style.height=`${innerHeight}px`;render()}
+function moveBy(dx:number,dy:number){if(!state)return;stopAuto();moveHero(state,dx,dy);afterAction()}
+function afterAction(){render();updateHud();if(!state)return;if(state.dead||state.won)window.setTimeout(showEnd,350)}
 
-game.sub(render);
-window.addEventListener('keydown',e=>{if(mode!=='game'||introOpen||bagOpen||menuOpen||game.state.over)return;const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','.',' '].includes(k))cancelWalk();if(k==='arrowup'||k==='w')game.move(0,-1);if(k==='arrowdown'||k==='s')game.move(0,1);if(k==='arrowleft'||k==='a')game.move(-1,0);if(k==='arrowright'||k==='d')game.move(1,0);if(k==='.'||k===' ')game.wait();if(k==='x'){inspectMode=!inspectMode;render()}});
-window.addEventListener('resize',()=>{if(mode==='game')render()});
-render();
+function showEnd(){if(!state)return;const o=document.querySelector<HTMLDivElement>('#overlay')!;o.classList.remove('hidden');o.innerHTML=`<section class="end-card"><small>${state.won?'THE CROWN':'THE TOWER REMAINS'}</small><h2>${state.won?'THE SKY IS OPEN':'YOU FELL ON FLOOR '+state.floor}</h2><p>${state.won?'The First King left no throne above the clouds—only a door.':'The stair keeps climbing without you.'}</p><button id="again">BEGIN ANOTHER ASCENT</button><button id="titleReturn" class="ghost">RETURN TO TITLE</button></section>`;document.querySelector<HTMLButtonElement>('#again')!.onclick=()=>startRun(selected);document.querySelector<HTMLButtonElement>('#titleReturn')!.onclick=showTitle}
+function showMenu(){const o=document.querySelector<HTMLDivElement>('#overlay')!;o.classList.remove('hidden');o.innerHTML=`<section class="menu-card"><small>PAUSED</small><h2>${state?FLOOR_NAMES[state.floor]:''}</h2><button id="resume">RESUME</button><button id="restart" class="ghost">ABANDON RUN</button></section>`;document.querySelector<HTMLButtonElement>('#resume')!.onclick=()=>o.classList.add('hidden');document.querySelector<HTMLButtonElement>('#restart')!.onclick=showTitle}
+function showPack(){if(!state)return;const o=document.querySelector<HTMLDivElement>('#overlay')!;o.classList.remove('hidden');o.innerHTML=`<section class="pack-card"><header><div><small>TRAVEL PACK</small><h2>${state.hero.bag.length} ITEMS</h2></div><button id="closePack">×</button></header><div class="pack-grid">${state.hero.bag.length?state.hero.bag.map((k,i)=>itemCard(k,i)).join(''):'<p class="empty-pack">Nothing but dust and spare cloth.</p>'}</div></section>`;document.querySelector<HTMLButtonElement>('#closePack')!.onclick=()=>o.classList.add('hidden');o.querySelectorAll<HTMLButtonElement>('[data-use]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.use);useItem(state!,i);o.classList.add('hidden');afterAction()})}
+function itemCard(k:ItemKind,i:number){const icon=k==='potion'?'♥':k==='bomb'?'✹':k==='ration'?'◒':'◇';const sub=k==='potion'?'+12 HP':k==='bomb'?'10 DMG · R2':k==='ration'?'+6 HP · +1 GUARD':'+5 GUARD';return `<button class="pack-item" data-use="${i}"><b class="item-icon ${k}">${icon}</b><span><strong>${labelItem(k)}</strong><small>${sub}</small></span><i>USE</i></button>`}
+
+function updateHud(){if(!state)return;const hp=document.querySelector<HTMLElement>('#hpText')!,guard=document.querySelector<HTMLElement>('#guardText')!,fill=document.querySelector<HTMLElement>('#hpFill')!;hp.textContent=`${state.hero.hp}/${state.hero.maxHp}`;guard.textContent=state.hero.guard?`◆ ${state.hero.guard}`:'';fill.style.width=`${Math.max(0,state.hero.hp/state.hero.maxHp*100)}%`;document.querySelector<HTMLElement>('#bandName')!.textContent=BAND_NAMES[bandFor(state.floor)]!;document.querySelector<HTMLElement>('#floorName')!.textContent=FLOOR_NAMES[state.floor]!;document.querySelector<HTMLElement>('#floorNo')!.textContent=`FLOOR ${String(state.floor).padStart(2,'0')} / 20`;document.querySelector<HTMLElement>('#portrait')!.dataset.cls=state.hero.cls;const latest=state.messages[state.messages.length-1]??'';document.querySelector<HTMLElement>('#message')!.textContent=latest;const boss=state.enemies.find(e=>e.kind==='boss');const banner=document.querySelector<HTMLElement>('#bossBanner')!;if(boss){banner.innerHTML=`<span>FLOOR GUARDIAN</span><div><i style="width:${Math.max(0,boss.hp/boss.maxHp*100)}%"></i></div><b>${boss.hp}</b>`;banner.classList.add('show')}else banner.classList.remove('show');const items=document.querySelector<HTMLDivElement>('#items')!;items.innerHTML='';for(let i=0;i<4;i++){const k=state.hero.bag[i];const b=document.createElement('button');b.className='slot'+(k?' filled':'');b.innerHTML=k?`<b class="slot-icon ${k}">${k==='potion'?'♥':k==='bomb'?'✹':k==='ration'?'◒':'◇'}</b><small>${labelItem(k).split(' ')[0]}</small>`:`<b>·</b><small>EMPTY</small>`;if(k)b.onclick=()=>{useItem(state!,i);afterAction()};items.appendChild(b)}}
+
+function onMapTap(ev:PointerEvent){if(!state||!canvas)return;const p=screenToWorld(ev.clientX,ev.clientY);if(!p)return;const enemy=state.enemies.find(e=>e.x===p.x&&e.y===p.y);if(enemy&&Math.abs(enemy.x-state.hero.x)+Math.abs(enemy.y-state.hero.y)===1){moveHero(state,enemy.x-state.hero.x,enemy.y-state.hero.y);afterAction();return}autoWalk(p.x,p.y)}
+function screenToWorld(sx:number,sy:number){if(!state||!canvas)return null;const dpr=canvas.width/innerWidth,view=calcView(canvas,state),x=(sx*dpr-view.ox)/view.ts+state.hero.x,y=(sy*dpr-view.oy)/view.ts+state.hero.y;return{x:Math.floor(x),y:Math.floor(y)}}
+function calcView(c:HTMLCanvasElement,s:TowerState){const ts=Math.max(36,Math.min(58,Math.floor(Math.min(c.width/12,c.height/18))));return{ts,ox:c.width/2-ts*.5,oy:c.height*.51-ts*.5}}
+
+function pathStep(tx:number,ty:number){if(!state)return null;const s=state;if(tx<0||ty<0||tx>=s.w||ty>=s.h)return null;const goal=ty*s.w+tx,start=s.hero.y*s.w+s.hero.x,prev=new Int32Array(s.w*s.h);prev.fill(-2);prev[start]=-1;const q=[start];for(let h=0;h<q.length;h++){const cur=q[h]!;if(cur===goal)break;const x=cur%s.w,y=Math.floor(cur/s.w);for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]] as const){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=s.w||ny>=s.h)continue;const ni=ny*s.w+nx;if(prev[ni]!==-2)continue;const t=s.tiles[ni];if(!t||t.kind==='wall'||t.kind==='void')continue;if(s.enemies.some(e=>e.x===nx&&e.y===ny)&&ni!==goal)continue;prev[ni]=cur;q.push(ni)}}if(prev[goal]===-2)return null;let cur=goal;while(prev[cur]!==start&&prev[cur]>=0)cur=prev[cur]!;if(prev[cur]===-2)return null;return{x:cur%s.w,y:Math.floor(cur/s.w)}}
+function threatNear(){if(!state)return false;return state.enemies.some(e=>Math.abs(e.x-state!.hero.x)+Math.abs(e.y-state!.hero.y)<=3)}
+function autoWalk(tx:number,ty:number){if(!state)return;stopAuto();const startFloor=state.floor;const tick=()=>{if(!state||state.dead||state.won||state.floor!==startFloor){stopAuto();return}const step=pathStep(tx,ty);if(!step){stopAuto();return}moveHero(state,step.x-state.hero.x,step.y-state.hero.y);afterAction();if((state.hero.x===tx&&state.hero.y===ty)||threatNear()){stopAuto();return}autoTimer=window.setTimeout(tick,95)};tick()}
+function stopAuto(){if(autoTimer!==undefined){clearTimeout(autoTimer);autoTimer=undefined}}
+
+function render(){if(!state||!canvas)return;const c=canvas.getContext('2d')!;const dpr=canvas.width/innerWidth;c.imageSmoothingEnabled=false;c.clearRect(0,0,canvas.width,canvas.height);const view=calcView(canvas,state),band=bandFor(state.floor);drawBackdrop(c,canvas.width,canvas.height,band);for(let y=0;y<state.h;y++)for(let x=0;x<state.w;x++){const t=state.tiles[y*state.w+x];if(!t?.seen)continue;const sx=view.ox+(x-state.hero.x)*view.ts,sy=view.oy+(y-state.hero.y)*view.ts;if(sx<-view.ts||sy<-view.ts||sx>canvas.width||sy>canvas.height)continue;drawTile(c,sx,sy,view.ts,t.kind,t.variant,band,t.visible)}for(const d of state.drops){const t=state.tiles[d.y*state.w+d.x];if(t?.visible)drawDrop(c,view.ox+(d.x-state.hero.x)*view.ts,view.oy+(d.y-state.hero.y)*view.ts,view.ts,d.kind)}for(const e of state.enemies){const t=state.tiles[e.y*state.w+e.x];if(t?.visible)drawEnemy(c,view.ox+(e.x-state.hero.x)*view.ts,view.oy+(e.y-state.hero.y)*view.ts,view.ts,e.kind,e.elite??false,e.hp/e.maxHp)}drawHero(c,view.ox,view.oy,view.ts,state.hero.cls);drawFogEdge(c,canvas.width,canvas.height);void dpr}
+function drawBackdrop(c:CanvasRenderingContext2D,w:number,h:number,band:number){const bg=['','#080a0b','#0a0908','#07100d','#08090f','#09080d'][band]!;c.fillStyle=bg;c.fillRect(0,0,w,h);const g=c.createRadialGradient(w*.5,h*.52,0,w*.5,h*.52,Math.max(w,h)*.62);g.addColorStop(0,'rgba(150,145,120,.055)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,w,h)}
+
+function palette(band:number){if(band===1)return{floor:'#47433b',floor2:'#585145',wall:'#252623',wall2:'#373832',edge:'#817664',accent:'#b89b6b'};if(band===2)return{floor:'#393934',floor2:'#4b4a42',wall:'#20211f',wall2:'#30312e',edge:'#7c7467',accent:'#b09363'};if(band===3)return{floor:'#303b32',floor2:'#3d4d3e',wall:'#1c2823',wall2:'#2b3930',edge:'#6f8a74',accent:'#d1b36d'};if(band===4)return{floor:'#303039',floor2:'#3e3d49',wall:'#1e1e27',wall2:'#2e2c39',edge:'#74728d',accent:'#b8996b'};return{floor:'#302d35',floor2:'#403a45',wall:'#1b1920',wall2:'#2b2731',edge:'#7d6e88',accent:'#d0a55e'}}
+function drawTile(c:CanvasRenderingContext2D,x:number,y:number,s:number,kind:string,v:number,band:number,visible:boolean){const p=palette(band),dim=visible?1:.30;c.save();c.globalAlpha=dim;if(kind==='void'){c.restore();return}if(kind==='wall'){c.fillStyle='#0b0c0b';c.fillRect(x,y,s,s);c.fillStyle=p.wall;c.fillRect(x+1,y+2,s-2,s-2);c.fillStyle=p.wall2;c.fillRect(x+2,y+3,s-4,s*.22);c.fillStyle=p.edge;c.globalAlpha=dim*.45;c.fillRect(x+2,y+2,s-4,Math.max(2,s*.05));c.globalAlpha=dim*.36;c.strokeStyle=p.edge;c.lineWidth=Math.max(1,s*.025);const rows=3;for(let r=1;r<rows;r++){const yy=y+r*s/rows;c.beginPath();c.moveTo(x+2,yy);c.lineTo(x+s-2,yy);c.stroke()}for(let r=0;r<rows;r++){const yy=y+r*s/rows,off=((r+v)%2)*s*.22;for(let xx=x+off;xx<x+s;xx+=s*.46){c.beginPath();c.moveTo(xx,yy);c.lineTo(xx,Math.min(y+s,yy+s/rows));c.stroke()}}c.globalAlpha=dim*.7;c.fillStyle='#050605';c.fillRect(x,y+s*.82,s,s*.18);c.restore();return}
+  c.fillStyle=p.floor;c.fillRect(x,y,s,s);c.fillStyle=p.floor2;c.globalAlpha=dim*.28;c.fillRect(x+1,y+1,s-2,s-2);c.globalAlpha=dim*.18;c.strokeStyle=p.edge;c.lineWidth=1;c.strokeRect(x+1.5,y+1.5,s-3,s-3);
+  if(kind==='door'){c.globalAlpha=dim;c.fillStyle='#3a2b1d';c.fillRect(x+s*.18,y+s*.08,s*.64,s*.84);c.fillStyle='#6d4a2d';c.fillRect(x+s*.23,y+s*.13,s*.54,s*.73);c.fillStyle=p.accent;c.fillRect(x+s*.68,y+s*.47,s*.08,s*.08)}
+  if(kind==='stairs'){c.globalAlpha=dim;c.fillStyle='#171817';for(let i=0;i<5;i++)c.fillRect(x+s*(.18+i*.065),y+s*(.68-i*.11),s*(.64-i*.13),s*.08);c.fillStyle=p.accent;c.globalAlpha=dim*.65;c.fillRect(x+s*.24,y+s*.18,s*.52,s*.05)}
+  if(kind==='water'){c.globalAlpha=dim*.85;c.fillStyle='#203e48';c.fillRect(x+1,y+1,s-2,s-2);c.strokeStyle='#5b8790';c.lineWidth=Math.max(1,s*.035);for(let i=0;i<2;i++){c.beginPath();c.moveTo(x+s*.12,y+s*(.36+i*.28));c.quadraticCurveTo(x+s*.35,y+s*(.28+i*.28),x+s*.58,y+s*(.36+i*.28));c.quadraticCurveTo(x+s*.75,y+s*(.43+i*.28),x+s*.9,y+s*(.36+i*.28));c.stroke()}}
+  if(kind==='grass'){c.globalAlpha=dim;c.fillStyle='#344a36';c.fillRect(x+1,y+1,s-2,s-2);c.strokeStyle='#73945f';c.lineWidth=Math.max(1,s*.025);for(let i=0;i<4;i++){const xx=x+s*(.2+i*.18);c.beginPath();c.moveTo(xx,y+s*.78);c.lineTo(xx+s*.08*((i%2)?1:-1),y+s*.46);c.stroke()}}
+  if(kind==='books'){c.globalAlpha=dim*.8;for(let i=0;i<3;i++){c.fillStyle=['#694438','#4c5a58','#765d36'][(i+v)%3]!;c.fillRect(x+s*(.14+i*.23),y+s*.16,s*.17,s*.68)}}
+  if(kind==='gear'){c.globalAlpha=dim*.75;c.strokeStyle='#8b795f';c.lineWidth=s*.08;c.beginPath();c.arc(x+s*.5,y+s*.5,s*.25,0,Math.PI*2);c.stroke();c.fillStyle='#25252b';c.beginPath();c.arc(x+s*.5,y+s*.5,s*.08,0,Math.PI*2);c.fill()}
+  if(kind==='lava'){c.globalAlpha=dim;c.fillStyle='#5c281c';c.fillRect(x+1,y+1,s-2,s-2);c.strokeStyle='#df7441';c.lineWidth=s*.05;c.beginPath();c.moveTo(x+s*.05,y+s*.7);c.bezierCurveTo(x+s*.3,y+s*.35,x+s*.55,y+s*.85,x+s*.95,y+s*.4);c.stroke()}
+  c.restore()}
+
+function drawHero(c:CanvasRenderingContext2D,x:number,y:number,s:number,cls:HeroClass){c.save();const cx=x+s*.5,cy=y+s*.52;c.fillStyle='rgba(0,0,0,.55)';c.beginPath();c.ellipse(cx, y+s*.82,s*.27,s*.09,0,0,Math.PI*2);c.fill();c.fillStyle='#111514';c.fillRect(x+s*.29,y+s*.26,s*.42,s*.48);c.fillStyle=cls==='vanguard'?'#b8c0b6':cls==='ranger'?'#7ea788':'#9b8eb8';c.fillRect(x+s*.34,y+s*.3,s*.32,s*.4);c.fillStyle='#d3b993';c.fillRect(x+s*.39,y+s*.17,s*.22,s*.18);c.fillStyle=cls==='vanguard'?'#d3b66f':cls==='ranger'?'#a6c97c':'#c8a6e0';c.fillRect(x+s*.29,y+s*.47,s*.42,s*.09);c.fillStyle='#101313';c.fillRect(x+s*.31,y+s*.7,s*.14,s*.15);c.fillRect(x+s*.55,y+s*.7,s*.14,s*.15);c.fillStyle='#eef0de';c.fillRect(x+s*.62,y+s*.28,s*.05,s*.16);c.restore()}
+function enemyColor(k:string){if(k==='rat')return'#9d7757';if(k==='guard')return'#8e8e89';if(k==='archer')return'#9c865e';if(k==='hound')return'#7b746a';if(k==='slime')return'#6a9b6f';if(k==='cultist')return'#806a8e';if(k==='golem')return'#9a8266';if(k==='wisp')return'#91b7c8';if(k==='knight')return'#656978';if(k==='seer')return'#aa86a0';return'#c05f50'}
+function drawEnemy(c:CanvasRenderingContext2D,x:number,y:number,s:number,k:string,elite:boolean,hp:number){c.save();c.fillStyle='rgba(0,0,0,.6)';c.beginPath();c.ellipse(x+s*.5,y+s*.82,s*.27,s*.09,0,0,Math.PI*2);c.fill();c.strokeStyle='#111';c.lineWidth=s*.08;c.fillStyle=enemyColor(k);if(k==='rat'||k==='hound'){c.beginPath();c.ellipse(x+s*.52,y+s*.56,s*.28,s*.2,0,0,Math.PI*2);c.fill();c.stroke();c.fillRect(x+s*.69,y+s*.45,s*.15,s*.12)}else if(k==='wisp'){c.beginPath();c.arc(x+s*.5,y+s*.48,s*.22,0,Math.PI*2);c.fill();c.stroke();c.globalAlpha=.5;c.beginPath();c.arc(x+s*.5,y+s*.48,s*.34,0,Math.PI*2);c.stroke()}else{c.fillRect(x+s*.3,y+s*.28,s*.4,s*.5);c.strokeRect(x+s*.3,y+s*.28,s*.4,s*.5);c.fillRect(x+s*.38,y+s*.14,s*.24,s*.2)}if(elite){c.fillStyle='#d6ad5f';c.beginPath();c.moveTo(x+s*.35,y+s*.12);c.lineTo(x+s*.43,y+s*.03);c.lineTo(x+s*.5,y+s*.12);c.lineTo(x+s*.58,y+s*.03);c.lineTo(x+s*.66,y+s*.12);c.closePath();c.fill()}if(hp<1){c.fillStyle='#251511';c.fillRect(x+s*.2,y+s*.9,s*.6,s*.05);c.fillStyle='#bb5d4f';c.fillRect(x+s*.2,y+s*.9,s*.6*Math.max(0,hp),s*.05)}c.restore()}
+function drawDrop(c:CanvasRenderingContext2D,x:number,y:number,s:number,k:ItemKind){c.save();const col=k==='potion'?'#d45a58':k==='bomb'?'#cf8b44':k==='ration'?'#b49a68':'#b7c9d2';c.fillStyle='rgba(0,0,0,.5)';c.beginPath();c.ellipse(x+s*.5,y+s*.72,s*.18,s*.06,0,0,Math.PI*2);c.fill();c.fillStyle=col;if(k==='potion'){c.fillRect(x+s*.4,y+s*.32,s*.2,s*.3);c.fillRect(x+s*.44,y+s*.25,s*.12,s*.09)}else if(k==='bomb'){c.beginPath();c.arc(x+s*.5,y+s*.5,s*.16,0,Math.PI*2);c.fill();c.strokeStyle='#e8c18b';c.lineWidth=2;c.beginPath();c.moveTo(x+s*.57,y+s*.35);c.quadraticCurveTo(x+s*.7,y+s*.25,x+s*.68,y+s*.17);c.stroke()}else if(k==='ration'){c.beginPath();c.ellipse(x+s*.5,y+s*.52,s*.22,s*.14,-.3,0,Math.PI*2);c.fill()}else{c.strokeStyle=col;c.lineWidth=s*.08;c.strokeRect(x+s*.38,y+s*.36,s*.24,s*.28)}c.restore()}
+function drawFogEdge(c:CanvasRenderingContext2D,w:number,h:number){const g=c.createRadialGradient(w*.5,h*.5,Math.min(w,h)*.28,w*.5,h*.5,Math.max(w,h)*.72);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.72,'rgba(0,0,0,.06)');g.addColorStop(1,'rgba(0,0,0,.8)');c.fillStyle=g;c.fillRect(0,0,w,h)}
+
+showTitle();
