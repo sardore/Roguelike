@@ -6642,7 +6642,7 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
 C.addEventListener('mousemove',e=>{if(!state||isMobileViewport())return;const t=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY);VIS.hoverPath=t?ReachabilityService.visiblePath(t.x,t.y):null}, {passive:true});
 C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
 
-(function(){const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','자동 탐사');b.textContent='이동';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}})();
+const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','자동 탐사');b.textContent='이동';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
 
 globalThis.__MANRU_LIFECYCLE__.registerNew('autowalk-v10',{post:()=>{addLog('좌클릭/탭: 자동 이동 · X/이동: 자동 탐사. 적이 보이거나 피격되면 즉시 멈춘다.')}});
 
@@ -6749,11 +6749,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
    48x48 source pixel art for world tiles, terrain, decor, characters, monsters and items.
    Also includes hard zoom-input suppression, dynamic floor dimensions, and DCSS-style vault terrain.
 */
-(function(){
-  'use strict';
-
-  /* ----------------------- zoom controls + input isolation ----------------------- */
-  const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
+const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   window.__manruZoomActive=false;
   window.__manruZoomSuppressUntil=0;
   const suppressZoomMove=(ms=260)=>{
@@ -6786,7 +6782,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   const rr=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
   const ln=(q,x0,y0,x1,y1,c,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(Math.round(x0)+.5,Math.round(y0)+.5);q.lineTo(Math.round(x1)+.5,Math.round(y1)+.5);q.stroke();q.lineWidth=1};
   const box=(q,x,y,w,h,c)=>{q.strokeStyle=c;q.strokeRect(Math.round(x)+.5,Math.round(y)+.5,Math.round(w)-1,Math.round(h)-1)};
-  const dot=(q,x,y,c)=>rr(q,x,y,1,1,c);
+  const hiResDot=(q,x,y,c)=>rr(q,x,y,1,1,c);
   const hiHash=(s)=>{let h=2166136261>>>0;for(let i=0;i<String(s).length;i++){h^=String(s).charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
   const pick=(arr,h,shift=0)=>arr[((h>>>shift)%arr.length+arr.length)%arr.length];
   const rgba=(hex,a)=>{
@@ -6812,7 +6808,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
       for(let row=0;row<6;row++){const seam=((row+(h&3))%3)*16+8;rr(q,seam,row*8,1,8,'rgba(4,2,1,.42)')}
       for(let i=0;i<7;i++){const x=(h>>(i%12))%44+2,y=(h>>(i+5)%16)%44+2;rr(q,x,y,2+(i%3),1,'rgba(173,92,52,.13)')}
       if(variant===2){rr(q,6,18,36,10,'rgba(122,39,29,.20)');rr(q,8,20,32,1,'rgba(226,160,87,.10)')}
-      if(variant===3){for(let i=0;i<4;i++){const x=8+i*9;dot(q,x,13,'rgba(217,172,101,.14)');dot(q,45-x,35,'rgba(0,0,0,.16)')}}
+      if(variant===3){for(let i=0;i<4;i++){const x=8+i*9;hiResDot(q,x,13,'rgba(217,172,101,.14)');hiResDot(q,45-x,35,'rgba(0,0,0,.16)')}}
     }else if(region===1){
       for(let y=0;y<48;y+=16){ln(q,0,y,48,y,'rgba(125,157,137,.14)')}
       for(let y=0;y<3;y++){const off=(y&1)?12:28;rr(q,off,y*16,1,16,'rgba(42,69,51,.24)')}
@@ -6823,15 +6819,15 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
       box(q,4,4,40,40,'rgba(213,137,191,.15)');rr(q,6,20,36,8,'rgba(108,42,88,.15)');
       for(let i=0;i<5;i++){ln(q,7+i*8,7,39-i*8,39,'rgba(232,171,206,.07)')}
       if(variant===1||variant===3){rr(q,12,11,24,2,'rgba(238,186,214,.08)');rr(q,12,35,24,1,'rgba(57,19,51,.16)')}
-      for(let i=0;i<5;i++)dot(q,8+((h+i*9)%33),8+((h>>>i)%31),'rgba(224,140,188,.12)')
+      for(let i=0;i<5;i++)hiResDot(q,8+((h+i*9)%33),8+((h>>>i)%31),'rgba(224,140,188,.12)')
     }else if(region===3){
       box(q,3,3,42,42,'rgba(168,120,80,.18)');ln(q,3,24,45,24,'rgba(89,59,42,.22)');
-      for(const [x,y] of [[7,7],[40,7],[7,40],[40,40]]){rr(q,x-1,y-1,3,3,'#2b211a');dot(q,x,y,'#89735b')}
+      for(const [x,y] of [[7,7],[40,7],[7,40],[40,40]]){rr(q,x-1,y-1,3,3,'#2b211a');hiResDot(q,x,y,'#89735b')}
       for(let i=0;i<7;i++){const x=5+((h+i*7)%36),y=6+((h>>>i)%35);rr(q,x,y,2+(i&1),1,'rgba(122,91,65,.12)')}
       if(variant===2){rr(q,9,30,30,4,'rgba(103,53,32,.17)')}
     }else{
       box(q,4,4,40,40,'rgba(235,196,91,.18)');ln(q,24,6,42,24,'rgba(232,194,95,.15)');ln(q,42,24,24,42,'rgba(232,194,95,.15)');ln(q,24,42,6,24,'rgba(232,194,95,.15)');ln(q,6,24,24,6,'rgba(232,194,95,.15)');
-      rr(q,22,9,4,30,'rgba(234,190,72,.08)');for(let i=0;i<6;i++)dot(q,7+((h+i*11)%34),8+((h>>>i)%32),'rgba(250,222,130,.16)');
+      rr(q,22,9,4,30,'rgba(234,190,72,.08)');for(let i=0;i<6;i++)hiResDot(q,7+((h+i*11)%34),8+((h>>>i)%32),'rgba(250,222,130,.16)');
       if(variant===3){rr(q,11,11,5,4,'rgba(126,50,57,.20)');rr(q,31,33,4,3,'rgba(126,50,57,.14)')}
     }
     rr(q,0,0,48,1,'rgba(255,255,255,.025)');rr(q,0,46,48,2,'rgba(0,0,0,.12)');
@@ -6850,7 +6846,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
     }else if(region===2){
       rr(q,5,8,38,28,'rgba(111,43,93,.29)');box(q,5,8,38,28,'rgba(221,147,199,.24)');rr(q,23,8,3,28,'rgba(24,8,21,.65)');for(let i=0;i<5;i++)rr(q,8+i*7,11,1,21,'rgba(240,189,217,.06)');
     }else if(region===3){
-      box(q,4,7,40,28,'rgba(166,119,78,.28)');for(const [x,y] of [[7,10],[40,10],[7,32],[40,32]]){rr(q,x-1,y-1,3,3,'#241913');dot(q,x,y,'#806b55')}rr(q,10,19,28,2,'rgba(120,91,68,.14)');
+      box(q,4,7,40,28,'rgba(166,119,78,.28)');for(const [x,y] of [[7,10],[40,10],[7,32],[40,32]]){rr(q,x-1,y-1,3,3,'#241913');hiResDot(q,x,y,'#806b55')}rr(q,10,19,28,2,'rgba(120,91,68,.14)');
     }else{
       box(q,4,5,40,33,'rgba(238,202,99,.27)');ln(q,24,8,39,22,'rgba(236,201,97,.20)');ln(q,39,22,24,36,'rgba(236,201,97,.20)');ln(q,24,36,9,22,'rgba(236,201,97,.20)');ln(q,9,22,24,8,'rgba(236,201,97,.20)');rr(q,22,9,4,27,'rgba(228,178,58,.13)');
     }
@@ -6874,20 +6870,20 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
     const baseFloor=()=>{if(!terrainLayerCatalog58().overlays.has(tile))q.drawImage(hiFloor(region,variant&3),0,0)};
     if(tile===TT.WATER||tile===TT.MERCURY){
       const mer=tile===TT.MERCURY;baseFloor();rr(q,0,0,48,48,mer?'#657271':'#244c51');rr(q,0,39,48,9,mer?'#3b4141':'#133238');
-      for(let i=0;i<5;i++){const y=8+i*8,x=((h>>(i+2))%16+frame*3+i*7)%34;rr(q,x,y,12-(i%3),2,mer?'#c0cbc5':'#6ba1a7');dot(q,x+2,y,'rgba(255,255,255,.25)')}
+      for(let i=0;i<5;i++){const y=8+i*8,x=((h>>(i+2))%16+frame*3+i*7)%34;rr(q,x,y,12-(i%3),2,mer?'#c0cbc5':'#6ba1a7');hiResDot(q,x+2,y,'rgba(255,255,255,.25)')}
       rr(q,0,0,48,2,mer?'rgba(226,230,222,.24)':'rgba(146,183,168,.18)');
     }else if(tile===TT.VOID){
       rr(q,0,0,48,48,'#010102');for(let i=0;i<9;i++){const x=(h+i*17+frame*2)%45,y=((h>>>i)+i*11)%45;rr(q,x,y,1+(i&1),1+(i%3===0),'#392042')}rr(q,23,9,2,30,'rgba(151,87,169,.24)');
     }else if(tile===TT.GOLD){
-      baseFloor();rr(q,3,3,42,42,'#3b2c16');box(q,5,5,38,38,'#c09a45');rr(q,22,8,4,31,'#dcb85d');rr(q,9,22,30,4,'#dcb85d');for(let i=0;i<6;i++)dot(q,8+((h+i*9)%32),8+((h>>>i)%30),'#ffecaa');
+      baseFloor();rr(q,3,3,42,42,'#3b2c16');box(q,5,5,38,38,'#c09a45');rr(q,22,8,4,31,'#dcb85d');rr(q,9,22,30,4,'#dcb85d');for(let i=0;i<6;i++)hiResDot(q,8+((h+i*9)%32),8+((h>>>i)%30),'#ffecaa');
     }else if(tile===TT.GRASS){
-      rr(q,0,0,48,48,'#17281a');for(let i=0;i<22;i++){const x=(h+i*13)%46,y=23+((h>>>i)%22);rr(q,x,y,1+(i%3===0),6+(i%7),'#315439');rr(q,x-2,y+3,2,1,'#4f714d')}for(let i=0;i<4;i++)dot(q,8+((h+i*8)%32),20+((h>>>i)%20),'#b47c77');
+      rr(q,0,0,48,48,'#17281a');for(let i=0;i<22;i++){const x=(h+i*13)%46,y=23+((h>>>i)%22);rr(q,x,y,1+(i%3===0),6+(i%7),'#315439');rr(q,x-2,y+3,2,1,'#4f714d')}for(let i=0;i<4;i++)hiResDot(q,8+((h+i*8)%32),20+((h>>>i)%20),'#b47c77');
     }else if(tile===TT.HEDGE){
       rr(q,0,0,48,48,'#1b2c22');rr(q,0,39,48,9,'#30382a');rr(q,1,40,46,2,'#5b6650');for(const [cx,cy,r]of [[6,9,10],[22,7,12],[39,12,12],[10,28,12],[29,26,14],[44,31,10]]){q.fillStyle=(cx+variant)%3?'#354e36':'#405940';q.beginPath();q.moveTo(cx-r,cy);q.lineTo(cx-r/2,cy-r*.8);q.lineTo(cx+r*.4,cy-r);q.lineTo(cx+r,cy-r*.2);q.lineTo(cx+r*.8,cy+r*.7);q.lineTo(cx-r*.4,cy+r);q.closePath();q.fill();}for(let i=0;i<18;i++){const lx=3+(h+i*13)%42,ly=4+((h>>>i)+i*7)%31;q.fillStyle=i%3?'#5c724d':'#788562';q.beginPath();q.moveTo(lx-2,ly+2);q.lineTo(lx+1,ly-2);q.lineTo(lx+5,ly-3);q.lineTo(lx+2,ly+1);q.closePath();q.fill();}rr(q,0,45,48,3,'#17271e');
     }else if(tile===TT.BAMBOO){
       rr(q,0,0,48,48,'#0d170f');for(let i=0;i<5;i++){const x=5+i*9+(variant&1);rr(q,x,2,4,44,i%2?'#5c7a59':'#48664b');for(let y=8+(i%2)*5;y<43;y+=12)rr(q,x-3,y,10,2,'#2b432e')}rr(q,0,43,48,5,'rgba(0,0,0,.34)');
     }else if(tile===TT.PAPER_BRIDGE||tile===TT.DRAWBRIDGE_DOWN||tile===TT.DRAWBRIDGE_UP){
-      baseFloor();const up=tile===TT.DRAWBRIDGE_UP;if(up){rr(q,9,2,30,44,'#513c2e');for(let i=0;i<6;i++){rr(q,10,5+i*7,28,5,i%2?'#75553b':'#60442f');rr(q,11,6+i*7,26,1,'rgba(238,203,153,.08)')}}else{const wood=tile===TT.PAPER_BRIDGE&&region===1&&(variant&1);rr(q,4,7,40,35,tile===TT.PAPER_BRIDGE?(wood?'#7d5937':'#d8cfb2'):'#8d663f');for(let y=9;y<41;y+=6){rr(q,6,y,36,4,tile===TT.PAPER_BRIDGE?(wood?((y/6)%2?'#b98a58':'#a57749'):'#eee2c5'):'#b88650');rr(q,6,y+4,36,1,'rgba(50,33,20,.28)')}rr(q,3,7,3,35,'#463425');rr(q,42,7,3,35,'#463425');if(wood){rr(q,21,8,6,33,'rgba(235,196,133,.08)');dot(q,11,24,'#dbc28b');dot(q,35,20,'#dbc28b')}else if(tile===TT.PAPER_BRIDGE){for(let i=0;i<4;i++)dot(q,11+i*7,14+((variant+i)%3)*7,'#d7a89f')}}
+      baseFloor();const up=tile===TT.DRAWBRIDGE_UP;if(up){rr(q,9,2,30,44,'#513c2e');for(let i=0;i<6;i++){rr(q,10,5+i*7,28,5,i%2?'#75553b':'#60442f');rr(q,11,6+i*7,26,1,'rgba(238,203,153,.08)')}}else{const wood=tile===TT.PAPER_BRIDGE&&region===1&&(variant&1);rr(q,4,7,40,35,tile===TT.PAPER_BRIDGE?(wood?'#7d5937':'#d8cfb2'):'#8d663f');for(let y=9;y<41;y+=6){rr(q,6,y,36,4,tile===TT.PAPER_BRIDGE?(wood?((y/6)%2?'#b98a58':'#a57749'):'#eee2c5'):'#b88650');rr(q,6,y+4,36,1,'rgba(50,33,20,.28)')}rr(q,3,7,3,35,'#463425');rr(q,42,7,3,35,'#463425');if(wood){rr(q,21,8,6,33,'rgba(235,196,133,.08)');hiResDot(q,11,24,'#dbc28b');hiResDot(q,35,20,'#dbc28b')}else if(tile===TT.PAPER_BRIDGE){for(let i=0;i<4;i++)hiResDot(q,11+i*7,14+((variant+i)%3)*7,'#d7a89f')}}
     }else if(tile===TT.BENCH){q.save();q.scale(1.5,1.5);drawSharedProp105(q,tile,0,0,region,variant,frame*240,extra!=='unlit');q.restore();}else if(tile===TT.TABLE){q.save();q.scale(1.5,1.5);drawSharedProp105(q,tile,0,0,region,variant,frame*240,extra!=='unlit');q.restore();}else if(tile===TT.SCREEN){q.save();q.scale(1.5,1.5);drawSharedProp105(q,tile,0,0,region,variant,frame*240,extra!=='unlit');q.restore();}else if(tile===TT.RAFT){
       rr(q,0,0,48,48,'rgba(0,0,0,0)');for(let i=0;i<7;i++){rr(q,5,9+i*5,38,4,i%2?'#8a603d':'#704a30')}rr(q,8,9,3,34,'#3a281b');rr(q,37,9,3,34,'#3a281b');rr(q,22,2,4,17,'#b99a64');
     }else if(tile===TT.PAVILION){
@@ -6926,7 +6922,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
     else if(kind==='silk'){rr(q,12,3,24,34,region===2?'#783e66':'#7b3a2f');rr(q,14,5,20,4,region===2?'#d69abb':'#d28b61');for(let y=11;y<32;y+=6)rr(q,16,y,16,1,'rgba(255,255,255,.08)');rr(q,20,37,3,7,'#4b253f');rr(q,27,37,3,7,'#4b253f')}
     else if(kind==='chains'){for(let x of [18,28]){for(let y=3;y<37;y+=5){box(q,x,y,5,6,'#746861')}}rr(q,18,38,15,4,'#413a35')}
     else if(kind==='relief'){rr(q,11,5,27,32,region===4?'#7d6632':'#5f554b');box(q,13,7,23,28,region===4?'#d0ad5d':'#998b7a');rr(q,20,12,9,6,'rgba(255,235,176,.13)');rr(q,18,20,13,10,'rgba(0,0,0,.14)')}
-    else if(kind==='rug'){rr(q,4,15,40,21,region===0?'#61261f':region===2?'#6e315c':region===4?'#796127':'#4d4231');box(q,6,17,36,17,rgba(A.light,.16));for(let x=9;x<40;x+=7)dot(q,x,25,rgba(A.light,.22))}
+    else if(kind==='rug'){rr(q,4,15,40,21,region===0?'#61261f':region===2?'#6e315c':region===4?'#796127':'#4d4231');box(q,6,17,36,17,rgba(A.light,.16));for(let x=9;x<40;x+=7)hiResDot(q,x,25,rgba(A.light,.22))}
     else if(kind==='papers'){for(let i=0;i<4;i++){const x=8+(h+i*11)%28,y=20+((h>>>i)%12);rr(q,x,y,10,7,'#d7c5a1');rr(q,x+2,y+2,6,1,'rgba(96,60,38,.28)')}}
     else if(kind==='rubble'){for(let i=0;i<8;i++){const x=7+(h+i*9)%34,y=27+((h>>>i)%10);rr(q,x,y,3+(i%4),2+(i&1),pick(['#594539','#6e5849','#806a57'],h,i))}}
     else if(kind==='bones'){rr(q,10,30,28,4,'#c6b89d');rr(q,15,22,4,13,'#d8cbb2');rr(q,28,20,4,15,'#d8cbb2');rr(q,8,25,10,4,'#d8cbb2');rr(q,30,31,10,4,'#d8cbb2')}
@@ -6954,36 +6950,36 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   function drawBeast48(q,m,frame,h){
     const p=pal(m.color||'#76604a'),attack=frame===2,bob=frame===1?1:0,name=m.name||'';
     if(name.includes('박쥐')||name.includes('나비')||name.includes('가오리')){
-      q.fillStyle=p.dark;q.beginPath();q.moveTo(24,18);q.lineTo(4,8+bob);q.lineTo(9,30);q.lineTo(24,25);q.lineTo(39,30);q.lineTo(44,8+bob);q.closePath();q.fill();rr(q,19,14+bob,10,16,p.mid);rr(q,21,10+bob,6,7,p.light);dot(q,22,14+bob,'#f1ca7a');dot(q,27,14+bob,'#f1ca7a');
+      q.fillStyle=p.dark;q.beginPath();q.moveTo(24,18);q.lineTo(4,8+bob);q.lineTo(9,30);q.lineTo(24,25);q.lineTo(39,30);q.lineTo(44,8+bob);q.closePath();q.fill();rr(q,19,14+bob,10,16,p.mid);rr(q,21,10+bob,6,7,p.light);hiResDot(q,22,14+bob,'#f1ca7a');hiResDot(q,27,14+bob,'#f1ca7a');
     }else if(name.includes('거미')){
-      for(let i=0;i<4;i++){const yy=15+i*6;ln(q,20,yy,4,6+i*10,p.dark,2);ln(q,28,yy,44,6+i*10,p.dark,2)}rr(q,14,13+bob,20,24,p.mid);rr(q,18,8+bob,12,11,p.light);for(const [x,y] of [[20,14],[25,14],[22,17],[28,17]])dot(q,x,y,'#e2b36c');
+      for(let i=0;i<4;i++){const yy=15+i*6;ln(q,20,yy,4,6+i*10,p.dark,2);ln(q,28,yy,44,6+i*10,p.dark,2)}rr(q,14,13+bob,20,24,p.mid);rr(q,18,8+bob,12,11,p.light);for(const [x,y] of [[20,14],[25,14],[22,17],[28,17]])hiResDot(q,x,y,'#e2b36c');
     }else if(name.includes('뱀')||name.includes('살모사')){
-      q.strokeStyle=p.mid;q.lineWidth=8;q.beginPath();q.moveTo(8,38);q.bezierCurveTo(7,25,35,36,31,17);q.bezierCurveTo(29,9,37,8,40,14);q.stroke();rr(q,34,9,10,9,p.light);dot(q,40,12,'#efc574');ln(q,43,16,47,18,'#c85c5c',1);
+      q.strokeStyle=p.mid;q.lineWidth=8;q.beginPath();q.moveTo(8,38);q.bezierCurveTo(7,25,35,36,31,17);q.bezierCurveTo(29,9,37,8,40,14);q.stroke();rr(q,34,9,10,9,p.light);hiResDot(q,40,12,'#efc574');ln(q,43,16,47,18,'#c85c5c',1);
     }else if(name.includes('지네')||name.includes('그리마')){
-      for(let i=0;i<7;i++){const x=6+i*6,y=21+((i+frame)&1)*3;rr(q,x,y,7,8,i%2?p.dark:p.mid);dot(q,x+3,y+2,p.light);ln(q,x+2,y+7,x-1,y+13,p.dark,1);ln(q,x+5,y+7,x+8,y+13,p.dark,1)}
+      for(let i=0;i<7;i++){const x=6+i*6,y=21+((i+frame)&1)*3;rr(q,x,y,7,8,i%2?p.dark:p.mid);hiResDot(q,x+3,y+2,p.light);ln(q,x+2,y+7,x-1,y+13,p.dark,1);ln(q,x+5,y+7,x+8,y+13,p.dark,1)}
     }else if(name.includes('물고기')||name.includes('피라냐')){
-      q.fillStyle=p.mid;q.beginPath();q.ellipse(25,25,16,10,0,0,Math.PI*2);q.fill();q.beginPath();q.moveTo(10,25);q.lineTo(2,14);q.lineTo(2,36);q.closePath();q.fill();rr(q,33,17,9,16,p.light);dot(q,37,21,'#f4d69b');for(let i=0;i<4;i++)rr(q,38+i*2,30-i,2,2,'#e4d7bd');
+      q.fillStyle=p.mid;q.beginPath();q.ellipse(25,25,16,10,0,0,Math.PI*2);q.fill();q.beginPath();q.moveTo(10,25);q.lineTo(2,14);q.lineTo(2,36);q.closePath();q.fill();rr(q,33,17,9,16,p.light);hiResDot(q,37,21,'#f4d69b');for(let i=0;i<4;i++)rr(q,38+i*2,30-i,2,2,'#e4d7bd');
     }else if(name.includes('거북')){
-      q.fillStyle=p.dark;q.beginPath();q.ellipse(24,25,17,13,0,0,Math.PI*2);q.fill();rr(q,10,17,28,17,p.mid);box(q,13,19,22,13,p.light);rr(q,37,22,8,7,p.light);dot(q,42,24,'#1b1b16');for(const [x,y] of [[8,18],[8,31],[36,16],[36,32]])rr(q,x,y,5,5,p.dark);
+      q.fillStyle=p.dark;q.beginPath();q.ellipse(24,25,17,13,0,0,Math.PI*2);q.fill();rr(q,10,17,28,17,p.mid);box(q,13,19,22,13,p.light);rr(q,37,22,8,7,p.light);hiResDot(q,42,24,'#1b1b16');for(const [x,y] of [[8,18],[8,31],[36,16],[36,32]])rr(q,x,y,5,5,p.dark);
     }else if(name.includes('악어')||name.includes('수룡')){
-      rr(q,5,19+bob,34,14,p.mid);rr(q,33,15+bob,13,12,p.light);rr(q,3,22+bob,10,7,p.dark);for(let i=0;i<6;i++)rr(q,9+i*5,17+bob,3,3,p.dark);dot(q,41,19+bob,'#f0d49a');
+      rr(q,5,19+bob,34,14,p.mid);rr(q,33,15+bob,13,12,p.light);rr(q,3,22+bob,10,7,p.dark);for(let i=0;i<6;i++)rr(q,9+i*5,17+bob,3,3,p.dark);hiResDot(q,41,19+bob,'#f0d49a');
     }else{
-      const lunge=attack?5:0;rr(q,7+lunge,20+bob,31,15,p.mid);rr(q,31+lunge,13+bob,14,14,p.dark);rr(q,10+lunge,33+bob,7,8,p.dark);rr(q,30+lunge,33+bob,7,8,p.dark);rr(q,3+lunge,23+bob,8,5,p.dark);rr(q,34+lunge,15+bob,8,4,p.light);dot(q,41+lunge,20+bob,'#f1d09b');if(name.includes('광견')||name.includes('경비견')){rr(q,35+lunge,8+bob,4,8,p.dark);rr(q,42+lunge,10+bob,4,8,p.dark)}
+      const lunge=attack?5:0;rr(q,7+lunge,20+bob,31,15,p.mid);rr(q,31+lunge,13+bob,14,14,p.dark);rr(q,10+lunge,33+bob,7,8,p.dark);rr(q,30+lunge,33+bob,7,8,p.dark);rr(q,3+lunge,23+bob,8,5,p.dark);rr(q,34+lunge,15+bob,8,4,p.light);hiResDot(q,41+lunge,20+bob,'#f1d09b');if(name.includes('광견')||name.includes('경비견')){rr(q,35+lunge,8+bob,4,8,p.dark);rr(q,42+lunge,10+bob,4,8,p.dark)}
     }
-    for(let i=0;i<5;i++){const x=8+((h>>>i)%32),y=12+((h>>>(i+5))%25);dot(q,x,y,rgba(p.hi,.28))}
+    for(let i=0;i<5;i++){const x=8+((h>>>i)%32),y=12+((h>>>(i+5))%25);hiResDot(q,x,y,rgba(p.hi,.28))}
   }
   function drawHumanoid48(q,m,frame,h){
     const p=pal(m.color||'#806b58'),attack=frame===2,bob=frame===1?1:0,name=m.name||'',guard=m.shape==='guard'||m.shape==='knight'||name.includes('병졸')||name.includes('수비병')||name.includes('인형');
     if(guard){rr(q,15,7+bob,19,12,p.dark);rr(q,18,8+bob,13,5,p.light);rr(q,16,18+bob,18,21,p.mid);rr(q,10,20+bob,7,17,p.dark);rr(q,33,20+bob,7,17,p.dark);rr(q,19,39,6,7,p.dark);rr(q,29,39,6,7,p.dark);rr(q,18,14+bob,13,4,'#11100e');for(let y=22;y<36;y+=5)rr(q,19,y+bob,13,2,rgba(p.hi,.18));if(attack){rr(q,39,11,3,30,'#c09b61');rr(q,36,11,9,3,'#c09b61')}}
-    else{rr(q,17,8+bob,15,10,p.light);rr(q,14,18+bob,21,20,p.mid);rr(q,9,22+bob,6,15,p.mid);rr(q,34,22+bob,6,15,p.mid);rr(q,17,38,6,8,p.dark);rr(q,29,38,6,8,p.dark);dot(q,21,12+bob,'#291d17');dot(q,28,12+bob,'#291d17');if(name.includes('도둑')||name.includes('살수'))rr(q,16,7+bob,18,5,'#191416')}
+    else{rr(q,17,8+bob,15,10,p.light);rr(q,14,18+bob,21,20,p.mid);rr(q,9,22+bob,6,15,p.mid);rr(q,34,22+bob,6,15,p.mid);rr(q,17,38,6,8,p.dark);rr(q,29,38,6,8,p.dark);hiResDot(q,21,12+bob,'#291d17');hiResDot(q,28,12+bob,'#291d17');if(name.includes('도둑')||name.includes('살수'))rr(q,16,7+bob,18,5,'#191416')}
     if(m.ranged||m.shape==='mage'){rr(q,39,15,3,26,'#6f4b30');rr(q,36,13,9,5,p.hi)}
   }
   function drawSpirit48(q,m,frame,h){
     const p=pal(m.color||'#79657c'),attack=frame===2,bob=frame===1?1:0,name=m.name||'';
-    if(name.includes('슬라임')||m.kind==='slime'){q.fillStyle=p.mid;q.beginPath();q.moveTo(7,37);q.quadraticCurveTo(6,18,24,13+bob);q.quadraticCurveTo(42,18,41,37);q.closePath();q.fill();rr(q,15,15+bob,18,7,p.light);dot(q,18,26,'#191718');dot(q,31,26,'#191718');for(let i=0;i<5;i++)dot(q,10+((h>>>i)%28),19+((h>>>(i+4))%16),rgba(p.hi,.35))}
-    else if(m.kind==='construct'||name.includes('가고일')||name.includes('수호상')){rr(q,10,10+bob,28,29,p.dark);rr(q,14,7+bob,20,13,p.mid);rr(q,6,18+bob,9,20,p.mid);rr(q,34,18+bob,9,20,p.mid);rr(q,15,38,7,8,p.dark);rr(q,28,38,7,8,p.dark);box(q,16,11+bob,16,10,p.light);dot(q,20,15+bob,'#e1754d');dot(q,29,15+bob,'#e1754d');if(attack)rr(q,5,12,38,4,rgba(p.hi,.22))}
-    else{q.fillStyle=p.dark;q.beginPath();q.moveTo(13,13+bob);q.quadraticCurveTo(24,3+bob,35,13+bob);q.lineTo(40,39);q.lineTo(31,35);q.lineTo(24,44);q.lineTo(17,35);q.lineTo(8,39);q.closePath();q.fill();rr(q,16,11+bob,16,16,p.mid);rr(q,19,13+bob,10,7,p.light);dot(q,21,18+bob,'#e8dfc4');dot(q,28,18+bob,'#e8dfc4');if(attack){rr(q,4,23,40,3,rgba(p.hi,.30));rr(q,2,21,5,7,p.hi)}}
-    for(let i=0;i<5;i++)dot(q,9+((h>>>i)%31),9+((h>>>(i+5))%31),rgba(p.hi,.35));
+    if(name.includes('슬라임')||m.kind==='slime'){q.fillStyle=p.mid;q.beginPath();q.moveTo(7,37);q.quadraticCurveTo(6,18,24,13+bob);q.quadraticCurveTo(42,18,41,37);q.closePath();q.fill();rr(q,15,15+bob,18,7,p.light);hiResDot(q,18,26,'#191718');hiResDot(q,31,26,'#191718');for(let i=0;i<5;i++)hiResDot(q,10+((h>>>i)%28),19+((h>>>(i+4))%16),rgba(p.hi,.35))}
+    else if(m.kind==='construct'||name.includes('가고일')||name.includes('수호상')){rr(q,10,10+bob,28,29,p.dark);rr(q,14,7+bob,20,13,p.mid);rr(q,6,18+bob,9,20,p.mid);rr(q,34,18+bob,9,20,p.mid);rr(q,15,38,7,8,p.dark);rr(q,28,38,7,8,p.dark);box(q,16,11+bob,16,10,p.light);hiResDot(q,20,15+bob,'#e1754d');hiResDot(q,29,15+bob,'#e1754d');if(attack)rr(q,5,12,38,4,rgba(p.hi,.22))}
+    else{q.fillStyle=p.dark;q.beginPath();q.moveTo(13,13+bob);q.quadraticCurveTo(24,3+bob,35,13+bob);q.lineTo(40,39);q.lineTo(31,35);q.lineTo(24,44);q.lineTo(17,35);q.lineTo(8,39);q.closePath();q.fill();rr(q,16,11+bob,16,16,p.mid);rr(q,19,13+bob,10,7,p.light);hiResDot(q,21,18+bob,'#e8dfc4');hiResDot(q,28,18+bob,'#e8dfc4');if(attack){rr(q,4,23,40,3,rgba(p.hi,.30));rr(q,2,21,5,7,p.hi)}}
+    for(let i=0;i<5;i++)hiResDot(q,9+((h>>>i)%31),9+((h>>>(i+5))%31),rgba(p.hi,.35));
   }
   function hiCreature(m,frame=0,dir='down',player=false){
     const gear=player?state.player:null,key=player?`p:${gear.classId}:${dir}:${frame}:${gear.weapon?.name||''}:${gear.armor?.tier||1}:${gear.cloak?.name||''}`:`m:${m.name}:${m.color}:${m.shape}:${m.kind}:${frame}`;
@@ -7325,14 +7321,10 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   pstate();
 })();
 
-})();
-
 
 
 /* ===== MANRU v3.2 UI + TITLE GRAND ORNAMENT PASS ===== */
-(function(){
-
-  function decorateTitle(){
+function decorateTitle(){
     const card=document.getElementById('card');
     if(!card||card.dataset.mfDecorated==='1') return;
     card.dataset.mfDecorated='1';
@@ -7379,16 +7371,12 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   decorateTitle();
   decorateButtonGroups(document);
-  // v5.4: legacy global observer removed; final UI renderers decorate their own nodes.
-})();
 
 
 
 
 /* ===== MANRU v3.4 UI SYSTEM PASS (high-readability roguelike inspired) ===== */
-(function(){
-
-  function labelSections(){
+function labelSections(){
     const mapping={
       '생명 / 기':'VITAL',
       '능력':'STATS',
@@ -7419,14 +7407,11 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   labelSections();
   tuneButtons(document);
-  // v5.4: legacy global observer removed; labels/buttons are stable after creation.
-})();
 
 
 
 /* ===== MANRU v4.2 CLEAN-SCOPE + TRUE 2.5D ARCHITECTURE ===== */
-(()=>{
-  const wallPalette=[
+const wallPalette=[
     {top:'#7b4434',face:'#4b221b',dark:'#27110d',edge:'#b06748',side:'#351712',floor:'#321c13'},
     {top:'#637368',face:'#3b4c42',dark:'#202b26',edge:'#9aad9d',side:'#2a3831',floor:'#1b2c26'},
     {top:'#72526f',face:'#472f47',dark:'#271928',edge:'#b879a5',side:'#332033',floor:'#2b1a2c'},
@@ -7502,12 +7487,10 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   const oldInteractive=drawInteractiveTerrain;
   drawInteractiveTerrain=function(tile,px,py,x,y,now){const z=regionIndex(),p=wallPalette[z];if(tile===TT.DOOR||tile===TT.OPEN_DOOR){X.save();X.fillStyle='rgba(0,0,0,.44)';X.fillRect(px+5,py+3,22,29);X.fillStyle=p.side;X.fillRect(px+2,py-8,6,40);X.fillRect(px+24,py-8,6,40);X.fillStyle=p.top;X.fillRect(px+2,py-8,28,8);X.fillStyle=p.edge;X.fillRect(px+4,py-1,24,3);if(tile===TT.DOOR){X.fillStyle=z===3?'#443a32':'#5c3023';X.fillRect(px+8,py+4,16,27);X.fillStyle='rgba(230,184,121,.12)';X.fillRect(px+10,py+6,12,2);X.fillStyle='#c49a5e';X.fillRect(px+20,py+18,2,2)}else{X.fillStyle='#050302';X.fillRect(px+8,py+4,16,27);X.fillStyle='rgba(229,174,105,.08)';X.fillRect(px+9,py+5,2,24)}X.fillStyle='rgba(0,0,0,.40)';X.fillRect(px+5,py+30,22,5);X.restore();return true}if(tile===TT.TABLE){X.save();X.fillStyle='rgba(0,0,0,.28)';X.beginPath();X.ellipse(px+16,py+27,18,5,0,0,Math.PI*2);X.fill();X.fillStyle='#3a1e14';X.fillRect(px-1,py+12,34,15);X.fillStyle='#875238';X.fillRect(px-2,py+8,36,12);X.fillStyle='#bc7b50';X.fillRect(px,py+8,32,3);X.fillStyle='#a16242';X.fillRect(px,py+19,32,3);X.fillStyle='#2d160f';X.fillRect(px+4,py+24,4,8);X.fillRect(px+24,py+24,4,8);X.restore();return true}if(tile===TT.SCREEN){X.save();X.fillStyle='rgba(0,0,0,.26)';X.fillRect(px+4,py+27,26,5);X.fillStyle='#2c110e';X.fillRect(px+3,py-7,26,39);X.fillStyle=z===2?'#7c3a68':'#7e3329';X.fillRect(px+6,py-4,20,32);X.fillStyle=z===2?'#d49abd':'#c27a58';X.fillRect(px+8,py-2,2,27);X.fillRect(px+15,py-2,2,27);X.fillRect(px+22,py-2,2,27);X.fillStyle='rgba(255,230,198,.08)';X.fillRect(px+7,py-3,18,2);X.restore();return true}return oldInteractive(tile,px,py,x,y,now)};
-})();
 
 
 /* ===== MANRU v4.3 VISUAL-COMPARE REFINEMENT ===== */
-(()=>{
-  const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
+const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
   const put43=(r,x,y,t)=>{if(!inside43(r,x,y))return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;setTerrainTile58(state.map,x,y,t);return true};
   const clear43=r=>{for(let y=r.y+1;y<=r.y+r.h-2;y++)for(let x=r.x+1;x<=r.x+r.w-2;x++)put43(r,x,y,TT.FLOOR)};
   const h43=(r,y,a,b,t)=>{for(let x=a;x<=b;x++)put43(r,x,y,t)};
@@ -7575,13 +7558,10 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   if(location.hash.includes('debug')&&window.__MANRU_DEBUG__){
     window.__MANRU_DEBUG__.teleportFeature=(i=0)=>{const f=state?.featureRooms?.[i];if(!f)return null;state.player.x=f.x+Math.floor(f.w/2);state.player.y=f.y+Math.floor(f.h/2);resetVisualState();VisibilityService.compute();updateAll();return f.name};
   }
-})();
 
 
 /* ===== MANRU v4.4 stronger 2.5D architecture + room structure pass ===== */
-(()=>{
-  
-  const inRoom44=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
+const inRoom44=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
   const safePut44=(r,x,y,t)=>{if(!inRoom44(r,x,y))return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;setTerrainTile58(state.map,x,y,t);return true};
   
   const v44=(r,x,a,b,t)=>{for(let y=a;y<=b;y++)safePut44(r,x,y,t)};
@@ -7624,26 +7604,8 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   registerGenerationStage('room-structure44','post',()=>{structuralOrdinaryRooms44();repair44()});
 
-  
-
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-  
-})();
-
 /* ===== MANRU v4.5 MOBILE UX / INPUT / PERFORMANCE OVERHAUL ===== */
-(()=>{
-  'use strict';
-  const UX={
+const UX={
     paused:null,autoMeta:null,modalOpening:false,modalDirty:false,
     closeBlockUntil:0,invEquipSlot:null,lastMiniAt:0,lastMiniTurn:-1,
     invScrollByTab:Object.create(null)
@@ -7891,21 +7853,10 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   document.body.classList.toggle('ux-modal-open',uiBlocking());
   globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishViewer45,finishClose:finishViewerClose45,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
-  
-})();
 
 
 /* ===== MANRU v4.7 CAMERA / PERF / LOOT STRATEGY ===== */
-(function(){
-  'use strict';
-
-  
-  
-  
-  
-
-  /* ---------- performance: explored-area culling, adaptive DPR, transient caps ---------- */
-  const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,frameEMA:18,renderDpr:1,cullKey:'',cullSeen:new Set(),decorKey:'',cullDecor:null,force:true};
+const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,frameEMA:18,renderDpr:1,cullKey:'',cullSeen:new Set(),decorKey:'',cullDecor:null,force:true};
   function baseDpr47(){const d=window.devicePixelRatio||1;return isMobileViewport()?Math.min(1.20,Math.max(1,d*.48)):Math.min(1.70,Math.max(1,d))}
   P47.renderDpr=baseDpr47();
   function syncGameViewport47(){if(state?.debugBattle57)return syncGameViewport();const w=document.getElementById('canvasWrap');if(!w)return false;const cs=getComputedStyle(w),cw=Math.max(300,Math.floor(w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight))),ch=Math.max(280,Math.floor(w.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom))),dpr=P47.renderDpr;if(VIEW.w!==cw||VIEW.h!==ch||Math.abs(VIEW.dpr-dpr)>.01){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false;P47.force=true;P47.cullKey=''}return true}
@@ -7986,13 +7937,10 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   
 
   syncGameViewport47();
-})();
 
 
 /* ===== MANRU v4.9: performance core + automatic camera + title/hero-select overhaul ===== */
-(function(){
-  'use strict';
-  const mapOpen49=()=>!!interactionActive8('mobileMapModal');
+const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   const drawerOpen49=()=>!!interactionActive8('mobileDrawer');
   
   
@@ -8168,7 +8116,6 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
     interactionAudit:()=>{if(!state)return[];const list=[TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT,TT.JAR,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION],out=[];for(const t of list){const x=state.player.x,y=state.player.y,old=state.map[y][x],hp=state.player.hp;state.player.hp=Math.max(state.player.maxHp,80);setTerrainTile58(state.map,x,y,t);try{bumpTileAction(x,y);out.push({t,ok:true})}catch(e){out.push({t,ok:false,error:String(e)})}setTerrainTile58(state.map,x,y,old);state.player.hp=Math.max(1,hp)}return out}
   };
   syncGameViewport();
-})();
 
 
 
@@ -8208,9 +8155,7 @@ drawWallOverhangPass=function(colors){
 
 
 /* ===== MANRU v5.2 BOW TARGETING + WORLD LONG-PRESS INSPECT ===== */
-(function(){
-  // compatibility fallback for older camera listeners that referenced this name across patch scopes
-  if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gameplayInputAllowed57();
+if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gameplayInputAllowed57();
   const AIM52={target:null,jar:null,lastSelectAt:0};
   
   const now52=()=>performance.now();
@@ -8289,16 +8234,13 @@ drawWallOverhangPass=function(colors){
     targetHp:()=>AIM52.target?.hp??null,
     setupBowTarget:()=>{if(!state)return null;const bow={...WEAPONS.find(w=>w.kind==='bow')};state.player.weapon=bow;const p=state.player;let pos=null;for(const [dx,dy] of [[3,0],[-3,0],[0,3],[0,-3],[2,2],[-2,2],[2,-2],[-2,-2]]){const x=p.x+dx,y=p.y+dy;if(x>1&&y>1&&x<COLS-2&&y<ROWS-2){for(const c of lineCells52(p.x,p.y,x,y))setTerrainTile58(state.map,c.x,c.y,TT.FLOOR);pos={x,y};break}}if(!pos)return null;const m={name:'조준 시험 표적',hp:30,maxHp:30,atk:1,def:0,eva:0,xp:0,color:'#b66',shape:'human',kind:'human',weakened:0,alerted:false};m.x=pos.x;m.y=pos.y;OccupancyService.addMonster(m);VisibilityService.compute();VisibilityService.rememberKey(k(pos.x,pos.y));VisibilityService.addVisibleKey(k(pos.x,pos.y));updateAll();return{x:pos.x,y:pos.y,player:{x:p.x,y:p.y},range:weaponRange()}}
   };
-})();
 
 /* ===== MANRU v5.1 MOBILE PERFORMANCE HOTFIX ===== */
 
 
 
 /* ===== MANRU v5.3: native copy/callout kill + clean inspect formatter ===== */
-(function(){
-
-  const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const uniq53=a=>[...new Set(a.map(v=>String(v??'').trim()).filter(Boolean))];
   function stats53(item){
     if(!item)return[];const a=[];
@@ -8347,14 +8289,9 @@ drawWallOverhangPass=function(colors){
     box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml53(it))})});
   });
 
-  
-})();
-
 
 /* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
-(function(){
-  'use strict';
-  const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
+const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
   try{const s=localStorage.getItem('manruSfx54');if(s==='0')V54.sfx=false}catch(_){ }
 
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);
@@ -8458,14 +8395,8 @@ drawWallOverhangPass=function(colors){
 }
   globalThis.__MANRU_BOSS54__={draw:drawBossIntent54,marks:()=>V54.marks.map(v=>({x:v.x,y:v.y,type:v.type})),hydrate:m=>normalizeBoss54(m,{loading:true}),core:activeCore54};
 
-  
-})();
-
 /* ===== MANRU v5.6 TALISMANS + CONTEXTUAL UNKNOWN POTIONS ===== */
-(function(){
-  'use strict';
-
-  const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
+const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
   const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
   const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
   const RECOVERY_KINDS=new Set(['heal_small','heal_medium','makgeolli','focus','cleanse']);
@@ -8768,7 +8699,6 @@ drawWallOverhangPass=function(colors){
   };
 
   if(state){ensureKnowledge56();decorateAllItems56()}
-})();
 
 
 /* ===== MANRU v5.7 · PDF 앞쪽 몬스터 초안 + 음식/비방 조리 완성 패스 ===== */
@@ -8932,8 +8862,7 @@ globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState57
 if(state)ensureFoodState57();
 
 /* ===== MANRU v5.8: PERFORMANCE / DENSITY / KOREAN UI HOTFIX ===== */
-(function(){
-  const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif';
+const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif';
 
   // ---- mobile pad toggle
   let pad58=document.getElementById('padToggle58');
@@ -9162,11 +9091,9 @@ if(state)ensureFoodState57();
 
   
   syncGameViewport();
-})();
 
 /* ===== MANRU v5.9: VAULT / DOOR / MULTI-LAYOUT OVERHAUL ===== */
-(function(){
-  const V59={lastMode:null, doorLog:[], modeLog:[]};
+const V59={lastMode:null, doorLog:[], modeLog:[]};
 
   /* ---------- geometry primitives ---------- */
   function clearMap59(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL)}
@@ -9589,14 +9516,8 @@ if(state)ensureFoodState57();
     if((!L&&!U)||(!R&&!U)){X.fillStyle='rgba(220,170,108,.10)';X.fillRect(px+(!L?3:25),py+4,4,5)}
   };
 
-  
-})();
-
 /* ===== MANRU v6.0: SPECIAL FLOOR / BOSS ARENA / PALETTE OVERHAUL ===== */
-(function(){
-  'use strict';
-
-  const V60={revision:3,hiddenSeq:0,lastFloor:0};
+const V60={revision:3,hiddenSeq:0,lastFloor:0};
   TT.HIDDEN_BRIDGE=40;
   TT.HIDDEN_WALL=41;
   TT.CRUMBLE=42;
@@ -10824,15 +10745,10 @@ function spawnAuthoredEncounters60(){
     validate:()=>{const out=[];for(const f of [...SPECIAL60,...BOSS60]){state.floor=f;NormalFloorGenerator.generate();let pass=0,doors=0,hidden=Object.keys(state.hiddenGroups60||{}).length;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){if(ReachabilityService.playerPassable(x,y))pass++;if(state.map[y][x]===TT.DOOR)doors++}out.push({f,size:[COLS,ROWS],layout:state.layoutName,pass,doors,hidden,boss:state.monsters.find(m=>m.boss)?.name||null,audit:auditCurrent60()})}return out},
     audit:()=>auditCurrent60()
   };
-})();
 
 /* r53: removed the overwritten v6.0 overview camera. */
 /* ===== MANRU v6.1: ENEMY DENSITY / TACTICAL ROLES / SMART STRUCTURE INPUT ===== */
-(function(){
-  'use strict';
-
-  // Shattered-style: rooms are populated by threat weight, with occasional packs; special floors have explicit encounter budgets.
-  const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,16],[21,24,14,18]];
+const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,16],[21,24,14,18]];
   for(const r of SPAWN_RULES){const q=spawnRanges61.find(v=>r.from===v[0]&&r.to===v[1]);if(q)r.count=[q[2],q[3]]}
   Object.assign(SPECIAL_BASE_COUNTS,{2:10,4:11,6:12,8:12,11:13,13:14,16:13,18:14,20:9,21:13,22:15,23:14,24:12});
   const TARGET61={2:13,4:16,6:25,8:24,11:26,13:29,16:32,18:32,21:28,22:43,23:12,24:9};
@@ -11045,10 +10961,6 @@ function spawnAuthoredEncounters60(){
   registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configure61(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('monster-config61',{post:()=>{if(state){for(const m of state.monsters){configure61(m);normalizeAsuraAttack61(m)}}}});
 
-  
-  
-})();
-
 
 /* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */
 /* v6.1 final render coordinator: one camera snapshot and one world renderer per update */
@@ -11070,9 +10982,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
 
 
 /* ===== MANRU v6.2: FLOOR FEELINGS / MINIVAULTS / TACTICAL BELT ===== */
-(function(){
-  'use strict';
-  const V62={lastFeeling:null,lastRoomKey:'',beltSig:'',beltPlayer:null,beltOrder:[]};
+const V62={lastFeeling:null,lastRoomKey:'',beltSig:'',beltPlayer:null,beltOrder:[]};
   const FEEL62=[
     {id:'supply',name:'보급',glyph:'량',desc:'회복 자원이 풍부한 층. 여유가 생길 때 다음 전투를 준비하기 좋다.'},
     {id:'war',name:'경계',glyph:'병',desc:'적이 많고 장비 보상이 좋은 층. 전투를 피할지 밀어붙일지 판단해야 한다.'},
@@ -11188,13 +11098,8 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   }
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'feeling62',draw:drawFeelingOverlay62});
 
-  
-})();
-
 /* ===== MANRU v7.0 RELEASE CANDIDATE CORE ===== */
-(function(){
-  'use strict';
-  const RC={
+const RC={
     build:'r57 INPUT LOCK / HONEST CHAIN / SAVE VALIDATION',
     panelOpen:false,
     lastActionAt:0,
@@ -11244,9 +11149,9 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     </div>`;
   document.body.appendChild(panel);
   const coach=document.createElement('div');coach.id='coach70';coach.setAttribute('role','dialog');coach.setAttribute('aria-modal','true');coach.setAttribute('aria-labelledby','coachTitle58');coach.setAttribute('aria-describedby','coachText58');document.body.appendChild(coach);let coachFocus58=null,coachCurrent58=null,coachTimer58=null;coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeTip70()}});
-  const stamp=document.createElement('div');stamp.id='releaseStamp70';stamp.textContent=RC.build;document.getElementById('canvasWrap')?.appendChild(stamp);
+  const releaseStamp=document.createElement('div');releaseStamp.id='releaseStamp70';releaseStamp.textContent=RC.build;document.getElementById('canvasWrap')?.appendChild(releaseStamp);
   const mb=document.querySelector('#mobileHud .mButtons');
-  const gear=document.createElement('button');gear.id='releaseGear70';gear.type='button';gear.textContent='설정';gear.setAttribute('aria-label','설정 / 세이브');mb?.appendChild(gear);
+  const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정 / 세이브');mb?.appendChild(releaseGearButton);
   const dg=document.createElement('button');dg.id='releaseGearDesktop70';dg.type='button';dg.textContent='設';dg.setAttribute('aria-label','설정 / 세이브');document.body.appendChild(dg);
 
   /* ---------- tiny UI sound ---------- */
@@ -11353,7 +11258,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   function closePanel70(){
     if(!RC.panelOpen)return;RC.panelOpen=false;panel.classList.remove('open');document.body.classList.remove('rc70-open');window.__MANRU_PAUSE_RENDER61=false;RC.lastActionAt=performance.now();if(state)updateAll();
   }
-  gear.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});dg.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});document.getElementById('rcClose70').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-panel'});
+  releaseGearButton.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});dg.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});document.getElementById('rcClose70').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-panel'});
   panel.addEventListener('pointerdown',e=>{if(e.target===panel)InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-backdrop'})},{passive:true});
 
   /* ---------- 8-way movement parity (mobile & PC) ---------- */
@@ -11617,11 +11522,9 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     camera:()=>globalThis.__MANRU_CAMERA_PROJECTION12__.lastRendered(),
     invalid:()=>state?(state.monsters||[]).filter(m=>m.x<0||m.y<0||m.x>=COLS||m.y>=ROWS||!PlacementService.monsterCanStand(m,m.x,m.y)).map(m=>({name:m.name,x:m.x,y:m.y,tile:state.map[m.y]?.[m.x],fixed:!!m.fixed,aquatic:!!m.aquatic,flying:!!m.flying,lava:!!m.lava,footprint:m.footprint||null})):[]
   };
-})();
 
 /* ===== MANRU v7.0.1: ANDROID BACKGROUND / RESUME RECOVERY ===== */
-(function(){
-  let resumeTimer71=0;
+let resumeTimer71=0;
   const recovery71={attempts:0,failures:0,last:null};
   function resume71(reason='resume',attempt=0){
     try{
@@ -11689,13 +11592,9 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     canvas?.addEventListener?.('contextrestored',()=>scheduleResume71('canvas-contextrestored',0),{passive:true});
   }
   window.__MANRU_RESUME_R6__={force:(reason='manual')=>resume71(reason),schedule:scheduleResume71,snapshot:()=>structuredClone(recovery71),version:'r71-verified-recovery'};
-})();
 
 /* ===== MANRU v7.1: REGIONAL COMPLEXITY / LANDMARK OVERHAUL ===== */
-(function(){
-  'use strict';
-  
-  const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
+const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   
   const PALETTE71=[
     {floor:'#4a211a',floorAlt:'#5a291f',wall:'#7d382c',wallDark:'#2b0f0d',accent:'#e99150',light:'#ffd18c',fog:'#0b0403'},
@@ -11980,34 +11879,11 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   registerGenerationStage('region71-pre','pre',()=>{state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null});
   registerGenerationStage('region71-post','post',()=>{enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;});
 
-  
-
-  
-})();
-
 /* ===== MANRU v7.3: WALL APPROACH / 8-WAY AUTOPATH / DELAYED HOLD RING ===== */
-(function(){
-  'use strict';
-  
 
-  /* ---------- 8-way pathfinding parity ----------
-     Manual movement already accepts diagonals.  Autowalk used the old 4-way BFS,
-     so diagonal-only corridors were falsely reported as unreachable. */
-  
-
-  /* ---------- wall / non-passable tile click ----------
-     A plain wall is not destructible, but tapping it should still mean
-     "walk to this wall", just like tapping a monster means approach it. */
-  /* Runtime81 owns blocked-target approach/action through its canonical automation engine. */
-
-
-  
-})();
 
 /* ===== MANRU v7.4: ELEMENTAL TALISMANS / FUSION / GEAR INFUSION ===== */
-(function(){
-  'use strict';
-  const V74={first:null,target:null,gearScroll:null,modal:null};
+const V74={first:null,target:null,gearScroll:null,modal:null};
   const E74={
     fire:{name:'화염',seal:'화',color:'#e45e34',soft:'#ffb061'},shock:{name:'뇌전',seal:'뇌',color:'#e7cf55',soft:'#fff39a'},
     water:{name:'수류',seal:'수',color:'#4b9fc3',soft:'#9edff2'},ice:{name:'빙결',seal:'빙',color:'#86b6cf',soft:'#d3eff7'},
@@ -12134,8 +12010,8 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
 
   /* fusion UI */
   const fusion=document.createElement('div');fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';document.body.appendChild(fusion);
-  const gear=document.createElement('div');gear.id='gear74';gear.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';document.body.appendChild(gear);
-  fusion.querySelector('[data-f74close]').onclick=()=>closeFusion74();gear.querySelector('[data-g74close]').onclick=()=>closeGear74();
+  const gearInfusionPanel=document.createElement('div');gearInfusionPanel.id='gear74';gearInfusionPanel.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';document.body.appendChild(gearInfusionPanel);
+  fusion.querySelector('[data-f74close]').onclick=()=>closeFusion74();gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear74();
   function basicTalismans74(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.type==='talisman'&&!v.item.branchExclusive105&&!v.item.fusion74&&known74(v.item))}
   function compatible74(a,b){return RECIPE74.get(key74(a.talismanKind,b.talismanKind))||null}
   function openFusion74(first=null){if(!playerClassRules58().talismanFusion){closeFusion74();toast('천하장사는 부적을 합성할 수 없다.');return false}if(!gameplayUiOpen57())return false;cancelAutoWalk();closeInventory();V74.first=first;setInteraction8('fusion74',true);renderFusion74()}
@@ -12214,14 +12090,10 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   globalThis.__MANRU_LIFECYCLE__.registerLoad('talisman74',{post:()=>{if(state){ensure74(true);updateAll()}}});
 
   globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES74.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem74),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion74(x,y),cancelTarget:()=>{cancelTarget74(true);return true},closePanels:()=>{closeFusion74();closeGear74();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear74(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear74(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant74(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind74('upgrade','강화 효과 관찰');openGear74(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
-  
-})();
 
 
 /* ===== MANRU v7.5: CLEAN SHATTERED-LIKE HUD / UNIFIED INPUT / FUSION QA ===== */
-(function(){
-  'use strict';
-  document.body.classList.add('mf75-clean');
+document.body.classList.add('mf75-clean');
 
 
   // First launch on touch screens follows Shattered-style tap movement: D-pad stays available behind a tiny toggle.
@@ -12235,17 +12107,9 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
 
   try{updateMobileHud()}catch(_){}
 
-  // Small self-audit for the v7.4 fusion integration and unified controls.
-  
-})();
-
 
 /* ===== MANRU v7.8: FULL-MAP DENSITY / LANDMARK POLISH ===== */
-(function(){
-  'use strict';
-  
-  
-  function imp78(x,y){if(!state)return true;if(x<=1||y<=1||x>=COLS-2||y>=ROWS-2)return true;if(state.player?.x===x&&state.player?.y===y)return true;if(state.stairs?.x===x&&state.stairs?.y===y)return true;if((state.items||[]).some(i=>i.x===x&&i.y===y))return true;if((state.monsters||[]).some(m=>m.hp>0&&typeof monCovers==='function'&&monCovers(m,x,y)))return true;return false}
+function imp78(x,y){if(!state)return true;if(x<=1||y<=1||x>=COLS-2||y>=ROWS-2)return true;if(state.player?.x===x&&state.player?.y===y)return true;if(state.stairs?.x===x&&state.stairs?.y===y)return true;if((state.items||[]).some(i=>i.x===x&&i.y===y))return true;if((state.monsters||[]).some(m=>m.hp>0&&typeof monCovers==='function'&&monCovers(m,x,y)))return true;return false}
   function safeFloor78(x,y){return x>1&&y>1&&x<COLS-2&&y<ROWS-2&&!imp78(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y]?.[x])}
   
   function symmetricFunctional78(){
@@ -12271,19 +12135,13 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
     state.fullDetail78={decor:state.decor?.length||0,region:regionIndex(),floor:state.floor};
   }
   registerGenerationStage('polish78','post',()=>{polish78();VisibilityService.compute()});
-  // r53: removed generation-on-load stage polish78; saved geometry is authoritative.
-  
-})();
 
 
 /* ===== MANRU v8.1: ALWAYS-ON AUTOWALK / FOLLOW-PEEK CAMERA / CONNECTED DECOR =====
    Input, automation, camera and viewport UI have one explicit owner.
    Map taps always mean destination movement. Auto-pickup is a fixed policy.
 */
-(function(){
-  'use strict';
-
-  const CONFIG81=Object.freeze({
+const CONFIG81=Object.freeze({
     version:'v8.1-structured-runtime',
     autoMove:true,
     autoPickup:true,
@@ -12882,14 +12740,10 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   
 
   window.__MANRU_RUNTIME81__={config:CONFIG81,state:Runtime81,Automation81,Camera81,Zoom81,ConnectedDecor81,Integrity81,inspect:inspectTile81,stopHeld:stopHeld81};
-  
-})();
 
 
 /* ===== MANRU v8.5: TRUE STRUCTURAL MAP REBUILD / DECOR VOCABULARY ===== */
-(function(){
-  'use strict';
-  const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
+const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   const V85={version:'v8.7-nethack-dense-modules',recent:[],samples:[]};
 
   // New architectural vocabulary. These are real map tiles, not random object sprites.
@@ -14490,18 +14344,8 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v9.6.5 MARTIAL STEALTH + FX';
 
-
-
-
-
-
-
-})();
-
 /* ===== MANRU v9.6.7: COMMON AMMUNITION / BOW-BIASED FLOOR LOOT ===== */
-(()=>{
-  'use strict';
-  const AMMO967=[
+const AMMO967=[
     {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:10,spawnMax:18,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 한 묶음에 많이 들어 있어 가장 흔하게 발견된다.'},
     {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:8,spawnMax:14,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 약간 더 강한 타격을 준다.'},
     {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:5,spawnMax:10,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 명중 시 적 방어를 2만큼 무시한다.'}
@@ -16142,16 +15986,11 @@ riverAndCore(...args){
 })();
 
 
-})();
-
-
 
 
 /* v9.8.4 cohesive runtime: intentionally inside the main game closure */
 
-(()=>{
-  'use strict';
-  const V984='v9.9.6-initial-zoom-100';
+const V984='v9.9.6-initial-zoom-100';
   try{localStorage.removeItem('manruZoomActual48')}catch(_){}
 
   /* ---------- UI glyph policy: large rune = Han character, explanatory label = Korean ---------- */
@@ -16699,15 +16538,9 @@ riverAndCore(...args){
   for(const id of ['rcLoadAuto70','rcExport70','rcImport70']){const b=document.getElementById(id);if(b){b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('퍼마데스 런에서는 과거 세이브를 불러올 수 없다.')}}}
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});
 
-  
-})();
-
 
 /* ===== MANRU v9.9.1 CURSE / HOLY / IDENTIFY / SKILL UX ===== */
-(()=>{
-  'use strict';
-  
-  const GEAR991=new Set(['weapon','armor','cloak','relic','trinket']);
+const GEAR991=new Set(['weapon','armor','cloak','relic','trinket']);
   const CURSE_RATE991=.15;
   const CURSE_CATALOG991=[
     {id:'thirst',name:'갈증',desc:'공격이 빗나가면 기력 1을 잃는다.'},
@@ -16930,13 +16763,10 @@ function markGear991(item,opt={}){
   // Keep debug hooks explicit for regression tests.
   
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v9.9.1 CURSES / HOLY / IDENTIFY / SKILL UX';
-})();
 
 
 /* ===== MANRU v9.9.2 STORY SYSTEM — integrated into core scope ===== */
-(()=>{
-  'use strict';
-  const STORY_VERSION992='v9.9.3-story-system';
+const STORY_VERSION992='v9.9.3-story-system';
   const STORY_NOTE_FLOORS992={4:'friend_measure',7:'assistant_numbers',11:'friend_route',16:'soldier_retreat',19:'friend_correction',22:'friend_accept',24:'friend_last'};
   const STORY_ECHO_FLOOR992=23;
   const STORY_DOCS992={
@@ -17263,13 +17093,10 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.2 SCREEN STATE / SHARED PLAYER SPRITE / BASIC GUIDE';
   const releaseStamp992=document.getElementById('releaseStamp70');if(releaseStamp992)releaseStamp992.textContent='v10.0.2';
-})();
 
 
   /* ===== MANRU v10.0.3: tall player / real quit / hardened permadeath / canonical food+talisman art ===== */
-  (()=>{
-    'use strict';
-    const V1003='v10.0.3';
+  const V1003='v10.0.3';
     const ACTIVE1003='manru984_active_run';
     const DEATH1003='manru984_last_death';
 
@@ -17385,13 +17212,10 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
       forceBadTransient:()=>{if(!state)return false;state.playerHitUntil=99_999_999;state.playerAttackUntil=88_888_888;return window.__MANRU_RELEASE__?.save?.()??false},
       permadeathAudit:()=>{const keys=Object.keys(localStorage).filter(k=>/manru.*(?:save|slot|backup|active_run)/i.test(k));return{active:!!localStorage.getItem(ACTIVE1003),foreignSaveKeys:keys.filter(k=>k!==ACTIVE1003),death:deathMeta1003(),importDisabled:!!document.getElementById('rcImport70')?.disabled,exportDisabled:!!document.getElementById('rcExport70')?.disabled,slotControls:[...document.querySelectorAll('[data-rcsave],[data-rcload]')].every(b=>b.disabled),quitVisible:!!document.getElementById('quitHead1003')}}
     };
-  })();
 
 
   /* ===== MANRU v10.0.4: Nevanda-informed compact heroes r2 / equipment layers / isolated saves ===== */
-  (()=>{
-    'use strict';
-    const V1004='v10.0.6';
+  const V1004='v10.0.6';
     const SAVE1004='manru1004_active_run';
     const SHADOW1004='manru1004_active_run_shadow';
     const DEATH1004='manru1004_last_death';
@@ -17828,7 +17652,6 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
       clearArt:()=>{PLAYER1004.clear();return true},
       clearCurrent:()=>{const result=SaveService.transact([[SAVE1004,null]],'diagnostic-clear');RunLifecycle.refreshContinue();return result}
     };
-  })();
 
   /* v10.0.4 strict typed-key final pass: later architecture layers are not allowed to reopen a bypass. */
   const keyApi1004=window.__MANRU_V96_TEST__,strictKeyFloors1004=new Set(keyApi1004?.keyFloors?.()||[]);
@@ -17844,8 +17667,6 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 DEBUG / STRICT TYPED KEY GATES / NO BYPASS';
 
 /* ===== MANRU v10.0.4 ROUTE/Hazard REWORK (rolled back from v10.0.5 map branch) ===== */
-(()=>{
-'use strict';
 const V='10.0.4-route-hazard-r1';
 const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
 const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
@@ -18086,7 +17907,7 @@ window.__MANRU_V1005_TEST__={
   pathTo:(x,y)=>ReachabilityService.hazardPathLength({x:+x,y:+y}),strictDoors:()=>{const a=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.DOOR){const L=!tileBlocks(state.map[y][x-1]),R=!tileBlocks(state.map[y][x+1]),U=!tileBlocks(state.map[y-1][x]),D=!tileBlocks(state.map[y+1][x]);a.push({x,y,meaningful:(L&&R&&!U&&!D)||(U&&D&&!L&&!R)})}return a},
   remodel,updateWardHud,initHazards:hz
 };
-document.title='만루 — v10.0.4 route/hazard rework';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE COMPLEXITY / LETHAL TERRAIN / 10T RESTORE';const stamp=document.getElementById('releaseStamp70');if(stamp)stamp.textContent='v10.0.4 · route/hazard';
+document.title='만루 — v10.0.4 route/hazard rework';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE COMPLEXITY / LETHAL TERRAIN / 10T RESTORE';const routeStamp=document.getElementById('releaseStamp70');if(routeStamp)routeStamp.textContent='v10.0.4 · route/hazard';
 
 /* MANRU v10.0.4 rollback continuation — key clarity + item-effect audit/fix */
 (()=>{
@@ -18270,11 +18091,7 @@ window.__MANRU_V1004_ITEMFIX__={
 try{document.title='만루 — v10.0.4 append architecture r4';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE+HAZARD / KEY CLARITY / ITEM EFFECT AUDIT';const stamp=document.getElementById('releaseStamp70');if(stamp)stamp.textContent='v10.0.4 · append architecture r4'}catch(_){ }
 })();
 
-})();
-
 /* ===== MANRU v10.0.4 ORIGINAL-MAP APPEND ARCHITECTURE / FINAL ENTITY PLACEMENT ===== */
-(()=>{
-'use strict';
 const BUILD1020='10.0.4-exit-invariant-boss-direct-drop-r5';
 const K1020=(x,y)=>`${x},${y}`;
 const clamp1020=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -20449,7 +20266,6 @@ window.__MANRU_ARCH1020__.fovAuditR8=()=>{if(!state)return{ok:false,reason:'no-s
 
 window.__MANRU_ARCH1020__.routeMetrics=()=>ReachabilityService.architectureRouteMetrics({K1020,inside1020,pass1020});
 try{document.title='만루 — 잠들지 않는 천 개의 방';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ORIGINAL MAP + APPEND ARCHITECTURE / FINAL ENTITY PLACEMENT';const s=document.getElementById('releaseStamp70');if(s)s.textContent='v10.0.4 · original map + append architecture'}catch(_){ }
-})();
 
 
 /* ===== MANRU v10.0.4 r18: SINGLE CANONICAL FLOOR GENERATION PIPELINE · EXIT MARKER INVARIANT / DIRECT BOSS DROPS ===== */
@@ -20609,10 +20425,6 @@ globalThis.__MANRU_GENERATION_R18__={generate:NormalFloorGenerator.generate,core
 
 /* ===== R7 CANONICAL CREATURE ART (outer game scope) ===== */
 /* ---------- MANRU canonical creature art r3: Nevanda/NetHack readability, exact-name silhouettes ---------- */
-(()=>{
-'use strict';
-
-
 const CW1012=32,CH1012=36,OUT1012='#120f12',INK1012='#211a1c';
 const CACHE1012=new Map(),PCACHE1012=new Map();
 const r1012=(q,x,y,w,h,c,o=true)=>{if(o){q.fillStyle=OUT1012;q.fillRect(x-1,y-1,w+2,h+2)}q.fillStyle=c;q.fillRect(x,y,w,h)};
@@ -21368,23 +21180,18 @@ for(const [obj,key,fn] of [[window.__MANRU_V1001__,'portrait',(id='wanderer')=>A
 
 
 try{if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 R7 / CANONICAL ITEMS / SHARED HAZARDS / DISTINCT CREATURES';const s=document.getElementById('releaseStamp70');if(s)s.textContent='v10.0.4 · precision r3 + creature pass'}catch(_){}
-})();
 
 
 /* R7 procedural item sprite generator removed: TRUE-HD atlas and authored consumable visuals are canonical. */
 
 /* ===== R7 CANONICAL ITEM ART (outer game scope) ===== */
-(()=>{
-'use strict';
-/* MANRU R7: one exact-item sprite source for start cards, inventory and world.
-   Potion appearance/identification stays intentionally independent. */
 const BUILD='10.0.6-r7-authored-branch-items';
 const W=48,H=48,CACHE=new Map(),DATA=new Map(),WEAPON_ASSETS=new Map(),PICTURE_ASSETS=new Map();
 const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
 const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
 const cv=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;const q=c.getContext('2d');q.imageSmoothingEnabled=false;return[c,q]};
 const rect=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-const dot=(q,x,y,c)=>rect(q,x,y,1,1,c);
+const itemArtDot=(q,x,y,c)=>rect(q,x,y,1,1,c);
 const line=(q,x1,y1,x2,y2,c,w=1)=>{q.strokeStyle='#15100d';q.lineWidth=w+2;q.beginPath();q.moveTo(x1+.5,y1+.5);q.lineTo(x2+.5,y2+.5);q.stroke();q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x1+.5,y1+.5);q.lineTo(x2+.5,y2+.5);q.stroke();q.lineWidth=1};
 const poly=(q,c,pts)=>{q.fillStyle=c;q.beginPath();q.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)q.lineTo(pts[i][0],pts[i][1]);q.closePath();q.fill()};
 const ell=(q,c,x,y,rx,ry)=>{q.fillStyle=c;q.beginPath();q.ellipse(x,y,rx,ry,0,0,Math.PI*2);q.fill()};
@@ -21419,7 +21226,7 @@ function drawBlade(q,st,m,hi,wood){
   poly(q,'#286fa7',[[-4,0],[-4,-18],[0,-26],[4,-18],[4,0]]);
   poly(q,'#92e7ff',[[0,-26],[4,-18],[4,0],[2,-2],[1,-18]]);poly(q,'#3daada',[[-3,-17],[0,-23],[0,-1],[-3,0]]);
   for(const y of[-17,-9])poly(q,'#ecfdff',[[0,y-3],[1,y-1],[3,y],[1,y+1],[0,y+3],[-1,y+1],[-3,y],[-1,y-1]]);
-  poly(q,'#e4c27f',[[-11,-3],[-6,-1],[0,-3],[6,-1],[11,-3],[8,3],[0,2],[-8,3]]);ell(q,'#112e5e',0,1,3,2);dot(q,0,0,'#b4edff');
+  poly(q,'#e4c27f',[[-11,-3],[-6,-1],[0,-3],[6,-1],[11,-3],[8,3],[0,2],[-8,3]]);ell(q,'#112e5e',0,1,3,2);itemArtDot(q,0,0,'#b4edff');
   rect(q,-2,4,5,9,'#203f66');for(const y of[5,8,11])line(q,-2,y,3,y+1,'#a7c6d8',1);poly(q,'#e8cc90',[[-3,13],[3,13],[4,16],[0,18],[-4,16]]);ell(q,'#5bc4f1',0,15,1.5,1.5);q.restore();
   for(const[x,y,r]of[[12,11,3],[35,18,2],[12,29,1.5]]){line(q,x-r,y,x+r,y,'#b5e6fc',.8);line(q,x,y-r,x,y+r,'#edfaff',.8)}return;
  }
@@ -21456,28 +21263,28 @@ function drawBlunt(q,st,m,hi,wood){
  q.save();q.translate(23,26);q.rotate(.25);line(q,0,17,0,-12,wood,4);rect(q,-1,-9,1,24,'#b38355');for(let y=9;y<17;y+=2)rect(q,-2,y,5,1,'#ccb089');rect(q,-3,17,6,2,'#928572');
  if(st==='club'){poly(q,'#332c23',[[-3,5],[-6,-14],[-3,-21],[3,-20],[6,-15],[3,5]]);poly(q,'#866341',[[-3,3],[-4,-14],[-1,-19],[3,-17],[4,-12],[2,3]]);for(const x of[-2,1]){q.strokeStyle='#b99a6a';q.lineWidth=.8;q.beginPath();q.moveTo(x,-15);q.lineTo(x+1,-2);q.stroke()}ell(q,'#403727',1,-10,1,2)}
  else if(st==='sickle'){q.strokeStyle='#273139';q.lineWidth=6;q.beginPath();q.arc(0,-12,10,-2.5,.85);q.stroke();q.strokeStyle='#b5c7c6';q.lineWidth=3;q.stroke();poly(q,'#e5e8d4',[[8,-6],[2,-2],[7,-10]])}
- else if(st==='flail'){for(let i=0;i<5;i++){ell(q,'#232a2c',i*2,-9-i*2,2.8,2);ell(q,'#b2b8a8',i*2,-9-i*2,1.8,1.2);ell(q,'#2f373a',i*2,-9-i*2,.9,.5)}ell(q,'#303c41',11,-20,6,6);poly(q,m,[[6,-22],[10,-25],[15,-22],[14,-17],[9,-16]]);for(const d of[-1,1])poly(q,hi,[[11+d*4,-23],[11+d*8,-25],[11+d*5,-20]]);dot(q,9,-22,'#eceddb')}
- else if(st==='hand_axe'||st==='battle_axe'){const big=st==='battle_axe';poly(q,'#253239',[[-3,-17],[-9,-19],[-15,-12],[-13,-5],[-4,-10],[3,-10],[4,-17]]);poly(q,m,[[-4,-16],[-9,-17],[-13,-12],[-12,-7],[-4,-12],[2,-12],[2,-16]]);poly(q,'#e3e8dc',[[-10,-18],[-14,-12],[-12,-6],[-10,-8],[-12,-12]]);if(big){poly(q,m,[[2,-17],[8,-19],[14,-12],[12,-6],[3,-10]]);poly(q,hi,[[9,-18],[13,-12],[11,-7],[10,-9],[11,-12]])}rect(q,-2,-18,4,9,'#849496');dot(q,-1,-16,hi)}
+ else if(st==='flail'){for(let i=0;i<5;i++){ell(q,'#232a2c',i*2,-9-i*2,2.8,2);ell(q,'#b2b8a8',i*2,-9-i*2,1.8,1.2);ell(q,'#2f373a',i*2,-9-i*2,.9,.5)}ell(q,'#303c41',11,-20,6,6);poly(q,m,[[6,-22],[10,-25],[15,-22],[14,-17],[9,-16]]);for(const d of[-1,1])poly(q,hi,[[11+d*4,-23],[11+d*8,-25],[11+d*5,-20]]);itemArtDot(q,9,-22,'#eceddb')}
+ else if(st==='hand_axe'||st==='battle_axe'){const big=st==='battle_axe';poly(q,'#253239',[[-3,-17],[-9,-19],[-15,-12],[-13,-5],[-4,-10],[3,-10],[4,-17]]);poly(q,m,[[-4,-16],[-9,-17],[-13,-12],[-12,-7],[-4,-12],[2,-12],[2,-16]]);poly(q,'#e3e8dc',[[-10,-18],[-14,-12],[-12,-6],[-10,-8],[-12,-12]]);if(big){poly(q,m,[[2,-17],[8,-19],[14,-12],[12,-6],[3,-10]]);poly(q,hi,[[9,-18],[13,-12],[11,-7],[10,-9],[11,-12]])}rect(q,-2,-18,4,9,'#849496');itemArtDot(q,-1,-16,hi)}
  else if(st==='hex_staff'){poly(q,'#303b40',[[-3,18],[-4,-22],[0,-25],[4,-22],[3,18]]);rect(q,-2,-22,2,39,'#a5b4b4');rect(q,1,-21,2,38,'#586c74');for(const y of[-20,-11,1,12])rect(q,-4,y,8,2,'#c1ac78')}
  else if(st==='vajra'){for(const d of[-1,1]){q.strokeStyle='#dbbd72';q.lineWidth=2;q.beginPath();q.moveTo(0,-4);q.bezierCurveTo(d*10,-10,d*7,-17,0,-22);q.stroke()}poly(q,'#e7d394',[[0,-24],[3,-15],[0,-6],[-3,-15]]);ell(q,'#a68045',0,-5,5,2);ell(q,'#f1d79b',0,-5,3,1)}
- else{const claw=st==='claw_hammer',wide=st==='forge_hammer'?13:st==='warhammer'?12:9;poly(q,'#273239',[[-wide,-20],[wide-2,-20],[wide,-17],[wide,-7],[-wide,-7],[-wide-2,-10]]);poly(q,m,[[-wide+1,-18],[wide-2,-18],[wide-1,-9],[-wide+1,-9]]);poly(q,'#d4ddcf',[[-wide,-20],[wide-2,-20],[wide-1,-17],[-wide+1,-17]]);rect(q,wide-4,-17,3,8,'#596e76');rect(q,-wide+2,-15,wide*2-8,1,hi);if(claw){poly(q,'#83969b',[[-9,-17],[-15,-22],[-16,-18],[-10,-12]]);rect(q,-15,-21,2,3,'#20282d')}if(st==='forge_hammer'){for(const x of[-11,7])rect(q,x,-18,3,10,'#b79a5d')}ell(q,'#384b50',0,-13,2,2);dot(q,-1,-14,'#e7dac0')}
+ else{const claw=st==='claw_hammer',wide=st==='forge_hammer'?13:st==='warhammer'?12:9;poly(q,'#273239',[[-wide,-20],[wide-2,-20],[wide,-17],[wide,-7],[-wide,-7],[-wide-2,-10]]);poly(q,m,[[-wide+1,-18],[wide-2,-18],[wide-1,-9],[-wide+1,-9]]);poly(q,'#d4ddcf',[[-wide,-20],[wide-2,-20],[wide-1,-17],[-wide+1,-17]]);rect(q,wide-4,-17,3,8,'#596e76');rect(q,-wide+2,-15,wide*2-8,1,hi);if(claw){poly(q,'#83969b',[[-9,-17],[-15,-22],[-16,-18],[-10,-12]]);rect(q,-15,-21,2,3,'#20282d')}if(st==='forge_hammer'){for(const x of[-11,7])rect(q,x,-18,3,10,'#b79a5d')}ell(q,'#384b50',0,-13,2,2);itemArtDot(q,-1,-14,'#e7dac0')}
  q.restore();
 }
 function drawGauntlet42(q,m,hi){
- for(const [x,y,rot]of[[14,25,-.2],[33,23,.2]]){q.save();q.translate(x,y);q.rotate(rot);poly(q,'#253138',[[-7,-10],[-5,-16],[5,-16],[8,-10],[7,9],[4,13],[-5,13],[-8,7]]);poly(q,m,[[-6,-9],[-4,-14],[4,-14],[6,-9],[5,8],[3,11],[-4,11],[-6,6]]);for(let i=0;i<3;i++){rect(q,-5+i*3,-13,2,5,hi);rect(q,-5+i*3,-8,2,1,'#4b626b')}poly(q,'#c2cfc9',[[-5,-5],[0,-7],[5,-4],[4,3],[0,5],[-5,2]]);poly(q,'#738991',[[0,-6],[5,-4],[4,3],[0,5]]);rect(q,-5,6,10,2,'#4d3b2b');rect(q,-5,7,10,1,'#bda477');for(const d of[-1,1])dot(q,d*4,6,hi);q.restore()}
+ for(const [x,y,rot]of[[14,25,-.2],[33,23,.2]]){q.save();q.translate(x,y);q.rotate(rot);poly(q,'#253138',[[-7,-10],[-5,-16],[5,-16],[8,-10],[7,9],[4,13],[-5,13],[-8,7]]);poly(q,m,[[-6,-9],[-4,-14],[4,-14],[6,-9],[5,8],[3,11],[-4,11],[-6,6]]);for(let i=0;i<3;i++){rect(q,-5+i*3,-13,2,5,hi);rect(q,-5+i*3,-8,2,1,'#4b626b')}poly(q,'#c2cfc9',[[-5,-5],[0,-7],[5,-4],[4,3],[0,5],[-5,2]]);poly(q,'#738991',[[0,-6],[5,-4],[4,3],[0,5]]);rect(q,-5,6,10,2,'#4d3b2b');rect(q,-5,7,10,1,'#bda477');for(const d of[-1,1])itemArtDot(q,d*4,6,hi);q.restore()}
 }
 function drawArtifactWeapon46(q,it){
   const id=it.artifactId46,ink='#1b1210';
   if(id==='ember_axe'){line(q,13,42,28,13,'#5f3522',5);poly(q,ink,[[22,8],[39,10],[34,24],[23,22]]);poly(q,'#d8562d',[[23,10],[36,12],[32,21],[24,20]]);poly(q,'#f2a24b',[[27,17],[30,8],[33,16],[37,13],[34,23]]);line(q,24,11,34,13,'#ffe5a0',.7);line(q,26,21,32,22,'#8a3429',1);for(const y of[31,35,39])line(q,14,y,19,y-2,'#b28c62',.7);return}
-  if(id==='water_crossbow'){poly(q,ink,[[7,17],[37,17],[43,23],[37,29],[7,29]]);rect(q,9,19,28,8,'#24586a');rect(q,14,21,22,4,'#7bdcf2');line(q,8,11,8,35,'#bceffc',4);line(q,39,11,39,35,'#bceffc',4);line(q,7,12,40,20,'#dffbff',1);line(q,7,34,40,26,'#dffbff',1);poly(q,'#3f6f79',[[21,29],[29,29],[24,43],[17,43]]);rect(q,18,12,12,7,'#16343d');ell(q,'#58c9e8',24,15,5,3);dot(q,25,14,'#f2feff');line(q,30,23,45,23,'#e8fbff',2);poly(q,'#9eeeff',[[45,20],[49,23],[45,26]]);for(const [x,y]of[[11,20],[34,20],[21,32]]){ell(q,'#153842',x,y,1.6,1.6);dot(q,x,y,'#e0f6e9')}line(q,19,38,24,33,'#9fbcb2',.8);return}
+  if(id==='water_crossbow'){poly(q,ink,[[7,17],[37,17],[43,23],[37,29],[7,29]]);rect(q,9,19,28,8,'#24586a');rect(q,14,21,22,4,'#7bdcf2');line(q,8,11,8,35,'#bceffc',4);line(q,39,11,39,35,'#bceffc',4);line(q,7,12,40,20,'#dffbff',1);line(q,7,34,40,26,'#dffbff',1);poly(q,'#3f6f79',[[21,29],[29,29],[24,43],[17,43]]);rect(q,18,12,12,7,'#16343d');ell(q,'#58c9e8',24,15,5,3);itemArtDot(q,25,14,'#f2feff');line(q,30,23,45,23,'#e8fbff',2);poly(q,'#9eeeff',[[45,20],[49,23],[45,26]]);for(const [x,y]of[[11,20],[34,20],[21,32]]){ell(q,'#153842',x,y,1.6,1.6);itemArtDot(q,x,y,'#e0f6e9')}line(q,19,38,24,33,'#9fbcb2',.8);return}
   if(id==='thunder_spear'){line(q,12,43,31,8,'#435f69',4);poly(q,ink,[[29,10],[34,2],[38,12]]);poly(q,'#9ce7f2',[[31,10],[34,4],[36,10]]);for(const a of [[[15,33],[23,29],[20,24],[29,21]],[[22,19],[29,16],[26,12],[34,9]]]){q.strokeStyle='#d9fbff';q.lineWidth=2;q.beginPath();q.moveTo(...a[0]);for(const z of a.slice(1))q.lineTo(...z);q.stroke()}poly(q,'#ecfffa',[[34,4],[36,10],[34,12],[35,9]]);for(const y of[34,38,42])line(q,12,y,17,y-2,'#a7d1d5',.8);return}
-  if(id==='curse_blade'){line(q,12,42,20,33,'#3f252d',4);poly(q,ink,[[18,35],[20,10],[28,3],[34,9],[27,16],[32,22],[24,35]]);poly(q,'#8d3558',[[21,32],[23,12],[28,7],[30,10],[24,18],[28,22],[23,33]]);for(const z of [[28,8],[25,19],[25,28]])dot(q,z[0],z[1],'#e884a8');line(q,25,13,24,16,'#e4abc4',.7);line(q,27,24,24,30,'#e4abc4',.7);for(const y of[35,38])line(q,13,y,18,y-1,'#9d6c7d',.8);return}
-  if(id==='earth_gauntlet'){drawGauntlet42(q,'#9a824f','#e0c878');for(const z of [[12,20],[18,29],[32,18],[35,28]]){rect(q,z[0],z[1],3,3,'#5e4930');dot(q,z[0]+1,z[1],'#f0d28b')}return}
-  if(id==='mirror_blade'){line(q,12,42,20,32,'#66554a',4);poly(q,ink,[[18,34],[23,7],[29,3],[31,10],[25,35]]);poly(q,'#cfe0e4',[[21,32],[25,9],[28,6],[28,11],[23,33]]);line(q,24,13,28,22,'#ffffff',1);line(q,22,25,26,30,'#8ba3b2',1);rect(q,15,31,14,3,'#b99862');poly(q,'#f3fcf2',[[25,11],[27,8],[25,22],[23,24]]);ell(q,'#52767b',22,32,2,1.3);dot(q,22,31,'#cff6e7');return}
+  if(id==='curse_blade'){line(q,12,42,20,33,'#3f252d',4);poly(q,ink,[[18,35],[20,10],[28,3],[34,9],[27,16],[32,22],[24,35]]);poly(q,'#8d3558',[[21,32],[23,12],[28,7],[30,10],[24,18],[28,22],[23,33]]);for(const z of [[28,8],[25,19],[25,28]])itemArtDot(q,z[0],z[1],'#e884a8');line(q,25,13,24,16,'#e4abc4',.7);line(q,27,24,24,30,'#e4abc4',.7);for(const y of[35,38])line(q,13,y,18,y-1,'#9d6c7d',.8);return}
+  if(id==='earth_gauntlet'){drawGauntlet42(q,'#9a824f','#e0c878');for(const z of [[12,20],[18,29],[32,18],[35,28]]){rect(q,z[0],z[1],3,3,'#5e4930');itemArtDot(q,z[0]+1,z[1],'#f0d28b')}return}
+  if(id==='mirror_blade'){line(q,12,42,20,32,'#66554a',4);poly(q,ink,[[18,34],[23,7],[29,3],[31,10],[25,35]]);poly(q,'#cfe0e4',[[21,32],[25,9],[28,6],[28,11],[23,33]]);line(q,24,13,28,22,'#ffffff',1);line(q,22,25,26,30,'#8ba3b2',1);rect(q,15,31,14,3,'#b99862');poly(q,'#f3fcf2',[[25,11],[27,8],[25,22],[23,24]]);ell(q,'#52767b',22,32,2,1.3);itemArtDot(q,22,31,'#cff6e7');return}
   if(id==='curse_spear'){line(q,12,43,31,9,'#493442',5);poly(q,ink,[[28,12],[34,2],[40,12],[34,19]]);poly(q,'#825275',[[31,11],[34,5],[37,11],[34,16]]);for(const y of[18,25,32])line(q,20+(32-y)*.35,y,26+(32-y)*.35,y-3,'#c16e9c',2);poly(q,'#c09cb8',[[34,5],[37,11],[34,16],[35,11]]);ell(q,'#572d4d',34,11,1,2);line(q,13,40,17,39,'#e1b0c5',1);return}
-  if(id==='lava_bow'){q.strokeStyle='#4a2118';q.lineWidth=6;q.beginPath();q.arc(22,24,17,-1.35,1.35);q.stroke();q.strokeStyle='#ed6b31';q.lineWidth=3;q.beginPath();q.arc(22,24,17,-1.35,1.35);q.stroke();q.strokeStyle='#ffcf67';q.lineWidth=1;q.beginPath();q.moveTo(27,7);q.lineTo(27,41);q.stroke();for(const z of [[15,14],[11,25],[16,35]])dot(q,z[0],z[1],'#ff9a42');q.strokeStyle='#ffce88';q.lineWidth=.8;q.beginPath();q.arc(22,24,18,-1.25,1.25);q.stroke();for(const y of[19,22,25,28])rect(q,37,y,4,1,'#79453b');return}
+  if(id==='lava_bow'){q.strokeStyle='#4a2118';q.lineWidth=6;q.beginPath();q.arc(22,24,17,-1.35,1.35);q.stroke();q.strokeStyle='#ed6b31';q.lineWidth=3;q.beginPath();q.arc(22,24,17,-1.35,1.35);q.stroke();q.strokeStyle='#ffcf67';q.lineWidth=1;q.beginPath();q.moveTo(27,7);q.lineTo(27,41);q.stroke();for(const z of [[15,14],[11,25],[16,35]])itemArtDot(q,z[0],z[1],'#ff9a42');q.strokeStyle='#ffce88';q.lineWidth=.8;q.beginPath();q.arc(22,24,18,-1.25,1.25);q.stroke();for(const y of[19,22,25,28])rect(q,37,y,4,1,'#79453b');return}
   if(id==='chain_sickle'){line(q,12,42,22,27,'#64452b',4);q.strokeStyle='#c7aa78';q.lineWidth=4;q.beginPath();q.arc(27,17,11,-2.1,.6);q.stroke();for(const [x,y] of [[23,29],[28,32],[33,35],[37,39]]){ell(q,'#2b241e',x,y,4,3);ell(q,'#c4ad7f',x,y,2,2)}q.strokeStyle='#f4e6bd';q.lineWidth=.8;q.beginPath();q.arc(27,17,12,-2.1,.6);q.stroke();for(const y of[32,36,40])line(q,12,y,18,y-2,'#b29879',.8);return}
-  if(id==='ward_hammer'){line(q,13,43,24,20,'#5a4127',5);outlineRect(q,11,8,27,14,ink);rect(q,13,10,23,10,'#c3a34e');rect(q,17,12,15,6,'#e7ce72');line(q,24,11,24,19,'#7a5b23',2);line(q,19,15,29,15,'#7a5b23',2);poly(q,'#f8e3a1',[[13,10],[35,10],[33,12],[15,12]]);rect(q,34,12,2,8,'#7c6337');for(const x of[15,33])dot(q,x,18,'#f5daa0');return}
+  if(id==='ward_hammer'){line(q,13,43,24,20,'#5a4127',5);outlineRect(q,11,8,27,14,ink);rect(q,13,10,23,10,'#c3a34e');rect(q,17,12,15,6,'#e7ce72');line(q,24,11,24,19,'#7a5b23',2);line(q,19,15,29,15,'#7a5b23',2);poly(q,'#f8e3a1',[[13,10],[35,10],[33,12],[15,12]]);rect(q,34,12,2,8,'#7c6337');for(const x of[15,33])itemArtDot(q,x,18,'#f5daa0');return}
 }
 function drawWeapon(q,it){
   if(it.artifactWeapon46){drawArtifactWeapon46(q,it);return}
@@ -21512,21 +21319,21 @@ function drawArmor(q,it){
  poly(q,shade(cloth,30),[[15,10],[20,8],[22,12],[18,24],[17,36],[19,38],[15,37],[16,20],[12,21],[12,16]]);poly(q,shade(cloth,-24),[[28,9],[33,11],[36,17],[34,21],[31,18],[31,37],[27,39],[26,27]],null);
  poly(q,'#252d2c',[[19,6],[29,6],[27,13],[24,15],[20,12]]);poly(q,light?'#e0d6b5':'#b39465',[[19,7],[24,12],[29,7],[28,11],[24,16],[20,12]]);
  if(light){for(const [x,y]of[[18,18],[19,24],[28,17],[29,28]]){q.strokeStyle='#bcc0a8';q.lineWidth=.8;q.beginPath();q.moveTo(x,y);q.lineTo(x-1,y+7);q.stroke()}line(q,23,15,20,30,'#53645f',1);rect(q,27,22,4,4,'#6c7e72');rect(q,27,22,4,1,'#c0bfa4')}
- else if(leather){poly(q,'#a47750',[[18,13],[23,16],[30,12],[31,27],[18,28]]);poly(q,'#614330',[[24,16],[29,14],[30,26],[24,27]]);for(const y of[17,22,27]){rect(q,17,y,15,1,'#d1ae79');for(const x of[18,29])dot(q,x,y-1,'#edd19a')}line(q,19,12,28,29,'#42372b',2);for(const y of[17,21,25])dot(q,21+(y-17)*.5,y,'#dec092')}
+ else if(leather){poly(q,'#a47750',[[18,13],[23,16],[30,12],[31,27],[18,28]]);poly(q,'#614330',[[24,16],[29,14],[30,26],[24,27]]);for(const y of[17,22,27]){rect(q,17,y,15,1,'#d1ae79');for(const x of[18,29])itemArtDot(q,x,y-1,'#edd19a')}line(q,19,12,28,29,'#42372b',2);for(const y of[17,21,25])itemArtDot(q,21+(y-17)*.5,y,'#dec092')}
  else if(st==='breast'){poly(q,'#2d414a',[[17,12],[23,15],[30,12],[33,20],[30,28],[24,31],[17,27],[15,20]]);poly(q,metal,[[18,13],[24,17],[29,13],[31,20],[28,27],[24,29],[18,26],[17,20]]);poly(q,'#d8e3dc',[[18,14],[23,17],[23,27],[19,25],[18,20]]);poly(q,'#5b7780',[[25,17],[29,15],[30,20],[27,26],[25,28]]);for(const d of[-1,1]){poly(q,'#687f83',[[24+d*8,10],[24+d*13,14],[24+d*12,18],[24+d*7,16]]);line(q,24+d*8,10,24+d*13,14,'#d1d8c5',1)}for(const y of[30,34,38]){rect(q,17,y,6,2,'#899994');rect(q,26,y,5,2,'#5e767b')}}
- else{for(let y=15;y<38;y+=4)for(let x=17+(y%8?0:2);x<31;x+=4){if(gold){poly(q,'#6c512d',[[x-1,y],[x+3,y],[x+3,y+3],[x+1,y+4],[x-1,y+2]]);poly(q,'#d4b363',[[x,y],[x+2,y],[x+2,y+2],[x+1,y+3],[x,y+2]]);dot(q,x,y,'#f4dda0')}else{rect(q,x,y,1,2,'#d3b67c');dot(q,x,y,'#f0d6a0')}}for(const d of[-1,1]){poly(q,metal,[[24+d*8,9],[24+d*14,14],[24+d*12,20],[24+d*7,16]]);line(q,24+d*8,10,24+d*13,14,'#e9d299',1)}if(gold){ell(q,'#73532e',24,20,5,5);ell(q,'#e6c67d',24,20,3.5,3.5);poly(q,'#923f38',[[24,16],[26,20],[24,24],[22,20]]);dot(q,23,18,'#f5ddaa')}}
- rect(q,16,29,16,3,'#342e26');rect(q,16,29,16,1,'#b39969');outlineRect(q,22,28,5,4,'#bda16a');rect(q,23,29,3,2,'#484436');for(const x of[14,30]){rect(q,x,37,4,3,'#3a332b');dot(q,x+1,37,'#c8af78')}
+ else{for(let y=15;y<38;y+=4)for(let x=17+(y%8?0:2);x<31;x+=4){if(gold){poly(q,'#6c512d',[[x-1,y],[x+3,y],[x+3,y+3],[x+1,y+4],[x-1,y+2]]);poly(q,'#d4b363',[[x,y],[x+2,y],[x+2,y+2],[x+1,y+3],[x,y+2]]);itemArtDot(q,x,y,'#f4dda0')}else{rect(q,x,y,1,2,'#d3b67c');itemArtDot(q,x,y,'#f0d6a0')}}for(const d of[-1,1]){poly(q,metal,[[24+d*8,9],[24+d*14,14],[24+d*12,20],[24+d*7,16]]);line(q,24+d*8,10,24+d*13,14,'#e9d299',1)}if(gold){ell(q,'#73532e',24,20,5,5);ell(q,'#e6c67d',24,20,3.5,3.5);poly(q,'#923f38',[[24,16],[26,20],[24,24],[22,20]]);itemArtDot(q,23,18,'#f5ddaa')}}
+ rect(q,16,29,16,3,'#342e26');rect(q,16,29,16,1,'#b39969');outlineRect(q,22,28,5,4,'#bda16a');rect(q,23,29,3,2,'#484436');for(const x of[14,30]){rect(q,x,37,4,3,'#3a332b');itemArtDot(q,x+1,37,'#c8af78')}
 }
 const CLOAK_EMBLEM={'질긴 가죽망토':'stitch','바람막이망토':'wind','여행자망토':'pocket','두꺼운 면망토':'quilt','암영망토':'eye','축지망토':'dash','자력망토':'magnet','무술망토':'knot','보호망토':'shield','반사망토':'mirror','용암망토':'flame','면역망토':'seal'};
 function drawCloak(q,it){
  const h=hash(it.name),base=['#6b4c3d','#3f5d5d','#5b5146','#6b5f52','#3c344b','#4f535e','#4f4a45','#594539','#4a5c4b','#4e5762','#6b3a2f','#5e5840'][h%12],hi=shade(base,45),st=CLOAK_EMBLEM[it.name]||'stitch';
  poly(q,'#17110f',[[15,7],[33,7],[39,41],[29,38],[24,44],[19,38],[9,41]]);
  poly(q,base,[[16,9],[32,9],[36,38],[28,35],[24,41],[20,35],[12,38]]);rect(q,20,6,8,6,shade(base,-25));
- if(st==='stitch'){for(const y of[18,25,32])for(const x of[17,23,29])dot(q,x,y,hi)}
+ if(st==='stitch'){for(const y of[18,25,32])for(const x of[17,23,29])itemArtDot(q,x,y,hi)}
  else if(st==='wind'){for(const y of[18,24,30]){line(q,15,y,31,y-3,hi,1);line(q,20,y+2,34,y,hi,1)}}
  else if(st==='pocket'){outlineRect(q,16,27,7,7,shade(base,-20));outlineRect(q,26,27,7,7,shade(base,-20))}
  else if(st==='quilt'){for(let y=16;y<36;y+=5)for(let x=16;x<33;x+=6)rect(q,x,y,5,4,(x+y)%2?hi:base)}
- else if(st==='eye'){ell(q,'#1c1721',24,23,8,5);ell(q,'#9c80b4',24,23,4,3);dot(q,24,23,'#efe1ff')}
+ else if(st==='eye'){ell(q,'#1c1721',24,23,8,5);ell(q,'#9c80b4',24,23,4,3);itemArtDot(q,24,23,'#efe1ff')}
  else if(st==='dash'){for(const y of[17,23,29,35])line(q,14,y,33,y-5,'#b9d7df',2)}
  else if(st==='magnet'){q.strokeStyle=hi;q.lineWidth=4;q.beginPath();q.arc(24,24,7,.2,Math.PI-.2);q.stroke();rect(q,16,23,4,8,'#c96e64');rect(q,29,23,4,8,'#6d9dc4')}
  else if(st==='knot'){line(q,17,17,31,32,hi,2);line(q,31,17,17,32,hi,2);ell(q,'#d7b067',24,24,4,4)}
@@ -21538,21 +21345,21 @@ function drawCloak(q,it){
 function drawRelic(q,it){
  const n=it.name||'',metal='#b99b5a',hi='#ead486';
  if(n==='장독 속 무언가'){
-  q.save();q.lineWidth=7;q.strokeStyle='#302620';q.beginPath();q.ellipse(24,28,12,11,-.24,0,Math.PI*2);q.stroke();q.lineWidth=4;q.strokeStyle='#a88957';q.stroke();q.lineWidth=1;q.strokeStyle='#e4c78b';q.beginPath();q.ellipse(24,27,12,11,-.24,Math.PI*.94,Math.PI*1.82);q.stroke();poly(q,'#47352c',[[17,14],[23,9],[31,11],[34,18],[29,23],[21,22]]);poly(q,'#1e2021',[[20,15],[24,12],[29,14],[30,19],[25,21],[21,19]]);line(q,23,14,26,19,'#8a5c4e',1);line(q,22,17,28,16,'#bb8963',1);dot(q,22,14,'#e3bf83');dot(q,34,30,'#b88e57');q.restore();
+  q.save();q.lineWidth=7;q.strokeStyle='#302620';q.beginPath();q.ellipse(24,28,12,11,-.24,0,Math.PI*2);q.stroke();q.lineWidth=4;q.strokeStyle='#a88957';q.stroke();q.lineWidth=1;q.strokeStyle='#e4c78b';q.beginPath();q.ellipse(24,27,12,11,-.24,Math.PI*.94,Math.PI*1.82);q.stroke();poly(q,'#47352c',[[17,14],[23,9],[31,11],[34,18],[29,23],[21,22]]);poly(q,'#1e2021',[[20,15],[24,12],[29,14],[30,19],[25,21],[21,19]]);line(q,23,14,26,19,'#8a5c4e',1);line(q,22,17,28,16,'#bb8963',1);itemArtDot(q,22,14,'#e3bf83');itemArtDot(q,34,30,'#b88e57');q.restore();
  }
- else if(n==='붉은 등롱 심지'){rect(q,20,7,8,7,'#5a2e20');line(q,24,14,24,36,'#7b442a',3);for(const y of[19,24,29])ell(q,'#dd6541',24,y,5,3);dot(q,24,35,'#f3c55f')}
- else if(n==='먹빛 벼루 조각'){poly(q,'#181a1e',[[9,28],[16,12],[36,9],[40,30],[30,39],[13,38]]);poly(q,'#3c4651',[[14,29],[19,16],[33,14],[35,28],[28,34],[17,34]]);ell(q,'#0b1118',25,24,7,5);dot(q,31,18,'#839a9f')}
+ else if(n==='붉은 등롱 심지'){rect(q,20,7,8,7,'#5a2e20');line(q,24,14,24,36,'#7b442a',3);for(const y of[19,24,29])ell(q,'#dd6541',24,y,5,3);itemArtDot(q,24,35,'#f3c55f')}
+ else if(n==='먹빛 벼루 조각'){poly(q,'#181a1e',[[9,28],[16,12],[36,9],[40,30],[30,39],[13,38]]);poly(q,'#3c4651',[[14,29],[19,16],[33,14],[35,28],[28,34],[17,34]]);ell(q,'#0b1118',25,24,7,5);itemArtDot(q,31,18,'#839a9f')}
  else if(n==='깨진 천면경'){poly(q,'#c4d4d1',[[24,5],[37,14],[34,35],[23,42],[11,33],[10,15]]);poly(q,'#425460',[[24,9],[33,16],[31,31],[23,37],[14,30],[14,17]]);line(q,16,16,31,32,'#e8f1e7',1);line(q,29,13,20,36,'#e8f1e7',1)}
  else if(n==='장고의 쇠갈고리'){line(q,13,39,29,12,'#555a5d',5);q.strokeStyle='#1b1c1d';q.lineWidth=7;q.beginPath();q.arc(30,13,9,-.4,2.1);q.stroke();q.strokeStyle='#a1a5a2';q.lineWidth=4;q.beginPath();q.arc(30,13,9,-.4,2.1);q.stroke();rect(q,10,36,7,6,'#6b4934')}
- else if(n==='용의 여의주 파편'){ell(q,'#2d454b',24,24,14,14);ell(q,'#8bb8b6',24,24,10,10);poly(q,'#d3eee2',[[24,11],[28,22],[38,24],[28,27],[24,39],[21,28],[10,24],[21,21]]);dot(q,23,19,'#fff8c7')}
+ else if(n==='용의 여의주 파편'){ell(q,'#2d454b',24,24,14,14);ell(q,'#8bb8b6',24,24,10,10);poly(q,'#d3eee2',[[24,11],[28,22],[38,24],[28,27],[24,39],[21,28],[10,24],[21,21]]);itemArtDot(q,23,19,'#fff8c7')}
  else if(n==='용왕의 숨비늘'){poly(q,'#58aebb',[[24,6],[37,15],[34,32],[24,42],[13,33],[10,16]]);for(const y of[14,21,28,35]){ell(q,'#a7e3df',24,y,7,4);line(q,18,y,30,y,'#3b7e89',1)}}
- else if(n==='공허닻 파편'){line(q,24,7,24,35,'#8767a2',4);q.strokeStyle='#b898d1';q.lineWidth=4;q.beginPath();q.arc(24,30,11,.1,Math.PI-.1);q.stroke();poly(q,'#d4b5e8',[[24,4],[29,11],[19,11]]);dot(q,24,23,'#f1d9ff')}
- else {ell(q,metal,24,24,13,13);ell(q,hi,24,24,8,8);dot(q,24,24,'#fff3b2')}
+ else if(n==='공허닻 파편'){line(q,24,7,24,35,'#8767a2',4);q.strokeStyle='#b898d1';q.lineWidth=4;q.beginPath();q.arc(24,30,11,.1,Math.PI-.1);q.stroke();poly(q,'#d4b5e8',[[24,4],[29,11],[19,11]]);itemArtDot(q,24,23,'#f1d9ff')}
+ else {ell(q,metal,24,24,13,13);ell(q,hi,24,24,8,8);itemArtDot(q,24,24,'#fff3b2')}
 }
 function drawTrinket(q,it){
  if(it.name==='방 번호패'){outlineRect(q,10,12,28,25,'#6c4b32');rect(q,12,14,24,21,'#c5aa7a');rect(q,16,17,16,4,'#ead7aa');q.fillStyle='#5b3827';q.font='900 12px serif';q.textAlign='center';q.fillText('客',24,31);q.textAlign='start'}
- else if(it.name==='비단 매듭'){for(const [x1,y1,x2,y2]of[[10,15,38,33],[38,15,10,33],[16,9,32,39],[32,9,16,39]])line(q,x1,y1,x2,y2,'#a85b78',4);ell(q,'#dd9bb4',24,24,6,6);dot(q,24,24,'#f4d1dc')}
- else if(it.name==='금박 부적'){outlineRect(q,13,6,22,35,'#9e7733');rect(q,15,8,18,31,'#d7bd66');rect(q,17,10,14,5,'#f1dd88');line(q,24,16,24,34,'#7d412c',2);line(q,19,22,29,22,'#7d412c',1);dot(q,24,28,'#fff0a2')}
+ else if(it.name==='비단 매듭'){for(const [x1,y1,x2,y2]of[[10,15,38,33],[38,15,10,33],[16,9,32,39],[32,9,16,39]])line(q,x1,y1,x2,y2,'#a85b78',4);ell(q,'#dd9bb4',24,24,6,6);itemArtDot(q,24,24,'#f4d1dc')}
+ else if(it.name==='금박 부적'){outlineRect(q,13,6,22,35,'#9e7733');rect(q,15,8,18,31,'#d7bd66');rect(q,17,10,14,5,'#f1dd88');line(q,24,16,24,34,'#7d412c',2);line(q,19,22,29,22,'#7d412c',1);itemArtDot(q,24,28,'#fff0a2')}
  else if(it.name==='수문지기의 접힌 행낭'){
   // Rolled waxed-cloth satchel, rope ties and the canal keeper's brass clasp.
   poly(q,'#242724',[[12,15],[31,10],[37,17],[38,35],[16,40],[10,33]]);
@@ -21561,7 +21368,7 @@ function drawTrinket(q,it){
   poly(q,'#33555a',[[12,26],[30,23],[35,27],[35,33],[17,37],[12,32]]);
   line(q,17,13,16,36,'#c4a67b',2);line(q,31,13,30,34,'#c4a67b',2);
   rect(q,21,26,8,9,'#473a29');rect(q,22,27,6,7,'#d5b879');rect(q,24,28,2,4,'#6d5340');
-  dot(q,16,20,'#c7d7c1');dot(q,32,19,'#bdd8d4');
+  itemArtDot(q,16,20,'#c7d7c1');itemArtDot(q,32,19,'#bdd8d4');
  }
  else if(it.name==='창고지기의 밥주머니'){
   // Tied grain sack; spilled rice kernels keep it distinct from the canal bag.
@@ -21571,7 +21378,7 @@ function drawTrinket(q,it){
   line(q,16,20,32,18,'#87613d',2);line(q,18,12,29,12,'#a44835',3);
   for(const [x,y]of[[21,25],[25,24],[29,27],[19,30],[25,31]])ell(q,'#f7e3b1',x,y,2,1);
   for(const [x,y]of[[8,37],[11,41],[39,40]])ell(q,'#dfc17d',x,y,2,1);
-  rect(q,22,8,4,5,'#efe0ae');dot(q,16,24,'#f7e2aa');
+  rect(q,22,8,4,5,'#efe0ae');itemArtDot(q,16,24,'#f7e2aa');
  }
  else if(it.name==='흑산 목령인'){
   // Carved wooden seal with a living green sprout and inset spirit sigil.
@@ -21596,7 +21403,7 @@ function drawUpgrade(q,it){
  outlineRect(q,14,9,20,19,dark);rect(q,16,11,16,15,brass);rect(q,19,14,10,9,hi);
  q.strokeStyle=dark;q.lineWidth=2;q.beginPath();q.arc(24,18,6,0,Math.PI*2);q.stroke();
  q.fillStyle=dark;q.font='900 9px serif';q.textAlign='center';q.textBaseline='middle';q.fillText('改',24,19);q.textAlign='start';q.textBaseline='alphabetic';
- rect(q,20,28,8,11,'#6e472c');rect(q,18,37,12,4,'#3f2b20');dot(q,29,12,'#fff0a8');
+ rect(q,20,28,8,11,'#6e472c');rect(q,18,37,12,4,'#3f2b20');itemArtDot(q,29,12,'#fff0a8');
 }
 function drawTalisman(q,it){
  const pub=window.__MANRU_TALISMAN_PUBLIC__;let a,seal;
@@ -21620,7 +21427,7 @@ function drawFood(q,it){
   for(const [x,y,r]of[[15,28,6],[25,29,7],[34,30,6],[20,36,6],[30,37,5]]){
    ell(q,'#271e2d',x+1,y+2,r+1,r+1);ell(q,'#623446',x,y,r,r);
    ell(q,'#995a65',x-2,y-2,Math.max(2,r-3),Math.max(1,r-4));
-   dot(q,x-3,y-2,'#d9a0a1');dot(q,x+2,y+3,'#4a273f');
+   itemArtDot(q,x-3,y-2,'#d9a0a1');itemArtDot(q,x+2,y+3,'#4a273f');
   }
   for(const [x,y]of[[13,22],[32,24]])poly(q,'#a88853',[[x,y],[x+4,y+2],[x+1,y+4]]);
  }
@@ -21638,12 +21445,12 @@ function drawFood(q,it){
    ell(q,'#102a24',x,y+3,9,6);rect(q,x-9,y-1,18,5,'#173e2e');ell(q,'#4d7250',x,y-1,9,6);
    ell(q,'#f0e2bc',x,y-2,7,4);ell(q,'#fff2d6',x-1,y-3,5,2);
    rect(q,x-3,y-4,3,4,'#d48b51');rect(q,x,y-3,4,3,'#829d91');rect(q,x+1,y-4,2,2,'#d26a3c');
-   dot(q,x-5,y-3,'#d9c595');dot(q,x+4,y-1,'#dac693');line(q,x-6,y+3,x-3,y+4,'#749773',1);
+   itemArtDot(q,x-5,y-3,'#d9c595');itemArtDot(q,x+4,y-1,'#dac693');line(q,x-6,y+3,x-3,y+4,'#749773',1);
   }
  }
- else if(n.includes('주먹밥')){poly(q,'#f3ead8',[[24,7],[38,32],[10,32]]);rect(q,11,29,26,8,'#17211d');rect(q,19,12,10,3,'#fffaf1');if(n.includes('전력')){rect(q,21,18,6,8,'#d4a441');dot(q,24,20,'#fff1a0')}}
- else if(n.includes('육포')){for(let i=0;i<3;i++){poly(q,i%2?'#9f5d3f':'#814731',[[10+i*9,12],[17+i*7,10],[19+i*7,35],[9+i*8,37]]);line(q,12+i*8,18,17+i*7,28,'#c98259',1)}if(n.includes('매콤'))dot(q,30,18,'#e54d39')}
- else if(n.includes('생선')){ell(q,'#668d91',24,24,14,8);poly(q,'#496f75',[[10,24],[3,16],[3,32]]);dot(q,32,21,'#e5d7ae');line(q,17,24,29,24,'#b4c6bd',1);if(n.includes('구운')){rect(q,16,18,18,3,'#9a603c');rect(q,16,27,18,3,'#9a603c')}if(n.includes('찜')){ell(q,'#b9a878',24,29,17,6);rect(q,13,26,22,4,'#6e9a55')}}
+ else if(n.includes('주먹밥')){poly(q,'#f3ead8',[[24,7],[38,32],[10,32]]);rect(q,11,29,26,8,'#17211d');rect(q,19,12,10,3,'#fffaf1');if(n.includes('전력')){rect(q,21,18,6,8,'#d4a441');itemArtDot(q,24,20,'#fff1a0')}}
+ else if(n.includes('육포')){for(let i=0;i<3;i++){poly(q,i%2?'#9f5d3f':'#814731',[[10+i*9,12],[17+i*7,10],[19+i*7,35],[9+i*8,37]]);line(q,12+i*8,18,17+i*7,28,'#c98259',1)}if(n.includes('매콤'))itemArtDot(q,30,18,'#e54d39')}
+ else if(n.includes('생선')){ell(q,'#668d91',24,24,14,8);poly(q,'#496f75',[[10,24],[3,16],[3,32]]);itemArtDot(q,32,21,'#e5d7ae');line(q,17,24,29,24,'#b4c6bd',1);if(n.includes('구운')){rect(q,16,18,18,3,'#9a603c');rect(q,16,27,18,3,'#9a603c')}if(n.includes('찜')){ell(q,'#b9a878',24,29,17,6);rect(q,13,26,22,4,'#6e9a55')}}
  else if(n==='엽전 엿'){for(const [x,y]of[[15,19],[24,16],[32,22],[20,29]]){ell(q,'#c58c39',x,y,6,6);ell(q,'#704b21',x,y,2,2)}line(q,11,12,36,34,'#a46e2f',1)}
  else if(n==='신선로'||n==='보신 전골'){ell(q,'#34251d',24,30,17,9);ell(q,'#8a603d',24,28,15,7);ell(q,'#c69455',24,25,13,6);rect(q,22,10,4,14,'#4a3528');ell(q,'#8da553',19,25,4,2);ell(q,'#aa5f4e',28,24,4,2)}
  else if(n.includes('국밥')||n.includes('숭늉')){
@@ -21652,7 +21459,7 @@ function drawFood(q,it){
   for(const [x,y]of[[16,24],[22,27],[29,24],[33,28]])ell(q,rice?'#fff7df':'#c6a06e',x,y,2,1);
   poly(q,'#b58c59',[[10,29],[13,37],[19,40],[29,40],[36,37],[39,29],[36,34],[31,37],[17,37],[12,34]]);
   line(q,14,34,33,35,'#513728',1);line(q,35,16,31,32,'#593d29',2);
-  for(const x of[17,28]){line(q,x,12,x-2,17,'#bbb8a2',1);dot(q,x-2,10,'#e7e1cc')}
+  for(const x of[17,28]){line(q,x,12,x-2,17,'#bbb8a2',1);itemArtDot(q,x-2,10,'#e7e1cc')}
  }
  else if(n.includes('버섯')){
   // The skewer passes through three differently coloured poison caps.
@@ -21660,16 +21467,16 @@ function drawFood(q,it){
   for(const [x,y,c]of[[17,29,'#af5664'],[24,22,'#885377'],[31,16,'#bc7862']]){
    poly(q,'#282327',[[x-7,y+1],[x-4,y-5],[x+2,y-7],[x+7,y-2],[x+6,y+2]]);
    poly(q,c,[[x-6,y],[x-3,y-5],[x+2,y-6],[x+6,y-2],[x+5,y+1]]);
-   line(q,x-3,y+3,x+4,y+2,'#ebc3ad',2);dot(q,x-2,y-3,'#f4d9c2');dot(q,x+3,y-2,'#ebc7a6');
+   line(q,x-3,y+3,x+4,y+2,'#ebc3ad',2);itemArtDot(q,x-2,y-3,'#f4d9c2');itemArtDot(q,x+3,y-2,'#ebc7a6');
   }
  }
  else if(n.includes('복숭아')||n==='신선도'){ell(q,'#d98b89',19,26,10,10);ell(q,'#df9a8f',29,26,10,10);rect(q,23,9,3,10,'#56764d');poly(q,'#70945e',[[26,10],[38,12],[29,17]]);if(n.includes('얼음')){for(const p of[[12,17],[35,18],[24,37]])poly(q,'#cce9ed',[[p[0],p[1]-4],[p[0]+3,p[1]],[p[0],p[1]+4],[p[0]-3,p[1]]])}}
  else if(n==='검게 탄 숯'){
   for(const [x,y,angle]of[[13,26,-.28],[25,20,.23],[25,32,-.14]]){
    q.save();q.translate(x,y);q.rotate(angle);outlineRect(q,-9,-4,19,8,'#17191c');rect(q,-7,-3,13,2,'#424449');rect(q,-5,2,12,1,'#686971');
-   line(q,-5,-1,4,1,'#0d0f13',1);dot(q,8,-2,'#565961');dot(q,4,2,'#8b8c93');q.restore();
+   line(q,-5,-1,4,1,'#0d0f13',1);itemArtDot(q,8,-2,'#565961');itemArtDot(q,4,2,'#8b8c93');q.restore();
   }
-  for(const [x,y]of[[12,37],[37,37],[9,31]]){dot(q,x,y,'#777981');dot(q,x+2,y+1,'#34363d')}
+  for(const [x,y]of[[12,37],[37,37],[9,31]]){itemArtDot(q,x,y,'#777981');itemArtDot(q,x+2,y+1,'#34363d')}
  }
  else if(n==='깨끗한 물'||n==='빙결액'){outlineRect(q,15,9,18,30,'#7a8a89');rect(q,17,15,14,20,n==='빙결액'?'#a9d6df':'#77b7c3');rect(q,20,7,8,6,'#76563c');rect(q,19,17,3,14,'rgba(255,255,255,.35)');if(n==='빙결액')poly(q,'#e5f7f3',[[24,16],[28,23],[24,30],[20,23]])}
  else {outlineRect(q,10,16,28,20,'#6d4e35');rect(q,13,13,22,8,'#d5b47a');rect(q,16,22,16,8,'#709b4d')}
@@ -21677,7 +21484,7 @@ function drawFood(q,it){
 function drawScroll(q,it){
  const kind=it.libraryKind1022||'',col=kind==='mapping'?'#6daeb7':kind==='identify'?'#8d74aa':kind==='ward'?'#c5a04c':'#9f7548';
  outlineRect(q,10,10,28,29,'#65452d');rect(q,12,8,24,30,'#dfc998');rect(q,15,11,18,24,'#f0ddae');rect(q,12,8,24,4,'#7c542f');rect(q,12,35,24,4,'#7c542f');
- if(kind==='mapping'){for(const [x1,y1,x2,y2]of[[17,16,31,16],[17,22,28,26],[19,31,31,20]])line(q,x1,y1,x2,y2,col,1);for(const [x,y]of[[17,16],[31,16],[17,22],[28,26],[19,31],[31,20]])dot(q,x,y,'#315963')}
+ if(kind==='mapping'){for(const [x1,y1,x2,y2]of[[17,16,31,16],[17,22,28,26],[19,31,31,20]])line(q,x1,y1,x2,y2,col,1);for(const [x,y]of[[17,16],[31,16],[17,22],[28,26],[19,31],[31,20]])itemArtDot(q,x,y,'#315963')}
  else if(kind==='identify'){ell(q,col,24,23,7,7);ell(q,'#f4e5c3',24,23,3,3);line(q,29,28,34,34,col,2)}
  else if(kind==='ward'){poly(q,col,[[24,13],[31,17],[30,27],[24,33],[18,27],[17,17]]);poly(q,'#f0d888',[[24,17],[28,19],[27,25],[24,29],[21,25],[20,19]])}
  else {for(const y of[16,21,26,31])line(q,17,y,31,y,col,1)}
@@ -21688,7 +21495,7 @@ function drawStoryNote(q){
  poly(q,'#f1dfb6',[[12,12],[30,9],[35,32],[16,36]]);
  poly(q,'#bda37d',[[30,9],[35,15],[29,16]]);line(q,29,10,30,16,'#80684e',1);
  for(const [y,w]of[[18,12],[22,15],[26,11],[30,13]])line(q,17,y,17+w,y-2,'#695747',1);
- ell(q,'#60382e',30,31,5,4);ell(q,'#a64d38',29,30,4,3);dot(q,29,30,'#e2b27b');
+ ell(q,'#60382e',30,31,5,4);ell(q,'#a64d38',29,30,4,3);itemArtDot(q,29,30,'#e2b27b');
 }
 function drawMartialManual(q,it={}){
  // A stitched book with visible pages, spine cord and a raised gold seal.
@@ -21789,7 +21596,6 @@ function audit(){
  return{build:BUILD,total:rows.length,nonPotion:rows.filter(r=>!r.potionException).length,potions:rows.filter(r=>r.potionException).length,mismatches:rows.filter(r=>!r.potionException&&!(r.start===r.inventory&&r.inventory===r.floor)),rows}
 }
 window.__MANRU_ITEM_ART_R7__={build:BUILD,dataItem:data,canvasItem:sprite,weaponAsset,pictureAsset:pictureAsset105,sprite:name=>{const it=proto(name);return it?data(it):null},canvas:name=>{const it=proto(name);return it?sprite(it):null},iconHtml,worldDraw,audit,clear:()=>{CACHE.clear();DATA.clear();WEAPON_ASSETS.clear();PICTURE_ASSETS.clear();return true}};
-})();
 
 /* r29: lexical-scope QA bridge. This exposes tests only; gameplay paths remain canonical. */
 
@@ -21797,9 +21603,6 @@ window.__MANRU_ITEM_ART_R7__={build:BUILD,dataItem:data,canvasItem:sprite,weapon
 
 
 /* ===== MANRU r48: LEGENDARY WEAPONS / GRAND PORTAL DUNGEONS ===== */
-(()=>{
-'use strict';
-
 const LEGENDS47=[
  {id:'ember_axe',name:'적련 불꽃도끼',kind:'blunt',atk:6,speed:0.63,range:2,armorPierce:true,ability:'화신 · 낙화',dungeon:'구천낙화 제련성',hudName:'구천낙화',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 소유 중 화염 피해에 면역. 이미 화염 방어각인이 있다면 불길에서 조금씩 회복한다. 이 무기로 적중할 때마다 낙화 스택이 쌓이며 10스택에서 시야 내 적 하나에 하늘의 도끼가 자동 낙하해 고정 피해 7을 주고 3턴 화염지대를 만든다. 방어무시를 유지하지만 후반 화력은 강화 무기에 뒤처진다.'},
  {id:'water_crossbow',name:'창해 수압연노',kind:'bow',crossbow47:true,tier:2,ranged:true,atk:1,speed:0.54,range:6,ability:'해압 폭쇄',dungeon:'창해 용궁 · 잠긴 조정',hudName:'창해 용궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'창해 용궁 보상 · T2 · 강화 불가. ATK 1 · 속도 0.54 · 사거리 6. 적중점 주변 3×3에 물 접촉과 적에게 고정 추가 피해 4. 직접 맞은 대상도 폭쇄를 맞는다. 폭쇄는 다시 폭쇄를 일으키지 않으며 물 타일을 생성하지 않는다.'},
@@ -22240,8 +22043,7 @@ function legendStress48(rounds=10){const n=Math.max(1,Math.min(80,+rounds||10)),
 globalThis.__MANRU_KEY_GUARD_R48__={audit:keyProgressAudit48,repair:repairKeyProgress48,stress:keyStress48,legendStress:legendStress48};
 const API47={gatekeeper:applyLegendGatekeeper47,mobCatalog:()=>Object.keys(DUNGEON_MOBS47).flatMap(mobDefs47),version:'R49',enemyDefinitions:id=>mobDefs47(id).map(d=>({...d})),build:(id,seed,quiet=true)=>LegendaryDungeonBuilder.build(adef46(id),{seed,quiet}),integrity:()=>GenerationValidator.legendary(),assets:()=>legendAssetAudit49(),defs:()=>LEGENDS47.map(a=>({...a})),debugKeys:()=>{const zs=state?.legendSanctums47||[];return{dungeon:state?.artifactDungeon46?.id||null,player:state?.player?{x:state.player.x,y:state.player.y}:null,sanctums:structuredClone(zs),plan:structuredClone(state?.keyPlan96||null),reward:state?.artifactReward46?{...state.artifactReward46}:null,mapAround:zs.map(z=>{const rows=[];for(let yy=z.cy-z.r-1;yy<=z.cy+z.r+1;yy++){const row=[];for(let xx=z.cx-z.r-1;xx<=z.cx+z.r+1;xx++)row.push(state.map?.[yy]?.[xx]??null);rows.push(row)}return{keyId:z.keyId,cx:z.cx,cy:z.cy,r:z.r,gate:z.gate,rows}})}},handlePortalAt:handlePortalAt46,enter:LegendaryDungeonBuilder.enter,restore:LegendaryDungeonBuilder.restore,forcePortal:forcePortal47,forceDungeon:(id=LEGENDS47[0].id)=>LegendaryDungeonBuilder.enter(id),reveal:()=>{if(!state?.artifactDungeon46)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}updateAll();return true},keyAudit:()=>keyProgressAudit48(false),audit:()=>({floor:state?.floor,inDungeon:!!state?.artifactDungeon46,dungeon:state?.artifactDungeon46||null,portal:state?.artifactPortal46||null,exit:state?.artifactExit46||null,reward:state?.items?.filter(i=>i.legendaryWeapon47).map(i=>({name:i.name,x:i.x,y:i.y}))||[],owned:[state?.player?.weapon,...(state?.player?.inventory||[])].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),reach:reachAudit46(),map:mapSignature46(),dims:[COLS,ROWS],monsters:state?.monsters?.filter(m=>!m.friendly47).length||0,legendMobs:state?.monsters?.filter(m=>m.legendMob47).map(m=>m.name)||[],decor:state?.legendDecor47?.length||0}),recordAcquisition:claimAudit46,claimReward:claimReward46,walkPortal:walkPortal46,walkReturn:walkReturn46,give:(id)=>{const a=adef46(id);if(!a||!state)return false;addInventoryItem57({...clone(a),count:1});claimAudit46();return true},upgradeProbe:(id)=>{const a=clone(adef46(id)||LEGENDS47[0]);const before={atk:a.atk,upgrade:a.upgrade||0};const r=applyWeaponUpgrade42(a);return{before,after:{atk:a.atk,upgrade:a.upgrade||0},result:r}},effectProbe:effectProbe47,regen:f=>{state.floor=clamp(+f||6,1,25);NormalFloorGenerator.generate();resetVisualState();VisibilityService.compute();updateAll();return{floor:state.floor,portal:state.artifactPortal46||null}},atkBonus:atkBonus47,critBonus:critBonus47,defBonus:defBonus47,syncEquip:syncEquip47,guard:guard47,fireAbsorb:fireAbsorb47,healFire:healFire47,allyTurn:allyTurn57,enemySpecial:enemySpecial47,owns:owns47,possesses:possesses47,claimed:claimed47,cursedEquipped:cursedEquipped47};
 globalThis.__MANRU_LEGEND47__=API47;globalThis.__MANRU_ARTIFACT46__=API47;
-if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='10.0.6';document.title='만루 — 창해 용궁 · 잠긴 조정';const releaseStamp57=document.getElementById('releaseStamp70');if(releaseStamp57)releaseStamp57.textContent='10.0.6 · 창해 용궁 · 잠긴 조정';
-})();;
+if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='10.0.6';document.title='만루 — 창해 용궁 · 잠긴 조정';const releaseStamp57=document.getElementById('releaseStamp70');if(releaseStamp57)releaseStamp57.textContent='10.0.6 · 창해 용궁 · 잠긴 조정';;
 
 // Inactive floors are immutable snapshots. Encode once when leaving, decode once
 // when entering; per-turn saves copy a small string instead of every old floor graph.

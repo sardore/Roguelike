@@ -140,6 +140,16 @@ for (const src of jsSources) {
     topLevelNames.set(n.id.name, list);
   }
 
+  // let/var bindings that receive functions: the first function written is the definition,
+  // every later function written to the same binding is a rebinding.
+  const fnWrites = new Map();
+  walk.ancestor(ast, {
+    AssignmentExpression(n, _s, anc) {
+      if (n.operator !== '=' || n.left.type !== 'Identifier' || !isFn(n.right)) return;
+      const b = resolve(n.left.name, anc);
+      if (b && (b.kind === 'let' || b.kind === 'var')) (fnWrites.get(b) || fnWrites.set(b, []).get(b)).push(n);
+    },
+  });
   const memberPaths = new Map();
   walk.ancestor(ast, {
     AssignmentExpression(n, _s, anc) {
@@ -147,8 +157,8 @@ for (const src of jsSources) {
       if (n.left.type === 'Identifier') {
         const b = resolve(n.left.name, anc);
         if (isFunctionBinding(b)) report('rebind', src.file, line(n), `function ${n.left.name} reassigned`);
-        else if (b && (b.kind === 'let' || b.kind === 'var') && isFn(n.right) && b.init && !isFn(b.init) && b.init.type === 'Identifier') {
-          report('rebind', src.file, line(n), `${n.left.name} reassigned to a function`);
+        else if (fnWrites.has(b) && isFn(n.right) && (isFn(b.init) || fnWrites.get(b)[0] !== n)) {
+          report('rebind', src.file, line(n), `${n.left.name} given another function`);
         }
       } else if (n.left.type === 'MemberExpression' && !n.left.computed) {
         const p = text(n.left);
@@ -170,7 +180,7 @@ for (const src of jsSources) {
     VariableDeclarator(n, _s, anc) {
       if (n.id.type !== 'Identifier' || n.init?.type !== 'Identifier') return;
       const b = resolve(n.init.name, anc.slice(0, -1));
-      if (isFunctionBinding(b)) report('alias', src.file, line(n), `${n.id.name} = ${n.init.name}`);
+      if (isFunctionBinding(b) || fnWrites.has(b)) report('alias', src.file, line(n), `${n.id.name} = ${n.init.name}`);
     },
     CatchClause(n) {
       if (n.body.body.length === 0) report('emptyCatch', src.file, line(n), 'empty catch');

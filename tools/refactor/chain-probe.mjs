@@ -27,14 +27,14 @@ const isFn = (n) => n && (n.type === 'FunctionExpression' || n.type === 'ArrowFu
 const inserts = []; // {at, text}
 const chains = [];
 for (const b of A.bindings) {
-  const fnBinding = b.kind === 'function' || (isFn(b.decl?.init) && b.kind !== 'param');
-  if (!fnBinding) continue;
   const assigns = b.refs.filter((r) => r.parent.type === 'AssignmentExpression' && r.parent.left === r.node && isFn(r.parent.right));
-  if (!assigns.length) continue;
+  const declFn = b.kind === 'function' ? b.decl : isFn(b.decl?.init) && b.kind !== 'param' ? b.decl.init : null;
+  // function declarations / function-initialised bindings that get reassigned, and late-bound
+  // let/var that receive more than one function
+  if (!assigns.length || (!declFn && !((b.kind === 'let' || b.kind === 'var') && assigns.length > 1))) continue;
   const id = `${b.name}@${b.idNode.loc.start.line}`;
   const layers = [];
-  const declFn = b.kind === 'function' ? b.decl : b.decl.init;
-  layers.push({ fn: declFn, line: b.idNode.loc.start.line });
+  if (declFn) layers.push({ fn: declFn, line: b.idNode.loc.start.line });
   for (const r of assigns) layers.push({ fn: r.parent.right, line: r.node.loc.start.line, stmt: r.ancestors.findLast((a) => a.type === 'ExpressionStatement') });
   const last = layers.at(-1);
   const key = JSON.stringify(id);
