@@ -25,7 +25,9 @@ async function computedStyles(page) {
   return page.evaluate((props) => {
     const rows = [];
     const label = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList.length ? '.' + [...el.classList].sort().join('.') : '');
+    const SKIP = new Set(['LINK', 'SCRIPT', 'STYLE', 'META', 'NOSCRIPT', 'TEMPLATE']);
     const walkEl = (el, path) => {
+      if (SKIP.has(el.tagName)) return;
       const p = path + '>' + label(el);
       const cs = getComputedStyle(el);
       rows.push(p + ' ' + props.map((k) => cs.getPropertyValue(k)).join('|'));

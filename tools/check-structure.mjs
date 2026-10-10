@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
+import { analyze } from './lib/scope.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..');
@@ -203,18 +204,23 @@ for (const src of jsSources) {
   for (const m of src.text.matchAll(/!important/g)) report('important', src.file, src.text.slice(0, m.index).split('\n').length + off, 'in script');
   // CSS text written into <style> elements from script still counts as CSS for the
   // selector and !important metrics, so moving it into styles/ is neutral for the ratchet.
-  walk.simple(ast, {
-    AssignmentExpression(n) {
-      if (n.left.type !== 'MemberExpression' || !/^(textContent|innerHTML)$/.test(n.left.property.name || '')) return;
-      if (n.left.object.type !== 'Identifier') return;
-      const init = (() => { for (const [, sc] of scopes) { const b = sc.get(n.left.object.name); if (b?.init) return b.init; } return null; })();
-      const isStyle = init?.type === 'CallExpression' && /createElement$/.test(text(init.callee)) && String(init.arguments[0]?.value).toLowerCase() === 'style';
-      if (!isStyle) return;
-      const r = n.right;
-      const cssText = r.type === 'Literal' ? String(r.value) : r.type === 'TemplateLiteral' ? r.quasis.map((q) => q.value.cooked).join('x') : null;
-      if (cssText) cssSources.push({ file: `${src.file}@${line(n)}`, text: cssText, scripted: true });
-    },
-  });
+  const model = analyze(ast);
+  const isStyleCall = (n) => n?.type === 'CallExpression' && /createElement$/.test(text(n.callee)) && String(n.arguments[0]?.value).toLowerCase() === 'style';
+  const styleBindings = new Set();
+  for (const b of model.bindings) {
+    if (isStyleCall(b.decl?.init)) styleBindings.add(b);
+    else if (b.refs.some((r) => r.parent.type === 'AssignmentExpression' && r.parent.left === r.node && isStyleCall(r.parent.right))) styleBindings.add(b);
+  }
+  for (const r of model.refs) {
+    if (!r.binding || !styleBindings.has(r.binding)) continue;
+    const m = r.parent;
+    if (m.type !== 'MemberExpression' || m.object !== r.node || !/^(textContent|innerHTML)$/.test(m.property.name || '')) continue;
+    const asg = r.ancestors.at(-2);
+    if (asg?.type !== 'AssignmentExpression' || asg.left !== m) continue;
+    const v = asg.right;
+    const cssText = v.type === 'Literal' ? String(v.value) : v.type === 'TemplateLiteral' ? v.quasis.map((q) => q.value.cooked).join('x') : null;
+    if (cssText) cssSources.push({ file: `${src.file}@${line(asg)}`, text: cssText, scripted: true });
+  }
 }
 
 for (const [name, files] of topLevelNames) if (files.length > 1) report('crossFileDuplicate', files.join(','), 0, name);
@@ -228,8 +234,11 @@ function stripComments(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
 }
 function cssRules(css) {
-  // Returns [{selector, context, line}] for every style rule, tracking @media/@supports nesting.
+  // Returns [{selector, context, line, section}] for every style rule, tracking @media/@supports
+  // nesting. A section starts at a `/* ---- name ---- */` header comment.
   const out = [];
+  const headers = [...css.matchAll(/\/\*\s*-{2,}\s*([^*]*?)\s*-{2,}\s*\*\//g)].map((m) => ({ at: m.index, name: m[1] }));
+  const sectionAt = (k) => { let name = ''; for (const h of headers) if (h.at <= k) name = h.name; return name; };
   const s = stripComments(css);
   const stack = [];
   let i = 0, start = 0;
@@ -244,7 +253,8 @@ function cssRules(css) {
         stack.push({ at: false, head });
         const ctx = stack.filter((x) => x.at).map((x) => x.head).join(' ');
         if (!/^@(keyframes|-webkit-keyframes|font-face|page)/.test(ctx) && !stack.slice(0, -1).some((x) => !x.at)) {
-          out.push({ selector: head, context: ctx, line: lineAt(start + (s.slice(start, i).length - s.slice(start, i).trimStart().length)) });
+          const at = start + (s.slice(start, i).length - s.slice(start, i).trimStart().length);
+          out.push({ selector: head, context: ctx, section: sectionAt(at), line: lineAt(at) });
         }
       }
       start = i + 1;
@@ -260,15 +270,15 @@ for (const src of cssSources) {
   for (const r of cssRules(src.text)) {
     for (const sel of r.selector.split(/,(?![^(]*\))/).map((x) => x.trim().replace(/\s+/g, ' ')).filter(Boolean)) {
       const list = selectorUses.get(sel) || [];
-      list.push({ file: src.file, context: r.context, line: r.line });
+      list.push({ file: src.file, section: r.section, context: r.context, line: r.line });
       selectorUses.set(sel, list);
     }
   }
 }
 for (const [sel, uses] of selectorUses) {
   if (uses.length < 2) continue;
-  // Allowed: one block per media context, all in the same file.
-  const sameFile = uses.every((u) => u.file === uses[0].file);
+  // Allowed: one block per media context, all in the same file and the same section.
+  const sameFile = uses.every((u) => u.file === uses[0].file && u.section === uses[0].section);
   const contexts = new Set(uses.map((u) => u.context));
   if (sameFile && contexts.size === uses.length) continue;
   report('duplicateSelector', uses[0].file, uses[0].line, `${sel} ×${uses.length} (${uses.map((u) => `${u.file}:${u.line}${u.context ? ' ' + u.context : ''}`).join(', ')})`);
