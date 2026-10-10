@@ -1,15 +1,15 @@
 {
  "parse": 0,
- "rebind": 116,
- "alias": 81,
+ "rebind": 106,
+ "alias": 78,
  "crossFileDuplicate": 0,
  "styleInject": 0,
  "defineProperty": 7,
  "mutationObserver": 1,
  "duplicateSelector": 277,
  "important": 2188,
- "suffixFunction": 2071,
+ "suffixFunction": 2070,
  "emptyCatch": 72,
- "timer": 68,
+ "timer": 55,
  "sameBody": 18
 }

@@ -2835,16 +2835,13 @@ function moveGroundItemStep57(it,toward){
 }
 function pullNearbyLoot(){const c=playerCloak(),r=c.magnet||0;if(!r||!state)return;for(const it of state.items){const d=entityDistance57(it,state.player);if(d>0&&d<=r)moveGroundItemStep57(it,state.player)}}
 
-function cancelAutoWalk(){autoWalkToken++;if(autoWalkTimer){clearTimeout(autoWalkTimer);autoWalkTimer=null}}
+function cancelAutoWalk(){return Auto81.stop('manual',true)}
 function terrainName(t){if(t===TT.ICE)return '얼어붙은 물';if(t>=500&&t<660)return ['전용 석판','전용 인레이','전용 재질판','실외 포장','전용 석벽','전용 기둥벽','암반 외벽','영구 다리','대형 구조물'][(t-500)%16]||'전용 건축물';return new Map([
   [TT.WALL,'벽'],[TT.PALACE_ROCK,'해련 바위벽'],[TT.FLOOR,'바닥'],[TT.STAIR,'다음 층'],[TT.DOOR,'닫힌 문'],[TT.OPEN_DOOR,'열린 문'],[TT.RUMOR,'소문 기록'],[TT.BRAZIER,'화로'],[TT.TRAP,'함정'],[TT.ARMORY,'무기고'],[TT.WATER,'물'],[TT.FOUNTAIN,'정화의 샘'],[TT.MIRROR,'천면경'],[TT.ALTAR,'혈흔 제단'],[TT.VAULT,'금고'],[TT.SNARE,'구속진'],[TT.CACHE,'보급함'],[TT.COOKPOT,'솥'],[TT.PAPER_BRIDGE,'종이 다리'],[TT.JAR,'장독'],[TT.LAVA,'용암'],[TT.DRAWBRIDGE_DOWN,'도개교'],[TT.DRAWBRIDGE_UP,'올라간 도개교'],[TT.VOID,'공허'],[TT.GOLD,'황금 잔광'],[TT.MERCURY,'수은'],[TT.SWITCH,'기계 장치'],[TT.BAMBOO,'대나무'],[TT.TABLE,'연회상'],[TT.SCREEN,'비단 병풍'],[TT.GRASS,'초원'],[TT.HEDGE,'울타리'],[TT.RAFT,'뗏목'],[TT.FAKE_DOOR,'문'],[TT.LOCKED_GATE,'잠긴 격벽'],[TT.KEY_TILE,'열쇠'],[TT.STAMINA_PAD,'기 회복 발판'],[TT.PEACH_TREE,'복숭아나무'],[TT.SECRET_DOOR,'수상한 벽'],[TT.PAVILION,'정자'],[TT.FLOOR,'행선 표식']
 ]).get(t)||'지형'}
 
 
-function runAutoPath(path){
-  if(!path?.length)return;const token=++autoWalkToken;
-  const step=()=>{if(token!==autoWalkToken||!state||state.dead||state.victory)return;const q=path.shift();if(!q)return;const hp0=state.player.hp;const enemyBefore=state.monsters.filter(isThreatVisibleToPlayer57).length;ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-state.player.x),Math.sign(q.y-state.player.y)]}).value;if(token!==autoWalkToken||state.dead)return;const enemyAfter=state.monsters.filter(isThreatVisibleToPlayer57).length;const interesting=state.items.some(it=>it.x===state.player.x&&it.y===state.player.y)||(state.player.x===state.stairs.x&&state.player.y===state.stairs.y);if(state.player.hp<hp0||enemyAfter>enemyBefore||state.monsters.some(m=>m.alerted&&isThreatVisibleToPlayer57(m))||interesting){cancelAutoWalk();return}if(path.length)autoWalkTimer=setTimeout(step,105)};step();
-}
+function runAutoPath(path,meta={}){return Auto81.startPath(path,meta)}
 function showBossIntro(mon){
   const box=document.getElementById('bossIntro');if(!box||!mon)return;vfVibrate(HAPTIC_PATTERN57.boss);clearTimeout(bossIntroTimer);document.getElementById('bossIntroName').textContent=mon.name;document.getElementById('bossIntroFloor').textContent=`제 ${String(state.floor).padStart(2,'0')}층`;box.classList.add('show');bossIntroTimer=setTimeout(()=>box.classList.remove('show'),1900);
   globalThis.__MANRU_SFX54__?.play?.('boss');const rule=document.getElementById('bossRule54');if(rule){rule.textContent=mon.bossPattern==='master'?'최종전 · 금빛 부채꼴을 피하고 사념체를 파괴하라':'보스 규칙을 읽고 예고 칸을 피하라';rule.classList.add('show');setTimeout(()=>{if(!state?.monsters?.some(m=>m.intent54))rule.classList.remove('show')},1700)}
@@ -6512,7 +6509,7 @@ renderMobileDrawer();
 /* ===== MANRU v1.0 VERIFIED VISUAL + AUTOWALK PASS ===== */
 VIS.hoverPath=null;VIS.autoPath=null;VIS.tapTrack=null;
 
-function v10AutoChip(text=null){const c=document.getElementById('autoMoveChip'),t=document.getElementById('autoMoveChipText');if(!c)return;if(text){if(t)t.textContent=text;c.classList.add('show')}else c.classList.remove('show')}
+function v10AutoChip(text=null){if(text&&/(석주|등롱 기둥|벽걸이 깃발|목상자|긴 의자|화단|정원석|석상|진열 선반|낮은 목책|창호 창문) 앞으로 이동/.test(text))text=null;const c=document.getElementById('autoMoveChip'),t=document.getElementById('autoMoveChipText');if(!c)return;if(text){if(t)t.textContent=text;c.classList.add('show')}else c.classList.remove('show')}
 
 /* r53: removed overwritten camera implementation. */
 
@@ -6621,32 +6618,10 @@ drawFloorTexture=function(px,py,x,y,colors,vis){
 
 
 
-function v10ChooseFrontierPath(){return ReachabilityService.frontierPath(.45,DIRS4)}
-function autoExplore(resume=false){
-  if(!gameplayInputAllowed57())return;
-  if(!resume){cancelAutoWalk();VIS.exploring=true;addLog('자동 탐사: 미탐사 구역을 계속 찾아간다. 적/피격/아이템에서 멈춘다.')}else VIS.exploring=true;
-  const best=v10ChooseFrontierPath();if(!best){VIS.exploring=false;v10AutoChip(null);toast('탐사할 새 길이 없다.');return}
-  runAutoPath(best,{explore:true})
-}
+function autoExplore(resume=false){return Auto81.explore(resume)}
 
-cancelAutoWalk=function(){VIS.autoPath=null;VIS.exploring=false;v10AutoChip(null);autoWalkToken++;if(autoWalkTimer){clearTimeout(autoWalkTimer);autoWalkTimer=null}};
 function v10StopForDanger(){VIS.autoPath=null;VIS.exploring=false;v10AutoChip(null);autoWalkToken++;if(autoWalkTimer){clearTimeout(autoWalkTimer);autoWalkTimer=null}}
 
-runAutoPath=function(path,meta={explore:false}){
-  if(!path?.length){if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);return}
-  const token=++autoWalkToken;VIS.autoPath=path.map(q=>({...q}));v10AutoChip(meta.explore?'자동 탐사':'자동 이동');
-  const step=()=>{
-    if(token!==autoWalkToken||!state||state.dead||state.victory){VIS.autoPath=null;return}
-    const q=path.shift();if(!q){VIS.autoPath=null;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);else v10AutoChip(null);return}
-    const hp=state.player.hp,before=state.monsters.filter(isThreatVisibleToPlayer57).length;
-    ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-state.player.x),Math.sign(q.y-state.player.y)]}).value;VIS.autoPath=path.map(v=>({...v}));
-    if(token!==autoWalkToken||state.dead)return;
-    const after=state.monsters.filter(isThreatVisibleToPlayer57).length,interesting=state.items.some(it=>it.x===state.player.x&&it.y===state.player.y)||(state.player.x===state.stairs.x&&state.player.y===state.stairs.y),danger=state.monsters.some(m=>m.alerted&&isThreatVisibleToPlayer57(m));
-    if(state.player.hp<hp||after>before||danger||interesting){v10StopForDanger();return}
-    if(path.length)autoWalkTimer=setTimeout(step,86);
-    else{VIS.autoPath=null;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),82);else v10AutoChip(null)}
-  };step()
-};
 
 function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.lineJoin='round';X.lineCap='round';X.strokeStyle=strong?'rgba(236,190,94,.78)':'rgba(216,224,229,.34)';X.lineWidth=strong?2.4:1.6;X.beginPath();X.moveTo(VIS.playerX*TILE+16,VIS.playerY*TILE+16);for(const q of path)X.lineTo(q.x*TILE+16,q.y*TILE+16);X.stroke();for(let i=0;i<path.length;i++){const q=path[i];X.fillStyle=strong?'rgba(237,190,91,.72)':'rgba(220,229,234,.48)';X.fillRect(q.x*TILE+14,q.y*TILE+14,4,4)}X.restore()}
 
@@ -6745,9 +6720,8 @@ globalThis.__MANRU_LIFECYCLE__.registerNew('visual-floor-decor',{post:()=>{if(st
 if(state){vfBuildDecor();updateAll()}
 
 // Visible autowalk state, while retaining verified stop-on-danger behavior.
-const vfAuto=document.createElement('div');vfAuto.id='vfAutoState';document.getElementById('canvasWrap').appendChild(vfAuto);function vfAutoState(s){vfAuto.textContent=s||'';vfAuto.classList.toggle('show',!!s)}
+const vfAuto=document.createElement('div');vfAuto.id='vfAutoState';document.getElementById('canvasWrap').appendChild(vfAuto);
 
-const vfCancelAuto=cancelAutoWalk;cancelAutoWalk=function(){vfAutoState(null);return vfCancelAuto()};
 
 if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   get:()=>state,elementDamage61:(entity,elem,amount)=>resolveElementDamage57(entity,elem,amount,{ground:false}),tutorial60:()=>tutorialEntryAudit60(),presentation58:()=>({busy:actionPresentationBusy58(),kind:ACTION_PRESENTATION58.kind,frame:(()=>{const f=actionFrame58();return f?{source:f.source,target:f.target,t:f.t,hit:f.a.hit,weapon:f.a.weapon}:null})(),remaining:Math.max(0,ACTION_PRESENTATION58.until-performance.now())}),
@@ -7239,9 +7213,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 /* ===== MANRU v3.7/3.8 SMART INTERACTION + FEATURE ROOMS + POTIONS ===== */
-function smartAction(meta){if(!meta||!state)return false;if(meta.type==='pickup'&&state.items.some(v=>v.x===state.player.x&&v.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return true}if(meta.type==='stairs'&&state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return true}return false}
 
-  runAutoPath=function(path,meta={explore:false,target:null}){if(!path?.length){if(meta.target&&smartAction(meta.target)){VIS.autoPath=null;v10AutoChip(null);return}if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);return}const token=++autoWalkToken;VIS.autoPath=path.map(q=>({...q}));v10AutoChip(meta.explore?'자동 탐사':meta.target?.type==='stairs'?'목표 이동 · 계단':meta.target?.type==='pickup'?'목표 이동 · 습득':'자동 이동');const step=()=>{if(token!==autoWalkToken||!state||state.dead||state.victory){VIS.autoPath=null;return}const q=path.shift();if(!q){VIS.autoPath=null;if(meta.target&&smartAction(meta.target)){v10AutoChip(null);return}if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);else v10AutoChip(null);return}const hp=state.player.hp,before=state.monsters.filter(isThreatVisibleToPlayer57).length;ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-state.player.x),Math.sign(q.y-state.player.y)]}).value;VIS.autoPath=path.map(v=>({...v}));if(token!==autoWalkToken||state.dead)return;const after=state.monsters.filter(isThreatVisibleToPlayer57).length,danger=state.monsters.some(m=>m.alerted&&isThreatVisibleToPlayer57(m)),reached=meta.target&&state.player.x===meta.target.x&&state.player.y===meta.target.y;if(reached&&smartAction(meta.target)){VIS.autoPath=null;v10AutoChip(null);return}const interesting=state.items.some(it=>it.x===state.player.x&&it.y===state.player.y)||(state.player.x===state.stairs.x&&state.player.y===state.stairs.y);if(state.player.hp<hp||after>before||danger||interesting){v10StopForDanger();return}if(path.length)autoWalkTimer=setTimeout(step,86);else{VIS.autoPath=null;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),82);else v10AutoChip(null)}};step()};
   function isPlainFloorTile(x,y){const t=state.map?.[y]?.[x];return t===TT.FLOOR||t===TT.GRASS}
   function contains(r,x,y){return x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h}
   function placeFeatureTile(x,y,t){if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1||(x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y)||!isPlainFloorTile(x,y))return false;setTerrainTile58(state.map,x,y,t);return true}
@@ -7590,11 +7562,6 @@ const UX={
   
 
 
-  const baseCancel=cancelAutoWalk;
-  cancelAutoWalk=function(){
-    if(!UX.modalOpening){UX.paused=null;UX.autoMeta=null;}
-    return baseCancel();
-  };
 
   function pauseAutoForUI(){
     if(!state)return;
@@ -7697,29 +7664,7 @@ const UX={
 
   // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
   
-  function actTarget45(t){if(!t||!state)return false;if(t.type==='pickup'&&state.player.x===t.x&&state.player.y===t.y){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return true}if(t.type==='stairs'&&state.player.x===t.x&&state.player.y===t.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return true}return false}
 
-  runAutoPath=function(path,meta={explore:false,target:null}){
-    if(!path?.length){if(meta.target&&actTarget45(meta.target))return;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),90);return}
-    UX.autoMeta={...meta};const token=++autoWalkToken;VIS.autoPath=path.map(q=>({...q}));v10AutoChip(meta.explore?'자동 탐사':meta.target?.type==='stairs'?'계단으로 이동':meta.target?.type==='pickup'?'아이템으로 이동':'자동 이동');
-    const step=()=>{
-      if(token!==autoWalkToken||!state||state.dead||state.victory||uiBlocking()){VIS.autoPath=path.map(v=>({...v}));return}
-      const q=path.shift();if(!q){VIS.autoPath=null;UX.autoMeta=null;if(meta.target&&actTarget45(meta.target)){v10AutoChip(null);return}if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),90);else v10AutoChip(null);return}
-      const hp=state.player.hp,beforeVisible=state.monsters.filter(isThreatVisibleToPlayer57).length;
-      ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-state.player.x),Math.sign(q.y-state.player.y)]}).value;VIS.autoPath=path.map(v=>({...v}));
-      if(token!==autoWalkToken||state.dead)return;
-      const afterVisible=state.monsters.filter(isThreatVisibleToPlayer57).length;
-      const adjacent=state.monsters.some(m=>isThreatVisibleToPlayer57(m)&&entityDistance57(m,state.player)<=1);
-      const reached=meta.target&&state.player.x===meta.target.x&&state.player.y===meta.target.y;
-      if(reached&&actTarget45(meta.target)){VIS.autoPath=null;UX.autoMeta=null;v10AutoChip(null);return}
-      const newThreat=afterVisible>beforeVisible;
-      const exploreInterest=meta.explore&&(state.items.some(it=>it.x===state.player.x&&it.y===state.player.y)||(state.player.x===state.stairs.x&&state.player.y===state.stairs.y));
-      const exploreEnemy=meta.explore&&state.monsters.some(m=>isThreatVisibleToPlayer57(m)&&m.alerted);
-      if(state.player.hp<hp||newThreat||adjacent||exploreInterest||exploreEnemy){VIS.autoPath=null;UX.autoMeta=null;v10StopForDanger();return}
-      if(path.length)autoWalkTimer=setTimeout(step,82);
-      else{VIS.autoPath=null;UX.autoMeta=null;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),90);else v10AutoChip(null)}
-    };step();
-  };
 
   // mobile drawer/map/inspect should block world controls but not eat their own buttons.
   registerMovePreR8(()=>!(uiBlocking()&&!UX.modalOpening));
@@ -12322,10 +12267,7 @@ const CONFIG81=Object.freeze({
     state(){return{active:this.active,exploring:this.exploreMode,target:this.target?{type:this.target.type,...this.targetPos(this.target)}:null,path:this.path.length,lastStop:this.lastStop}}
   };
 
-  cancelAutoWalk=function(){return Auto81.stop('manual',true)};
 
-  runAutoPath=function(path,meta={}){return Auto81.startPath(path,meta)};
-  autoExplore=function(resume=false){return Auto81.explore(resume)};
 
   const Automation81={
     valid:q=>Auto81.valid(q),
@@ -13032,7 +12974,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
 
   // Decorative blockers behave like walls: no unsolicited "X 바로 앞이다" messages.
   // r57: silent physical decor blocking is integrated into canonical bumpBlockedTile.
-  const chip88=v10AutoChip;v10AutoChip=function(text=null){if(text&&/(석주|등롱 기둥|벽걸이 깃발|목상자|긴 의자|화단|정원석|석상|진열 선반|낮은 목책|창호 창문) 앞으로 이동/.test(text))return chip88(null);return chip88(text)};
 
 
   // Remove any dedicated identify-talisman toolbar artifact. Generic targeted-talisman cancel UI remains for mobile usability.
