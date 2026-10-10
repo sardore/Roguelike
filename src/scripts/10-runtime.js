@@ -2886,15 +2886,12 @@ function withJosa57(value,pair='이/가'){
 function makeEmptyMap(){return Array.from({length:ROWS},()=>Array(COLS).fill(TT.WALL))}
 function carveRect(m,x,y,w,h,tile=TT.FLOOR){for(let yy=Math.max(0,y);yy<Math.min(ROWS,y+h);yy++)for(let xx=Math.max(0,x);xx<Math.min(COLS,x+w);xx++)setTerrainTile58(m,xx,yy,tile)}
 function room(x,y,w,h){return{x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)}}
-function corridor(m,a,b,w=1){let x=a.x,y=a.y;const paint=(x,y)=>{for(let oy=0;oy<w;oy++)for(let ox=0;ox<w;ox++){const xx=x+ox,yy=y+oy;if(xx>0&&yy>0&&xx<COLS-1&&yy<ROWS-1)setTerrainTile58(m,xx,yy,TT.FLOOR)}};if(globalThis.__MANRU_RANDOM57__()<.5){while(x!==b.x){paint(x,y);x+=Math.sign(b.x-x)}while(y!==b.y){paint(x,y);y+=Math.sign(b.y-y)}}else{while(y!==b.y){paint(x,y);y+=Math.sign(b.y-y)}while(x!==b.x){paint(x,y);x+=Math.sign(b.x-x)}}paint(x,y)}
 function addRoom(m,x,y,w,h){carveRect(m,x,y,w,h);const r=room(x,y,w,h);state.rooms.push(r);return r}
-function addLoop(m){if(state.rooms.length<4)return;for(let n=0;n<4;n++){const a=choice(state.rooms),b=choice(state.rooms);if(a!==b)corridor(m,a,b,1)}}
-function baseRooms(m,count=14,narrow=false){for(let t=0;t<520&&state.rooms.length<count;t++){const w=rand(narrow?4:5,narrow?8:11),h=rand(narrow?4:5,narrow?7:9),x=rand(1,COLS-w-2),y=rand(1,ROWS-h-2);if(state.rooms.some(r=>x<r.x+r.w+1&&x+w+1>r.x&&y<r.y+r.h+1&&y+h+1>r.y))continue;const r=addRoom(m,x,y,w,h);if(state.rooms.length>1)corridor(m,state.rooms[state.rooms.length-2],r,1)}if(state.rooms.length<5){state.rooms=[];const fallback=[[2,2,8,7],[20,3,8,7],[38,2,8,7],[8,23,9,7],[30,23,9,7]];for(const v of fallback)addRoom(m,...v);for(let i=1;i<state.rooms.length;i++)corridor(m,state.rooms[i-1],state.rooms[i])}addLoop(m)}
 function regionIndex(){return Math.floor((state.floor-1)/5)}
 function setFixedEnds(start,exit){state.fixedStart={...start};state.fixedExit={...exit}}
 function registerWholeRoom(x=1,y=1,w=COLS-2,h=ROWS-2){state.rooms.push(room(x,y,w,h))}
 function paintLine(m,x0,y0,x1,y1,tile=TT.FLOOR,width=1){let x=x0,y=y0,guard=0;while((x!==x1||y!==y1)&&guard++<220){for(let oy=0;oy<width;oy++)for(let ox=0;ox<width;ox++){const xx=x+ox,yy=y+oy;if(xx>0&&yy>0&&xx<COLS-1&&yy<ROWS-1)setTerrainTile58(m,xx,yy,tile)}if(x!==x1)x+=Math.sign(x1-x);else if(y!==y1)y+=Math.sign(y1-y)}for(let oy=0;oy<width;oy++)for(let ox=0;ox<width;ox++){const xx=x+ox,yy=y+oy;if(xx>0&&yy>0&&xx<COLS-1&&yy<ROWS-1)setTerrainTile58(m,xx,yy,tile)}}
-function buildInnNormal(m){baseRooms(m,rand(14,18));state.layoutName=choice(['등롱 객실군','잔칫상 회랑','비단 객실 격자']);for(let i=0;i<rand(10,16);i++){const p=PlacementService.randomFloor(0);if(m[p.y][p.x]===TT.FLOOR)setTerrainTile58(m,p.x,p.y,globalThis.__MANRU_RANDOM57__()<.58?TT.TABLE:TT.SCREEN)}}
+function buildInnNormal(m){return buildNormal85(m,0)}
 function buildGreatHall(m){carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);registerWholeRoom();state.layoutName='거대 회관 · 백석연';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});
   const pods=[[7,4,8,6],[20,3,8,7],[34,4,8,6],[6,14,9,7],[20,13,9,8],[35,14,8,7],[9,24,9,6],[25,24,8,6],[38,24,7,6]];
   for(const [x,y,w,h] of pods){for(let xx=x;xx<x+w;xx++){setTerrainTile58(m,xx,y,TT.SCREEN);setTerrainTile58(m,xx,y+h-1,TT.SCREEN)}for(let yy=y;yy<y+h;yy++){setTerrainTile58(m,x,yy,TT.SCREEN);setTerrainTile58(m,x+w-1,yy,TT.SCREEN)}const side=globalThis.__MANRU_RANDOM57__()<.5?'top':'bottom',dx=x+rand(1,w-2),dy=side==='top'?y:y+h-1;setTerrainTile58(m,dx,dy,TT.FLOOR);setTerrainTile58(m,x+Math.floor(w/2),y+Math.floor(h/2),TT.TABLE)}
@@ -2908,14 +2905,15 @@ function buildChoiceCorridor(m){state.layoutName='큰 복도 · 이중 삼갈래
   const tags=[{y:6,name:'안전 · 보급',tile:TT.CACHE},{y:16,name:'무 · 장비',tile:TT.ARMORY},{y:26,name:'위험 · 보물',tile:TT.VAULT}];state.routeTags=[];
   tags.forEach((r,i)=>{for(const x of [8,30])setTerrainTile58(m,x,r.y,TT.FLOOR);setTerrainTile58(m,18,r.y,i===0?TT.BRAZIER:r.tile);setTerrainTile58(m,40,r.y,r.tile);if(i===2){setTerrainTile58(m,14,r.y,TT.TRAP);setTerrainTile58(m,36,r.y,TT.TRAP)}});
 }
-function buildGardenNormal(m){baseRooms(m,rand(11,14));state.layoutName=choice(['비 젖은 수묵원','연못 회랑','담묵 정원']);for(let i=0;i<rand(6,9);i++){const r=choice(state.rooms),wx=clamp(r.cx-rand(2,3),1,COLS-7),wy=clamp(r.cy-rand(1,2),1,ROWS-6),ww=rand(4,7),hh=rand(3,5);carveRect(m,wx,wy,ww,hh,TT.WATER);const horizontal=globalThis.__MANRU_RANDOM57__()<.5;if(horizontal){const y=wy+Math.floor(hh/2);for(let x=wx;x<wx+ww;x++)setTerrainTile58(m,x,y,TT.PAPER_BRIDGE)}else{const x=wx+Math.floor(ww/2);for(let y=wy;y<wy+hh;y++)setTerrainTile58(m,x,y,TT.PAPER_BRIDGE)}}}
+function buildGardenNormal(m){return buildNormal85(m,1)}
 function bridgeBetween(m,a,b,tile=TT.PAPER_BRIDGE){let x=(a.cx??a.x),y=(a.cy??a.y),tx=(b.cx??b.x),ty=(b.cy??b.y);while(x!==tx){x+=Math.sign(tx-x);if(m[y][x]===TT.WATER)setTerrainTile58(m,x,y,tile)}while(y!==ty){y+=Math.sign(ty-y);if(m[y][x]===TT.WATER)setTerrainTile58(m,x,y,tile)}}
-function buildPavilionCluster(m){for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.WATER);state.layoutName='수중 정자 모임 · 육정환';state.rooms=[];
-  const islands=[room(2,3,7,6),room(21,2,7,6),room(40,3,7,6),room(4,24,8,7),room(21,13,7,7),room(38,24,8,7)];
-  for(const r of islands){carveRect(m,r.x,r.y,r.w,r.h,TT.FLOOR);state.rooms.push(r);setTerrainTile58(m,r.cx,r.cy,TT.PAVILION)}
-  for(const [a,b] of [[0,1],[1,2],[0,4],[1,4],[2,4],[3,4],[4,5],[2,5],[0,3],[3,5]])bridgeBetween(m,islands[a],islands[b]);
-  setFixedEnds({x:islands[0].cx,y:islands[0].cy},{x:islands[5].cx,y:islands[5].cy});setTerrainTile58(m,islands[4].cx,islands[4].cy,TT.FOUNTAIN);setTerrainTile58(m,islands[1].cx,islands[1].cy,TT.CACHE);
-}
+function buildPavilionCluster(m){
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.WATER);state.layoutName='수중 정자 모임 · 칠정환';state.rooms=[];
+    const specs=[[2,3,8,7],[Math.floor(COLS*.29),2,8,7],[COLS-10,4,8,7],[4,ROWS-10,9,8],[Math.floor(COLS*.44),Math.floor(ROWS*.42),9,8],[Math.floor(COLS*.70),ROWS-11,9,8],[COLS-11,Math.floor(ROWS*.47),9,8]];
+    const islands=specs.map(v=>room(...v));for(const r of islands){carveRect(m,r.x,r.y,r.w,r.h,TT.FLOOR);state.rooms.push(r);setTerrainTile58(m,r.cx,r.cy,TT.PAVILION)}
+    const edges=[[0,1],[1,2],[0,3],[1,4],[2,6],[3,4],[4,5],[4,6],[5,6],[2,4],[0,4]];for(const [a,b] of edges)bridgeBetween(m,islands[a],islands[b]);
+    setFixedEnds({x:islands[0].cx,y:islands[0].cy},{x:islands[5].cx,y:islands[5].cy});setTerrainTile58(m,islands[4].cx,islands[4].cy,TT.FOUNTAIN);setTerrainTile58(m,islands[1].cx,islands[1].cy,TT.CACHE);setTerrainTile58(m,islands[6].cx,islands[6].cy,TT.RUMOR);
+  }
 function carveMazeCell(m,cx,cy){carveRect(m,cx-1,cy-1,3,3,TT.FLOOR)}
 function buildBambooMaze(m){for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.BAMBOO);state.layoutName='대나무 미로 · 흑죽림';state.rooms=[room(1,1,COLS-2,ROWS-2)];state.visionPenalty=3;
   const xs=[],ys=[];for(let x=3;x<=COLS-4;x+=5)xs.push(x);for(let y=3;y<=ROWS-4;y+=5)ys.push(y);const cells=[];for(let j=0;j<ys.length;j++)for(let i=0;i<xs.length;i++)cells.push({i,j,x:xs[i],y:ys[j]});
@@ -2924,12 +2922,13 @@ function buildBambooMaze(m){for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)se
   for(let n=0;n<7;n++){const a=choice(cells),b=choice(cells);if(Math.abs(a.i-b.i)+Math.abs(a.j-b.j)===1)paintLine(m,a.x,a.y,b.x,b.y,TT.FLOOR,3)}
   const last=cells[cells.length-1];setFixedEnds({x:cells[0].x,y:cells[0].y},{x:last.x,y:last.y});setTerrainTile58(m,last.x,last.y,TT.FLOOR);
 }
-function buildInnerNormal(m){baseRooms(m,rand(14,18),true);state.layoutName=choice(['비단 내실','천면경 회랑','향실 객방군']);for(let i=0;i<rand(12,18);i++){const p=PlacementService.randomFloor(0);if(m[p.y][p.x]===TT.FLOOR)setTerrainTile58(m,p.x,p.y,globalThis.__MANRU_RANDOM57__()<.75?TT.MIRROR:TT.SNARE)}}
-function buildPerfumeRiver(m){carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='향수강(향수강) · 유동 뗏목';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});state.rafts=[];
-  let cy=Math.floor(ROWS/2);for(let x=1;x<COLS-1;x++){if(x%6===0)cy=clamp(cy+choice([-2,-1,0,1,2]),9,ROWS-10);for(let y=cy-3;y<=cy+3;y++)setTerrainTile58(m,x,y,TT.WATER)}
-  for(const [x,dy] of [[9,-1],[24,1],[39,-1]]){const y=clamp(cy+dy,5,ROWS-6);carveRect(m,x-2,y-2,5,5,TT.FLOOR);setTerrainTile58(m,x,y,globalThis.__MANRU_RANDOM57__()<.55?TT.CACHE:TT.RUMOR)}
-  for(const x of [7,17,29,41]){let top=ROWS,bottom=0;for(let y=1;y<ROWS-1;y++)if(m[y][x]===TT.WATER){top=Math.min(top,y);bottom=Math.max(bottom,y)}if(top<bottom){const y=Math.floor((top+bottom)/2);setTerrainTile58(m,x,y,TT.RAFT);state.rafts.push({x,y,min:top,max:bottom,dir:globalThis.__MANRU_RANDOM57__()<.5?1:-1})}}
-}
+function buildInnerNormal(m){return buildNormal85(m,2)}
+function buildPerfumeRiver(m){
+    carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='향수강(향수강) · 대하 유동 뗏목';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});state.rafts=[];
+    let cy=Math.floor(ROWS/2);for(let x=1;x<COLS-1;x++){if(x%7===0)cy=clamp(cy+choice([-3,-2,-1,0,1,2,3]),10,ROWS-11);for(let y=cy-4;y<=cy+4;y++)setTerrainTile58(m,x,y,TT.WATER)}
+    for(const ratio of [.18,.38,.60,.80]){const x=Math.floor(COLS*ratio),y=clamp(cy+choice([-3,-2,2,3]),6,ROWS-7);carveRect(m,x-3,y-3,7,7,TT.FLOOR);state.rooms.push(room(x-3,y-3,7,7));setTerrainTile58(m,x,y,globalThis.__MANRU_RANDOM57__()<.5?TT.CACHE:TT.RUMOR)}
+    for(const ratio of [.12,.30,.50,.70,.88]){const x=Math.floor(COLS*ratio);let top=ROWS,bottom=0;for(let y=1;y<ROWS-1;y++)if(m[y][x]===TT.WATER){top=Math.min(top,y);bottom=Math.max(bottom,y)}if(top<bottom){const y=Math.floor((top+bottom)/2);setTerrainTile58(m,x,y,TT.RAFT);state.rafts.push({x,y,min:top,max:bottom,dir:globalThis.__MANRU_RANDOM57__()<.5?1:-1})}}
+  }
 function buildRoomMaze(m){state.layoutName='방 미로 · 천문첩';state.rooms=[];const cols=8,rows=5,rw=4,rh=4,x0=1,y0=2,gx=2,gy=2;
   const grid=[];for(let j=0;j<rows;j++){grid[j]=[];for(let i=0;i<cols;i++){const x=x0+i*(rw+gx),y=y0+j*(rh+gy),r=addRoom(m,x,y,rw,rh);grid[j][i]=r}}
   const seen=new Set(['0,0']),stack=[[0,0]],edges=[];while(stack.length){const [i,j]=stack[stack.length-1],ns=[[1,0],[-1,0],[0,1],[0,-1]].map(([di,dj])=>[i+di,j+dj]).filter(([ni,nj])=>ni>=0&&ni<cols&&nj>=0&&nj<rows&&!seen.has(ni+','+nj));if(!ns.length){stack.pop();continue}const [ni,nj]=choice(ns);seen.add(ni+','+nj);edges.push([[i,j],[ni,nj]]);stack.push([ni,nj])}
@@ -2938,7 +2937,7 @@ function buildRoomMaze(m){state.layoutName='방 미로 · 천문첩';state.rooms
   for(let n=0;n<12;n++){const j=rand(0,rows-2),i=rand(0,cols-1),r=grid[j][i],x=r.cx,y=r.y+r.h;if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,globalThis.__MANRU_RANDOM57__()<.56?TT.FAKE_DOOR:TT.DOOR)}
   state.monsterDenseRooms=[grid[0][6],grid[2][3],grid[3][5],grid[4][2]];setFixedEnds({x:grid[0][0].cx,y:grid[0][0].cy},{x:grid[4][7].cx,y:grid[4][7].cy});
 }
-function buildStorageNormal(m){baseRooms(m,rand(14,18),true);state.layoutName=choice(['장독 적재로','냉골 창고','도살 준비실']);for(let i=0;i<rand(15,22);i++){const p=PlacementService.randomFloor(0);if(m[p.y][p.x]===TT.FLOOR)setTerrainTile58(m,p.x,p.y,TT.JAR)}}
+function buildStorageNormal(m){return buildNormal85(m,3)}
 function buildFortress(m){state.layoutName='성채 · 초원미로 / 용암해자 / 내성';state.rooms=[room(1,1,COLS-2,ROWS-2)];const bridgeY=Math.floor(ROWS/2),moatL=17,moatR=25,castleL=26;setFixedEnds({x:3,y:ROWS-4},{x:COLS-3,y:3});state.cipher={secret:[1,2,3,4,5].sort(()=>globalThis.__MANRU_RANDOM57__()-.5),guess:[],history:[],solved:false};
   carveRect(m,1,1,16,ROWS-2,TT.GRASS);for(let y=3;y<ROWS-3;y+=5)for(let x=3;x<16;x++)if((x+y)%8!==0)setTerrainTile58(m,x,y,TT.HEDGE);for(let x=5;x<16;x+=4)for(let y=2;y<ROWS-2;y++)if(y%6!==0)setTerrainTile58(m,x,y,TT.HEDGE);paintLine(m,3,ROWS-4,15,bridgeY,TT.GRASS,2);
   for(let y=1;y<ROWS-1;y++)for(let x=moatL;x<=moatR;x++)setTerrainTile58(m,x,y,TT.LAVA);for(let x=moatL;x<=moatR;x++)setTerrainTile58(m,x,bridgeY,TT.DRAWBRIDGE_UP);
@@ -2953,24 +2952,24 @@ function buildIronWarehouse(m){carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.roo
   const gateX=42;for(let y=1;y<ROWS-1;y++)setTerrainTile58(m,gateX,y,TT.WALL);setTerrainTile58(m,gateX,16,TT.LOCKED_GATE);carveRect(m,43,2,5,ROWS-5,TT.FLOOR);setTerrainTile58(m,COLS-3,4,TT.FLOOR);setTerrainTile58(m,COLS-3,8,TT.VAULT);
   for(const [x,y] of [[4,4],[24,28],[37,5]])setTerrainTile58(m,x,y,TT.KEY_TILE);setTerrainTile58(m,35,23,TT.ARMORY);setTerrainTile58(m,27,3,TT.CACHE);
 }
-function buildHeartNormal(m){baseRooms(m,rand(10,13));state.layoutName=choice(['황금 신전 회랑','원혼 회랑','수은 별궁']);for(let i=0;i<rand(4,7);i++){const r=choice(state.rooms);if(r.w>=5&&r.h>=5){const t=globalThis.__MANRU_RANDOM57__()<.55?TT.VOID:TT.MERCURY;carveRect(m,r.cx-1,r.cy-1,3,3,t);if(t===TT.VOID)setTerrainTile58(m,r.cx,r.cy,TT.DRAWBRIDGE_DOWN)}}for(let i=0;i<rand(10,16);i++){const p=PlacementService.randomFloor(0);if(m[p.y][p.x]===TT.FLOOR)setTerrainTile58(m,p.x,p.y,TT.GOLD)}}
+function buildHeartNormal(m){return buildNormal85(m,4)}
 function island(m,x,y){carveRect(m,x,y,5,5,TT.FLOOR);const r=room(x,y,5,5);state.rooms.push(r);setTerrainTile58(m,r.cx,r.cy,TT.STAMINA_PAD);return r}
-function buildVoidSea(m){for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.VOID);state.rooms=[];state.layoutName='공허 유체의 바다 · 팔섬연쇄';state.requiresBlink=true;
-  const rs=[island(m,2,25),island(m,10,25),island(m,10,16),island(m,18,16),island(m,26,16),island(m,26,7),island(m,34,7),island(m,42,7)];
-  setFixedEnds({x:rs[0].cx,y:rs[0].cy},{x:rs[7].cx,y:rs[7].cy});setTerrainTile58(m,rs[0].cx,rs[0].cy,TT.FLOOR);setTerrainTile58(m,rs[7].cx,rs[7].cy,TT.FLOOR);for(let i=1;i<7;i++)setTerrainTile58(m,rs[i].cx,rs[i].cy,TT.STAMINA_PAD);setTerrainTile58(m,rs[4].cx,rs[4].cy-2,TT.RUMOR);
-}
+function buildVoidSea(m){
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.VOID);state.rooms=[];state.layoutName='공허 유체의 바다 · 구섬연쇄';state.requiresBlink=true;
+    const pts=[[2,ROWS-8],[10,ROWS-8],[10,ROWS-18],[19,ROWS-18],[28,ROWS-18],[28,8],[38,8],[47,15],[COLS-8,7]],rs=pts.map(([x,y])=>island(m,x,y));
+    setFixedEnds({x:rs[0].cx,y:rs[0].cy},{x:rs[rs.length-1].cx,y:rs[rs.length-1].cy});setTerrainTile58(m,rs[0].cx,rs[0].cy,TT.FLOOR);setTerrainTile58(m,rs[rs.length-1].cx,rs[rs.length-1].cy,TT.FLOOR);for(let i=1;i<rs.length-1;i++)setTerrainTile58(m,rs[i].cx,rs[i].cy,TT.STAMINA_PAD);setTerrainTile58(m,rs[4].cx,rs[4].cy-2,TT.RUMOR);
+  }
 function buildGrandTemple(m){carveRect(m,3,3,COLS-6,ROWS-6,TT.FLOOR);state.rooms=[room(3,3,COLS-6,ROWS-6)];state.layoutName='거대 신전 · 잠수 보물고';const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);setFixedEnds({x:5,y:ROWS-5},{x:COLS-5,y:4});
   for(let x=5;x<COLS-5;x++)setTerrainTile58(m,x,cy,TT.WATER);for(let y=5;y<ROWS-5;y++)setTerrainTile58(m,cx,y,TT.WATER);for(const [x,y] of [[11,cy],[cx,8],[cx,24],[37,cy]])setTerrainTile58(m,x,y,TT.DRAWBRIDGE_DOWN);
   for(const [x,y] of [[9,7],[39,7],[9,25],[39,25]])setTerrainTile58(m,x,y,TT.GOLD);setTerrainTile58(m,cx,7,TT.ALTAR);setTerrainTile58(m,cx,25,TT.FOUNTAIN);
   const wallX=41;for(let y=19;y<ROWS-4;y++)setTerrainTile58(m,wallX,y,TT.WALL);setTerrainTile58(m,wallX,24,TT.SECRET_DOOR);carveRect(m,42,20,5,9,TT.FLOOR);setTerrainTile58(m,45,24,TT.VAULT);state.secretTreasure={x:45,y:24};
 }
-function buildMercuryLake(m){carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='수은 연못 · 용잠';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});const cy=Math.floor(ROWS/2);
-  carveRect(m,10,7,29,19,TT.MERCURY);for(let x=10;x<39;x++)setTerrainTile58(m,x,cy,TT.DRAWBRIDGE_DOWN);carveRect(m,20,12,10,9,TT.FLOOR);setTerrainTile58(m,24,cy,TT.PAVILION);setTerrainTile58(m,24,13,TT.CACHE);setTerrainTile58(m,13,23,TT.RUMOR);
-}
-function buildPeachGarden(m){carveRect(m,1,1,COLS-2,ROWS-2,TT.GRASS);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='만루보주의 정원 · 선도원';const cy=17;setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});
-  for(let x=2;x<COLS-2;x++)setTerrainTile58(m,x,cy,TT.WATER);for(const x of [9,24,39])setTerrainTile58(m,x,cy,TT.DRAWBRIDGE_DOWN);
-  for(const [x,y] of [[6,6],[13,9],[20,6],[31,8],[40,6],[8,25],[17,23],[32,24],[42,25]])setTerrainTile58(m,x,y,peachTerrain53());setTerrainTile58(m,24,ROWS-5,TT.COOKPOT);setTerrainTile58(m,24,5,TT.BRAZIER);setTerrainTile58(m,4,10,TT.RUMOR);
-}
+function buildMercuryLake(m){
+    carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='수은 연못 · 대용잠';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});const cy=Math.floor(ROWS/2),lx=Math.floor(COLS*.18),lw=Math.floor(COLS*.64),ly=Math.floor(ROWS*.18),lh=Math.floor(ROWS*.62);carveRect(m,lx,ly,lw,lh,TT.MERCURY);for(let x=lx;x<lx+lw;x++)setTerrainTile58(m,x,cy,TT.DRAWBRIDGE_DOWN);carveRect(m,Math.floor(COLS*.41),Math.floor(ROWS*.36),Math.floor(COLS*.18),Math.floor(ROWS*.27),TT.FLOOR);setTerrainTile58(m,Math.floor(COLS/2),cy,TT.PAVILION);setTerrainTile58(m,Math.floor(COLS/2),ly+3,TT.CACHE);setTerrainTile58(m,lx+4,ly+lh-3,TT.RUMOR);
+  }
+function buildPeachGarden(m){
+    carveRect(m,1,1,COLS-2,ROWS-2,TT.GRASS);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='만루보주의 정원 · 대선도원';const cy=Math.floor(ROWS/2);setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});for(let x=2;x<COLS-2;x++)setTerrainTile58(m,x,cy,TT.WATER);for(const ratio of [.18,.40,.62,.83])setTerrainTile58(m,Math.floor(COLS*ratio),cy,TT.DRAWBRIDGE_DOWN);for(let y=6;y<ROWS-5;y+=8)for(let x=6;x<COLS-5;x+=9)if(Math.abs(y-cy)>3)setTerrainTile58(m,x,y,peachTerrain53());setTerrainTile58(m,Math.floor(COLS/2),ROWS-6,TT.COOKPOT);setTerrainTile58(m,Math.floor(COLS/2),5,TT.BRAZIER);setTerrainTile58(m,4,9,TT.RUMOR);
+  }
 function buildRegionLayout(m){state.fixedStart=null;state.fixedExit=null;state.visionPenalty=0;state.specialFloor=false;state.rafts=[];state.routeTags=[];state.monsterDenseRooms=[];state.floorKeys=0;state.floorKeysRequired=0;state.cipher=null;state.requiresBlink=false;state.secretTreasure=null;
   const f=state.floor;if(f===2){state.specialFloor=true;buildGreatHall(m)}else if(f===4){state.specialFloor=true;buildChoiceCorridor(m)}else if(f===6){state.specialFloor=true;buildPavilionCluster(m)}else if(f===8){state.specialFloor=true;buildBambooMaze(m)}else if(f===11){state.specialFloor=true;buildPerfumeRiver(m)}else if(f===13){state.specialFloor=true;buildRoomMaze(m)}else if(f===16){state.specialFloor=true;buildFortress(m)}else if(f===18){state.specialFloor=true;buildIronWarehouse(m)}else if(f===21){state.specialFloor=true;buildVoidSea(m)}else if(f===22){state.specialFloor=true;buildGrandTemple(m)}else if(f===23){state.specialFloor=true;buildMercuryLake(m)}else if(f===24){state.specialFloor=true;buildPeachGarden(m)}else if(f<=5)buildInnNormal(m);else if(f<=10)buildGardenNormal(m);else if(f<=15)buildInnerNormal(m);else if(f<=20)buildStorageNormal(m);else buildHeartNormal(m)}
 function chooseEnds(){if(state.fixedStart&&state.fixedExit){state.player.x=state.fixedStart.x;state.player.y=state.fixedStart.y;state.stairs={...state.fixedExit};setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR);return}let best=[state.rooms[0],state.rooms[state.rooms.length-1]],bd=-1;for(const a of state.rooms)for(const b of state.rooms){const d=Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);if(d>bd){bd=d;best=[a,b]}}if(globalThis.__MANRU_RANDOM57__()<.5)best.reverse();state.player.x=best[0].cx;state.player.y=best[0].cy;state.stairs={x:best[1].cx,y:best[1].cy};setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR)}
@@ -3017,7 +3016,8 @@ function generateBossFloor(){const m=makeEmptyMap();state.rooms=[];state.items=[
  else if(f===20){addRoom(m,3,3,COLS-6,ROWS-6);for(let y=6;y<ROWS-5;y+=6)for(let x=7;x<COLS-6;x+=6)setTerrainTile58(m,x,y,TT.JAR);for(let x=7;x<COLS-7;x++){if(x!==cx)setTerrainTile58(m,x,9,TT.SCREEN);if(x%5!==0)setTerrainTile58(m,x,ROWS-10,TT.TABLE)}setTerrainTile58(m,cx,5,TT.ARMORY);setTerrainTile58(m,cx,ROWS-6,TT.COOKPOT);state.layoutName='장고 심부 · 거대 형틀';}
  else{addRoom(m,3,3,COLS-6,ROWS-6);for(let y=5;y<ROWS-5;y++)for(let x=5;x<COLS-5;x++){if((x<14||x>COLS-15)&&(y>8&&y<ROWS-8))setTerrainTile58(m,x,y,TT.VOID)}carveRect(m,cx-6,6,13,8,TT.MERCURY);for(let x=cx-6;x<=cx+6;x++)setTerrainTile58(m,x,13,TT.DRAWBRIDGE_DOWN);for(let y=ROWS-11;y<ROWS-5;y++)for(let x=cx-8;x<=cx+8;x++)if((x+y)%3===0)setTerrainTile58(m,x,y,TT.GOLD);state.layoutName='만루의 심장 · 천실핵';}
  state.map=m;state.player.x=cx;state.player.y=ROWS-4;state.stairs={x:cx,y:ROWS-5};setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR);const bp={x:cx,y:f===25?6:7};OccupancyService.addMonster(makeBoss(BOSSES[f],bp));state.visible=new Set();state.seen=new Set();VisibilityService.compute()}
-function spawnNamed(name,pos=null,opts={}){const d=opts.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(opts.legendDungeon47).find(x=>x.name===name):MONSTERS.find(x=>x.name===name);if(!d)return null;const mon=scaledMonster(d,opts.combatFloor??branchCombatFloor105()),point=PlacementService.findMonster(mon,{placementMode:pos?'exact':'floor',...opts,origin:opts.origin||pos||state.player});if(!point)return null;mon.x=point.x;mon.y=point.y;mon.spawnProvenance57=opts.provenance||'generation';OccupancyService.addMonster(mon);return mon}
+function spawnNamed(...a){return configure61(placeNamedMonster(...a))}
+function placeNamedMonster(name,pos=null,opts={}){const d=opts.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(opts.legendDungeon47).find(x=>x.name===name):MONSTERS.find(x=>x.name===name);if(!d)return null;const mon=scaledMonster(d,opts.combatFloor??branchCombatFloor105()),point=PlacementService.findMonster(mon,{placementMode:pos?'exact':'floor',...opts,origin:opts.origin||pos||state.player});if(!point)return null;mon.x=point.x;mon.y=point.y;mon.spawnProvenance57=opts.provenance||'generation';OccupancyService.addMonster(mon);return mon}
 
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
 function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan105();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype57(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem57(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen8();updateAll()}
@@ -3159,6 +3159,19 @@ function contextAction(){
 }
 ActionDispatcher.register('CONTEXT_ACTION',contextAction);
 function spawnLayoutExtras(){
+    if((SPECIAL60.has(state.floor)||BOSS60.has(state.floor))&&!state._spawnV60)return;
+    if(!SPECIAL60.has(state.floor)&&!BOSS60.has(state.floor))return spawnNormalLayoutExtras();
+    if(state.floor===8){spawnNear60('독꽃',Math.floor(COLS*.35),Math.floor(ROWS*.35));spawnNear60('검은 뱀',Math.floor(COLS*.62),Math.floor(ROWS*.55));spawnNear60('정원 바위괴물',Math.floor(COLS*.78),Math.floor(ROWS*.28))}
+    else if(state.floor===11){spawnNear60('비단 술래',Math.floor(COLS*.25),Math.floor(ROWS*.60));spawnNear60('향기요정',Math.floor(COLS*.55),Math.floor(ROWS*.35));spawnNear60('윈도',Math.floor(COLS*.80),Math.floor(ROWS*.65))}
+    else if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=3)continue;const d=choice(floorEnemyDefinitions()),m=scaledMonster(d);if(PlacementService.monsterCanStand(m,r.cx,r.cy)){Object.assign(m,{x:r.cx,y:r.cy});OccupancyService.addMonster(m)}}}
+    else if(state.floor===16){spawnNear60('성채 비행 감시자',9,7);spawnNear60('경비 인형 - 보병',42,11);spawnNear60('경비 인형 - 보병',58,31);spawnNear60('경비 인형 - 포병',COLS-8,15);spawnNear60('화염 가고일',COLS-10,6);spawnNear60('해자 잠복꾼',29,Math.floor(ROWS/2))}
+    else if(state.floor===18){spawnNear60('강시',12,10);spawnNear60('식귀',Math.floor(COLS*.48),9);spawnNear60('산성 슬라임',Math.floor(COLS*.70),ROWS-10);spawnNear60('굶주린 창고 쥐',COLS-8,Math.floor(ROWS/2))}
+    else if(state.floor===21){for(const [n,x,y] of [['공허 가오리',23,35],['공허 가오리',50,35],['차원 포식자',32,8],['신전 사제 망령',59,17],['천수 아수라',68,35]])spawnNear60(n,x,y,3)}
+    else if(state.floor===22){spawnNear60('만루의 수호상',Math.floor(COLS/2),Math.floor(ROWS/2)-8);spawnNear60('신전 사제 망령',9,9);spawnNear60('신전 사제 망령',COLS-10,ROWS-10)}
+    else if(state.floor===23){spawnNear60('여의 수룡',Math.floor(COLS/2),Math.floor(ROWS/2),6);spawnNear60('공허 가오리',Math.floor(COLS*.28),Math.floor(ROWS*.32));spawnNear60('천수 아수라',Math.floor(COLS*.72),Math.floor(ROWS*.65))}
+    else if(state.floor===24){spawnNear60('보주의 파수꾼',Math.floor(COLS*.70),Math.floor(ROWS*.25));spawnNear60('차원 포식자',Math.floor(COLS*.22),Math.floor(ROWS*.70));spawnNear60('공허 가오리',Math.floor(COLS*.55),Math.floor(ROWS*.72))}
+  }
+function spawnNormalLayoutExtras(){
   // F2 encounter packs are placed on finalized branch geometry by populateFloor2Branches66.
   if(state.floor===4){spawnNamed('목재 좀벌레',{x:16,y:16});spawnNamed('그림자 살모사',{x:35,y:16});spawnNamed('취한 경비견',{x:39,y:26})}
   if(state.floor===6){for(let i=0;i<5;i++)spawnNamed('피라냐')}
@@ -7043,30 +7056,6 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
   function setFloorSize(f){const [w,h]=sizeForFloor(f);COLS=w;ROWS=h;}
   // adaptive versions of layouts that need to fill the larger maps
-  buildPavilionCluster=function(m){
-    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.WATER);state.layoutName='수중 정자 모임 · 칠정환';state.rooms=[];
-    const specs=[[2,3,8,7],[Math.floor(COLS*.29),2,8,7],[COLS-10,4,8,7],[4,ROWS-10,9,8],[Math.floor(COLS*.44),Math.floor(ROWS*.42),9,8],[Math.floor(COLS*.70),ROWS-11,9,8],[COLS-11,Math.floor(ROWS*.47),9,8]];
-    const islands=specs.map(v=>room(...v));for(const r of islands){carveRect(m,r.x,r.y,r.w,r.h,TT.FLOOR);state.rooms.push(r);setTerrainTile58(m,r.cx,r.cy,TT.PAVILION)}
-    const edges=[[0,1],[1,2],[0,3],[1,4],[2,6],[3,4],[4,5],[4,6],[5,6],[2,4],[0,4]];for(const [a,b] of edges)bridgeBetween(m,islands[a],islands[b]);
-    setFixedEnds({x:islands[0].cx,y:islands[0].cy},{x:islands[5].cx,y:islands[5].cy});setTerrainTile58(m,islands[4].cx,islands[4].cy,TT.FOUNTAIN);setTerrainTile58(m,islands[1].cx,islands[1].cy,TT.CACHE);setTerrainTile58(m,islands[6].cx,islands[6].cy,TT.RUMOR);
-  };
-  buildPerfumeRiver=function(m){
-    carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='향수강(향수강) · 대하 유동 뗏목';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});state.rafts=[];
-    let cy=Math.floor(ROWS/2);for(let x=1;x<COLS-1;x++){if(x%7===0)cy=clamp(cy+choice([-3,-2,-1,0,1,2,3]),10,ROWS-11);for(let y=cy-4;y<=cy+4;y++)setTerrainTile58(m,x,y,TT.WATER)}
-    for(const ratio of [.18,.38,.60,.80]){const x=Math.floor(COLS*ratio),y=clamp(cy+choice([-3,-2,2,3]),6,ROWS-7);carveRect(m,x-3,y-3,7,7,TT.FLOOR);state.rooms.push(room(x-3,y-3,7,7));setTerrainTile58(m,x,y,globalThis.__MANRU_RANDOM57__()<.5?TT.CACHE:TT.RUMOR)}
-    for(const ratio of [.12,.30,.50,.70,.88]){const x=Math.floor(COLS*ratio);let top=ROWS,bottom=0;for(let y=1;y<ROWS-1;y++)if(m[y][x]===TT.WATER){top=Math.min(top,y);bottom=Math.max(bottom,y)}if(top<bottom){const y=Math.floor((top+bottom)/2);setTerrainTile58(m,x,y,TT.RAFT);state.rafts.push({x,y,min:top,max:bottom,dir:globalThis.__MANRU_RANDOM57__()<.5?1:-1})}}
-  };
-  buildVoidSea=function(m){
-    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.VOID);state.rooms=[];state.layoutName='공허 유체의 바다 · 구섬연쇄';state.requiresBlink=true;
-    const pts=[[2,ROWS-8],[10,ROWS-8],[10,ROWS-18],[19,ROWS-18],[28,ROWS-18],[28,8],[38,8],[47,15],[COLS-8,7]],rs=pts.map(([x,y])=>island(m,x,y));
-    setFixedEnds({x:rs[0].cx,y:rs[0].cy},{x:rs[rs.length-1].cx,y:rs[rs.length-1].cy});setTerrainTile58(m,rs[0].cx,rs[0].cy,TT.FLOOR);setTerrainTile58(m,rs[rs.length-1].cx,rs[rs.length-1].cy,TT.FLOOR);for(let i=1;i<rs.length-1;i++)setTerrainTile58(m,rs[i].cx,rs[i].cy,TT.STAMINA_PAD);setTerrainTile58(m,rs[4].cx,rs[4].cy-2,TT.RUMOR);
-  };
-  buildMercuryLake=function(m){
-    carveRect(m,1,1,COLS-2,ROWS-2,TT.FLOOR);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='수은 연못 · 대용잠';setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});const cy=Math.floor(ROWS/2),lx=Math.floor(COLS*.18),lw=Math.floor(COLS*.64),ly=Math.floor(ROWS*.18),lh=Math.floor(ROWS*.62);carveRect(m,lx,ly,lw,lh,TT.MERCURY);for(let x=lx;x<lx+lw;x++)setTerrainTile58(m,x,cy,TT.DRAWBRIDGE_DOWN);carveRect(m,Math.floor(COLS*.41),Math.floor(ROWS*.36),Math.floor(COLS*.18),Math.floor(ROWS*.27),TT.FLOOR);setTerrainTile58(m,Math.floor(COLS/2),cy,TT.PAVILION);setTerrainTile58(m,Math.floor(COLS/2),ly+3,TT.CACHE);setTerrainTile58(m,lx+4,ly+lh-3,TT.RUMOR);
-  };
-  buildPeachGarden=function(m){
-    carveRect(m,1,1,COLS-2,ROWS-2,TT.GRASS);state.rooms=[room(1,1,COLS-2,ROWS-2)];state.layoutName='만루보주의 정원 · 대선도원';const cy=Math.floor(ROWS/2);setFixedEnds({x:3,y:ROWS-4},{x:COLS-4,y:3});for(let x=2;x<COLS-2;x++)setTerrainTile58(m,x,cy,TT.WATER);for(const ratio of [.18,.40,.62,.83])setTerrainTile58(m,Math.floor(COLS*ratio),cy,TT.DRAWBRIDGE_DOWN);for(let y=6;y<ROWS-5;y+=8)for(let x=6;x<COLS-5;x+=9)if(Math.abs(y-cy)>3)setTerrainTile58(m,x,y,peachTerrain53());setTerrainTile58(m,Math.floor(COLS/2),ROWS-6,TT.COOKPOT);setTerrainTile58(m,Math.floor(COLS/2),5,TT.BRAZIER);setTerrainTile58(m,4,9,TT.RUMOR);
-  };
 
   function forceTile(x,y,t,allow=null){if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;if(allow&&!allow.includes(state.map[y][x]))return false;setTerrainTile58(state.map,x,y,t);return true}
   function vaultRect(r,pad=1){return{x:r.x+pad,y:r.y+pad,w:r.w-pad*2,h:r.h-pad*2,cx:r.cx,cy:r.cy}}
@@ -9311,50 +9300,8 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
     ['plus',layoutPlus59],['x',layoutX59],['grid',layoutGrid59],
     ['ring',layoutRing59],['spine',layoutSpine59],['cluster',layoutCluster59]
   ];
-  function variedBase59(m){
-    let choices=MODES59.filter(([n])=>n!==V59.lastMode);
-    const [name,fn]=choice(choices);V59.lastMode=name;state.layoutMode59=name;V59.modeLog.push(name);
-    if(V59.modeLog.length>20)V59.modeLog.shift();fn(m);
-  }
 
   /* ---------- regional identity layered onto the six topologies ---------- */
-  function scatterRoom59(tile,count,filter=()=>true){
-    for(let i=0;i<count;i++){
-      const r=choice(state.rooms),p=randomInside59(r);
-      if(state.map[p.y]?.[p.x]===TT.FLOOR&&filter(p,r))setTerrainTile58(state.map,p.x,p.y,tile);
-    }
-  }
-  buildInnNormal=function(m){
-    variedBase59(m);state.layoutName='청풍루 · '+state.layoutName;
-    scatterRoom59(TT.TABLE,rand(5,9));scatterRoom59(TT.SCREEN,rand(3,6));
-  };
-  buildGardenNormal=function(m){
-    variedBase59(m);state.layoutName='수묵원 · '+state.layoutName;
-    const candidates=[...state.rooms].filter(r=>r.w>=7&&r.h>=6);
-    for(let i=0;i<Math.min(rand(2,4),candidates.length);i++){
-      const r=candidates.splice(rand(0,candidates.length-1),1)[0],rx=r.x+2,ry=r.y+2,rw=Math.max(3,r.w-4),rh=Math.max(3,r.h-4);
-      for(let y=ry;y<ry+rh;y++)for(let x=rx;x<rx+rw;x++)if(state.map[y]?.[x]===TT.FLOOR)setTerrainTile58(state.map,x,y,TT.WATER);
-      if(globalThis.__MANRU_RANDOM57__()<.5){for(let x=rx;x<rx+rw;x++)setTerrainTile58(state.map,x,r.cy,TT.PAPER_BRIDGE)}else{for(let y=ry;y<ry+rh;y++)setTerrainTile58(state.map,r.cx,y,TT.PAPER_BRIDGE)}
-    }
-  };
-  buildInnerNormal=function(m){
-    variedBase59(m);state.layoutName='유혹의 내실 · '+state.layoutName;
-    scatterRoom59(TT.MIRROR,rand(7,11));scatterRoom59(TT.SNARE,rand(3,5));
-  };
-  buildStorageNormal=function(m){
-    variedBase59(m);state.layoutName='지하 장고 · '+state.layoutName;
-    scatterRoom59(TT.JAR,rand(10,16));scatterRoom59(TT.TABLE,rand(3,6));
-  };
-  buildHeartNormal=function(m){
-    variedBase59(m);state.layoutName='만루의 심장 · '+state.layoutName;
-    scatterRoom59(TT.GOLD,rand(6,10));
-    const rs=[...state.rooms].filter(r=>r.w>=8&&r.h>=7);
-    for(let i=0;i<Math.min(2,rs.length);i++){
-      const r=rs[i],t=globalThis.__MANRU_RANDOM57__()<.55?TT.VOID:TT.MERCURY;
-      for(let y=r.cy-1;y<=r.cy+1;y++)for(let x=r.cx-1;x<=r.cx+1;x++)if(state.map[y]?.[x]===TT.FLOOR)setTerrainTile58(state.map,x,y,t);
-      setTerrainTile58(state.map,r.cx,r.cy,t===TT.VOID?TT.PAPER_BRIDGE:TT.DRAWBRIDGE_DOWN);
-    }
-  };
 
   /* ---------- doors become real information gates ---------- */
   // Closed-door sight blocking is owned by the canonical SIGHT_BLOCKING_TILES57 set.
@@ -10441,20 +10388,6 @@ const V60={revision:3,hiddenSeq:0,lastFloor:0};
 
   /* ---------- custom population for rebuilt geometry ---------- */
   function spawnNear60(name,x,y,r=5){const d=MONSTERS.find(v=>v.name===name);if(!d)return null;const mon=scaledMonster(d),reach=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;for(let rad=0;rad<=r;rad++)for(let oy=-rad;oy<=rad;oy++)for(let ox=-rad;ox<=rad;ox++){const xx=x+ox,yy=y+oy;if(xx<=0||yy<=0||xx>=COLS-1||yy>=ROWS-1||(reach&&!reach.has(k(xx,yy))))continue;if(PlacementService.monsterCanStand(mon,xx,yy)){Object.assign(mon,{x:xx,y:yy});OccupancyService.addMonster(mon);return mon}}return null}
-  const spawnLayoutExtrasBase60=spawnLayoutExtras;
-  spawnLayoutExtras=function(){
-    if((SPECIAL60.has(state.floor)||BOSS60.has(state.floor))&&!state._spawnV60)return;
-    if(!SPECIAL60.has(state.floor)&&!BOSS60.has(state.floor))return spawnLayoutExtrasBase60();
-    if(state.floor===8){spawnNear60('독꽃',Math.floor(COLS*.35),Math.floor(ROWS*.35));spawnNear60('검은 뱀',Math.floor(COLS*.62),Math.floor(ROWS*.55));spawnNear60('정원 바위괴물',Math.floor(COLS*.78),Math.floor(ROWS*.28))}
-    else if(state.floor===11){spawnNear60('비단 술래',Math.floor(COLS*.25),Math.floor(ROWS*.60));spawnNear60('향기요정',Math.floor(COLS*.55),Math.floor(ROWS*.35));spawnNear60('윈도',Math.floor(COLS*.80),Math.floor(ROWS*.65))}
-    else if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=3)continue;const d=choice(floorEnemyDefinitions()),m=scaledMonster(d);if(PlacementService.monsterCanStand(m,r.cx,r.cy)){Object.assign(m,{x:r.cx,y:r.cy});OccupancyService.addMonster(m)}}}
-    else if(state.floor===16){spawnNear60('성채 비행 감시자',9,7);spawnNear60('경비 인형 - 보병',42,11);spawnNear60('경비 인형 - 보병',58,31);spawnNear60('경비 인형 - 포병',COLS-8,15);spawnNear60('화염 가고일',COLS-10,6);spawnNear60('해자 잠복꾼',29,Math.floor(ROWS/2))}
-    else if(state.floor===18){spawnNear60('강시',12,10);spawnNear60('식귀',Math.floor(COLS*.48),9);spawnNear60('산성 슬라임',Math.floor(COLS*.70),ROWS-10);spawnNear60('굶주린 창고 쥐',COLS-8,Math.floor(ROWS/2))}
-    else if(state.floor===21){for(const [n,x,y] of [['공허 가오리',23,35],['공허 가오리',50,35],['차원 포식자',32,8],['신전 사제 망령',59,17],['천수 아수라',68,35]])spawnNear60(n,x,y,3)}
-    else if(state.floor===22){spawnNear60('만루의 수호상',Math.floor(COLS/2),Math.floor(ROWS/2)-8);spawnNear60('신전 사제 망령',9,9);spawnNear60('신전 사제 망령',COLS-10,ROWS-10)}
-    else if(state.floor===23){spawnNear60('여의 수룡',Math.floor(COLS/2),Math.floor(ROWS/2),6);spawnNear60('공허 가오리',Math.floor(COLS*.28),Math.floor(ROWS*.32));spawnNear60('천수 아수라',Math.floor(COLS*.72),Math.floor(ROWS*.65))}
-    else if(state.floor===24){spawnNear60('보주의 파수꾼',Math.floor(COLS*.70),Math.floor(ROWS*.25));spawnNear60('차원 포식자',Math.floor(COLS*.22),Math.floor(ROWS*.70));spawnNear60('공허 가오리',Math.floor(COLS*.55),Math.floor(ROWS*.72))}
-  };
 
 function spawnAuthoredEncounters60(){
     if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}return true}
@@ -10807,7 +10740,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
   function configure61(m){if(!m||m.boss)return m;const def=MONSTERS.find(d=>d.name===m.name);if(def)for(const field of ['visStack57','guardPost57','infectionHitsRequired57','silkTrapCount57','gasStatus57','lavaTrail57','split','slow','actionLag57','exitPressureSpeed57','gumiBehaviorVersion57','corpseRelocateSpan57','corpseRelocateMinRadius57','floor24Chaser57','persistentChase57','revivalLives57','reviveWeakTurns57','reviveWeakAtkMul57','reviveWeakDefMul57','reviveWeakEvaDelta57','reviveFullAtkMul57','reviveFullDefMul57','reviveFullEvaDelta57','deathCountsAsLosBreak57','warningAura57','exitPressureSense57','losLostSummon57'])if(def[field]!=null&&m[field]==null)m[field]=structuredClone(def[field]);if(m.gasStatus57)delete m.gas;if(m.floor24Chaser57&&def&&(m.gumiScaleVersion57||0)<3){const fresh=scaledMonster(def),wasCorpse=m.revivePhase57==='corpse'||m.hp<=0,ratio=(m.maxHp||0)>0?clamp((m.hp||0)/m.maxHp,0,1):1;delete m.fixedStats57;delete m.slow;delete m.reviveWeakAtk57;delete m.reviveWeakEva57;delete m.reviveFullAtk57;delete m.reviveFullEva57;m.maxHp=fresh.maxHp;m.hp=wasCorpse?0:Math.max(1,Math.round(fresh.maxHp*ratio));m.atk=fresh.atk;m.def=fresh.def;m.eva=fresh.eva;m.baseAtk57=fresh.atk;m.baseDef57=fresh.def;m.baseEva57=fresh.eva;m.miniBoss=true;m.reach=def.reach||1;delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57);m.exitPressureSpeedBudget57=0;m.gumiBehaviorVersion57=def.gumiBehaviorVersion57||4;m.reviveWeakAtkMul57=def.reviveWeakAtkMul57;m.reviveWeakDefMul57=def.reviveWeakDefMul57;m.reviveWeakEvaDelta57=def.reviveWeakEvaDelta57;m.reviveFullAtkMul57=def.reviveFullAtkMul57;m.reviveFullDefMul57=def.reviveFullDefMul57;m.reviveFullEvaDelta57=def.reviveFullEvaDelta57;m.deathCountsAsLosBreak57=true;m.losLostSummon57=structuredClone(def.losLostSummon57);m.gumiScaleVersion57=3}if(m.floor24Chaser57&&def&&(m.gumiBehaviorVersion57||0)<4){delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57||{min:.5,max:1.5});m.exitPressureSpeedBudget57=0;m.corpseRelocateSpan57=def.corpseRelocateSpan57||21;m.corpseRelocateMinRadius57=def.corpseRelocateMinRadius57||6;m.gumiBehaviorVersion57=4}if(m.revivalLives57){if(!Number.isFinite(m.livesRemaining57))m.livesRemaining57=m.revivalLives57;if(!m.revivePhase57)m.revivePhase57='normal';if(!Number.isFinite(m.baseAtk57))m.baseAtk57=Number.isFinite(m.atk)?m.atk:(def?.atk??1);if(!Number.isFinite(m.baseDef57))m.baseDef57=Number.isFinite(m.def)?m.def:(def?.def??0);if(!Number.isFinite(m.baseEva57))m.baseEva57=Number.isFinite(m.eva)?m.eva:(def?.eva??0);if(!Number.isFinite(m.losLostSummonCooldown57))m.losLostSummonCooldown57=0;applyMonsterRevivalStats57(m)}const r=ROLE61[m.name];if(r){m.role61=r[0];m.roleDesc61=r[1]}if(m.role61==='shell'){if(!Number.isFinite(m.shell61))m.shell61=0;if(!Number.isFinite(m.shellCd61))m.shellCd61=0}if(m.name==='성채 비행 감시자')m.support=false;if(m.name==='해자 잠복꾼'){m.ambush=false;m.hidden=false}if(!m.summonOwner105&&!m.prisoner105?.released&&(m.guardPost57||m.rumorSpaceId1030||m.legendElite47||m.elite1023||m.miniVaultResident62)&&!m.guardHome57&&Number.isFinite(m.x)&&Number.isFinite(m.y)&&!state.generationInProgress57){let room=roomAt(m.x,m.y);const vault=state.miniVault62,rumor=(state.rumorSpaces1030||[]).find(q=>q.id===m.rumorSpaceId1030);if(m.miniVaultResident62&&vault&&m.x>=vault.x&&m.y>=vault.y&&m.x<vault.x+vault.w&&m.y<vault.y+vault.h)room=vault;if(rumor?.rect){const r=rumor.rect;room={x:r.x1,y:r.y1,w:r.x2-r.x1+1,h:r.y2-r.y1+1}}m.guardHome57={x:m.x,y:m.y,room:room?{x:room.x,y:room.y,w:room.w,h:room.h}:null}}return m}
   function normalizeAsuraAttack61(m){if(!m||m.name!=='천수 아수라'||!state)return m;const d=MONSTERS.find(v=>v.name==='천수 아수라');if(!d)return m;const within=(state.floor-1)%5,depth=state.floor>=6?Math.floor((state.floor-6)/5)+1:0,cap=Math.round(d.atk*(1+within*.025)*(depth?1.15+depth*.05:1));if(Number.isFinite(m.atk)&&m.atk>cap)m.atk=cap;return m}
-  const spawnNamed61=spawnNamed;spawnNamed=function(...a){return configure61(spawnNamed61(...a))};
 
   function farEnough61(x,y){return Math.abs(x-state.player.x)+Math.abs(y-state.player.y)>=8&&!state.visible.has(k(x,y))}
   function spawnAt61(name,anchor=null){const d=MONSTERS.find(v=>v.name===name);if(!d)return null;const m=scaledMonster(d),cands=[],reachable61=state.floor===24?globalThis.__MANRU_SPECIAL_FLOORS60__?.reach24?.({entranceOpen:true,allowBlink:false,ignoreOccupants:true})?.cells:null;
@@ -12862,14 +12794,12 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   
   
   
-  function line85(m,a,b,w=1,t=TT.FLOOR){let x=a.x,y=a.y;const paint=(xx,yy)=>{const o=Math.floor(w/2);for(let dy=-o;dy<=o;dy++)for(let dx=-o;dx<=o;dx++)if(in85(xx+dx,yy+dy))setTerrainTile58(m,xx+dx,yy+dy,t)};if(globalThis.__MANRU_RANDOM57__()<.5){while(x!==b.x){paint(x,y);x+=Math.sign(b.x-x)}while(y!==b.y){paint(x,y);y+=Math.sign(b.y-y)}}else{while(y!==b.y){paint(x,y);y+=Math.sign(b.y-y)}while(x!==b.x){paint(x,y);x+=Math.sign(b.x-x)}}paint(x,y)}
   
   
   
   
 
   
-  function mappass85(x,y){return in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH].includes(state.map[y][x])}
   
   
   
@@ -12929,7 +12859,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   
   
   let buildNormal85;
-  buildInnNormal=m=>buildNormal85(m,0);buildGardenNormal=m=>buildNormal85(m,1);buildInnerNormal=m=>buildNormal85(m,2);buildStorageNormal=m=>buildNormal85(m,3);buildHeartNormal=m=>buildNormal85(m,4);
 
 
   function normalizeDoors86(){
@@ -12942,38 +12871,14 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     state.doorCleanup86=removed;return removed;
   }
   function autoWindows86(){
-    if(!state||state.specialFloor)return 0;let placed=0;const nearDoor=(x,y)=>DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.DOOR),nearWin=(x,y)=>DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW);
-    for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
-      if(state.map[y][x]!==TT.WALL||nearDoor(x,y)||nearWin(x,y))continue;
-      const lr=!tileBlocks(state.map[y][x-1])&&!tileBlocks(state.map[y][x+1]),ud=!tileBlocks(state.map[y-1][x])&&!tileBlocks(state.map[y+1][x]);
-      if(lr===ud)continue;const h=hash2(x,y,8656+state.floor*31);if(h<.62)continue;
-      const openAxis=lr?'h':'v',nearFeature=(state.featureRooms||[]).some(f=>x>=f.x-1&&y>=f.y-1&&x<f.x+f.w+1&&y<f.y+f.h+1);if(!nearFeature&&h<.84)continue;
-      setTerrainTile58(state.map,x,y,TT.WINDOW);placed++;
-    }
-    let total=placed;for(let yy=1;yy<ROWS-1;yy++)for(let xx=1;xx<COLS-1;xx++)if(state.map[yy][xx]===TT.WINDOW)total++;
-    if(total===0){
-      const rooms=[...(state.rooms||[])].filter(r=>r.w>=7&&r.h>=7&&!(state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)&&!(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h)).sort((a,b)=>b.w*b.h-a.w*a.h);
-      const r=rooms[0];if(r){
-        if(r.w>=r.h){const y=r.cy;for(let x=r.x+2;x<r.x+r.w-2;x++)if(!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.stairs.x===x&&state.stairs.y===y)&&mappass85(x,y))setTerrainTile58(state.map,x,y,TT.WALL);if(in85(r.cx,y))setTerrainTile58(state.map,r.cx,y,TT.WINDOW)}
-        else{const x=r.cx;for(let y=r.y+2;y<r.y+r.h-2;y++)if(!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.stairs.x===x&&state.stairs.y===y)&&mappass85(x,y))setTerrainTile58(state.map,x,y,TT.WALL);if(in85(x,r.cy))setTerrainTile58(state.map,x,r.cy,TT.WINDOW)}
-        placed++;
-      }
-    }
+    if(!state||state.specialFloor)return 0;sanitizeWindows88();const z=regionIndex();if(z!==0&&z!==2){state.windows86=0;return 0}let placed=0;
+    for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){if(state.map[y][x]!==TT.WALL||!validWindow88(x,y))continue;if(DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW))continue;if(hash2(x,y,90000+state.floor*37)<.91)continue;setTerrainTile58(state.map,x,y,TT.WINDOW);placed++}
     state.windows86=placed;return placed;
   }
-  function harmonizeDecor86(){
-    if(!state||state.specialFloor)return;
-    const z=regionIndex(),paired=z===1?TT.FLOWERBED:z===3?TT.CRATE:z===4?TT.STONE_PILLAR:TT.BENCH;
-    const doors=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)if(state.map[y][x]===TT.DOOR)doors.push({x,y});
-    for(const d of doors){
-      const horiz=!tileBlocks(state.map[d.y][d.x-1])&&!tileBlocks(state.map[d.y][d.x+1]);const sides=horiz?[[0,-2],[0,2]]:[[-2,0],[2,0]];
-      if(hash2(d.x,d.y,8660+state.floor)<.46)continue;
-      for(const [dx,dy] of sides){const x=d.x+dx,y=d.y+dy;if(in85(x,y)&&mappass85(x,y)&&!OccupancyService.isOccupied(x,y))setTerrainTile58(state.map,x,y,paired);}
-    }
-    if(state.decor){state.decor=state.decor.filter(d=>{const close=DIRS8.some(([dx,dy])=>{const t=state.map[d.y+dy]?.[d.x+dx];return t===TT.WINDOW||t===TT.DOOR||(t>=44&&t<=56)});return close||hash2(d.x,d.y,8666+state.floor)>.72}).slice(0,10)}
-  }
+  function harmonizeDecor86(){if(!state||state.specialFloor)return;sanitizeWindows88();state.decor=[]}
 
-  function cleanupMap85(){
+  function cleanupMap85(){if(!state)return;cleanupMapGeometry();if(NORMAL85.has(state.floor)&&!state.specialFloor)scrubNormal88();sanitizeWindows88()}
+  function cleanupMapGeometry(){
     if(!state)return;if(state.specialFloor&&(state.floor23?.preserveAuthoredGeometry||state.floor24?.preserveAuthoredGeometry)){state.routeTags=[];return}
     // Remove the floor kanji route markers everywhere. They are not collectible nor mechanically useful.
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.map[y][x]===TT.FLOOR)setTerrainTile58(state.map,x,y,state.floor===24?TT.LIGHT_GRASS:TT.FLOOR);
@@ -12998,7 +12903,8 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
       }
     }
   }
-  function pruneDecor85(){
+  function pruneDecor85(){if(NORMAL85.has(state.floor)&&!state.specialFloor){state.decor=[];return}return pruneDecorNearStructures()}
+  function pruneDecorNearStructures(){
     if(!state?.decor)return;
     const nearStructure=d=>DIRS8.some(([dx,dy])=>{const x=d.x+dx,y=d.y+dy;if(x<0||y<0||x>=COLS||y>=ROWS)return false;const t=state.map[y][x];return tileBlocks(t)||[TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE].includes(t)});
     const feature=d=>(state.featureRooms||[]).some(r=>d.x>=r.x-1&&d.y>=r.y-1&&d.x<r.x+r.w+1&&d.y<r.y+r.h+1);
@@ -13095,27 +13001,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   
 
   function floorOnly88(x,y){return in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET].includes(state.map[y][x])&&!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.stairs.x===x&&state.stairs.y===y)}
-  function putPair88(r,a,b,t){for(const [x,y] of [a,b])if(x>r.x&&x<r.x+r.w-1&&y>r.y&&y<r.y+r.h-1&&floorOnly88(x,y))setTerrainTile58(state.map,x,y,t)}
-  function themeDecor88(z){
-    const rooms=[...(state.rooms||[])].filter(r=>r.w>=6&&r.h>=5).sort((a,b)=>b.w*b.h-a.w*a.h);if(!rooms.length)return;
-    const grand=rooms[0];state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:'주요 홀',x:grand.x,y:grand.y,w:grand.w,h:grand.h,kind85:'grand'});
-    // One intentionally open/grand room; decoration is symmetrical and theme-specific, never random scatter.
-    const gx1=grand.x+2,gx2=grand.x+grand.w-3,gy1=grand.y+2,gy2=grand.y+grand.h-3;
-    if(z===0){putPair88(grand,[gx1,gy1],[gx2,gy1],TT.LANTERN_POST);putPair88(grand,[gx1,gy2],[gx2,gy2],TT.LANTERN_POST);putPair88(grand,[grand.cx-2,gy1],[grand.cx+2,gy1],TT.BENCH);if(grand.w>=9)for(let y=grand.cy-1;y<=grand.cy+1;y++)if(floorOnly88(grand.cx,y))setTerrainTile58(state.map,grand.cx,y,TT.CARPET)}
-    else if(z===1){putPair88(grand,[gx1,gy1],[gx2,gy1],TT.FLOWERBED);putPair88(grand,[gx1,gy2],[gx2,gy2],TT.ROCK);putPair88(grand,[grand.cx-2,grand.cy],[grand.cx+2,grand.cy],TT.LOW_FENCE);if(floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.STONE_PATH)}
-    else if(z===2){putPair88(grand,[gx1,gy1],[gx2,gy1],TT.STATUE);putPair88(grand,[gx1,gy2],[gx2,gy2],TT.WALL_BANNER);putPair88(grand,[grand.cx-2,grand.cy],[grand.cx+2,grand.cy],TT.MIRROR);if(grand.w>=9)for(let x=grand.cx-1;x<=grand.cx+1;x++)if(floorOnly88(x,grand.cy))setTerrainTile58(state.map,x,grand.cy,TT.CARPET)}
-    else if(z===3){putPair88(grand,[gx1,gy1],[gx2,gy1],TT.RACK);putPair88(grand,[gx1,gy2],[gx2,gy2],TT.CRATE);putPair88(grand,[grand.cx-2,grand.cy],[grand.cx+2,grand.cy],TT.STONE_PILLAR)}
-    else{putPair88(grand,[gx1,gy1],[gx2,gy1],TT.STONE_PILLAR);putPair88(grand,[gx1,gy2],[gx2,gy2],TT.STATUE);if(grand.w>=9)for(let x=grand.cx-2;x<=grand.cx+2;x++)if(floorOnly88(x,grand.cy))setTerrainTile58(state.map,x,grand.cy,TT.CARPET)}
-    // Smaller rooms get one coherent paired motif along a wall, not mixed objects across the floor.
-    for(let i=1;i<rooms.length;i++){
-      const r=rooms[i],top=r.y+1,bottom=r.y+r.h-2,left=r.x+1,right=r.x+r.w-2,phase=i%3;
-      if(z===0){const t=phase===0?TT.BENCH:phase===1?TT.CRATE:TT.LANTERN_POST;putPair88(r,[left+1,top+1],[right-1,top+1],t)}
-      else if(z===1){const t=phase===0?TT.FLOWERBED:phase===1?TT.ROCK:TT.LOW_FENCE;putPair88(r,[left+1,top+1],[right-1,top+1],t)}
-      else if(z===2){const t=phase===0?TT.STATUE:phase===1?TT.WALL_BANNER:TT.MIRROR;putPair88(r,[left+1,top+1],[right-1,top+1],t)}
-      else if(z===3){const t=phase===0?TT.CRATE:phase===1?TT.RACK:TT.STONE_PILLAR;putPair88(r,[left+1,bottom-1],[right-1,bottom-1],t)}
-      else{const t=phase===0?TT.STONE_PILLAR:TT.STATUE;putPair88(r,[left+1,top+1],[right-1,top+1],t)}
-    }
-  }
+  function themeDecor88(z){smallTheme90(z)}
   
 
   function open88(x,y){return in85(x,y)&&!tileBlocks(state.map[y][x])}
@@ -13129,16 +13015,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     return true;
   }
   function sanitizeWindows88(){if(state?.specialFloor&&(state.floor23?.preserveAuthoredGeometry||state.floor24?.preserveAuthoredGeometry))return 0;let removed=0;const z=regionIndex();for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.WINDOW){const old=state.map[y][x];setTerrainTile58(state.map,x,y,TT.WALL);if(z!==0&&z!==2||!validWindow88(x,y)){removed++;continue}setTerrainTile58(state.map,x,y,old)}state.windowRemoved88=removed;return removed}
-  autoWindows86=function(){
-    if(!state||state.specialFloor)return 0;sanitizeWindows88();const z=regionIndex();if(z!==0&&z!==2){state.windows86=0;return 0}
-    let placed=0;for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
-      if(state.map[y][x]!==TT.WALL||!validWindow88(x,y))continue;
-      if(DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW))continue;
-      if(hash2(x,y,88000+state.floor*31)<.70)continue;
-      setTerrainTile58(state.map,x,y,TT.WINDOW);placed++;
-    }
-    state.windows86=placed;return placed;
-  };
 
   function scrubNormal88(){
     if(!state||state.specialFloor||!NORMAL85.has(state.floor))return;
@@ -13155,11 +13031,8 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     }
     state.decor=[];
   }
-  const cleanupBase88=cleanupMap85;cleanupMap85=function(){if(!state)return;cleanupBase88();if(NORMAL85.has(state.floor)&&!state.specialFloor)scrubNormal88();sanitizeWindows88()};
 
   // No random sprite confetti on normal floors. Theme identity is expressed by deliberate map tiles above.
-  const pruneBase88=pruneDecor85;pruneDecor85=function(){if(NORMAL85.has(state.floor)&&!state.specialFloor){state.decor=[];return}return pruneBase88()};
-  harmonizeDecor86=function(){if(!state||state.specialFloor)return;sanitizeWindows88();state.decor=[]};
 
   function finishSpecialArchitecture88(){
     if(!state)return;
@@ -13247,38 +13120,8 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     else pts=[[r.x+2,r.cy],[r.x+r.w-3,r.cy]];
     let n=0;for(const [x,y] of pts)if(floorOnly88(x,y)){setTerrainTile58(state.map,x,y,t);n++}return n;
   }
-  themeDecor88=function(z){
-    const grand=state.grandRoom89||[...(state.rooms||[])].sort((a,b)=>b.w*b.h-a.w*a.h)[0];if(!grand)return;
-    state.featureRooms=state.featureRooms||[];let count=0;
-    // Common entrance/ceremonial room accents: at most 4-6 objects total.
-    if(z===0){count+=sparsePair89(grand,TT.LANTERN_POST,'top');if(grand.w>=10)count+=sparsePair89(grand,TT.BENCH,'bottom');if(grand.w>=11&&floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.CARPET)}
-    else if(z===1){count+=sparsePair89(grand,TT.FLOWERBED,'top');if(floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.ROCK)}
-    else if(z===2){count+=sparsePair89(grand,TT.WALL_BANNER,'top');if(floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.STATUE);if(grand.w>=11&&floorOnly88(grand.cx,grand.cy+1))setTerrainTile58(state.map,grand.cx,grand.cy+1,TT.CARPET)}
-    else if(z===3){count+=sparsePair89(grand,TT.RACK,'bottom');if(floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.CRATE)}
-    else{count+=sparsePair89(grand,TT.STONE_PILLAR,'top');if(floorOnly88(grand.cx,grand.cy))setTerrainTile58(state.map,grand.cx,grand.cy,TT.STATUE)}
-    // At most one secondary focal pair, and only 45% of floors. Recent prop types stay rare and purposeful.
-    const focal=state.focalRooms89?.[0];
-    if(focal&&hash2(state.floor,state.__arch89||0,89091)>.75){
-      if(z===0)sparsePair89(focal,TT.CRATE,'bottom');
-      else if(z===1)sparsePair89(focal,TT.LOW_FENCE,'side');
-      else if(z===2)sparsePair89(focal,TT.MIRROR,'side');
-      else if(z===3)sparsePair89(focal,TT.CRATE,'bottom');
-      else sparsePair89(focal,TT.STONE_PILLAR,'side');
-    }
-    state.decor=[];
-  };
 
   // Windows remain themes 1 and 3 only, and are substantially rarer.
-  autoWindows86=function(){
-    if(!state||state.specialFloor)return 0;sanitizeWindows88();const z=regionIndex();if(z!==0&&z!==2){state.windows86=0;return 0}
-    let placed=0;for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
-      if(state.map[y][x]!==TT.WALL||!validWindow88(x,y))continue;
-      if(DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW))continue;
-      if(hash2(x,y,89000+state.floor*31)<.86)continue;
-      setTerrainTile58(state.map,x,y,TT.WINDOW);placed++;
-    }
-    state.windows86=placed;return placed;
-  };
 
 
   
@@ -13325,30 +13168,14 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     if(type==='supply')return TT.CACHE;if(type==='armory')return TT.ARMORY;if(type==='shrine')return z===4?TT.ALTAR:TT.BRAZIER;if(type==='kitchen')return TT.COOKPOT;if(type==='archive')return z===2?TT.MIRROR:TT.RUMOR;if(type==='medic')return TT.FOUNTAIN;return TT.CACHE;
   }
   function purposeRooms90(z){
-    const candidates=[...(state.purposeRooms90||[]),...(state.mainRooms90||[]).filter(r=>r!==state.grandRoom89&&r.kind90!=='grand')];
-    const uniq=[];const seen=new Set();for(const r of candidates){const k=`${r.x},${r.y},${r.w},${r.h}`;if(!seen.has(k)){seen.add(k);uniq.push(r)}}
-    const wanted=Math.min(6,Math.max(3,Math.ceil(uniq.length*.78)));state.purposeRooms90=[];
-    for(let i=0;i<wanted&&i<uniq.length;i++){
-      const r=uniq[(i*2+state.floor)%uniq.length],type=PURPOSE90[(i+state.floor+z)%PURPOSE90.length],cells=roomFreeCells90(r);if(!cells.length)continue;
-      const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]);
-      const t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
-      if(type==='trapcache'){const near=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(near)setTerrainTile58(state.map,near.x,near.y,z===2?TT.SNARE:TT.TRAP);addItem90(r,true)}
-      else if(type==='supply'||type==='armory'||type==='archive')addItem90(r,i%2===0);
-      else if(type==='kitchen'){if(globalThis.__MANRU_RANDOM57__()<.7)addItem90(r,false)}
-      state.purposeRooms90.push({...r,purpose90:type});feature89(({supply:'보급실',armory:'무기고',shrine:'제단실',kitchen:'주방',archive:'기록실',medic:'회복실',trapcache:'위험 보관실'})[type],r,'purpose');
+    const leaves=[...(state.branchLeaves92||[])],fallback=[...(state.branchRooms92||[])].sort((a,b)=>(b.branchDepth92||0)-(a.branchDepth92||0));const src=leaves.length?leaves:fallback;state.purposeRooms90=[];
+    const used=new Set(),wanted=Math.min(6,src.length);for(let i=0;i<wanted;i++){const r=src[i],rk=`${r.x},${r.y}`;if(used.has(rk))continue;used.add(rk);const type=['supply','armory','medic','archive','shrine','trapcache'][(state.floor+z+i*2)%6],cells=roomFreeCells90(r);if(!cells.length)continue;const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]),t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
+      if(['supply','armory','archive','trapcache'].includes(type))addItem90(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
+      const rr={...r,purpose90:type};state.purposeRooms90.push(rr);feature89(({supply:'보급실',armory:'무기고',medic:'회복실',archive:'기록실',shrine:'제단실',trapcache:'위험 보관실'})[type],r,'purpose');
     }
     state.purposeCount90=state.purposeRooms90.length;
   }
-  function fillUnused90(z){
-    const low=[[TT.RUMOR,TT.BRAZIER],[TT.RUMOR,TT.FOUNTAIN],[TT.RUMOR,TT.MIRROR],[TT.JAR,TT.COOKPOT],[TT.GOLD,TT.ALTAR]][z]||[TT.RUMOR];
-    const occupiedPurpose=new Set((state.purposeRooms90||[]).map(r=>`${r.x},${r.y},${r.w},${r.h}`));let added=0;
-    for(const r of state.mainRooms90||[]){
-      if(r===state.grandRoom89||r.grand90)continue;const rk=`${r.x},${r.y},${r.w},${r.h}`;if(occupiedPurpose.has(rk))continue;
-      let has=false;for(let y=r.y+1;y<r.y+r.h-1&&!has;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(FUNCTION90.has(state.map[y]?.[x])){has=true;break}
-      if(has)continue;const cells=roomFreeCells90(r);if(!cells.length)continue;const p=cells.reduce((b,q)=>Math.abs(q.x-r.cx)+Math.abs(q.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?q:b,cells[0]);setTerrainTile58(state.map,p.x,p.y,low[(added+state.floor)%low.length]);feature89('소규모 기능실',r,'minor-purpose');added++;
-    }
-    state.minorPurpose90=added;return added;
-  }
+  function fillUnused90(){state.minorPurpose90=0;return 0}
   function guardPurposes90(){
     const mons=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);let mi=0,guards=0;
     for(const r of state.purposeRooms90||[]){if(mi>=mons.length)break;if(['medic','kitchen'].includes(r.purpose90))continue;const mon=mons[mi++];let placed=false;for(let rad=0;rad<=3&&!placed;rad++)for(let y=r.cy-rad;y<=r.cy+rad&&!placed;y++)for(let x=r.cx-rad;x<=r.cx+rad;x++){if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;guards++;placed=true;break}}}
@@ -13366,12 +13193,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   }
 
   
-  themeDecor88=function(z){smallTheme90(z)};
-  autoWindows86=function(){
-    if(!state||state.specialFloor)return 0;sanitizeWindows88();const z=regionIndex();if(z!==0&&z!==2){state.windows86=0;return 0}let placed=0;
-    for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){if(state.map[y][x]!==TT.WALL||!validWindow88(x,y))continue;if(DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW))continue;if(hash2(x,y,90000+state.floor*37)<.91)continue;setTerrainTile58(state.map,x,y,TT.WINDOW);placed++}
-    state.windows86=placed;return placed;
-  };
 
   function finishArchitecture90(){
     if(!state)return;if(state.specialFloor)return finishSpecialArchitecture88();if(!NORMAL85.has(state.floor))return;
@@ -13632,15 +13453,6 @@ function buildTutorialEntry60(m,rooms){
   }
   buildNormal85=function(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;};
 
-  purposeRooms90=function(z){
-    const leaves=[...(state.branchLeaves92||[])],fallback=[...(state.branchRooms92||[])].sort((a,b)=>(b.branchDepth92||0)-(a.branchDepth92||0));const src=leaves.length?leaves:fallback;state.purposeRooms90=[];
-    const used=new Set(),wanted=Math.min(6,src.length);for(let i=0;i<wanted;i++){const r=src[i],rk=`${r.x},${r.y}`;if(used.has(rk))continue;used.add(rk);const type=['supply','armory','medic','archive','shrine','trapcache'][(state.floor+z+i*2)%6],cells=roomFreeCells90(r);if(!cells.length)continue;const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]),t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
-      if(['supply','armory','archive','trapcache'].includes(type))addItem90(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
-      const rr={...r,purpose90:type};state.purposeRooms90.push(rr);feature89(({supply:'보급실',armory:'무기고',medic:'회복실',archive:'기록실',shrine:'제단실',trapcache:'위험 보관실'})[type],r,'purpose');
-    }
-    state.purposeCount90=state.purposeRooms90.length;
-  };
-  fillUnused90=function(){state.minorPurpose90=0;return 0};
 
 
   /* v9.4 architecture modules: local side-bypass halls, vestibules, ring corridors, semi-open halls, outer narrow chains. */
@@ -13678,35 +13490,7 @@ function buildTutorialEntry60(m,rooms){
   V85.version='v9.5-expanded-complex-architecture';
   const SPECIAL_KEY94=new Set([2,4,13,22,24]);
   
-  function gateDisconnect94(x,y){const old=state.map[y][x],kk=key85(x,y);setTerrainTile58(state.map,x,y,TT.LOCKED_GATE);const r=ReachabilityService.keyTrialCells({key85,in85});const cut=!r.seen.has(key85(state.stairs.x,state.stairs.y));setTerrainTile58(state.map,x,y,old);return cut}
-  function installKeyTrial94(){
-    if(!state.specialFloor||state.floorKeysRequired>0||!SPECIAL_KEY94.has(state.floor))return false;const chance=state.floor>=20?.38:.30;if(globalThis.__MANRU_RANDOM57__()>chance)return false;
-    const path=ReachabilityService.architectureMainPath({key85,in85});let gate=null;
-    if(path&&path.length>=18){
-      const candidates=path.slice(Math.floor(path.length*.30),Math.floor(path.length*.78)).filter(p=>{const t=state.map[p.y][p.x];return [TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET,TT.DOOR,TT.OPEN_DOOR].includes(t)&&entityDistance57(p,state.player)>6&&entityDistance57(p,state.stairs)>5&&!OccupancyService.isOccupied(p.x,p.y)});
-      for(const p of candidates.sort(()=>globalThis.__MANRU_RANDOM57__()-.5)){if(gateDisconnect94(p.x,p.y)){gate=p;break}}
-    }
-    // Fallback: build a compact locked stair vestibule. The box shifts inward when the stair sits near a map edge.
-    let seal=null;if(!gate){const sx=state.stairs.x,sy=state.stairs.y,w=9,h=7,x0=clamp(sx-4,2,COLS-w-1),y0=clamp(sy-3,2,ROWS-h-1),x1=x0+w-1,y1=y0+h-1;
-      if(state.player.x>=x0&&state.player.x<=x1&&state.player.y>=y0&&state.player.y<=y1)return false;
-      for(let y=y0+1;y<y1;y++)for(let x=x0+1;x<x1;x++)if(state.map[y][x]!==TT.STAIR)setTerrainTile58(state.map,x,y,TT.FLOOR);
-      for(let x=x0;x<=x1;x++){setTerrainTile58(state.map,x,y0,TT.WALL);setTerrainTile58(state.map,x,y1,TT.WALL)}for(let y=y0+1;y<y1;y++){setTerrainTile58(state.map,x0,y,TT.WALL);setTerrainTile58(state.map,x1,y,TT.WALL)}
-      const sides=[
-        {x:x0,y:clamp(sy,y0+1,y1-1),out:{x:x0-1,y:clamp(sy,y0+1,y1-1)},score:Math.abs(state.player.x-(x0-1))+Math.abs(state.player.y-sy)},
-        {x:x1,y:clamp(sy,y0+1,y1-1),out:{x:x1+1,y:clamp(sy,y0+1,y1-1)},score:Math.abs(state.player.x-(x1+1))+Math.abs(state.player.y-sy)},
-        {x:clamp(sx,x0+1,x1-1),y:y0,out:{x:clamp(sx,x0+1,x1-1),y:y0-1},score:Math.abs(state.player.x-sx)+Math.abs(state.player.y-(y0-1))},
-        {x:clamp(sx,x0+1,x1-1),y:y1,out:{x:clamp(sx,x0+1,x1-1),y:y1+1},score:Math.abs(state.player.x-sx)+Math.abs(state.player.y-(y1+1))}
-      ].filter(d=>in85(d.out.x,d.out.y)).sort((a,b)=>a.score-b.score);
-      let chosen=null,target=null;
-      for(const d of sides){for(let r=0;r<=12&&!target;r++)for(let yy=d.out.y-r;yy<=d.out.y+r&&!target;yy++)for(let xx=d.out.x-r;xx<=d.out.x+r;xx++){if(!in85(xx,yy)||xx>=x0&&xx<=x1&&yy>=y0&&yy<=y1||tileBlocks(state.map[yy][xx]))continue;target={x:xx,y:yy};break}if(target){chosen=d;break}}
-      if(!chosen||!target)return false;line85(state.map,target,chosen.out,1,TT.FLOOR);setTerrainTile58(state.map,chosen.x,chosen.y,TT.LOCKED_GATE);gate={x:chosen.x,y:chosen.y};seal={x0,y0,x1,y1};
-      if(in85(sx-2,sy)&&state.map[sy][sx-2]===TT.FLOOR)setTerrainTile58(state.map,sx-2,sy,TT.STONE_PILLAR);if(in85(sx+2,sy)&&state.map[sy][sx+2]===TT.FLOOR)setTerrainTile58(state.map,sx+2,sy,TT.STONE_PILLAR);
-    }else setTerrainTile58(state.map,gate.x,gate.y,TT.LOCKED_GATE);
-    state.floorKeys=0;state.floorKeysRequired=state.floor>=20?3:2;const reach=ReachabilityService.keyTrialCells({key85,in85}).q.filter(p=>p.d>7&&!OccupancyService.isOccupied(p.x,p.y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET].includes(state.map[p.y][p.x]));reach.sort((a,b)=>b.d-a.d);const picks=[];
-    for(const p of reach){if(picks.length>=state.floorKeysRequired)break;if(picks.every(q=>Math.abs(p.x-q.x)+Math.abs(p.y-q.y)>10)){picks.push(p);setTerrainTile58(state.map,p.x,p.y,TT.KEY_TILE)}}
-    if(picks.length<state.floorKeysRequired){setTerrainTile58(state.map,gate.x,gate.y,TT.OPEN_DOOR);for(const p of picks)setTerrainTile58(state.map,p.x,p.y,TT.FLOOR);state.floorKeysRequired=0;return false}
-    state.keyTrial94={gate:{x:gate.x,y:gate.y},keys:picks.map(p=>({x:p.x,y:p.y})),seal};state.layoutName+=' / 열쇠 봉쇄 길목';return true
-  }
+  function installKeyTrial94(){return false}
   function zoneCells94(r){const out=[];if(!r)return out;for(let y=Math.max(1,r.y+1);y<Math.min(ROWS-1,r.y+r.h-1);y++)for(let x=Math.max(1,r.x+1);x<Math.min(COLS-1,r.x+r.w-1);x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&(x!==state.player.x||y!==state.player.y))out.push({x,y});return out}
   function biasItems94(){
     if(!state?.items?.length)return;const important=[...(state.itemBiasZones94||[]),...(state.purposeRooms90||[]),...(state.featureRooms||[]).filter(r=>/보급|병기|저장|비밀|사당|성소|정자|굴|제단|외곽/.test(r.name||''))];if(!important.length)return;const occupiedItems=new Set(state.items.map(i=>key85(i.x,i.y)));let moved=0;
@@ -13851,7 +13635,6 @@ function buildTutorialEntry60(m,rooms){
     state.floorKeys=0;state.floorKeysRequired=0;if(state.floor===18)state.layoutName=(state.layoutName||'').replace(' / 삼중 열쇠','');
   }
   // Disable the old probabilistic stair-box trial. v9.6 installs deterministic door locks after generation.
-  installKeyTrial94=function(){return false};
 
   function corridorDoorCandidate96(p){
     if(!p||!in85(p.x,p.y))return false;const t=state.map[p.y][p.x];if(![TT.DOOR,TT.OPEN_DOOR,TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET].includes(t)||OccupancyService.isOccupied(p.x,p.y))return false;
@@ -18203,7 +17986,46 @@ function build5_1020(){
   line1020(cx,ROWS-5,cx,bands[0]+2,TT.FLOOR,2,true);
   state.layoutName=(state.layoutName||'청풍루 보스층')+' · 대칭 객실미궁 / 교대문 회랑 / 후면 보스실';
 }
-function build15_1020(){bossMazeCommon1020(15)}
+function build15_1020(){
+  bossMazeCommon1020(15);
+  const cx=Math.floor(COLS/2),F=TT.CARPET,keepTop=17;
+  // bossMazeCommon leaves metadata for rooms that we are about to replace. Keep only real top/boss rooms; stale lower rooms must not survive as fake unreachable chambers.
+  state.rooms=(state.rooms||[]).filter(r=>r&&Number.isFinite(r.cy)&&r.cy<keepTop&&safeFloorTile1020(state.map[r.cy]?.[r.cx]));
+  for(let y=keepTop;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)setTerrainTile58(state.map,x,y,TT.WALL);
+  movePlayer1020(cx,ROWS-5);
+  const rooms=[];
+  const mk=(cx0,cy0,w,h,name)=>{const r=box1020(Math.round(cx0-w/2),Math.round(cy0-h/2),w,h,F,TT.WALL,true);rooms.push(r);tag1020(r.cx,r.cy,name);return r};
+  const connect=(a,b,phase=0)=>{
+    const horiz=Math.abs(a.cx-b.cx)>=Math.abs(a.cy-b.cy),sgnX=Math.sign(b.cx-a.cx)||1,sgnY=Math.sign(b.cy-a.cy)||-1;
+    let ax=horiz?(sgnX>0?a.x+a.w-1:a.x):a.cx, ay=horiz?a.cy:(sgnY>0?a.y+a.h-1:a.y);
+    let bx=horiz?(sgnX>0?b.x:b.x+b.w-1):b.cx, by=horiz?b.cy:(sgnY>0?b.y:b.y+b.h-1);
+    door1020(ax,ay);door1020(bx,by);
+    if(horiz){const bend=Math.round((ax+bx)/2)+(phase%2?2:-2);line1020(ax,ay,bend,ay,F,2,true);line1020(bend,ay,bend,by,F,2,true);line1020(bend,by,bx,by,F,2,true)}
+    else{const bend=Math.round((ay+by)/2)+(phase%2?2:-2);line1020(ax,ay,ax,bend,F,2,true);line1020(ax,bend,bx,bend,F,2,true);line1020(bx,bend,bx,by,F,2,true)}
+  };
+  const start=mk(cx,ROWS-6,11,5,'침모전 진입전실');
+  // Staggered sizes/y positions make the plan feel architectural rather than a room-grid.
+  const A=[mk(cx-24,43,9,6,'서 비단응접실'),mk(cx-7,40,11,7,'서 거울실'),mk(cx+8,40,11,7,'동 거울실'),mk(cx+25,43,9,6,'동 비단응접실')];
+  const B=[mk(cx-30,33,8,6,'서 향실'),mk(cx-15,31,10,6,'서 자수실'),mk(cx,34,9,7,'중앙 경대실'),mk(cx+15,31,10,6,'동 자수실'),mk(cx+30,33,8,6,'동 향실')];
+  const C=[mk(cx-24,23,10,6,'서 환영실'),mk(cx-7,25,9,6,'서 비밀내실'),mk(cx+8,25,9,6,'동 비밀내실'),mk(cx+25,23,10,6,'동 환영실')];
+  connect(start,A[1],0);connect(start,A[2],1);connect(start,A[0],0);connect(start,A[3],1);
+  connect(A[0],A[1],0);connect(A[1],A[2],1);connect(A[2],A[3],0);
+  connect(A[0],B[0],0);connect(A[0],B[1],1);connect(A[1],B[1],0);connect(A[1],B[2],1);connect(A[2],B[2],0);connect(A[2],B[3],1);connect(A[3],B[3],0);connect(A[3],B[4],1);
+  connect(B[0],B[1],1);connect(B[1],B[2],0);connect(B[2],B[3],1);connect(B[3],B[4],0);
+  connect(B[0],C[0],0);connect(B[1],C[0],1);connect(B[1],C[1],0);connect(B[2],C[1],1);connect(B[2],C[2],0);connect(B[3],C[2],1);connect(B[3],C[3],0);connect(B[4],C[3],1);
+  connect(C[0],C[1],0);connect(C[1],C[2],1);connect(C[2],C[3],0);
+  // Two boss-threshold approaches; either choice rejoins immediately at the threshold instead of forcing a floor-wide return.
+  const L={x:cx-8,y:15,w:5,h:3,cx:cx-6,cy:16},R={x:cx+4,y:15,w:5,h:3,cx:cx+6,cy:16};rect1020(L.x,L.y,L.w,L.h,F,true);rect1020(R.x,R.y,R.w,R.h,F,true);
+  connect(C[0],L,0);connect(C[1],L,1);connect(C[2],R,0);connect(C[3],R,1);rect1020(cx-7,15,15,3,F,true);line1020(cx,17,cx,15,F,2,true);
+  // Paired short reward salons remain loops, never dead inaccessible rectangles.
+  const RL=mk(8,36,7,5,'서 유희실'),RR=mk(COLS-9,36,7,5,'동 유희실');connect(RL,A[0],0);connect(RL,B[0],1);connect(RR,A[3],0);connect(RR,B[4],1);
+  const all=[...rooms];all.forEach((r,i)=>{;if(i%2===0){;;}});
+  // Last-resort geometric check: connect any accidentally severed chamber to its nearest reachable corridor, never leave decorative unreachable rooms.
+  let reach=reachableSet1020({unlock:true,openBoss:true});for(const r of all){if(reach.has(K1020(r.cx,r.cy)))continue;let best=null,bd=1e9;for(const kk of reach){const[x,y]=kk.split(',').map(Number),d=Math.abs(x-r.cx)+Math.abs(y-r.cy);if(d<bd){bd=d;best={x,y}}}if(best){line1020(r.cx,r.cy,best.x,r.cy,F,2,true);line1020(best.x,r.cy,best.x,best.y,F,2,true);reach=reachableSet1020({unlock:true,openBoss:true})}}
+  // The original boss theatre leaves two ornate side galleries at y≈10. They are real rooms, not scenery: give each a short mirrored door/corridor into the boss-side hall so no decorative chamber is unreachable.
+  const galleryY=10;door1020(20,galleryY);line1020(20,galleryY,26,galleryY,F,1,true);door1020(54,galleryY);line1020(48,galleryY,54,galleryY,F,1,true);
+  state.layoutName=(state.layoutName||'유혹의 내실')+' · 교차 비단살롱 / 짧은 재합류 / 쌍환 동선 / 후면 침모실';
+}
 function build20_1020(){
   const cx=Math.floor(COLS/2),floor=TT.STONE_PATH,wall=TT.WALL,bands=[Math.round(ROWS*.76),Math.round(ROWS*.55),Math.round(ROWS*.34)];
   // F20 owns one coherent fortress map. Keep the old bilateral composition and lava identity, but use the
@@ -18354,22 +18176,38 @@ function build20_1020(){
 
 /* F06: a substantial stilt manor around the existing descent, with one front gate, 2-wide hall, side rooms and windows. */
 function build6_1020(){
-  const s=state.stairs,cx=clamp1020(s.x,14,COLS-15),cy=clamp1020(s.y,10,ROWS-11),w=25,h=17,x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);
-  // choose front side facing the player; on F6 that normally means the nearer existing dock side.
+  const s={...state.stairs},w=31,h=21,cx=clamp1020(s.x,17,COLS-18),cy=clamp1020(s.y,12,ROWS-13),x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);
   const horizontal=Math.abs(state.player.x-cx)>Math.abs(state.player.y-cy),fromLeft=state.player.x<cx,fromTop=state.player.y<cy;
   rect1020(x,y,w,h,TT.WALL,true);rect1020(x+1,y+1,w-2,h-2,TT.WOOD_FLOOR,true);
-  // central 2-wide corridor
-  if(horizontal){const gy=cy-1;rect1020(x+1,gy,w-2,2,TT.WOOD_FLOOR,true);const gx=fromLeft?x:x+w-1;door1020(gx,cy);for(const xx of [x+6,x+12,x+18]){for(let yy=y+1;yy<y+h-1;yy++)setTerrainTile58(state.map,xx,yy,TT.WALL);door1020(xx,cy);door1020(xx,cy-1)}}
-  else{const gx=cx-1;rect1020(gx,y+1,2,h-2,TT.WOOD_FLOOR,true);const gy=fromTop?y:y+h-1;door1020(cx,gy);for(const yy of [y+5,y+11]){for(let xx=x+1;xx<x+w-1;xx++)setTerrainTile58(state.map,xx,yy,TT.WALL);door1020(cx,yy);door1020(cx-1,yy)}}
-  // exterior windows, regular and coherent
-  for(let xx=x+3;xx<x+w-3;xx+=4){window1020(xx,y);window1020(xx,y+h-1)}for(let yy=y+3;yy<y+h-3;yy+=4){window1020(x,yy);window1020(x+w-1,yy)}
-  // preserve the stair as the deepest inner room target
-  setTerrainTile58(state.map,s.x,s.y,TT.STAIR);
-  // short dock to the nearest outside walkable tile
-  const gate=horizontal?{x:fromLeft?x:x+w-1,y:cy}:{x:cx,y:fromTop?y:y+h-1};
-  const dir=horizontal?{x:fromLeft?-1:1,y:0}:{x:0,y:fromTop?-1:1};let gx=gate.x+dir.x,gy=gate.y+dir.y;
-  for(let i=0;i<14&&inside1020(gx,gy);i++,gx+=dir.x,gy+=dir.y){if(pass1020(state.map[gy][gx]))break;setTerrainTile58(state.map,gx,gy,TT.WOOD_FLOOR)}
-  addRoom1020(roomObj1020(x,y,w,h,'대형 수상 관리가옥'));tag1020(cx,cy,'수상 관리가옥 · 중앙 복도와 측실군');state.layoutName=(state.layoutName||'수목원')+' · 계단 수상관리관 / 측실 복도';
+  // broad exterior veranda: an uninterrupted circulating ring just inside the outer wall.
+  ring1023(x+2,y+2,w-4,h-4,TT.WOOD_FLOOR);ring1023(x+3,y+3,w-6,h-6,TT.WOOD_FLOOR);
+  // inner residential block. Two staggered corridors interlock instead of a single answer hallway.
+  rect1020(x+5,y+5,w-10,h-10,TT.WALL,true);rect1020(x+6,y+6,w-12,h-12,TT.WOOD_FLOOR,true);
+  const ix=x+6,iy=y+6,iw=w-12,ih=h-12;
+  const vx=[ix+6,ix+13],hy=[iy+4,iy+9];
+  for(const xx of vx)for(let yy=iy;yy<iy+ih;yy++)setTerrainTile58(state.map,xx,yy,TT.WALL);
+  for(const yy of hy)for(let xx=ix;xx<ix+iw;xx++)setTerrainTile58(state.map,xx,yy,TT.WALL);
+  // Doors are deliberately offset, so adjacent rooms connect to each other as well as to the veranda.
+  const ds=[[vx[0],iy+2],[vx[0],iy+7],[vx[0],iy+ih-2],[vx[1],iy+1],[vx[1],iy+6],[vx[1],iy+ih-3],
+            [ix+3,hy[0]],[ix+10,hy[0]],[ix+iw-3,hy[0]],[ix+1,hy[1]],[ix+8,hy[1]],[ix+iw-5,hy[1]]];
+  ds.forEach(([dx,dy])=>door1020(dx,dy));
+  // Four access doors connect the inner rooms to the circulating veranda, creating a true loop around the house.
+  door1020(cx,y+5);door1020(cx,y+h-6);door1020(x+5,cy);door1020(x+w-6,cy);
+  line1020(cx,y+3,cx,y+5,TT.WOOD_FLOOR,2,true);line1020(cx,y+h-6,cx,y+h-4,TT.WOOD_FLOOR,2,true);
+  // One main exterior gate only, facing the existing approach.
+  const gate=horizontal?{x:fromLeft?x:x+w-1,y:cy}:{x:cx,y:fromTop?y:y+h-1};door1020(gate.x,gate.y);
+  const dir=horizontal?{x:fromLeft?-1:1,y:0}:{x:0,y:fromTop?-1:1};let ax=gate.x+dir.x,ay=gate.y+dir.y;
+  for(let i=0;i<18&&inside1020(ax,ay);i++,ax+=dir.x,ay+=dir.y){if(i>1&&pass1020(state.map[ay][ax]))break;setTerrainTile58(state.map,ax,ay,TT.WOOD_FLOOR)}
+  // Exterior windows are regular; inner rooms remain visually legible from outside.
+  for(let xx=x+4;xx<x+w-4;xx+=4){if(xx!==cx)window1020(xx,y);if(xx!==cx)window1020(xx,y+h-1)}
+  for(let yy=y+4;yy<y+h-4;yy+=4){if(yy!==cy)window1020(x,yy);if(yy!==cy)window1020(x+w-1,yy)}
+  // Keep the original stair in the deepest interior. Guarded prize sits in the room opposite the main gate.
+  setTerrainTile58(state.map,s.x,s.y,TT.STAIR);state.stairs=s;state.fixedExit={...s};
+  const tx=horizontal?(fromLeft?x+w-9:x+8):cx,ty=horizontal?cy:(fromTop?y+h-8:y+7);
+  state.f6Elite1023={x:clamp1020(tx,ix+1,ix+iw-2),y:clamp1020(ty,iy+1,iy+ih-2)};
+  state.f6Prize1023={x:clamp1020(state.f6Elite1023.x+(horizontal?0:2),ix+1,ix+iw-2),y:clamp1020(state.f6Elite1023.y+(horizontal?2:0),iy+1,iy+ih-2)};
+  addRoom1020(roomObj1020(x,y,w,h,'수상 관리가옥 · 외부 회랑'));tag1020(cx,cy,'수상 관리가옥 · 순환 외부복도 / 얽힌 측실군 / 경비 보물실');
+  state.layoutName=(state.layoutName||'수목원')+' · 대형 수상관리관 / 순환 외부회랑 / 얽힌 생활실';
 }
 
 /* F08: append one actual house, not a highlighted answer path. One gate -> 2-wide hall -> many side rooms, each with exterior windows. */
@@ -18393,54 +18231,42 @@ function build8_1020(){
 
 /* F11: original v10.0.4 already has a validated mandatory raft crossing. Preserve it and remove any late-added land bypass if it appears. */
 function build11_1020(){
-  // F11 is a RIVER floor.  Keep the original validated raft/blink machinery, but remove the long cliff-floor
-  // ledges that visually read as a second land route.  Geometry is edited before entity restoration, so no loot
-  // can be entombed by this pass.
   const snap=cloneTerrainMap58(state.map),styles=state.floorStyle980||{},rafts=state.rafts||[];
-  const protected11=(x,y)=>{
-    if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<=8)return true;
-    if(Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)<=8)return true;
-    const st=String(styles[K1020(x,y)]||'');if(/f11_(dock|blinkpost|cliff_marker)/.test(st))return true;
-    if(state.map[y]?.[x]===TT.RAFT)return true;
-    for(const r of rafts){if(Math.abs(x-r.x)<=4&&(Math.abs(y-(r.min-1))<=3||Math.abs(y-(r.max+1))<=3))return true}
-    return false;
-  };
-  const drown=[];
-  for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
-    const t=state.map[y][x];if(!safeFloorTile1020(t)||protected11(x,y))continue;
-    const perimeter=(y>=ROWS-15)||(x>=COLS-11);
-    const nearWater=(()=>{let n=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(state.map[y+dy]?.[x+dx]===TT.WATER)n++;return n})()>=2;
-    // Perimeter ledges were the conspicuous fake bypass.  Shore-adjacent isolated floor is also returned to river.
-    if(perimeter||nearWater&&((x+y+state.floor)%3!==0))drown.push({x,y});
-  }
-  for(const q of drown)setTerrainTile58(state.map,q.x,q.y,TT.WATER);
-  // If an old walk-only route somehow survives, cut it with the existing validated repair logic by turning
-  // additional central floor cells into water, never by adding a substitute hallway.
+  const protected11=(x,y)=>{if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<=7)return true;if(Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)<=7)return true;const st=String(styles[K1020(x,y)]||'');if(/f11_(dock|blinkpost|cliff_marker)/.test(st))return true;if(state.map[y]?.[x]===TT.RAFT)return true;for(const r of rafts)if(Math.abs(x-r.x)<=4&&(Math.abs(y-(r.min-1))<=3||Math.abs(y-(r.max+1))<=3))return true;return false};
+  const flood=[];
+  for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){const t=state.map[y][x];if(!safeFloorTile1020(t)||protected11(x,y))continue;const bottom=y>=ROWS-13,side=(x<=8||x>=COLS-9)&&y>8&&y<ROWS-8;let nw=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(state.map[y+dy]?.[x+dx]===TT.WATER)nw++;if(bottom||side||nw>=5)flood.push({x,y})}
+  for(const p of flood)setTerrainTile58(state.map,p.x,p.y,TT.WATER);
+  // The old bottom shelf visually read as a deliberate bypass even when disconnected. Remove it almost entirely.
+  for(let yy=ROWS-9;yy<ROWS-2;yy++)for(let xx=12;xx<COLS-12;xx++){const t=state.map[yy][xx];if(tileBlocks(t)||HAZ1020().has(t)||PROTECTED1020().has(t))continue;if((state.rafts||[]).some(r=>Math.abs(xx-r.x)<=3&&Math.abs(yy-r.y)<=4))continue;setTerrainTile58(state.map,xx,yy,TT.WATER)}
+  // Explicitly destroy every remaining pure-walk solution one cell at a time, choosing cells far from docks/endpoints.
+  for(let cut=0;cut<40;cut++){const pth=pureWalkPath1023();if(!pth.length)break;const cands=pth.slice(5,-5).filter(p=>!protected11(p.x,p.y)&&safeFloorTile1020(state.map[p.y][p.x]));if(!cands.length)break;cands.sort((a,b)=>Math.abs(a.y-ROWS/2)-Math.abs(b.y-ROWS/2));setTerrainTile58(state.map,cands[0].x,cands[0].y,TT.WATER)}
   let a=window.__MANRU_V981_TEST__?.raft?.();
-  if(a?.pureWalk){const mid=Math.floor(ROWS/2),cands=[];for(let y=mid-10;y<=mid+10;y++)for(let x=4;x<COLS-4;x++){if(safeFloorTile1020(state.map[y][x])&&!protected11(x,y))cands.push({x,y,score:Math.abs(y-mid)})}cands.sort((u,v)=>u.score-v.score);for(const q of cands){setTerrainTile58(state.map,q.x,q.y,TT.WATER);a=window.__MANRU_V981_TEST__?.raft?.();if(a&&!a.pureWalk)break}}
-  a=window.__MANRU_V981_TEST__?.raft?.();
-  if(!(a&&a.valid&&!a.pureWalk&&a.pureRaft&&a.exitWithRaft&&a.exitBlinkFallback)){
-    // Never trade presentation for a broken river: restore the already validated original if this extra cleanup
-    // would invalidate raft or blink traversal.
-    state.map=snap;
-  }
-  state.layoutName=(state.layoutName||'향수강')+' · 육상 우회 수몰 / 필수 뗏목 도하 / 희소 점멸 비상석';
+  if(!(a&&a.valid&&!a.pureWalk&&a.pureRaft&&a.exitWithRaft))state.map=snap;
+  else state.layoutName=(state.layoutName||'향수강')+' · 육상 샛길 완전수몰 / 필수 뗏목 도하 / 희소 점멸 비상석';
 }
 
 /* F16: preserve field + lava moat + castle shell, subdivide the interior into actual living/service quarters and streets. */
 function build16_1020(){
-  const x0=Math.round(COLS*.43),x1=COLS-4,y0=4,y1=ROWS-4,cx=Math.floor((x0+x1)/2),cy=Math.floor((y0+y1)/2);
-  // longitudinal 2-wide service street and two transverse streets
-  rect1020(cx-1,y0+2,2,y1-y0-4,TT.STONE_PATH,true);for(const yy of [Math.round(ROWS*.34),Math.round(ROWS*.66)])rect1020(x0+2,yy-1,x1-x0-4,2,TT.STONE_PATH,true);
-  const specs=[
-    [x0+3,y0+3,14,10,'북서 막사'],[cx+3,y0+3,15,10,'북동 장교숙소'],
-    [x0+4,Math.round(ROWS*.38),13,9,'취사장'],[cx+4,Math.round(ROWS*.38),14,9,'무기고'],
-    [x0+3,Math.round(ROWS*.69),15,10,'하급병 숙소'],[cx+3,Math.round(ROWS*.69),16,10,'창고·세탁실']
-  ];
-  for(const [x,y,w,h,n] of specs){const r=box1020(x,y,w,h,TT.FLOOR,TT.WALL,true);const side=r.cx<cx?r.x+r.w-1:r.x;door1020(side,r.cy);line1020(side,r.cy,cx+(r.cx<cx?-1:0),r.cy,TT.STONE_PATH,2,true);for(let xx=r.x+3;xx<r.x+r.w-3;xx+=4)window1020(xx,r.y);tag1020(r.cx,r.cy,n)}
-  // courtyard furniture is grouped, not random noise
-  for(const [x,y,t] of [[cx-7,cy,TT.BENCH],[cx+7,cy,TT.BENCH],[cx-7,cy+3,TT.RACK],[cx+7,cy+3,TT.RACK]])if(inside1020(x,y))setTerrainTile58(state.map,x,y,t);
-  state.layoutName=(state.layoutName||'회색돌 성채')+' · 생활구획 / 막사 / 취사 / 무기고 / 후방숙소';
+  const x0=Math.round(COLS*.43),x1=COLS-4,y0=4,y1=ROWS-4,cx=Math.floor((x0+x1)/2),w=x1-x0;
+  // Close the previously open south edge and make the keep a real bounded structure. Protected bridge/switch tiles are untouched.
+  for(let x=x0;x<=x1;x++){if(!PROTECTED1020().has(state.map[y0]?.[x]))setTerrainTile58(state.map,x,y0,TT.WALL);if(!PROTECTED1020().has(state.map[y1]?.[x]))setTerrainTile58(state.map,x,y1,TT.WALL)}
+  for(let y=y0;y<=y1;y++){if(!PROTECTED1020().has(state.map[y]?.[x0]))setTerrainTile58(state.map,x0,y,TT.WALL);if(!PROTECTED1020().has(state.map[y]?.[x1]))setTerrainTile58(state.map,x1,y,TT.WALL)}
+  // Re-open exactly one inner gate aligned to the real drawbridge; closing the southern shell must never sever the cipher bridge.
+  const br=[];for(let yy=1;yy<ROWS-1;yy++)for(let xx=1;xx<COLS-1;xx++)if(state.map[yy][xx]===TT.DRAWBRIDGE_UP||state.map[yy][xx]===TT.DRAWBRIDGE_DOWN)br.push({x:xx,y:yy});
+  const bridgeY=br.length?Math.round(br.reduce((a,b)=>a+b.y,0)/br.length):Math.round(ROWS*.50);rect1020(x0-1,bridgeY-1,4,3,TT.STONE_PATH,true);
+  const bands=[Math.round(ROWS*.29),Math.round(ROWS*.49),Math.round(ROWS*.69)],gates=[cx-12,cx+11,cx-5];
+  bands.forEach((yy,i)=>{wallBand1023(x0+1,x1-1,yy,[[gates[i]-1,gates[i]+1]]);rect1020(gates[i]-1,yy-1,3,3,TT.STONE_PATH,true)});
+  line1020(x0+1,bridgeY,gates[0],bridgeY,TT.STONE_PATH,2,true);line1020(gates[0],bridgeY,gates[0],bands[0]-1,TT.STONE_PATH,2,true);
+  // Alternating longitudinal walls make each ward turn before the next gate rather than exposing the whole keep.
+  const vwalls=[cx-18,cx+18,cx-8,cx+8];for(let i=0;i<vwalls.length;i++){const xx=vwalls[i],ya=i<2?y0+2:bands[0]+1,yb=i<2?bands[1]-1:y1-2;for(let y=ya;y<=yb;y++)if(!PROTECTED1020().has(state.map[y]?.[xx]))setTerrainTile58(state.map,xx,y,TT.WALL);for(const yy of [Math.round((ya+yb)*.36),Math.round((ya+yb)*.72)])if(inside1020(xx,yy))door1020(xx,yy)}
+  // Functional rooms line the wards; doors face the internal streets, windows face courtyards.
+  const specs=[[x0+3,y0+3,13,9,'외성 경비막사'],[cx+3,y0+3,14,9,'장교 숙소'],[x0+4,bands[0]+3,12,8,'취사장'],[cx+4,bands[0]+3,14,8,'무기고'],[x0+3,bands[1]+3,14,9,'병사 숙소'],[cx+3,bands[1]+3,13,9,'의무실'],[x0+4,bands[2]+3,12,8,'세탁·창고'],[cx+4,bands[2]+3,14,8,'후방 보급실']];
+  for(const [x,y,w,h,n] of specs){if(x+w>=x1||y+h>=y1)continue;const r=box1020(x,y,w,h,TT.FLOOR,TT.WALL,true);const side=r.cx<cx?r.x+r.w-1:r.x;door1020(side,r.cy);for(let xx=r.x+3;xx<r.x+r.w-3;xx+=4)window1020(xx,r.y);if(/취사|창고|보급/.test(n)){const jx=r.cx<cx?r.x+2:r.x+r.w-3,jy=r.y+r.h-3;if(safeFloorTile1020(state.map[jy]?.[jx]))setTerrainTile58(state.map,jx,jy,TT.JAR)}tag1020(r.cx,r.cy,n)}
+  // Grouped courtyard fixtures.
+  for(const yy of [bands[0]-5,bands[1]-5,bands[2]-5])for(const dx of [-5,5])if(inside1020(cx+dx,yy)&&safeFloorTile1020(state.map[yy][cx+dx]))setTerrainTile58(state.map,cx+dx,yy,dx<0?TT.BENCH:TT.RACK);
+  // Safety only: if the real stair is not reachable with the bridge considered open, connect it through the nearest ward, never through the outer field.
+  if(!reach1020(state.stairs,{unlock:true})){const r=reachableSet1020({unlock:true}),cand=[];for(const kk of r){const[x,y]=kk.split(',').map(Number);if(x<=x0||x>=x1)continue;cand.push({x,y,d:Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)})}cand.sort((a,b)=>a.d-b.d);if(cand[0]){line1020(cand[0].x,cand[0].y,state.stairs.x,cand[0].y,TT.STONE_PATH,2,true);line1020(state.stairs.x,cand[0].y,state.stairs.x,state.stairs.y,TT.STONE_PATH,2,true);setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR)}}
+  state.layoutName=(state.layoutName||'회색돌 성채')+' · 폐쇄 성곽 / 삼중 생활구획 / 교대 관문 / 병영·무기고·의무실';
 }
 
 /* F18: warehouse density via ordered storage bays and inspection corridors, preserving the existing lock plan after reinstallation. */
@@ -18484,334 +18310,7 @@ function farthestReachableKeyCell1020(reach,filter=()=>true,origin=state.player)
 }
 
 /* F22: height x2. Upper half keeps the old golden temple DNA; lower half is a seeded mirrored labyrinth. One middle convergence throat. */
-function mazeHalf1020(m,x0,y0,w,h,seed){
-  // 2-wide coarse maze on one half; mirror caller makes the other half. deterministic pseudo-random DFS.
-  const cw=Math.max(3,Math.floor((w-2)/4)),ch=Math.max(3,Math.floor((h-2)/4)),vis=Array.from({length:ch},()=>Array(cw).fill(false)),stack=[[Math.floor(cw/2),ch-1]];
-  let n=(seed>>>0)||1;const rnd=()=>{n=(Math.imul(n^n>>>15,2246822519)+3266489917)>>>0;return n/4294967296};
-  const carve=(gx,gy)=>{const px=x0+1+gx*4,py=y0+1+gy*4;rect1020(px,py,3,3,TT.GILDED_FLOOR,true)};
-  vis[stack[0][1]][stack[0][0]]=true;carve(stack[0][0],stack[0][1]);while(stack.length){const [gx,gy]=stack[stack.length-1],dirs=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>gx+dx>=0&&gy+dy>=0&&gx+dx<cw&&gy+dy<ch&&!vis[gy+dy][gx+dx]);if(!dirs.length){stack.pop();continue}const [dx,dy]=dirs[Math.floor(rnd()*dirs.length)],nx=gx+dx,ny=gy+dy;vis[ny][nx]=true;carve(nx,ny);const ax=x0+2+gx*4,ay=y0+2+gy*4,bx=x0+2+nx*4,by=y0+2+ny*4;line1020(ax,ay,bx,by,TT.GILDED_FLOOR,2,true);stack.push([nx,ny])}
-}
 function build22_1020(){
-  clearOldKeyTiles1020();const old=cloneTerrainMap58(state.map),oldR=ROWS;ROWS=oldR*2-1;state.map=Array.from({length:ROWS},()=>Array(COLS).fill(TT.WALL));for(let y=0;y<oldR;y++)for(let x=0;x<COLS;x++)setTerrainTile58(state.map,x,y,old[y][x],terrainCellPlacement58(old,x,y));
-  const mid=oldR-1,cx=Math.floor(COLS/2);
-  // The midpoint is a true full-width structural diaphragm. Only one tile can cross it.
-  for(let x=1;x<COLS-1;x++)setTerrainTile58(state.map,x,mid,TT.WALL);
-  rect1020(cx-3,mid-3,7,3,TT.GILDED_FLOOR,true);rect1020(cx-3,mid+1,7,3,TT.GILDED_FLOOR,true);const midGate={x:cx,y:mid};setTerrainTile58(state.map,cx,mid,TT.FLOOR);
-
-  // Lower half: a deterministic mirrored coarse maze, clearly unlike ordinary room generation.
-  const y0=oldR+2,h=ROWS-y0-4,half=Math.floor(COLS/2)-4;rect1020(2,y0,half,h,TT.WALL,true);mazeHalf1020(state.map,3,y0+1,half-3,h-2,22022+(state.turn||0));for(let y=y0;y<y0+h;y++)for(let x=3;x<cx;x++){const mx=COLS-1-x;if(inside1020(mx,y))setTerrainTile58(state.map,mx,y,state.map[y][x])}
-  const findCell=(ys,ye,rev=false)=>{const arr=[];for(let y=ys;y<=ye;y++)for(let x=4;x<cx-4;x++)if(safeFloorTile1020(state.map[y][x]))arr.push({x,y});arr.sort((a,b)=>rev?(b.y-a.y||Math.abs(a.x-cx)-Math.abs(b.x-cx)):(a.y-b.y||Math.abs(a.x-cx)-Math.abs(b.x-cx)));return arr[0]||null};
-  const bot=findCell(Math.max(y0,ROWS-24),ROWS-5,true),top=findCell(y0+1,Math.min(ROWS-5,y0+16),false),mirror=p=>p?{x:COLS-1-p.x,y:p.y}:null;
-  rect1020(cx-5,ROWS-8,11,6,TT.GILDED_FLOOR,true);movePlayer1020(cx,ROWS-5);const junction={x:cx,y:ROWS-9};rect1020(cx-2,ROWS-11,5,4,TT.GILDED_FLOOR,true);
-  if(bot){line1020(junction.x,junction.y,bot.x,bot.y,TT.GILDED_FLOOR,2,true);const mb=mirror(bot);line1020(junction.x,junction.y,mb.x,mb.y,TT.GILDED_FLOOR,2,true)}
-  const converge={x:cx,y:mid+7};rect1020(cx-3,mid+4,7,5,TT.GILDED_FLOOR,true);if(top){line1020(top.x,top.y,converge.x-3,converge.y,TT.GILDED_FLOOR,2,true);const mt=mirror(top);line1020(mt.x,mt.y,converge.x+3,converge.y,TT.GILDED_FLOOR,2,true)}line1020(cx,mid+7,cx,mid+2,TT.GILDED_FLOOR,3,true);line1020(cx,mid+2,cx,mid+1,TT.GILDED_FLOOR,1,true);
-
-  // Upper half keeps the old golden-temple masses, but the guaranteed route is a pair of mirrored pilgrimage galleries,
-  // not a straight answer corridor. They split after the midpoint gate and reconverge only at the top shrine.
-  const levels=[mid-8,mid-20,mid-32,Math.max(18,mid-44),9],offs=[8,19,12,20,3];
-  rect1020(cx-1,mid-2,3,2,TT.GILDED_FLOOR,true);let ly=mid-2,lx=cx-1,ry=mid-2,rx=cx+1;
-  for(let i=0;i<levels.length;i++){
-    const yy=clamp1020(levels[i],8,mid-4),off=offs[i],nlx=cx-off,nrx=cx+off;
-    line1020(lx,ly,nlx,ly,TT.GILDED_FLOOR,2,true);line1020(nlx,ly,nlx,yy,TT.GILDED_FLOOR,2,true);
-    line1020(rx,ry,nrx,ry,TT.GILDED_FLOOR,2,true);line1020(nrx,ry,nrx,yy,TT.GILDED_FLOOR,2,true);
-    // symmetric decorated antechamber at each turn
-    rect1020(nlx-2,yy-1,5,3,TT.GILDED_FLOOR,true);rect1020(nrx-2,yy-1,5,3,TT.GILDED_FLOOR,true);
-    if(i%2===0){;;}
-    lx=nlx;ly=yy;rx=nrx;ry=yy;
-  }
-  moveStair1020(cx,3);rect1020(cx-4,1,9,6,TT.WALL,true);rect1020(cx-3,2,7,3,TT.GILDED_FLOOR,true);door1020(cx,6);line1020(cx,6,cx,3,TT.GILDED_FLOOR,1,true);setTerrainTile58(state.map,cx,3,TT.STAIR);line1020(lx,ly,cx-2,7,TT.GILDED_FLOOR,2,true);line1020(rx,ry,cx+2,7,TT.GILDED_FLOOR,2,true);line1020(cx-2,7,cx+2,7,TT.GILDED_FLOOR,2,true);line1020(cx,7,cx,6,TT.GILDED_FLOOR,2,true);
-
-  // Symmetric grouped decoration only.
-  for(let y=y0+5;y<ROWS-10;y+=12)for(const dx of [-18,-10,10,18]){const x=cx+dx;if(Math.abs(dx)!==18&&inside1020(x,y)&&safeFloorTile1020(state.map[y][x]))decor1020(x,y,'goldSeal')}
-  const lowReach=reachableSet1020({start:state.player}),key=farthestReachableKeyCell1020(lowReach,p=>p.y>mid+4&&p.y<ROWS-5,state.player)||{x:cx,y:ROWS-12};
-  state.midGate22_1020=midGate;state.midKey22_1020=key;installCustomKeyPlan1020('jade',key,midGate,'midpoint-convergence');
-  state.goldIndoor1020=true;state.layoutName='만루의 심장 · 이중높이 금빛 대미궁 / 단일 중앙 합류문 / 상부 쌍회랑 신궁';tag1020(cx,mid+7,'미궁 중앙 단일 합류회랑');
-}
-
-/* F23: keep the mercury/bridge network, enlarge selected existing stone nodes into major islands and add gold-floored buildings. */
-function build23_1020(){
-  const centers=[];for(let y=6;y<ROWS-6;y+=10)for(let x=8;x<COLS-8;x+=12){let score=0;for(let yy=y-3;yy<=y+3;yy++)for(let xx=x-4;xx<=x+4;xx++){const t=state.map[yy]?.[xx];if(t===TT.MOON_STONE||t===TT.STONE_PATH||t===TT.WOOD_FLOOR||t===TT.DRAWBRIDGE_DOWN)score++}if(score>=5)centers.push({x,y,score})}centers.sort((a,b)=>b.score-a.score);const chosen=[];for(const p of centers){if(chosen.every(q=>Math.abs(q.x-p.x)+Math.abs(q.y-p.y)>18))chosen.push(p);if(chosen.length>=6)break}
-  for(const [i,p] of chosen.entries()){
-    const iw=i%2?15:13,ih=i%3?11:9,x=clamp1020(p.x-Math.floor(iw/2),2,COLS-iw-2),y=clamp1020(p.y-Math.floor(ih/2),2,ROWS-ih-2);
-    rect1020(x,y,iw,ih,TT.MOON_STONE,true);const bw=iw-4,bh=ih-4,bx=x+2,by=y+2;box1020(bx,by,bw,bh,TT.GILDED_FLOOR,TT.WALL,true);const side=i%4,dx=side===0?-1:side===1?1:0,dy=side===2?-1:side===3?1:0;let gx=side===0?bx:side===1?bx+bw-1:bx+Math.floor(bw/2),gy=side===2?by:side===3?by+bh-1:by+Math.floor(bh/2);door1020(gx,gy);
-    // short bridge from the new island edge until it meets existing passable network
-    let sx=gx+dx,sy=gy+dy;for(let n=0;n<8&&inside1020(sx,sy);n++,sx+=dx,sy+=dy){if(pass1020(state.map[sy][sx]))break;setTerrainTile58(state.map,sx,sy,TT.WOOD_FLOOR)}
-    for(let xx=bx+2;xx<bx+bw-2;xx+=3){if(by>1)window1020(xx,by);if(by+bh-1<ROWS-1)window1020(xx,by+bh-1)}tag1020(p.x,p.y,`수은섬 금빛 객전 ${i+1}`)
-  }
-  state.goldIndoor1020=true;state.layoutName=(state.layoutName||'수은 연못')+' · 대형 건물섬 / 금빛 실내 객전';
-}
-
-/* F24: append one genuinely large building. Deepest chamber holds the brass key; an outdoor gate guards the stair. */
-function installCustomBrassPlan24_1020(keyPos,gatePos){
-  // Generation installs the plan once. Load/final-repair must preserve an already collected key or opened gate.
-  const plan=state?.keyPlan96,brassKey=plan?.keys?.find(q=>q.keyId==='brass'&&q.x===keyPos.x&&q.y===keyPos.y),brassDoor=plan?.doors?.find(d=>d.keyId==='brass'&&d.x===gatePos.x&&d.y===gatePos.y),same=plan?.kind==='exit-vestibule'&&brassKey&&brassDoor;
-  if(!same)return installCustomKeyPlan1020('brass',keyPos,gatePos,'exit-vestibule');
-  plan.ring=plan.ring&&typeof plan.ring==='object'?plan.ring:{};plan.ring.brass=Math.max(0,+plan.ring.brass||0);
-  for(const q of plan.keys||[])if(q.keyId==='brass'){if(q.active===false){if(state.map?.[q.y]?.[q.x]===TT.KEY_TILE)setTerrainTile58(state.map,q.x,q.y,TT.FLOOR)}else setTerrainTile58(state.map,q.x,q.y,TT.KEY_TILE)}
-  for(const d of plan.doors||[])if(d.keyId==='brass')setTerrainTile58(state.map,d.x,d.y,d.open===true?TT.OPEN_DOOR:TT.LOCKED_GATE);
-  for(const g of plan.groups||[])if(g.keyId==='brass')for(const d of g.doors||[]){const hit=(plan.doors||[]).find(q=>q.x===d.x&&q.y===d.y&&q.keyId==='brass');d.open=hit?.open===true}
-  return plan;
-}
-function build24_1020(){
-  const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2),w=33,h=23,x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);rect1020(x,y,w,h,TT.WALL,true);rect1020(x+1,y+1,w-2,h-2,TT.GILDED_FLOOR,true);rect1020(cx-1,y+1,2,h-2,TT.GILDED_FLOOR,true);
-  for(const yy of [y+6,y+12,y+17]){for(let xx=x+1;xx<x+w-1;xx++)setTerrainTile58(state.map,xx,yy,TT.WALL);door1020(cx-1,yy);door1020(cx,yy);for(const dx of [-10,10])door1020(cx+dx,yy)}for(const xx of [x+8,x+16,x+24]){for(let yy=y+1;yy<y+h-1;yy++)if(Math.abs(xx-cx)>2)setTerrainTile58(state.map,xx,yy,TT.WALL);for(const yy of [y+3,y+9,y+15,y+20])if(inside1020(xx,yy))door1020(xx,yy)}
-  // choose the outer entrance facing the player and extend a neutral stone approach until it meets the original outdoor network.
-  const dxp=state.player.x-cx,dyp=state.player.y-cy;let gate,dir;if(Math.abs(dxp)>Math.abs(dyp)){if(dxp<0){gate={x,y:cy};dir={x:-1,y:0}}else{gate={x:x+w-1,y:cy};dir={x:1,y:0}}}else{if(dyp<0){gate={x:cx,y};dir={x:0,y:-1}}else{gate={x:cx,y:y+h-1};dir={x:0,y:1}}}door1020(gate.x,gate.y);let ax=gate.x+dir.x,ay=gate.y+dir.y;for(let n=0;n<24&&inside1020(ax,ay);n++,ax+=dir.x,ay+=dir.y){const old=state.map[ay][ax];if(n>2&&safeFloorTile1020(old))break;setTerrainTile58(state.map,ax,ay,TT.STONE_PATH)}
-  for(let xx=x+3;xx<x+w-3;xx+=4){if(!(gate.y===y&&xx===gate.x))window1020(xx,y);if(!(gate.y===y+h-1&&xx===gate.x))window1020(xx,y+h-1)}
-  // deepest reachable room is opposite the entrance. Because the hall is connected, this is deliberately reachable before the stair gate.
-  const keyPos={x:cx-dir.x*0,y:cy-dir.y*0};let kp={x:cx,y:cy};const cells=reachableSet1020({unlock:true});let best=-1;for(const kk of cells){const [xx,yy]=kk.split(',').map(Number);if(xx<=x+1||xx>=x+w-2||yy<=y+1||yy>=y+h-2||!safeFloorTile1020(state.map[yy][xx]))continue;const dist=Math.abs(xx-gate.x)+Math.abs(yy-gate.y);if(dist>best){best=dist;kp={x:xx,y:yy}}}
-  const s=state.stairs,gx=clamp1020(s.x,3,COLS-4),gy=clamp1020(s.y,3,ROWS-4);rect1020(gx-3,gy-3,7,7,TT.WALL,true);rect1020(gx-2,gy-2,5,5,TT.STONE_PATH,true);setTerrainTile58(state.map,gx,gy,TT.STAIR);state.stairs={x:gx,y:gy};
-  // one approach gate on the stair vestibule, facing the map center.
-  const ddx=Math.abs(gx-cx)>Math.abs(gy-cy)?Math.sign(cx-gx):0,ddy=ddx?0:Math.sign(cy-gy),gatePos={x:gx+ddx*3,y:gy+ddy*3};line1020(gatePos.x+ddx,gatePos.y+ddy,cx,cy,TT.STONE_PATH,1,false);installCustomBrassPlan24_1020(kp,gatePos);
-  state.goldIndoor1020=true;state.deepKey24_1020=kp;state.outdoorGate24_1020=gatePos;state.layoutName=(state.layoutName||'만루보주의 정원')+' · 대형 금빛 원관 / 최심부 황동열쇠 / 야외 계단문';tag1020(kp.x,kp.y,'대형 원관 최심부 · 황동열쇠');
-}
-
-/* Selective architecture only. No global map replacement. */
-
-/* ===== ARCHITECTURE REVISION 1023: requested density / organic route / canal sanctum ===== */
-
-function ring1023(x,y,w,h,t=TT.WOOD_FLOOR){
-  for(let xx=x;xx<x+w;xx++){set1020(xx,y,t,true);set1020(xx,y+h-1,t,true)}
-  for(let yy=y;yy<y+h;yy++){set1020(x,yy,t,true);set1020(x+w-1,yy,t,true)}
-}
-function wallBand1023(x0,x1,y,gaps=[]){for(let x=x0;x<=x1;x++){if(gaps.some(g=>x>=g[0]&&x<=g[1]))continue;if(!PROTECTED1020().has(state.map[y]?.[x]))setTerrainTile58(state.map,x,y,TT.WALL)}}
-function pureWalkPath1023(){const p=ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player),state.stairs);return p?[{x:state.player.x,y:state.player.y},...p]:[]}
-
-/* F06 r2 — veranda ring outside, tangled inner rooms, one guarded treasure chamber. */
-build6_1020=function(){
-  const s={...state.stairs},w=31,h=21,cx=clamp1020(s.x,17,COLS-18),cy=clamp1020(s.y,12,ROWS-13),x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);
-  const horizontal=Math.abs(state.player.x-cx)>Math.abs(state.player.y-cy),fromLeft=state.player.x<cx,fromTop=state.player.y<cy;
-  rect1020(x,y,w,h,TT.WALL,true);rect1020(x+1,y+1,w-2,h-2,TT.WOOD_FLOOR,true);
-  // broad exterior veranda: an uninterrupted circulating ring just inside the outer wall.
-  ring1023(x+2,y+2,w-4,h-4,TT.WOOD_FLOOR);ring1023(x+3,y+3,w-6,h-6,TT.WOOD_FLOOR);
-  // inner residential block. Two staggered corridors interlock instead of a single answer hallway.
-  rect1020(x+5,y+5,w-10,h-10,TT.WALL,true);rect1020(x+6,y+6,w-12,h-12,TT.WOOD_FLOOR,true);
-  const ix=x+6,iy=y+6,iw=w-12,ih=h-12;
-  const vx=[ix+6,ix+13],hy=[iy+4,iy+9];
-  for(const xx of vx)for(let yy=iy;yy<iy+ih;yy++)setTerrainTile58(state.map,xx,yy,TT.WALL);
-  for(const yy of hy)for(let xx=ix;xx<ix+iw;xx++)setTerrainTile58(state.map,xx,yy,TT.WALL);
-  // Doors are deliberately offset, so adjacent rooms connect to each other as well as to the veranda.
-  const ds=[[vx[0],iy+2],[vx[0],iy+7],[vx[0],iy+ih-2],[vx[1],iy+1],[vx[1],iy+6],[vx[1],iy+ih-3],
-            [ix+3,hy[0]],[ix+10,hy[0]],[ix+iw-3,hy[0]],[ix+1,hy[1]],[ix+8,hy[1]],[ix+iw-5,hy[1]]];
-  ds.forEach(([dx,dy])=>door1020(dx,dy));
-  // Four access doors connect the inner rooms to the circulating veranda, creating a true loop around the house.
-  door1020(cx,y+5);door1020(cx,y+h-6);door1020(x+5,cy);door1020(x+w-6,cy);
-  line1020(cx,y+3,cx,y+5,TT.WOOD_FLOOR,2,true);line1020(cx,y+h-6,cx,y+h-4,TT.WOOD_FLOOR,2,true);
-  // One main exterior gate only, facing the existing approach.
-  const gate=horizontal?{x:fromLeft?x:x+w-1,y:cy}:{x:cx,y:fromTop?y:y+h-1};door1020(gate.x,gate.y);
-  const dir=horizontal?{x:fromLeft?-1:1,y:0}:{x:0,y:fromTop?-1:1};let ax=gate.x+dir.x,ay=gate.y+dir.y;
-  for(let i=0;i<18&&inside1020(ax,ay);i++,ax+=dir.x,ay+=dir.y){if(i>1&&pass1020(state.map[ay][ax]))break;setTerrainTile58(state.map,ax,ay,TT.WOOD_FLOOR)}
-  // Exterior windows are regular; inner rooms remain visually legible from outside.
-  for(let xx=x+4;xx<x+w-4;xx+=4){if(xx!==cx)window1020(xx,y);if(xx!==cx)window1020(xx,y+h-1)}
-  for(let yy=y+4;yy<y+h-4;yy+=4){if(yy!==cy)window1020(x,yy);if(yy!==cy)window1020(x+w-1,yy)}
-  // Keep the original stair in the deepest interior. Guarded prize sits in the room opposite the main gate.
-  setTerrainTile58(state.map,s.x,s.y,TT.STAIR);state.stairs=s;state.fixedExit={...s};
-  const tx=horizontal?(fromLeft?x+w-9:x+8):cx,ty=horizontal?cy:(fromTop?y+h-8:y+7);
-  state.f6Elite1023={x:clamp1020(tx,ix+1,ix+iw-2),y:clamp1020(ty,iy+1,iy+ih-2)};
-  state.f6Prize1023={x:clamp1020(state.f6Elite1023.x+(horizontal?0:2),ix+1,ix+iw-2),y:clamp1020(state.f6Elite1023.y+(horizontal?2:0),iy+1,iy+ih-2)};
-  addRoom1020(roomObj1020(x,y,w,h,'수상 관리가옥 · 외부 회랑'));tag1020(cx,cy,'수상 관리가옥 · 순환 외부복도 / 얽힌 측실군 / 경비 보물실');
-  state.layoutName=(state.layoutName||'수목원')+' · 대형 수상관리관 / 순환 외부회랑 / 얽힌 생활실';
-};
-
-/* F11 r2 — no bottom/side land bypass. River traversal only; existing raft/blink system is preserved. */
-build11_1020=function(){
-  const snap=cloneTerrainMap58(state.map),styles=state.floorStyle980||{},rafts=state.rafts||[];
-  const protected11=(x,y)=>{if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<=7)return true;if(Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)<=7)return true;const st=String(styles[K1020(x,y)]||'');if(/f11_(dock|blinkpost|cliff_marker)/.test(st))return true;if(state.map[y]?.[x]===TT.RAFT)return true;for(const r of rafts)if(Math.abs(x-r.x)<=4&&(Math.abs(y-(r.min-1))<=3||Math.abs(y-(r.max+1))<=3))return true;return false};
-  const flood=[];
-  for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){const t=state.map[y][x];if(!safeFloorTile1020(t)||protected11(x,y))continue;const bottom=y>=ROWS-13,side=(x<=8||x>=COLS-9)&&y>8&&y<ROWS-8;let nw=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(state.map[y+dy]?.[x+dx]===TT.WATER)nw++;if(bottom||side||nw>=5)flood.push({x,y})}
-  for(const p of flood)setTerrainTile58(state.map,p.x,p.y,TT.WATER);
-  // The old bottom shelf visually read as a deliberate bypass even when disconnected. Remove it almost entirely.
-  for(let yy=ROWS-9;yy<ROWS-2;yy++)for(let xx=12;xx<COLS-12;xx++){const t=state.map[yy][xx];if(tileBlocks(t)||HAZ1020().has(t)||PROTECTED1020().has(t))continue;if((state.rafts||[]).some(r=>Math.abs(xx-r.x)<=3&&Math.abs(yy-r.y)<=4))continue;setTerrainTile58(state.map,xx,yy,TT.WATER)}
-  // Explicitly destroy every remaining pure-walk solution one cell at a time, choosing cells far from docks/endpoints.
-  for(let cut=0;cut<40;cut++){const pth=pureWalkPath1023();if(!pth.length)break;const cands=pth.slice(5,-5).filter(p=>!protected11(p.x,p.y)&&safeFloorTile1020(state.map[p.y][p.x]));if(!cands.length)break;cands.sort((a,b)=>Math.abs(a.y-ROWS/2)-Math.abs(b.y-ROWS/2));setTerrainTile58(state.map,cands[0].x,cands[0].y,TT.WATER)}
-  let a=window.__MANRU_V981_TEST__?.raft?.();
-  if(!(a&&a.valid&&!a.pureWalk&&a.pureRaft&&a.exitWithRaft))state.map=snap;
-  else state.layoutName=(state.layoutName||'향수강')+' · 육상 샛길 완전수몰 / 필수 뗏목 도하 / 희소 점멸 비상석';
-};
-
-/* F15 r5 — compact organic mirror-maze: many small chambers, braided short loops, no broad dead halls. */
-build15_1020=function(){
-  bossMazeCommon1020(15);
-  const cx=Math.floor(COLS/2),floor=TT.CARPET,topKeep=17;
-  for(let y=topKeep;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)setTerrainTile58(state.map,x,y,TT.WALL);
-  movePlayer1020(cx,ROWS-5);
-  const nodes=[];
-  const mk=(x,y,w=9,h=5,name='비단실')=>{const r=box1020(Math.round(x-w/2),Math.round(y-h/2),w,h,floor,TT.WALL,true);nodes.push(r);tag1020(r.cx,r.cy,name);return r};
-  const edge=(a,b)=>{const dx=Math.abs(b.cx-a.cx),dy=Math.abs(b.cy-a.cy);let ax=a.cx,ay=a.cy,bx=b.cx,by=b.cy;if(dx>=dy){ax=b.cx>a.cx?a.x+a.w-1:a.x;ay=a.cy;bx=b.cx>a.cx?b.x:b.x+b.w-1;by=b.cy}else{ay=b.cy>a.cy?a.y+a.h-1:a.y;ax=a.cx;by=b.cy>a.cy?b.y:b.y+b.h-1;bx=b.cx}door1020(ax,ay);door1020(bx,by);const bendX=(ax+bx)/2|0;line1020(ax,ay,bendX,ay,floor,2,true);line1020(bendX,ay,bendX,by,floor,2,true);line1020(bendX,by,bx,by,floor,2,true)};
-  const start=mk(cx,ROWS-6,11,5,'침모전 전실');
-  const T1=[mk(cx-19,44,9,5,'서 비단실 1'),mk(cx,43,9,5,'중앙 거울실 1'),mk(cx+19,44,9,5,'동 비단실 1')];
-  const T2=[mk(cx-28,35,7,5,'서 외곽실 2'),mk(cx-9,34,9,5,'서 안쪽실 2'),mk(cx+9,34,9,5,'동 안쪽실 2'),mk(cx+28,35,7,5,'동 외곽실 2')];
-  const T3=[mk(cx-20,27,9,5,'서 비단실 3'),mk(cx,26,9,5,'중앙 거울실 3'),mk(cx+20,27,9,5,'동 비단실 3')];
-  const T4=[mk(cx-27,20,7,5,'서 외곽실 4'),mk(cx-8,21,9,5,'서 안쪽실 4'),mk(cx+8,21,9,5,'동 안쪽실 4'),mk(cx+27,20,7,5,'동 외곽실 4')];
-  // Dense braid: local loops in every tier, plus alternating diagonal joins. Wrong choices rejoin one tier later at most.
-  edge(start,T1[1]);edge(start,T1[0]);edge(start,T1[2]);edge(T1[0],T1[1]);edge(T1[1],T1[2]);
-  edge(T1[0],T2[0]);edge(T1[0],T2[1]);edge(T1[1],T2[1]);edge(T1[1],T2[2]);edge(T1[2],T2[2]);edge(T1[2],T2[3]);edge(T2[0],T2[1]);edge(T2[2],T2[3]);
-  edge(T2[0],T3[0]);edge(T2[1],T3[0]);edge(T2[1],T3[1]);edge(T2[2],T3[1]);edge(T2[2],T3[2]);edge(T2[3],T3[2]);edge(T3[0],T3[1]);edge(T3[1],T3[2]);
-  edge(T3[0],T4[0]);edge(T3[0],T4[1]);edge(T3[1],T4[1]);edge(T3[1],T4[2]);edge(T3[2],T4[2]);edge(T3[2],T4[3]);edge(T4[0],T4[1]);edge(T4[2],T4[3]);
-  // Outer pair loops back inward near the boss threshold; inner pair goes to the threshold directly.
-  const gateL={cx:cx-4,cy:16,x:cx-5,y:15,w:3,h:3},gateR={cx:cx+4,cy:16,x:cx+3,y:15,w:3,h:3};edge(T4[0],T4[1]);edge(T4[3],T4[2]);edge(T4[1],gateL);edge(T4[2],gateR);rect1020(cx-5,15,11,3,floor,true);line1020(cx,17,cx,15,floor,2,true);
-  // Compact paired reward salons with two connections each; never isolated.
-  const SL=mk(8,30,7,5,'서 환영실'),SR=mk(COLS-9,30,7,5,'동 환영실');edge(SL,T2[0]);edge(SL,T3[0]);edge(SR,T2[3]);edge(SR,T3[2]);
-  for(let i=0;i<nodes.length;i++){const r=nodes[i];;}
-  let reach=reachableSet1020({unlock:true,openBoss:true});for(const r of nodes){if(reach.has(K1020(r.cx,r.cy)))continue;let best=null,bd=1e9;for(const kk of reach){const[x,y]=kk.split(',').map(Number),d=Math.abs(x-r.cx)+Math.abs(y-r.cy);if(d<bd){bd=d;best={x,y}}}if(best){line1020(r.cx,r.cy,best.x,r.cy,floor,2,true);line1020(best.x,r.cy,best.x,best.y,floor,2,true);reach=reachableSet1020({unlock:true,openBoss:true})}}
-  state.layoutName=(state.layoutName||'유혹의 내실')+' · 소실형 비단 미궁 / 유기적 쌍회랑 / 짧은 재합류 / 후면 침모실';
-};
-
-/* F16 r2 — actual layered castle wards. Outer fortifications and internal living quarters are both subdivided. */
-build16_1020=function(){
-  const x0=Math.round(COLS*.43),x1=COLS-4,y0=4,y1=ROWS-4,cx=Math.floor((x0+x1)/2),w=x1-x0;
-  // Close the previously open south edge and make the keep a real bounded structure. Protected bridge/switch tiles are untouched.
-  for(let x=x0;x<=x1;x++){if(!PROTECTED1020().has(state.map[y0]?.[x]))setTerrainTile58(state.map,x,y0,TT.WALL);if(!PROTECTED1020().has(state.map[y1]?.[x]))setTerrainTile58(state.map,x,y1,TT.WALL)}
-  for(let y=y0;y<=y1;y++){if(!PROTECTED1020().has(state.map[y]?.[x0]))setTerrainTile58(state.map,x0,y,TT.WALL);if(!PROTECTED1020().has(state.map[y]?.[x1]))setTerrainTile58(state.map,x1,y,TT.WALL)}
-  // Re-open exactly one inner gate aligned to the real drawbridge; closing the southern shell must never sever the cipher bridge.
-  const br=[];for(let yy=1;yy<ROWS-1;yy++)for(let xx=1;xx<COLS-1;xx++)if(state.map[yy][xx]===TT.DRAWBRIDGE_UP||state.map[yy][xx]===TT.DRAWBRIDGE_DOWN)br.push({x:xx,y:yy});
-  const bridgeY=br.length?Math.round(br.reduce((a,b)=>a+b.y,0)/br.length):Math.round(ROWS*.50);rect1020(x0-1,bridgeY-1,4,3,TT.STONE_PATH,true);
-  const bands=[Math.round(ROWS*.29),Math.round(ROWS*.49),Math.round(ROWS*.69)],gates=[cx-12,cx+11,cx-5];
-  bands.forEach((yy,i)=>{wallBand1023(x0+1,x1-1,yy,[[gates[i]-1,gates[i]+1]]);rect1020(gates[i]-1,yy-1,3,3,TT.STONE_PATH,true)});
-  line1020(x0+1,bridgeY,gates[0],bridgeY,TT.STONE_PATH,2,true);line1020(gates[0],bridgeY,gates[0],bands[0]-1,TT.STONE_PATH,2,true);
-  // Alternating longitudinal walls make each ward turn before the next gate rather than exposing the whole keep.
-  const vwalls=[cx-18,cx+18,cx-8,cx+8];for(let i=0;i<vwalls.length;i++){const xx=vwalls[i],ya=i<2?y0+2:bands[0]+1,yb=i<2?bands[1]-1:y1-2;for(let y=ya;y<=yb;y++)if(!PROTECTED1020().has(state.map[y]?.[xx]))setTerrainTile58(state.map,xx,y,TT.WALL);for(const yy of [Math.round((ya+yb)*.36),Math.round((ya+yb)*.72)])if(inside1020(xx,yy))door1020(xx,yy)}
-  // Functional rooms line the wards; doors face the internal streets, windows face courtyards.
-  const specs=[[x0+3,y0+3,13,9,'외성 경비막사'],[cx+3,y0+3,14,9,'장교 숙소'],[x0+4,bands[0]+3,12,8,'취사장'],[cx+4,bands[0]+3,14,8,'무기고'],[x0+3,bands[1]+3,14,9,'병사 숙소'],[cx+3,bands[1]+3,13,9,'의무실'],[x0+4,bands[2]+3,12,8,'세탁·창고'],[cx+4,bands[2]+3,14,8,'후방 보급실']];
-  for(const [x,y,w,h,n] of specs){if(x+w>=x1||y+h>=y1)continue;const r=box1020(x,y,w,h,TT.FLOOR,TT.WALL,true);const side=r.cx<cx?r.x+r.w-1:r.x;door1020(side,r.cy);for(let xx=r.x+3;xx<r.x+r.w-3;xx+=4)window1020(xx,r.y);if(/취사|창고|보급/.test(n)){const jx=r.cx<cx?r.x+2:r.x+r.w-3,jy=r.y+r.h-3;if(safeFloorTile1020(state.map[jy]?.[jx]))setTerrainTile58(state.map,jx,jy,TT.JAR)}tag1020(r.cx,r.cy,n)}
-  // Grouped courtyard fixtures.
-  for(const yy of [bands[0]-5,bands[1]-5,bands[2]-5])for(const dx of [-5,5])if(inside1020(cx+dx,yy)&&safeFloorTile1020(state.map[yy][cx+dx]))setTerrainTile58(state.map,cx+dx,yy,dx<0?TT.BENCH:TT.RACK);
-  // Safety only: if the real stair is not reachable with the bridge considered open, connect it through the nearest ward, never through the outer field.
-  if(!reach1020(state.stairs,{unlock:true})){const r=reachableSet1020({unlock:true}),cand=[];for(const kk of r){const[x,y]=kk.split(',').map(Number);if(x<=x0||x>=x1)continue;cand.push({x,y,d:Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)})}cand.sort((a,b)=>a.d-b.d);if(cand[0]){line1020(cand[0].x,cand[0].y,state.stairs.x,cand[0].y,TT.STONE_PATH,2,true);line1020(state.stairs.x,cand[0].y,state.stairs.x,state.stairs.y,TT.STONE_PATH,2,true);setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR)}}
-  state.layoutName=(state.layoutName||'회색돌 성채')+' · 폐쇄 성곽 / 삼중 생활구획 / 교대 관문 / 병영·무기고·의무실';
-};
-
-/* F22 r3 — preserve the monumental central avenue itself. Dense lower canal cloister; avenue ends in a forced side/down/up palace pilgrimage. */
-build22_1020=function(){
-  clearOldKeyTiles1020();
-  const baseH=Math.min(ROWS,60),targetH=baseH*2-1,cx=Math.floor(COLS/2),mid=baseH-1;
-  ROWS=targetH;state.map=Array.from({length:ROWS},()=>Array(COLS).fill(TT.WALL));state.f22HolyCells1023=[];state.archDecor1023=state.archDecor1023||{};
-
-  /* LOWER HALF — water is the structure. No huge open floor and no key. */
-  movePlayer1020(cx,ROWS-5);
-  const bottomHall=box1020(cx-6,ROWS-10,13,7,TT.STONE_PATH,TT.WALL,true);tag1020(cx,bottomHall.cy,'하부 수로원 입구 전실');
-  // Central water spine prevents a straight north-south answer route. The start hall exits sideways around it.
-  rect1020(cx-2,mid+5,5,ROWS-mid-16,TT.WATER,true);
-  door1020(bottomHall.x,bottomHall.cy);door1020(bottomHall.x+bottomHall.w-1,bottomHall.cy);
-  line1020(bottomHall.x,bottomHall.cy,cx-11,bottomHall.cy,TT.STONE_PATH,2,true);line1020(bottomHall.x+bottomHall.w-1,bottomHall.cy,cx+11,bottomHall.cy,TT.STONE_PATH,2,true);
-  const stageYs=[ROWS-18,ROWS-31,ROWS-44,mid+10].filter((y,i,a)=>y>mid+5&&a.indexOf(y)===i).sort((a,b)=>b-a);
-  let prevL={x:cx-11,y:bottomHall.cy},prevR={x:cx+11,y:bottomHall.cy};
-  stageYs.forEach((cyy,i)=>{
-    const ow=27,oh=11,lx=6,rx=COLS-6-ow;
-    // Two cloisters: stone ring outside, water court inside.
-    const L=box1020(lx,cyy-Math.floor(oh/2),ow,oh,TT.STONE_PATH,TT.WALL,true),R=box1020(rx,cyy-Math.floor(oh/2),ow,oh,TT.STONE_PATH,TT.WALL,true);
-    rect1020(L.x+5,L.y+3,L.w-10,L.h-6,TT.WATER,true);rect1020(R.x+5,R.y+3,R.w-10,R.h-6,TT.WATER,true);
-    // Alternating inner/outer gates force turns while keeping mirrored architecture.
-    const outerFirst=i%2===0;
-    const lGateX=outerFirst?L.x:L.x+L.w-1,rGateX=outerFirst?R.x+R.w-1:R.x;
-    door1020(lGateX,L.cy);door1020(rGateX,R.cy);
-    const lInner=L.x+L.w-1,rInner=R.x;door1020(lInner,L.cy-2);door1020(rInner,R.cy-2);
-    // Link from previous stage with L-shaped, offset corridors rather than vertical shafts.
-    const lJoin={x:outerFirst?L.x-1:L.x+L.w,y:L.cy},rJoin={x:outerFirst?R.x+R.w:R.x-1,y:R.cy};
-    line1020(prevL.x,prevL.y,lJoin.x,prevL.y,TT.STONE_PATH,2,true);line1020(lJoin.x,prevL.y,lJoin.x,lJoin.y,TT.STONE_PATH,2,true);
-    line1020(prevR.x,prevR.y,rJoin.x,prevR.y,TT.STONE_PATH,2,true);line1020(rJoin.x,prevR.y,rJoin.x,rJoin.y,TT.STONE_PATH,2,true);
-    // A single ceremonial bridge crosses the central canal at alternating heights, but is never aligned with the next bridge.
-    const bridgeY=L.cy+(i%2?-3:3);line1020(L.x+L.w,bridgeY,cx-3,bridgeY,TT.STONE_PATH,2,true);line1020(cx+3,bridgeY,R.x-1,bridgeY,TT.STONE_PATH,2,true);rect1020(cx-2,bridgeY-1,5,3,TT.STONE_PATH,true);
-    // Service rooms fill outer wall mass, connected to the cloister, not scattered into open space.
-    const sy=L.y-7;if(sy>mid+3){const SL=box1020(7,sy,13,7,TT.STONE_PATH,TT.WALL,true),SR=box1020(COLS-20,sy,13,7,TT.STONE_PATH,TT.WALL,true);door1020(SL.cx,SL.y+SL.h-1);door1020(SR.cx,SR.y+SR.h-1);line1020(SL.cx,SL.y+SL.h-1,L.x+4,L.y,TT.STONE_PATH,2,true);line1020(SR.cx,SR.y+SR.h-1,R.x+R.w-5,R.y,TT.STONE_PATH,2,true);tag1020(SL.cx,SL.cy,i%2?'수문 기록실':'순례객 숙소');tag1020(SR.cx,SR.cy,i%2?'수문 기록실':'순례객 숙소')}
-    // Two of the stages carry symmetric silver chapels with guaranteed holy talismans.
-    if(i===1||i===3){for(const side of [-1,1]){const x=side<0?cx-36:cx+24,yy=cyy-4,r=box1020(x,yy,12,8,TT.MOON_STONE,TT.WALL,true);door1020(side<0?r.x+r.w-1:r.x,r.cy);const toX=side<0?L.x+L.w:R.x-1;line1020(side<0?r.x+r.w-1:r.x,r.cy,toX,r.cy,TT.STONE_PATH,2,true);state.f22HolyCells1023.push({x:r.cx,y:r.cy});;;decor1020(r.cx,r.y+1,'holyIcon1023');tag1020(r.cx,r.cy,'은빛 종교실 · 성부 봉안')}}
-    for(const p of [[L.x+2,L.y+2],[L.x+L.w-3,L.y+2],[R.x+2,R.y+2],[R.x+R.w-3,R.y+2]]);
-    prevL={x:L.x+L.w-2,y:L.y};prevR={x:R.x+1,y:R.y};
-  });
-  // Converge from the top pair into one ceremonial throat immediately below the unchanged avenue.
-  // The final lower-canal approach deliberately makes a U-turn around the water spine; no straight north-south answer line.
-  const returnY=mid+18;rect1020(cx-1,returnY-1,3,3,TT.STONE_PATH,true);
-  line1020(cx,returnY,cx-18,returnY,TT.STONE_PATH,2,true);line1020(cx-18,returnY,cx-18,mid+4,TT.STONE_PATH,2,true);line1020(cx-18,mid+4,cx-6,mid+4,TT.STONE_PATH,2,true);
-  line1020(cx,returnY,cx+18,returnY,TT.STONE_PATH,2,true);line1020(cx+18,returnY,cx+18,mid+4,TT.STONE_PATH,2,true);line1020(cx+18,mid+4,cx+6,mid+4,TT.STONE_PATH,2,true);
-  line1020(prevL.x,prevL.y,cx-18,prevL.y,TT.STONE_PATH,2,true);line1020(cx-18,prevL.y,cx-18,returnY,TT.STONE_PATH,2,true);
-  line1020(prevR.x,prevR.y,cx+18,prevR.y,TT.STONE_PATH,2,true);line1020(cx+18,prevR.y,cx+18,returnY,TT.STONE_PATH,2,true);
-  line1020(cx-6,mid+4,cx+6,mid+4,TT.STONE_PATH,2,true);line1020(cx,mid+4,cx,mid+1,TT.GILDED_FLOOR,3,true);
-  for(let x=1;x<COLS-1;x++)setTerrainTile58(state.map,x,mid,TT.WALL);rect1020(cx-2,mid-1,5,3,TT.GILDED_FLOOR,true);
-
-  /* UPPER HALF — the monumental central avenue is deliberately kept unchanged in shape. */
-  const avenueTop=22;rect1020(cx-3,avenueTop,7,mid-avenueTop,TT.GILDED_FLOOR,true);
-  // Monumental side bays along the avenue add function without altering the avenue footprint.
-  const bayYs=[mid-9,mid-21,mid-33].filter(y=>y>avenueTop+8);for(const yy of bayYs){for(const side of [-1,1]){const bx=side<0?cx-25:cx+12,r=box1020(bx,yy-4,13,9,TT.GILDED_FLOOR,TT.WALL,true);door1020(side<0?r.x+r.w-1:r.x,r.cy);line1020(side<0?r.x+r.w-1:r.x,r.cy,side<0?cx-4:cx+4,r.cy,TT.GILDED_FLOOR,2,true);;}}
-  // At the avenue's far end, north is sealed. Exactly here the procession splits left/right, as requested.
-  const splitY=avenueTop+2;for(let x=cx-4;x<=cx+4;x++)setTerrainTile58(state.map,x,avenueTop-1,TT.WALL);
-  const outerL=7,outerR=COLS-8,downY=Math.min(mid-7,avenueTop+24);
-  line1020(cx-3,splitY,outerL+5,splitY,TT.GILDED_FLOOR,3,true);line1020(cx+3,splitY,outerR-5,splitY,TT.GILDED_FLOOR,3,true);
-  line1020(outerL+5,splitY,outerL+5,downY,TT.GILDED_FLOOR,3,true);line1020(outerR-5,splitY,outerR-5,downY,TT.GILDED_FLOOR,3,true);
-
-  // Dense mirrored palace chain fills the upper wall mass. Every room is on the required side/down/up pilgrimage, not optional junk.
-  const palaceYs=[downY-2,downY-11,downY-20,12].filter((y,i,a)=>y>7&&y<mid-5&&a.indexOf(y)===i).sort((a,b)=>b-a);
-  let lpx=outerL+5,lpy=downY,rpx=outerR-5,rpy=downY;
-  palaceYs.forEach((yy,i)=>{
-    const rw=i%2?15:13,rh=8,lx=i%2?9:20,rx=COLS-lx-rw;
-    const L=box1020(lx,yy,rw,rh,i%2?TT.CARPET:TT.GILDED_FLOOR,TT.WALL,true),R=box1020(rx,yy,rw,rh,i%2?TT.CARPET:TT.GILDED_FLOOR,TT.WALL,true);
-    const le={x:L.x,y:L.cy},re={x:R.x+R.w-1,y:R.cy};door1020(le.x,le.y);door1020(re.x,re.y);
-    // Alternate outside/inside bends so no long segment can see through more than one palace tier.
-    line1020(lpx,lpy,le.x,lpy,TT.GILDED_FLOOR,2,true);line1020(le.x,lpy,le.x,le.y,TT.GILDED_FLOOR,2,true);
-    line1020(rpx,rpy,re.x,rpy,TT.GILDED_FLOOR,2,true);line1020(re.x,rpy,re.x,re.y,TT.GILDED_FLOOR,2,true);
-    const li={x:L.x+L.w-1,y:L.cy},ri={x:R.x,y:R.cy};door1020(li.x,li.y);door1020(ri.x,ri.y);
-    const nx=i%2?cx-18:outerL, mx=i%2?cx+18:outerR;line1020(li.x,li.y,nx,li.y,TT.GILDED_FLOOR,2,true);line1020(ri.x,ri.y,mx,ri.y,TT.GILDED_FLOOR,2,true);
-    ;;
-    lpx=nx;lpy=li.y;rpx=mx;rpy=ri.y;
-  });
-  // Outer ascents finally climb back to the top sanctuary. There is no connection from the avenue directly to this ascent.
-  line1020(lpx,lpy,outerL,lpy,TT.GILDED_FLOOR,2,true);line1020(rpx,rpy,outerR,rpy,TT.GILDED_FLOOR,2,true);line1020(outerL,lpy,outerL,7,TT.GILDED_FLOOR,2,true);line1020(outerR,rpy,outerR,7,TT.GILDED_FLOOR,2,true);
-  // Top stair sanctuary: only side doors, solid south wall.
-  rect1020(cx-7,1,15,8,TT.WALL,true);rect1020(cx-6,2,13,5,TT.GILDED_FLOOR,true);door1020(cx-6,4);door1020(cx+6,4);moveStair1020(cx,3);setTerrainTile58(state.map,cx,3,TT.STAIR);
-  line1020(outerL,7,cx-6,7,TT.GILDED_FLOOR,2,true);line1020(cx-6,7,cx-6,4,TT.GILDED_FLOOR,2,true);line1020(outerR,7,cx+6,7,TT.GILDED_FLOOR,2,true);line1020(cx+6,7,cx+6,4,TT.GILDED_FLOOR,2,true);
-
-  clearOldKeyTiles1020();state.keyPlan96=null;state.midGate22_1020=null;state.midKey22_1020=null;state.goldIndoor1020=true;
-  state.layoutName='만루의 심장 · 밀집 하부 수로원 / 은빛 종교실 / 중앙 장엄대로 보존 / 회귀형 금빛 상궁';
-  tag1020(cx,splitY,'중앙 장엄대로 종점 · 좌우 순례회랑 분기');
-};
-
-
-/* ===== MANRU v10.0.4 r4 — F15 organic weave / F22 preserved ceremonial spine / special-floor decor parity ===== */
-
-/* F15 r8: varied mirrored salons around a braided circulation graph. Every chamber has >=2 useful links. */
-build15_1020=function(){
-  bossMazeCommon1020(15);
-  const cx=Math.floor(COLS/2),F=TT.CARPET,keepTop=17;
-  // bossMazeCommon leaves metadata for rooms that we are about to replace. Keep only real top/boss rooms; stale lower rooms must not survive as fake unreachable chambers.
-  state.rooms=(state.rooms||[]).filter(r=>r&&Number.isFinite(r.cy)&&r.cy<keepTop&&safeFloorTile1020(state.map[r.cy]?.[r.cx]));
-  for(let y=keepTop;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)setTerrainTile58(state.map,x,y,TT.WALL);
-  movePlayer1020(cx,ROWS-5);
-  const rooms=[];
-  const mk=(cx0,cy0,w,h,name)=>{const r=box1020(Math.round(cx0-w/2),Math.round(cy0-h/2),w,h,F,TT.WALL,true);rooms.push(r);tag1020(r.cx,r.cy,name);return r};
-  const connect=(a,b,phase=0)=>{
-    const horiz=Math.abs(a.cx-b.cx)>=Math.abs(a.cy-b.cy),sgnX=Math.sign(b.cx-a.cx)||1,sgnY=Math.sign(b.cy-a.cy)||-1;
-    let ax=horiz?(sgnX>0?a.x+a.w-1:a.x):a.cx, ay=horiz?a.cy:(sgnY>0?a.y+a.h-1:a.y);
-    let bx=horiz?(sgnX>0?b.x:b.x+b.w-1):b.cx, by=horiz?b.cy:(sgnY>0?b.y:b.y+b.h-1);
-    door1020(ax,ay);door1020(bx,by);
-    if(horiz){const bend=Math.round((ax+bx)/2)+(phase%2?2:-2);line1020(ax,ay,bend,ay,F,2,true);line1020(bend,ay,bend,by,F,2,true);line1020(bend,by,bx,by,F,2,true)}
-    else{const bend=Math.round((ay+by)/2)+(phase%2?2:-2);line1020(ax,ay,ax,bend,F,2,true);line1020(ax,bend,bx,bend,F,2,true);line1020(bx,bend,bx,by,F,2,true)}
-  };
-  const start=mk(cx,ROWS-6,11,5,'침모전 진입전실');
-  // Staggered sizes/y positions make the plan feel architectural rather than a room-grid.
-  const A=[mk(cx-24,43,9,6,'서 비단응접실'),mk(cx-7,40,11,7,'서 거울실'),mk(cx+8,40,11,7,'동 거울실'),mk(cx+25,43,9,6,'동 비단응접실')];
-  const B=[mk(cx-30,33,8,6,'서 향실'),mk(cx-15,31,10,6,'서 자수실'),mk(cx,34,9,7,'중앙 경대실'),mk(cx+15,31,10,6,'동 자수실'),mk(cx+30,33,8,6,'동 향실')];
-  const C=[mk(cx-24,23,10,6,'서 환영실'),mk(cx-7,25,9,6,'서 비밀내실'),mk(cx+8,25,9,6,'동 비밀내실'),mk(cx+25,23,10,6,'동 환영실')];
-  connect(start,A[1],0);connect(start,A[2],1);connect(start,A[0],0);connect(start,A[3],1);
-  connect(A[0],A[1],0);connect(A[1],A[2],1);connect(A[2],A[3],0);
-  connect(A[0],B[0],0);connect(A[0],B[1],1);connect(A[1],B[1],0);connect(A[1],B[2],1);connect(A[2],B[2],0);connect(A[2],B[3],1);connect(A[3],B[3],0);connect(A[3],B[4],1);
-  connect(B[0],B[1],1);connect(B[1],B[2],0);connect(B[2],B[3],1);connect(B[3],B[4],0);
-  connect(B[0],C[0],0);connect(B[1],C[0],1);connect(B[1],C[1],0);connect(B[2],C[1],1);connect(B[2],C[2],0);connect(B[3],C[2],1);connect(B[3],C[3],0);connect(B[4],C[3],1);
-  connect(C[0],C[1],0);connect(C[1],C[2],1);connect(C[2],C[3],0);
-  // Two boss-threshold approaches; either choice rejoins immediately at the threshold instead of forcing a floor-wide return.
-  const L={x:cx-8,y:15,w:5,h:3,cx:cx-6,cy:16},R={x:cx+4,y:15,w:5,h:3,cx:cx+6,cy:16};rect1020(L.x,L.y,L.w,L.h,F,true);rect1020(R.x,R.y,R.w,R.h,F,true);
-  connect(C[0],L,0);connect(C[1],L,1);connect(C[2],R,0);connect(C[3],R,1);rect1020(cx-7,15,15,3,F,true);line1020(cx,17,cx,15,F,2,true);
-  // Paired short reward salons remain loops, never dead inaccessible rectangles.
-  const RL=mk(8,36,7,5,'서 유희실'),RR=mk(COLS-9,36,7,5,'동 유희실');connect(RL,A[0],0);connect(RL,B[0],1);connect(RR,A[3],0);connect(RR,B[4],1);
-  const all=[...rooms];all.forEach((r,i)=>{;if(i%2===0){;;}});
-  // Last-resort geometric check: connect any accidentally severed chamber to its nearest reachable corridor, never leave decorative unreachable rooms.
-  let reach=reachableSet1020({unlock:true,openBoss:true});for(const r of all){if(reach.has(K1020(r.cx,r.cy)))continue;let best=null,bd=1e9;for(const kk of reach){const[x,y]=kk.split(',').map(Number),d=Math.abs(x-r.cx)+Math.abs(y-r.cy);if(d<bd){bd=d;best={x,y}}}if(best){line1020(r.cx,r.cy,best.x,r.cy,F,2,true);line1020(best.x,r.cy,best.x,best.y,F,2,true);reach=reachableSet1020({unlock:true,openBoss:true})}}
-  // The original boss theatre leaves two ornate side galleries at y≈10. They are real rooms, not scenery: give each a short mirrored door/corridor into the boss-side hall so no decorative chamber is unreachable.
-  const galleryY=10;door1020(20,galleryY);line1020(20,galleryY,26,galleryY,F,1,true);door1020(54,galleryY);line1020(48,galleryY,54,galleryY,F,1,true);
-  state.layoutName=(state.layoutName||'유혹의 내실')+' · 교차 비단살롱 / 짧은 재합류 / 쌍환 동선 / 후면 침모실';
-};
-
-/* F22 r8: narrow canal cloister -> PRESERVED ceremonial spine -> split/down/grand-palace pilgrimage -> side-entry stair sanctuary. */
-build22_1020=function(){
   clearOldKeyTiles1020();const oldR=ROWS,targetH=Math.max(119,oldR*2-1),cx=Math.floor(COLS/2);ROWS=targetH;
   state.map=Array.from({length:ROWS},()=>Array(COLS).fill(TT.WALL));state.rooms=[];state.f22HolyCells1023=[];state.archDecor1023=state.archDecor1023||{};
   const G=TT.GILDED_FLOOR,S=TT.MOON_STONE,W=TT.WATER,WOOD=TT.WOOD_FLOOR,mid=Math.floor((ROWS-1)/2),bot=ROWS-6;
@@ -18882,7 +18381,73 @@ build22_1020=function(){
   clearOldKeyTiles1020();state.keyPlan96=null;state.midGate22_1020=null;state.midKey22_1020=null;state.goldIndoor1020=true;
   state.floor22RouteR44={points:route.map(p=>({...p})),nominalLength:route.slice(1).reduce((n,p,i)=>n+Math.abs(p.x-route[i].x)+Math.abs(p.y-route[i].y),0),width:3};
   state.layoutName='만루의 심장 · 대회귀 수로순례 / 삼중 은빛 의장로 / 사궁 금빛 회귀미궁 / 최종 신궁';
-};
+}
+
+/* F23: keep the mercury/bridge network, enlarge selected existing stone nodes into major islands and add gold-floored buildings. */
+function build23_1020(){
+  const centers=[];for(let y=6;y<ROWS-6;y+=10)for(let x=8;x<COLS-8;x+=12){let score=0;for(let yy=y-3;yy<=y+3;yy++)for(let xx=x-4;xx<=x+4;xx++){const t=state.map[yy]?.[xx];if(t===TT.MOON_STONE||t===TT.STONE_PATH||t===TT.WOOD_FLOOR||t===TT.DRAWBRIDGE_DOWN)score++}if(score>=5)centers.push({x,y,score})}centers.sort((a,b)=>b.score-a.score);const chosen=[];for(const p of centers){if(chosen.every(q=>Math.abs(q.x-p.x)+Math.abs(q.y-p.y)>18))chosen.push(p);if(chosen.length>=6)break}
+  for(const [i,p] of chosen.entries()){
+    const iw=i%2?15:13,ih=i%3?11:9,x=clamp1020(p.x-Math.floor(iw/2),2,COLS-iw-2),y=clamp1020(p.y-Math.floor(ih/2),2,ROWS-ih-2);
+    rect1020(x,y,iw,ih,TT.MOON_STONE,true);const bw=iw-4,bh=ih-4,bx=x+2,by=y+2;box1020(bx,by,bw,bh,TT.GILDED_FLOOR,TT.WALL,true);const side=i%4,dx=side===0?-1:side===1?1:0,dy=side===2?-1:side===3?1:0;let gx=side===0?bx:side===1?bx+bw-1:bx+Math.floor(bw/2),gy=side===2?by:side===3?by+bh-1:by+Math.floor(bh/2);door1020(gx,gy);
+    // short bridge from the new island edge until it meets existing passable network
+    let sx=gx+dx,sy=gy+dy;for(let n=0;n<8&&inside1020(sx,sy);n++,sx+=dx,sy+=dy){if(pass1020(state.map[sy][sx]))break;setTerrainTile58(state.map,sx,sy,TT.WOOD_FLOOR)}
+    for(let xx=bx+2;xx<bx+bw-2;xx+=3){if(by>1)window1020(xx,by);if(by+bh-1<ROWS-1)window1020(xx,by+bh-1)}tag1020(p.x,p.y,`수은섬 금빛 객전 ${i+1}`)
+  }
+  state.goldIndoor1020=true;state.layoutName=(state.layoutName||'수은 연못')+' · 대형 건물섬 / 금빛 실내 객전';
+}
+
+/* F24: append one genuinely large building. Deepest chamber holds the brass key; an outdoor gate guards the stair. */
+function installCustomBrassPlan24_1020(keyPos,gatePos){
+  // Generation installs the plan once. Load/final-repair must preserve an already collected key or opened gate.
+  const plan=state?.keyPlan96,brassKey=plan?.keys?.find(q=>q.keyId==='brass'&&q.x===keyPos.x&&q.y===keyPos.y),brassDoor=plan?.doors?.find(d=>d.keyId==='brass'&&d.x===gatePos.x&&d.y===gatePos.y),same=plan?.kind==='exit-vestibule'&&brassKey&&brassDoor;
+  if(!same)return installCustomKeyPlan1020('brass',keyPos,gatePos,'exit-vestibule');
+  plan.ring=plan.ring&&typeof plan.ring==='object'?plan.ring:{};plan.ring.brass=Math.max(0,+plan.ring.brass||0);
+  for(const q of plan.keys||[])if(q.keyId==='brass'){if(q.active===false){if(state.map?.[q.y]?.[q.x]===TT.KEY_TILE)setTerrainTile58(state.map,q.x,q.y,TT.FLOOR)}else setTerrainTile58(state.map,q.x,q.y,TT.KEY_TILE)}
+  for(const d of plan.doors||[])if(d.keyId==='brass')setTerrainTile58(state.map,d.x,d.y,d.open===true?TT.OPEN_DOOR:TT.LOCKED_GATE);
+  for(const g of plan.groups||[])if(g.keyId==='brass')for(const d of g.doors||[]){const hit=(plan.doors||[]).find(q=>q.x===d.x&&q.y===d.y&&q.keyId==='brass');d.open=hit?.open===true}
+  return plan;
+}
+function build24_1020(){
+  const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2),w=33,h=23,x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);rect1020(x,y,w,h,TT.WALL,true);rect1020(x+1,y+1,w-2,h-2,TT.GILDED_FLOOR,true);rect1020(cx-1,y+1,2,h-2,TT.GILDED_FLOOR,true);
+  for(const yy of [y+6,y+12,y+17]){for(let xx=x+1;xx<x+w-1;xx++)setTerrainTile58(state.map,xx,yy,TT.WALL);door1020(cx-1,yy);door1020(cx,yy);for(const dx of [-10,10])door1020(cx+dx,yy)}for(const xx of [x+8,x+16,x+24]){for(let yy=y+1;yy<y+h-1;yy++)if(Math.abs(xx-cx)>2)setTerrainTile58(state.map,xx,yy,TT.WALL);for(const yy of [y+3,y+9,y+15,y+20])if(inside1020(xx,yy))door1020(xx,yy)}
+  // choose the outer entrance facing the player and extend a neutral stone approach until it meets the original outdoor network.
+  const dxp=state.player.x-cx,dyp=state.player.y-cy;let gate,dir;if(Math.abs(dxp)>Math.abs(dyp)){if(dxp<0){gate={x,y:cy};dir={x:-1,y:0}}else{gate={x:x+w-1,y:cy};dir={x:1,y:0}}}else{if(dyp<0){gate={x:cx,y};dir={x:0,y:-1}}else{gate={x:cx,y:y+h-1};dir={x:0,y:1}}}door1020(gate.x,gate.y);let ax=gate.x+dir.x,ay=gate.y+dir.y;for(let n=0;n<24&&inside1020(ax,ay);n++,ax+=dir.x,ay+=dir.y){const old=state.map[ay][ax];if(n>2&&safeFloorTile1020(old))break;setTerrainTile58(state.map,ax,ay,TT.STONE_PATH)}
+  for(let xx=x+3;xx<x+w-3;xx+=4){if(!(gate.y===y&&xx===gate.x))window1020(xx,y);if(!(gate.y===y+h-1&&xx===gate.x))window1020(xx,y+h-1)}
+  // deepest reachable room is opposite the entrance. Because the hall is connected, this is deliberately reachable before the stair gate.
+  const keyPos={x:cx-dir.x*0,y:cy-dir.y*0};let kp={x:cx,y:cy};const cells=reachableSet1020({unlock:true});let best=-1;for(const kk of cells){const [xx,yy]=kk.split(',').map(Number);if(xx<=x+1||xx>=x+w-2||yy<=y+1||yy>=y+h-2||!safeFloorTile1020(state.map[yy][xx]))continue;const dist=Math.abs(xx-gate.x)+Math.abs(yy-gate.y);if(dist>best){best=dist;kp={x:xx,y:yy}}}
+  const s=state.stairs,gx=clamp1020(s.x,3,COLS-4),gy=clamp1020(s.y,3,ROWS-4);rect1020(gx-3,gy-3,7,7,TT.WALL,true);rect1020(gx-2,gy-2,5,5,TT.STONE_PATH,true);setTerrainTile58(state.map,gx,gy,TT.STAIR);state.stairs={x:gx,y:gy};
+  // one approach gate on the stair vestibule, facing the map center.
+  const ddx=Math.abs(gx-cx)>Math.abs(gy-cy)?Math.sign(cx-gx):0,ddy=ddx?0:Math.sign(cy-gy),gatePos={x:gx+ddx*3,y:gy+ddy*3};line1020(gatePos.x+ddx,gatePos.y+ddy,cx,cy,TT.STONE_PATH,1,false);installCustomBrassPlan24_1020(kp,gatePos);
+  state.goldIndoor1020=true;state.deepKey24_1020=kp;state.outdoorGate24_1020=gatePos;state.layoutName=(state.layoutName||'만루보주의 정원')+' · 대형 금빛 원관 / 최심부 황동열쇠 / 야외 계단문';tag1020(kp.x,kp.y,'대형 원관 최심부 · 황동열쇠');
+}
+
+/* Selective architecture only. No global map replacement. */
+
+/* ===== ARCHITECTURE REVISION 1023: requested density / organic route / canal sanctum ===== */
+
+function ring1023(x,y,w,h,t=TT.WOOD_FLOOR){
+  for(let xx=x;xx<x+w;xx++){set1020(xx,y,t,true);set1020(xx,y+h-1,t,true)}
+  for(let yy=y;yy<y+h;yy++){set1020(x,yy,t,true);set1020(x+w-1,yy,t,true)}
+}
+function wallBand1023(x0,x1,y,gaps=[]){for(let x=x0;x<=x1;x++){if(gaps.some(g=>x>=g[0]&&x<=g[1]))continue;if(!PROTECTED1020().has(state.map[y]?.[x]))setTerrainTile58(state.map,x,y,TT.WALL)}}
+function pureWalkPath1023(){const p=ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player),state.stairs);return p?[{x:state.player.x,y:state.player.y},...p]:[]}
+
+/* F06 r2 — veranda ring outside, tangled inner rooms, one guarded treasure chamber. */
+
+/* F11 r2 — no bottom/side land bypass. River traversal only; existing raft/blink system is preserved. */
+
+/* F15 r5 — compact organic mirror-maze: many small chambers, braided short loops, no broad dead halls. */
+
+/* F16 r2 — actual layered castle wards. Outer fortifications and internal living quarters are both subdivided. */
+
+/* F22 r3 — preserve the monumental central avenue itself. Dense lower canal cloister; avenue ends in a forced side/down/up palace pilgrimage. */
+
+
+/* ===== MANRU v10.0.4 r4 — F15 organic weave / F22 preserved ceremonial spine / special-floor decor parity ===== */
+
+/* F15 r8: varied mirrored salons around a braided circulation graph. Every chamber has >=2 useful links. */
+
+/* F22 r8: narrow canal cloister -> PRESERVED ceremonial spine -> split/down/grand-palace pilgrimage -> side-entry stair sanctuary. */
 
 function buildArchitecture1020(){const fn={4:build4_1020,5:build5_1020,6:build6_1020,8:build8_1020,11:build11_1020,15:build15_1020,16:build16_1020,18:build18_1020,20:build20_1020,22:build22_1020,23:build23_1020,24:build24_1020}[state.floor];if(fn)fn()}
 
