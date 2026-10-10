@@ -5729,9 +5729,9 @@ let updatePanels;
 
 
 function isMobileViewport(){return window.matchMedia('(max-width:1080px)').matches}
-function syncGameViewport(){ClientEnvironment.refresh('viewport');const observing=!!state?.debugBattle57,w=document.getElementById(observing?(DEBUG_BATTLE57.watching?'battleWatchViewport57':'battleViewport57'):'canvasWrap'),cs=getComputedStyle(w),cw=Math.max(observing?1:300,Math.floor((w.clientWidth||(observing?innerWidth:0))-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))),ch=Math.max(observing?1:280,Math.floor((w.clientHeight||(observing?innerHeight-130:0))-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0))),dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));if(VIEW.w!==cw||VIEW.h!==ch||VIEW.dpr!==dpr){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false}}
+function syncViewportOnWindowResize(){ClientEnvironment.refresh('viewport');const observing=!!state?.debugBattle57,w=document.getElementById(observing?(DEBUG_BATTLE57.watching?'battleWatchViewport57':'battleViewport57'):'canvasWrap'),cs=getComputedStyle(w),cw=Math.max(observing?1:300,Math.floor((w.clientWidth||(observing?innerWidth:0))-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))),ch=Math.max(observing?1:280,Math.floor((w.clientHeight||(observing?innerHeight-130:0))-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0))),dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));if(VIEW.w!==cw||VIEW.h!==ch||VIEW.dpr!==dpr){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false}}
 /* Phase 12: CameraProjection12 and WorldHitTest12 are installed before runtime input can fire. */
-window.addEventListener('resize',syncGameViewport,{passive:true});window.addEventListener('orientationchange',()=>setTimeout(syncGameViewport,80),{passive:true});
+window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});window.addEventListener('orientationchange',()=>setTimeout(syncGameViewport,80),{passive:true});
 
 /* ===== MANRU rendering override ===== */
 function regionColors(){const c=regionColorsWithFloor11(),p=FLOOR91[regionIndex()]||FLOOR91[0];return{...c,floor:p.floor,floorAlt:p.alt,fog:p.fog}}
@@ -7823,12 +7823,12 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   /* ---------- performance: 1x mobile raster, dirty rendering, diff-only HUD ---------- */
   const PERF49={dirty:true,panelDirty:true,miniDirty:true,lastFrame:0,lastPanel:0,lastMini:0,lastHud:0,lastDrawCost:10,emaCost:10,lastTurn:-1,lastEquip:'',lastLog:'',viewW:0,viewH:0};
   function mobileDpr49(){return isMobileViewport()?1:Math.min(1.5,Math.max(1,window.devicePixelRatio||1))}
-  syncGameViewport=function(){
+  function syncGameViewport(){
     const observing=!!state?.debugBattle57,w=document.getElementById(observing?(DEBUG_BATTLE57.watching?'battleWatchViewport57':'battleViewport57'):'canvasWrap');if(!w||!C?.isConnected)return false;
     const cs=getComputedStyle(w),cw=Math.max(observing?1:300,Math.floor((w.clientWidth||(observing?innerWidth:0))-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))),ch=Math.max(observing?1:280,Math.floor((w.clientHeight||(observing?innerHeight-130:0))-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0))),dpr=mobileDpr49();
     if(VIEW.w!==cw||VIEW.h!==ch||Math.abs(VIEW.dpr-dpr)>.01){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false;PERF49.dirty=true;PERF49.miniDirty=true}
     return true;
-  };
+  }
   
   
   
