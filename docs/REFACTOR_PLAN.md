@@ -1,4 +1,6 @@
-# 만루 V40 구조 통합 계획
+# 만루 V40 구조 통합 계획 (수행 완료 — 결과는 ARCHITECTURE.md)
+
+> 이 문서는 시작 시점의 조사와 계획이다. 실제 결과와 최종 지표는 `docs/ARCHITECTURE.md`, 남은 판단 사항은 `docs/FINDINGS.md`에 있다.
 
 기준: `MANRU_V40_SEAWEED_COOKING_SOURCE_20261007` (커밋 `2770b75`에 손대지 않고 들여옴).
 진행 방식: 검사기·기준선을 먼저 만들고, 영역 하나를 커밋 하나로 통합한다. 커밋마다 `npm run check`와 `npm test`(V40 기준선과 해시 비교)를 통과해야 한다.
