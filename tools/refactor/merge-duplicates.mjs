@@ -48,6 +48,9 @@ for (const d of dups) {
   const D = one(d);
   for (const r of D.b.refs) {
     if (r.node.start >= D.fn.start && r.node.end <= D.fn.end) continue;
+    // The kept name must still mean the kept function at this spot (no local shadows it).
+    const seen = A.resolveFrom(keep, r.ancestors);
+    if (seen !== K.b) throw new Error(`${d}: at line ${r.node.loc.start.line} the name ${keep} is shadowed by another binding`);
     const p = r.parent;
     if (p.type === 'Property' && p.shorthand && p.value === r.node) edits.push({ start: p.start, end: p.end, text: `${d.split('@')[0]}:${keep}` });
     else edits.push({ start: r.node.start, end: r.node.end, text: keep });
