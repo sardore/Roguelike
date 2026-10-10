@@ -104,7 +104,7 @@ if (process.argv.includes('--md')) {
   for (const x of out) {
     const d = Object.entries(x.defined);
     const g = d.filter(([, v]) => !v.qa), q = d.filter(([, v]) => v.qa);
-    const kind = g.length ? (q.length ? '게임+QA 섞임' : '게임') : (d.length || x.testReadsObject || x.gameReads ? 'QA' : '전체 미사용');
+    const kind = g.length ? (q.length ? '게임+QA 섞임' : '게임') : (!d.length && x.gameReads ? '게임' : x.testReadsObject || d.length ? 'QA' : '전체 미사용');
     L.push(`## ${x.name} — ${kind} (줄 ${x.defs.join(',')})`);
     if (g.length) L.push(`- 게임: ${g.map(([k, v]) => `${k}(${v.reads})`).join(', ')}`);
     if (q.length) L.push(`- QA: ${q.map(([k, v]) => k + (v.test ? '[테스트]' : '')).join(', ')}`);
