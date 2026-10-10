@@ -16118,7 +16118,7 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
   C.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas:contextmenu');
   document.getElementById('runtimeInput81')?.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});InputRouter.noteListener('world:contextmenu-inspect');
 
-  window.__MANRU_V1001__={renderClasses:renderClassGrid1001,paintLighting:paintClassLighting1001,startSprite:name=>globalThis.__MANRU_ITEM_ART_R7__?.sprite(name)||'',portrait:classPortrait1001};
+  window.__MANRU_V1001__={renderClasses:renderClassGrid1001,paintLighting:paintClassLighting1001,startSprite:name=>globalThis.__MANRU_ITEM_ART_R7__?.sprite(name)||'',portrait:(id='wanderer')=>ACTOR_ART1012.classPreviewData(id)};
 
   /* v10.0.2: one canonical screen state, instead of leaving the class picker alive behind display:none. */
   const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
@@ -16149,7 +16149,7 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
   bootScreen1002();
 
   // Basic controls are documented at the point they matter, without blocking gameplay.
-  window.__MANRU_V1002__={screen:()=>SCREEN1002.mode,setScreen:setScreen1002,sprite:(id='wanderer')=>globalThis.__MANRU_ACTOR_ART__?.classPreviewData?.(id)||EMPTY_ACTOR1001,actorBox:()=>({scale:1.2,topOverflow:TILE*.2,bottomOverflow:0}),boot:bootScreen1002};
+  window.__MANRU_V1002__={screen:()=>SCREEN1002.mode,setScreen:setScreen1002,sprite:(id='wanderer')=>ACTOR_ART1012.classPreviewData(id),actorBox:()=>({width:32,height:36,topOverflow:4,bottomOverflow:0,scale:1}),boot:bootScreen1002};
 
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.2 SCREEN STATE / SHARED PLAYER SPRITE / BASIC GUIDE';
   const releaseStamp992=document.getElementById('releaseStamp70');if(releaseStamp992)releaseStamp992.textContent='v10.0.2';
@@ -16174,47 +16174,6 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
     /* ---------- player sprite: 36x52 exact-pixel world render, feet anchored to tile bottom ---------- */
     const PW1003=36,PH1003=52,PLAYER1003_CACHE=new Map();
-    function pc1003(){const c=document.createElement('canvas');c.width=PW1003;c.height=PH1003;const q=c.getContext('2d');q.imageSmoothingEnabled=false;return[c,q]}
-    function playerSprite1003(id='wanderer',weaponName=''){
-      const key=`${id}|${weaponName||''}`;if(PLAYER1003_CACHE.has(key))return PLAYER1003_CACHE.get(key);
-      const[c,q]=pc1003(),r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
-      q.clearRect(0,0,PW1003,PH1003);
-      if(id==='escort'){
-        // tall lamellar silhouette: narrow shoulders, long skirt/legs, compact helmet
-        r(10,3,16,4,'#263136');r(13,0,11,4,'#445159');r(17,0,3,3,'#a34537');
-        r(12,7,13,11,'#c3aa82');r(14,11,3,2,'#20201e');r(21,11,3,2,'#20201e');
-        r(9,18,19,20,'#5b5148');r(11,19,15,4,'#99836c');r(12,24,13,2,'#c0a57b');r(12,29,13,2,'#c0a57b');r(12,34,13,2,'#c0a57b');
-        r(6,20,4,17,'#4b4138');r(28,20,4,17,'#4b4138');r(12,38,6,11,'#2a241f');r(21,38,6,11,'#2a241f');r(11,48,8,4,'#171411');r(20,48,8,4,'#171411');
-        r(8,18,2,18,'#88745c');r(27,18,2,18,'#88745c');
-      }else if(id==='swordsman'){
-        r(10,4,16,4,'#0e191d');r(13,1,12,4,'#20363d');r(25,2,5,10,'#17282e');
-        r(12,8,13,11,'#cad2cf');r(14,12,3,2,'#172126');r(21,12,3,2,'#172126');r(17,17,5,2,'#6b4a3d');
-        r(9,19,19,19,'#4f707b');r(11,20,15,4,'#7f9ca5');r(6,20,4,18,'#87322d');r(28,20,4,18,'#31525e');r(11,30,15,4,'#36545f');
-        r(12,38,6,11,'#17252a');r(21,38,6,11,'#17252a');r(11,48,8,4,'#0e171a');r(20,48,8,4,'#0e171a');
-      }else{
-        // inspector: taller gat + narrow cream coat; old 24px-wide squat torso removed
-        r(8,5,20,3,'#100a07');r(11,2,14,4,'#21140d');r(14,0,8,2,'#4b2d1b');
-        r(11,8,14,11,'#d1b58e');r(9,9,2,10,'#68442f');r(25,9,2,10,'#68442f');r(14,12,3,2,'#1a1714');r(21,12,3,2,'#1a1714');r(17,17,4,2,'#805339');
-        r(8,19,20,20,'#d0b98f');r(11,20,14,17,'#ead7af');r(14,22,8,14,'#80332c');r(16,24,4,8,'#be8f4e');r(17,26,2,4,'#e4c36f');
-        r(5,20,4,18,'#b99159');r(28,20,4,18,'#cdbb89');r(5,18,5,4,'#6b4527');r(28,18,5,4,'#a63c2f');
-        r(11,39,7,10,'#35221a');r(21,39,7,10,'#35221a');r(10,48,9,4,'#1d120e');r(20,48,9,4,'#1d120e');
-      }
-      const weapon=weaponName?WEAPONS.find(w=>w.name===weaponName):null;
-      if(weapon){
-        const kind=weapon.kind||'blade';
-        if(kind==='bow'){
-          q.strokeStyle='#8c6337';q.lineWidth=2;q.beginPath();q.arc(30,29,7,-1.35,1.35);q.stroke();q.strokeStyle='#d8c198';q.lineWidth=1;q.beginPath();q.moveTo(31,22);q.lineTo(31,38);q.stroke();
-        }else if(kind==='spear'){
-          r(32,11,2,36,'#9b7041');r(31,6,4,7,'#d7d3c6');r(32,4,2,3,'#eee9d9');
-        }else if(kind==='blunt'){
-          r(31,24,3,23,'#76502e');r(28,18,8,9,'#918271');r(29,19,6,3,'#b1a08b');
-        }else{
-          r(31,17,2,29,'#d7d6cd');r(30,13,4,6,'#eeeade');r(28,43,8,3,'#8d6638');
-        }
-      }
-      PLAYER1003_CACHE.set(key,c);return c;
-    }
-    const playerSpriteData1003=(id='wanderer',weapon='')=>playerSprite1003(id,weapon).toDataURL('image/png');
 
     
     
@@ -16225,8 +16184,6 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
 
     /* Starting-item cards are not mutated here. The class renderer consumes canonical real item art directly. */
-    if(window.__MANRU_V1001__)window.__MANRU_V1001__.portrait=id=>{const cls=CLASSES.find(c=>c.id===id);return playerSpriteData1003(id,cls?.startWeapon||'')}
-    if(window.__MANRU_V1002__){window.__MANRU_V1002__.sprite=(id='wanderer',weapon='')=>playerSpriteData1003(id,weapon);window.__MANRU_V1002__.actorBox=()=>({width:PW1003,height:PH1003,topOverflow:PH1003-TILE,bottomOverflow:0,scale:1})}
 
     /* ---------- visible real quit button ---------- */
     function ensureQuit1003(){
@@ -16263,7 +16220,7 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
     window.__MANRU_V1003__={
       version:V1003,
-      player:(id='wanderer',weapon='')=>playerSpriteData1003(id,weapon),
+      player:(id='wanderer')=>ACTOR_ART1012.classPreviewData(id),
       actorBox:()=>({width:PW1003,height:PH1003,topOverflow:PH1003-TILE,bottomOverflow:0}),
       item:name=>globalThis.__MANRU_ITEM_ART_R7__?.sprite(name)||null,
       itemKinds:()=>CONSUMABLES.filter(i=>i.type==='food'||i.type==='ingredient').map(i=>({name:i.name,kind:i.foodKind,canonical:!!globalThis.__MANRU_ITEM_ART_R7__?.sprite(i.name)})),
@@ -16686,15 +16643,12 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
       PLAYER1004.set(key,c);return c;
     }
     function classGear1004(cls){return{weapon:cls?.startWeapon?{...(WEAPONS.find(w=>w.name===cls.startWeapon)||{}),name:cls.startWeapon}:null,armor:{...(ARMORS?.[0]||{}),name:ARMORS?.[0]?.name||'경량복',tier:1,rarity:'common'},cloak:null,relic:null,trinket:null}}
-    function playerData1004(id='wanderer',p=null,dir='down',attack=false){return playerSprite1004(id,p,dir,attack).toDataURL('image/png')}
 
     
     
 
     /* ---------- class screen uses the exact same compact sprite source ---------- */
     // r40: retired the old class-grid mutation owner. The final actor service now consumes this exact v10.0.4 start-sprite source directly, so reopening the class picker cannot silently swap portraits behind the canonical renderer.
-    if(window.__MANRU_V1001__)window.__MANRU_V1001__.portrait=id=>{const cls=CLASSES.find(c=>c.id===id);return playerData1004(id,classGear1004(cls),'down',false)};
-    if(window.__MANRU_V1002__){window.__MANRU_V1002__.sprite=(id='wanderer',weapon='')=>{const cls=CLASSES.find(c=>c.id===id),g=classGear1004(cls);if(weapon)g.weapon={...(WEAPONS.find(w=>w.name===weapon)||{}),name:weapon};return playerData1004(id,g,'down',false)};window.__MANRU_V1002__.actorBox=()=>({width:32,height:36,topOverflow:4,bottomOverflow:0,scale:1})}
 
     document.title='만루 — v10.0.4 디버그 수정 · 도달성/퍼마데스 보강';
     if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 DEBUG FIX / LATE ITEM REACHABILITY / DEAD-RUN REGISTRY';
@@ -16702,9 +16656,9 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
     window.__MANRU_V1004__={
       version:V1004,
-      actorBox:()=>({width:PW1004,height:PH1004,topOverflow:PH1004-TILE,bottomOverflow:0}),
+      actorBox:()=>({width:32,height:36,topOverflow:4,bottomOverflow:0}),
       canvas:(id='wanderer',gear=null,dir='down',attack=false)=>playerSprite1004(id,gear||classGear1004(CLASSES.find(c=>c.id===id)),dir,!!attack),
-      player:(id='wanderer',gear=null,dir='down')=>playerData1004(id,gear||classGear1004(CLASSES.find(c=>c.id===id)),dir,false),
+      player:(id='wanderer',gear=null,dir='down')=>ACTOR_ART1012.player(id,gear||ACTOR_ART1012.startGear(id),dir,false).toDataURL('image/png'),
       gearKey:()=>state?gearKey1004(state.player):null,
       saveAudit:()=>({screen:window.__MANRU_V1002__?.screen?.(),current:!!currentRaw1004(),currentVersion:(()=>{try{return JSON.parse(currentRaw1004()||'null')?.saveVersion1004||null}catch(_){return null}})(),legacyRun:!!localStorage.getItem(LEGACY_RUN1004),legacyDeath:!!localStorage.getItem(LEGACY_DEATH1004),death:deathMeta1004(),deadRuns:deadRuns1004().size,lateItems:state?.lateItemRepair1004||null}),
       forceSave:writeRun1004,
@@ -20008,11 +19962,6 @@ function renderSprite1012(m,c,player=false){const now=FX.frameNow??performance.n
 
 function drawWorldCreature1012(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART1012.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite1012(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART1012.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite1012(m,c,false)}const c=monsterCanvas1012(m,((performance.now()/430+m.x*3+m.y)|0)&1);return renderSprite1012(m,c,false)}
 window.__MANRU_V1001__?.renderClasses();
-if(window.__MANRU_V1001__)window.__MANRU_V1001__.portrait=id=>ACTOR_ART1012.classPreviewData(id);
-if(window.__MANRU_V1002__){window.__MANRU_V1002__.sprite=(id='wanderer')=>ACTOR_ART1012.classPreviewData(id);window.__MANRU_V1002__.actorBox=()=>({width:32,height:36,topOverflow:4,bottomOverflow:0,scale:1})}
-if(window.__MANRU_V1003__)window.__MANRU_V1003__.player=(id='wanderer')=>ACTOR_ART1012.classPreviewData(id);
-if(window.__MANRU_V1004__){window.__MANRU_V1004__.player=(id='wanderer',gear=null,dir='down')=>ACTOR_ART1012.player(id,gear||ACTOR_ART1012.startGear(id),dir,false).toDataURL('image/png');window.__MANRU_V1004__.actorBox=()=>({width:32,height:36,topOverflow:4,bottomOverflow:0})}
-for(const [obj,key,fn] of [[window.__MANRU_V1001__,'portrait',(id='wanderer')=>ACTOR_ART1012.classPreviewData(id)],[window.__MANRU_V1002__,'sprite',(id='wanderer')=>ACTOR_ART1012.classPreviewData(id)],[window.__MANRU_V1003__,'player',(id='wanderer')=>ACTOR_ART1012.classPreviewData(id)],[window.__MANRU_V1004__,'player',(id='wanderer',gear=null,dir='down')=>ACTOR_ART1012.player(id,gear||ACTOR_ART1012.startGear(id),dir,false).toDataURL('image/png')]])if(obj)Object.defineProperty(obj,key,{value:fn,writable:false,configurable:false});
 
 
 try{if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 R7 / CANONICAL ITEMS / SHARED HAZARDS / DISTINCT CREATURES';const s=document.getElementById('releaseStamp70');if(s)s.textContent='v10.0.4 · precision r3 + creature pass'}catch(_){}
