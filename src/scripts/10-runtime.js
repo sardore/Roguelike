@@ -7755,7 +7755,7 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   function drawTitleCanvas49(){
     const world=document.querySelector('.titleWorld');if(!world)return;
     let c=document.getElementById('titleCanvas49');if(!c){c=document.createElement('canvas');c.id='titleCanvas49';world.prepend(c)}
-    const mobile=innerWidth<700,W=mobile?720:1440,H=mobile?1200:1000;c.width=W;c.height=H;const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+    const mobile=innerWidth<700,W=mobile?720:1440,H=mobile?1200:1000;c.width=W;c.height=H;c.dataset.mobile=mobile?'1':'0';const q=c.getContext('2d');q.imageSmoothingEnabled=false;
     const titleLights={};titleLightState49.lamps=[];titleLightState49.layers=titleLights;
     for(const side of [-1,1]){const id=side<0?'titleLanternLeft49':'titleLanternRight49';let layer=document.getElementById(id);if(!layer){layer=document.createElement('canvas');layer.id=id;layer.className='titleLanterns49';world.appendChild(layer)}layer.width=W;layer.height=H;titleLights[side]=layer.getContext('2d');titleLights[side].imageSmoothingEnabled=false;}
 
@@ -7796,6 +7796,7 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
     paintTitleLights49(performance.now(),true);
   }
   drawTitleCanvas49();
+  addEventListener('resize',()=>{const c=document.getElementById('titleCanvas49');if(c&&c.dataset.mobile!==(innerWidth<700?'1':'0'))drawTitleCanvas49()},{passive:true});
 
   function showClassPick49(){requestGameFullscreen65();
     startGate.style.display='none';pickWrap.classList.add('show');document.body.classList.add('title-class-mode');
@@ -16100,9 +16101,12 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
   /* v10.0.2: one canonical screen state, instead of leaving the class picker alive behind display:none. */
   const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
+  // Development tools (the debug arena button) are shown only when the page is opened with ?debug=1.
+  const DEBUG_TOOLS=new URLSearchParams(location.search).get('debug')==='1';
   function setScreen1002(mode){
     SCREEN1002.mode=mode;
     document.body.dataset.manruScreen=mode;
+    document.body.toggleAttribute('data-debug-tools',DEBUG_TOOLS);
     if(mode==='game'){
       // Retire title-selection state itself. It no longer survives invisibly behind gameplay.
       pickWrap?.classList.remove('show');document.body.classList.remove('title-class-mode','end-screen95');

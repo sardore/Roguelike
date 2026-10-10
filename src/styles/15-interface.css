@@ -377,7 +377,6 @@
     }
     #overlay::-webkit-scrollbar{width:5px}#overlay::-webkit-scrollbar-track{background:#0b0503}#overlay::-webkit-scrollbar-thumb{background:#80512d}
     .titleWorld{position:fixed!important;inset:0!important;background:#070302!important;filter:none!important;transform:translateZ(0)}
-    .titleWorld>.moon,.titleWorld>.farRoof,.titleWorld>.tower,.titleWorld>.lantern,.titleWorld>.mist{display:none!important}
     .mf-title-frame,.mf-side-banner,.mf-header-rail,.mf-footer-rail,.mf-title-emblems,.mf-subplate{display:none!important}
     #titleCanvas49,#titleSky49,#titleWindows49,.titleLanterns49{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;filter:saturate(1.06) contrast(1.05)}
     #titleSky49{z-index:0;pointer-events:none}#titleCanvas49{z-index:1;background:transparent}#titleWindows49{z-index:2;pointer-events:none;background:transparent}body.title-class-mode #titleSky49,body.title-class-mode #titleWindows49{display:none}
@@ -1073,7 +1072,7 @@
     @media(prefers-reduced-motion:reduce){#classGrid.classRoster1001 .classBtn{transition:none}.pickLantern1001,.pickStageSeal1001,.pickStageGlyph1001,.pickStage1001:before,.pickStage1001:after{animation:none!important}}
 
 /* ---- Screen state reveal ---- */
-    body:not([data-manru-screen]) #overlay{visibility:hidden!important}
+    body:not([data-manru-screen]) #app{visibility:hidden!important}
     body[data-manru-screen] #overlay{visibility:visible!important}
     body[data-manru-screen="game"] #overlay{display:none!important}
     body[data-manru-screen="title"] #overlay,body[data-manru-screen="ending"] #overlay{display:flex!important}

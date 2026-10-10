@@ -103,6 +103,7 @@ body.mf75-clean #mobileControls .actions.quickbar button:disabled,#inventory [da
 #mobileControls .actions #summonButton105.summonSplit105 button:last-child .mfKey{right:auto;left:14px;top:auto;bottom:3px}
 
 #startGate .debugBattleBtn57{grid-column:1/-1;min-height:42px!important;padding:10px 16px!important;display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(#30251c,#1a140f)!important;border-color:#705238!important;color:#d6bc91!important}
+body:not([data-debug-tools]) #startGate .debugBattleBtn57{display:none}
 #startGate .debugBattleBtn57 b{font-size:13px;letter-spacing:.06em;color:#d6bc91}
 #startGate .debugBattleBtn57 span{font-size:11px;color:#a48b68}
 #startGate .debugBattleBtn57:after{content:none!important}

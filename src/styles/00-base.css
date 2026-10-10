@@ -714,22 +714,6 @@
   .titleWorld{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;filter:saturate(.84)}
   .titleWorld:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.23) 47%,rgba(0,0,0,.88) 100%);z-index:20}
   .titleWorld:after{content:"";position:absolute;inset:0;opacity:.23;background-image:repeating-linear-gradient(0deg,rgba(255,224,178,.025) 0 1px,transparent 1px 4px);mix-blend-mode:screen;z-index:21}
-  .moon{position:absolute;left:50%;top:7%;width:min(24vw,260px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 45% 40%,#b89f74 0 8%,#6a5a44 35%,#352c25 70%,#17100d 100%);box-shadow:0 0 90px rgba(194,155,92,.12);opacity:.32}
-  .farRoof{position:absolute;height:18px;background:#120b07;border-top:2px solid #442618;box-shadow:0 -6px 0 #080403,0 8px 24px #000;transform:skewX(-32deg);opacity:.8}
-  .roofA{left:-4%;right:56%;top:27%}.roofB{left:59%;right:-5%;top:33%;transform:skewX(29deg)}
-  .tower{position:absolute;bottom:0;border-left:2px solid #29160f;border-right:2px solid #29160f;background:linear-gradient(90deg,#080504,#130b07 12%,#0b0705 48%,#160c08 82%,#070403);box-shadow:0 0 80px #000}
-  .tower i{position:relative;display:block;height:82px;border-bottom:8px solid #080403;background:linear-gradient(180deg,rgba(105,49,27,.10),transparent 72%)}
-  .tower i:before{content:"";position:absolute;left:8%;right:8%;top:13px;height:45px;background:repeating-linear-gradient(90deg,#080403 0 12%,#3b1f14 12% 13%,#120a07 13% 29%);border-top:2px solid #3a2115;border-bottom:2px solid #060302;opacity:.9}
-  .tower i:after{content:"";position:absolute;left:-9%;right:-9%;bottom:-5px;height:10px;background:#0b0604;border-top:2px solid #4a2918;clip-path:polygon(5% 0,95% 0,100% 100%,0 100%)}
-  .towerBack{width:34%;left:7%;opacity:.58;transform:translateY(6%) scale(.93);filter:blur(.2px)}
-  .towerMain{width:min(42vw,560px);left:50%;transform:translateX(-50%);opacity:.92;box-shadow:0 0 120px #000,0 0 48px rgba(122,55,27,.08) inset}
-  .lantern{position:absolute;width:12px;height:18px;background:#9b3426;border:2px solid #35130d;box-shadow:0 0 17px rgba(220,74,37,.42);animation:titleLantern 2.8s ease-in-out infinite;z-index:4}
-  .lantern:before{content:"";position:absolute;left:4px;top:-10px;width:1px;height:9px;background:#5b3824}.lantern:after{content:"";position:absolute;left:4px;bottom:-7px;width:1px;height:7px;background:#7b2d22}
-  .l1{left:28%;top:35%;animation-delay:-.7s}.l2{right:28%;top:42%;animation-delay:-1.9s}.l3{left:42%;top:22%;animation-delay:-1.1s}.l4{right:41%;top:58%;animation-delay:-2.2s}
-  .mist{position:absolute;left:-12%;width:124%;height:26%;border-radius:50%;background:radial-gradient(ellipse,rgba(112,87,62,.10),rgba(26,16,11,.02) 60%,transparent 73%);filter:blur(18px);animation:titleMist 12s ease-in-out infinite alternate;z-index:10}
-  .mist1{bottom:12%}.mist2{bottom:35%;opacity:.45;animation-duration:17s;animation-delay:-6s}
-  @keyframes titleLantern{0%,100%{transform:translateY(0) rotate(-2deg);filter:brightness(.88)}50%{transform:translateY(3px) rotate(2deg);filter:brightness(1.22)}}
-  @keyframes titleMist{from{transform:translateX(-2%) scaleX(.95)}to{transform:translateX(3%) scaleX(1.05)}}
 
   #card{
     width:min(930px,96%);max-height:100dvh;overflow:auto;text-align:center;
@@ -791,7 +775,7 @@
   @media(max-width:1080px){
     #bossIntro{position:fixed!important;top:34%;width:88%}
     #card{padding:calc(18px + var(--safe-top)) 12px calc(18px + var(--safe-bottom))!important;display:flex;min-height:100%;flex-direction:column;justify-content:center}
-    #card h1{font-size:calc(clamp(66px,22vw,100px) * var(--ui-font-scale, 1))!important}.titleCrown{margin-top:auto}.towerMain{width:76vw}.towerBack{width:62%;left:-10%}
+    #card h1{font-size:calc(clamp(66px,22vw,100px) * var(--ui-font-scale, 1))!important}.titleCrown{margin-top:auto}
     #startGate{grid-template-columns:1fr 112px;width:min(520px,96%)}#startGate button{min-height:54px}
     #card .classGrid{grid-template-columns:1fr!important;max-width:540px;margin:0 auto}.pickHeading{margin-top:2px}
     #card .classBtn{min-height:87px!important;grid-template-columns:42px 1fr;grid-template-rows:auto auto auto;padding:10px 12px!important}.classSeal{grid-row:1/4}.classDesc{display:none}.classStats{margin-top:3px}
@@ -802,7 +786,7 @@
     #card .startIntro{font-size:calc(10px * var(--ui-font-scale, 1))!important;line-height:1.55!important;margin-bottom:10px!important}#startGate{grid-template-columns:1fr 92px}.enterBtn b{font-size:calc(12px * var(--ui-font-scale, 1))}.continueBtn span{font-size:calc(8px * var(--ui-font-scale, 1))}.startHint{font-size:calc(8px * var(--ui-font-scale, 1))}
     #card .classStats span{font-size:calc(8px * var(--ui-font-scale, 1));min-width:42px}.classRole{font-size:calc(8px * var(--ui-font-scale, 1))}.pickHeading small{display:none}
   }
-  @media(prefers-reduced-motion:reduce){.lantern,.mist{animation:none!important}#bossIntro,#classPickWrap{transition:none!important;animation:none!important}}
+  @media(prefers-reduced-motion:reduce){#bossIntro,#classPickWrap{transition:none!important;animation:none!important}}
 
 
 
@@ -931,8 +915,6 @@
   /* ===== MANRU R8 TITLE FINISH ===== */
   #overlay{background:radial-gradient(ellipse at 50% 24%,rgba(132,53,28,.24),transparent 30%),radial-gradient(ellipse at 50% 88%,rgba(88,31,18,.18),transparent 40%),linear-gradient(180deg,#090403 0%,#030201 57%,#010101 100%)!important}
   .titleWorld{transform:scale(1.015);filter:saturate(.92) contrast(1.05)}
-  .towerMain{width:min(46vw,610px);filter:drop-shadow(0 20px 30px #000);border-color:#3c2115;background:linear-gradient(90deg,#070403,#160b07 16%,#0a0604 50%,#180d08 84%,#060302)}
-  .towerMain i:nth-child(2){transform:scaleX(.91)}.towerMain i:nth-child(3){transform:scaleX(.83)}
   .titleCrown{color:#96704a}.titleCrown:before,.titleCrown:after{content:'◆';font-size:calc(7px * var(--ui-font-scale, 1));color:#b47a43;opacity:.9}
   #card h1{filter:drop-shadow(0 12px 7px #000) drop-shadow(0 0 20px rgba(208,128,55,.08))}
   #card h1 span{-webkit-text-stroke:1.4px rgba(45,18,10,.96)}
