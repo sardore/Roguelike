@@ -2809,8 +2809,8 @@ function combatTerrainTargetCheckR8(target,range=weaponRange()){
   if(!state||!target||!['jar','terrain'].includes(target.type)||!elementalWorldTarget105(target.x,target.y))return{ok:false,reason:'공격할 가구가 없다.'};if(!state.seen.has(k(target.x,target.y)))return{ok:false,reason:'확인하지 못한 가구다.'};return combatLineCheckR8(state.player.x,state.player.y,target.x,target.y,{range,units:!!(state.player.weapon?.ranged||state.player.weapon?.kind==='bow')})
 }
 
-function itemTypeLabel(t){if(t==='painting')return '화공의 그림';if(t==='book')return '소환술서';if(t==='guide')return '안내서';if(t==='martial_manual')return '무술비급';return({weapon:'무기',armor:'방어구',cloak:'망토',relic:'유물',trinket:'장신구',food:'음식'})[t]||'물품'}
-function itemGlyph(item){if(item?.summonItem105==='picture')return '畵';if(item?.summonItem105)return '召';if(item?.type==='martial_manual')return '秘';if(item.type==='weapon'){if(item.kind==='brawl')return'권';if(item.kind==='bow')return'활';if(item.kind==='spear')return'창';if(item.kind==='blunt')return'둔';return'검'}if(item.type==='armor')return'갑';if(item.type==='cloak')return'망';if(item.type==='relic')return'유';if(item.type==='trinket')return'장';if(item.type==='food')return'식';return'물'}
+function itemTypeLabel(t){if(t==='ammo')return'탄약';if(t==='ingredient')return'조리 재료';if(t==='talisman')return'부적';if(t==='potion')return'비약 / 약병';if(t==='painting')return '화공의 그림';if(t==='book')return '소환술서';if(t==='guide')return '안내서';if(t==='martial_manual')return '무술비급';return({weapon:'무기',armor:'방어구',cloak:'망토',relic:'유물',trinket:'장신구',food:'음식'})[t]||'물품'}
+function itemGlyph(item){if(item?.type==='ammo')return'탄';if(item?.mineItem105)return item.mineItem105==='stone'?'石':item.mineItem105==='oil'?'油':'玄';if(item?.type==='ingredient')return item.foodKind==='seaweed'?'초':item.name==='깨끗한 물'?'수':'빙';if(item?.type==='potion')return'약';if(item?.type==='talisman')return publicTalismanSeal56(item);if(item?.summonItem105==='picture')return '畵';if(item?.summonItem105)return '召';if(item?.type==='martial_manual')return '秘';if(item.type==='weapon'){if(item.kind==='brawl')return'권';if(item.kind==='bow')return'활';if(item.kind==='spear')return'창';if(item.kind==='blunt')return'둔';return'검'}if(item.type==='armor')return'갑';if(item.type==='cloak')return'망';if(item.type==='relic')return'유';if(item.type==='trinket')return'장';if(item.type==='food')return'식';return'물'}
 function visualPlayerPosition57(){if(!state)return{x:0,y:0,worldX:TILE/2,worldY:TILE/2};const x=Number.isFinite(VIS.playerX)?VIS.playerX:state.player.x,y=Number.isFinite(VIS.playerY)?VIS.playerY:state.player.y;return{x,y,worldX:x*TILE+TILE/2,worldY:y*TILE+TILE/2}}
 function cameraFollowPosition57(){
  if(state?.debugBattle57){const mon=debugBattleSubject57(),p=mon?v8CreatureCoords(mon):DEBUG_BATTLE57.lastSubjectPosition||{x:COLS/2,y:ROWS/2};return{x:p.x,y:p.y,worldX:(p.x+.5)*TILE,worldY:(p.y+.5)*TILE}}
@@ -2862,6 +2862,7 @@ function hudLocation58(){
 }
 
 function toast(msg){
+  msg=sanitize56(msg);
   const t = document.getElementById("toast");
   t.textContent = displayText53(msg);
   t.style.opacity = 1;
@@ -2869,7 +2870,9 @@ function toast(msg){
   t._tm = setTimeout(()=>t.style.opacity=0, 1300);
 }
 
-function addLog(msg){
+function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!knownPotion56(p))identifyPotion56(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
+function logWithCategory(msg){writeLogLine(msg);if(state){const [kind,ico]=cls(msg);meta.unshift({msg,kind,ico,turn:state.turn});if(meta.length>50)meta.length=50}}
+function writeLogLine(msg){
   if(!state) return;
   state.log.unshift(displayText53(displayCombatText58(msg)));
   state.log = state.log.slice(0, 18);
@@ -3703,7 +3706,13 @@ function basicAttack(){
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
 ActionDispatcher.register('ATTACK',basicAttack);
-function updateAttackButton(){const b=document.getElementById('attackActionBtn');if(!b||!state)return;b.classList.add('ready');b.classList.remove('cooling');const sm=b.querySelector('small');if(sm)sm.textContent=`${attackTurnCost().toFixed(1)}턴`}
+function updateAttackButton(...args){const r=markAttackButtonAim(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo967();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo967()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r}
+function markAttackButtonAim(){
+    paintAttackButton();const b=document.getElementById('attackActionBtn');if(!b)return;
+    const valid=targetValid52()&&(!!AIM52.jar||bow52());b.classList.toggle('aim52',!!valid);const sm=b.querySelector('small');
+    if(valid&&sm)sm.textContent='조준';
+  }
+function paintAttackButton(){const b=document.getElementById('attackActionBtn');if(!b||!state)return;b.classList.add('ready');b.classList.remove('cooling');const sm=b.querySelector('small');if(sm)sm.textContent=`${attackTurnCost().toFixed(1)}턴`}
 
 function monsterIsEvil(mon){
   return ["undead","eldritch","mutant"].includes(mon.kind);
@@ -5347,7 +5356,10 @@ function renderMartialPanel(){const box=document.getElementById('martialPanel');
 function openMartial(){
   if(!gameplayUiOpen57()||cipherOpen)return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();if(!state||cipherOpen)return;globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();martialOpen=true;renderMartialPanel();document.getElementById('martialPanel').style.display='block';globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
 }function closeMartial(){martialOpen=false;document.getElementById('martialPanel').style.display='none';globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
-let itemSummary;
+function itemSummary(item){if(item?.type==='ammo'){const d=ammoDef967(item.ammoKind)||item,a=[];if(d.atkBonus)a.push(`공격 +${d.atkBonus}`);if(d.pierce)a.push(`방어 ${d.pierce} 무시`);return `활 탄약 · ${a.length?a.join(' · '):'표준 화살'} · ${item.count||1}발`}return describeItemWithBrands(item)}
+function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
+function describeIdentifiedItem(item){if(item?.type==='potion'&&!knownPotion56(item))return `${POTION_META[item.potionKind]?.family||'미확인 약성'} · ${item.origin56?.label||'출처 불명'}`;if(item?.type==='talisman'&&!knownTalisman56(item))return '미확인 부적 · 술법 불명';if(item?.type==='talisman')return item.ability||item.desc||'';return describeItemStats(item)}
+function describeItemStats(item){return displayText53(stats53(item).join(' · '))}
 
 function consumeOne(idx){return consumeItemQuantity57(state?.player?.inventory?.[idx])}
 function useInventoryBaseR30(idx){
@@ -5421,7 +5433,7 @@ function dropInventoryItem(idx){const act=playerAction57('drop',{allowInventory:
 ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
 let inventoryFiltered;
 function invEquipData(){const p=state.player;return[['weapon','무기',p.weapon,'검'],['armor','갑옷',p.armor,'갑'],['cloak','망토',p.cloak,'망'],['relic','유물',p.relic,'유'],['trinket','장신구',p.trinket,'장']]}
-function inventoryDetailHtml(item,idx){if(!item)return`<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>`;const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type);return`<div class="invDetailGlyph">${itemGlyph(item)}</div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}</div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${itemSummary(item)}</div>`:''}<div class="desc">${item.desc||itemSummary(item)||'설명이 없다.'}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`}
+function inventoryDetailHtml(item,idx){if(!item)return'<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>';const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type),fx=hiEffectSummary(item),desc=item.desc||'설명이 없다.';return `<div class="vfDetailTop">${vfIconHtml(item,'large')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}${item.type==='weapon'?' · TURN-BASED':''}</div></div></div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${fx}</div>`:''}<div class="desc">${desc}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`}
 function renderInventoryFallbackR34(){const box=document.getElementById('inventory');if(!box||!state)return;const p=state.player;if(inventorySelection>=p.inventory.length)inventorySelection=p.inventory.length-1;const filtered=inventoryFiltered(),selected=inventorySelection>=0?p.inventory[inventorySelection]:null;box.innerHTML=`<div class="invFrame"><div class="invTop"><div><h2>행낭</h2><small>장비는 위, 소모품은 아래. 같은 음식은 겹친다.</small></div><div class="invTopMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div></div><div class="invEquipStrip">${invEquipData().map(([slot,label,item,g])=>`<div class="equipSlot" data-eqslot="${slot}"><div class="ek">${label}</div><div class="ev">${item?item.name:'비어 있음'}</div><div class="eg">${g}</div></div>`).join('')}</div><div class="invBody"><div class="invBagPane"><div class="invTabs"><button class="invTab ${inventoryTab==='all'?'active':''}" data-invtab="all">전체</button><button class="invTab ${inventoryTab==='gear'?'active':''}" data-invtab="gear">장비</button><button class="invTab ${inventoryTab==='food'?'active':''}" data-invtab="food">음식</button><button class="invTab ${inventoryTab==='treasure'?'active':''}" data-invtab="treasure">유물</button></div><div class="invGrid">${filtered.length?filtered.map(({item,idx})=>`<button class="invSlot ${idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="invTier">${item.tier?`T${item.tier}`:''}</span><span class="invGlyph">${itemGlyph(item)}</span><span class="invSlotName">${item.name}</span>${(item.count||1)>1?`<span class="invCount">×${item.count}</span>`:''}</button>`).join(''):'<div class="invDetailEmpty" style="grid-column:1/-1">이 분류에는 물품이 없다.</div>'}</div></div><div class="invDetail" id="invDetail">${inventoryDetailHtml(selected,inventorySelection)}</div></div></div>`;box.querySelector('#invCloseBtn').onclick=closeInventory;box.querySelectorAll('[data-invtab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.invtab;renderInventory()});box.querySelectorAll('[data-invslot]').forEach(b=>{b.onclick=()=>{inventorySelection=+b.dataset.invslot;renderInventory()};b.ondblclick=()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invslot]}).value});box.querySelectorAll('[data-invuse]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value);box.querySelectorAll('[data-invdrop]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value);box.querySelectorAll('[data-invinspect]').forEach(b=>b.onclick=()=>{const it=p.inventory[+b.dataset.invinspect];showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)});box.querySelectorAll('[data-eqslot]').forEach(el=>{el.onclick=()=>{const it=p[el.dataset.eqslot];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)};attachLongPress(el,el.onclick)})}
 const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
 function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
@@ -6277,68 +6289,44 @@ globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 
 function renderMobileDrawer(){if(!interactionActive8('mobileDrawer'))return;const box=document.getElementById('mobileDrawerBody');if(!box||!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),near=state.monsters.filter(isThreatVisibleToPlayer57).sort((a,b)=>entityDistance57(a,p)-entityDistance57(b,p))[0];if(mobileTab==='status'){box.innerHTML=`<div class="mDrawerGrid"><div class="mCard"><h4>층 / 구역</h4><div><b>${state.artifactDungeon46?(state.artifactDungeon46.name||state.layoutName||''):`${String(state.floor).padStart(2,'0')} / 25`}</b> <span class="turnPip">T${state.turn}</span><br>${state.artifactDungeon46?'':region[2]}${state.artifactDungeon46?'':`<br><span style="color:#a38d6c">${state.layoutName||''}</span>`}</div></div><div class="mCard"><h4>성장</h4><div>LV ${p.level} · 무술 ${p.skillPoints}<br>점멸 ${p.blinkLevel?p.blinkLevel+'칸':'미습득'}</div></div><div class="mCard"><h4>생명</h4><div>HP ${displayHealth58(p.hp)}/${displayHealth58(p.maxHp)}<br>기력 ${displayNumber53(p.focus)}/${st.maxFocus}<br>허기 ${Math.round(p.hunger)}/125</div></div><div class="mCard"><h4>능력</h4><div>ATK ${st.atk} · DEF ${displayDef42(st.def)}<br>EVA ${st.eva} · WILL ${st.will}</div></div><div class="mCard mWide"><h4>디버프</h4><div>${debuffDetailHtml57()}</div></div><div class="mCard mWide"><h4>주변</h4><div>${near?`<b style="color:${near.color}">${near.name}</b> · HP ${displayHealth58(near.hp)}/${displayHealth58(near.maxHp)}`:'주변 적 없음'}</div></div><div class="mCard mWide"><h4>지형</h4><div>${state.floor===16&&!state.cipher?.solved?'성채 암호를 풀어 용암 해자의 도개교를 내려야 한다.':state.floor===18?`철판창고 · ${lockProgressText()}.`:state.floor===21?'공허 위 5×5 섬을 점멸로 잇는다. 발판에서 기력이 회복된다.':state.specialFloor?'이 층은 구조 자체가 특수 기믹이다.':'등불 뒤의 샛길과 특수 방을 살펴라.'}</div><button class="mInvBtn" id="saveFromDrawer">기록 저장</button></div></div>`;document.getElementById('saveFromDrawer').onclick=()=>ClientEnvironment.emit({type:'SAVE',source:'mobile-drawer'})}else if(mobileTab==='equip'){box.innerHTML=`<div class="mDrawerGrid"><div class="mCard mWide"><h4>장비</h4><div>무기 ${p.weapon?p.weapon.name:'맨손'}<br>갑옷 ${p.armor?p.armor.name:'경량복'}<br>망토 ${p.cloak?p.cloak.name:'없음'}<br>유물 ${p.relic?p.relic.name:'없음'}<br>장신구 ${p.trinket?p.trinket.name:'없음'}</div><button class="mInvBtn" id="openInvFromDrawer">인벤토리</button><button class="mInvBtn" id="openMartialFromDrawer">무술</button></div></div>`;document.getElementById('openInvFromDrawer').onclick=()=>openInventory();document.getElementById('openMartialFromDrawer').onclick=()=>openMartial()}else if(mobileTab==='log'){box.innerHTML=`<div class="mCard"><h4>최근 기록</h4><div class="mLogList">${state.log.slice(0,20).map(v=>`<div class="mLogItem">${v}</div>`).join('')}</div></div>`}else{box.innerHTML=`<div class="mDrawerGrid"><div class="mCard mWide"><h4>조작</h4><div>스와이프/방향키 이동 · 탭 자동 이동 · 상단 이동 자동 탐사 · 살/. 살피기·대기 · 공격 공격 · 점멸 점멸 · 무술 · 줍 줍기</div></div><div class="mCard"><h4>성장</h4><div>Lv.1~12는 최대 HP +1~2 · 무술 포인트 +1. Lv.13~18은 영구 기본 HP +3. Lv13·15·17·18 무술 포인트 +1. 보스는 비급 지급.</div></div><div class="mCard"><h4>허기</h4><div>1+ 정상 · 0에서 ATK -20% + 굶주림 피해.</div></div><div class="mCard mWide"><h4>특수 지형</h4><div>거대 회관·병풍 / 수중 정자·대나무 미로 / 향수강 뗏목·가짜 문 / 16층 성채 암호·도개교 / 철판창고 열쇠 / 공허 점멸섬·숨은 신전·복숭아 정원</div></div></div>`}}
 
-function plainInspectText93(title, html){
-  const box = document.createElement('div');
-  box.innerHTML = html || '';
-  const txt = (box.textContent || box.innerText || '').replace(/\s+/g,' ').trim();
-  return (title ? title+' · ' : '') + txt;
-}
-function showInspect(title, html){
-  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  const wrap = document.getElementById("mobileInspect");
-  const titleEl = document.getElementById("inspectTitle");
-  const bodyEl = document.getElementById("inspectBody");
-  if(isMobileViewport()){
-    const msg = plainInspectText93(title, html).slice(0, 140);
-    const ss = document.getElementById('statusLine');
-    if(ss) ss.textContent = msg;
-    toast(msg);
-    setInteraction8('mobileInspect',false);
-    globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();return;
+function showInspect(title,html){
+    const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
+    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem986(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
+    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect984('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),null);return}
+    const txt=dedupeProse986(textOnly984(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
+    directOpenInspect984(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   }
-  if(titleEl) titleEl.textContent = title;
-  if(bodyEl) bodyEl.innerHTML = html;
-  setInteraction8('mobileInspect',true);
-globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
-}
-function closeInspect(){
-  const wrap = document.getElementById("mobileInspect");
-  setInteraction8('mobileInspect',false);
-globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
-function attachLongPress(el, fn){
-  if(!el || !fn) return;
-  let timer = null, sx = 0, sy = 0;
-  const start = (e)=>{
-    const t = e.touches?.[0] || e.changedTouches?.[0];
-    sx = t?.clientX ?? 0;
-    sy = t?.clientY ?? 0;
-    timer = setTimeout(()=>{ fn(); timer=null; }, isMobileViewport()?560:430);
-  };
-  const cancel = ()=>{ if(timer){ clearTimeout(timer); timer=null; } };
-  const move = (e)=>{
-    if(!timer) return;
-    const t = e.touches?.[0] || e.changedTouches?.[0];
-    if(!t) return;
-    if(Math.max(Math.abs((t.clientX||0)-sx), Math.abs((t.clientY||0)-sy)) > 12) cancel();
-  };
-  el.addEventListener("touchstart", start, {passive:true});
-  el.addEventListener("touchend", cancel, {passive:true});
-  el.addEventListener("touchmove", move, {passive:true});
-  el.addEventListener("touchcancel", cancel, {passive:true});
-  el.addEventListener("contextmenu", e=>e.preventDefault());
-}
+function closeInspect(ev){
+    const wrap=inspectWrap();if(!interactionActive8('mobileInspect'))return false;
+    if(ev){ev.preventDefault?.();ev.stopPropagation?.();ev.stopImmediatePropagation?.()}
+    cancelLongPresses();
+    setInteraction8('mobileInspect',false);wrap?.setAttribute('aria-hidden','true');
+    document.body.classList.remove('manru-inspect-open');
+    touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null;
+    // Android synthetic click can arrive hundreds of ms after touchend.
+    block(520);return true;
+  }
+function attachLongPress(el,fn){
+    if(!el||!fn)return;
+    if(el.__manruLongPressCleanup)el.__manruLongPressCleanup();
+    let timer=null,sx=0,sy=0,fired=false;
+    const clear=()=>{if(timer){clearTimeout(timer);timer=null}U.longPresses.delete(clear)};
+    const down=(e)=>{
+      if(blocked()||inspectOpen())return;
+      const p=e.touches?.[0]||e; sx=p.clientX||0;sy=p.clientY||0;fired=false;clear();
+      timer=setTimeout(()=>{timer=null;fired=true;block(220);fn();},430);U.longPresses.add(clear);
+    };
+    const move=(e)=>{const p=e.touches?.[0]||e;if(Math.hypot((p.clientX||0)-sx,(p.clientY||0)-sy)>12)clear()};
+    const up=(e)=>{if(fired){e.preventDefault?.();e.stopPropagation?.();block(260)}clear()};
+    const ctx=(e)=>e.preventDefault();
+    el.addEventListener('touchstart',down,{passive:true});el.addEventListener('touchmove',move,{passive:true});el.addEventListener('touchend',up,{passive:false});el.addEventListener('touchcancel',clear,{passive:true});el.addEventListener('contextmenu',ctx);
+    el.__manruLongPressCleanup=()=>{clear();el.removeEventListener('touchstart',down);el.removeEventListener('touchmove',move);el.removeEventListener('touchend',up);el.removeEventListener('touchcancel',clear);el.removeEventListener('contextmenu',ctx)};
+  }
 
 function bindEquipInspect(){
-  const p = state.player;
-  const map = {weaponTxt:p.weapon, armorTxt:p.armor, cloakTxt:p.cloak, relicTxt:p.relic, trinketTxt:p.trinket};
-  Object.entries(map).forEach(([id,item])=>{
-    const el = document.getElementById(id);
-    attachLongPress(el, ()=>showInspect(
-      id.replace("Txt","").toUpperCase(),
-      item ? `<b>${item.name}</b><br>${itemSummary(item)}<br><span style="color:#a79374">${item.desc || ""}</span>` : "장착된 아이템 없음."
-    ));
-  });
-}
+    if(!state)return;const p=state.player,map={weaponTxt:p.weapon,armorTxt:p.armor,cloakTxt:p.cloak,relicTxt:p.relic,trinketTxt:p.trinket};
+    Object.entries(map).forEach(([id,item])=>{const el=document.getElementById(id);attachLongPress(el,()=>showInspect(item?.name||id.replace('Txt','').toUpperCase(),itemInspectHtml(item)))});
+  }
 
 function syncLargeMinimap(){
   const big = document.getElementById("mobileMiniLarge");
@@ -6707,7 +6695,6 @@ function vfWeather(now){const z=state?.branchContext105?.id==='mine'?0:vfRegion(
 
 
 // Inventory uses actual pixel icons instead of character glyph placeholders.
-inventoryDetailHtml=function(item,idx){if(!item)return`<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>`;const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type);return`<div class="vfDetailTop">${vfIconHtml(item,'large')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}</div></div></div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${itemSummary(item)}</div>`:''}<div class="desc">${item.desc||itemSummary(item)||'설명이 없다.'}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`};
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
 // Class portraits use the same in-game sprites.
@@ -7083,7 +7070,6 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   /* ----------------------- inventory consistency / no duplicate copy ----------------------- */
   function hiEffectSummary(item){const a=[];if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL +${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.focus)a.push(`FOCUS +${displayNumber53(item.focus)}`);if(item.speed)a.push(`공속 ${item.speed}× · 비용 ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)a.push(`사거리 ${item.range}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`FOCUS +${item.focusGain}`);if(item.hunger)a.push(`허기력 +${item.hunger}`);if(item.ability&&item.ability!=='없음')a.push(`[${item.ability}]`);if(item.curse)a.push(`저주: ${item.curse}`);return a.join(' · ')}
   
-  inventoryDetailHtml=function(item,idx){if(!item)return'<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>';const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type),fx=hiEffectSummary(item),desc=item.desc||'설명이 없다.';return `<div class="vfDetailTop">${vfIconHtml(item,'large')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}${item.type==='weapon'?' · TURN-BASED':''}</div></div></div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${fx}</div>`:''}<div class="desc">${desc}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`};
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
   globalThis.__MANRU_LIFECYCLE__.registerNew('v3-map-art',{post:()=>{addLog('48px 세밀 스프라이트 · 가변 지도 크기 · 전술 금고방이 활성화되었다.');updateAll()}});
@@ -7111,7 +7097,7 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
   };
 
 
-  showInspect=function(title,html){
+  function showInspectSheet(title,html){
     if(blocked())return;
     cancelLongPresses();
     const wrap=inspectWrap(),titleEl=document.getElementById('inspectTitle'),bodyEl=document.getElementById('inspectBody');
@@ -7122,40 +7108,10 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
     U.inspectOpenedAt=inputNow();
     // swallow release/click belonging to the long-press/tap that opened this sheet
     block(180);
-  };
-  closeInspect=function(ev){
-    const wrap=inspectWrap();if(!interactionActive8('mobileInspect'))return false;
-    if(ev){ev.preventDefault?.();ev.stopPropagation?.();ev.stopImmediatePropagation?.()}
-    cancelLongPresses();
-    setInteraction8('mobileInspect',false);wrap?.setAttribute('aria-hidden','true');
-    document.body.classList.remove('manru-inspect-open');
-    touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null;
-    // Android synthetic click can arrive hundreds of ms after touchend.
-    block(520);return true;
-  };
+  }
 
   // One long-press implementation only. Calling again on the same node replaces the previous binding.
-  attachLongPress=function(el,fn){
-    if(!el||!fn)return;
-    if(el.__manruLongPressCleanup)el.__manruLongPressCleanup();
-    let timer=null,sx=0,sy=0,fired=false;
-    const clear=()=>{if(timer){clearTimeout(timer);timer=null}U.longPresses.delete(clear)};
-    const down=(e)=>{
-      if(blocked()||inspectOpen())return;
-      const p=e.touches?.[0]||e; sx=p.clientX||0;sy=p.clientY||0;fired=false;clear();
-      timer=setTimeout(()=>{timer=null;fired=true;block(220);fn();},430);U.longPresses.add(clear);
-    };
-    const move=(e)=>{const p=e.touches?.[0]||e;if(Math.hypot((p.clientX||0)-sx,(p.clientY||0)-sy)>12)clear()};
-    const up=(e)=>{if(fired){e.preventDefault?.();e.stopPropagation?.();block(260)}clear()};
-    const ctx=(e)=>e.preventDefault();
-    el.addEventListener('touchstart',down,{passive:true});el.addEventListener('touchmove',move,{passive:true});el.addEventListener('touchend',up,{passive:false});el.addEventListener('touchcancel',clear,{passive:true});el.addEventListener('contextmenu',ctx);
-    el.__manruLongPressCleanup=()=>{clear();el.removeEventListener('touchstart',down);el.removeEventListener('touchmove',move);el.removeEventListener('touchend',up);el.removeEventListener('touchcancel',clear);el.removeEventListener('contextmenu',ctx)};
-  };
 
-  bindEquipInspect=function(){
-    if(!state)return;const p=state.player,map={weaponTxt:p.weapon,armorTxt:p.armor,cloakTxt:p.cloak,relicTxt:p.relic,trinketTxt:p.trinket};
-    Object.entries(map).forEach(([id,item])=>{const el=document.getElementById(id);attachLongPress(el,()=>showInspect(item?.name||id.replace('Txt','').toUpperCase(),itemInspectHtml(item)))});
-  };
   // Use native click activation for touch, mouse and keyboard. Keep the sheet
   // present through pointerup so a touch's click cannot hit the control behind it.
   // IMPORTANT: internal modal controls are NEVER blocked by the ghost-click firewall.
@@ -7201,7 +7157,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
   /* ---------- rich log ---------- */
-  const meta=[];function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|FOCUS|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']};const add0=addLog;addLog=function(msg){add0(msg);if(state){const [kind,ico]=cls(msg);meta.unshift({msg,kind,ico,turn:state.turn});if(meta.length>50)meta.length=50}};;// r54: dead pre-v49 panel wrapper removed.
+  const meta=[];function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|FOCUS|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']};;// r54: dead pre-v49 panel wrapper removed.
 
   /* ---------- combat FX ---------- */
   const feed=document.createElement('div');feed.id='mfHitFeed';document.getElementById('canvasWrap')?.appendChild(feed);/* r25: obsolete pre-v5.4 attack forwarding wrapper removed; v5.4 is the registered combat core. */
@@ -7252,7 +7208,6 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function drink(item){const p=state.player;pstate();const recovery=['heal_small','heal_medium'].includes(item.potionKind);if(recovery){if(!applyRecoveryPotion57(p,item))return false;}else switch(item.potionKind){case'makgeolli':{const turns=Math.max(1,Math.floor(item.drunkTurns57||8));state.status.drunk=Math.max(state.status.drunk||0,turns+1);state.makgeolliRecoveryTurns57=state.status.drunk;state.drunkBornTurn57=state.turn+1;state.makgeolliHealHundredths57=0;addLog(`${item.name}: 취함 ${turns}턴 · 매턴 지속 회복. 취기는 중첩되지 않고 남은 시간을 ${turns}턴까지 새로 고친다.`);break}case'focus':{const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+20);state.status.willBoost=Math.max(state.status.willBoost,6);addLog(`${item.name}: 기력 +${p.focus-b} · WILL 강화.`);break}case'cleanse':{const b=p.hp,h=Math.max(4,Math.ceil(p.maxHp*.12));p.hp=Math.min(p.maxHp,p.hp+h);state.status.illness=0;state.status.poison=0;state.status.bleed=0;state.status.weaken=0;state.status.upset=0;addLog(`${item.name}: 독·출혈·약화·배탈 해제 · HP +${displayNumber53(Math.round(p.hp-b))}.`);break}case'swift':state.status.swift=Math.max(state.status.swift,7);addLog(`${item.name}: 6턴 신속.`);break;case'fortify':state.status.fortify=Math.max(state.status.fortify,9);addLog(`${item.name}: 8턴 DEF 강화.`);break;default:return false}burst(p.x,p.y,pcolor(item),12,.75);if(!recovery)consumeRef(item);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||.8,reason:"drink"}).value;return true}
   function throwAt(tx,ty){const act=playerAction57('target',{uiOwner:'potionTargetHud'});if(!act.ok)return false;if(!potionTarget||!state)return false;const item=potionTarget.item,r=potionTarget.range||4,p=state.player;if(!state.player.inventory.includes(item)){cancelTarget(true);return false}if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>r){toast(`사거리 ${r}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('보지 못한 곳이다.');return false}if(!lineClear(p.x,p.y,tx,ty)){toast('던질 경로가 막혔다.');return false}if(state.floor>=11)alertNearby(tx,ty,item.throwElement105?4:item.potionKind==='smoke'?6:8,item.throwElement105||item.potionKind==='smoke'?'projectile':'explosion');projectileFX(p.x,p.y,tx,ty,pcolor(item));burst(tx,ty,pcolor(item),18,1);if(item.throwElement105==='water'||item.throwElement105==='ice'){emitElementContact105(item.throwElement105,elementCells105(tx,ty,1),effectSource57(p));addLog(`${item.name}: 주변 3×3에 ${item.throwElement105==='water'?'물기운':'냉기'}가 퍼졌다.`)}else if(item.potionKind==='smoke'){addField('smoke',tx,ty,6);addLog(`${item.name}: 3×3 연막 5턴.`)}else{const m=findMonsterAt(tx,ty),observed=isEntityObservableToPlayer57(m),direct=isThreatVisibleToPlayer57(m)?m:null;if(observed&&m&&!isHostileTarget57(m)){toast('아군에게 공격용 약병을 던질 수 없다.');return false}if(direct){markCombatActivity57('potion-throw');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(direct,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${direct.name}의 아수라장이 투척 직격을 지웠다.`)}else{const dealt=damageEntity61(direct,6,state.player,'fire');if(dealt>0){dojoRememberHit105(direct,'area');floatText(tx,ty,'-'+dealt,'#ff9d5c',14,'fire');}if(direct.hp<=0)killMonster(direct)}}addField('fire',tx,ty,5);addLog(`${item.name}: 3×3 화염 4턴.`)}consumeRef(item);cancelTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||1,reason:"throwAt"}).value;return true}
   // r30: potion dispatch is integrated in canonical useInventoryItem.
-  const tl0=itemTypeLabel;itemTypeLabel=function(t){return t==='potion'?'비약 / 약병':tl0(t)};const ig0=itemGlyph;itemGlyph=function(i){return i?.type==='potion'?'약':ig0(i)};
    // r34: obsolete potion-tab render wrapper removed.
   /* R7 refactor: obsolete early potion visual wrapper removed. */
   
@@ -8124,12 +8079,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   }
 
 
-  const updateAttack52=updateAttackButton;
-  updateAttackButton=function(){
-    updateAttack52();const b=document.getElementById('attackActionBtn');if(!b)return;
-    const valid=targetValid52()&&(!!AIM52.jar||bow52());b.classList.toggle('aim52',!!valid);const sm=b.querySelector('small');
-    if(valid&&sm)sm.textContent='조준';
-  };
 
   
   
@@ -8187,7 +8136,6 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
   }
 
   // 요약은 수치만. 설명/능력을 섞지 않는다.
-  itemSummary=function(item){return displayText53(stats53(item).join(' · '))};
   window.__MANRU_CLEAN_INSPECT53={item:itemHtml53,stats:stats53};
 
   const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
@@ -8386,7 +8334,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 
   const esc56=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const baseAddLog56=addLog,baseToast56=toast,baseShowInspect56=showInspect;
 
   function shuffle56(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(globalThis.__MANRU_RANDOM57__()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
   function ensureKnowledge56(){
@@ -8469,25 +8416,19 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     return V56.baseCleanItem?V56.baseCleanItem(item,dist):`<div class="clean53"><div class="clean53Desc">${esc56(item.desc||itemSummary(item)||'')}</div></div>`;
   }
   function identifyPotion56(kind,reason='효과를 직접 확인했다'){
-    const K=ensureKnowledge56();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=POTION_BY_KIND.get(kind),a=APP_BY_ID.get(K.potionMap[kind]);baseAddLog56(`약병 식별 · ${a?.name||'미확인 약병'} = ${p?.name||kind} (${reason}).`);burst(state.player.x,state.player.y,a?.color||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
+    const K=ensureKnowledge56();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=POTION_BY_KIND.get(kind),a=APP_BY_ID.get(K.potionMap[kind]);logWithCategory(`약병 식별 · ${a?.name||'미확인 약병'} = ${p?.name||kind} (${reason}).`);burst(state.player.x,state.player.y,a?.color||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
   }
   function identifyTalisman56(kind,reason='효과를 직접 확인했다'){
-    const K=ensureKnowledge56();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=TALISMAN_BY_KIND.get(kind);if(!t)return false;const a=TALISMAN_APP_BY_ID.get(K.talismanMap[kind])||TALISMAN_APPEARANCES[0];K.talismanKnown[kind]=true;baseAddLog56(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
+    const K=ensureKnowledge56();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=TALISMAN_BY_KIND.get(kind);if(!t)return false;const a=TALISMAN_APP_BY_ID.get(K.talismanMap[kind])||TALISMAN_APPEARANCES[0];K.talismanKnown[kind]=true;logWithCategory(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
   }
   function sanitize56(text){let s=String(text??'');if(!state)return s;const K=state.knowledge56;for(const p of POTION_LIST)if(!K.potionKnown[p.potionKind])s=s.split(p.name).join(app56(p).name);for(const t of TALISMANS)if(t.talismanKind!=='identify'&&!K.talismanKnown[t.talismanKind])s=s.split(t.name).join(talismanApp56(t).name);return s}
   function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
-  addLog=function(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!knownPotion56(p))identifyPotion56(p.potionKind,'사용 효과 관찰')}return baseAddLog56(sanitize56(raw))};
-  toast=function(msg){return baseToast56(sanitize56(msg))};
-  showInspect=function(title,body){let t=String(title??''),item=[...(state?.player?.inventory||[]),...(state?.items||[]),...POTION_LIST,...TALISMANS].find(i=>i?.name===t||publicName56(i)===t);if(item&&(item.type==='potion'||item.type==='talisman'))return baseShowInspect56(publicName56(item),inspectHTML56(item));return baseShowInspect56(sanitize56(t),sanitize56(body))};
   if(window.__MANRU_CLEAN_INSPECT53)window.__MANRU_CLEAN_INSPECT53.item=inspectHTML56;
 
   const targetHud=document.createElement('div');targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';document.body.appendChild(targetHud);
 
   function potionIconHtml56R26(item,cls=''){const a=app56(item),mark=knownPotion56(item)?'':'?';return `<span class="vfHiIcon ${cls} v56PotionIcon" style="--liquid:${a.color};--glass:${a.glass}"><i class="neck"></i><i class="bottle"></i><i class="shine"></i><b class="mark">${mark}</b></span>`}
   function talismanIconHtml56R26(item,cls=''){const a=talismanApp56(item),seal=publicTalismanSeal56(item);return `<span class="vfHiIcon ${cls} v56TalismanIcon" style="--talpaper:${a.paper};--talpaper2:${a.paper2};--talink:${a.ink}"><i class="thread"></i><i class="paper"></i><b class="seal">${esc56(seal)}</b></span>`}
-  const glyphBase56=itemGlyph;itemGlyph=function(item){if(item?.type==='potion')return'약';if(item?.type==='talisman')return publicTalismanSeal56(item);return glyphBase56(item)};
-  const typeBase56=itemTypeLabel;itemTypeLabel=function(t){if(t==='talisman')return'부적';return typeBase56(t)};
-  const summaryBase56=itemSummary;itemSummary=function(item){if(item?.type==='potion'&&!knownPotion56(item))return `${POTION_META[item.potionKind]?.family||'미확인 약성'} · ${item.origin56?.label||'출처 불명'}`;if(item?.type==='talisman'&&!knownTalisman56(item))return '미확인 부적 · 술법 불명';if(item?.type==='talisman')return item.ability||item.desc||'';return summaryBase56(item)};
   function drawPotionWorld56R26(item){const px=item.x*TILE,py=item.y*TILE;X.save();X.fillStyle='rgba(0,0,0,.45)';X.fillRect(px+9,py+26,14,3);const a=app56(item);X.fillStyle='#5a3b27';X.fillRect(px+14,py+6,5,6);X.fillStyle='#bba782';X.fillRect(px+13,py+9,7,3);X.fillStyle='#4b2d20';X.fillRect(px+10,py+12,13,14);X.fillStyle=a.color;X.fillRect(px+12,py+14,9,10);X.fillStyle=a.glass;X.globalAlpha=.38;X.fillRect(px+13,py+15,2,7);X.globalAlpha=1;if(!knownPotion56(item)){X.fillStyle='#e3cfaa';X.font='900 8px ui-monospace,monospace';X.fillText('?',px+24,py+10)}X.restore()}
   function drawTalismanWorld56R26(item){const px=item.x*TILE,py=item.y*TILE,a=talismanApp56(item),seal=publicTalismanSeal56(item);X.save();X.fillStyle='rgba(0,0,0,.42)';X.fillRect(px+10,py+26,13,3);X.fillStyle='#8c2f27';X.fillRect(px+15,py+3,2,4);X.fillStyle=a.paper2;X.beginPath();X.moveTo(px+9,py+7);X.lineTo(px+24,py+7);X.lineTo(px+23,py+24);X.lineTo(px+20,py+28);X.lineTo(px+17,py+25);X.lineTo(px+14,py+28);X.lineTo(px+10,py+24);X.closePath();X.fill();X.fillStyle=a.paper;X.fillRect(px+10,py+8,13,14);X.strokeStyle=a.ink;X.strokeRect(px+12.5,py+12.5,8,8);X.fillStyle=a.ink;X.font='900 8px Georgia,serif';X.textAlign='center';X.fillText(seal,px+16.5,py+19.5);X.textAlign='start';X.restore()}
   globalThis.__MANRU_POTION_ART_56__={iconHtml:potionIconHtml56R26,worldDraw:drawPotionWorld56R26};
@@ -8515,13 +8456,13 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     const meta=box.querySelector('.uxInvMeta');if(meta&&!meta.querySelector('.v56KnowledgeMeter')){const K=state.knowledge56,known=Object.values(K.potionKnown).filter(Boolean).length,tKnown=TALISMANS.filter(t=>knownTalisman56(t)).length;meta.insertAdjacentHTML('beforeend',`<span class="v56KnowledgeMeter">약 ${known}/${POTION_LIST.length} · 부 ${tKnown}/${TALISMANS.length}</span>`)}
     const eq=box.querySelector('.uxEq.selected'),selected=eq?state.player[eq.dataset.uxeq]:(inventorySelection>=0?state.player.inventory[inventorySelection]:null),detail=box.querySelector('.uxDetail');
     if(selected&&detail&&(selected.type==='potion'||selected.type==='talisman')){
-      const h=detail.querySelector('h3');if(h)h.textContent=publicName56(selected)+((selected.count||1)>1?` ×${selected.count}`:'');const sub=detail.querySelector('small');if(sub)sub.textContent=selected.type==='talisman'?(knownTalisman56(selected)?`식별된 부적 · 일회용${selected.targeted?` · 사거리 ${selected.targetRange}`:''}`:'미확인 부적 · 술법 불명'):(knownPotion56(selected)?'식별된 비약':'미확인 비약 · 단서로 추정 가능');const stats=detail.querySelector('.uxStats');if(stats)stats.innerHTML=selected.type==='talisman'?(knownTalisman56(selected)?`<span class="uxStat">${esc56(classItemDescription58(selected)?'괴력 · 매턴 HP 2% 회복':selected.ability||'일회용 술법')}</span>`:`<span class="uxStat">문양 ${esc56(publicTalismanSeal56(selected))}</span><span class="uxStat">효과 ?</span>`):(knownPotion56(selected)?`<span class="uxStat">${esc56(truePotion56(selected).ability||'식별됨')}</span>`:`<span class="uxStat">${esc56(POTION_META[selected.potionKind]?.family||'미확인')}</span><span class="uxStat">${esc56(selected.origin56?.label||'출처 불명')}</span>`);const desc=detail.querySelector('.uxDesc');if(desc)desc.innerHTML=selected.type==='talisman'?talismanHTML56(selected):(knownPotion56(selected)?`<div class="v56Clue"><b>확정 효과</b>${esc56(truePotion56(selected).desc||'')}</div>`:potionClueHTML56(selected,true));const primary=detail.querySelector('[data-invuse]');if(primary)primary.textContent=selected.type==='talisman'?'펼치기':(!knownPotion56(selected)?'사용':(selected.throwable?'투척':'마시기'));const info=detail.querySelector('[data-invinspect]');if(info){const n=info.cloneNode(true);info.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(typeof globalThis.__MANRU_TERRAIN_CODEX986__?.openItem==='function')globalThis.__MANRU_TERRAIN_CODEX986__.openItem(selected);else baseShowInspect56(publicName56(selected),inspectHTML56(selected))})}
+      const h=detail.querySelector('h3');if(h)h.textContent=publicName56(selected)+((selected.count||1)>1?` ×${selected.count}`:'');const sub=detail.querySelector('small');if(sub)sub.textContent=selected.type==='talisman'?(knownTalisman56(selected)?`식별된 부적 · 일회용${selected.targeted?` · 사거리 ${selected.targetRange}`:''}`:'미확인 부적 · 술법 불명'):(knownPotion56(selected)?'식별된 비약':'미확인 비약 · 단서로 추정 가능');const stats=detail.querySelector('.uxStats');if(stats)stats.innerHTML=selected.type==='talisman'?(knownTalisman56(selected)?`<span class="uxStat">${esc56(classItemDescription58(selected)?'괴력 · 매턴 HP 2% 회복':selected.ability||'일회용 술법')}</span>`:`<span class="uxStat">문양 ${esc56(publicTalismanSeal56(selected))}</span><span class="uxStat">효과 ?</span>`):(knownPotion56(selected)?`<span class="uxStat">${esc56(truePotion56(selected).ability||'식별됨')}</span>`:`<span class="uxStat">${esc56(POTION_META[selected.potionKind]?.family||'미확인')}</span><span class="uxStat">${esc56(selected.origin56?.label||'출처 불명')}</span>`);const desc=detail.querySelector('.uxDesc');if(desc)desc.innerHTML=selected.type==='talisman'?talismanHTML56(selected):(knownPotion56(selected)?`<div class="v56Clue"><b>확정 효과</b>${esc56(truePotion56(selected).desc||'')}</div>`:potionClueHTML56(selected,true));const primary=detail.querySelector('[data-invuse]');if(primary)primary.textContent=selected.type==='talisman'?'펼치기':(!knownPotion56(selected)?'사용':(selected.throwable?'투척':'마시기'));const info=detail.querySelector('[data-invinspect]');if(info){const n=info.cloneNode(true);info.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(typeof globalThis.__MANRU_TERRAIN_CODEX986__?.openItem==='function')globalThis.__MANRU_TERRAIN_CODEX986__.openItem(selected);else showInspectSheet(publicName56(selected),inspectHTML56(selected))})}
     }
   }
   function inventoryFilteredFor56(tab){const old=inventoryTab;inventoryTab=tab;const r=inventoryFiltered();inventoryTab=old;return r}
   registerInventoryRenderR34('r56-identification','post',()=>patchInventory56());
 
-  function observePotion56(item){if(!item||item.type!=='potion')return;decoratePotion56(item);const K=ensureKnowledge56(),n=(K.potionSeen[item.potionKind]||0)+1;K.potionSeen[item.potionKind]=n;if(!knownPotion56(item)&&!K.clueSeen[item.potionKind]){K.clueSeen[item.potionKind]=1;baseAddLog56(`약병 단서 기록 · ${app56(item).name}: ${POTION_META[item.potionKind]?.family||'약성 불명'} / ${item.origin56?.label||'출처 불명'}.`)}}
+  function observePotion56(item){if(!item||item.type!=='potion')return;decoratePotion56(item);const K=ensureKnowledge56(),n=(K.potionSeen[item.potionKind]||0)+1;K.potionSeen[item.potionKind]=n;if(!knownPotion56(item)&&!K.clueSeen[item.potionKind]){K.clueSeen[item.potionKind]=1;logWithCategory(`약병 단서 기록 · ${app56(item).name}: ${POTION_META[item.potionKind]?.family||'약성 불명'} / ${item.origin56?.label||'출처 불명'}.`)}}
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
   registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion56(item)}});
 
@@ -8580,7 +8521,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
   function onFloorGenerated56(){ensureKnowledge56();decorateAllItems56();contextualRewards56();decorateAllItems56();state.roomHints56={};if(typeof vfBuildDecor==='function')vfBuildDecor()}
   registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
-  globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();baseAddLog56('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
+  globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('knowledge56',{post:()=>{if(state){ensureKnowledge56();decorateAllItems56();state.roomHints56=state.roomHints56||{};updateAll()}}});
 
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:knownPotion56,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget56(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget56(item);return true}return !!useInstantTalisman56(item)}});
@@ -8766,8 +8707,6 @@ function naturalFoodPick57(){const pool=[];const add=(n,w)=>{const d=foodDef57(n
 const dropBase57=dropRandomItem;dropRandomItem=function(pos,special=false){const n=state.items.length,r=dropBase57(pos,special);for(let i=n;i<state.items.length;i++){const it=state.items[i];if(it?.type==='food'&&(it.craftedOnly57||it.naturalOnly57||(it.minFloor||1)>state.floor)){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}if(it?.type==='ingredient'){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}}return r};
 
 // 인벤토리 분류와 버튼 문구
-const itemTypeBase57=itemTypeLabel;itemTypeLabel=function(t){if(t==='ingredient')return'조리 재료';return itemTypeBase57(t)};
-const glyphBase57=itemGlyph;itemGlyph=function(i){if(i?.mineItem105)return i.mineItem105==='stone'?'石':i.mineItem105==='oil'?'油':'玄';if(i?.type==='ingredient')return i.foodKind==='seaweed'?'초':i.name==='깨끗한 물'?'수':'빙';return glyphBase57(i)};
 
 registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
@@ -11936,7 +11875,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
-  const summaryBase74=itemSummary;itemSummary=function(item){const s=summaryBase74(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s};
   registerInventoryRenderR34('r74-talisman-fusion','post',()=>{const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion74()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion74(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})});
   // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
   targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
@@ -14180,16 +14118,12 @@ const AMMO967=[
   function decorBoost970(){if(!state||state.specialFloor||!Array.isArray(state.rooms))return;const z=regionIndex();for(let i=0;i<state.rooms.length;i++){const r=state.rooms[i];if(!r||r.w<6||r.h<5)continue;const h=hash2(r.cx,r.cy,9740+i*11);if(h<.34)continue;if(z===0)pair970(r,i%2?TT.LANTERN_POST:TT.BENCH,i%3?'top':'bottom');else if(z===1)pair970(r,i%2?TT.PAPER_CRANE:TT.FLOWERBED,i%3?'top':'bottom');else if(z===2)pair970(r,i%2?TT.INCENSE_STAND:TT.MIRROR,i%3?'top':'bottom');else if(z===3)pair970(r,i%2?TT.IRON_HOOK:TT.JAR,i%3?'top':'bottom');else pair970(r,i%2?TT.GOLD_LAMP:TT.PETAL_MAT,i%3?'top':'bottom')}}
   // v9.7 generation/load wrappers were folded into the current release pipeline.
   // v9.8.3 load quality pass is registered in the canonical lifecycle below.
-  const type967=itemTypeLabel;itemTypeLabel=function(t){if(t==='ammo')return'탄약';return type967(t)};
-  const glyph967=itemGlyph;itemGlyph=function(item){if(item?.type==='ammo')return'탄';return glyph967(item)};
-  const summary967=itemSummary;itemSummary=function(item){if(item?.type==='ammo'){const d=ammoDef967(item.ammoKind)||item,a=[];if(d.atkBonus)a.push(`공격 +${d.atkBonus}`);if(d.pierce)a.push(`방어 ${d.pierce} 무시`);return `활 탄약 · ${a.length?a.join(' · '):'표준 화살'} · ${item.count||1}발`}return summary967(item)};
   
   // r30: ammunition selection is integrated in canonical useInventoryItem.
   registerInventoryRenderR34('r967-ammo','post',()=>{const box=document.getElementById('inventory');if(box&&state){box.querySelectorAll('[data-invuse]').forEach(b=>{const it=state.player.inventory[+b.dataset.invuse];if(it?.type==='ammo')b.textContent=it.ammoKind===state.player.loadedAmmoKind?'장전됨':'장전'});box.querySelectorAll('[data-invslot]').forEach(b=>{const it=state.player.inventory[+b.dataset.invslot];if(it?.type==='ammo'){if(it.ammoKind===state.player.loadedAmmoKind)b.classList.add('ammo967-loaded');const role=b.querySelector('.uxRole47');if(role)role.textContent='탄약'}})}});
   /* R7 refactor: ammo inventory/world visuals now use the canonical exact-item renderer. */
   registerPlayerAttackStageR25('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef967(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
   globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo967,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo967();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo967(ctx.ammo)}};
-  const attackBtn967=updateAttackButton;updateAttackButton=function(...args){const r=attackBtn967(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo967();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo967()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r};
   const wall970=drawWallTexture;
   drawWallTexture=function(px,py,x,y,colors){const s=state?.subthemeWalls970?.[`${x},${y}`];if(s){const P={r1_banquet:['#5f2c24','#26130f'],r1_service:['#4c3424','#20160f'],r2_indoor:['#9b7846','#4e3822'],r2_outdoor:['#4a5c50','#202b25'],r3_silk:['#5e3659','#281625'],r3_moon:['#4b5965','#202932'],r4_storage:['#554034','#211812'],r4_cellar:['#555d61','#22282b'],r5_sanctum:['#5d5130','#231f13'],r5_garden:['#5b6250','#252a20'],rumor_garden:['#52684d','#1e2820'],rumor_store:['#6b4a2f','#26180d'],rumor_archive:['#51443c','#1d1816'],rumor_moon:['#667582','#27313b'],rumor_silk:['#70405f','#281521'],rumor_shrine:['#7a6635','#2b2411'],rumor_flood:['#54727a','#1f2c31'],rumor_gas:['#5b6551','#20261c'],haz_water:['#4f6e77','#1d2a30'],haz_lava:['#7f4a2d','#2d140d'],haz_mercury:['#7e858d','#262a2f'],haz_void:['#5a4e78','#1c1829']}[s];if(P)colors={...colors,wall:P[0],wallDark:P[1]}}return wall970(px,py,x,y,colors)};
 
@@ -16175,13 +16109,6 @@ const V984='v9.9.6-initial-zoom-100';
     const r=document.createElement('span');r.className='inspect984Rune';r.textContent=String(title||'?').trim().slice(0,1);box.appendChild(r);
   }
   /* Final inspect owner. It bypasses the historical append-wrappers that duplicated monster/item prose. */
-  showInspect=function(title,html){
-    const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
-    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem986(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
-    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect984('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),null);return}
-    const txt=dedupeProse986(textOnly984(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
-    directOpenInspect984(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
-  };
   window.__MANRU_TERRAIN_CODEX986__={
     openItem:openItemInspect986,
     entries:()=>Object.entries(TT).map(([key,value])=>({key,value,name:terrainName(value),has:!!TERRAIN986.get(value),desc:TERRAIN986.get(value)?.desc||null,hint:TERRAIN986.get(value)?.hint||null})),
