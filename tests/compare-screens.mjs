@@ -10,7 +10,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const [a, b] = process.argv.slice(2).map((l) => path.join(here, 'artifacts', l));
 const out = path.join(here, 'artifacts', 'screen-diff');
 fs.mkdirSync(out, { recursive: true });
-const NOISE = 24; // per-channel difference treated as rendering noise
+// Per-channel difference treated as noise. The game canvas read back from the page is nearly
+// exact, so it gets a strict limit; composited screenshots and the animated arena get more.
+const noiseFor = (name) => (name.endsWith('.canvas.png') && !name.includes('battle') ? 2 : 24);
 const LIMIT = 0.002; // share of pixels allowed above the noise level
 let failed = 0;
 for (const name of fs.readdirSync(a).filter((f) => f.startsWith('screens.')).sort()) {
@@ -23,7 +25,7 @@ for (const name of fs.readdirSync(a).filter((f) => f.startsWith('screens.')).sor
     let n = 0;
     for (let i = 0; i < pa.data.length; i += 4) {
       const d = Math.max(Math.abs(pa.data[i] - pb.data[i]), Math.abs(pa.data[i + 1] - pb.data[i + 1]), Math.abs(pa.data[i + 2] - pb.data[i + 2]));
-      const bad = d > NOISE;
+      const bad = d > noiseFor(name);
       if (bad) n++;
       diff.data[i] = bad ? 255 : pa.data[i] / 4;
       diff.data[i + 1] = bad ? 0 : pa.data[i + 1] / 4;

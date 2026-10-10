@@ -11662,8 +11662,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
       debugBattleRender57(true,performance.now(),true);
       try{updateAttackButton()}catch(_){}
       if(FX?.transition)FX.transition=null;
-      if(typeof P47!=='undefined'&&P47){P47.force=true;P47.cullKey='';P47.decorKey=''}
-      if(typeof PERF49!=='undefined'&&PERF49){PERF49.dirty=true;PERF49.panelDirty=true;PERF49.miniDirty=true}
       recovery71.last={reason,attempt,ok:true,at:Date.now(),width:C.width,height:C.height};
       return true;
     }catch(err){
@@ -14503,7 +14501,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 /* ===== MANRU v9.6.7: COMMON AMMUNITION / BOW-BIASED FLOOR LOOT ===== */
 (()=>{
   'use strict';
-  if(window.__MANRU_AMMO967__)return; window.__MANRU_AMMO967__=true;
   const AMMO967=[
     {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:10,spawnMax:18,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 한 묶음에 많이 들어 있어 가장 흔하게 발견된다.'},
     {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:8,spawnMax:14,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 약간 더 강한 타격을 준다.'},
@@ -15103,13 +15100,13 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
     for(const r of rooms.slice(0,5))markRoom980(r,styles[hash980(r.cx,r.cy,17)>.5?0:1]);
     // Connectivity repair runs before validation so local vault modules survive instead of being discarded wholesale.
     try{if(!state.keyPlan96&&typeof ensureNormalConnectivity==='function')ensureNormalConnectivity()}catch(_){ }
-    const validStructure=validateNormal980()&&(!state.keyPlan96||typeof validLockPlan96!=='function'||validLockPlan96());
+    const validStructure=validateNormal980();
     if(!validStructure){
       restore980(backup);
       // Preserve non-blocking visual zoning even if a rare structural insertion is rejected.
       for(const r of rooms.slice(0,5))markRoom980(r,styles[hash980(r.cx,r.cy,17)>.5?0:1]);
       state.qualityRejected980=(state.qualityRejected980||0)+1;
-    }else{try{biasItems94?.()}catch(_){}}
+    }
   }
 
   function lineOwn980(x0,y0,x1,y1,t=TT.FLOOR,w=1){
@@ -15515,7 +15512,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
     try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(e){V980.errors.push(`repair:${e}`)}
     try{if(!state.specialFloor&&!state.keyPlan96&&typeof ensureNormalConnectivity==='function')ensureNormalConnectivity()}catch(e){V980.errors.push(`connect:${e}`)}
     try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(_){ }
-    try{normalizeDoors86?.();sanitizeWindows88?.()}catch(_){ }
     // Never rewrite/reinstall key plans after architecture work. If the exact original lock graph was disturbed,
     // restore its map and entity positions, then apply visual-only zoning.
     if(lockBackup&&!lockAuditOkay980()){
@@ -16647,8 +16643,8 @@ riverAndCore(...args){
     const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
     const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem986(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
     const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect984('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),null);return}
-    const txt=dedupeProse986(textOnly984(typeof sanitize56==='function'?sanitize56(html):html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
-    directOpenInspect984(typeof sanitize56==='function'?sanitize56(title):title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
+    const txt=dedupeProse986(textOnly984(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
+    directOpenInspect984(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   };
   window.__MANRU_TERRAIN_CODEX986__={
     openItem:openItemInspect986,

@@ -58,6 +58,9 @@ async function capture(out, key, s) {
     await s.tick(50);
   }
   out[key + '.png'] = await s.page.screenshot();
+  // The game canvas itself, read back from the page: free of compositor noise.
+  const canvas = await s.page.evaluate(() => { const c = document.getElementById('game'); try { return c && c.width ? c.toDataURL('image/png') : null; } catch { return null; } });
+  if (canvas) out[key + '.canvas.png'] = Buffer.from(canvas.split(',')[1], 'base64');
   out[key + '.css'] = await computedStyles(s.page);
 }
 

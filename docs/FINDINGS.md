@@ -11,3 +11,4 @@
 | F-04 | 생성·잠금 | V40 16040행 `typeof validLockPlan96!=='function'||validLockPlan96()`는 함수가 보이지 않아 늘 `true`다. 이 경로에서는 잠금 계획 검증이 생략된다. | 보존(항상 참으로 정리) · 판단 필요 |
 | F-05 | 감정·조사창 | V40 17625·17626행의 조사창은 `typeof sanitize56==='function'?sanitize56(text):text`로 미감정 물약·부적 이름을 가리려 하지만, `sanitize56`이 다른 구획의 지역 함수라 늘 원문을 쓴다. 미감정 아이템의 실제 이름이 조사창 본문·제목에 노출될 수 있다. | 보존(원문 사용으로 정리) · 판단 필요 |
 | F-06 | 복귀 렌더 | V40 12366·12367행(안드로이드 백그라운드 복귀 처리)의 `typeof P47!=='undefined'`, `typeof PERF49!=='undefined'`는 늘 거짓이다. 복귀 시 렌더 캐시 무효화가 일어나지 않는다. | 보존(분기 삭제) · 판단 필요 |
+| F-07 | 몬스터 그림 | 몬스터 스프라이트 분기(V40 20755행 `else if(/천수 아수라/.test(n))drawSpiritMonster1011(q,m,p,'angel')`)가 어디에도 정의되지 않은 `drawSpiritMonster1011`을 부른다. 이 분기를 타면 `ReferenceError`가 난다. | 보존 · 판단 필요 |
