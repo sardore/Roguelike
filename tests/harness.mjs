@@ -12,7 +12,10 @@ export function sha(text) {
 
 function seedScript(seed) {
   let a = seed >>> 0;
+  window.__rngCalls = 0;
+  window.__reseed = (x) => { a = x >>> 0; };
   Math.random = () => {
+    window.__rngCalls++;
     a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), a | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
