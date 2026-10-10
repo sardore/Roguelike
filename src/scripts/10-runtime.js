@@ -16101,12 +16101,9 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
 
   /* v10.0.2: one canonical screen state, instead of leaving the class picker alive behind display:none. */
   const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
-  // Development tools (the debug arena button) are shown only when the page is opened with ?debug=1.
-  const DEBUG_TOOLS=new URLSearchParams(location.search).get('debug')==='1';
   function setScreen1002(mode){
     SCREEN1002.mode=mode;
     document.body.dataset.manruScreen=mode;
-    document.body.toggleAttribute('data-debug-tools',DEBUG_TOOLS);
     if(mode==='game'){
       // Retire title-selection state itself. It no longer survives invisibly behind gameplay.
       pickWrap?.classList.remove('show');document.body.classList.remove('title-class-mode','end-screen95');

@@ -26,7 +26,7 @@ npm test             # V40 기준선과 동작 비교 (Chromium 필요)
 - `dist/MANRU.html`은 더블클릭으로 실행된다. 외부 요청이 없다.
 - PWA: `dist/app/www`를 https 호스팅에 올리고 "홈 화면에 추가". 오프라인에서도 열린다.
 - 안드로이드 APK: `dist/app/`에서 `build-android.sh`(또는 `.bat`). Node 20+와 Android Studio가 필요하다. 이 환경에서는 SDK가 없어 실행해 보지 못했다.
-- 디버그 전장 버튼은 주소 뒤에 `?debug=1`을 붙였을 때만 보인다.
+- 디버그 전장 버튼은 개발 버전이라 타이틀에 항상 보인다.
 - 세이브는 실행 방식(HTML 파일 / PWA 주소 / APK)마다 따로 저장된다. 옮기려면 게임 안의 세이브 내보내기/가져오기를 쓴다.
 
 ## 규칙 요약
