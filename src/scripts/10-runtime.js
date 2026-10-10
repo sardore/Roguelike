@@ -2202,7 +2202,6 @@ function spillJar105(x,y,kind){
  if(kind==='water')emitElementContact105('water',cells);for(const e of [state.player,...state.monsters])if(e.hp>0&&cells.some(q=>monCovers(e,q.x,q.y)))environmentStanding105(e);
  if(kind==='water')elementAttackFx105('water',cells,{x,y});return cells;
 }
-function lightReaches105(x,y){return worldLightSources49().some(l=>Math.hypot(l.x-x,l.y-y)<=l.r&&lineClear(l.x,l.y,x,y))}
 function reflectRay105(origin,target,kind='beam',damage=0,elem='holy'){
  if(!['beam','gaze'].includes(kind))return false;
  for(const q of combatLineCellsR8(origin.x,origin.y,target.x,target.y)){
@@ -3737,7 +3736,7 @@ const HAPTIC_PATTERN57=Object.freeze({
 });
 try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(_){}
 function vibrationEnabled57(){return HAPTIC57.enabled}
-function setVibrationEnabled57(on){HAPTIC57.enabled=!!on;try{localStorage.setItem('manruHaptics57',HAPTIC57.enabled?'1':'0')}catch(_){}return HAPTIC57.enabled}
+function setVibrationEnabled57(on){HAPTIC57.enabled=!!on;try{localStorage.setItem('manruHaptics57',HAPTIC57.enabled?'1':'0')}catch(error){console.warn('[manru] haptics setting not stored',error)}return HAPTIC57.enabled}
 function vfVibrate(pattern){
   try{
     if(!HAPTIC57.enabled||typeof navigator==='undefined'||typeof navigator.vibrate!=='function')return false;
@@ -3772,7 +3771,6 @@ function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&m
 function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStagesR25('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard105(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard105(guarded);RuntimeState.martialDamageBundle1005=null}}}
 function attackPlayerInitialCoreR25(mon,bonusAtk=0){state.playerAttackUntil=performance.now()+145;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome57('attempt',mon);mon.alerted=true;if(state.floor<11)alertNearby(mon.x,mon.y,4);const st=getStats(),w=state.player.weapon||{},ranged=!!(w.ranged||w.kind==='bow');let bonus=bonusAtk;if((state.status?.drunk||0)>0){const drunk=drunkAttackOutcome57();if(drunk==='whiff'){setPlayerAttackOutcome57('miss',mon,{reason:'drunk-whiff'});floatText(state.player.x,state.player.y,'비틀','#d7c39e',10);addLog('취기가 손끝을 틀어 공격이 허공을 갈랐다.');return false}if(drunk==='heavy'){bonus+=DRUNK_RULES57.attackHeavyBonus;floatText(state.player.x,state.player.y,'취중 강타','#e5c987',9)}}if(globalThis.__MANRU_RANDOM57__()<entityAttackMissChance57(state.player,mon,{base:.05,max:.45})){setPlayerAttackOutcome57('miss',mon,{reason:'evasion'});addLog(mon.name+'이 공격을 피했다.');floatText(mon.x,mon.y,'빗나감','#a9bed2',10);return false}if(!ranged&&state.player.strongReady>0){bonus+=2+state.player.strongReady*2;addLog(`강타 ${state.player.strongReady}단계 발동.`);state.player.strongReady=0}const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity61(mon,damageFormula(st.atk+bonus,mon.def-(mon.weakened>0?2:0),crit));setPlayerAttackOutcome57('hit',mon,{damage:dmg,crit});if(mon.hp>0)setMonsterAttackInvestigation57(mon,state.player);mon.hitUntil=performance.now()+115;if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?15:13);addLog(`${state.player.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}`);if(w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0)damageEntity61(mon,3,state.player);if(w.stun&&globalThis.__MANRU_RANDOM57__()<w.stun)mon.stunned=Math.max(mon.stunned||0,1);if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true}
 setPlayerAttackBaseR25('initial',attackPlayerInitialCoreR25);
-function applyKnockback(mon){if(!state||!mon)return false;const r=resolveForcedMovement57(state.player,mon,1,{mode:'push',hostile:true,log:'충격에 밀려났다.'});return r.moved>0}
 // WILL is the player's universal resistance against chance-based hostile status effects.
 // Curve: effective proc chance = base chance * 6/(6+WILL). It never grants immunity;
 // explicit statusImmune gear remains the only full immunity source.
@@ -4629,10 +4627,8 @@ function drawCoreSealWarning54(ctx,intent,project,now,visible=()=>true){
  ctx.restore();
 }
 
-function damagePlayer54(n,why,color='#e78372'){n=Math.max(0,Math.round(Number(n)||0));markCombatActivity57('boss-effect');n=damageEntity61(state.player,n);if(n>0){floatText(state.player.x,state.player.y,'-'+n,color,15);impact(state.player.x,state.player.y,color,5);addLog(`${why}: -${n} HP`);globalThis.__MANRU_SFX54__?.play?.('hurt');}if(state.player.hp<=0)die(why)}
 function lineToward54(mon,target,steps=4){const out=[];let x=mon.x,y=mon.y;for(let i=0;i<steps;i++){const dx=Math.sign(target.x-x),dy=Math.sign(target.y-y);if(Math.abs(target.x-x)>=Math.abs(target.y-y))x+=dx;else y+=dy;if(!cell54(x,y))break;out.push({x,y})}return out}
 function charge54(mon,target){if(!target)return;const aimed={...target};for(let i=0;i<4;i++){const dx=Math.sign(aimed.x-mon.x),dy=Math.sign(aimed.y-mon.y);let nx=mon.x,ny=mon.y;if(Math.abs(aimed.x-mon.x)>=Math.abs(aimed.y-mon.y))nx+=dx;else ny+=dy;const t=state.map[ny]?.[nx];if([TT.TABLE,TT.SCREEN,TT.JAR,TT.DOOR].includes(t)){setTerrainTile58(state.map,nx,ny,TT.FLOOR);burst(nx,ny,'#a66543',9,.65);globalThis.__MANRU_SFX54__?.play?.('door')}if(!PlacementService.monsterCanStand(mon,nx,ny))break;OccupancyService.move(mon,nx,ny)}for(const victim of [state.player,...state.monsters])if(combatTargetValid57(mon,victim)&&entityDistance57(mon,victim)<=1){attackMonster(mon,5,{target:victim,delivery:'melee',range:1,fixedArea58:true});break}}
-function chainIntentHits54(mon,I,target=selectCombatOpponent57(mon)){if(!target)return false;const d=entityDistance57(mon,target);return d>=3&&d<=8&&I.cells.some(c=>monCovers(target,c.x,c.y))&&monsterAttackLineR8(mon,8,{target,delivery:'area'}).ok}
 function executeIntent54(mon){
  const I=mon.intent54;if(!I)return false;
  if(I.type.startsWith('palace'))return palaceResolveIntent105(mon,I);
@@ -5651,7 +5647,7 @@ const RunLifecycle={
     try{if(!meta||(meta.saveVersion1004!=null&&!['v10.0.4','v10.0.5','v10.0.6'].includes(meta.saveVersion1004))||(meta.saveSchema1004!=null&&meta.saveSchema1004!==1)||meta.dead||meta.victory)return false;
       const migrated=GameState.migrate(meta);RuntimeState.lifecycle.validate(migrated);const save=globalThis.__MANRU_SAVE_SERVICE__,rid=migrated.runId984;
       return !rid||(!save.deadRuns().has(rid)&&save.death()?.runId!==rid&&!(state?.runId984===rid&&(state.dead||state.victory)));
-    }catch(_){return false}
+    }catch(error){console.warn('[manru] saved run cannot be continued',error);return false}
   },
   refreshContinue(){
     const b=document.getElementById('continueBtn');if(!b)return;
@@ -6792,10 +6788,6 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
 
   /* ----------------------- 48x48 terrain sprites ----------------------- */
-  function drawLongBench48(q){
-    rect(q,4,22,40,8,'#4b2d1d');rect(q,6,19,36,7,'#8b5c36');rect(q,7,19,34,2,'#b27c4a');
-    rect(q,9,28,5,14,'#382319');rect(q,34,28,5,14,'#382319');
-  }
   
   function terrainKey(tile,region,variant,frame,extra=''){return `${tile}:${region}:${variant}:${frame}:${extra}`}
   function hiTerrain(tile,region,variant=0,frame=0,extra=''){
@@ -8015,7 +8007,7 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
 
 /* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
 const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
-  try{const s=localStorage.getItem('manruSfx54');if(s==='0')V54.sfx=false}catch(_){ }
+  try{const s=localStorage.getItem('manruSfx54');if(s==='0')V54.sfx=false}catch(error){console.warn('[manru] sound setting not read',error)}
 
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);
   const rule=document.createElement('div');rule.id='bossRule54';document.getElementById('canvasWrap')?.appendChild(rule);
@@ -8090,7 +8082,7 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   registerGenerationStage('boss-zones54-pre','pre',()=>{V54.marks=[];rule.classList.remove('show')});registerGenerationStage('boss-zones54-post','post',()=>{state.bossZones54=[];for(const m of state.monsters||[])normalizeBoss54(m)});
 
   // InputRouter owns the physical shortcut; this API remains the existing sound-setting owner.
-  globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54,toggle(){V54.sfx=!V54.sfx;try{localStorage.setItem('manruSfx54',V54.sfx?'1':'0')}catch(_){}toast(`효과음 ${V54.sfx?'켜짐':'꺼짐'}`);return V54.sfx},enabled(){return V54.sfx}});
+  globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54,toggle(){V54.sfx=!V54.sfx;try{localStorage.setItem('manruSfx54',V54.sfx?'1':'0')}catch(error){console.warn('[manru] sound setting not stored',error)}toast(`효과음 ${V54.sfx?'켜짐':'꺼짐'}`);return V54.sfx},enabled(){return V54.sfx}});
 
   function drawBossIntent54(){
  if(!state)return;drawBossArena54();
@@ -9978,7 +9970,6 @@ const V60={revision:3,hiddenSeq:0,lastFloor:0};
   /* ---------- exact-floor visual language ---------- */
 
 
-  function doorPal60(){const f=state.floor;if([16,18,20].includes(f))return{frame:'#202b31',panel:'#667782',edge:'#e08b55',metal:'#d5dce0'};if([21,22,23,25].includes(f))return{frame:'#18182a',panel:'#4c5279',edge:'#e4c35d',metal:'#a9f0ef'};if([6,8,10].includes(f))return{frame:'#1d2722',panel:'#4c5e50',edge:'#9f9367',metal:'#c8c4a6'};if([11,13,15].includes(f))return{frame:'#251425',panel:'#754669',edge:'#e192bd',metal:'#e7c5df'};return{frame:'#2d100c',panel:'#7e3025',edge:'#e29a58',metal:'#d8b276'}}
   function drawDoor60(px,py,open,x,y){drawDoor(px,py,open,state.map[y-1]?.[x]===TT.WALL&&state.map[y+1]?.[x]===TT.WALL)}
 
   /* ---------- custom population for rebuilt geometry ---------- */
@@ -10803,7 +10794,7 @@ const RC={
   function structureHit70(cx,cy){return globalThis.__MANRU_WORLD_HITTEST12__.nearestCell(cx,cy,{radius:2,predicate:(x,y)=>STRUCT70.has(state.map[y]?.[x])&&VisibilityService.isSeen(x,y)})}
   /* ---------- contextual tutorial ---------- */
   function tipLedger66(){
-    let ledger;try{ledger=JSON.parse(lsGet70('manruTutorialAccount66'))}catch(_){}
+    let ledger;try{ledger=JSON.parse(lsGet70('manruTutorialAccount66'))}catch(error){console.warn('[manru] tutorial ledger unreadable',error)}
     if(!ledger||ledger.version!==1){ledger={version:1,seen:{...(state?.tutorialSeen59||{})}};lsSet70('manruTutorialAccount66',JSON.stringify(ledger))}
     return ledger;
   }
@@ -10998,7 +10989,7 @@ const RC={
 // v10.0.4 canonical loader owns continue/load; legacy snapshot fallback removed.
   function loadGameCore70(request=null){
     let raw=request?.raw||null;
-    if(!request?.state&&!raw)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(_){}
+    if(!request?.state&&!raw)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}
     if(!request?.state&&!raw){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return false}
     try{
       const env=request?.state?{state:request.state,settings:request.settings||{}}:parseEnvelope70(raw),st=env.state;
@@ -15061,7 +15052,7 @@ const V984='v9.9.6-initial-zoom-100';
 
 
   /* ---------- Phase 12 canonical camera, projection and world hit-test owners ---------- */
-  const savedMode='follow';try{localStorage.removeItem('manruCameraMode984')}catch(_){};
+  const savedMode='follow';try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[manru] camera setting not cleared',error)};
   const ZOOM_LIMITS984={mobile:{min:.50,max:1.80},desktop:{min:.40,max:2.20}};
   const savedZoom=(()=>{try{const active=localStorage.getItem('manru984_active_run');if(!active)return 1;const raw=localStorage.getItem('manruZoom984');if(raw==null||raw==='')return 1;const z=+raw;if(!Number.isFinite(z))return 1;const lim=isMobileViewport()?ZOOM_LIMITS984.mobile:ZOOM_LIMITS984.desktop;return Math.max(lim.min,Math.min(lim.max,z))}catch(_){return 1}})();
   const cameraData12={mode:savedMode,zoom:savedZoom,cx:0,cy:0,tx:0,ty:0,ready:false,last:performance.now(),lastUpdate:0,lastPlayerX:null,lastPlayerY:null};
@@ -15085,7 +15076,7 @@ const V984='v9.9.6-initial-zoom-100';
       if(state&&cameraData12.mode==='follow'){const p=cameraFollowPosition57(),c=CameraState12.clampCenter(p.worldX,p.worldY,z);cameraData12.tx=c.x;cameraData12.ty=c.y;cameraData12.cx=c.x;cameraData12.cy=c.y}else if(state){const c=CameraState12.clampCenter(cameraData12.tx,cameraData12.ty,z);cameraData12.tx=c.x;cameraData12.ty=c.y;if(cameraData12.mode==='free'){cameraData12.cx=cameraData12.tx;cameraData12.cy=cameraData12.ty}}
       cameraData12.last=now;cameraData12.lastUpdate=now;return CameraState12.snapshot()
     },
-    setZoom(value,announce=false,anchor=null){CameraState12.cancelInertia();const lim=CameraState12.limits(),priorZoom=CameraState12.scale(),sp=CameraProjection12.clientToViewport(anchor?.clientX,anchor?.clientY),anchorCamera=cameraData12.ready&&sp?{cx:cameraData12.cx,cy:cameraData12.cy}:null;cameraData12.zoom=Math.max(lim.min,Math.min(lim.max,Math.round(value*1000)/1000));const nextZ=CameraState12.scale();if(anchorCamera&&cameraData12.mode==='free'&&Math.abs(nextZ-priorZoom)>.0001){const wx=anchorCamera.cx+(sp.x-VIEW.w*.5)/Math.max(.001,priorZoom),wy=anchorCamera.cy+(sp.y-VIEW.h*.48)/Math.max(.001,priorZoom),wantedX=wx-(sp.x-VIEW.w*.5)/Math.max(.001,nextZ),wantedY=wy-(sp.y-VIEW.h*.48)/Math.max(.001,nextZ),c=CameraState12.clampCenter(wantedX,wantedY,nextZ);cameraData12.cx=cameraData12.tx=c.x;cameraData12.cy=cameraData12.ty=c.y}clearTimeout(zoomPersistTimer984);if(!state?.debugBattle57)zoomPersistTimer984=setTimeout(()=>{try{localStorage.setItem('manruZoom984',String(cameraData12.zoom))}catch(_){}},220);const el=document.getElementById('zoomVal');if(el)el.textContent=Math.round(cameraData12.zoom*100)+'%';window.__manruZoomSuppressUntil=performance.now()+120;if(announce)toast(`줌 ${Math.round(cameraData12.zoom*100)}%`);cameraRenderPending67=true;return cameraData12.zoom},
+    setZoom(value,announce=false,anchor=null){CameraState12.cancelInertia();const lim=CameraState12.limits(),priorZoom=CameraState12.scale(),sp=CameraProjection12.clientToViewport(anchor?.clientX,anchor?.clientY),anchorCamera=cameraData12.ready&&sp?{cx:cameraData12.cx,cy:cameraData12.cy}:null;cameraData12.zoom=Math.max(lim.min,Math.min(lim.max,Math.round(value*1000)/1000));const nextZ=CameraState12.scale();if(anchorCamera&&cameraData12.mode==='free'&&Math.abs(nextZ-priorZoom)>.0001){const wx=anchorCamera.cx+(sp.x-VIEW.w*.5)/Math.max(.001,priorZoom),wy=anchorCamera.cy+(sp.y-VIEW.h*.48)/Math.max(.001,priorZoom),wantedX=wx-(sp.x-VIEW.w*.5)/Math.max(.001,nextZ),wantedY=wy-(sp.y-VIEW.h*.48)/Math.max(.001,nextZ),c=CameraState12.clampCenter(wantedX,wantedY,nextZ);cameraData12.cx=cameraData12.tx=c.x;cameraData12.cy=cameraData12.ty=c.y}clearTimeout(zoomPersistTimer984);if(!state?.debugBattle57)zoomPersistTimer984=setTimeout(()=>{try{localStorage.setItem('manruZoom984',String(cameraData12.zoom))}catch(error){console.warn('[manru] zoom setting not stored',error)}},220);const el=document.getElementById('zoomVal');if(el)el.textContent=Math.round(cameraData12.zoom*100)+'%';window.__manruZoomSuppressUntil=performance.now()+120;if(announce)toast(`줌 ${Math.round(cameraData12.zoom*100)}%`);cameraRenderPending67=true;return cameraData12.zoom},
     center(){CameraState12.setMode('follow');CameraState12.centerOnPlayer();cameraRenderPending67=true;return CameraState12.snapshot()},
     panWorld(dx,dy){cameraMotion68.active=false;if(!cameraData12.ready&&state)CameraState12.centerOnPlayer();CameraState12.setMode('free');const c=CameraState12.clampCenter(cameraData12.tx+dx,cameraData12.ty+dy);cameraData12.cx=cameraData12.tx=c.x;cameraData12.cy=cameraData12.ty=c.y;cameraData12.last=performance.now();cameraData12.lastUpdate=cameraData12.last;cameraRenderPending67=true;return CameraState12.snapshot()},
     beginInspect(){CameraState12.cancelInertia();cameraMotion68.lastInput=performance.now()-16;const rt=window.__MANRU_RUNTIME81__;if(rt?.state)rt.state.cameraInspecting=true;return CameraState12.setMode('free')},
@@ -15574,7 +15565,7 @@ const V984='v9.9.6-initial-zoom-100';
     post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData12.lastPlayerX=state.player.x;cameraData12.lastPlayerY=state.player.y;CameraState12.setMode('follow',false);CameraState12.centerOnPlayer();setTimeout(()=>{CameraState12.setZoom(q.desiredZoom??1,false);fixGlyphs984()},90)}}
   });
   globalThis.__MANRU_LIFECYCLE__.registerLoad('camera-save984',{
-    pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(_){}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData12.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
+    pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData12.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
     post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData12.lastPlayerX=state.player.x;cameraData12.lastPlayerY=state.player.y;CameraState12.setMode('follow',false);CameraState12.centerOnPlayer();setTimeout(()=>{CameraState12.setZoom(q.desiredZoom??cameraData12.zoom,false);fixGlyphs984()},90)}return r}
   });
 // r53: overwritten save implementation retired.
@@ -19204,7 +19195,6 @@ const CW1012=32,CH1012=36,OUT1012='#120f12',INK1012='#211a1c';
 const CACHE1012=new Map(),PCACHE1012=new Map();
 const r1012=(q,x,y,w,h,c,o=true)=>{if(o){q.fillStyle=OUT1012;q.fillRect(x-1,y-1,w+2,h+2)}q.fillStyle=c;q.fillRect(x,y,w,h)};
 const px1012=(q,x,y,c)=>{q.fillStyle=c;q.fillRect(x,y,1,1)};
-const line1012=(q,x1,y1,x2,y2,c,w=1)=>{q.strokeStyle=OUT1012;q.lineWidth=w+2;q.beginPath();q.moveTo(x1+.5,y1+.5);q.lineTo(x2+.5,y2+.5);q.stroke();q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x1+.5,y1+.5);q.lineTo(x2+.5,y2+.5);q.stroke()};
 const eye1012=(q,x,y,c='#f5dc9a')=>{q.fillStyle=OUT1012;q.fillRect(x-1,y-1,3,3);q.fillStyle=c;q.fillRect(x,y,1,1)};
 const shadow1012=(q,x=16,y=32,w=14)=>{q.fillStyle='rgba(0,0,0,.42)';q.fillRect(x-Math.floor(w/2),y,w,2);q.fillStyle='rgba(0,0,0,.22)';q.fillRect(x-Math.floor(w/2)+2,y+2,w-4,1)};
 
