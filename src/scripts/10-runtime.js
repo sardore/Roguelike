@@ -7635,7 +7635,6 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
 
 
   /* ---------- item ecology + long-term upgrade choice ---------- */
-  const UPGRADE47={name:'개량 인장',type:'upgrade',tier:1,rarity:'relic',stackMax:5,ability:'장비 개량 1회',desc:'무기·갑옷·망토 하나에 영구 개량을 새긴다. 같은 장비에는 최대 3회.'};if(!CONSUMABLES.some(i=>i.name===UPGRADE47.name))CONSUMABLES.push(UPGRADE47);
   const role47=i=>{if(!i)return'other';if(['weapon','armor','cloak'].includes(i.type))return'gear';if(['relic','trinket'].includes(i.type))return'relic';if(i.type==='upgrade'||i.type==='martial_manual')return'strategy';if(i.type==='food')return'recovery';if(i.type==='potion')return ['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)?'recovery':'strategy';return'other'};
   
   function countRole47(x){return state.player.inventory.filter(i=>x==='all'||role47(i)===x).length}
@@ -7658,7 +7657,7 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   function place47(t){if(!t)return;const p=PlacementService.randomFloor(0);PlacementService.placeItem({...clone(t),x:p.x,y:p.y,count:1})}
   function trait47(){if(state.specialFloor)return null;const a=[['보급','회복 자원이 풍부함'],['경계','적과 장비 보상이 증가'],['불온','함정과 전술 물품 증가'],['비밀','보급함과 유물 발견 가능']];let pool=a.filter(v=>v[0]!==state.lastTrait47);if(!pool.length)pool=a;const pick=choice(pool);state.lastTrait47=pick[0];return pick}
   
-  function applyStrategy47(){state.player.upgradeMarks=state.player.upgradeMarks||0;state.floorTrait47=trait47();if([4,9,14,19,24].includes(state.floor))place47(UPGRADE47);if(state.floorTrait47){const n=state.floorTrait47[0];if(n==='보급')place47(deckPick47(ordinaryPotionPool105(false),'traitRecover'));else if(n==='경계'){place47(deckPick47(gear47(Math.min(5,tierForFloor()+1)),'traitGear'));const d=choice(floorEnemyDefinitions());if(d){const m=scaledMonster(d),p=PlacementService.randomMonsterCell(m);if(p){Object.assign(m,p);OccupancyService.addMonster(m)}}}else if(n==='불온'){for(let i=0;i<2;i++){const p=PlacementService.randomFloor(0,{avoidSafeChoice:true});if(state.map[p.y][p.x]===TT.FLOOR)setTerrainTile58(state.map,p.x,p.y,TT.TRAP)}place47(deckPick47(ordinaryPotionPool105(true),'traitTactic'))}else if(n==='비밀'){const p=PlacementService.randomFloor(0);setTerrainTile58(state.map,p.x,p.y,TT.CACHE);const rr=relics47();if(rr.length&&globalThis.__MANRU_RANDOM57__()<.55)place47(choice(rr))}}VisibilityService.compute();vfBuildDecor();P47.force=true;P47.cullKey=''}
+  function applyStrategy47(){state.player.upgradeMarks=state.player.upgradeMarks||0;state.floorTrait47=trait47();if(state.floorTrait47){const n=state.floorTrait47[0];if(n==='보급')place47(deckPick47(ordinaryPotionPool105(false),'traitRecover'));else if(n==='경계'){place47(deckPick47(gear47(Math.min(5,tierForFloor()+1)),'traitGear'));const d=choice(floorEnemyDefinitions());if(d){const m=scaledMonster(d),p=PlacementService.randomMonsterCell(m);if(p){Object.assign(m,p);OccupancyService.addMonster(m)}}}else if(n==='불온'){for(let i=0;i<2;i++){const p=PlacementService.randomFloor(0,{avoidSafeChoice:true});if(state.map[p.y][p.x]===TT.FLOOR)setTerrainTile58(state.map,p.x,p.y,TT.TRAP)}place47(deckPick47(ordinaryPotionPool105(true),'traitTactic'))}else if(n==='비밀'){const p=PlacementService.randomFloor(0);setTerrainTile58(state.map,p.x,p.y,TT.CACHE);const rr=relics47();if(rr.length&&globalThis.__MANRU_RANDOM57__()<.55)place47(choice(rr))}}VisibilityService.compute();vfBuildDecor();P47.force=true;P47.cullKey=''}
   registerGenerationStage('strategy47','post',()=>applyStrategy47());
   // r54: dead pre-v49 floor trait wrapper removed.
 
@@ -14951,7 +14950,6 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
   }
 
   // Remove the old parallel upgrade economy from future loot tables.
-  try{for(let i=CONSUMABLES.length-1;i>=0;i--)if(CONSUMABLES[i]?.name==='개량 인장'||CONSUMABLES[i]?.type==='upgrade')CONSUMABLES.splice(i,1)}catch(_){ }
   const upMeta=upgradeProto982();if(upMeta){upMeta.minFloor=1;upMeta.stackMax=15;upMeta.desc='장비 하나의 기본 성능을 한 단계 개량한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 다른 장비로 되돌릴 수 없다.'}
 
   // Random upgrade rolls are normalized after floor generation: all incidental upgrade items are
