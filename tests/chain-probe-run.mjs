@@ -44,7 +44,7 @@ try {
     await collect(s);
     await s.close();
   }
-  const s = await openSession(browser, root, { seed: 10 });
+  const s = await openSession(browser, root, { seed: 10, query: 'debug=1' });
   await s.page.click('#debugBattleBtn57');
   await s.tick(800);
   for (const m of ['벌집나무', '고목 목매', '벌떼', '천수 아수라']) {

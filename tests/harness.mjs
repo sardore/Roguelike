@@ -31,7 +31,7 @@ export async function launch() {
 }
 
 // root is a source directory, or {dir, entry} for a built page (dist/MANRU.html).
-export async function openSession(browser, root, { seed = 1, viewport = { width: 1280, height: 800 }, mobile = false, storage = null, hash = '', context = null } = {}) {
+export async function openSession(browser, root, { seed = 1, viewport = { width: 1280, height: 800 }, mobile = false, storage = null, hash = '', query = '', context = null } = {}) {
   const { dir, entry } = typeof root === 'string' ? { dir: root, entry: '' } : root;
   const server = await serve(dir);
   const ctx = context || (await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1 }));
@@ -49,7 +49,7 @@ export async function openSession(browser, root, { seed = 1, viewport = { width:
       for (const [k, v] of entries) localStorage.setItem(k, v);
     }, storage);
   }
-  await page.goto(server.url + entry + (hash ? '#' + hash : ''));
+  await page.goto(server.url + entry + (query ? '?' + query : '') + (hash ? '#' + hash : ''));
   // Navigation lets a variable amount of fake time pass; re-anchor to a fixed instant.
   await page.clock.pauseAt(new Date(Date.parse(EPOCH) + 5000));
   await page.clock.runFor(1500);

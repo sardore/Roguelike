@@ -123,7 +123,7 @@ export const scenarios = {
       mixed: [['고목 목매', 'A', 2], ['벌떼', 'B', 2]],
     };
     for (const [name, roster] of Object.entries(rosters)) {
-      const s = await openSession(browser, root, { seed: 77 });
+      const s = await openSession(browser, root, { seed: 77, query: 'debug=1' });
       await s.page.click('#debugBattleBtn57');
       await s.tick(800);
       for (const [monster, side, count] of roster) {
@@ -309,7 +309,7 @@ export const scenarios = {
       await dismissModals(s, 2);
       out[`screens.${form}.errors`] = JSON.stringify(s.errors);
       await s.close();
-      const d = await openSession(browser, root, { seed: 6, ...opts });
+      const d = await openSession(browser, root, { seed: 6, query: 'debug=1', ...opts });
       await d.page.click('#debugBattleBtn57');
       await d.tick(800);
       await capture(out, `screens.${form}.battle`, d);
