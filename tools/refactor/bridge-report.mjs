@@ -12,6 +12,8 @@ const ast = acorn.parse(src, { ecmaVersion: 'latest', locations: true });
 const T = (n) => src.slice(n.start, n.end);
 const isRoot = (n) => n.type === 'Identifier' && (n.name === 'globalThis' || n.name === 'window');
 const bridges = new Map();
+const posReads = [];
+const defRanges = new Map(); // `${bridge}.${member}` -> [{start,end}] source ranges that define the member's body
 const get = (name) => bridges.get(name) || bridges.set(name, { defs: [], reads: [], members: new Map() }).get(name);
 const nameOf = (m) => (m.type === 'MemberExpression' && !m.computed && isRoot(m.object) && /^__/.test(m.property.name) ? m.property.name : null);
 
@@ -27,6 +29,7 @@ walk.fullAncestor(ast, (n, _s, anc) => {
   // member access  X.member / X?.member
   if (parent.type === 'MemberExpression' && parent.object === n && !parent.computed) {
     b.members.set(parent.property.name, (b.members.get(parent.property.name) || 0) + 1);
+    posReads.push({ name, member: parent.property.name, at: n.start });
   }
 });
 // Aliases: `const api = window.__X__` (also `a = window.__X__ || ...`). Member reads through the alias
@@ -45,6 +48,7 @@ walk.fullAncestor(ast, (n, _s, anc) => {
   if (parent.type === 'AssignmentExpression' && parent.left === n) return;
   const b = get(aliasOf.get(n.object.name));
   b.members.set(n.property.name, (b.members.get(n.property.name) || 0) + 1);
+  posReads.push({ name: aliasOf.get(n.object.name), member: n.property.name, at: n.start });
 });
 // defineProperty(globalThis,'__X__',...)
 walk.simple(ast, {
@@ -56,39 +60,54 @@ walk.simple(ast, {
 // sources are followed one level), plus later `X.member = ...` assignments.
 const defined = new Map();
 const addDef = (name, key, line) => { if (!defined.has(name)) defined.set(name, new Map()); defined.get(name).set(key, line); };
-const literalKeys = (o, name) => { for (const p of o.properties) if (p.type === 'Property' && !p.computed) addDef(name, p.key.name ?? p.key.value, p.loc.start.line); };
+const addRange = (name, key, n) => { const k = `${name}.${key}`; if (!defRanges.has(k)) defRanges.set(k, []); defRanges.get(k).push({ start: n.start, end: n.end }); };
+const literalKeys = (o, name) => { for (const p of o.properties) if (p.type === 'Property' && !p.computed) { const key = p.key.name ?? p.key.value; addDef(name, key, p.loc.start.line); addRange(name, key, p); } };
 walk.fullAncestor(ast, (n, _s, anc) => {
   const parent = anc[anc.length - 2];
   const name = n.type === 'MemberExpression' ? nameOf(n) : null;
   if (name && parent.type === 'AssignmentExpression' && parent.left === n && parent.right.type === 'ObjectExpression') literalKeys(parent.right, name);
   if (n.type === 'AssignmentExpression' && n.left.type === 'MemberExpression' && !n.left.computed) {
     const base = n.left.object.type === 'MemberExpression' ? nameOf(n.left.object) : null;
-    if (base) addDef(base, n.left.property.name, n.loc.start.line);
+    if (base) { addDef(base, n.left.property.name, n.loc.start.line); addRange(base, n.left.property.name, n); }
   }
 });
 // Reads of the members from test code (tests/*.mjs), by textual match.
 const testsText = fs.readdirSync('tests').filter((f) => f.endsWith('.mjs')).map((f) => fs.readFileSync('tests/' + f, 'utf8')).join('\n');
 const testReads = (name, member) => new RegExp(`${name}\\??\\.${member}\\b`).test(testsText);
+// A member that is read only from inside the bodies of members that are themselves unreachable from
+// game code is QA-only too. Start from members nobody reads and grow until nothing changes.
+const qaOnly = new Set();
+const insideQa = (at) => [...qaOnly].some((k) => (defRanges.get(k) || []).some((r) => at >= r.start && at < r.end));
+for (let changed = true; changed;) {
+  changed = false;
+  for (const [name, defs] of defined) for (const key of defs.keys()) {
+    const k = `${name}.${key}`;
+    if (qaOnly.has(k)) continue;
+    const reads = posReads.filter((r) => r.name === name && r.member === key);
+    const selfRanges = defRanges.get(k) || [];
+    if (reads.every((r) => selfRanges.some((q) => r.at >= q.start && r.at < q.end) || insideQa(r.at))) { qaOnly.add(k); changed = true; }
+  }
+}
 const out = [...bridges].map(([name, b]) => ({
   name,
   defs: b.defs.map((d) => d.line),
   gameReads: b.reads.filter((r) => r.kind === 'read').length,
   members: Object.fromEntries([...b.members].sort((a, c) => c[1] - a[1])),
-  defined: Object.fromEntries([...(defined.get(name) || [])].map(([k, line]) => [k, { line, reads: b.members.get(k) || 0, test: testReads(name, k) }])),
+  defined: Object.fromEntries([...(defined.get(name) || [])].map(([k, line]) => [k, { line, reads: b.members.get(k) || 0, test: testReads(name, k), qa: qaOnly.has(`${name}.${k}`) }])),
   testReadsObject: new RegExp(name + '\\b').test(testsText),
 }));
 out.sort((a, b) => b.gameReads - a.gameReads || a.name.localeCompare(b.name));
 if (process.argv.includes('--md')) {
-  const L = ['# 공개 전역(브리지) 판정표', '', '`node tools/refactor/bridge-report.mjs --md`가 만든다. 멤버가 게임 코드·별칭을 통해 읽히는지, 테스트가 읽는지로 가른다.', '',
-    '- **게임**: 런타임 안 어디선가 읽는다 (감사 함수가 생성 검증에 쓰이는 경우 포함).', '- **테스트**: 테스트만 읽는다.', '- **미사용**: 코드도 테스트도 읽지 않는다. 콘솔에서 손으로 부르는 용도일 수 있다.', ''];
+  const L = ['# 공개 전역(브리지) 판정표', '', '`node tools/refactor/bridge-report.mjs --md`가 만든다.', '',
+    '- **게임**: 게임 코드가 읽는다. 릴리스에 남는다.', '- **QA**: 아무도 읽지 않거나, 읽는 곳이 모두 다른 QA 멤버 안이다. 빌드 플래그 `--qa`로만 들어간다. `[테스트]`는 `tests/`가 쓴다.', '',
+    '판정은 이름이 아니라 읽는 곳으로 한다. 별칭(`const api = window.__X__`)을 통한 읽기도 센다. 이름만으로 본 읽기는 과대 계산되어 게임 쪽으로 기운다.', ''];
   for (const x of out) {
     const d = Object.entries(x.defined);
-    const g = d.filter(([, v]) => v.reads), t = d.filter(([, v]) => !v.reads && v.test), u = d.filter(([, v]) => !v.reads && !v.test);
-    const kind = !x.gameReads && !x.testReadsObject ? '전체 미사용' : g.length || x.gameReads ? '게임 사용' : '테스트 전용';
+    const g = d.filter(([, v]) => !v.qa), q = d.filter(([, v]) => v.qa);
+    const kind = g.length ? (q.length ? '게임+QA 섞임' : '게임') : (d.length || x.testReadsObject || x.gameReads ? 'QA' : '전체 미사용');
     L.push(`## ${x.name} — ${kind} (줄 ${x.defs.join(',')})`);
     if (g.length) L.push(`- 게임: ${g.map(([k, v]) => `${k}(${v.reads})`).join(', ')}`);
-    if (t.length) L.push(`- 테스트: ${t.map(([k]) => k).join(', ')}`);
-    if (u.length) L.push(`- 미사용: ${u.map(([k]) => k).join(', ')}`);
+    if (q.length) L.push(`- QA: ${q.map(([k, v]) => k + (v.test ? '[테스트]' : '')).join(', ')}`);
     L.push('');
   }
   console.log(L.join('\n'));
