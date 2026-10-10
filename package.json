@@ -6,8 +6,9 @@
   "scripts": {
     "check": "node tools/check-structure.mjs",
     "build": "node tools/build.mjs",
-    "test": "node tests/run.mjs",
-    "test:update-baseline": "node tests/run.mjs --update",
+    "build:qa": "node tools/build.mjs --qa",
+    "test": "node tools/build.mjs --qa && node tests/run.mjs",
+    "test:update-baseline": "node tools/build.mjs --qa && node tests/run.mjs --update",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {

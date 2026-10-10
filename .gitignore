@@ -5,3 +5,4 @@ app/www/
 app/node_modules/
 tests/artifacts/
 *.tsbuildinfo
+dist-qa/

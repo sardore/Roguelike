@@ -107,7 +107,7 @@
  "pwa.manifest": "eaeabb4b8c16ea4be937aeae809e11c2e5fd8a53",
  "pwa.worker": "9d35e7ee8c88819fe97c0af55a319ac2e75978cf",
  "pwa.offline-title": "77130a0e6670ee9ed37381aacf0c38d0bffd8a41",
- "pwa.offline-newgame": "81e00e8e27a6221feeba7796836b0e108f9ac3e0",
+ "pwa.offline-newgame": "15e95c3ec779c1898f69da0c53abe8c5e85db42a",
  "pwa.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "floorsind.01": "f47cccab4d34a5a934ef3415bc6277a184581e40",
  "floorsind.02": "3c2c940c1c76488ba3103bca4fd9b6c6d830b981",
@@ -134,5 +134,7 @@
  "floorsind.23": "98aa921eda73be48703745003a9b9d7e726b28b7",
  "floorsind.24": "89ca8ac6f790431d2f5ac2f502e1c77be3677742",
  "floorsind.25": "762c2b061f81bc831af4f66cc497bdae22ea713c",
- "floorsind.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "floorsind.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "release.storage": "b5c948c0ec177f35a27774850697f618d0b37f68",
+ "release.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

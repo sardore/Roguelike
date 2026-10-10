@@ -13,13 +13,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const value = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
-// --target src (default) | single (dist/MANRU.html) | app (dist/app/www); the built targets
-// must reproduce the same baseline as the source tree.
-const target = value('--target') || 'src';
+// --target qa (default, dist-qa/) | src (release source, no QA hooks) | single (dist/MANRU.html) |
+// app (dist/app/www). Only the QA build carries the test hooks; run.mjs skips the scenarios that
+// need them for the other targets and checks that those builds publish none.
+const target = value('--target') || 'qa';
 const dist = path.join(here, '..', 'dist');
 const root = value('--root') ? path.resolve(value('--root'))
   : target === 'single' ? { dir: dist, entry: 'MANRU.html' }
   : target === 'app' ? path.join(dist, 'app', 'www')
+  : target === 'qa' ? path.join(here, '..', 'dist-qa')
   : path.join(here, '..', 'src');
 const only = value('--only')?.split(',');
 const skip = value('--skip')?.split(',') || [];
@@ -33,7 +35,8 @@ try {
     if ((only && !only.includes(name)) || skip.includes(name)) continue;
     if (name === 'pwa' && target !== 'app') continue;
     const t = Date.now();
-    const out = await run(browser, root);
+    if (target !== 'qa' && !['release', 'pwa'].includes(name)) continue;
+    const out = await run(browser, root, target);
     Object.assign(results, out);
     console.log(`${name}: ${Object.keys(out).length} checks in ${((Date.now() - t) / 1000).toFixed(1)}s`);
   }
@@ -59,7 +62,7 @@ if (flag('--update')) {
 
 const baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
 const failed = Object.keys(hashes).filter((k) => baseline[k] !== hashes[k]);
-const ran = new Set(Object.keys(scenarios).filter((n) => (!only || only.includes(n)) && !skip.includes(n) && (n !== 'pwa' || target === 'app')));
+const ran = new Set(Object.keys(scenarios).filter((n) => (!only || only.includes(n)) && !skip.includes(n) && (n !== 'pwa' || target === 'app') && (target === 'qa' || ['release', 'pwa'].includes(n))));
 const missing = Object.keys(baseline).filter((k) => !(k in hashes) && ran.has(k.split('.')[0]));
 if (failed.length || missing.length) {
   for (const k of failed) console.log(`CHANGED ${k}${baseline[k] ? '' : ' (not in baseline)'}`);

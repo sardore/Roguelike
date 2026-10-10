@@ -79,6 +79,28 @@ export const scenarios = {
   },
 
   // Seeded keyboard play: movement, bump attacks, pickup, autoexplore, skills, panels.
+  // Needs no QA hook, so it runs against every build: the same inputs must leave the same saved
+  // data behind in the QA build and in the release builds, and a release build publishes no QA hooks.
+  async release(browser, root, target) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 7 });
+    await startRun(s, 'swordsman');
+    const rnd = pick(7 * 7919);
+    for (let step = 1; step <= 80; step++) {
+      const key = KEYS[rnd(KEYS.length)];
+      await s.page.keyboard.press(key);
+      await s.tick(key === 'x' ? 1500 : 220);
+      if (key === 'i' || key === 'f' || key === 'q') await dismissModals(s, 1);
+    }
+    out['release.storage'] = JSON.stringify(await storageDump(s));
+    out['release.errors'] = JSON.stringify(s.errors);
+    if (target !== 'qa') {
+      const leaked = await s.page.evaluate(() => Object.keys(window).filter((k) => /^__MANRU_V\d+_TEST__$|^__MANRU_ARCH1020__$|^__MANRU_GAME_STATE__$/.test(k)).concat(typeof window.__MANRU_RELEASE__?.snapshot === 'function' ? ['__MANRU_RELEASE__.snapshot'] : []));
+      if (leaked.length) throw new Error(`QA hooks published by the ${target} build: ${leaked.join(', ')}`);
+    }
+    await s.close();
+    return out;
+  },
   async walk(browser, root) {
     const out = {};
     for (const [cls, seed] of [['swordsman', 7], ['archer', 8], ['summoner', 9], ['strongman', 10]]) {
@@ -267,8 +289,8 @@ export const scenarios = {
     await page.click('#classStartBtn1001');
     await page.waitForTimeout(3000);
     out['pwa.offline-newgame'] = await page.evaluate(() => {
-      const env = window.__MANRU_RELEASE__.snapshot();
-      return JSON.stringify({ floor: env?.state?.floor, hp: env?.state?.player?.hp, maxHp: env?.state?.player?.maxHp });
+      // The release build has no snapshot hook: the run shows up as a screen change and a stored save.
+      return JSON.stringify({ screen: document.body.dataset.manruScreen, saved: Object.keys(localStorage).filter((k) => k.startsWith('manru1004_')).sort() });
     });
     out['pwa.errors'] = JSON.stringify(s.errors);
     await s.close();

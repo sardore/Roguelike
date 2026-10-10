@@ -19,12 +19,14 @@ jobs:
         run: npm run build
       - name: Install Chromium
         run: npx --yes playwright@1.56.1 install --with-deps chromium
-      - name: Behaviour preservation on src (seeded replay, V40 saves, floors, debug arena)
+      - name: Behaviour preservation on the QA build (seeded replay, V40 saves, floors, debug arena)
         run: npm test -- --skip screens,render
+      - name: Release source publishes no QA hooks and saves the same data
+        run: npm test -- --target src --label src
       - name: Same behaviour from the single HTML build
-        run: npm test -- --target single --only newgame,saves,battle --label single
+        run: npm test -- --target single --label single
       - name: Installable app (manifest, service worker, offline relaunch, offline new run)
-        run: npm test -- --target app --only pwa,newgame --label app
+        run: npm test -- --target app --label app
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

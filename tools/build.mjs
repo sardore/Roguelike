@@ -6,6 +6,10 @@
 //                     scripts) whose www/ is the installable PWA (manifest, service worker, icons)
 //
 // Replaces the former build_standalone.py and assemble_app.py.
+//
+//   node tools/build.mjs --qa   writes dist-qa/ instead: the source tree with src/qa/qa.js spliced into
+//                               the runtime closure at its marker. Only the tests use it; it is never
+//                               a deliverable. The release build never reads src/qa/.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -98,9 +102,25 @@ function buildApp(out) {
   return files.length + 1;
 }
 
+const QA_MARKER = '/*@@QA-BRIDGES@@*/';
+const runtime = read(path.join(src, 'scripts', '10-runtime.js'));
+if (runtime.split(QA_MARKER).length !== 2) fail('src/scripts/10-runtime.js must contain the QA marker exactly once');
+
+if (process.argv.includes('--qa')) {
+  const out = path.join(repo, 'dist-qa');
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.mkdirSync(out, { recursive: true });
+  for (const d of GAME_DIRS) if (fs.existsSync(path.join(src, d))) fs.cpSync(path.join(src, d), path.join(out, d), { recursive: true });
+  fs.copyFileSync(path.join(src, 'index.html'), path.join(out, 'index.html'));
+  fs.writeFileSync(path.join(out, 'scripts', '10-runtime.js'), runtime.replace(QA_MARKER, read(path.join(src, 'qa', 'qa.js'))));
+  console.log('dist-qa/ written (QA build, for tests only)');
+  process.exit(0);
+}
+
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 const single = inline(html);
+if (/__MANRU_V\d+_TEST__|__MANRU_ARCH1020__/.test(single)) fail('QA bridges leaked into the release build');
 fs.writeFileSync(path.join(dist, 'MANRU.html'), single);
 const count = buildApp(path.join(dist, 'app'));
 console.log(`dist/MANRU.html ${single.length} bytes · dist/app/www ${count} files`);

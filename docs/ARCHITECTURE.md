@@ -57,14 +57,19 @@
 
 남은 별칭 2개는 공급자 교체 구조다(`MANRU_LOAD_CORE`, `typedKeyMeta96`). `!important`와 중복 선택자는 CSS 겹침을 풀어야 줄어드는 큰 작업이라 이번에는 늘지 않게만 고정했다.
 
+## QA 코드 분리
+
+게임이 읽지 않는 전역·감사 함수는 `src/qa/qa.js`에 있고, `10-runtime.js` 끝의 `/*@@QA-BRIDGES@@*/` 자리에 `npm run build:qa`가 끼워 넣는다(`dist-qa/`, 테스트 전용). `npm run build`(단일 HTML·앱)는 `src/qa/`를 읽지 않으며, QA 이름이 새면 빌드가 실패한다. 어떤 전역·멤버가 어느 쪽인지는 `docs/BRIDGES.md`(`node tools/refactor/bridge-report.mjs --md`로 다시 만든다). 디버그 전장 버튼과 `__MANRU_DEBUG__`는 개발 버전 기능이라 출시에도 있다.
+
 ## 검증 장치
 
 - `npm run check`: 위 지표가 `tools/structure-baseline.json`보다 늘면 실패. pre-commit과 CI가 돌린다.
-- `npm test`: 시계·난수·UUID·`performance.now`를 페이지 밖에서 고정한 재생. V40이 쓴 세이브 4종(진행·사망·브랜치·전설 던전), 7개 직업 새 게임, 입력 재생, 25개 층, 디버그 전장(벌집나무·벌떼·목매)을 `tests/baseline/behaviour.json`과 비교한다. `--target single`·`--target app`으로 빌드 산출물도 같은 기준선을 재현해야 한다.
+- `npm test`: QA 빌드(`dist-qa/`)에서 시계·난수·UUID·`performance.now`를 페이지 밖에서 고정한 재생. V40이 쓴 세이브 4종(진행·사망·브랜치·전설 던전), 7개 직업 새 게임, 입력 재생, 25개 층, 디버그 전장(벌집나무·벌떼·목매)을 `tests/baseline/behaviour.json`과 비교한다. `--target single`·`--target app`으로 빌드 산출물도 같은 기준선을 재현해야 한다.
 - 로컬 전용: `node tests/run.mjs --only screens,render --label <이름>` 후 `node tests/compare-screens.mjs ref <이름>`(계산된 스타일 전부 + 픽셀), `node tests/title-frames.mjs`(로딩 중 타이틀 프레임 녹화).
 
 ## 다음 단계 (이번 작업에서 하지 않은 것)
 
 - `10-runtime.js` 도메인별 파일 분할(`core/ world/ combat/ items/ monsters/ ui/ save/`). 상태 변수를 공유 객체로 옮겨야 한다.
 - `!important`·중복 선택자 정리(CSS 캐스케이드 재작성).
-- 출시 빌드에서 QA 브리지(`__MANRU_V…_TEST__` 등)를 빼는 문제: `docs/FINDINGS.md` F-09.
+
+- 출시 빌드(`--target src|single|app`)는 `release` 시나리오로 확인한다: QA 빌드와 같은 입력 뒤 저장 데이터가 같고, QA 훅이 하나도 공개되지 않는다.
