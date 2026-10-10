@@ -10,3 +10,33 @@
 ## 벌집나무 사건
 
 MANRU_RED_EYES_SOURCE_20261004.zip의 scripts/10-runtime.js와 지정 HTML, V7/V8까지 보관된 소스에 디버그 배치 시 delete mon.hiveTree105가 존재했다. hiveTree105는 피격 시 벌떼 생성과 전용 나무·벌집 그림 선택에 함께 쓰인다. 디버그 초기화가 이를 제거해 목록 미리보기와 실제 전장 그림이 달라졌다. 코드 주석은 세계 이벤트를 제한하려는 취지를 나타내지만 최초 작성 시각·작성자는 현재 자료로 확인할 수 없다. V9에서 배치 소유자의 hiveTree105 및 hpThreshold57 삭제를 제거하고 정상 특성을 보존한다. 디버그에서 세계 전용 HP 변신 이벤트를 제한하는 조건은 damageEntity61의 실제 이벤트 호출 소유자로 옮겼다. 피격 벌떼는 기존 진영 상속·배치·4마리 제한 처리로 실행한다.
+
+## 구조 규칙 — 2026-10-10 (위반 시 작업 무효)
+
+원본은 `src/` 하나뿐이다. `dist/MANRU.html`(단일 HTML)과 `dist/app/`(PWA·Capacitor)은 `npm run build` 산출물이므로 직접 고치지 않는다.
+
+### 덧씌우기 금지
+동작을 바꿀 때는 그 동작의 원본 정의를 직접 고친다. 다음은 금지한다.
+- 이미 정의된 함수에 새 함수를 대입하는 것 (`fn = function…`, `window.fn = …`, `globalThis.X.fn = …`)
+- 원본을 변수에 잡아두고 감싸는 것 (`const old = fn; fn = (...a) => { …; old(...a) }`, 이름이 무엇이든)
+- 객체·프로토타입 메서드 바꿔치기, `Object.defineProperty`로 기존 동작 가로채기
+- 실행 뒤 결과를 다시 고치는 사후 보정 (`setTimeout`·`requestAnimationFrame`·`MutationObserver`·`load` 이벤트로 나중에 DOM이나 상태를 다시 고치기)
+- JS에서 `<style>`을 만들어 끼워 넣는 것. 모든 CSS는 `src/styles/`에만 둔다.
+- 같은 CSS 선택자를 여러 파일·위치에 다시 정의해서 앞의 것을 덮는 것
+- 새로운 `!important` 추가
+
+### 병렬 신설 금지
+- 기능을 바꾸거나 더할 때는 그 일을 이미 하는 코드(소유자)를 찾아 그 코드를 고친다. 같은 일을 하는 두 번째 함수·서비스·상태 필드를 만들지 않는다.
+- 새 함수가 꼭 필요하면 같은 커밋에서 기존 것을 지우고 모든 호출처를 옮긴다.
+- 버전 접미사(`…57`, `…105`, `…1004`)를 붙인 새 함수로 기존 기능을 대체하지 않는다.
+- 쓰이지 않거나 다른 시스템으로 대체된 코드는 지운다.
+
+### 동작 보존
+- 구조 정리 커밋은 밸런스·수치·외형·특성을 바꾸지 않는다. 정리 중 찾은 버그·기획 의문은 고치지 말고 `docs/FINDINGS.md`에 적는다.
+- 세이브 호환: localStorage 키, 세이브 형식, `saveVersion` 처리를 바꾸지 않는다.
+
+### 강제 장치
+- `npm run check` (`tools/check-structure.mjs`): AST 기반 구조 검사. 재대입·래핑·파일 간 중복 선언·CSS 주입·중복 선택자·`!important`·버전 접미사 함수·빈 catch·타이머·동일 본문 함수를 세고, `tools/structure-baseline.json`보다 하나라도 늘면 실패한다. 줄었으면 `npm run check -- --update-baseline`으로 기준을 낮춘다(올리지는 못한다). `--report <metric>`으로 위치를 본다.
+- pre-commit 훅(`.githooks/pre-commit`, `npm install` 때 연결)과 CI가 같은 검사를 돌린다.
+- `npm test` (`tests/run.mjs`): 시드·시계를 밖에서 고정한 브라우저 재생. 직업별 새 게임, 입력 재생, 25개 층 생성, 디버그 전장(벌집나무·벌떼·목매), 저장 후 이어하기, V40 세이브 로드 결과를 `tests/baseline/behaviour.json`과 비교한다. 의도한 변경일 때만 `npm run test:update-baseline`으로 갱신하고, 그 사실을 커밋 메시지에 적는다.
+- 화면 비교는 기계마다 글꼴·GPU가 달라 로컬에서만 한다: `node tests/run.mjs --only screens --label <이름>` 후 `node tests/compare-screens.mjs ref <이름>`.
