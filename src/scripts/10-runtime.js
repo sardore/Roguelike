@@ -923,7 +923,8 @@ function cacheEvent(x,y){
 
 
 
-function fountainEvent(x,y){
+function fountainEvent(x,y){const r=drinkFromFountain(x,y);giveItem57(foodDef57('깨끗한 물'),x,y);addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');return r}
+function drinkFromFountain(x,y){
   setTerrainTile58(state.map,x,y,TT.FLOOR);
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10);
   state.player.focus = Math.min(getStats().maxFocus, state.player.focus + 4);
@@ -3232,7 +3233,10 @@ function clone(o){return JSON.parse(JSON.stringify(o))}
   }
 function ordinaryGearPool105(tier,floor){const lo=Math.max(1,tier-1),hi=Math.min(5,tier+(floor>=16?1:0)),all=[...WEAPONS.map(x=>({...x,type:'weapon'})),...ARMORS.map(x=>({...x,type:'armor'})),...CLOAKS.map(x=>({...x,type:'cloak'}))];const pool=all.filter(x=>(x.tier||1)>=lo&&(x.tier||1)<=hi);return pool.length?pool:all.filter(x=>(x.tier||1)<=tier)}
 function pickByTier(arr,tier){const pool=arr.filter(x=>(x.tier||1)<=tier);return clone(choice(pool.length?pool:arr))}
-let dropRandomItem;
+function dropRandomItem(pos,special=false){if(state?.branchContext105?.id==='granary'){const roll=globalThis.__MANRU_RANDOM57__();let item;if(roll<.30)item=naturalFoodPick57();else if(roll<.78)item=clone(choice((window.MANRU_POTIONS||[]).filter(p=>(p.minFloor||1)<=state.floor&&!p.craftedOnly57)));else if(roll<.90)item=makeAmmo967(weightedAmmo967(),false);if(item){PlacementService.placeItem(item,pos);return item}}if(state&&pos){const chance=special ? .20 : .13;if(globalThis.__MANRU_RANDOM57__()<chance){const item=makeAmmo967(weightedAmmo967(),false);item.x=pos.x;item.y=pos.y;PlacementService.placeItem(item);return item}}return dropLootWithNaturalFood(pos,special)}
+function dropLootWithNaturalFood(pos,special=false){const n=state.items.length,r=dropLootWithTalismans(pos,special);for(let i=n;i<state.items.length;i++){const it=state.items[i];if(it?.type==='food'&&(it.craftedOnly57||it.naturalOnly57||(it.minFloor||1)>state.floor)){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}if(it?.type==='ingredient'){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}}return r}
+function dropLootWithTalismans(pos,special=false){if(mountainOutdoor105(pos)){if(globalThis.__MANRU_RANDOM57__()<.10){const item=clone(MOUNTAIN_BERRY105);PlacementService.placeItem(item,pos);return item}return null}if(state&&globalThis.__MANRU_RANDOM57__()<(special?.34:.20)){const t=talismanPick56();if(t){PlacementService.placeItem({...t,x:pos.x,y:pos.y,count:1});return}}const n=state?.items?.length||0,r=dropFloorLoot(pos,special);for(const i of(state?.items||[]).slice(n))decoratePotion56(i,i.x,i.y);return r}
+function dropFloorLoot(pos,fromSpecial=false){const tier=Math.min(5,tierForFloor()+(fromSpecial&&globalThis.__MANRU_RANDOM57__()<.42?1:0)),r=globalThis.__MANRU_RANDOM57__();let item;if(r<(fromSpecial?.50:.40))item=deckPick47(gear47(tier),'gear');else if(r<(fromSpecial?.68:.68)){const foods=CONSUMABLES.filter(x=>x.type==='food'&&(x.rarity!=='relic'||state.floor>=16));item=deckPick47([...foods,...ordinaryPotionPool105(false)],'recovery')}else if(r<(fromSpecial?.86:.88))item=deckPick47(ordinaryPotionPool105(true),'strategy');else{const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),pool=relics47().filter(x=>!owned.has(x.name));item=clone(choice(pool.length?pool:relics47()))}if(!item)return;item.x=pos.x;item.y=pos.y;item.count=item.count||1;globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item)}
 function hungerMods(){return{atk:0,eva:0}}
 function isBrawlWeapon42(it){return !!(it&&it.type==='weapon'&&(it.brawlWeapon||it.kind==='brawl'))}
 function brawlUpgradeEffect42(it){return isBrawlWeapon42(it)?Math.floor((it.upgrade||0)/3):(it?.upgrade||0)}
@@ -7777,7 +7781,6 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick57(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
   function gear47(tier){return ordinaryGearPool105(tier,state.floor)}
   function relics47(){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&state.floor>=(f[x.name]||1))}
-  dropRandomItem=function(pos,fromSpecial=false){const tier=Math.min(5,tierForFloor()+(fromSpecial&&globalThis.__MANRU_RANDOM57__()<.42?1:0)),r=globalThis.__MANRU_RANDOM57__();let item;if(r<(fromSpecial?.50:.40))item=deckPick47(gear47(tier),'gear');else if(r<(fromSpecial?.68:.68)){const foods=CONSUMABLES.filter(x=>x.type==='food'&&(x.rarity!=='relic'||state.floor>=16));item=deckPick47([...foods,...ordinaryPotionPool105(false)],'recovery')}else if(r<(fromSpecial?.86:.88))item=deckPick47(ordinaryPotionPool105(true),'strategy');else{const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),pool=relics47().filter(x=>!owned.has(x.name));item=clone(choice(pool.length?pool:relics47()))}if(!item)return;item.x=pos.x;item.y=pos.y;item.count=item.count||1;globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item)};
   function place47(t){if(!t)return;const p=PlacementService.randomFloor(0);PlacementService.placeItem({...clone(t),x:p.x,y:p.y,count:1})}
   function trait47(){if(state.specialFloor)return null;const a=[['보급','회복 자원이 풍부함'],['경계','적과 장비 보상이 증가'],['불온','함정과 전술 물품 증가'],['비밀','보급함과 유물 발견 가능']];let pool=a.filter(v=>v[0]!==state.lastTrait47);if(!pool.length)pool=a;const pick=choice(pool);state.lastTrait47=pick[0];return pick}
   
@@ -8486,7 +8489,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     if(!state)return;for(const fr of state.featureRooms||[]){const cfg=ROOM_CONTEXT[fr.name],inside=i=>i.x>=fr.x&&i.y>=fr.y&&i.x<fr.x+fr.w&&i.y<fr.y+fr.h;if(fr.name==='연금술방'){let n=state.items.filter(i=>i.type==='potion'&&inside(i)).length;while(n<2&&state.items.length<13){if(!addRoomPotion56(fr,cfg.kinds))break;n++}}else if(fr.name==='서고'){if(!state.items.some(i=>i.type==='talisman'&&inside(i))&&state.items.length<13)addRoomTalisman56(fr)}else if(cfg&&globalThis.__MANRU_RANDOM57__()<.45&&state.items.length<13&&!state.items.some(i=>i.type==='potion'&&inside(i)))addRoomPotion56(fr,cfg.kinds);if(['사당','무기고','감방'].includes(fr.name)&&globalThis.__MANRU_RANDOM57__()<.34&&state.items.length<13&&!state.items.some(i=>i.type==='talisman'&&inside(i)))addRoomTalisman56(fr)}
     if([2,7,12,17,22].includes(state.floor)&&!state.items.some(i=>i.type==='talisman')&&state.items.length<13){const p=PlacementService.randomFloor(0),t=talismanPick56();if(t)PlacementService.placeItem({...t,x:p.x,y:p.y,count:1})}
   }
-  const dropBase56=dropRandomItem;dropRandomItem=function(pos,special=false){if(mountainOutdoor105(pos)){if(globalThis.__MANRU_RANDOM57__()<.10){const item=clone(MOUNTAIN_BERRY105);PlacementService.placeItem(item,pos);return item}return null}if(state&&globalThis.__MANRU_RANDOM57__()<(special?.34:.20)){const t=talismanPick56();if(t){PlacementService.placeItem({...t,x:pos.x,y:pos.y,count:1});return}}const n=state?.items?.length||0,r=dropBase56(pos,special);for(const i of(state?.items||[]).slice(n))decoratePotion56(i,i.x,i.y);return r};
 
 
   function consumeItem56(item){const i=state.player.inventory.indexOf(item);if(i<0)return false;consumeOne(i);return true}
@@ -8607,7 +8609,8 @@ registerMoveCostStage55('food57',c=>{if(state?.status?.freeStamina57>0)c*=.50;re
 
 globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}},post:ctx=>{const b=ctx.food57||{};if(state&&!state.dead&&state.turn!==b.turn&&state.turn%10===0&&state.player.hunger<=0){const raw=(playerCloak().focusRegen||1)>=2?2:1,gained=Math.max(0,state.player.focus-(b.focus??state.player.focus));state.player.focus=Math.max(0,state.player.focus-Math.min(gained,raw*.5));if(typeof updatePanels==='function')updatePanels()}}});
 
-function consumeFood57(item,idx){
+function consumeFood57(item,idx){const c=playerCloak?.()||{},old=item?.eatCost57;if(item&&c.eatSpeed&&Number.isFinite(old))item.eatCost57=Math.max(.25,old/c.eatSpeed);try{return consumeFoodAtCost(item,idx)}finally{if(item&&Number.isFinite(old))item.eatCost57=old}}
+function consumeFoodAtCost(item,idx){
   if(!state||!item)return;ensureFoodState57();const p=state.player;
   if(item.throwableFood57){beginFoodTarget57(item);return}
   if(item.hungerFull57)p.hunger=BALANCE.hungerMax;else p.hunger=Math.min(BALANCE.hungerMax,p.hunger+(item.hunger||0));
@@ -8682,7 +8685,6 @@ registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open dire
 
 
 // 획득 구조: 주방, 샘, 피라냐, 복숭아나무 + 설계 공백을 메운 빙결액 배치
-const fountainBase57=fountainEvent;fountainEvent=function(x,y){const r=fountainBase57(x,y);giveItem57(foodDef57('깨끗한 물'),x,y);addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');return r};
 window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState57();const unknown=FOOD_RECIPES57.filter(v=>!state.cookbook57[v.id]);if(unknown.length&&globalThis.__MANRU_RANDOM57__()<.40){const rec=choice(unknown);state.cookbook57[rec.id]=true;addLog(`찢어진 조리서 · ${rec.name}: ${rec.ingredients.join(' + ')}.`);return rec.id}return null};
 function roomFreeFood57(fr){const a=[];for(let y=fr.y+1;y<fr.y+fr.h-1;y++)for(let x=fr.x+1;x<fr.x+fr.w-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y))a.push({x,y});return a.length?choice(a):PlacementService.randomFloor(0)}
 function placeFood57(name,fr=null){const d=foodDef57(name);if(!d)return;const p=fr?roomFreeFood57(fr):PlacementService.randomFloor(0);PlacementService.placeItem({...clone(d),x:p.x,y:p.y,count:1})}
@@ -8710,7 +8712,6 @@ registerGenerationStage('food57','post',()=>{ensureFoodState57();foodFloorReward
 
 // 랜덤 드랍에서는 완성 요리/재료/날생선을 제외하고 PDF 기본 음식만 가중치로 선택한다.
 function naturalFoodPick57(){const pool=[];const add=(n,w)=>{const d=foodDef57(n);if(d&&state.floor>=(d.minFloor||1))for(let i=0;i<w;i++)pool.push(d)};add('주먹밥',30);add('말린 육포',28);add('식어버린 국밥',18);add('엽전 엿',21);if(state.floor>=6)add('독버섯 꼬치',8);if(state.floor>=16)add('신선로',3);if(state.floor>=21)add('신선도',1);return clone(foodOccurrencePick57(pool))}
-const dropBase57=dropRandomItem;dropRandomItem=function(pos,special=false){const n=state.items.length,r=dropBase57(pos,special);for(let i=n;i<state.items.length;i++){const it=state.items[i];if(it?.type==='food'&&(it.craftedOnly57||it.naturalOnly57||(it.minFloor||1)>state.floor)){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}if(it?.type==='ingredient'){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}}return r};
 
 // 인벤토리 분류와 버튼 문구
 
@@ -13997,8 +13998,6 @@ const AMMO967=[
   
   
   
-  const drop967=dropRandomItem;
-  dropRandomItem=function(pos,special=false){if(state?.branchContext105?.id==='granary'){const roll=globalThis.__MANRU_RANDOM57__();let item;if(roll<.30)item=naturalFoodPick57();else if(roll<.78)item=clone(choice((window.MANRU_POTIONS||[]).filter(p=>(p.minFloor||1)<=state.floor&&!p.craftedOnly57)));else if(roll<.90)item=makeAmmo967(weightedAmmo967(),false);if(item){PlacementService.placeItem(item,pos);return item}}if(state&&pos){const chance=special ? .20 : .13;if(globalThis.__MANRU_RANDOM57__()<chance){const item=makeAmmo967(weightedAmmo967(),false);item.x=pos.x;item.y=pos.y;PlacementService.placeItem(item);return item}}return drop967(pos,special)};
   
   
   
@@ -17633,8 +17632,6 @@ registerMonsterAttackStageR25('parry-stagger1006',(next,mon,bonus=0,context={},.
 
 /* common cloak trap effect; fatal terrain deliberately untouched */
 /* travel cloak eat speed */
-const consumeFood1006=consumeFood57;
-consumeFood57=function(item,idx){const c=playerCloak?.()||{},old=item?.eatCost57;if(item&&c.eatSpeed&&Number.isFinite(old))item.eatCost57=Math.max(.25,old/c.eatSpeed);try{return consumeFood1006(item,idx)}finally{if(item&&Number.isFinite(old))item.eatCost57=old}};
 
 /* fractional focus regen so 1.35 is no longer rounded to the same result as 1.00 */
 globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.turn1006=state?.turn??0},post:ctx=>{if(state&&!state.dead&&state.turn!==ctx.turn1006){const p=state.player,c=playerCloak?.()||{},fr=+c.focusRegen||1;if(fr>1&&fr<2){p.cloakFocusCarry1006=(p.cloakFocusCarry1006||0)+(fr-1)/10;while(p.cloakFocusCarry1006>=1){p.cloakFocusCarry1006-=1;const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+1);if(p.focus>b){floatText(p.x,p.y,'기 +1','#9fcdbf',9);addLog(`${c.name}: 바람을 타고 기력 +1.`)}}}}}});
