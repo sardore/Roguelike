@@ -114,6 +114,26 @@ export const scenarios = {
     return out;
   },
 
+  // Floors 1-25 generated one at a time with the random stream reset before each floor, so a
+  // change to the generator shows up only on the floor it affects (no shifted-seed cascade).
+  async floorsind(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4242 });
+    await startRun(s, 'wanderer');
+    for (let f = 1; f <= 25; f++) {
+      out[`floorsind.${String(f).padStart(2, '0')}`] = await s.page.evaluate((floor) => {
+        window.__reseed(900000 + floor * 7919);
+        window.__MANRU_RELEASE__.regen(floor);
+        const st = window.__MANRU_RELEASE__.snapshot().state;
+        return JSON.stringify({ map: st.map, items: st.items, monsters: st.monsters.map((m) => ({ name: m.name, x: m.x, y: m.y })), rooms: st.rooms, stairs: st.stairs });
+      }, f);
+      await s.tick(200);
+    }
+    out['floorsind.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Debug arena with the AGENTS.md regression species: real placement, then combat rounds.
   async battle(browser, root) {
     const out = {};
@@ -188,8 +208,11 @@ export const scenarios = {
         text: document.getElementById('continueBtn')?.textContent.replace(/\s+/g, ' ').trim(),
         screen: document.body.dataset.manruScreen,
       }));
+      // The continue button must be enabled at boot exactly when a resumable run exists (F-01:
+      // branch saves used to be rejected during boot because branch data was not initialised yet).
+      const enabled = await s.page.evaluate(() => !document.getElementById('continueBtn').classList.contains('noSave'));
+      if (enabled !== (name !== 'dead')) throw new Error(`continue button for the ${name} save is ${enabled ? 'enabled' : 'disabled'} at boot`);
       if (name !== 'dead') {
-        // Clicked even when styled as noSave: V40 shows a branch save as noSave at boot (FINDINGS F-01).
         await s.page.click('#continueBtn');
         await s.tick(3000);
         await dismissModals(s);
