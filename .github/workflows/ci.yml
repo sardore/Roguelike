@@ -20,7 +20,7 @@ jobs:
       - name: Install Chromium
         run: npx --yes playwright@1.56.1 install --with-deps chromium
       - name: Behaviour preservation on src (seeded replay, V40 saves, floors, debug arena)
-        run: npm test -- --skip screens
+        run: npm test -- --skip screens,render
       - name: Same behaviour from the single HTML build
         run: npm test -- --target single --only newgame,saves,battle --label single
       - name: Installable app (manifest, service worker, offline relaunch, offline new run)

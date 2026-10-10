@@ -7121,14 +7121,12 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
 /* ===== MANRU v3.3 INPUT / MODAL CLEANUP =====
    Fixes Android ghost-click reopen, stacked long-press handlers, and game-input leakage while inspect is open.
 */
-(function(){
-  'use strict';
-  const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
-  const now=()=>performance.now();
+const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
+  const inputNow=()=>performance.now();
   const inspectWrap=()=>document.getElementById('mobileInspect');
   const inspectOpen=()=>!!interactionActive8('mobileInspect');
-  const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,now()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
-  const blocked=()=>now()<U.blockUntil;
+  const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
+  const blocked=()=>inputNow()<U.blockUntil;
   const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(_){}}U.longPresses.clear()};
   const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`FOCUS +${it.focusGain}`);if(it.hunger)a.push(`허기력 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
   const itemInspectHtml=(it)=>{
@@ -7147,7 +7145,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     if(bodyEl)bodyEl.innerHTML=html;
     setInteraction8('mobileInspect',true);wrap?.setAttribute('aria-hidden','false');
     document.body.classList.add('manru-inspect-open');
-    U.inspectOpenedAt=now();
+    U.inspectOpenedAt=inputNow();
     // swallow release/click belonging to the long-press/tap that opened this sheet
     block(180);
   };
@@ -7199,7 +7197,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     wrap.addEventListener('pointerdown',()=>{if(DEBUG_BATTLE57.open)DEBUG_BATTLE57.inspectRelease57=null;},{capture:true});
     const closeBackdrop=(e)=>{
       const release=DEBUG_BATTLE57.open&&DEBUG_BATTLE57.inspectRelease57;
-      if(release&&now()<release.until&&(e.pointerId===release.id||!e.pointerId&&Math.hypot(e.clientX-release.x,e.clientY-release.y)<12)){DEBUG_BATTLE57.inspectRelease57=null;e.preventDefault();e.stopImmediatePropagation();return;}
+      if(release&&inputNow()<release.until&&(e.pointerId===release.id||!e.pointerId&&Math.hypot(e.clientX-release.x,e.clientY-release.y)<12)){DEBUG_BATTLE57.inspectRelease57=null;e.preventDefault();e.stopImmediatePropagation();return;}
       if(e.target!==wrap||!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-backdrop'})
     };
     wrap.addEventListener('click',closeBackdrop,{capture:true});
@@ -7210,16 +7208,10 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   // If a stale timer/old sheet survived load, start from a clean state.
   cancelLongPresses();document.body.classList.remove('manru-inspect-open');if(wrap&&!wrap.classList.contains('open'))wrap.setAttribute('aria-hidden','true');
   window.__MANRU_INPUT_DEBUG__={inspectOpen,blocked,show:(t,h)=>showInspect(t,h),close:()=>closeInspect(),block,activeLongPresses:()=>U.longPresses.size};
-})();
 
 
 /* ===== MANRU v3.6 INTERNAL POLISH: zoom fix / combat HUD / inventory / log / materials ===== */
-(function(){
-  'use strict';
-
-
-  /* ---------- combat HUD ---------- */
-  const hud=document.createElement('div');hud.id='mfCombatHud';hud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(hud);
+const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(combatHud);
   function tileName(x,y){const t=state?.map?.[y]?.[x];if(t==null)return'알 수 없음';try{return terrainName(t)}catch(_){return'바닥'}}
   function updateCH(){if(!state)return;const vis=state.monsters.filter(isThreatVisibleToPlayer57),adj=vis.filter(m=>entityDistance57(m,state.player)<=1),items=state.items.filter(i=>i.x===state.player.x&&i.y===state.player.y),stairs=state.player.x===state.stairs.x&&state.player.y===state.stairs.y,boss=vis.find(m=>m.boss);const sb=document.getElementById('mfState'),tb=document.getElementById('mfThreat'),gb=document.getElementById('mfGround'),ab=document.getElementById('mfAction');if(sb){const engaged=vis.length>0;sb.classList.toggle('warn',engaged);sb.classList.toggle('good',!engaged);sb.querySelector('.v').textContent=engaged?(adj.length?'교전':'경계'):'탐색';sb.querySelector('.s').textContent=engaged?(adj.length?'즉시 공격 거리':'시야 내 위협'):`${regionFor(state.floor)[2]} · ${state.layoutName||''}`}if(tb){tb.classList.toggle('warn',vis.length>0);tb.querySelector('.v').textContent=boss?`보스 ${boss.name}`:`적 ${vis.length}`;tb.querySelector('.s').textContent=`인접 ${adj.length} · HP ${displayHealth58(state.player.hp)}/${displayHealth58(state.player.maxHp)}`}if(gb){gb.querySelector('.v').textContent=items[0]?.name||(stairs?'계단':'빈 바닥');gb.querySelector('.s').textContent=items.length?`습득 ${items.length}개`:(stairs?'다음 층으로 이동 가능':tileName(state.player.x,state.player.y))}if(ab){ab.querySelector('.v').textContent=adj.length?'공격':items.length?'줍기':stairs?'하강':'이동';ab.querySelector('.s').textContent=`공격 ${attackTurnCost().toFixed(1)}턴 · 점멸 ${(state.player.blinkLevel||0)>0?'가능':'없음'}`}}
   registerPanelHook54('combat-hud36',updateCH);
@@ -7243,33 +7235,23 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   /* ---------- material separation ---------- */
   const fl0=drawFloorTexture;drawFloorTexture=function(px,py,x,y,colors,vis){fl0(px,py,x,y,colors,vis);if(!vis)return;const z=vfRegion(),a=hash2(x,y,8001+state.floor*31),b=hash2(x,y,8057+state.floor*17);X.save();if(z===0){X.fillStyle='rgba(236,183,115,.055)';X.fillRect(px+3,py+7+(a>.5?8:0),24,1);X.fillRect(px+6,py+21,15,1);X.fillStyle='rgba(38,16,11,.14)';if(a>.36)X.fillRect(px+9,py+5,1,17);if(a>.72)X.fillRect(px+23,py+12,1,13);if(b>.84){X.fillStyle='rgba(206,151,88,.25)';X.fillRect(px+4,py+4,1,1);X.fillRect(px+27,py+27,1,1)}}else if(z===1){X.fillStyle='rgba(188,220,203,.07)';if(a>.28)X.fillRect(px+5,py+8,12,1);if(a>.64)X.fillRect(px+19,py+19,8,1);X.fillStyle='rgba(59,91,64,.20)';if(b>.70){X.fillRect(px+4,py+26,8,2);X.fillRect(px+7,py+23,2,4)}X.fillStyle='rgba(211,239,230,.06)';if(b>.42)X.fillRect(px+12,py+5,1,8)}else if(z===2){X.fillStyle='rgba(230,184,213,.055)';X.fillRect(px+4,py+9,24,1);X.fillRect(px+4,py+22,24,1);X.fillRect(px+10,py+4,1,24);X.fillRect(px+22,py+4,1,24);if(a>.74){X.fillStyle='rgba(244,205,226,.10)';X.fillRect(px+15,py+14,2,2);X.fillRect(px+13,py+16,1,1);X.fillRect(px+18,py+16,1,1)}}else if(z===3){X.fillStyle='rgba(166,126,89,.07)';X.fillRect(px+3,py+9,26,1);X.fillRect(px+3,py+24,26,1);X.fillStyle='rgba(31,23,18,.25)';X.fillRect(px+15,py+3,1,26);X.fillStyle='rgba(180,146,99,.20)';for(const q of [[5,5],[26,5],[5,26],[26,26]])X.fillRect(px+q[0],py+q[1],1,1);if(b>.78){X.fillStyle='rgba(125,62,39,.15)';X.fillRect(px+19,py+13,6,2)}}else{X.strokeStyle='rgba(230,194,94,.08)';X.strokeRect(px+5.5,py+5.5,21,21);X.fillStyle='rgba(234,203,112,.08)';X.fillRect(px+15,py+8,2,16);X.fillRect(px+8,py+15,16,2);if(a>.78){X.fillStyle='rgba(255,238,157,.24)';X.fillRect(px+7,py+7,1,1);X.fillRect(px+24,py+23,1,1)}}X.restore()};const wl0=drawWallTexture;drawWallTexture=function(px,py,x,y,colors){wl0(px,py,x,y,colors);const z=vfRegion(),a=hash2(x,y,9001+state.floor*13),b=hash2(x,y,9067+state.floor*19);X.save();if(z===0){X.fillStyle='rgba(225,161,98,.065)';X.fillRect(px+4,py+7,24,1);X.fillRect(px+4,py+20,24,1);if(a>.72){X.fillStyle='rgba(37,12,8,.22)';X.fillRect(px+15,py+8,2,10)}}else if(z===1){X.strokeStyle='rgba(162,190,171,.08)';X.beginPath();X.moveTo(px+3,py+11.5);X.lineTo(px+28,py+11.5);X.moveTo(px+3,py+22.5);X.lineTo(px+28,py+22.5);X.stroke();if(a>.70){X.fillStyle='rgba(61,88,65,.18)';X.fillRect(px+3,py+24,10,2)}}else if(z===2){X.fillStyle='rgba(232,178,210,.06)';X.fillRect(px+5,py+8,22,1);X.fillRect(px+5,py+23,22,1);if(a>.68){X.fillStyle='rgba(245,208,228,.08)';X.fillRect(px+15,py+11,2,8)}}else if(z===3){X.fillStyle='rgba(185,146,103,.12)';for(const q of [[5,6],[26,6],[5,25],[26,25]])X.fillRect(px+q[0],py+q[1],2,2);if(b>.70){X.fillStyle='rgba(112,60,39,.17)';X.fillRect(px+10,py+16,12,2)}}else{X.strokeStyle='rgba(244,211,116,.10)';X.strokeRect(px+7.5,py+7.5,17,17);if(a>.66){X.fillStyle='rgba(255,231,131,.12)';X.fillRect(px+15,py+10,2,12)}}X.restore()};const sp0=drawSpecialTerrain;drawSpecialTerrain=function(tile,px,py,x,y,now){const r=sp0(tile,px,py,x,y,now);if(!r)return r;const p=.5+.5*Math.sin(now/260+x+y);X.save();if(tile===TT.WATER||tile===TT.MERCURY){X.strokeStyle=`rgba(190,226,220,${.06+.05*p})`;X.beginPath();X.moveTo(px+5,py+9);X.lineTo(px+13,py+9);X.moveTo(px+18,py+22);X.lineTo(px+27,py+22);X.stroke()}else if(tile===TT.VOID){X.fillStyle=`rgba(181,109,203,${.10+.08*p})`;X.fillRect(px+15,py+8,2,16)}else if(tile===TT.GOLD||tile===TT.ALTAR||tile===TT.VAULT){X.strokeStyle=`rgba(247,215,128,${.10+.08*p})`;X.strokeRect(px+6.5,py+6.5,19,19)}X.restore();return true};
 
-  /* ---------- world scan markers ---------- */
-  
-
-  // Retired overwritten HUD coordinator.
-})();
-
 
 
 
 /* ===== MANRU v3.7/3.8 SMART INTERACTION + FEATURE ROOMS + POTIONS ===== */
-(()=>{
-  'use strict';
-
-  
-  function smartAction(meta){if(!meta||!state)return false;if(meta.type==='pickup'&&state.items.some(v=>v.x===state.player.x&&v.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return true}if(meta.type==='stairs'&&state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return true}return false}
+function smartAction(meta){if(!meta||!state)return false;if(meta.type==='pickup'&&state.items.some(v=>v.x===state.player.x&&v.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return true}if(meta.type==='stairs'&&state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return true}return false}
 
   runAutoPath=function(path,meta={explore:false,target:null}){if(!path?.length){if(meta.target&&smartAction(meta.target)){VIS.autoPath=null;v10AutoChip(null);return}if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);return}const token=++autoWalkToken;VIS.autoPath=path.map(q=>({...q}));v10AutoChip(meta.explore?'자동 탐사':meta.target?.type==='stairs'?'목표 이동 · 계단':meta.target?.type==='pickup'?'목표 이동 · 습득':'자동 이동');const step=()=>{if(token!==autoWalkToken||!state||state.dead||state.victory){VIS.autoPath=null;return}const q=path.shift();if(!q){VIS.autoPath=null;if(meta.target&&smartAction(meta.target)){v10AutoChip(null);return}if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),80);else v10AutoChip(null);return}const hp=state.player.hp,before=state.monsters.filter(isThreatVisibleToPlayer57).length;ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-state.player.x),Math.sign(q.y-state.player.y)]}).value;VIS.autoPath=path.map(v=>({...v}));if(token!==autoWalkToken||state.dead)return;const after=state.monsters.filter(isThreatVisibleToPlayer57).length,danger=state.monsters.some(m=>m.alerted&&isThreatVisibleToPlayer57(m)),reached=meta.target&&state.player.x===meta.target.x&&state.player.y===meta.target.y;if(reached&&smartAction(meta.target)){VIS.autoPath=null;v10AutoChip(null);return}const interesting=state.items.some(it=>it.x===state.player.x&&it.y===state.player.y)||(state.player.x===state.stairs.x&&state.player.y===state.stairs.y);if(state.player.hp<hp||after>before||danger||interesting){v10StopForDanger();return}if(path.length)autoWalkTimer=setTimeout(step,86);else{VIS.autoPath=null;if(meta.explore&&VIS.exploring)autoWalkTimer=setTimeout(()=>autoExplore(true),82);else v10AutoChip(null)}};step()};
-  function floorish(x,y){const t=state.map?.[y]?.[x];return t===TT.FLOOR||t===TT.GRASS}
+  function isPlainFloorTile(x,y){const t=state.map?.[y]?.[x];return t===TT.FLOOR||t===TT.GRASS}
   function contains(r,x,y){return x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h}
-  function put(x,y,t){if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1||(x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y)||!floorish(x,y))return false;setTerrainTile58(state.map,x,y,t);return true}
-  function sigil(x,y,label){return put(x,y,TT.FLOOR)}
-  function alchemy(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2){put(x,r.y+1,TT.TABLE);put(x,r.y+r.h-2,TT.JAR)}put(r.cx,r.cy,TT.COOKPOT);put(r.cx-2,r.cy,TT.BRAZIER);put(r.cx+2,r.cy,TT.CACHE);put(r.cx,r.cy-2,TT.TABLE);put(r.cx,r.cy+2,TT.TABLE);sigil(r.x+1,r.y+1,'연금술방')}
-  function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){put(r.x+1,y,TT.JAR);put(r.x+r.w-2,y,TT.TABLE)}put(r.cx,r.cy,TT.COOKPOT);put(r.cx-2,r.cy,TT.TABLE);put(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
-  function shrine(r){put(r.cx,r.cy,TT.ALTAR);for(const[qx,qy]of[[r.x+1,r.y+1],[r.x+r.w-2,r.y+1],[r.x+1,r.y+r.h-2],[r.x+r.w-2,r.y+r.h-2]])put(qx,qy,TT.BRAZIER);put(r.cx-2,r.cy,TT.SCREEN);put(r.cx+2,r.cy,TT.SCREEN);sigil(r.cx,r.y+1,'사당')}
-  function armoryRoom(r){put(r.cx,r.cy,TT.ARMORY);for(let x=r.x+1;x<=r.x+r.w-2;x+=2)put(x,r.y+1,TT.TABLE);for(let x=r.x+2;x<=r.x+r.w-3;x+=3)put(x,r.y+r.h-2,TT.CACHE);sigil(r.x+1,r.y+1,'무기고')}
-  function study(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2)put(x,r.y+1,TT.TABLE);for(let y=r.y+2;y<=r.y+r.h-2;y+=2)put(r.x+1,y,TT.SCREEN);put(r.cx,r.cy,TT.RUMOR);put(r.cx+2,r.cy,TT.MIRROR);put(r.cx-2,r.cy,TT.TABLE);sigil(r.x+1,r.y+1,'서고')}
-  function cells(r){for(let y=r.y+1;y<=r.y+r.h-2;y++)if(y!==r.cy)put(r.cx,y,TT.SCREEN);put(r.cx-2,r.cy-1,TT.SNARE);put(r.cx-2,r.cy+1,TT.SNARE);put(r.cx+2,r.cy-1,TT.JAR);put(r.cx+2,r.cy+1,TT.JAR);put(r.cx,r.cy,TT.DOOR);sigil(r.x+1,r.y+1,'감방')}
+  function placeFeatureTile(x,y,t){if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1||(x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y)||!isPlainFloorTile(x,y))return false;setTerrainTile58(state.map,x,y,t);return true}
+  function sigil(x,y,label){return placeFeatureTile(x,y,TT.FLOOR)}
+  function alchemy(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2){placeFeatureTile(x,r.y+1,TT.TABLE);placeFeatureTile(x,r.y+r.h-2,TT.JAR)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.BRAZIER);placeFeatureTile(r.cx+2,r.cy,TT.CACHE);placeFeatureTile(r.cx,r.cy-2,TT.TABLE);placeFeatureTile(r.cx,r.cy+2,TT.TABLE);sigil(r.x+1,r.y+1,'연금술방')}
+  function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){placeFeatureTile(r.x+1,y,TT.JAR);placeFeatureTile(r.x+r.w-2,y,TT.TABLE)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);placeFeatureTile(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
+  function shrine(r){placeFeatureTile(r.cx,r.cy,TT.ALTAR);for(const[qx,qy]of[[r.x+1,r.y+1],[r.x+r.w-2,r.y+1],[r.x+1,r.y+r.h-2],[r.x+r.w-2,r.y+r.h-2]])placeFeatureTile(qx,qy,TT.BRAZIER);placeFeatureTile(r.cx-2,r.cy,TT.SCREEN);placeFeatureTile(r.cx+2,r.cy,TT.SCREEN);sigil(r.cx,r.y+1,'사당')}
+  function armoryRoom(r){placeFeatureTile(r.cx,r.cy,TT.ARMORY);for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let x=r.x+2;x<=r.x+r.w-3;x+=3)placeFeatureTile(x,r.y+r.h-2,TT.CACHE);sigil(r.x+1,r.y+1,'무기고')}
+  function study(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let y=r.y+2;y<=r.y+r.h-2;y+=2)placeFeatureTile(r.x+1,y,TT.SCREEN);placeFeatureTile(r.cx,r.cy,TT.RUMOR);placeFeatureTile(r.cx+2,r.cy,TT.MIRROR);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);sigil(r.x+1,r.y+1,'서고')}
+  function cells(r){for(let y=r.y+1;y<=r.y+r.h-2;y++)if(y!==r.cy)placeFeatureTile(r.cx,y,TT.SCREEN);placeFeatureTile(r.cx-2,r.cy-1,TT.SNARE);placeFeatureTile(r.cx-2,r.cy+1,TT.SNARE);placeFeatureTile(r.cx+2,r.cy-1,TT.JAR);placeFeatureTile(r.cx+2,r.cy+1,TT.JAR);placeFeatureTile(r.cx,r.cy,TT.DOOR);sigil(r.x+1,r.y+1,'감방')}
 
   function applyFeatureRooms(){if(!state||state.specialFloor)return;state.featureRooms=[];const pool=[['연금술방',alchemy],['주방',kitchen],['사당',shrine],['무기고',armoryRoom],['서고',study],['감방',cells]],c=(state.rooms||[]).filter(r=>r.w>=8&&r.h>=7&&!contains(r,state.player.x,state.player.y)&&!contains(r,state.stairs.x,state.stairs.y));if(!c.length)return;c.sort((a,b)=>b.w*b.h-a.w*a.h);const want=Math.min(state.floor>=11?2:1,c.length),used=new Set();for(let i=0;i<want;i++){const r=c[i];let j=Math.floor(hash2(r.x,r.y,state.floor+503)*pool.length)%pool.length,g=0;while(used.has(pool[j][0])&&g++<pool.length)j=(j+1)%pool.length;used.add(pool[j][0]);pool[j][1](r);state.featureRooms.push({name:pool[j][0],x:r.x,y:r.y,w:r.w,h:r.h})}if(state.featureRooms.length)addLog(`특수방 감지: ${state.featureRooms.map(v=>v.name).join(' / ')}`)}
   registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
@@ -7308,7 +7290,6 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
   
   pstate();
-})();
 
 
 
@@ -14556,10 +14537,7 @@ const AMMO967=[
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v9.7.2 REFERENCE QUALITY TILES / STRUCTURE';
 
 /* ===== MANRU v9.8.0: RESEARCHED REGION ARCHITECTURE / VAULT MODULES / FULL-MAP QA ===== */
-(()=>{
-  'use strict';
-
-  const V980={
+const V980={
     version:'v9.8.0-researched-region-architecture',
     normalFloors:new Set([7,9,12,14,17,19]),
     specialFloors:new Set([6,8,10,11,13,15,16,18,20,21,22,23,24,25]),
@@ -15625,9 +15603,7 @@ if([23,24].includes(state?.floor)&&drawAuthoredTerrain61(tile,px,py,x,y,now))ret
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v9.8.1 FIXED MAP / RAFT / PORTAL / REACHABILITY';
 
   /* v9.8.3 direct monster stats / core loot / clean current-generation pipeline */
-(()=>{
-  'use strict';
-  if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU pipeline density stage missing');
+if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU pipeline density stage missing');
   const V982={
     version:'v9.8.3-direct-stats-clean-pipeline',
     upgradesPerChapter:3,
@@ -15764,9 +15740,6 @@ riverAndCore(...args){
     const b=document.getElementById('contextActionBtn');if(b&&!b.classList.contains('available')){b.disabled=true;const sm=document.getElementById('contextActionLabel');if(sm)sm.textContent='상호작용';const g=b.querySelector('b');if(g)g.textContent='·'}
   });
   if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v9.9.0 WILL STATUS RESISTANCE';
-})();
-
-})();
 
 
 
@@ -17693,9 +17666,7 @@ window.__MANRU_V1005_TEST__={
 document.title='만루 — v10.0.4 route/hazard rework';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE COMPLEXITY / LETHAL TERRAIN / 10T RESTORE';const routeStamp=document.getElementById('releaseStamp70');if(routeStamp)routeStamp.textContent='v10.0.4 · route/hazard';
 
 /* MANRU v10.0.4 rollback continuation — key clarity + item-effect audit/fix */
-(()=>{
-'use strict';
-const BUILD='10.0.4-route-hazard-r2-key-itemfix';
+const ROUTE_BUILD='10.0.4-route-hazard-r2-key-itemfix';
 
 /* ---------- key silhouettes: type = material + geometry, not color only ---------- */
 const KEY_META1006={
@@ -17861,7 +17832,7 @@ function keyView1006(id='iron'){
 
 /* QA surface */
 window.__MANRU_V1004_ITEMFIX__={
-  build:BUILD,
+  build:ROUTE_BUILD,
   keyMeta:()=>Object.values(KEY_META1006).map(k=>({...k})),
   audited:()=>['수련용 환도','태도','당파','단단한 철궁','낡은 장도리','손도끼','질긴 가죽망토','바람막이망토','여행자망토','두꺼운 면망토'].map(n=>{const d=defBy(n);return{name:n,ability:d?.ability||'',focusChain:!!d?.focusChain,edgeBonus:!!d?.edgeBonus,parry:d?.parry||0,tracking:!!d?.tracking,breakPower:d?.breakPower||0,staggerResist:d?.staggerResist||0,focusRegen:d?.focusRegen||0,eatSpeed:d?.eatSpeed||0,trapGuard:d?.trapGuard||0,desc:d?.desc||''}}),
   normalize:normalizeAllItems1006,pruneDoors:pruneOrphanDoors1006,
@@ -17872,7 +17843,6 @@ window.__MANRU_V1004_ITEMFIX__={
   selfTest:selfTest1006,keyView:keyView1006
 };
 try{document.title='만루 — v10.0.4 append architecture r4';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE+HAZARD / KEY CLARITY / ITEM EFFECT AUDIT';const stamp=document.getElementById('releaseStamp70');if(stamp)stamp.textContent='v10.0.4 · append architecture r4'}catch(_){ }
-})();
 
 /* ===== MANRU v10.0.4 ORIGINAL-MAP APPEND ARCHITECTURE / FINAL ENTITY PLACEMENT ===== */
 const BUILD1020='10.0.4-exit-invariant-boss-direct-drop-r5';

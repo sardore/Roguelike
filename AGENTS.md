@@ -39,4 +39,4 @@ MANRU_RED_EYES_SOURCE_20261004.zip의 scripts/10-runtime.js와 지정 HTML, V7/V
 - `npm run check` (`tools/check-structure.mjs`): AST 기반 구조 검사. 재대입·래핑·파일 간 중복 선언·CSS 주입·중복 선택자·`!important`·버전 접미사 함수·빈 catch·타이머·동일 본문 함수를 세고, `tools/structure-baseline.json`보다 하나라도 늘면 실패한다. 줄었으면 `npm run check -- --update-baseline`으로 기준을 낮춘다(올리지는 못한다). `--report <metric>`으로 위치를 본다.
 - pre-commit 훅(`.githooks/pre-commit`, `npm install` 때 연결)과 CI가 같은 검사를 돌린다.
 - `npm test` (`tests/run.mjs`): 시드·시계를 밖에서 고정한 브라우저 재생. 직업별 새 게임, 입력 재생, 25개 층 생성, 디버그 전장(벌집나무·벌떼·목매), 저장 후 이어하기, V40 세이브 로드 결과를 `tests/baseline/behaviour.json`과 비교한다. 의도한 변경일 때만 `npm run test:update-baseline`으로 갱신하고, 그 사실을 커밋 메시지에 적는다.
-- 화면 비교는 기계마다 글꼴·GPU가 달라 로컬에서만 한다: `node tests/run.mjs --only screens --label <이름>` 후 `node tests/compare-screens.mjs ref <이름>`.
+- 화면 비교는 기계마다 글꼴·GPU가 달라 로컬에서만 한다: `node tests/run.mjs --only screens,render --label <이름>` 후 `node tests/compare-screens.mjs ref <이름>`.

@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
 import { analyze } from '../lib/scope.mjs';
+import { moveProblems, ancestorsOf } from '../lib/moves.mjs';
 
 const args = process.argv.slice(2);
 const file = args[0];
@@ -46,6 +47,11 @@ for (const name of names) {
       Identifier(n, _s, anc) { if (n.name === 'arguments' && !anc.some((a) => a.type === 'FunctionExpression' || a.type === 'FunctionDeclaration')) bad = true; },
     });
     if (bad) throw new Error(`${name}: final arrow uses this/arguments`);
+  }
+  {
+    const dest = ancestorsOf(ast, b.kind === 'function' ? b.decl : b.decl.init);
+    const bad = moveProblems(A, final, dest);
+    if (bad.length) throw new Error(`${name}: final layer refers to bindings not visible at the declaration: ${bad.join(', ')}`);
   }
   const edits = [];
   // 1. declaration gets the final layer

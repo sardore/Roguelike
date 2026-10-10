@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
 import { analyze } from '../lib/scope.mjs';
+import { moveProblems, ancestorsOf } from '../lib/moves.mjs';
 
 const args = process.argv.slice(2);
 const [file, name, innerList] = args;
@@ -50,6 +51,13 @@ if (innerNames.length !== live.length - 1) throw new Error(`${name}: ${live.leng
 const nameOfLayer = new Map(live.slice(0, -1).map((l, i) => [layers.indexOf(l), innerNames[i]]));
 for (const nm of innerNames) if (A.bindings.some((x) => x.name === nm)) throw new Error(`${nm} already exists`);
 
+{
+  const dest = ancestorsOf(ast, b.kind === 'function' ? b.decl : b.decl);
+  for (const l of live) {
+    const bad = moveProblems(A, l.fn, dest).filter((x) => !aliases.some((al) => x.startsWith(al.binding.name + '@')));
+    if (bad.length) throw new Error(`${name}: layer at ${l.fn.loc.start.line} refers to bindings not visible at the declaration: ${bad.join(', ')}`);
+  }
+}
 const edits = [];
 // alias uses
 for (const al of aliases) {
@@ -65,8 +73,13 @@ for (const al of aliases) {
   // remove alias declaration
   let vd = null;
   walk.full(ast, (n) => { if (n.type === 'VariableDeclaration' && n.declarations.includes(al.binding.decl)) vd = n; });
-  if (vd.declarations.length !== 1) throw new Error(`${name}: alias ${al.binding.name} shares a declaration`);
-  edits.push({ start: vd.start, end: vd.end, text: '', remove: true });
+  if (vd.declarations.length === 1) edits.push({ start: vd.start, end: vd.end, text: '', remove: true });
+  else {
+    // drop just this declarator from `const a=x,b=y;`
+    const i = vd.declarations.indexOf(al.binding.decl);
+    const next = vd.declarations[i + 1], prev = vd.declarations[i - 1];
+    edits.push(next ? { start: al.binding.decl.start, end: next.start, text: '', remove: true } : { start: prev.end, end: al.binding.decl.end, text: '', remove: true });
+  }
 }
 // render a layer as a declaration text with replacements applied inside it
 const render = (l, declName) => {

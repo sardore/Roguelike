@@ -253,6 +253,35 @@ export const scenarios = {
     return out;
   },
 
+  // Game canvas on every floor and inside a branch / legendary dungeon (local-only, like screens).
+  async render(browser, root) {
+    const out = {};
+    const canvas = async (s) => {
+      const data = await s.page.evaluate(() => document.getElementById('game').toDataURL('image/png'));
+      return Buffer.from(data.split(',')[1], 'base64');
+    };
+    const s = await openSession(browser, root, { seed: 8080 });
+    await startRun(s, 'wanderer');
+    for (let f = 1; f <= 25; f++) {
+      await s.page.evaluate((floor) => window.__MANRU_RELEASE__.regen(floor), f);
+      await s.tick(600);
+      out[`screens.render.floor${String(f).padStart(2, '0')}.canvas.png`] = await canvas(s);
+    }
+    out['screens.render.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    for (const name of ['branch', 'legend', 'progress']) {
+      const fixture = JSON.parse(fs.readFileSync(path.join(savesDir, name + '.json'), 'utf8'));
+      const r = await openSession(browser, root, { seed: 51, storage: fixture.storage });
+      await r.page.click('#continueBtn');
+      await r.tick(3000);
+      await dismissModals(r);
+      await r.tick(600);
+      out[`screens.render.${name}.canvas.png`] = await canvas(r);
+      await r.close();
+    }
+    return out;
+  },
+
   // Screens: pixels and computed styles. Local-only (fonts and GPU differ between machines).
   async screens(browser, root) {
     const out = {};
