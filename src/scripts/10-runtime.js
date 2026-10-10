@@ -2836,7 +2836,11 @@ function moveGroundItemStep57(it,toward){
 function pullNearbyLoot(){const c=playerCloak(),r=c.magnet||0;if(!r||!state)return;for(const it of state.items){const d=entityDistance57(it,state.player);if(d>0&&d<=r)moveGroundItemStep57(it,state.player)}}
 
 function cancelAutoWalk(){return Auto81.stop('manual',true)}
-function terrainName(t){if(t===TT.ICE)return '얼어붙은 물';if(t>=500&&t<660)return ['전용 석판','전용 인레이','전용 재질판','실외 포장','전용 석벽','전용 기둥벽','암반 외벽','영구 다리','대형 구조물'][(t-500)%16]||'전용 건축물';return new Map([
+function terrainName(t){if(t===TT.WATER)return'깊은 물 · 인접 뭍 없으면 익사';if(t===TT.VOID)return'공허 · 추락 즉사';if(t===TT.LAVA)return'용암 · 즉사';if(t===TT.PAPER_BRIDGE)return'종이 다리 · 밟은 뒤 다음 실제 행동권 사용 후 붕괴 / 기절 턴 제외 / 10턴 복구';if(t===TT.CRUMBLE)return'불안정 발판 · 밟으면 붕괴 예고 / 10턴 복구';if(t===TT.PORTAL)return state?.artifactDungeon46?state.artifactDungeon46.name:'포탈';const decorName={
+    [TT.STONE_PILLAR]:'석주',[TT.LANTERN_POST]:'등롱 기둥',[TT.WALL_BANNER]:'벽걸이 깃발',[TT.CRATE]:'목상자',[TT.BENCH]:'긴 의자',[TT.FLOWERBED]:'화단',[TT.ROCK]:'정원석',[TT.STATUE]:'석상',[TT.RACK]:'진열 선반',[TT.LOW_FENCE]:'낮은 목책',[TT.CARPET]:'융단',[TT.STONE_PATH]:'석판길',[TT.WINDOW]:'창호 창문',
+    [TT.WOOD_FLOOR]:'황목 마루',[TT.MOON_STONE]:'월백 석판',[TT.DARK_WOOD]:'검목 마루',[TT.GILDED_FLOOR]:'금선 바닥',[TT.PAPER_CRANE]:'종이학 장식',[TT.LOTUS_FLOWER]:'연꽃 장식',[TT.INCENSE_STAND]:'향대',[TT.IRON_HOOK]:'철제 걸이',[TT.GOLD_LAMP]:'금등',[TT.PETAL_MAT]:'꽃잎 깔개',[TT.GARDEN_TREE]:'수목원 나무',
+    [TT.BED]:'목제 침상',[TT.BOOK_STACK]:'서고 장부',[TT.RUMOR_BED]:'낡은 침상',[TT.RUMOR_MED_CABINET]:'약품 찬장',[TT.RUMOR_GAS_PIPE]:'봉인 가스관',[TT.RUMOR_FLOOD_GRATE]:'침수 배수격자',[TT.RUMOR_ARCHIVE_PILE]:'무너진 문서더미',[TT.RUMOR_WEAPON_RACK]:'경비 무기걸이',[TT.RUMOR_SILK_DIVAN]:'비단 좌상',[TT.RUMOR_RITUAL_OBELISK]:'제례 석주',[TT.RUMOR_CHARRED_COUNTER]:'그을린 조리대',[TT.RUMOR_INVESTIGATION_BOARD]:'조사 도면판',[TT.RUMOR_SMUGGLER_BUNDLE]:'밀수 포대',[TT.RUMOR_GREENHOUSE_FRAME]:'온실 골조'
+  }[t];if(decorName)return decorName;if(t===TT.HIDDEN_BRIDGE)return'공간의 이음새';if(t===TT.HIDDEN_WALL)return'수상한 구조물';if(t===TT.LIGHT_GRASS)return'연두빛 초원';if(t===TT.ICE)return '얼어붙은 물';if(t>=500&&t<660)return ['전용 석판','전용 인레이','전용 재질판','실외 포장','전용 석벽','전용 기둥벽','암반 외벽','영구 다리','대형 구조물'][(t-500)%16]||'전용 건축물';return new Map([
   [TT.WALL,'벽'],[TT.PALACE_ROCK,'해련 바위벽'],[TT.FLOOR,'바닥'],[TT.STAIR,'다음 층'],[TT.DOOR,'닫힌 문'],[TT.OPEN_DOOR,'열린 문'],[TT.RUMOR,'소문 기록'],[TT.BRAZIER,'화로'],[TT.TRAP,'함정'],[TT.ARMORY,'무기고'],[TT.WATER,'물'],[TT.FOUNTAIN,'정화의 샘'],[TT.MIRROR,'천면경'],[TT.ALTAR,'혈흔 제단'],[TT.VAULT,'금고'],[TT.SNARE,'구속진'],[TT.CACHE,'보급함'],[TT.COOKPOT,'솥'],[TT.PAPER_BRIDGE,'종이 다리'],[TT.JAR,'장독'],[TT.LAVA,'용암'],[TT.DRAWBRIDGE_DOWN,'도개교'],[TT.DRAWBRIDGE_UP,'올라간 도개교'],[TT.VOID,'공허'],[TT.GOLD,'황금 잔광'],[TT.MERCURY,'수은'],[TT.SWITCH,'기계 장치'],[TT.BAMBOO,'대나무'],[TT.TABLE,'연회상'],[TT.SCREEN,'비단 병풍'],[TT.GRASS,'초원'],[TT.HEDGE,'울타리'],[TT.RAFT,'뗏목'],[TT.FAKE_DOOR,'문'],[TT.LOCKED_GATE,'잠긴 격벽'],[TT.KEY_TILE,'열쇠'],[TT.STAMINA_PAD,'기 회복 발판'],[TT.PEACH_TREE,'복숭아나무'],[TT.SECRET_DOOR,'수상한 벽'],[TT.PAVILION,'정자'],[TT.FLOOR,'행선 표식']
 ]).get(t)||'지형'}
 
@@ -3040,8 +3044,10 @@ const FOOTPRINT_OFFSETS57={
   hound:[[-1,-2],[1,-2],[0,-1],[0,0],[0,1],[-1,2],[1,2]],
   dragon:[[-1,-1],[0,-1],[1,-1],[0,0],[0,1],[-1,1],[1,1]]
 };
-function tileBlocks(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return BLOCKING_TILES57.has(t)}
-function tileBlocksSight(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
+function tileBlocks(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL)return true;return tileBlocksByTerrain(t)}
+// Terrain table only: ignores decor blockers and hidden passages (map carving and spawn search use this).
+function tileBlocksByTerrain(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return BLOCKING_TILES57.has(t)}
+function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
 
 function footprintOffsets(mon){return FOOTPRINT_OFFSETS57[mon?.footprint]||FOOTPRINT_OFFSETS57.one}
 function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
@@ -3581,7 +3587,7 @@ function movePlayer(dx,dy){
   }
 }
 ActionDispatcher.register('MOVE',movePlayer);
-function blinkHardBlock(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return [4,5,6,8].includes((t-500)%16);return[TT.WALL,TT.BAMBOO,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.PEACH_TREE,TT.DRAWBRIDGE_UP].includes(t)}
+function blinkHardBlock(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return [4,5,6,8].includes((t-500)%16);return[TT.WALL,TT.BAMBOO,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.PEACH_TREE,TT.DRAWBRIDGE_UP].includes(t)}
 function blinkTargetCells57(origin=state?.player,range=state?.player?.blinkLevel||0,opts={}){
   if(!state||!origin||range<=0)return[];const out=[],hazards=new Set([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].filter(Number.isFinite));
   for(const[dx,dy]of DIRS8)for(let dist=1;dist<=range;dist++){
@@ -9363,14 +9369,6 @@ const V60={revision:3,hiddenSeq:0,lastFloor:0};
   };
 
   /* ---------- hidden route terrain ---------- */
-  const tileBlocksBase60=tileBlocks;
-  tileBlocks=function(t){return t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL||tileBlocksBase60(t)};
-  const sightBase60=tileBlocksSight;
-  tileBlocksSight=function(t){return t===TT.HIDDEN_WALL||sightBase60(t)};
-  const blinkBase60=blinkHardBlock;
-  blinkHardBlock=function(t){return t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL||blinkBase60(t)};
-  const terrainNameBase60=terrainName;
-  terrainName=function(t){if(t===TT.HIDDEN_BRIDGE)return'공간의 이음새';if(t===TT.HIDDEN_WALL)return'수상한 구조물';if(t===TT.CRUMBLE)return'불안정한 발판';if(t===TT.LIGHT_GRASS)return'연두빛 초원';return terrainNameBase60(t)};
 
   function initHidden60(){
     state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={};state._lastPlayerPos60=null;V60.hiddenSeq=0;
@@ -10263,7 +10261,7 @@ function spawnAuthoredEncounters60(){
 
   function repairRequired60(){
     const start={x:state.player.x,y:state.player.y},goal={x:state.stairs.x,y:state.stairs.y},id=(x,y)=>y*COLS+x,xy=i=>({x:i%COLS,y:Math.floor(i/COLS)});
-    const walkable=t=>!tileBlocksBase60(t);
+    const walkable=t=>!tileBlocksByTerrain(t);
     if(ReachabilityService.requiredExitReach({start,goal,walkable}))return 0;
     const N=COLS*ROWS,dist=Array(N).fill(Infinity),prev=Array(N).fill(-1),done=Array(N).fill(false),sid=id(start.x,start.y),gid=id(goal.x,goal.y);dist[sid]=0;
     const cost=t=>walkable(t)?1:t===TT.DOOR?1:[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t)?3:[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO].includes(t)?5:(t===TT.WALL?7:40);
@@ -10309,7 +10307,7 @@ function spawnAuthoredEncounters60(){
       if(ok)candidates.push({x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)});
     }return candidates.length?choice(candidates):null;
   }
-  function nearestOpen94(cx,cy,max=28){let best=null,bd=1e9;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){const t=state.map[y][x];if(tileBlocksBase60(t)||t===TT.STAIR)continue;const d=Math.abs(x-cx)+Math.abs(y-cy);if(d<bd&&d<=max){bd=d;best={x,y}}}return best}
+  function nearestOpen94(cx,cy,max=28){let best=null,bd=1e9;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){const t=state.map[y][x];if(tileBlocksByTerrain(t)||t===TT.STAIR)continue;const d=Math.abs(x-cx)+Math.abs(y-cy);if(d<bd&&d<=max){bd=d;best={x,y}}}return best}
   function markOuterWall94(r){state.outerWall94=state.outerWall94||{};for(let x=r.x;x<r.x+r.w;x++){if(in60(x,r.y-1))state.outerWall94[k(x,r.y-1)]=1;if(in60(x,r.y+r.h))state.outerWall94[k(x,r.y+r.h)]=1}for(let y=r.y;y<r.y+r.h;y++){if(in60(r.x-1,y))state.outerWall94[k(r.x-1,y)]=1;if(in60(r.x+r.w,y))state.outerWall94[k(r.x+r.w,y)]=1}}
   function enrichSpecial94(f){
     state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];
@@ -10527,7 +10525,7 @@ function spawnAuthoredEncounters60(){
       if(mode.unlock&&t===TT.LOCKED_GATE)t=TT.OPEN_DOOR;
       return t;
     };
-    const can=(x,y,mode)=>x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksBase60(tileAt(x,y,mode));
+    const can=(x,y,mode)=>x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksByTerrain(tileAt(x,y,mode));
     
     
     let doors=0,hiddenCells=0,crumble=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.DOOR)doors++;if(t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL)hiddenCells++;if(t===TT.CRUMBLE)crumble++}
@@ -12548,14 +12546,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   TERRAIN_LAYER_CACHE58=null;
   const BLOCK85=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.RUMOR_BED,TT.RUMOR_MED_CABINET,TT.RUMOR_GAS_PIPE,TT.RUMOR_ARCHIVE_PILE,TT.RUMOR_WEAPON_RACK,TT.RUMOR_SILK_DIVAN,TT.RUMOR_RITUAL_OBELISK,TT.RUMOR_CHARRED_COUNTER,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_SMUGGLER_BUNDLE,TT.RUMOR_GREENHOUSE_FRAME,TT.BED,TT.BOOK_STACK]);
   const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
-  const oldTileBlocks85=tileBlocks; tileBlocks=function(t){return BLOCK85.has(t)||oldTileBlocks85(t)};
-  const oldSight85=tileBlocksSight; tileBlocksSight=function(t){return SIGHT85.has(t)||oldSight85(t)};
-  const oldBlink85=blinkHardBlock; blinkHardBlock=function(t){return BLOCK85.has(t)||oldBlink85(t)};
-  const oldTerrainName85=terrainName; terrainName=function(t){return ({
-    [TT.STONE_PILLAR]:'석주',[TT.LANTERN_POST]:'등롱 기둥',[TT.WALL_BANNER]:'벽걸이 깃발',[TT.CRATE]:'목상자',[TT.BENCH]:'긴 의자',[TT.FLOWERBED]:'화단',[TT.ROCK]:'정원석',[TT.STATUE]:'석상',[TT.RACK]:'진열 선반',[TT.LOW_FENCE]:'낮은 목책',[TT.CARPET]:'융단',[TT.STONE_PATH]:'석판길',[TT.WINDOW]:'창호 창문',
-    [TT.WOOD_FLOOR]:'황목 마루',[TT.MOON_STONE]:'월백 석판',[TT.DARK_WOOD]:'검목 마루',[TT.GILDED_FLOOR]:'금선 바닥',[TT.PAPER_CRANE]:'종이학 장식',[TT.LOTUS_FLOWER]:'연꽃 장식',[TT.INCENSE_STAND]:'향대',[TT.IRON_HOOK]:'철제 걸이',[TT.GOLD_LAMP]:'금등',[TT.PETAL_MAT]:'꽃잎 깔개',[TT.GARDEN_TREE]:'수목원 나무',
-    [TT.BED]:'목제 침상',[TT.BOOK_STACK]:'서고 장부',[TT.RUMOR_BED]:'낡은 침상',[TT.RUMOR_MED_CABINET]:'약품 찬장',[TT.RUMOR_GAS_PIPE]:'봉인 가스관',[TT.RUMOR_FLOOD_GRATE]:'침수 배수격자',[TT.RUMOR_ARCHIVE_PILE]:'무너진 문서더미',[TT.RUMOR_WEAPON_RACK]:'경비 무기걸이',[TT.RUMOR_SILK_DIVAN]:'비단 좌상',[TT.RUMOR_RITUAL_OBELISK]:'제례 석주',[TT.RUMOR_CHARRED_COUNTER]:'그을린 조리대',[TT.RUMOR_INVESTIGATION_BOARD]:'조사 도면판',[TT.RUMOR_SMUGGLER_BUNDLE]:'밀수 포대',[TT.RUMOR_GREENHOUSE_FRAME]:'온실 골조'
-  })[t]||oldTerrainName85(t)};
 
   const drawSpecial85=drawSpecialTerrain;
   drawSpecialTerrain=function(tile,px,py,x,y,now){
@@ -15125,8 +15115,6 @@ const V980={
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
   const V981={version:V980.version,errors:[],repairs:[],portalBuilds:0};
 
-  const terrainName981=terrainName;
-  terrainName=function(t){return t===TT.PORTAL?(state?.artifactDungeon46?state.artifactDungeon46.name:'포탈'):terrainName981(t)};
 
   function expectedBlink981(f=state?.floor||1){return f<=5?0:f<=15?2:f<=20?3:4}
   function tileReveal981(x,y,opt={}){
@@ -17520,7 +17508,7 @@ globalThis.__MANRU_LIFECYCLE__.registerLoad('hazard1005',{post:()=>{if(state){hz
 
 
 /* descriptive UI for new rules */
-const terrainName1005=terrainName;terrainName=function(t){if(t===TT.WATER)return'깊은 물 · 인접 뭍 없으면 익사';if(t===TT.VOID)return'공허 · 추락 즉사';if(t===TT.LAVA)return'용암 · 즉사';if(t===TT.PAPER_BRIDGE)return'종이 다리 · 밟은 뒤 다음 실제 행동권 사용 후 붕괴 / 기절 턴 제외 / 10턴 복구';if(t===TT.CRUMBLE)return'불안정 발판 · 밟으면 붕괴 예고 / 10턴 복구';return terrainName1005(t)};
+
 
 window.__MANRU_V1005_TEST__={
   version:V,stats:()=>state?getStats():null,input:()=>state?{run:runState57(),owner:gameplayInputOwner57().kind,panels:gameplayInputOwner57().panels.map(p=>p.id),allowed:gameplayInputAllowed57(),notice:RuntimeState.ui.generationPending||false}:null,setHp:v=>{if(!state)return null;state.player.hp=Math.max(1,Math.min(state.player.maxHp,+v||1));return state.player.hp},clearMonsters:()=>{if(!state)return 0;state.monsters=[];return 0},tileAt:(x,y)=>state?.map?.[+y]?.[+x]??null,map:()=>state?cloneTerrainMap58(state.map):null,dims:()=>({cols:COLS,rows:ROWS,player:state?{x:state.player.x,y:state.player.y}:null,stairs:state?{...state.stairs}:null,boss:state?.monsters?.find(m=>m.boss)?{x:state.monsters.find(m=>m.boss).x,y:state.monsters.find(m=>m.boss).y}:null}),metric:()=>routeMetric(),hazard:()=>state?{turn:state.turn,agency:Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0,stun:state.status?.stun||0,player:{x:state.player.x,y:state.player.y},hp:state.player.hp,maxHp:state.player.maxHp,dead:!!state.dead,tile:state.map?.[state.player.y]?.[state.player.x],drown:remain('drown'),void:remain('void'),armed:structuredClone(hz().armed),collapsed:structuredClone(hz().collapsed),relic:state.player.relic?.name||null}:null,setStun:n=>{if(!state)return null;state.status.stun=Math.max(0,Math.floor(+n||0));return state.status.stun},noAgency:n=>{for(let i=0;i<Math.max(0,Math.floor(+n||0))&&state&&!state.dead;i++)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"diagnostic",...{playerAgency:false,reason:'qa-no-agency'}}).value;return window.__MANRU_V1005_TEST__.hazard()},landAt:(x,y,cause='boss-teleport')=>{if(!state)return null;const r=resolvePlayerLanding57(+x,+y,{cause:String(cause||'boss-teleport'),resetVisual:true});VisibilityService.compute();updateAll();return{landing:r,hazard:window.__MANRU_V1005_TEST__.hazard()}},rest:()=>{if(!state)return null;ActionDispatcher.dispatch({type:'REST',args:[]}).value;return window.__MANRU_V1005_TEST__.hazard()},keyPlan:()=>state?.keyPlan96?structuredClone(state.keyPlan96):null,preKeyPlan:()=>state?.preRouteKeyPlan1005?structuredClone(state.preRouteKeyPlan1005):null,postRouteLock:()=>state?.postRouteLockAudit1005?structuredClone(state.postRouteLockAudit1005):null,advance:n=>{for(let i=0;i<Math.max(0,+n||0)&&state&&!state.dead;i++)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"diagnostic"}).value;return window.__MANRU_V1005_TEST__.hazard()},
