@@ -1,0 +1,2 @@
+Built-in imagegen edit: preserve uploaded bronze antler jade dragon king; convert left sprite to clean 80x88 logical grid; transparent background; no redesign, smoothing, added props or text.
+Runtime asset normalized to 80x88, nearest-neighbor, 48 colors, binary alpha.
