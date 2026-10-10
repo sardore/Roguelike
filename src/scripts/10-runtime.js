@@ -17040,25 +17040,6 @@ queueMicrotask(normalizeAllItems1006);
 
 globalThis.__MANRU_TURN_PIPELINE_FINAL__={active:()=>globalThis.__MANRU_TURN_PIPELINE__?.active?.()===true,stages:()=>globalThis.__MANRU_TURN_PIPELINE__?.stages?.()||[],core:()=>globalThis.__MANRU_TURN_PIPELINE__?.core?.()||'missing'};
 
-function selfTest1006(){
-  if(!state)return{ok:false,reason:'no-state'};const rand0=Math.random;
-  const snap={player:structuredClone(state.player),monsters:state.monsters,items:state.items,map:cloneTerrainMap58(state.map),turn:state.turn,floorTurn:state.floorTurn,enemyEnergy:state.enemyEnergy,status:structuredClone(state.status),log:[...(state.log||[])],dead:state.dead,victory:state.victory};
-  const out={};
-  try{
-    state.dead=false;state.victory=false;state.monsters=[];state.items=[];setTerrainTile58(state.map,state.player.x,state.player.y,TT.FLOOR);
-    Math.random=()=>.99;
-    state.player.weapon={...WEAPONS.find(x=>x.name==='수련용 환도'),type:'weapon'};state.player.focus=0;state.player.maxFocus=20;state.player.baseAtk=5;let m={name:'연계표적',hp:100,maxHp:100,atk:0,def:0,eva:0,xp:0,kind:'human',shape:'human',x:state.player.x+1,y:state.player.y};attackPlayer(m);const f1=state.player.focus;attackPlayer(m);out.focusChain={f1,f2:state.player.focus,ok:f1===0&&state.player.focus===1};
-    const w={...WEAPONS.find(x=>x.name==='태도'),type:'weapon'};state.player.weapon=w;const mk=()=>({name:'일섬표적',hp:120,maxHp:120,atk:0,def:3,eva:0,xp:0,kind:'human',shape:'human',x:state.player.x+1,y:state.player.y});let a=mk();w.edgeBonus=false;attackPlayer(a);const base=120-a.hp;a=mk();w.edgeBonus=true;attackPlayer(a);const edge=120-a.hp;out.edge={base,edge,knockback:w.knockback,ok:edge>base&&w.knockback===1};
-    Math.random=()=>.20;const bow={...WEAPONS.find(x=>x.name==='단단한 철궁'),type:'weapon'};state.player.weapon=bow;const mk2=()=>({name:'추적표적',hp:100,maxHp:100,atk:0,def:0,eva:9,xp:0,kind:'human',shape:'human',x:state.player.x+2,y:state.player.y});a=mk2();bow.tracking=false;attackPlayer(a);const nt=100-a.hp;a=mk2();bow.tracking=true;attackPlayer(a);const tr=100-a.hp;out.tracking={noTrack:nt,track:tr,ok:nt===0&&tr>0};
-    Math.random=()=>.10;state.player.weapon={...WEAPONS.find(x=>x.name==='당파'),type:'weapon'};state.player.hp=40;state.player.maxHp=40;m={name:'근접표적',hp:20,maxHp:20,atk:20,def:0,eva:0,xp:0,kind:'human',shape:'human',x:state.player.x+1,y:state.player.y,ranged:false};const h0=state.player.hp;attackMonster(m);out.parry={hp0:h0,hp1:state.player.hp,stunned:m.stunned||0,ok:state.player.hp===h0&&(m.stunned||0)>=1};
-    state.player.weapon=null;state.player.baseEva=0;state.player.armor={def:0,eva:0};state.player.cloak={...CLOAKS.find(x=>x.name==='질긴 가죽망토'),type:'cloak'};state.status.stun=0;state.status.weaken=0;m={name:'충격표적',hp:20,maxHp:20,atk:3,def:0,eva:0,xp:0,kind:'beast',shape:'beast',x:state.player.x+1,y:state.player.y,ranged:false,web:true,slow:true,knockback:true};const pos={x:state.player.x,y:state.player.y};attackMonster(m);out.stagger={stun:state.status.stun,weaken:state.status.weaken,pos0:pos,pos1:{x:state.player.x,y:state.player.y},ok:state.status.stun===0&&state.status.weaken===0&&state.player.x===pos.x&&state.player.y===pos.y};
-    state.player.cloak={...CLOAKS.find(x=>x.name==='두꺼운 면망토'),type:'cloak'};state.player.hp=30;state.player.maxHp=30;let x=state.player.x,y=state.player.y;setTerrainTile58(state.map,x,y,TT.TRAP);const th=state.player.hp;trapEvent(x,y);out.trapGuard={hp0:th,hp1:state.player.hp,tile:state.map[y][x],ok:state.player.hp===th&&state.map[y][x]===TT.FLOOR};
-    Math.random=rand0;state.monsters=[];state.enemyEnergy=0;state.player.cloak={...CLOAKS.find(x=>x.name==='여행자망토'),type:'cloak'};state.player.hunger=20;const food={...CONSUMABLES.find(x=>x.name==='말린 육포'),count:1};state.player.inventory=[food];const tt=state.turn;consumeFood57(food,0);out.eatSpeed={turn:state.turn-tt,enemyEnergy:state.enemyEnergy,ok:state.enemyEnergy>0&&state.enemyEnergy<1};
-    state.monsters=[];state.player.cloak={...CLOAKS.find(x=>x.name==='바람막이망토'),type:'cloak'};state.player.focus=0;state.player.maxFocus=30;state.player.hunger=120;state.player.cloakFocusCarry1006=0;state.turn=0;state.enemyEnergy=0;for(let i=0;i<30;i++)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:.25,reason:"selfTest1006"}).value;out.focusRegen={focus:state.player.focus,carry:state.player.cloakFocusCarry1006,ok:state.player.focus>=4};
-    state.player.weapon={...WEAPONS.find(x=>x.name==='낡은 장도리'),type:'weapon'};state.player.facing={x:1,y:0};x=state.player.x+1;y=state.player.y;setTerrainTile58(state.map,x,y,TT.TABLE);ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;const ft=state.map[y][x];setTerrainTile58(state.map,x,y,TT.HEDGE);ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;const ht=state.map[y][x];out.breakPower={furniture:ft,hedge:ht,ok:ft===TT.FLOOR&&ht===TT.HEDGE};
-  }catch(e){out.error=String(e)}finally{Math.random=rand0;state.player=snap.player;state.monsters=snap.monsters;state.items=snap.items;state.map=snap.map;state.turn=snap.turn;state.floorTurn=snap.floorTurn;state.enemyEnergy=snap.enemyEnergy;state.status=snap.status;state.log=snap.log;state.dead=snap.dead;state.victory=snap.victory;VisibilityService.compute();updateAll()}
-  out.ok=!out.error&&Object.values(out).filter(v=>v&&typeof v==='object'&&'ok'in v).every(v=>v.ok);return out
-}
 function keyView1006(id='iron'){
   if(!state)return null;window.__MANRU_V1005_TEST__?.regen?.(2);const q=state.keyPlan96?.keys?.find(k=>k.keyId===id&&k.active!==false)||state.keyPlan96?.keys?.find(k=>k.active!==false);if(!q)return null;state.player.x=Math.max(1,q.x-2);state.player.y=q.y;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)VisibilityService.rememberKey(k(x,y));VisibilityService.compute();updateAll();return{x:q.x,y:q.y,id:q.keyId,name:keyMeta1006(q.keyId).name}
 }
@@ -17071,9 +17052,7 @@ window.__MANRU_V1004_ITEMFIX__={
   normalize:normalizeAllItems1006,pruneDoors:pruneOrphanDoors1006,
   give:(name)=>{const d=defBy(name);if(!state||!d)return false;addInventoryItem57({...clone(d),type:WEAPONS.includes(d)?'weapon':CLOAKS.includes(d)?'cloak':RELICS.includes(d)?'relic':'trinket',identified:true});return true},
   equip:(name)=>{const d=defBy(name);if(!state||!d)return false;const type=WEAPONS.includes(d)?'weapon':CLOAKS.includes(d)?'cloak':RELICS.includes(d)?'relic':'trinket';state.player[type]={...clone(d),type,identified:true};return true},
-  setRandom:v=>{window.__itemFixOldRandom1006??=Math.random;Math.random=()=>+v;return true},
-  resetRandom:()=>{if(window.__itemFixOldRandom1006){Math.random=window.__itemFixOldRandom1006;delete window.__itemFixOldRandom1006}return true},
-  selfTest:selfTest1006,keyView:keyView1006
+  keyView:keyView1006
 };
 try{document.title='만루 — v10.0.4 append architecture r4';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE+HAZARD / KEY CLARITY / ITEM EFFECT AUDIT';const stamp=document.getElementById('releaseStamp70');if(stamp)stamp.textContent='v10.0.4 · append architecture r4'}catch(_){ }
 

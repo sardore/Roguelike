@@ -1,6 +1,6 @@
 {
  "parse": 0,
- "rebind": 3,
+ "rebind": 0,
  "alias": 2,
  "crossFileDuplicate": 0,
  "styleInject": 0,
@@ -8,7 +8,7 @@
  "mutationObserver": 1,
  "duplicateSelector": 277,
  "important": 2188,
- "suffixFunction": 2037,
+ "suffixFunction": 2036,
  "emptyCatch": 63,
  "timer": 54,
  "sameBody": 4
