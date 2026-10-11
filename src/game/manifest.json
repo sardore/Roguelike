@@ -1,6 +1,7 @@
 {
  "closure": [
   "kernel.js",
+  "catalog.js",
   "spine.js"
  ],
  "afterClosure": [
