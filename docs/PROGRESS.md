@@ -13,6 +13,7 @@
 | pinned:save | save 소속 고정 문장 → save.js | 11126 | 1252 / 584 | 770 | 56.3% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 | pinned:items | items 소속 고정 문장 → items.js | 10962 | 1195 / 584 | 770 | 57% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 | pinned:combat | combat 소속 고정 문장 → combat.js | 10855 | 1157 / 584 | 770 | 57.5% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
+| pinned:monsters | monsters 소속 고정 문장 → monsters.js | 10322 | 1086 / 584 | 770 | 59.7% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 
 ## 현재 파일별 줄 수
 
@@ -23,14 +24,14 @@
 | save.js | 534 |
 | items.js | 718 |
 | combat.js | 617 |
-| monsters.js | 1346 |
+| monsters.js | 1950 |
 | render.js | 3966 |
 | mapgen.js | 2489 |
 | special.js | 1660 |
 | branches.js | 2084 |
-| spine.js | 10855 |
+| spine.js | 10322 |
 | input.js | 148 |
 | story.js | 208 |
 | ui.js | 717 |
 | start.js | 9 |
-| (total) | 25540 |
+| (total) | 25611 |
