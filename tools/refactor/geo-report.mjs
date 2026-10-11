@@ -14,7 +14,7 @@ const SEEDS = {
   branches: /^(branch|BRANCH|buildPalace|buildCitadel|buildMine|buildDojo|buildMountain|mountain|MOUNTAIN|palace|Palace|PALACE|citadel|CITADEL|mine[A-Z]|MINE|dojo|DOJO|canal|Canal|CANAL|artifactDungeon|legend|LEGEND|anvil|Anvil)/,
 };
 const args = process.argv.slice(2);
-const work = args.find((a) => !a.startsWith('--') && a !== args[args.indexOf('--list') + 1]) || '.work/runtime.js';
+const work = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--list') || '.work/runtime.js';
 const text = fs.readFileSync(work, 'utf8');
 const marks = [...text.matchAll(/^\/\*@@FILE ([^@]+)@@\*\/\n/gm)].map((m) => ({ file: m[1], at: m.index }));
 const segOf = (pos) => { let cur = null; for (const m of marks) if (m.at <= pos) cur = m.file; return cur; };
