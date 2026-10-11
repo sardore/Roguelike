@@ -75,8 +75,14 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 - `CITADEL_PROP_TILES`(render 분할 `75ce46e`): `Object.assign(TT,{STONE_PILLAR:44,…})`보다 앞으로 가서 소품 타일 ID 21개가 `undefined`였다. 흑성채 소품 그리기(`CITADEL_PROP_TILES[prop]`)가 그 소품들의 타일을 찾지 못했다.
 수정: 세 선언을 각자 채우기 문장 바로 뒤(spine.js)로 되돌렸다. 되돌린 뒤 분할 전 빌드와 다른 값은 의도한 둘뿐이다(`RunLifecycle` 구조, F-21의 `TERRAIN_LAYER_CACHE58`). 재발 방지: `values` 시나리오가 빈 저장소와 분기 세이브로 부팅해 클로저의 모든 최상위 값(614개)을 로드 끝에 직렬화하고 기준선과 비교한다(`tools/lib/load-probe.mjs`). 수정 전 빌드에서는 위 세 값이 다르게 나온다.
 
-## F-24 (결정 필요) V40부터 있던, 할당 전 타일 ID를 담는 집합 두 개
+## F-24 (수정, 동작 변경) V40부터 있던, 할당 전 타일 ID를 담는 집합 두 개
 같은 계산(로드 중 `TT.X`를 읽는데 `X`가 더 뒤에서 할당됨)에서 V40 원래 순서에서도 그런 값이 둘 있다. 지금 동작은 V40과 같다.
 - `TEMP_TERRAIN_IMMUTABLE57`: `TT.PORTAL`(68, 뒤의 `Object.assign(TT,{PORTAL:68})`에서 할당)을 담으려 했지만 `undefined`가 들어 있다. 임시 지형 변경에서 포탈이 보호되지 않는다.
 - `RUNTIME_ENTRY_REACTIVE57`: `TT.CRUMBLE`과 `TT.PORTAL`이 아직 없어서 `filter(Number.isFinite)`로 빠진다. 진입 반응 지형에 무너지는 바닥과 포탈이 없다.
 선택지: (1) 의도대로 고친다(할당을 kernel의 `TT` 정의로 옮기면 두 집합이 값을 담게 된다; 동작 변경 커밋), (2) 그대로 둔다.
+
+**수정(사용자 결정, 2026-10-11)**: 타일 ID 할당을 소유자인 kernel의 `TT` 정의로 옮겼다. spine.js에 흩어져 있던 고정 할당 세 개(`TT.HIDDEN_BRIDGE=40`…`TT.LIGHT_GRASS=43`, `Object.assign(TT,{STONE_PILLAR:44,…})`, `Object.assign(TT,{PORTAL:68})`)를 같은 순서로 `TT` 리터럴 끝에 넣었으므로 `Object.keys(TT)` 순서는 그대로다. 각 할당 뒤의 `TERRAIN_LAYER_CACHE58=null`(새 타일이 생겼으니 캐시를 버리던 문장)도 같이 지웠다. 전설 타일(`TT['LEGEND_'+…]`)은 branches.js 표에서 계산되므로 그대로 둔다.
+- 두 집합은 이제 의도한 ID를 담는다: `TEMP_TERRAIN_IMMUTABLE57`에 포탈(68), `RUNTIME_ENTRY_REACTIVE57`에 무너지는 바닥(42)·포탈(68). 누락을 숨기던 `.filter(v=>Number.isFinite(v))`도 지웠다(모든 ID가 정의되어 있음을 확인).
+- 사용처에서 누락을 보완하던 직접 비교 4곳을 지웠다: `palaceRootFloor`의 `top!==TT.PORTAL`, 용궁 뿌리 패턴 검사의 `!==TT.PORTAL`(branches.js), 지형 변경 뒤 진입 반응의 `||tile===TT.PORTAL||tile===TT.CRUMBLE`, 임시 지형 변경 거부의 `||old===TT.PORTAL`(monsters.js). 이 네 곳은 원래 직접 비교가 빠진 ID를 채우고 있었으므로, 사용처에서의 판정 결과는 수정 전과 같다.
+- 확인: `values` 시나리오에서 바뀐 값은 이 두 집합뿐이다(기준선 `values.empty`/`values.branch` 갱신). `npm test` 나머지 항목은 그대로다.
+- 부수 효과: 이 할당을 기다리느라 spine.js에 묶여 있던 `ASURA_HAZ`, `CITADEL_PROP_TILES`(F-23) 등은 이제 순서 제약이 없다.

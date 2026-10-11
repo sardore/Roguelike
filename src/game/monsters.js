@@ -1480,14 +1480,14 @@ mutate(x,y,tile,opts={}){
   }
   const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(tile);
   if(occupants.length&&kind&&!opts.deferHazard57)haz?.revalidateAt?.(x,y,opts.source||'runtime-terrain');
-  else if(occupants.includes(state.player)&&(RUNTIME_ENTRY_REACTIVE57.has(tile)||tile===TT.PORTAL||tile===TT.CRUMBLE))bumpTileAction(x,y,{cause:'terrain-mutation',activeInteraction:false});
+  else if(occupants.includes(state.player)&&RUNTIME_ENTRY_REACTIVE57.has(tile))bumpTileAction(x,y,{cause:'terrain-mutation',activeInteraction:false});
   return{ok:true,changed:true,old,tile,version57,occupants:occupants.length};
 },
 temporary(x,y,tile,ttl,kind='temporary',opts={}){
   if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1||!Number.isFinite(ttl)||ttl<=0)return false;
   state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];const old=state.map[y]?.[x],allowed=opts.allowedOld;
   // PORTAL is registered after these base sets; read its live tile value here.
-  if(TEMP_TERRAIN_IMMUTABLE57.has(old)||old===TT.PORTAL||(allowed&&!allowed.includes(old)))return false;
+  if(TEMP_TERRAIN_IMMUTABLE57.has(old)||(allowed&&!allowed.includes(old)))return false;
   const prior=state.tempTerrain74.find(t=>t.x===x&&t.y===y);
   if(prior){if(state.map[y][x]!==prior.tile||prior.tile!==tile)return false;prior.ttl=Math.max(prior.ttl,ttl);prior.kind=kind;return true}
   const placement58=terrainCellPlacement58(state.map,x,y),changed=RuntimeTerrainOwner.mutate(x,y,tile,{source:opts.source||kind,overlapSolid:!!opts.overlapSolid});if(!changed.ok)return false;
@@ -2174,7 +2174,7 @@ function moveGroundItemStep57(it,toward){
   candidates.sort((a,b)=>a.d-b.d||a.axis-b.axis||a.y-b.y||a.x-b.x);const q=candidates[0];if(!q)return false;return PlacementService.moveItem(it,q.x,q.y);
 }
 function markCombatBlink57(entity){if(entity&&state)entity.combatBlinkTurn57=state.turn;}
-const RUNTIME_ENTRY_REACTIVE57=new Set([TT.PAPER_BRIDGE,TT.CRUMBLE,TT.PORTAL,TT.RUMOR,TT.TRAP,TT.MIRROR,TT.SNARE,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION].filter(v=>Number.isFinite(v)));
+const RUNTIME_ENTRY_REACTIVE57=new Set([TT.PAPER_BRIDGE,TT.CRUMBLE,TT.PORTAL,TT.RUMOR,TT.TRAP,TT.MIRROR,TT.SNARE,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION]);
 function combatFieldBlocksSight57(x,y){return !!state?.tempFields?.some(f=>['smoke','steam'].includes(f.kind)&&f.ttl>0&&(f.cells?f.cells.some(c=>c.x===x&&c.y===y):Math.abs(x-f.x)<=1&&Math.abs(y-f.y)<=1))}
 function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&mon.hp<=mon.maxHp*.5?3:2):1}
 function movementDiscoveryEvades105(mon,ctx){

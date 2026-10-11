@@ -27,8 +27,6 @@
 | `ConnectedDecor81`, `floorSet980`, `immutable980` | mapgen | T (초기화식이 `TT.*`/`window.*` 값을 로드 시점에 집합·객체로 담는데, 그 값을 채우는 스파인의 문장(줄 12495 부근 `TT.*=`)이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 이동 |
 | `BRANCH_INTERACTIVE_OVERLAYS105` | branches | T (`TT.*`를 로드 시점에 담는데 채우는 문장이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 |
 | `RECIPE` | items | 채우기 순서(F-23): `addFusionRecipe(...)` 호출들 뒤에서 만들어져야 한다 | 호출 묶음을 items로 옮길 때 같이 |
-| `ASURA_HAZ` | monsters | T(F-23): `TT.CRUMBLE` 할당 뒤 | `TT` 할당을 kernel로 모은 뒤(F-24 결정 필요) |
-| `CITADEL_PROP_TILES` | render | T(F-23): `Object.assign(TT,{STONE_PILLAR…})` 뒤 | 같은 조건 |
 
 ## rest 처리 결과 (2026-10-11)
 

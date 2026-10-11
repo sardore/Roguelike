@@ -381,7 +381,7 @@ function palaceRootWallExplode(records){const walls=Array.isArray(records)?recor
  let damaged=0;for(const[target,hit]of hits){const result=resolveElementDamage57(target,'earth',hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:'해련 바위벽 붕괴',ground:true,color:'#bf8b59',contactHandled105:true});if(result.damage>0)damaged++;}
  if(damaged)addLog(`해련 바위벽 붕괴: ${damaged}체 피해.`);return damaged;
 }
-function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&top!==TT.PORTAL&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
+function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
 function palaceResolveIntent(mon,I){
  if(I.type==='palaceSweep105'){
   const data=I.data;
@@ -401,7 +401,7 @@ function palaceResolveIntent(mon,I){
 }
 function palaceLotusTurn(mon,target){mon.palaceBloom105=palaceWet(mon);if(mon.stunned>0){mon.stunned--;return true;}if(mon.intent54)return palaceResolveIntent(mon,mon.intent54);if(mon.skillSeal105>0||!combatTargetValid57(mon,target)||!actorDetectedTarget57(mon,target,7))return true;const distance=entityDistance57(mon,target),now=state.floorTurn;
  if(mon.palaceBloom105&&distance<=6&&distance>1&&now>=(mon.nextPalacePull105||0)&&monsterAttackLineR(mon,6,{target}).ok){mon.nextPalacePull105=now+6;const aim={x:target.x,y:target.y},landing={x:mon.x+Math.sign(target.x-mon.x),y:mon.y+Math.sign(target.y-mon.y)};return setBossIntent(mon,'palacePull105',[aim,landing],'해련의 견인',{resolveTurn105:state.turn+1,targetId105:target===state.player?'player':combatantId(target)});}
- if(distance<=5&&now>=(mon.nextPalaceRoots105||0)){const pattern=[[0,-2],[1,-1],[2,0],[1,1],[0,2],[-1,1],[-2,0],[-1,-1]].map(([dx,dy])=>({x:target.x+dx,y:target.y+dy})),cells=pattern.filter(c=>palaceRootFloor(c.x,c.y));if(cells.length&&pattern.every(c=>state.map[c.y]?.[c.x]!=null&&state.map[c.y][c.x]!==TT.PORTAL&&!TEMP_TERRAIN_IMMUTABLE57.has(state.map[c.y][c.x]))){mon.nextPalaceRoots105=now+7;return setBossIntent(mon,'palaceRoots105',cells,'해련의 뿌리 융기',{resolveTurn105:state.turn+1});}}
+ if(distance<=5&&now>=(mon.nextPalaceRoots105||0)){const pattern=[[0,-2],[1,-1],[2,0],[1,1],[0,2],[-1,1],[-2,0],[-1,-1]].map(([dx,dy])=>({x:target.x+dx,y:target.y+dy})),cells=pattern.filter(c=>palaceRootFloor(c.x,c.y));if(cells.length&&pattern.every(c=>state.map[c.y]?.[c.x]!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(state.map[c.y][c.x]))){mon.nextPalaceRoots105=now+7;return setBossIntent(mon,'palaceRoots105',cells,'해련의 뿌리 융기',{resolveTurn105:state.turn+1});}}
  return true;
 }
 function palaceKingInventory(mon){
@@ -2143,7 +2143,7 @@ const WorldTransition57=Object.freeze({
  complete(){OccupancyService.endShared();state._worldTransition57=true},
  commit(ctx,cost){if(!state?._worldTransition57)return false;delete state._worldTransition57;commitPlayerAction57(ctx,cost);return true}
 });
-const TEMP_TERRAIN_IMMUTABLE57=new Set([TT.STAIR,TT.PORTAL,TT.KEY_TILE,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.SWITCH,TT.DRAWBRIDGE_UP,TT.DRAWBRIDGE_DOWN].filter(v=>Number.isFinite(v)));
+const TEMP_TERRAIN_IMMUTABLE57=new Set([TT.STAIR,TT.PORTAL,TT.KEY_TILE,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.SWITCH,TT.DRAWBRIDGE_UP,TT.DRAWBRIDGE_DOWN]);
 function runtimeTerrainOccupants57(x,y){
   const out=[];if(!state)return out;if(state.player?.x===x&&state.player?.y===y)out.push(state.player);for(const m of state.monsters||[])if(m.hp>0&&monCovers(m,x,y))out.push(m);return out;
 }
