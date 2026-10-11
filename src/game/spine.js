@@ -59,19 +59,7 @@ const CLASSES=[
 
 function bodyPowerDuration58(p=state?.player){return 20+Math.max(0,Math.min(5,Math.floor(Number(p?.martial?.constitution)||0)))*5}
 function bodyPowerExhaustion58(p=state?.player){return bodyPowerDuration58(p)}
-function normalizeClassState58(p,agency=0){
-  if(p.classId==='summoner'){p.name='무당';p.gender='female';p.color=CLASSES.find(c=>c.id==='summoner').color;}
-  p.bloodAltarGains105=Number.isFinite(p.bloodAltarGains105)?Math.max(0,Math.floor(p.bloodAltarGains105)):0;
-  const old=p.classState||{},valid=playerClassRules58(p).upgradeTalismanMode==='bodyBoost';
-  const previousTotal=valid?Math.max(0,Math.min(45,Math.floor(Number(old.powerTotal)||0))):0;
-  const previousRemaining=Math.max(0,Math.min(previousTotal,Math.floor(Number(old.powerTurns)||0)));
-  const exhaustion=previousTotal?Math.max(0,Math.min(16,Math.floor(Number(old.powerExhaustion??old.powerTotal)||0))):0;
-  // Upgrade active older saves once, preserving elapsed proportion; exhaustion now equals the full power duration.
-  const migrate=previousRemaining>0&&(Number(old.powerRulesVersion)||0)<2;
-  const total=migrate?Math.round(exhaustion*2.5):previousTotal;
-  const remaining=migrate?Math.min(total,Math.ceil(previousRemaining*total/previousTotal)):previousRemaining;
-  p.classState={aimPower:playerClassRules58(p).roar==='aim'&&Number(old.aimPower)>4?Math.min(aimMaximum(p),Math.floor(Number(old.aimPower))):0,aimBornAgency:Number.isFinite(old.aimBornAgency)?old.aimBornAgency:agency,aimMoveAgency:Number.isFinite(old.aimMoveAgency)?old.aimMoveAgency:-1,aimAttackAgency:Number.isFinite(old.aimAttackAgency)?old.aimAttackAgency:-1,powerTurns:remaining,powerTotal:total,powerExhaustion:total,powerRulesVersion:3,powerHealHundredths:valid?Math.max(0,Math.min(99,Math.floor(Number(old.powerHealHundredths)||0))):0,powerBornAgencyTurn:Number.isFinite(old.powerBornAgencyTurn)?old.powerBornAgencyTurn:agency,powerLastAgencyTurn:Number.isFinite(old.powerLastAgencyTurn)?old.powerLastAgencyTurn:agency};
-}
+
 function identifyStartingItems58(){
   const p=state.player,K=state.knowledge56=state.knowledge56||{};
   K.potionKnown=K.potionKnown||{};K.talismanKnown=K.talismanKnown||{};
@@ -334,7 +322,7 @@ const AUTO_MOVE_RATE70=1.5;
 
 
 
-function actionPresentationBusy58(){return ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.until}
+
 
 
 
@@ -1053,15 +1041,13 @@ function releaseTerrainUnderlay58(x,y,fallback=TT.FLOOR){
 function isToolBreakableTerrain57(tile){return TOOL_BREAKABLE_KEYS57.some(name=>Number.isFinite(TT[name])&&tile===TT[name])}
 function furnitureFloor57(x,y){return terrainUnderlayAt58(x,y)??inferTerrainUnderlay58(x,y)}
 
-function jarGasState57(){return state?state.jarGasFields57:[]}
 
 
 
 
 
-function jarGasConcentrationMap57(status='poison',target=null){
-  const out=new Map();for(const f of jarGasState57())if((f.status57||'poison')===status&&(!target||!f.sourceFaction||effectCanAffect57(f,target)))for(const c of f.cells||[])if(c.c>0){const kk=jarGasCellKey57(c.x,c.y),v=out.get(kk)||0;if(c.c>v)out.set(kk,c.c)}return out
-}
+
+
 
 
 
@@ -1263,7 +1249,7 @@ function brawlUpgradeEffect42(it){return isBrawlWeapon(it)?Math.floor((it.upgrad
 
 
 
-function armorUpgradeGain42(base,level=0){const u=Math.max(0,Math.floor(+level||0));let gain=0;for(let n=1;n<=u;n++)gain+=armorUpgradeStepGain42(base,n);return gain}
+
 
 
 
@@ -1536,11 +1522,7 @@ function combatLineCheckR8(x0,y0,x1,y1,opts={}){
 
 
 
-function attackTerrainTargetR8(target){
- const p=state.player,w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow'),check=combatTerrainTargetCheckR8(target);if(!check.ok)return false;
- const strong=!ranged&&p.strongReady>0;if(strong)p.strongReady=0;const jar=state.map[target.y]?.[target.x]===TT.JAR;if(jar&&!destroyJar57(target.x,target.y,{forced:true,source:ranged?'ranged':'melee'}).ok)return false;
- if(ranged)projectileFX(p.x,p.y,target.x,target.y);else slashFX(p.x,p.y,target.x,target.y,'#e7c8a2');globalThis.__MANRU_SFX54__?.play?.('hit');target.hp=0;setPlayerAttackOutcome('hit',target,{damage:1});ACTION_PRESENTATION58.strong=strong;return true;
-}
+
 
 
 
@@ -1577,7 +1559,7 @@ function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&m
 
 setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
-function rollHostileStatus(baseChance){return globalThis.__MANRU_RANDOM57__()<hostileStatusChance(baseChance)}
+
 
 
 
@@ -1646,8 +1628,6 @@ function applyRecoveryPotion57(actor,item){
 
 
 
-function xpRequirementForLevel57(targetLevel){const lv=Math.max(2,Math.min(BALANCE.maxLevel,Math.floor(Number(targetLevel)||2)));if(lv===2)return 32;if(lv<=13)return 24+lv*8;return Math.round(128*Math.pow(1.5,lv-13))}
-function normalizePlayerProgression57(p){if(!p)return;p.level=Math.max(1,Math.min(BALANCE.maxLevel,Math.floor(Number(p.level)||1)));p.xp=Math.max(0,Math.floor(Number(p.xp)||0));p.nextXp=p.level<BALANCE.maxLevel?xpRequirementForLevel57(p.level+1):xpRequirementForLevel57(BALANCE.maxLevel);p.skillPoints=Math.max(0,Math.floor(Number(p.skillPoints)||0))}
 
 
 
@@ -1658,10 +1638,9 @@ function normalizePlayerProgression57(p){if(!p)return;p.level=Math.max(1,Math.mi
 
 
 
-function recordPlayerSight105(){
- if(!state?.player||state.generationInProgress57)return;
- for(const mon of state.monsters||[])if(!mon.seenByPlayer105&&isThreatVisibleToPlayer(mon))mon.seenByPlayer105=true;
-}
+
+
+
 
 
 
@@ -3739,11 +3718,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  function qaThreshold23_60(){
-    if(state.floor!==23)return{ok:false,reason:'not-f23'};const dragon=(state.monsters||[]).find(m=>m.name==='여의 수룡'&&m.hp>0);if(!dragon)return{ok:false,reason:'missing-dragon'};
-    const before=dragon.hp,amount=Math.max(1,Math.floor(dragon.maxHp*.51)+1);damageEntity(dragon,amount,state.player);const item=(state.items||[]).find(i=>i.type==='progress_key23');
-    return{ok:!!state.floor23?.thresholdTriggered&&!!item,before,after:dragon.hp,maxHp:dragon.maxHp,item:item?{x:item.x,y:item.y,name:item.name}:null,thresholdTriggered:!!state.floor23?.thresholdTriggered};
-  }
+
   function qaPickupProgressKey23_60(){
     if(state.floor!==23)return{ok:false,reason:'not-f23'};const item=(state.items||[]).find(i=>i.type==='progress_key23');if(!item)return{ok:false,reason:'missing-progress-key'};
     state.player.x=item.x;state.player.y=item.y;OccupancyService.move(state.player,state.player.x,state.player.y);const picked=pickupBaseR25();return{ok:!!picked&&!!state.floor23?.keyAcquired,picked:!!picked,keyAcquired:!!state.floor23?.keyAcquired};
@@ -5394,7 +5369,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   // Natural recovery replaces explicit Rest. Hunger controls the very slow recovery interval; combat/status suppresses it.
   function naturalInterval94(){const h=state?.player?.hunger??0;return h>=90?16:h>=65?22:h>=40?30:h>=20?42:Infinity}
-  function safeForNatural94(){if(!state||state.status.poison>0||state.status.bleed>0)return false;return !state.monsters.some(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,state.player)<=4)}
+
   globalThis.__MANRU_TURN_PIPELINE__.register('natural-heal94',{post:ctx=>{
     if(!ctx.playerAgency||!state||state.dead||state.victory)return;const p=state.player;
     if(p.hp>=p.maxHp){state.earlyRecoveryProgress58=0;return}
@@ -7738,7 +7713,7 @@ function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor',
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*3:0}
 
 
-function syncEquip47(){const p=state?.player;if(!p)return;for(const it of [p.weapon,...(p.inventory||[]),...(state.items||[])]){if(!it?.legendaryWeapon47)continue;const d=adef46(it.artifactId46);if(d)for(const key of ['atk','speed','range','desc','armorPierce']){if(Object.prototype.hasOwnProperty.call(d,key))it[key]=d[key];else if(key==='armorPierce')delete it[key]}}const on=equipped47('curse_blade'),changed=on!==!!p.legendCurseActive47;p.legendCurseActive47=on;recomputeMaxHp(p);if(changed&&on)floatText(p.x,p.y,'최대 HP -30%','#b95c7c',10);if(!on){delete p.legendCurseBaseMax47;delete p.legendCurseCut47}if(!equipped47('earth_gauntlet'))p.legendEarthStacks47=0}
+
 function guard47(elem){return elem==='fire'&&possesses47('ember_axe')}
 function fireAbsorb47(){return possesses47('ember_axe')&&state?.player?.armor?.elementGuard74==='fire'}
 function healFire47(n=1){n=Math.max(0,Math.round(Number(n)||0));if(!state||!fireAbsorb47())return 0;const p=state.player,b=p.hp;p.hp=Math.min(p.maxHp,p.hp+n);const g=p.hp-b;if(g>0)floatText(p.x,p.y,`화염흡수 +${g}`,'#ffb365',9);return g}

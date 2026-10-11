@@ -28,6 +28,7 @@
 | pinned:mapgen (2차) | 앞선 이동 뒤 mapgen.js 쪽 참조가 많아진 문장 → mapgen.js | 8482 | 713 / 584 | 755 | 67.1% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 | pinned:monsters (2차) | 앞선 이동 뒤 monsters.js 쪽 참조가 많아진 문장 → monsters.js | 8328 | 676 / 584 | 755 | 67.7% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 | pinned:special (2차) | 앞선 이동 뒤 special.js 쪽 참조가 많아진 문장 → special.js | 8273 | 660 / 584 | 755 | 67.9% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
+| pinned:combat (2차) | 앞선 이동 뒤 combat.js 쪽 참조가 많아진 문장 → combat.js | 8248 | 647 / 584 | 755 | 68.1% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 
 ## 현재 파일별 줄 수
 
@@ -37,16 +38,16 @@
 | catalog.js | 173 |
 | save.js | 534 |
 | items.js | 702 |
-| combat.js | 612 |
+| combat.js | 650 |
 | monsters.js | 2141 |
 | render.js | 4841 |
 | mapgen.js | 3115 |
 | special.js | 1873 |
 | branches.js | 2202 |
 | elements.js | 247 |
-| spine.js | 8273 |
+| spine.js | 8248 |
 | input.js | 148 |
 | story.js | 212 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25812 |
+| (total) | 25825 |
