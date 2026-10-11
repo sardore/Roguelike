@@ -2192,3 +2192,16 @@ function migrateMineAppearance105(){
  if(m.version<2)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if([TT.RUMOR_CHARRED_COUNTER,TT.RACK].includes(state.map[y][x]))setTerrainTile58(state.map,x,y,TT.STONE_PATH);
  m.artRevision=4;
 }
+
+/* Branch definitions (count, parent floor, titles). Declared here, before spine.js, so the continue check that
+   runs while the game loads can validate a branch save (F-21). */
+const BRANCH_DEFS105=Object.freeze({
+ palace:{name:'창해 용궁',count:2,parent:9,titles:['창해 외궁','잠긴 조정'],color:'#8dbda9'},
+ citadel:{name:'흑성채',count:4,parent:16,titles:['외곽 문루와 중앙 심부','교차 철교','감옥탑과 묘역','천성 요새와 중앙탑 상부'],color:'#a4b9cb'},
+ dojo:{name:'도장',count:2,parent:12,titles:['백사 회랑','반월 미궁'],color:'#c9b18b'},
+ canal:{name:'수로',count:1,parent:2,titles:['침수 수문실'],color:'#76b9b3'},
+ granary:{name:'식량창고',count:2,parent:3,titles:['하역장과 곡물고','지하 숙성고'],color:'#d5b473'},
+ stockade:{name:'산채',count:2,parent:7,titles:['겹비탈 숲길','상봉 산성'],color:'#a6b482'},
+ mine:{name:'광산',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['등롱 갱도','꺼져 가는 심부'],color:'#d3a46b'},
+ black:{name:'흑산채',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['고목 능선','흑기 정상성'],color:'#ac8eae'}
+});

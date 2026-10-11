@@ -100,6 +100,17 @@ async function inputState(s) {
 }
 const KEYS2 = ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'w', 'a', 's', 'd', 'h', 'j', 'k', 'l', 'y', 'u', 'b', 'n', '1', '2', '3', 'z', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Control+ArrowRight', '?', 'Tab', 'Enter', 'Escape', 'm', 'r', 't', 'p', 'v', ' ', '.', ','];
 
+// Installed before the page's scripts (openSession init): records the continue button's class before each change
+// while the game boots, and console warnings.
+const BOOT_PROBE = () => {
+  const probe = (window.__QA_BOOT_PROBE__ = { continueClass: [], warnings: [] });
+  const warn = console.warn.bind(console);
+  console.warn = (...a) => { probe.warnings.push(a.map(String).join(' ').slice(0, 160)); warn(...a); };
+  // observer records arrive batched, so each record keeps the value the class had before that change
+  new MutationObserver((list) => { for (const m of list) if (m.target.id === 'continueBtn') probe.continueClass.push(m.oldValue); })
+    .observe(document, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ['class'] });
+};
+
 export const scenarios = {
   // New game for every class: floor 1 generation, starting kit, story state.
   async newgame(browser, root) {
@@ -270,7 +281,7 @@ export const scenarios = {
     const out = {};
     for (const name of ['progress', 'dead', 'branch', 'legend']) {
       const fixture = JSON.parse(fs.readFileSync(path.join(savesDir, name + '.json'), 'utf8'));
-      const s = await openSession(browser, root, { seed: 50, storage: fixture.storage });
+      const s = await openSession(browser, root, { seed: 50, storage: fixture.storage, init: BOOT_PROBE });
       out[`saves.${name}.title`] = await s.page.evaluate(() => JSON.stringify({
         continue: document.getElementById('continueBtn')?.className,
         text: document.getElementById('continueBtn')?.textContent.replace(/\s+/g, ' ').trim(),
@@ -280,6 +291,13 @@ export const scenarios = {
       // branch saves used to be rejected during boot because branch data was not initialised yet).
       const enabled = await s.page.evaluate(() => !document.getElementById('continueBtn').classList.contains('noSave'));
       if (enabled !== (name !== 'dead')) throw new Error(`continue button for the ${name} save is ${enabled ? 'enabled' : 'disabled'} at boot`);
+      // F-21: the continue check made while the game loads must accept the run by itself (the boot-end re-check that
+      // used to repair the branch save is gone, so the enabled check above covers it) and must reject nothing on the
+      // way: the branch save used to read BRANCH_DEFS105 before its declaration. The class history is recorded too
+      // (F-22: the checks that run before the save service is published always disable the button first).
+      const boot = await s.page.evaluate(() => window.__QA_BOOT_PROBE__);
+      out[`saves.${name}.boot`] = JSON.stringify(boot);
+      if (boot.warnings.some((w) => w.includes('cannot be continued'))) throw new Error(`the ${name} save was rejected during boot: ${boot.warnings.join(' | ')}`);
       if (name !== 'dead') {
         await s.page.click('#continueBtn');
         await s.tick(3000);

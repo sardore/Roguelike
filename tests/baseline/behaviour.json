@@ -248,5 +248,9 @@
  "loadhooks.plain.pc.aimjar": "75fb77b3aac3663760b608a7c168af06c5411a31",
  "loadhooks.plain.mobile.aimjar": "75fb77b3aac3663760b608a7c168af06c5411a31",
  "loadhooks.stripped.pc.aimjar": "75fb77b3aac3663760b608a7c168af06c5411a31",
- "loadhooks.stripped.mobile.aimjar": "75fb77b3aac3663760b608a7c168af06c5411a31"
+ "loadhooks.stripped.mobile.aimjar": "75fb77b3aac3663760b608a7c168af06c5411a31",
+ "saves.progress.boot": "eca3dc9562dd7784aa3922ad90b01d40982ea5b3",
+ "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
+ "saves.branch.boot": "eca3dc9562dd7784aa3922ad90b01d40982ea5b3",
+ "saves.legend.boot": "eca3dc9562dd7784aa3922ad90b01d40982ea5b3"
 }

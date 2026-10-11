@@ -20,6 +20,9 @@
 | pinned:branches | branches 소속 고정 문장 → branches.js | 9414 | 880 / 584 | 770 | 63.5% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 | pinned:story | story 소속 고정 문장 → story.js | 9411 | 879 / 584 | 770 | 63.5% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 
+정정: `3d24e7f`(pinned:save) 커밋 메시지의 "이전에 move-to의 정적 호출 경로 검사가 거부한 것만 옮겼다"는 틀렸다. 옮긴 문장에는 이전 도메인 이동에서 아예 고르지 않았던 문장도 섞여 있다(선택 기준은 rest-plan의 참조 친화도 `pinned:save`). 이력은 고치지 않는다.
+| F-21 | BRANCH_DEFS105 → branches.js, 부팅 끝 재확인 삭제(동작 변경) | 9401 | 878 / 584 | 770 | 63.6% | - |
+
 ## 현재 파일별 줄 수
 
 | file | lines |
@@ -33,10 +36,10 @@
 | render.js | 4354 |
 | mapgen.js | 2963 |
 | special.js | 1802 |
-| branches.js | 2194 |
-| spine.js | 9411 |
+| branches.js | 2207 |
+| spine.js | 9401 |
 | input.js | 148 |
 | story.js | 212 |
 | ui.js | 717 |
-| start.js | 9 |
+| start.js | 6 |
 | (total) | 25818 |
