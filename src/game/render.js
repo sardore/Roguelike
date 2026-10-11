@@ -1448,7 +1448,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     const scene=titleSceneState49;scene.rooms=[];
     for(const [key,id]of [['sky','titleSky49'],['windows','titleWindows49']]){let layer=document.getElementById(id);if(!layer){layer=document.createElement('canvas');layer.id=id;world.appendChild(layer);}layer.width=W;layer.height=H;scene[key]=layer.getContext('2d');}
     scene.background=document.createElement('canvas');scene.background.width=W;scene.background.height=H;const bg=scene.background.getContext('2d'),sky=bg.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#08131b');sky.addColorStop(.48,'#1b2628');sky.addColorStop(1,'#090e10');bg.fillStyle=sky;bg.fillRect(0,0,W,H);
-    scene.clouds=[{y:.065,start:W*.2,speed:11,scale:1.25,opacity:.48},{y:.12,start:W*.92,speed:17,scale:.95,opacity:.55},{y:.22,start:W*.6,speed:7,scale:1.7,opacity:.38},{y:.04,start:W*.75,speed:21,scale:.8,opacity:.36}].map((cloud,i)=>({...cloud,art:titleCloudArt49(i*7)}));
+    scene.clouds=[{y:.065,start:W*.2,speed:11,scale:1.25,opacity:.48},{y:.12,start:W*.92,speed:17,scale:.95,opacity:.55},{y:.22,start:W*.6,speed:7,scale:1.7,opacity:.38},{y:.04,start:W*.75,speed:21,scale:.8,opacity:.36}].map((cloud,i)=>({...cloud,art:titleCloudArt(i*7)}));
     const poly=(pts,fill)=>{q.fillStyle=fill;q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill()};
     // Distant ridges and silhouettes establish scale behind the inhabited inn.
     for(let row=0;row<3;row++){const pts=[[0,H]];for(let x=0;x<=W+60;x+=60)pts.push([x,H*(.29+row*.065)+Math.sin(x*.012+row)*38+Math.cos(x*.027)*22]);pts.push([W,H]);poly(pts,['#18272d','#142328','#101e23'][row])}
@@ -1836,7 +1836,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     const reduced=classMotion1001.matches,resized=st.w!==w||st.h!==h;
     if(!force&&!resized&&st.reduced===reduced&&(reduced||now-st.last<33))return st.snapshot;
     st.last=now;st.reduced=reduced;st.w=w;st.h=h;
-    if(resized)stage.style.setProperty('--pick-wood',`url("${classWoodPanel1001(w,h)}")`);
+    if(resized)stage.style.setProperty('--pick-wood',`url("${classWoodPanel(w,h)}")`);
     const field=stage.querySelector('.pickLightField1001'),actor=stage.querySelector('.pickActorLight1001'),q=field.getContext('2d'),a=actor.getContext('2d');
     for(const c of [field,actor]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;}
     q.clearRect(0,0,w,h);a.clearRect(0,0,w,h);q.imageSmoothingEnabled=false;a.imageSmoothingEnabled=false;
@@ -2765,7 +2765,7 @@ const ACTOR_ART=Object.freeze({
   classPreviewData:(id='wanderer')=>canonicalPlayerCanvas(id,startingGearFor(id),'down',false).toDataURL('image/png'),
   friendPreviewData:(boss=false)=>friendCanvas(!!boss,false,0).toDataURL('image/png'),
   drawWorld:drawWorldCreature,
-  clear:()=>{ACTOR_CACHE.clear();PCACHE.clear();clearPlayerArt();renderClassGrid1001();return true}
+  clear:()=>{ACTOR_CACHE.clear();PCACHE.clear();clearPlayerArt();renderClassGrid();return true}
 });
 function renderSprite(m,c,player=false){const now=FX.frameNow??performance.now(),point=actorPresentationPoint(m,player,now),px=point.x-TILE/2,py=point.y-TILE/2,hit=player?(state.playerHitUntil||0)>now:(m.hitUntil||0)>now,dormantMimic=!player&&m.treeMimic105&&m.mimicDormant105!==false;X.save();
   const fp=player?[[0,0]]:(typeof footprintOffsets==='function'?footprintOffsets(m):[[0,0]]);if(fp.length>1){X.fillStyle='rgba(0,0,0,.11)';for(const[ox,oy]of fp)X.fillRect((m.x+ox)*TILE+5,(m.y+oy)*TILE+20,22,8)}
@@ -3062,7 +3062,7 @@ function sprite(it){
  else if(it.type==='upgrade')drawUpgrade(q,it);
  else if(it.type==='ammo')drawAmmo(q,it);
  else if(it.type==='story_note')drawStoryNote(q,it);
- else if(it.summonItem105==='picture'){const picture=pictureAsset105(it);q.drawImage(picture,4,1,40,47);}
+ else if(it.summonItem105==='picture'){const picture=summonPictureAsset(it);q.drawImage(picture,4,1,40,47);}
  else if(it.type==='martial_manual'||it.type==='book')drawMartialManual(q,it);
  else if(it.type==='scroll'||it.libraryScroll1022)drawScroll(q,it);
  else drawGeneric(q,it);

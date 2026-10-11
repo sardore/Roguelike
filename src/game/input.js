@@ -80,12 +80,12 @@ function attachLongPress(el,fn){
       const raw=btn.dataset.move||btn.dataset.diag70||'',dir=raw?raw.split(',').map(Number):null,center=btn.dataset.act==='rest';if(!dir&&!center)return;
       btn.addEventListener('pointerdown',e=>{
         if(e.pointerType==='mouse'&&e.button!==0||btn.hidden||!btn.isConnected||btn.getClientRects().length===0)return;
-        if(worldTargetActive57()&&dir){e.preventDefault();e.stopPropagation();stopHeld81();ClientEnvironment.emit({type:'TARGET_MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});return}
-        if(!canAct81())return;e.preventDefault();e.stopPropagation();stopHeld81();try{btn.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}
+        if(worldTargetActive57()&&dir){e.preventDefault();e.stopPropagation();stopHeldInput();ClientEnvironment.emit({type:'TARGET_MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});return}
+        if(!canAct81())return;e.preventDefault();e.stopPropagation();stopHeldInput();try{btn.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}
         Runtime81.held={btn,id:e.pointerId,dir,center};btn.classList.add('rt81-pressed');
         if(dir){ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});Runtime81.repeatDelay=setTimeout(()=>{if(Runtime81.held?.btn!==btn)return;Runtime81.repeatTick=setInterval(()=>{if(Runtime81.held?.btn===btn&&canAct81())ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad-hold'})},CONFIG81.repeatEveryMs)},CONFIG81.repeatDelayMs)}else ClientEnvironment.emit({type:'REST',source:'mobile-pad'});
       },{passive:false});
-      const end=e=>{if(Runtime81.held?.btn!==btn)return;e?.preventDefault?.();e?.stopPropagation?.();stopHeld81()};
+      const end=e=>{if(Runtime81.held?.btn!==btn)return;e?.preventDefault?.();e?.stopPropagation?.();stopHeldInput()};
       btn.addEventListener('pointerup',end,{passive:false});btn.addEventListener('pointercancel',end,{passive:false});btn.addEventListener('lostpointercapture',end,{passive:false});btn.onclick=e=>{e.preventDefault();e.stopPropagation()};
     });
     const acts={attack:'ATTACK',rest:'REST',pickup:'CONTEXT_ACTION',open:'BLINK',skill:'CLASS_SKILL',inv:'TOGGLE_INVENTORY',summon0:'OPEN_SUMMON105',summon1:'OPEN_SUMMON105'};

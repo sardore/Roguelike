@@ -9,7 +9,8 @@
   "render.js",
   "spine.js",
   "input.js",
-  "story.js"
+  "story.js",
+  "ui.js"
  ],
  "afterClosure": [
   "start.js"

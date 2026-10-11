@@ -30,3 +30,6 @@
 `PLAYER_SPRITE_W/H`(플레이어), `HERO_SPRITE_W/H`(영웅, QA만 읽음), `ACTOR_CELL_W/H`(사용처 없음, 삭제함)가 모두 32×36이다. 같은 값을 따로 둔 이유는 확인되지 않는다. 합칠지(예: 한 상수) 기획·소유자 판단이 필요하다. 지금은 사용 중인 두 벌만 남겼다.
 
 **처리(사용자 지시)**: render.js의 `drawKit(q)`가 `{r, poly}`(사각형·다각형 채우기)를 돌려준다. 같은 본문의 지역 도우미 31개(26개 선언문)를 `const {r,poly}=drawKit(q)` 형태로 바꿨고 호출처는 건드리지 않았다(`tools/refactor/draw-kit.mjs`; 컨텍스트가 대입되지 않는 const/param이고 도우미보다 먼저 선언된 경우만). sameBody 3 → 0.
+
+## F-18 직업 초상화 함수가 두 벌이다 (ui)
+`classPortrait95`(→`classPortraitCanvas`, 64px 캔버스에 직접 그림)와 `classPortrait1001`(→`classArtSpanHtml`, 스프라이트 시트를 잘라 쓰는 `<span>` HTML), `classPortraitHtml1001`이 함께 있다. 둘 다 호출처가 있어(`refreshClassPortraits95`와 직업 선택 화면) 지우지 않았다. 어느 쪽이 현재 화면에 쓰이는지, 한쪽이 폐기 후보인지 확인이 필요하다.

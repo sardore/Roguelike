@@ -1284,13 +1284,13 @@ function summonCast(name,bookId=null){
  const replacing=new Set(state.monsters.filter(m=>m.summonOwner105==='player'&&m.summonBookId105===book.summonBookId105)),cells=summonCells([recipe],replacing).filter(p=>entityDistance57(p,state.player)<=2).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player)),spot=cells.find(p=>PlacementService.monsterCanStand(recipe.entry.preview,p.x,p.y,null,{ignore:replacing}));
  if(!spot){toast('곁에 소환할 자리가 없다.');return false;}
  const act=playerAction57('summon',{uiOwner:'summonPanel105',skill:true,stunMessage:'몸이 굳어 소환하지 못했다.'});if(!act.ok)return false;
- const mon=summonNative(recipe.entry,recipe.floor),had=summonAll().some(m=>!m.summonParent105&&m.summonBookId105===book.summonBookId105);closeSummonPanel105();const snapshot=captureGenerationSnapshot();
+ const mon=summonNative(recipe.entry,recipe.floor),had=summonAll().some(m=>!m.summonParent105&&m.summonBookId105===book.summonBookId105);closeSummonPanel();const snapshot=captureGenerationSnapshot();
  try{
   summonRetire(null,summonContainers(),book.summonBookId105);for(const [key,c]of Object.entries(q.contracts))if(c.bookId105===book.summonBookId105)delete q.contracts[key];const contract=`summon-${++q.serial}-${state.turn}`,id=`${contract}-0`;q.contracts[contract]={persistent105:true,expires:null,bookId105:book.summonBookId105};
   Object.assign(mon,spot,{faction57:'player',friendly47:true,allyId53:id,summonBookId105:book.summonBookId105,summonRoot105:id,summonContract105:contract,summonOwner105:'player',summonElement105:book.summonElement105,summonPersistent105:true,summonExpire105:null,summonPictureCount105:recipe.pictureCount105,summonCombatFloor105:recipe.floor,rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'player-summon',mimicDormant105:false,dormant57:false,alerted:true,hidden:false});delete mon.allyExpireTurn47;delete mon.ttl47;
   if(mon.martialActor105)mon.dojoActorId105=id;if(!OccupancyService.addMonster(mon))throw Error('소환체 배치 계약 불일치');
  }catch(error){restoreGenerationSnapshot(snapshot);console.error('summon placement rejected',error);toast('소환하지 못했다. 기존 소환체와 체력은 유지된다.');return false;}
- state.player.hp-=cost;q.activeBook105=book.summonBookId105;book.summonRecoveryUntil105=state.turn+summonRecovery105(book.upgrade);playSummonArrival(state.player,mon);addLog(`${had?'교체 소환':'소환'} · ${mon.name} 1마리 · HP ${cost} · ${recipe.floor}층 배율 · 기운 회복 ${summonRecovery105(book.upgrade)}턴`);closeSummonPanel105();commitPlayerAction57(act,1);updateAll();return true;
+ state.player.hp-=cost;q.activeBook105=book.summonBookId105;book.summonRecoveryUntil105=state.turn+summonRecovery105(book.upgrade);playSummonArrival(state.player,mon);addLog(`${had?'교체 소환':'소환'} · ${mon.name} 1마리 · HP ${cost} · ${recipe.floor}층 배율 · 기운 회복 ${summonRecovery105(book.upgrade)}턴`);closeSummonPanel();commitPlayerAction57(act,1);updateAll();return true;
 }
 function summonInstallPicture(item,bookId){
  if(!state?.player||state.debugBattle57||!state.player.inventory.includes(item)||item.summonItem105!=='picture')return false;
@@ -1298,7 +1298,7 @@ function summonInstallPicture(item,bookId){
  const before=book.summonPictures105[entry.name]?.count||0;if(!Number.isSafeInteger(before+1))return false;
  const act=playerAction57('item',{uiOwner:'summonPanel105',allowInventory:true});if(!act.ok)return false;if(!consumeItemQuantity(item,1))return false;
  book.summonPictures105[entry.name]={count:before+1,portrait:book.summonPictures105[entry.name]?.portrait||clone(item.summonPortrait105||entry.actor||entry.def)};q.activeBook105=book.summonBookId105;
- addLog(`${entry.name} 그림을 술서에 끼웠다 · ${before+1}장 · 추가 층배율 +${before}.`);closeSummonPanel105();closeInventory();commitPlayerAction57(act,1);updateAll();return true;
+ addLog(`${entry.name} 그림을 술서에 끼웠다 · ${before+1}장 · 추가 층배율 +${before}.`);closeSummonPanel();closeInventory();commitPlayerAction57(act,1);updateAll();return true;
 }
 function summonBindTalisman(item,bookId,name=null){
  if(!state?.player||state.debugBattle57||!state.player.inventory.includes(item))return false;const q=summonState(),book=summonBook(bookId),element=summonTalismanElement105(item);if(!book||!element)return false;
@@ -1309,11 +1309,11 @@ function summonBindTalisman(item,bookId,name=null){
  const act=playerAction57('item',{uiOwner:'summonPanel105'});if(!act.ok)return false;if(!consumeItemQuantity(item,1))return false;
  if(name){book.summonPictures105[name].count++;addLog(`${item.name}의 기운으로 ${name} 그림을 한 장 더 새겼다 · ${book.summonPictures105[name].count}장.`);}
  else{book.summonElement105=element;addLog(`${item.name}를 술서에 끼웠다 · ${SUMMON_RACES[element].name} 소환.`);}
- q.activeBook105=book.summonBookId105;closeSummonPanel105();commitPlayerAction57(act,1);updateAll();return true;
+ q.activeBook105=book.summonBookId105;closeSummonPanel();commitPlayerAction57(act,1);updateAll();return true;
 }
 function summonOpen(bookId=null,mode='summon',sourceItem=null){
  if(!gameplayUiOpen57())return false;const s=summonState(),book=summonBook(bookId);if(!book){toast('행낭에 소환술서가 없다.');return false;}if(mode==='summon'&&!SUMMON_RACES[book.summonElement105])return false;s.activeBook105=book.summonBookId105;
- const all=summonAll(),remaining=Math.max(0,book.summonRecoveryUntil105-state.turn),element=book.summonElement105,race=SUMMON_RACES[element],panel=summonPanel105(mode==='copy'?'그림에 기운을 더한다':'만령 소환술서'),body=panel.querySelector('.summonBody105');
+ const all=summonAll(),remaining=Math.max(0,book.summonRecoveryUntil105-state.turn),element=book.summonElement105,race=SUMMON_RACES[element],panel=summonPanel(mode==='copy'?'그림에 기운을 더한다':'만령 소환술서'),body=panel.querySelector('.summonBody105');
  SUMMON_PANEL_SESSION105={run:state,bookId:book.summonBookId105,mode,sourceItem};panel.style.setProperty('--summon-ink105',SUMMON_COLORS[element]||'#9b8863');panel.querySelector('.summonEyebrow105').textContent=`萬靈 · ${race?race.name:'속성 미정'} · 강화 +${book.upgrade}`;
  const stats=document.createElement('div');stats.className='summonStats105';for(const [label,value]of [['소모 체력',`HP ${summonHpCost(null,book.upgrade)} / ${state.player.classId==='summoner'?'현재 '+state.player.hp:'최대 '+state.player.maxHp}`],['이 책의 영',all.find(m=>!m.summonParent105&&m.summonBookId105===book.summonBookId105)?.name||'없음'],['추가 소환',`${summonChildCount(book.summonBookId105,all)} / ${summonChildLimit(book.summonBookId105)}마리`],['이 술서의 기운',remaining?`${remaining}턴 남음`:'준비 완료']]){const d=document.createElement('div'),k=document.createElement('span'),v=document.createElement('b');k.textContent=label;v.textContent=value;v.className='summonReady105';d.append(k,v);stats.append(d);}body.append(stats);
  if(mode==='summon'){
@@ -1325,7 +1325,7 @@ function summonOpen(bookId=null,mode='summon',sourceItem=null){
  for(const r of recipes){
   const native=branchCombatFloor105(),disabled=mode==='copy'?!sourceItem||!state.player.inventory.includes(sourceItem)||summonTalismanElement105(sourceItem)!==element:!!remaining||state.player.hp<=summonHpCost(null,book.upgrade);
   const hint=mode==='copy'?`${r.pictureCount105}장 → ${r.pictureCount105+1}장 · 추가 층배율 +${r.pictureCount105}`:`그림 ${r.pictureCount105}장 · ${native} + ${r.pictureCount105-1} = ${r.floor}층 배율${remaining?' · 기운 회복 중':state.player.hp<=summonHpCost(null,book.upgrade)?' · 체력 부족':''}`;
-  const b=summonChoice105(list,r.entry.name,hint,summonPictureItem(r.entry.name,r.entry.portrait105||r.entry.actor||r.entry.def,r.pictureCount105),()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:mode==='copy'?'SUMMON_TALISMAN105':'SUMMON_CAST105',args:mode==='copy'?[sourceItem,book.summonBookId105,r.entry.name]:[r.entry.name,book.summonBookId105]});},disabled);b.dataset.summonSpecies=r.entry.name;b.dataset.pictureCount=r.pictureCount105;b.dataset.pictureGrade=summonPictureGrade(r.pictureCount105);
+  const b=summonChoice(list,r.entry.name,hint,summonPictureItem(r.entry.name,r.entry.portrait105||r.entry.actor||r.entry.def,r.pictureCount105),()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:mode==='copy'?'SUMMON_TALISMAN105':'SUMMON_CAST105',args:mode==='copy'?[sourceItem,book.summonBookId105,r.entry.name]:[r.entry.name,book.summonBookId105]});},disabled);b.dataset.summonSpecies=r.entry.name;b.dataset.pictureCount=r.pictureCount105;b.dataset.pictureGrade=summonPictureGrade(r.pictureCount105);
  }
  if(!recipes.length){const empty=document.createElement('p');empty.className='summonEmpty105';empty.textContent=mode==='copy'?'이 종족의 끼운 그림이 없다. 부적은 소모되지 않는다.':race?'이 종족의 그림을 먼저 끼우자. 다른 종족의 그림도 책에 보관할 수 있다.':'그림은 부적의 속성과 관계없이 끼워 둘 수 있다.';list.append(empty);}
  const footer=document.createElement('footer');footer.className='summonFoot105';const note=document.createElement('p');note.textContent=mode==='copy'?'선택을 마치면 부적 1장만 소모한다. 취소하면 그대로 남는다.':`책마다 직접 소환 1마리 · 영의 추가 소환 최대 ${summonChildLimit(book.summonBookId105)}마리 · 지속시간 무제한 · 이 책으로 새 소환 성공 시 교체. 추가 그림은 다음 소환부터 적용. 같은 속성부적을 다시 끼우면 그림 복제. 기운 회복은 책마다 따로 기본 72턴. 강화 +${book.upgrade}: HP ${summonHpCost(null,book.upgrade)}, 기운 회복 ${summonRecovery105(book.upgrade)}턴.`;footer.append(note);body.append(footer);
@@ -1333,15 +1333,15 @@ function summonOpen(bookId=null,mode='summon',sourceItem=null){
 }
 function summonOpenMaterials(bookId,kind){
  if(!gameplayUiOpen57())return false;summonState();const book=summonBook(bookId);if(!book)return false;
- const panel=summonPanel105(kind==='picture'?'그림을 끼운다':'부적을 끼운다'),body=panel.querySelector('.summonBody105'),list=document.createElement('div');list.className='summonPictures105';body.append(list);SUMMON_PANEL_SESSION105={run:state,bookId,mode:kind};
+ const panel=summonPanel(kind==='picture'?'그림을 끼운다':'부적을 끼운다'),body=panel.querySelector('.summonBody105'),list=document.createElement('div');list.className='summonPictures105';body.append(list);SUMMON_PANEL_SESSION105={run:state,bookId,mode:kind};
  const items=state.player.inventory.filter(i=>kind==='picture'?i.summonItem105==='picture':!!summonTalismanElement105(i));
- for(const item of items){const element=summonTalismanElement105(item),same=element&&book.summonElement105===element;const b=summonChoice105(list,item.name,kind==='picture'?`보유 ${itemQuantity(item)}장 · 한 장을 끼운다`:`${SUMMON_RACES[element].name} · ${same?'끼운 그림 하나에 기운을 더한다':'책의 종족을 바꾼다'} · 1장 소모`,item,()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:kind==='picture'?'SUMMON_PICTURE105':'SUMMON_TALISMAN105',args:[item,bookId]});});b.dataset.summonMaterial=kind;b.dataset.summonMaterialName=item.name;}
+ for(const item of items){const element=summonTalismanElement105(item),same=element&&book.summonElement105===element;const b=summonChoice(list,item.name,kind==='picture'?`보유 ${itemQuantity(item)}장 · 한 장을 끼운다`:`${SUMMON_RACES[element].name} · ${same?'끼운 그림 하나에 기운을 더한다':'책의 종족을 바꾼다'} · 1장 소모`,item,()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:kind==='picture'?'SUMMON_PICTURE105':'SUMMON_TALISMAN105',args:[item,bookId]});});b.dataset.summonMaterial=kind;b.dataset.summonMaterialName=item.name;}
  if(!items.length){const empty=document.createElement('p');empty.className='summonEmpty105';empty.textContent=kind==='picture'?`행낭에 그림이 없다. 술서를 지니고 같은 적을 기본 ${SUMMON_RULES.pictureKills}회, 테마 후반 일반 적은 ${SUMMON_RULES.latePictureKills}회 처치하자.`:'행낭에 끼울 속성부적이 없다.';list.append(empty);}const back=document.createElement('button');back.textContent='책으로 돌아간다';back.onclick=()=>summonOpen(bookId);body.append(back);return true;
 }
 function summonUse(item,idx){
  if(item.summonItem105==='book'){summonState();return summonOpen(item.summonBookId105);}
  if(item.summonItem105!=='picture')return false;summonState();const books=state.player.inventory.filter(i=>i.summonItem105==='book');if(!books.length){toast('그림을 끼울 소환술서가 없다.');return false;}
  if(books.length===1)return summonInstallPicture(item,books[0].summonBookId105);
- const panel=summonPanel105('그림을 끼울 술서를 고른다'),body=panel.querySelector('.summonBody105');for(const book of books)summonChoice105(body,`${book.name} +${book.upgrade}`,SUMMON_RACES[book.summonElement105]?.name||'속성 미정',book,()=>ActionDispatcher.dispatch({type:'SUMMON_PICTURE105',args:[item,book.summonBookId105]}));return true;
+ const panel=summonPanel('그림을 끼울 술서를 고른다'),body=panel.querySelector('.summonBody105');for(const book of books)summonChoice(body,`${book.name} +${book.upgrade}`,SUMMON_RACES[book.summonElement105]?.name||'속성 미정',book,()=>ActionDispatcher.dispatch({type:'SUMMON_PICTURE105',args:[item,book.summonBookId105]}));return true;
 }
 function summonShortcutBooks(){if(!state?.player)return [];summonState();return state.player.inventory.filter(i=>i.summonItem105==='book').sort((a,b)=>b.upgrade-a.upgrade||a.summonBookId105.localeCompare(b.summonBookId105,undefined,{numeric:true}));}

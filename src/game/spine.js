@@ -215,47 +215,27 @@ const INPUT={held:new Set(),nextMoveAt:0};
 function clearHeldInput53(){globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia?.();if(typeof RuntimeState!=='undefined'&&RuntimeState.input?.qHold61){clearTimeout(RuntimeState.input.qHold61.timer);RuntimeState.input.qHold61=null;}INPUT.held.clear();INPUT.nextMoveAt=0;globalThis.__MANRU_RUNTIME81__?.stopHeld?.()}
 
 function actionTargetOpen56(){return interactionActive8('potionTargetHud')||interactionActive8('talismanTarget56')||interactionActive8('foodTarget57')||worldTargetActive57()}
-function exclusiveGameplayInput56(){return storyInputOpen()||actionTargetOpen56()}
+
 
 
 function endTargetInput57(ms=320){targetFollowupSuppressUntil=Math.max(targetFollowupSuppressUntil,performance.now()+Math.max(0,ms));clearHeldInput53();touchStart=null;return targetFollowupSuppressUntil}
 
-function syncWorldTargetInput57(){const input=document.getElementById('runtimeInput81');if(input)input.style.pointerEvents=actionTargetOpen56()?'none':'auto'}
-function ensureWorldTarget57(){
-  let h=document.getElementById('worldTarget57');if(h)return h;
-  h=document.createElement('div');h.id='worldTarget57';h.innerHTML='<div><b id="worldTargetTitle57">목표 지정</b><span id="worldTargetText57">이동할 곳을 골라라.</span></div><button id="worldTargetCancel57">취소</button>';document.body.appendChild(h);
-  h.querySelector('#worldTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};return h;
-}
+
+
 function worldTargetActive57(){return !!WORLD_TARGET}
 
-function beginWorldTarget57(cfg={}){
-  if(!state||runState57()!=='playing'||WORLD_TARGET||!Array.isArray(cfg.cells)||!cfg.cells.length)return false;
-  cancelAutoWalk();clearHeldInput53();const h=ensureWorldTarget57(),cells=cfg.cells.map(v=>({...v})),byKey=new Map(cells.map(v=>[k(v.x,v.y),v]));
-  WORLD_TARGET={kind:cfg.kind||'world',title:cfg.title||'목표 지정',text:cfg.text||'목표 칸을 골라라.',range:cfg.range||0,cells,byKey,onPick:cfg.onPick||null,onCancel:cfg.onCancel||null,meta:cfg.meta||null};
-  document.getElementById('worldTargetTitle57').textContent=WORLD_TARGET.title;document.getElementById('worldTargetText57').textContent=WORLD_TARGET.text;h.classList.add('show');syncWorldTargetInput57();
-  if(cfg.toast)toast(cfg.toast);drawMap(true);return true;
-}
-function cancelWorldTarget57(silent=false){
-  const t=WORLD_TARGET;if(!t)return false;WORLD_TARGET=null;ensureWorldTarget57().classList.remove('show');syncWorldTargetInput57();endTargetInput57(260);try{t.onCancel?.()}catch(e){console.warn('[world-target cancel]',e)}if(!silent)toast('목표 지정을 취소했다.');drawMap(true);return true;
-}
-function finishWorldTarget57(cell,source='pointer'){
-  const t=WORLD_TARGET;if(!t||!cell)return false;const live=t.byKey.get(k(cell.x,cell.y));if(!live){toast('선택할 수 없는 칸이다.');return false}
-  let ok=false;try{ok=t.onPick?.({...live},source)!==false}catch(e){console.error('[world-target pick]',e);ok=false}if(!ok)return false;
-  WORLD_TARGET=null;ensureWorldTarget57().classList.remove('show');syncWorldTargetInput57();endTargetInput57(300);drawMap(true);return true;
-}
+
+
+
 function worldTargetDirection57(dx,dy){
   const t=WORLD_TARGET;if(!t)return false;dx=Math.sign(dx);dy=Math.sign(dy);if(!dx&&!dy)return false;
   const pool=t.cells.filter(v=>Math.sign(v.dx??(v.x-state.player.x))===dx&&Math.sign(v.dy??(v.y-state.player.y))===dy);if(!pool.length){toast('그 방향에는 점멸할 칸이 없다.');return true}
-  pool.sort((a,b)=>(b.dist??entityDistance57(b,state.player))-(a.dist??entityDistance57(a,state.player)));return finishWorldTarget57(pool[0],'direction');
+  pool.sort((a,b)=>(b.dist??entityDistance57(b,state.player))-(a.dist??entityDistance57(a,state.player)));return finishWorldTarget(pool[0],'direction');
 }
 
 
-function heldInputBlocked53(){return !gameplayInputAllowed57()||document.hidden||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)}
-function advanceHeldInput53(now=performance.now()){
- if(heldInputBlocked53()){clearHeldInput53();return false}
- const key=[...INPUT.held].pop(),d=MOVE_KEYS[key];if(!d||now<INPUT.nextMoveAt)return false;
- INPUT.nextMoveAt=now+Math.max(125,movementInterval());ClientEnvironment.emit({type:'MOVE',dx:d[0],dy:d[1],source:'keyboard-hold'});return true;
-}
+
+
 window.addEventListener('blur',clearHeldInput53);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
 const VIS={playerX:0,playerY:0,last:performance.now(),camX:0,camY:0,camInit:false};
@@ -311,15 +291,7 @@ function displayCombatText58(value){
 }
 function displayNumber53(value){const n=Number(value);return Number.isFinite(n)?String(Number(n.toFixed(2))):'—'}
 function displayText53(value){return String(value).replace(/-?\d+\.\d{3,}(?:e[+-]?\d+)?/gi,n=>displayNumber53(n))}
-function floatText(x,y,text,color="#ffffff",size=13,element=null){
-  const elementColor=element&&ELEMENT_FX_COLORS105[element];
-  if(elementColor)color=elementColor;
-  text=displayCombatText58(text);
-  const dmg=/^-\d+/.test(text),n=dmg?Math.max(14,size):size;
-  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now(),life:dmg?820:720});
-  const feed=dmg&&state?document.getElementById('mfHitFeed'):null;
-  if(feed){const hurt=x===state.player.x&&y===state.player.y,d=document.createElement('div');d.className=`mfHit ${hurt?'hurt':''}`;d.textContent=`${hurt?'피격':'타격'} ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
-}
+
 function burst(x,y,color="#ffffff",count=9,power=1){
   const now=performance.now();
   for(let i=0;i<count;i++){
@@ -889,9 +861,9 @@ function gameplayPanels57(){return[
   {id:'potionTargetHud',css:'show',kind:'targeting',close:globalThis.__MANRU_POTION41_ACTIONS__?.cancelTarget},
   {id:'talismanTarget56',css:'show',kind:'targeting',close:clearTalismanInput57},
   {id:'foodTarget57',css:'show',kind:'targeting',close:cancelFoodTarget},
-  {id:'anvilPanel105',kind:'modal',close:closeAnvil105},
-  {id:'summonPanel105',kind:'modal',close:closeSummonPanel105},
-  {id:'worldTarget57',css:'show',kind:'targeting',close:cancelWorldTarget57}
+  {id:'anvilPanel105',kind:'modal',close:closeAnvil},
+  {id:'summonPanel105',kind:'modal',close:closeSummonPanel},
+  {id:'worldTarget57',css:'show',kind:'targeting',close:cancelWorldTarget}
 ]}
 function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
 function interactionActive8(id){
@@ -904,18 +876,9 @@ function interactionActive8(id){
   if(id==='rc70')return !!RuntimeState.ui.release?.panelOpen;
   return RuntimeState.ui.sessions.has(id);
 }
-function setInteraction8(id,active){if(active)RuntimeState.ui.sessions.add(id);else RuntimeState.ui.sessions.delete(id);projectInteractionUI8()}
-function projectInteractionUI8(){
-  for(const panel of gameplayPanels57()){
-    const active=interactionActive8(panel.id),element=document.getElementById(panel.id);
-    if(panel.css&&element){element.classList.toggle(panel.css,active);element.style.removeProperty('display')}if(panel.body)document.body.classList.toggle(panel.body,active);
-    const display={inventory:'block',martialPanel:'block',helpPanel:'block',cipherPanel:'flex'}[panel.id];if(element&&display){element.style.display=active?display:'none';if(panel.id==='inventory')element.classList.toggle('open',active)}
-  }
-  document.getElementById('mapGenerationNotice57')?.classList.toggle('show',RuntimeState.ui.generationPending);
-  document.body.classList.toggle('manru-inspect-open',interactionActive8('mobileInspect'));
-  document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0);syncWorldTargetInput57();
-}
-function setGenerationPresentation8(active){RuntimeState.ui.generationPending=active;projectInteractionUI8()}
+function setInteraction8(id,active){if(active)RuntimeState.ui.sessions.add(id);else RuntimeState.ui.sessions.delete(id);projectInteractionUI()}
+
+function setGenerationPresentation8(active){RuntimeState.ui.generationPending=active;projectInteractionUI()}
 function activeGameplayPanels57(){return gameplayPanels57().filter(panel=>interactionActive8(panel.id))}
 function gameplayInputOwner57(){
   if(runState57()!=='playing')return{kind:'terminal',panels:[]};const panels=activeGameplayPanels57();
@@ -935,12 +898,12 @@ function dismissGameplayInput57(all=false){
   const panels=activeGameplayPanels57();if(!panels.length)return false;
   for(const panel of all?panels:[panels[panels.length-1]])panel.close?.(true);clearHeldInput53();return true
 }
-function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI8();return true}
+function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
 const INPUT_PRIORITY57=Object.freeze(['fatal/blocking','modal/dialogue','targeting','special interaction','gameplay HUD','canvas/world','gameplay keyboard','passive shortcut']);
 const INPUT_COMMANDS57=Object.freeze(['MOVE','ATTACK','REST','PICKUP','CONTEXT_ACTION','DESCEND','BLINK','CLASS_SKILL','OPEN_MARTIAL','TOGGLE_SKILL_QUICK','QUICK_MARTIAL','OPEN_SUMMON105','TOGGLE_INVENTORY','TOGGLE_HELP','OPEN_MOBILE_DRAWER','OPEN_MAP','AUTO_EXPLORE','TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','MODAL_CANCEL','WORLD_SELECT','WORLD_INSPECT','CAMERA_PAN','CAMERA_ZOOM','CAMERA_CENTER','CLOSE_DOOR','QUICK_SLOT','TOGGLE_RELEASE','TOGGLE_SFX','STORY_OPEN_NOTE','STORY_SELECT_ENDING','STORY_CONFIRM_ENDING','STORY_CONTINUE','CIPHER_DIGIT','CIPHER_CLEAR','SAVE','LOAD']);
 const INPUT_ROUTER57_AUDIT={serial:0,handled:0,blocked:0,ignored:0,handledCommands:{},attempts:{},history:[],listeners:new Set()};
 
-const CLIENT_GAMEPLAY_COMMANDS9=Object.freeze(new Set(['MOVE','ATTACK','REST','PICKUP','CONTEXT_ACTION','DESCEND','BLINK','CLASS_SKILL','OPEN_MARTIAL','TOGGLE_SKILL_QUICK','QUICK_MARTIAL','AUTO_EXPLORE','TARGET_MOVE','TARGET_CONFIRM','WORLD_SELECT','WORLD_INSPECT','CAMERA_PAN','CAMERA_ZOOM','CAMERA_CENTER','CLOSE_DOOR','QUICK_SLOT']));
+
 function clientCommand9(client,command){
   const audit=RuntimeState.client[client.kind];
   if(!client.active()){audit.inactiveAttempts++;return{command:command?.type||'UNKNOWN',source:command?.source||'unknown',status:'ignored',owner:'inactive-client',consumed:false}}
@@ -992,7 +955,7 @@ const MobileClient=Object.freeze({
 });
 const OrientationGate=Object.freeze({
   active(){return false},
-  blocks(command){return this.active()&&runState57()==='playing'&&CLIENT_GAMEPLAY_COMMANDS9.has(command?.type)},
+  blocks(command){return this.active()&&runState57()==='playing'&&CLIENT_GAMEPLAY_COMMANDS.has(command?.type)},
   project(){
     const active=this.active()&&runState57()==='playing',overlay=document.getElementById('orientationGate9');
     document.body.classList.toggle('orientation-gate9',active);if(overlay){overlay.hidden=!active;overlay.setAttribute('aria-hidden',String(!active))}return active;
@@ -1054,7 +1017,7 @@ const ActionDispatcher=Object.freeze({
       else if(type==='TARGET_CONFIRM'){
         const q=command.cell,potion=globalThis.__MANRU_POTION41_ACTIONS__,fusion=globalThis.__MANRU_TALISMAN74_ACTIONS__,talisman=globalThis.__MANRU_CONSUMABLE56_ACTIONS__;
         if(!q){result.attempted=false;result.reason='missing-cell'}
-        else if(worldTargetActive57())result.value=finishWorldTarget57(q,command.source||'pointer');
+        else if(worldTargetActive57())result.value=finishWorldTarget(q,command.source||'pointer');
         else if(potion?.target?.())result.value=!!potion.throwAt?.(q.x,q.y);
         else if(fusion?.target?.())result.value=!!fusion.castTarget?.(q.x,q.y);
         else if(talisman?.target?.())result.value=!!talisman.castTarget?.(q.x,q.y);
@@ -1721,12 +1684,9 @@ function applyCombatDebuffStats57(stats,actor=state?.player){
 }
 
 
-function debuffDetailHtml57(){const rows=playerDebuffRows();return rows.length?rows.map(r=>`<b style="color:${r.color}">${combatStatusIconHtml57(r)} ${r.label} ${r.turns}</b> · ${r.effect}`).join('<br>'):'현재 디버프 없음.'}
-function ensureDebuffHud57(){
-  let hud=document.getElementById('debuffHud57');if(hud)return hud;hud=document.createElement('div');hud.id='debuffHud57';document.body.appendChild(hud);
-  return hud
-}
-function updateDebuffHud57(){const hud=ensureDebuffHud57(),rows=playerDebuffRows();if(bodyPowerActive())rows.unshift({label:'괴력',turns:state.player.classState.powerTurns});hud.classList.toggle('show',rows.length>0);hud.innerHTML=rows.map(r=>`<span${r.color?` style="color:${r.color};border-color:${r.color}"`:''}>${combatStatusIconHtml57(r)}${r.label} ${r.turns}</span>`).join('');return rows.length}
+
+
+
 
 
 /* R58 canonical semantic policies: one owner for tool-breakable furniture and one turn-owned jar gas field. */
@@ -1805,20 +1765,7 @@ function releaseTerrainUnderlay58(x,y,fallback=TT.FLOOR){
   const base=terrainSurface58(exact)?exact:terrainSurface58(fallback)?fallback:inferTerrainUnderlay58(x,y);
   delete layers.underlay[key];delete layers.attachment[key];return base;
 }
-function normalizeTerrainUnderlays58(){
-  if(!state?.map)return 0;const layers=terrainMapLayers58(state.map),cat=terrainLayerCatalog58();let recovered=0;
-  for(let y=0;y<state.map.length;y++)for(let x=0;x<state.map[y].length;x++){
-    const key=k(x,y),tile=state.map[y][x];if(!cat.overlays.has(tile)){delete layers.underlay[key];delete layers.attachment[key];continue}
-    const entrance=(state.rumorSpaces1030||[]).find(r=>r.revealed&&!r.opened&&r.entry?.x===x&&r.entry?.y===y);
-    if(entrance&&[TT.SCREEN,TT.RACK,TT.WINDOW].includes(tile)){layers.underlay[key]=TT.WALL;layers.attachment[key]='secret-wall';continue}
-    if(tile===TT.WALL_BANNER){layers.underlay[key]=TT.WALL;layers.attachment[key]='wall';continue}
-    let mode=layers.attachment[key],base=layers.underlay[key];
-    if(!mode){mode=cat.wallOverlays.has(tile)&&base===TT.WALL?'wall':'standing';layers.attachment[key]=mode}
-    const valid=mode==='wall'?cat.wallOverlays.has(tile)&&base===TT.WALL:mode==='standing'&&terrainSurface58(base);
-    if(!valid){layers.attachment[key]='standing';layers.underlay[key]=inferTerrainUnderlay58(x,y,tile);recovered++}
-  }
-  state.terrainUnderlayVersion58=2;RuntimeState.persistence.terrainRecovery58={recovered,method:'legacy-room-or-adjacent-surface',exactOriginalRecoverable:false};return recovered;
-}
+
 function terrainBaseTile58(x,y,tile=state?.map?.[y]?.[x]){return terrainLayerCatalog58().overlays.has(tile)?terrainUnderlayAt58(x,y)??TT.FLOOR:tile}
 function validateTerrainUnderlays58(){
  if(!state?.map)return true;const layers=terrainMapLayers58(state.map),cat=terrainLayerCatalog58();
@@ -1899,7 +1846,7 @@ function combatTerrainTargetCheckR8(target,range=weaponRange()){
 
 
 
-function movementInterval(){return 105}
+
 
 function canMoveGroundItem57(it,x,y){
   if(!state||!it||x<0||y<0||x>=COLS||y>=ROWS)return false;
@@ -1927,11 +1874,8 @@ function terrainName(t){if(t===TT.WATER)return'깊은 물 · 인접 뭍 없으�
 ]).get(t)||'지형'}
 
 
-function runAutoPath(path,meta={}){return Auto81.startPath(path,meta)}
-function showBossIntro(mon){
-  const box=document.getElementById('bossIntro');if(!box||!mon)return;vfVibrate(HAPTIC_PATTERN57.boss);clearTimeout(bossIntroTimer);document.getElementById('bossIntroName').textContent=mon.name;document.getElementById('bossIntroFloor').textContent=`제 ${String(state.floor).padStart(2,'0')}층`;box.classList.add('show');bossIntroTimer=setTimeout(()=>box.classList.remove('show'),1900);
-  globalThis.__MANRU_SFX54__?.play?.('boss');const rule=document.getElementById('bossRule54');if(rule){rule.textContent=mon.bossPattern==='master'?'최종전 · 금빛 부채꼴을 피하고 사념체를 파괴하라':'보스 규칙을 읽고 예고 칸을 피하라';rule.classList.add('show');setTimeout(()=>{if(!state?.monsters?.some(m=>m.intent54))rule.classList.remove('show')},1700)}
-}
+
+
 
 function regionFor(floor){
   return REGIONS.find(r=>floor>=r[0] && floor<=r[1]) || REGIONS[0];
@@ -1947,14 +1891,7 @@ function hudLocation58(){
  return{kind:'normal',floor:String(state.floor).padStart(2,'0'),tag:'',desktop:`제 ${String(state.floor).padStart(2,'0')}층 / 25`,full:state.layoutName||regionFor(state.floor)[2]};
 }
 
-function toast(msg){
-  msg=sanitize56(msg);
-  const t = document.getElementById("toast");
-  t.textContent = displayText53(msg);
-  t.style.opacity = 1;
-  clearTimeout(t._tm);
-  t._tm = setTimeout(()=>t.style.opacity=0, 1300);
-}
+
 
 function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!isPotionKnownByPlayer(p))identifyPotion(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
 function logWithCategory(msg){writeLogLine(msg);if(state){const [kind,ico]=cls(msg);meta.unshift({msg,kind,ico,turn:state.turn});if(meta.length>50)meta.length=50}}
@@ -2105,8 +2042,8 @@ function spawnNamed(...a){return configureMonsterTraits(placeNamedMonster(...a))
 function placeNamedMonster(name,pos=null,opts={}){const d=opts.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(opts.legendDungeon47).find(x=>x.name===name):MONSTERS.find(x=>x.name===name);if(!d)return null;const mon=scaledMonster(d,opts.combatFloor??branchCombatFloor105()),point=PlacementService.findMonster(mon,{placementMode:pos?'exact':'floor',...opts,origin:opts.origin||pos||state.player});if(!point)return null;mon.x=point.x;mon.y=point.y;mon.spawnProvenance57=opts.provenance||'generation';OccupancyService.addMonster(mon);return mon}
 
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
-function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan105();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen8();updateAll()}
-function projectRunningScreen8(){document.body.classList.add('run-active');const overlay=document.getElementById('overlay');if(overlay)overlay.style.display='none'}
+function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan105();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
+
 function peachTerrain53(){
  if(!state||state.floor<6||state.floor>10||state.artifactDungeon46)return TT.PEACH_TREE;
  const budget=state.peachGeneration53||(state.peachGeneration53={limit:1+(globalThis.__MANRU_RANDOM57__()<.35?1:0),reserved:0});
@@ -2227,7 +2164,7 @@ function adjacentBranchPortal105(){
   return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;
 }
 function contextAction(){
-  const stock=state?.player&&ShopMapBuilder.groundAt(state.player.x,state.player.y);if(stock)return gameplayInputAllowed57()&&openShop58(stock);
+  const stock=state?.player&&ShopMapBuilder.groundAt(state.player.x,state.player.y);if(stock)return gameplayInputAllowed57()&&openShop(stock);
   const merchant=adjacentMerchant58();if(merchant)return interactNeutral58(merchant);
   const act=playerAction57('context',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;
   const bed=dojoAdjacentBed105();if(bed)return dojoUseBed105(bed,act);
@@ -2238,7 +2175,7 @@ function contextAction(){
   const branch=adjacentBranchPortal105();if(branch){if(branchTransition105(branch)){WorldTransition57.commit(act,1);return true}return false}
   if(state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return}
   if((state.items||[]).some(it=>it.x===state.player.x&&it.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return}
-  const anvil=citadelAdjacentAnvil105();if(anvil)return anvilOpen105(anvil);
+  const anvil=citadelAdjacentAnvil105();if(anvil)return anvilOpen(anvil);
   const pushable=adjacentPushable105();if(pushable){if(pushStructure105(pushable)){commitPlayerAction57(act,1);return true}toast('앞칸이 막혔거나 통로를 봉쇄하게 되어 밀 수 없다.');return false}
   const p=state.player,f=p.facing||{x:0,y:-1},jx=p.x+f.x,jy=p.y+f.y;if(state.map[jy]?.[jx]===TT.JAR&&!findMonsterAt(jx,jy)){state._manualTerrainTargetR8={type:'jar',x:jx,y:jy};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}
   const doorHook=globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__;if(typeof doorHook==='function'&&doorHook())return true;
@@ -2328,11 +2265,11 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 
 
 
-function closeCipher(){cipherOpen=false;const p=document.getElementById('cipherPanel');if(p)p.style.display='none';globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.()}
+
 function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
-function renderCipherPanel(){const box=document.getElementById('cipherPanel');if(!box||!state?.cipher)return;const c=state.cipher;box.innerHTML=`<div class="cipherSheet"><span class="uiCorners63" aria-hidden="true"></span><div class="cipherHead"><div><b>성채 도개교 암호</b><small>숫자 1~5 · O=자리/숫자 일치 · P=숫자만 존재 · X=없음<br>한 번 제출할 때마다 1턴이 흐른다.</small></div><button class="uxClose" id="cipherClose" aria-label="닫기">×</button></div><div class="cipherDisplay">${Array.from({length:5},(_,i)=>`<div class="cipherDigit ${c.guess[i]?'':'empty'}">${c.guess[i]||'·'}</div>`).join('')}</div><div class="cipherKeys">${[1,2,3,4,5].map(n=>`<button data-cnum="${n}">${n}</button>`).join('')}</div><div class="cipherActions"><button id="cipherClear">지우기</button><button id="cipherSubmit">제출</button></div><div class="cipherHistory">${c.history.slice().reverse().map(h=>`<div class="cipherTry"><b>${h.guess.join('')}</b><span>${h.result.map(v=>`<b class="${v}">${v}</b>`).join(' ')}</span></div>`).join('')}</div></div>`;box.querySelector('#cipherClose').onclick=closeCipher;box.querySelectorAll('[data-cnum]').forEach(b=>b.onclick=()=>InputRouter.dispatch({type:'CIPHER_DIGIT',digit:+b.dataset.cnum,source:'cipher-key'}));box.querySelector('#cipherClear').onclick=()=>InputRouter.dispatch({type:'CIPHER_CLEAR',source:'cipher-clear'});box.querySelector('#cipherSubmit').onclick=ActionDispatcher.handleEvent}
+
 function editCipherGuess8(digit){if(runState57()!=='playing'||!cipherOpen||!state?.cipher)return false;const c=state.cipher;if(digit===null)c.guess=[];else{if(!Number.isInteger(digit)||digit<1||digit>5||c.guess.length>=5)return false;c.guess.push(digit)}renderCipherPanel();return true}
-function openCipher(){if(!gameplayUiOpen57())return false;if(!state?.cipher||state.cipher.solved){toast('도개교는 이미 열려 있다.');return}if(inventoryOpen)closeInventory();if(martialOpen)closeMartial();closeMobileDrawer();cipherOpen=true;renderCipherPanel();document.getElementById('cipherPanel').style.display='flex'}
+
 function submitCipher(){const act=playerAction57('cipher',{allowCipher:true,stunMessage:'몸이 굳어 암호 장치를 조작하지 못했다.'});if(!act.ok)return !!act.consumed;const c=state.cipher;if(!c||c.guess.length!==5){toast('다섯 자리를 모두 입력해야 한다.');return false}const result=cipherResult(c.secret,c.guess);c.history.push({guess:[...c.guess],result});const solved=result.every(v=>v==='O');c.guess=[];if(solved){c.solved=true;const sw=state.switches.find(v=>v.kind==='cipher');if(sw){sw.used=true;for(const t of sw.targets)if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN)}addLog('O O O O O — 자물쇠가 풀렸다. 도개교가 내려온다.');impact(sw?.x??15,sw?.y??Math.floor(ROWS/2),'#e0b266',5);closeCipher()}else{addLog(`암호 실패: ${result.join(' ')}. 성채가 침입자를 감지했다.`);if(globalThis.__MANRU_RANDOM57__()<.40)spawnNamed(globalThis.__MANRU_RANDOM57__()<.5?'경비 인형 - 보병':'성채 비행 감시자',null,{provenance:'repeatable-reinforcement'});renderCipherPanel()}commitPlayerAction57(act,1);return true}
 ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 function triggerSwitch(x,y){
@@ -2344,7 +2281,7 @@ function triggerSwitch(x,y){
 
 function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}
 function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
-function lockProgressText(){const q=globalThis.__MANRU_TYPED_KEYS__?.summary?.();if(q?.active&&q.rows?.length)return q.rows.map(r=>`${r.name} ×${r.have} · 잠금 ${r.closed}`).join(' / ');if(state?.floor===6&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]!==TT.LOCKED_GATE)return '봉인 고문서고 · 해제됨';if((state?.floorKeysRequired||0)>0)return `${legacyKeyLabel()} ${state.floorKeys||0}/${state.floorKeysRequired||0}`;return '잠금 상태 없음'}
+
 function bumpBlockedTile(x,y,actionCtx=null){if(x<0||y<0||x>=COLS||y>=ROWS)return false;const act=actionCtx||playerAction57('interact',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;const t=state.map[y][x];if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x,y};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}const branch=state.branchPortals105?.find(p=>p.x===x&&p.y===y);if(branch){toast('문 옆에서 상호작용 버튼(F)으로 출입할 수 있다.');return false}if(t===TT.BED&&branchBedData105()){const bed=dojoAdjacentBed105();if(bed?.x===x&&bed?.y===y)return dojoUseBed105(bed,act);return true;}const rumorEntrance=globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,act);if(rumorEntrance?.handled)return rumorEntrance.result;const silent=[TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW];if(silent.includes(t))return true;if(t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL){if(globalThis.__MANRU_HIDDEN60_ACTIONS__?.revealAt?.(x,y)){commitPlayerAction57(act,1);return true}}const noisy=[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR].includes(t);if(noisy)alertNearby(x,y,7);if(t===TT.HEDGE){setTerrainTile58(state.map,x,y,state.floor===24?TT.LIGHT_GRASS:TT.GRASS);burst(x,y,'#8ab36b',10,.55);addLog('울타리를 베어 통로를 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.BAMBOO){setTerrainTile58(state.map,x,y,TT.FLOOR);burst(x,y,'#7caf60',10,.55);addLog('대나무를 베어 샛길을 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE&&state?.keyPlan96&&globalThis.__MANRU_TYPED_KEYS__?.tryOpenAt){const rr=globalThis.__MANRU_TYPED_KEYS__.tryOpenAt(x,y);if(rr?.handled)return true}if(t===TT.TABLE||t===TT.SCREEN){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y)));impact(x,y,t===TT.SCREEN?'#c76858':'#9a704b',3);burst(x,y,'#b48b65',12,.9);addLog(t===TT.SCREEN?'비단 병풍을 베어 통로를 냈다.':'탁자를 부숴 길을 냈다.');if(t===TT.TABLE&&globalThis.__MANRU_RANDOM57__()<.12)dropRandomItem({x,y},false);commitPlayerAction57(act,1);return true}if(t===TT.FAKE_DOOR){setTerrainTile58(state.map,x,y,TT.WALL);doorFX(x,y);addLog('문을 밀었지만 뒤에는 차가운 벽뿐이다. 가짜 문이었다.');commitPlayerAction57(act,1);return true}if(t===TT.SECRET_DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);burst(x,y,'#d8bd77',12,.7);addLog('벽 문양이 갈라지며 숨은 문이 열렸다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE){if((state.floorKeys||0)>=(state.floorKeysRequired||0)){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);addLog(state.floor===6?'봉인 고문서고 열쇠로 문을 열었다.':'모은 열쇠로 봉쇄문을 열었다.');commitPlayerAction57(act,1)}else toast(`열쇠 ${state.floorKeys||0}/${state.floorKeysRequired||0}. 창고를 더 뒤져야 한다.`);return true}if(t===TT.PEACH_TREE){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,TT.GRASS));burst(x,y,'#e1a9a3',13,.7);giveFood('신선도',x,y);addLog('복숭아나무에서 신선도 한 알을 땄다.');commitPlayerAction57(act,1);return true}return false}
 ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
 function portalLandingValid57(link,x,y){
@@ -2397,11 +2334,11 @@ function bumpTileAction(x,y,opts={}){
   if(active&&tile===TT.COOKPOT){openCooking('pot');return true;}
   if(tile===TT.RUMOR){const record=state.branchTerrain105?.citadel105?.features105?.find(f=>f.x===x&&f.y===y&&f.theme==='archive');if(record&&state.branchContext105?.id==='citadel'){const district=CITADEL_TOWERS105[record.tower105].district105,release=CITADEL_RELEASES105.find(r=>CITADEL_TOWERS105[r.tower].district105===district&&r.key!=='central-shortcut');addLog(release?`성채 기록: ${CITADEL_TOWERS105[release.tower].name} ${release.level}층에서 ${release.targetLevel}층 ${release.label}의 걸쇠를 풀 수 있다.`:'성채 기록: 동쪽 상층 연결교를 따라 중앙탑 4층에 진입한 뒤 최하층으로 내려가라.');addLog('미궁 기록: 세 걸쇠의 순서는 자유다. 두 등불은 불로 켜고, 동쪽 바위는 옆 피난길에서 돌을 던져 풀어라. 내측 철창은 빠르지만 5턴 뒤 닫힌다.');}else rumorEvent();setTerrainTile58(state.map,x,y,TT.FLOOR);return true;}
   if(tile===TT.TRAP){trapEvent(x,y);return true;}
-  if(active&&citadelAnvilAt105(x,y))return anvilOpen105({x,y});
+  if(active&&citadelAnvilAt105(x,y))return anvilOpen({x,y});
   if(active&&tile===TT.ARMORY){armoryEvent(x,y);return true;}
   if(active&&tile===TT.FOUNTAIN){fountainEvent(x,y);return true;}
   if(tile===TT.MIRROR){mirrorEvent(x,y);return true;}
-  if(active&&tile===TT.ALTAR){if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1){const d=state.branchTerrain105?.citadel105;if(x===d?.reward?.x&&y===d?.reward?.y)return citadelReward105();if(x===d?.trial105?.start.x&&y===d?.trial105?.start.y){if(cause==='interact')return citadelTrialBegin105();if(cause==='walk')toast('미궁 입구. 보급을 챙긴 뒤 상호작용으로 시험을 시작한다.');return false;}}altarEvent(x,y);return true;}
+  if(active&&tile===TT.ALTAR){if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1){const d=state.branchTerrain105?.citadel105;if(x===d?.reward?.x&&y===d?.reward?.y)return citadelReward();if(x===d?.trial105?.start.x&&y===d?.trial105?.start.y){if(cause==='interact')return citadelTrialBegin105();if(cause==='walk')toast('미궁 입구. 보급을 챙긴 뒤 상호작용으로 시험을 시작한다.');return false;}}altarEvent(x,y);return true;}
   if(active&&tile===TT.VAULT){vaultEvent(x,y);return true;}
   if(tile===TT.SNARE){snareEvent(x,y);return true;}
   if(active&&tile===TT.CACHE){cacheEvent(x,y);return true;}
@@ -2461,7 +2398,7 @@ function resolvePlayerLanding57(x,y,opts={}){
   martialLanding(origin);applyJarGasEffects57();if(state.floor>=11&&(p.x!==origin.x||p.y!==origin.y)){state.recentPlayerCells57=(state.recentPlayerCells57||[]).filter(c=>(state.playerAgencyTurns57||0)-c.agency<26);state.recentPlayerCells57.push({x:p.x,y:p.y,agency:state.playerAgencyTurns57||0});if(state.recentPlayerCells57.length>64)state.recentPlayerCells57.shift()}
   if(kind){resolveSilkCrossing54(origin,cause);return{ok:!!hazardResult,moved:p.x!==origin.x||p.y!==origin.y,cause,hazard:kind,result:hazardResult,x:p.x,y:p.y}}
   if(opts.resetVisual)resetVisualState();
-  if(state.shopIntermission?.active){const stock=ShopMapBuilder.groundAt(x,y);if(stock)openShop58(stock);return{ok:true,moved:p.x!==origin.x||p.y!==origin.y,cause,entry:!!stock,x,y}}
+  if(state.shopIntermission?.active){const stock=ShopMapBuilder.groundAt(x,y);if(stock)openShop(stock);return{ok:true,moved:p.x!==origin.x||p.y!==origin.y,cause,entry:!!stock,x,y}}
   const activeInteraction=opts.activeInteraction??cause==='walk';
   if(activeInteraction&&PLAYER_ENTRY_PICKUP_FIRST57.has(tile)){
     let guard=0;while(guard++<12&&(state.items||[]).some(it=>it.x===x&&it.y===y)){
@@ -2670,7 +2607,7 @@ function useBlink(){
   if(p.blinkLevel<2){toast('청풍루 문지기를 쓰러뜨린 뒤 점멸을 얻는다.');return false}if((p.focus||0)<2){toast('점멸에는 기력 2가 필요하다.');addLog('점멸 실패: 기력이 2 미만이다.');return false}
   // 21F only: open a reusable world-cell target mode. No focus or turn is spent until a destination is confirmed.
   if(state.floor===21){const range=Math.max(1,Math.floor(p.blinkLevel||0)),cells=blinkTargetCells57(p,range);if(!cells.length){toast('점멸할 착지점이 없다.');return false}
-    return beginWorldTarget57({kind:'blink21',title:'점멸',text:`이동할 곳을 골라라 · 최대 ${range}칸 · 방향키는 해당 방향 최장거리`,range,cells,toast:'이동할 곳을 골라라.',meta:{act},onPick:(cell)=>executeBlinkTarget57(cell,{act,range})});
+    return beginWorldTarget({kind:'blink21',title:'점멸',text:`이동할 곳을 골라라 · 최대 ${range}칸 · 방향키는 해당 방향 최장거리`,range,cells,toast:'이동할 곳을 골라라.',meta:{act},onPick:(cell)=>executeBlinkTarget57(cell,{act,range})});
   }
   const f=p.facing||{x:0,y:-1},cells=blinkTargetCells57(p,p.blinkLevel),ray=cells.filter(q=>q.dx===Math.sign(f.x)&&q.dy===Math.sign(f.y)).sort((a,b)=>b.dist-a.dist),best=ray[0];if(!best){toast('점멸할 착지점이 없다.');return false}
   return executeBlinkTarget57(best,{act,range:p.blinkLevel});
@@ -2720,12 +2657,8 @@ function selectFacingAdjacentTarget57(candidates,priority=null){
 
 
 ActionDispatcher.register('ATTACK',basicAttack);
-function updateAttackButton(...args){const r=markAttackButtonAim(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r}
-function markAttackButtonAim(){
-    paintAttackButton();const b=document.getElementById('attackActionBtn');if(!b)return;
-    const valid=isAimTargetValid()&&(!!AIM_STATE.jar||bow52());b.classList.toggle('aim52',!!valid);const sm=b.querySelector('small');
-    if(valid&&sm)sm.textContent='조준';
-  }
+
+
 
 
 
@@ -2739,8 +2672,8 @@ const HAPTIC_PATTERN57=Object.freeze({
   boss:Object.freeze([36,25,82]),death:Object.freeze([75,45,125])
 });
 try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){ignoreError('haptics preference unreadable',error)}
-function vibrationEnabled57(){return HAPTIC57.enabled}
-function setVibrationEnabled57(on){HAPTIC57.enabled=!!on;try{localStorage.setItem('manruHaptics57',HAPTIC57.enabled?'1':'0')}catch(error){console.warn('[manru] haptics setting not stored',error)}return HAPTIC57.enabled}
+
+
 
 
 
@@ -2764,7 +2697,7 @@ function hostileStatusChance(baseChance,willOverride=null){
   return clamp((Number(baseChance)||0)*(6/den),0,.95);
 }
 function rollHostileStatus(baseChance){return globalThis.__MANRU_RANDOM57__()<hostileStatusChance(baseChance)}
-function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune)return false;if((opts.element==='ice'||opts.cold)&&entityElementGuard57(state.player,'ice'))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud57();return true}
+function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune)return false;if((opts.element==='ice'||opts.cold)&&entityElementGuard57(state.player,'ice'))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();return true}
 
 
 
@@ -3350,7 +3283,7 @@ function sellShop58(item){
  if(transfer.remaining){toast('엽전 엿을 받을 공간이 없다.');return{ok:false,reason:'capacity'}}
  state.player.inventory=staged;
  if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;toast('저장하지 못해 판매를 취소했다.');return{ok:false,reason:'save'}}
- renderShop58();updateAll();return{ok:true,value};
+ renderShop();updateAll();return{ok:true,value};
 }
 function shopPrice58(item){return({common:1,rare:2,relic:3,sealed:5})[item.rarity]||1}
 function shopEligible58(item,afterFloor,theme){
@@ -3422,7 +3355,7 @@ restore(){
 });
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
 function adjacentMerchant58(){return(state?.neutralInteractables58||[]).find(n=>n.kind==='merchant'&&entityDistance57(n,state.player)<=1)||null}
-function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop58();return true}
+function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop();return true}
 function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity(i),0)}
 function purchaseShop58(id){
  const shop=state?.shopIntermission;if(!shop?.active||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
@@ -3441,38 +3374,13 @@ function purchaseShop58(id){
  closeShop58();updateAll();return{ok:true,price};
 }
 ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('SHOP_SELL',sellShop58);
-function normalizeShop58(){
- const s=state.shopIntermission;if(!s){state.shopIntermission=null;state.neutralInteractables58=[];return}
- if(!s.active){state.neutralInteractables58=[];return}
- if(![5,10,15,20].includes(s.afterFloor)||s.afterFloor!==state.floor||s.nextFloor!==s.afterFloor+1||s.theme!==s.afterFloor/5-1||!Array.isArray(s.stock)||!s.merchant||!s.outer)throw new Error('invalid shop save');
- if(s.stock.some(x=>typeof x.soldOut!=='boolean'||!shopEligible58(x.item,s.afterFloor,s.theme)))throw new Error('invalid shop stock');
- if(s.version!==3){for(const row of s.stock)row.price=shopPrice58(row.item);ShopMapBuilder.build();s.version=3}
- if(s.stock.some(x=>x.price!==shopPrice58(x.item)||!Number.isInteger(x.x)||!Number.isInteger(x.y)))throw new Error('invalid shop stock placement');
- s.purchaseId=null;state.neutralInteractables58=[s.merchant];
-}
 
 
-function shopPublic58(item){
- const consumable=globalThis.__MANRU_CONSUMABLE56_ACTIONS__,talisman=globalThis.__MANRU_TALISMAN74_ACTIONS__,gear=['weapon','armor','cloak','relic','trinket'].includes(item.type);
- const known=item.type==='talisman'?talisman?.known?.(item):item.type==='potion'?consumable?.knownPotion?.(item):!gear||item.identified===true;
- const name=item.type==='talisman'?talisman?.publicName?.(item):consumable?.publicName?.(item);
- return{name:name||item.name,description:known?(item.desc||item.ability||''):'미감정 물품 · 교환해도 자동으로 감정되지 않는다.'};
-}
-function openShop58(stock=null){
- const panel=document.getElementById('shop58'),shop=state?.shopIntermission;if(!panel||!shop?.active)return false;
- if(stock&&(stock.soldOut||stock.x!==state.player.x||stock.y!==state.player.y))return false;
- if(!stock&&!adjacentMerchant58())return false;
- cancelAutoWalk();clearHeldInput53();shop.purchaseId=stock?.id||null;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();renderShop58();setInteraction8('shop58',true);globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();return true;
-}
+
+
+
 function closeShop58(){setInteraction8('shop58',false);if(state?.shopIntermission)state.shopIntermission.purchaseId=null;clearHeldInput53();globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.()}
-function renderShop58(){
- const panel=document.getElementById('shop58'),s=state?.shopIntermission;if(!panel||!s?.active)return;
- const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),purchase=s.stock.find(r=>r.id===s.purchaseId&&!r.soldOut),items=purchase?[purchase.item]:state.player.inventory;
- panel.innerHTML=`<section class="shopSheet58" role="dialog" aria-modal="true" aria-label="${purchase?'진열품 구매 확인':'내 행낭 · 물품 판매'}"><span class="uiCorners63" aria-hidden="true"></span><header><div><small>${esc(SHOP_RULES58[s.theme].room)} · ${esc(s.merchant.name)}</small><h2>${purchase?'이 물건을 살까?':'내 행낭 · 물품 판매'}</h2><p>보유 엽전 엿 <b>${shopCurrency58()}</b>개</p></div><button class="uxClose" data-shop-close aria-label="닫기">×</button></header><div class="ShopMapBuilder.stock ${purchase?'shopConfirm58':''}">${items.map((item,index)=>{const pub=shopPublic58(item),value=ShopMapBuilder.saleValue(item),enabled=!!purchase||value>0;return`<article class="shopItem58 ${enabled?'eligible':'ineligible'}"><div class="shopArt58">${globalThis.__MANRU_ITEM_ART_R7__?.iconHtml?.(item)||''}</div><div><small style="color:${rarityColor(item.rarity)}">${esc(({common:'일반',rare:'희귀',relic:'유물',sealed:'봉인'})[item.rarity]||'특수')} · ${itemQuantity(item)}개</small><h3>${esc(pub.name)}</h3><p>${esc(pub.description)}</p></div>${purchase?`<button data-shop-buy="${esc(purchase.id)}" ${shopCurrency58()<purchase.price?'disabled':''}>엽전 엿 ${purchase.price}개 지불 · 구매</button>`:`<button data-shop-sell="${index}" ${value?'':'disabled'}>${value?`1개 판매 · 엽전 엿 ${value}개 받기`:'판매 불가'}</button>`}</article>`}).join('')||'<p>행낭이 비어 있다.</p>'}</div><footer>${purchase?'구매를 확정할 때만 엽전 엿이 차감된다.':'밝게 표시된 물건만 판매 가능 · 유물 1개 / 봉인급 2개 받기'}<button data-shop-cancel>${purchase?'두고 가기':'닫기'}</button></footer></section>`;
- panel.querySelector('[data-shop-close]').onclick=closeShop58;panel.querySelector('[data-shop-cancel]').onclick=closeShop58;
- panel.querySelectorAll('[data-shop-buy]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'SHOP_BUY',args:[b.dataset.shopBuy]}).value);
- panel.querySelectorAll('[data-shop-sell]').forEach(b=>{const item=items[+b.dataset.shopSell];b.onclick=()=>ActionDispatcher.dispatch({type:'SHOP_SELL',args:[item]}).value});
-}
+
 
 
 function descend(){
@@ -3521,7 +3429,7 @@ ActionDispatcher.register('MARTIAL_MANUAL_CHOICE',chooseMartialManual);
 ActionDispatcher.register('MARTIAL',activateMartial);
 
 
-function renderMartialPanel(){const box=document.getElementById('martialPanel');if(!box||!state)return;const p=state.player;box.innerHTML=`<div class="martialHead991"><div><b>기술 강화</b><small>포인트 ${p.skillPoints} · ×로 닫기 · 기술 사용은 버튼을 짧게 눌러 실행</small></div><button class="uxClose" id="martialClose991" aria-label="닫기">×</button></div><div class="martialGrid991">${Object.entries(MARTIAL_INFO).map(([id,info])=>{const v=martialPresentation(id,info,p);return `<article data-martial-inspect="${id}" class="${martialCardClasses(id,p)}">${martialCardContent(id,p)}<button class="upgrade991" data-up991="${id}" ${p.skillPoints<=0||p.martial[id]>=martialCap(id,p)?'disabled':''}>${p.martial[id]>=martialCap(id,p)?'최대 강화':'강화 +1'}</button></article>`}).join('')}</div>`;box.querySelectorAll('[data-martial-inspect]').forEach(el=>el.oncontextmenu=e=>{e.preventDefault();const id=el.dataset.martialInspect,v=martialPresentation(id,MARTIAL_INFO[id],p);showInspect(v.name,`${p.martial[id]}단 / 상한 ${martialCap(id,p)} · ${v.type==='active'?'기력 '+v.cost:'지속 효과'}<br>${v.desc}`)});box.querySelector('#martialClose991').onclick=closeMartial;box.querySelectorAll('[data-up991]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'UPGRADE_MARTIAL',args:[b.dataset.up991]}).value)}
+
 function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
 
 
@@ -3541,43 +3449,23 @@ ActionDispatcher.register('ITEM_USE',useInventoryItem);
 
 ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
 let inventoryFiltered;
-function inventoryDetailHtml(item,idx){if(!item)return'<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>';const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type),fx=hiEffectSummary(item),desc=item.desc||'설명이 없다.';return `<div class="vfDetailTop">${vfIconHtml(item,'large')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}${item.type==='weapon'?' · TURN-BASED':''}</div></div></div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${fx}</div>`:''}<div class="desc">${desc}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`}
-function renderInventoryFallbackR34(){const box=document.getElementById('inventory');if(!box||!state)return;const p=state.player;if(inventorySelection>=p.inventory.length)inventorySelection=p.inventory.length-1;const filtered=inventoryFiltered(),selected=inventorySelection>=0?p.inventory[inventorySelection]:null;box.innerHTML=`<div class="invFrame"><div class="invTop"><div><h2>행낭</h2><small>장비는 위, 소모품은 아래. 같은 음식은 겹친다.</small></div><div class="invTopMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div></div><div class="invEquipStrip">${equipData().map(([slot,label,item,g])=>`<div class="equipSlot" data-eqslot="${slot}"><div class="ek">${label}</div><div class="ev">${item?item.name:'비어 있음'}</div><div class="eg">${g}</div></div>`).join('')}</div><div class="invBody"><div class="invBagPane"><div class="invTabs"><button class="invTab ${inventoryTab==='all'?'active':''}" data-invtab="all">전체</button><button class="invTab ${inventoryTab==='gear'?'active':''}" data-invtab="gear">장비</button><button class="invTab ${inventoryTab==='food'?'active':''}" data-invtab="food">음식</button><button class="invTab ${inventoryTab==='treasure'?'active':''}" data-invtab="treasure">유물</button></div><div class="invGrid">${filtered.length?filtered.map(({item,idx})=>`<button class="invSlot ${idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="invTier">${item.tier?`T${item.tier}`:''}</span><span class="invGlyph">${itemGlyph(item)}</span><span class="invSlotName">${item.name}</span>${(item.count||1)>1?`<span class="invCount">×${item.count}</span>`:''}</button>`).join(''):'<div class="invDetailEmpty" style="grid-column:1/-1">이 분류에는 물품이 없다.</div>'}</div></div><div class="invDetail" id="invDetail">${inventoryDetailHtml(selected,inventorySelection)}</div></div></div>`;box.querySelector('#invCloseBtn').onclick=closeInventory;box.querySelectorAll('[data-invtab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.invtab;renderInventory()});box.querySelectorAll('[data-invslot]').forEach(b=>{b.onclick=()=>{inventorySelection=+b.dataset.invslot;renderInventory()};b.ondblclick=()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invslot]}).value});box.querySelectorAll('[data-invuse]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value);box.querySelectorAll('[data-invdrop]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value);box.querySelectorAll('[data-invinspect]').forEach(b=>b.onclick=()=>{const it=p.inventory[+b.dataset.invinspect];showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)});box.querySelectorAll('[data-eqslot]').forEach(el=>{el.onclick=()=>{const it=p[el.dataset.eqslot];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)};attachLongPress(el,el.onclick)})}
+
+
 const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
 function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
-function renderInventory(...args){for(const s of INVENTORY_RENDER_R34.pre)s.fn(...args);const core=INVENTORY_RENDER_R34.core?.fn||renderInventoryFallbackR34;const result=core(...args);for(const s of INVENTORY_RENDER_R34.post)s.fn(...args);return result}
+function renderInventory(...args){for(const s of INVENTORY_RENDER_R34.pre)s.fn(...args);const core=INVENTORY_RENDER_R34.core?.fn||renderInventoryFallbackR;const result=core(...args);for(const s of INVENTORY_RENDER_R34.post)s.fn(...args);return result}
 
 
-function openInventory(){
-  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  if(cipherOpen){globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();return}
-  if(martialOpen) closeMartial();
-  inventoryOpen = true;if(inventorySelection<0&&state.player.inventory.length)inventorySelection=0;
-  renderInventory();
-  const box=document.getElementById("inventory");box.style.display="block";box.classList.add('open');
-globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
-}
-function closeInventory(){
-  inventoryOpen = false;
-  const box=document.getElementById("inventory");box.style.display="none";box.classList.remove('open');
-globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
+
+
 function toggleInventory(){
   if(!state) return;
   if(inventoryOpen) closeInventory(); else openInventory();
 }
 
-function renderHelp(){const box=document.getElementById('helpPanel');box.innerHTML=`<div class="invHeader helpHead57"><div><h2>만루 · 도움말</h2><small>ESC 또는 ?로도 닫을 수 있다.</small></div><button class="uxClose" id="helpClose57" aria-label="닫기">×</button></div><div class="helpCols"><div><h3>조작</h3><div>WASD 이동 · SPACE/J 기본 공격 · G 줍기 · F 주변 분기문 출입 · C 인접 문닫기 · E 점멸</div><div>Q 무술 메뉴 · I 인벤토리 · R 휴식</div><div>&gt; 다음 층 · K 저장 · L 불러오기</div><br><h3>성장</h3><div>Lv.1~12: 기존 성장 유지(레벨에 따라 최대 HP +1~2, 무술 포인트 +1). Lv.13~18: 최대 HP +3, 레벨업 무술 포인트 없음.</div><div>완전 턴제다. 당신이 행동할 때만 적·허기·상태가 진행된다. 무기 속도는 공격 행동의 턴 비용을 바꾼다.</div><div>ATK/DEF/EVA는 자동으로 폭증하지 않는다. 장비와 무술 선택이 핵심.</div></div><div><h3>점멸</h3><div>5층 보스: 2칸 습득</div><div>15층 보스: 3칸</div><div>20층 보스: 4칸</div><div>21층부터 공허 간격을 넘는 핵심 이동기가 된다.</div><br><h3>허기</h3><div>1 이상: 전투 능력치 패널티 없음</div><div>0: ATK -20% + 주기적 굶주림 피해</div></div></div>`;box.querySelector('#helpClose57').onclick=closeHelp}
-function openHelp(){
-  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  helpOpen = true;
-  renderHelp();
-  document.getElementById("helpPanel").style.display = "block";
-globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
-}
-function closeHelp(){
-  helpOpen = false;
-  document.getElementById("helpPanel").style.display = "none";
-globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
+
+
+
 function toggleHelp(){
   if(!state) return;
   if(helpOpen) closeHelp(); else openHelp();
@@ -3599,14 +3487,14 @@ function toggleHelp(){
 
 const RuntimeState={
   ui:{sessions:new Set(),generationPending:false,release:null,food:null,inventory:null,screen:null,storyChoice:null,storyNote:null,storyScene:null,deathCause:null},
-  interactionActive:interactionActive8,projectUI(){projectInteractionUI8();globalThis.__MANRU_STORY992__?.project?.();if(inventoryOpen)renderInventory();if(interactionActive8('shop58'))renderShop58();if(runState57()==='death')presentDeath8(RuntimeState.ui.deathCause)},
+  interactionActive:interactionActive8,projectUI(){projectInteractionUI();globalThis.__MANRU_STORY992__?.project?.();if(inventoryOpen)renderInventory();if(interactionActive8('shop58'))renderShop();if(runState57()==='death')presentDeath(RuntimeState.ui.deathCause)},
   input:{qHold61:null,classic:INPUT,router:INPUT_ROUTER57_AUDIT,device:null},action:ACTION_AUDIT5,turn:null,
   client:{initialized:false,type:null,orientation:null,orientationGate:false,selection:null,environment:null,refreshes:0,transitions:0,lastReason:'boot',desktop:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0},mobile:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0}},
   lifecycle:{phase:'no-run',generation:0,depth:0,last:null,validate:null,parse:null},
   persistence:{pending:false,last:null,history:[]},
   prepareRun(){
     RuntimeState.persistence.retiredItemMigration57=null;RuntimeState.persistence.terrainRecovery58=null;
-    RuntimeState.ui.sessions.clear();RuntimeState.ui.generationPending=false;RuntimeState.ui.storyChoice=null;RuntimeState.ui.storyNote=null;RuntimeState.ui.storyScene=null;RuntimeState.ui.deathCause=null;projectInteractionUI8();
+    RuntimeState.ui.sessions.clear();RuntimeState.ui.generationPending=false;RuntimeState.ui.storyChoice=null;RuntimeState.ui.storyNote=null;RuntimeState.ui.storyScene=null;RuntimeState.ui.deathCause=null;projectInteractionUI();
     clearHeldInput53();const device=RuntimeState.input.device;
     if(device){for(const pointer of device.pointers?.values?.()||[]){clearTimeout(pointer.holdShow);clearTimeout(pointer.holdFire)}device.pointers?.clear?.();device.gesture=null;device.mousePan=null;device.suppressClickUntil=0;device.cameraInspecting=false;}
     globalThis.__MANRU_RUNTIME81__?.stopHeld?.();globalThis.__MANRU_RUNTIME81__?.Camera81?.resume?.(false);document.body.classList.remove('camera-inspect81');return true;
@@ -3636,17 +3524,17 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 const RUN_END_EFFECTS53=[];
 function runEndEffects53(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS53)effect(kind);return true}
 
-function endScreen95(){document.body.classList.add('end-screen95');for(const id of ['coach70','toast','autoMoveChip','vfAutoState']){const n=document.getElementById(id);if(n){n.classList.remove('show');n.style.display='none'}}}
 
-function presentDeath8(by){document.getElementById('overlay').style.display='flex';const pct=Math.min(100,Math.round(state.floor/25*100));document.getElementById('card').innerHTML=`<div class="death94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">亡</div><div class="brand">만루 · 탐사 기록 종료</div><h1>등불이 꺼졌다</h1><div class="deathCause94">${by}</div><div class="deathStats94"><span><b>${state.floor}</b><small>도달 층</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:${pct}%"></i></div><p>객주의 복도 어딘가에서 감찰 기록이 끊겼다.<br>남은 등불들은 아무 일도 없었다는 듯 다시 흔들린다.</p><button class="deathRetry94" onclick="location.reload()">다시 침투</button></div>`}
 
-function presentVictory8(){document.getElementById('overlay').style.display='flex';document.getElementById('card').innerHTML=`<div class="death94 victory94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">만</div><div class="brand">만루 · 천 개의 방이 잠들다</div><h1>천 개의 방이 멎었다</h1><div class="deathCause94">만루보주 격파</div><div class="deathStats94"><span><b>25</b><small>최심부</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:100%"></i></div><p>좌우와 위아래로 뒤틀리던 객실이 처음으로 제자리에서 멎는다.<br>만루의 마지막 등불이 조용히 꺼졌다.</p><button class="deathRetry94" onclick="location.reload()">새 기록 시작</button></div>`}
+
+
+
 
 
 
 const PANEL_HOOKS54=[];
 function registerPanelHook54(id,run){if(PANEL_HOOKS54.some(h=>h.id===id))throw new Error('duplicate panel hook '+id);PANEL_HOOKS54.push({id,run})}
-function runPanelHooks54(){for(const h of PANEL_HOOKS54)h.run()}
+
 let updatePanels;
 
 
@@ -3739,11 +3627,7 @@ function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof vis
 function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeReady57())throw new ReferenceError('canonical runtime entrypoints are not initialized');runtimeLoopStarted57=1;requestAnimationFrame(visualLoop);return true}
 Object.defineProperty(globalThis,'__MANRU_RUNTIME_START57__',{value:Object.freeze({ready:runtimeReady57,start:startRuntimeLoop57,started:()=>runtimeLoopStarted57===1}),writable:false,configurable:false});
 
-function setMobileTab(tab){
-  mobileTab = tab;
-  document.querySelectorAll(".mTab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
-  renderMobileDrawer();
-}
+
 function openMobileDrawer(tab=null){
   if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
   if(tab) mobileTab = tab;
@@ -3756,63 +3640,26 @@ function closeMobileDrawer(){
 globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 
 
-function renderMobileDrawer(){if(!interactionActive8('mobileDrawer'))return;const box=document.getElementById('mobileDrawerBody');if(!box||!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),near=state.monsters.filter(isThreatVisibleToPlayer).sort((a,b)=>entityDistance57(a,p)-entityDistance57(b,p))[0];if(mobileTab==='status'){box.innerHTML=`<div class="mDrawerGrid"><div class="mCard"><h4>층 / 구역</h4><div><b>${state.artifactDungeon46?(state.artifactDungeon46.name||state.layoutName||''):`${String(state.floor).padStart(2,'0')} / 25`}</b> <span class="turnPip">T${state.turn}</span><br>${state.artifactDungeon46?'':region[2]}${state.artifactDungeon46?'':`<br><span style="color:#a38d6c">${state.layoutName||''}</span>`}</div></div><div class="mCard"><h4>성장</h4><div>LV ${p.level} · 무술 ${p.skillPoints}<br>점멸 ${p.blinkLevel?p.blinkLevel+'칸':'미습득'}</div></div><div class="mCard"><h4>생명</h4><div>HP ${displayHealth(p.hp)}/${displayHealth(p.maxHp)}<br>기력 ${displayNumber53(p.focus)}/${st.maxFocus}<br>허기 ${Math.round(p.hunger)}/125</div></div><div class="mCard"><h4>능력</h4><div>ATK ${st.atk} · DEF ${displayDef42(st.def)}<br>EVA ${st.eva} · WILL ${st.will}</div></div><div class="mCard mWide"><h4>디버프</h4><div>${debuffDetailHtml57()}</div></div><div class="mCard mWide"><h4>주변</h4><div>${near?`<b style="color:${near.color}">${near.name}</b> · HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)}`:'주변 적 없음'}</div></div><div class="mCard mWide"><h4>지형</h4><div>${state.floor===16&&!state.cipher?.solved?'성채 암호를 풀어 용암 해자의 도개교를 내려야 한다.':state.floor===18?`철판창고 · ${lockProgressText()}.`:state.floor===21?'공허 위 5×5 섬을 점멸로 잇는다. 발판에서 기력이 회복된다.':state.specialFloor?'이 층은 구조 자체가 특수 기믹이다.':'등불 뒤의 샛길과 특수 방을 살펴라.'}</div><button class="mInvBtn" id="saveFromDrawer">기록 저장</button></div></div>`;document.getElementById('saveFromDrawer').onclick=()=>ClientEnvironment.emit({type:'SAVE',source:'mobile-drawer'})}else if(mobileTab==='equip'){box.innerHTML=`<div class="mDrawerGrid"><div class="mCard mWide"><h4>장비</h4><div>무기 ${p.weapon?p.weapon.name:'맨손'}<br>갑옷 ${p.armor?p.armor.name:'경량복'}<br>망토 ${p.cloak?p.cloak.name:'없음'}<br>유물 ${p.relic?p.relic.name:'없음'}<br>장신구 ${p.trinket?p.trinket.name:'없음'}</div><button class="mInvBtn" id="openInvFromDrawer">인벤토리</button><button class="mInvBtn" id="openMartialFromDrawer">무술</button></div></div>`;document.getElementById('openInvFromDrawer').onclick=()=>openInventory();document.getElementById('openMartialFromDrawer').onclick=()=>openMartial()}else if(mobileTab==='log'){box.innerHTML=`<div class="mCard"><h4>최근 기록</h4><div class="mLogList">${state.log.slice(0,20).map(v=>`<div class="mLogItem">${v}</div>`).join('')}</div></div>`}else{box.innerHTML=`<div class="mDrawerGrid"><div class="mCard mWide"><h4>조작</h4><div>스와이프/방향키 이동 · 탭 자동 이동 · 상단 이동 자동 탐사 · 살/. 살피기·대기 · 공격 공격 · 점멸 점멸 · 무술 · 줍 줍기</div></div><div class="mCard"><h4>성장</h4><div>Lv.1~12는 최대 HP +1~2 · 무술 포인트 +1. Lv.13~18은 영구 기본 HP +3. Lv13·15·17·18 무술 포인트 +1. 보스는 비급 지급.</div></div><div class="mCard"><h4>허기</h4><div>1+ 정상 · 0에서 ATK -20% + 굶주림 피해.</div></div><div class="mCard mWide"><h4>특수 지형</h4><div>거대 회관·병풍 / 수중 정자·대나무 미로 / 향수강 뗏목·가짜 문 / 16층 성채 암호·도개교 / 철판창고 열쇠 / 공허 점멸섬·숨은 신전·복숭아 정원</div></div></div>`}}
+
 
 function showInspect(title,html){
     const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
     const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
-    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect984('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),null);return}
-    const txt=dedupeProse986(textOnly984(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
-    directOpenInspect984(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
-  }
-function closeInspect(ev){
-    const wrap=inspectWrap();if(!interactionActive8('mobileInspect'))return false;
-    if(ev){ev.preventDefault?.();ev.stopPropagation?.();ev.stopImmediatePropagation?.()}
-    cancelLongPresses();
-    setInteraction8('mobileInspect',false);wrap?.setAttribute('aria-hidden','true');
-    document.body.classList.remove('manru-inspect-open');
-    touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null;
-    // Android synthetic click can arrive hundreds of ms after touchend.
-    block(520);return true;
-  }
-
-
-function bindEquipInspect(){
-    if(!state)return;const p=state.player,map={weaponTxt:p.weapon,armorTxt:p.armor,cloakTxt:p.cloak,relicTxt:p.relic,trinketTxt:p.trinket};
-    Object.entries(map).forEach(([id,item])=>{const el=document.getElementById(id);attachLongPress(el,()=>showInspect(item?.name||id.replace('Txt','').toUpperCase(),itemInspectHtml(item)))});
+    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),null);return}
+    const txt=dedupeProse986(textOnly(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
+    directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   }
 
 
 
-function openMapModal(){
-  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  const wrap = document.getElementById("mobileMapModal");
-  syncLargeMinimap();
-  setInteraction8('mobileMapModal',true);
-globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
-}
-function closeMapModal(){
-  const wrap = document.getElementById("mobileMapModal");
-  setInteraction8('mobileMapModal',false);
-globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 
-function bindMobileTopButtons(){
-  const p = document.getElementById("mobilePanelBtn");
-  const d = document.getElementById("mobileDrawerClose");
-  const c = document.getElementById("mobileClosePanel");
-  const h = document.getElementById("mobileHelpBtn");
-  const m = document.getElementById("mobileMapBtn");
-  const ic = document.getElementById("inspectClose");
-  const mc = document.getElementById("mapClose");
-  if(p) p.onclick = ()=>ClientEnvironment.emit({type:'OPEN_MOBILE_DRAWER',tab:'status',source:'mobile-hud'});
-  if(d) d.onclick = ()=>ClientEnvironment.emit({type:'MODAL_CANCEL',source:'mobile-hud'});
-  if(c) c.onclick = ()=>ClientEnvironment.emit({type:'MODAL_CANCEL',source:'mobile-hud'});
-  if(h) h.onclick = ()=>ClientEnvironment.emit({type:'OPEN_MOBILE_DRAWER',tab:'help',source:'mobile-hud'});
-  if(m) m.onclick = ()=>ClientEnvironment.emit({type:'OPEN_MAP',source:'mobile-hud'});
-  if(ic) ic.onclick = ()=>ClientEnvironment.emit({type:'MODAL_CANCEL',source:'mobile-hud'});
-  if(mc) mc.onclick = ()=>ClientEnvironment.emit({type:'MODAL_CANCEL',source:'mobile-hud'});
-  document.querySelectorAll(".mTab").forEach(btn=>btn.onclick = ()=>setMobileTab(btn.dataset.tab));
-}
+
+
+
+
+
+
+
 
 
 document.addEventListener('keydown',InputRouter,true);InputRouter.noteListener('document:keydown');
@@ -3843,7 +3690,7 @@ renderMobileDrawer();
 /* ===== MANRU v1.0 VERIFIED VISUAL + AUTOWALK PASS ===== */
 VIS.hoverPath=null;VIS.autoPath=null;VIS.tapTrack=null;
 
-function v10AutoChip(text=null){if(text&&/(석주|등롱 기둥|벽걸이 깃발|목상자|긴 의자|화단|정원석|석상|진열 선반|낮은 목책|창호 창문) 앞으로 이동/.test(text))text=null;const c=document.getElementById('autoMoveChip'),t=document.getElementById('autoMoveChipText');if(!c)return;if(text){if(t)t.textContent=text;c.classList.add('show')}else c.classList.remove('show')}
+
 
 /* r53: removed overwritten camera implementation. */
 
@@ -4096,12 +3943,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  function hiCreature(m,frame=0,dir='down',player=false){
-    const gear=player?state.player:null,key=player?`p:${gear.classId}:${dir}:${frame}:${gear.weapon?.name||''}:${gear.armor?.tier||1}:${gear.cloak?.name||''}`:`m:${m.name}:${m.color}:${m.shape}:${m.kind}:${frame}`;
-    if(HI_CACHE.creature.has(key))return HI_CACHE.creature.get(key);const c=hc(),q=ctx2(c),h=hiHash(key);
-    if(player)drawPlayer(q,gear.classId||'wanderer',dir,frame,gear);else if(m.kind==='beast'||m.shape==='beast'||m.shape==='angel'&&!m.name.includes('망령'))drawBeast(q,m,frame,h);else if(m.kind==='spirit'||m.kind==='undead'||m.kind==='construct'||m.shape==='void'||m.shape==='zero'||m.shape==='mage')drawSpirit(q,m,frame,h);else drawHumanoid(q,m,frame,h);
-    HI_CACHE.creature.set(key,c);return c;
-  }
+
 
   /* ----------------------- apply 48x48 renderers ----------------------- */
   /* r26: obsolete v3 world-item public renderer assignment removed; R7 is canonical. */
@@ -4170,8 +4012,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
   globalThis.__MANRU_LIFECYCLE__.resetLoad('legacy-v3',legacyLoadCore);
 
 
-  /* ----------------------- inventory consistency / no duplicate copy ----------------------- */
-  function hiEffectSummary(item){const a=[];if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL +${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.focus)a.push(`FOCUS +${displayNumber53(item.focus)}`);if(item.speed)a.push(`공속 ${item.speed}× · 비용 ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)a.push(`사거리 ${item.range}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`FOCUS +${item.focusGain}`);if(item.hunger)a.push(`허기력 +${item.hunger}`);if(item.ability&&item.ability!=='없음')a.push(`[${item.ability}]`);if(item.curse)a.push(`저주: ${item.curse}`);return a.join(' · ')}
+
   
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
@@ -4192,26 +4033,10 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
   const blocked=()=>inputNow()<U.blockUntil;
   const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(error){ignoreError('a long-press cancel callback threw',error)}}U.longPresses.clear()};
 
-  const itemInspectHtml=(it)=>{
-    if(!it)return'장착된 아이템 없음.';
-    const icon=typeof vfIconHtml==='function'?vfIconHtml(it,'inspectIcon'):'';
-    const fx=itemEffects(it),desc=it.desc||'설명이 없다.';
-    return `<div class="inspectItemHero">${icon}<div><b>${it.name}</b><small>${itemTypeLabel(it.type)}${it.tier?` · T${it.tier}`:''} · ${(it.rarity||'common').toUpperCase()}</small></div></div>${fx?`<div class="inspectFx">${fx}</div>`:''}<div class="inspectDesc">${desc}</div>`;
-  };
 
 
-  function showInspectSheet(title,html){
-    if(blocked())return;
-    cancelLongPresses();
-    const wrap=inspectWrap(),titleEl=document.getElementById('inspectTitle'),bodyEl=document.getElementById('inspectBody');
-    if(titleEl)titleEl.textContent=title;
-    if(bodyEl)bodyEl.innerHTML=html;
-    setInteraction8('mobileInspect',true);wrap?.setAttribute('aria-hidden','false');
-    document.body.classList.add('manru-inspect-open');
-    U.inspectOpenedAt=inputNow();
-    // swallow release/click belonging to the long-press/tap that opened this sheet
-    block(180);
-  }
+
+
 
   // One long-press implementation only. Calling again on the same node replaces the previous binding.
 
@@ -4244,8 +4069,8 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
 
 /* ===== MANRU v3.6 INTERNAL POLISH: zoom fix / combat HUD / inventory / log / materials ===== */
 const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(combatHud);
-  function tileName(x,y){const t=state?.map?.[y]?.[x];if(t==null)return'알 수 없음';try{return terrainName(t)}catch(_){return'바닥'}}
-  function updateCH(){if(!state)return;const vis=state.monsters.filter(isThreatVisibleToPlayer),adj=vis.filter(m=>entityDistance57(m,state.player)<=1),items=state.items.filter(i=>i.x===state.player.x&&i.y===state.player.y),stairs=state.player.x===state.stairs.x&&state.player.y===state.stairs.y,boss=vis.find(m=>m.boss);const sb=document.getElementById('mfState'),tb=document.getElementById('mfThreat'),gb=document.getElementById('mfGround'),ab=document.getElementById('mfAction');if(sb){const engaged=vis.length>0;sb.classList.toggle('warn',engaged);sb.classList.toggle('good',!engaged);sb.querySelector('.v').textContent=engaged?(adj.length?'교전':'경계'):'탐색';sb.querySelector('.s').textContent=engaged?(adj.length?'즉시 공격 거리':'시야 내 위협'):`${regionFor(state.floor)[2]} · ${state.layoutName||''}`}if(tb){tb.classList.toggle('warn',vis.length>0);tb.querySelector('.v').textContent=boss?`보스 ${boss.name}`:`적 ${vis.length}`;tb.querySelector('.s').textContent=`인접 ${adj.length} · HP ${displayHealth(state.player.hp)}/${displayHealth(state.player.maxHp)}`}if(gb){gb.querySelector('.v').textContent=items[0]?.name||(stairs?'계단':'빈 바닥');gb.querySelector('.s').textContent=items.length?`습득 ${items.length}개`:(stairs?'다음 층으로 이동 가능':tileName(state.player.x,state.player.y))}if(ab){ab.querySelector('.v').textContent=adj.length?'공격':items.length?'줍기':stairs?'하강':'이동';ab.querySelector('.s').textContent=`공격 ${attackTurnCost().toFixed(1)}턴 · 점멸 ${(state.player.blinkLevel||0)>0?'가능':'없음'}`}}
+
+
   registerPanelHook54('combat-hud36',updateCH);
 
   /* ---------- action button motif ---------- */
@@ -4290,7 +4115,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function pstate(){if(!state)return;state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};for(const q of['swift','fortify','willBoost'])if(!Number.isFinite(state.status[q]))state.status[q]=0}
   function pcolor(i){return i?.color||'#b65b4c'}
   const ph=document.createElement('div');ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);let potionTarget=null;
-  function beginTarget(item){potionTarget={item,range:item.throwRange||4};closeInventory();ph.classList.add('show');syncWorldTargetInput57();document.getElementById('potionTargetName').textContent=item.name+' 투척';cancelAutoWalk();toast(`${item.name}: 목표 지점을 지정하라.`)}function cancelTarget(silent=false){potionTarget=null;ph.classList.remove('show');syncWorldTargetInput57();endTargetInput57(320);if(!silent)toast('투척을 취소했다.')}ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
   registerPlayerStatStage55('potions41',s=>{if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s});registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
@@ -4310,51 +4135,9 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 
-/* ===== MANRU v3.2 UI + TITLE GRAND ORNAMENT PASS ===== */
-function decorateTitle(){
-    const card=document.getElementById('card');
-    if(!card||card.dataset.mfDecorated==='1') return;
-    card.dataset.mfDecorated='1';
-    const frame=document.createElement('div');
-    frame.className='mf-title-frame';
-    frame.innerHTML=`
-      <div class="mf-title-corner tl"></div><div class="mf-title-corner tr"></div>
-      <div class="mf-title-corner bl"></div><div class="mf-title-corner br"></div>
-      <div class="mf-header-rail"><i></i><i></i><b>만 루</b><i></i><i></i></div>
-      <div class="mf-footer-rail"><i></i><i></i><b>ROGUELIKE</b><i></i><i></i></div>
-      <div class="mf-side-banner left"><div class="sig">루</div><div class="sub">바람</div></div>
-      <div class="mf-side-banner right"><div class="sig">밤</div><div class="sub">그림자</div></div>`;
-    card.prepend(frame);
 
-    const sub=card.querySelector('.sub');
-    if(sub&&!card.querySelector('.mf-title-emblems')){
-      const emblems=document.createElement('div');
-      emblems.className='mf-title-emblems';
-      emblems.innerHTML=`<div class="seal">객</div><div class="knot"><i></i></div><div class="seal">전투</div><div class="knot"><i></i></div><div class="seal">루</div>`;
-      sub.insertAdjacentElement('afterend', emblems);
-      const plate=document.createElement('div');
-      plate.className='mf-subplate';
-      plate.innerHTML=`<i></i><span>객 객주 · 요 괴 · 비 밀 · 전 술</span><i></i>`;
-      emblems.insertAdjacentElement('afterend', plate);
-    }
-    const hint=card.querySelector('.startHint');
-    if(hint&&!card.querySelector('.pixelBadge')){
-      const badge=document.createElement('div');
-      badge.className='pixelBadge';
-      badge.textContent='턴제 · 자동탐사 · HD 픽셀';
-      hint.insertAdjacentElement('beforebegin',badge);
-    }
-  }
 
-  function decorateButtonGroups(root=document){
-    root.querySelectorAll('#startGate button,.invActions button,.invTab,.classBtn,#zoomHud button,#mobileHud .mButtons button,#mobileControls button,.cipherKeys button,.cipherActions button,.martialCard button').forEach(btn=>{
-      if(btn.dataset.mfGlyphDone==='1') return;
-      btn.dataset.mfGlyphDone='1';
-      if(btn.matches('#startGate .enterBtn')&&!btn.querySelector('.mfBtnMark')) btn.insertAdjacentHTML('beforeend','<span class="mfBtnMark" style="position:absolute;right:9px;top:8px;font:900 calc(14px * var(--ui-font-scale, 1)) Georgia,serif;color:#7f5a38;pointer-events:none">문</span>');
-      else if(btn.matches('#startGate .continueBtn')&&!btn.querySelector('.mfBtnMark')) btn.insertAdjacentHTML('beforeend','<span class="mfBtnMark" style="position:absolute;right:9px;top:8px;font:900 calc(14px * var(--ui-font-scale, 1)) Georgia,serif;color:#7f5a38;pointer-events:none">계속</span>');
-      else if(btn.classList.contains('primary')&&!btn.querySelector('.mfBtnMark')) btn.insertAdjacentHTML('beforeend','<span class="mfBtnMark" style="position:absolute;right:8px;top:6px;font:900 calc(11px * var(--ui-font-scale, 1)) Georgia,serif;color:#7b5531;pointer-events:none">◆</span>');
-    });
-  }
+
 
   decorateTitle();
   decorateButtonGroups(document);
@@ -4362,21 +4145,7 @@ function decorateTitle(){
 
 
 
-/* ===== MANRU v3.4 UI SYSTEM PASS (high-readability roguelike inspired) ===== */
-function labelSections(){
-    const mapping={
-      '생명 / 기':'VITAL',
-      '능력':'STATS',
-      '장비':'GEAR',
-      '무술':'STYLE',
-      '허기':'HUNGER',
-      '주변':'AWARE',
-    };
-    document.querySelectorAll('#side .section h3').forEach(h=>{
-      const t=h.textContent.trim();
-      h.setAttribute('data-kor', mapping[t]||'LOG');
-    });
-  }
+
 
   function tuneButtons(root=document){
     root.querySelectorAll('.quickbar button').forEach(btn=>{
@@ -4571,9 +4340,9 @@ const UX={
     invScrollByTab:Object.create(null)
   };RuntimeState.ui.inventory=UX;
   const now=()=>performance.now();
-  const isDrawerOpen=()=>interactionActive8('mobileDrawer');
-  const isInspectOpen=()=>interactionActive8('mobileInspect');
-  const isMapOpen=()=>interactionActive8('mobileMapModal');
+
+
+
   const uiBlocking=()=>activeGameplayPanels57().length>0;
   const viewerOpen=()=>!!(inventoryOpen||helpOpen||martialOpen||isDrawerOpen()||isInspectOpen()||isMapOpen());
   const blockTap=(ms=180)=>UX.closeBlockUntil=Math.max(UX.closeBlockUntil,now()+ms);
@@ -4589,22 +4358,11 @@ const UX={
     }
     cancelAutoWalk();
   }
-  function safeToResume(){
-    if(!state||!UX.paused||viewerOpen()||cipherOpen)return false;
-    if(UX.modalDirty||state.turn!==UX.paused.turn||state.player.x!==UX.paused.x||state.player.y!==UX.paused.y)return false;
-    if(state.monsters.some(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,state.player)<=1))return false;
-    return UX.paused.path?.length>0;
-  }
-  function resumeAutoMaybe(){
-    document.body.classList.toggle('ux-modal-open',uiBlocking());
-    if(UX.modalOpening)return;
-    if(!safeToResume()){if(!viewerOpen()&&UX.modalDirty)UX.paused=null;return}
-    const saved=UX.paused,generation14=RunLifecycle.generation();UX.paused=null;
-    setTimeout(()=>{if(RunLifecycle.isCurrent(generation14)&&!uiBlocking()&&state&&!state.dead&&!state.victory)runAutoPath(saved.path,{...saved.meta,resumed:true})},90);
-  }
+
+
   function beginViewer45(){UX.modalOpening=true;pauseAutoForUI();UX.invEquipSlot=null}
-  function finishViewer45(){UX.modalOpening=false;document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0)}
-  function finishViewerClose45(){UX.modalOpening=false;UX.invEquipSlot=null;blockTap(170);document.body.classList.toggle('ux-modal-open',uiBlocking());resumeAutoMaybe()}
+
+
 
 
   replaceViewerQuickButton('inv',()=>toggleInventory());
@@ -4629,10 +4387,7 @@ const UX={
     return `<div class="uxDetail" id="uxDetail"><div class="uxDetailHead">${uxIcon(item,'uxDetailIcon')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><small>${slot?'장착 중 · ':''}${item.legendaryWeapon47?'전설의 무기':uxType(item)}${item.tier?` · T${item.tier}`:''} · ${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}</small></div></div><div class="uxStats">${stats.map(x=>`<span class="uxStat">${x}</span>`).join('')}${curseChip}</div><div class="uxDesc">${classItemDescription58(item)||item.desc||item.ability||itemSummary(item)||'설명이 없다.'}</div><div class="uxActions">${slot?`<button class="primary" data-uxinspectequip="${slot}">세부 정보</button><button data-uxunequip="${slot}">해제</button><button class="danger" data-uxdrop-equip="${slot}">바닥에 놓기</button>`:`<button class="primary" data-invuse="${idx}"${item.summonItem105==='book'&&!SUMMON_RACES[item.summonElement105]?' disabled':''}>${primary}</button>${item.summonItem105==='book'?`<button data-bookmaterial105="talisman" data-bookindex105="${idx}">부적을 끼운다</button><button data-bookmaterial105="picture" data-bookindex105="${idx}">그림을 끼운다</button>`:''}<button data-invinspect="${idx}">정보</button><button class="danger" data-invdrop="${idx}">버리기</button>`}</div></div>`;
   }
 
-  function rememberInventoryScroll45(tab=inventoryTab){
-    const grid=document.querySelector('#inventory #uxGrid');
-    if(grid)UX.invScrollByTab[tab]=Math.max(0,grid.scrollTop||0);
-  }
+
   function restoreInventoryScroll45(grid,tab=inventoryTab){
     if(!grid)return;
     const top=Math.max(0,UX.invScrollByTab[tab]||0);
@@ -4654,10 +4409,10 @@ const UX={
     box.innerHTML=`<div class="uxInv"><span class="uiCorners63" aria-hidden="true"></span><div class="uxInvHead"><div class="uxTitle"><h2>행낭</h2><small>한 번 눌러 선택 · 아래 큰 버튼으로 사용/장착</small></div><div class="uxInvMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><span class="turn">TURN ${state.turn}</span></div><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div><div class="uxEquipRail">${equips}</div><div class="uxTabs">${tabs.map(([id,lab])=>`<button class="${inventoryTab===id?'active':''}" data-invtab="${id}">${lab}<span>${tabCount(id)}</span></button>`).join('')}</div><div class="uxInvMain"><div class="uxGrid" id="uxGrid">${cells}</div>${selected?detailHTML(selected,inventorySelection,UX.invEquipSlot):''}</div></div>`;
     restoreInventoryScroll45(box.querySelector('#uxGrid'));
     const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);setTimeout(()=>{if(inventoryOpen)closeInventory()},0)};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
-    box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll45();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
-    box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll45();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
-    box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll45();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
-    box.querySelectorAll('[data-uxeq]').forEach(b=>b.addEventListener('click',()=>{const slot=b.dataset.uxeq;if(!p[slot])return;rememberInventoryScroll45();UX.invEquipSlot=slot;inventorySelection=-1;renderInventory()}));
+    box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
+    box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
+    box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
+    box.querySelectorAll('[data-uxeq]').forEach(b=>b.addEventListener('click',()=>{const slot=b.dataset.uxeq;if(!p[slot])return;rememberInventoryScroll();UX.invEquipSlot=slot;inventorySelection=-1;renderInventory()}));
     box.querySelectorAll('[data-bookmaterial105]').forEach(b=>b.addEventListener('click',()=>{summonState();const book=p.inventory[+b.dataset.bookindex105];if(book?.summonItem105==='book')summonOpenMaterials(book.summonBookId105,b.dataset.bookmaterial105);}));
     box.querySelectorAll('[data-invuse]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value));
     box.querySelectorAll('[data-invdrop]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value));
@@ -4702,7 +4457,7 @@ const UX={
     state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
     if(playerAgency){state.playerAgencyTurns57++;if(state.status.illness>0&&--state.status.illness===0){addLog('중병의 유예가 끝났다.');die('중병');turnResult.aborted=true;turnResult.abortStage='illness';return}}
     state._turnAgencyCounted57=playerAgency;
-    state.turn++;palaceAdvance105(c);summonCleanup();summonUpdateButtons105();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
+    state.turn++;palaceAdvance105(c);summonCleanup();summonUpdateButtons();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
     turnResult.stageOrder.push('core:regen');dojoBedTick105();if(state.status.regen>0){state.player.hp=Math.min(state.player.maxHp,state.player.hp+1);state.status.regen--}
     turnResult.stageOrder.push('core:status');applyStatusTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:status';return}turnResult.stageOrder.push('core:hunger');hungerTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:hunger';return}
     tickBossArenaMist(playerAgency);if(state.dead){turnResult.aborted=true;return}
@@ -4778,7 +4533,7 @@ const UX={
   TurnEngine.register('jar-gas57',{post:()=>{tickJarGasFields();tickTerrainReactions105()}});
 
   document.body.classList.toggle('ux-modal-open',uiBlocking());
-  globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishViewer45,finishClose:finishViewerClose45,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
+  globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishModalOpening,finishClose:finishViewerClose,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
 
 
 /* ===== MANRU v4.7 CAMERA / PERF / LOOT STRATEGY ===== */
@@ -4803,18 +4558,12 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   /* ---------- item ecology + long-term upgrade choice ---------- */
   const role47=i=>{if(!i)return'other';if(['weapon','armor','cloak'].includes(i.type))return'gear';if(['relic','trinket'].includes(i.type))return'relic';if(i.type==='upgrade'||i.type==='martial_manual')return'strategy';if(i.type==='food')return'recovery';if(i.type==='potion')return ['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)?'recovery':'strategy';return'other'};
   
-  function countRole47(x){return state.player.inventory.filter(i=>x==='all'||role47(i)===x).length}
-  function selectedGear47(){const slot=RuntimeState.ui.inventory?.invEquipSlot;if(slot){const it=state.player[slot];if(it&&['weapon','armor','cloak'].includes(it.type))return it}const it=state.player.inventory[inventorySelection];return it&&['weapon','armor','cloak'].includes(it.type)?it:null}
+
+
   function upgradeGearAction5(it){const act=playerAction57('upgrade',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 장비를 개량하지 못했다.'});if(!act.ok)return;if(!(state.player.upgradeMarks>0))return;if(it.type==='weapon')applyWeaponUpgrade(it);else if(it.type==='armor')applyArmorUpgrade(it);else{it.upgrade=(it.upgrade||0)+1;it.eva=(it.eva||0)+1;}state.player.upgradeMarks--;addLog(`${it.name} +${it.upgrade} 개량.`);cancelAutoWalk();closeInventory();commitPlayerAction57(act,1)}
   ActionDispatcher.register('UPGRADE_GEAR',upgradeGearAction5);
-  function decorateInventory47(){
-    if(!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;const defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy','전술'],['relic','유물']],tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')];tabs.forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];if(b.firstChild)b.firstChild.nodeValue=d[1];const s=b.querySelector('span');if(s)s.textContent=countRole47(d[0]);b.classList.toggle('active',inventoryTab===d[0])});
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(!it)return;if(!el.querySelector('.uxRole47'))el.insertAdjacentHTML('beforeend',`<span class="uxRole47">${({gear:'장비',recovery:'회복',strategy:'전술',relic:'유물'})[role47(it)]||'기타'}</span>`);if(it.upgrade>0&&!el.querySelector('.uxPlus47'))el.insertAdjacentHTML('beforeend',`<span class="uxPlus47">+${it.upgrade}</span>`)});
-    box.querySelectorAll('[data-uxeq]').forEach(el=>{const it=state.player[el.dataset.uxeq];if(it?.upgrade>0&&!el.querySelector('.uxPlus47'))el.insertAdjacentHTML('beforeend',`<span class="uxPlus47">+${it.upgrade}</span>`)});
-    const meta=box.querySelector('.uxInvMeta');if(meta&&!meta.querySelector('.forge47'))meta.insertAdjacentHTML('beforeend',`<span class="forge47">인장 ${state.player.upgradeMarks||0}</span>`);
-    const it=selectedGear47(),actions=box.querySelector('.uxActions');if(it&&actions&&!it.artifactWeapon46&&(state.player.upgradeMarks||0)>0&&(it.upgrade||0)<3&&!actions.querySelector('.uxUpgradeAction47')){const b=document.createElement('button');b.className='uxUpgradeAction47';b.textContent=`개량 인장×${state.player.upgradeMarks}`;b.onclick=e=>{e.preventDefault();e.stopPropagation();return ActionDispatcher.dispatch({type:'UPGRADE_GEAR',args:[it],source:'inventory'}).value};actions.prepend(b)}
-  }
-  registerInventoryRenderR34('r47-tab-normalize','pre',()=>{if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'});registerInventoryRenderR34('r47-decorate','post',()=>decorateInventory47());
+
+  registerInventoryRenderR34('r47-tab-normalize','pre',()=>{if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'});registerInventoryRenderR34('r47-decorate','post',()=>decorateInventory());
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
@@ -4838,16 +4587,9 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   }
   registerGenerationStage('resource48','post',()=>{guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true});
 
-  /* ---------- v4.8 inventory: stable five-role taxonomy, no category drift ---------- */
-  const roleName48={gear:'장비',recovery:'회복',strategy:'전술',relic:'유물',other:'기타'};
-  function cleanInventory48(){
-    if(!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
-    const tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')],defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy','전술'],['relic','유물']];
-    tabs.forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];b.childNodes[0].nodeValue=d[1];const n=b.querySelector('span');if(n)n.textContent=countRole47(d[0])});
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(!it)return;el.setAttribute('aria-label',`${it.name} · ${roleName48[role47(it)]||'기타'}`)});
-    const sub=box.querySelector('.uxInvHead small');if(sub)sub.textContent='장비 · 회복 · 전술 · 유물만 나눠서 관리 / 같은 소모품은 자동 중첩';
-  }
-  registerInventoryRenderR34('r48-clean-taxonomy','post',()=>cleanInventory48());
+
+
+  registerInventoryRenderR34('r48-clean-taxonomy','post',()=>cleanInventory());
 
   /* ---------- v4.8 test hooks ---------- */
   
@@ -4888,23 +4630,16 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
 
   const titleMotion49=matchMedia('(prefers-reduced-motion:reduce)');
   const titleSceneState49={sky:null,windows:null,background:null,clouds:[],rooms:[],snapshot:null};
-  function titleCloudArt49(seed){
-    const c=document.createElement('canvas');c.width=480;c.height=108;const q=c.getContext('2d');
-    for(let i=0;i<11;i++){const x=32+i*40,y=48+Math.sin(i*1.7+seed)*13,rx=46+(i%3)*17,ry=10+(i*7+seed)%14;q.save();q.translate(x,y);q.scale(rx,ry);const g=q.createRadialGradient(0,0,0,0,0,1);g.addColorStop(0,'#9ba9a43a');g.addColorStop(.5,'#7c92942b');g.addColorStop(1,'#7c929400');q.fillStyle=g;q.fillRect(-1,-1,2,2);q.restore();}
-    return c;
-  }
+
 
 
 
   drawTitleCanvas();
   addEventListener('resize',()=>{const c=document.getElementById('titleCanvas49');if(c&&c.dataset.mobile!==(innerWidth<700?'1':'0'))drawTitleCanvas()},{passive:true});
 
-  function showClassPick49(){requestGameFullscreen65();
-    startGate.style.display='none';pickWrap.classList.add('show');document.body.classList.add('title-class-mode');
-    renderClassGrid1001();
-  }
-  function showStartGate49(){pickWrap.classList.remove('show');startGate.style.display='grid';document.body.classList.remove('title-class-mode')}
-  enterBtn.onclick=showClassPick49;classBackBtn.onclick=showStartGate49;
+
+
+  enterBtn.onclick=showClassPick;classBackBtn.onclick=showStartGate;
 
   /* ---------- camera: default auto-follow, temporary look-pan, explicit free mode ---------- */
 
@@ -4918,30 +4653,30 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   
   MINIMAP_PIPELINE.before=force=>{const now=performance.now();if(!state)return false;if(!force&&!RENDER_PERF_STATE.miniDirty&&!mapOpen49()&&now-RENDER_PERF_STATE.lastMini<320)return false;RENDER_PERF_STATE.lastMini=now;RENDER_PERF_STATE.miniDirty=false;return true};
 
-  function setText49(id,v){v=displayText53(v);const e=document.getElementById(id);if(e&&e.textContent!==String(v))e.textContent=String(v)}
-  function setHTML49(id,v){const e=document.getElementById(id);if(e&&e.innerHTML!==v)e.innerHTML=v}
-  function setWidth49(id,v){const e=document.getElementById(id);if(e&&e.style.width!==v)e.style.width=v}
+
+
+
   updateMobileHud=function updateMobileHudCanonical55(){
-    if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText49('mFloor',location58.floor);setText49('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText49('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText49('mHunger',Math.round(p.hunger));
+    if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText('mFloor',location58.floor);setText('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText('mHunger',Math.round(p.hunger));
     const hpBlock=document.querySelector('#mobileHud .hp');if(hpBlock)hpBlock.style.setProperty('--hp',(clamp(100*p.hp/p.maxHp,0,100)*.72)+'%');
     const tag=document.getElementById('terrainTag');if(tag){tag.textContent=location58.challenge||location58.tag;tag.style.opacity=location58.challenge||['artifact','shop'].includes(location58.kind)?'.92':'0';tag.classList.toggle('withBoss58',!!boss)}
     const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed105(),anvil=citadelAdjacentAnvil105(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby105(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping105()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
     document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
-    const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText49('bossName',boss.name);setWidth49('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
+    const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
     if(mapOpen49())syncLargeMinimap();
     if(isMobileViewport()){const enemy=state.monsters.some(isThreatVisibleToPlayer),show=(act,on)=>document.querySelector(`#mobileControls [data-act="${act}"]`)?.classList.toggle('ux54-hidden',!on);show('attack',true);show('pickup',true);show('inv',true);show('rest',true);show('open',(p.blinkLevel||0)>0);show('skill',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));document.querySelector('#mobileHud .mobileFocusBlock')?.classList.toggle('ux54-show',enemy||p.focus<st.maxFocus)}
     document.querySelectorAll('#mobileControls .actions.quickbar [data-act]').forEach(b=>b.setAttribute('aria-hidden','false'));if(hpBlock){const pct=Math.max(0,Math.min(100,(p.hp/Math.max(1,p.maxHp))*100));hpBlock.style.setProperty('--hp75',pct+'%')}
   };
   updatePanels=function(){
     if(!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),side=!!state.artifactDungeon46,location58=hudLocation58();
-    setText49('floorTxt',location58.desktop);setText49('regionTxt',location58.kind==='branch'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText49('depthLore',location58.kind==='branch'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText49('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth49('hpFill',(100*p.hp/p.maxHp)+'%');setText49('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth49('manaFill',(100*p.focus/st.maxFocus)+'%');setText49('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth49('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
-    setText49('atkTxt',st.atk);setText49('defTxt',displayDef42(st.def));setText49('evaTxt',st.eva);setText49('wilTxt',st.will);setText49('visTxt',st.vision);setText49('weaponTxt',p.weapon?p.weapon.name:'맨손');setText49('armorTxt',p.armor?p.armor.name:'경량복');setText49('cloakTxt',p.cloak?p.cloak.name:'없음');setText49('relicTxt',p.relic?p.relic.name:'없음');setText49('trinketTxt',p.trinket?p.trinket.name:'없음');
-    setHTML49('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText49('alertTxt',Math.round(p.hunger)+'%');setWidth49('alertFill',Math.min(100,p.hunger)+'%');
-    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML49('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText49('statusLine',`TURN ${state.turn} · ${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()} · 허기 ${Math.round(p.hunger)}${p.hunger<=0?' (ATK -20%)':''}`);updateDebuffHud57();setText49('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
+    setText('floorTxt',location58.desktop);setText('regionTxt',location58.kind==='branch'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText('depthLore',location58.kind==='branch'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth('hpFill',(100*p.hp/p.maxHp)+'%');setText('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth('manaFill',(100*p.focus/st.maxFocus)+'%');setText('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
+    setText('atkTxt',st.atk);setText('defTxt',displayDef42(st.def));setText('evaTxt',st.eva);setText('wilTxt',st.will);setText('visTxt',st.vision);setText('weaponTxt',p.weapon?p.weapon.name:'맨손');setText('armorTxt',p.armor?p.armor.name:'경량복');setText('cloakTxt',p.cloak?p.cloak.name:'없음');setText('relicTxt',p.relic?p.relic.name:'없음');setText('trinketTxt',p.trinket?p.trinket.name:'없음');
+    setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
+    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`TURN ${state.turn} · ${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()} · 허기 ${Math.round(p.hunger)}${p.hunger<=0?' (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
     const logs=state.log.slice(0,10),sig=logs.join('\u0001');if(sig!==RENDER_PERF_STATE.lastLog){RENDER_PERF_STATE.lastLog=sig;const log=document.getElementById('messageLog');if(log)log.innerHTML=logs.map(x=>'<div>'+x+'</div>').join('')}
-    setText49('miniMonsters','적 '+visibleMonsters.length);setText49('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText49('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText49('miniThreat','허기 '+Math.round(p.hunger)+'%');
+    setText('miniMonsters','적 '+visibleMonsters.length);setText('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText('miniThreat','허기 '+Math.round(p.hunger)+'%');
     const eqSig=[p.weapon?.name,p.armor?.name,p.cloak?.name,p.relic?.name,p.trinket?.name].join('|');if(eqSig!==RENDER_PERF_STATE.lastEquip){RENDER_PERF_STATE.lastEquip=eqSig;bindEquipInspect()}
-    updateMobileHud();updateAttackButton();if(drawerOpen())renderMobileDrawer();RENDER_PERF_STATE.panelDirty=false;RENDER_PERF_STATE.lastPanel=performance.now();runPanelHooks54();
+    updateMobileHud();updateAttackButton();if(drawerOpen())renderMobileDrawer();RENDER_PERF_STATE.panelDirty=false;RENDER_PERF_STATE.lastPanel=performance.now();runPanelHooks();
   };
   /* removed overwritten updateAll */
   /* removed overwritten visualLoop */
@@ -5303,8 +5038,8 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     if(item.talismanKind==='ward'){state.status.ward=Math.max(state.status.ward||0,11);state.status.weaken=0;identifyTalisman56(item.talismanKind,'사용 효과 관찰');consumeRef(item);closeInventory();addLog('호신부: 10턴 보호막 · 약화 해제.');burst(state.player.x,state.player.y,'#dfc76f',20,.72);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInstantTalisman56"}).value;return true}
     return false
   }
-  function beginTalismanTarget56(item){cancelAutoWalk();clearHeldInput53();closeInventory();V56.target={item,kind:item.talismanKind,range:item.targetRange||5,wasUnknown:!knownTalisman56(item)};targetHud.classList.add('show');syncWorldTargetInput57();document.getElementById('talismanTargetTitle').textContent=`${publicTalismanName56(item)} · ${publicTalismanSeal56(item)}`;document.getElementById('talismanTargetText').textContent=knownTalisman56(item)?(item.talismanKind==='blink'?`본 안전 칸 · 사거리 ${V56.target.range}`:`목표 중심 3×3 · 사거리 ${V56.target.range}`):'성질 미확인 · 본 칸 하나를 지정';drawMap(true)}
-  function cancelTalismanTarget56(silent=false){V56.target=null;targetHud.classList.remove('show');syncWorldTargetInput57();endTargetInput57(320);if(!silent)toast('부적 사용을 취소했다.');drawMap(true)}
+
+
   function safeBlink56(x,y){return validatePlayerTransfer57(x,y,{cause:'talisman-blink'}).ok}
   function castTalisman56(tx,ty){const action=playerAction57('modal-action',{uiOwner:'talismanTarget56'});if(!action.ok)return false;
     const a=V56.target;if(!a||!state)return false;const p=state.player,ox=p.x,oy=p.y;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(a.wasUnknown?'부적의 기운이 그곳까지 닿지 않는다.':`사거리 ${a.range}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('아직 확인하지 못한 칸이다.');return false}
@@ -5315,7 +5050,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
       if(a.kind==='blast'){const dmg=28+Math.floor((state.floor-1)/5)*6;for(const m of targets){const d=damageEntity(m,m.boss?Math.max(6,Math.floor(dmg*.80)):dmg);m.hitUntil=performance.now()+160;if(d>0)floatText(m.x,m.y,'-'+d,'#f0c37c',14);impact(m.x,m.y,'#e1b26d',5);if(m.hp<=0)killMonster(m);else{const dx=Math.sign(m.x-tx)||Math.sign(m.x-p.x),dy=Math.sign(m.y-ty)||Math.sign(m.y-p.y);if(dx||dy)resolveForcedMovement57(m,{x:m.x-dx,y:m.y-dy},1,{mode:'push',hostile:true,creditPlayer:true})}}addLog(`폭발부적: ${targets.length}체 파쇄.`);burst(tx,ty,'#e3ad5d',26,1.1)}
       else if(a.kind==='bind'){for(const m of targets){if(m.boss){m.controlCd54=Math.max(0,m.controlCd54||0);if(m.controlCd54<=0){m.stunned=Math.max(m.stunned||0,1);m.controlCd54=4;m.controlCdTurn54=state.turn}}else m.stunned=Math.max(m.stunned||0,4);floatText(m.x,m.y,m.boss?'봉박 1':'봉박 4','#d8c58a',10)}addLog(`봉박부: ${targets.length}체 봉인 · 일반 적 4턴.`);burst(tx,ty,'#c9b77a',20,.65)}
     }
-    consumeRef(a.item);cancelTalismanTarget56(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"castTalisman56"}).value;return true
+    consumeRef(a.item);cancelTalismanTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"castTalisman56"}).value;return true
   }
   targetHud.querySelector('#talismanCancel56').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
   
@@ -5329,7 +5064,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('knowledge56',{post:()=>{if(state){ensureKnowledge56();decorateAllItems56();state.roomHints56=state.roomHints56||{};updateAll()}}});
 
-  globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget56(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget56(item);return true}return !!useInstantTalisman56(item)}});
+  globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
   function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
 
   if(state){ensureKnowledge56();decorateAllItems56()}
@@ -5388,13 +5123,13 @@ function ingredientKey57(item){if(item?.type==='potion'){const proto=(globalThis
 
 
 
-function renderCooking57(){document.getElementById('cookStation57').textContent=V57.cookSource==='brazier'?'화로 · 날것을 굽거나 비방을 조리한다':`솥 · 최대 ${COOKING_INGREDIENT_LIMIT57}종 재료를 실험한다`;const a=eligibleCooking(),sel=selectedCooking(),rec=matchRecipe(sel),allKnown=sel.every(v=>isPotionKindVisible(v.item));document.getElementById('cookPreview57').innerHTML=!sel.length?`재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.`:rec?(state.cookbook57[rec.id]&&allKnown?`예상 결과 · <b>${rec.name}</b> ${(rec.yield||1)}개`:'재료가 반응한다. 조리하면 정체를 알 수 있다.'):'맞는 비방이 보이지 않는다. 그대로 조리하면 <b>검게 탄 숯</b>이 된다.';const inv=document.getElementById('cookInv57');inv.innerHTML=a.length?a.map(({item,idx})=>`<button class="cookItem57 ${V57.selected.has(idx)?'sel':''}" data-cook57="${idx}">${typeof vfIconHtml==='function'?vfIconHtml(item,'small'):''}<b>${cookingName(item)}</b><span>${item.count||1}개</span></button>`).join(''):'<div style="grid-column:1/-1;padding:24px;text-align:center;color:#7e674e">조리할 재료가 없다.</div>';inv.querySelectorAll('[data-cook57]').forEach(b=>b.onclick=()=>{const idx=+b.dataset.cook57;if(V57.selected.has(idx))V57.selected.delete(idx);else if(V57.selected.size<COOKING_INGREDIENT_LIMIT57)V57.selected.add(idx);else toast(`재료는 최대 ${COOKING_INGREDIENT_LIMIT57}종까지 넣을 수 있다.`);renderCooking57()});const book=document.getElementById('cookBookList57');book.innerHTML=FOOD_RECIPES.map(r=>state.cookbook57[r.id]?`<div><b style="color:#d7b77d">${r.name}</b> ${(r.yield||1)}개${r.stations?.length===1?` · ${r.stations[0]==='pot'?'솥 전용':'화로 전용'}`:''} · ${r.ingredients.map(key=>[key,...(r.alternatives?.[key]||[])].join(' 또는 ')).join(' + ')}</div>`:`<div>??? · ${r.hint}</div>`).join('')}
+
 
 
 
 
 ActionDispatcher.register('COOK',cookSelected);
-cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking57()};cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
+cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking()};cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
 
@@ -7052,19 +6787,9 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 /* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */
 /* v6.1 final render coordinator: one camera snapshot and one world renderer per update */
   const R61={last:0,lastMini:0,lastHud:0,dirty:true};
-  function mapModalOpen(){return !!interactionActive8('mobileMapModal')}
+
   
-function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdateButtons105();
-    if(!state)return;
-    // Gameplay, FOV and saves remain synchronous. Paint only the final state
-    // once in the existing animation frame, including rapid keyboard input.
-    if(!flushFrame){renderUpdatePending=true;return}
-    renderUpdatePending=false;R61.dirty=true;
-    updatePanels();
-    drawMap(true);R61.last=performance.now();R61.dirty=false;
-    if(mapModalOpen()||performance.now()-R61.lastMini>240){drawMinimap(true);R61.lastMini=performance.now()}
-    const sk=document.getElementById('skillTxt');if(sk)sk.onclick=()=>InputRouter.dispatch({type:'CLASS_SKILL',source:'gameplay-hud'});
-}
+
 /* removed overwritten visualLoop */
 
 
@@ -7135,26 +6860,18 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
   registerGenerationStage('feeling62','post',()=>{if(state&&!state.monsters.some(m=>m.boss)){applyFeeling62();applyMiniVault62();VisibilityService.compute();vfBuildDecor()}});
 
-  function updateFeelingUI62(){const f=feeling62();if(!f){feelEl.classList.remove('show');return}feelEl.innerHTML=`<b>${f.glyph}</b><span>${f.name}</span>`;feelEl.classList.add('show')}
+
 
   function strategyItem62(i){if(!i)return false;if(i.type==='talisman')return true;if(i.type==='potion')return !['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind);if(i.type==='food')return ['전력 주먹밥','매콤한 육포','한방 생선찜','보신 전골','얼음 복숭아'].includes(i.name);return false}
-  function glyph62(i){if(i.type==='talisman')return window.__MANRU_TALISMAN_PUBLIC__?.seal?.(i)||'부';if(i.type==='potion')return i.throwable?'병':'약';if(i.type==='food')return'식';return'물'}
+
 
   function beltItemKey62(item){return JSON.stringify([item.type,item.talismanKind||item.potionKind||item.name])}
 
-  function renderBelt62(){
-    if(!state||state.dead||state.victory){belt.classList.remove('show');return}
-    const a=beltItems(),pub=v=>globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.publicName?.(v.item)||v.item.name;
-    const sig=JSON.stringify(a.map(v=>[v.key,v.idx,pub(v),v.item.count||1]));
-    if(sig===V62.beltSig&&belt.childElementCount===a.length){belt.classList.toggle('show',a.length>0);return}V62.beltSig=sig;
-    const scroll=belt.scrollLeft;
-    belt.innerHTML=a.map((v,n)=>`<button class="beltSlot62" data-belt62="${n}" aria-label="${escBelt(pub(v))}"><i>${n+1}</i><b>${escBelt(glyph62(v.item))}</b><small>${escBelt(pub(v))}</small>${(v.item.count||1)>1?`<em>×${v.item.count}</em>`:''}</button>`).join('');belt.classList.toggle('show',a.length>0);belt.scrollLeft=scroll;
-    belt.querySelectorAll('[data-belt62]').forEach(b=>{const key=a[+b.dataset.belt62].key;b.onclick=e=>{e.preventDefault();e.stopPropagation();const v=beltItems().find(v=>v.key===key);if(v)ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value}});
-  }
+
 
   globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
-  registerPanelHook54('feeling62',()=>{updateFeelingUI62();renderBelt62();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`});
+  registerPanelHook54('feeling62',()=>{updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`});
 
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'feeling62',draw:drawFeelingOverlay});
@@ -7188,13 +6905,8 @@ const RC={
   RC.storagePersistent=(()=>{const k='__manru_probe70';try{localStorage.setItem(k,'1');localStorage.removeItem(k);return true}catch(_){return false}})();
   try{RC.uiVolume=Math.max(0,Math.min(1,+(lsGet('manruUiVolume70')??.35)))}catch(error){ignoreError('ui volume unreadable',error)}
 
-  function applyTextScale70(value,persist=false){
-    const scale=[1,1.15,1.3,1.45].includes(Number(value))?Number(value):1;
-    RC.textScale=scale;document.documentElement.style.setProperty('--ui-font-scale',String(scale));
-    document.documentElement.toggleAttribute('data-ui-text-large',scale>1);
-    if(persist)lsSet('manruUiTextScale70',String(scale));
-  }
-  applyTextScale70(lsGet('manruUiTextScale70')??1);
+
+  applyTextScale(lsGet('manruUiTextScale70')??1);
 
   /* ---------- final release UI ---------- */
 
@@ -7209,7 +6921,7 @@ const RC={
       </div>
     </div>`;
   document.body.appendChild(panel);
-  const coach=document.createElement('div');coach.id='coach70';coach.setAttribute('role','dialog');coach.setAttribute('aria-modal','true');coach.setAttribute('aria-labelledby','coachTitle58');coach.setAttribute('aria-describedby','coachText58');document.body.appendChild(coach);coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeTip70()}});
+  const coach=document.createElement('div');coach.id='coach70';coach.setAttribute('role','dialog');coach.setAttribute('aria-modal','true');coach.setAttribute('aria-labelledby','coachTitle58');coach.setAttribute('aria-describedby','coachText58');document.body.appendChild(coach);coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
   const releaseStamp=document.createElement('div');releaseStamp.id='releaseStamp70';releaseStamp.textContent=RELEASE_INFO.stamp;document.getElementById('canvasWrap')?.appendChild(releaseStamp);
   const mb=document.querySelector('#mobileHud .mButtons');
   const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정 / 세이브');mb?.appendChild(releaseGearButton);
@@ -7230,39 +6942,16 @@ const RC={
 
 
 
-  const AUTO_KEY='manruRC70_autosave';
-  
-
-
-
-
 
   
 
-  function restoreState70(st){
-    st=GameState.migrate(st);validateSaveState(st);
-    // Current saves already own their finalized visual-decor state. Rebuilding vfBuildDecor here
-    // discards saved architecture/theme props after the geometry has already been finalized.
-    // Only legacy saves that genuinely lack a decor array need the reconstruction fallback.
-    const hasSavedDecor70=Array.isArray(st.decor);
-    state=GameState.initialize(structuredClone(st));globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();state._manualRangedTargetR8=null;state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;normalizeClassState58(state.player,state.playerAgencyTurns57);normalizeHealthState58(state);
-    ROWS=state.map?.length||ROWS;COLS=state.map?.[0]?.length||COLS;for(const wall of state.tempTerrain74||[])if(wall.rootWall105)delete wall.riseStarted105;
-    state.seen=state.seen instanceof Set?state.seen:new Set(state.seen||[]);state.visible=new Set();state.grassTufts1020=state.grassTufts1020 instanceof Set?state.grassTufts1020:new Set(Array.isArray(state.grassTufts1020)?state.grassTufts1020:[]);
-    if(state.branchWorld105?.canalFollowers105){summonPlaceFollowers105(state.branchWorld105.canalFollowers105);delete state.branchWorld105.canalFollowers105;}
-    if(!state.branchContext105&&!state.artifactDungeon46&&!state.shopIntermission?.active&&[2,3,7,9,12,16].includes(state.floor)&&!state.branchPortals105.length)branchEntrance105({required:false});
-    if(state.branchContext105?.id==='palace')palaceApplyTide105();
- if(state.branchContext105?.id==='mine'){mineEnsureEntrance105();migrateMineAppearance105();}
-    BRANCH_TILE_CACHE.clear();
-    state.decals=state.decals||[];if(state.decals.length>24)state.decals.splice(0,state.decals.length-24);state.decor=state.decor||[];state.vaults=state.vaults||[];state.switches=state.switches||[];state.rafts=state.rafts||[];state.routeTags=state.routeTags||[];
-    state.floorKeys=state.floorKeys||0;state.floorKeysRequired=state.floorKeysRequired||0;state.visionPenalty=state.visionPenalty||0;state.cipher=state.cipher||null;state.enemyEnergy=state.enemyEnergy||0;
-    state.player=state.player||{};state.player.hunger=state.player.hunger??100;state.player.skillPoints=state.player.skillPoints??0;state.player.blinkLevel=state.player.blinkLevel??0;normalizePlayerProgression57(state.player);
-    state.player.martial=Object.assign({strong:0,roar:0,ghost:0,brawl:0,constitution:0},state.player.martial||{});state.player.nextAttackAt=0;state.player.busyUntil=0;
-    state.status=Object.assign({haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0,swift:0,fortify:0,willBoost:0},state.status||{});if(!Number.isFinite(state.makgeolliRecoveryTurns57))state.makgeolliRecoveryTurns57=state.status.drunk||0;state.makgeolliHealHundredths57=Math.max(0,Math.min(99,Math.floor(Number(state.makgeolliHealHundredths57)||0)));if(state.status.drunk>0&&!Number.isFinite(state.drunkBornTurn57))state.drunkBornTurn57=state.turn;
-    normalizeTerrainUnderlays58();
-    for(const mon of state.monsters||[])normalizeBoss(mon,{loading:true});
-    document.body.classList.add('run-active');const ov=document.getElementById('overlay');if(ov)ov.style.display='none';
-    normalizeShop58();normalizeRunState57();migrateRetiredItems(state);normalizeItemContainers57();VisibilityService.compute();resetVisualState();resetTurnState();if(!hasSavedDecor70)vfBuildDecor();updateAll();return true;
-  }
+
+
+
+
+  
+
+
 
 
 
@@ -7272,12 +6961,8 @@ const RC={
 
   /* ---------- release panel owner (physical routing is canonical in InputRouter) ---------- */
   RuntimeState.ui.release=RC;
-  function openReleasePanel(){if(!gameplayUiOpen57())return false;
-    if(RC.panelOpen)return;cancelAutoWalk();RC.panelOpen=true;panel.classList.add('open');document.body.classList.add('rc70-open');window.__MANRU_PAUSE_RENDER61=true;refreshSlots();refreshSfx70();uiTone70(520,.035);
-  }
-  function closePanel70(){
-    if(!RC.panelOpen)return;RC.panelOpen=false;panel.classList.remove('open');document.body.classList.remove('rc70-open');window.__MANRU_PAUSE_RENDER61=false;RC.lastActionAt=performance.now();if(state)updateAll();
-  }
+
+
   releaseGearButton.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});dg.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});document.getElementById('rcClose70').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-panel'});
   panel.addEventListener('pointerdown',e=>{if(e.target===panel)InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-backdrop'})},{passive:true});
 
@@ -7302,32 +6987,20 @@ const RC={
     return ledger;
   }
   function seenTip70(id){return !!tipLedger66().seen[id]}
-  function markTip70(id){const ledger=tipLedger66();ledger.seen[id]=true;lsSet('manruTutorialAccount66',JSON.stringify(ledger));if(state)(state.tutorialSeen59||(state.tutorialSeen59={}))[id]=true}
+
 
   function tip70(id,text,sub='',options={}){
     if((!options.repeatable&&seenTip70(id))||coachCurrent?.id===id||RC.tutorialQueue.some(t=>t.id===id))return;
-    const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip70,0);
-  }
-  function closeTip70(silent=false){
-    if(!RC.tutorialShowing){if(silent){RC.tutorialQueue=[];clearTimeout(coachTimer)}return}if(!silent&&!coachCurrent.repeatable)markTip70(coachCurrent.id);setInteraction8('coach70',false);coach.classList.remove('show');RC.tutorialShowing=false;coachCurrent=null;clearHeldInput53();endTargetInput57(180);if(coachFocus?.isConnected)coachFocus.focus({preventScroll:true});coachFocus=null;if(silent){RC.tutorialQueue=[];clearTimeout(coachTimer)}else coachTimer=setTimeout(pumpTip70,200);
-  }
-  function pumpTip70(){
-    clearTimeout(coachTimer);if(RC.tutorialShowing||!RC.tutorialQueue.length)return;
-    RC.tutorialQueue=RC.tutorialQueue.filter(t=>t.run===state?.runId984);if(!RC.tutorialQueue.length)return;
-    if(!state||state.dead||state.victory)return;
-    if(state.story992?.dispatchPending60||RC.panelOpen||activeGameplayPanels57().length||actionPresentationBusy58()||state._turnPipelineActive57||document.body.dataset.manruScreen!=='game'){coachTimer=setTimeout(pumpTip70,180);return}
-    const t=RC.tutorialQueue.shift();if(!t.repeatable&&seenTip70(t.id)&&!t.resume66){coachTimer=setTimeout(pumpTip70,0);return}coachCurrent=t;RC.tutorialShowing=true;coachFocus=document.activeElement;cancelAutoWalk();clearHeldInput53();
-    const titles={floor5:'첫 수문장 앞에서',floor6:'달라진 만루, 수묵원',floor11:'영악한 괴물, 강해진 회복력',start:'한 걸음이 한 수다',bag:'준비한 물건이 살린다',potion:'색만으로 믿지 마라',talisman:'위기를 뒤집는 한 장',food:'허기를 먼저 살펴라',bow:'사선을 읽고 쏴라',door:'문 너머를 준비하라',throw:'전장을 바꾸는 약병',resume:'다시, 만루 안으로',martial:'무술을 다듬는 법',combat:'첫 교전, 거리를 읽어라',recovery:'상처를 돌보는 시간',level:'한 단계 강해졌다',stairs:'내려가기 전에',hunger:'허기를 놓치지 마라',entry_exit:'전실을 나서기 전에'};
-    coach.innerHTML='<section class="coachSheet58"><span class="uiCorners63" aria-hidden="true"></span><button id="coachClose58" aria-label="안내 닫기">×</button><div class="coachEyebrow58">만루 · 조사관의 수첩</div><h2 id="coachTitle58"></h2><p id="coachText58"></p><small id="coachSub58"></small><footer class="coachFoot58"><small>닫기 × / Esc</small><button id="coachContinue58">확인 · 계속</button></footer></section>';
-    coach.querySelector('#coachTitle58').textContent=t.title||titles[t.id]||'알아두면 살아남는다';coach.querySelector('#coachText58').textContent=t.text;coach.querySelector('#coachSub58').textContent=t.sub;
-    coach.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();closeTip70()});setInteraction8('coach70',true);coach.style.removeProperty('display');coach.classList.add('show');if(!t.repeatable)markTip70(t.id);coach.querySelector('#coachContinue58').focus({preventScroll:true});uiTone70(620,.05);
-  }
-  function resetTips70(){
-    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove(k))}catch(error){ignoreError('tip reset could not clear keys',error)}
-    closeTip70(true);lsSet('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closePanel70();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');showFloorTips();
+    const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
   }
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('runtime70',{post:()=>{closeTip70(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();if(!state?.tutorialEntry60)tip70('start','탭/클릭한 칸까지 이동한다. 방향키와 WASD로도 이동할 수 있다.','한 번 행동하면 적도 움직인다.')}});
+
+  function resetTips70(){
+    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove(k))}catch(error){ignoreError('tip reset could not clear keys',error)}
+    closeCurrentTip(true);lsSet('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closeReleasePanel();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');showFloorTips();
+  }
+
+  globalThis.__MANRU_LIFECYCLE__.registerNew('runtime70',{post:()=>{closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();if(!state?.tutorialEntry60)tip70('start','탭/클릭한 칸까지 이동한다. 방향키와 WASD로도 이동할 수 있다.','한 번 행동하면 적도 움직인다.')}});
 
 
 
@@ -7343,10 +7016,7 @@ const RC={
   registerMovePreR8(ctx=>{RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true});
   // r30: runtime item coaching/activity bookkeeping is integrated in canonical useInventoryItem.
 
-  function suspendTip60(){
-    if(RC.tutorialShowing){const t=coachCurrent;setInteraction8('coach70',false);coach.classList.remove('show');RC.tutorialShowing=false;coachCurrent=null;coachFocus=null;RC.tutorialQueue.unshift({...t,resume66:true})}
-    clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip70,180);
-  }
+
 
 
 
@@ -7409,7 +7079,7 @@ const RC={
   }
   visualLoop=function(now=performance.now()){
     try{
-    if(!state?.debugBattle57)advanceHeldInput53(now);
+    if(!state?.debugBattle57)advanceHeldInput(now);
     if(!document.hidden&&!window.__MANRU_PAUSE_RENDER61){
       const w=innerWidth,h=innerHeight;
       if(document.body.dataset.manruScreen==='title'){
@@ -7419,7 +7089,7 @@ const RC={
       if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
       if(state?.debugBattle57)debugBattleFrame57(now);
       if(state&&!state.debugBattle57){
-        dojoSleepFrame105(now);updateVisualMotion(now);
+        dojoSleepFrame(now);updateVisualMotion(now);
         const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;
         if(pending||cameraRenderPending||now-RC.lastDraw>=budget){
           const t=performance.now();if(pending)updateAll(true);else drawMap(false);const cost=performance.now()-t;RC.perf.lastCost=cost;RC.perf.frames++;RC.perf.ema+= (cost-RC.perf.ema)/Math.min(120,RC.perf.frames);RC.lastDraw=now;
@@ -7450,12 +7120,11 @@ const RC={
   document.getElementById('rcQuickAudit70').onclick=()=>{document.getElementById('rcDiag70').textContent=JSON.stringify(audit70(),null,2)};
   document.getElementById('rcPerf70').onclick=()=>{const total=bench70(20);document.getElementById('rcDiag70').textContent=`20회 강제 렌더 ${total}ms\n평균 ${(total/20).toFixed(2)}ms\nEMA ${RC.perf.ema.toFixed(2)}ms\nDPR ${VIEW.dpr}`};
 
-  /* ---------- settings buttons ---------- */
-  function sfxOn70(){try{return lsGet('manruSfx54')!=='0'}catch(_){return true}}
-  function refreshSfx70(){const b=document.getElementById('rcSfx70');if(b)b.textContent=`게임 효과음 ${sfxOn70()?'ON':'OFF'}`;const h=document.getElementById('rcHaptic70');if(h){const on=vibrationEnabled57();h.textContent=`진동 ${on?'ON':'OFF'}`;h.setAttribute('aria-pressed',on?'true':'false')}const r=document.getElementById('rcUiVol70');if(r)r.value=String(RC.uiVolume)}
-  document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));setTimeout(refreshSfx70,20)};
-  document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled57(!vibrationEnabled57());refreshSfx70();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
-  document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale70(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
+
+
+  document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));setTimeout(refreshSfx,20)};
+  document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled(!vibrationEnabled());refreshSfx();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
+  document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
   const textScaleControl=document.getElementById('rcTextScale70');textScaleControl.value=String(RC.textScale);
   document.getElementById('rcTutorial70').onclick=resetTips70;
   document.getElementById('rcExport70').onclick=exportSaveFile;
@@ -7465,15 +7134,12 @@ const RC={
 
 
   globalThis.__MANRU_LIFECYCLE__.resetLoad('runtime70',loadGameCore,validateSaveState,parseEnvelope);
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('resume70',{post:()=>{closeTip70(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();showFloorTips();if(trainingActive()){if(!state.story992?.dispatchPending60)advanceEntryTutorial();return}setTimeout(()=>tip70('resume','자동 추적 카메라가 플레이어를 따라간다. ◎로 언제든 중심 복귀 가능.','추적=고정 추적 · 완만=데드존 · 자유=자유 시점'),500)}});
-  function refreshContinue70(){
-    RunLifecycle.refreshContinue();
-    const st=document.getElementById('rcStorage70');if(st)st.textContent=RC.storagePersistent?'· 영구 저장 가능':'· 브라우저 영구 저장 제한: 내보내기 사용';
-  }
-  refreshSlots();refreshSfx70();refreshContinue70();
+  globalThis.__MANRU_LIFECYCLE__.registerLoad('resume70',{post:()=>{closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();showFloorTips();if(trainingActive()){if(!state.story992?.dispatchPending60)advanceEntryTutorial();return}setTimeout(()=>tip70('resume','자동 추적 카메라가 플레이어를 따라간다. ◎로 언제든 중심 복귀 가능.','추적=고정 추적 · 완만=데드존 · 자유=자유 시점'),500)}});
+
+  refreshSlots();refreshSfx();refreshContinueStatus();
 
   window.__MANRU_RELEASE__={
-    openPanel:openReleasePanel,closePanel:closePanel70,markAction:()=>{RC.lastActionAt=performance.now();return RC.lastActionAt},tip:tip70,floorTutorial:showFloorTips,closeTip:closeTip70,suspendTip:suspendTip60,entryTutorial:advanceEntryTutorial,closePanel:closePanel70
+    openPanel:openReleasePanel,closePanel:closeReleasePanel,markAction:()=>{RC.lastActionAt=performance.now();return RC.lastActionAt},tip:tip70,floorTutorial:showFloorTips,closeTip:closeCurrentTip,suspendTip:suspendTips,entryTutorial:advanceEntryTutorial,closePanel:closeReleasePanel
   };
 
 /* ===== MANRU v7.0.1: ANDROID BACKGROUND / RESUME RECOVERY ===== */
@@ -7958,7 +7624,7 @@ ActionDispatcher.register('FUSE',fuse74);
 
 
 
-  function renderGear74(){const s=V74.gearScroll,host=document.getElementById('gear74body');if(!s){host.innerHTML='';return}document.getElementById('gear74title').textContent=['upgrade','reinforce105'].includes(s.talismanKind)?`${s.name} · 장비 선택`:`${s.name} · 각인 대상`;document.getElementById('gear74sub').textContent=s.talismanKind==='upgrade'?'강화 횟수 제한 없음 · 방어구는 초반 약 +1.8~2.0 DEF에서 시작해 강화할수록 회당 상승량이 점차 감소 · 내부 계산은 소수, 표시는 정수 반올림 · 권갑은 3강마다 실질 ATK +1 · 소환술서는 소모 HP·기운 회복 시간 감소(강화할수록 감소 폭이 작아짐) · 이전 강화는 반환되지 않음.':'장비 각인은 무기 1개 / 방어구 1개만 유지되며 새 각인이 기존 각인을 교체한다. 성광 각인은 무기 언데드 추가피해 +5, 방어구 언데드 직접피해 15% 감소.';const entries=gearEntries().filter(v=>(s.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost'||v.item.summonItem105==='book')&&(s.talismanKind!=='reinforce105'||(!v.item.artifactWeapon46&&(v.item.tier||1)<=2)));if(s.talismanKind==='reinforce105')document.getElementById('gear74sub').textContent='T2 이하 무기·방어구만 +1 강화 · 일반 강화와 같은 효과 · 천하장사도 장비에 사용';host.innerHTML=`<div class="f74gear">${entries.map((v,n)=>{const e=E74[v.item.elementBrand74||v.item.elementGuard74];return`<button data-g74="${n}"><b>${esc74(v.item.name)} ${v.item.upgrade?`+${v.item.upgrade}`:''}</b><small>${v.label} · ${v.item.summonItem105==='book'?'소환술서':v.item.type==='weapon'?'무기':'방어구'}</small>${e?`<div class="f74brand">현재 ${e.name} 각인</div>`:''}</button>`}).join('')}</div>`;if(!entries.length)host.innerHTML='<div class="f74none">사용 가능한 T2 이하 무기·방어구가 없다. 부적은 소비되지 않았다.</div>';host.querySelectorAll('[data-g74]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'GEAR_APPLY',args:[entries[+b.dataset.g74]]}).value);if(s.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'){const power=document.createElement('button');power.textContent='육체에 괴력 부여';power.onclick=()=>{closeGear();useBodyPower74(s);};host.append(power);}}
+
 
 ActionDispatcher.register('GEAR_APPLY',applyGear);
 
@@ -7976,8 +7642,8 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   /* fused effects */
   const targetHud74=()=>document.getElementById('talismanTarget56');
   function safeBlink74(x,y){return validatePlayerTransfer57(x,y,{cause:'fusion-blink'}).ok}
-  function startTarget74(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();clearHeldInput53();V74.target={item,range:item.targetRange||5,effect:item.fusionEffect74};closeInventory();const h=targetHud74();h?.classList.add('show');syncWorldTargetInput57();const a=document.getElementById('talismanTargetTitle'),b=document.getElementById('talismanTargetText');if(a)a.textContent=`${item.name} · ${item.seal}`;if(b)b.textContent=`목표 지정 · 사거리 ${V74.target.range}`;drawMap(true)}
-  function cancelTarget74(silent=false){V74.target=null;targetHud74()?.classList.remove('show');syncWorldTargetInput57();endTargetInput57(320);if(!silent)toast('부적 사용을 취소했다.');drawMap(true)}
+  function startTarget74(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();clearHeldInput53();V74.target={item,range:item.targetRange||5,effect:item.fusionEffect74};closeInventory();const h=targetHud74();h?.classList.add('show');syncWorldTargetInput();const a=document.getElementById('talismanTargetTitle'),b=document.getElementById('talismanTargetText');if(a)a.textContent=`${item.name} · ${item.seal}`;if(b)b.textContent=`목표 지정 · 사거리 ${V74.target.range}`;drawMap(true)}
+
   function reveal74(){let n=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));if(state.map[y][x]===TT.SECRET_DOOR)n++}VisibilityService.compute();return n}
 
 
@@ -8004,7 +7670,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   globalThis.__MANRU_LIFECYCLE__.registerNew('talisman74',{post:()=>{ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('talisman74',{post:()=>{if(state){ensure74(true);updateAll()}}});
 
-  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTarget74(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
+  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
 /* ===== MANRU v7.5: CLEAN SHATTERED-LIKE HUD / UNIFIED INPUT / FUSION QA ===== */
@@ -8086,7 +7752,7 @@ const CONFIG81=Object.freeze({
   
   
   const targeting81=()=>actionTargetOpen56();
-  const blocked81=()=>!gameplayInputAllowed57();
+
   const canAct81=()=>gameplayInputAllowed57();
   
 
@@ -8172,7 +7838,7 @@ const CONFIG81=Object.freeze({
       return ReachabilityService.pathTo(pos.x,pos.y);
     },
     pickupAll(){
-      if(!state||blocked81())return 0;
+      if(!state||isGameplayInputBlocked())return 0;
       let count=0,guard=0;
       while(guard++<12){
         const before=state.items.length;
@@ -8190,7 +7856,7 @@ const CONFIG81=Object.freeze({
       if(t.type==='merchant'){if(entityDistance57(pos,p)>1)return false;this.stop('merchant',true);return interactNeutral58(neutralInteractableAt58(pos.x,pos.y))}
       if(t.type==='shop-stock'){
         if(p.x!==pos.x||p.y!==pos.y)return false;
-        this.stop('shop-stock',true);const stock=ShopMapBuilder.groundAt(pos.x,pos.y);if(stock)openShop58(stock);return true;
+        this.stop('shop-stock',true);const stock=ShopMapBuilder.groundAt(pos.x,pos.y);if(stock)openShop(stock);return true;
       }
       if(t.type==='monster'){
         if(entityDistance57(t.mon,p)>1)return false;
@@ -8232,7 +7898,7 @@ const CONFIG81=Object.freeze({
       return'';
     },
     startPath(path,meta={}){
-      if(!state||state.dead||state.victory||blocked81()||targeting81())return false;
+      if(!state||state.dead||state.victory||isGameplayInputBlocked()||targeting81())return false;
       this.stop('replace',false);
       this.active=true;this.exploreMode=!!meta.explore;VIS.exploring=this.exploreMode;
       this.target=meta.target||null;this.path=(path||[]).map(p=>({x:p.x,y:p.y}));
@@ -8243,7 +7909,7 @@ const CONFIG81=Object.freeze({
       this.setChip(label);
       const tick=()=>{
         if(token!==this.serial||!this.active)return;
-        if(!state||state.dead||state.victory||blocked81()||targeting81()){this.stop('blocked-ui',true);return}
+        if(!state||state.dead||state.victory||isGameplayInputBlocked()||targeting81()){this.stop('blocked-ui',true);return}
         const presentationWait=ACTION_PRESENTATION58.run===state?ACTION_PRESENTATION58.inputUntil-performance.now():0;
         if(presentationWait>0){this.schedule(tick,Math.ceil(presentationWait));return}
         if(this.target&&this.act(this.target))return;
@@ -8454,21 +8120,11 @@ const CONFIG81=Object.freeze({
 
   
 
-  /* ---------------- mobile controls: one owner, no duplicate touch/click stack ---------------- */
-  function stopHeld81(){
-    clearTimeout(Runtime81.repeatDelay);clearInterval(Runtime81.repeatTick);Runtime81.repeatDelay=Runtime81.repeatTick=0;
-    if(Runtime81.held?.btn)Runtime81.held.btn.classList.remove('rt81-pressed');Runtime81.held=null;
-  }
 
 
-  /* ---------------- mobile map input: tap destination, drag camera, hold inspect, pinch zoom ---------------- */
-  function placeInput81(){
-    const input=Runtime81.input;if(!input)return;
-    if(!state||state.debugBattle57||runState57()!=='playing'){input.style.display='none';input.style.pointerEvents='none';return;}
-    const r=C.getBoundingClientRect();
-    input.style.display='block';input.style.left=r.left+'px';input.style.top=r.top+'px';input.style.width=r.width+'px';input.style.height=r.height+'px';input.style.pointerEvents=targeting81()?'none':'auto';
-  }
-  function queuePlace81(){requestAnimationFrame(placeInput81)}
+
+
+  function queuePlace81(){requestAnimationFrame(placeInput)}
 
 
   function inspectTile81(q){
@@ -8481,17 +8137,7 @@ const CONFIG81=Object.freeze({
     const tag=routeTagAt(q.x,q.y);showInspect(terrainName(t),tag?.label?`${terrainName(t)}. ${tag.label}을 가리키는 표식이다.`:`${terrainName(t)}.`);
   }
 
-  /* ---------------- compact viewport controls, no feature banner ---------------- */
-  function cleanViewportUI81(){
-    const hud=document.getElementById('zoomHud');if(hud){
-      const rebindZoom=(id,key,title)=>{const old=document.getElementById(id);if(!old)return;const b=old.cloneNode(true);old.replaceWith(b);b.title=title;b.onclick=e=>{e.preventDefault();e.stopPropagation();ClientEnvironment.emit({type:'CAMERA_ZOOM',delta:key==='+'?1:-1,source:'zoom-hud'})}};
-      rebindZoom('zoomOutBtn','-','축소');rebindZoom('zoomInBtn','+','확대');
-      let center=document.getElementById('cameraCenterBtn');if(!center){center=document.createElement('button');center.id='cameraCenterBtn';center.textContent='◎';hud.appendChild(center)}
-      const fresh=center.cloneNode(true);center.replaceWith(fresh);fresh.title='플레이어에게 시점 복귀';fresh.onclick=e=>{e.preventDefault();e.stopPropagation();ClientEnvironment.emit({type:'CAMERA_CENTER',source:'zoom-hud'})};
-      hud.setAttribute('aria-label','시점과 확대');
-    }
-    const autoTop=document.getElementById('mobileAutoBtn');if(autoTop){const b=autoTop.cloneNode(true);autoTop.replaceWith(b);b.onclick=e=>{e.preventDefault();ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'})}}
-  }
+
 
   /* Final integrity pass: later visual/layout passes may occasionally invalidate a spawn tile. */
   const Integrity81={
@@ -8550,9 +8196,9 @@ const CONFIG81=Object.freeze({
   globalThis.__MANRU_LIFECYCLE__.registerNew('runtime81',{post:()=>{CameraController.center();ConnectedDecor81.build();queuePlace81()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('runtime81',{post:()=>{if(state?.artifactDungeon46){CameraController.center();return}if(state){CameraController.center()}}});
 
-  addEventListener('pointerup',stopHeld81,{passive:true});addEventListener('pointercancel',stopHeld81,{passive:true});addEventListener('blur',stopHeld81,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeld81()},{passive:true});
+  addEventListener('pointerup',stopHeldInput,{passive:true});addEventListener('pointercancel',stopHeldInput,{passive:true});addEventListener('blur',stopHeldInput,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 
-  cleanViewportUI81();makeInput();rebindControls();ConnectedDecor81.build();CameraController.resume(false);
+  cleanViewportUI();makeInput();rebindControls();ConnectedDecor81.build();CameraController.resume(false);
 
   
   
@@ -8562,7 +8208,7 @@ const CONFIG81=Object.freeze({
   
   
 
-  window.__MANRU_RUNTIME81__={state:Runtime81,Automation81,Camera81:CameraController,Zoom81:ZoomController,ConnectedDecor81,Integrity81,inspect:inspectTile81,stopHeld:stopHeld81};
+  window.__MANRU_RUNTIME81__={state:Runtime81,Automation81,Camera81:CameraController,Zoom81:ZoomController,ConnectedDecor81,Integrity81,inspect:inspectTile81,stopHeld:stopHeldInput};
 
 
 /* ===== MANRU v8.5: TRUE STRUCTURAL MAP REBUILD / DECOR VOCABULARY ===== */
@@ -9283,9 +8929,8 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   // More expressive 32px sprite finishing pass over the atlas sprites.
   
 
-  // Polished title motion: lantern glows and mist breathe asynchronously without redrawing the atlas each frame.
-  function titlePolish94(){const w=document.querySelector('.titleWorld');if(!w||w.querySelector('.titleGlow94'))return;const layer=document.createElement('div');layer.className='titleGlow94';layer.innerHTML='<i style="--x:23%;--y:33%;--d:0s"></i><i style="--x:78%;--y:39%;--d:-.8s"></i><i style="--x:31%;--y:58%;--d:-1.7s"></i><i style="--x:70%;--y:70%;--d:-2.4s"></i><i class="hero" style="--x:50%;--y:83%;--d:-1.1s"></i><b></b>';w.appendChild(layer)}
-  titlePolish94();
+
+  titlePolish();
 
   // Higher quality death/victory cards.
 
@@ -9297,44 +8942,9 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   // Progression is owned by the canonical checkLevel() above; no late reassignment.
 
-  // Dedicated class portraits replace the old generic title portraits.
-  function classPortrait95(id){
-    const c=document.createElement('canvas');c.width=c.height=64;const q=c.getContext('2d');q.imageSmoothingEnabled=false;
-    const r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)},s=(x,y,w,h,col)=>{q.strokeStyle=col;q.lineWidth=1;q.strokeRect(x+.5,y+.5,w-1,h-1)};
-    r(0,0,64,64,'#050302');r(4,4,56,56,'#110906');r(6,6,52,52,'#1b100a');
-    // architectural portrait frame, floor shadow, and warm backlight
-    r(8,8,48,2,'#5a3a22');r(8,54,48,2,'#5a3a22');r(8,8,2,48,'#5a3a22');r(54,8,2,48,'#5a3a22');
-    r(12,13,40,34,id==='wanderer'?'#2a1710':id==='escort'?'#20272a':'#17242a');
-    r(13,49,38,5,'#080403');r(16,51,32,3,'#030201');
-    if(id==='wanderer'){
-      // broad inspector hat, layered coat, seal and sheathed blade
-      r(17,11,30,4,'#120b08');r(21,7,22,5,'#21130c');r(25,6,14,2,'#342015');r(20,15,24,16,'#d0b792');
-      r(19,18,3,13,'#7b5136');r(42,18,3,13,'#7b5136');r(25,21,3,2,'#1d1612');r(36,21,3,2,'#1d1612');r(30,27,5,2,'#80543c');
-      r(16,31,32,17,'#7f342b');r(19,32,26,4,'#a94e39');r(21,37,22,11,'#5c2822');r(27,35,10,9,'#b28b4f');s(27,35,10,9,'#f0cc78');
-      r(12,15,3,35,'#c59954');r(10,13,7,4,'#6f4524');r(49,18,3,31,'#6f4b2e');r(48,16,5,3,'#d6b06a');
-      r(18,46,8,5,'#2b1510');r(38,46,8,5,'#2b1510');
-    }else if(id==='escort'){
-      // heavy guard silhouette, helmet crest, segmented armour, spear and shield
-      r(19,8,26,7,'#252d31');r(23,5,18,4,'#3b4549');r(29,3,6,4,'#8a3c30');r(20,15,24,14,'#baa47f');
-      r(24,20,3,2,'#1e2020');r(37,20,3,2,'#1e2020');r(15,28,34,21,'#65594d');r(18,29,28,5,'#90806c');
-      for(let y=35;y<47;y+=4){r(19,y,26,2,'#b69b72');r(20,y+2,24,1,'#3d342c')}
-      r(10,27,8,20,'#594a3c');s(10,27,8,20,'#d0b47d');r(46,27,8,20,'#594a3c');s(46,27,8,20,'#d0b47d');
-      r(7,11,3,41,'#a77743');r(6,8,5,6,'#d3ab69');r(53,15,3,37,'#a77743');r(51,12,7,5,'#d3ab69');
-      r(18,47,10,5,'#27201b');r(36,47,10,5,'#27201b');
-    }else{
-      // scout swordsman, asymmetric scarf, ponytail and long sword
-      r(20,9,26,5,'#111b20');r(24,6,19,4,'#1d3038');r(43,7,6,15,'#17252b');r(20,14,24,16,'#c2ced0');
-      r(25,20,3,2,'#172126');r(36,20,3,2,'#172126');r(30,26,6,2,'#6d4b3d');
-      r(16,30,31,18,'#516f7b');r(19,31,25,5,'#7997a1');r(14,30,7,18,'#7c302b');r(21,37,23,3,'#273c45');r(23,40,19,8,'#3e5b66');
-      r(49,6,3,44,'#d2e0df');r(48,5,5,4,'#f0f4ec');r(47,48,7,3,'#7e5833');r(10,34,4,17,'#7e332d');
-      r(18,47,9,5,'#18252b');r(37,47,9,5,'#18252b');
-    }
-    // subtle pixel highlights and outer border
-    r(9,9,1,10,'rgba(246,200,121,.22)');r(54,43,1,10,'rgba(246,200,121,.16)');s(4,4,56,56,'#8a5b32');
-    return c.toDataURL('image/png')
-  }
-  function refreshClassPortraits95(){document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{const img=b.querySelector('.vfClassPortrait');if(img)img.src=classPortrait95(['wanderer','escort','swordsman'][i])})}
-  queueMicrotask(refreshClassPortraits95);
+
+
+  queueMicrotask(refreshClassPortraits);
 
   // Final 32px sprite pass: class weapons, silhouettes and enemy-family details remain visible at game scale.
   
@@ -9651,44 +9261,14 @@ function installFloor24GrandEntrance96(){
     return{floor:state.floor,expected,mapKeys:mapKeys.length,mapGates:mapGates.length,typed:!!plan,typedGroups:plan?.groups?.length||0,typedKeys:activePlanKeys.length,typedGates:closedPlanDoors.length,countMatch,legacyKeys:legacyKeys.length,legacyGates:legacyGates.length,orphanKeys,orphanGates,missingPlanKeys,missingPlanGates,legacyOk,typedOk,ok};
   }
 
-  /* v9.6.2 DESKTOP INTEL PANEL */
-  function buildDesktopSide962(){
-    const side=document.getElementById('side');if(!side||side.dataset.v962==='1')return;side.dataset.v962='1';
-    side.innerHTML=`<button class="uxClose" id="mobileClosePanel" type="button" aria-label="닫기" style="display:none">×</button>
-      <div class="d962Head"><div><span>만루 탐사 기록</span><b id="regionTxt">---</b></div><strong id="floorTxt">제 -- 층</strong></div>
-      <div class="d962Sub"><span id="depthLore">---</span><span id="turnTxt">TURN --</span></div>
-      <div class="d962Vitals">
-        <div><label>생명 <span id="hpTxt">--/--</span></label><i><em id="hpFill"></em></i></div>
-        <div><label>기력 <span id="manaTxt">--/--</span></label><i><em id="manaFill"></em></i></div>
-        <div><label>경험 <span id="xpTxt">--</span></label><i><em id="xpFill"></em></i></div>
-        <div><label>허기 <span id="alertTxt">--</span></label><i><em id="alertFill"></em></i></div>
-      </div>
-      <section class="d962Radar"><header><b>능력치</b><span>현재 장비 포함</span></header><svg id="desktopRadar962" viewBox="0 0 220 190" aria-label="능력치 육각형"></svg></section>
-      <section class="d962Keys"><header><b>열쇠 / 봉쇄</b><span id="desktopKeyCount962">---</span></header><div id="desktopKeyStatus962"></div></section>
-      <section class="d962Equip"><header><b>장비</b></header><div class="d962Eq"><span>무기</span><b id="weaponTxt">---</b><span>갑옷</span><b id="armorTxt">---</b><span>망토</span><b id="cloakTxt">---</b><span>유물</span><b id="relicTxt">---</b><span>장신구</span><b id="trinketTxt">---</b></div></section>
-      <section class="d962Around"><header><b>주변 / 상태</b></header><div id="monsterInfo">주변 생체 반응 없음.</div><div id="statusLine">---</div></section>
-      <section class="d962Martial"><header><b>무술</b></header><div id="skillTxt">---</div></section>
-      <div class="d962Hint">WASD 이동 · C 문닫기 · 클릭 자동이동 · 드래그 시점 · ◎ 복귀</div>`;
-  }
-  function radarPoint962(cx,cy,r,i,n=6){const a=-Math.PI/2+i*Math.PI*2/n;return[cx+Math.cos(a)*r,cy+Math.sin(a)*r]}
-  function updateRadar962(){
-    const svg=document.getElementById('desktopRadar962');if(!svg||!state)return;const st=getStats(),values=[st.atk,st.def,st.eva,st.will,st.vision,st.maxFocus],steps=[20,12,12,10,12,18],scales=steps.map((step,i)=>step*Math.max(1,Math.ceil(values[i]/step))),vals=values.map((v,i)=>clamp(v/scales[i],0,1));
-    const labs=['공격','방어','회피','의지','시야','기력'],cx=110,cy=94,R=64;
-    const poly=r=>Array.from({length:6},(_,i)=>radarPoint962(cx,cy,R*r,i).map(v=>v.toFixed(1)).join(',')).join(' ');
-    const val=vals.map((v,i)=>radarPoint962(cx,cy,R*v,i).map(q=>q.toFixed(1)).join(',')).join(' ');
-    let axes='';for(let i=0;i<6;i++){const [x,y]=radarPoint962(cx,cy,R,i);const [lx,ly]=radarPoint962(cx,cy,R+18,i);axes+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/><text x="${lx}" y="${ly-1}" text-anchor="middle"><title>${labs[i]} ${displayNumber53(values[i])} · 눈금 최대 ${scales[i]}</title><tspan x="${lx}">${labs[i]}</tspan><tspan x="${lx}" dy="11">${displayNumber53(values[i])}</tspan></text>`}
-    svg.setAttribute('aria-label',labs.map((label,i)=>label+' '+displayNumber53(values[i])).join(' · '));svg.innerHTML=`<g class="grid"><polygon points="${poly(1)}"/><polygon points="${poly(.66)}"/><polygon points="${poly(.33)}"/>${axes}</g><polygon class="value" points="${val}"/><circle cx="${cx}" cy="${cy}" r="2"/>`;
-  }
-  function updateKeys962(){
-    const box=document.getElementById('desktopKeyStatus962'),count=document.getElementById('desktopKeyCount962');if(!box||!count||!state)return;
-    const plan=state.keyPlan96;if(plan?.groups?.length){const ids=[...new Set(plan.groups.map(g=>g.keyId))];let total=0,closed=0;box.innerHTML=ids.map(id=>{const meta=globalThis.__MANRU_TYPED_KEYS__?.meta?.(id)||keyMeta96(id),have=plan.ring?.[id]||0,doors=plan.groups.filter(g=>g.keyId===id).flatMap(g=>g.doors||[]),left=doors.filter(d=>!d.open&&state.map[d.y]?.[d.x]===TT.LOCKED_GATE).length;total+=have;closed+=left;return`<div class="d962Key"><i style="--kc:${meta.color}"></i><span><b>${meta.name}</b><small>${left?`잠긴 문 ${left}`:'해제됨'}</small></span><strong>×${have}</strong></div>`}).join('');count.textContent=`보유 ${total} · 잠금 ${closed}`;return}
-    if((state.floorKeysRequired||0)>0){const nm=legacyKeyLabel(),released=state.floor===6&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]!==TT.LOCKED_GATE,sub=released?'봉인 고문서고 · 해제됨':state.floor===6?'봉인 고문서고':'구역 봉쇄';box.innerHTML=`<div class="d962Key"><i style="--kc:#c1aa7b"></i><span><b>${nm}</b><small>${sub}</small></span><strong>${released?'해제':`${state.floorKeys||0}/${state.floorKeysRequired}`}</strong></div>`;count.textContent=sub;return}
-    box.innerHTML='<div class="d962None">현재 층에 확인된 잠금 없음</div>';count.textContent='자유 통행';
-  }
-  function updateDesktopSide962(){if(innerWidth<=1080||!state)return;buildDesktopSide962();updateRadar962();updateKeys962()}
-  buildDesktopSide962();
+
+
+
+
+  function updateDesktopSide962(){if(innerWidth<=1080||!state)return;buildDesktopSide();updateRadar();updateKeys()}
+  buildDesktopSide();
   registerPanelHook54('desktop962',updateDesktopSide962);
-  addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide962();updateDesktopSide962()}},{passive:true});
+  addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
 
 
   function strictLockFloors(){return [...new Set([...LOCK_SPECIAL96.keys(),...LOCK_NORMAL96.keys()])]}
@@ -9741,12 +9321,8 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   window.closeAdjacentDoor=closeAdjacentDoor964;
 
   globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
-  function refreshDoorContext964(){
-    if(!state)return;const p=state.player,onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=(state.items||[]).some(i=>i.x===p.x&&i.y===p.y),closable=openDoorCandidates964().some(d=>!doorCloseBlock964(d.x,d.y));
-    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed105(),anvil=citadelAdjacentAnvil105(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),merchant=adjacentMerchant58(),gate=palaceGateNearby105(),branch=adjacentBranchPortal105(),label=document.getElementById('contextActionLabel'),btn=document.getElementById('contextActionBtn'),actionable=!!stock||!!bed||!!merchant||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||closable;if(label)label.textContent=stock?'구매':dojoSleeping105()?'잠듦':bed?'취침':merchant?'교환':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':closable?'문닫기':'상호작용';
-    if(btn){btn.classList.toggle('available',actionable);btn.disabled=!actionable;btn.title=stock?'발밑 진열품 구매 확인':bed?'침상에서 잠들어 회복 (최대 50턴)':merchant?'행낭 물품 판매':silk?'인접 비단 함정 해제 (1턴)':gate?`${gate.label} · 이 방 배수 6턴 / 재사용 16턴`:branch?`${branch.label} · F 또는 상호작용 버튼으로 출입` :onStairs?'다음 층':hasItem?'줍기':anvil?'모루에서 같은 장비 두 개 합성':pushable?'밀기':closable?'인접 열린 문 닫기':'현재 상호작용 대상 없음';const b=btn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':merchant?'교환':silk?'解':gate?'閥':branch?'入':onStairs?'降':hasItem?'拾':anvil?'合':pushable?'推':closable?'閉':'·'}
-  }
-  registerPanelHook54('door964',refreshDoorContext964);
+
+  registerPanelHook54('door964',refreshDoorContext);
 
   
 
@@ -11139,15 +10715,8 @@ riverAndCore(...args){
 const V984='v9.9.6-initial-zoom-100';
   try{localStorage.removeItem('manruZoomActual48')}catch(error){ignoreError('old zoom setting could not be removed',error)}
 
-  /* ---------- UI glyph policy: large rune = Han character, explanatory label = Korean ---------- */
-  function fixGlyphs984(){
-    const auto=document.getElementById('mobileAutoBtn');if(auto){auto.textContent='行';auto.setAttribute('aria-label','이동 / 자동 탐사')}
-    const rest=document.querySelector('[data-act="rest"]');if(rest){rest.textContent='대기';rest.setAttribute('aria-label','대기 / 1턴 보내기')}
-    const gear=document.getElementById('releaseGear70');if(gear)gear.setAttribute('aria-label','설정');
-    const gearD=document.getElementById('releaseGearDesktop70');if(gearD)gearD.setAttribute('aria-label','설정');
-    const inspectClose=document.getElementById('inspectClose');if(inspectClose){inspectClose.textContent='×';inspectClose.classList.add('uxClose');inspectClose.setAttribute('aria-label','닫기')}
-  }
-  fixGlyphs984();queueMicrotask(fixGlyphs984);requestAnimationFrame(fixGlyphs984);
+
+  fixGlyphs();queueMicrotask(fixGlyphs);requestAnimationFrame(fixGlyphs);
 
 
 try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[manru] camera setting not cleared',error)};
@@ -11176,7 +10745,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   /* ---------- Shattered-style inspect: one description source, top window, complete terrain codex ---------- */
   let pendingInspect984=null;
   const TERRAIN986=new Map([
-    [TT.PALACE_ROCK,{...palaceInspect105(TT.PALACE_ROCK),inspectPriority57:'terrain'}],
+    [TT.PALACE_ROCK,{...palaceInspect(TT.PALACE_ROCK),inspectPriority57:'terrain'}],
     [TT.WALL,{desc:'두꺼운 내벽. 층을 거듭 증축하면서 오래된 벽 위에 새 벽을 덧댄 흔적이 남아 있다.'}],
     [TT.FLOOR,{desc:'수많은 발자국에 닳은 객주 바닥. 얼룩과 긁힌 자국이 지나간 사람들의 흔적을 남긴다.'}],
     [TT.STAIR,{desc:'더 깊은 층으로 내려가는 계단. 아래에서 올라오는 공기는 층이 바뀔 때마다 냄새부터 달라진다.',hint:'계단 위에서 내려가면 다음 층으로 진행한다.'}],
@@ -11283,7 +10852,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   ]);
   const KNOWN_DECOR986=['trim','scroll','vines','roots','silk','chains','relief','rug','papers','rubble','bones','c81:runner','c81:roots','c81:silk','c81:chain','c81:vein','c81:canopy'];
 
-  function textOnly984(html){const d=document.createElement('div');d.innerHTML=String(html??'');return(d.textContent||d.innerText||'').replace(/\s+/g,' ').trim()}
+
   function esc984(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function dedupeProse986(v,existing=''){
     const raw=String(v??'').replace(/\s+/g,' ').trim();if(!raw)return'';
@@ -11389,52 +10958,27 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   function simpleHtml986(info){const desc=dedupeProse986(info.desc||''),ability=dedupeProse986(info.ability||''),hint=dedupeProse986(info.hint||'',[desc,ability].filter(Boolean).join(' ')),meta=Array.isArray(info.meta)?info.meta.filter(Boolean):[],stats=Array.isArray(info.stats)?info.stats.filter(Boolean):[];return`${meta.length?`<div class="inspectMeta986">${meta.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${stats.length?`<div class="inspectStats986">${stats.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${info.statuses?.length?`<section class="inspectStatuses57" aria-label="상태이상">${info.statuses.map(r=>`<span class="inspectStatus57" data-status-key="${esc984(r.key)}" style="--status-color:${r.color}"><b aria-hidden="true">${combatStatusIconHtml57(r)}</b>${esc984(r.label)}${r.turns!==null?` <small>${displayNumber53(r.turns)}턴</small>`:''}</span>`).join('')}</section>`:''}${ability?`<div class="inspectAbility986"><b>능력</b>${esc984(ability)}</div>`:''}<p class="inspectDesc986">${esc984(desc)}</p>${info.martialCards?`<section class="inspectMartials105" aria-label="보유 무술"><b>보유 무술</b>${info.martialCards.map(c=>`<article class="${martialCardClasses(c.id,c.actor)} inspectMartial105">${martialCardContent(c.id,c.actor,'','',true)}</article>`).join('')}${info.blink?`<article class="martialCard991 skill-ghost inspectMartial105"><div class="skillSig991">縮</div><div class="skillCopy991"><h4>점멸</h4><div class="martialLv991">기력 ${DOJO_BLINK105.cost}</div><p>${DOJO_BLINK105.range}칸 이동 · 재사용 ${DOJO_BLINK105.cooldown}턴</p></div></article>`:''}</section>`:''}${info.skills?.length?`<section class="inspectMartials105 inspectSkills986" aria-label="기술·특성"><b>기술·특성</b>${info.skills.map(c=>`<details class="martialCard991 skill-${esc984(c.style)} inspectMartial105 inspectSkill986" data-skill-id="${esc984(c.id)}"><summary><div class="skillSig991" aria-hidden="true">${esc984(c.seal)}</div><div class="skillCopy991"><h4>${esc984(c.name)}</h4><div class="martialLv991">${esc984(c.type)} · ${esc984(c.meta)}</div></div><span class="inspectSkillToggle986" aria-hidden="true">＋</span></summary><p class="inspectSkillEffect986">${esc984(c.desc)}</p></details>`).join('')}</section>`:''}${hint?`<div class="inspectHint986"><b>힌트</b>${esc984(hint)}</div>`:''}`}
-  function directOpenInspect984(title,html,target=null,previewItem=null){
-    const canonicalTitle=title;title=displayText53(title);html=displayText53(html);
-    const wrap=document.getElementById('mobileInspect'),titleEl=document.getElementById('inspectTitle'),bodyEl=document.getElementById('inspectBody');
-    if(titleEl)titleEl.textContent=title;if(bodyEl)bodyEl.innerHTML=html;wrap?.classList.toggle('martialInspect105',!!bodyEl?.querySelector('.inspectMartials105'));
-    pendingInspect984=target?{...target,at:performance.now()}:null;
-    setInteraction8('mobileInspect',true);wrap?.setAttribute('aria-hidden','false');document.body.classList.add('manru-inspect-open');
-    requestAnimationFrame(()=>{renderPreview984(canonicalTitle,target,previewItem)});
-  }
-  function openItemInspect986(it,target=null){if(!it)return false;const info=itemInfo(it);directOpenInspect984(info.name,simpleHtml986(info),target,it);return true}
+
+  function openItemInspect986(it,target=null){if(!it)return false;const info=itemInfo(it);directOpenInspect(info.name,simpleHtml986(info),target,it);return true}
   window.__MANRU_INSPECT984__=function(q){
     if(!q||!state)return;const x=q.x,y=q.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
     const target={x,y};
-    if(!state.seen.has(k(x,y))){directOpenInspect984('미탐사 구역',simpleHtml986({desc:'등불과 시야가 닿지 않은 공간. 직접 확인하기 전에는 안쪽의 구조나 존재를 알 수 없다.',hint:''}),target);return}
-    const tile=state.map[y][x];if(TERRAIN986.get(tile)?.inspectPriority57==='terrain'){const info=terrainInfo986(tile,x,y);directOpenInspect984(info.name,simpleHtml986(info),target);return}
-    const palaceWarning=palaceWarningInfo105(x,y);if(palaceWarning){directOpenInspect984(palaceWarning.name,simpleHtml986(palaceWarning),target);return}
-    const martialInfo=state.visible.has(k(x,y))?martialWorldInfo(x,y):null;if(martialInfo){directOpenInspect984(martialInfo.name,simpleHtml986(martialInfo),target);return}
+    if(!state.seen.has(k(x,y))){directOpenInspect('미탐사 구역',simpleHtml986({desc:'등불과 시야가 닿지 않은 공간. 직접 확인하기 전에는 안쪽의 구조나 존재를 알 수 없다.',hint:''}),target);return}
+    const tile=state.map[y][x];if(TERRAIN986.get(tile)?.inspectPriority57==='terrain'){const info=terrainInfo986(tile,x,y);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const palaceWarning=palaceWarningInfo105(x,y);if(palaceWarning){directOpenInspect(palaceWarning.name,simpleHtml986(palaceWarning),target);return}
+    const martialInfo=state.visible.has(k(x,y))?martialWorldInfo(x,y):null;if(martialInfo){directOpenInspect(martialInfo.name,simpleHtml986(martialInfo),target);return}
     const mon=findMonsterAt(x,y),it=(state.items||[]).find(v=>v.x===x&&v.y===y),t=state.map[y][x];
-    if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo986();directOpenInspect984(info.name,simpleHtml986(info),target);return}
-    if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),target);return}
-    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect984(info.name,simpleHtml986(info),target,stock.item);return}
-    const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect984(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
+    if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo986();directOpenInspect(info.name,simpleHtml986(info),target);return}
+    if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect(info.name,simpleHtml986(info),target,stock.item);return}
+    const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
     if(it){openItemInspect986(it,target);return}
-    const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect984(info.name,simpleHtml986(info),target);return}
-    const decal=decalInfo986(x,y);if(decal){directOpenInspect984(decal.name,simpleHtml986(decal),target);return}
-    const info=terrainInfo986(t,x,y);directOpenInspect984(info.name,simpleHtml986(info),target);
+    const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const decal=decalInfo986(x,y);if(decal){directOpenInspect(decal.name,simpleHtml986(decal),target);return}
+    const info=terrainInfo986(t,x,y);directOpenInspect(info.name,simpleHtml986(info),target);
   };
-  function ensurePreview984(){
-    const card=document.querySelector('#mobileInspect .inspectCard');if(!card)return null;let box=document.getElementById('inspectPreview984');if(!box){box=document.createElement('div');box.id='inspectPreview984';const body=document.getElementById('inspectBody');card.insertBefore(box,body)}const body=document.getElementById('inspectBody');if(document.getElementById('mobileInspect')?.classList.contains('martialInspect105')){if(box.parentElement!==body)body.prepend(box);}else if(box.parentElement!==card)card.insertBefore(box,body);return box;
-  }
-  function renderPreview984(title,target,itemOverride=null){
-    const box=ensurePreview984();if(!box)return;box.innerHTML='';delete box.dataset.redacted;
-    if(target&&state){
-      const ground=itemOverride||(state.items||[]).find(v=>v.x===target.x&&v.y===target.y);
-      if(ground&&unidentifiedItem(ground)){
-        if((ground.type==='potion'||ground.type==='talisman')&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(ground,'inspect984Icon');box.dataset.redacted='physical-only';return}
-        const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return;
-      }
-      const cv=document.createElement('canvas');cv.width=cv.height=96;box.appendChild(cv);const cx=cv.getContext('2d');cx.imageSmoothingEnabled=false;
-      const mon=state.monsters.find(m=>m.martialActor105&&m.x===target.x&&m.y===target.y&&isEntityObservableToPlayer57(m));if(mon){const sprite=globalThis.__MANRU_ACTOR_ART__?.monster(mon,0);if(sprite){cx.drawImage(sprite,16,12,64,72);return;}}
-      try{const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=cam.zoom,dpr=VIEW.dpr||1,pad=.42,src=TILE*z*dpr*(1+pad*2),point=globalThis.__MANRU_CAMERA_PROJECTION12__.worldToViewport((target.x-pad)*TILE,(target.y-pad)*TILE,cam),sx=point.x*dpr,sy=point.y*dpr;cx.drawImage(C,sx,sy,src,src,0,0,96,96)}catch(_){cx.fillStyle='#130c08';cx.fillRect(0,0,96,96)}
-      return;
-    }
-    const item=itemOverride||itemFromTitle986(title);if(item&&unidentifiedItem(item)&&item.type!=='potion'&&item.type!=='talisman'){const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return}
-    if(item&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(item,'inspect984Icon');if(unidentifiedItem(item))box.dataset.redacted='physical-only';return}
-    const r=document.createElement('span');r.className='inspect984Rune';r.textContent=String(title||'?').trim().slice(0,1);box.appendChild(r);
-  }
+
+
   /* Final inspect owner. It bypasses the historical append-wrappers that duplicated monster/item prose. */
   window.__MANRU_TERRAIN_CODEX986__={
     openItem:openItemInspect986
@@ -11461,11 +11005,11 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
   globalThis.__MANRU_LIFECYCLE__.registerNew('camera-save984',{
     pre:ctx=>{const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}},
-    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false);fixGlyphs984()},90)}}
+    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false);fixGlyphs()},90)}}
   });
   globalThis.__MANRU_LIFECYCLE__.registerLoad('camera-save984',{
     pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
-    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false);fixGlyphs984()},90)}return r}
+    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false);fixGlyphs()},90)}return r}
   });
 // r53: overwritten save implementation retired.
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
@@ -11516,20 +11060,9 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   function closeChoice991(){setInteraction8('choice991',false);choiceCancel991=null}
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
-  function openChoice991(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGearItem(it)?publicGearType(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
 
-  function openMartialManualChoice1005(pending){
-    if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();
-    modal.querySelector('#choice991Title').textContent='후천무술 선택';modal.querySelector('#choice991Sub').textContent='펼쳐진 가르침 중 하나를 고른다. 선택하면 비급을 소비한다. 잠시 덮어도 가르침은 바뀌지 않는다.';
-    modal.classList.add('martialManual1005');const list=modal.querySelector('#choice991List');list.innerHTML='';pending.choices.forEach((c,index)=>{
-      const p=structuredClone(state.player);if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
-      const current=p.martial[c.id];if(c.form==='breakthrough')p.martial[c.id]=5;
-      const v=martialPresentation(c.id,MARTIAL_INFO[c.id],p),b=document.createElement('button');b.className=martialCardClasses(c.id,p)+' martialChoice1005';b.dataset.manualSkill=c.id;b.dataset.manualForm=c.form;
-      const note=c.form==='breakthrough'?`현재 ${current}단. 5단까지 수련할 길을 연다. 아래는 5단의 경지이며, 단계는 무술 포인트로 올린다.`:`쌓아 온 ${current}단의 수련을 이어, 이 무술로 바꾼다.`;
-      b.innerHTML=martialCardContent(c.id,p,v.name+(c.form==='breakthrough'?' · 5단 돌파':''),note)+'<span class="upgrade991 manualSelect1005">선택</span>';
-      b.onclick=()=>ActionDispatcher.dispatch({type:'MARTIAL_MANUAL_CHOICE',args:[index],source:'martial-manual'}).value;list.appendChild(b);
-    });setInteraction8('choice991',true);return true;
-  }
+
+
   function identifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;const target=e?.item||e;if(!useIdentifyScrollOn(target,'감정부적')){toast('이미 감정된 물건이다. 다른 대상을 고르시오.');return}consumeInventoryItem(item);closeChoice991();burst(state.player.x,state.player.y,'#d9ba73',18,.7);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"identifyChoiceAction5"}).value}
   ActionDispatcher.register('IDENTIFY_CHOICE',identifyChoiceAction5);
   function purifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;if(!purifyGearItem(e.item))return;consumeInventoryItem(item);closeChoice991();burst(state.player.x,state.player.y,'#f1d786',22,.8);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"purifyChoiceAction5"}).value}
@@ -11547,7 +11080,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   // Explicit v9.9.1 item-identity service. Outer canonical item-use code may use only this boundary;
   // keeping the lexical helpers private prevents another silent scope break when item routing is refactored.
-  globalThis.__MANRU_ITEM_IDENTITY991__=Object.freeze({hostileHit:undeadItemCurse,openMartialManual:openMartialManualChoice1005,closeChoice:closeChoice991,
+  globalThis.__MANRU_ITEM_IDENTITY991__=Object.freeze({hostileHit:undeadItemCurse,openMartialManual:openMartialManualChoice,closeChoice:closeChoice991,
     isGear:isGearItem,
     curseDef:curseDefOf,
     curseStacks:curseStackCount,
@@ -11562,7 +11095,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     useIdentify:useIdentifyItem,
     useHoly:useHolyItem,
     useHolyFusion:useHolyFusionItem,
-    closeSkillQuick:closeSkillQuick991,
+    closeSkillQuick:closeSkillQuickPanel,
     closeChoice:closeChoice991,
     purifyGear:purifyGearItem
   });
@@ -11614,16 +11147,16 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
   let quickOpen991=false;
   function availableSkills991(){if(!state||state.status.skillSeal>0)return[];const p=state.player;return Object.entries(MARTIAL_INFO).map(([id,info])=>[id,martialPresentation(id,info,p)]).filter(([id,v])=>v.type==='active'&&(p.martial[id]||0)>0&&p.focus>=v.cost)}
-  function closeSkillQuick991(){quickOpen991=false;skillQuick.classList.remove('open');skillQuick.innerHTML=''}
-  function renderSkillQuick991(){const a=availableSkills991(),p=state.player;skillQuick.innerHTML=`<div class="skillQuickHead991"><b>사용 가능한 기술</b><small>짧게 다시 누르면 닫기 · <strong>길게 누르면 강화</strong></small></div><div class="skillQuickGrid991">${a.length?a.map(([id,v],index)=>`<button class="quickSkill991 skill-${v.visual||id} ${p.martial[id]===5?'martialTranscend1005':''} form-${martialFormOf(id,p)||'base'}" title="${v.desc}" data-skill991="${id}"><kbd>[${MARTIAL_RULES.keys[index].toUpperCase()}]</kbd><b>${v.name}</b><small>${p.martial[id]}단계 · 기 ${v.cost}</small></button>`).join(''):'<div class="skillQuickEmpty991">지금 바로 사용할 수 있는 기술이 없다.</div>'}</div>`;skillQuick.querySelectorAll('[data-skill991]').forEach(b=>b.oncontextmenu=e=>{e.preventDefault();const id=b.dataset.skill991,v=martialPresentation(id,MARTIAL_INFO[id],p);showInspect(v.name,v.desc)});skillQuick.querySelectorAll('[data-skill991]').forEach(b=>b.onclick=()=>{const id=b.dataset.skill991;closeSkillQuick991();ActionDispatcher.dispatch({type:'MARTIAL',args:[id]}).value})}
-  function toggleSkillQuick991(){if(!state||exclusiveGameplayInput56())return;if(quickOpen991){closeSkillQuick991();return}if(martialOpen)closeMartial();quickOpen991=true;renderSkillQuick991();skillQuick.classList.add('open');if(!state.skillHoldHint991){state.skillHoldHint991=true;toast('기술: 짧게=사용/닫기 · 길게=강화. 강화창은 ×로 닫는다.')}}
+
+
+
   
   
 
 
   // r57: canonical activateMartial closes the quick-skill panel through __MANRU_ITEM_IDENTITY991__.
 
-  globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick991,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuick991();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
+  globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuickPanel();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
 
   bindSkillButton();queueMicrotask(bindSkillButton);
 
@@ -11713,23 +11246,11 @@ const STORY_VERSION992='v9.9.3-story-system';
   
   
   const EMPTY_ACTOR1001='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-    function classPortrait1001(id){
-    const canonical=globalThis.__MANRU_ACTOR_ART__;
-    return canonical?.classPreviewData?canonical.classPreviewData(id):EMPTY_ACTOR1001;
-  }
-  function classPortraitHtml1001(id,role){
-    const source=globalThis.__MANRU_ACTOR_ART__?.classPreview(id),frame=source?.actorFrame105||{x:0,y:0,w:32,h:36},resolution=source?.actorResolution105||1;
-    const width=(source?.width||32)/resolution/frame.w*100,height=(source?.height||36)/resolution/frame.h*100;
-    return `<span class="${role} pickClassArt1001" style="--class-art-left:${-frame.x/frame.w*100}%;--class-art-top:${-frame.y/frame.h*100}%;--class-art-width:${width}%;--class-art-height:${height}%"><img alt="" src="${classPortrait1001(id)}"></span>`;
-  }
 
-  function classLoadout1001(cls){
-    const out=[{name:'경량복'}];
-    if(cls.startWeapon)out.push({name:cls.startWeapon});
-    for(const [name,count] of (cls.startItems||[]))out.push({name,count:count||1});
-    return out;
-  }
-  function classItemHtml1001(it){const nm=(it.count||1)>1?`${it.name}×${it.count}`:it.name;return `<span class="classItem1001" data-item-name="${encodeURIComponent(it.name)}">${vfIconHtml(itemPrototype(it.name),'classStartIcon1001')}<span>${nm}</span></span>`}
+
+
+
+
   let selectedClass1001=CLASSES[0].id;
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
   const CLASS1001_STATS=[['hp','생명'],['focus','기'],['atk','공격'],['def','방어'],['eva','회피'],['will','의지'],['vision','시야']];
@@ -11742,69 +11263,23 @@ const STORY_VERSION992='v9.9.3-story-system';
     will:'M7 3h10v18H7ZM10 7h4M12 5v6M10 14l2-2 2 2-2 4Z',
     vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
   });
-  function classStatIcon1001(key){return `<svg class="pickStatIcon1001" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${CLASS1001_STAT_PATHS[key]}"></path></svg>`}
+
   const classMotion1001=matchMedia('(prefers-reduced-motion:reduce)');
   let classLight1001=null;
-  // Static, deterministic timber backdrop; generated only on selection/size changes.
-  function classWoodPanel1001(w,h){
-    const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d'),count=Math.ceil(w/54),board=w/count;
-    const noise=(i,j)=>{let n=Math.imul(i+19,374761393)^Math.imul(j+7,668265263);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967295;};
-    q.fillStyle='#160c07';q.fillRect(0,0,w,h);
-    for(let i=0;i<count;i++){
-      const x=Math.round(i*board),right=Math.round((i+1)*board),width=right-x,variation=Math.round(noise(i,0)*8),base=q.createLinearGradient(x,0,right,0);
-      base.addColorStop(0,`rgb(${30+variation},${18+variation*.5},11)`);base.addColorStop(.20,`rgb(${48+variation},${29+variation*.5},17)`);base.addColorStop(.72,`rgb(${43+variation},${26+variation*.5},16)`);base.addColorStop(1,'#1b100a');q.fillStyle=base;q.fillRect(x,0,width,h);
-      q.save();q.beginPath();q.rect(x+2,0,width-4,h);q.clip();
-      const knotX=x+width*(.28+noise(i,2)*.42),knotY=h*(.22+noise(i,3)*.55),hasKnot=i%3===1;
-      for(let line=0;line<19;line++){
-        const gx=x+3+(width-6)*(line+.5)/19,phase=noise(i,line+20)*6.28;
-        q.beginPath();for(let y=-12;y<h+14;y+=12){const bulge=hasKnot?Math.exp(-Math.pow((y-knotY)/23,2))*(gx<knotX?-1:1)*3.5:0,xx=gx+Math.sin(y*.028+phase)*(.6+noise(i,line+40)) +Math.sin(y*.073+phase)*.35+bulge;y===-12?q.moveTo(xx,y):q.lineTo(xx,y);}
-        q.strokeStyle=line%3?'rgba(13,7,3,.28)':'rgba(174,109,59,.16)';q.lineWidth=line%4?.65:1;q.stroke();
-      }
-      if(hasKnot){for(let ring=4;ring>=1;ring--){q.beginPath();q.ellipse(knotX,knotY,ring*1.8,ring*4.3,.08,0,Math.PI*2);q.strokeStyle=ring%2?'#13090466':'#7d492a38';q.lineWidth=.8;q.stroke();}q.fillStyle='#170b06aa';q.beginPath();q.ellipse(knotX,knotY,1.4,3.1,.08,0,Math.PI*2);q.fill();}
-      const joint=Math.round(h*(.28+noise(i,5)*.46));q.fillStyle='#0d070580';q.fillRect(x+2,joint,width-4,1);q.fillStyle='#9e63322a';q.fillRect(x+3,joint+1,width-6,1);
-      for(const nx of [x+7,right-7]){q.fillStyle='#0c0806b0';q.fillRect(nx,joint+5,2,2);q.fillStyle='#ad885140';q.fillRect(nx,joint+5,1,1);}
-      q.restore();q.fillStyle='#090503c0';q.fillRect(x,0,2,h);q.fillStyle='#b0794435';q.fillRect(x+2,0,1,h);
-    }
-    const shade=q.createRadialGradient(w*.5,h*.4,Math.min(w,h)*.14,w*.5,h*.43,Math.max(w,h)*.8);shade.addColorStop(0,'#06030100');shade.addColorStop(1,'#07040280');q.fillStyle=shade;q.fillRect(0,0,w,h);
-    return c.toDataURL('image/png');
-  }
-
-  function prepareClassLighting1001(id){
-    const stage=classDetail1001.querySelector('.pickStage1001'),source=globalThis.__MANRU_ACTOR_ART__?.classPreview(id);
-    classLight1001={stage,source,last:-Infinity,reduced:null};if(!source)return;
-    const w=source.width,h=source.height,mask=document.createElement('canvas'),rim=document.createElement('canvas');mask.width=rim.width=w;mask.height=rim.height=h;
-    const m=mask.getContext('2d');m.drawImage(source,0,0);m.globalCompositeOperation='source-in';m.fillStyle='#130906';m.fillRect(0,0,w,h);
-    const pixels=source.getContext('2d').getImageData(0,0,w,h),edge=rim.getContext('2d').createImageData(w,h);let foot=0,minX=w,maxX=0;
-    const alpha=(x,y)=>x<0||x>=w||y<0||y>=h?0:pixels.data[(y*w+x)*4+3];
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(!alpha(x,y))continue;foot=Math.max(foot,y+1);minX=Math.min(minX,x);maxX=Math.max(maxX,x+1);const i=(y*w+x)*4;edge.data[i]=255;edge.data[i+1]=180;edge.data[i+2]=75;edge.data[i+3]=(!alpha(x-1,y)||!alpha(x+1,y))?alpha(x,y):0;}
-    rim.getContext('2d').putImageData(edge,0,0);const tint=document.createElement('canvas');tint.width=w;tint.height=h;Object.assign(classLight1001,{mask,rim,tint,foot,minX,maxX});
-  }
 
 
-  function selectClass1001(id){
-    const cls=CLASSES.find(c=>c.id===id);if(!cls)return;
-    selectedClass1001=cls.id;const meta=CLASS1001_META[cls.id];
-    pickWrap.style.setProperty('--class-accent',cls.color);
-    for(const b of classGrid.children){const selected=b.dataset.classId===id;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));b.tabIndex=selected?0:-1;}
-    classDetail1001.dataset.classId=id;
-    classDetail1001.innerHTML=`<div class="pickStage1001" aria-hidden="true"><div class="pickBackdrop1001"></div><canvas class="pickLightField1001"></canvas><canvas class="pickActorLight1001"></canvas><span class="pickStageLabel1001">萬樓 · ${String(CLASSES.indexOf(cls)+1).padStart(2,'0')} / 07</span><span class="pickStageSeal1001">${meta.seal}</span><span class="pickStageGlyph1001">${meta.seal}</span><i class="pickLantern1001 left"></i><i class="pickLantern1001 right"></i>${classPortraitHtml1001(id,'pickStageSprite1001')}<span class="pickStageCaption1001">등불 너머, 새로운 여정</span></div><div class="pickInfo1001"><p class="pickRole1001">${meta.role}</p><h2 class="pickName1001" id="classDetailName1001">${cls.name}</h2><p class="pickDesc1001">${cls.desc}</p><section class="pickSection1001" aria-label="시작 능력치"><h3 class="pickSectionTitle1001">시작 능력치</h3><dl class="pickStats1001">${CLASS1001_STATS.map(([key,label])=>`<div class="pickStat1001" data-stat="${key}"><dt>${classStatIcon1001(key)}<span>${label}</span></dt><dd>${cls[key]}</dd></div>`).join('')}</dl></section><section class="pickSection1001" aria-label="시작 장비"><h3 class="pickSectionTitle1001">시작 장비</h3><div class="classLoadoutItems1001">${classLoadout1001(cls).map(classItemHtml1001).join('')}</div></section></div>`;
-    classDetail1001.scrollTop=0;
-    prepareClassLighting1001(id);paintClassLighting(performance.now(),true);
-    classStart1001.setAttribute('aria-label',`${cls.name} 신분으로 입장`);
-  }
-  function renderClassGrid1001(){
-    classGrid.classList.add('classRoster1001');classGrid.setAttribute('role','group');classGrid.setAttribute('aria-label','직업 선택');
-    classGrid.innerHTML='';
-    for(const cls of CLASSES){const b=document.createElement('button');b.type='button';b.className='classBtn';b.id=`class-choice-${cls.id}`;b.dataset.classId=cls.id;b.innerHTML=`${classPortraitHtml1001(cls.id,'pickRosterSprite1001')}<span class="pickRosterName1001">${cls.name}</span>`;b.onclick=()=>selectClass1001(cls.id);classGrid.appendChild(b);}
-    selectClass1001(selectedClass1001);
-  }
+
+
+
+
+
   classGrid.addEventListener('keydown',e=>{
     if(!pickWrap.classList.contains('show')||!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
     e.preventDefault();const index=CLASSES.findIndex(c=>c.id===selectedClass1001),next=e.key==='Home'?0:e.key==='End'?CLASSES.length-1:(index+(e.key==='ArrowRight'?1:-1)+CLASSES.length)%CLASSES.length;
-    selectClass1001(CLASSES[next].id);classGrid.children[next].focus();
+    selectClass(CLASSES[next].id);classGrid.children[next].focus();
   });
   classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
-  renderClassGrid1001();
+  renderClassGrid();
 
   // Replace only the actual player actor. NPCs/monsters keep the existing renderer.
     
@@ -11817,29 +11292,17 @@ const STORY_VERSION992='v9.9.3-story-system';
 
   /* v10.0.2: one canonical screen state, instead of leaving the class picker alive behind display:none. */
   const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
-  function setScreen1002(mode){
-    SCREEN1002.mode=mode;
-    document.body.dataset.manruScreen=mode;
-    if(mode==='game'){
-      // Retire title-selection state itself. It no longer survives invisibly behind gameplay.
-      pickWrap?.classList.remove('show');document.body.classList.remove('title-class-mode','end-screen95');
-      if(startGate)startGate.style.display='grid';
-    }else if(mode==='title'){
-      document.body.classList.remove('run-active','end-screen95');
-    }
-    OrientationGate.project();
-    return mode;
-  }
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen1002('game')}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen1002('game')}});
-  RUN_END_EFFECTS53.push(()=>setScreen1002('ending'));
+
+  globalThis.__MANRU_LIFECYCLE__.registerNew('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen('game')}});
+  globalThis.__MANRU_LIFECYCLE__.registerLoad('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen('game')}});
+  RUN_END_EFFECTS53.push(()=>setScreen('ending'));
 
   function bootScreen1002(){
     if(SCREEN1002.booted)return;SCREEN1002.booted=true;
-    if(state&&!state.dead&&!state.victory){setScreen1002('game');return}
+    if(state&&!state.dead&&!state.victory){setScreen('game');return}
     // r57: legacy active-run restore is intentionally absent; only save1004 may resume a run after full initialization.
-    setScreen1002(state&&(state.dead||state.victory)?'ending':'title');
+    setScreen(state&&(state.dead||state.victory)?'ending':'title');
   }
   bootScreen1002();
 
@@ -11878,25 +11341,10 @@ const STORY_VERSION992='v9.9.3-story-system';
 
     /* Starting-item cards are not mutated here. The class renderer consumes canonical real item art directly. */
 
-    /* ---------- visible real quit button ---------- */
-    function ensureQuit1003(){
-      // Permadeath has one rolling autosave only: remove legacy rollback/import surfaces entirely.
-      const legacyBtn1003=['rcLoadAuto70','rcExport70','rcImport70'].map(id=>document.getElementById(id)).filter(Boolean);
-      for(const b of legacyBtn1003){b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')}
-      document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')});
-      const head=document.querySelector('#releasePanel70 .rc70Head'),close=document.getElementById('rcClose70');if(head&&close&&!document.getElementById('quitHead1003')){const b=document.createElement('button');b.id='quitHead1003';b.type='button';b.textContent='게임 종료';head.insertBefore(b,close)}
-      const body=document.querySelector('#releasePanel70 .rc70Body');if(body&&!document.getElementById('quitSection1003')){const sec=document.createElement('section');sec.id='quitSection1003';sec.className='rc70Section';sec.innerHTML='<h3>게임 종료</h3><div class="quitRow1003"><div class="quitCopy1003"><b>현재 탐사를 자동 저장한 뒤 게임을 종료한다.</b><small>자동 저장한 뒤 탐사를 마친다.</small></div><button id="quitGame1003" type="button">게임 종료</button></div>';body.appendChild(sec)}
-      for(const id of ['quitHead1003','quitGame1003']){const b=document.getElementById(id);if(b&&!b.dataset.bound1003){b.dataset.bound1003='1';b.onclick=quitGame1003}}
-    }
+
     
-    function quitGame1003(){
-      if(!confirm('게임을 종료할까? 현재 진행은 자동 저장된다.'))return;
-      if(state&&!state.dead&&!state.victory){const result=globalThis.__MANRU_SAVE_SERVICE__.commit('quit');if(!result.ok){toast('기록 저장에 실패해 종료하지 않았다.');return}}
-      try{sessionStorage.setItem('manru1003_explicit_quit','1')}catch(error){ignoreError('explicit-quit flag could not be stored',error)};
-      try{window.close()}catch(error){ignoreError('window.close refused by the browser',error)};
-      setTimeout(()=>{try{location.replace('about:blank')}catch(_){document.body.innerHTML='<main style="background:#050302;color:#b99b77;position:fixed;inset:0;display:grid;place-items:center;font:700 calc(14px * var(--ui-font-scale, 1)) system-ui">만루 종료됨</main>'}},80);
-    }
-    ensureQuit1003();
+
+    ensureQuit();
 
     /* ---------- permadeath hardening: reject a resurrected snapshot while its death tombstone remains ---------- */
     
@@ -11942,7 +11390,7 @@ const STORY_VERSION992='v9.9.3-story-system';
     try{MON_VIS?.clear?.()}catch(error){ignoreError('monster visual cache clear',error)}
     try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
     document.body.classList.remove('run-active','end-screen95','title-class-mode');
-    setScreen1002('title');
+    setScreen('title');
     // Both historical death keys and the dead-run ledger are inspected by the canonical eligibility rule.
     RunLifecycle.refreshContinue();
 
@@ -12255,7 +11703,7 @@ globalThis.__MANRU_TURN_PIPELINE__.register('hazard1005',{pre:ctx=>{if(!state)re
 
 /* HUD: the remaining ward time must be impossible to miss. */
 const hud=document.createElement('div');hud.id='hazardWard1005';hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';document.body.appendChild(hud);
-function updateWardHud(){if(!hud||!state){hud.style.display='none';return}const d=remain('drown'),v=remain('void'),a=hud.querySelector('[data-w=drown]'),b=hud.querySelector('[data-w=void]');hud.style.display=d||v?'flex':'none';a.className=d?'hzWard1005 hzDrown1005':'';b.className=v?'hzWard1005 hzVoid1005':'';a.innerHTML=d?`<b>水</b> 익사 면역 ${d}턴`:'';b.innerHTML=v?`<b>空</b> 공허 면역 ${v}턴`:''}
+
 
 
 globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'hazard1005',draw:drawHazardOverlay});
@@ -14138,8 +13586,8 @@ function rumorPopulate1030(r){if(r.populated)return;r.populated=true;if(r.type.i
 function rumorDirection1030(r){const dx=r.entry.x-state.player.x,dy=r.entry.y-state.player.y,ax=Math.abs(dx),ay=Math.abs(dy);if(ax<=Math.max(1,ay*.45))return dy<0?'북쪽':'남쪽';if(ay<=Math.max(1,ax*.45))return dx<0?'서쪽':'동쪽';return(dy<0?'북':'남')+(dx<0?'서쪽':'동쪽')}
 function rumorDistanceBand1030(r){const d=Math.abs(r.entry.x-state.player.x)+Math.abs(r.entry.y-state.player.y);return d<=10?'가까운 거리':d<=20?'중간 거리':'먼 거리'}
 function rumorEntranceClue1030(style){return({crack:'금이 번진 벽',secret:'희미한 문양이 떠오른 수상한 벽',screen:'뒤쪽에서 빈 울림이 나는 병풍',rack:'벽에서 살짝 들뜬 진열 선반',window:'틀이 미세하게 흔들리는 창호'})[style]||'결이 다른 벽'}
-function rumorNotice1030(r){if(!r)return false;let box=document.getElementById('rumorNotice1030');if(!box){box=document.createElement('div');box.id='rumorNotice1030';box.innerHTML='<small>숨은 공간 단서 확보</small><b></b><span></span>';document.body.appendChild(box)}const dir=rumorDirection1030(r),band=rumorDistanceBand1030(r),clue=rumorEntranceClue1030(r.entry.style);box.querySelector('b').textContent=r.type.name;box.querySelector('span').textContent=`현재 위치 기준 ${dir} · ${band} · ${withJosa57(clue,'을/를')} 조사하라`;box.classList.remove('show');void box.offsetWidth;box.classList.add('show');clearTimeout(box._tm1030);box._tm1030=setTimeout(()=>box.classList.remove('show'),2600);return true}
-function revealRumorSpace1030(r){if(!r||r.revealed)return null;r.revealed=true;r.revealedTurn=state.turn||0;r.entry.style=rumorEntranceStyle1030();const style=r.entry.style;if(style==='secret')setTerrainTile58(state.map,r.entry.x,r.entry.y,TT.SECRET_DOOR);else if(style==='screen'||style==='rack'||style==='window'){setTerrainTile58(state.map,r.entry.x,r.entry.y,style==='screen'?TT.SCREEN:style==='rack'?TT.RACK:TT.WINDOW,{base:TT.WALL,attachment:'secret-wall'})}else setTerrainTile58(state.map,r.entry.x,r.entry.y,TT.WALL);rumorPopulate1030(r);specialTerrainGrandDress1031();const dir=rumorDirection1030(r),band=rumorDistanceBand1030(r),clue=rumorEntranceClue1030(style);addLog(`소문 확인 · ${r.type.name} — ${r.type.rumor}`);addLog(`숨은 입구 단서 · 현재 위치 기준 ${dir}, ${band}. ${withJosa57(clue,'을/를')} 찾아 조사하면 입구를 열 수 있다.`);toast(`숨은 공간 단서 · ${r.type.name} · ${dir}의 ${clue}`);rumorNotice1030(r);burst(state.player.x,state.player.y,'#e1bd73',22,1.02);floatText(state.player.x,state.player.y,'숨은 공간 단서','#f0cf8a',12);flash('#d8b36a',160);vfVibrate(HAPTIC_PATTERN57.toggle);globalThis.__MANRU_SFX54__?.play?.('pickup');if(state.visible.has(K1020(r.entry.x,r.entry.y))){burst(r.entry.x,r.entry.y,'#efd38c',26,1.05);impact(r.entry.x,r.entry.y,'#d8b56f',2.2)}VisibilityService.compute();updateAll();return r}
+
+function revealRumorSpace1030(r){if(!r||r.revealed)return null;r.revealed=true;r.revealedTurn=state.turn||0;r.entry.style=rumorEntranceStyle1030();const style=r.entry.style;if(style==='secret')setTerrainTile58(state.map,r.entry.x,r.entry.y,TT.SECRET_DOOR);else if(style==='screen'||style==='rack'||style==='window'){setTerrainTile58(state.map,r.entry.x,r.entry.y,style==='screen'?TT.SCREEN:style==='rack'?TT.RACK:TT.WINDOW,{base:TT.WALL,attachment:'secret-wall'})}else setTerrainTile58(state.map,r.entry.x,r.entry.y,TT.WALL);rumorPopulate1030(r);specialTerrainGrandDress1031();const dir=rumorDirection1030(r),band=rumorDistanceBand1030(r),clue=rumorEntranceClue1030(style);addLog(`소문 확인 · ${r.type.name} — ${r.type.rumor}`);addLog(`숨은 입구 단서 · 현재 위치 기준 ${dir}, ${band}. ${withJosa57(clue,'을/를')} 찾아 조사하면 입구를 열 수 있다.`);toast(`숨은 공간 단서 · ${r.type.name} · ${dir}의 ${clue}`);rumorNotice(r);burst(state.player.x,state.player.y,'#e1bd73',22,1.02);floatText(state.player.x,state.player.y,'숨은 공간 단서','#f0cf8a',12);flash('#d8b36a',160);vfVibrate(HAPTIC_PATTERN57.toggle);globalThis.__MANRU_SFX54__?.play?.('pickup');if(state.visible.has(K1020(r.entry.x,r.entry.y))){burst(r.entry.x,r.entry.y,'#efd38c',26,1.05);impact(r.entry.x,r.entry.y,'#d8b56f',2.2)}VisibilityService.compute();updateAll();return r}
 function rumorRevealNext1030(){const hidden=(state?.rumorSpaces1030||[]).filter(r=>!r.revealed);if(!hidden.length)return null;return revealRumorSpace1030(choice(hidden))}
 function rumorOpenEntranceAt1030(x,y,t,act){const r=rumorSpaceByEntry1030(x,y);if(!r||r.opened)return null;const style=r.entry.style;if(style==='crack'&&t!==TT.WALL)return null;if(style==='secret'&&t!==TT.SECRET_DOOR)return null;if(style==='screen'&&t!==TT.SCREEN)return null;if(style==='rack'&&t!==TT.RACK)return null;if(style==='window'&&t!==TT.WINDOW)return null;r.opened=true;r.openedTurn=state.turn||0;if(style==='screen'||style==='rack'||style==='window')releaseTerrainUnderlay58(x,y,style==='screen'?r.floorTile:TT.WALL);setTerrainTile58(state.map,x,y,style==='screen'?r.floorTile:TT.OPEN_DOOR);doorFX(x,y);burst(x,y,style==='screen'?'#c86e59':'#d7b66e',16,.8);const msg=style==='rack'?'기울어진 선반을 밀자 뒤의 통로가 열렸다.':style==='window'?'창호 틀을 밀어 숨은 틈을 열었다.':style==='screen'?'병풍을 젖히자 벽 뒤의 공간이 이어졌다.':style==='crack'?'금 간 벽을 밀자 얇은 벽체가 안쪽으로 무너졌다.':'벽 문양이 갈라지며 숨은 문이 열렸다.';addLog(`${r.type.name} · ${msg}`);toast(`${r.type.name} 입구 개방`);globalThis.__MANRU_SFX54__?.play?.('door');commitPlayerAction57(act,1);VisibilityService.compute();updateAll();return{handled:true,result:true,room:r}}
 function rumorDrawEntranceOverlay1030(ctx,tile,px,py,x,y,now){const r=rumorSpaceByEntry1030(x,y);if(!r||r.opened||!state.seen.has(rumorSpaceKey1030(x,y)))return false;ctx.save();const pulse=.5+.5*Math.sin(now/330+x*.7+y*.9),a=.74+.20*pulse;ctx.globalAlpha=a;ctx.lineWidth=2;ctx.strokeStyle='#edc777';ctx.fillStyle=`rgba(220,171,86,${.08+.08*pulse})`;ctx.fillRect(px+3,py+3,26,26);ctx.strokeRect(px+3.5,py+3.5,25,25);ctx.strokeStyle='rgba(255,229,154,.92)';ctx.lineWidth=2.2;const c=7;ctx.beginPath();ctx.moveTo(px+c,py+3);ctx.lineTo(px+3,py+3);ctx.lineTo(px+3,py+c);ctx.moveTo(px+32-c,py+3);ctx.lineTo(px+29,py+3);ctx.lineTo(px+29,py+c);ctx.moveTo(px+3,py+32-c);ctx.lineTo(px+3,py+29);ctx.lineTo(px+c,py+29);ctx.moveTo(px+32-c,py+29);ctx.lineTo(px+29,py+29);ctx.lineTo(px+29,py+32-c);ctx.stroke();ctx.fillStyle=`rgba(255,215,126,${.38+.22*pulse})`;ctx.beginPath();ctx.moveTo(px+16,py+9);ctx.lineTo(px+21,py+16);ctx.lineTo(px+16,py+23);ctx.lineTo(px+11,py+16);ctx.closePath();ctx.fill();ctx.strokeStyle='#f2d18a';ctx.lineWidth=1.4;if(r.entry.style==='crack'){ctx.beginPath();ctx.moveTo(px+8,py+5);ctx.lineTo(px+15,py+12);ctx.lineTo(px+12,py+18);ctx.lineTo(px+22,py+27);ctx.moveTo(px+15,py+12);ctx.lineTo(px+24,py+8);ctx.stroke()}else if(r.entry.style==='rack'){for(const yy of[9,14,19,24]){ctx.beginPath();ctx.moveTo(px+8,py+yy);ctx.lineTo(px+24,py+yy);ctx.stroke()}}else if(r.entry.style==='window'){ctx.strokeRect(px+9.5,py+8.5,13,16);ctx.beginPath();ctx.moveTo(px+16,py+9);ctx.lineTo(px+16,py+24);ctx.moveTo(px+10,py+16);ctx.lineTo(px+22,py+16);ctx.stroke()}else if(r.entry.style==='screen'){ctx.beginPath();ctx.moveTo(px+10,py+7);ctx.lineTo(px+10,py+25);ctx.moveTo(px+16,py+7);ctx.lineTo(px+16,py+25);ctx.moveTo(px+22,py+7);ctx.lineTo(px+22,py+25);ctx.stroke()}ctx.restore();return true}
@@ -14377,7 +13825,7 @@ function dir1012(m,player=false){if(player){const f=state?.player?.facing||{x:0,
 
 
 
-renderClassGrid1001();
+renderClassGrid();
 
 
 
@@ -14456,39 +13904,7 @@ const CLOAK_EMBLEM={'질긴 가죽망토':'stitch','바람막이망토':'wind','
 
 
 
-function pictureAsset105(it){
- const key=KEY(it);if(PICTURE_ASSETS.has(key))return PICTURE_ASSETS.get(key);
- const c=document.createElement('canvas');c.width=96;c.height=112;const q=c.getContext('2d');q.imageSmoothingEnabled=false;
- const level=summonPictureGrade(it.pictureCopies105||1)+1,bronze='#8e693c',gold='#d8b76d',hi='#f5dfa0',dark='#2a201b',jade='#82bca5',amethyst='#be99d3';
- const accent=level===1?bronze:level===2?'#b7c6bc':level===3?jade:level===4?amethyst:gold;
- const r=(x,y,w,h,color)=>{q.fillStyle=color;q.fillRect(x,y,w,h)},stroke=(pts,color,width=1)=>{q.strokeStyle=color;q.lineWidth=width;q.lineJoin='round';q.lineCap='round';q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.stroke()},diamond=(x,y,n,color)=>poly(q,color,[[x,y-n],[x+n,y],[x,y+n],[x-n,y]]);
- // Carved timber, inset brass bevels and two parchment layers leave the creature uncluttered.
- r(16,17,64,83,'#120e0b');r(18,18,60,80,'#503b29');r(19,19,58,77,'#9b7748');r(21,21,54,73,'#32251b');r(23,23,50,69,'#c6ad7d');
- const paper=q.createLinearGradient(25,26,69,87);paper.addColorStop(0,'#f3e4bd');paper.addColorStop(.48,'#ead4a7');paper.addColorStop(1,'#cdb27d');q.fillStyle=paper;q.fillRect(25,26,46,62);
- r(25,26,46,1,'#fff0cb');r(25,27,1,60,'#f6e6bf');r(70,28,1,60,'#b89b6b');r(27,87,43,1,'#a98e61');
- for(let i=0;i<19;i++){const x=27+(i*17)%41,y=30+(i*23)%54;r(x,y,1,i%3+1,i%2?'#b3955720':'#fff1ce50');}
- stroke([[27,81],[38,78],[43,80],[55,76],[68,79]],'#b39d6a42');stroke([[28,37],[37,33],[43,35]],'#fff4d32d');
- const mon=it.summonPortrait105,art=mon?globalThis.__MANRU_ACTOR_ART__.monster(mon,0):null;
- if(art){const scale=Math.min(42/art.width,46/art.height),w=Math.round(art.width*scale),h=Math.round(art.height*scale);q.drawImage(art,Math.round(48-w/2),Math.round(57-h/2),w,h);}
- r(59,75,9,9,'#8b4132');r(60,76,7,7,'#b96148');r(61,77,1,4,'#efd4a1');r(63,77,3,1,'#efd4a1');r(64,79,1,3,'#efd4a1');r(62,81,4,1,'#efd4a1');
- // Six grades combine the former small-step variants into visibly different carved, tasselled, jade, amethyst and crowned frames.
- for(const [x,y,dx,dy]of [[19,20,1,1],[76,20,-1,1],[19,94,1,-1],[76,94,-1,-1]]){
-  stroke([[x,y+9*dy],[x,y],[x+9*dx,y]],bronze,3);stroke([[x+dx,y+8*dy],[x+dx,y+dy],[x+8*dx,y+dy]],hi);
-  {r(x+2*dx-1,y+2*dy-1,3,3,dark);diamond(x+2*dx,y+2*dy,1.5,accent);}
-  stroke([[x+4*dx,y+8*dy],[x+4*dx,y+4*dy],[x+8*dx,y+4*dy]],accent);
-  if(level>=2)diamond(x+5*dx,y+5*dy,2,gold);
- }
- {r(28,18,40,2,bronze);r(29,19,38,1,'#d0b580');r(28,95,40,2,bronze);}
- {for(const x of [20,76]){r(x,33,1,48,accent);for(const y of [37,53,69])r(x-1,y,3,1,hi);}}
- if(level>=2){for(const x of [15,81]){stroke([[x,30],[x-3,34],[x,38],[x+3,42],[x,46]],dark,3);stroke([[x,30],[x-3,34],[x,38],[x+3,42],[x,46]],accent,1.3);diamond(x,50,3,accent);diamond(x,50,1,hi);}}
- if(level>=2){for(const x of [16,80]){stroke([[x,80],[x,98],[x-2,101],[x+2,104]],'#603e2e',2);r(x-3,103,6,6,'#8c3f35');r(x-2,103,4,1,gold);for(const dx of [-2,0,2])r(x+dx,106,1,5,'#c6744e');}stroke([[29,16],[39,13],[48,16],[57,13],[67,16]],bronze,2);}
- if(level>=3){for(const x of [12,84]){stroke([[x,58],[x-4,62],[x,67],[x+3,62],[x,58]],gold,1.5);diamond(x,62,2,jade);r(x,61,1,1,hi);}stroke([[30,99],[40,102],[48,99],[56,102],[66,99]],bronze,2);}
- if(level>=3){for(const sign of [-1,1]){q.save();q.translate(48,14);q.scale(sign,1);q.strokeStyle=gold;q.lineWidth=1.5;q.beginPath();q.moveTo(0,0);q.bezierCurveTo(7,-8,21,-10,26,-2);q.bezierCurveTo(32,7,17,10,19,3);q.stroke();q.strokeStyle=accent;q.lineWidth=1;q.beginPath();q.moveTo(0,-1);q.bezierCurveTo(9,-5,15,-5,22,-1);q.stroke();q.restore();}diamond(48,12,4,jade);diamond(48,11,1.5,hi);}
- if(level>=4){for(const sign of [-1,1]){q.save();q.translate(48,95);q.scale(sign,1);stroke([[5,4],[17,7],[25,4],[30,-5]],gold,1.5);poly(q,amethyst,[[19,4],[23,0],[26,4],[23,7]]);r(22,2,1,2,hi);q.restore();}stroke([[10,28],[7,39],[10,53],[7,74],[11,84]],accent,1);stroke([[86,28],[89,39],[86,53],[89,74],[85,84]],accent,1);}
- if(level>=5){for(const sign of [-1,1]){q.save();q.translate(48,13);q.scale(sign,1);poly(q,gold,[[5,-2],[13,-9],[23,-8],[30,-3],[23,-5],[18,-3],[26,1],[16,-1],[9,2]]);stroke([[12,-5],[22,-6],[28,-3]],hi);q.restore();}for(const x of [9,87])diamond(x,54,3,hi);}
- if(level>=6){q.strokeStyle=gold;q.lineWidth=1;q.beginPath();q.arc(48,11,9,Math.PI,Math.PI*2);q.stroke();for(const [x,y]of [[48,0],[39,3],[57,3]])diamond(x,y+2,2,hi);diamond(48,10,6,gold);diamond(48,10,3,'#a45e38');r(47,8,2,2,hi);stroke([[37,105],[43,107],[48,104],[53,107],[59,105]],gold,2);diamond(48,105,2,hi);}
- PICTURE_ASSETS.set(key,c);return c;
-}
+
 
 
 function data(it){const key='d:'+KEY(it);if(DATA.has(key))return DATA.get(key);const d=sprite(it).toDataURL('image/png');DATA.set(key,d);return d}
@@ -14496,7 +13912,7 @@ function data(it){const key='d:'+KEY(it);if(DATA.has(key))return DATA.get(key);c
 
 globalThis.__MANRU_ICON_HTML_IMPL_R7__=iconHtml;
 globalThis.__MANRU_DRAW_ITEM_IMPL_R7__=worldDraw;
-window.__MANRU_ITEM_ART_R7__={dataItem:data,weaponAsset,pictureAsset:pictureAsset105,iconHtml,clear:()=>{CACHE.clear();DATA.clear();WEAPON_ASSETS.clear();PICTURE_ASSETS.clear();return true}};
+window.__MANRU_ITEM_ART_R7__={dataItem:data,weaponAsset,pictureAsset:summonPictureAsset,iconHtml,clear:()=>{CACHE.clear();DATA.clear();WEAPON_ASSETS.clear();PICTURE_ASSETS.clear();return true}};
 
 /* r29: lexical-scope QA bridge. This exposes tests only; gameplay paths remain canonical. */
 
@@ -15203,9 +14619,9 @@ function palaceApplyTide105({deferHazard=false}={}){if(state?.branchContext105?.
 function palaceAdvance105(cost){if(state?.branchContext105?.id!=='palace')return;const w=palaceWorld105(),before=palaceTide105();w.time=Math.round((w.time+cost)*1000000)/1000000;palaceApplyTide105();if(before.phase!==palaceTide105().phase)addLog(`용궁 조수: 수위 ${palaceTide105().level} · ${palaceTide105().rising?'밀물':'썰물'}.`);}
 function palaceGateNearby105(){if(state?.branchContext105?.id!=='palace')return null;return (state.branchTerrain105.palace105.handles||[]).find(h=>entityDistance57(h,state.player)<=1&&anvilNearby105(h))||null;}
 function palaceUseGate105(h,act){const w=palaceWorld105(),key=`${state.branchContext105.level}:${h.room}`,g=w.gates[key];if(g&&g.ready>w.time){toast(`수문 재사용까지 ${Math.ceil(g.ready-w.time)}턴`);return false;}w.gates[key]={until:w.time+6,ready:w.time+16};palaceApplyTide105();addLog(`${h.label}: 이 방의 수위 -1 · 6턴. 재사용 16턴.`);commitPlayerAction57(act,1);return true;}
-function palaceGaugeText105(){const t=palaceTide105(),w=palaceWorld105(),room=state.branchTerrain105.palace105.roomCells[k(state.player.x,state.player.y)],h=palaceGateNearby105(),g=w.gates[`${state.branchContext105.level}:${h?.room||room}`];const pending=state.monsters.find(mon=>mon.hp>0&&mon.intent54?.type==='palaceRoyal105'),warning=pending?` · 왕의 밀물 예고 ${Math.max(0,pending.intent54.data.resolveTurn105-state.turn)}턴 뒤` : '';return `수위 ${t.level} /  ${t.rising?'밀물 ↑':'썰물 ↓'} · 다음 ${t.next}${t.royal?' + 왕의 밀물':''} · ${t.remaining.toFixed(1)}턴`+warning+(t.royal?` · 왕의 밀물 ${t.royalRemaining.toFixed(1)}턴`:'')+(g?.until>w.time?` · 이 방 배수 ${Math.ceil(g.until-w.time)}턴`:g?.ready>w.time?` · 수문 재사용 ${Math.ceil(g.ready-w.time)}턴`:'');}
+
 function palaceWarningInfo105(x,y){if(!state?.visible?.has(k(x,y)))return null;const mon=state.monsters.find(m=>m.hp>0&&m.intent54?.type.startsWith('palace')&&m.intent54.cells.some(c=>c.x===x&&c.y===y));if(!mon)return null;const I=mon.intent54,left=Math.max(1,(I.data.resolveTurn105??I.armedPlayerTurn+1)-state.turn),when=left===1?'다음 행동 뒤':`${left}번 행동 뒤`;const info={palaceRoots105:{name:'바위뿌리 융기 예고',desc:`${when} 바위벽이 실제로 솟은 칸의 대상만 1턴 기절하며 벽과 겹친다. 빙판 등으로 융기가 막히면 기절도 걸리지 않는다.`,hint:'벽은 솟은 다음 행동 뒤 붕괴하며 주변 3×3에 대지 피해를 준다. 여러 벽의 폭발은 중첩된다.'},palacePull105:{name:'해련의 견인 예고',desc:`${when} 물 위의 해련이 목표를 자기 바로 앞으로 끌어당긴다.`,hint:'해련이 물에서 벗어나거나 경로가 벽·다른 개체로 막히면 견인이 제한된다.'},palaceCannon105:{name:'수압포 사선',desc:`${when} 이 칸을 관통하는 수압포가 발사된다.`,hint:'예고된 직선에서 벗어나거나 기둥 뒤로 피한다.'},palaceSweep105:{name:`용미 쓸기 · 전방위 ${I.data.radius105}/${PALACE_SWEEP_RULES105.maxRadius}칸`,desc:'적이 4칸 이내에 접근했을 때만 시작한다. 예고 반경이 행동마다 1칸씩 커진다. 5칸까지 넓어진 뒤 다음 행동에 꼬리로 쓸고 1칸 밀친다.',hint:'물방울이 솟는 칸은 용미 예고 범위다. 용왕은 준비부터 쓸기가 끝날 때까지 무적. 재사용 간격은 보통 15턴, 최고 수위 10턴. 명중하면 중독·출혈·실명·쇠약·기절·배탈·취함·기봉인 각각 2턴. 최종 범위 밖이나 벽 뒤로 피하자.'},palaceWave105:{name:'창해의 삼중 파도',desc:`${when} 벽을 따라 파도가 밀려온다. 한 턴마다 한 겹씩 총 세 겹이 나타나 반대편 벽까지 전진한다.`,hint:'높은 바닥만으로 파도를 피할 수 없다. 석벽·기둥·가구 뒤로 대피한다. 파도는 생물을 밀치고 물리 피해를 준 뒤 그 칸의 물결이 부서진다.'},palaceStone105:{name:'간수 철창 해방 예고',desc:`${when} 창해군이 이 스위치에 광산의 돌을 던진다.`,hint:'연결된 철창이 열리면 쇠사슬 간수가 나온다.'},palaceRoyal105:{name:'왕의 밀물 예고',desc:`${when} 궁전 수위가 한 단계 높아진다.`,hint:'높은 석단으로 피한다. 자연 조수는 계속 흐르고 추가 밀물은 8턴 뒤 끝난다.'}}[I.type];return info||null;}
-function palaceInspect105(t,x,y){if(t===TT.PALACE_ROCK)return{name:'해련 바위벽',desc:'해련의 뿌리가 밀어 올린 갈색 바위벽. 실제로 솟은 칸에 겹친 적을 1턴 기절시키고, 다음 행동 뒤 무너져 주변 3×3에 대지 피해를 준다.',hint:'이동·시야·투사체·점멸을 막는다. 벽 하나의 기본 붕괴 피해는 해련 공격력 ×1.4이며, 여러 벽에 겹쳐 맞으면 피해가 중첩된다.'};const warning=palaceWarningInfo105(x,y);if(warning)return warning;if(state?.branchContext105?.id!=='palace')return null;const restBed=state.branchTerrain105.palace105.beds105?.find(b=>b.x===x&&b.y===y&&!b.uses&&t===TT.BED);if(restBed)return{name:'용궁 회복 침상',desc:'도장 침상처럼 잠든 동안 상처가 아문다. 한 번 몸을 눕히면 낡은 틀이 부서져 다시 사용할 수 없다.',hint:`곁에서 상호작용. 매턴 최대 HP의 ${DOJO_BED_RULES105.healFraction*100}% 회복(올림), ${DOJO_BED_RULES105.wakeChance*100}% 확률로 기상. 최대 ${DOJO_BED_RULES105.maxTurns}턴. 적과 허기는 계속 진행된다.`};const control=mineButton105(x,y)||mineState105()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));if(control)return mineInspect105(t,x,y);if(t===TT.PAPER_BRIDGE)return{name:'진주 종이다리',desc:'물길 위로 겹친 방수 종이 발판. 밟은 뒤 다음 실제 행동권 사용 후 붕괴하며 10턴 뒤 복구된다.',hint:'불·물 접촉과 붕괴·익사 판정은 기존 종이다리 규칙을 따른다.'};const d=state.branchTerrain105.palace105,key=k(x,y),w=d.windows[key],p=d.props[key],handle=d.handles.find(h=>h.x===x&&h.y===y);if(t===TT.PALACE_WALL_LAMP)return{name:'벽 부착 진주 등롱',desc:'청동 용두 받침으로 석벽에 걸린 진주 유리 등롱. 벽의 깊은 감실에서 따뜻한 빛이 난다.',hint:'석벽에 붙은 장식: 이동·시야·투사체를 막으며 통로를 차지하지 않는다.'};if(w&&t===TT.WALL)return{name:w.name,desc:'청동 격자와 석재 창턱 뒤로 흐린 산호와 푸른 수중 빛이 비친다. 벽에 파인 장식창이다.',hint:'석벽과 같은 이동·시야 차단. 창문을 관통할 수 없다.'};if(d.arches?.[key]&&!tileBlocks(t))return{name:d.arches[key].grand?'창해 정문 · 열린 홍예':'청동 문틀의 열린 통로',desc:'석재 기둥과 청동 인방 사이로 열린 궁전 통로. 문루의 처마 아래로 걸어갈 수 있다.',hint:palaceGaugeText105()+' · 열린 통로는 이동과 투사체를 막지 않는다. 양옆 석벽과 기둥은 실제 장애물이다.'};if(d.facades?.[key]&&t===TT.WALL)return{name:d.facades[key].style.startsWith('gate')?'창해 문루의 석재 기둥·외벽':'궁전의 석재 외벽',desc:'윗면과 벽면, 기단이 연결된 두꺼운 석조 구조. 청동 장식과 옥색 기와가 남아 있다.',hint:'이동·시야·투사체를 막는다. 열린 홍예와 문을 이용한다.'};if(handle){const g=palaceWorld105().gates[`${state.branchContext105.level}:${handle.room}`];return{name:handle.label,desc:'환류 수문을 조작해 표시된 방만 수위 한 단계 낮춘다.',hint:`조작 1턴 · 지속 6턴 · 재사용 16턴${g?.ready>palaceWorld105().time?' · 재사용까지 '+Math.ceil(g.ready-palaceWorld105().time)+'턴':''}`};}if(p&&p.tile===t)return{name:p.name,desc:p.desc||'용궁의 오래된 시설. 통로 주변에 배치되어 있다.',hint:tileBlocks(t)?'이동을 막는다. 보이는 물체와 충돌 판정이 같다.':'바닥 위의 작은 장식이다. 이동을 막지 않는다.'};if(d.permanentWater?.[key])return{name:'상시 수중 정원',desc:'조수와 무관하게 깊은 바닷물이 남는 야외 수역. 작은 수목원 섬과 목교가 실내 궁전으로 이어진다.',hint:'깊은 물: 기존 익사·수생·비행·구조 규칙. 끊긴 외원은 양끝 선착장에서 뗏목을 기다려 건넌다. 다른 수역에는 높은 돌길과 목교가 있다.'};if(d.floors[key]!=null){const height=d.floors[key],room=d.rooms.find(r=>r.id===d.roomCells[key]);return{name:`${room?.name||'용궁 회랑'} · 높이 ${height}`,desc:(state.branchContext105.level===2?['청보라 물결 바닥','푸른 보라 조개 바닥','진주빛 청보라 비늘 바닥','상아색 금테 석단']:['남청색 물결 바닥','청록색 조개 바닥','밝은 옥색 비늘 바닥','상아색 금테 석단'])[height],hint:palaceGaugeText105()+' · '+(t===TT.SHALLOW_WATER?'얕은 물: 이동 시간 ×1.5':t===TT.WATER?'깊은 물: 기존 익사·구조 규칙':height===3?'항상 물 위의 석단':'수위와 높이 차이로 침수')};}return null;}
+
 function palaceRootWallExplode105(records){const walls=Array.isArray(records)?records:[records],hits=new Map(),targets=[state.player,...state.monsters];for(const wall of walls){const cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:wall.rootWall105.faction,owner:wall.rootWall105.id,credit:wall.rootWall105.credit};elementAttackFx105('earth',cells,{x:wall.x,y:wall.y});for(const target of targets){if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;let hit=hits.get(target);if(!hit){hit={parts:[],effect};hits.set(target,hit);}hit.parts.push(wall.rootWall105.atk*1.4);if(effect.credit==='player')hit.effect=effect;}elementBreakFx105(wall.x,wall.y,'earth');}
  let damaged=0;for(const[target,hit]of hits){const result=resolveElementDamage57(target,'earth',hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:'해련 바위벽 붕괴',ground:true,color:'#bf8b59',contactHandled105:true});if(result.damage>0)damaged++;}
  if(damaged)addLog(`해련 바위벽 붕괴: ${damaged}체 피해.`);return damaged;
@@ -15625,7 +15041,7 @@ function branchLeafAt105(x,y){return !!state?.branchTerrain105?.leaves?.[k(x,y)]
 function branchWake105(m,cause){if(!m?.sleeping105||m.doorSleep105)return false;m.sleeping105=false;m.alerted=true;m.searchTurns=Math.max(m.searchTurns||0,6);if(state.visible?.has(k(m.x,m.y))){floatText(m.x,m.y,'!', '#efad62',9);addLog(`${m.name}이 ${cause}에 깨어났다.`)}return true}
 function branchWarningDoor105(x,y){const d=state?.branchTerrain105?.warningDoors?.find(v=>v.x===x&&v.y===y);if(!d||d.triggered)return false;for(const q of state.branchTerrain105.warningDoors)if(q.group===d.group)q.triggered=true;let n=0;for(const m of state.monsters)if(m.warningGroup105===d.group&&m.hp>0){m.doorSleep105=false;n+=Number(branchWake105(m,'경고문 개방'));}alertNearby(x,y,7,'door');addLog(`녹슨 경고문이 울렸다. 굶주린 쥐 ${n}마리가 잠에서 깨어났다.`);return true}
 function branchRevealReward105(r){BRANCH_TILE_CACHE.clear();if(!r.reward||r.rewardGranted)return;r.rewardGranted=true;PlacementService.placeItem({...clone(BRANCH_REWARDS105.canal),placement57:{branchReward105:{id:'canal',level:1,source:'leaf-puzzle'}}},r.reward);addLog('솟아오른 미로의 끝에 수문지기의 행낭이 드러났다.')}
-function branchTerrainInfo105(t,x,y){const palace=palaceInspect105(t,x,y);if(palace)return palace;
+function branchTerrainInfo105(t,x,y){const palace=palaceInspect(t,x,y);if(palace)return palace;
  const dojoInfo=dojoTerrainInfo105(t,x,y);if(dojoInfo)return dojoInfo;
  if(!state?.branchContext105)return null;const ter=state.branchTerrain105,sw=state.switches?.find(s=>s.x===x&&s.y===y&&s.kind==='branch-reveal');
  if(sw){const r=ter.reveals.find(r=>r.switchId===sw.id),remaining=(r.cells||[]).filter(c=>branchLeafAt105(c.x,c.y)&&state.map[c.y]?.[c.x]===TT.PAPER_BRIDGE).length;return{name:r.reward?'잎막이 수문 스위치':'침수 구획 인양 스위치',desc:sw.used?'물 아래의 지형을 모두 인양했다. 다시 작동하지 않는다.':'물 아래의 바닥·벽·가구가 솟아오르고 잠겨 있던 적들이 나타난다. 구조물 위에 사람이 있으면 작동하지 않는다.',hint:sw.used?'인양 완료. 처음 들어온 문을 통해 돌아갈 수 있다.':r.reward?`잎사귀가 인양 장치를 막고 있다. 남은 잎 ${remaining}칸. 모두 없앤 뒤 뭍으로 돌아와 작동하자.`:'스위치는 뭍에서 작동한다. 침수 구역에 먼저 들어갈 필요가 없다.'}}
@@ -16080,7 +15496,7 @@ function mineUseItem105(item){
  if(item.mineItem105==='mystery')return mineMystery105(item);
  const p=state.player,range=item.mineItem105==='stone'?MINE_RULES105.stoneRange:4,cells=[];
  for(let y=Math.max(0,p.y-range);y<=Math.min(ROWS-1,p.y+range);y++)for(let x=Math.max(0,p.x-range);x<=Math.min(COLS-1,p.x+range);x++)if(state.visible.has(k(x,y))&&!runtimeTerrainSolid57(state.map[y][x])&&lineClear(p.x,p.y,x,y))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
- if(!cells.length)return false;closeInventory();return beginWorldTarget57({kind:'mine-throw',title:item.name,text:`사거리 ${range}칸 · 한 개 투척 · 목표 칸 선택`,range,cells,meta:{item},onPick:mineThrow105});
+ if(!cells.length)return false;closeInventory();return beginWorldTarget({kind:'mine-throw',title:item.name,text:`사거리 ${range}칸 · 한 개 투척 · 목표 칸 선택`,range,cells,meta:{item},onPick:mineThrow105});
 }
 function resolveMineStone105(actor,item,cell){if(!actor||actor.hp<=0||item?.mineItem105!=='stone'||state.map[cell?.y]?.[cell?.x]==null||entityDistance57(actor,cell)>MINE_RULES105.stoneRange||runtimeTerrainSolid57(state.map[cell.y][cell.x])||!lineClear(actor.x,actor.y,cell.x,cell.y))return false;const thrown=splitItemQuantity(item,1,actor.inventory);if(!thrown)return false;projectileFX(actor.x,actor.y,cell.x,cell.y,'#c0b39b');alertNearby(cell.x,cell.y,7,'projectile');for(const target of [state.player,...state.monsters])if(combatTargetValid57(actor,target)&&entityFootprintCells57(target).some(c=>c.x===cell.x&&c.y===cell.y)){damageEntity(target,MINE_RULES105.stoneDamage,actor);if(target.hp<=0){if(target===state.player)die('광산의 돌');else killMonster(target);}}triggerPressureTile105(cell.x,cell.y,null,'stone');if(![TT.VOID,TT.LAVA].includes(state.map[cell.y][cell.x]))transferItemQuantity(thrown,null,state.items,1,{position:cell});addLog('광산의 돌이 부딪혔다. 남은 돌은 다시 주울 수 있다.');return true;}
 function mineThrow105(cell,inputSource='pointer'){
@@ -16300,8 +15716,8 @@ function dojoSleeping105(){return branchBedData105()?.sleep105;}
 function dojoAdjacentBed105(){return selectFacingAdjacentTarget57((branchBedData105()?.beds105||[]).filter(b=>!(b.singleUse105&&b.uses)&&state.map[b.y]?.[b.x]===TT.BED&&entityDistance57(b,state.player)===1&&(!(b.x!==state.player.x&&b.y!==state.player.y)||!tileBlocks(state.map[b.y][state.player.x])&&!tileBlocks(state.map[state.player.y][b.x]))));}
 function dojoUseBed105(b,act){if(!b||b!==dojoAdjacentBed105())return false;cancelAutoWalk();b.uses=(b.uses||0)+1;const p=state.player;branchBedData105().sleep105={x:p.x,y:p.y,bedX:b.x,bedY:b.y,turns:0};if(b.singleUse105)breakFurnitureTerrain57(b.x,b.y,null,{cause:'bed-use'});addLog('침상 곁에 몸을 누였다. 깊은 잠이 들고, 멀리 '+(state.branchContext105.id==='palace'?'물결':'수련')+' 소리만 남는다.');toast('잠듦 · 매턴 회복 · 늦어도 50턴 뒤 깨어남');commitPlayerAction57(act,1);return true;}
 function dojoBedTick105(){const sleep=dojoSleeping105();if(!sleep)return;const d=branchBedData105(),p=state.player;if(state.dead||p.x!==sleep.x||p.y!==sleep.y){delete d.sleep105;return;}sleep.turns++;const gain=Math.min(p.maxHp-p.hp,Math.max(1,Math.ceil(p.maxHp*DOJO_BED_RULES105.healFraction)));p.hp+=gain;floatText(p.x,p.y,gain?'잠 · +'+gain:'zZz','#c0d1b5',10);if(sleep.turns>=DOJO_BED_RULES105.maxTurns||globalThis.__MANRU_RANDOM57__()<DOJO_BED_RULES105.wakeChance){delete d.sleep105;addLog(`${sleep.turns}턴 만에 눈을 떴다. 주변 소리가 다시 귀에 들어온다.`);}}
-let dojoSleepNextFrame105=0;
-function dojoSleepFrame105(now){if(!dojoSleeping105()||state.dead||runState57()!=='playing'||!gameplayInputAllowed57()||now<dojoSleepNextFrame105)return;dojoSleepNextFrame105=now+DOJO_BED_RULES105.intervalMs;globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,playerAgency:true,reason:'dojo-sleep'});}
+
+
 
 
 
@@ -17253,7 +16669,7 @@ function citadelOpen105(key){
  BRANCH_TILE_CACHE.clear();MINE_CANVAS.clear();if(fresh)addLog('성채의 쇠사슬이 울리며 연결된 철창이 열렸다.');return true;
 }
 function citadelTrialState105(){const world=citadelWorld105();return world.trial105||(world.trial105={status:'ready',deadline:0,seals:[],boulder:false,attempt:0});}
-function citadelTrialTick105(){const t=state?.branchWorld105?.citadel105?.trial105;if(!t||t.status!=='active')return;if(state.turn>=t.deadline){t.status='expired';t.seals=[];t.boulder=false;addLog('흑성 미궁의 종이 울렸다. 시험에 실패했다. 입구 제단에서 다시 시작할 수 있다.');closeSummonPanel105();globalThis.__MANRU_SAVE_SERVICE__?.request?.();}else if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1&&[30,10].includes(t.deadline-state.turn))addLog(`흑성 미궁: 남은 ${t.deadline-state.turn}턴.`);}
+function citadelTrialTick105(){const t=state?.branchWorld105?.citadel105?.trial105;if(!t||t.status!=='active')return;if(state.turn>=t.deadline){t.status='expired';t.seals=[];t.boulder=false;addLog('흑성 미궁의 종이 울렸다. 시험에 실패했다. 입구 제단에서 다시 시작할 수 있다.');closeSummonPanel();globalThis.__MANRU_SAVE_SERVICE__?.request?.();}else if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1&&[30,10].includes(t.deadline-state.turn))addLog(`흑성 미궁: 남은 ${t.deadline-state.turn}턴.`);}
 function citadelTrialPress105(button,source,rolling=[]){const data=state.branchTerrain105?.citadel105?.trial105;if(!data||!['player','stone'].includes(source))return;const t=citadelTrialState105();if(t.status!=='active'||state.turn>=t.deadline)return;
  if(button.trialBoulder105&&rolling.includes('trial-boulder')){t.boulder=true;addLog('공성 바위의 걸쇠가 풀렸다.');}
  if(button.trialSeal105==null)return;const index=button.trialSeal105,lamp=mineState105().lanterns.find(l=>l.trialLamp105===index);if(!lamp?.lit){toast('옆의 꺼진 등불에 먼저 불을 붙여야 한다.');return;}if(index===1&&!t.boulder){toast('공성 바위의 걸쇠를 먼저 풀어야 한다.');return;}if(!t.seals.includes(index)){t.seals.push(index);addLog(`흑성 미궁: ${index+1}번째 걸쇠 해제 (${t.seals.length}/3).`);}}
@@ -17261,38 +16677,20 @@ function citadelTrialBegin105(){const data=state.branchTerrain105?.citadel105?.t
  const mine=mineState105();if(!mine.carts.some(c=>c.home==='trial-boulder'&&c.alive)){const home=mine.sources.find(h=>h.id==='trial-boulder');toast(`공성 바위가 아직 없다. 적재 자리를 비우고 ${Math.max(0,(home?.nextAt||0)-state.floorTurn)}턴 후 보충을 확인하자.`);return false;}
  const prepared=[],reserved=new Set();for(const spec of data.keepers){if(state.monsters.some(m=>m.citadelTrialGuard105===spec.id&&m.hp>0))continue;const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105===spec.role),mon=scaledMonster(def,citadelCombatDepth105(spec.x,spec.y,1));const cells=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)cells.push({x:spec.x+dx,y:spec.y+dy});cells.sort((a,b)=>entityDistance57(a,spec)-entityDistance57(b,spec));const pos=cells.find(p=>!reserved.has(k(p.x,p.y))&&!state.branchTerrain105.props[k(p.x,p.y)]&&PlacementService.monsterCanStand(mon,p.x,p.y));if(!pos){toast('시험실의 수호자가 설 자리를 비워야 한다.');return false;}Object.assign(mon,pos,{citadelTrialGuard105:spec.id,spawnProvenance57:'citadel-trial',rewardPolicy57:{xp:false,drops:false,kills:false},alerted:true,guardHome57:{...pos,room:{x:spec.x-2,y:spec.y-2,w:5,h:5}}});prepared.push(mon);reserved.add(k(pos.x,pos.y));}
  Object.assign(t,{status:'active',deadline:state.turn+CITADEL_TRIAL_PLAN105.turns+1,seals:[],boulder:false,attempt:t.attempt+1});for(const mon of prepared)OccupancyService.addMonster(mon);addLog('흑성 미궁 시작: 180턴 안에 세 걸쇠와 일곱 수호자를 돌파하고 동남 전승 제단에 도달하라. 걸쇠 순서는 자유이며 내측 철창은 단축로다.');return true;}
-function citadelReward105(){
- const world=citadelWorld105(),d=state.branchTerrain105?.citadel105,t=citadelTrialState105();
- const ready=()=>!world.rewardClaimed&&state.branchContext105?.id==='citadel'&&state.branchContext105.level===1&&d?.trial105&&t.status==='active'&&state.turn<t.deadline&&t.seals.length===3&&entityDistance57(state.player,d.reward)<=1&&state.visible.has(k(d.reward.x,d.reward.y))&&!state.monsters.some(m=>m.citadelTrialGuard105!=null&&m.hp>0);
- if(world.rewardClaimed){toast('이 성채의 전승은 이미 받았다.');return false;}if(!d?.trial105){toast('이전에 생성된 중앙층에는 미궁이 없다. 새로 생성된 성채에서 도전할 수 있다.');return false;}
- if(state.branchContext105?.id!=='citadel'||state.branchContext105.level!==1||entityDistance57(state.player,d.reward)>1||!state.visible.has(k(d.reward.x,d.reward.y)))return false;
- if(t.status!=='active'||state.turn>=t.deadline||t.seals.length!==3){toast('180턴 안에 세 걸쇠를 풀고 전승 제단에 도달해야 한다.');return false;}if(!ready()){toast('시험실의 일곱 수호자를 모두 쓰러뜨려야 한다.');return false;}
-  const upgrade=(window.MANRU_TALISMANS||[]).find(i=>i.talismanKind==='upgrade');if(!upgrade)throw Error('Missing citadel reward definition');
-  const panel=summonPanel105('흑성채의 전승',`시험 보상은 강화부적 1장이다. 남은 ${t.deadline-state.turn}턴.`),button=document.createElement('button');button.textContent=upgrade.name+' × 1';button.onclick=()=>{if(!ready())return;world.rewardClaimed=true;world.rewardChoice105='upgrade';t.status='completed';addInventoryItem({...clone(upgrade),count:1});addLog('흑성 미궁을 통과해 강화부적 1장을 받았다.');closeSummonPanel105();globalThis.__MANRU_SAVE_SERVICE__?.request?.();};panel.append(button);return true;
-}
+
 let ANVIL_SESSION105=null;
 function citadelAnvilAt105(x,y){return state?.branchContext105?.id==='citadel'&&state.branchTerrain105?.props?.[k(x,y)]==='anvil'&&terrainSurface58(terrainBaseTile58(x,y));}
 function anvilNearby105(q){const p=state?.player;return !!p&&entityDistance57(q,p)<=1&&(q.x===p.x||q.y===p.y||!runtimeTerrainSolid57(state.map[p.y]?.[q.x])&&!runtimeTerrainSolid57(state.map[q.y]?.[p.x]));}
 function citadelAdjacentAnvil105(){if(!state?.player)return null;const p=state.player,near=[];for(const [dx,dy]of [[0,0],...DIRS8])if(citadelAnvilAt105(p.x+dx,p.y+dy)&&anvilNearby105({x:p.x+dx,y:p.y+dy}))near.push({x:p.x+dx,y:p.y+dy});return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;}
 
 function anvilPair105(base,donor){const p=state?.player;return !!p&&base!==donor&&anvilGear(base)&&anvilGear(donor)&&(p.weapon===base||p.armor===base||p.inventory.includes(base))&&p.inventory.includes(donor)&&base.type===donor.type&&base.name===donor.name&&(base.upgrade||0)===(donor.upgrade||0);}
-function closeAnvil105(){ANVIL_SESSION105=null;document.getElementById('anvilPanel105')?.remove();setInteraction8('anvilPanel105',false);}
-function anvilOpen105(q=citadelAdjacentAnvil105()){
- if(!q||!gameplayUiOpen57()||!citadelAnvilAt105(q.x,q.y)||!anvilNearby105(q))return false;
- closeInventory();cancelAutoWalk();clearHeldInput53();ANVIL_SESSION105={map:state.map,x:q.x,y:q.y};
- const panel=document.createElement('section');panel.id='anvilPanel105';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.style.cssText='position:fixed;z-index:300;top:50%;left:50%;transform:translate(-50%,-50%);width:min(740px,calc(100vw - 24px));max-height:90vh;box-sizing:border-box;overflow:auto;padding:16px;background:#171d23;border:2px solid #a8956b;border-radius:12px;color:#eee0bc;box-shadow:0 15px 90px #000c;display:flex;flex-direction:column;gap:10px;';
- const title=document.createElement('h2');title.textContent='모루 · 장비 합성';const desc=document.createElement('p');desc.textContent='같은 종류·같은 강화치의 미저주 무기 또는 방어구 2개 → 강화 +1 장비 하나. 재료 1개를 소모하며, 남길 장비의 각인과 특성은 유지한다. 전설 무기는 합성할 수 없다. 합성 1턴.';const close=document.createElement('button');close.textContent='닫기';close.onclick=closeAnvil105;panel.append(title,desc,close);
- const p=state.player,entries=[p.weapon,p.armor,...p.inventory].filter(anvilGear),pairs=[];
- const detail=it=>`${it.name} +${it.upgrade||0}${p.weapon===it||p.armor===it?' · 장착 중':''}${it.elementBrand74||it.elementGuard74?' · 각인 '+({fire:'화염',water:'수류',wind:'풍압',earth:'대지',wood:'목령',grass:'목령',shock:'뇌전',holy:'성광',ice:'빙결',thunder:'뇌전'}[it.elementBrand74||it.elementGuard74]||'원소'):''}`;
- for(const base of entries)for(const donor of p.inventory){if(!anvilPair105(base,donor))continue;pairs.push([base,donor]);const button=document.createElement('button');button.style.cssText='text-align:left;white-space:pre-line;padding:12px;';button.textContent=`남김: ${detail(base)} → +${(base.upgrade||0)+1}\n소모: ${detail(donor)}`;button.onclick=()=>ActionDispatcher.dispatch({type:'ANVIL_FUSE105',args:[base,donor]}).value;panel.append(button);}
- if(!pairs.length){const empty=document.createElement('p');empty.textContent='합성할 장비 쌍이 없다. 같은 종류와 강화치의 미저주 무기·방어구를 모아 오자.';panel.append(empty);}
- document.body.append(panel);setInteraction8('anvilPanel105',true);return true;
-}
+
+
 function anvilFuse105(base,donor){
  const session=ANVIL_SESSION105;if(!session||session.map!==state?.map||!citadelAnvilAt105(session.x,session.y)||!anvilNearby105(session)||!anvilPair105(base,donor)){toast('모루와 합성 재료를 다시 확인하자.');return false;}
  const act=playerAction57('anvil',{uiOwner:'anvilPanel105'});if(!act.ok)return false;
  if(!consumeItemQuantity(donor,1))return false;if(base.type==='weapon')applyWeaponUpgrade(base);else applyArmorUpgrade(base);
- closeAnvil105();burst(session.x,session.y,'#e8bc6b',18,.7);addLog(`모루 합성 · ${base.name} 2개를 합쳐 +${base.upgrade} 하나를 만들었다. 남긴 장비의 각인과 특성은 유지된다.`);commitPlayerAction57(act,1);updateAll();return true;
+ closeAnvil();burst(session.x,session.y,'#e8bc6b',18,.7);addLog(`모루 합성 · ${base.name} 2개를 합쳐 +${base.upgrade} 하나를 만들었다. 남긴 장비의 각인과 특성은 유지된다.`);commitPlayerAction57(act,1);updateAll();return true;
 }
 ActionDispatcher.register('ANVIL_FUSE105',anvilFuse105);
 function citadelInspect105(t,x,y){if(citadelAnvilAt105(x,y))return{name:'장비 합성 모루',desc:'같은 종류·같은 강화치의 미저주 무기 또는 방어구 2개를 합쳐 강화 +1 장비 하나를 만든다. 남길 장비의 각인과 특성은 유지된다.',hint:'모루 곁에서 상호작용 · 합성 1턴 · 전설 무기 제외'};if(state?.branchContext105?.id!=='citadel')return null;const data=state.branchTerrain105?.citadel105,portal=state.branchPortals105?.find(p=>p.x===x&&p.y===y);if(portal)return{name:portal.label,desc:portal.kind==='exit'?'흑성채를 나와 본관으로 돌아가는 출입구.':`${CITADEL_TOWERS105[portal.tower105].name} 안에서 ${portal.to.split(':')[1]}층으로 이동한다.`,hint:portal.requireWorld105?(portal.requireWorld105.keys.every(key=>citadelWorld105().opened[key])?'두 봉인이 끊어졌다. 하행 철문이 열려 있다.':portal.requireWorld105.hint+' 순서는 자유다.'):'계단 위에서 상호작용하면 이동한다.'};const feature=data?.features105?.find(f=>f.x===x&&f.y===y&&f.tile===t);if(feature)return{name:feature.name,desc:feature.desc,hint:feature.theme==='archive'?'밟으면 기록을 읽는다.':'한 번 쓰는 시설은 사용 후 소모된다.'};const b=mineButton105(x,y);const trial=data?.trial105;if(trial&&x===trial.start.x&&y===trial.start.y)return{name:'흑성 미궁 입구',desc:'시작하면 180턴이 흐른다. 꺼진 등불 두 개에 불을 붙이고 세 걸쇠와 일곱 수호자를 돌파한 뒤 동남 전승 제단에 도달해야 한다. 서쪽 철창은 5턴 뒤 닫히며 동쪽 바위는 버튼 쪽으로 굴러온다.',hint:'밟는 것만으로 시작되지 않는다. 화룡유와 돌을 챙긴 뒤 제단에서 상호작용하자. 재도전 시 켜진 등불과 소모한 자원은 유지되며 걸쇠는 다시 풀어야 한다. 바위는 25턴마다 보충된다.'};if(b?.trialSeal105!=null)return{name:'전승 걸쇠 '+(b.trialSeal105+1),desc:b.trialSeal105===1?'곁의 등불과 동쪽 공성 바위 걸쇠를 모두 작동시켜야 한다.':'곁의 꺼진 등불에 불을 붙인 뒤 스위치를 눌러야 한다.',hint:'시험 중에만 전승 걸쇠가 풀린다.'};if(b?.prisonCell105){const captive=state.monsters.find(mon=>mon.hp>0&&mon.prisoner105?.cell===b.prisonCell105);return{name:b.prisonEntry105==='out'?'감방 바깥 스위치':'감방 안쪽 스위치',desc:'철창을 5턴 동안 연다.'+(captive?' '+(captive.prisoner105.elite?'강한 수감자와 보급 물자가':'수감자가')+' 안에 있다. 열면 수감자가 출구로 달려든다.':''),hint:'밟거나 돌을 던져 연다. 안쪽에서도 다시 열 수 있다.'};}if(b?.shortcut105)return{name:'단축 회랑 압력판',desc:'바깥 회랑을 우회하는 짧은 관리 통로. 철창은 5턴 뒤 다시 올라온다.',hint:'양쪽 압력판으로 열 수 있다. 전투 중 철창 아래에 머물지 말자.'};if(b&&!b.remote105)return{name:'철창 스위치',desc:'연결된 철창을 5턴간 내리고 같은 가로·세로줄의 바위 걸쇠를 푼다. 감옥 안쪽 스위치로도 다시 열 수 있다.',hint:'밟거나 돌을 던져 작동한다.'};if(b?.remote105&&b.activation105)return{name:b.remote105.label,desc:b.remote105.key.startsWith('core3-')?'봉인을 끊으면 중앙 하행문의 쇠사슬 하나와 이 구역의 귀환문이 열린다.':'연결된 영구 철문을 연다.',hint:citadelWorld105().opened[b.remote105.key]?'이미 해제했다.':'밟거나 돌을 던져 작동한다.'};if(b?.remote105)return{name:'연결 철창 스위치',desc:`${b.remote105.level}층 ${b.remote105.label||CITADEL_RELEASES105.find(r=>r.key===b.remote105.key)?.label||'연결교'} 철창을 영구히 연다.`,hint:state.branchWorld105?.citadel105?.opened?.[b.remote105.key]?'이미 개방했다. 다른 층으로 돌아가도 열린 상태를 유지한다.':'밟거나 돌을 던져 작동한다. 개방 위치는 장부에도 기록된다.'};if(x===(state.branchTerrain105?.citadel105?.reward?.x??72)&&y===(state.branchTerrain105?.citadel105?.reward?.y??72)&&state.branchContext105.level===1)return{name:'흑성채 전승 제단',desc:'시간 안에 세 걸쇠를 해제하고 시험실 수호자들을 쓰러뜨려야 열리는 전승 제단.',hint:'시험을 통과하면 강화부적 1장을 받는다. 전설 무기의 잔향은 외곽 세 탑으로 이어진다.'};if(t===TT.VOID)return{name:'성채 낭떠러지',desc:'탑과 석교 아래로 깊은 어둠이 흐른다. 다리와 돌바닥만 통행할 수 있다.',hint:'발판 밖은 추락 위험.'};const w=mineState105()?.walls.find(w=>w.cells.some(c=>c.x===x&&c.y===y));if(w?.prisonCell105)return{name:w.open?'열린 감방 철창':'감방 철창',desc:'양쪽 스위치로 5턴간 열리는 감방. 철창이 열리면 수감자가 출구를 향해 나온다.',hint:'내부 스위치로도 다시 열 수 있다. 생물이 끼면 폐쇄가 늦어지고 바위·가구는 부서진다.'};if(w?.authored105)return{name:w.label||'성채 철문',desc:'연결된 빗장을 풀면 영구히 열린다.',hint:w.open?'개방했다.':w.requireAll105.map(key=>mineState105().buttons.find(b=>b.remote105?.key===key)?.remote105.label||'연결 봉인').join(' · ')};if(w)return{name:w.open?'열린 철창':'성채 철창',desc:w.persistent105?'다른 높이의 스위치와 연결된 철창. 한 번 열면 계속 열린다.':'철제 승강 격벽. 5턴 뒤 올라오며 생물이 끼면 복구를 늦추고 바위·가구는 부순다.',hint:'바위와 생물도 버튼을 누를 수 있다.'};if(mineState105()?.carts.some(c=>c.alive&&c.x===x&&c.y===y))return{name:'움직이는 바위',desc:'버튼과 같은 가로·세로줄에서 버튼 쪽으로 구른다. 충돌 26, 최대 20칸. 충돌·낭떠러지 또는 대지 공격에 부서진다.',hint:'25턴마다 보충된다. 시험의 걸쇠는 파괴가 아니라 실제 굴림을 요구한다.'};if(t===TT.WALL)return{name:'흑성채 석벽',desc:'탑 외벽과 감옥의 두꺼운 석조 벽.',hint:'이동과 시야를 막는다.'};if(t===TT.DRAWBRIDGE_DOWN)return{name:'공중 연결교',desc:'탑과 플랫폼 사이를 잇는 난간 다리. 난간 안쪽은 통행 가능하고 바깥은 낭떠러지다.',hint:'같은 탑의 상행·하행 계단으로 다른 다리를 찾을 수 있다.'};if([TT.STONE_PATH,TT.FLOOR].includes(t)){const room=state.branchTerrain105.citadel105.rooms?.find(r=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h);return{name:room?.name||'탑 석조 통로',desc:(room?.desc105?room.desc105+(room.function105?' '+room.function105:''):'탑의 기능 공간과 계단을 잇는 석조 통로. 문 너머에는 각 공간의 작업 시설과 보급이 있다.'),hint:room?'벽과 문으로 분리된 석실. 문 너머의 시야와 사선은 차단된다.':''};}return null;}
@@ -17382,13 +16780,6 @@ function summonTalismanElement105(item){return item?.type==='talisman'&&globalTh
 ActionDispatcher.register('SUMMON_CAST105',summonCast);
 ActionDispatcher.register('SUMMON_PICTURE105',summonInstallPicture);
 ActionDispatcher.register('SUMMON_TALISMAN105',summonBindTalisman);
-function closeSummonPanel105(){document.getElementById('summonPanel105')?.remove();SUMMON_PANEL_SESSION105=null;setInteraction8('summonPanel105',false);}
-function summonPanel105(title,description){closeSummonPanel105();closeInventory();cancelAutoWalk();clearHeldInput53();const panel=document.createElement('section');panel.id='summonPanel105';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','summonTitle105');panel.innerHTML=`<div class="summonSheet105"><header class="summonHead105"><div class="summonBook105" aria-hidden="true"><span>靈</span></div><div><span class="summonEyebrow105">萬靈 · 소환술서</span><h2 id="summonTitle105"></h2></div><button class="summonClose105" aria-label="닫기" title="닫기">×</button></header><div class="summonBody105"></div></div>`;panel.querySelector('h2').textContent=title;panel.querySelector('.summonClose105').onclick=closeSummonPanel105;panel.onclick=event=>{if(event.target===panel)closeSummonPanel105();};document.body.append(panel);setInteraction8('summonPanel105',true);return panel;}
-function summonChoice105(body,title,hint,item,onClick,disabled=false){
- const button=document.createElement('button');button.className='summonPicture105';button.disabled=disabled;
- if(item){const art=document.createElement('img');art.alt='';art.src=item.summonItem105==='picture'?globalThis.__MANRU_ITEM_ART_R7__.pictureAsset(item).toDataURL('image/png'):globalThis.__MANRU_ITEM_ART_R7__.dataItem(item);if(item.summonItem105==='picture')art.className='summonPainting105';button.append(art);}
- const copy=document.createElement('span'),name=document.createElement('b'),description=document.createElement('small');name.textContent=title;description.textContent=hint;copy.append(name,description);button.append(copy);button.onclick=onClick;body.append(button);return button;
-}
 
 
 
@@ -17396,11 +16787,11 @@ function summonChoice105(body,title,hint,item,onClick,disabled=false){
 
 
 
-function summonUpdateButtons105(){
- const slot=document.getElementById('summonButton105');if(!slot)return;const books=summonShortcutBooks();slot.hidden=!books.length||runState57()!=='playing'||!!state?.debugBattle57;slot.classList.toggle('summonSplit105',books.length>1);
- for(const [n,button]of [...slot.querySelectorAll('button')].entries()){const book=books[n],ready=!!SUMMON_RACES[book?.summonElement105];button.hidden=!book;button.disabled=!ready;button.classList.toggle('available',ready);button.dataset.bookId=book?.summonBookId105||'';button.title=book?`${book.name} +${book.upgrade} · ${SUMMON_RACES[book.summonElement105]?.name||'속성부적 없음'}`:'';button.setAttribute('aria-label',button.title);}
-}
-function initSummon105(){summonUpdateButtons105();}
+
+
+
+
+function initSummon105(){summonUpdateButtons();}
 
 initSummon105();
 initDebugBattle57();

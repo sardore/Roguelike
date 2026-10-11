@@ -87,6 +87,42 @@ for (const s of stmts) {
   if (seg.file === 'qa/qa.js') throw new Error(`${declNames(s)[0]} is declared in qa/qa.js (test-only code): it must not move into the game`);
 }
 
+// the same, one call away: a function a load-time statement (outside any function, before the new file) calls
+// must not read a moved const/let either
+{
+  const segIdx = (file) => marks.findIndex((m) => m.file === file);
+  const tIdx = segIdx(target);
+  let insertAt;
+  if (tIdx >= 0) insertAt = tIdx + 1 < marks.length ? marks[tIdx + 1].at : text.length;
+  else {
+    const refIdx = segIdx(createAfter || createBefore);
+    if (refIdx >= 0) insertAt = createBefore ? marks[refIdx].at : refIdx + 1 < marks.length ? marks[refIdx + 1].at : text.length;
+  }
+  if (insertAt !== undefined) {
+    const movedValues = new Set();
+    for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) movedValues.add(n);
+    const fnByName = new Map();
+    for (const s of top) if (s.type === 'FunctionDeclaration') fnByName.set(s.id.name, s);
+    const eager = new Map(); // function name -> the load-time statement or function that reaches it
+    const queue = [];
+    const reach = (node, via, skipFns) => {
+      walk.ancestor(node, { Identifier(id, _st, anc) {
+        if (skipFns && anc.some((a) => /Function/.test(a.type))) return;
+        const f = fnByName.get(id.name);
+        if (f && !eager.has(id.name)) { eager.set(id.name, via); queue.push(f); }
+      } });
+    };
+    for (const s of top) if (s.start < insertAt && !picked.has(s) && s.type !== 'FunctionDeclaration') reach(s, `a statement at line ${s.loc.start.line}`, true);
+    while (queue.length) { const f = queue.pop(); reach(f.body, `${f.id.name} (via ${eager.get(f.id.name)})`, false); }
+    for (const [name] of eager) {
+      const f = fnByName.get(name);
+      walk.simple(f.body, { Identifier(id) {
+        if (movedValues.has(id.name)) throw new Error(`${id.name}: read at load time inside ${name}, which ${eager.get(name)} calls: its place is fixed by that call`);
+      } });
+    }
+  }
+}
+
 // ---- the text of each statement with the comments directly above and a trailing comment
 function blockOf(s) {
   let start = s.start, end = s.end;

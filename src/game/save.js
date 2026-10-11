@@ -130,7 +130,7 @@ const RunLifecycle={
       RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
     }catch(e){
       ctx.aborted=true;state=prior.state;COLS=prior.cols;ROWS=prior.rows;window.__MANRU_RUN_SEED984=prior.seed;RuntimeState.lifecycle.phase=prior.phase;RuntimeState.lifecycle.generation++;
-      resetVisualState();resetTurnState();if(state){VisibilityService.compute();updateAll()}setScreen1002(prior.screen||'title');
+      resetVisualState();resetTurnState();if(state){VisibilityService.compute();updateAll()}setScreen(prior.screen||'title');
       document.body.classList.toggle('run-active',!!state&&!state.dead&&!state.victory);
       RuntimeState.lifecycle.last={ok:false,kind,failure:String(e)};toast('탐사 기록을 적용하지 못했다. 이전 기록을 유지한다.');if(isNew)throw e;return false;
     }finally{
@@ -216,7 +216,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     function saveSlot(n){const result=globalThis.__MANRU_SAVE_SERVICE__.commit('manual');toast(result.ok?'기록 저장 완료.':'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return result}
   function loadRaw(raw,label='세이브'){
     if(!raw){toast(label+'가 없다.');return false}
-    const ok=loadGame({raw,label,source:'slot70'});if(ok){RC.lastActionAt=performance.now();closePanel70();toast(label+' 불러오기 완료.')}return ok;
+    const ok=loadGame({raw,label,source:'slot70'});if(ok){RC.lastActionAt=performance.now();closeReleasePanel();toast(label+' 불러오기 완료.')}return ok;
   }
   function loadSlot(n){return loadRaw(lsGet(slotKey(n)),`슬롯 ${n}`)}
       function slotMeta(n){
@@ -243,7 +243,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     try{
       const env=request?.state?{state:request.state,settings:request.settings||{}}:parseEnvelope(raw),st=env.state;
       if(st?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(st.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
-      restoreState70(st);
+      restoreState(st);
       if(env.settings?.camera)try{globalThis.__MANRU_CAMERA_STATE12__.setMode(env.settings.camera)}catch(error){ignoreError('saved camera mode could not be applied',error)}
       if(Number.isFinite(env.settings?.uiVolume)){RC.uiVolume=env.settings.uiVolume;lsSet('manruUiVolume70',String(RC.uiVolume))}
       RC.lastActionAt=performance.now();if(!request?.label)toast('불러오기 완료.');return true

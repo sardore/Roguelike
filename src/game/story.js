@@ -10,8 +10,8 @@ function tutorialEntryAudit(){
  const stairDistance=distances.get(k(state.stairs.x,state.stairs.y))??-1;
  return{ok:checkpoints.every(p=>p.reachable)&&reach.has(k(a.exit.x,a.exit.y))&&enemies.length===0&&hazards.length===0&&stairDistance>=24,checkpoints,enemies,hazards,stairDistance,minimumStairDistance:24,exitReachable:reach.has(k(a.exit.x,a.exit.y))};
 }
-function beginEndingPresentation(){document.body.classList.remove('run-active');endScreen95()}
-function showEnding(){if(!RunLifecycle.terminate('victory'))return false;beginEndingPresentation();presentVictory8()}
+function beginEndingPresentation(){document.body.classList.remove('run-active');endScreen()}
+function showEnding(){if(!RunLifecycle.terminate('victory'))return false;beginEndingPresentation();presentVictory()}
 let coachFocus=null,coachCurrent=null,coachTimer=null;
   function showFloorTips(){
     if(!state||state.debugBattle57||state.debugMapGeneration57||state.shopIntermission?.active||state.artifactDungeon46)return;
