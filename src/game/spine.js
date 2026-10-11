@@ -3492,7 +3492,7 @@ const RuntimeState={
   interactionActive:interactionActive8,projectUI(){projectInteractionUI();globalThis.__MANRU_STORY992__?.project?.();if(inventoryOpen)renderInventory();if(interactionActive8('shop58'))renderShop();if(runState57()==='death')presentDeath(RuntimeState.ui.deathCause)},
   input:{qHold61:null,classic:INPUT,router:INPUT_ROUTER57_AUDIT,device:null},action:ACTION_AUDIT5,turn:null,
   client:{initialized:false,type:null,orientation:null,orientationGate:false,selection:null,environment:null,refreshes:0,transitions:0,lastReason:'boot',desktop:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0},mobile:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0}},
-  lifecycle:{phase:'no-run',generation:0,depth:0,last:null,validate:null,parse:null},
+  lifecycle:{phase:'no-run',generation:0,depth:0,last:null,validate:validateSaveState,parse:parseEnvelope},
   persistence:{pending:false,last:null,history:[]},
   prepareRun(){
     RuntimeState.persistence.retiredItemMigration57=null;RuntimeState.persistence.terrainRecovery58=null;
@@ -4011,8 +4011,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
   
 
 
-  globalThis.__MANRU_LIFECYCLE__.resetLoad('legacy-v3',legacyLoadCore);
-
+  
 
 
   
@@ -7131,9 +7130,7 @@ const RC={
   document.getElementById('rcLoadAuto70').onclick=()=>loadRaw(lsGet(AUTO_KEY),'자동저장');
 
 
-  globalThis.__MANRU_LIFECYCLE__.resetLoad('runtime70',loadGameCore,validateSaveState,parseEnvelope);
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('resume70',{post:()=>{closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();showFloorTips();if(trainingActive()){if(!state.story992?.dispatchPending60)advanceEntryTutorial();return}setTimeout(()=>tip70('resume','자동 추적 카메라가 플레이어를 따라간다. ◎로 언제든 중심 복귀 가능.','추적=고정 추적 · 완만=데드존 · 자유=자유 시점'),500)}});
-
+    
   refreshSlots();refreshSfx();refreshContinueStatus();
 
   window.__MANRU_RELEASE__={
@@ -7666,8 +7663,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
   globalThis.__MANRU_LIFECYCLE__.registerNew('talisman74',{post:()=>{ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('talisman74',{post:()=>{if(state){ensure74(true);updateAll()}}});
-
+  
   globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
@@ -8192,8 +8188,7 @@ const CONFIG81=Object.freeze({
   /* Reapply after start/load without adding switches or changing user policy. */
   registerGenerationStage('runtime81','post',()=>{Integrity81.repair();ConnectedDecor81.build();queuePlace81()});
   globalThis.__MANRU_LIFECYCLE__.registerNew('runtime81',{post:()=>{CameraController.center();ConnectedDecor81.build();queuePlace81()}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('runtime81',{post:()=>{if(state?.artifactDungeon46){CameraController.center();return}if(state){CameraController.center()}}});
-
+  
   addEventListener('pointerup',stopHeldInput,{passive:true});addEventListener('pointercancel',stopHeldInput,{passive:true});addEventListener('blur',stopHeldInput,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 
   cleanViewportUI();makeInput();rebindControls();ConnectedDecor81.build();CameraController.resume(false);
@@ -8934,8 +8929,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   registerGenerationStage('quality94-pre','pre',()=>{state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null});
   registerGenerationStage('quality94-post','post',()=>{state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial94();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('quality94',{post:()=>{if(state){state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];VisibilityService.compute();updateAll()}}});
-
+  
 
   // Progression is owned by the canonical checkLevel() above; no late reassignment.
 
@@ -9199,8 +9193,7 @@ function installFloor24GrandEntrance96(){
   
 
   registerGenerationStage('locks96','post',()=>{clearLegacyTrial96();refineF2Floor96();densifySpecial96();installLockPlan96();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('locks96',{post:()=>{if(state){state.keyPlan96=state.keyPlan96||null;globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();VisibilityService.compute();updateAll()}}});
-
+  
   function lockAudit96(){return strictLockAudit96(state.keyPlan96)}
   function lockPlanProgressed96(plan=state.keyPlan96){
     if(!plan)return false;
@@ -10681,18 +10674,7 @@ riverAndCore(...args){
   
   globalThis.__MANRU_GENERATE_CORE983__=NormalGenerationStages10.riverAndCore;
 
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('quality-current983',{post:()=>{
-    if(state?.shopIntermission?.active)return;
-    if(state?.artifactDungeon46||state?.branchContext105){try{updateAll()}catch(error){ignoreError('ui refresh in the load hook (branch or legend floor)',error)};return}
-    if(state){
-      core982();migrateLegacyInventory();
-      if(!state.coreLootAudit982){const S=schedule982();state.coreLootAudit982={floor:state.floor,chapter:chapter982()+1,upgrades:[...S.upgrades],heals:[...S.heals],groundUpgrades:(state.items||[]).filter(i=>i.talismanKind==='upgrade').length,groundHealing:(state.items||[]).filter(i=>i.type==='potion'&&['heal_small','heal_medium'].includes(i.potionKind)).length}}
-      if(state.floor!==11){state.riverRule982=null;state.riverGenerationAttempts982=0;}
-      if(state.floor===11&&state.raftAudit981&&!state.riverRule982)state.riverRule982={mustCross:true,pureWalk:!!state.raftAudit981.pureWalk,pureRaft:!!state.raftAudit981.pureRaft,blinkFallback:!!state.raftAudit981.exitBlinkFallback,ok:!state.raftAudit981.pureWalk&&!!state.raftAudit981.pureRaft&&!!state.raftAudit981.exitBlinkFallback};
-      try{updateAll()}catch(error){ignoreError('ui refresh in the load hook',error)}
-    }
-  }});
-
+  
 
   
   
@@ -10998,11 +10980,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     pre:ctx=>{const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}},
     post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): the zoom limits depend on the game screen's laid-out size, which exists only after the screen switch that follows this stage; 90 ms waits for that layout. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
   });
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('camera-save984',{
-    pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
-    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): same wait for the laid-out game screen as in the new-run stage above. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
-  });
-// r53: overwritten save implementation retired.
+  // r53: overwritten save implementation retired.
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
 
 
@@ -11104,8 +11082,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   // Existing generated floor may have been built before the new wrapper was installed.
   if(state){applyCursesToAllGear();ensureHolyDrop();syncCurseClocks991()}
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('curse-clock991',{post:()=>{if(state){state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}});
-
+  
   // Curse effects preserve the base item stats. Equal active curse ids across equipped slots
   // share one geometric strength: 1 stack=1x, 2=2x, 3=4x, 4=8x, 5=16x.
   registerPlayerAttackStageR('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
@@ -11286,8 +11263,7 @@ const STORY_VERSION992='v9.9.3-story-system';
 
 
   globalThis.__MANRU_LIFECYCLE__.registerNew('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen('game')}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen('game')}});
-  RUN_END_EFFECTS53.push(()=>setScreen('ending'));
+    RUN_END_EFFECTS53.push(()=>setScreen('ending'));
 
   function bootScreen1002(){
     if(SCREEN1002.booted)return;SCREEN1002.booted=true;
@@ -11339,8 +11315,7 @@ const STORY_VERSION992='v9.9.3-story-system';
 
     /* ---------- permadeath hardening: reject a resurrected snapshot while its death tombstone remains ---------- */
     
-    globalThis.__MANRU_LIFECYCLE__.registerLoad('permadeath1003',{post:(ctx,r)=>{sanitizeTransient1003();if(state){resetVisualState();updateAll()}return r}});
-    globalThis.__MANRU_TURN_PIPELINE__.register('permadeath-clean1003',{post:()=>{/* Persistence cleanup belongs to SaveService commit. */}});
+        globalThis.__MANRU_TURN_PIPELINE__.register('permadeath-clean1003',{post:()=>{/* Persistence cleanup belongs to SaveService commit. */}});
 
     // Any stale renderer timestamp loaded during the earlier v10.0.2 boot is neutralized now.
     sanitizeTransient1003();
@@ -11545,8 +11520,7 @@ const STORY_VERSION992='v9.9.3-story-system';
   const strictKeyFloors1004=new Set(strictLockFloors()||[]);
   // r18: strict typed-key retries run inside the canonical generation pipeline so failed attempts
   // do not also consume holy/story/item side effects through nested generation wrappers.
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('strict-lock1004',{post:()=>{if(state&&!state.artifactDungeon46&&!state.branchContext105&&strictKeyFloors1004.has(state.floor))state.strictLockAudit1004=lockAudit96()||null}});
-
+  
 /* ===== MANRU v10.0.4 ROUTE/Hazard REWORK (rolled back from v10.0.5 map branch) ===== */
 const V='10.0.4-route-hazard-r1';
 const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
@@ -11727,7 +11701,6 @@ function placeGuaranteedRelics(){
 }
 function remodel(){if(state?.specialFloor&&[23,24].includes(state.floor)){VisibilityService.compute();vfBuildDecor?.();state.routeMetric1005=routeMetric();return}if(!state)return;state.routeDesign1005=null;state.routeKeyShrine1005=null;semanticDoors();repairEntities();if(strictLockFloors().includes(state.floor))ensureStrictLocks96();semanticDoors();repairEntities();placeGuaranteedRelics();repairLateItems1004();window.__MANRU_RUNTIME81__?.Integrity81?.repair?.();VisibilityService.compute();vfBuildDecor?.();state.routeMetric1005=routeMetric();}
 // r18: hazard/route post-generation stages are invoked explicitly by the canonical pipeline.
-globalThis.__MANRU_LIFECYCLE__.registerLoad('hazard1005',{post:()=>{if(state){hz();resolveAllStandingHazards1005('load');updateWardHud();VisibilityService.compute();updateAll()}}});
 
 /* Friend/false-friend sprite: same 32x36 scale as the current player, but sharper and more threatening. */
 
@@ -11830,7 +11803,6 @@ function pruneOrphanDoors1006(){
 
 /* keep old saves and newly generated instances in sync with audited definitions */
 globalThis.__MANRU_LIFECYCLE__.registerNew('normalize1006',{post:()=>{normalizeAllItems()}});
-globalThis.__MANRU_LIFECYCLE__.registerLoad('normalize1006',{post:()=>{normalizeAllItems()}});
 // r18: item normalization/door pruning are explicit canonical generation stages.
 
 
@@ -13611,7 +13583,6 @@ function applyArchitecture1020(){if(state?.specialFloor&&[23,24].includes(state.
 }
 
 // r18: architecture finalization is the final explicit stage of the canonical generation pipeline.
-globalThis.__MANRU_LIFECYCLE__.registerLoad('architecture1020',{post:()=>{if(state?.shopIntermission?.active)return;if(state?.artifactDungeon46||state?.branchContext105){VisibilityService.compute();updateAll();return}if(state){/* Restore finalized architecture; migrate only the obsolete R66 foyer court. */migrateFloor2Layout67();retireLegacyVisualDecor64();restoreLibraryVisual1022();state.restaurantRooms42=Array.isArray(state.restaurantRooms42)?state.restaurantRooms42:[];state.archDecor1020=state.archDecor1020&&typeof state.archDecor1020==='object'?state.archDecor1020:{};state.archDecor1023=state.archDecor1023&&typeof state.archDecor1023==='object'?state.archDecor1023:{};globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();VisibilityService.compute();updateAll()}}});
 
 
 
@@ -14222,7 +14193,6 @@ globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'legendary47',draw:drawLegen
 
 function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapon,...(state?.player?.inventory||[])])if(it?.artifactId46)ids.add(it.artifactId46);if(state&&ids.has('water_crossbow')){state.artifactHistory46||=[];if(!state.artifactHistory46.some(h=>h.id==='water_crossbow'&&h.status==='claimed'))state.artifactHistory46.push({id:'water_crossbow',status:'claimed',floor:9,source:[state.player.weapon,...state.player.inventory].some(i=>i?.artifactId46==='water_crossbow'&&i.palaceReward105)?'palace':'legacy',turn:state.turn});}if(state)state.artifactClaimed46=[...new Set([...(state.artifactClaimed46||[]),...ids])];const plan=state?.branchWorld105?.citadel105?.relicPlan105;if(plan&&ids.has(plan.realId))plan.claimed=true;}
 globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit46});
-globalThis.__MANRU_LIFECYCLE__?.registerLoad?.('artifact46',{post:()=>{if(state&&!state.generatedBuild)state.generatedBuild=state.generationPipelineR18?.version||'legacy-unknown';if(state?.artifactReturn46){const {artifactReturn46:r}=state;if(r.schema46===2&&r.outer){r.outer={...r.outer,seen:Array.isArray(r.outer.seen)?r.outer.seen:[],visible:Array.isArray(r.outer.visible)?r.outer.visible:[],grassTufts1020:Array.isArray(r.outer.grassTufts1020)?r.outer.grassTufts1020:[]}}else{if(!r.generatedBuild)r.generatedBuild='legacy-unknown';const seen=Array.isArray(r.seen)?r.seen:[],visible=Array.isArray(r.visible)?r.visible:[];Object.assign(r,{seen,visible})}}for(const mon of state.monsters||[])if(/^(?:화산|월화) 궁수(?: · 문지기)?$/.test(mon.name)){mon.name=mon.name.replace('화산 궁수','월화 궁수');mon.monsterSpecies105=monsterSpeciesName(mon.name);mon.color='#b54222';mon.projectileImpact57={element:'fire',radius:2,turns:3};delete mon.legendSkill47;}state.legendFireFields47=Array.isArray(state.legendFireFields47)?state.legendFireFields47:[];state.legendTerrain47=Array.isArray(state.legendTerrain47)?state.legendTerrain47:[];for(const t of state.legendTerrain47){if(t?.ttl>0&&state.map?.[t.y]?.[t.x]===t.tile){setTerrainTile58(state.map,t.x,t.y,t.old);RuntimeTerrainOwner.temporary(t.x,t.y,t.tile,t.ttl,'legend-lava',{allowedOld:[t.old],source:'legend-legacy47'})}}state.legendTerrain47=[];state.legendDecor47=Array.isArray(state.legendDecor47)?state.legendDecor47:[];claimAudit46();syncEquip47()}});
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 
 function keyProgressInternal48(){

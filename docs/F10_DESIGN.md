@@ -28,6 +28,11 @@
 - 이 순서는 `audit()` 출력과 `loadhooks`·`saves`·`saveload` 시나리오로 변경 전후 동일함을 확인한다. 단계 등록 때문에 파일 곳곳에 흩어진 `registerLoad` 호출은 한 함수로 모이므로, 어느 단계가 언제 도는지는 그 함수 한 곳만 읽으면 된다.
 - 선행 조건: 아래 실험 결과(F-19)의 4개 훅(`camera49`, `knowledge56`, `monster-config61`, `aim52`)에 대한 사용자 결정. 두 개(`potions41`, `food57`의 불러오기 쪽)는 결과가 같아 이미 삭제했다.
 
+## 3.55 진행 (2026-10-11)
+- `MANRU_LOAD_CORE`/`MANRU_LOAD_CORE_ID`/`resetLoad`/`snapshotLoad`/`registerLoad`와 도달 불가한 `loadGameV0Legacy`, `legacyLoadCore`를 삭제했다(`alias` 2→1). 불러오기 코어는 `loadGameCore` 하나이고 `RunLifecycle.runLoad`가 직접 쓴다. `RuntimeState.lifecycle.validate/parse`는 처음부터 `validateSaveState`/`parseEnvelope`이다.
+- 실행되던 15개 단계는 `save.js`의 `beforeLoad`(거절 가능, 이전의 `camera-save984` pre) 한 곳과 `afterLoad`(14개 post를 같은 순서로 호출) 한 곳에 순서대로 적혀 있다. 각 단계는 이름 있는 함수가 되었다(`docs/NAMING.md`). 새 런 쪽 `registerNew` 등록은 아직 남아 있다(`NEW_RUN_STEPS`가 그 목록을 돌린다): 다음 단계에서 같은 방식으로 `afterNewRun`으로 합칠 수 있다.
+- 남은 F-10b(`typedKeyMeta96`)는 별도 결정 대기.
+
 ## 3.6 실험 결과 요약 (자세한 표는 FINDINGS F-19)
 죽은 훅 6개를 켠 빌드와 비교: 상태가 완전히 같은 것 2개(삭제함), 재그리기 표시만 다른 것 1개, 상태 필드만 다른 것 1개(이름 가림은 같음), 동작이 달라지는 것 2개(몬스터 경비 위치, 조준 대상).
 

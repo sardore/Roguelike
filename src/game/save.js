@@ -6,41 +6,13 @@ function migrateRetiredItems(run){if(!run?.player)return{inventory:0,ground:0,pe
 function captureGenerationSnapshot(){return{state:structuredClone(state),cols:COLS,rows:ROWS}}
 function restoreGenerationSnapshot(snap){if(!snap?.state)return false;state=structuredClone(snap.state);COLS=snap.cols;ROWS=snap.rows;return true}
 let saveGame;
-function loadGameV0Legacy(){
-  const raw = localStorage.getItem("manruV08Save") || localStorage.getItem("manruV07Save") || localStorage.getItem("manruV06Save") || localStorage.getItem("manruV04Save") || localStorage.getItem("manruV03Save");
-  if(!raw){ toast("저장 데이터가 없다."); return; }
-  state = JSON.parse(raw);
-  normalizeClassState58(state.player,state.playerAgencyTurns57||0);normalizeHealthState58(state);
-  state.decals = state.decals || [];
-  state.switches = state.switches || [];
-  state.rafts = state.rafts || [];
-  state.routeTags = state.routeTags || [];
-  state.floorKeys = state.floorKeys || 0;
-  state.floorKeysRequired = state.floorKeysRequired || 0;
-  state.visionPenalty = state.visionPenalty || 0;
-  state.cipher = state.cipher || null;
-  state.player.hunger = state.player.hunger ?? 100;
-  state.player.skillPoints = state.player.skillPoints ?? 0;
-  state.player.blinkLevel = state.player.blinkLevel ?? 0;
-  state.player.martial = Object.assign({strong:0,roar:0,ghost:0,brawl:0,constitution:0},state.player.martial||{});
-  state.status = Object.assign({haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,blind:0,skillSeal:0}, state.status || {});state.player.cloak=state.player.cloak||null;state.player.nextAttackAt=0;state.player.busyUntil=0;state.enemyEnergy=state.enemyEnergy||0;
-  state.seen = new Set(state.seen);
-  state.visible = new Set(state.visible);
-  document.body.classList.add('run-active');
-  document.getElementById("overlay").style.display = "none";
-  VisibilityService.compute();resetVisualState();resetTurnState();
-  updateAll();
-  toast("불러오기 완료.");
-}
 /* ===== CANONICAL NEW/LOAD LIFECYCLE PIPELINE =====
    Historical releases used nested `old=newGame/loadGame; fn=function(){old();...}` chains.
    Keep one stable public entrypoint and register explicit wrapper-equivalent stages instead.
    Registration order is historical inner -> outer order.  Pre hooks therefore run in reverse,
    then the core runs once, then post hooks unwind in forward order. */
 const MANRU_NEW_LIFECYCLE_STAGES=[];
-const MANRU_LOAD_LIFECYCLE_STAGES=[];
 const MANRU_LIFECYCLE_ABORT=Symbol('MANRU_LIFECYCLE_ABORT');
-let MANRU_LOAD_CORE=loadGameV0Legacy,MANRU_LOAD_CORE_ID='legacy-v0';
 function manruLifecycleAbort(value){return{tag:MANRU_LIFECYCLE_ABORT,value}}
 function manruRegisterLifecycle(list,id,spec={}){
   const old=list.findIndex(s=>s.id===id);const stage={id,pre:typeof spec.pre==='function'?spec.pre:null,post:typeof spec.post==='function'?spec.post:null};
@@ -106,12 +78,71 @@ const GameState=Object.freeze({
   project:projectGameState,migrate:migrateGameState,
   snapshot:()=>({owner:'GameState',schema:1,fields:[...GAMESTATE_FIELDS],runtimeFields:[...GAMESTATE_RUNTIME_FIELDS],derivedFields:['visible']})
 });
+const NEW_RUN_STEPS={
+  before(ctx){
+    ctx.entered=new Set();
+    for(let i=MANRU_NEW_LIFECYCLE_STAGES.length-1;i>=0;i--){const st=MANRU_NEW_LIFECYCLE_STAGES[i];if(st.pre){const out=st.pre(ctx,...ctx.args);if(out?.tag===MANRU_LIFECYCLE_ABORT)return{stage:st.id,value:out.value}}ctx.entered.add(i)}
+    return null;
+  },
+  after(ctx){
+    for(let i=0;i<MANRU_NEW_LIFECYCLE_STAGES.length;i++)if(ctx.entered.has(i)&&MANRU_NEW_LIFECYCLE_STAGES[i].post){const out=MANRU_NEW_LIFECYCLE_STAGES[i].post(ctx,ctx.result,...ctx.args);if(out!==undefined)ctx.result=out}
+  },
+};
+/* ===== LOAD PIPELINE: what a load does around loadGameCore, in order =====
+   beforeLoad runs before the core and may reject the load; afterLoad runs after it. They replace the stage
+   registry (registerLoad/resetLoad): the order below is the order the 15 registered stages ran in. */
+function readLoadRequest(ctx,request){let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}}
+function resetTipsAfterLoad(){closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();showFloorTips();if(trainingActive()){if(!state.story992?.dispatchPending60)advanceEntryTutorial();return}setTimeout(()=>tip70('resume','자동 추적 카메라가 플레이어를 따라간다. ◎로 언제든 중심 복귀 가능.','추적=고정 추적 · 완만=데드존 · 자유=자유 시점'),500)}
+function refreshTalismansAfterLoad(){if(state){ensure74(true);updateAll()}}
+function centerCameraAfterLoad(){if(state?.artifactDungeon46){CameraController.center();return}if(state){CameraController.center()}}
+function restoreWallAndBiasFields(){if(state){state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];VisibilityService.compute();updateAll()}}
+function restoreKeyPlan(){if(state){state.keyPlan96=state.keyPlan96||null;globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();VisibilityService.compute();updateAll()}}
+function restoreCoreLootAudit(){
+    if(state?.shopIntermission?.active)return;
+    if(state?.artifactDungeon46||state?.branchContext105){try{updateAll()}catch(error){ignoreError('ui refresh in the load hook (branch or legend floor)',error)};return}
+    if(state){
+      core982();migrateLegacyInventory();
+      if(!state.coreLootAudit982){const S=schedule982();state.coreLootAudit982={floor:state.floor,chapter:chapter982()+1,upgrades:[...S.upgrades],heals:[...S.heals],groundUpgrades:(state.items||[]).filter(i=>i.talismanKind==='upgrade').length,groundHealing:(state.items||[]).filter(i=>i.type==='potion'&&['heal_small','heal_medium'].includes(i.potionKind)).length}}
+      if(state.floor!==11){state.riverRule982=null;state.riverGenerationAttempts982=0;}
+      if(state.floor===11&&state.raftAudit981&&!state.riverRule982)state.riverRule982={mustCross:true,pureWalk:!!state.raftAudit981.pureWalk,pureRaft:!!state.raftAudit981.pureRaft,blinkFallback:!!state.raftAudit981.exitBlinkFallback,ok:!state.raftAudit981.pureWalk&&!!state.raftAudit981.pureRaft&&!!state.raftAudit981.exitBlinkFallback};
+      try{updateAll()}catch(error){ignoreError('ui refresh in the load hook',error)}
+    }
+  }
+function restoreCameraAfterLoad(ctx,r){if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): same wait for the laid-out game screen as in the new-run stage above. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
+function syncCurseClockAfterLoad(){if(state){state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}
+function showGameScreenAfterLoad(){if(state&&!state.dead&&!state.victory)setScreen('game')}
+function sanitizeAfterLoad(ctx,r){sanitizeTransient1003();if(state){resetVisualState();updateAll()}return r}
+function auditStrictLocksAfterLoad(){if(state&&!state.artifactDungeon46&&!state.branchContext105&&strictKeyFloors1004.has(state.floor))state.strictLockAudit1004=lockAudit96()||null}
+function resolveHazardsAfterLoad(){if(state){hz();resolveAllStandingHazards1005('load');updateWardHud();VisibilityService.compute();updateAll()}}
+function restoreArchitectureAfterLoad(){if(state?.shopIntermission?.active)return;if(state?.artifactDungeon46||state?.branchContext105){VisibilityService.compute();updateAll();return}if(state){/* Restore finalized architecture; migrate only the obsolete R66 foyer court. */migrateFloor2Layout67();retireLegacyVisualDecor64();restoreLibraryVisual1022();state.restaurantRooms42=Array.isArray(state.restaurantRooms42)?state.restaurantRooms42:[];state.archDecor1020=state.archDecor1020&&typeof state.archDecor1020==='object'?state.archDecor1020:{};state.archDecor1023=state.archDecor1023&&typeof state.archDecor1023==='object'?state.archDecor1023:{};globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();VisibilityService.compute();updateAll()}}
+function migrateArtifactReturnAfterLoad(){if(state&&!state.generatedBuild)state.generatedBuild=state.generationPipelineR18?.version||'legacy-unknown';if(state?.artifactReturn46){const {artifactReturn46:r}=state;if(r.schema46===2&&r.outer){r.outer={...r.outer,seen:Array.isArray(r.outer.seen)?r.outer.seen:[],visible:Array.isArray(r.outer.visible)?r.outer.visible:[],grassTufts1020:Array.isArray(r.outer.grassTufts1020)?r.outer.grassTufts1020:[]}}else{if(!r.generatedBuild)r.generatedBuild='legacy-unknown';const seen=Array.isArray(r.seen)?r.seen:[],visible=Array.isArray(r.visible)?r.visible:[];Object.assign(r,{seen,visible})}}for(const mon of state.monsters||[])if(/^(?:화산|월화) 궁수(?: · 문지기)?$/.test(mon.name)){mon.name=mon.name.replace('화산 궁수','월화 궁수');mon.monsterSpecies105=monsterSpeciesName(mon.name);mon.color='#b54222';mon.projectileImpact57={element:'fire',radius:2,turns:3};delete mon.legendSkill47;}state.legendFireFields47=Array.isArray(state.legendFireFields47)?state.legendFireFields47:[];state.legendTerrain47=Array.isArray(state.legendTerrain47)?state.legendTerrain47:[];for(const t of state.legendTerrain47){if(t?.ttl>0&&state.map?.[t.y]?.[t.x]===t.tile){setTerrainTile58(state.map,t.x,t.y,t.old);RuntimeTerrainOwner.temporary(t.x,t.y,t.tile,t.ttl,'legend-lava',{allowedOld:[t.old],source:'legend-legacy47'})}}state.legendTerrain47=[];state.legendDecor47=Array.isArray(state.legendDecor47)?state.legendDecor47:[];claimAudit46();syncEquip47()}
+function beforeLoad(ctx){
+  const out=readLoadRequest(ctx,...ctx.args);
+  return out?.tag===MANRU_LIFECYCLE_ABORT?{stage:'camera-save',value:out.value}:null;
+}
+function afterLoad(ctx){
+  resetTipsAfterLoad();
+  refreshTalismansAfterLoad();
+  centerCameraAfterLoad();
+  restoreWallAndBiasFields();
+  restoreKeyPlan();
+  restoreCoreLootAudit();
+  const camera=restoreCameraAfterLoad(ctx,ctx.result);if(camera!==undefined)ctx.result=camera;
+  syncCurseClockAfterLoad();
+  showGameScreenAfterLoad();
+  const clean=sanitizeAfterLoad(ctx,ctx.result);if(clean!==undefined)ctx.result=clean;
+  auditStrictLocksAfterLoad();
+  resolveHazardsAfterLoad();
+  normalizeAllItems();
+  restoreArchitectureAfterLoad();
+  migrateArtifactReturnAfterLoad();
+}
 const RunLifecycle={
-  run(core,stages,args,kind){
+  run(core,steps,args,kind){
     if(RuntimeState.lifecycle.depth)throw Error('Nested run replacement is not permitted');
     const save=globalThis.__MANRU_SAVE_SERVICE__,isNew=kind==='new';
     const prior={state,cols:COLS,rows:ROWS,seed:window.__MANRU_RUN_SEED984,phase:RuntimeState.lifecycle.phase,screen:currentScreen()};
-    const ctx={kind,args:[...args],data:Object.create(null),result:undefined,aborted:false,abortStage:null},entered=new Set();
+    const ctx={kind,args:[...args],data:Object.create(null),result:undefined,aborted:false,abortStage:null};
     RuntimeState.lifecycle.depth++;RuntimeState.lifecycle.generation++;RuntimeState.lifecycle.phase=isNew?'creating':'loading';save.clearPending();
     setGenerationPresentation8(false);closeGameplayInteractionState57();RuntimeState.prepareRun();
     try{
@@ -121,10 +152,10 @@ const RunLifecycle={
         if(request?.state){request={...request,state:GameState.migrate(request.state)};ctx.args[0]=request}
         const meta=request?.state||RuntimeState.lifecycle.parse(request.raw).state;if(!RunLifecycle.accepts(meta))throw Error('Ineligible saved run');
       }
-      for(let i=stages.length-1;i>=0;i--){const st=stages[i];if(st.pre){const out=st.pre(ctx,...ctx.args);if(out?.tag===MANRU_LIFECYCLE_ABORT){ctx.aborted=true;ctx.abortStage=st.id;ctx.result=out.value;break}}entered.add(i)}
+      const rejected=steps.before(ctx);if(rejected){ctx.aborted=true;ctx.abortStage=rejected.stage;ctx.result=rejected.value}
       if(ctx.aborted)throw Error('Lifecycle rejected at '+ctx.abortStage);
       ctx.result=core(...ctx.args);if(ctx.result===false)throw Error('Load initialization rejected');
-      for(let i=0;i<stages.length;i++)if(entered.has(i)&&stages[i].post){const out=stages[i].post(ctx,ctx.result,...ctx.args);if(out!==undefined)ctx.result=out}
+      steps.after(ctx);
       if(ctx.result===false||!state||state.dead||state.victory)throw Error('Candidate is not a playable run');RuntimeState.lifecycle.validate(state);
       const persistence=save.commit(kind);if(!persistence.ok)throw Error('Run persistence failed: '+persistence.failure);
       RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
@@ -135,17 +166,13 @@ const RunLifecycle={
       RuntimeState.lifecycle.last={ok:false,kind,failure:String(e)};toast('탐사 기록을 적용하지 못했다. 이전 기록을 유지한다.');if(isNew)throw e;return false;
     }finally{
       RuntimeState.lifecycle.depth--;save.clearPending();RunLifecycle.refreshContinue();
-      globalThis.__MANRU_LAST_LIFECYCLE__={kind,core:isNew?'base-new':MANRU_LOAD_CORE_ID,entered:[...entered].sort((a,b)=>a-b).map(i=>stages[i].id),aborted:ctx.aborted,abortStage:ctx.abortStage};
     }
   },
   registerNew:(id,spec)=>manruRegisterLifecycle(MANRU_NEW_LIFECYCLE_STAGES,id,spec),
-  registerLoad:(id,spec)=>manruRegisterLifecycle(MANRU_LOAD_LIFECYCLE_STAGES,id,spec),
   abort:manruLifecycleAbort,
-  runNew:(...args)=>RunLifecycle.run(newGameCoreLifecycle,MANRU_NEW_LIFECYCLE_STAGES,args,'new'),
-  runLoad:(...args)=>RunLifecycle.run(MANRU_LOAD_CORE,MANRU_LOAD_LIFECYCLE_STAGES,args,'load'),
-  resetLoad(id,core,validate=null,parse=null){if(typeof core!=='function')throw new Error('load core required');MANRU_LOAD_CORE=core;MANRU_LOAD_CORE_ID=id;MANRU_LOAD_LIFECYCLE_STAGES.length=0;if(validate)RuntimeState.lifecycle.validate=validate;if(parse)RuntimeState.lifecycle.parse=parse;return id},
-  snapshotLoad:()=>{const core=MANRU_LOAD_CORE,stages=[...MANRU_LOAD_LIFECYCLE_STAGES],id=MANRU_LOAD_CORE_ID;return(...args)=>RunLifecycle.run(core,stages,args,`load-snapshot:${id}`)},
-  audit:()=>({newCore:'base-new',loadCore:MANRU_LOAD_CORE_ID,newStages:MANRU_NEW_LIFECYCLE_STAGES.map(s=>s.id),loadStages:MANRU_LOAD_LIFECYCLE_STAGES.map(s=>s.id)}),
+  runNew:(...args)=>RunLifecycle.run(newGameCoreLifecycle,NEW_RUN_STEPS,args,'new'),
+  runLoad:(...args)=>RunLifecycle.run(loadGameCore,{before:beforeLoad,after:afterLoad},args,'load'),
+  audit:()=>({newCore:'base-new',newStages:MANRU_NEW_LIFECYCLE_STAGES.map(s=>s.id)}),
   busy(){return RuntimeState.lifecycle.depth>0},
   generation(){return RuntimeState.lifecycle.generation},
   isCurrent(generation){return generation===RuntimeState.lifecycle.generation},
@@ -174,10 +201,6 @@ const RunLifecycle={
 function newGame(...args){requestGameFullscreen65();return RunLifecycle.runNew(...args)}
 function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad(...args)}
   /* ----------------------- robust load for dynamic map sizes ----------------------- */
-  function legacyLoadCore(){
-    const raw=localStorage.getItem('manruV08Save')||localStorage.getItem('manruV07Save')||localStorage.getItem('manruV06Save')||localStorage.getItem('manruV04Save')||localStorage.getItem('manruV03Save');if(!raw){toast('저장 데이터가 없다.');return}
-    state=JSON.parse(raw);state.generatedBuild=state.generatedBuild||state.generationPipelineR18?.version||'legacy-unknown';state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;normalizeClassState58(state.player,state.playerAgencyTurns57);normalizeHealthState58(state);clearHeldInput53();ROWS=state.map?.length||sizeForFloor(state.floor)[1];COLS=state.map?.[0]?.length||sizeForFloor(state.floor)[0];state.decals=state.decals||[];state.decor=state.decor||[];state.vaults=state.vaults||[];state.switches=state.switches||[];state.rafts=state.rafts||[];state.routeTags=state.routeTags||[];state.floorKeys=state.floorKeys||0;state.floorKeysRequired=state.floorKeysRequired||0;state.visionPenalty=state.visionPenalty||0;state.cipher=state.cipher||null;state.player.hunger=state.player.hunger??100;state.player.skillPoints=state.player.skillPoints??0;state.player.blinkLevel=state.player.blinkLevel??0;state.player.martial=Object.assign({strong:0,roar:0,ghost:0,brawl:0,constitution:0},state.player.martial||{});state.status=Object.assign({haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,blind:0,skillSeal:0},state.status||{});state.player.cloak=state.player.cloak||null;state.player.nextAttackAt=0;state.player.busyUntil=0;state.enemyEnergy=state.enemyEnergy||0;state.seen=new Set(state.seen||[]);state.visible=new Set(state.visible||[]);state.grassTufts1020=new Set(Array.isArray(state.grassTufts1020)?state.grassTufts1020:[]);document.body.classList.add('run-active');document.getElementById('overlay').style.display='none';VisibilityService.compute();resetVisualState();resetTurnState();vfBuildDecor();updateAll();toast('불러오기 완료.')
-  }
   const memoryStorage=Object.create(null);
   function lsGet(k){try{return localStorage.getItem(k)}catch(_){return Object.prototype.hasOwnProperty.call(memoryStorage,k)?memoryStorage[k]:null}}
   function lsSet(k,v){try{localStorage.setItem(k,String(v));return true}catch(_){memoryStorage[k]=String(v);return false}}
