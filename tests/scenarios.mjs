@@ -457,6 +457,77 @@ export const scenarios = {
     return out;
   },
 
+  // The UI actions whose deferred follow-ups were replaced by direct calls: closing the inventory with its button (touch and
+  // click), the sound toggle in the settings panel, the throw banner of an unidentified potion, and the static first state
+  // of the pad, the context button and the settings buttons.
+  async uiactions(browser, root) {
+    const out = {};
+    for (const [form, opts] of [['pc', { viewport: { width: 1280, height: 800 } }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }]]) {
+      const s = await openSession(browser, root, { seed: 31, hash: 'debug', ...opts });
+      out[`uiactions.${form}.static`] = await s.page.evaluate(() => JSON.stringify(['.pad [data-act=rest]', '#contextActionBtn', '#mobileAutoBtn', '#releaseGear70', '#releaseGearDesktop70', '#inspectClose'].map((q) => { const e = document.querySelector(q); return e && { attrs: [...e.attributes].filter((a) => !a.name.startsWith('data-mf')).map((a) => a.name + '=' + a.value).sort(), text: e.textContent }; })));
+      await startRun(s, 'swordsman');
+      // inventory: open, close with the button
+      await s.page.keyboard.press('i'); await s.tick(500);
+      out[`uiactions.${form}.inv.open`] = await inputState(s);
+      if (form === 'mobile') { const b = await s.page.locator('#invCloseBtn').boundingBox(); await s.page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); } else await s.page.click('#invCloseBtn');
+      await s.tick(400);
+      out[`uiactions.${form}.inv.closed`] = await inputState(s);
+      // sound toggle: the label right after the click and after the clock moved
+      await s.page.keyboard.press('F1'); await s.tick(400);
+      const sfx = [];
+      for (let i = 0; i < 2; i++) { await s.page.click('#rcSfx70'); sfx.push(await s.page.evaluate(() => [document.getElementById('rcSfx70').textContent, localStorage.getItem('manruSfx54')])); await s.tick(60); sfx.push(await s.page.evaluate(() => [document.getElementById('rcSfx70').textContent, localStorage.getItem('manruSfx54')])); }
+      out[`uiactions.${form}.sfx`] = JSON.stringify(sfx);
+      await s.page.keyboard.press('Escape'); await s.tick(300);
+      // identification while the inventory is open: the list must show the identified potion once the clock moved
+      await s.page.keyboard.press('i'); await s.tick(400);
+      const ident = await s.page.evaluate(() => {
+        const st = window.__MANRU_DEBUG__.get();
+        const proto = (window.MANRU_POTIONS || []).find((p) => !p.throwable) || window.MANRU_POTIONS[0];
+        const potion = { ...JSON.parse(JSON.stringify(proto)), count: 1 };
+        st.player.inventory.push(potion);
+        const text = () => (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim();
+        const known0 = !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(potion);
+        const before = text();
+        const ret = globalThis.__MANRU_QA_IDENTIFY__.potion(potion.potionKind, 'test');
+        return { real: potion.name, known0, ret, known1: !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(potion), before, sync: text() };
+      });
+      await s.tick(60);
+      ident.after = await s.page.evaluate(() => (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim());
+      ident.afterShowsName = ident.after.includes(ident.real);
+      out[`uiactions.${form}.identify`] = JSON.stringify(ident);
+      await s.page.keyboard.press('Escape'); await s.tick(300);
+      // throw banner of an unidentified throwable potion
+      const banner = await s.page.evaluate(() => {
+        const st = window.__MANRU_DEBUG__.get();
+        const proto = (window.MANRU_POTIONS || []).find((p) => p.throwable);
+        if (!proto) return { error: 'no throwable potion' };
+        const item = { ...JSON.parse(JSON.stringify(proto)), count: 1 };
+        st.player.inventory.push(item);
+        const known = !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.knownPotion?.(item);
+        const ret = globalThis.__MANRU_ACTION_DISPATCHER__.dispatch({ type: 'ITEM_USE', args: [st.player.inventory.length - 1] });
+        return { known, real: item.name, started: !!ret?.value, sync: document.getElementById('potionTargetName')?.textContent, shown: document.getElementById('potionTargetHud')?.classList.contains('show') };
+      });
+      await s.tick(20);
+      banner.after = await s.page.evaluate(() => document.getElementById('potionTargetName')?.textContent);
+      out[`uiactions.${form}.banner`] = JSON.stringify(banner);
+      // rotation: the canvas size follows the viewport (resize and the orientationchange event, then the clock moves)
+      if (form === 'mobile') {
+        const dims = () => s.page.evaluate(() => { const c = document.getElementById('game'); return [c.width, c.height, innerWidth, innerHeight, Math.round(c.getBoundingClientRect().width), Math.round(c.getBoundingClientRect().height)]; });
+        const rot = [await dims()];
+        await s.page.setViewportSize({ width: 844, height: 390 });
+        await s.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+        await s.tick(300); rot.push(await dims());
+        await s.page.setViewportSize({ width: 390, height: 844 });
+        await s.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+        await s.tick(300); rot.push(await dims());
+        out['uiactions.mobile.rotate'] = JSON.stringify(rot);
+      }
+      out[`uiactions.${form}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   async screens(browser, root) {
     const out = {};
     for (const [form, opts] of [['pc', { viewport: { width: 1280, height: 800 } }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }]]) {

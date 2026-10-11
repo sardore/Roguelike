@@ -125,8 +125,6 @@ function useInventoryItem(idx,...rest){
   else if(item.type==='potion')result=potion41?.drink?.(item)??false;
   else result=useInventoryBaseR30(idx,...rest);
 
-  // Keep an unidentified throwable's public appearance in the target banner without reaching into v5.6 internals.
-  if(item.type==='potion'&&item.throwable&&!consumable56?.knownPotion?.(item))setTimeout(()=>{const e=document.getElementById('potionTargetName');if(e)e.textContent=`${consumable56?.publicName?.(item)||item.name} 투척`},0);
   return result;
 }
 function dropInventoryItem(idx){const act=playerAction57('drop',{allowInventory:true});if(!act.ok)return !!act.consumed;const item=splitItemQuantity(state.player.inventory[idx],1,state.player.inventory);if(!item)return false;PlacementService.placeItem(item,state.player);renderInventory();updateAll();return true}
@@ -189,7 +187,7 @@ function itemPrototype(name){if(name==='만령 소환술서')return summonBookIt
     return `${head}<div class="v56Clue"><b>감각</b>${esc56(meta.sense||'특징을 잡기 어렵다.')}</div><div class="v56Clue"><b>${esc56(origin.label)}</b>${esc56(origin.text)}</div><div class="v56Candidates"><b>가능성</b>${cands.map(n=>`<span>${esc56(n)}</span>`).join('')}</div><div class="v56KnowledgeHint">같은 빛의 약병은 이번 탐험에서 항상 같은 효과다. 사용하거나 감정부적를 펼치면 확정된다.</div>`;
   }
   function identifyPotion(kind,reason='효과를 직접 확인했다'){
-    const K=ensureKnowledge56();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=POTION_BY_KIND.get(kind),a=APP_BY_ID.get(K.potionMap[kind]);logWithCategory(`약병 식별 · ${a?.name||'미확인 약병'} = ${p?.name||kind} (${reason}).`);burst(state.player.x,state.player.y,a?.color||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
+    const K=ensureKnowledge56();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=POTION_BY_KIND.get(kind),a=APP_BY_ID.get(K.potionMap[kind]);logWithCategory(`약병 식별 · ${a?.name||'미확인 약병'} = ${p?.name||kind} (${reason}).`);burst(state.player.x,state.player.y,a?.color||'#d6b071',13,.55);if(inventoryOpen)inventoryDirty=true;updateAll();return true
   }
   function observePotion(item){if(!item||item.type!=='potion')return;decoratePotion56(item);const K=ensureKnowledge56(),n=(K.potionSeen[item.potionKind]||0)+1;K.potionSeen[item.potionKind]=n;if(!isPotionKnownByPlayer(item)&&!K.clueSeen[item.potionKind]){K.clueSeen[item.potionKind]=1;logWithCategory(`약병 단서 기록 · ${app56(item).name}: ${POTION_META[item.potionKind]?.family||'약성 불명'} / ${item.origin56?.label||'출처 불명'}.`)}}
 const POTION_LOOK={crimson:'탁한 주홍색 약병',jade:'맑은 비취색 약병',azure:'푸른 유리 약병',ivory:'우윳빛 약병',amber:'호박빛 약병',smoke:'회청색 약병',violet:'자줏빛 약병',ink:'먹빛 약병',ochre:'황갈색 유리 약병'};

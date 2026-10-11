@@ -231,7 +231,7 @@ function v10AutoChip(text=null){if(text&&/(석주|등롱 기둥|벽걸이 깃발
   }
   function tileName(x,y){const t=state?.map?.[y]?.[x];if(t==null)return'알 수 없음';try{return terrainName(t)}catch(_){return'바닥'}}
   function updateCH(){if(!state)return;const vis=state.monsters.filter(isThreatVisibleToPlayer),adj=vis.filter(m=>entityDistance57(m,state.player)<=1),items=state.items.filter(i=>i.x===state.player.x&&i.y===state.player.y),stairs=state.player.x===state.stairs.x&&state.player.y===state.stairs.y,boss=vis.find(m=>m.boss);const sb=document.getElementById('mfState'),tb=document.getElementById('mfThreat'),gb=document.getElementById('mfGround'),ab=document.getElementById('mfAction');if(sb){const engaged=vis.length>0;sb.classList.toggle('warn',engaged);sb.classList.toggle('good',!engaged);sb.querySelector('.v').textContent=engaged?(adj.length?'교전':'경계'):'탐색';sb.querySelector('.s').textContent=engaged?(adj.length?'즉시 공격 거리':'시야 내 위협'):`${regionFor(state.floor)[2]} · ${state.layoutName||''}`}if(tb){tb.classList.toggle('warn',vis.length>0);tb.querySelector('.v').textContent=boss?`보스 ${boss.name}`:`적 ${vis.length}`;tb.querySelector('.s').textContent=`인접 ${adj.length} · HP ${displayHealth(state.player.hp)}/${displayHealth(state.player.maxHp)}`}if(gb){gb.querySelector('.v').textContent=items[0]?.name||(stairs?'계단':'빈 바닥');gb.querySelector('.s').textContent=items.length?`습득 ${items.length}개`:(stairs?'다음 층으로 이동 가능':tileName(state.player.x,state.player.y))}if(ab){ab.querySelector('.v').textContent=adj.length?'공격':items.length?'줍기':stairs?'하강':'이동';ab.querySelector('.s').textContent=`공격 ${attackTurnCost().toFixed(1)}턴 · 점멸 ${(state.player.blinkLevel||0)>0?'가능':'없음'}`}}
-  function beginTarget(item){potionTarget={item,range:item.throwRange||4};closeInventory();ph.classList.add('show');syncWorldTargetInput();document.getElementById('potionTargetName').textContent=item.name+' 투척';cancelAutoWalk();toast(`${item.name}: 목표 지점을 지정하라.`)}
+  function beginTarget(item){potionTarget={item,range:item.throwRange||4};closeInventory();ph.classList.add('show');syncWorldTargetInput();document.getElementById('potionTargetName').textContent=(item.type==='potion'&&item.throwable&&!globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.knownPotion?.(item)?(globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.publicName?.(item)||item.name):item.name)+' 투척';cancelAutoWalk();toast(`${item.name}: 목표 지점을 지정하라.`)}
 function cancelTarget(silent=false){potionTarget=null;ph.classList.remove('show');syncWorldTargetInput();endTargetInput57(320);if(!silent)toast('투척을 취소했다.')}
 /* ===== MANRU v3.2 UI + TITLE GRAND ORNAMENT PASS ===== */
 function decorateTitle(){
@@ -356,6 +356,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     if(!flushFrame){renderUpdatePending=true;return}
     renderUpdatePending=false;R61.dirty=true;
     updatePanels();
+    if(inventoryDirty&&inventoryOpen)renderInventory();
     drawMap(true);R61.last=performance.now();R61.dirty=false;
     if(mapModalOpen()||performance.now()-R61.lastMini>240){drawMinimap(true);R61.lastMini=performance.now()}
     const sk=document.getElementById('skillTxt');if(sk)sk.onclick=()=>InputRouter.dispatch({type:'CLASS_SKILL',source:'gameplay-hud'});
@@ -462,43 +463,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   }
   // Polished title motion: lantern glows and mist breathe asynchronously without redrawing the atlas each frame.
   function titlePolish(){const w=document.querySelector('.titleWorld');if(!w||w.querySelector('.titleGlow94'))return;const layer=document.createElement('div');layer.className='titleGlow94';layer.innerHTML='<i style="--x:23%;--y:33%;--d:0s"></i><i style="--x:78%;--y:39%;--d:-.8s"></i><i style="--x:31%;--y:58%;--d:-1.7s"></i><i style="--x:70%;--y:70%;--d:-2.4s"></i><i class="hero" style="--x:50%;--y:83%;--d:-1.1s"></i><b></b>';w.appendChild(layer)}
-  // Dedicated class portraits replace the old generic title portraits.
-  function classPortraitCanvas(id){
-    const c=document.createElement('canvas');c.width=c.height=64;const q=c.getContext('2d');q.imageSmoothingEnabled=false;
-    const r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)},s=(x,y,w,h,col)=>{q.strokeStyle=col;q.lineWidth=1;q.strokeRect(x+.5,y+.5,w-1,h-1)};
-    r(0,0,64,64,'#050302');r(4,4,56,56,'#110906');r(6,6,52,52,'#1b100a');
-    // architectural portrait frame, floor shadow, and warm backlight
-    r(8,8,48,2,'#5a3a22');r(8,54,48,2,'#5a3a22');r(8,8,2,48,'#5a3a22');r(54,8,2,48,'#5a3a22');
-    r(12,13,40,34,id==='wanderer'?'#2a1710':id==='escort'?'#20272a':'#17242a');
-    r(13,49,38,5,'#080403');r(16,51,32,3,'#030201');
-    if(id==='wanderer'){
-      // broad inspector hat, layered coat, seal and sheathed blade
-      r(17,11,30,4,'#120b08');r(21,7,22,5,'#21130c');r(25,6,14,2,'#342015');r(20,15,24,16,'#d0b792');
-      r(19,18,3,13,'#7b5136');r(42,18,3,13,'#7b5136');r(25,21,3,2,'#1d1612');r(36,21,3,2,'#1d1612');r(30,27,5,2,'#80543c');
-      r(16,31,32,17,'#7f342b');r(19,32,26,4,'#a94e39');r(21,37,22,11,'#5c2822');r(27,35,10,9,'#b28b4f');s(27,35,10,9,'#f0cc78');
-      r(12,15,3,35,'#c59954');r(10,13,7,4,'#6f4524');r(49,18,3,31,'#6f4b2e');r(48,16,5,3,'#d6b06a');
-      r(18,46,8,5,'#2b1510');r(38,46,8,5,'#2b1510');
-    }else if(id==='escort'){
-      // heavy guard silhouette, helmet crest, segmented armour, spear and shield
-      r(19,8,26,7,'#252d31');r(23,5,18,4,'#3b4549');r(29,3,6,4,'#8a3c30');r(20,15,24,14,'#baa47f');
-      r(24,20,3,2,'#1e2020');r(37,20,3,2,'#1e2020');r(15,28,34,21,'#65594d');r(18,29,28,5,'#90806c');
-      for(let y=35;y<47;y+=4){r(19,y,26,2,'#b69b72');r(20,y+2,24,1,'#3d342c')}
-      r(10,27,8,20,'#594a3c');s(10,27,8,20,'#d0b47d');r(46,27,8,20,'#594a3c');s(46,27,8,20,'#d0b47d');
-      r(7,11,3,41,'#a77743');r(6,8,5,6,'#d3ab69');r(53,15,3,37,'#a77743');r(51,12,7,5,'#d3ab69');
-      r(18,47,10,5,'#27201b');r(36,47,10,5,'#27201b');
-    }else{
-      // scout swordsman, asymmetric scarf, ponytail and long sword
-      r(20,9,26,5,'#111b20');r(24,6,19,4,'#1d3038');r(43,7,6,15,'#17252b');r(20,14,24,16,'#c2ced0');
-      r(25,20,3,2,'#172126');r(36,20,3,2,'#172126');r(30,26,6,2,'#6d4b3d');
-      r(16,30,31,18,'#516f7b');r(19,31,25,5,'#7997a1');r(14,30,7,18,'#7c302b');r(21,37,23,3,'#273c45');r(23,40,19,8,'#3e5b66');
-      r(49,6,3,44,'#d2e0df');r(48,5,5,4,'#f0f4ec');r(47,48,7,3,'#7e5833');r(10,34,4,17,'#7e332d');
-      r(18,47,9,5,'#18252b');r(37,47,9,5,'#18252b');
-    }
-    // subtle pixel highlights and outer border
-    r(9,9,1,10,'rgba(246,200,121,.22)');r(54,43,1,10,'rgba(246,200,121,.16)');s(4,4,56,56,'#8a5b32');
-    return c.toDataURL('image/png')
-  }
-  function refreshClassPortraits(){document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{const img=b.querySelector('.vfClassPortrait');if(img)img.src=classPortraitCanvas(['wanderer','escort','swordsman'][i])})}
   /* v9.6.2 DESKTOP INTEL PANEL */
   function buildDesktopSide(){
     const side=document.getElementById('side');if(!side||side.dataset.v962==='1')return;side.dataset.v962='1';
@@ -537,14 +501,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     if(!state)return;const p=state.player,onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=(state.items||[]).some(i=>i.x===p.x&&i.y===p.y),closable=openDoorCandidates964().some(d=>!doorCloseBlock964(d.x,d.y));
     const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed105(),anvil=citadelAdjacentAnvil105(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),merchant=adjacentMerchant58(),gate=palaceGateNearby105(),branch=adjacentBranchPortal105(),label=document.getElementById('contextActionLabel'),btn=document.getElementById('contextActionBtn'),actionable=!!stock||!!bed||!!merchant||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||closable;if(label)label.textContent=stock?'구매':dojoSleeping105()?'잠듦':bed?'취침':merchant?'교환':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':closable?'문닫기':'상호작용';
     if(btn){btn.classList.toggle('available',actionable);btn.disabled=!actionable;btn.title=stock?'발밑 진열품 구매 확인':bed?'침상에서 잠들어 회복 (최대 50턴)':merchant?'행낭 물품 판매':silk?'인접 비단 함정 해제 (1턴)':gate?`${gate.label} · 이 방 배수 6턴 / 재사용 16턴`:branch?`${branch.label} · F 또는 상호작용 버튼으로 출입` :onStairs?'다음 층':hasItem?'줍기':anvil?'모루에서 같은 장비 두 개 합성':pushable?'밀기':closable?'인접 열린 문 닫기':'현재 상호작용 대상 없음';const b=btn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':merchant?'교환':silk?'解':gate?'閥':branch?'入':onStairs?'降':hasItem?'拾':anvil?'合':pushable?'推':closable?'閉':'·'}
-  }
-  /* ---------- UI glyph policy: large rune = Han character, explanatory label = Korean ---------- */
-  function fixGlyphs(){
-    const auto=document.getElementById('mobileAutoBtn');if(auto){auto.textContent='行';auto.setAttribute('aria-label','이동 / 자동 탐사')}
-    const rest=document.querySelector('[data-act="rest"]');if(rest){rest.textContent='대기';rest.setAttribute('aria-label','대기 / 1턴 보내기')}
-    const gear=document.getElementById('releaseGear70');if(gear)gear.setAttribute('aria-label','설정');
-    const gearD=document.getElementById('releaseGearDesktop70');if(gearD)gearD.setAttribute('aria-label','설정');
-    const inspectClose=document.getElementById('inspectClose');if(inspectClose){inspectClose.textContent='×';inspectClose.classList.add('uxClose');inspectClose.setAttribute('aria-label','닫기')}
   }
   function textOnly(html){const d=document.createElement('div');d.innerHTML=String(html??'');return(d.textContent||d.innerText||'').replace(/\s+/g,' ').trim()}
   function directOpenInspect(title,html,target=null,previewItem=null){

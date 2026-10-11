@@ -198,6 +198,8 @@ const REGION_ART=[
 
 let state = null;
 let inventoryOpen = false;
+// set when a game event changes what the open inventory shows; the next frame flush (updateAll(true)) repaints it
+let inventoryDirty = false;
 let helpOpen = false;
 
 let cipherOpen = false;
@@ -3453,7 +3455,7 @@ let inventoryFiltered;
 
 const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
 function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
-function renderInventory(...args){for(const s of INVENTORY_RENDER_R34.pre)s.fn(...args);const core=INVENTORY_RENDER_R34.core?.fn||renderInventoryFallbackR;const result=core(...args);for(const s of INVENTORY_RENDER_R34.post)s.fn(...args);return result}
+function renderInventory(...args){inventoryDirty=false;for(const s of INVENTORY_RENDER_R34.pre)s.fn(...args);const core=INVENTORY_RENDER_R34.core?.fn||renderInventoryFallbackR;const result=core(...args);for(const s of INVENTORY_RENDER_R34.post)s.fn(...args);return result}
 
 
 
@@ -3541,7 +3543,7 @@ let updatePanels;
 
 
 /* Phase 12: CameraProjection12 and WorldHitTest12 are installed before runtime input can fire. */
-window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});window.addEventListener('orientationchange',()=>setTimeout(syncGameViewport,80),{passive:true});
+window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});
 
 
 function regionColorsWithFloor11(){const c=regionColorsWithPalette();if(state?.floor===11)return{...c,wall:'#696f73',wallDark:'#303537',accent:'#959da1',light:'#c9ccca',fog:'#111416'};return c}
@@ -3721,7 +3723,7 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
 C.addEventListener('mousemove',e=>{if(!state||isMobileViewport())return;const t=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY);VIS.hoverPath=t?ReachabilityService.visiblePath(t.x,t.y):null}, {passive:true});
 C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
 
-const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','자동 탐사');b.textContent='이동';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
+const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','이동 / 자동 탐사');b.textContent='行';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
 
 globalThis.__MANRU_LIFECYCLE__.registerNew('autowalk-v10',{post:()=>{addLog('좌클릭/탭: 자동 이동 · X/이동: 자동 탐사. 적이 보이거나 피격되면 즉시 멈춘다.')}});
 
@@ -4408,7 +4410,7 @@ const UX={
     const cells=filtered.length?filtered.map(({item,idx})=>`<button class="uxSlot ${!UX.invEquipSlot&&idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="tier">${item.tier?`T${item.tier}`:''}</span><span class="rar"></span>${uxIcon(item,'uxSlotIcon')}<span class="nm">${item.name}</span>${(item.count||1)>1?`<span class="count">×${item.count}</span>`:''}</button>`).join(''):`<div class="uxEmpty"><b>${p.inventory.length?'이 분류는 비어 있음':'행낭이 비어 있음'}</b><p>${p.inventory.length?'다른 분류를 보거나 전체 목록으로 돌아가면 된다.':'바닥의 물품은 줍 버튼이나 아이템 칸 터치로 바로 주울 수 있다.'}</p>${p.inventory.length&&inventoryTab!=='all'?'<button id="uxShowAll">전체 보기</button>':''}</div>`;
     box.innerHTML=`<div class="uxInv"><span class="uiCorners63" aria-hidden="true"></span><div class="uxInvHead"><div class="uxTitle"><h2>행낭</h2><small>한 번 눌러 선택 · 아래 큰 버튼으로 사용/장착</small></div><div class="uxInvMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><span class="turn">TURN ${state.turn}</span></div><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div><div class="uxEquipRail">${equips}</div><div class="uxTabs">${tabs.map(([id,lab])=>`<button class="${inventoryTab===id?'active':''}" data-invtab="${id}">${lab}<span>${tabCount(id)}</span></button>`).join('')}</div><div class="uxInvMain"><div class="uxGrid" id="uxGrid">${cells}</div>${selected?detailHTML(selected,inventorySelection,UX.invEquipSlot):''}</div></div>`;
     restoreInventoryScroll45(box.querySelector('#uxGrid'));
-    const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);setTimeout(()=>{if(inventoryOpen)closeInventory()},0)};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
+    const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);if(inventoryOpen)closeInventory()};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
     box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
     box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
     box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
@@ -4965,7 +4967,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   }
 
   function identifyTalisman56(kind,reason='효과를 직접 확인했다'){
-    const K=ensureKnowledge56();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=TALISMAN_BY_KIND.get(kind);if(!t)return false;const a=TALISMAN_APP_BY_ID.get(K.talismanMap[kind])||TALISMAN_APPEARANCES[0];K.talismanKnown[kind]=true;logWithCategory(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
+    const K=ensureKnowledge56();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=TALISMAN_BY_KIND.get(kind);if(!t)return false;const a=TALISMAN_APP_BY_ID.get(K.talismanMap[kind])||TALISMAN_APPEARANCES[0];K.talismanKnown[kind]=true;logWithCategory(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);if(inventoryOpen)inventoryDirty=true;updateAll();return true
   }
   function sanitize56(text){let s=String(text??'');if(!state)return s;const K=state.knowledge56;for(const p of POTION_LIST)if(!K.potionKnown[p.potionKind])s=s.split(p.name).join(app56(p).name);for(const t of TALISMANS)if(t.talismanKind!=='identify'&&!K.talismanKnown[t.talismanKind])s=s.split(t.name).join(talismanApp56(t).name);return s}
   function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
@@ -6924,8 +6926,8 @@ const RC={
   const coach=document.createElement('div');coach.id='coach70';coach.setAttribute('role','dialog');coach.setAttribute('aria-modal','true');coach.setAttribute('aria-labelledby','coachTitle58');coach.setAttribute('aria-describedby','coachText58');document.body.appendChild(coach);coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
   const releaseStamp=document.createElement('div');releaseStamp.id='releaseStamp70';releaseStamp.textContent=RELEASE_INFO.stamp;document.getElementById('canvasWrap')?.appendChild(releaseStamp);
   const mb=document.querySelector('#mobileHud .mButtons');
-  const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정 / 세이브');mb?.appendChild(releaseGearButton);
-  const dg=document.createElement('button');dg.id='releaseGearDesktop70';dg.type='button';dg.textContent='設';dg.setAttribute('aria-label','설정 / 세이브');document.body.appendChild(dg);
+  const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정');mb?.appendChild(releaseGearButton);
+  const dg=document.createElement('button');dg.id='releaseGearDesktop70';dg.type='button';dg.textContent='設';dg.setAttribute('aria-label','설정');document.body.appendChild(dg);
 
   /* ---------- tiny UI sound ---------- */
   function uiTone70(freq=360,dur=.028){
@@ -7122,7 +7124,7 @@ const RC={
 
 
 
-  document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));setTimeout(refreshSfx,20)};
+  document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));refreshSfx()};
   document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled(!vibrationEnabled());refreshSfx();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
   document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
   const textScaleControl=document.getElementById('rcTextScale70');textScaleControl.value=String(RC.textScale);
@@ -8922,7 +8924,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   /* v9.8.6 inspect cleanup: removed no-op showInspect forwarding wrapper. */
   // Keep one ordinary wait action in the movement pad; remove the duplicate quick-button.
-  queueMicrotask(()=>{document.querySelector('.pad [data-act="rest"]')?.replaceChildren(document.createTextNode('대기'));const q=document.querySelector('.actions [data-act="rest"]');if(q)q.remove();});
 
   // v10.0.4-r45: obsolete v9.4 keyTrial wrapper removed. All LOCKED_GATE interaction is owned by the canonical base handler + typed-key service.
 
@@ -8944,7 +8945,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
 
-  queueMicrotask(refreshClassPortraits);
 
   // Final 32px sprite pass: class weapons, silhouettes and enemy-family details remain visible at game scale.
   
@@ -10702,10 +10702,6 @@ riverAndCore(...args){
   
   
   // v9.8.8: explicit inspect/search action removed; long-press detail viewer remains.
-  queueMicrotask(()=>{
-    const wait=document.querySelector('.pad [data-act="rest"]');if(wait){wait.textContent='대기';wait.setAttribute('aria-label','대기 / 1턴 보내기')}
-    const b=document.getElementById('contextActionBtn');if(b&&!b.classList.contains('available')){b.disabled=true;const sm=document.getElementById('contextActionLabel');if(sm)sm.textContent='상호작용';const g=b.querySelector('b');if(g)g.textContent='·'}
-  });
 
 
 
@@ -10716,7 +10712,6 @@ const V984='v9.9.6-initial-zoom-100';
   try{localStorage.removeItem('manruZoomActual48')}catch(error){ignoreError('old zoom setting could not be removed',error)}
 
 
-  fixGlyphs();queueMicrotask(fixGlyphs);requestAnimationFrame(fixGlyphs);
 
 
 try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[manru] camera setting not cleared',error)};
@@ -11005,11 +11000,11 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
   globalThis.__MANRU_LIFECYCLE__.registerNew('camera-save984',{
     pre:ctx=>{const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}},
-    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false);fixGlyphs()},90)}}
+    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
   });
   globalThis.__MANRU_LIFECYCLE__.registerLoad('camera-save984',{
     pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
-    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false);fixGlyphs()},90)}return r}
+    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
   });
 // r53: overwritten save implementation retired.
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
@@ -11841,7 +11836,6 @@ function pruneOrphanDoors1006(){
 globalThis.__MANRU_LIFECYCLE__.registerNew('normalize1006',{post:()=>{normalizeAllItems()}});
 globalThis.__MANRU_LIFECYCLE__.registerLoad('normalize1006',{post:()=>{normalizeAllItems()}});
 // r18: item normalization/door pruning are explicit canonical generation stages.
-queueMicrotask(normalizeAllItems);
 
 
 

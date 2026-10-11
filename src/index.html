@@ -115,7 +115,7 @@
             <button data-move="0,-1">▲</button>
             <button class="ghost"></button>
             <button data-move="-1,0">◀</button>
-            <button data-act="rest">대기</button>
+            <button data-act="rest" aria-label="대기 / 1턴 보내기">대기</button>
             <button data-move="1,0">▶</button>
             <button class="ghost"></button>
             <button data-move="0,1">▼</button>
@@ -123,7 +123,7 @@
           </div>
           <div class="actions quickbar">
             <button data-act="attack" id="attackActionBtn"><b>擊</b><small>기본 공격</small></button>
-            <button data-act="pickup" id="contextActionBtn"><b>拾</b><small id="contextActionLabel">상호작용</small></button>
+            <button data-act="pickup" id="contextActionBtn" disabled><b>·</b><small id="contextActionLabel">상호작용</small></button>
             <button data-act="open"><b>閃</b><small>순간 이동</small></button>
             <button data-act="skill"><b>武</b><small>기술</small></button>
             <button data-act="inv"><b>囊</b><small>소지품</small></button>
