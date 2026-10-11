@@ -9,7 +9,7 @@
  "duplicateSelector": 276,
  "important": 2186,
  "suffixFunction": 1952,
- "emptyCatch": 61,
+ "emptyCatch": 0,
  "timer": 53,
  "sameBody": 4
 }

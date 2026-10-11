@@ -3730,7 +3730,7 @@ const HAPTIC_PATTERN57=Object.freeze({
   ambush:Object.freeze([24,20,62]),summon:Object.freeze([26,18,26,18,70]),
   boss:Object.freeze([36,25,82]),death:Object.freeze([75,45,125])
 });
-try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(_){}
+try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){ignoreError('haptics preference unreadable',error)}
 function vibrationEnabled57(){return HAPTIC57.enabled}
 function setVibrationEnabled57(on){HAPTIC57.enabled=!!on;try{localStorage.setItem('manruHaptics57',HAPTIC57.enabled?'1':'0')}catch(error){console.warn('[manru] haptics setting not stored',error)}return HAPTIC57.enabled}
 function vfVibrate(pattern){
@@ -6906,7 +6906,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   /* ----------------------- per-item inventory artwork ----------------------- */
   /* r26: obsolete v3 inventory-icon public renderer assignment removed; R7 is canonical. */
   document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{
-    const cls=CLASSES[i];if(!cls)return;const fake={shape:'player'},old=b.querySelector('.vfClassPortrait');if(old)old.remove();const img=document.createElement('img');img.className='vfClassPortrait';const backup=state;try{if(!state)state={player:{classId:cls.id,weapon:null,armor:ARMORS[0],cloak:null}};else{state.player.classId=cls.id}img.src=hiCreature(fake,0,'down',true).toDataURL('image/png')}catch{}finally{state=backup}b.appendChild(img);
+    const cls=CLASSES[i];if(!cls)return;const fake={shape:'player'},old=b.querySelector('.vfClassPortrait');if(old)old.remove();const img=document.createElement('img');img.className='vfClassPortrait';const backup=state;try{if(!state)state={player:{classId:cls.id,weapon:null,armor:ARMORS[0],cloak:null}};else{state.player.classId=cls.id}img.src=hiCreature(fake,0,'down',true).toDataURL('image/png')}catch(error){ignoreError('class portrait preview is optional decoration',error)}finally{state=backup}b.appendChild(img);
   });
 
   /* ----------------------- dynamic map dimensions and DCSS-style vaults ----------------------- */
@@ -6990,7 +6990,7 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
   const inspectOpen=()=>!!interactionActive8('mobileInspect');
   const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
   const blocked=()=>inputNow()<U.blockUntil;
-  const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(_){}}U.longPresses.clear()};
+  const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(error){ignoreError('a long-press cancel callback threw',error)}}U.longPresses.clear()};
   const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`FOCUS +${it.focusGain}`);if(it.hunger)a.push(`허기력 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
   const itemInspectHtml=(it)=>{
     if(!it)return'장착된 아이템 없음.';
@@ -7921,7 +7921,7 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     document.addEventListener(type,e=>{if(editable53(e.target))return;if(e.target?.closest?.('#app,#overlay,#game,canvas')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
   }
   document.addEventListener('contextmenu',e=>{if(editable53(e.target)||e.target?.closest?.('#game,#runtimeInput81'))return;if(e.target?.closest?.('#app,#overlay')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
-  document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(_){}}},{capture:true,passive:true});
+  document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(error){ignoreError('getSelection unavailable',error)}}},{capture:true,passive:true});
 
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
   registerInventoryRenderR34('r53-inspect-bindings','post',()=>{
@@ -7940,8 +7940,8 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
   /* ---------- lightweight procedural SFX ---------- */
   function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}
-  function tone54(freq=220,dur=.055,type='square',gain=.035,slide=0){const a=ac54();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(freq,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),a.currentTime+dur);g.gain.setValueAtTime(gain,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.onended=()=>{o.disconnect();g.disconnect()};o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur+.01)}catch(_){}}
-  function noise54(dur=.045,gain=.025){const a=ac54();if(!a)return;try{const n=Math.max(1,Math.floor(a.sampleRate*dur)),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(globalThis.__MANRU_RANDOM57__()*2-1)*(1-i/n);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=gain;s.onended=()=>{s.disconnect();g.disconnect();s.buffer=null};s.connect(g).connect(a.destination);s.start()}catch(_){}}
+  function tone54(freq=220,dur=.055,type='square',gain=.035,slide=0){const a=ac54();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(freq,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),a.currentTime+dur);g.gain.setValueAtTime(gain,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.onended=()=>{o.disconnect();g.disconnect()};o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur+.01)}catch(error){ignoreError('tone cue could not play',error)}}
+  function noise54(dur=.045,gain=.025){const a=ac54();if(!a)return;try{const n=Math.max(1,Math.floor(a.sampleRate*dur)),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(globalThis.__MANRU_RANDOM57__()*2-1)*(1-i/n);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=gain;s.onended=()=>{s.disconnect();g.disconnect();s.buffer=null};s.connect(g).connect(a.destination);s.start()}catch(error){ignoreError('noise cue could not play',error)}}
   function sfx54(k){if(!V54.sfx)return;const map={bodyPower58:[72,.20,'sawtooth',.035,145],stepWood:[92,.032,'square',.018,-15],stepStone:[122,.028,'triangle',.014,-8],stepMetal:[178,.03,'square',.014,18],stepWater:[72,.05,'sine',.022,-18],swing:[260,.045,'sawtooth',.018,-100],hit:[105,.055,'square',.032,-45],crit:[330,.08,'square',.028,170],miss:[420,.035,'sine',.012,-140],hurt:[74,.07,'sawtooth',.026,-28],pickup:[520,.055,'square',.018,210],door:[118,.06,'square',.022,-40],stairs:[180,.11,'sine',.025,-90],boss:[64,.22,'sawtooth',.035,-22],warn:[150,.10,'square',.025,80],death:[82,.14,'triangle',.026,-50]};const p=map[k];if(p)tone54(...p);if(['hit','hurt','door','death'].includes(k))noise54(k==='death'?.10:.035,k==='death'?.035:.018)}
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
   globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
@@ -7998,7 +7998,7 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
   /* ---------- terrain footsteps ---------- */
   registerMovePostR8(ctx=>{if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}});
-  registerPickupStageR25('pickup-feedback54',{pre:ctx=>{ctx.invBefore54=state?.player?.inventory?.length||0},post:ctx=>{const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(_){}}}});
+  registerPickupStageR25('pickup-feedback54',{pre:ctx=>{ctx.invBefore54=state?.player?.inventory?.length||0},post:ctx=>{const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}});
   DESCEND_EFFECTS53.push(()=>sfx54('stairs'));
 
   /* ---------- feature room visual signatures ---------- */
@@ -8465,8 +8465,8 @@ const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans K
   // ---- mobile pad toggle
   let pad58=document.getElementById('padToggle58');
   if(!pad58){pad58=document.createElement('button');pad58.id='padToggle58';pad58.type='button';pad58.textContent='십';document.body.appendChild(pad58)}
-  try{if(localStorage.getItem('manruPad58')==='0')document.body.classList.add('pad58-hidden')}catch(_){}
-  pad58.onclick=e=>{e.preventDefault();e.stopPropagation();document.body.classList.toggle('pad58-hidden');try{localStorage.setItem('manruPad58',document.body.classList.contains('pad58-hidden')?'0':'1')}catch(_){}};
+  try{if(localStorage.getItem('manruPad58')==='0')document.body.classList.add('pad58-hidden')}catch(error){ignoreError('pad visibility unreadable',error)}
+  pad58.onclick=e=>{e.preventDefault();e.stopPropagation();document.body.classList.toggle('pad58-hidden');try{localStorage.setItem('manruPad58',document.body.classList.contains('pad58-hidden')?'0':'1')}catch(error){ignoreError('pad visibility could not be saved',error)}};
 
   // ---- restore canonical special-floor enemy density lost by renamed monsters
   function ensureCanonExtras58(){
@@ -10482,7 +10482,7 @@ const RC={
   function lsRemove70(k){try{localStorage.removeItem(k)}catch(_){delete MEM70[k]}}
   function lsKeys70(){try{return Object.keys(localStorage)}catch(_){return Object.keys(MEM70)}}
   RC.storagePersistent=(()=>{const k='__manru_probe70';try{localStorage.setItem(k,'1');localStorage.removeItem(k);return true}catch(_){return false}})();
-  try{RC.uiVolume=Math.max(0,Math.min(1,+(lsGet70('manruUiVolume70')??.35)))}catch(_){}
+  try{RC.uiVolume=Math.max(0,Math.min(1,+(lsGet70('manruUiVolume70')??.35)))}catch(error){ignoreError('ui volume unreadable',error)}
 
   function applyTextScale70(value,persist=false){
     const scale=[1,1.15,1.3,1.45].includes(Number(value))?Number(value):1;
@@ -10520,7 +10520,7 @@ const RC={
       if(RC.uiAudio.state==='suspended')RC.uiAudio.resume();
       const o=RC.uiAudio.createOscillator(),g=RC.uiAudio.createGain();o.type='square';o.frequency.value=freq;g.gain.value=.018*RC.uiVolume;
       g.gain.exponentialRampToValueAtTime(.0001,RC.uiAudio.currentTime+dur);o.connect(g).connect(RC.uiAudio.destination);o.start();o.stop(RC.uiAudio.currentTime+dur+.01);
-    }catch(_){}
+    }catch(error){ignoreError('ui sound could not play',error)}
   }
   panel.addEventListener('pointerup',e=>{if(e.target.closest('button'))uiTone70(410,.025)},{passive:true});
 
@@ -10661,7 +10661,7 @@ const RC={
     coach.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();closeTip70()});setInteraction8('coach70',true);coach.style.removeProperty('display');coach.classList.add('show');if(!t.repeatable)markTip70(t.id);coach.querySelector('#coachContinue58').focus({preventScroll:true});uiTone70(620,.05);
   }
   function resetTips70(){
-    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove70(k))}catch(_){}
+    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove70(k))}catch(error){ignoreError('tip reset could not clear keys',error)}
     closeTip70(true);lsSet70('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closePanel70();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');floorTutorial66();
   }
 
@@ -10814,7 +10814,7 @@ const RC={
   function refreshSfx70(){const b=document.getElementById('rcSfx70');if(b)b.textContent=`게임 효과음 ${sfxOn70()?'ON':'OFF'}`;const h=document.getElementById('rcHaptic70');if(h){const on=vibrationEnabled57();h.textContent=`진동 ${on?'ON':'OFF'}`;h.setAttribute('aria-pressed',on?'true':'false')}const r=document.getElementById('rcUiVol70');if(r)r.value=String(RC.uiVolume)}
   document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));setTimeout(refreshSfx70,20)};
   document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled57(!vibrationEnabled57());refreshSfx70();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
-  document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale70(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet70('manruUiVolume70',String(RC.uiVolume))}catch(_){}}};
+  document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale70(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet70('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
   const textScaleControl=document.getElementById('rcTextScale70');textScaleControl.value=String(RC.textScale);
   document.getElementById('rcTutorial70').onclick=resetTips70;
   document.getElementById('rcExport70').onclick=export70;
@@ -10831,7 +10831,7 @@ const RC={
       const env=request?.state?{state:request.state,settings:request.settings||{}}:parseEnvelope70(raw),st=env.state;
       if(st?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(st.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
       restoreState70(st);
-      if(env.settings?.camera)try{globalThis.__MANRU_CAMERA_STATE12__.setMode(env.settings.camera)}catch(_){}
+      if(env.settings?.camera)try{globalThis.__MANRU_CAMERA_STATE12__.setMode(env.settings.camera)}catch(error){ignoreError('saved camera mode could not be applied',error)}
       if(Number.isFinite(env.settings?.uiVolume)){RC.uiVolume=env.settings.uiVolume;lsSet70('manruUiVolume70',String(RC.uiVolume))}
       RC.lastActionAt=performance.now();if(!request?.label)toast('불러오기 완료.');return true
     }catch(e){toast('저장 데이터를 복구하지 못했다.');return false}
@@ -10858,10 +10858,10 @@ let resumeTimer71=0;
       if(X.isContextLost?.())throw Error('main canvas context lost');
       // Android can keep JS Canvas objects while discarding their backing pixels. Invalidate all
       // offscreen actor canvases so the player/monster sprites are rebuilt from drawing commands.
-      try{window.__MANRU_ACTOR_CACHE1011__?.clear?.()}catch(_){}
-      try{globalThis.__MANRU_ACTOR_ART__?.clear?.()}catch(_){}
-      try{window.__MANRU_ITEM_ART_R7__?.clear?.()}catch(_){}
-      try{window.__MANRU_CLEAR_HI_CACHE__?.()}catch(_){}
+      try{window.__MANRU_ACTOR_CACHE1011__?.clear?.()}catch(error){ignoreError('actor cache clear',error)}
+      try{globalThis.__MANRU_ACTOR_ART__?.clear?.()}catch(error){ignoreError('actor art clear',error)}
+      try{window.__MANRU_ITEM_ART_R7__?.clear?.()}catch(error){ignoreError('item art clear',error)}
+      try{window.__MANRU_CLEAR_HI_CACHE__?.()}catch(error){ignoreError('hi-res cache clear',error)}
       globalThis.__MANRU_LEGEND_TERRAIN47__?.clear?.();
       // Mobile browsers may discard offscreen canvas pixels without discarding
       // the canvas objects. Branch, dojo and mine tiles share these caches.
@@ -10878,17 +10878,17 @@ let resumeTimer71=0;
       if(state.player){state.player.nextAttackAt=0;state.player.busyUntil=0}
       for(const m of state.monsters||[]){m.hitUntil=0;m.evadeUntil=0;m.attackUntil=0;delete m.attackTarget;delete m.hitDir}
       // Do not trust canvas drawing state after a surface restore.
-      try{X.globalAlpha=1;X.globalCompositeOperation='source-over';X.imageSmoothingEnabled=false;X.shadowBlur=0;X.shadowColor='rgba(0,0,0,0)';X.filter='none'}catch(_){}
-      try{syncGameViewport()}catch(_){}
-      try{X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalAlpha=1;X.globalCompositeOperation='source-over';X.filter='none';X.fillStyle='#0b0704';X.fillRect(0,0,VIEW.w,VIEW.h)}catch(_){}
+      try{X.globalAlpha=1;X.globalCompositeOperation='source-over';X.imageSmoothingEnabled=false;X.shadowBlur=0;X.shadowColor='rgba(0,0,0,0)';X.filter='none'}catch(error){ignoreError('canvas state reset',error)}
+      try{syncGameViewport()}catch(error){ignoreError('viewport sync',error)}
+      try{X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalAlpha=1;X.globalCompositeOperation='source-over';X.filter='none';X.fillStyle='#0b0704';X.fillRect(0,0,VIEW.w,VIEW.h)}catch(error){ignoreError('clear frame',error)}
       VIS.playerX=state.player.x;VIS.playerY=state.player.y;VIS.camInit=false;
-      try{globalThis.__MANRU_CAMERA_STATE12__?.resume(true)}catch(_){}
-      try{VisibilityService.compute()}catch(_){}
-      try{updatePanels()}catch(_){}
+      try{globalThis.__MANRU_CAMERA_STATE12__?.resume(true)}catch(error){ignoreError('camera resume',error)}
+      try{VisibilityService.compute()}catch(error){ignoreError('visibility recompute',error)}
+      try{updatePanels()}catch(error){ignoreError('panel refresh',error)}
       if(drawMap(true)===false)throw Error('main canvas paint refused');
       drawMinimap(true);
       debugBattleRender57(true,performance.now(),true);
-      try{updateAttackButton()}catch(_){}
+      try{updateAttackButton()}catch(error){ignoreError('attack button refresh',error)}
       if(FX?.transition)FX.transition=null;
       recovery71.last={reason,attempt,ok:true,at:Date.now(),width:C.width,height:C.height};
       return true;
@@ -11409,10 +11409,10 @@ document.body.classList.add('mf75-clean');
       document.body.classList.add('pad58-hidden');
       localStorage.setItem('manruPad58','0');
     }
-  }catch(_){ }
+  }catch(error){ignoreError('pad default could not be saved',error)}
 
 
-  try{updateMobileHud()}catch(_){}
+  try{updateMobileHud()}catch(error){ignoreError('mobile hud refresh before a run exists',error)}
 
 
 /* ===== MANRU v7.8: FULL-MAP DENSITY / LANDMARK POLISH ===== */
@@ -11516,13 +11516,13 @@ const CONFIG81=Object.freeze({
     valid(q){return !!q&&Number.isFinite(q.x)&&Number.isFinite(q.y)&&q.x>=0&&q.y>=0&&q.x<COLS&&q.y<ROWS},
     visibleEnemies(){return new Set((state?.monsters||[]).filter(isThreatVisibleToPlayer57))},
     alertedEnemies(){return new Set((state?.monsters||[]).filter(m=>m.alerted&&isThreatVisibleToPlayer57(m)))},
-    setChip(text){try{v10AutoChip(text||null)}catch(_){}},
+    setChip(text){try{v10AutoChip(text||null)}catch(error){ignoreError('auto-walk chip update',error)}},
     syncPreview(path=this.path){VIS.autoPath=(path||[]).map(p=>({x:p.x,y:p.y}))},
     clearTimer(){if(this.timer){clearTimeout(this.timer);this.timer=0}if(autoWalkTimer){clearTimeout(autoWalkTimer);autoWalkTimer=null}},
     stop(reason='manual',clearExplore=true){
       this.serial++;this.clearTimer();this.active=false;this.path=[];this.target=null;this.lastStop=reason;
       if(clearExplore)this.exploreMode=false;
-      try{autoWalkToken++}catch(_){}
+      autoWalkToken++
       VIS.autoPath=null;VIS.exploring=!!this.exploreMode;this.setChip(null);
       const legacyChip=document.getElementById('vfAutoState');if(legacyChip){legacyChip.classList.remove('show');legacyChip.textContent=''}
       return true;
@@ -11875,7 +11875,7 @@ const CONFIG81=Object.freeze({
       btn.addEventListener('pointerdown',e=>{
         if(e.pointerType==='mouse'&&e.button!==0||btn.hidden||!btn.isConnected||btn.getClientRects().length===0)return;
         if(worldTargetActive57()&&dir){e.preventDefault();e.stopPropagation();stopHeld81();ClientEnvironment.emit({type:'TARGET_MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});return}
-        if(!canAct81())return;e.preventDefault();e.stopPropagation();stopHeld81();try{btn.setPointerCapture(e.pointerId)}catch(_){}
+        if(!canAct81())return;e.preventDefault();e.stopPropagation();stopHeld81();try{btn.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}
         Runtime81.held={btn,id:e.pointerId,dir,center};btn.classList.add('rt81-pressed');
         if(dir){ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});Runtime81.repeatDelay=setTimeout(()=>{if(Runtime81.held?.btn!==btn)return;Runtime81.repeatTick=setInterval(()=>{if(Runtime81.held?.btn===btn&&canAct81())ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad-hold'})},CONFIG81.repeatEveryMs)},CONFIG81.repeatDelayMs)}else ClientEnvironment.emit({type:'REST',source:'mobile-pad'});
       },{passive:false});
@@ -11912,7 +11912,7 @@ const CONFIG81=Object.freeze({
     const cancelHold=p=>{if(p?.holdShow)clearTimeout(p.holdShow);if(p?.holdFire)clearTimeout(p.holdFire);hold.classList.remove('show')};
     const clearAll=()=>{Camera81.cancelInertia();for(const p of Runtime81.pointers.values())cancelHold(p);Runtime81.pointers.clear();Runtime81.gesture=null;hold.classList.remove('show')};
     input.addEventListener('pointerdown',e=>{
-      Camera81.cancelInertia();if(!canAct81()||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();e.stopPropagation();try{input.setPointerCapture(e.pointerId)}catch(_){}
+      Camera81.cancelInertia();if(!canAct81()||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();e.stopPropagation();try{input.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}
       const q=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY),p={id:e.pointerId,x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,q,moved:false,held:false,holdShow:0,holdFire:0};Runtime81.pointers.set(e.pointerId,p);
       if(Runtime81.pointers.size===1){
         if(e.pointerType!=='mouse'){
@@ -12197,7 +12197,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     const sideRooms=(state.rooms||[]).filter(r=>r.w>=5&&r.h>=5&&!pathSet.has(key85(r.cx,r.cy))).sort((a,b)=>distPath(b)-distPath(a));
     const rewardRoom=sideRooms.find(r=>distPath(r)>=4);
     if(rewardRoom&&ReachabilityService.playerPassable(rewardRoom.cx,rewardRoom.cy)&&!(state.items||[]).some(i=>Math.abs(i.x-rewardRoom.cx)+Math.abs(i.y-rewardRoom.cy)<3)){
-      try{dropRandomItem({x:rewardRoom.cx,y:rewardRoom.cy},true);state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:'측면 보급실',x:rewardRoom.x,y:rewardRoom.y,w:rewardRoom.w,h:rewardRoom.h,kind85:'reward'})}catch(_){}
+      try{dropRandomItem({x:rewardRoom.cx,y:rewardRoom.cy},true);state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:'측면 보급실',x:rewardRoom.x,y:rewardRoom.y,w:rewardRoom.w,h:rewardRoom.h,kind85:'reward'})}catch(error){ignoreError('side-room reward could not be placed; generation continues without it',error)}
     }
     const movable=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);
     const moveNear=(mon,anchor)=>{if(!mon||!anchor)return false;for(let r=0;r<=4;r++)for(let y=anchor.y-r;y<=anchor.y+r;y++)for(let x=anchor.x-r;x<=anchor.x+r;x++){if(!in85(x,y)||Math.max(Math.abs(x-anchor.x),Math.abs(y-anchor.y))!==r)continue;if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;return true}}return false};
@@ -13134,9 +13134,9 @@ function installFloor24GrandEntrance96(){
       audit=strictLockAudit96(state.keyPlan96);ok=!!audit?.ok;
     }
     if(!ok&&state.floor===2){state.map=cloneTerrainMap58(base);state.keyPlan96=null;return{floor:2,required:true,ok:false,reason:'authored-choice-layout-rejected',audit}}
-    if(!ok){state.map=cloneTerrainMap58(base);state.layoutName=layout;state.keyPlan96=null;try{exitVestibule96(Math.min(count,KEY_TYPES96.length),base)}catch(_){}audit=strictLockAudit96(state.keyPlan96);ok=!!audit?.ok}
+    if(!ok){state.map=cloneTerrainMap58(base);state.layoutName=layout;state.keyPlan96=null;try{exitVestibule96(Math.min(count,KEY_TYPES96.length),base)}catch(error){ignoreError('exit vestibule repair failed; the lock audit that follows reports the result',error)}audit=strictLockAudit96(state.keyPlan96);ok=!!audit?.ok}
     state.strictLockAudit1004={...(audit||{}),floor:state.floor,required:true,progressed:false,repaired:true,repairAttempts:attempts,ok};
-    try{VisibilityService.compute()}catch(_){ }
+    try{VisibilityService.compute()}catch(error){ignoreError('visibility recompute after the repair attempt',error)}
     return state.strictLockAudit1004;
   }
 
@@ -13821,7 +13821,7 @@ const V980={
     else if(f===19){cloister980(a,protectedSet,styles[1],TT.STONE_PILLAR);sideGallery980(b,protectedSet,styles[0],TT.JAR);if(c)innerRoom980(c,protectedSet,styles[1],TT.FOUNTAIN)}
     for(const r of rooms.slice(0,5))markRoom980(r,styles[hash980(r.cx,r.cy,17)>.5?0:1]);
     // Connectivity repair runs before validation so local vault modules survive instead of being discarded wholesale.
-    try{if(!state.keyPlan96&&typeof ensureNormalConnectivity==='function')ensureNormalConnectivity()}catch(_){ }
+    try{if(!state.keyPlan96&&typeof ensureNormalConnectivity==='function')ensureNormalConnectivity()}catch(error){ignoreError('connectivity repair failed; validation that follows decides',error)}
     const validStructure=validateNormal980();
     if(!validStructure){
       restore980(backup);
@@ -14232,7 +14232,7 @@ const V980={
     itemToFeature980();
     try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(e){V980.errors.push(`repair:${e}`)}
     try{if(!state.specialFloor&&!state.keyPlan96&&typeof ensureNormalConnectivity==='function')ensureNormalConnectivity()}catch(e){V980.errors.push(`connect:${e}`)}
-    try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(_){ }
+    try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(error){ignoreError('integrity repair failed; the next validation catches it',error)}
     // Never rewrite/reinstall key plans after architecture work. If the exact original lock graph was disturbed,
     // restore its map and entity positions, then apply visual-only zoning.
     if(lockBackup&&!lockAuditOkay980()){
@@ -14565,7 +14565,7 @@ const V980={
     try{
       if(state.floor>=6){if(state.floor===13)rebuild13_981();else{if(state.floor===6)augment6_981();densifyFixed981();if(state.floor===11)repair11_981()}}
       if(state.floor===21)ensureFloor21Blink981(4);
-      try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(_){ }
+      try{window.__MANRU_RUNTIME81__?.Integrity81?.repair?.()}catch(error){ignoreError('integrity repair failed; the next validation catches it',error)}
       const reach=state.floor===21?ReachabilityService.mechanicalBlinkReach({expectedBlink981,key980,floor21Stand981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true,blinkRange:4}):ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true});if(state.floor===11)relocateLandMonsters981(reach);relocateItems981();
       const exitAudit=state.floor===21?ReachabilityService.mechanicalBlinkReach({expectedBlink981,key980,floor21Stand981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true,blinkRange:4}).exit:ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true}).exit;
       state.qualityVersion981=V981.version;state.qualityAudit981={reachExit:exitAudit,itemReach:state.itemReach981,raft:state.floor===11?raftAudit981():null,portal:state.floor===13?portalAudit981():null,floor21BlinkChoice:state.floor===21?state.floor21BlinkAuditR43:null};
@@ -14700,13 +14700,13 @@ riverAndCore(...args){
 
   globalThis.__MANRU_LIFECYCLE__.registerLoad('quality-current983',{post:()=>{
     if(state?.shopIntermission?.active)return;
-    if(state?.artifactDungeon46||state?.branchContext105){try{updateAll()}catch(_){};return}
+    if(state?.artifactDungeon46||state?.branchContext105){try{updateAll()}catch(error){ignoreError('ui refresh in the load hook (branch or legend floor)',error)};return}
     if(state){
       core982();migrateLegacyInventory982();
       if(!state.coreLootAudit982){const S=schedule982();state.coreLootAudit982={floor:state.floor,chapter:chapter982()+1,upgrades:[...S.upgrades],heals:[...S.heals],groundUpgrades:(state.items||[]).filter(i=>i.talismanKind==='upgrade').length,groundHealing:(state.items||[]).filter(i=>i.type==='potion'&&['heal_small','heal_medium'].includes(i.potionKind)).length}}
       if(state.floor!==11){state.riverRule982=null;state.riverGenerationAttempts982=0;}
       if(state.floor===11&&state.raftAudit981&&!state.riverRule982)state.riverRule982={mustCross:true,pureWalk:!!state.raftAudit981.pureWalk,pureRaft:!!state.raftAudit981.pureRaft,blinkFallback:!!state.raftAudit981.exitBlinkFallback,ok:!state.raftAudit981.pureWalk&&!!state.raftAudit981.pureRaft&&!!state.raftAudit981.exitBlinkFallback};
-      try{updateAll()}catch(_){}
+      try{updateAll()}catch(error){ignoreError('ui refresh in the load hook',error)}
     }
   }});
 
@@ -14727,7 +14727,7 @@ riverAndCore(...args){
 /* v9.8.4 cohesive runtime: intentionally inside the main game closure */
 
 const V984='v9.9.6-initial-zoom-100';
-  try{localStorage.removeItem('manruZoomActual48')}catch(_){}
+  try{localStorage.removeItem('manruZoomActual48')}catch(error){ignoreError('old zoom setting could not be removed',error)}
 
   /* ---------- UI glyph policy: large rune = Han character, explanatory label = Korean ---------- */
   function fixGlyphs984(){
@@ -15335,7 +15335,7 @@ function markGear991(item,opt={}){
   function closeChoice991(){setInteraction8('choice991',false);choiceCancel991=null}
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
-  function openChoice991(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(_){}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGear991(it)?publicGearType991(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
+  function openChoice991(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGear991(it)?publicGearType991(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
 
   function openMartialManualChoice1005(pending){
     if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();
@@ -15468,7 +15468,7 @@ function markGear991(item,opt={}){
   // r57: canonical activateMartial closes the quick-skill panel through __MANRU_ITEM_IDENTITY991__.
 
   globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick991,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuick991();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
-  function bindSkillButton991(){const old=document.querySelector('#mobileControls [data-act="skill"]');if(!old||old.dataset.v991==='1')return;const b=old.cloneNode(true);b.dataset.v991='1';old.replaceWith(b);let timer=0,long=false,down=false,x=0,y=0;const clear=()=>{clearTimeout(timer);timer=0;down=false;b.classList.remove('rt81-pressed')};b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0||b.hidden||!b.isConnected||b.getClientRects().length===0)return;e.preventDefault();e.stopPropagation();down=true;long=false;x=e.clientX;y=e.clientY;b.classList.add('rt81-pressed');try{b.setPointerCapture(e.pointerId)}catch(_){}timer=setTimeout(()=>{if(!down)return;long=true;clearTimeout(timer);timer=0;b.classList.remove('rt81-pressed');ClientEnvironment.emit({type:'OPEN_MARTIAL',source:'skill-long-press'})},520)},{passive:false});b.addEventListener('pointermove',e=>{if(down&&Math.hypot(e.clientX-x,e.clientY-y)>18)clear()},{passive:true});b.addEventListener('pointerup',e=>{if(!down&&!long)return;e.preventDefault();e.stopPropagation();const wasLong=long;clear();if(!wasLong)ClientEnvironment.emit({type:'TOGGLE_SKILL_QUICK',source:'mobile-action'})},{passive:false});b.addEventListener('pointercancel',clear,{passive:true});b.onclick=e=>{e.preventDefault();e.stopPropagation()};b.title='짧게: 기술 사용 · 길게: 기술 강화';for(const id of ['skill:pointerdown','skill:pointermove','skill:pointerup','skill:pointercancel','skill:click'])InputRouter.noteListener(id)}
+  function bindSkillButton991(){const old=document.querySelector('#mobileControls [data-act="skill"]');if(!old||old.dataset.v991==='1')return;const b=old.cloneNode(true);b.dataset.v991='1';old.replaceWith(b);let timer=0,long=false,down=false,x=0,y=0;const clear=()=>{clearTimeout(timer);timer=0;down=false;b.classList.remove('rt81-pressed')};b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0||b.hidden||!b.isConnected||b.getClientRects().length===0)return;e.preventDefault();e.stopPropagation();down=true;long=false;x=e.clientX;y=e.clientY;b.classList.add('rt81-pressed');try{b.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}timer=setTimeout(()=>{if(!down)return;long=true;clearTimeout(timer);timer=0;b.classList.remove('rt81-pressed');ClientEnvironment.emit({type:'OPEN_MARTIAL',source:'skill-long-press'})},520)},{passive:false});b.addEventListener('pointermove',e=>{if(down&&Math.hypot(e.clientX-x,e.clientY-y)>18)clear()},{passive:true});b.addEventListener('pointerup',e=>{if(!down&&!long)return;e.preventDefault();e.stopPropagation();const wasLong=long;clear();if(!wasLong)ClientEnvironment.emit({type:'TOGGLE_SKILL_QUICK',source:'mobile-action'})},{passive:false});b.addEventListener('pointercancel',clear,{passive:true});b.onclick=e=>{e.preventDefault();e.stopPropagation()};b.title='짧게: 기술 사용 · 길게: 기술 강화';for(const id of ['skill:pointerdown','skill:pointermove','skill:pointerup','skill:pointercancel','skill:click'])InputRouter.noteListener(id)}
   bindSkillButton991();queueMicrotask(bindSkillButton991);
 
   // CSS: deliberately >1px borders and distinct visual identity per technique.
@@ -15568,7 +15568,7 @@ const STORY_VERSION992='v9.9.3-story-system';
   }
   function presentStoryScene8(title,text,quote){storyEnsureUI992();const sc=document.getElementById('storyScene992');sc.innerHTML=`<div class="storySceneCard992"><span class="uiCorners63" aria-hidden="true"></span><h2>${esc992(title)}</h2><p>${esc992(text)}</p>${quote?`<p class="storySceneQuote992">“${esc992(quote)}”</p>`:''}<button id="storySceneContinue992">계속</button></div>`;setInteraction8('storyScene992',true);document.getElementById('storySceneContinue992').onclick=()=>InputRouter.dispatch({type:'STORY_CONTINUE',source:'story-continue'});
   }
-  function storyContinueScene8(){if(!interactionActive8('storyScene992'))return false;storyCloseScene992();const boss=state?.monsters?.find(m=>m.boss&&m.storyPhase992===2);if(boss)setTimeout(()=>{try{showBossIntro(boss)}catch(_){}},120);return true;
+  function storyContinueScene8(){if(!interactionActive8('storyScene992'))return false;storyCloseScene992();const boss=state?.monsters?.find(m=>m.boss&&m.storyPhase992===2);if(boss)setTimeout(()=>{try{showBossIntro(boss)}catch(error){ignoreError('boss intro could not be shown; the story continues',error)}},120);return true;
   }
 
   function storySafeNoteCell992(){
@@ -15818,11 +15818,11 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
       st.playerHitUntil=0;st.playerAttackUntil=0;st.attackUntil=0;st.evadeUntil=0;
       if(st.player){st.player.nextAttackAt=0;st.player.busyUntil=0}
       for(const m of st.monsters||[]){m.hitUntil=0;m.evadeUntil=0;m.attackUntil=0;m.attackTarget=null;m.hitDir=null}
-      try{FX.shakeUntil=0;FX.shakePower=0}catch(_){}
+      try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
       return true;
     }
     sanitizeTransient1003();
-    if(state){resetVisualState();try{updateAll()}catch(_){}}
+    if(state){resetVisualState();try{updateAll()}catch(error){ignoreError('ui refresh after restore',error)}}
 
     /* ---------- player sprite: 36x52 exact-pixel world render, feet anchored to tile bottom ---------- */
     const PW1003=36,PH1003=52,PLAYER1003_CACHE=new Map();
@@ -15851,8 +15851,8 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
     function quitGame1003(){
       if(!confirm('게임을 종료할까? 현재 진행은 자동 저장된다.'))return;
       if(state&&!state.dead&&!state.victory){const result=globalThis.__MANRU_SAVE_SERVICE__.commit('quit');if(!result.ok){toast('기록 저장에 실패해 종료하지 않았다.');return}}
-      try{sessionStorage.setItem('manru1003_explicit_quit','1')}catch(_){};
-      try{window.close()}catch(_){};
+      try{sessionStorage.setItem('manru1003_explicit_quit','1')}catch(error){ignoreError('explicit-quit flag could not be stored',error)};
+      try{window.close()}catch(error){ignoreError('window.close refused by the browser',error)};
       setTimeout(()=>{try{location.replace('about:blank')}catch(_){document.body.innerHTML='<main style="background:#050302;color:#b99b77;position:fixed;inset:0;display:grid;place-items:center;font:700 calc(14px * var(--ui-font-scale, 1)) system-ui">만루 종료됨</main>'}},80);
     }
     ensureQuit1003();
@@ -15890,7 +15890,7 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
           if(key===LEGACY_RUN1004||key===LEGACY_DEATH1004||/^manruV\d+Save$/i.test(key)||/^manruRC70_(?:slot|backup|autosave)/i.test(key))drop.push(key);
         }
         for(const key of drop)localStorage.removeItem(key);
-      }catch(_){}
+      }catch(error){ignoreError('legacy save cleanup could not scan storage',error)}
     }
     // r57: legacy autosave writers and registrations are deleted at their canonical sources.
     function candidate1004(raw,source='unknown'){
@@ -16039,9 +16039,9 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
     // The earlier v10.0.2 boot code may already have restored manru984_active_run before this patch runs.
     // At document boot there has been no user input yet, so discard that transient in-memory restore and show title.
     state=null;
-    try{cancelAutoWalk()}catch(_){}
-    try{MON_VIS?.clear?.()}catch(_){}
-    try{FX.shakeUntil=0;FX.shakePower=0}catch(_){}
+    try{cancelAutoWalk()}catch(error){ignoreError('cancel auto-walk before the first run',error)}
+    try{MON_VIS?.clear?.()}catch(error){ignoreError('monster visual cache clear',error)}
+    try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
     document.body.classList.remove('run-active','end-screen95','title-class-mode');
     setScreen1002('title');
     // Both historical death keys and the dead-run ledger are inspected by the canonical eligibility rule.
@@ -16061,14 +16061,14 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
     function currentWalkCells1004(){return state?.player?ReachabilityService.playerSearch(state.player,{tileAt:(x,y)=>state.map[y]?.[x]===TT.STAIR?TT.WALL:state.map[y]?.[x]}).cells:new Set()}
     function repairLateItems1004(){
       if(!state?.items?.length){state.lateItemRepair1004={moved:0,bad:0,left:0};return state.lateItemRepair1004}
-      let bad=[];try{bad=mechanicalReachAudit()?.items?.unreachable||[]}catch(_){}
+      let bad=[];try{bad=mechanicalReachAudit()?.items?.unreachable||[]}catch(error){ignoreError('reach audit failed; treated as no unreachable items',error)}
       if(!bad.length){state.lateItemRepair1004={moved:0,bad:0,left:0};return state.lateItemRepair1004}
       const walk=currentWalkCells1004();let moved=0;
       for(const b of bad){
         const it=(state.items||[]).find(i=>i.x===b.x&&i.y===b.y&&i.name===b.name);if(!it)continue;
         const x=it.x,y=it.y;if(PlacementService.placeItem(it,{x,y},{reachable:walk})&&(it.x!==x||it.y!==y))moved++;
       }
-      let left=[];try{left=mechanicalReachAudit()?.items?.unreachable||[]}catch(_){}
+      let left=[];try{left=mechanicalReachAudit()?.items?.unreachable||[]}catch(error){ignoreError('reach audit failed; treated as no unreachable items',error)}
       state.lateItemRepair1004={moved,bad:bad.length,left:left.length};return state.lateItemRepair1004
     }
     // r18: repairLateItems1004 is called explicitly by the canonical generation pipeline.
@@ -16586,7 +16586,7 @@ patchDef('질긴 가죽망토',{staggerResist:.30,desc:'피격 시 30% 확률로
 patchDef('바람막이망토',{focusRegen:1.35,desc:'기본 기력 자연회복에 약 35%의 추가 회복을 누적합니다.'});
 patchDef('여행자망토',{eatSpeed:1.35,desc:'음식 사용 행동비용을 약 26% 줄여 전투 중 보급이 훨씬 안전해집니다.'});
 patchDef('두꺼운 면망토',{trapGuard:.35,desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.'});
-try{delete defBy('두꺼운 면망토').hazardResist}catch(_){ }
+delete defBy('두꺼운 면망토').hazardResist
 
 function normalizeSavedItem1006(it){
   if(!it)return it;const d=defBy(it.name);if(!d)return it;
@@ -16663,7 +16663,6 @@ queueMicrotask(normalizeAllItems1006);
 
 
 /* QA surface */
-try{document.title='만루 — v10.0.4 append architecture r4';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ROLLBACK / ROUTE+HAZARD / KEY CLARITY / ITEM EFFECT AUDIT';const stamp=document.getElementById('releaseStamp70');if(stamp)stamp.textContent='v10.0.4 · append architecture r4'}catch(_){ }
 
 /* ===== MANRU v10.0.4 ORIGINAL-MAP APPEND ARCHITECTURE / FINAL ENTITY PLACEMENT ===== */
 const BUILD1020='10.0.4-exit-invariant-boss-direct-drop-r5';
@@ -17559,7 +17558,7 @@ function restaurantPlanClear42(a){
 function restaurantDoor42(a){return{x:a.door.x,y:a.door.y}}
 function restaurantInside42(fr,x,y,pad=0){return x>=fr.x+pad&&y>=fr.y+pad&&x<fr.x+fr.w-pad&&y<fr.y+fr.h-pad}
 function restaurantReachSet42(){
-  try{const r=reachableCells({unlock:true,rafts:true,portals:true,blinkRange:0});if(r instanceof Set)return r}catch(_){}
+  try{const r=reachableCells({unlock:true,rafts:true,portals:true,blinkRange:0});if(r instanceof Set)return r}catch(error){ignoreError('reachability helper failed; the generic walk below is used',error)}
   return reachableSet1020({unlock:true,openBoss:true,diagonal:true});
 }
 function restaurantTileFree42(fr,x,y){
@@ -18455,7 +18454,7 @@ function rumorAudit1030(){if(!state)return{ok:false,reason:'no-state'};const spa
 function rumorQAGenerate1030(floor=1,type=null,count=1){state.floor=Math.max(1,Math.min(25,Math.floor(floor)));NormalFloorGenerator.generate();const before=structuredClone(state.rumorSpaceAudit1030||{});if(!rumorSpaceEligible1030())return{before,audit:rumorAudit1030()};if(!state.rumorSpaces1030?.length||type){/* QA only: rebuild the extension on the current finalized ordinary map. */for(const r of state.rumorSpaces1030||[])for(const q of r.cells||[])if(state.map[q.y]?.[q.x]!==TT.WALL)setTerrainTile58(state.map,q.x,q.y,TT.WALL);generateRumorSpaces1030({force:true,count,forceType:type});specialTerrainGrandDress1031()}return{before,audit:rumorAudit1030(),spaces:(state.rumorSpaces1030||[]).map(r=>({id:r.id,type:r.typeId,name:r.type.name,entry:r.entry,rect:r.rect,revealed:r.revealed}))}}
 function specialTerrainGrandDress1031(){if(!state||!state.map)return{ok:false,reason:'no-state'};state.subthemeWalls970=state.subthemeWalls970||{};const key=(x,y)=>`${x},${y}`,floorish=t=>[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].includes(t),quiet=(x,y)=>!(state.items||[]).some(i=>i.x===x&&i.y===y)&&!(state.monsters||[]).some(m=>monCovers(m,x,y))&&!(state.player?.x===x&&state.player?.y===y)&&!(state.stairs?.x===x&&state.stairs?.y===y),setWall=(x,y,style)=>{if(x>0&&y>0&&x<COLS-1&&y<ROWS-1&&state.map[y]?.[x]===TT.WALL)state.subthemeWalls970[key(x,y)]=style},setDecor=(x,y,t)=>{if(x>0&&y>0&&x<COLS-1&&y<ROWS-1&&floorish(state.map[y]?.[x])&&quiet(x,y)){const base=state.map[y][x];rememberTerrainUnderlay58(x,y,base);setTerrainTile58(state.map,x,y,t)}};const markRumor=(r,style)=>{if(!r||!style)return;for(let y=r.rect.y1-1;y<=r.rect.y2+1;y++)for(let x=r.rect.x1-1;x<=r.rect.x2+1;x++)if(x<r.rect.x1||x>r.rect.x2||y<r.rect.y1||y>r.rect.y2)setWall(x,y,style)};for(const r of state.rumorSpaces1030||[]){if(!r.revealed)continue;const style=r.hazard1030==='gas'?'rumor_gas':r.type.shape==='flood'?'rumor_flood':r.type.shape==='silk'?'rumor_silk':r.type.shape==='shrine'?'rumor_shrine':r.type.floor==='garden'?'rumor_garden':r.type.floor==='moon'?'rumor_moon':r.type.floor==='wood'?'rumor_store':'rumor_archive';markRumor(r,style)}const defs=[{tile:TT.WATER,style:'haz_water',decor:[TT.LOTUS_FLOWER,TT.PETAL_MAT]},{tile:TT.LAVA,style:'haz_lava',decor:[TT.GOLD_LAMP,TT.IRON_HOOK]},{tile:TT.MERCURY,style:'haz_mercury',decor:[TT.PAPER_CRANE,TT.INCENSE_STAND]},{tile:TT.VOID,style:'haz_void',decor:[TT.INCENSE_STAND,TT.PAPER_CRANE]}];for(const def of defs){const spots=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y]?.[x]===def.tile){for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++)setWall(x+ox,y+oy,def.style);for(const[dx,dy]of DIRS4){const qx=x+dx,qy=y+dy;if(floorish(state.map[qy]?.[qx])&&quiet(qx,qy))spots.push({x:qx,y:qy})}}const seen=new Set();for(const s of spots){const kk=key(s.x,s.y);if(seen.has(kk))continue;seen.add(kk);if((s.x+s.y)%3===0)setDecor(s.x,s.y,def.decor[(s.x+s.y)&1])}}return{ok:true,wallThemes:Object.keys(state.subthemeWalls970||{}).length}}
 globalThis.__MANRU_RUMOR_SPACES1030__=Object.freeze({version:RUMOR_SPACE_VERSION1030,types:RUMOR_SPACE_TYPES1030.map(t=>({id:t.id,name:t.name,preview:!!t.preview,risk:t.risk})),generate:generateRumorSpaces1030,revealNext:rumorRevealNext1030,reveal:r=>revealRumorSpace1030(r),openEntranceAt:rumorOpenEntranceAt1030,drawEntranceOverlay:rumorDrawEntranceOverlay1030,isSealedInterior:(x,y)=>!!rumorSpaceByInterior1030(x,y),mutationLocked:rumorSpaceMutationLocked1030,audit:rumorAudit1030,qaGenerate:rumorQAGenerate1030});
-function applyArchitecture1020(){if(state?.specialFloor&&[23,24].includes(state.floor)){try{vfBuildDecor?.()}catch(_){}VisibilityService.compute();const specialProgression=globalThis.__MANRU_SPECIAL_FLOORS60__?.validate?.()||null,stateLock=state.floor===24?lockAudit96()||null:null;state.architecture1020={build:BUILD1020,assets:BUILD1022,lock:stateLock,topology:{ok:specialProgression?.ok!==false,specialProgression57:specialProgression},rumorSpaces:null,floor21BlinkChoice:null};return true}
+function applyArchitecture1020(){if(state?.specialFloor&&[23,24].includes(state.floor)){try{vfBuildDecor?.()}catch(error){ignoreError('special-floor decor rebuild failed; decor stays as generated',error)}VisibilityService.compute();const specialProgression=globalThis.__MANRU_SPECIAL_FLOORS60__?.validate?.()||null,stateLock=state.floor===24?lockAudit96()||null:null;state.architecture1020={build:BUILD1020,assets:BUILD1022,lock:stateLock,topology:{ok:specialProgression?.ok!==false,specialProgression57:specialProgression},rumorSpaces:null,floor21BlinkChoice:null};return true}
   if(!state)return false;
   // Per-floor append metadata must never leak across descents.  A stale boss/key gate from the previous floor can
   // otherwise turn an unrelated tile into a wall on the next floor.
@@ -18476,7 +18475,7 @@ function applyArchitecture1020(){if(state?.specialFloor&&[23,24].includes(state.
   lock=state.keyPlan96?.groups?.length?lockAudit96()||null:lock;postEntitySanity1020();
   if(state.bossExitGate1020)setTerrainTile58(state.map,state.bossExitGate1020.x,state.bossExitGate1020.y,state.bossDefeated?TT.OPEN_DOOR:TT.WALL);
   // Surface decoration never creates furniture or changes collision geometry.
-  try{vfBuildDecor?.()}catch(_){}themePatternPass1022();repairBlockingPhysicalDecor1029();if(state.floor===21)repairFloor21Blink();const topology=stabilizeFinalTopology1029();makeRestaurant42();postEntitySanity1020();finalEntitySweep1020();rebalanceMonsterCrowding1027();if(state.floor===22)spreadFloor22R43();repairRestaurantRewards42();sanitizeRestaurantMonsters42();if(state.floor===6){const prize=state.items.find(it=>it.r8LibraryPrize);if(prize)state.f6LibraryPrizeR8={x:prize.x,y:prize.y}}budgetPeaches52();sanitizeWallDecor1029();if(state.floor===20)auditFloor20Content1020();generateRumorSpaces1030();specialTerrainGrandDress1031();if(state.floor===23)repairFloor23MercuryConnectivity1029();if(state.floor===21){repairBlockingPhysicalDecor1029();repairFloor21Blink();state.floor21FinalBlinkChoiceAuditR46=blinkChoiceReach({unlock:true,openBoss:true,rafts:true,portals:true,blinkRange:4})||null}finishEntryDocumentDoors67();VisibilityService.compute();state.architecture1020={build:BUILD1020,assets:BUILD1022,lock:topology.lock||lock,topology,rumorSpaces:state.rumorSpaceAudit1030,floor21BlinkChoice:state.floor===21?state.floor21FinalBlinkChoiceAuditR46:null};return true
+  try{vfBuildDecor?.()}catch(error){ignoreError('special-floor decor rebuild failed; decor stays as generated',error)}themePatternPass1022();repairBlockingPhysicalDecor1029();if(state.floor===21)repairFloor21Blink();const topology=stabilizeFinalTopology1029();makeRestaurant42();postEntitySanity1020();finalEntitySweep1020();rebalanceMonsterCrowding1027();if(state.floor===22)spreadFloor22R43();repairRestaurantRewards42();sanitizeRestaurantMonsters42();if(state.floor===6){const prize=state.items.find(it=>it.r8LibraryPrize);if(prize)state.f6LibraryPrizeR8={x:prize.x,y:prize.y}}budgetPeaches52();sanitizeWallDecor1029();if(state.floor===20)auditFloor20Content1020();generateRumorSpaces1030();specialTerrainGrandDress1031();if(state.floor===23)repairFloor23MercuryConnectivity1029();if(state.floor===21){repairBlockingPhysicalDecor1029();repairFloor21Blink();state.floor21FinalBlinkChoiceAuditR46=blinkChoiceReach({unlock:true,openBoss:true,rafts:true,portals:true,blinkRange:4})||null}finishEntryDocumentDoors67();VisibilityService.compute();state.architecture1020={build:BUILD1020,assets:BUILD1022,lock:topology.lock||lock,topology,rumorSpaces:state.rumorSpaceAudit1030,floor21BlinkChoice:state.floor===21?state.floor21FinalBlinkChoiceAuditR46:null};return true
 }
 
 // r18: architecture finalization is the final explicit stage of the canonical generation pipeline.
@@ -18490,7 +18489,6 @@ function floor20ContentAudit(){return state?.floor===20?structuredClone(auditFlo
 function finalComponentAudit(){return ReachabilityService.finalComponents({finalReachSet1029,inside1020,HAZ1020,K1020,stairMarkerState1029,finalExitReach1029},true)}
 
 
-try{document.title='만루 — 잠들지 않는 천 개의 방';if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 ORIGINAL MAP + APPEND ARCHITECTURE / FINAL ENTITY PLACEMENT';const s=document.getElementById('releaseStamp70');if(s)s.textContent='v10.0.4 · original map + append architecture'}catch(_){ }
 
 
 /* ===== MANRU v10.0.4 r18: SINGLE CANONICAL FLOOR GENERATION PIPELINE · EXIT MARKER INVARIANT / DIRECT BOSS DROPS ===== */
@@ -19397,7 +19395,6 @@ function drawWorldCreature1012(m){if(!m||m.hidden&&!m.boss)return false;const pl
 renderClassGrid1001();
 
 
-try{if(window.__MANRU_RELEASE__)window.__MANRU_RELEASE__.build='v10.0.4 R7 / CANONICAL ITEMS / SHARED HAZARDS / DISTINCT CREATURES';const s=document.getElementById('releaseStamp70');if(s)s.textContent='v10.0.4 · precision r3 + creature pass'}catch(_){}
 
 
 /* R7 procedural item sprite generator removed: TRUE-HD atlas and authored consumable visuals are canonical. */

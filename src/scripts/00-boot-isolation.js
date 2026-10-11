@@ -1,4 +1,14 @@
 
+/* Shared by every script: a failure that is expected and harmless (storage blocked, audio locked, an optional
+   browser API missing) is passed here instead of an empty catch. The first occurrence of each reason is logged
+   so it stays visible in the console; docs/CATCH_AUDIT.md lists every call site. */
+const ignoredErrorReasons=new Set();
+function ignoreError(reason,error){
+  if(ignoredErrorReasons.has(reason))return;
+  ignoredErrorReasons.add(reason);
+  console.debug('[manru] ignored error:',reason,error);
+}
+
 /* v10.0.4 boot recovery: if the canonical save is missing/corrupt, preserve the newest surviving same-build legacy candidate before later code can prune anything. */
 (()=>{
   'use strict';
@@ -17,5 +27,5 @@
       if(!best||rank[0]>best.rank[0]||(rank[0]===best.rank[0]&&(rank[1]>best.rank[1]||(rank[1]===best.rank[1]&&rank[2]>best.rank[2]))))best={...c,key,rank};
     }
     if(best){sessionStorage.setItem(RECOVERY,best.raw);sessionStorage.setItem('manru1004_boot_recovery_source',best.key)}
-  }catch(_){}
+  }catch(error){ignoreError('boot recovery: storage unavailable, keep the primary save',error)}
 })();
