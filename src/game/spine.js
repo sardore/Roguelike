@@ -758,8 +758,7 @@ function combatStatusIconHtml57(row){
 
 
 
-/* R58 canonical semantic policies: one owner for tool-breakable furniture and one turn-owned jar gas field. */
-const TOOL_BREAKABLE_KEYS57=Object.freeze(['TABLE','SCREEN','JAR','CRATE','BENCH','RACK','LOW_FENCE','FLOWERBED']);
+
 
 const TERRAIN_SURFACE_KEYS58=Object.freeze(['SHALLOW_WATER','PALACE_LOW','PALACE_MID','PALACE_UPPER','PALACE_HIGH','ICE','FLOOR','GRASS','LIGHT_GRASS','WOOD_FLOOR','MOON_STONE','DARK_WOOD','GILDED_FLOOR','STONE_PATH','CARPET']);
 const TERRAIN_OVERLAY_KEYS58=Object.freeze(['PALACE_WALL_LAMP','TABLE','SCREEN','JAR','CRATE','BENCH','RACK','LOW_FENCE','FLOWERBED','STONE_PILLAR','LANTERN_POST','WALL_BANNER','WINDOW','ROCK','STATUE','PAPER_CRANE','LOTUS_FLOWER','INCENSE_STAND','IRON_HOOK','GOLD_LAMP','PETAL_MAT','GARDEN_TREE','PEACH_TREE','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','RUMOR_ARCHIVE_PILE','RUMOR_WEAPON_RACK','RUMOR_SILK_DIVAN','RUMOR_RITUAL_OBELISK','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','BED','BOOK_STACK']);
@@ -870,7 +869,7 @@ function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
-function compactHudName58(value,max=10){const raw=String(value||'').trim();if(!raw)return'';if([...raw].length<=max)return raw;const parts=raw.split(/[·/()]/).map(v=>v.trim()).filter(Boolean),fit=parts.findLast?.(v=>[...v].length<=max)||parts.find(v=>[...v].length<=max);return fit||[...raw].slice(0,max).join('')}
+
 
 
 
@@ -1041,12 +1040,7 @@ function editCipherGuess8(digit){if(runState57()!=='playing'||!cipherOpen||!stat
 
 function submitCipher(){const act=playerAction57('cipher',{allowCipher:true,stunMessage:'몸이 굳어 암호 장치를 조작하지 못했다.'});if(!act.ok)return !!act.consumed;const c=state.cipher;if(!c||c.guess.length!==5){toast('다섯 자리를 모두 입력해야 한다.');return false}const result=cipherResult(c.secret,c.guess);c.history.push({guess:[...c.guess],result});const solved=result.every(v=>v==='O');c.guess=[];if(solved){c.solved=true;const sw=state.switches.find(v=>v.kind==='cipher');if(sw){sw.used=true;for(const t of sw.targets)if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN)}addLog('O O O O O — 자물쇠가 풀렸다. 도개교가 내려온다.');impact(sw?.x??15,sw?.y??Math.floor(ROWS/2),'#e0b266',5);closeCipher()}else{addLog(`암호 실패: ${result.join(' ')}. 성채가 침입자를 감지했다.`);if(globalThis.__MANRU_RANDOM57__()<.40)spawnNamed(globalThis.__MANRU_RANDOM57__()<.5?'경비 인형 - 보병':'성채 비행 감시자',null,{provenance:'repeatable-reinforcement'});renderCipherPanel()}commitPlayerAction57(act,1);return true}
 ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
-function triggerSwitch(x,y){
-  const sw=state.switches?.find(v=>v.x===x&&v.y===y);if(!sw)return false;
-  if(sw.kind==='cipher'){openCipher();return true}
-  if(sw.kind==='f23-center'||sw.kind==='f23-reveal'||sw.kind==='branch-reveal'){const r=globalThis.__MANRU_SPECIAL_FLOORS60__?.activateSwitch?.(sw);if(r?.handled)return true}
-  if(sw.used)return false;sw.used=true;for(const t of sw.targets||[])if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN);addLog('도개교가 거친 소리를 내며 내려왔다.');impact(x,y,'#d6a85f',3);return true
-}
+
 
 function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}
 function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
@@ -1061,14 +1055,7 @@ function portalLandingValid57(link,x,y){
   if(t===TT.PORTAL||dangerousLootTerrain42(t)||!playerTransferLandingSafe57(x,y))return false;
   return true;
 }
-function resolvePortalLanding57(link){
-  if(!state||!link)return null;const preferred=link.destLand;
-  if(preferred&&portalLandingValid57(link,preferred.x,preferred.y))return{x:preferred.x,y:preferred.y,preferred:true};
-  const room=state.portalRooms981?.[link.destRoom]||state.rooms?.[link.destRoom];if(!room)return null;
-  const source=(room.cells981?.length?room.cells981:null)||Array.from({length:Math.max(0,room.h-2)},(_,iy)=>Array.from({length:Math.max(0,room.w-2)},(_,ix)=>({x:room.x+1+ix,y:room.y+1+iy}))).flat();
-  const px=preferred?.x??link.destPortal?.x??room.cx??room.x,py=preferred?.y??link.destPortal?.y??room.cy??room.y;
-  return source.filter(q=>portalLandingValid57(link,q.x,q.y)).sort((a,b)=>Math.abs(a.x-px)+Math.abs(a.y-py)-Math.abs(b.x-px)-Math.abs(b.y-py)||Math.abs(a.x-(link.destPortal?.x??px))+Math.abs(a.y-(link.destPortal?.y??py))-Math.abs(b.x-(link.destPortal?.x??px))-Math.abs(b.y-(link.destPortal?.y??py))||a.y-b.y||a.x-b.x)[0]||null;
-}
+
 
 
 const PLAYER_ENTRY_PICKUP_FIRST57=new Set([TT.BRAZIER,TT.COOKPOT,TT.ARMORY,TT.FOUNTAIN,TT.ALTAR,TT.VAULT,TT.CACHE,TT.JAR,TT.SWITCH].filter(v=>Number.isFinite(v)));
