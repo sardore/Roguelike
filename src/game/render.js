@@ -2003,7 +2003,7 @@ function drawKeyGateOverlay(tile,px,py,x,y,now,r){
 function paintRestaurantFinal(fr){
   const floor=fr.theme42===3?(TT.DARK_WOOD??TT.WOOD_FLOOR??TT.FLOOR):(TT.WOOD_FLOOR??TT.FLOOR),d=fr.door42;
   for(let y=fr.y;y<fr.y+fr.h;y++)for(let x=fr.x;x<fr.x+fr.w;x++){const edge=x===fr.x||y===fr.y||x===fr.x+fr.w-1||y===fr.y+fr.h-1;setTerrainTile58(state.map,x,y,edge?TT.WALL:floor)}
-  setTerrainTile58(state.map,d.x,d.y,TT.DOOR);restaurantCluster42(fr);restaurantFurniture42(fr);styleRestaurantFinal42(fr);return true;
+  setTerrainTile58(state.map,d.x,d.y,TT.DOOR);restaurantCluster(fr);restaurantFurniture(fr);styleRestaurantFinal42(fr);return true;
 }
 /* ===== NEVANDA-CLEAN ACTOR PASS (render only) ===== */
 /* ---------- compact clean Nevanda-informed sprites; every non-exempt enemy gets an individual tile ---------- */

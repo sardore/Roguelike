@@ -8,6 +8,7 @@
   "monsters.js",
   "render.js",
   "mapgen.js",
+  "special.js",
   "spine.js",
   "input.js",
   "story.js",
