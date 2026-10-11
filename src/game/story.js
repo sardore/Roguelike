@@ -210,3 +210,4 @@ const BRANCH_LORE=Object.freeze({
     if((!options.repeatable&&seenTip70(id))||coachCurrent?.id===id||RC.tutorialQueue.some(t=>t.id===id))return;
     const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
   }
+  function seenTip70(id){return !!tipLedger66().seen[id]}

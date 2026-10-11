@@ -3986,7 +3986,7 @@ const RC={
   /* ---------- retained structure hit testing (Runtime81 automation owns selection) ---------- */
   const STRUCT70=new Set([TT.DOOR,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
 
-  function seenTip70(id){return !!tipLedger66().seen[id]}
+
 
 
 

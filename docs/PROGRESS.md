@@ -29,6 +29,7 @@
 | pinned:monsters (2차) | 앞선 이동 뒤 monsters.js 쪽 참조가 많아진 문장 → monsters.js | 8328 | 676 / 584 | 755 | 67.7% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 | pinned:special (2차) | 앞선 이동 뒤 special.js 쪽 참조가 많아진 문장 → special.js | 8273 | 660 / 584 | 755 | 67.9% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 | pinned:combat (2차) | 앞선 이동 뒤 combat.js 쪽 참조가 많아진 문장 → combat.js | 8248 | 647 / 584 | 755 | 68.1% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
+| pinned:story (2차) | 앞선 이동 뒤 story.js 쪽 참조가 많아진 문장 → story.js | 8248 | 646 / 584 | 755 | 68.1% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 
 ## 현재 파일별 줄 수
 
@@ -47,7 +48,7 @@
 | elements.js | 247 |
 | spine.js | 8248 |
 | input.js | 148 |
-| story.js | 212 |
+| story.js | 213 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25825 |
+| (total) | 25826 |
