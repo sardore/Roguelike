@@ -1208,7 +1208,6 @@ const BLOCKING_TILES57=new Set([TT.WALL,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.D
 const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
-const LAVA_STAND_TILES57=new Set([TT.LAVA,TT.FLOOR,TT.GRASS,TT.OPEN_DOOR,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.DRAWBRIDGE_DOWN]);
 
 
 // Terrain table only: ignores decor blockers and hidden passages (map carving and spawn search use this).
@@ -3509,7 +3508,6 @@ registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=invento
 if(state)ensureFoodState();
 
 /* ===== MANRU v5.8: PERFORMANCE / DENSITY / KOREAN UI HOTFIX ===== */
-const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif';
 
   // ---- mobile pad toggle
   let pad58=document.getElementById('padToggle58');
@@ -3599,223 +3597,14 @@ const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans K
 /* ===== MANRU v5.9: VAULT / DOOR / MULTI-LAYOUT OVERHAUL ===== */
 const V59={lastMode:null, doorLog:[], modeLog:[]};
 
-  /* ---------- geometry primitives ---------- */
-  function clearMap59(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL)}
 
-  function room59(m,x,y,w,h,shape='rect'){
-    x=Math.max(1,Math.min(COLS-w-2,x));y=Math.max(1,Math.min(ROWS-h-2,y));
-    const r=roomRect(x,y,w,h);r.shape59=shape;state.rooms.push(r);
-    const x0=x+1,y0=y+1,x1=x+w-2,y1=y+h-2;
-    if(shape==='cross'){
-      const armX=Math.max(2,Math.floor((w-2)/3)),armY=Math.max(2,Math.floor((h-2)/3));
-      for(let yy=y0;yy<=y1;yy++)for(let xx=x0;xx<=x1;xx++){
-        if(Math.abs(xx-r.cx)<=Math.floor(armX/2)||Math.abs(yy-r.cy)<=Math.floor(armY/2))setTerrainTile58(m,xx,yy,TT.FLOOR);
-      }
-    }else{
-      for(let yy=y0;yy<=y1;yy++)for(let xx=x0;xx<=x1;xx++)setTerrainTile58(m,xx,yy,TT.FLOOR);
-      if(shape==='chamfer'&&w>=7&&h>=7){
-        for(const [xx,yy] of [[x0,y0],[x1,y0],[x0,y1],[x1,y1]])setTerrainTile58(m,xx,yy,TT.WALL);
-      }else if(shape==='pillars'&&w>=9&&h>=8){
-        for(const [xx,yy] of [[x0+1,y0+1],[x1-1,y0+1],[x0+1,y1-1],[x1-1,y1-1]])setTerrainTile58(m,xx,yy,TT.WALL);
-      }
-    }
-    setTerrainTile58(m,r.cx,r.cy,TT.FLOOR);
-    return r;
-  }
-  function borderRoom59(x,y){
-    for(const r of state.rooms||[]){
-      if(x<r.x||x>=r.x+r.w||y<r.y||y>=r.y+r.h)continue;
-      if(x===r.x||x===r.x+r.w-1||y===r.y||y===r.y+r.h-1)return r;
-    }
-    return null;
-  }
-  function corridorCell59(m,x,y){
-    if(!insideMapInterior(x,y))return;
-    const br=borderRoom59(x,y);
-    if(br){
-      if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.DOOR);
-    }else if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.FLOOR);
-  }
-  function doorPoint59(r,target){
-    const dx=target.x-r.cx,dy=target.y-r.cy;
-    if(Math.abs(dx)>=Math.abs(dy)){
-      const east=dx>=0,x=east?r.x+r.w-1:r.x;
-      const y=Math.max(r.y+2,Math.min(r.y+r.h-3,target.y));
-      return{x,y,ox:x+(east?1:-1),oy:y};
-    }else{
-      const south=dy>=0,y=south?r.y+r.h-1:r.y;
-      const x=Math.max(r.x+2,Math.min(r.x+r.w-3,target.x));
-      return{x,y,ox:x,oy:y+(south?1:-1)};
-    }
-  }
-  function stairPath59(m,a,b){
-    let x=a.x,y=a.y,guard=0,flip=globalThis.__MANRU_RANDOM57__()<.5;
-    corridorCell59(m,x,y);
-    while((x!==b.x||y!==b.y)&&guard++<600){
-      const canX=x!==b.x,canY=y!==b.y;
-      if(canX&&canY){
-        if(flip)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);
-        flip=!flip;
-      }else if(canX)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);
-      corridorCell59(m,x,y);
-    }
-  }
-  function manhattan59(m,a,b,style='L'){
-    let x=a.x,y=a.y,guard=0;
-    corridorCell59(m,x,y);
-    if(style==='diag'){stairPath59(m,a,b);return}
-    const horizontalFirst=style==='H'||(style==='L'&&globalThis.__MANRU_RANDOM57__()<.5);
-    if(style==='Z'){
-      if(globalThis.__MANRU_RANDOM57__()<.5){
-        const mx=Math.round((a.x+b.x)/2);
-        while(x!==mx&&guard++<500){x+=Math.sign(mx-x);corridorCell59(m,x,y)}
-        while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell59(m,x,y)}
-        while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell59(m,x,y)}
-      }else{
-        const my=Math.round((a.y+b.y)/2);
-        while(y!==my&&guard++<500){y+=Math.sign(my-y);corridorCell59(m,x,y)}
-        while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell59(m,x,y)}
-        while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell59(m,x,y)}
-      }
-      return;
-    }
-    if(horizontalFirst){
-      while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell59(m,x,y)}
-      while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell59(m,x,y)}
-    }else{
-      while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell59(m,x,y)}
-      while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell59(m,x,y)}
-    }
-  }
-  function connect59(m,a,b,style='L'){
-    const da=doorPoint59(a,b),db=doorPoint59(b,a);
-    setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);
-    carveInterior(m,da.ox,da.oy);carveInterior(m,db.ox,db.oy);
-    manhattan59(m,{x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style);
-  }
-  function connectToPoint59(m,r,p,style='L'){
-    const d=doorPoint59(r,p);setTerrainTile58(m,d.x,d.y,TT.DOOR);carveInterior(m,d.ox,d.oy);
-    manhattan59(m,{x:d.ox,y:d.oy},p,style);
-  }
-  function addGate59(m,x,y){
-    if(!insideMapInterior(x,y))return;
-    if(m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,TT.DOOR);
-  }
   function randomInside59(r){
     const cells=[];
     for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y][x]===TT.FLOOR)cells.push({x,y});
     return cells.length?choice(cells):{x:r.cx,y:r.cy};
   }
 
-  /* ---------- six genuinely different normal-floor builders ---------- */
-  function layoutPlus59(m){
-    clearMap59(m);state.rooms=[];
-    const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
-    const hub=room59(m,cx-5,cy-4,11,9,'pillars');
-    const north=room59(m,cx-5,2,10,7,'chamfer');
-    const south=room59(m,cx-5,ROWS-9,10,7,'chamfer');
-    const west=room59(m,2,cy-4,9,8,'rect');
-    const east=room59(m,COLS-11,cy-4,9,8,'rect');
-    connect59(m,hub,north,'L');connect59(m,hub,south,'L');connect59(m,hub,west,'L');connect59(m,hub,east,'L');
-    const qs=[
-      room59(m,4,4,8,7,'rect'),
-      room59(m,COLS-12,4,8,7,'rect'),
-      room59(m,4,ROWS-11,8,7,'rect'),
-      room59(m,COLS-12,ROWS-11,8,7,'rect')
-    ];
-    connect59(m,qs[0],north,'Z');connect59(m,qs[1],north,'Z');connect59(m,qs[2],south,'Z');connect59(m,qs[3],south,'Z');
-    state.layoutName='+자 대회랑 · 사방 객실';
-  }
-  function layoutX59(m){
-    clearMap59(m);state.rooms=[];
-    const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
-    const hub=room59(m,cx-4,cy-4,9,9,'chamfer');
-    const corners=[
-      room59(m,2,2,9,7,'rect'),
-      room59(m,COLS-12,2,9,7,'rect'),
-      room59(m,2,ROWS-10,9,7,'rect'),
-      room59(m,COLS-12,ROWS-10,9,7,'rect')
-    ];
-    for(const r of corners)connect59(m,r,hub,'diag');
-    const top=room59(m,cx-4,2,9,6,'rect'),bottom=room59(m,cx-4,ROWS-9,9,6,'rect');
-    const left=room59(m,2,cy-3,8,7,'rect'),right=room59(m,COLS-11,cy-3,8,7,'rect');
-    connect59(m,top,hub,'L');connect59(m,bottom,hub,'L');connect59(m,left,hub,'L');connect59(m,right,hub,'L');
-    state.layoutName='X자 사선회랑 · 교차 객실';
-  }
-  function layoutGrid59(m){
-    clearMap59(m);state.rooms=[];
-    const cols=3,rows=3,cw=Math.floor((COLS-4)/cols),ch=Math.floor((ROWS-4)/rows),grid=[];
-    for(let gy=0;gy<rows;gy++){
-      grid[gy]=[];
-      for(let gx=0;gx<cols;gx++){
-        const maxW=Math.max(7,cw-3),maxH=Math.max(6,ch-3),w=Math.min(maxW,rand(7,Math.max(7,maxW))),h=Math.min(maxH,rand(6,Math.max(6,maxH)));
-        const bx=2+gx*cw,by=2+gy*ch,x=bx+Math.max(0,Math.floor((cw-w)/2)),y=by+Math.max(0,Math.floor((ch-h)/2));
-        grid[gy][gx]=room59(m,x,y,w,h,(gx+gy)%3===0?'chamfer':'rect');
-      }
-    }
-    for(let gy=0;gy<rows;gy++)for(let gx=0;gx<cols;gx++){
-      if(gx<cols-1 && (gy===0||globalThis.__MANRU_RANDOM57__()<.78))connect59(m,grid[gy][gx],grid[gy][gx+1],globalThis.__MANRU_RANDOM57__()<.4?'Z':'L');
-      if(gy<rows-1 && (gx===1||globalThis.__MANRU_RANDOM57__()<.72))connect59(m,grid[gy][gx],grid[gy+1][gx],globalThis.__MANRU_RANDOM57__()<.4?'Z':'L');
-    }
-    state.layoutName='격자 객실군 · 문과 짧은 회랑';
-  }
-  function layoutRing59(m){
-    clearMap59(m);state.rooms=[];
-    const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
-    const rs=[
-      room59(m,3,3,9,7,'chamfer'),
-      room59(m,cx-4,2,9,7,'rect'),
-      room59(m,COLS-12,3,9,7,'chamfer'),
-      room59(m,COLS-11,cy-3,8,7,'rect'),
-      room59(m,COLS-12,ROWS-10,9,7,'chamfer'),
-      room59(m,cx-4,ROWS-9,9,7,'rect'),
-      room59(m,3,ROWS-10,9,7,'chamfer'),
-      room59(m,2,cy-3,8,7,'rect')
-    ];
-    for(let i=0;i<rs.length;i++)connect59(m,rs[i],rs[(i+1)%rs.length],i%2?'Z':'L');
-    const court=room59(m,cx-5,cy-4,11,9,'pillars');
-    connect59(m,court,rs[1],'L');connect59(m,court,rs[5],'L');
-    state.layoutName='환형 회랑 · 중정 순환로';
-  }
-  function layoutSpine59(m){
-    clearMap59(m);state.rooms=[];
-    const cy=Math.floor(ROWS/2),x0=3,x1=COLS-4;
-    for(let x=x0;x<=x1;x++)setTerrainTile58(m,x,cy,TT.FLOOR);
-    const xs=[7,Math.floor(COLS*.27),Math.floor(COLS*.50),Math.floor(COLS*.73),COLS-9];
-    for(let i=0;i<xs.length;i++){
-      const x=Math.max(2,Math.min(COLS-10,xs[i]-4));
-      const top=room59(m,x,Math.max(2,cy-10),9,7,i%2?'rect':'chamfer');
-      const bot=room59(m,x,Math.min(ROWS-9,cy+4),9,7,i%2?'chamfer':'rect');
-      connectToPoint59(m,top,{x:top.cx,y:cy},'L');connectToPoint59(m,bot,{x:bot.cx,y:cy},'L');
-    }
-    addGate59(m,Math.floor(COLS*.22),cy);addGate59(m,Math.floor(COLS*.50),cy);addGate59(m,Math.floor(COLS*.78),cy);
-    state.layoutName='장축 회랑 · 연속 측실과 관문';
-  }
-  function layoutCluster59(m){
-    clearMap59(m);state.rooms=[];
-    const target=rand(11,15);let tries=0;
-    while(state.rooms.length<target&&tries++<700){
-      const w=rand(7,11),h=rand(6,9),x=rand(2,Math.max(2,COLS-w-3)),y=rand(2,Math.max(2,ROWS-h-3));
-      if(state.rooms.some(r=>x<r.x+r.w+3&&x+w+3>r.x&&y<r.y+r.h+3&&y+h+3>r.y))continue;
-      const nr=room59(m,x,y,w,h,globalThis.__MANRU_RANDOM57__()<.3?'chamfer':globalThis.__MANRU_RANDOM57__()<.15?'cross':'rect');
-      if(state.rooms.length>1){
-        let nearest=null,dist=1e9;
-        for(const r of state.rooms.slice(0,-1)){const d=Math.abs(r.cx-nr.cx)+Math.abs(r.cy-nr.cy);if(d<dist){dist=d;nearest=r}}
-        connect59(m,nr,nearest,globalThis.__MANRU_RANDOM57__()<.35?'Z':'L');
-      }
-    }
-    if(state.rooms.length<6){layoutGrid59(m);return}
-    for(let n=0;n<Math.min(4,Math.floor(state.rooms.length/3));n++){
-      const a=choice(state.rooms),b=choice(state.rooms);if(a!==b)connect59(m,a,b,globalThis.__MANRU_RANDOM57__()<.5?'Z':'L');
-    }
-    state.layoutName='불규칙 객실군 · 다중 우회로';
-  }
-  const MODES59=[
-    ['plus',layoutPlus59],['x',layoutX59],['grid',layoutGrid59],
-    ['ring',layoutRing59],['spine',layoutSpine59],['cluster',layoutCluster59]
-  ];
 
-  /* ---------- regional identity layered onto the six topologies ---------- */
 
   /* ---------- doors become real information gates ---------- */
   // Closed-door sight blocking is owned by the canonical SIGHT_BLOCKING_TILES57 set.
@@ -5502,7 +5291,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   
   const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);
   const DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.CARPET,TT.STONE_PATH]);
-  const SILENT_DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW]);
   function clear88(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL);state.rooms=[]}
 
   function room88(m,x,y,w,h,shape='rect'){
@@ -5678,7 +5466,6 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   /* ===== MANRU v9.0: DENSE PURPOSEFUL ROOMS / NO WASTED WINGS ===== */
   V85.version='v9.0-dense-purposeful-rooms';
   
-  const PURPOSE90=['supply','armory','shrine','kitchen','archive','medic','trapcache'];
   const FUNCTION90=new Set([TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT,TT.JAR,TT.GOLD]);
 
   
@@ -5939,7 +5726,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   /* ===== MANRU v9.4: KEY TRIALS / PURPOSEFUL LOOT / NATURAL RECOVERY / VISUAL STABILITY ===== */
   V85.version='v9.5-expanded-complex-architecture';
-  const SPECIAL_KEY94=new Set([2,4,13,22,24]);
   
 
 
@@ -6537,7 +6323,6 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
 
 /* v9.8.4 cohesive runtime: intentionally inside the main game closure */
 
-const V984='v9.9.6-initial-zoom-100';
   try{localStorage.removeItem('manruZoomActual48')}catch(error){ignoreError('old zoom setting could not be removed',error)}
 
 
