@@ -459,3 +459,76 @@ function normalizeSavedItem(it){
   if(it.type==='armor')syncArmorDefense(it);if(it.name==='두꺼운 면망토')delete it.hazardResist;
   return it;
 }
+function worldTargetActive57(){return !!WORLD_TARGET}
+// Phase 5: one invocation registry; entries reference their existing implementation.
+const ACTION_ROUTES5=new Map(),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
+function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
+function requestGameFullscreen65(){
+ fullscreenWanted66=true;
+ if(document.fullscreenElement){fullscreenResume66=false;return false}
+ fullscreenResume66=true;
+ if(document.hidden||fullscreenPending65||!document.documentElement.requestFullscreen||navigator.userActivation?.isActive===false)return false;
+ fullscreenPending65=true;
+ document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{fullscreenResume66=false}).catch(()=>{fullscreenResume66=true}).finally(()=>{fullscreenPending65=false});return true;
+}
+function runEndEffects53(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS53)effect(kind);return true}
+  function qaRestore60(){if(!qaSnapshot60)return false;restoreGenerationSnapshot(qaSnapshot60);resetVisualState();resetTurnState();FX.transition=null;VisibilityService.compute();updateAll();return true}
+  /* ---------- contextual tutorial ---------- */
+  function tipLedger66(){
+    let ledger;try{ledger=JSON.parse(lsGet('manruTutorialAccount66'))}catch(error){console.warn('[manru] tutorial ledger unreadable',error)}
+    if(!ledger||ledger.version!==1){ledger={version:1,seen:{...(state?.tutorialSeen59||{})}};lsSet('manruTutorialAccount66',JSON.stringify(ledger))}
+    return ledger;
+  }
+  function resetTips70(){
+    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove(k))}catch(error){ignoreError('tip reset could not clear keys',error)}
+    closeCurrentTip(true);lsSet('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closeReleasePanel();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');showFloorTips();
+  }
+  function ensure74(restoring=false){
+    if(!state)return;const K=K74();state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];state.elementFields74=Array.isArray(state.elementFields74)?state.elementFields74:[];state.elementWard74=state.elementWard74||null;
+    if(!restoring)for(const m of state.monsters||[]){m.burn74=m.burn74||0;m.poison74=m.poison74||0}
+    for(const it of [...(state.items||[]),...(state.player?.inventory||[])])if(it?.fusion74){if(it.talismanKind==='f_holy_upgrade'){it.element74='holy';it.fusionMode74='gear';it.fusionEffect74=null;it.targeted=false;it.ability='무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소';it.desc='성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'}K.talismanKnown[it.talismanKind]=true;}
+  }
+  function core982(){
+    if(!state)return null;
+    const C=state.coreLoot982||(state.coreLoot982={version:V982.version,chapters:{},spawned:{upgrade:{},heal:{}}});
+    C.version=V982.version;C.chapters=C.chapters||{};C.spawned=C.spawned||{upgrade:{},heal:{}};C.spawned.upgrade=C.spawned.upgrade||{};C.spawned.heal=C.spawned.heal||{};
+    return C;
+  }
+  function chapter982(f=state?.floor||1){return Math.max(0,Math.min(4,Math.floor((f-1)/5)))}
+  function schedule982(ch=chapter982()){
+    const C=core982();if(!C)return null;const key=String(ch);if(C.chapters[key])return C.chapters[key];
+    const start=ch*5+1,floors=[start,start+1,start+2,start+3],roll=shuffle([...floors]);
+    const upgrades=roll.slice(0,V982.upgradesPerChapter).sort((a,b)=>a-b),omitted=floors.find(f=>!upgrades.includes(f));
+    const second=upgrades[Math.floor(globalThis.__MANRU_RANDOM57__()*upgrades.length)];
+    const heals=[omitted,second].sort((a,b)=>a-b);
+    return C.chapters[key]={upgrades,heals};
+  }
+    const DEATH1004='manru1004_last_death';
+// Isolated observer arena. All damage, movement, faction and scaling rules stay in the combat core.
+function debugBattleMap57(fresh=false){
+ const b=DEBUG_BATTLE57,mode=document.getElementById('battleMap57').value,floor=clamp(Math.floor(+document.getElementById('battleMapFloor57').value||9),1,25),key=mode+':'+floor;
+ if(fresh||!b.mapTemplate||b.mapKey!==key){
+  if(mode==='current'&&b.previous.state?.map?.length){state=structuredClone(b.previous.state);COLS=state.map[0].length;ROWS=state.map.length;}
+  else{state=createRunState57(CLASSES[0]);state.debugMapGeneration57=true;state.runId984='debug-'+Date.now()+'-'+(++b.mapSerial||1);state.branchWorld105={version:1,pages:{}};GameState.initialize(state);
+   if(mode.startsWith('palace'))buildBranch('palace',mode==='palace2'?2:1);
+   else{state.floor=mode==='normal'?9:floor;NormalFloorGenerator.generate();}
+  }
+  // Keep architecture, props, layers, lights and tide data; empty only encounter contents.
+  state.monsters=[];state.items=[];state.pendingGroundItems57=[];state.neutralInteractables58=[];state.shopIntermission=null;state.log=[];delete state.debugMapGeneration57;
+  for(const name of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])state[name]=[];
+  state.player=structuredClone(createRunState57(CLASSES[0]).player);state.dead=false;state.victory=false;state.runState57='playing';state.turn=state.floorTurn=0;state.status=structuredClone(createRunState57(CLASSES[0]).status);
+  b.mapTemplate=structuredClone(state);b.mapKey=key;b.spawnAnchors=null;b.roomKey=null;
+ }
+ state=structuredClone(b.mapTemplate);COLS=state.map[0].length;ROWS=state.map.length;GameState.initialize(state);
+ state.debugBattle57=true;state.debugBattleIgnoreTerrain57=document.getElementById('battleTerrain57').checked;state.debugBattlePlantMove57=document.getElementById('battlePlantMove57').checked;
+ state.player.x=state.player.y=-1000;state.player.name='관전자';
+ // Pick one real room for initial encounters so teams share a connected combat space.
+ const probe={kind:'human',hp:1,footprint:'one'},rooms=state.rooms.map((r,i)=>({r,i,cells:[]}));
+ for(const entry of rooms){const r=entry.r;for(let y=Math.max(1,r.y);y<Math.min(ROWS-1,r.y+r.h);y++)for(let x=Math.max(1,r.x);x<Math.min(COLS-1,r.x+r.w);x++)if(PlacementService.monsterCanStand(probe,x,y))entry.cells.push({x,y});}
+ b.rooms=rooms.filter(e=>e.cells.length>=12).sort((a,c)=>c.cells.length-a.cells.length);
+ const select=document.getElementById('battleRoom57');select.replaceChildren();if(b.roomKey===-1){const custom=document.createElement('option');custom.value='-1';custom.textContent='직접 지정한 출발점';select.append(custom);}for(const e of b.rooms){const option=document.createElement('option');option.value=e.i;option.textContent=e.r.name||`구역 ${e.i+1} · ${e.r.w}×${e.r.h}`;select.append(option)}
+ const chosen=b.roomKey===-1?null:b.rooms.find(e=>e.i===b.roomKey)||b.rooms[0];if(chosen){b.roomKey=chosen.i;select.value=String(chosen.i);if(!b.spawnAnchors){const r=chosen.r,vertical=r.h>r.w,cx=r.cx??r.x+r.w/2,cy=r.cy??r.y+r.h/2,span=Math.max(2,Math.min(7,(vertical?r.h:r.w)/3));b.spawnAnchors={A:{x:cx-(vertical?0:span),y:cy-(vertical?span:0)},B:{x:cx+(vertical?0:span),y:cy+(vertical?span:0)}};}}
+ b.spawnAnchors??={A:{x:COLS/2-5,y:ROWS/2},B:{x:COLS/2+5,y:ROWS/2}};
+ document.getElementById('battleMapName57').textContent=state.layoutName+' · '+COLS+'×'+ROWS;
+ document.getElementById('battleMapFloor57').disabled=mode!=='main';document.getElementById('battleRoom57').disabled=!b.rooms.length;
+}

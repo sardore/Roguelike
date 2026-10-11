@@ -219,7 +219,7 @@ function endTargetInput57(ms=320){targetFollowupSuppressUntil=Math.max(targetFol
 
 
 
-function worldTargetActive57(){return !!WORLD_TARGET}
+
 
 
 
@@ -613,8 +613,7 @@ const ClientEnvironment=Object.freeze({
   snapshot(){return{owner:'ClientEnvironment',type:RuntimeState.client.type,orientation:RuntimeState.client.orientation,orientationGate:OrientationGate.active(),selection:{...RuntimeState.client.selection},environment:{...RuntimeState.client.environment},refreshes:RuntimeState.client.refreshes,transitions:RuntimeState.client.transitions,owners:{desktop:DesktopClient.active()?1:0,mobile:MobileClient.active()?1:0},inactiveEmissions:{desktop:0,mobile:0},desktop:DesktopClient.snapshot(),mobile:MobileClient.snapshot()}}
 });
 
-// Phase 5: one invocation registry; entries reference their existing implementation.
-const ACTION_ROUTES5=new Map(),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
+
 const ActionDispatcher=Object.freeze({
   register(type,implementation){if(ACTION_ROUTES5.has(type))throw new Error('duplicate action route: '+type);ACTION_ROUTES5.set(type,implementation)},
   denied(reason){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.denial=reason},
@@ -898,7 +897,7 @@ findItemCell(origin,opt={}){
 
 
 
-function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
+
 
 function normalizeItemContainers57(){
   if(!state?.player)return;
@@ -2953,14 +2952,7 @@ globalThis.__MANRU_LIFECYCLE__=RunLifecycle;
 
 // Fullscreen belongs to entering/resuming the game, with no floating HUD control.
 let fullscreenPending65=false,fullscreenWanted66=false,fullscreenResume66=false;
-function requestGameFullscreen65(){
- fullscreenWanted66=true;
- if(document.fullscreenElement){fullscreenResume66=false;return false}
- fullscreenResume66=true;
- if(document.hidden||fullscreenPending65||!document.documentElement.requestFullscreen||navigator.userActivation?.isActive===false)return false;
- fullscreenPending65=true;
- document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{fullscreenResume66=false}).catch(()=>{fullscreenResume66=true}).finally(()=>{fullscreenPending65=false});return true;
-}
+
 document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)fullscreenResume66=false;else if(fullscreenWanted66)fullscreenResume66=true;window.dispatchEvent(new window.Event('resize'))});
 // Re-enter from a genuine user gesture when the browser revokes fullscreen on app switching.
 for(const type of ['pointerdown','touchend','keydown'])document.addEventListener(type,e=>{if(e.isTrusted&&fullscreenResume66&&document.body.dataset.manruScreen==='game')requestGameFullscreen65()},{capture:true,passive:true});
@@ -2968,7 +2960,7 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 
 
 const RUN_END_EFFECTS53=[];
-function runEndEffects53(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS53)effect(kind);return true}
+
 
 
 
@@ -5243,7 +5235,7 @@ function spawnAuthoredEncounters60(){
     return h.toString(16).padStart(8,'0');
   }
   function qaMark60(){qaSnapshot60=captureGenerationSnapshot();return{floor:state.floor,hash:qaHash60()}}
-  function qaRestore60(){if(!qaSnapshot60)return false;restoreGenerationSnapshot(qaSnapshot60);resetVisualState();resetTurnState();FX.transition=null;VisibilityService.compute();updateAll();return true}
+
   function qaSummary60(){
     if(!state)return null;
     return{floor:state.floor,hash:qaHash60(),generationFailure:state.generationFinalKeyFailureR48||null,player:{x:state.player.x,y:state.player.y,hp:state.player.hp},stairs:{...state.stairs},
@@ -5616,12 +5608,7 @@ const RC={
 
   /* ---------- retained structure hit testing (Runtime81 automation owns selection) ---------- */
   const STRUCT70=new Set([TT.DOOR,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
-  /* ---------- contextual tutorial ---------- */
-  function tipLedger66(){
-    let ledger;try{ledger=JSON.parse(lsGet('manruTutorialAccount66'))}catch(error){console.warn('[manru] tutorial ledger unreadable',error)}
-    if(!ledger||ledger.version!==1){ledger={version:1,seen:{...(state?.tutorialSeen59||{})}};lsSet('manruTutorialAccount66',JSON.stringify(ledger))}
-    return ledger;
-  }
+
   function seenTip70(id){return !!tipLedger66().seen[id]}
 
 
@@ -5631,10 +5618,7 @@ const RC={
   }
 
 
-  function resetTips70(){
-    try{lsKeys70().filter(k=>k.startsWith('manruTip70:')).forEach(k=>lsRemove(k))}catch(error){ignoreError('tip reset could not clear keys',error)}
-    closeCurrentTip(true);lsSet('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closeReleasePanel();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');showFloorTips();
-  }
+
 
   
 
@@ -6108,11 +6092,7 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
     for(const t of window.MANRU_TALISMANS||[]){if(t.talismanKind==='identify')continue;if(!K.talismanMap[t.talismanKind])K.talismanMap[t.talismanKind]=free.shift()||APP_IDS74[Object.keys(K.talismanMap).length%APP_IDS74.length]}
     return K;
   }
-  function ensure74(restoring=false){
-    if(!state)return;const K=K74();state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];state.elementFields74=Array.isArray(state.elementFields74)?state.elementFields74:[];state.elementWard74=state.elementWard74||null;
-    if(!restoring)for(const m of state.monsters||[]){m.burn74=m.burn74||0;m.poison74=m.poison74||0}
-    for(const it of [...(state.items||[]),...(state.player?.inventory||[])])if(it?.fusion74){if(it.talismanKind==='f_holy_upgrade'){it.element74='holy';it.fusionMode74='gear';it.fusionEffect74=null;it.targeted=false;it.ability='무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소';it.desc='성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'}K.talismanKnown[it.talismanKind]=true;}
-  }
+
   function known74(item){if(!item||item.type!=='talisman')return false;if(item.branchExclusive105||item.fusion74||item.talismanKind==='identify')return true;return !!(state?.knowledge56?.talismanKnown?.[item.talismanKind])}
   function public74(item){if(!item)return'';if(item.branchExclusive105||item.fusion74)return item.name;return window.__MANRU_TALISMAN_PUBLIC__?.name?.(item)||item.name}
   
@@ -8076,21 +8056,9 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
     healsPerChapter:2
   };
 
-  function core982(){
-    if(!state)return null;
-    const C=state.coreLoot982||(state.coreLoot982={version:V982.version,chapters:{},spawned:{upgrade:{},heal:{}}});
-    C.version=V982.version;C.chapters=C.chapters||{};C.spawned=C.spawned||{upgrade:{},heal:{}};C.spawned.upgrade=C.spawned.upgrade||{};C.spawned.heal=C.spawned.heal||{};
-    return C;
-  }
-  function chapter982(f=state?.floor||1){return Math.max(0,Math.min(4,Math.floor((f-1)/5)))}
-  function schedule982(ch=chapter982()){
-    const C=core982();if(!C)return null;const key=String(ch);if(C.chapters[key])return C.chapters[key];
-    const start=ch*5+1,floors=[start,start+1,start+2,start+3],roll=shuffle([...floors]);
-    const upgrades=roll.slice(0,V982.upgradesPerChapter).sort((a,b)=>a-b),omitted=floors.find(f=>!upgrades.includes(f));
-    const second=upgrades[Math.floor(globalThis.__MANRU_RANDOM57__()*upgrades.length)];
-    const heals=[omitted,second].sort((a,b)=>a-b);
-    return C.chapters[key]={upgrades,heals};
-  }
+
+
+
 
   function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
   function nonUpgradeTalisman982(){const p=(window.MANRU_TALISMANS||[]).filter(i=>i.talismanKind!=='upgrade'&&(i.minFloor||1)<=state.floor);return p.length?clone(choice(p)):null}
@@ -8732,7 +8700,7 @@ const STORY_VERSION992='v9.9.3-story-system';
 
 
 
-    const DEATH1004='manru1004_last_death';
+
 
 
     const LEGACY_DEATH1004='manru984_last_death';
@@ -10785,34 +10753,7 @@ function recoverActorFocus105(actor,turn){if(turn%10||actor.focusRecoveredTurn10
 
 
 
-// Isolated observer arena. All damage, movement, faction and scaling rules stay in the combat core.
-function debugBattleMap57(fresh=false){
- const b=DEBUG_BATTLE57,mode=document.getElementById('battleMap57').value,floor=clamp(Math.floor(+document.getElementById('battleMapFloor57').value||9),1,25),key=mode+':'+floor;
- if(fresh||!b.mapTemplate||b.mapKey!==key){
-  if(mode==='current'&&b.previous.state?.map?.length){state=structuredClone(b.previous.state);COLS=state.map[0].length;ROWS=state.map.length;}
-  else{state=createRunState57(CLASSES[0]);state.debugMapGeneration57=true;state.runId984='debug-'+Date.now()+'-'+(++b.mapSerial||1);state.branchWorld105={version:1,pages:{}};GameState.initialize(state);
-   if(mode.startsWith('palace'))buildBranch('palace',mode==='palace2'?2:1);
-   else{state.floor=mode==='normal'?9:floor;NormalFloorGenerator.generate();}
-  }
-  // Keep architecture, props, layers, lights and tide data; empty only encounter contents.
-  state.monsters=[];state.items=[];state.pendingGroundItems57=[];state.neutralInteractables58=[];state.shopIntermission=null;state.log=[];delete state.debugMapGeneration57;
-  for(const name of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])state[name]=[];
-  state.player=structuredClone(createRunState57(CLASSES[0]).player);state.dead=false;state.victory=false;state.runState57='playing';state.turn=state.floorTurn=0;state.status=structuredClone(createRunState57(CLASSES[0]).status);
-  b.mapTemplate=structuredClone(state);b.mapKey=key;b.spawnAnchors=null;b.roomKey=null;
- }
- state=structuredClone(b.mapTemplate);COLS=state.map[0].length;ROWS=state.map.length;GameState.initialize(state);
- state.debugBattle57=true;state.debugBattleIgnoreTerrain57=document.getElementById('battleTerrain57').checked;state.debugBattlePlantMove57=document.getElementById('battlePlantMove57').checked;
- state.player.x=state.player.y=-1000;state.player.name='관전자';
- // Pick one real room for initial encounters so teams share a connected combat space.
- const probe={kind:'human',hp:1,footprint:'one'},rooms=state.rooms.map((r,i)=>({r,i,cells:[]}));
- for(const entry of rooms){const r=entry.r;for(let y=Math.max(1,r.y);y<Math.min(ROWS-1,r.y+r.h);y++)for(let x=Math.max(1,r.x);x<Math.min(COLS-1,r.x+r.w);x++)if(PlacementService.monsterCanStand(probe,x,y))entry.cells.push({x,y});}
- b.rooms=rooms.filter(e=>e.cells.length>=12).sort((a,c)=>c.cells.length-a.cells.length);
- const select=document.getElementById('battleRoom57');select.replaceChildren();if(b.roomKey===-1){const custom=document.createElement('option');custom.value='-1';custom.textContent='직접 지정한 출발점';select.append(custom);}for(const e of b.rooms){const option=document.createElement('option');option.value=e.i;option.textContent=e.r.name||`구역 ${e.i+1} · ${e.r.w}×${e.r.h}`;select.append(option)}
- const chosen=b.roomKey===-1?null:b.rooms.find(e=>e.i===b.roomKey)||b.rooms[0];if(chosen){b.roomKey=chosen.i;select.value=String(chosen.i);if(!b.spawnAnchors){const r=chosen.r,vertical=r.h>r.w,cx=r.cx??r.x+r.w/2,cy=r.cy??r.y+r.h/2,span=Math.max(2,Math.min(7,(vertical?r.h:r.w)/3));b.spawnAnchors={A:{x:cx-(vertical?0:span),y:cy-(vertical?span:0)},B:{x:cx+(vertical?0:span),y:cy+(vertical?span:0)}};}}
- b.spawnAnchors??={A:{x:COLS/2-5,y:ROWS/2},B:{x:COLS/2+5,y:ROWS/2}};
- document.getElementById('battleMapName57').textContent=state.layoutName+' · '+COLS+'×'+ROWS;
- document.getElementById('battleMapFloor57').disabled=mode!=='main';document.getElementById('battleRoom57').disabled=!b.rooms.length;
-}
+
 function debugBattleCamera57(center=false){
  if(!DEBUG_BATTLE57.open)return;syncGameViewport();const cam=globalThis.__MANRU_CAMERA_STATE12__,value=Number(document.getElementById('battleZoom57').value);
  if(center){document.getElementById('battleFollow57').checked=true;if(value===0)cam.setZoom(Math.min(VIEW.w/(COLS*TILE),VIEW.h/(ROWS*TILE))/(isMobileViewport()?1.24:1.44));else cam.setZoom(value);cam.center();}

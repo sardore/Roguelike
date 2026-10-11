@@ -10,6 +10,7 @@
 |---|---|---:|---:|---:|---:|---|
 | afterNewRun | 새 게임 단계 등록(registerNew) → `beforeNewRun`/`afterNewRun` | 11246 | 1289 / 584 | 770 | 55.7% | 첫 기록. |
 | branch consts | 분기 상수 23개 → branches.js (로드 중 읽기 계측) | 11185 | 1266 / 584 | 770 | 56% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
+| pinned:save | save 소속 고정 문장 → save.js | 11126 | 1252 / 584 | 770 | 56.3% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 
 ## 현재 파일별 줄 수
 
@@ -17,7 +18,7 @@
 |---|---:|
 | kernel.js | 16 |
 | catalog.js | 173 |
-| save.js | 461 |
+| save.js | 534 |
 | items.js | 497 |
 | combat.js | 472 |
 | monsters.js | 1346 |
@@ -25,9 +26,9 @@
 | mapgen.js | 2489 |
 | special.js | 1660 |
 | branches.js | 2084 |
-| spine.js | 11185 |
+| spine.js | 11126 |
 | input.js | 148 |
 | story.js | 208 |
 | ui.js | 717 |
 | start.js | 9 |
-| (total) | 25431 |
+| (total) | 25445 |
