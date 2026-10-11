@@ -286,7 +286,7 @@ function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id
 
 
 
-function moveTurnCost(destination=null){let cost=clamp(1/(playerCloak().moveSpeed||1),.72,1.15);for(const stage of MOVE_COST_STAGES55)cost=stage.run(cost);if(silkThreadAt54(state.player.x,state.player.y))cost+=.5;const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding')||0;return clamp(applyPlayerDebuffActionCost('move',cost),.25,cursed>0?6:2.4)*(terrainBaseTile58(destination?.x??state.player.x,destination?.y??state.player.y)===TT.SHALLOW_WATER?1.5:1)}
+
 function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}
 function normalizeRunState57(){if(!state)return;if(!state.generationInProgress57&&!state.terrainReactions105?.wallMaterials105)produceWallMaterials105();const next=state.runState57||(state.dead?'death':state.victory?'victory':'playing');state.runState57=next;state.dead=next==='death';state.victory=next==='victory';if(state.player?.summoning105)summonState()}
 
@@ -462,26 +462,7 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-const OccupancyService=(()=>{
- let shared=null,sharedState=null,sharedMap=null,indexed=new WeakMap(),rebuilds=0,queries=0,linearFallbacks=0;
- const category=new WeakMap();
- const cells=(entity,x=entity?.x,y=entity?.y)=>entityFootprintCells57(entity,x,y);
- function ensureWorld(){if(shared&&(sharedState!==state||sharedMap!==state?.map))endShared()}
- function put(entity,kind){ensureWorld();if(!shared||!entity)return;category.set(entity,kind);const keys=cells(entity).map(q=>k(q.x,q.y));indexed.set(entity,keys);for(const key of keys){const set=shared.get(key)||new Set();set.add(entity);shared.set(key,set)}}
- function release(entity){ensureWorld();if(!shared||!entity)return;for(const key of indexed.get(entity)||[]){const set=shared.get(key);if(!set)continue;set.delete(entity);if(!set.size)shared.delete(key)}indexed.delete(entity)}
- function beginShared(){shared=new Map();sharedState=state;sharedMap=state?.map;indexed=new WeakMap();rebuilds++;if(state?.player)put(state.player,'player');for(const m of state?.monsters||[])if(m.hp>0)put(m,'monster');for(const n of state?.neutralInteractables58||[])put(n,'neutral');for(const item of state?.items||[])put(item,'item');return shared}
- function endShared(){shared=null;sharedState=null;sharedMap=null;indexed=new WeakMap()}
- function entriesAt(x,y){ensureWorld();queries++;return shared?.get(k(x,y))||null}
- function isOccupied(x,y,ignore=null){const entries=entriesAt(x,y);if(shared){for(const entity of entries||[]){const kind=category.get(entity);if(entity!==ignore&&(kind==='monster'||kind==='neutral'))return true}return false}linearFallbacks++;return !!neutralInteractableAt58(x,y)||state.monsters.some(m=>m!==ignore&&m.hp>0&&monCovers(m,x,y))}
- function blocksEntityCell(x,y,ignored){const entries=entriesAt(x,y);if(shared){for(const entity of entries||[]){const kind=category.get(entity);if(!ignored.has(entity)&&(kind==='player'||kind==='monster'||kind==='neutral'))return true}return false}linearFallbacks++;for(const n of state.neutralInteractables58||[])if(n.x===x&&n.y===y)return true;for(const other of [state.player,...state.monsters])if(other&&!ignored.has(other)&&other.hp>0&&entityFootprintCells57(other).some(q=>q.x===x&&q.y===y))return true;return false}
- function occupants(cells0){ensureWorld();const keys=new Set(cells0.map(q=>k(q.x,q.y))),out=[];if(shared){const found=new Set();for(const key of keys)for(const entity of shared.get(key)||[]){const kind=category.get(entity);if((kind==='player'||kind==='monster'||kind==='item')&&!found.has(entity)){found.add(entity);out.push(entity)}}return out}linearFallbacks++;for(const entity of [state.player,...state.monsters,...state.items])if(entity&&(entity.hp==null||entity.hp>0)&&entityFootprintCells57(entity).some(q=>keys.has(k(q.x,q.y))))out.push(entity);return out}
- function removeItem(item){release(item);const i=state.items.indexOf(item);if(i<0)return false;state.items.splice(i,1);return true}
- function addMonster(mon){if(mon.summonOwner105&&!summonCanAdmit(mon))return 0;if(mon.faction57&&!['player','hostile','neutral'].includes(mon.faction57))throw new Error('Unknown combat faction: '+mon.faction57);mon.faction57=entityFaction(mon);mon.friendly47=mon.faction57==='player';if(state.debugBattle57){mon.debugSide57=mon.faction57==='player'?'A':'B';mon.debugId57??=++DEBUG_BATTLE57.serial;mon.rewardPolicy57={xp:false,kills:false,drops:false}}const length=state.monsters.push(mon);put(mon,'monster');return length}
- function removeMonster(mon){release(mon);const found=state.monsters.includes(mon);state.monsters=state.monsters.filter(item=>item!==mon);return found}
- function move(entity,x,y){const ox=entity?.x,oy=entity?.y;if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return false;const kind=category.get(entity)||(entity===state.player?'player':state.items?.includes(entity)?'item':state.neutralInteractables58?.includes(entity)?'neutral':'monster');release(entity);entity.x=x;entity.y=y;put(entity,kind);if((ox!==x||oy!==y)&&(kind==='player'||kind==='monster'))entityTerrainEntry105(entity,x,y,ox,oy);return true}
- function metrics(){ensureWorld();return{shared:!!shared,rebuilds,queries,linearFallbacks,cells:shared?.size||0}}
- return Object.freeze({beginShared,endShared,isOccupied,blocksEntityCell,occupants,addMonster,removeMonster,removeItem,move,metrics});
-})();
+
 const PlacementService=Object.freeze({
 moveItem(item,x,y){if(!state?.items?.includes(item))return false;OccupancyService.move(item,x,y);return true},
 placeItem(item,origin={x:item?.x,y:item?.y},opts={}){
@@ -6224,17 +6205,13 @@ const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:
 
 function hz(){return state?state.hazard1005:null}
 
-function hazardTile(t){return t===TT.WATER?'water':t===TT.VOID?'void':t===TT.LAVA?'lava':t===TT.MERCURY?'mercury':null}
 
 
 
-function nearestLandFor1005(e,x,y,prefer=null){
-  const a=[];for(const[dx,dy]of DIRS4){const q={x:x+dx,y:y+dy};if(safeLandFor1005(e,q.x,q.y))a.push(q)}
-  if(prefer){const p=a.find(q=>q.x===prefer.x&&q.y===prefer.y);if(p)return p}
-  return a[0]||null
-}
 
-function consumeWard(kind){const p=state.player,r=p.relic;if(!r)return false;const ok=kind==='drown'?r.drownWard1005:r.voidWard1005;if(!ok)return false;const nm=r.name;p.relic=null;addLog(`${nm}이 치명적인 ${kind==='drown'?'익사':'공허 추락'}를 대신 받아냈다.`);wardPulse(kind,10);return true}
+
+
+
 
 
 
