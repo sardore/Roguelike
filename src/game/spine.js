@@ -47,13 +47,7 @@ const SPAWN_RULES=[
   {from:21,to:24,count:[9,12],safe:8}
 ];
 const SPECIAL_BASE_COUNTS={2:6,4:5,6:6,8:8,11:7,13:8,16:0,18:8,21:7,22:8,23:7,24:4};
-const REGION_AMBIENCE=[
-  ['붉은 등롱이 바람도 없이 흔들린다.','빈 연회상 너머에서 잔 부딪히는 소리가 난다.'],
-  ['빗소리가 지붕이 없는 정원에서 울린다.','젖은 먹 냄새와 대나무 냄새가 섞인다.'],
-  ['거울 속 등불이 실제 등불보다 늦게 흔들린다.','비단 너머에서 누군가 걷는 소리가 겹친다.'],
-  ['차가운 쇠 냄새 아래 오래된 향신료 냄새가 남아 있다.','장독 사이에서 쇠사슬이 아주 느리게 끌린다.'],
-  ['황금 벽은 밝은데 방 안은 더 어둡다.','원혼이 벽의 문양을 따라 반대 방향으로 흐른다.']
-];
+
 
 // Menu light radius and energy share one phase; reduced motion freezes the phase.
 // Held equipment and item icons share the authored weapon pixels. Poses transform the asset about its actual grip.
@@ -129,11 +123,7 @@ function classItemDescription58(item,p=state?.player){return item?.talismanKind=
 
 
 
-function safeEchoCell1005(x,y){
- if(x<0||y<0||x>=COLS||y>=ROWS)return false;const t=state.map[y][x];
- const ordinary=[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].filter(Number.isFinite);
- return ordinary.includes(t)&&ReachabilityService.playerPassable(x,y)&&!dangerousLootTerrain42(t)&&!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.items||[]).some(i=>i.x===x&&i.y===y)&&!(state.switches||[]).some(i=>i.x===x&&i.y===y)&&!(state.portals981||[]).some(i=>i.x===x&&i.y===y)&&!neutralInteractableAt58(x,y)&&!(state.stairs?.x===x&&state.stairs?.y===y);
-}
+
 
 
 
@@ -326,7 +316,7 @@ function startFloorTransition(){
 }
 
 
-function rand(a,b){ return Math.floor(globalThis.__MANRU_RANDOM57__()*(b-a+1))+a; }
+
 function choice(arr){ return arr[Math.floor(globalThis.__MANRU_RANDOM57__()*arr.length)]; }
 function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 function k(x,y){ return x+","+y; }
@@ -1301,9 +1291,7 @@ function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
-function regionFor(floor){
-  return REGIONS.find(r=>floor>=r[0] && floor<=r[1]) || REGIONS[0];
-}
+
 
 function compactHudName58(value,max=10){const raw=String(value||'').trim();if(!raw)return'';if([...raw].length<=max)return raw;const parts=raw.split(/[·/()]/).map(v=>v.trim()).filter(Boolean),fit=parts.findLast?.(v=>[...v].length<=max)||parts.find(v=>[...v].length<=max);return fit||[...raw].slice(0,max).join('')}
 
@@ -1352,7 +1340,7 @@ function withJosa57(value,pair='이/가'){
 
 
 
-function island(m,x,y){carveRect(m,x,y,5,5,TT.FLOOR);const r=roomRect(x,y,5,5);state.rooms.push(r);setTerrainTile58(m,r.cx,r.cy,TT.STAMINA_PAD);return r}
+
 
 
 
@@ -1379,7 +1367,7 @@ const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
 const LAVA_STAND_TILES57=new Set([TT.LAVA,TT.FLOOR,TT.GRASS,TT.OPEN_DOOR,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.DRAWBRIDGE_DOWN]);
 
-function tileBlocks(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL)return true;return tileBlocksByTerrain(t)}
+
 // Terrain table only: ignores decor blockers and hidden passages (map carving and spawn search use this).
 function tileBlocksByTerrain(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return BLOCKING_TILES57.has(t)}
 function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
@@ -1475,10 +1463,7 @@ function contextAction(){
 ActionDispatcher.register('CONTEXT_ACTION',contextAction);
 
 
-/* ===== Canonical floor-generation stage registry =====
-   Legacy releases used nested `old=generateFloor; generateFloor=...` wrappers.  The
-   current runtime keeps one base generator plus explicit pre/post stages instead. */
-const MANRU_GENERATION_PIPELINE={base:null,pre:[],post:[]};
+
 function setGenerationBase(id,fn){if(typeof fn!=='function')throw new TypeError('generation base must be a function');MANRU_GENERATION_PIPELINE.base={id,fn};return fn}
 
 
@@ -1603,7 +1588,7 @@ function bumpTileAction(x,y,opts={}){
 }
 const PLAYER_ENTRY_PICKUP_FIRST57=new Set([TT.BRAZIER,TT.COOKPOT,TT.ARMORY,TT.FOUNTAIN,TT.ALTAR,TT.VAULT,TT.CACHE,TT.JAR,TT.SWITCH].filter(v=>Number.isFinite(v)));
 const PLAYER_TRANSFER_UNSAFE57=new Set([TT.DOOR,TT.TRAP,TT.SNARE,TT.LAVA,TT.WATER,TT.VOID,TT.MERCURY].filter(v=>Number.isFinite(v)));
-function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityService.playerTerrainPassable(x,y)}
+
 
 
 function playerTransferLandingSafe57(x,y){
@@ -1615,15 +1600,7 @@ function playerTransferPolicy57(cause){
   if(cause==='holy-blink'||cause==='mirror-teleport'||cause==='boss-teleport')return{seen:false,safe:true,authorized:true,excludeOrigin:true};
   return null;
 }
-function validatePlayerTransfer57(x,y,opts={}){
-  if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
-  const cause=opts.cause||'teleport',policy=opts.policy||playerTransferPolicy57(cause)||{},p=state.player;
-  if((opts.excludeOrigin??policy.excludeOrigin)&&x===p.x&&y===p.y)return{ok:false,reason:'origin'};
-  if((opts.requireSeen??policy.seen)&&!state.seen?.has(k(x,y)))return{ok:false,reason:'unseen'};
-  if((opts.requireSafe??policy.safe)&&!playerTransferLandingSafe57(x,y))return{ok:false,reason:'unsafe'};
-  if(opts.requireAuthorized??policy.authorized){const authorized=opts.authorizedSet||ReachabilityService.playerMobility();if(!authorized.has(k(x,y)))return{ok:false,reason:'unauthorized'}}
-  return{ok:true,reason:null};
-}
+
 function randomPlayerTransferDestination57(cause,opts={}){
   if(!state?.player)return null;const authorized=ReachabilityService.playerMobility(),all=[],far=[],minDistance=Math.max(0,opts.minDistance??4);
   for(const id of authorized){const [xs,ys]=String(id).split(','),x=Number(xs),y=Number(ys);if(!Number.isFinite(x)||!Number.isFinite(y))continue;const v=validatePlayerTransfer57(x,y,{cause,authorizedSet:authorized});if(!v.ok)continue;const q={x,y};all.push(q);if(entityDistance57(q,state.player)>=minDistance)far.push(q)}
@@ -1784,15 +1761,8 @@ function movePlayer(dx,dy){
   }
 }
 ActionDispatcher.register('MOVE',movePlayer);
-function blinkHardBlock(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return [4,5,6,8].includes((t-500)%16);return[TT.WALL,TT.BAMBOO,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.PEACH_TREE,TT.DRAWBRIDGE_UP].includes(t)}
-function blinkTargetCells57(origin=state?.player,range=state?.player?.blinkLevel||0,opts={}){
-  if(!state||!origin||range<=0)return[];const out=[],hazards=new Set([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].filter(Number.isFinite));
-  for(const[dx,dy]of DIRS8)for(let dist=1;dist<=range;dist++){
-    const x=origin.x+dx*dist,y=origin.y+dy*dist;if(x<0||y<0||x>=COLS||y>=ROWS)break;const t=state.map[y][x];if(blinkHardBlock(t))break;
-    const standable=!hazards.has(t)&&ReachabilityService.playerPassable(x,y)&&(!opts.ignoreOccupants?!OccupancyService.isOccupied(x,y):true);if(standable)out.push({x,y,dx,dy,dist,tile:t});if(t===TT.PORTAL)break;
-  }
-  return out;
-}
+
+
 function executeBlinkTarget57(cell,ctx){
   if(!state||!cell||!ctx?.act?.ok)return false;const p=state.player,ox=p.x,oy=p.y,live=blinkTargetCells57(p,ctx.range).find(q=>q.x===cell.x&&q.y===cell.y);if(!live){toast('그 칸은 더 이상 점멸할 수 없다.');return false}
   if((p.focus||0)<2){toast('점멸에는 기력 2가 필요하다.');return false}
@@ -2070,17 +2040,7 @@ function silkThreadAt54(x,y){
 
 
 
-function selectCoreDestination54(owner=null,target=state.player){
- const p=target||owner,search=p===state.player?ReachabilityService.playerSearch(p,{ignoreOccupants:true,projectHazards:true,blinkBudget:Math.floor((p.focus||0)/2),blinkRange:state.status.skillSeal>0?0:p.blinkLevel||0}):null,candidates=[];
- for(const key of (p===state.player?search.cells:ReachabilityService.distances(p).keys())){
-  const [x,y]=key.split(',').map(Number),distance=p===state.player?search.dist.get(key):Math.max(Math.abs(x-p.x),Math.abs(y-p.y));if(!distance||state.hazard1005?.armed?.[key]||!safeLootGround42(x,y)||OccupancyService.isOccupied(x,y)||state.items.some(i=>i.x===x&&i.y===y))continue;
-  let space=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(safeLootGround42(x+dx,y+dy)&&![TT.DRAWBRIDGE_DOWN,TT.PAPER_BRIDGE,TT.RAFT,TT.CRUMBLE].includes(state.map[y+dy]?.[x+dx]))space++;
-  if(space!==9)continue;
-  let room=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(safeLootGround42(x+dx,y+dy))room++;
-  candidates.push({x,y,distance,space:room});
- }
- candidates.sort((a,b)=>b.distance-a.distance||b.space-a.space||a.y-b.y||a.x-b.x);return candidates[0]||null;
-}
+
 
 
 
@@ -2831,15 +2791,15 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 /* ===== MANRU v3.7/3.8 SMART INTERACTION + FEATURE ROOMS + POTIONS ===== */
 
 
-  function contains(r,x,y){return x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h}
+
 
   function sigil(x,y,label){return placeFeatureTile(x,y,TT.FLOOR)}
-  function alchemy(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2){placeFeatureTile(x,r.y+1,TT.TABLE);placeFeatureTile(x,r.y+r.h-2,TT.JAR)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.BRAZIER);placeFeatureTile(r.cx+2,r.cy,TT.CACHE);placeFeatureTile(r.cx,r.cy-2,TT.TABLE);placeFeatureTile(r.cx,r.cy+2,TT.TABLE);sigil(r.x+1,r.y+1,'연금술방')}
+
   function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){placeFeatureTile(r.x+1,y,TT.JAR);placeFeatureTile(r.x+r.w-2,y,TT.TABLE)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);placeFeatureTile(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
-  function shrine(r){placeFeatureTile(r.cx,r.cy,TT.ALTAR);for(const[qx,qy]of[[r.x+1,r.y+1],[r.x+r.w-2,r.y+1],[r.x+1,r.y+r.h-2],[r.x+r.w-2,r.y+r.h-2]])placeFeatureTile(qx,qy,TT.BRAZIER);placeFeatureTile(r.cx-2,r.cy,TT.SCREEN);placeFeatureTile(r.cx+2,r.cy,TT.SCREEN);sigil(r.cx,r.y+1,'사당')}
+
   function armoryRoom(r){placeFeatureTile(r.cx,r.cy,TT.ARMORY);for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let x=r.x+2;x<=r.x+r.w-3;x+=3)placeFeatureTile(x,r.y+r.h-2,TT.CACHE);sigil(r.x+1,r.y+1,'무기고')}
-  function study(r){for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let y=r.y+2;y<=r.y+r.h-2;y+=2)placeFeatureTile(r.x+1,y,TT.SCREEN);placeFeatureTile(r.cx,r.cy,TT.RUMOR);placeFeatureTile(r.cx+2,r.cy,TT.MIRROR);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);sigil(r.x+1,r.y+1,'서고')}
-  function cells(r){for(let y=r.y+1;y<=r.y+r.h-2;y++)if(y!==r.cy)placeFeatureTile(r.cx,y,TT.SCREEN);placeFeatureTile(r.cx-2,r.cy-1,TT.SNARE);placeFeatureTile(r.cx-2,r.cy+1,TT.SNARE);placeFeatureTile(r.cx+2,r.cy-1,TT.JAR);placeFeatureTile(r.cx+2,r.cy+1,TT.JAR);placeFeatureTile(r.cx,r.cy,TT.DOOR);sigil(r.x+1,r.y+1,'감방')}
+
+
 
 
   registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
@@ -3258,7 +3218,7 @@ const UX={
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
 
   function relics47(){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&state.floor>=(f[x.name]||1))}
-  function place47(t){if(!t)return;const p=PlacementService.randomFloor(0);PlacementService.placeItem({...clone(t),x:p.x,y:p.y,count:1})}
+
   function trait47(){if(state.specialFloor)return null;const a=[['보급','회복 자원이 풍부함'],['경계','적과 장비 보상이 증가'],['불온','함정과 전술 물품 증가'],['비밀','보급함과 유물 발견 가능']];let pool=a.filter(v=>v[0]!==state.lastTrait47);if(!pool.length)pool=a;const pick=choice(pool);state.lastTrait47=pick[0];return pick}
   
 
@@ -3669,10 +3629,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
 
-  function contextualRewards56(){
-    if(!state)return;for(const fr of state.featureRooms||[]){const cfg=ROOM_CONTEXT[fr.name],inside=i=>i.x>=fr.x&&i.y>=fr.y&&i.x<fr.x+fr.w&&i.y<fr.y+fr.h;if(fr.name==='연금술방'){let n=state.items.filter(i=>i.type==='potion'&&inside(i)).length;while(n<2&&state.items.length<13){if(!addRoomPotion(fr,cfg.kinds))break;n++}}else if(fr.name==='서고'){if(!state.items.some(i=>i.type==='talisman'&&inside(i))&&state.items.length<13)addRoomTalisman(fr)}else if(cfg&&globalThis.__MANRU_RANDOM57__()<.45&&state.items.length<13&&!state.items.some(i=>i.type==='potion'&&inside(i)))addRoomPotion(fr,cfg.kinds);if(['사당','무기고','감방'].includes(fr.name)&&globalThis.__MANRU_RANDOM57__()<.34&&state.items.length<13&&!state.items.some(i=>i.type==='talisman'&&inside(i)))addRoomTalisman(fr)}
-    if([2,7,12,17,22].includes(state.floor)&&!state.items.some(i=>i.type==='talisman')&&state.items.length<13){const p=PlacementService.randomFloor(0),t=talismanPick56();if(t)PlacementService.placeItem({...t,x:p.x,y:p.y,count:1})}
-  }
+
 
 
 
@@ -4264,11 +4221,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  /* ---------- 23F: mercury archipelago with ring bridges and submerged causeway ---------- */
-  function markWallMaterial23(m,styleMap,r,style){
-    if(!r)return;for(let x=r.x;x<r.x+r.w;x++)for(const y of [r.y,r.y+r.h-1])if(m[y]?.[x]===TT.WALL)styleMap[k(x,y)]=style;
-    for(let y=r.y+1;y<r.y+r.h-1;y++)for(const x of [r.x,r.x+r.w-1])if(m[y]?.[x]===TT.WALL)styleMap[k(x,y)]=style;
-  }
+
 
 
 
@@ -4362,30 +4315,7 @@ function spawnAuthoredEncounters60(){
   }
   function nearestOpen94(cx,cy,max=28){let best=null,bd=1e9;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){const t=state.map[y][x];if(tileBlocksByTerrain(t)||t===TT.STAIR)continue;const d=Math.abs(x-cx)+Math.abs(y-cy);if(d<bd&&d<=max){bd=d;best={x,y}}}return best}
   function markOuterWall94(r){state.outerWall94=state.outerWall94||{};for(let x=r.x;x<r.x+r.w;x++){if(in60(x,r.y-1))state.outerWall94[k(x,r.y-1)]=1;if(in60(x,r.y+r.h))state.outerWall94[k(x,r.y+r.h)]=1}for(let y=r.y;y<r.y+r.h;y++){if(in60(r.x-1,y))state.outerWall94[k(r.x-1,y)]=1;if(in60(r.x+r.w,y))state.outerWall94[k(r.x+r.w,y)]=1}}
-  function enrichSpecial94(f){
-    state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];
-    if([4,13,16,18,22,24].includes(f)){
-      const count=f>=16?4:3;
-      for(let i=0;i<count;i++){
-        const w=rand(7,9),h=rand(5,7),r=wallPocket94(w,h);if(!r)break;
-        const nr=walledBox(state.map,r.x,r.y,r.w,r.h,TT.FLOOR),near=nearestOpen94(nr.cx,nr.cy,24);if(!near)continue;
-        carveLine(state.map,nr.cx,nr.cy,near.x,near.y,TT.FLOOR,i===0&&globalThis.__MANRU_RANDOM57__()<.45?2:1);markOuterWall94(nr);state.rooms.push(roomRect(nr.x,nr.y,nr.w,nr.h));
-        if(i===count-1||i===1){const t=[TT.CACHE,TT.RUMOR,TT.FOUNTAIN,TT.ARMORY][(f+i)%4];setTerrainTile58(state.map,nr.cx,nr.cy,t);state.itemBiasZones94.push({x:nr.x,y:nr.y,w:nr.w,h:nr.h,name:'외곽 별채'});}
-        state.featureRooms.push({name:'외곽 좁은 별채',x:nr.x,y:nr.y,w:nr.w,h:nr.h,kind94:'outer'});
-      }
-    }
-    if(f===6){
-      const extras=[[Math.floor(COLS*.15),Math.floor(ROWS*.30)],[Math.floor(COLS*.83),Math.floor(ROWS*.32)],[Math.floor(COLS*.18),Math.floor(ROWS*.70)],[Math.floor(COLS*.80),Math.floor(ROWS*.72)]];
-      for(let i=0;i<extras.length;i++){const [x,y]=extras[i];if(state.map[y]?.[x]!==TT.WATER)continue;const r=carveBlob(state.map,x,y,2+(i%2),2,TT.FLOOR);setTerrainTile58(state.map,r.cx,r.cy,i%2?TT.BRAZIER:TT.CACHE);state.featureRooms.push({name:'작은 수목섬',x:r.x,y:r.y,w:r.w,h:r.h});state.itemBiasZones94.push({x:r.x,y:r.y,w:r.w,h:r.h,name:'작은 수목섬'})}
-    }
-    if(f===11){
-      // Carve several stone grottoes into the gorge walls, connected only to the nearest bank.
-      for(const side of ['top','bottom'])for(let i=0;i<2;i++){
-        const w=8,h=6,x=clamp(Math.floor(COLS*(.22+i*.42))-Math.floor(w/2),3,COLS-w-3),y=side==='top'?2:ROWS-h-2;let ok=true;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(state.map[yy][xx]!==TT.WALL)ok=false;if(!ok)continue;
-        const r=walledBox(state.map,x,y,w,h,TT.FLOOR),near=nearestOpen94(r.cx,r.cy,20);if(near)carveLine(state.map,r.cx,r.cy,near.x,near.y,TT.FLOOR,1);markOuterWall94(r);setTerrainTile58(state.map,r.cx,r.cy,i===1?TT.CACHE:TT.RUMOR);state.featureRooms.push({name:'회색돌 협곡굴',x:r.x,y:r.y,w:r.w,h:r.h});state.itemBiasZones94.push({x:r.x,y:r.y,w:r.w,h:r.h,name:'협곡굴'});
-      }
-    }
-  }
+
 
   function syncFloor23Gate60(){const q=state.floor23;if(state.floor!==23||!q)return false;for(const c of q.gateCells||[])setTerrainTile58(state.map,c.x,c.y,q.centerUnlocked?TT.DRAWBRIDGE_DOWN:TT.WALL);return true}
   function materializeFloor23Reveal60(sw){
@@ -4492,23 +4422,8 @@ function spawnAuthoredEncounters60(){
     return{ok:!!out.changed&&resolved&&state.map[ch.y]?.[ch.x]===TT.MERCURY,entityKind,control:control.switchId,cell:{x:ch.x,y:ch.y},out,before,after,adapted,resolved};
   }
   function qaClearHostiles60(){const n=(state.monsters||[]).filter(m=>m.hp>0).length;state.monsters=[];return n}
-  function qaWalkTo60(goal){
-    if(!goal)return{ok:false,reason:'missing-goal'};let steps=0,blocked=null;
-    while((state.player.x!==goal.x||state.player.y!==goal.y)&&steps<1200){
-      const search=ReachabilityService.playerSearch(state.player,{ignoreOccupants:false,goal}),path=ReachabilityService.playerPath(search,goal);if(!path?.length){blocked={x:state.player.x,y:state.player.y,goal:{...goal}};break}
-      const nx=path[0].x,ny=path[0].y,dx=nx-state.player.x,dy=ny-state.player.y,bx=state.player.x,by=state.player.y,res=ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}).value;steps++;
-      if(state.player.x===bx&&state.player.y===by){blocked={x:bx,y:by,next:{nx,ny},result:res};break}
-    }
-    return{ok:state.player.x===goal.x&&state.player.y===goal.y,steps,blocked,at:{x:state.player.x,y:state.player.y},goal:{...goal}};
-  }
-  function qaF24KeyGate60(){
-    if(state.floor!==24)return{ok:false,reason:'not-f24'};closeGameplayInteractionState57();const q=state.floor24,key={...q.entranceKey},ringBefore=state.keyPlan96?.ring?.brass||0,walkKey=qaWalkTo60(key);
-    if(!walkKey.ok)return{ok:false,stage:'walk-key',walkKey,ringBefore};const picked=state.map[key.y]?.[key.x]!==TT.KEY_TILE&&((state.keyPlan96?.ring?.brass||0)>ringBefore);
-    const gate=(q.entranceGateCells||[])[1]||(q.entranceGateCells||[])[0],gateApproachReach=ReachabilityService.playerSearch(state.player,{ignoreOccupants:false}).cells,adj=[...DIRS8].map(([dx,dy])=>({x:gate.x-dx,y:gate.y-dy,dx,dy})).filter(a=>gateApproachReach.has(k(a.x,a.y))&&ReachabilityService.playerTerrainPassable(a.x,a.y)&&!(state.monsters||[]).some(m=>m.hp>0&&m.x===a.x&&m.y===a.y)).sort((a,b)=>Math.abs(a.x-state.player.x)+Math.abs(a.y-state.player.y)-Math.abs(b.x-state.player.x)-Math.abs(b.y-state.player.y))[0];
-    if(!adj)return{ok:false,stage:'gate-adjacent',picked,gate};const walkGate=qaWalkTo60({x:adj.x,y:adj.y});if(!walkGate.ok)return{ok:false,stage:'walk-gate',picked,walkGate,gate};
-    const beforeOpen=(q.entranceGateCells||[]).map(c=>state.map[c.y]?.[c.x]),bump=movePlayer(Math.sign(gate.x-state.player.x),Math.sign(gate.y-state.player.y)),afterOpen=(q.entranceGateCells||[]).map(c=>state.map[c.y]?.[c.x]),allOpen=afterOpen.every(t=>t===TT.OPEN_DOOR);
-    return{ok:picked&&allOpen,picked,walkKey,walkGate,bump,beforeOpen,afterOpen,allOpen,ring:state.keyPlan96?.ring?.brass||0};
-  }
+
+
   function qaF24WalkExit60(){if(state.floor!==24)return{ok:false,reason:'not-f24'};const walk=qaWalkTo60(state.stairs);return{ok:walk.ok,walk,stairs:{...state.stairs}}}
   function qaF24Summons60(n=12){
     if(state.floor!==24)return{ok:false,reason:'not-f24'};const q=state.floor24,protectedSet=new Set((q.reinforcementProtectedCells||[]).map(c=>k(c.x,c.y))),source=(state.monsters||[]).find(v=>v.floor24Chaser57)||null,names=source?.losLostSummon57?.names||['처녀귀신','굶주린 쥐'],events=[];for(let i=0;i<Math.max(1,Math.min(40,+n||12));i++){const name=names[i%names.length],m=spawnPressureReinforcement57(source,name);events.push(m?{x:m.x,y:m.y,name:m.name,protected:protectedSet.has(k(m.x,m.y))}:null)}
@@ -4523,27 +4438,14 @@ function spawnAuthoredEncounters60(){
     const hall=roomKind('great-hall');
     return{greatHall:hall,banquet:hall,library:roomKind('library'),bedroom:roomKind('inner-wing'),study:roomKind('sarangchae'),tea:roomKind('tea-room'),service:roomKind('haengrang'),courtyard:roomNamed('비정형 중정')||roomKind('courtyard'),northGallery:roomNamed('북측 분절 창호 추격회랑')||roomKind('north-eaves'),exit:{x:state.stairs.x,y:state.stairs.y,kind:'exit'}}
   }
-  function qaView60(target,opts={}){
-    if(!state)return false;closeGameplayInteractionState57();const savedMonsters=opts.cleanHostiles===true?state.monsters:null;if(savedMonsters)state.monsters=[];try{const p=target||state.player;if(p&&Number.isFinite(p.x)&&Number.isFinite(p.y)){
-      let dest={x:p.x,y:p.y};if(!ReachabilityService.playerTerrainPassable(dest.x,dest.y)||OccupancyService.isOccupied(dest.x,dest.y)){let best=null;for(let r=1;r<=5&&!best;r++)for(let y=p.y-r;y<=p.y+r&&!best;y++)for(let x=p.x-r;x<=p.x+r;x++){if(Math.max(Math.abs(x-p.x),Math.abs(y-p.y))!==r||!ReachabilityService.playerTerrainPassable(x,y)||OccupancyService.isOccupied(x,y))continue;best={x,y};break}if(best)dest=best}
-      state.player.x=dest.x;state.player.y=dest.y;OccupancyService.move(state.player,state.player.x,state.player.y)
-    }
-    resetVisualState();VisibilityService.compute();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}drawMap(true);return true}finally{if(savedMonsters)state.monsters=savedMonsters}
-  }
+
   function qaCleanHud60(on=true){
     document.documentElement.classList.toggle('qa-clean-capture60',!!on);return document.documentElement.classList.contains('qa-clean-capture60')
   }
   const qa60=Object.freeze({mark:qaMark60,restore:qaRestore60,summary:qaSummary60,hash:qaHash60,activate23:qaActivate23ById60,run23Order:qaRun23Order60,threshold23:qaThreshold23_60,pickupProgress23:qaPickupProgressKey23_60,descend:qaDescend60,revealSaveLoad:qaRevealSaveLoad60,hazard23:qaHazard23_60,clearHostiles:qaClearHostiles60,walkTo:qaWalkTo60,f24KeyGate:qaF24KeyGate60,f24WalkExit:qaF24WalkExit60,f24Summons:qaF24Summons60,f24GumiMechanics:qaF24GumiMechanics60,f24ItemReach:qaF24ItemReach60,f24VisualTargets:qaF24VisualTargets60,view:qaView60,cleanView:(target)=>qaView60(target,{cleanHostiles:true}),cleanHud:qaCleanHud60});
   globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 
-  function rebuildSpecial60(f){
-    const authored=[23,24].includes(f),savedMonsters=authored?[]:[...(state.monsters||[])],savedItems=[...(state.items||[])],boss=savedMonsters.find(m=>m.boss)||null;[COLS,ROWS]=SIZE60[f]||[COLS,ROWS];state.map=makeEmptyMap();state.rooms=[];state.decals=[];state.decor=[];state.rafts=[];state.routeTags=[];state.switches=[];state.vaults=[];state.featureRooms=[];state.guardRooms59=[];state.secretTreasure=null;state.specialFloor=true;state.fixedStart=null;state.fixedExit=null;state.visionPenalty=0;state.requiresBlink=false;initHidden60();state.floorSeed60=Math.floor(globalThis.__MANRU_RANDOM57__()*1000000);
-    const builders={2:buildFloor2GreatHall,4:buildChoice,6:buildPavilion,8:buildBamboo,11:buildRiver,13:buildFloor13RoomMaze,16:buildFloor16Fortress,18:buildWarehouse,21:buildFloor21VoidSea,22:buildTemple,23:buildMercury,24:buildPeach};
-    if(BOSS_FLOORS.has(f)){if(!boss)return;buildBossArena(f,state.map,boss)}else builders[f](state.map);
-    if([4,6,8,13,22].includes(f))repairRequired60();
-    if(!BOSS_FLOORS.has(f)&&![23,24].includes(f))enrichSpecial94(f);
-    relocate60(savedMonsters,savedItems);if(authored)spawnAuthoredEncounters60();else{state._spawnV60=true;try{spawnLayoutExtras()}finally{state._spawnV60=false}}state._lastPlayerPos60={x:state.player.x,y:state.player.y};state.specialRevision60=4;state.seen=new Set();state.visible=new Set();VisibilityService.compute();vfBuildDecor();;
-  }
+
 
   registerGenerationStage('special60-pre','pre',()=>{state.featureRooms=[];state.landmarks=[];state.guardRooms59=[];state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={}});
   registerGenerationStage('special60-post','post',()=>{const f=state.floor;if(SPECIAL60.has(f)||BOSS_FLOORS.has(f))rebuildSpecial60(f)});
@@ -4982,130 +4884,23 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   }
 
 
-  function addCrosslinks71(){
-    const rooms=state.rooms||[];if(rooms.length<4)return 0;
-    const pairs=[];for(let i=0;i<rooms.length;i++)for(let j=i+1;j<rooms.length;j++)pairs.push([roomDistance(rooms[i],rooms[j]),rooms[i],rooms[j]]);
-    pairs.sort((a,b)=>b[0]-a[0]);let made=0,target=state.floor>=11?4:3;
-    for(const [,a,b] of pairs){
-      if(made>=target)break;
-      if(roomHasEndpoint(a)&&roomHasEndpoint(b))continue;
-      carveCorridorBetween({x:a.cx,y:a.cy},{x:b.cx,y:b.cy},made===0&&state.floor>=11?2:1,made%2===1);made++;
-    }
-    return made;
-  }
 
 
 
 
 
 
-  function styleInn71(r){
-    addLandmark('등롱 연회축',r,'banquet');const cx=r.cx,cy=r.cy;
-    for(let x=r.x+2;x<r.x+r.w-2;x++){if(Math.abs(x-cx)<=1||x%3===0)continue;if(canEdit(x,cy))setTerrainTile58(state.map,x,cy,TT.TABLE)}
-    for(const [x,y] of [[r.x+2,r.y+2],[r.x+r.w-3,r.y+2],[r.x+2,r.y+r.h-3],[r.x+r.w-3,r.y+r.h-3]])if(canEdit(x,y))setTerrainTile58(state.map,x,y,TT.BRAZIER);
-    for(let y=r.y+2;y<r.y+r.h-2;y+=3){if(canEdit(r.x+2,y))setTerrainTile58(state.map,r.x+2,y,TT.SCREEN);if(canEdit(r.x+r.w-3,y))setTerrainTile58(state.map,r.x+r.w-3,y,TT.SCREEN)}
-  }
-  function styleGarden71(r){
-    addLandmark('비취 연못 중정',r,'pond');
-    const rx=Math.max(2,Math.min(3,Math.floor((r.w-3)/2))),ry=Math.max(1,Math.min(2,Math.floor((r.h-3)/2)));
-    for(let y=r.cy-ry;y<=r.cy+ry;y++)for(let x=r.cx-rx;x<=r.cx+rx;x++)if(canEdit(x,y)&&!(Math.abs(x-r.cx)===rx&&Math.abs(y-r.cy)===ry))setTerrainTile58(state.map,x,y,TT.WATER);
-    for(let x=r.cx-rx;x<=r.cx+rx;x++)if(!isImportantCell(x,r.cy))setTerrainTile58(state.map,x,r.cy,TT.PAPER_BRIDGE);
-    for(const [x,y] of [[r.x+2,r.y+2],[r.x+r.w-3,r.y+2],[r.x+2,r.y+r.h-3],[r.x+r.w-3,r.y+r.h-3]])if(canEdit(x,y))setTerrainTile58(state.map,x,y,globalThis.__MANRU_RANDOM57__()<.55?TT.BAMBOO:TT.HEDGE);
-    if(canEdit(r.cx,r.y+2))setTerrainTile58(state.map,r.cx,r.y+2,TT.PAVILION);
-  }
-  function styleInner71(r){
-    addLandmark('천면경 분기회랑',r,'mirror');
-    for(let y=r.y+2;y<r.y+r.h-2;y+=2)for(const x of [r.x+2,r.x+r.w-3])if(canEdit(x,y))setTerrainTile58(state.map,x,y,TT.MIRROR);
-    for(let x=r.x+2;x<r.x+r.w-2;x++){if(Math.abs(x-r.cx)<=1)continue;if(canEdit(x,r.cy))setTerrainTile58(state.map,x,r.cy,x%3===0?TT.SCREEN:TT.FLOOR)}
-    for(const [dx,dy] of [[-2,-2],[2,-2],[-2,2],[2,2]])if(canEdit(r.cx+dx,r.cy+dy))setTerrainTile58(state.map,r.cx+dx,r.cy+dy,TT.SNARE);
-    const side=globalThis.__MANRU_RANDOM57__()<.5?{x:r.x,y:r.cy}:{x:r.x+r.w-1,y:r.cy};
-    if(state.map[side.y]?.[side.x]===TT.WALL&&!isImportantCell(side.x,side.y))setTerrainTile58(state.map,side.x,side.y,globalThis.__MANRU_RANDOM57__()<.55?TT.FAKE_DOOR:TT.SECRET_DOOR);
-  }
-  function styleStorage71(r){
-    addLandmark('철제 적재 구획',r,'storage');
-    for(let y=r.y+2;y<r.y+r.h-2;y+=2)for(let x=r.x+2;x<r.x+r.w-2;x+=3){
-      if(Math.abs(x-r.cx)<=1&&Math.abs(y-r.cy)<=1)continue;
-      if(canEdit(x,y))setTerrainTile58(state.map,x,y,(x+y)%2?TT.JAR:TT.TABLE);
-    }
-    for(let y=r.y+1;y<r.y+r.h-1;y++)if(y!==r.cy&&canEdit(r.cx,y))setTerrainTile58(state.map,r.cx,y,TT.FLOOR);
-    for(const x of [r.cx-2,r.cx+2])if(canEdit(x,r.cy))setTerrainTile58(state.map,x,r.cy,TT.BRAZIER);
-  }
-  function styleHeart71(r){
-    addLandmark('보주 의식 감실',r,'ritual');
-    for(let y=r.cy-2;y<=r.cy+2;y++)for(let x=r.cx-3;x<=r.cx+3;x++)if((Math.abs(x-r.cx)===3||Math.abs(y-r.cy)===2)&&canEdit(x,y))setTerrainTile58(state.map,x,y,TT.GOLD);
-    if(canEdit(r.cx,r.cy))setTerrainTile58(state.map,r.cx,r.cy,TT.ALTAR);
-    for(const [dx,dy,t] of [[-2,0,TT.VOID],[2,0,TT.MERCURY],[0,-2,TT.VOID],[0,2,TT.MERCURY]])if(canEdit(r.cx+dx,r.cy+dy))setTerrainTile58(state.map,r.cx+dx,r.cy+dy,t);
-    for(const [x,y] of [[r.cx-1,r.cy],[r.cx+1,r.cy],[r.cx,r.cy-1],[r.cx,r.cy+1]])if(!isImportantCell(x,y))setTerrainTile58(state.map,x,y,TT.DRAWBRIDGE_DOWN);
-  }
-  function styleAnnex71(r,z,secret){
-    if(!r)return;addLandmark(secret?'숨은 부속실':'측면 부속실',r,secret?'secret':'annex');
-    const core=z===0?TT.CACHE:z===1?TT.FOUNTAIN:z===2?TT.RUMOR:z===3?TT.ARMORY:TT.VAULT;
-    if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,core);
-    const obstacle=z===0?TT.SCREEN:z===1?TT.BAMBOO:z===2?TT.MIRROR:z===3?TT.JAR:TT.GOLD;
-    for(const [dx,dy]of[[-2,-1],[2,-1],[-2,1],[2,1]])if(canEdit(r.cx+dx,r.cy+dy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx+dx,r.cy+dy,obstacle);
-  }
-  function enhanceNormal71(){
-    if(!NORMAL71.has(state.floor)||state.specialFloor||state.monsters?.some(m=>m.boss))return;
-    state.landmarks71=[];state.landmarkCells71={};const z=regionIndex(),used=new Set();
-    for(let n=0;n<2;n++){
-      const r=chooseRoom71(8,n?6:7,used);if(!r)continue;
-      if(z===0)styleInn71(r);else if(z===1)styleGarden71(r);else if(z===2)styleInner71(r);else if(z===3)styleStorage71(r);else styleHeart71(r);
-    }
-    const cross=addCrosslinks71(),annex=carveAnnex(false),micro=carveMicro(z),secret=(state.floor>=7&&globalThis.__MANRU_RANDOM57__()<.78)?carveAnnex(true):null;
-    styleAnnex71(annex,z,false);styleAnnex71(secret,z,true);ensureNormalConnectivity();
-    const lm=(state.landmarks71||[]).filter(v=>v.r),enemies=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);let moved=0;
-    for(const l of lm.slice(0,3)){
-      if(moved>=enemies.length)break;const m=enemies[moved],r=l.r;let q=null;
-      for(let t=0;t<28;t++){const p={x:rand(r.x+1,r.x+r.w-2),y:rand(r.y+1,r.y+r.h-2)};if(PlacementService.monsterCanStand(m,p.x,p.y)){q=p;break}}
-      if(q){m.x=q.x;m.y=q.y;moved++}
-    }
-    state.regionComplex71={crosslinks:cross,annexes:(annex?1:0)+(micro?1:0)+(secret?1:0),landmarks:state.landmarks71?.length||0};
-    state.layoutName+=` · ${choice(['다층 동선','숨은 측랑','랜드마크군','복합 구획'])}`;
-  }
 
 
-  function enhanceSpecial71(){
-    if(!state?.specialFloor||state.monsters?.some(m=>m.boss))return;
-    const f=state.floor,rooms=[...(state.rooms||[])].filter(r=>r.w>=8&&r.h>=7&&!roomHasEndpoint(r));
-    if(f===22){
-      for(const r of rooms.slice(0,8)){
-        addLandmark('금동 기둥 감실',r,'ritual');
-        const pts=[[r.cx-2,r.cy-2],[r.cx+2,r.cy-2],[r.cx-2,r.cy+2],[r.cx+2,r.cy+2]];
-        for(const [x,y] of pts)if(canEdit(x,y,[TT.FLOOR]))setTerrainTile58(state.map,x,y,TT.WALL);
-        if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,globalThis.__MANRU_RANDOM57__()<.5?TT.ALTAR:TT.GOLD);
-        for(const [x,y] of [[r.cx,r.y+2],[r.cx,r.y+r.h-3]])if(canEdit(x,y,[TT.FLOOR]))setTerrainTile58(state.map,x,y,TT.BRAZIER);
-      }
-    }else if(f===16){
-      for(const r of rooms.slice(0,6)){
-        for(const [x,y] of [[r.cx-2,r.cy],[r.cx+2,r.cy]])if(canEdit(x,y,[TT.FLOOR,TT.GRASS]))setTerrainTile58(state.map,x,y,TT.WALL);
-        if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,TT.ARMORY);
-      }
-    }else if(f===18){
-      for(const r of rooms.slice(0,6)){
-        for(let y=r.y+2;y<r.y+r.h-2;y+=2)for(const x of [r.x+2,r.x+r.w-3])if(canEdit(x,y,[TT.FLOOR]))setTerrainTile58(state.map,x,y,TT.JAR);
-      }
-    }else if(f===2){
-      for(const r of rooms.slice(0,5)){
-        for(let x=r.x+2;x<r.x+r.w-2;x+=3)if(canEdit(x,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,x,r.cy,TT.TABLE);
-        if(canEdit(r.cx,r.y+2,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.y+2,TT.BRAZIER);
-      }
-    }else if(f===6){
-      for(const r of rooms.slice(0,8))if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,TT.PAVILION);
-    }else if(f===11||f===13){
-      for(const r of rooms.slice(0,7)){
-        for(const [x,y] of [[r.x+2,r.cy],[r.x+r.w-3,r.cy]])if(canEdit(x,y,[TT.FLOOR]))setTerrainTile58(state.map,x,y,TT.SCREEN);
-        if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,TT.MIRROR);
-      }
-    }else if(f===21||f===23){
-      for(const r of rooms.slice(0,10)){
-        if(canEdit(r.cx,r.cy,[TT.FLOOR]))setTerrainTile58(state.map,r.cx,r.cy,globalThis.__MANRU_RANDOM57__()<.6?TT.GOLD:TT.ALTAR);
-      }
-    }else if(f===24){
-      for(const r of rooms.slice(0,8)){
-        for(const [x,y] of [[r.x+2,r.y+2],[r.x+r.w-3,r.y+r.h-3]])if(canEdit(x,y,[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS]))setTerrainTile58(state.map,x,y,peachTerrain());
-      }
-    }
-  }
+
+
+
+
+
+
+
+
+
 
   
 
@@ -5767,57 +5562,7 @@ const CONFIG81=Object.freeze({
 
 
 
-  /* Final integrity pass: later visual/layout passes may occasionally invalidate a spawn tile. */
-  const Integrity81={
-    nearSpot(x,y,{forStairs=false}={}){
-      for(let r=0;r<Math.max(COLS,ROWS);r++){
-        const spots=[];
-        for(let yy=Math.max(1,y-r);yy<=Math.min(ROWS-2,y+r);yy++)for(let xx=Math.max(1,x-r);xx<=Math.min(COLS-2,x+r);xx++){
-          if(Math.abs(xx-x)+Math.abs(yy-y)>r||!ReachabilityService.playerPassable(xx,yy)||OccupancyService.isOccupied(xx,yy))continue;
-          if(forStairs&&((xx===state.player.x&&yy===state.player.y)||(state.items||[]).some(i=>i.x===xx&&i.y===yy)))continue;
-          if(state.map[yy][xx]===TT.STAIR&&!forStairs)continue;
-          spots.push({x:xx,y:yy});
-        }
-        if(spots.length)return choice(spots);
-      }
-      return null;
-    },
-    itemSpot(used){
-      const spots=[];
-      for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
-        const q=k(x,y);if(used.has(q)||!ReachabilityService.playerPassable(x,y)||OccupancyService.isOccupied(x,y)||state.map[y][x]===TT.STAIR||(x===state.player.x&&y===state.player.y))continue;
-        spots.push({x,y});
-      }
-      return spots.length?choice(spots):null;
-    },
-    repair(){
-      if(!state)return{player:0,stairs:0,monsters:0,items:0,removed:0};
-      let player=0,stairs=0,monsters=0,items=0,removed=0;
-      const p=state.player;
-      if(p&&(p.x<1||p.y<1||p.x>=COLS-1||p.y>=ROWS-1||tileBlocks(state.map[p.y]?.[p.x]))){const q=this.nearSpot(Math.min(COLS-2,Math.max(1,p.x||1)),Math.min(ROWS-2,Math.max(1,p.y||1)));if(q){p.x=q.x;p.y=q.y;player=1}}
-      const st=state.stairs;
-      if(st&&(st.x<1||st.y<1||st.x>=COLS-1||st.y>=ROWS-1||tileBlocks(state.map[st.y]?.[st.x]))){
-        const ox=st.x,oy=st.y,q=this.nearSpot(Math.min(COLS-2,Math.max(1,st.x||1)),Math.min(ROWS-2,Math.max(1,st.y||1)),{forStairs:true});
-        if(q){if(oy>=0&&ox>=0&&oy<ROWS&&ox<COLS&&state.map[oy][ox]===TT.STAIR)setTerrainTile58(state.map,ox,oy,TT.FLOOR);state.stairs={x:q.x,y:q.y};setTerrainTile58(state.map,q.x,q.y,TT.STAIR);stairs=1}
-      }
-      const live=[];
-      for(const m of state.monsters||[]){
-        const invalid=m.x<1||m.y<1||m.x>=COLS-1||m.y>=ROWS-1||!PlacementService.monsterCanStand(m,m.x,m.y);
-        if(invalid){const p=typeof PlacementService.randomMonsterCell==='function'?PlacementService.randomMonsterCell(m):null;if(p){m.x=p.x;m.y=p.y;monsters++}else{removed++;continue}}
-        live.push(m);
-      }
-      state.monsters=live;
-      const used=new Set();
-      for(const it of state.items||[]){
-        const q=k(it.x,it.y),invalid=it.x<1||it.y<1||it.x>=COLS-1||it.y>=ROWS-1||tileBlocks(state.map[it.y]?.[it.x])||used.has(q);
-        if(invalid){const p=this.itemSpot(used);if(p){it.x=p.x;it.y=p.y;items++}}
-        used.add(k(it.x,it.y));
-      }
-      state.integrity81={player,stairs,monsters,items,removed};
-      state.repairedMonsters70=(state.repairedMonsters70||0)+monsters;
-      return state.integrity81;
-    }
-  };
+
 
   /* Reapply after start/load without adding switches or changing user policy. */
   registerGenerationStage('runtime81','post',()=>{Integrity81.repair();ConnectedDecor81.build();queuePlace81()});
@@ -6039,7 +5784,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
 
 
   function doorPoint88(r,target){if(['serpentine','rturn'].includes(r.shape88)){const south=(target.cy??target.y)>r.cy,y=south?r.y+r.h-1:r.y,x=r.cx;return{x,y,ox:x,oy:y+(south?1:-1)}}const dx=target.x-r.cx,dy=target.y-r.cy;if(Math.abs(dx)>=Math.abs(dy)){const east=dx>=0,x=east?r.x+r.w-1:r.x,y=Math.max(r.y+2,Math.min(r.y+r.h-3,target.y));return{x,y,ox:x+(east?1:-1),oy:y}}const south=dy>=0,y=south?r.y+r.h-1:r.y,x=Math.max(r.x+2,Math.min(r.x+r.w-3,target.x));return{x,y,ox:x,oy:y+(south?1:-1)}}
-  function stairPath88(m,a,b){let x=a.x,y=a.y,guard=0,flip=globalThis.__MANRU_RANDOM57__()<.5;corridorCell(m,x,y);while((x!==b.x||y!==b.y)&&guard++<600){const cx=x!==b.x,cy=y!==b.y;if(cx&&cy){if(flip)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);flip=!flip}else if(cx)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);corridorCell(m,x,y)}}
+
   function manhattan88(m,a,b,style='L'){
     let x=a.x,y=a.y,guard=0;corridorCell(m,x,y);if(style==='diag'){stairPath88(m,a,b);return}
     const hf=style==='H'||(style==='L'&&globalThis.__MANRU_RANDOM57__()<.5);
@@ -6122,9 +5867,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   }
   
   function corridor89(m,a,b,style='L'){connect88(m,a,b,style)}
-  function feature89(name,r,kind='architecture'){
-    state.featureRooms=state.featureRooms||[];state.featureRooms.push({name,x:r.x,y:r.y,w:r.w,h:r.h,kind89:kind});
-  }
+
   function splitRoom89(m,r,axis='v',doors=1){
     if(!r||r.w<9||r.h<8)return false;
     if(axis==='v'){
@@ -6241,13 +5984,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
 
   
 
-  function finishArchitecture90(){
-    if(!state)return;if(state.specialFloor)return finishSpecialArchitecture88();if(!NORMAL85.has(state.floor))return;
-    const savedMonsters=[...(state.monsters||[])],savedItems=[...(state.items||[])],z=regionIndex();
-    state.map=makeEmptyMap();state.rooms=[];state.featureRooms=[];state.routeTags=[];state.vaults=[];state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null;state.guardRooms59=[];state.decor=[];state.fixedStart=null;state.fixedExit=null;
-    buildNormal(state.map,z);chooseEnds();purposeRooms90(z);fillUnused90(z);ensureNormalConnectivity();normalizeDoors86();relocateEntities89(savedMonsters,savedItems);guardPurposes90();themeDecor88(z);autoWindows86();
-    ensureNormalConnectivity();normalizeDoors86();sanitizeWindows88();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute();vfBuildDecor();state.decor=[];harmonizeDecor86();
-  };
+;
 
   
   
@@ -6440,23 +6177,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
     state.roomTemplate92='room-in-room';state.roomTemplate93='room-in-room';V93.roomTemplates.push('room-in-room');return r;
   }
 
-  function graphOrganic93(m,z,options=null){
-    reset93(m);const profile=options?.id||chooseProfile93(),rooms=placeRooms93(m,z,options);if(rooms.length<2){organic91(m,z);state.layoutMode85='v93-fallback';return}
-    const edges=options?profileLinks105(m,rooms,options):mst93(m,rooms),treeAdj=graphAdj93(rooms.length,edges),diam=diameter93(treeAdj);if(!options)localLoops93(m,rooms,edges,profile);
-    const mainPath=diam.path,mainSet=new Set(mainPath);let bi=ReachabilityService.roomBranches({graphAdj93},rooms,edges,mainPath);
-    for(let guard=0;!options&&guard<3;guard++){const deep=[...bi.off].sort((a,b)=>b.d-a.d)[0];if(!deep||deep.d<=2)break;const adj=graphAdj93(rooms.length,edges),p=shortestNodes93(adj,deep.root,deep.i);if(p.length<4)break;const bridgeNode=p[p.length-2];if(!addEdge93(m,rooms,edges,deep.root,bridgeNode,globalThis.__MANRU_RANDOM57__()<.5?'L':'Z','branch-loop'))break;bi=ReachabilityService.roomBranches({graphAdj93},rooms,edges,mainPath)}
-    if(!options)softenRooms93(m,rooms,edges);
-    state.mainPathRooms92=mainPath.map(i=>rooms[i]);state.branchRooms92=bi.off.map(x=>({...rooms[x.i],branchDepth92:x.d,node92:x.i}));state.branchLeaves92=bi.leaves.map(x=>({...rooms[x.i],branchDepth92:x.d,node92:x.i}));
-    state.roomGraph92={profile,edges:edges.map(e=>({...e})),mainPath:[...mainPath],branchDepths:bi.off.map(x=>x.d),loops:edges.filter(e=>e.kind==='loop').length};
-    state.roomGraph93={profile,edges:edges.map(e=>({...e})),mainPath:[...mainPath],branchDepths:bi.off.map(x=>x.d),loops:edges.filter(e=>e.kind==='loop').length,wideHalls:edges.filter(e=>(e.width||1)>1).length};
-    setFixedEnds({x:rooms[diam.a].cx,y:rooms[diam.a].cy},{x:rooms[diam.b].cx,y:rooms[diam.b].cy});
-    if(options){state.layoutMode85='v93-'+options.id;return{rooms,edges,diam};}
-    rareTemplate93(m,rooms);
-    applyModules(m,rooms);outerChain94(m,z);if(state.floor===1)buildTutorialEntry(m,rooms);
-    if(!state.grandRoom89){const large=[...rooms].sort((a,b)=>b.w*b.h-a.w*a.h)[0];if(large&&large.w*large.h>=84&&globalThis.__MANRU_RANDOM57__()<.38){large.grand90=true;state.grandRoom89=large}}
-    if(state.grandRoom89)feature89('대실',state.grandRoom89,'grand');
-    state.focalRooms89=state.branchLeaves92.slice(0,2);state.layoutMode85=`v93-${profile}`;state.layoutName=`비대칭 객실군 · ${profile==='braid'?'근거리 엮임':profile==='offset-halls'?'편심 회랑축':'군집 순환'} / 가변 회랑폭 · 짧은 곁가지`;
-  }
+
   buildNormal=function(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;};
 
 
@@ -6479,7 +6200,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   const SPECIAL_KEY94=new Set([2,4,13,22,24]);
   
 
-  function zoneCells94(r){const out=[];if(!r)return out;for(let y=Math.max(1,r.y+1);y<Math.min(ROWS-1,r.y+r.h-1);y++)for(let x=Math.max(1,r.x+1);x<Math.min(COLS-1,r.x+r.w-1);x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&(x!==state.player.x||y!==state.player.y))out.push({x,y});return out}
+
 
   function coherentDecor94(){
     if(!state||state.specialFloor)return;const rawZones=[...(state.featureRooms||[]),...(state.purposeRooms90||[]),state.grandRoom89,...(state.mainPathRooms92||[]).filter(r=>r?.role93==='hall').slice(0,2)].filter(r=>r&&r.w>=5&&r.h>=5),seenZones=new Set(),zones=rawZones.filter(r=>{const q=`${r.x},${r.y},${r.w},${r.h}`;if(seenZones.has(q))return false;seenZones.add(q);return true});const z=regionIndex(),tiles=z===0?[TT.LANTERN_POST,TT.BENCH,TT.CRATE]:z===1?[TT.FLOWERBED,TT.ROCK,TT.LOW_FENCE]:z===2?[TT.STATUE,TT.MIRROR,TT.WALL_BANNER]:z===3?[TT.CRATE,TT.RACK,TT.STONE_PILLAR]:[TT.STONE_PILLAR,TT.STATUE,TT.CARPET];let used=0;
@@ -6693,27 +6414,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
     return state.strictLockAudit1004;
   }
 
-  // Complete lock-surface audit: every final KEY_TILE / LOCKED_GATE must be owned by the typed plan or the single legacy 6F archive lock.
-  function lockSurfaceAudit96(){
-    if(!state?.map)return null;
-    const mapKeys=[],mapGates=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){const t=state.map[y][x];if(t===TT.KEY_TILE)mapKeys.push({x,y});else if(t===TT.LOCKED_GATE)mapGates.push({x,y})}
-    const plan=state.keyPlan96,expected=expectedLockCount(),activePlanKeys=(plan?.keys||[]).filter(q=>q.active!==false),closedPlanDoors=(plan?.doors||[]).filter(d=>d.open!==true);
-    const keySet=new Set(activePlanKeys.map(q=>key85(q.x,q.y))),gateSet=new Set(closedPlanDoors.map(d=>key85(d.x,d.y)));
-    const legacyKeys=[],legacyGates=[];
-    if(state.floor===6&&state.f6LibraryKeyR8&&state.map?.[state.f6LibraryKeyR8.y]?.[state.f6LibraryKeyR8.x]===TT.KEY_TILE)legacyKeys.push({...state.f6LibraryKeyR8});
-    if(state.floor===6&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]===TT.LOCKED_GATE)legacyGates.push({...state.f6LibraryGateR8});
-    const legacyKeySet=new Set(legacyKeys.map(q=>key85(q.x,q.y))),legacyGateSet=new Set(legacyGates.map(q=>key85(q.x,q.y)));
-    const orphanKeys=mapKeys.filter(q=>!keySet.has(key85(q.x,q.y))&&!legacyKeySet.has(key85(q.x,q.y)));
-    const orphanGates=mapGates.filter(q=>!gateSet.has(key85(q.x,q.y))&&!legacyGateSet.has(key85(q.x,q.y)));
-    const missingPlanKeys=activePlanKeys.filter(q=>state.map?.[q.y]?.[q.x]!==TT.KEY_TILE);
-    const missingPlanGates=closedPlanDoors.filter(d=>state.map?.[d.y]?.[d.x]!==TT.LOCKED_GATE);
-    const legacyExpected=state.floor===6,legacyHave=state.floorKeys||0,legacyRequired=state.floorKeysRequired||0,legacyGateClosed=legacyGates.length>0;
-    const legacyKeyShouldExist=legacyExpected&&legacyGateClosed&&legacyHave<Math.max(1,legacyRequired),legacyGateShouldExist=legacyExpected&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]===TT.LOCKED_GATE;
-    const legacyOk=!legacyExpected||(legacyRequired>=1&&legacyKeys.length===(legacyKeyShouldExist?1:0)&&legacyGates.length===(legacyGateShouldExist?1:0)&&(!legacyGateClosed||legacyHave>=1||legacyKeys.length===1));
-    const typedOk=!plan||(missingPlanKeys.length===0&&missingPlanGates.length===0),countMatch=expected?!!plan&&plan.groups?.length===expected&&plan.keys?.length===expected:!plan||!(plan.groups?.length);
-    const ok=orphanKeys.length===0&&orphanGates.length===0&&typedOk&&legacyOk&&countMatch;
-    return{floor:state.floor,expected,mapKeys:mapKeys.length,mapGates:mapGates.length,typed:!!plan,typedGroups:plan?.groups?.length||0,typedKeys:activePlanKeys.length,typedGates:closedPlanDoors.length,countMatch,legacyKeys:legacyKeys.length,legacyGates:legacyGates.length,orphanKeys,orphanGates,missingPlanKeys,missingPlanGates,legacyOk,typedOk,ok};
-  }
+
 
 
 
@@ -6795,7 +6496,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   window.MANRU_AMMO=AMMO_TYPES;
   for(const w of WEAPONS)if(w.kind==='bow')w.ammoFamily='arrow';
 
-  const isBow967=()=>state?.player?.weapon?.kind==='bow';
+
 
 
 
@@ -6861,14 +6562,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-  function safeSet972(x,y,t){
-    if(!(x>0&&y>0&&x<COLS-1&&y<ROWS-1)) return false;
-    const old=state.map[y]?.[x];
-    if([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.DOOR,TT.OPEN_DOOR].includes(old)) return false;
-    if(!isGroundTile(old) || !isQuietCell(x,y)) return false;
-    setTerrainTile58(state.map,x,y,t);
-    return true;
-  }
+
 
 
 
@@ -6897,25 +6591,18 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
 
 
-/* ===== MANRU v9.8.0: RESEARCHED REGION ARCHITECTURE / VAULT MODULES / FULL-MAP QA ===== */
-const V980={
-    version:'v9.8.0-researched-region-architecture',
-    normalFloors:new Set([7,9,12,14,17,19]),
-    specialFloors:new Set([6,8,10,11,13,15,16,18,20,21,22,23,24,25]),
-    modules:[],
-    errors:[]
-  };
 
-  const in980=(x,y)=>x>0&&y>0&&x<COLS-1&&y<ROWS-1;
-  const key980=(x,y)=>`${x},${y}`;
-  const region980=()=>Math.max(0,Math.min(4,regionIndex()));
-  const hash980=(x,y,s=0)=>hash2(x,y,98000+s+(state?.floor||1)*131);
+
+
+
+
+
   const floorSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.GOLD]);
   const plannedSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.KEY_TILE,TT.PAVILION,TT.FLOOR,TT.GOLD]);
   const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
 
 
-  function planned980(t){return plannedSet980.has(t)||!tileBlocks(t)}
+
 
 
 
@@ -6978,11 +6665,7 @@ const V980={
 
 
 
-  function lockAuditOkay980(){
-    if(!REQUIRED_LOCKS.has(state?.floor))return true;
-    const plan=state?.keyPlan96;if(!plan)return false;
-    try{const a=lockAudit96();return a?!!a.ok:false}catch(_){return false}
-  }
+
 
 
 
@@ -7004,38 +6687,12 @@ const V980={
   const V981={version:V980.version,errors:[],repairs:[],portalBuilds:0};
 
 
-  function expectedBlink981(f=state?.floor||1){return f<=5?0:f<=15?2:f<=20?3:4}
-  function tileReveal981(x,y,opt={}){
-    let t=state.map[y]?.[x];
-    if(t===TT.HIDDEN_BRIDGE)t=state.hiddenReplacement60?.[key980(x,y)]??TT.PAPER_BRIDGE;
-    else if(t===TT.HIDDEN_WALL)t=state.hiddenReplacement60?.[key980(x,y)]??TT.FLOOR;
-    if(opt.unlock&&t===TT.LOCKED_GATE)t=TT.OPEN_DOOR;
-    if(opt.unlock&&t===TT.DRAWBRIDGE_UP)t=TT.DRAWBRIDGE_DOWN;
-    return t;
-  }
-  function reachPass981(x,y,opt={}){return in980(x,y)&&ReachabilityService.playerTerrainPassable(x,y,{...opt,tileAt:(x,y)=>tileReveal981(x,y,opt)})}
 
-  function blinkBlock981(t,opt={}){
-    if(opt.unlock&&t===TT.LOCKED_GATE)return false;
-    if(opt.unlock&&t===TT.DRAWBRIDGE_UP)return false;
-    if(t===TT.HIDDEN_BRIDGE)return false;
-    if(t===TT.HIDDEN_WALL)return false;
-    return blinkHardBlock(t);
-  }
-  function raftDockPairs981(opt={}){
-    const out=[];
-    for(const r of state?.rafts||[]){
-      if(!Number.isInteger(r.min)||!Number.isInteger(r.max)||r.min>=r.max||r.y<r.min||r.y>r.max)continue;
-      let clear=true;for(let y=r.min;y<=r.max;y++)if(!in980(r.x,y)||![TT.WATER,TT.RAFT].includes(state.map[y][r.x])){clear=false;break}
-      if(!clear)continue;
-      const docks=new Map();for(let y=r.min;y<=r.max;y++)for(const[dx,dy]of DIRS8){
-        const x=r.x+dx,yy=y+dy;if(x===r.x&&yy>=r.min&&yy<=r.max)continue;
-        if(ReachabilityService.playerStepAllowed({x:r.x,y},x,yy,{...opt,tileAt:(x,y)=>tileReveal981(x,y,opt),excludeRafts:true}))docks.set(key980(x,yy),{x,y:yy});
-      }
-      const stops=[...docks.values()];if(stops.length)out.push({raft:r,A:[{x:r.x,y:r.y},...stops],B:stops});
-    }
-    return out;
-  }
+
+
+
+
+
 
   
   function floor21Stand981(x,y,opt={}){
@@ -7073,10 +6730,6 @@ const V980={
 
 
 
-  function raftAudit981(){
-    const tracks=new Set(raftDockPairs981({unlock:true}).map(p=>p.raft)),entries=[];for(const r of state?.rafts||[]){entries.push({track:tracks.has(r),x:r.x,min:r.min,max:r.max,y:r.y,current:state.map[r.y]?.[r.x]===TT.RAFT,top:reachPass981(r.x,r.min-1,{unlock:true}),bottom:reachPass981(r.x,r.max+1,{unlock:true})})}
-    const walk=ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:false,blinkRange:0}),pureRaft=ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,blinkRange:0}),withRaft=ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,blinkRange:2}),without=ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:false,blinkRange:2});return{valid:entries.length>0&&entries.every(e=>e.track&&e.current&&e.top&&e.bottom&&e.min<e.max),entries,pureWalk:walk.exit,pureRaft:pureRaft.exit,exitWithRaft:withRaft.exit,exitBlinkFallback:without.exit,main:state.raftMain981||null,fallback:state.raftFallback981||null};
-  }
 
 
 
@@ -7084,8 +6737,8 @@ const V980={
 
 
 
-  function portalAudit981(){
-    if(state?.floor!==13)return null;const counts=Array(state.portalRooms981?.length||0).fill(0),monsterCounts=Array(state.portalRooms981?.length||0).fill(0),bad=[];for(const [k,v]of Object.entries(state.portalLinks981||{})){counts[v.room]=(counts[v.room]||0)+1;const reciprocal=state.portalLinks981[key980(v.destPortal.x,v.destPortal.y)];if(!reciprocal||reciprocal.destRoom!==v.room)bad.push(k)}for(const m of state.monsters||[]){if(m.hp<=0)continue;const rid=(state.portalRooms981||[]).findIndex(r=>m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h);if(rid>=0)monsterCounts[rid]++}const reach=ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true,blinkRange:2}),allRooms=(state.portalRooms981||[]).every(r=>(r.cells981||[]).some(p=>reach.cells.has(key980(p.x,p.y))));return{rooms:counts.length,portals:Object.keys(state.portalLinks981||{}).length,counts,min:counts.length?Math.min(...counts):0,max:counts.length?Math.max(...counts):0,monsterCounts,maxMonsterRoom:monsterCounts.length?Math.max(...monsterCounts):0,overcrowded:monsterCounts.map((n,i)=>({room:i,count:n})).filter(x=>x.count>3),reciprocalBad:bad.length,allRooms,exit:reach.exit,itemsUnreachable:(state.items||[]).filter(i=>!reach.cells.has(key980(i.x,i.y))).length}}
+
+
 
 
 
@@ -7107,10 +6760,10 @@ const V980={
   registerMinimapHook('portals981',({sx,sy})=>{if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}});
 
 
-  function itemReachAudit981(){const reach=state.floor===21?ReachabilityService.mechanicalBlinkReach({expectedBlink981,key980,floor21Stand981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true,blinkRange:4}):ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true});return{floor:state.floor,range:reach.range,exit:reach.exit,total:(state.items||[]).length,unreachable:(state.items||[]).filter(i=>!reach.cells.has(key980(i.x,i.y))).map(i=>({name:i.name,x:i.x,y:i.y}))}}
-  function mechanicalReachAudit(){const r=state.floor===21?ReachabilityService.mechanicalBlinkReach({expectedBlink981,key980,floor21Stand981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true,blinkRange:4}):ReachabilityService.mechanicalReach({expectedBlink981,key980,reachPass981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{unlock:true,rafts:true,portals:true});return{floor:state.floor,layout:state.layoutName,reach:r.exit,reachStates:r.stateCount||null,items:itemReachAudit981(),raft:state.floor===11?raftAudit981():null,portal:state.floor===13?portalAudit981():null,floor21BlinkChoice:state.floor===21?state.floor21BlinkAuditR43:null,generationAttempts:state.generationFinalKeyAttemptsR48||null,rejected:(state.generationRejected51||[]).length,repairs:[...V981.repairs],errors:[...V981.errors]}}
 
-function blinkChoiceReach(opt={}){const r=ReachabilityService.mechanicalBlinkReach({expectedBlink981,key980,floor21Stand981,raftDockPairs981,tileReveal981,blinkBlock981,in980},{...opt,blinkRange:opt.blinkRange??4});return{exit:r.exit,count:r.count,stateCount:r.stateCount,range:r.range,mode:r.mode}}
+
+
+
 function repairFloor21Blink(){return ensureFloor21Blink(4)}
 
   /* v9.8.3 direct monster stats / core loot / clean current-generation pipeline */
@@ -7946,17 +7599,7 @@ function remain(kind){const h=hz();if(!h)return 0;const u=kind==='drown'?h.drown
 function hazardTile(t){return t===TT.WATER?'water':t===TT.VOID?'void':t===TT.LAVA?'lava':t===TT.MERCURY?'mercury':null}
 
 
-function safeLandFor1005(e,x,y){
-  if(x<1||y<1||x>=COLS-1||y>=ROWS-1)return false;
-  const t=state.map[y][x];if(hazardTile(t)||t===TT.DRAWBRIDGE_UP||t===TT.CRUMBLE)return false;
-  if(entityIsPlayer(e))return !tileBlocks(t)&&!OccupancyService.isOccupied(x,y);
-  if(e?.footprint){
-    if(!PlacementService.monsterCanStand(e,x,y))return false;
-    for(const[ox,oy]of footprintOffsets(e)){const tt=state.map[y+oy]?.[x+ox];if(hazardTile(tt)||tt===TT.CRUMBLE)return false}
-    return true
-  }
-  return !tileBlocks(t)&&!OccupancyService.isOccupied(x,y,e)&&(x!==state.player.x||y!==state.player.y)
-}
+
 function nearestLandFor1005(e,x,y,prefer=null){
   const a=[];for(const[dx,dy]of DIRS4){const q={x:x+dx,y:y+dy};if(safeLandFor1005(e,q.x,q.y))a.push(q)}
   if(prefer){const p=a.find(q=>q.x===prefer.x&&q.y===prefer.y);if(p)return p}
@@ -8102,7 +7745,7 @@ globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'hazard1005',draw:drawHazardO
 
 
 function missionTarget(){if(state.floor===20)return state.monsters?.find(m=>m.boss)||state.stairs;if(state.floor===16)return state.switches?.find(s=>s.kind==='cipher')||state.stairs;if(state.floor===24){const q=state.keyPlan96?.keys?.find(k=>k.active!==false)||state.keyPlan96?.keys?.[0];if(q)return{x:q.x,y:q.y,name:'first-key'}}return state.stairs}
-function routeMetric(){const t=missionTarget(),len=ReachabilityService.hazardPathLength(t),man=t?Math.abs(t.x-state.player.x)+Math.abs(t.y-state.player.y):0;return{floor:state.floor,target:t?{x:t.x,y:t.y,name:t.name||'stairs'}:null,path:len,manhattan:man,ratio:len&&man?+(len/man).toFixed(2):null,design:state.routeDesign1005||null}}
+
 
 
 
@@ -8213,7 +7856,7 @@ const inside1020=(x,y)=>x>0&&y>0&&x<COLS-1&&y<ROWS-1;
 
 const HAZ1020=()=>new Set([TT.WATER,TT.MERCURY,TT.LAVA,TT.VOID,TT.DRAWBRIDGE_UP].filter(v=>v!=null));
 
-function pass1020(t){return !tileBlocks(t)&&!HAZ1020().has(t)}
+
 function safeFloorTile1020(t){return !tileBlocks(t)&&!HAZ1020().has(t)&&t!==TT.STAIR&&t!==TT.PORTAL&&t!==TT.SWITCH&&t!==TT.RAFT&&t!==TT.KEY_TILE}
 
 
@@ -8248,8 +7891,7 @@ function reach1020(p,opts={}){return !!p&&reachableSet1020(opts).has(K1020(p.x,p
 
 
 
-/* F08: append one actual house, not a highlighted answer path. One gate -> 2-wide hall -> many side rooms, each with exterior windows. */
-function walkPath(){const p=ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player),state.stairs);return p?[{x:state.player.x,y:state.player.y},...p]:[]}
+
 
 
 
@@ -8303,14 +7945,7 @@ function restoreFloor20BossKeys1020(){
 
 
 
-function restoreEntities1020(saved){
-  state.items=[];state.monsters=[];const reach=reachableSet1020({unlock:true,openBoss:true});
-  const safeReach=p=>reach.has(K1020(p.x,p.y));
-  // F22: deliberately distribute payload across both halves instead of leaving the new lower maze empty.
-  const f22Cells=[];if(state.floor===22){for(const kk of reach){const [x,y]=kk.split(',').map(Number);if(y>3&&safeFloorTile1020(state.map[y][x]))f22Cells.push({x,y})}f22Cells.sort((a,b)=>a.y-b.y||a.x-b.x)}
-  saved.items.forEach((it,i)=>{let target={x:it.x,y:it.y};if(state.floor===22&&f22Cells.length)target=f22Cells[Math.floor((i+1)*f22Cells.length/(saved.items.length+1))]||target;if(!candidateFinal1020(target.x,target.y,null)||!safeReach(target))target=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},target.x,target.y,null,safeReach);it.x=target.x;it.y=target.y;PlacementService.placeItem(it)});
-  saved.monsters.forEach((m,i)=>{let target={x:m.x,y:m.y};if(m.boss&&[5,15,20].includes(state.floor)){const cx=Math.floor(COLS/2),by=4,bh=12;target={x:cx,y:by+Math.floor(bh*.58)}}else if(state.floor===22&&f22Cells.length)target=f22Cells[Math.floor((i+.5)*f22Cells.length/Math.max(1,saved.monsters.length))]||target;if(!candidateFinal1020(target.x,target.y,m)||!safeReach(target))target=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},target.x,target.y,m,safeReach);m.x=target.x;m.y=target.y;OccupancyService.addMonster(m)});
-}
+
 
 
 function strictKeys1020(){
@@ -8543,10 +8178,7 @@ window.__MANRU_ACTOR_CACHE1011__={clear:()=>{HERO_SPRITE_CACHE.clear();return tr
 
 
 
-function finalReachSet1029(){
-  const r=reachableCells({unlock:true,openBoss:true,rafts:true,portals:true,diagonal:true,blinkRange:Math.max(0,state.player?.blinkLevel||0)});
-  return r instanceof Set?r:reachableSet1020({unlock:true,openBoss:true,diagonal:true});
-}
+
 
 
 
@@ -8635,17 +8267,7 @@ function migrateFloor2Layout67(){
 
 
 
-function budgetPeaches52(){
- if(state.artifactDungeon46||state.floor<6||state.floor>10)return;
- const budget=state.peachGeneration53||(state.peachGeneration53={limit:1+(globalThis.__MANRU_RANDOM57__()<.35?1:0),reserved:0});
- let trees=0,items=0;for(const row of state.map)for(const t of row)if(t===TT.PEACH_TREE)trees++;
- for(const it of state.items||[])if(it.foodKind==='peach'||it.name==='신선도')items+=it.count||1;
- const before=trees+items;if(before>budget.limit)throw new Error('theme 2 peach producer exceeded shared generation budget');
- const reach=finalReachSet1029(),candidates=[];
- for(const id of reach){const [x,y]=id.split(',').map(Number),t=state.map[y]?.[x];if(!Number.isFinite(x)||!Number.isFinite(y)||tileBlocks(t)||HAZ1020().has(t)||[TT.KEY_TILE,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.CACHE,TT.ARMORY,TT.VAULT].includes(t)||state.items.some(i=>i.x===x&&i.y===y)||state.monsters.some(m=>monCovers(m,x,y))||entityDistance57({x,y},state.player)<3)continue;candidates.push({x,y,h:hash1022(floorSeedKey(`peach-resource53:${x},${y}`))})}
- candidates.sort((a,b)=>a.h-b.h);for(let i=before;i<budget.limit;i++){const q=candidates.pop();if(!q)throw new Error('no reachable peach resource placement');PlacementService.placeItem({...structuredClone(foodDef('신선도')),count:1,x:q.x,y:q.y,generatedPeach53:true})}
- state.peachBudget52={floor:state.floor,before,limit:budget.limit,after:budget.limit,trees,items:budget.limit-trees,sources:['shared budget tree generators','reachable resource allocation'],policy:'one guaranteed, 35% second, no post-generation deletion'};
-}
+
 
 function rebalanceFloor6WaterR8(targetRatio=.36){
   if(state.floor!==6)return null;const interior=(COLS-2)*(ROWS-2),nearPavilion=(x,y)=>{for(let yy=Math.max(1,y-2);yy<=Math.min(ROWS-2,y+2);yy++)for(let xx=Math.max(1,x-2);xx<=Math.min(COLS-2,x+2);xx++)if(state.map[yy]?.[xx]===TT.PAVILION||state.map[yy]?.[xx]===TT.RAFT)return true;return false};
@@ -8830,17 +8452,8 @@ function repairFloor23MercuryConnectivity1029(){
   const audit=finalReachSet1029(),remaining=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(safe(x,y)&&!audit.has(K1020(x,y)))remaining.push({x,y});state.floor23MercuryRepair1029={ok:remaining.length===0,bridges,components,remaining:remaining.length};return state.floor23MercuryRepair1029;
 }
 
-function rescueOrdinaryExit1029(){
-  if([11,13,21].includes(state.floor)||strictLockFloors().includes(state.floor)||state.keyPlan96?.groups?.length||finalExitReach1029())return finalExitReach1029();
-  window.__MANRU_RUNTIME81__?.Integrity81?.repair?.();semanticDoorCleanup();pruneOrphanDoors();if(finalExitReach1029())return true;
-  const reach=reachableSet1020({unlock:true,openBoss:true});let best=null,bd=1e9;for(const kk of reach){const[x,y]=kk.split(',').map(Number),d=Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y);if(d<bd){bd=d;best={x,y}}}if(!best)return false;archLine(best.x,best.y,state.stairs.x,best.y,TT.FLOOR,1,true);archLine(state.stairs.x,best.y,state.stairs.x,state.stairs.y,TT.FLOOR,1,true);setTerrainTile58(state.map,state.stairs.x,state.stairs.y,TT.STAIR);semanticDoorCleanup();return finalExitReach1029()
-}
-function stabilizeFinalTopology1029(){
-  semanticDoorCleanup();pruneOrphanDoors();
-  /* Final topology is observational for typed-key floors. Do NOT move/rebuild keys here: the canonical outer generator rejects the whole map if this audit fails. */
-  let lock=null;if(state.keyPlan96?.groups?.length)lock=lockAudit96()||null;
-  const exit=rescueOrdinaryExit1029();semanticDoorCleanup();pruneOrphanDoors();return{exit,lock,components:ReachabilityService.finalComponents({finalReachSet1029,inside1020,HAZ1020,K1020,stairMarkerState1029,finalExitReach1029})}
-}
+
+
 
 /* ===== MANRU r43: floor 22 encounter budgeting on the FINAL expanded geometry ===== */
 const F22_BUDGET43={lower:16,central:11,upper:16};
@@ -9129,7 +8742,7 @@ function claimed47(id){return(state?.artifactClaimed46||[]).includes(id)||(state
 function owns47(id){return possesses47(id)}
 
 function eligible46(){const f=state?.floor||0;citadelEnsurePlan();return LEGENDS47.filter(a=>a.id!=='water_crossbow'&&!citadelReservedRelic(a.id)&&a.minFloor<=f&&f<=a.maxFloor&&!possesses47(a.id)&&!claimed47(a.id))}
-function safe46(x,y){return insideMapInterior(x,y)&&ReachabilityService.playerPassable(x,y)&&!OccupancyService.isOccupied(x,y)&&state.map[y][x]!==TT.STAIR&&state.map[y][x]!==TT.PORTAL&&state.map[y][x]!==TT.KEY_TILE&&state.map[y][x]!==TT.LOCKED_GATE}
+
 function snapshotSerializable46(src){const o=structuredClone(src);delete o.artifactReturn46;return{...o,seen:src.seen instanceof Set?[...src.seen]:(Array.isArray(src.seen)?[...src.seen]:[]),visible:src.visible instanceof Set?[...src.visible]:(Array.isArray(src.visible)?[...src.visible]:[]),grassTufts1020:src.grassTufts1020 instanceof Set?[...src.grassTufts1020]:(Array.isArray(src.grassTufts1020)?[...src.grassTufts1020]:[])}}
 function artifactCarry46(){const o=carryRunState57([...ARTIFACT_PLAYER_SCOPE46,...ARTIFACT_RUN_SCOPE46]);o.hazardPlayer1005={drownUntil:state.hazard1005?.drownUntil||0,voidUntil:state.hazard1005?.voidUntil||0};return o}
 function normalizeSnapshotCollections46(o){return{...o,seen:o.seen instanceof Set?o.seen:new Set(Array.isArray(o.seen)?o.seen:[]),visible:o.visible instanceof Set?o.visible:new Set(Array.isArray(o.visible)?o.visible:[]),grassTufts1020:o.grassTufts1020 instanceof Set?o.grassTufts1020:new Set(Array.isArray(o.grassTufts1020)?o.grassTufts1020:[])}}
@@ -9341,7 +8954,7 @@ function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,
 
 
 function handlePortalAt46(x,y){if(!WorldTransition57.allowed())return false;if(state.artifactDungeon46&&state.artifactExit46?.x===x&&state.artifactExit46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.restore()}if(state.artifactPortal46?.x===x&&state.artifactPortal46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.enter(state.artifactPortal46.id)}return false}
-function portalCandidate46(){const dist=typeof ReachabilityService.distances==='function'?ReachabilityService.distances(state.player):null,c=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){if(!safe46(x,y))continue;const d=dist?.get?.(key46(x,y));if(d==null||d<12)continue;if(Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)<6)continue;if((state.items||[]).some(i=>i.x===x&&i.y===y))continue;c.push({x,y,d})}c.sort((a,b)=>b.d-a.d);return c.slice(0,Math.max(1,Math.floor(c.length*.25)))}
+
 function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}
 function maybePortal46(){if(!state||state.floor<6||state.floor>=25||state.artifactDungeon46||state.artifactPortal46||state.floor===13||[10,15,20,25].includes(state.floor)||state.monsters?.some(m=>m.boss))return;state.artifactHistory46=state.artifactHistory46||[];const pool=eligible46();if(!pool.length)return;const chance=state.floor>=21?.20:state.floor>=16?.18:state.floor>=11?.16:.14;if(globalThis.__MANRU_RANDOM57__()>=chance)return;const c=portalCandidate46();if(!c.length)return;const a=choice(pool),p=choice(c),oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};state.artifactHistory46.push({floor:state.floor,id:a.id,status:'spawned'});addLog('벽면에 전설무기의 봉인이 갈라지며 드문 금빛 포탈이 열렸다.')}
 registerGenerationStage('artifact-reset46','pre',resetPortal46);registerGenerationStage('artifact-portal46','post',maybePortal46);
@@ -9373,25 +8986,12 @@ function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapo
 globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit46});
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 
-function keyProgressInternal48(){
- const plan=state?.keyPlan96;if(!state||!plan)return{ok:true,reason:'no-plan',unlocked:new Set(),seen:new Set(),stages:[],badKeys:[],targetOk:true};
- const ids=[...new Set([...(plan.groups||[]).map(g=>g.keyId),...(plan.keys||[]).map(q=>q.keyId),...(plan.doors||[]).map(d=>d.keyId)].filter(Boolean))],unlocked=new Set(),stages=[];
- for(const id of ids){if((plan.ring?.[id]||0)>0||(plan.doors||[]).filter(d=>d.keyId===id).length>0&&(plan.doors||[]).filter(d=>d.keyId===id).every(d=>d.open===true||state.map?.[d.y]?.[d.x]===TT.OPEN_DOOR))unlocked.add(id)}
- let changed=true,walk=ReachabilityService.keyWalk(unlocked);while(changed){changed=false;for(const q of plan.keys||[]){if(q.active===false||unlocked.has(q.keyId))continue;if(walk.seen.has(key46(q.x,q.y))){unlocked.add(q.keyId);stages.push({keyId:q.keyId,x:q.x,y:q.y,cellsBefore:walk.seen.size});changed=true}}if(changed)walk=ReachabilityService.keyWalk(unlocked)}
- const badKeys=(plan.keys||[]).filter(q=>q.active!==false&&!unlocked.has(q.keyId)).map(q=>({keyId:q.keyId,x:q.x,y:q.y}));
- const target=state.artifactDungeon46?state.artifactReward46:state.stairs,targetOk=!target||walk.seen.has(key46(target.x,target.y)),exitOk=!state.artifactDungeon46||!state.artifactExit46||walk.seen.has(key46(state.artifactExit46.x,state.artifactExit46.y));
- let sequenceOk=true,sequence=null;if(plan.kind==='legendary-r48'){
-   const iron=(plan.keys||[]).find(q=>q.keyId==='iron'&&q.active!==false),jade=(plan.keys||[]).find(q=>q.keyId==='jade'&&q.active!==false),s0=ReachabilityService.keyWalk(new Set()),s1=ReachabilityService.keyWalk(new Set(['iron'])),s2=ReachabilityService.keyWalk(new Set(['iron','jade']));
-   sequence={ironInitially:!!iron&&s0.seen.has(key46(iron.x,iron.y)),jadeInitially:!!jade&&s0.seen.has(key46(jade.x,jade.y)),jadeAfterIron:!!jade&&s1.seen.has(key46(jade.x,jade.y)),rewardInitially:!!target&&s0.seen.has(key46(target.x,target.y)),rewardAfterIron:!!target&&s1.seen.has(key46(target.x,target.y)),rewardAfterJade:!!target&&s2.seen.has(key46(target.x,target.y))};
-   sequenceOk=sequence.ironInitially&&!sequence.jadeInitially&&sequence.jadeAfterIron&&!sequence.rewardInitially&&!sequence.rewardAfterIron&&sequence.rewardAfterJade;
- }
- return{ok:badKeys.length===0&&targetOk&&exitOk&&sequenceOk,kind:plan.kind||'unknown',unlocked,seen:walk.seen,walk:walk.q,stages,badKeys,targetOk,exitOk,sequenceOk,sequence,ids};
-}
+
 function keyProgressAudit48(store=true){const a=keyProgressInternal48(),out={ok:a.ok,kind:a.kind,unlocked:[...(a.unlocked||[])],reachable:a.seen?.size||0,stages:a.stages||[],badKeys:a.badKeys||[],targetOk:a.targetOk!==false,exitOk:a.exitOk!==false,sequenceOk:a.sequenceOk!==false,sequence:a.sequence||null,ids:a.ids||[]};if(store&&state)state.keyIntegrity48=out;return out}
 function reachAudit46(){if(!state)return null;const a=keyProgressAudit48(false);return{cells:a.reachable,reward:a.targetOk,exit:a.exitOk,keys:a,rooms:state.rooms?.length||0,dims:[COLS,ROWS]}}
 function claimReward46(){const r=state?.artifactReward46;if(!r)return false;state.player.x=r.x;state.player.y=r.y;resetVisualState();VisibilityService.compute();pickupBaseR25();claimAudit46();return{owned:[state.player.weapon,...state.player.inventory].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),left:(state.items||[]).filter(i=>i.legendaryWeapon47).length}}
-function walkPortal46(id){if(!state||state.artifactDungeon46)return false;const p=globalThis.__MANRU_LEGEND47__?.forcePortal?.(id);if(!p)return false;const a=DIRS8.map(([dx,dy])=>({x:p.x-dx,y:p.y-dy,dx,dy})).find(q=>insideMapInterior(q.x,q.y)&&ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y));if(!a)return false;state.player.x=a.x;state.player.y=a.y;resetVisualState();VisibilityService.compute();ActionDispatcher.dispatch({type:'MOVE',args:[a.dx,a.dy]}).value;return{entered:!!state.artifactDungeon46,audit:reachAudit46()}}
-function walkReturn46(){const p=state?.artifactExit46;if(!p)return false;const a=DIRS8.map(([dx,dy])=>({x:p.x-dx,y:p.y-dy,dx,dy})).find(q=>insideMapInterior(q.x,q.y)&&ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y));if(!a)return false;state.player.x=a.x;state.player.y=a.y;resetVisualState();VisibilityService.compute();ActionDispatcher.dispatch({type:'MOVE',args:[a.dx,a.dy]}).value;return{returned:!state.artifactDungeon46,floor:state.floor,dims:[COLS,ROWS]}}
+
+
 function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan();if(citadelReservedRelic(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
 
 const API47={gatekeeper:applyLegendGatekeeper47,mobCatalog:()=>Object.keys(DUNGEON_MOBS47).flatMap(mobDefs47),version:'R49',enemyDefinitions:id=>mobDefs47(id).map(d=>({...d})),build:(id,seed,quiet=true)=>LegendaryDungeonBuilder.build(adef46(id),{seed,quiet}),integrity:()=>GenerationValidator.legendary(),assets:()=>legendAssetAudit(),defs:()=>LEGENDS47.map(a=>({...a})),debugKeys:()=>{const zs=state?.legendSanctums47||[];return{dungeon:state?.artifactDungeon46?.id||null,player:state?.player?{x:state.player.x,y:state.player.y}:null,sanctums:structuredClone(zs),plan:structuredClone(state?.keyPlan96||null),reward:state?.artifactReward46?{...state.artifactReward46}:null,mapAround:zs.map(z=>{const rows=[];for(let yy=z.cy-z.r-1;yy<=z.cy+z.r+1;yy++){const row=[];for(let xx=z.cx-z.r-1;xx<=z.cx+z.r+1;xx++)row.push(state.map?.[yy]?.[xx]??null);rows.push(row)}return{keyId:z.keyId,cx:z.cx,cy:z.cy,r:z.r,gate:z.gate,rows}})}},handlePortalAt:handlePortalAt46,enter:LegendaryDungeonBuilder.enter,restore:LegendaryDungeonBuilder.restore,forcePortal:forcePortal47,forceDungeon:(id=LEGENDS47[0].id)=>LegendaryDungeonBuilder.enter(id),reveal:()=>{if(!state?.artifactDungeon46)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}updateAll();return true},keyAudit:()=>keyProgressAudit48(false),audit:()=>({floor:state?.floor,inDungeon:!!state?.artifactDungeon46,dungeon:state?.artifactDungeon46||null,portal:state?.artifactPortal46||null,exit:state?.artifactExit46||null,reward:state?.items?.filter(i=>i.legendaryWeapon47).map(i=>({name:i.name,x:i.x,y:i.y}))||[],owned:[state?.player?.weapon,...(state?.player?.inventory||[])].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),reach:reachAudit46(),map:mapSignature46(),dims:[COLS,ROWS],monsters:state?.monsters?.filter(m=>!m.friendly47).length||0,legendMobs:state?.monsters?.filter(m=>m.legendMob47).map(m=>m.name)||[],decor:state?.legendDecor47?.length||0}),recordAcquisition:claimAudit46,claimReward:claimReward46,walkPortal:walkPortal46,walkReturn:walkReturn46,give:(id)=>{const a=adef46(id);if(!a||!state)return false;addInventoryItem({...clone(a),count:1});claimAudit46();return true},upgradeProbe:(id)=>{const a=clone(adef46(id)||LEGENDS47[0]);const before={atk:a.atk,upgrade:a.upgrade||0};const r=applyWeaponUpgrade(a);return{before,after:{atk:a.atk,upgrade:a.upgrade||0},result:r}},effectProbe:effectProbe47,regen:f=>{state.floor=clamp(+f||6,1,25);NormalFloorGenerator.generate();resetVisualState();VisibilityService.compute();updateAll();return{floor:state.floor,portal:state.artifactPortal46||null}},atkBonus:atkBonus47,critBonus:cursedBladeCritBonus,defBonus:earthGauntletDefBonus,syncEquip:syncEquip47,guard:guard47,fireAbsorb:fireAbsorb47,healFire:healFire47,allyTurn:alliesTurn,enemySpecial:enemySpecial47,owns:owns47,possesses:possesses47,claimed:claimed47,cursedEquipped:cursedEquipped47};
