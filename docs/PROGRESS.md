@@ -18,6 +18,7 @@
 | pinned:mapgen | mapgen 소속 고정 문장 → mapgen.js | 9618 | 928 / 584 | 770 | 62.7% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 | pinned:special | special 소속 고정 문장 → special.js | 9500 | 904 / 584 | 770 | 63.2% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 | pinned:branches | branches 소속 고정 문장 → branches.js | 9414 | 880 / 584 | 770 | 63.5% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
+| pinned:story | story 소속 고정 문장 → story.js | 9411 | 879 / 584 | 770 | 63.5% | 계측으로 정적 검사의 과잉 판단을 풀어 늘었다. |
 
 ## 현재 파일별 줄 수
 
@@ -33,9 +34,9 @@
 | mapgen.js | 2963 |
 | special.js | 1802 |
 | branches.js | 2194 |
-| spine.js | 9414 |
+| spine.js | 9411 |
 | input.js | 148 |
-| story.js | 208 |
+| story.js | 212 |
 | ui.js | 717 |
 | start.js | 9 |
-| (total) | 25817 |
+| (total) | 25818 |

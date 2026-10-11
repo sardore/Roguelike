@@ -206,3 +206,7 @@ const BRANCH_LORE=Object.freeze({
  black:'검은 능선과 산성. 좁은 길과 매복에 대비하라.',
  mine:'불빛이 닿지 않는 갱도와 광차가 오가는 심부. 다리 밖은 낭떠러지다.'
 });
+  function tip70(id,text,sub='',options={}){
+    if((!options.repeatable&&seenTip70(id))||coachCurrent?.id===id||RC.tutorialQueue.some(t=>t.id===id))return;
+    const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
+  }
