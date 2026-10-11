@@ -52,3 +52,7 @@
 
 ## F-20 (버그 수정, 동작 변경) 불러온 뒤에도 이전 조준 대상이 남던 문제
 증상: 몬스터나 병 투척 칸을 조준한 채 불러오기를 하면 `AIM_STATE.target`/`jar`(이전 런의 몬스터 객체 또는 칸)가 불러온 뒤에도 남았다. 원인: 조준을 비우던 `registerLoad('aim52')` 훅이 `resetLoad`가 단계 목록을 비워서 한 번도 실행되지 않았다(F-10, F-19). 수정(사용자 결정): 훅을 되살리지 않고 불러오기 본체 `loadGameCore`가 `restoreState(st)` 성공 직후 `AIM_STATE.target=null; AIM_STATE.jar=null; state._manualTerrainTargetR8=null`을 직접 한다. 확인: `loadhooks` 시나리오에 몬스터 조준과 투척 칸 조준(`aim`, `aimjar`) 불러오기를 넣었고, 수정 전 빌드와 수정 후 빌드를 같은 시나리오로 비교하면 달라지는 것은 이 두 키뿐이다(상태·가방·60입력 뒤 상태는 동일). 기준선 변경은 의도한 것이다(`loadhooks.*.aim`: 대상이 남음→null, `aimjar` 추가).
+
+## F-21 (결정 필요) 분기 세이브가 있으면 부팅 중 이어하기 판정이 한 번 TDZ 오류로 실패한다
+계측(`tools/refactor/load-reads.mjs`: spine.js의 const/let/class 362개의 모든 읽기를 탐침으로 바꾸고 빈 저장소, `?debug=1`, 모바일, V40 세이브 4종으로 부팅): 클로저 로드 중 선언 전에 읽히는(TDZ) 값은 `BRANCH_DEFS105` 하나뿐이고, `branch.json` 세이브로 부팅할 때만 2회 일어난다. 경로: 로드 중 느슨한 문장의 `RunLifecycle.refreshContinue()` → `SaveService.recover()` → `candidate1004` → `RunLifecycle.accepts` → `GameState.migrate` → `branchPruneWorld` → `branchRetentionFloor` → `branchRootFloor`가 아직 선언되지 않은 `BRANCH_DEFS105`를 읽어 `ReferenceError`. `accepts`의 catch가 잡아 `console.warn('[manru] saved run cannot be continued')`를 남기고 그 순간의 이어하기 판정은 false가 된다. 부팅 뒤 다시 부르는 `refreshContinue`는 정상이라 최종 화면(`saves.branch` 기준선)은 같다.
+`BRANCH_DEFS105`를 branches.js로 옮기면 이 읽기가 성공해서 로드 중 `migrate`가 끝까지 실행된다(동작 변경). 그래서 이 상수만 spine.js에 남겼다. 선택지: (1) 옮겨서 고친다(동작 변경 커밋, 경고 사라짐, 로드 중 첫 판정이 true), (2) 그대로 둔다. 다른 360개 값은 TDZ 읽기가 없다(이 탐침이 덮는 부팅 상황 기준; TDZ 오류 뒤 같은 경로에서 건너뛴 읽기는 고친 뒤 다시 계측해야 보인다).

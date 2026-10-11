@@ -42,7 +42,7 @@ for (const s of spine) {
   cat.set(s, kw && !(aff && aff !== 'mapgen' && aff !== 'special' && aff !== 'branches') ? kw[0] : aff ? 'pinned:' + aff : 'rest');
 }
 const li = args.indexOf('--list');
-if (li >= 0) { for (const s of spine) if (cat.get(s) === args[li + 1]) console.log(namesOf(s)[0] || '(loose)', lines(s)); process.exit(0); }
+if (li >= 0) { for (const s of spine) if (cat.get(s) === args[li + 1]) console.log((namesOf(s).join(',') || '(loose)'), lines(s)); process.exit(0); }
 const count = {}, sizes = {};
 for (const s of spine) { const c = cat.get(s); count[c] = (count[c] || 0) + 1; sizes[c] = (sizes[c] || 0) + lines(s); }
 console.log('remaining in spine.js:', spine.length, 'statements,', spine.reduce((a, s) => a + lines(s), 0), 'statement lines');

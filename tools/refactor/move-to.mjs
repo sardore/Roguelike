@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // Refactor tool: move top-level declarations of the game closure into another file of src/game, keeping
 // their order and the comments directly above them. Run on the work file (node tools/game.mjs assemble).
-//   node tools/refactor/move-to.mjs <work.js> <target.js> <names.txt> [--create-after <file>] [--dry]
+//   node tools/refactor/move-to.mjs <work.js> <target.js> <names.txt> [--create-after <file>] [--measured <file>] [--dry]
 // names.txt lists one declaration name per line (# starts a comment). Statements that declare several
 // names must be listed completely. The tool refuses when the move would make a const/let initialiser
 // read another const/let that is now declared after it (a temporal-dead-zone error at load time).
 // Loose statements (calls, registrations) are never moved: their order is behaviour.
+// --measured <file> takes the output of tools/refactor/load-reads.mjs. The call-path check below is static and
+// counts any mention of a function as a call; a name the measurement saw no read of before its declaration ran
+// ("tdz 0") is exempt from that one check when it moves to an earlier place, a name never read during load
+// ("not read at load") wherever it moves.
 import fs from 'node:fs';
 import path from 'node:path';
 import * as acorn from 'acorn';
@@ -18,7 +22,11 @@ const createIdx = args.indexOf('--create-after');
 const createAfter = createIdx >= 0 ? args[createIdx + 1] : null;
 const beforeIdx = args.indexOf('--create-before');
 const createBefore = beforeIdx >= 0 ? args[beforeIdx + 1] : null;
-const [workFile, target, namesFile] = args.filter((a, i) => !a.startsWith('--') && !(createIdx >= 0 && i === createIdx + 1) && !(beforeIdx >= 0 && i === beforeIdx + 1));
+const measuredIdx = args.indexOf('--measured');
+const [workFile, target, namesFile] = args.filter((a, i) => !a.startsWith('--') && ![createIdx, beforeIdx, measuredIdx].some((k) => k >= 0 && i === k + 1));
+const measuredLines = measuredIdx < 0 ? [] : fs.readFileSync(args[measuredIdx + 1], 'utf8').split('\n');
+const measuredSafe = new Set(measuredLines.map((l) => /^(\S+)\t(not read at load|ok \d+ tdz 0\b)/.exec(l)?.[1]).filter(Boolean));
+const measuredUnread = new Set(measuredLines.map((l) => /^(\S+)\tnot read at load/.exec(l)?.[1]).filter(Boolean));
 const srcDir = path.resolve('src');
 let text = fs.readFileSync(workFile, 'utf8');
 const names = fs.readFileSync(namesFile, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
@@ -138,7 +146,7 @@ for (const s of stmts) {
 {
   if (insertAt !== undefined) {
     const movedValues = new Set();
-    for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) movedValues.add(n);
+    for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) if (!measuredUnread.has(n) && !(measuredSafe.has(n) && insertAt < s.start)) movedValues.add(n);
     const fnByName = new Map();
     for (const s of top) if (s.type === 'FunctionDeclaration') fnByName.set(s.id.name, s);
     const eager = new Map(); // function name -> the load-time statement or function that reaches it

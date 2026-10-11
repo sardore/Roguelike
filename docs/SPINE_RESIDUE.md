@@ -10,11 +10,13 @@
 | Q: QA 전용 | `src/qa/qa.js`에 선언된 것은 게임 파일로 옮기지 않는다. |
 | P: 느슨한 문장 | 호출·등록 문장은 실행 순서가 곧 동작이라 옮기지 않는다(이벤트 리스너 등록 순서는 `input.listeners.*` 지문 테스트가 지킨다). |
 
+### 계측으로 푼 보수적 판단
+`move-to`의 호출 경로 검사는 정적이라 함수 이름이 언급되기만 해도 로드 중 호출로 본다. `tools/refactor/load-reads.mjs`는 실제로 로드 중 읽히는지를 잰다(spine.js의 값 바인딩 362개, 7가지 부팅 상황). 결과: 221개는 로드 중 한 번도 읽히지 않고, 140개는 선언이 실행된 뒤에만 읽히고, 선언 전 읽기(TDZ)는 `BRANCH_DEFS105` 하나(F-21)다. `move-to --measured <결과>`는 이 결과로 그 정적 검사 하나만 면제한다(앞으로 옮길 때는 TDZ 0, 뒤로 옮길 때는 로드 중 읽기 0인 이름). 옮긴 뒤에는 `--snapshot`으로 옛 빌드와 새 빌드의 로드 끝 값을 비교한다.
+
 ## 선언 (이유 L / W)
 | 이름 | 원래 도메인 | 이유 | 해소 방법 |
 |---|---|---|---|
 | `POTION_LIST`, `POTION_BY_KIND` | items | W (`window.MANRU_POTIONS`) | `MANRU_POTIONS`를 만드는 문장을 소유자에게 옮긴 뒤 이동 |
-| `LEGEND_TILES49` | render | L (`LEGENDS47` 로드 시 읽음) | `LEGENDS47`과 같은 파일로 |
 | `Cam96` | render | L/W | 확인 필요 |
 | `InputRouter`, `ClientEnvironment`, `Runtime81`, `DesktopClient`, `CONFIG81` | input | L (스파인의 느슨한 문장이 로드 시 읽음: 줄 8123, 10573, 15089, 24626, 24747 부근) | 해당 문장(등록·부팅)과 함께 input/boot로 옮기거나, 읽는 문장을 읽는 시점이 늦은 형태로 바꾼다(동작을 바꾸지 않는 범위에서) |
 | `coach`, `STORY_VERSION992` | story | L (스파인의 느슨한 문장이 로드 시 읽음: 줄 14125, 24899 부근) | 읽는 문장과 함께 이동 |
@@ -23,7 +25,8 @@
 | `debugBattle*`, `Auto81`, 한두 글자 최상위 상수 | ui | (순서 문제가 아니라 도메인/이름 미정) | 디버그 전장 파일, 이동 도메인, 역할명 단계 |
 | `PlacementService`, `OccupancyService`, `BLOCK85` | mapgen | L (함수 `aquaticStranded`가 렌더 경로를 통해 스파인의 로드 문장에서 호출되고 이 값을 읽음) | 호출하는 로드 문장과 함께 이동 |
 | `ConnectedDecor81`, `floorSet980`, `immutable980` | mapgen | T (초기화식이 `TT.*`/`window.*` 값을 로드 시점에 집합·객체로 담는데, 그 값을 채우는 스파인의 문장(줄 12495 부근 `TT.*=`)이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 이동 |
-| 위 분기 상수 약 25개와 `LEGENDS47`·`LEGEND_TILES49`·`LEGEND_THEMES47`·`DEF47`, `LEGEND_SKILLS986` | branches | L(추이적), T/전설 표 순서(`DEF47`·`LEGEND_TILES49`가 `LEGENDS47`을 로드 시 읽음) | 호출 경로를 끊는 부팅 단계 정리 뒤 한 번에 이동 |
+| `BRANCH_DEFS105` | branches | 계측된 TDZ 읽기(F-21): `branch.json` 세이브로 부팅하면 로드 중 `refreshContinue`가 선언 전에 읽고 catch된다. 옮기면 그 읽기가 성공한다(동작 변경) | F-21 결정 뒤 |
+| `BRANCH_INTERACTIVE_OVERLAYS105` | branches | T (`TT.*`를 로드 시점에 담는데 채우는 문장이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 |
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
