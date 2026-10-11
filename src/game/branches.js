@@ -2082,3 +2082,113 @@ const CITADEL_ENEMIES105=Object.freeze([
  {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
 const CITADEL_MOVED105=Object.freeze(['chain_sickle','curse_spear','ward_hammer']);
+function pressureSwitchVariant105(button){
+ const m=mineState(),trial=state.branchWorld105?.citadel105?.trial105;
+ const pressed=button.pressedTurn===state.floorTurn||runtimeTerrainOccupants57(button.x,button.y).some(e=>e.hp>0&&!e.flying)||m?.carts.some(c=>c.alive&&c.x===button.x&&c.y===button.y);
+ const latched=button.remote105?!!state.branchWorld105?.citadel105?.opened?.[button.remote105.key]:button.trialSeal105!=null?!!trial?.seals?.includes(button.trialSeal105):button.trialBoulder105?!!trial?.boulder:m?.walls.some(w=>w.open&&(w.buttonId===button.id||w.buttonIds?.includes(button.id)));
+ return Number(pressed)+2*Number(!!latched);
+}
+function k(x,y){ return x+","+y; }
+function isWaterTile105(tile){return tile===TT.WATER||tile===TT.SHALLOW_WATER;}
+function effectCanAffect57(effect,target){return !!target&&target.hp>0&&(effect?.friendlyFire||factionsHostile57(effect?.sourceFaction||'neutral',entityFaction(target)))}
+function elementalStructureAt105(x,y){
+ const object=mineState()?.carts.find(c=>c.alive&&c.x===x&&c.y===y&&c.material105);
+ return object?{type:'mine-structure',object,material:object.material105}:null;
+}
+function destroyElementStructure105(target,elem){
+ return !!(target?.object?.alive&&elementAffectsMaterial105(elem,target.material)&&destroyMineStructure(target.object,elem));
+}
+function breakFurnitureTerrain57(x,y,weapon,options={}){
+  if(!state)return false;const t=state.map?.[y]?.[x],key=k(x,y),usedBed=options.cause==='bed-use'&&t===TT.BED,crush=usedBed||['rising-gate','wave'].includes(options.cause);
+  if(!crush&&state.terrainAttachment58?.[key]==='secret-wall')return !!globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,null)?.result;
+  const mine=crush?mineState():null,tileFurniture=crush?terrainLayerCatalog58().overlays.has(t):isToolBreakableTerrain57(t),prop=crush&&(Object.hasOwn(state.branchTerrain105?.props||{},key)||state.branchTerrain105?.palace105?.props?.[key]?.tile===t),decor=crush&&(state.decor||[]).some(d=>d.x===x&&d.y===y),lamp=mine?.lanterns.some(l=>l.x===x&&l.y===y);
+  if(!tileFurniture&&!prop&&!decor&&!lamp)return false;
+  if(tileFurniture){
+   if(t===TT.JAR){if(!destroyJar57(x,y,{forced:true,source:crush?'rising-gate':'tool'}).ok)return false;if(!crush)return true;}
+   else{const base=releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y));setTerrainTile58(state.map,x,y,base);}
+  }
+  if(crush){
+   if(state.branchTerrain105?.props)delete state.branchTerrain105.props[key];if(state.branchTerrain105?.palace105?.props)delete state.branchTerrain105.palace105.props[key];
+   state.decor=(state.decor||[]).filter(d=>d.x!==x||d.y!==y);
+   if(mine)mine.lanterns=mine.lanterns.filter(l=>l.x!==x||l.y!==y);
+   branchInvalidateTerrain(state.map,x,y);
+  }
+  if(t!==TT.JAR)burst(x,y,'#a78357',10,.65);if(!usedBed)alertNearby(x,y,7);addLog(usedBed?'낡은 침상이 무너졌다. 다시 사용할 수 없다.':crush?(options.cause==='wave'?'창해의 파도에 가구가 부서졌다.':'솟아오르는 격벽에 가구가 부서졌다.'):`${weapon?.name||'도구'}로 가구를 철거했다.`);VisibilityService.compute();return true;
+}
+function lineClear(x0,y0,x1,y1){return combatLineCheckR8(x0,y0,x1,y1,{units:false}).ok}
+function contextAction(){
+  const stock=state?.player&&ShopMapBuilder.groundAt(state.player.x,state.player.y);if(stock)return gameplayInputAllowed57()&&openShop(stock);
+  const merchant=adjacentMerchant58();if(merchant)return interactNeutral58(merchant);
+  const act=playerAction57('context',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;
+  const bed=dojoAdjacentBed();if(bed)return dojoUseBed(bed,act);
+  const silk=adjacentSilkTrap57();
+  if(silk&&snareEvent(silk.x,silk.y,true)){commitPlayerAction57(act,1);return true}
+  if(state.map[state.player.y]?.[state.player.x]===TT.ALTAR){const handled=bumpTileAction(state.player.x,state.player.y,{cause:'interact',activeInteraction:true});if(handled)commitPlayerAction57(act,1);return handled;}
+  const gate=palaceGateNearby();if(gate)return palaceUseGate(gate,act);
+  const branch=adjacentBranchPortal105();if(branch){if(branchTransition(branch)){WorldTransition57.commit(act,1);return true}return false}
+  if(state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return}
+  if((state.items||[]).some(it=>it.x===state.player.x&&it.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return}
+  const anvil=citadelAdjacentAnvil();if(anvil)return anvilOpen(anvil);
+  const pushable=adjacentPushable105();if(pushable){if(pushStructure105(pushable)){commitPlayerAction57(act,1);return true}toast('앞칸이 막혔거나 통로를 봉쇄하게 되어 밀 수 없다.');return false}
+  const p=state.player,f=p.facing||{x:0,y:-1},jx=p.x+f.x,jy=p.y+f.y;if(state.map[jy]?.[jx]===TT.JAR&&!findMonsterAt(jx,jy)){state._manualTerrainTargetR8={type:'jar',x:jx,y:jy};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}
+  const doorHook=globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__;if(typeof doorHook==='function'&&doorHook())return true;
+  return false;
+}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+const WorldTransition57=Object.freeze({
+ allowed(){return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
+ portal(x,y,active,cause){
+  const branch=state?.branchPortals105?.find(p=>p.x===x&&p.y===y),legend=state?.artifactDungeon46?state.artifactExit46:state?.artifactPortal46;
+  const hasLegend=legend?.x===x&&legend?.y===y;if(!branch&&!hasLegend)return false;
+  if(branch)return false; // Branch gates are passable floor markers; only explicit interaction travels.
+  if(!active||cause!=='walk'||!this.allowed())return true;
+  globalThis.__MANRU_ARTIFACT46__?.handlePortalAt?.(x,y);
+  return true;
+ },
+ complete(){OccupancyService.endShared();state._worldTransition57=true},
+ commit(ctx,cost){if(!state?._worldTransition57)return false;delete state._worldTransition57;commitPlayerAction57(ctx,cost);return true}
+});
+const TEMP_TERRAIN_IMMUTABLE57=new Set([TT.STAIR,TT.PORTAL,TT.KEY_TILE,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.SWITCH,TT.DRAWBRIDGE_UP,TT.DRAWBRIDGE_DOWN].filter(v=>Number.isFinite(v)));
+function runtimeTerrainOccupants57(x,y){
+  const out=[];if(!state)return out;if(state.player?.x===x&&state.player?.y===y)out.push(state.player);for(const m of state.monsters||[])if(m.hp>0&&monCovers(m,x,y))out.push(m);return out;
+}
+function runtimeTerrainSolid57(tile){return tileBlocks(tile)&&![TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(tile)}
+function tickCombatFields57(){
+ state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
+ for(const f of state.tempFields.filter(f=>f.kind==='palaceWave105'&&f.ttl>0))palaceAdvanceWave(f);
+ for(const f of state.tempFields.filter(f=>f.kind==='fire'&&f.ttl>0&&state.turn>(f.bornTurn??-1))){applyElementField57(f,'fire',3,{source:'화염 지대',color:'#ff9b55',size:12});if(runState57()!=='playing')return false}return true;
+}
+  function simpleHtml986(info){const desc=dedupeProse986(info.desc||''),ability=dedupeProse986(info.ability||''),hint=dedupeProse986(info.hint||'',[desc,ability].filter(Boolean).join(' ')),meta=Array.isArray(info.meta)?info.meta.filter(Boolean):[],stats=Array.isArray(info.stats)?info.stats.filter(Boolean):[];return`${meta.length?`<div class="inspectMeta986">${meta.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${stats.length?`<div class="inspectStats986">${stats.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${info.statuses?.length?`<section class="inspectStatuses57" aria-label="상태이상">${info.statuses.map(r=>`<span class="inspectStatus57" data-status-key="${esc984(r.key)}" style="--status-color:${r.color}"><b aria-hidden="true">${combatStatusIconHtml57(r)}</b>${esc984(r.label)}${r.turns!==null?` <small>${displayNumber53(r.turns)}턴</small>`:''}</span>`).join('')}</section>`:''}${ability?`<div class="inspectAbility986"><b>능력</b>${esc984(ability)}</div>`:''}<p class="inspectDesc986">${esc984(desc)}</p>${info.martialCards?`<section class="inspectMartials105" aria-label="보유 무술"><b>보유 무술</b>${info.martialCards.map(c=>`<article class="${martialCardClasses(c.id,c.actor)} inspectMartial105">${martialCardContent(c.id,c.actor,'','',true)}</article>`).join('')}${info.blink?`<article class="martialCard991 skill-ghost inspectMartial105"><div class="skillSig991">縮</div><div class="skillCopy991"><h4>점멸</h4><div class="martialLv991">기력 ${DOJO_BLINK105.cost}</div><p>${DOJO_BLINK105.range}칸 이동 · 재사용 ${DOJO_BLINK105.cooldown}턴</p></div></article>`:''}</section>`:''}${info.skills?.length?`<section class="inspectMartials105 inspectSkills986" aria-label="기술·특성"><b>기술·특성</b>${info.skills.map(c=>`<details class="martialCard991 skill-${esc984(c.style)} inspectMartial105 inspectSkill986" data-skill-id="${esc984(c.id)}"><summary><div class="skillSig991" aria-hidden="true">${esc984(c.seal)}</div><div class="skillCopy991"><h4>${esc984(c.name)}</h4><div class="martialLv991">${esc984(c.type)} · ${esc984(c.meta)}</div></div><span class="inspectSkillToggle986" aria-hidden="true">＋</span></summary><p class="inspectSkillEffect986">${esc984(c.desc)}</p></details>`).join('')}</section>`:''}${hint?`<div class="inspectHint986"><b>힌트</b>${esc984(hint)}</div>`:''}`}
+function armFragile(x,y,t,opts={}){
+  if(t===TT.PAPER_BRIDGE&&opts.entity&&opts.entity!==state.player)return false;
+  const h=hz(),kk=k(x,y),kind=t===TT.PAPER_BRIDGE?'paper':'crumble',turn=state.turn||0,agency=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
+  if(!h.armed[kk]){
+    let collapseAgency57=null;
+    if(kind==='paper'){
+      const cause=opts.cause||'unknown',voluntary=new Set(['walk','blink','talisman-blink','fusion-blink','holy-blink','portal','ally-swap']);
+      // If this landing happens before the chosen action is committed, preserve the landing action plus one full reaction action.
+      // If it happens during/after a turn core (enemy push/teleport etc.), the current agency was already spent, so grant one future real action.
+      const pendingChosen=!!state._turnPipelineActive57&&!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57;
+      collapseAgency57=agency+((pendingChosen||(!state._turnPipelineActive57&&voluntary.has(cause)))?2:1);
+      h.armed[kk]={x,y,kind,armedTurn:turn,armedAgency57:agency,collapseAgency57,entryCause57:cause};
+    }else h.armed[kk]={x,y,kind,armedTurn:turn};
+    addLog(branchLeafAt(x,y)?'잎사귀 다리가 가라앉기 시작했다. 다음 실제 행동 뒤 영구히 사라진다.':kind==='paper'?'종이 다리가 축축하게 꺼지며 찢어지기 시작했다. 다음 실제 행동권을 쓴 뒤 무너진다. 기절처럼 행동권을 잃은 턴은 세지 않는다.':'발판에 굵은 금이 번졌다. 다음 발걸음 뒤에 무너진다.');
+    toast(branchLeafAt(x,y)?'잎사귀 다리 · 영구 붕괴 예고':kind==='paper'?'종이 다리 · 다음 실제 행동 후 붕괴':'발판 붕괴 예고');burst(x,y,kind==='paper'?'#d9cda7':'#c597d0',12,.65)
+  }
+  return true
+}
+function adef46(id){return DEF47.get(id)||null}
+function eligible46(){const f=state?.floor||0;citadelEnsurePlan();return LEGENDS47.filter(a=>a.id!=='water_crossbow'&&!citadelReservedRelic(a.id)&&a.minFloor<=f&&f<=a.maxFloor&&!possesses47(a.id)&&!claimed47(a.id))}
+function installLegendKeys47(a,rs){const t=LEGEND_TILES49[a.id],spec=LEGEND_DUNGEON_LAYOUTS[a.id],doors=[],keys=[],groups=[];state.legendSanctums47=[];
+ for(const [idx,keyId]of [[rs.length-2,'iron'],[rs.length-1,'jade']]){const r=rs[idx],group=groups.length,gd=[];if(!r.ports.length)throw new Error('sealed wing without entrance');for(const p of r.ports){setTerrainTile58(state.map,p.x,p.y,TT.LOCKED_GATE);const d={x:p.x,y:p.y,keyId,group,open:false,sanctum47:true};doors.push(d);gd.push(d);addDecor47(p.x,p.y,'key_arch',keyId==='iron'?'철문':'청옥문')}groups.push({keyId,doors:gd});state.legendSanctums47.push({cx:r.cx,cy:r.cy,r:Math.floor(Math.min(r.w,r.h)/2),keyId,gate:r.ports[0],label:r===rs.at(-1)?'전설무기 성소':'청옥열쇠 별전'})}
+ for(const[idx,keyId]of[[spec.keyRooms[0],'iron'],[rs.length-2,'jade']]){const r=rs[idx];let pos=null;for(let y=r.y+1;y<r.y+r.h-1&&!pos;y++)for(let x=r.x+1;x<r.x+r.w-1&&!pos;x++)if(!tileBlocks(state.map[y][x])&&state.map[y][x]!==TT.DOOR&&!state.legendDecorGrid47[key46(x,y)]?.object49)pos={x,y};if(!pos)throw new Error('no key niche');setTerrainTile58(state.map,pos.x,pos.y,TT.KEY_TILE);keys.push({...pos,keyId,active:true,floorTile49:t.base+1})}
+ state.keyPlan96={doors,keys,ring:{iron:0,jade:0},groups,kind:'legendary-r48'};state.floorKeys=0;state.floorKeysRequired=0;globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();return state.keyPlan96;
+}
+function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan();if(citadelReservedRelic(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
+function carryRunState57(extra=[]){const o={};for(const f of new Set([...BRANCH_RUN_FIELDS105,...extra]))if(f in state)o[f]=structuredClone(state[f]);return o}
+function retryPendingBranchEntrance105(){const id=state?.branchWorld105?.pendingEntrances105?.[branchWorldKey()];if(!id)return false;if(id==='mine')return mineEnsureEntrance({required:false});return branchEntrance({required:false});}
+function migrateMineAppearance105(){
+ const m=mineState();if(!m||m.artRevision===4)return;
+ if(m.version<2)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if([TT.RUMOR_CHARRED_COUNTER,TT.RACK].includes(state.map[y][x]))setTerrainTile58(state.map,x,y,TT.STONE_PATH);
+ m.artRevision=4;
+}

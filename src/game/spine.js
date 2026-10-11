@@ -22,12 +22,7 @@
 
 
 
-function pressureSwitchVariant105(button){
- const m=mineState(),trial=state.branchWorld105?.citadel105?.trial105;
- const pressed=button.pressedTurn===state.floorTurn||runtimeTerrainOccupants57(button.x,button.y).some(e=>e.hp>0&&!e.flying)||m?.carts.some(c=>c.alive&&c.x===button.x&&c.y===button.y);
- const latched=button.remote105?!!state.branchWorld105?.citadel105?.opened?.[button.remote105.key]:button.trialSeal105!=null?!!trial?.seals?.includes(button.trialSeal105):button.trialBoulder105?!!trial?.boulder:m?.walls.some(w=>w.open&&(w.buttonId===button.id||w.buttonIds?.includes(button.id)));
- return Number(pressed)+2*Number(!!latched);
-}
+
 
 
 
@@ -319,7 +314,7 @@ function startFloorTransition(){
 
 function choice(arr){ return arr[Math.floor(globalThis.__MANRU_RANDOM57__()*arr.length)]; }
 function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
-function k(x,y){ return x+","+y; }
+
 
 globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
 globalThis.__MANRU_RANDOM57__=()=>RngService.random();
@@ -351,7 +346,7 @@ function registerAttackCostStage55(id,run){if(ATTACK_COST_STAGES55.some(v=>v.id=
 function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate move cost stage '+id);MOVE_COST_STAGES55.push({id,run})}
 
 
-function isWaterTile105(tile){return tile===TT.WATER||tile===TT.SHALLOW_WATER;}
+
 function moveTurnCost(destination=null){let cost=clamp(1/(playerCloak().moveSpeed||1),.72,1.15);for(const stage of MOVE_COST_STAGES55)cost=stage.run(cost);if(silkThreadAt54(state.player.x,state.player.y))cost+=.5;const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding')||0;return clamp(applyPlayerDebuffActionCost('move',cost),.25,cursed>0?6:2.4)*(terrainBaseTile58(destination?.x??state.player.x,destination?.y??state.player.y)===TT.SHALLOW_WATER?1.5:1)}
 function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}
 function normalizeRunState57(){if(!state)return;if(!state.generationInProgress57&&!state.terrainReactions105?.wallMaterials105)produceWallMaterials105();const next=state.runState57||(state.dead?'death':state.victory?'victory':'playing');state.runState57=next;state.dead=next==='death';state.victory=next==='victory';if(state.player?.summoning105)summonState()}
@@ -809,7 +804,7 @@ findItemCell(origin,opt={}){
 
 function effectSource57(source,opts={}){if(source?.sourceFaction&&source!==state?.player&&!(state?.monsters||[]).includes(source))return{sourceFaction:opts.sourceFaction||source.sourceFaction,owner:opts.owner??source.owner??null,credit:opts.credit??source.credit??null,friendlyFire:opts.friendlyFire??!!source.friendlyFire};const owner=opts.owner??source??null;return{sourceFaction:opts.sourceFaction||entityFaction(owner),owner:owner===state?.player?'player':(state?.monsters||[]).includes(owner)?combatantId(owner):owner?.id57??owner?.name??owner,credit:opts.credit??(entityFaction(owner)==='player'?'player':null),friendlyFire:!!opts.friendlyFire}}
 
-function effectCanAffect57(effect,target){return !!target&&target.hp>0&&(effect?.friendlyFire||factionsHostile57(effect?.sourceFaction||'neutral',entityFaction(target)))}
+
 function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
 // Element contacts belong to world geometry, not to the identity of the attacker.
 // Producers supply a frozen footprint; consumers decide by material/state only.
@@ -837,13 +832,8 @@ function produceWallMaterials105(world=state,reset=false){
 
 
 function elementAffectsMaterial105(elem,material){return elem==='earth'&&material==='stone'||elem==='fire'&&material==='wood';}
-function elementalStructureAt105(x,y){
- const object=mineState()?.carts.find(c=>c.alive&&c.x===x&&c.y===y&&c.material105);
- return object?{type:'mine-structure',object,material:object.material105}:null;
-}
-function destroyElementStructure105(target,elem){
- return !!(target?.object?.alive&&elementAffectsMaterial105(elem,target.material)&&destroyMineStructure(target.object,elem));
-}
+
+
 function newTerrainReactions105(){return{version:2,burning:{},unlit:{},revision:0,lastTick:null}}
 
 
@@ -1239,23 +1229,7 @@ function jarGasConcentrationMap57(status='poison',target=null){
 
 
 
-function breakFurnitureTerrain57(x,y,weapon,options={}){
-  if(!state)return false;const t=state.map?.[y]?.[x],key=k(x,y),usedBed=options.cause==='bed-use'&&t===TT.BED,crush=usedBed||['rising-gate','wave'].includes(options.cause);
-  if(!crush&&state.terrainAttachment58?.[key]==='secret-wall')return !!globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,null)?.result;
-  const mine=crush?mineState():null,tileFurniture=crush?terrainLayerCatalog58().overlays.has(t):isToolBreakableTerrain57(t),prop=crush&&(Object.hasOwn(state.branchTerrain105?.props||{},key)||state.branchTerrain105?.palace105?.props?.[key]?.tile===t),decor=crush&&(state.decor||[]).some(d=>d.x===x&&d.y===y),lamp=mine?.lanterns.some(l=>l.x===x&&l.y===y);
-  if(!tileFurniture&&!prop&&!decor&&!lamp)return false;
-  if(tileFurniture){
-   if(t===TT.JAR){if(!destroyJar57(x,y,{forced:true,source:crush?'rising-gate':'tool'}).ok)return false;if(!crush)return true;}
-   else{const base=releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y));setTerrainTile58(state.map,x,y,base);}
-  }
-  if(crush){
-   if(state.branchTerrain105?.props)delete state.branchTerrain105.props[key];if(state.branchTerrain105?.palace105?.props)delete state.branchTerrain105.palace105.props[key];
-   state.decor=(state.decor||[]).filter(d=>d.x!==x||d.y!==y);
-   if(mine)mine.lanterns=mine.lanterns.filter(l=>l.x!==x||l.y!==y);
-   branchInvalidateTerrain(state.map,x,y);
-  }
-  if(t!==TT.JAR)burst(x,y,'#a78357',10,.65);if(!usedBed)alertNearby(x,y,7);addLog(usedBed?'낡은 침상이 무너졌다. 다시 사용할 수 없다.':crush?(options.cause==='wave'?'창해의 파도에 가구가 부서졌다.':'솟아오르는 격벽에 가구가 부서졌다.'):`${weapon?.name||'도구'}로 가구를 철거했다.`);VisibilityService.compute();return true;
-}
+
 
 
 
@@ -1406,7 +1380,7 @@ compute(){
   recordPlayerSight105();
 }
 });
-function lineClear(x0,y0,x1,y1){return combatLineCheckR8(x0,y0,x1,y1,{units:false}).ok}
+
 // Movement, sight and combat all permit corner diagonals. The shared symmetric LOS
 // still blocks walls crossed between cells, including knight-move offsets.
 
@@ -1439,24 +1413,7 @@ function adjacentBranchPortal105(){
   if(!state?.player)return null;const p=state.player,near=(state.branchPortals105||[]).filter(q=>Math.max(Math.abs(q.x-p.x),Math.abs(q.y-p.y))<=1&&state.map[q.y]?.[q.x]===TT.PORTAL);
   return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;
 }
-function contextAction(){
-  const stock=state?.player&&ShopMapBuilder.groundAt(state.player.x,state.player.y);if(stock)return gameplayInputAllowed57()&&openShop(stock);
-  const merchant=adjacentMerchant58();if(merchant)return interactNeutral58(merchant);
-  const act=playerAction57('context',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;
-  const bed=dojoAdjacentBed();if(bed)return dojoUseBed(bed,act);
-  const silk=adjacentSilkTrap57();
-  if(silk&&snareEvent(silk.x,silk.y,true)){commitPlayerAction57(act,1);return true}
-  if(state.map[state.player.y]?.[state.player.x]===TT.ALTAR){const handled=bumpTileAction(state.player.x,state.player.y,{cause:'interact',activeInteraction:true});if(handled)commitPlayerAction57(act,1);return handled;}
-  const gate=palaceGateNearby();if(gate)return palaceUseGate(gate,act);
-  const branch=adjacentBranchPortal105();if(branch){if(branchTransition(branch)){WorldTransition57.commit(act,1);return true}return false}
-  if(state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return}
-  if((state.items||[]).some(it=>it.x===state.player.x&&it.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return}
-  const anvil=citadelAdjacentAnvil();if(anvil)return anvilOpen(anvil);
-  const pushable=adjacentPushable105();if(pushable){if(pushStructure105(pushable)){commitPlayerAction57(act,1);return true}toast('앞칸이 막혔거나 통로를 봉쇄하게 되어 밀 수 없다.');return false}
-  const p=state.player,f=p.facing||{x:0,y:-1},jx=p.x+f.x,jy=p.y+f.y;if(state.map[jy]?.[jx]===TT.JAR&&!findMonsterAt(jx,jy)){state._manualTerrainTargetR8={type:'jar',x:jx,y:jy};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}
-  const doorHook=globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__;if(typeof doorHook==='function'&&doorHook())return true;
-  return false;
-}
+
 ActionDispatcher.register('CONTEXT_ACTION',contextAction);
 
 
@@ -1469,7 +1426,7 @@ setGenerationBase('base-original',generateFloorOriginal);
 
 
 function tierForFloor(floor=state.floor){if(floor>=24)return globalThis.__MANRU_RANDOM57__()<.42?5:4;if(floor>=21)return globalThis.__MANRU_RANDOM57__()<.38?4:3;if(floor>=16)return globalThis.__MANRU_RANDOM57__()<.40?4:3;if(floor>=11)return globalThis.__MANRU_RANDOM57__()<.55?3:2;if(floor>=6)return globalThis.__MANRU_RANDOM57__()<.48?2:1;return 1}
-function clone(o){return JSON.parse(JSON.stringify(o))}
+
 
 
 
@@ -1534,19 +1491,7 @@ function resolvePortalLanding57(link){
   const px=preferred?.x??link.destPortal?.x??room.cx??room.x,py=preferred?.y??link.destPortal?.y??room.cy??room.y;
   return source.filter(q=>portalLandingValid57(link,q.x,q.y)).sort((a,b)=>Math.abs(a.x-px)+Math.abs(a.y-py)-Math.abs(b.x-px)-Math.abs(b.y-py)||Math.abs(a.x-(link.destPortal?.x??px))+Math.abs(a.y-(link.destPortal?.y??py))-Math.abs(b.x-(link.destPortal?.x??px))-Math.abs(b.y-(link.destPortal?.y??py))||a.y-b.y||a.x-b.x)[0]||null;
 }
-const WorldTransition57=Object.freeze({
- allowed(){return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
- portal(x,y,active,cause){
-  const branch=state?.branchPortals105?.find(p=>p.x===x&&p.y===y),legend=state?.artifactDungeon46?state.artifactExit46:state?.artifactPortal46;
-  const hasLegend=legend?.x===x&&legend?.y===y;if(!branch&&!hasLegend)return false;
-  if(branch)return false; // Branch gates are passable floor markers; only explicit interaction travels.
-  if(!active||cause!=='walk'||!this.allowed())return true;
-  globalThis.__MANRU_ARTIFACT46__?.handlePortalAt?.(x,y);
-  return true;
- },
- complete(){OccupancyService.endShared();state._worldTransition57=true},
- commit(ctx,cost){if(!state?._worldTransition57)return false;delete state._worldTransition57;commitPlayerAction57(ctx,cost);return true}
-});
+
 function bumpTileAction(x,y,opts={}){
   const tile=state?.map?.[y]?.[x],cause=opts.cause||'walk',active=opts.activeInteraction??cause==='walk';
   if(tile===TT.PORTAL&&!state.branchPortals105?.some(p=>p.x===x&&p.y===y))clearHeldInput53?.();
@@ -1634,11 +1579,9 @@ function resolvePlayerLanding57(x,y,opts={}){
   resolveSilkCrossing54(origin,cause);
   const entry=opts.entry===false?false:bumpTileAction(x,y,{cause,activeInteraction});return{ok:true,moved:p.x!==origin.x||p.y!==origin.y,cause,entry,x:p.x,y:p.y}
 }
-const TEMP_TERRAIN_IMMUTABLE57=new Set([TT.STAIR,TT.PORTAL,TT.KEY_TILE,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.SWITCH,TT.DRAWBRIDGE_UP,TT.DRAWBRIDGE_DOWN].filter(v=>Number.isFinite(v)));
+
 const RUNTIME_ENTRY_REACTIVE57=new Set([TT.PAPER_BRIDGE,TT.CRUMBLE,TT.PORTAL,TT.RUMOR,TT.TRAP,TT.MIRROR,TT.SNARE,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION].filter(v=>Number.isFinite(v)));
-function runtimeTerrainOccupants57(x,y){
-  const out=[];if(!state)return out;if(state.player?.x===x&&state.player?.y===y)out.push(state.player);for(const m of state.monsters||[])if(m.hp>0&&monCovers(m,x,y))out.push(m);return out;
-}
+
 
 function terrainHasPendingRecovery57(x,y){
   // Authored future drainage preserves submerged loot in place. Terminal floods
@@ -1649,7 +1592,7 @@ function terrainHasPendingRecovery57(x,y){
   const reveal=state.floor23?.reveal;if(reveal&&!reveal.used&&(reveal.cells||[]).some(q=>q.x===x&&q.y===y&&safe(q.t)))return ReachabilityService.lootCells({futureOnly:true,includeReveal:true}).has(k(x,y));
   return false;
 }
-function runtimeTerrainSolid57(tile){return tileBlocks(tile)&&![TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(tile)}
+
 
 
 
@@ -2064,11 +2007,7 @@ function silkThreadAt54(x,y){
 
 
 
-function tickCombatFields57(){
- state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
- for(const f of state.tempFields.filter(f=>f.kind==='palaceWave105'&&f.ttl>0))palaceAdvanceWave(f);
- for(const f of state.tempFields.filter(f=>f.kind==='fire'&&f.ttl>0&&state.turn>(f.bornTurn??-1))){applyElementField57(f,'fire',3,{source:'화염 지대',color:'#ff9b55',size:12});if(runState57()!=='playing')return false}return true;
-}
+
 
 function tickElementFields57(){
  for(const f of state.elementFields74||[]){if(state.turn>f.bornTurn&&f.ttl>0&&f.kind==='fire'){applyElementField57(f,'fire',f.damage??3,{source:'원소 화염지대',color:'#ff9862',size:10});if(runState57()!=='playing')return;f.ttl--}}state.elementFields74=(state.elementFields74||[]).filter(f=>f.ttl>0);
@@ -6984,7 +6923,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  function simpleHtml986(info){const desc=dedupeProse986(info.desc||''),ability=dedupeProse986(info.ability||''),hint=dedupeProse986(info.hint||'',[desc,ability].filter(Boolean).join(' ')),meta=Array.isArray(info.meta)?info.meta.filter(Boolean):[],stats=Array.isArray(info.stats)?info.stats.filter(Boolean):[];return`${meta.length?`<div class="inspectMeta986">${meta.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${stats.length?`<div class="inspectStats986">${stats.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${info.statuses?.length?`<section class="inspectStatuses57" aria-label="상태이상">${info.statuses.map(r=>`<span class="inspectStatus57" data-status-key="${esc984(r.key)}" style="--status-color:${r.color}"><b aria-hidden="true">${combatStatusIconHtml57(r)}</b>${esc984(r.label)}${r.turns!==null?` <small>${displayNumber53(r.turns)}턴</small>`:''}</span>`).join('')}</section>`:''}${ability?`<div class="inspectAbility986"><b>능력</b>${esc984(ability)}</div>`:''}<p class="inspectDesc986">${esc984(desc)}</p>${info.martialCards?`<section class="inspectMartials105" aria-label="보유 무술"><b>보유 무술</b>${info.martialCards.map(c=>`<article class="${martialCardClasses(c.id,c.actor)} inspectMartial105">${martialCardContent(c.id,c.actor,'','',true)}</article>`).join('')}${info.blink?`<article class="martialCard991 skill-ghost inspectMartial105"><div class="skillSig991">縮</div><div class="skillCopy991"><h4>점멸</h4><div class="martialLv991">기력 ${DOJO_BLINK105.cost}</div><p>${DOJO_BLINK105.range}칸 이동 · 재사용 ${DOJO_BLINK105.cooldown}턴</p></div></article>`:''}</section>`:''}${info.skills?.length?`<section class="inspectMartials105 inspectSkills986" aria-label="기술·특성"><b>기술·특성</b>${info.skills.map(c=>`<details class="martialCard991 skill-${esc984(c.style)} inspectMartial105 inspectSkill986" data-skill-id="${esc984(c.id)}"><summary><div class="skillSig991" aria-hidden="true">${esc984(c.seal)}</div><div class="skillCopy991"><h4>${esc984(c.name)}</h4><div class="martialLv991">${esc984(c.type)} · ${esc984(c.meta)}</div></div><span class="inspectSkillToggle986" aria-hidden="true">＋</span></summary><p class="inspectSkillEffect986">${esc984(c.desc)}</p></details>`).join('')}</section>`:''}${hint?`<div class="inspectHint986"><b>힌트</b>${esc984(hint)}</div>`:''}`}
+
 
 
   window.__MANRU_INSPECT984__=function(q){
@@ -7639,24 +7578,7 @@ function collapseFragileAt105(x,y,kind='paper'){
  const base=kind==='paper'?TT.WATER:(state.crumbleBase60?.[k(x,y)]??TT.VOID),result=RuntimeTerrainOwner.mutate(x,y,base,{source:kind+'-element-collapse'});if(!result.ok)return false;
  const h=hz();delete h.armed[k(x,y)];if(!branchLeafAt(x,y))h.collapsed[k(x,y)]={x,y,restoreTile:tile,baseTile:base,restoreTurn:state.turn+10,kind,mutationVersion57:result.version57};burst(x,y,'#86cbd1',15,.75);return true;
 }
-function armFragile(x,y,t,opts={}){
-  if(t===TT.PAPER_BRIDGE&&opts.entity&&opts.entity!==state.player)return false;
-  const h=hz(),kk=k(x,y),kind=t===TT.PAPER_BRIDGE?'paper':'crumble',turn=state.turn||0,agency=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
-  if(!h.armed[kk]){
-    let collapseAgency57=null;
-    if(kind==='paper'){
-      const cause=opts.cause||'unknown',voluntary=new Set(['walk','blink','talisman-blink','fusion-blink','holy-blink','portal','ally-swap']);
-      // If this landing happens before the chosen action is committed, preserve the landing action plus one full reaction action.
-      // If it happens during/after a turn core (enemy push/teleport etc.), the current agency was already spent, so grant one future real action.
-      const pendingChosen=!!state._turnPipelineActive57&&!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57;
-      collapseAgency57=agency+((pendingChosen||(!state._turnPipelineActive57&&voluntary.has(cause)))?2:1);
-      h.armed[kk]={x,y,kind,armedTurn:turn,armedAgency57:agency,collapseAgency57,entryCause57:cause};
-    }else h.armed[kk]={x,y,kind,armedTurn:turn};
-    addLog(branchLeafAt(x,y)?'잎사귀 다리가 가라앉기 시작했다. 다음 실제 행동 뒤 영구히 사라진다.':kind==='paper'?'종이 다리가 축축하게 꺼지며 찢어지기 시작했다. 다음 실제 행동권을 쓴 뒤 무너진다. 기절처럼 행동권을 잃은 턴은 세지 않는다.':'발판에 굵은 금이 번졌다. 다음 발걸음 뒤에 무너진다.');
-    toast(branchLeafAt(x,y)?'잎사귀 다리 · 영구 붕괴 예고':kind==='paper'?'종이 다리 · 다음 실제 행동 후 붕괴':'발판 붕괴 예고');burst(x,y,kind==='paper'?'#d9cda7':'#c597d0',12,.65)
-  }
-  return true
-}
+
 
 function collapsePaperAfterAction1005(){
   const h=hz(),turn=state.turn||0,agency=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
@@ -8617,13 +8539,13 @@ window.__MANRU_ITEM_ART_R7__={dataItem:data,weaponAsset,pictureAsset:summonPictu
 
 const ARTIFACT_PLAYER_SCOPE46=Object.freeze(['player','status','turn','enemyEnergy','dead','victory','runState57','runEndEffects57']);
 const ARTIFACT_RUN_SCOPE46=Object.freeze(['pendingMartialManualChoice','martialManualDrops','martialDamageSequence','martialProgression1005','artifactClaimed46','artifactHistory46','knowledge56','lootHistory47','uniqueKilled','harvested','holy991','story992','runId984','saveVersion1004']);
-function adef46(id){return DEF47.get(id)||null}
+
 function key46(x,y){return `${x},${y}`}
 function possesses47(id){const p=state?.player;if(!p)return false;return p.weapon?.artifactId46===id||(p.inventory||[]).some(i=>i.artifactId46===id)}
 function claimed47(id){return(state?.artifactClaimed46||[]).includes(id)||(state?.artifactHistory46||[]).some(h=>h.id===id&&['claimed','cleared','completed'].includes(h.status))}
 function owns47(id){return possesses47(id)}
 
-function eligible46(){const f=state?.floor||0;citadelEnsurePlan();return LEGENDS47.filter(a=>a.id!=='water_crossbow'&&!citadelReservedRelic(a.id)&&a.minFloor<=f&&f<=a.maxFloor&&!possesses47(a.id)&&!claimed47(a.id))}
+
 
 function snapshotSerializable46(src){const o=structuredClone(src);delete o.artifactReturn46;return{...o,seen:src.seen instanceof Set?[...src.seen]:(Array.isArray(src.seen)?[...src.seen]:[]),visible:src.visible instanceof Set?[...src.visible]:(Array.isArray(src.visible)?[...src.visible]:[]),grassTufts1020:src.grassTufts1020 instanceof Set?[...src.grassTufts1020]:(Array.isArray(src.grassTufts1020)?[...src.grassTufts1020]:[])}}
 function artifactCarry46(){const o=carryRunState57([...ARTIFACT_PLAYER_SCOPE46,...ARTIFACT_RUN_SCOPE46]);o.hazardPlayer1005={drownUntil:state.hazard1005?.drownUntil||0,voidUntil:state.hazard1005?.voidUntil||0};return o}
@@ -8786,11 +8708,7 @@ function architecture47(a,rs){const t=LEGEND_TILES49[a.id],spec=LEGEND_DUNGEON_L
  for(const p of state.legendPaths49){for(let i=3;i<p.cells.length-3;i+=7){const q=p.cells[i];addDecor47(q.x,q.y,'route','회랑 인레이');}}
  for(const i of spec.bonus){const r=rs[i],x=r.x+2,y=r.y+r.h-2;PlacementService.placeItem({...clone(CONSUMABLES.find(v=>v.type==='potion')||CONSUMABLES[0]),x,y,count:1});}
 }
-function installLegendKeys47(a,rs){const t=LEGEND_TILES49[a.id],spec=LEGEND_DUNGEON_LAYOUTS[a.id],doors=[],keys=[],groups=[];state.legendSanctums47=[];
- for(const [idx,keyId]of [[rs.length-2,'iron'],[rs.length-1,'jade']]){const r=rs[idx],group=groups.length,gd=[];if(!r.ports.length)throw new Error('sealed wing without entrance');for(const p of r.ports){setTerrainTile58(state.map,p.x,p.y,TT.LOCKED_GATE);const d={x:p.x,y:p.y,keyId,group,open:false,sanctum47:true};doors.push(d);gd.push(d);addDecor47(p.x,p.y,'key_arch',keyId==='iron'?'철문':'청옥문')}groups.push({keyId,doors:gd});state.legendSanctums47.push({cx:r.cx,cy:r.cy,r:Math.floor(Math.min(r.w,r.h)/2),keyId,gate:r.ports[0],label:r===rs.at(-1)?'전설무기 성소':'청옥열쇠 별전'})}
- for(const[idx,keyId]of[[spec.keyRooms[0],'iron'],[rs.length-2,'jade']]){const r=rs[idx];let pos=null;for(let y=r.y+1;y<r.y+r.h-1&&!pos;y++)for(let x=r.x+1;x<r.x+r.w-1&&!pos;x++)if(!tileBlocks(state.map[y][x])&&state.map[y][x]!==TT.DOOR&&!state.legendDecorGrid47[key46(x,y)]?.object49)pos={x,y};if(!pos)throw new Error('no key niche');setTerrainTile58(state.map,pos.x,pos.y,TT.KEY_TILE);keys.push({...pos,keyId,active:true,floorTile49:t.base+1})}
- state.keyPlan96={doors,keys,ring:{iron:0,jade:0},groups,kind:'legendary-r48'};state.floorKeys=0;state.floorKeysRequired=0;globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();return state.keyPlan96;
-}
+
 GenerationValidator.legendary=function legendaryCandidate10(){const progression=keyProgressAudit48(false),all=ReachabilityService.keyWalk(new Set(['iron','jade'])),islands=[],badItems=[],badRooms=[];let walkable=0,ordinaryDoors=0;const forbidden=new Set([TT.FLOOR,TT.DARK_WOOD,TT.MOON_STONE,TT.GILDED_FLOOR,TT.BRAZIER,TT.CRATE,TT.JAR,TT.CACHE,TT.STONE_PILLAR,TT.PAPER_BRIDGE]);let reused=0;
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(forbidden.has(t))reused++;if(t===TT.DOOR)ordinaryDoors++;if(!tileBlocks(t)||t===TT.LOCKED_GATE){walkable++;if(!all.seen.has(key46(x,y)))islands.push({x,y,t})}}
  for(const it of state.items)if(!all.seen.has(key46(it.x,it.y)))badItems.push({name:it.name,x:it.x,y:it.y});
@@ -8874,7 +8792,7 @@ function reachAudit46(){if(!state)return null;const a=keyProgressAudit48(false);
 function claimReward46(){const r=state?.artifactReward46;if(!r)return false;state.player.x=r.x;state.player.y=r.y;resetVisualState();VisibilityService.compute();pickupBaseR25();claimAudit46();return{owned:[state.player.weapon,...state.player.inventory].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),left:(state.items||[]).filter(i=>i.legendaryWeapon47).length}}
 
 
-function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan();if(citadelReservedRelic(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
+
 
 const API47={gatekeeper:applyLegendGatekeeper47,mobCatalog:()=>Object.keys(DUNGEON_MOBS47).flatMap(mobDefs47),version:'R49',enemyDefinitions:id=>mobDefs47(id).map(d=>({...d})),build:(id,seed,quiet=true)=>LegendaryDungeonBuilder.build(adef46(id),{seed,quiet}),integrity:()=>GenerationValidator.legendary(),assets:()=>legendAssetAudit(),defs:()=>LEGENDS47.map(a=>({...a})),debugKeys:()=>{const zs=state?.legendSanctums47||[];return{dungeon:state?.artifactDungeon46?.id||null,player:state?.player?{x:state.player.x,y:state.player.y}:null,sanctums:structuredClone(zs),plan:structuredClone(state?.keyPlan96||null),reward:state?.artifactReward46?{...state.artifactReward46}:null,mapAround:zs.map(z=>{const rows=[];for(let yy=z.cy-z.r-1;yy<=z.cy+z.r+1;yy++){const row=[];for(let xx=z.cx-z.r-1;xx<=z.cx+z.r+1;xx++)row.push(state.map?.[yy]?.[xx]??null);rows.push(row)}return{keyId:z.keyId,cx:z.cx,cy:z.cy,r:z.r,gate:z.gate,rows}})}},handlePortalAt:handlePortalAt46,enter:LegendaryDungeonBuilder.enter,restore:LegendaryDungeonBuilder.restore,forcePortal:forcePortal47,forceDungeon:(id=LEGENDS47[0].id)=>LegendaryDungeonBuilder.enter(id),reveal:()=>{if(!state?.artifactDungeon46)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}updateAll();return true},keyAudit:()=>keyProgressAudit48(false),audit:()=>({floor:state?.floor,inDungeon:!!state?.artifactDungeon46,dungeon:state?.artifactDungeon46||null,portal:state?.artifactPortal46||null,exit:state?.artifactExit46||null,reward:state?.items?.filter(i=>i.legendaryWeapon47).map(i=>({name:i.name,x:i.x,y:i.y}))||[],owned:[state?.player?.weapon,...(state?.player?.inventory||[])].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),reach:reachAudit46(),map:mapSignature46(),dims:[COLS,ROWS],monsters:state?.monsters?.filter(m=>!m.friendly47).length||0,legendMobs:state?.monsters?.filter(m=>m.legendMob47).map(m=>m.name)||[],decor:state?.legendDecor47?.length||0}),recordAcquisition:claimAudit46,claimReward:claimReward46,walkPortal:walkPortal46,walkReturn:walkReturn46,give:(id)=>{const a=adef46(id);if(!a||!state)return false;addInventoryItem({...clone(a),count:1});claimAudit46();return true},upgradeProbe:(id)=>{const a=clone(adef46(id)||LEGENDS47[0]);const before={atk:a.atk,upgrade:a.upgrade||0};const r=applyWeaponUpgrade(a);return{before,after:{atk:a.atk,upgrade:a.upgrade||0},result:r}},effectProbe:effectProbe47,regen:f=>{state.floor=clamp(+f||6,1,25);NormalFloorGenerator.generate();resetVisualState();VisibilityService.compute();updateAll();return{floor:state.floor,portal:state.artifactPortal46||null}},atkBonus:atkBonus47,critBonus:cursedBladeCritBonus,defBonus:earthGauntletDefBonus,syncEquip:syncEquip47,guard:guard47,fireAbsorb:fireAbsorb47,healFire:healFire47,allyTurn:alliesTurn,enemySpecial:enemySpecial47,owns:owns47,possesses:possesses47,claimed:claimed47,cursedEquipped:cursedEquipped47};
 globalThis.__MANRU_LEGEND47__=API47;globalThis.__MANRU_ARTIFACT46__=API47;
@@ -8916,7 +8834,7 @@ const BRANCH_DEFS105=Object.freeze({
 
 
 
-function carryRunState57(extra=[]){const o={};for(const f of new Set([...BRANCH_RUN_FIELDS105,...extra]))if(f in state)o[f]=structuredClone(state[f]);return o}
+
 
 
 
@@ -9006,7 +8924,7 @@ const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GAT
 
 
 
-function retryPendingBranchEntrance105(){const id=state?.branchWorld105?.pendingEntrances105?.[branchWorldKey()];if(!id)return false;if(id==='mine')return mineEnsureEntrance({required:false});return branchEntrance({required:false});}
+
 
 
 function buildIndoorLandmark105(map,r,id){
@@ -9140,11 +9058,7 @@ function buildIndoorLandmark105(map,r,id){
 
 
 
-function migrateMineAppearance105(){
- const m=mineState();if(!m||m.artRevision===4)return;
- if(m.version<2)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if([TT.RUMOR_CHARRED_COUNTER,TT.RACK].includes(state.map[y][x]))setTerrainTile58(state.map,x,y,TT.STONE_PATH);
- m.artRevision=4;
-}
+
 
 
 
