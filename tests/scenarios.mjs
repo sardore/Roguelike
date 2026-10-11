@@ -362,8 +362,34 @@ export const scenarios = {
       await s.tick(600);
       await capture(out, `screens.${form}.map`, s);
       await dismissModals(s, 2);
+      // Settings (F1) and help (H) panels.
+      await s.page.keyboard.press('F1');
+      await s.tick(600);
+      await capture(out, `screens.${form}.settings`, s);
+      await s.page.keyboard.press('F1');
+      await s.tick(300);
+      await s.page.keyboard.press('h');
+      await s.tick(600);
+      await capture(out, `screens.${form}.help`, s);
+      await dismissModals(s, 2);
+      // A fight on the first floor: a training dummy next to the player, one blow exchanged.
+      await s.page.evaluate(() => window.__MANRU_V56_TEST__.spawnDummy(1, 0));
+      await s.tick(300);
+      await s.page.keyboard.press('ArrowRight');
+      await s.tick(250);
+      await capture(out, `screens.${form}.combat`, s);
       out[`screens.${form}.errors`] = JSON.stringify(s.errors);
       await s.close();
+      // A sub-branch: the V40 save made inside a branch.
+      const fixture = JSON.parse(fs.readFileSync(path.join(savesDir, 'branch.json'), 'utf8'));
+      const b = await openSession(browser, root, { seed: 8, storage: fixture.storage, ...opts });
+      await b.page.click('#continueBtn');
+      await b.tick(3000);
+      await dismissModals(b);
+      await b.tick(600);
+      await capture(out, `screens.${form}.branch`, b);
+      out[`screens.${form}.branch.errors`] = JSON.stringify(b.errors);
+      await b.close();
       const d = await openSession(browser, root, { seed: 6, query: 'debug=1', ...opts });
       await d.page.click('#debugBattleBtn57');
       await d.tick(800);

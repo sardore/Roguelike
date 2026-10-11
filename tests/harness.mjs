@@ -2,6 +2,10 @@
 // fixed from outside the page, so no QA hook has to live in the shipped game code.
 import { chromium } from 'playwright-core';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { serve } from './server.mjs';
 
 export const EPOCH = '2026-01-01T00:00:00Z';
@@ -28,9 +32,26 @@ function seedScript(seed) {
   crypto.randomUUID = () => '00000000-0000-4000-8000-' + String(++u).padStart(12, '0');
 }
 
+// Screenshots must not depend on the machine's fonts. Chromium gets a fontconfig that sees only the
+// bundled font (tests/fonts), and every generic family resolves to it.
+function pinnedFontEnv() {
+  const fonts = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fonts');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'manru-fontconfig-'));
+  const family = (name) => `<alias binding="strong"><family>${name}</family><prefer><family>NanumGothic</family></prefer></alias>`;
+  fs.writeFileSync(path.join(dir, 'fonts.conf'), `<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <dir>${fonts}</dir>
+  <cachedir>${path.join(dir, 'cache')}</cachedir>
+  ${['sans-serif', 'serif', 'monospace', 'system-ui', 'ui-monospace', 'Georgia', 'Inter', 'Arial', 'Helvetica', 'Times New Roman', 'Courier New'].map(family).join('\n  ')}
+</fontconfig>
+`);
+  return { ...process.env, FONTCONFIG_FILE: path.join(dir, 'fonts.conf') };
+}
+
 export async function launch() {
   const executablePath = process.env.MANRU_CHROMIUM || undefined;
-  return chromium.launch({ executablePath });
+  return chromium.launch({ executablePath, env: pinnedFontEnv() });
 }
 
 // root is a source directory, or {dir, entry} for a built page (dist/MANRU.html).

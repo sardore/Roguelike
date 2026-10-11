@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch, sha } from './harness.mjs';
 import { scenarios } from './scenarios.mjs';
+import { compareImages } from './lib-images.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -46,8 +47,12 @@ try {
 
 fs.mkdirSync(artifactDir, { recursive: true });
 for (const [key, value] of Object.entries(results)) fs.writeFileSync(path.join(artifactDir, Buffer.isBuffer(value) ? key : key + '.txt'), value ?? 'null');
-// Screens are machine-specific (fonts, GPU): they are compared by tests/compare-screens.mjs, not hashed.
-const hashes = Object.fromEntries(Object.entries(results).filter(([k]) => !k.startsWith('screens.')).map(([k, v]) => [k, sha(v ?? 'null')]));
+// Screenshots are compared as images against tests/baseline/screens (the fonts are pinned by the harness,
+// see tests/fonts); everything else, including the computed-style dumps, is hashed.
+const screensDir = path.join(here, 'baseline', 'screens');
+const isShot = (k) => /^screens\..*\.png$/.test(k) && !k.endsWith('.canvas.png');
+const hashes = Object.fromEntries(Object.entries(results).filter(([k]) => !k.endsWith('.png')).map(([k, v]) => [k, sha(v ?? 'null')]));
+const shots = Object.keys(results).filter(isShot);
 
 const errorKeys = Object.keys(results).filter((k) => k.endsWith('errors') && results[k] !== '[]');
 for (const k of errorKeys) console.log(`page errors in ${k}: ${results[k]}`);
@@ -56,15 +61,28 @@ if (flag('--update')) {
   const old = fs.existsSync(baselineFile) ? JSON.parse(fs.readFileSync(baselineFile, 'utf8')) : {};
   fs.mkdirSync(path.dirname(baselineFile), { recursive: true });
   fs.writeFileSync(baselineFile, JSON.stringify({ ...old, ...hashes }, null, 1) + '\n');
-  console.log(`baseline written: ${Object.keys(hashes).length} checks`);
+  fs.mkdirSync(screensDir, { recursive: true });
+  for (const k of shots) fs.writeFileSync(path.join(screensDir, k), results[k]);
+  console.log(`baseline written: ${Object.keys(hashes).length} checks, ${shots.length} screenshots`);
   process.exit(0);
 }
 
+const ran0 = (n) => Object.keys(scenarios).includes(n) && (!only || only.includes(n)) && !skip.includes(n) && target === 'qa';
 const baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
 const failed = Object.keys(hashes).filter((k) => baseline[k] !== hashes[k]);
+const pixelFailures = [];
+for (const k of shots) {
+  const file = path.join(screensDir, k);
+  if (!fs.existsSync(file)) { pixelFailures.push(`${k} (no baseline image)`); continue; }
+  const r = compareImages(k, fs.readFileSync(file), results[k], path.join(artifactDir, 'screen-diff'));
+  if (!r.ok) pixelFailures.push(`${k}: ${r.reason}`);
+}
+const shotsMissing = fs.existsSync(screensDir) && ran0('screens') ? fs.readdirSync(screensDir).filter((f) => f.endsWith('.png') && !(f in results)) : [];
 const ran = new Set(Object.keys(scenarios).filter((n) => (!only || only.includes(n)) && !skip.includes(n) && (n !== 'pwa' || target === 'app') && (target === 'qa' || ['release', 'pwa'].includes(n))));
 const missing = Object.keys(baseline).filter((k) => !(k in hashes) && ran.has(k.split('.')[0]));
-if (failed.length || missing.length) {
+if (failed.length || missing.length || pixelFailures.length || shotsMissing.length) {
+  for (const k of pixelFailures) console.log(`PIXELS ${k}`);
+  for (const k of shotsMissing) console.log(`MISSING screenshot ${k}`);
   for (const k of failed) console.log(`CHANGED ${k}${baseline[k] ? '' : ' (not in baseline)'}`);
   for (const k of missing) console.log(`MISSING ${k}`);
   console.log(`artifacts: ${artifactDir}`);

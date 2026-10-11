@@ -65,7 +65,8 @@
 
 - `npm run check`: 위 지표가 `tools/structure-baseline.json`보다 늘면 실패. pre-commit과 CI가 돌린다.
 - `npm test`: QA 빌드(`dist-qa/`)에서 시계·난수·UUID·`performance.now`를 페이지 밖에서 고정한 재생. V40이 쓴 세이브 4종(진행·사망·브랜치·전설 던전), 7개 직업 새 게임, 입력 재생, 25개 층, 디버그 전장(벌집나무·벌떼·목매)을 `tests/baseline/behaviour.json`과 비교한다. `--target single`·`--target app`으로 빌드 산출물도 같은 기준선을 재현해야 한다.
-- 로컬 전용: `node tests/run.mjs --only screens,render --label <이름>` 후 `node tests/compare-screens.mjs ref <이름>`(계산된 스타일 전부 + 픽셀), `node tests/title-frames.mjs`(로딩 중 타이틀 프레임 녹화).
+- 화면 비교(`screens`): 타이틀, 신분 선택, 이야기, 1층, 인벤토리, 지도, 설정(F1), 도움말(H), 1층 전투, 서브브랜치, 디버그 전장 2종을 PC 1280×800과 모바일 390×844로 찍어 `tests/baseline/screens/`의 기준 이미지와 비교한다(노이즈 임계 이하의 차이만 허용). 계산된 스타일 덤프는 해시로 비교한다. 글꼴은 `tests/fonts/NanumGothic-400.ttf` 하나로 고정하고 Chromium에 그 폴더만 보이는 fontconfig를 넘기므로 로컬과 CI 결과가 같다. 기준을 바꾸는 것은 의도한 변경일 때만이고 `npm run test:update-baseline`으로 한다.
+- 로컬 전용: `node tests/run.mjs --only screens,render --label <이름>` 후 `node tests/compare-screens.mjs <이름A> <이름B>`(두 실행 비교, 층 25장의 캔버스 `render` 포함), `node tests/title-frames.mjs`(로딩 중 타이틀 프레임 녹화).
 
 ## 다음 단계 (이번 작업에서 하지 않은 것)
 
