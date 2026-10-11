@@ -43,6 +43,7 @@
 | rest→mapgen | rest 중 사용처 과반이 mapgen.js인 선언 → mapgen.js (규칙 a) | 7758 | 526 / 584 | 755 | 70.1% | - |
 | rest→items | rest 중 사용처 과반이 items.js인 선언 → items.js (규칙 a) | 7735 | 510 / 584 | 755 | 70.2% | - |
 | rest→monsters | rest 중 사용처 과반이 monsters.js인 선언 → monsters.js (규칙 a) | 7713 | 494 / 584 | 755 | 70.3% | - |
+| rest→render | rest 중 사용처 과반이 render.js인 선언 → render.js (규칙 a) | 7694 | 479 / 584 | 755 | 70.4% | - |
 
 ## 현재 파일별 줄 수
 
@@ -54,14 +55,14 @@
 | items.js | 947 |
 | combat.js | 651 |
 | monsters.js | 2206 |
-| render.js | 4843 |
+| render.js | 4877 |
 | mapgen.js | 3173 |
 | special.js | 1873 |
 | branches.js | 2360 |
 | elements.js | 247 |
-| spine.js | 7713 |
+| spine.js | 7694 |
 | input.js | 148 |
 | story.js | 213 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25984 |
+| (total) | 25999 |

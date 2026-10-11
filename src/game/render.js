@@ -4841,3 +4841,37 @@ function initDebugBattle57(){
 // Menu light radius and energy share one phase; reduced motion freezes the phase.
 // Held equipment and item icons share the authored weapon pixels. Poses transform the asset about its actual grip.
 function heldWeaponKey1001(item){const art=globalThis.__MANRU_ITEM_ART_R7__;return item?.name?(art?art.weaponAsset(item).key:'weapon-art-pending'):'unarmed'}
+  const pick=(arr,h,shift=0)=>arr[((h>>>shift)%arr.length+arr.length)%arr.length];
+  const titleMotion49=matchMedia('(prefers-reduced-motion:reduce)');
+  function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
+  function bounds58(cam,pad=2){
+    const x0=Math.max(0,Math.floor((-cam.x/cam.zoom)/TILE)-pad),y0=Math.max(0,Math.floor((-cam.y/cam.zoom)/TILE)-pad);
+    const x1=Math.min(COLS-1,Math.ceil(((VIEW.w-cam.x)/cam.zoom)/TILE)+pad),y1=Math.min(ROWS-1,Math.ceil(((VIEW.h-cam.y)/cam.zoom)/TILE)+pad);
+    return{x0,y0,x1,y1};
+  }
+  const PALETTE71=[
+    {floor:'#4a211a',floorAlt:'#5a291f',wall:'#7d382c',wallDark:'#2b0f0d',accent:'#e99150',light:'#ffd18c',fog:'#0b0403'},
+    {floor:'#283029',floorAlt:'#313a31',wall:'#4d5348',wallDark:'#252a23',accent:'#93896a',light:'#cec6a6',fog:'#0b0f0c'},
+    {floor:'#321c33',floorAlt:'#412443',wall:'#70486d',wallDark:'#211223',accent:'#d783b8',light:'#f5c4df',fog:'#0b050d'},
+    {floor:'#343a3e',floorAlt:'#40484d',wall:'#6a7279',wallDark:'#171b1e',accent:'#c07b50',light:'#d8c8b0',fog:'#080a0b'},
+    {floor:'#17192e',floorAlt:'#202442',wall:'#565b82',wallDark:'#090b19',accent:'#d9b84f',light:'#f7e39a',fog:'#03040a'}
+  ];
+  function smallTheme90(z){
+    const g=state.grandRoom89;if(!g)return;let n=0;
+    // only the grand room gets sparse, symmetric decoration; purpose rooms rely on functional identity.
+    if(z===0){n+=sparsePair89(g,TT.LANTERN_POST,'top');if(g.w>=10)n+=sparsePair89(g,TT.BENCH,'bottom')}
+    else if(z===1){n+=sparsePair89(g,TT.FLOWERBED,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.ROCK)}
+    else if(z===2){n+=sparsePair89(g,TT.WALL_BANNER,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.STATUE)}
+    else if(z===3){n+=sparsePair89(g,TT.RACK,'bottom');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.CRATE)}
+    else{n+=sparsePair89(g,TT.STONE_PILLAR,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.STATUE)}
+    state.decor=[];state.grandDecor90=n;
+  }
+  const classMotion1001=matchMedia('(prefers-reduced-motion:reduce)');
+    function hash1004(s=''){let h=2166136261;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const keyPos1006=(x,y)=>state?.keyPlan96?.keys?.find(q=>q.x===x&&q.y===y&&q.active!==false)||null;
+const doorPos1006=(x,y)=>state?.keyPlan96?.doors?.find(q=>q.x===x&&q.y===y&&q.open!==true)||null;
+const px1012=(q,x,y,c)=>{q.fillStyle=c;q.fillRect(x,y,1,1)};
+function dir1012(m,player=false){if(player){const f=state?.player?.facing||{x:0,y:1};return Math.abs(f.x)>Math.abs(f.y)?(f.x<0?'left':'right'):(f.y<0?'up':'down')}const t=m?.attackTarget,dx=t?Math.sign(t.x-m.x):0,dy=t?Math.sign(t.y-m.y):0;return Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down')}
+const ARMOR_STYLE={'경량복':'light','강화 가죽 갑옷':'leather','철제 흉갑':'breast','관원용 두정갑':'dujeong','총사령관 황금갑':'gold'};
+const CLOAK_EMBLEM={'질긴 가죽망토':'stitch','바람막이망토':'wind','여행자망토':'pocket','두꺼운 면망토':'quilt','암영망토':'eye','축지망토':'dash','자력망토':'magnet','무술망토':'knot','보호망토':'shield','반사망토':'mirror','용암망토':'flame','면역망토':'seal'};
+function polyPlanter105(q,c,ps){q.fillStyle=c;q.beginPath();ps.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();}

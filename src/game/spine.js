@@ -1949,7 +1949,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  const pick=(arr,h,shift=0)=>arr[((h>>>shift)%arr.length+arr.length)%arr.length];
+
 
 
 
@@ -2543,7 +2543,7 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   /* ---------- title / hero select: full-screen art, real mobile scrolling ---------- */
 
 
-  const titleMotion49=matchMedia('(prefers-reduced-motion:reduce)');
+
 
 
 
@@ -2842,7 +2842,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
   
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
-  function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
+
 
   if(state){ensureKnowledge56();decorateAllItems56()}
 
@@ -2980,11 +2980,7 @@ if(state)ensureFoodState();
   registerGenerationStage('canon58','post',()=>{normalizeKitchens58();ensureCanonExtras58();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()});
 
 
-  function bounds58(cam,pad=2){
-    const x0=Math.max(0,Math.floor((-cam.x/cam.zoom)/TILE)-pad),y0=Math.max(0,Math.floor((-cam.y/cam.zoom)/TILE)-pad);
-    const x1=Math.min(COLS-1,Math.ceil(((VIEW.w-cam.x)/cam.zoom)/TILE)+pad),y1=Math.min(ROWS-1,Math.ceil(((VIEW.h-cam.y)/cam.zoom)/TILE)+pad);
-    return{x0,y0,x1,y1};
-  }
+
 
   
 
@@ -3668,13 +3664,7 @@ const RC={
 
 
   
-  const PALETTE71=[
-    {floor:'#4a211a',floorAlt:'#5a291f',wall:'#7d382c',wallDark:'#2b0f0d',accent:'#e99150',light:'#ffd18c',fog:'#0b0403'},
-    {floor:'#283029',floorAlt:'#313a31',wall:'#4d5348',wallDark:'#252a23',accent:'#93896a',light:'#cec6a6',fog:'#0b0f0c'},
-    {floor:'#321c33',floorAlt:'#412443',wall:'#70486d',wallDark:'#211223',accent:'#d783b8',light:'#f5c4df',fog:'#0b050d'},
-    {floor:'#343a3e',floorAlt:'#40484d',wall:'#6a7279',wallDark:'#171b1e',accent:'#c07b50',light:'#d8c8b0',fog:'#080a0b'},
-    {floor:'#17192e',floorAlt:'#202442',wall:'#565b82',wallDark:'#090b19',accent:'#d9b84f',light:'#f7e39a',fog:'#03040a'}
-  ];
+
 
 
 
@@ -4680,16 +4670,7 @@ const CONFIG81=Object.freeze({
     for(const r of state.purposeRooms90||[]){if(mi>=mons.length)break;if(['medic','kitchen'].includes(r.purpose90))continue;const mon=mons[mi++];let placed=false;for(let rad=0;rad<=3&&!placed;rad++)for(let y=r.cy-rad;y<=r.cy+rad&&!placed;y++)for(let x=r.cx-rad;x<=r.cx+rad;x++){if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;guards++;placed=true;break}}}
     state.purposeGuards90=guards;
   }
-  function smallTheme90(z){
-    const g=state.grandRoom89;if(!g)return;let n=0;
-    // only the grand room gets sparse, symmetric decoration; purpose rooms rely on functional identity.
-    if(z===0){n+=sparsePair89(g,TT.LANTERN_POST,'top');if(g.w>=10)n+=sparsePair89(g,TT.BENCH,'bottom')}
-    else if(z===1){n+=sparsePair89(g,TT.FLOWERBED,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.ROCK)}
-    else if(z===2){n+=sparsePair89(g,TT.WALL_BANNER,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.STATUE)}
-    else if(z===3){n+=sparsePair89(g,TT.RACK,'bottom');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.CRATE)}
-    else{n+=sparsePair89(g,TT.STONE_PILLAR,'top');if(floorOnly88(g.cx,g.cy))setTerrainTile58(state.map,g.cx,g.cy,TT.STATUE)}
-    state.decor=[];state.grandDecor90=n;
-  }
+
 
   
 
@@ -5941,7 +5922,7 @@ const STORY_VERSION992='v9.9.3-story-system';
     vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
   });
 
-  const classMotion1001=matchMedia('(prefers-reduced-motion:reduce)');
+
   let classLight1001=null;
 
 
@@ -6071,7 +6052,7 @@ RuntimeState.ui.screen=SCREEN1002;
     // r53: removed generation-on-load stage repair-items1004; saved geometry is authoritative.
 
 
-    function hash1004(s=''){let h=2166136261;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+
 
 
 
@@ -6189,8 +6170,8 @@ const ROUTE_BUILD='10.0.4-route-hazard-r2-key-itemfix';
 
 
 
-const keyPos1006=(x,y)=>state?.keyPlan96?.keys?.find(q=>q.x===x&&q.y===y&&q.active!==false)||null;
-const doorPos1006=(x,y)=>state?.keyPlan96?.doors?.find(q=>q.x===x&&q.y===y&&q.open!==true)||null;
+
+
 
 
 const TERRAIN_R41_1006=globalThis.__MANRU_TERRAIN_R41__=globalThis.__MANRU_TERRAIN_R41__||{};TERRAIN_R41_1006.specialBefore=drawKeyTile;TERRAIN_R41_1006.specialKeyAfter=drawKeyGateOverlay;
@@ -6862,7 +6843,7 @@ if(typeof globalThis.__MANRU_GENERATE_CORE983__!=='function')throw new Error('Ma
 
 
 
-const px1012=(q,x,y,c)=>{q.fillStyle=c;q.fillRect(x,y,1,1)};
+
 
 
 
@@ -6891,7 +6872,7 @@ function playerKey1012(id,p,dir,attack){const g=x=>x?`${x.name||''}:${x.tier||0}
 
 
 Object.defineProperty(globalThis,'__MANRU_ACTOR_ART__',{value:ACTOR_ART,writable:false,configurable:false,enumerable:true});
-function dir1012(m,player=false){if(player){const f=state?.player?.facing||{x:0,y:1};return Math.abs(f.x)>Math.abs(f.y)?(f.x<0?'left':'right'):(f.y<0?'up':'down')}const t=m?.attackTarget,dx=t?Math.sign(t.x-m.x):0,dy=t?Math.sign(t.y-m.y):0;return Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down')}
+
 
 
 
@@ -6930,9 +6911,9 @@ const STATIC_EXTRA_R7=[{"name":"개량 인장","type":"upgrade","tier":1,"rarity
 
 
 
-const ARMOR_STYLE={'경량복':'light','강화 가죽 갑옷':'leather','철제 흉갑':'breast','관원용 두정갑':'dujeong','총사령관 황금갑':'gold'};
 
-const CLOAK_EMBLEM={'질긴 가죽망토':'stitch','바람막이망토':'wind','여행자망토':'pocket','두꺼운 면망토':'quilt','암영망토':'eye','축지망토':'dash','자력망토':'magnet','무술망토':'knot','보호망토':'shield','반사망토':'mirror','용암망토':'flame','면역망토':'seal'};
+
+
 
 
 
@@ -7307,7 +7288,7 @@ MONSTERS.push(PALACE_LOTUS105,PALACE_GARDENER105);
 
 
 
-function polyPlanter105(q,c,ps){q.fillStyle=c;q.beginPath();ps.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();}
+
 
 
 
