@@ -3068,7 +3068,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   /* ---------- cheap extra wall depth / corner readability ---------- */
 
 
-  const ASURA_HAZ=new Set([TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.PAPER_BRIDGE,TT.CRUMBLE,TT.SNARE,TT.DRAWBRIDGE_DOWN,TT.DRAWBRIDGE_UP,TT.LOCKED_GATE]);
 
 
 
@@ -3321,7 +3320,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
   /* ---------- structure interaction: click/tap paths next to a blocked target, then opens or destroys it ---------- */
   const BREAK61=new Set([TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
-  const INTERACT61=new Set([TT.DOOR,...BREAK61]);
   // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
   function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
 
@@ -3492,7 +3490,6 @@ const RC={
 
 
   /* ---------- retained structure hit testing (Runtime81 automation owns selection) ---------- */
-  const STRUCT70=new Set([TT.DOOR,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
 
 
 
@@ -4589,7 +4586,6 @@ const CONFIG81=Object.freeze({
   /* ===== MANRU v9.0: DENSE PURPOSEFUL ROOMS / NO WASTED WINGS ===== */
   V85.version='v9.0-dense-purposeful-rooms';
   
-  const FUNCTION90=new Set([TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT,TT.JAR,TT.GOLD]);
 
   
   
@@ -4967,7 +4963,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   }
 
   // Camera81 delegates to CameraState12; the visual loop consumes its dirty flag once per frame.
-  const Cam96=window.__MANRU_RUNTIME81__?.Camera81;
 
   // v9.1 used a cheaper alternate wall/light renderer while inspecting. That caused the texture
   // to visibly change during a pan. Restore the same render pipeline for follow and inspect modes.
@@ -5760,7 +5755,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 /* ===== MANRU v9.9.2 STORY SYSTEM — integrated into core scope ===== */
-const STORY_VERSION992='v9.9.3-story-system';
 
 
 
@@ -5901,16 +5895,12 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
   /* ===== MANRU v10.0.3: tall player / real quit / hardened permadeath / canonical food+talisman art ===== */
-  const V1003='v10.0.3';
-    const ACTIVE1003='manru984_active_run';
-    const DEATH1003='manru984_last_death';
 
 
     sanitizeTransient1003();
     if(state){resetVisualState();try{updateAll()}catch(error){ignoreError('ui refresh after restore',error)}}
 
     /* ---------- player sprite: 36x52 exact-pixel world render, feet anchored to tile bottom ---------- */
-    const PW1003=36,PH1003=52,PLAYER1003_CACHE=new Map();
 
     
     
@@ -6024,7 +6014,6 @@ RuntimeState.ui.screen=SCREEN1002;
   // do not also consume holy/story/item side effects through nested generation wrappers.
   
 /* ===== MANRU v10.0.4 ROUTE/Hazard REWORK (rolled back from v10.0.5 map branch) ===== */
-const V='10.0.4-route-hazard-r1';
 const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
 const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
 
@@ -6101,7 +6090,6 @@ globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'hazard1005',draw:drawHazardO
 
 
 /* MANRU v10.0.4 rollback continuation — key clarity + item-effect audit/fix */
-const ROUTE_BUILD='10.0.4-route-hazard-r2-key-itemfix';
 
 
 
@@ -6416,7 +6404,6 @@ function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return
 globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
 
 
-const rarity1011={common:'#b8aa8e',uncommon:'#9ac09a',rare:'#8ebed2',epic:'#ba91ce',legendary:'#e0bb61',sealed:'#f0cb65',relic:'#d8bfe3'};
 
 
 
@@ -6819,7 +6806,6 @@ renderClassGrid();
 /* R7 procedural item sprite generator removed: TRUE-HD atlas and authored consumable visuals are canonical. */
 
 /* ===== R7 CANONICAL ITEM ART (outer game scope) ===== */
-const BUILD='10.0.6-r7-authored-branch-items';
 
 const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
 const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
@@ -6836,7 +6822,6 @@ const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
 
 
 
-const STATIC_EXTRA_R7=[{"name":"개량 인장","type":"upgrade","tier":1,"rarity":"relic","seal":"改","ability":"장비 개량 1회","desc":"무기·갑옷·망토 하나에 영구 개량을 새긴다."},{"name":"도서관 지도첩","type":"scroll","rarity":"rare","libraryScroll1022":true,"libraryKind1022":"mapping"},{"name":"도서관 감식록","type":"scroll","rarity":"rare","libraryScroll1022":true,"libraryKind1022":"identify"},{"name":"도서관 수호장","type":"scroll","rarity":"relic","libraryScroll1022":true,"libraryKind1022":"ward"},{"name":"화강부적","type":"talisman","talismanKind":"f_fire_upgrade","fusion74":true,"element74":"fire","seal":"炎","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 화염각인 / 방어구 화염면역","desc":"무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다."},{"name":"뇌강부적","type":"talisman","talismanKind":"f_shock_upgrade","fusion74":true,"element74":"shock","seal":"淨","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 공속 +10% / 방어구 이동비용 -8%","desc":"전류를 장비의 움직임에 맞춰 흘린다."},{"name":"수강부적","type":"talisman","talismanKind":"f_water_upgrade","fusion74":true,"element74":"water","seal":"流","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 방어 약화 / 방어구 독·출혈 세척","desc":"수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다."},{"name":"빙강부적","type":"talisman","talismanKind":"f_ice_upgrade","fusion74":true,"element74":"ice","seal":"凍","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 냉각 경직 / 방어구 EVA +1","desc":"차가운 기운을 장비에 고정한다."},{"name":"목강부적","type":"talisman","talismanKind":"f_grass_upgrade","fusion74":true,"element74":"grass","seal":"芽","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 독분 각인 / 방어구 독 면역","desc":"살아 있는 기운을 장비 표면에 뿌리내린다."},{"name":"지강부적","type":"talisman","talismanKind":"f_earth_upgrade","fusion74":true,"element74":"earth","seal":"岩","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 중량타 / 방어구 DEF +1·밀치기 면역","desc":"장비의 무게와 지지력을 대지에 맞춘다."},{"name":"화폭부적","type":"talisman","talismanKind":"f_fire_blast","fusion74":true,"element74":"fire","seal":"炎","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_fire","ability":"3×3 층 비례 화염폭발 + 화염지대","desc":"원소 역류 없이 목표 지점에 화염을 집중한다."},{"name":"뇌폭부적","type":"talisman","talismanKind":"f_shock_blast","fusion74":true,"element74":"shock","seal":"電","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"bomb_shock","ability":"층 비례 연쇄 뇌격 · 물/금속 특효","desc":"목표 주변의 생체와 금속을 전류가 연쇄적으로 잇는다."},{"name":"조수 폭쇄부적","type":"talisman","talismanKind":"f_water_blast","fusion74":true,"element74":"water","seal":"潮","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_water","ability":"층 비례 수압 폭발 · 강한 밀치기 · 소화","desc":"강한 수압 피해와 진형 붕괴를 함께 노리는 수압 폭탄이다."},{"name":"빙폭부적","type":"talisman","talismanKind":"f_ice_blast","fusion74":true,"element74":"ice","seal":"雪","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_ice","ability":"층 비례 빙결폭발 · 비보스 경직","desc":"급랭으로 각개격파 시간을 번다."},{"name":"목폭부적","type":"talisman","talismanKind":"f_grass_blast","fusion74":true,"element74":"grass","seal":"荊","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_grass","ability":"층 비례 독분폭발 · 뿌리 구속","desc":"강한 직접 피해와 독·구속을 함께 퍼뜨린다."},{"name":"지폭부적","type":"talisman","talismanKind":"f_earth_blast","fusion74":true,"element74":"earth","seal":"震","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_earth","ability":"층 비례 고충격 폭발 · 밀치기/경직","desc":"지상 적의 진형을 무너뜨리는 충격파를 만든다."},{"name":"화막부적","type":"talisman","talismanKind":"f_fire_ward","fusion74":true,"element74":"fire","seal":"熾","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"fireward","ability":"7턴 보호막 + 일시 화염저항","desc":"몸을 화염 장막으로 감싸고 주변에 불길을 남긴다."},{"name":"뇌섬부적","type":"talisman","talismanKind":"f_shock_blink","fusion74":true,"element74":"shock","seal":"閃","tier":3,"rarity":"rare","targeted":true,"targetRange":7,"fusionMode74":"target","fusionEffect74":"shockblink","ability":"순간이동 + 출발/도착 뇌격","desc":"축지의 양끝에 짧은 뇌격을 남긴다."},{"name":"정수부적","type":"talisman","talismanKind":"f_water_ward","fusion74":true,"element74":"water","seal":"淨","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"pureward","ability":"상태이상 정화 + 8턴 보호막","desc":"상처를 씻고 보호막을 만든다."},{"name":"빙쇄부적","type":"talisman","talismanKind":"f_ice_bind","fusion74":true,"element74":"ice","seal":"鎖","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"icebind","ability":"3×3 강빙결","desc":"봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다."},{"name":"생맥부적","type":"talisman","talismanKind":"f_grass_map","fusion74":true,"element74":"grass","seal":"脈","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"lifemap","ability":"전체 지도 + HP 8 회복","desc":"건물의 틈과 살아 있는 기운을 함께 읽는다."},{"name":"석갑부적","type":"talisman","talismanKind":"f_earth_ward","fusion74":true,"element74":"earth","seal":"壁","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"stoneward","ability":"8턴 보호막 + 일시 대지저항","desc":"몸을 암반 같은 기운으로 감싼다."},{"name":"증기부적","type":"talisman","talismanKind":"f_steam","fusion74":true,"element74":null,"seal":"霧","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"steam","ability":"3×3 증기 2턴 · 사선 차단","desc":"상극의 두 기운을 증기로 바꿔 사선을 끊는다."},{"name":"설빙부적","type":"talisman","talismanKind":"f_frostfield","fusion74":true,"element74":null,"seal":"霜","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"frostfield","ability":"3×3 강빙결장","desc":"수기를 얼려 강한 제압장으로 만든다."},{"name":"생장부적","type":"talisman","talismanKind":"f_regrowth","fusion74":true,"element74":null,"seal":"生","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"regrowth","ability":"재생 7턴 + 인접 적 뿌리구속","desc":"수기와 목기를 생장으로 바꾼다."},{"name":"용암부적","type":"talisman","talismanKind":"f_lava","fusion74":true,"element74":null,"seal":"熔","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"lava","ability":"화염 충격 + 임시 용암","desc":"대지를 녹여 좁은 길을 위험지대로 만든다."},{"name":"목석부적","type":"talisman","talismanKind":"f_bulwark","fusion74":true,"element74":null,"seal":"壘","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"bulwark","ability":"임시 암벽 + 6턴 보호막","desc":"뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다."},{"name":"폭뢰부적","type":"talisman","talismanKind":"f_thunderpool","fusion74":true,"element74":null,"seal":"轟","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"thunderpool","ability":"수기 전도 연쇄뇌격","desc":"물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다."},{"name":"봉폭부적","type":"talisman","talismanKind":"f_bindblast","fusion74":true,"element74":null,"seal":"禁","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bindblast","ability":"층 비례 폭발 + 일반 적 3턴 봉인","desc":"폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다."},{"name":"천안부적","type":"talisman","talismanKind":"f_heaveneye","fusion74":true,"element74":null,"seal":"眼","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"heaveneye","ability":"전체 지도 + 미확인 2종 감정","desc":"지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다."},{"name":"감강부적","type":"talisman","talismanKind":"f_identify_upgrade","fusion74":true,"element74":null,"seal":"鑑","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"identify_all991","ability":"인벤토리의 모든 미감정 아이템 완전 감정","desc":"감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다."},{"name":"호축부적","type":"talisman","talismanKind":"f_guardblink","fusion74":true,"element74":null,"seal":"遁","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"guardblink","ability":"안전 순간이동 + 6턴 보호막","desc":"도망과 방어를 한 번에 해결하는 비상탈출 부적이다."},{"name":"성화부적","type":"talisman","talismanKind":"f_holy_fire","fusion74":true,"element74":null,"seal":"輝","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_fire991","ability":"성광 정화 + 화염 가호","desc":"성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다."},{"name":"성뢰부적","type":"talisman","talismanKind":"f_holy_shock","fusion74":true,"element74":null,"seal":"閃","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_shock991","ability":"성광 정화 + 뇌전 가호","desc":"성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다."},{"name":"성수부적","type":"talisman","talismanKind":"f_holy_water","fusion74":true,"element74":null,"seal":"淨","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_water991","ability":"강한 정화 + 수류 가호","desc":"깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다."},{"name":"성빙부적","type":"talisman","talismanKind":"f_holy_ice","fusion74":true,"element74":null,"seal":"雪","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_ice991","ability":"성광 정화 + 빙결 가호","desc":"차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다."},{"name":"성목부적","type":"talisman","talismanKind":"f_holy_grass","fusion74":true,"element74":null,"seal":"生","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_grass991","ability":"성광 정화 + 목령 가호","desc":"살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다."},{"name":"성토부적","type":"talisman","talismanKind":"f_holy_earth","fusion74":true,"element74":null,"seal":"震","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_earth991","ability":"성광 정화 + 대지 가호","desc":"성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다."},{"name":"성감부적","type":"talisman","talismanKind":"f_holy_identify","fusion74":true,"element74":null,"seal":"明","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_identify991","ability":"모든 미감정 장비 감정 + 저주 드러냄","desc":"성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다."},{"name":"성강부적","type":"talisman","talismanKind":"f_holy_upgrade","fusion74":true,"element74":"holy","seal":"鍊","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소","desc":"성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다."},{"name":"성폭부적","type":"talisman","talismanKind":"f_holy_blast","fusion74":true,"element74":null,"seal":"光","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_blast991","ability":"주변 성광 폭발 · 원혼/언데드 특효","desc":"성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다."},{"name":"성안부적","type":"talisman","talismanKind":"f_holy_mapping","fusion74":true,"element74":null,"seal":"眼","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_mapping991","ability":"전체 지도 + 숨은 문 + 해로운 상태 정화","desc":"성광이 벽과 몸의 탁한 결을 함께 훑는다."},{"name":"성호부적","type":"talisman","talismanKind":"f_holy_ward","fusion74":true,"element74":null,"seal":"護","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_ward991","ability":"강한 상태 정화 + 보호막","desc":"성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다."},{"name":"성축부적","type":"talisman","talismanKind":"f_holy_blink","fusion74":true,"element74":null,"seal":"縮","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_blink991","ability":"바라보는 방향 안전 점멸 + 정화","desc":"성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다."},{"name":"성봉부적","type":"talisman","talismanKind":"f_holy_bind","fusion74":true,"element74":null,"seal":"封","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_bind991","ability":"주변 구속 · 원혼/언데드 강구속","desc":"종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다."}];
 
 
 
