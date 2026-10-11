@@ -45,3 +45,7 @@
 | `ACTOR_SPEC` | `SPEC1012` | `ACTOR_SPEC[m.name]`/`[m.spriteSpecies]`로 종별 그림 규격 조회(6회) | 맞음 |
 | `drawLegendMotif` | `motif49` | 전설 던전 월드(`drawLegendWorld`) 그리기에서 `(q,T,x,y,kind,size)`로 문양을 그림, 9회 | 맞음 |
 | `ACTOR_CELL_W/H` | `CW/CH1012` | **사용처가 한 곳도 없어서 삭제**(선언만 있었음). 같은 32×36 크기가 `PLAYER_SPRITE_*`, `HERO_SPRITE_*`와 세 벌로 존재(FINDINGS F-17) | 삭제 |
+
+## input.js
+- 접미사 제거(기계) 9개, 수동 0개. 옮긴 것은 이벤트 처리 함수·키 표·길게 누르기/스와이프 도우미 12개다. 리스너를 등록하는 느슨한 문장은 `spine.js`에 남아 있어 등록 순서는 그대로이고, `input.listeners.*` 지문과 입력 재생 37개 검사로 확인했다.
+- 옮기지 못한 입력 코드(`InputRouter`, `ClientEnvironment`, `Runtime81`, `DesktopClient`, `CONFIG81`)는 스파인의 느슨한 문장이 로드 시점에 읽어서 `docs/SPINE_RESIDUE.md`에 이유와 함께 적었다. 이름도 아직 바꾸지 않았다(옮길 때 `POINTER_CONFIG`, `PointerRuntime`으로 바꿀 계획: `CONFIG81`은 드래그 임계값·길게 누르기 지연·반복 간격만 담고, `Runtime81`은 `pointers/gesture/held/repeatTick/qa` 상태를 담는다는 사용처 확인에 근거).

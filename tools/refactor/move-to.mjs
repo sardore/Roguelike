@@ -61,6 +61,20 @@ for (const n of names) {
   picked.add(s);
 }
 const stmts = [...picked].sort((a, b) => a.start - b.start);
+// a moved const/let (not a function: those are hoisted) that a statement staying behind reads at load time (outside any function)
+// would be read before it exists whenever the new file loads after that statement
+{
+  const movedValues = new Map();
+  for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) movedValues.set(n, s);
+  for (const s of top) {
+    if (picked.has(s) || s.type === 'FunctionDeclaration') continue;
+    walk.ancestor(s, { Identifier(id, _st, anc) {
+      if (!movedValues.has(id.name) || anc.some((a) => /Function/.test(a.type))) return;
+      if (s.type === 'VariableDeclaration' && declNames(s).includes(id.name)) return;
+      throw new Error(`${id.name}: read at load time by a statement that stays (line ${id.loc?.start.line ?? '?'}): its place is fixed by that statement`);
+    } });
+  }
+}
 for (const s of stmts) {
   const seg = segOf(s.start);
   if (!seg) throw new Error('statement outside any file segment');

@@ -635,3 +635,14 @@ SPEC1012	ACTOR_SPEC	manual
 motif49	drawLegendMotif	manual
 CW1012	ACTOR_CELL_W	manual
 CH1012	ACTOR_CELL_H	manual
+# domain: input (input.js)
+old	new	kind
+clientKeyboardEvent9	clientKeyboardEvent	strip
+clientTargetEvent9	clientTargetEvent	strip
+MOVE_KEYS53	MOVE_KEYS	strip
+WORLD_TARGET_KEYS57	WORLD_TARGET_KEYS	strip
+worldTargetKeyDirection57	worldTargetKeyDirection	strip
+targetFollowupSuppressed57	targetFollowupSuppressed	strip
+rebindControls81	rebindControls	strip
+makeInput81	makeInput	strip
+bindSkillButton991	bindSkillButton	strip
