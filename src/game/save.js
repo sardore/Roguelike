@@ -532,3 +532,75 @@ function debugBattleMap57(fresh=false){
  document.getElementById('battleMapName57').textContent=state.layoutName+' · '+COLS+'×'+ROWS;
  document.getElementById('battleMapFloor57').disabled=mode!=='main';document.getElementById('battleRoom57').disabled=!b.rooms.length;
 }
+function resetTurnState(){if(!state)return;/* fractional enemy-energy debt is intentionally preserved; zeroing it would let stair/reset actions erase scheduler cost */state.enemyEnergy=state.enemyEnergy||0}
+const ActionDispatcher=Object.freeze({
+  register(type,implementation){if(ACTION_ROUTES5.has(type))throw new Error('duplicate action route: '+type);ACTION_ROUTES5.set(type,implementation)},
+  denied(reason){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.denial=reason},
+  commitNoTime(){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.committed=true},
+  observeTurn(result){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.turns.push(result)},
+  dispatch(command){
+    const type=command?.type,route=ACTION_ROUTES5.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
+    if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
+    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id)};
+    const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
+    const frame={result,turns:result.turns,denial:null};if(!parent)ACTION_AUDIT5.roots++;ACTION_AUDIT5.stack.push(frame);
+    let completed=false;
+    try{
+      let args=command.args;
+      if(!args){
+        if(type==='MOVE')args=[command.dx,command.dy];
+        else if(type==='MARTIAL')args=[command.id];
+        else if(type==='ITEM_USE'||type==='ITEM_DROP')args=[command.index];
+        else if(type==='CLOSE_DOOR')args=[command.quiet??false];
+        else args=[];
+      }
+      if(route)result.value=route(...args);
+      else if(type==='TARGET_CANCEL')result.value=dismissGameplayInput57();
+      else if(type==='TARGET_MOVE')result.value=worldTargetDirection57(command.dx,command.dy);
+      else if(type==='QUICK_SLOT')result.value=globalThis.__MANRU_BELT62__?.use?.(command.slot);
+      else if(type==='TARGET_CONFIRM'){
+        const q=command.cell,potion=globalThis.__MANRU_POTION41_ACTIONS__,fusion=globalThis.__MANRU_TALISMAN74_ACTIONS__,talisman=globalThis.__MANRU_CONSUMABLE56_ACTIONS__;
+        if(!q){result.attempted=false;result.reason='missing-cell'}
+        else if(worldTargetActive57())result.value=finishWorldTarget(q,command.source||'pointer');
+        else if(potion?.target?.())result.value=!!potion.throwAt?.(q.x,q.y);
+        else if(fusion?.target?.())result.value=!!fusion.castTarget?.(q.x,q.y);
+        else if(talisman?.target?.())result.value=!!talisman.castTarget?.(q.x,q.y);
+        else if(typeof V57!=='undefined'&&V57.foodTarget)result.value=!!throwFood(q.x,q.y);
+        else{result.attempted=false;result.reason='no-target'}
+      }
+      completed=true;return result;
+    }finally{
+      result.logicalTurns=(state?.turn||0)-before.turn;result.floorTurnDelta=(state?.floorTurn||0)-before.floorTurn;result.enemyRounds=result.turns.reduce((sum,turn)=>sum+turn.enemyRounds,0);result.agencyTurns=(state?.playerAgencyTurns57||0)-before.agency;
+      result.timeCost=result.turns.reduce((sum,turn)=>sum+turn.timeCost,0);
+      result.advancesWorld=result.logicalTurns>0;result.playerDied=!before.dead&&!!state?.dead;
+      result.lifecycleAborted=!completed||!state||state.runId984!==before.run;
+      result.pending=!!result.value&&!result.advancesWorld&&((['BLINK','ITEM_USE','QUICK_SLOT'].includes(type)&&activeGameplayPanels57().some(panel=>!before.panels.includes(panel.id)))||(type==='DESCEND'&&before.floor===21&&state?.floor===21));
+      result.committed=!result.pending&&(frame.committed===true||result.advancesWorld||result.value===true||result.children.some(child=>child.committed));
+      if(type==='TARGET_CANCEL')result.committed=false;
+      result.successful=result.committed&&!frame.denial&&!result.playerDied&&!result.lifecycleAborted;
+      result.status=result.lifecycleAborted?'aborted':result.playerDied?'dead':frame.denial==='stun'?'denied':frame.denial?'blocked':result.pending?'pending':type==='TARGET_CANCEL'?'cancelled':result.committed?'committed':!result.attempted?'no-action':result.handled?'failed':'ignored';
+      if(frame.denial)result.reason=frame.denial;
+      if(completed&&!parent&&ACTION_PRESENTATION58.pending&&ACTION_PRESENTATION58.run===state){const a=ACTION_PRESENTATION58,now=performance.now();a.pending=false;a.start=now;a.until=now+(a.kind==='attack'?260:240)/(a.rate||1);a.inputUntil=now+85/(a.rate||1);}
+      ACTION_AUDIT5.stack.pop();if(parent){parent.result.children.push(result);parent.turns.push(...result.turns);if(frame.denial)parent.denial=frame.denial}
+      else{if(completed)result.persistence=globalThis.__MANRU_SAVE_SERVICE__?.flush?.(type,result,!activeGameplayPanels57().some(panel=>!before.panels.includes(panel.id)));else globalThis.__MANRU_SAVE_SERVICE__?.clearPending?.();ACTION_AUDIT5.history.push(result);if(ACTION_AUDIT5.history.length>100)ACTION_AUDIT5.history.shift()}
+    }
+  },
+  handleEvent(e){const type=e.currentTarget?.id==='cookDo57'?'COOK':e.currentTarget?.id==='cipherSubmit'?'CIPHER_SUBMIT':null;if(type)return ActionDispatcher.dispatch({type,source:'modal-control'}).value},
+  snapshot(){return{roots:ACTION_AUDIT5.roots,invocations:ACTION_AUDIT5.serial,activeDepth:ACTION_AUDIT5.stack.length,routes:[...ACTION_ROUTES5.keys()],history:structuredClone(ACTION_AUDIT5.history)}},
+  resetAudit(){if(ACTION_AUDIT5.stack.length)throw new Error('Cannot reset an active action');ACTION_AUDIT5.serial=0;ACTION_AUDIT5.roots=0;ACTION_AUDIT5.history=[];return this.snapshot()}
+});
+function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
+// Fullscreen belongs to entering/resuming the game, with no floating HUD control.
+let fullscreenPending65=false,fullscreenWanted66=false,fullscreenResume66=false;
+  function pstate(){if(!state)return;state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};for(const q of['swift','fortify','willBoost'])if(!Number.isFinite(state.status[q]))state.status[q]=0}
+  /* ---------- deterministic F23/F24 runtime QA hooks ---------- */
+  let qaSnapshot60=null;
+  function lsKeys70(){try{return Object.keys(localStorage)}catch(_){return Object.keys(memoryStorage)}}
+  const V982={
+    version:'v9.8.3-direct-stats-clean-pipeline',
+    upgradesPerChapter:3,
+    healsPerChapter:2
+  };
+  // Basic controls are documented at the point they matter, without blocking gameplay.
+  function currentScreen(){return SCREEN1002.mode}
+    function deathMeta1004(){try{return JSON.parse(localStorage.getItem(DEATH1004)||localStorage.getItem(LEGACY_DEATH1004)||'null')}catch(_){return null}}
