@@ -1,0 +1,8 @@
+{
+ "closure": [
+  "spine.js"
+ ],
+ "afterClosure": [
+  "start.js"
+ ]
+}

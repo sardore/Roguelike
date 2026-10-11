@@ -16,6 +16,7 @@
 // Every metric is ratcheted against tools/structure-baseline.json: it may only go down.
 import fs from 'node:fs';
 import path from 'node:path';
+import { assembleGame, locate } from './lib/game.mjs';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
@@ -39,11 +40,16 @@ function listFiles(dir, ext) {
 const rel = (f) => path.relative(repo, f);
 const violations = {};
 function report(metric, file, line, detail) {
+  if (file === GAME_LABEL) ({ file, line } = locate(GAME.parts, line));
   (violations[metric] ||= []).push(`${file}:${line} ${detail}`);
 }
 
 // ---------------------------------------------------------------- sources
 const jsSources = listFiles(path.join(srcDir, 'scripts'), '.js').map((f) => ({ file: rel(f), text: fs.readFileSync(f, 'utf8') }));
+// The game runtime is several files assembled into one closure; analyse the assembled text and map lines back.
+const GAME = assembleGame(srcDir);
+const GAME_LABEL = 'src/game (assembled)';
+jsSources.push({ file: GAME_LABEL, text: GAME.text });
 const cssSources = listFiles(path.join(srcDir, 'styles'), '.css').map((f) => ({ file: rel(f), text: fs.readFileSync(f, 'utf8') }));
 const indexFile = path.join(srcDir, 'index.html');
 if (fs.existsSync(indexFile)) {
@@ -297,10 +303,10 @@ for (const [sel, uses] of selectorUses) {
 // ---------------------------------------------------------------- QA leak
 // The release build omits src/qa/qa.js; the runtime must not read anything only that file provides.
 {
-  const qaFile = path.join(srcDir, 'qa', 'qa.js'), rtFile = path.join(srcDir, 'scripts', '10-runtime.js');
-  if (fs.existsSync(qaFile) && fs.existsSync(rtFile)) {
+  const qaFile = path.join(srcDir, 'qa', 'qa.js'), rtText = GAME.text;
+  if (fs.existsSync(qaFile)) {
     const { findQaLeaks } = await import('./lib/qa-leak.mjs');
-    for (const leak of findQaLeaks(fs.readFileSync(rtFile, 'utf8'), fs.readFileSync(qaFile, 'utf8'))) report('qaLeak', 'src/scripts/10-runtime.js', 0, leak);
+    for (const leak of findQaLeaks(rtText, fs.readFileSync(qaFile, 'utf8'))) report('qaLeak', GAME_LABEL, 1, leak);
   }
 }
 

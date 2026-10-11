@@ -6,3 +6,5 @@ app/node_modules/
 tests/artifacts/
 *.tsbuildinfo
 dist-qa/
+dist-dev/
+.work/

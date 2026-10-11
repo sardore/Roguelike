@@ -18,6 +18,7 @@
 
 ```
 npm install          # 의존성 설치 + pre-commit 훅 연결
+npm run dev          # 개발 서버: dist-dev/를 만들어 http://127.0.0.1:5173/ 에서 열고 src/ 변경 시 다시 빌드
 npm run build        # dist/MANRU.html (단일 HTML) + dist/app/ (PWA·Capacitor)
 npm run check        # 구조 검사 (재대입·CSS 주입·중복 등이 늘면 실패)
 npm run build:qa     # dist-qa/ : 테스트 전용 빌드 (src/qa/qa.js 포함, 배포하지 않음)

@@ -10,10 +10,10 @@
 |---|---|
 | `scripts/00-boot-isolation.js` | 부팅 직전 세이브 복구 후보를 정한다 (`manru1004_*` 키). |
 | `styles/00-base.css` … `50-text-scale.css` | 모든 CSS. `15-interface.css`는 예전에 런타임이 `<style>`로 주입하던 블록이다. 전부 `<head>`에서 런타임보다 먼저 로드된다. |
-| `scripts/10-runtime.js` | 게임 전체. 바깥 클로저 하나, 패치 구획 없음. |
+| `src/game/*.js` (순서: `src/game/manifest.json`) | 게임 전체. 빌드가 manifest 순서대로 이어 붙여 **바깥 클로저 하나**(`scripts/10-runtime.js`)로 만든다. 패치 구획 없음. `src/`를 브라우저로 바로 열 수는 없고 `npm run dev`(또는 `npm run build:dev`)가 만든 `dist-dev/`를 연다. |
 | `scripts/99-maintenance.js` | 모바일 컨텍스트 메뉴 차단. |
 
-`10-runtime.js`는 아직 한 파일이다. 같은 클로저의 `let` 상태(`state`, `COLS`, `ROWS` 등)를 공유하고 모듈 경계를 가로질러 재대입하기 때문에, 파일 분할은 상태를 공유 객체로 옮기는 별도 작업이다(아래 "다음 단계").
+게임 코드는 도메인별 파일로 나뉘지만 결과는 한 클로저라서 `state`, `COLS`, `ROWS` 같은 공유 `let`과 실행 순서가 그대로다. 도메인 사이의 경계는 `docs/MODULE_PLAN.md`와 각 도메인의 공개 목록으로 정하고 검사기가 지킨다. 여러 파일을 한꺼번에 도구로 고칠 때는 `node tools/game.mjs assemble` → 도구 실행 → `node tools/game.mjs split`.
 
 ## 영역별 소유자
 
@@ -59,7 +59,7 @@
 
 ## QA 코드 분리
 
-게임이 읽지 않는 전역·감사 함수는 `src/qa/qa.js`에 있고, `10-runtime.js` 끝의 `/*@@QA-BRIDGES@@*/` 자리에 `npm run build:qa`가 끼워 넣는다(`dist-qa/`, 테스트 전용). `npm run build`(단일 HTML·앱)는 `src/qa/`를 읽지 않으며, QA 이름이 새면 빌드가 실패한다. 어떤 전역·멤버가 어느 쪽인지는 `docs/BRIDGES.md`(`node tools/refactor/bridge-report.mjs --md`로 다시 만든다). 디버그 전장 버튼과 `__MANRU_DEBUG__`는 개발 버전 기능이라 출시에도 있다.
+게임이 읽지 않는 전역·감사 함수는 `src/qa/qa.js`에 있고, 조립된 클로저 끝의 `/*@@QA-BRIDGES@@*/` 자리에 `npm run build:qa`가 끼워 넣는다(`dist-qa/`, 테스트 전용). `npm run build`(단일 HTML·앱)는 `src/qa/`를 읽지 않으며, QA 이름이 새면 빌드가 실패한다. 어떤 전역·멤버가 어느 쪽인지는 `docs/BRIDGES.md`(`node tools/refactor/bridge-report.mjs --md`로 다시 만든다). 디버그 전장 버튼과 `__MANRU_DEBUG__`는 개발 버전 기능이라 출시에도 있다.
 
 ## 검증 장치
 

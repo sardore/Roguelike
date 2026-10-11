@@ -16,7 +16,7 @@ const args = process.argv.slice(2);
 const write = args.includes('--write');
 const keepArg = args.includes('--keep') ? args[args.indexOf('--keep') + 1].split(',') : [];
 const KEEP = new Set(['__MANRU_DEBUG__', '__MANRU_DEBUG_BATTLE57__', ...keepArg]);
-const file = 'src/scripts/10-runtime.js';
+const file = process.argv.slice(2).find((a) => !a.startsWith('--') && a.endsWith('.js')) || '.work/runtime.js';
 const qaFile = 'src/qa/qa.js';
 export const MARKER = '/*@@QA-BRIDGES@@*/';
 const B = analyzeBridges(file);

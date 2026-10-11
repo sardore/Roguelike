@@ -7,6 +7,8 @@
 //
 // Replaces the former build_standalone.py and assemble_app.py.
 //
+//   node tools/build.mjs --dev  writes dist-dev/ instead: the game without QA hooks, runnable in a browser
+//                               (src/ is not: the runtime is assembled from src/game/*.js, see tools/lib/game.mjs).
 //   node tools/build.mjs --qa   writes dist-qa/ instead: the source tree with src/qa/qa.js spliced into
 //                               the runtime closure at its marker. Only the tests use it; it is never
 //                               a deliverable. The release build never reads src/qa/.
@@ -14,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { assembleGame, QA_MARKER } from './lib/game.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(repo, 'src');
@@ -27,6 +30,10 @@ function fail(message) {
 }
 
 const read = (p) => fs.readFileSync(p, 'utf8');
+// scripts/10-runtime.js does not exist in src/: it is assembled from src/game/*.js
+const RUNTIME = 'scripts/10-runtime.js';
+const releaseRuntime = assembleGame(src).text;
+const readScript = (file) => (file === RUNTIME ? releaseRuntime : read(path.join(src, file)));
 const html = read(path.join(src, 'index.html'));
 {
   // One place names the release: RELEASE_INFO in the boot script. The static <title> must match it.
@@ -39,7 +46,7 @@ const html = read(path.join(src, 'index.html'));
 // ---------------------------------------------------------------- single HTML
 function inline(page) {
   let out = page.replace(/<script([^>]*\bsrc=["'](scripts\/[^"']+)["'][^>]*)>\s*<\/script>/g, (_m, attrs, file) => {
-    const text = read(path.join(src, file)).replaceAll('</script', '<\\/script');
+    const text = readScript(file).replaceAll('</script', '<\\/script');
     return '<script' + attrs.replace(/\s+src=["'][^"']+["']/, '') + '>' + text + '</script>';
   });
   out = out.replace(/<link\s+[^>]*href=["'](styles\/[^"']+)["'][^>]*>/g, (_m, file) => '<style>' + read(path.join(src, file)) + '</style>');
@@ -92,6 +99,7 @@ function buildApp(out) {
   const www = path.join(out, 'www');
   fs.mkdirSync(www, { recursive: true });
   for (const d of GAME_DIRS) if (fs.existsSync(path.join(src, d))) fs.cpSync(path.join(src, d), path.join(www, d), { recursive: true });
+  fs.writeFileSync(path.join(www, RUNTIME), releaseRuntime);
   fs.writeFileSync(path.join(www, 'index.html'), appIndex(html));
   fs.cpSync(path.join(appShell, 'pwa'), www, { recursive: true });
   const files = listFiles(www).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
@@ -109,18 +117,18 @@ function buildApp(out) {
   return files.length + 1;
 }
 
-const QA_MARKER = '/*@@QA-BRIDGES@@*/';
-const runtime = read(path.join(src, 'scripts', '10-runtime.js'));
-if (runtime.split(QA_MARKER).length !== 2) fail('src/scripts/10-runtime.js must contain the QA marker exactly once');
+if (releaseRuntime.split(QA_MARKER).length !== 2) fail('the assembled runtime must contain the QA marker exactly once');
 
-if (process.argv.includes('--qa')) {
-  const out = path.join(repo, 'dist-qa');
+// dist-qa/ (tests: QA hooks spliced in) and dist-dev/ (no QA hooks, like a release but not packaged)
+for (const [flag, dir, qa, note] of [['--qa', 'dist-qa', true, 'QA build, for tests only'], ['--dev', 'dist-dev', false, 'game without QA hooks, for local use']]) {
+  if (!process.argv.includes(flag)) continue;
+  const out = path.join(repo, dir);
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
   for (const d of GAME_DIRS) if (fs.existsSync(path.join(src, d))) fs.cpSync(path.join(src, d), path.join(out, d), { recursive: true });
   fs.copyFileSync(path.join(src, 'index.html'), path.join(out, 'index.html'));
-  fs.writeFileSync(path.join(out, 'scripts', '10-runtime.js'), runtime.replace(QA_MARKER, read(path.join(src, 'qa', 'qa.js'))));
-  console.log('dist-qa/ written (QA build, for tests only)');
+  fs.writeFileSync(path.join(out, RUNTIME), assembleGame(src, { qa }).text);
+  console.log(`${dir}/ written (${note})`);
   process.exit(0);
 }
 

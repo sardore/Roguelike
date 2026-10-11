@@ -1,5 +1,3 @@
-(()=>{
-"use strict";
 /* Mine 10.0.5: authored branch state consumed by canonical movement, FOV, turns and item input. */
 const MINE_RULES105=Object.freeze({cartDamage:26,wallDamage:18,cartRange:20,respawnTurns:25,wallTurns:5,lightRadius:5,stoneRange:6,stoneDamage:2});
 const MINE_ITEMS105=Object.freeze({
@@ -23778,14 +23776,3 @@ initDebugBattle57();
 globalThis.__MANRU_DEBUG_BATTLE57__=Object.freeze({snapshot:()=>DEBUG_BATTLE57.open?{round:DEBUG_BATTLE57.round,watching:!!DEBUG_BATTLE57.watching,subject:DEBUG_BATTLE57.subjectId,playing:DEBUG_BATTLE57.playing,winner:DEBUG_BATTLE57.winner,catalog:DEBUG_BATTLE57.catalog.map(e=>({name:e.def.name,group:e.group})),units:state.monsters.map(m=>({id:m.debugId57,name:m.name,side:m.debugSide57,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp,atk:m.atk,def:m.def,faction:entityFaction57(m),cells:entityFootprintCells57(m),revive:m.revivePhase57})),debug:state.debugBattle57,map:{width:COLS,height:ROWS,rooms:state.rooms.length,tiles:[...new Set(state.map.flat())]},patterns:state.monsters.filter(m=>m.boss).map(m=>({id:combatantId54(m),name:m.name,faction:entityFaction57(m),intent:m.intent54?.type,core:m.coreStage54,links:m.silk54?.links.length})),owners:state.monsters.filter(m=>m.bossOwnerId57).map(m=>({name:m.name,owner:m.bossOwnerId57,faction:entityFaction57(m),fixture:m.combatFixture54}))}:null});
 
 
-  /*@@QA-BRIDGES@@*/
-})();
-
-/* R58 startup commit: begin animation only after every canonical subsystem above initialized. */
-if(typeof globalThis.__MANRU_ACTOR_ART__?.drawWorld!=='function')throw new ReferenceError('canonical actor renderer is not initialized');
-if(!globalThis.__MANRU_RUNTIME_START57__?.ready?.())throw new ReferenceError('canonical runtime entrypoints are not initialized');
-globalThis.__MANRU_RUNTIME_START57__.start();
-// Every definition now exists. Earlier refreshes ran while branch data (BRANCH_DEFS105 ...) was still
-// uninitialised and rejected branch saves, so the continue button is evaluated once more here.
-globalThis.__MANRU_LIFECYCLE__.refreshContinue();
-globalThis.__MANRU_INIT_COMPLETE__=Object.freeze({build:RELEASE_INFO.build,actor:true,runtime:true,loopStarted:globalThis.__MANRU_RUNTIME_START57__.started()});

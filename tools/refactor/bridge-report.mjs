@@ -3,7 +3,7 @@
 // and which of those members game code reaches. Output: JSON, or `--md` for docs/BRIDGES.md.
 import { analyzeBridges } from '../lib/bridges.mjs';
 
-const file = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'src/scripts/10-runtime.js';
+const file = process.argv.slice(2).find((a) => !a.startsWith('--')) || '.work/runtime.js';
 const { out } = analyzeBridges(file);
 if (process.argv.includes('--md')) {
   const L = ['# 공개 전역(브리지) 판정표', '', '`node tools/refactor/bridge-report.mjs --md`가 만든다.', '',

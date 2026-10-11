@@ -22,7 +22,7 @@ jobs:
       - name: Behaviour and screenshots on the QA build (seeded replay, V40 saves, floors, debug arena, pinned fonts)
         run: npm test -- --skip render
       - name: Release source publishes no QA hooks and saves the same data
-        run: npm test -- --target src --label src
+        run: npm run build:dev && npm test -- --target src --label src
       - name: Same behaviour from the single HTML build
         run: npm test -- --target single --label single
       - name: Installable app (manifest, service worker, offline relaunch, offline new run)

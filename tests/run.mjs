@@ -14,7 +14,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const value = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
-// --target qa (default, dist-qa/) | src (release source, no QA hooks) | single (dist/MANRU.html) |
+// --target qa (default, dist-qa/) | src (dist-dev/: the assembled game without QA hooks; npm run build:dev) | single (dist/MANRU.html) |
 // app (dist/app/www). Only the QA build carries the test hooks; run.mjs skips the scenarios that
 // need them for the other targets and checks that those builds publish none.
 const target = value('--target') || 'qa';
@@ -23,7 +23,7 @@ const root = value('--root') ? path.resolve(value('--root'))
   : target === 'single' ? { dir: dist, entry: 'MANRU.html' }
   : target === 'app' ? path.join(dist, 'app', 'www')
   : target === 'qa' ? path.join(here, '..', 'dist-qa')
-  : path.join(here, '..', 'src');
+  : path.join(here, '..', 'dist-dev');
 const only = value('--only')?.split(',');
 const skip = value('--skip')?.split(',') || [];
 const baselineFile = path.join(here, 'baseline', 'behaviour.json');

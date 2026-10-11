@@ -21,7 +21,7 @@ export const DOMAINS = [
 export function domainOf(name) { for (const [d, re] of DOMAINS) if (re.test(name)) return d; return 'core'; }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const file = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'src/scripts/10-runtime.js';
+  const file = process.argv.slice(2).find((a) => !a.startsWith('--')) || '.work/runtime.js';
   const src = fs.readFileSync(file, 'utf8');
   const ast = acorn.parse(src, { ecmaVersion: 'latest', locations: true });
   const A = analyze(ast);
