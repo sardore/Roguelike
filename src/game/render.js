@@ -4839,3 +4839,6 @@ function initDebugBattle57(){
  document.getElementById('battleClear57').onclick=()=>{DEBUG_BATTLE57.roster=[];debugBattleRoster57();debugBattleCreateWorld57()};
  panel.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape'){event.preventDefault();if(document.body.classList.contains('manru-inspect-open'))closeInspect();else closeDebugBattle57()}});
 }
+// Menu light radius and energy share one phase; reduced motion freezes the phase.
+// Held equipment and item icons share the authored weapon pixels. Poses transform the asset about its actual grip.
+function heldWeaponKey1001(item){const art=globalThis.__MANRU_ITEM_ART_R7__;return item?.name?(art?art.weaponAsset(item).key:'weapon-art-pending'):'unarmed'}

@@ -37,9 +37,7 @@
 const SPECIAL_BASE_COUNTS={2:6,4:5,6:6,8:8,11:7,13:8,16:0,18:8,21:7,22:8,23:7,24:4};
 
 
-// Menu light radius and energy share one phase; reduced motion freezes the phase.
-// Held equipment and item icons share the authored weapon pixels. Poses transform the asset about its actual grip.
-function heldWeaponKey1001(item){const art=globalThis.__MANRU_ITEM_ART_R7__;return item?.name?(art?art.weaponAsset(item).key:'weapon-art-pending'):'unarmed'}
+
 
 
 
