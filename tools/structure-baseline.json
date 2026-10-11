@@ -8,8 +8,8 @@
  "mutationObserver": 1,
  "duplicateSelector": 276,
  "important": 2186,
- "suffixFunction": 1952,
+ "suffixFunction": 1950,
  "emptyCatch": 0,
  "timer": 53,
- "sameBody": 4
+ "sameBody": 3
 }

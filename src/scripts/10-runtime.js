@@ -8696,7 +8696,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   /* ---------- geometry primitives ---------- */
   function clearMap59(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL)}
   function insideMapInterior(x,y){return x>0&&y>0&&x<COLS-1&&y<ROWS-1}
-  function carve59(m,x,y,t=TT.FLOOR){if(insideMapInterior(x,y))setTerrainTile58(m,x,y,t)}
   function room59(m,x,y,w,h,shape='rect'){
     x=Math.max(1,Math.min(COLS-w-2,x));y=Math.max(1,Math.min(ROWS-h-2,y));
     const r=roomRect(x,y,w,h);r.shape59=shape;state.rooms.push(r);
@@ -8785,11 +8784,11 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   function connect59(m,a,b,style='L'){
     const da=doorPoint59(a,b),db=doorPoint59(b,a);
     setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);
-    carve59(m,da.ox,da.oy);carve59(m,db.ox,db.oy);
+    carveInterior(m,da.ox,da.oy);carveInterior(m,db.ox,db.oy);
     manhattan59(m,{x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style);
   }
   function connectToPoint59(m,r,p,style='L'){
-    const d=doorPoint59(r,p);setTerrainTile58(m,d.x,d.y,TT.DOOR);carve59(m,d.ox,d.oy);
+    const d=doorPoint59(r,p);setTerrainTile58(m,d.x,d.y,TT.DOOR);carveInterior(m,d.ox,d.oy);
     manhattan59(m,{x:d.ox,y:d.oy},p,style);
   }
   function addGate59(m,x,y){
@@ -12224,7 +12223,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   const DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.CARPET,TT.STONE_PATH]);
   const SILENT_DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW]);
   function clear88(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL);state.rooms=[]}
-  function carve88(m,x,y,t=TT.FLOOR){if(insideMapInterior(x,y))setTerrainTile58(m,x,y,t)}
+  function carveInterior(m,x,y,t=TT.FLOOR){if(insideMapInterior(x,y))setTerrainTile58(m,x,y,t)}
   function room88(m,x,y,w,h,shape='rect'){
     x=Math.max(1,Math.min(COLS-w-2,x));y=Math.max(1,Math.min(ROWS-h-2,y));
     const r=roomRect(x,y,w,h);r.shape88=shape;state.rooms.push(r);const x0=x+1,y0=y+1,x1=x+w-2,y1=y+h-2;
@@ -12256,7 +12255,7 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
     }
     if(hf){while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell88(m,x,y)}while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell88(m,x,y)}}else{while(y!==b.y&&guard++<500){y+=Math.sign(b.y-y);corridorCell88(m,x,y)}while(x!==b.x&&guard++<500){x+=Math.sign(b.x-x);corridorCell88(m,x,y)}}
   }
-  function connect88(m,a,b,style='L'){const da=doorPoint88(a,b),db=doorPoint88(b,a);setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);carve88(m,da.ox,da.oy);carve88(m,db.ox,db.oy);manhattan88(m,{x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style)}
+  function connect88(m,a,b,style='L'){const da=doorPoint88(a,b),db=doorPoint88(b,a);setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);carveInterior(m,da.ox,da.oy);carveInterior(m,db.ox,db.oy);manhattan88(m,{x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style)}
   
   
 
