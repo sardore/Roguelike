@@ -2286,7 +2286,7 @@ const UX={
     closeBlockUntil:0,invEquipSlot:null,lastMiniAt:0,lastMiniTurn:-1,
     invScrollByTab:Object.create(null)
   };RuntimeState.ui.inventory=UX;
-  const now=()=>performance.now();
+
 
 
 

@@ -49,6 +49,7 @@
 | rest→save | rest 중 사용처 과반이 save.js인 선언 → save.js (규칙 a) | 7667 | 463 / 584 | 755 | 70.5% | - |
 | rest→combat | rest 중 사용처 과반이 combat.js인 선언 → combat.js (규칙 a) | 7664 | 458 / 584 | 755 | 70.5% | - |
 | rest→ui | rest 중 사용처 과반이 ui.js인 선언 → ui.js (규칙 a) | 7658 | 453 / 584 | 755 | 70.6% | - |
+| rest→input | rest 중 사용처 과반이 input.js인 선언 → input.js (규칙 a) | 7658 | 452 / 584 | 755 | 70.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -66,8 +67,8 @@
 | branches.js | 2377 |
 | elements.js | 247 |
 | spine.js | 7658 |
-| input.js | 148 |
+| input.js | 149 |
 | story.js | 213 |
 | ui.js | 728 |
 | start.js | 6 |
-| (total) | 26025 |
+| (total) | 26026 |
