@@ -1282,11 +1282,7 @@ function combatGuardBlocks57(attacker,target){
 setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
 function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[phase];if(!list)throw new Error('invalid boss reward phase '+phase);if(list.some(v=>v.id===id))throw new Error('duplicate boss reward stage '+id);list.push({id,run})}
-function weightedBossUtility55(entries){
-  const pool=entries.filter(e=>e?.item&&Number(e.weight)>0);if(!pool.length)return null;
-  const total=pool.reduce((n,e)=>n+e.weight,0);let r=globalThis.__MANRU_RANDOM57__()*total;
-  for(const e of pool){r-=e.weight;if(r<=0)return e}return pool.at(-1)
-}
+
 
 
 
@@ -2102,7 +2098,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
-function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|FOCUS|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']};;// r54: dead pre-v49 panel wrapper removed.
+;;// r54: dead pre-v49 panel wrapper removed.
 
   /* ---------- combat FX ---------- */
   const feed=document.createElement('div');feed.id='mfHitFeed';document.getElementById('canvasWrap')?.appendChild(feed);/* r25: obsolete pre-v5.4 attack forwarding wrapper removed; v5.4 is the registered combat core. */
@@ -2666,7 +2662,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
 
-  const uniq53=a=>[...new Set(a.map(v=>String(v??'').trim()).filter(Boolean))];
+
 
 
 
@@ -2753,7 +2749,7 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
   const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
   const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
-  const RECOVERY_KINDS=new Set(['heal_small','heal_medium','makgeolli','focus','cleanse']);
+
 
 
 
@@ -2781,7 +2777,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
   const GENERIC_TALISMAN56=Object.freeze({id:'unknown',name:'미확인 부적',paper:'#d8c79b',paper2:'#b49b6d',ink:'#8a2f28',seal:'?'});
-  const IDENTIFY_TALISMAN_THEME56=Object.freeze({id:'identify',name:'감정부적',paper:'#dfc78e',paper2:'#b8955b',ink:'#9d3126',seal:'鑑'});
+
   
 
 
@@ -2792,18 +2788,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
   function featureAt56(x,y){return(state?.featureRooms||[]).find(r=>x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h)||null}
   function nearTypes56(x,y,r=2){const s=new Set();for(let yy=Math.max(0,y-r);yy<=Math.min(ROWS-1,y+r);yy++)for(let xx=Math.max(0,x-r);xx<=Math.min(COLS-1,x+r);xx++)s.add(state.map[yy]?.[xx]);return s}
-  function contextAt56(x,y,kind){
-    const fr=featureAt56(x,y);if(fr&&ROOM_CONTEXT[fr.name]){const c=ROOM_CONTEXT[fr.name],match=c.kinds.includes(kind);return{label:fr.name,text:match?c.text:'이 방의 주된 약성과 다른 물건이다. 다른 곳에서 반입된 듯하다.',kinds:match?[...c.kinds]:[],strength:match?2:0}}
-    const n=nearTypes56(x,y,2),tests=[
-      {has:[TT.LAVA,TT.BRAZIER],label:'열기 주변',text:'불과 수지 흔적이 있어 열기·강화 계열일 가능성이 있다.',kinds:['fire','fortify','smoke']},
-      {has:[TT.WATER,TT.FOUNTAIN,TT.MERCURY],label:'물가 주변',text:'정화수와 냉기가 가까워 정신·정화 계열일 가능성이 있다.',kinds:['cleanse','focus','heal_small']},
-      {has:[TT.TRAP,TT.SNARE],label:'함정 주변',text:'회피 경로에 놓인 약병이라 기동·연막 계열일 가능성이 있다.',kinds:['swift','smoke','heal_medium']},
-      {has:[TT.ALTAR,TT.GOLD],label:'제단 주변',text:'향과 금분 흔적이 있어 정화·보호 계열일 가능성이 있다.',kinds:['cleanse','focus','fortify']},
-      {has:[TT.ARMORY],label:'병기 보관구',text:'병기 옆에 놓여 전투·연막 계열일 가능성이 있다.',kinds:['fortify','smoke','fire']}
-    ];
-    for(const t of tests)if(t.has.some(v=>n.has(v))){const match=t.kinds.includes(kind);return{label:t.label,text:match?t.text:'주변 구조와 약성이 어긋난다. 위치 단서의 신뢰도가 낮다.',kinds:match?[...t.kinds]:[],strength:match?1:0}}
-    return{label:'출처 불명',text:'발견 위치만으로는 약성을 좁히기 어렵다.',kinds:[],strength:0};
-  }
+
 
 
 
@@ -2839,7 +2824,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   };
 
 
-  function inventoryFilteredFor56(tab){const old=inventoryTab;inventoryTab=tab;const r=inventoryFiltered();inventoryTab=old;return r}
+
   registerInventoryRenderR34('r56-identification','post',()=>patchInventory56());
 
 
@@ -2932,7 +2917,7 @@ foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefaul
 cookingPanel.id='cook57';cookingPanel.innerHTML=`<div class="cookSheet57"><span class="uiCorners63" aria-hidden="true"></span><div class="cookHead57"><div><h2>비방 조리</h2><small id="cookStation57">솥에서 재료를 실험한다.</small></div><button class="uxClose" id="cookClose57" aria-label="닫기">×</button></div><div class="cookPreview57" id="cookPreview57">재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.</div><div class="cookBody57"><div class="cookInv57" id="cookInv57"></div><section class="cookBook57"><h3>조리 도감</h3><div id="cookBookList57"></div></section></div><div class="cookFoot57"><button id="cookClear57">선택 해제</button><button class="primary" id="cookDo57">조리</button></div></div>`;document.body.appendChild(cookingPanel);
 
 
-function ingredientKey57(item){if(item?.type==='potion'){const proto=(globalThis.MANRU_POTIONS||[]).find(p=>p.potionKind===item.potionKind);return item.potionKind==='fire'?'화유병':proto?.name||item.name||'';}return item?.name||''}
+
 
 
 
@@ -2953,8 +2938,8 @@ registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open dire
 window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState();const unknown=FOOD_RECIPES.filter(v=>!state.cookbook57[v.id]);if(unknown.length&&globalThis.__MANRU_RANDOM57__()<.40){const rec=choice(unknown);state.cookbook57[rec.id]=true;addLog(`찢어진 조리서 · ${rec.name}: ${rec.ingredients.join(' + ')}.`);return rec.id}return null};
 function roomFreeFood57(fr){const a=[];for(let y=fr.y+1;y<fr.y+fr.h-1;y++)for(let x=fr.x+1;x<fr.x+fr.w-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y))a.push({x,y});return a.length?choice(a):PlacementService.randomFloor(0)}
 
-const GUARANTEED_FOOD_PER_NONBOSS_FLOOR57=1;
-const EXTRA_FOOD_CHANCE_NONBOSS57=.20;
+
+
 
 registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards57()});
 
@@ -3445,10 +3430,10 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  function strategyItem62(i){if(!i)return false;if(i.type==='talisman')return true;if(i.type==='potion')return !['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind);if(i.type==='food')return ['전력 주먹밥','매콤한 육포','한방 생선찜','보신 전골','얼음 복숭아'].includes(i.name);return false}
 
 
-  function beltItemKey62(item){return JSON.stringify([item.type,item.talismanKind||item.potionKind||item.name])}
+
+
 
 
 
@@ -3596,16 +3581,8 @@ const RC={
 
 
 
-  function recoveryPool70(){
-    const food=CONSUMABLES.filter(i=>i.type==='food'&&!['relic','sealed'].includes(i.rarity)&&!i.recipeResult57);
-    const pots=(window.MANRU_POTIONS||[]).filter(i=>['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)&&(state.floor>=(i.minFloor||1)));
-    return [...food,...pots];
-  }
-  function tacticalPool70(){
-    const pots=(window.MANRU_POTIONS||[]).filter(i=>!['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind)&&(state.floor>=(i.minFloor||1)));
-    const tal=(window.MANRU_TALISMANS||[]).filter(i=>state.floor>=(i.minFloor||1));
-    return [...pots,...tal];
-  }
+
+
 
   function repairMonsters70(){
     if(!state?.monsters?.length)return 0;let moved=0;
@@ -3860,7 +3837,7 @@ const RC={
 
   function public74(item){if(!item)return'';if(item.branchExclusive105||item.fusion74)return item.name;return window.__MANRU_TALISMAN_PUBLIC__?.name?.(item)||item.name}
   
-  function app74(item){return window.__MANRU_TALISMAN_PUBLIC__?.app?.(item)||{name:'미확인 부적',ink:'#9b7448'}}
+
 
 
 
@@ -5780,7 +5757,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   // Item choice modal shared by identify, holy purification and holy-upgrade.
   const modal=document.createElement('div');modal.id='choice991';modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div></div>';document.body.appendChild(modal);
-  let choiceCancel991=null;
+
 
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});

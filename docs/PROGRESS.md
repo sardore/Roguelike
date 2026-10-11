@@ -41,6 +41,7 @@
 | pinned:combat (3차) | 앞선 이동 뒤 combat.js 쪽 참조가 많아진 문장 → combat.js | 7795 | 538 / 584 | 755 | 69.9% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 | F-23 | 분할 회귀 3건 되돌림(선언을 채우기 문장 뒤로) + values 시나리오 | 7801 | 541 / 584 | 755 | 69.9% | 되돌린 선언 3개와 주석 3줄로 spine.js가 6줄 늘었다. 3차 이동 커밋 6개는 기준선을 낮추지 않았고 이 커밋에서 한꺼번에 낮췄다. |
 | rest→mapgen | rest 중 사용처 과반이 mapgen.js인 선언 → mapgen.js (규칙 a) | 7758 | 526 / 584 | 755 | 70.1% | - |
+| rest→items | rest 중 사용처 과반이 items.js인 선언 → items.js (규칙 a) | 7735 | 510 / 584 | 755 | 70.2% | - |
 
 ## 현재 파일별 줄 수
 
@@ -49,7 +50,7 @@
 | kernel.js | 16 |
 | catalog.js | 173 |
 | save.js | 698 |
-| items.js | 908 |
+| items.js | 947 |
 | combat.js | 651 |
 | monsters.js | 2168 |
 | render.js | 4843 |
@@ -57,9 +58,9 @@
 | special.js | 1873 |
 | branches.js | 2360 |
 | elements.js | 247 |
-| spine.js | 7758 |
+| spine.js | 7735 |
 | input.js | 148 |
 | story.js | 213 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25952 |
+| (total) | 25968 |

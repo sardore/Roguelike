@@ -906,3 +906,42 @@ function refineTheme2Rooms1027(){
   for(const v of meta){const {r,seed,indoor}=v;for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++){const t=state.map[y]?.[x];if(!floorish(t))continue;if(indoor){const border=x===r.x+1||x===r.x+r.w-2||y===r.y+1||y===r.y+r.h-2;setTerrainTile58(state.map,x,y,border&&r.w>=9&&r.h>=7?TT.DARK_WOOD:TT.WOOD_FLOOR)}else{const cross=x===r.cx||y===r.cy;setTerrainTile58(state.map,x,y,cross?TT.STONE_PATH:((x+y+seed)%6===0?TT.LIGHT_GRASS:TT.GRASS))}}if(indoor)out.indoor++;else out.garden++;out.rooms.push({x:r.x,y:r.y,w:r.w,h:r.h,indoor,enclosure:v.enclosure})}
   state.theme2RoomIdentity1027=out;return out;
 }
+function weightedBossUtility55(entries){
+  const pool=entries.filter(e=>e?.item&&Number(e.weight)>0);if(!pool.length)return null;
+  const total=pool.reduce((n,e)=>n+e.weight,0);let r=globalThis.__MANRU_RANDOM57__()*total;
+  for(const e of pool){r-=e.weight;if(r<=0)return e}return pool.at(-1)
+}
+function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|FOCUS|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']}
+  const uniq53=a=>[...new Set(a.map(v=>String(v??'').trim()).filter(Boolean))];
+  const RECOVERY_KINDS=new Set(['heal_small','heal_medium','makgeolli','focus','cleanse']);
+  const IDENTIFY_TALISMAN_THEME56=Object.freeze({id:'identify',name:'감정부적',paper:'#dfc78e',paper2:'#b8955b',ink:'#9d3126',seal:'鑑'});
+  function contextAt56(x,y,kind){
+    const fr=featureAt56(x,y);if(fr&&ROOM_CONTEXT[fr.name]){const c=ROOM_CONTEXT[fr.name],match=c.kinds.includes(kind);return{label:fr.name,text:match?c.text:'이 방의 주된 약성과 다른 물건이다. 다른 곳에서 반입된 듯하다.',kinds:match?[...c.kinds]:[],strength:match?2:0}}
+    const n=nearTypes56(x,y,2),tests=[
+      {has:[TT.LAVA,TT.BRAZIER],label:'열기 주변',text:'불과 수지 흔적이 있어 열기·강화 계열일 가능성이 있다.',kinds:['fire','fortify','smoke']},
+      {has:[TT.WATER,TT.FOUNTAIN,TT.MERCURY],label:'물가 주변',text:'정화수와 냉기가 가까워 정신·정화 계열일 가능성이 있다.',kinds:['cleanse','focus','heal_small']},
+      {has:[TT.TRAP,TT.SNARE],label:'함정 주변',text:'회피 경로에 놓인 약병이라 기동·연막 계열일 가능성이 있다.',kinds:['swift','smoke','heal_medium']},
+      {has:[TT.ALTAR,TT.GOLD],label:'제단 주변',text:'향과 금분 흔적이 있어 정화·보호 계열일 가능성이 있다.',kinds:['cleanse','focus','fortify']},
+      {has:[TT.ARMORY],label:'병기 보관구',text:'병기 옆에 놓여 전투·연막 계열일 가능성이 있다.',kinds:['fortify','smoke','fire']}
+    ];
+    for(const t of tests)if(t.has.some(v=>n.has(v))){const match=t.kinds.includes(kind);return{label:t.label,text:match?t.text:'주변 구조와 약성이 어긋난다. 위치 단서의 신뢰도가 낮다.',kinds:match?[...t.kinds]:[],strength:match?1:0}}
+    return{label:'출처 불명',text:'발견 위치만으로는 약성을 좁히기 어렵다.',kinds:[],strength:0};
+  }
+  function inventoryFilteredFor56(tab){const old=inventoryTab;inventoryTab=tab;const r=inventoryFiltered();inventoryTab=old;return r}
+function ingredientKey57(item){if(item?.type==='potion'){const proto=(globalThis.MANRU_POTIONS||[]).find(p=>p.potionKind===item.potionKind);return item.potionKind==='fire'?'화유병':proto?.name||item.name||'';}return item?.name||''}
+const GUARANTEED_FOOD_PER_NONBOSS_FLOOR57=1;
+const EXTRA_FOOD_CHANCE_NONBOSS57=.20;
+  function strategyItem62(i){if(!i)return false;if(i.type==='talisman')return true;if(i.type==='potion')return !['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind);if(i.type==='food')return ['전력 주먹밥','매콤한 육포','한방 생선찜','보신 전골','얼음 복숭아'].includes(i.name);return false}
+  function beltItemKey62(item){return JSON.stringify([item.type,item.talismanKind||item.potionKind||item.name])}
+  function recoveryPool70(){
+    const food=CONSUMABLES.filter(i=>i.type==='food'&&!['relic','sealed'].includes(i.rarity)&&!i.recipeResult57);
+    const pots=(window.MANRU_POTIONS||[]).filter(i=>['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)&&(state.floor>=(i.minFloor||1)));
+    return [...food,...pots];
+  }
+  function tacticalPool70(){
+    const pots=(window.MANRU_POTIONS||[]).filter(i=>!['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind)&&(state.floor>=(i.minFloor||1)));
+    const tal=(window.MANRU_TALISMANS||[]).filter(i=>state.floor>=(i.minFloor||1));
+    return [...pots,...tal];
+  }
+  function app74(item){return window.__MANRU_TALISMAN_PUBLIC__?.app?.(item)||{name:'미확인 부적',ink:'#9b7448'}}
+  let choiceCancel991=null;
