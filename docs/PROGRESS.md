@@ -47,6 +47,7 @@
 | rest→special | rest 중 사용처 과반이 special.js인 선언 → special.js (규칙 a) | 7684 | 473 / 584 | 755 | 70.5% | - |
 | rest→branches | rest 중 사용처 과반이 branches.js인 선언 → branches.js (규칙 a) | 7671 | 469 / 584 | 755 | 70.5% | - |
 | rest→save | rest 중 사용처 과반이 save.js인 선언 → save.js (규칙 a) | 7667 | 463 / 584 | 755 | 70.5% | - |
+| rest→combat | rest 중 사용처 과반이 combat.js인 선언 → combat.js (규칙 a) | 7664 | 458 / 584 | 755 | 70.5% | - |
 
 ## 현재 파일별 줄 수
 
@@ -56,16 +57,16 @@
 | catalog.js | 173 |
 | save.js | 708 |
 | items.js | 947 |
-| combat.js | 651 |
+| combat.js | 659 |
 | monsters.js | 2206 |
 | render.js | 4877 |
 | mapgen.js | 3173 |
 | special.js | 1889 |
 | branches.js | 2377 |
 | elements.js | 247 |
-| spine.js | 7667 |
+| spine.js | 7664 |
 | input.js | 148 |
 | story.js | 213 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 26015 |
+| (total) | 26020 |
