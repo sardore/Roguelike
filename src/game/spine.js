@@ -127,13 +127,7 @@ function classItemDescription58(item,p=state?.player){return item?.talismanKind=
 
 
 
-const REGIONS=[
-  [1,5,'청풍루','붉은 등불과 비단, 끝없이 이어지는 연회장과 객실.','#4d2924','#231814','#c77e53'],
-  [6,10,'수묵원','객주 안인데 비가 내리는 수묵 정원. 물과 대나무 사이의 종이 다리를 건넌다.','#35423a','#17231d','#8aa58d'],
-  [11,15,'유혹의 내실','자줏빛 비단과 거울이 방의 경계를 뒤틀어 놓는다.','#49334e','#211522','#bd7eac'],
-  [16,20,'지하 장고','16층 성채의 용암 해자를 넘으면 장독과 철판 창고가 이어지고, 20층 형틀 심부로 내려간다.','#4b3a30','#211914','#a77755'],
-  [21,25,'만루의 심장','황금 기와와 원혼, 수은 연못과 거대한 공동.','#5a4930','#211a12','#d1b25f']
-];
+
 
 
 
@@ -304,7 +298,7 @@ function startFloorTransition(){
 
 
 
-function choice(arr){ return arr[Math.floor(globalThis.__MANRU_RANDOM57__()*arr.length)]; }
+
 function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 
 
@@ -865,13 +859,7 @@ function entityTerrainEntry105(entity,x,y,ox,oy){
 }
 
 
-function spillJar105(x,y,kind){
- const r=terrainReactions105();r.spills||={};
- const cells=elementCells105(x,y,1).filter(q=>!tileBlocks(state.map[q.y]?.[q.x])&&!globalThis.__MANRU_HAZARD_CORE__?.kind(state.map[q.y]?.[q.x]));
- for(const q of cells)r.spills[k(q.x,q.y)]={...q,kind,ttl:5,born:state.turn};
- if(kind==='water')emitElementContact105('water',cells);for(const e of [state.player,...state.monsters])if(e.hp>0&&cells.some(q=>monCovers(e,q.x,q.y)))environmentStanding105(e);
- if(kind==='water')elementAttackFx105('water',cells,{x,y});return cells;
-}
+
 
 
 
@@ -1197,8 +1185,7 @@ const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
 
 
-// Terrain table only: ignores decor blockers and hidden passages (map carving and spawn search use this).
-function tileBlocksByTerrain(t){if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return BLOCKING_TILES57.has(t)}
+
 function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
 
 
@@ -1391,21 +1378,14 @@ const PLAYER_TRANSFER_UNSAFE57=new Set([TT.DOOR,TT.TRAP,TT.SNARE,TT.LAVA,TT.WATE
 
 
 
-function playerTransferLandingSafe57(x,y){
-  if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const t=state.map?.[y]?.[x];return ReachabilityService.playerPassable(x,y)&&!OccupancyService.isOccupied(x,y)&&!PLAYER_TRANSFER_UNSAFE57.has(t);
-}
+
 function playerTransferPolicy57(cause){
   if(cause==='talisman-blink'||cause==='fusion-blink')return{seen:true,safe:true,authorized:true,excludeOrigin:true};
   if(cause==='holy-blink'||cause==='mirror-teleport'||cause==='boss-teleport')return{seen:false,safe:true,authorized:true,excludeOrigin:true};
   return null;
 }
 
-function randomPlayerTransferDestination57(cause,opts={}){
-  if(!state?.player)return null;const authorized=ReachabilityService.playerMobility(),all=[],far=[],minDistance=Math.max(0,opts.minDistance??4);
-  for(const id of authorized){const [xs,ys]=String(id).split(','),x=Number(xs),y=Number(ys);if(!Number.isFinite(x)||!Number.isFinite(y))continue;const v=validatePlayerTransfer57(x,y,{cause,authorizedSet:authorized});if(!v.ok)continue;const q={x,y};all.push(q);if(entityDistance57(q,state.player)>=minDistance)far.push(q)}
-  const pool=far.length?far:all;return pool.length?choice(pool):null;
-}
+
 function markCombatBlink57(entity){if(entity&&state)entity.combatBlinkTurn57=state.turn;}
 
 function resolvePlayerLanding57(x,y,opts={}){
@@ -1561,22 +1541,8 @@ function movePlayer(dx,dy){
 ActionDispatcher.register('MOVE',movePlayer);
 
 
-function executeBlinkTarget57(cell,ctx){
-  if(!state||!cell||!ctx?.act?.ok)return false;const p=state.player,ox=p.x,oy=p.y,live=blinkTargetCells57(p,ctx.range).find(q=>q.x===cell.x&&q.y===cell.y);if(!live){toast('그 칸은 더 이상 점멸할 수 없다.');return false}
-  if((p.focus||0)<2){toast('점멸에는 기력 2가 필요하다.');return false}
-  try{p.focus-=2;state.blinkSpent52=(state.blinkSpent52||0)+2;burst(ox,oy,'#c9d4e5',10,.7);const landing=resolvePlayerLanding57(live.x,live.y,{cause:'blink'});if(!landing.ok){p.focus+=2;state.blinkSpent52=Math.max(0,(state.blinkSpent52||0)-2);toast('점멸할 수 없는 칸이다.');return false}burst(p.x,p.y,'#c9d4e5',12,.9);addLog(`점멸 ${live.dist}칸 · 기력 -2.`);if(!state.dead)commitPlayerAction57(ctx.act,.85);return true}finally{if(state&&(p.x!==ox||p.y!==oy))window.__MANRU_RUNTIME81__?.Automation81?.pickup?.()}
-}
-function useBlink(){
-  if(typeof V57!=='undefined'&&V57.cookOpen)return false;const rt=window.__MANRU_RUNTIME81__;if(rt?.state?.cameraInspecting)rt.Camera81?.resume?.(false);const p=state?.player;if(!p)return false;
-  const act=playerAction57('blink',{skill:true,stunMessage:'몸이 굳어 점멸하지 못했다.'});if(!act.ok)return !!act.consumed;
-  if(p.blinkLevel<2){toast('청풍루 문지기를 쓰러뜨린 뒤 점멸을 얻는다.');return false}if((p.focus||0)<2){toast('점멸에는 기력 2가 필요하다.');addLog('점멸 실패: 기력이 2 미만이다.');return false}
-  // 21F only: open a reusable world-cell target mode. No focus or turn is spent until a destination is confirmed.
-  if(state.floor===21){const range=Math.max(1,Math.floor(p.blinkLevel||0)),cells=blinkTargetCells57(p,range);if(!cells.length){toast('점멸할 착지점이 없다.');return false}
-    return beginWorldTarget({kind:'blink21',title:'점멸',text:`이동할 곳을 골라라 · 최대 ${range}칸 · 방향키는 해당 방향 최장거리`,range,cells,toast:'이동할 곳을 골라라.',meta:{act},onPick:(cell)=>executeBlinkTarget57(cell,{act,range})});
-  }
-  const f=p.facing||{x:0,y:-1},cells=blinkTargetCells57(p,p.blinkLevel),ray=cells.filter(q=>q.dx===Math.sign(f.x)&&q.dy===Math.sign(f.y)).sort((a,b)=>b.dist-a.dist),best=ray[0];if(!best){toast('점멸할 착지점이 없다.');return false}
-  return executeBlinkTarget57(best,{act,range:p.blinkLevel});
-}
+
+
 ActionDispatcher.register('BLINK',useBlink);
 
 
@@ -2117,12 +2083,7 @@ window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});
 
 
 
-function estateWallExposure24(x,y){
-  const pass=(xx,yy)=>xx>=0&&yy>=0&&xx<COLS&&yy<ROWS&&!tileBlocks(state.map[yy][xx]);
-  const n=pass(x,y-1),s=pass(x,y+1),w=pass(x-1,y),e=pass(x+1,y);
-  if(n&&!s)return'n';if(s&&!n)return's';if(w&&!e)return'w';if(e&&!w)return'e';
-  if(n||s)return n?'n':'s';if(w||e)return w?'w':'e';return null
-}
+
 
 
 
@@ -2529,7 +2490,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 
-  function sigil(x,y,label){return placeFeatureTile(x,y,TT.FLOOR)}
+
 
   function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){placeFeatureTile(r.x+1,y,TT.JAR);placeFeatureTile(r.x+r.w-2,y,TT.TABLE)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);placeFeatureTile(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
 
@@ -2931,7 +2892,7 @@ const UX={
 
   function relics47(){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&state.floor>=(f[x.name]||1))}
 
-  function trait47(){if(state.specialFloor)return null;const a=[['보급','회복 자원이 풍부함'],['경계','적과 장비 보상이 증가'],['불온','함정과 전술 물품 증가'],['비밀','보급함과 유물 발견 가능']];let pool=a.filter(v=>v[0]!==state.lastTrait47);if(!pool.length)pool=a;const pick=choice(pool);state.lastTrait47=pick[0];return pick}
+
   
 
   registerGenerationStage('strategy47','post',()=>applyStrategy());
@@ -3331,13 +3292,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
   registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}});
 
-  function talismanPick56(){
-    const K=ensureKnowledge56(),pool=TALISMANS.filter(t=>t.talismanKind!=='upgrade'&&state.floor>=(t.minFloor||1)),h=K.talismanHistory;
-    let a=pool.filter(t=>!h.includes(t.talismanKind));if(!a.length)a=pool;
-    let total=a.reduce((s,t)=>s+(t.weight74||1),0),r=globalThis.__MANRU_RANDOM57__()*total,pick=a[0];
-    for(const t of a){r-=t.weight74||1;if(r<=0){pick=t;break}}
-    const out=clone(pick);h.push(out.talismanKind);while(h.length>Math.min(5,Math.max(3,pool.length-1)))h.shift();return out
-  }
+
 
 
 
@@ -3550,11 +3505,7 @@ if(state)ensureFoodState();
 const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
-  function randomInside59(r){
-    const cells=[];
-    for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y][x]===TT.FLOOR)cells.push({x,y});
-    return cells.length?choice(cells):{x:r.cx,y:r.cy};
-  }
+
 
 
 
@@ -3655,9 +3606,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
   /* ---------- hidden route terrain ---------- */
 
-  function initHidden60(){
-    state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={};state._lastPlayerPos60=null;HIDDEN_ROUTE_STATE.hiddenSeq=0;
-  }
+
 
   function revealHidden60(x,y){
     const id=state.hiddenLookup60?.[k(x,y)],g=state.hiddenGroups60?.[id];if(!g)return false;
@@ -3788,15 +3737,8 @@ function spawnAuthoredEncounters60(){
   }
 
 
-  /* v9.4: denser special-floor side architecture. These are local branches, never map-wide bypasses. */
-  function wallPocket94(w=8,h=6){
-    const candidates=[];for(let y=2;y<=ROWS-h-3;y++)for(let x=2;x<=COLS-w-3;x++){
-      if(!(x<COLS*.24||x>COLS*.76||y<ROWS*.22||y>ROWS*.78))continue;let ok=true;
-      for(let yy=y;yy<y+h&&ok;yy++)for(let xx=x;xx<x+w;xx++)if(state.map[yy][xx]!==TT.WALL){ok=false;break}
-      if(ok)candidates.push({x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)});
-    }return candidates.length?choice(candidates):null;
-  }
-  function nearestOpen94(cx,cy,max=28){let best=null,bd=1e9;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){const t=state.map[y][x];if(tileBlocksByTerrain(t)||t===TT.STAIR)continue;const d=Math.abs(x-cx)+Math.abs(y-cy);if(d<bd&&d<=max){bd=d;best={x,y}}}return best}
+
+
   function markOuterWall94(r){state.outerWall94=state.outerWall94||{};for(let x=r.x;x<r.x+r.w;x++){if(in60(x,r.y-1))state.outerWall94[k(x,r.y-1)]=1;if(in60(x,r.y+r.h))state.outerWall94[k(x,r.y+r.h)]=1}for(let y=r.y;y<r.y+r.h;y++){if(in60(r.x-1,y))state.outerWall94[k(r.x-1,y)]=1;if(in60(r.x+r.w,y))state.outerWall94[k(r.x+r.w,y)]=1}}
 
 
@@ -3847,7 +3789,7 @@ function spawnAuthoredEncounters60(){
     return{floor:24,keyReach,keyTile,sealed,blinkBypassBeforeKey,blinkBypassBeforeGate,walkReachAfterGate,progressionReachAfterGate,openReach,majorReach,closedBlinkStateCount:closedBlink.stateCount,closedExactStateCount:closedExact.stateCount,occupantConditionValid,interiorWalkable,interiorOpenRatio:+interiorOpenRatio.toFixed(3),zoneTypes:[...zoneTypes],windows,decor,decorAttempted:decorAudit.attempted,decorPlaced:decorAudit.placed,decorFailures:(decorAudit.failed||[]).length,decorPlanComplete,loopRank,routeDistance,direct,routeDetour:+routeDetour.toFixed(2),pathBends:pathMetrics.bends,symmetricPairs,asymmetricLayout,isolatedPassableCount,detachedPassable:detachedPassable.slice(0,24),badItems,badMonsters,spawnReachable,featureMaskMatches,northEavesMaskCells:expectedEaves.size,northEavesFeatureCells:featureEaves.size,gardenDetailCount,gardenDetailed,estateQuality,perimeterLeaks,uniqueEntrance:perimeterLeaks.length===0&&q.entranceGateCells?.length===3,planMatches,gumiTraitConfig,gumiRuntimeStateValid,gumiValid,gateClear,exitClear,reinforcementProtectedCount:protectedSet.size,reinforcementProtectedCellsValid,reinforcementCap:q.reinforcementCap57??null,ok:keyReach&&keyTile&&sealed&&!blinkBypassBeforeKey&&!blinkBypassBeforeGate&&walkReachAfterGate&&progressionReachAfterGate&&estateQuality&&perimeterLeaks.length===0&&q.entranceGateCells?.length===3&&planMatches&&gumiValid&&gateClear&&exitClear&&reinforcementProtectedCellsValid&&occupantConditionValid}
 
   }
-  function safeProgressDrop23(mon){let p=PlacementService.findItemCell(mon,{radius:10});if(p)return p;const q=state.floor23,reach=floodSpecial60(state.player,{centerOpen:true}),cells=[];for(const kk of reach.keys()){const[x,y]=kk.split(',').map(Number),t=state.map[y]?.[x];if(x<q.centerBounds.x||x>=q.centerBounds.x+q.centerBounds.w||y<q.centerBounds.y||y>=q.centerBounds.y+q.centerBounds.h||tileBlocks(t)||[TT.MERCURY,TT.VOID,TT.WATER,TT.LAVA].includes(t)||(state.items||[]).some(i=>i.x===x&&i.y===y))continue;cells.push({x,y,d:Math.abs(x-mon.x)+Math.abs(y-mon.y)})}cells.sort((a,b)=>a.d-b.d);return cells[0]||null}
+
   function onMonsterHpThreshold60(mon,threshold){if(state.floor!==23||threshold?.event!=='f23-progress-key'||!state.floor23)return false;const q=state.floor23;if(q.thresholdTriggered)return false;q.thresholdTriggered=true;const p=safeProgressDrop23(mon);if(!p)throw new Error('F23 progress key has no reachable safe drop');const item={name:'수은 심부 열쇠',type:'progress_key23',rarity:'rare',identified:true,count:1,stackable:false,x:p.x,y:p.y,color:'#d8f2ef'};PlacementService.placeItem(item,p);addLog('여의 수룡의 힘이 절반 아래로 꺾이자 수은 심부 열쇠가 튕겨 나왔다.');burst(p.x,p.y,'#d8f2ef',22,1);return true}
   function onTypedGateOpened60(plan,keyId){if(state.floor!==24||keyId!=='brass'||plan?.kind!=='f24-grand-entrance'||!state.floor24)return false;state.floor24.chaseStarted=true;const g=(state.monsters||[]).find(m=>m.floor24Chaser57);if(g){g.dormant57=false;g.alerted=true;g.exitPressureSpeedBudget57=0;g.searchTurns=Math.max(g.searchTurns||0,18);g.lastSeenPosition={x:state.player.x,y:state.player.y,bornTurn:state.floorTurn||0}}addLog('대형 현관이 열리자 건물 깊숙한 곳에서 구미묘의 울음이 울렸다.');return true}
   function validateSpecial60(){return state.floor===23?validate23Progress60():state.floor===24?validate24Progress60():{ok:true,floor:state.floor}}
@@ -3877,7 +3819,7 @@ function spawnAuthoredEncounters60(){
   function qaClearHostiles60(){const n=(state.monsters||[]).filter(m=>m.hp>0).length;state.monsters=[];return n}
 
 
-  function qaF24WalkExit60(){if(state.floor!==24)return{ok:false,reason:'not-f24'};const walk=qaWalkTo60(state.stairs);return{ok:walk.ok,walk,stairs:{...state.stairs}}}
+
   function qaF24Summons60(n=12){
     if(state.floor!==24)return{ok:false,reason:'not-f24'};const q=state.floor24,protectedSet=new Set((q.reinforcementProtectedCells||[]).map(c=>k(c.x,c.y))),source=(state.monsters||[]).find(v=>v.floor24Chaser57)||null,names=source?.losLostSummon57?.names||['처녀귀신','굶주린 쥐'],events=[];for(let i=0;i<Math.max(1,Math.min(40,+n||12));i++){const name=names[i%names.length],m=spawnPressureReinforcement57(source,name);events.push(m?{x:m.x,y:m.y,name:m.name,protected:protectedSet.has(k(m.x,m.y))}:null)}
     const active=(state.monsters||[]).filter(m=>m.hp>0&&m.spawnProvenance57==='los-lost-summon'),bad=active.filter(m=>protectedSet.has(k(m.x,m.y)));return{ok:active.length<=(q.reinforcementCap57||3)&&bad.length===0,attempts:events.length,events,active:active.map(m=>({x:m.x,y:m.y,name:m.name})),cap:q.reinforcementCap57||3,bad};
@@ -3895,7 +3837,7 @@ function spawnAuthoredEncounters60(){
   function qaCleanHud60(on=true){
     document.documentElement.classList.toggle('qa-clean-capture60',!!on);return document.documentElement.classList.contains('qa-clean-capture60')
   }
-  const qa60=Object.freeze({mark:qaMark60,restore:qaRestore60,summary:qaSummary60,hash:qaHash60,activate23:qaActivate23ById60,run23Order:qaRun23Order60,threshold23:qaThreshold23_60,pickupProgress23:qaPickupProgressKey23_60,descend:qaDescend60,revealSaveLoad:qaRevealSaveLoad60,hazard23:qaHazard23_60,clearHostiles:qaClearHostiles60,walkTo:qaWalkTo60,f24KeyGate:qaF24KeyGate60,f24WalkExit:qaF24WalkExit60,f24Summons:qaF24Summons60,f24GumiMechanics:qaF24GumiMechanics60,f24ItemReach:qaF24ItemReach60,f24VisualTargets:qaF24VisualTargets60,view:qaView60,cleanView:(target)=>qaView60(target,{cleanHostiles:true}),cleanHud:qaCleanHud60});
+
   globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 
 
@@ -4251,8 +4193,7 @@ const RC={
     }finally{requestAnimationFrame(visualLoop)}
   };
 
-  /* ---------- diagnostics ---------- */
-  function reachable70(){return !!state?.stairs&&ReachabilityService.playerSearch(state.player,{goal:state.stairs}).cells.has(k(state.stairs.x,state.stairs.y))}
+
   function audit70(){
     if(!state)return{ok:false,error:'게임 미시작'};
     const invalidMon=(state.monsters||[]).filter(m=>m.x<0||m.y<0||m.x>=COLS||m.y>=ROWS||!PlacementService.monsterCanStand(m,m.x,m.y));
@@ -4506,7 +4447,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   }
   /* fused effects */
   const targetHud74=()=>document.getElementById('talismanTarget56');
-  function safeBlink74(x,y){return validatePlayerTransfer57(x,y,{cause:'fusion-blink'}).ok}
+
   function startTarget74(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();clearHeldInput53();V74.target={item,range:item.targetRange||5,effect:item.fusionEffect74};closeInventory();const h=targetHud74();h?.classList.add('show');syncWorldTargetInput();const a=document.getElementById('talismanTargetTitle'),b=document.getElementById('talismanTargetText');if(a)a.textContent=`${item.name} · ${item.seal}`;if(b)b.textContent=`목표 지정 · 사거리 ${V74.target.range}`;drawMap(true)}
 
 
@@ -4557,9 +4498,7 @@ function imp78(x,y){if(!state)return true;if(x<=1||y<=1||x>=COLS-2||y>=ROWS-2)re
   function safeFloor78(x,y){return x>1&&y>1&&x<COLS-2&&y<ROWS-2&&!imp78(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y]?.[x])}
   
 
-  function preservePath78(){
-    if(!state.specialFloor){ensureNormalConnectivity();}
-  }
+
 
   registerGenerationStage('polish78','post',()=>{polish78();VisibilityService.compute()});
 
@@ -5406,28 +5345,25 @@ const CONFIG81=Object.freeze({
 
   /* ===== MANRU v9.3: ASYMMETRIC CLUSTERS / VARIABLE-WIDTH HALLS / SHORT PURPOSEFUL BRANCHES ===== */
   V85.version='v9.3-asymmetric-clusters-variable-halls';
-  const V93={serial:0,profiles:[],roomTemplates:[]};
-  const PROFILE93=['braid','offset-halls','cluster-loop'];
+
+
   function reset93(m){delete state.tutorialEntry60;clear88(m);state.rooms=[];state.featureRooms=[];state.routeTags=[];state.grandRoom89=null;state.focalRooms89=[];state.purposeRooms90=[];state.mainRooms90=[];state.branchRooms92=[];state.branchLeaves92=[];state.mainPathRooms92=[];state.roomGraph92=null;state.roomTemplate92=null;state.roomGraph93=null;state.roomTemplate93=null;}
   function canPlace93(x,y,w,h,pad=1){return x>=2&&y>=(state.floor===1?17:2)&&x+w<COLS-2&&y+h<ROWS-2&&!roomOverlap91(x,y,w,h,pad)}
   function addCompact93(m,x,y,w,h,kind='room',shape='rect',role='room'){const r=add89(m,x,y,w,h,kind,shape);r.node93=state.rooms.length-1;r.role93=role;state.mainRooms90.push(r);return r}
-  function graphAdj93(n,edges){const a=Array.from({length:n},()=>[]);for(const e of edges){a[e.a].push(e.b);a[e.b].push(e.a)}return a}
+
   function shortestNodes93(adj,s,t){const q=[s],prev=Array(adj.length).fill(-2);prev[s]=-1;for(let i=0;i<q.length;i++){const u=q[i];if(u===t)break;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}if(prev[t]===-2)return[];const out=[];for(let u=t;u!==-1;u=prev[u])out.push(u);return out.reverse()}
   function farNode93(adj,s){const q=[s],d=Array(adj.length).fill(-1);d[s]=0;for(let i=0;i<q.length;i++){const u=q[i];for(const v of adj[u])if(d[v]<0){d[v]=d[u]+1;q.push(v)}}let b=s;for(let i=0;i<d.length;i++)if(d[i]>d[b])b=i;return{node:b,dist:d[b],d}}
   function diameter93(adj){const a=farNode93(adj,0).node,b=farNode93(adj,a).node;return{a,b,path:shortestNodes93(adj,a,b)}}
   function graphDistance93(adj,a,b){const p=shortestNodes93(adj,a,b);return p.length?p.length-1:99}
-  function chooseProfile93(){let p=PROFILE93.filter(x=>x!==state.generationProfile93);if(!p.length)p=PROFILE93;const x=choice(p);state.generationProfile93=x;V93.profiles.push(x);if(V93.profiles.length>40)V93.profiles.shift();return x}
+
 
 
 
   function segment93(out,x,y,tx,ty){while(x!==tx||y!==ty){const px=x,py=y;if(x!==tx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);out.push({x,y,dir:x!==px?'h':'v'})}return{x,y}}
   function pathPoints93(a,b,style='L'){let x=a.x,y=a.y;const out=[];if(style==='Z'){if(globalThis.__MANRU_RANDOM57__()<.5){const mx=Math.round((a.x+b.x)/2);({x,y}=segment93(out,x,y,mx,y));({x,y}=segment93(out,x,y,x,b.y));({x,y}=segment93(out,x,y,b.x,b.y));}else{const my=Math.round((a.y+b.y)/2);({x,y}=segment93(out,x,y,x,my));({x,y}=segment93(out,x,y,b.x,y));({x,y}=segment93(out,x,y,b.x,b.y));}}else if(style==='diag'){while(x!==b.x||y!==b.y){const px=x,py=y;if(x!==b.x&&y!==b.y){if(globalThis.__MANRU_RANDOM57__()<.5)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y)}else if(x!==b.x)x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);out.push({x,y,dir:x!==px?'h':'v'})}}else if(style==='H'||(style==='L'&&globalThis.__MANRU_RANDOM57__()<.5)){({x,y}=segment93(out,x,y,b.x,y));({x,y}=segment93(out,x,y,b.x,b.y));}else{({x,y}=segment93(out,x,y,x,b.y));({x,y}=segment93(out,x,y,b.x,b.y));}return out}
-  function edgeWidth93(ra,rb,kind){const hall=(ra.role93==='hall'||rb.role93==='hall'),span=roomDistance(ra,rb),big=Math.max(ra.w*ra.h,rb.w*rb.h)>=88;if(hall&&big&&globalThis.__MANRU_RANDOM57__()<.12)return 3;if(hall&&globalThis.__MANRU_RANDOM57__()<.58)return 2;if(kind==='loop'&&globalThis.__MANRU_RANDOM57__()<.26)return 2;if(kind==='branch-loop'&&globalThis.__MANRU_RANDOM57__()<.24)return 2;if(span>=18&&globalThis.__MANRU_RANDOM57__()<.18)return 2;return 1}
+
   function connectVar93(m,a,b,style='L',width=1,options=null){if(options)return connectProfileRooms105(m,a,b,width,options);const da=doorPoint88(a,b),db=doorPoint88(b,a);setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);corridorCell(m,da.ox,da.oy);corridorCell(m,db.ox,db.oy);const pts=pathPoints93({x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style);let lastDir=null;for(const p of pts){if(lastDir&&p.dir!==lastDir&&width>1)carveSquare(m,p.x,p.y,1,!!options);if(options){for(let o=0;o<width;o++)corridorCell(m,p.x+(p.dir==='v'?o:0),p.y+(p.dir==='h'?o:0),true);}else carveBand(m,p.x,p.y,p.dir,width);lastDir=p.dir}if(width>1){carveSquare(m,da.ox,da.oy,1,!!options);carveSquare(m,db.ox,db.oy,1,!!options)}return options?pts:null}
-  function addEdge93(m,rooms,edges,a,b,style='L',kind='tree',options=null){
-    if(a===b||edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a)))return false;
-    const width=options?choice(options.widths):edgeWidth93(rooms[a],rooms[b],kind);const route=connectVar93(m,rooms[a],rooms[b],style,width,options);edges.push({a,b,kind,width,...(route?{route}: {})});return true;
-  }
+
 // Profiles parameterize the canonical room/edge producer. Room shells are immutable
 // routing obstacles: widening can never cut a jamb or create a freestanding door.
 function placeProfileRooms105(m,p){
@@ -5477,15 +5413,7 @@ function connectProfileRooms105(m,a,b,width,p){
  for(const[r,d]of[[a,pa],[b,pb]]){setTerrainTile58(m,d.x+d.dx,d.y+d.dy,TT.FLOOR);setTerrainTile58(m,d.x,d.y,TT.DOOR);if(!r.ports105.some(q=>q.x===d.x&&q.y===d.y))r.ports105.push({...d});}
  return route;
 }
-function profileLinks105(m,rooms,p){
- const edges=[],danger=new Set(p.dangerIndices),safe=rooms.map((_,i)=>i).filter(i=>!danger.has(i)),tree=new Set([0]);
- // Same minimum-distance spanning graph as mst93, with optional alarm rooms excluded
- // from the safe backbone. Extra safe links form loops through different rooms.
- while(tree.size<safe.length){let best,score=Infinity;for(const a of tree)for(const b of safe)if(!tree.has(b)){const d=roomDistance(rooms[a],rooms[b])+globalThis.__MANRU_RANDOM57__()*4;if(d<score){score=d;best={a,b}}}addEdge93(m,rooms,edges,best.a,best.b,'L','tree',p);tree.add(best.b)}
- for(let row=0;row<p.rows;row++)for(let col=0;col<p.columns;col++){const a=row*p.columns+col;for(const b of[col+1<p.columns?a+1:-1,row+1<p.rows?a+p.columns:-1])if(b>=0&&!danger.has(a)&&!danger.has(b)&&globalThis.__MANRU_RANDOM57__()<.6)addEdge93(m,rooms,edges,a,b,'L','loop',p)}
- for(const i of danger){addEdge93(m,rooms,edges,i-p.columns,i,'L','alarm',p);addEdge93(m,rooms,edges,i,i+p.columns,'L','alarm',p)}
- return edges;
-}
+
 globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
   function placeRooms93(m,z,profile=null){
@@ -5508,19 +5436,8 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
     for(let t=0;rooms.length<(state.floor===1?10:13)&&t<1350;t++){const w=globalThis.__MANRU_RANDOM57__()<.3?rand(9,13):6,h=globalThis.__MANRU_RANDOM57__()<.3?rand(4,6):5,x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(!canPlace93(x,y,w,h,1))continue;rooms.push(addCompact93(m,x,y,w,h,'room','rect',w>=9||h>=8?'hall':'room'))}
     return rooms;
   }
-  function mst93(m,rooms,options=null){
-    const edges=[];if(rooms.length<2)return edges;const inTree=new Set([Math.floor(globalThis.__MANRU_RANDOM57__()*rooms.length)]);
-    while(inTree.size<rooms.length){let best=null,bd=1e9;for(const a of inTree)for(let b=0;b<rooms.length;b++){if(inTree.has(b))continue;const d=roomDistance(rooms[a],rooms[b]);const hallBias=(rooms[a].role93==='hall'||rooms[b].role93==='hall')?-.8:0;const score=d+hallBias+globalThis.__MANRU_RANDOM57__()*1.5;if(score<bd){bd=score;best={a,b}}}if(!best)break;addEdge93(m,rooms,edges,best.a,best.b,globalThis.__MANRU_RANDOM57__()<.18?'Z':globalThis.__MANRU_RANDOM57__()<.08?'diag':'L','tree',options);inTree.add(best.b)}return edges;
-  }
-  function localLoops93(m,rooms,edges,profile){
-    let adj=graphAdj93(rooms.length,edges),want=profile==='braid'?2:profile==='offset-halls'?1:rand(1,2),candidates=[];
-    for(let a=0;a<rooms.length;a++)for(let b=a+1;b<rooms.length;b++){
-      if(edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a)))continue;const gd=graphDistance93(adj,a,b),sd=roomDistance(rooms[a],rooms[b]);if(gd>=2&&gd<=4&&sd>=6&&sd<=Math.max(19,Math.floor((COLS+ROWS)*.15)))candidates.push({a,b,gd,sd,score:sd+gd*1.8+(rooms[a].role93==='hall'||rooms[b].role93==='hall'?-2:0)+globalThis.__MANRU_RANDOM57__()*3});
-    }
-    candidates.sort((a,b)=>a.score-b.score);let used=[];
-    for(const q of candidates){if(used.length>=want)break;if(addEdge93(m,rooms,edges,q.a,q.b,globalThis.__MANRU_RANDOM57__()<.36?'Z':'L','loop')){used.push(q);adj=graphAdj93(rooms.length,edges)}}
-    return used;
-  }
+
+
   
   function softenRooms93(m,rooms,edges){
     const deg=Array(rooms.length).fill(0);for(const e of edges){deg[e.a]++;deg[e.b]++;}
@@ -5528,14 +5445,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
       if(globalThis.__MANRU_RANDOM57__()<.24&&r.w>=8&&r.h>=7){const side=rand(0,3);if(side===0&&r.y>2)for(let yy=r.y-2;yy<r.y;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===1&&r.y+r.h<ROWS-2)for(let yy=r.y+r.h;yy<=r.y+r.h+1;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===2&&r.x>2)for(let xx=r.x-2;xx<r.x;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===3&&r.x+r.w<COLS-2)for(let xx=r.x+r.w;xx<=r.x+r.w+1;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);}
     })
   }
-  function rareTemplate93(m,rooms){
-    if(globalThis.__MANRU_RANDOM57__()>.16)return null;const candidates=rooms.filter(r=>r.w>=8&&r.h>=7&&!(state.fixedStart&&r.cx===state.fixedStart.x&&r.cy===state.fixedStart.y)&&!(state.fixedExit&&r.cx===state.fixedExit.x&&r.cy===state.fixedExit.y));if(!candidates.length)return null;const r=choice(candidates),kind=globalThis.__MANRU_RANDOM57__()<.6?'subroom':'divider';
-    if(kind==='divider'){splitRoom89(m,r,globalThis.__MANRU_RANDOM57__()<.5?'v':'h',1);state.roomTemplate92='single-divider';state.roomTemplate93='single-divider';V93.roomTemplates.push('single-divider');return r}
-    const w=4,h=3,x=r.cx-2,y=r.cy-1;if(x<=r.x||y<=r.y||x+w>=r.x+r.w-1||y+h>=r.y+r.h-1)return null;
-    for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1)setTerrainTile58(m,xx,yy,TT.WALL);else setTerrainTile58(m,xx,yy,TT.FLOOR);
-    const side=rand(0,3);if(side===0)setTerrainTile58(m,r.cx,y,TT.DOOR);else if(side===1)setTerrainTile58(m,r.cx,y+h-1,TT.DOOR);else if(side===2)setTerrainTile58(m,x,r.cy,TT.DOOR);else setTerrainTile58(m,x+w-1,r.cy,TT.DOOR);
-    state.roomTemplate92='room-in-room';state.roomTemplate93='room-in-room';V93.roomTemplates.push('room-in-room');return r;
-  }
+
 
 
   buildNormal=function(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;};
@@ -5547,11 +5457,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
 
-  function outerChain94(m,z){
-    if(globalThis.__MANRU_RANDOM57__()>.24)return 0;state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];const side=globalThis.__MANRU_RANDOM57__()<.5?'left':'right',n=rand(3,5),w=rand(6,8),h=rand(5,6),gap=2,x=side==='left'?2:COLS-w-2,total=n*h+(n-1)*gap;if(total>ROWS-6)return 0;let y=rand(2,ROWS-total-2),prev=null,first=null;
-    const created=[];for(let i=0;i<n;i++){if(!canPlace93(x,y,w,h,0)){y+=h+gap;continue}const r=addCompact93(m,x,y,w,h,'outer','rect','outer');created.push(r);if(prev)connectVar93(m,prev,r,'L',1);prev=r;if(!first)first=r;for(let xx=r.x;xx<r.x+r.w;xx++){state.outerWall94[key85(xx,r.y-1)]=1;state.outerWall94[key85(xx,r.y+r.h)]=1}for(let yy=r.y;yy<r.y+r.h;yy++){state.outerWall94[key85(r.x-1,yy)]=1;state.outerWall94[key85(r.x+r.w,yy)]=1}y+=h+gap}
-    if(!created.length)return 0;let near=null,bd=1e9;for(const r of state.rooms){if(created.includes(r))continue;const d=roomDistance(first,r);if(d<bd){bd=d;near=r}}if(near)connectVar93(m,first,near,'L',1);const last=created.at(-1);state.itemBiasZones94.push({x:last.x,y:last.y,w:last.w,h:last.h,name:'외곽 연속실'});feature89('외곽 좁은 연속실',last,'outer');return created.length
-  }
+
 
   
 
@@ -6108,7 +6014,7 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
 
 
   function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
-  function nonUpgradeTalisman982(){const p=(window.MANRU_TALISMANS||[]).filter(i=>i.talismanKind!=='upgrade'&&(i.minFloor||1)<=state.floor);return p.length?clone(choice(p)):null}
+
 
 
 
@@ -7065,7 +6971,7 @@ function safeFloorTile1020(t){return !tileBlocks(t)&&!HAZ1020().has(t)&&t!==TT.S
 function snapshotEntities1020(){return{items:(state.items||[]).map(v=>v),monsters:(state.monsters||[]).map(v=>v)}}
 function clearEntities1020(){state.items=[];state.monsters=[]}
 
-function candidateFinal1020(x,y,mon=null){if(!inside1020(x,y)||occupiedFinal(x,y))return false;if(mon)return PlacementService.monsterCanStand(mon,x,y);return safeFloorTile1020(state.map[y][x])}
+
 
 
 
@@ -7328,16 +7234,7 @@ function postEntitySanity1020(){
   PlacementService.validateItems({reachable:finalReachSet1029()});
 }
 
-function finalEntitySweep1020(){
-  const reach=finalReachSet1029();
-  const keep=[];
-  for(const m of state.monsters||[]){const aquatic=!!(m.aquatic||m.waterOnly57),valid=PlacementService.monsterCanStand(m,m.x,m.y)&&(aquatic||reach.has(K1020(m.x,m.y)));if(valid){keep.push(m);continue}
-    const ox=m.x,oy=m.y;m.x=-999;m.y=-999;let best=null,bd=1e9;
-    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){if(!PlacementService.monsterCanStand(m,x,y))continue;if(!aquatic&&!reach.has(K1020(x,y)))continue;const d=Math.abs(x-ox)+Math.abs(y-oy);if(d<bd){bd=d;best={x,y}}}
-    if(best){m.x=best.x;m.y=best.y;keep.push(m)}
-  }
-  state.monsters=keep;PlacementService.validateItems({reachable:reach});
-}
+
 
 
 
@@ -7436,15 +7333,7 @@ function enclosedRoomScore1026(r){
 }
 
 
-function subdivideOpenBuildings1026(){
-  state.buildingPartition1026={floor:state.floor,candidates:0,partitioned:0,rolledBack:0,doors:0,rooms:[],probes:[]};
-  // Mechanic-first floors and boss arenas keep their authored topology. Ordinary buildings on other floors are eligible.
-  if([5,10,11,13,15,20,21,25].includes(state.floor))return state.buildingPartition1026;
-  const seen=new Set(),done=[],rooms=(state.rooms||[]).filter(r=>r&&Number.isFinite(r.x)&&Number.isFinite(r.y)).sort((a,b)=>b.w*b.h-a.w*a.h),limit=[6,7,8,9,18,22,24].includes(state.floor)?8:6;
-  const overlap=(a,b)=>{const x=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)),y=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));return x*y/Math.max(1,Math.min(a.w*a.h,b.w*b.h))};
-  for(const r of rooms){if(state.buildingPartition1026.partitioned>=limit)break;const key=[r.x,r.y,r.w,r.h].join(':');if(seen.has(key)||done.some(d=>overlap(r,d)>.58))continue;seen.add(key);const probe=roomProbe1026(r);if(probe&&r.w>=8&&r.h>=6&&r.w<=38&&r.h<=28)state.buildingPartition1026.probes.push({name:r.name||r.label||null,x:r.x,y:r.y,w:r.w,h:r.h,...probe});const score=enclosedRoomScore1026(r);if(!score)continue;state.buildingPartition1026.candidates++;const out=carvePartition(r,score);if(out.ok){state.buildingPartition1026.partitioned++;state.buildingPartition1026.doors+=out.doors;const row={name:r.name||r.label||null,x:r.x,y:r.y,w:r.w,h:r.h,doors:out.doors};state.buildingPartition1026.rooms.push(row);done.push(r)}else state.buildingPartition1026.rolledBack++}
-  return state.buildingPartition1026;
-}
+
 
 /* R39 THEME-2 GARDEN COURTS — floor 8 keeps its authored house but the surrounding field is divided into optional courtyards/alleys instead of one giant lawn. */
 function shapeFloor8Garden1028(){
@@ -7835,7 +7724,7 @@ window.__MANRU_ITEM_ART_R7__={dataItem:data,weaponAsset,pictureAsset:summonPictu
 const ARTIFACT_PLAYER_SCOPE46=Object.freeze(['player','status','turn','enemyEnergy','dead','victory','runState57','runEndEffects57']);
 const ARTIFACT_RUN_SCOPE46=Object.freeze(['pendingMartialManualChoice','martialManualDrops','martialDamageSequence','martialProgression1005','artifactClaimed46','artifactHistory46','knowledge56','lootHistory47','uniqueKilled','harvested','holy991','story992','runId984','saveVersion1004']);
 
-function key46(x,y){return `${x},${y}`}
+
 function possesses47(id){const p=state?.player;if(!p)return false;return p.weapon?.artifactId46===id||(p.inventory||[]).some(i=>i.artifactId46===id)}
 function claimed47(id){return(state?.artifactClaimed46||[]).includes(id)||(state?.artifactHistory46||[]).some(h=>h.id===id&&['claimed','cleared','completed'].includes(h.status))}
 function owns47(id){return possesses47(id)}
@@ -8051,7 +7940,7 @@ function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,
 function handlePortalAt46(x,y){if(!WorldTransition57.allowed())return false;if(state.artifactDungeon46&&state.artifactExit46?.x===x&&state.artifactExit46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.restore()}if(state.artifactPortal46?.x===x&&state.artifactPortal46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.enter(state.artifactPortal46.id)}return false}
 
 function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}
-function maybePortal46(){if(!state||state.floor<6||state.floor>=25||state.artifactDungeon46||state.artifactPortal46||state.floor===13||[10,15,20,25].includes(state.floor)||state.monsters?.some(m=>m.boss))return;state.artifactHistory46=state.artifactHistory46||[];const pool=eligible46();if(!pool.length)return;const chance=state.floor>=21?.20:state.floor>=16?.18:state.floor>=11?.16:.14;if(globalThis.__MANRU_RANDOM57__()>=chance)return;const c=portalCandidate46();if(!c.length)return;const a=choice(pool),p=choice(c),oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};state.artifactHistory46.push({floor:state.floor,id:a.id,status:'spawned'});addLog('벽면에 전설무기의 봉인이 갈라지며 드문 금빛 포탈이 열렸다.')}
+
 registerGenerationStage('artifact-reset46','pre',resetPortal46);registerGenerationStage('artifact-portal46','post',maybePortal46);
 
 function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor','cloak','relic','trinket'].reduce((n,k0)=>n+((p[k0]?.curse991||p[k0]?.curseActive991)?1:0),0)}
@@ -8082,8 +7971,8 @@ globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit4
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 
 
-function keyProgressAudit48(store=true){const a=keyProgressInternal48(),out={ok:a.ok,kind:a.kind,unlocked:[...(a.unlocked||[])],reachable:a.seen?.size||0,stages:a.stages||[],badKeys:a.badKeys||[],targetOk:a.targetOk!==false,exitOk:a.exitOk!==false,sequenceOk:a.sequenceOk!==false,sequence:a.sequence||null,ids:a.ids||[]};if(store&&state)state.keyIntegrity48=out;return out}
-function reachAudit46(){if(!state)return null;const a=keyProgressAudit48(false);return{cells:a.reachable,reward:a.targetOk,exit:a.exitOk,keys:a,rooms:state.rooms?.length||0,dims:[COLS,ROWS]}}
+
+
 function claimReward46(){const r=state?.artifactReward46;if(!r)return false;state.player.x=r.x;state.player.y=r.y;resetVisualState();VisibilityService.compute();pickupBaseR25();claimAudit46();return{owned:[state.player.weapon,...state.player.inventory].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),left:(state.items||[]).filter(i=>i.legendaryWeapon47).length}}
 
 

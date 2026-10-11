@@ -25,6 +25,7 @@
 | elements | 원소 반응 42문장 → elements.js (사용자 지정 도메인) | 9226 | 848 / 584 | 770 | 64.3% | - |
 | unused | 안 쓰는 선언 23개 삭제 | 9011 | 825 / 584 | 755 | 64.9% | - |
 | pinned:render (2차) | 앞선 이동 뒤 render.js 쪽 참조가 많아진 문장 → render.js | 8593 | 754 / 584 | 755 | 66.6% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
+| pinned:mapgen (2차) | 앞선 이동 뒤 mapgen.js 쪽 참조가 많아진 문장 → mapgen.js | 8482 | 713 / 584 | 755 | 67.1% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 
 ## 현재 파일별 줄 수
 
@@ -37,13 +38,13 @@
 | combat.js | 612 |
 | monsters.js | 1950 |
 | render.js | 4841 |
-| mapgen.js | 2963 |
+| mapgen.js | 3115 |
 | special.js | 1802 |
 | branches.js | 2202 |
 | elements.js | 247 |
-| spine.js | 8593 |
+| spine.js | 8482 |
 | input.js | 148 |
 | story.js | 212 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25718 |
+| (total) | 25759 |
