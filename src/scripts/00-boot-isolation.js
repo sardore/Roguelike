@@ -9,6 +9,10 @@ function ignoreError(reason,error){
   console.debug('[manru] ignored error:',reason,error);
 }
 
+/* The one place that names this release. The document title in index.html must equal title (tools/build.mjs checks it),
+   the corner stamp shows stamp, and the QA bridge reports build. */
+const RELEASE_INFO=Object.freeze({build:'10.0.6',title:'만루 — 창해 용궁 · 잠긴 조정',stamp:'10.0.6 · 창해 용궁 · 잠긴 조정'});
+
 /* v10.0.4 boot recovery: if the canonical save is missing/corrupt, preserve the newest surviving same-build legacy candidate before later code can prune anything. */
 (()=>{
   'use strict';

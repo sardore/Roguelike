@@ -28,6 +28,13 @@ function fail(message) {
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 const html = read(path.join(src, 'index.html'));
+{
+  // One place names the release: RELEASE_INFO in the boot script. The static <title> must match it.
+  const info = read(path.join(src, 'scripts', '00-boot-isolation.js')).match(/RELEASE_INFO=Object\.freeze\(\{[^}]*title:'([^']*)'/);
+  const title = html.match(/<title>([^<]*)<\/title>/);
+  if (!info) fail('RELEASE_INFO not found in scripts/00-boot-isolation.js');
+  if (!title || title[1] !== info[1]) fail(`index.html <title> (${title && title[1]}) must equal RELEASE_INFO.title (${info[1]})`);
+}
 
 // ---------------------------------------------------------------- single HTML
 function inline(page) {

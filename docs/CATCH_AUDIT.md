@@ -74,8 +74,8 @@
 | 10-runtime.js:16042 | 부팅 | cancel auto-walk before the first run | `ignoreError(이유, error)`로 교체 |
 | 10-runtime.js:16043 | 부팅 | monster visual cache clear | `ignoreError(이유, error)`로 교체 |
 | 10-runtime.js:16044 | 부팅 | effects reset | `ignoreError(이유, error)`로 교체 |
-| 10-runtime.js:16064 | 오류 은폐 가능 | reach audit failed; treated as no unreachable items | `ignoreError(이유, error)`로 교체 |
-| 10-runtime.js:16071 | 오류 은폐 가능 | reach audit failed; treated as no unreachable items | `ignoreError(이유, error)`로 교체 |
+| 10-runtime.js:16064 | 오류 은폐 → 수정 | reach audit failed | 실패로 처리: `console.error` 후 다시 던져 층 생성 루프가 재생성 (F-12) |
+| 10-runtime.js:16071 | 오류 은폐 → 수정 | reach audit failed | 위와 같음 (F-12) |
 | 10-runtime.js:16589 | 제거 | defBy cannot miss: the item is defined two lines above | try/catch 제거 |
 | 10-runtime.js:16666 | 삭제 | version stamp overwritten by the final stamp | 블록 삭제 |
 | 10-runtime.js:17562 | 생성 보호 | reachability helper failed; the generic walk below is used | `ignoreError(이유, error)`로 교체 |
@@ -85,5 +85,5 @@
 | 10-runtime.js:19400 | 삭제 | version stamp overwritten by the final stamp | 블록 삭제 |
 
 ## 판단이 필요한 것 (FINDINGS.md F-12~F-13)
-- **오류 은폐 가능 2곳**(16064, 16071): 도달성 감사가 던지면 "도달 불가 아이템 없음"으로 취급한다. 지금은 던지지 않는다. 실패 시 통과로 처리하는 것이 맞는지는 기획 판단이다. 동작을 바꾸지 않고 기록만 한다.
+- **오류 은폐 2곳**(16064, 16071)은 F-12로 수정했다: 감사가 던지면 이제 실패로 처리해 층을 다시 생성한다.
 - 버전 표기(`RELEASE.build`, `document.title`)가 로드 중 여러 번 덮어써진다. 마지막 값만 의미가 있다. 빈 catch가 있던 3곳만 지웠고 나머지 덮어쓰기는 아직 남아 있다.
