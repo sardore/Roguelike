@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const QA_MARKER = '/*@@QA-BRIDGES@@*/';
+export const QA_FILE = 'qa/qa.js';
 export const SENTINEL = (name) => `/*@@FILE ${name}@@*/`;
 const HEAD = '(()=>{\n"use strict";\n';
 
@@ -30,24 +31,26 @@ export function readManifest(srcDir) {
 }
 
 // Returns { text, parts } where parts[i] = { file, firstLine, lastLine } (1-based lines of the assembled text).
-// withSentinels adds a `/*@@FILE name@@*/` line before each file so splitGame can undo the assembly.
+// With sentinels (work mode for the refactor tools) a `/*@@FILE name@@*/` line precedes every file, and src/qa/qa.js
+// is included as the virtual file `qa/qa.js`, so a tool that renames something renames it there too.
 export function assembleGame(srcDir, { qa = false, sentinels = false } = {}) {
   const manifest = readManifest(srcDir);
   const parts = [];
   let text = HEAD;
   const lineOf = () => text.split('\n').length;
-  const add = (file) => {
-    const body = fs.readFileSync(path.join(srcDir, 'game', file), 'utf8');
+  const add = (file, body) => {
     if (sentinels) text += SENTINEL(file) + '\n';
     const first = lineOf();
     text += body;
     parts.push({ file, firstLine: first, lastLine: lineOf() - 1 });
   };
-  for (const f of manifest.closure) add(f);
-  const marker = qa ? fs.readFileSync(path.join(srcDir, 'qa', 'qa.js'), 'utf8') : '  ' + QA_MARKER + '\n';
-  if (sentinels && qa) throw new Error('sentinels and qa cannot be combined');
-  text += marker + '})();\n';
-  for (const f of manifest.afterClosure) add(f);
+  const gameFile = (f) => fs.readFileSync(path.join(srcDir, 'game', f), 'utf8');
+  for (const f of manifest.closure) add(f, gameFile(f));
+  const qaText = () => fs.readFileSync(path.join(srcDir, 'qa', 'qa.js'), 'utf8');
+  if (sentinels) add(QA_FILE, qaText());
+  else text += qa ? qaText() : '  ' + QA_MARKER + '\n';
+  text += '})();\n';
+  for (const f of manifest.afterClosure) add(f, gameFile(f));
   return { text, parts };
 }
 
@@ -66,17 +69,16 @@ export function splitGame(srcDir, text) {
   const out = new Map();
   marks.forEach((m, i) => {
     const start = m.index + m[0].length;
-    let end = i + 1 < marks.length ? marks[i + 1].index : text.length;
+    const end = i + 1 < marks.length ? marks[i + 1].index : text.length;
     let body = text.slice(start, end);
-    // the closure ends with the marker and `})();` before the first file after the closure
-    if (manifest.closure.includes(m[1]) && manifest.closure.at(-1) === m[1]) {
-      const cut = body.lastIndexOf('  ' + QA_MARKER + '\n})();\n');
-      if (cut < 0) throw new Error('closing of the closure not found');
-      body = body.slice(0, cut);
+    if (m[1] === QA_FILE) {
+      // the closure ends right after the QA text
+      if (!body.endsWith('})();\n')) throw new Error('closing of the closure not found after qa/qa.js');
+      body = body.slice(0, -'})();\n'.length);
     }
     out.set(m[1], body);
   });
-  for (const f of [...manifest.closure, ...manifest.afterClosure]) if (!out.has(f)) throw new Error(`sentinel for ${f} missing`);
-  for (const [f, body] of out) fs.writeFileSync(path.join(srcDir, 'game', f), body);
+  for (const f of [...manifest.closure, ...manifest.afterClosure, QA_FILE]) if (!out.has(f)) throw new Error(`sentinel for ${f} missing`);
+  for (const [f, body] of out) fs.writeFileSync(f === QA_FILE ? path.join(srcDir, 'qa', 'qa.js') : path.join(srcDir, 'game', f), body);
   return [...out.keys()];
 }

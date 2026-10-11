@@ -7,13 +7,13 @@ const MINE_ITEMS105=Object.freeze({
 });
 
 
-const C = document.getElementById("game");
-const X = C.getContext("2d",{alpha:false});
-const MC = document.getElementById("mini");
-const MX = MC.getContext("2d");
-const VIEW={w:1056,h:704,dpr:1};
 
-const TILE = 32;
+
+
+
+
+
+
 /* Shared X-braced crate: timber grain, beveled rails and iron fasteners. */
 function drawCrateX85(ctx,px,py){
  ctx.save();ctx.translate(px,py);ctx.lineWidth=.7;
@@ -147,17 +147,13 @@ function drawSharedProp105(ctx,t,px,py,region=0,variant=0,now=0,lit=true,appeara
  return true;
 }
 
-let COLS = 49;
-let ROWS = 33;
 
-const TT = {
-  PALACE_LOW:680,PALACE_MID:681,PALACE_UPPER:682,PALACE_HIGH:683,SHALLOW_WATER:684,PALACE_ROCK:685,PALACE_WALL_LAMP:686,ICE:83,WALL:0,FLOOR:1,STAIR:2,DOOR:3,OPEN_DOOR:4,RUMOR:5,BRAZIER:6,TRAP:7,ARMORY:8,WATER:9,FOUNTAIN:10,MIRROR:11,ALTAR:12,VAULT:13,SNARE:14,CACHE:15,COOKPOT:16,
-  PAPER_BRIDGE:17,JAR:18,LAVA:19,DRAWBRIDGE_DOWN:20,VOID:21,GOLD:22,MERCURY:23,SWITCH:24,DRAWBRIDGE_UP:25,BAMBOO:26,
-  TABLE:27,SCREEN:28,GRASS:29,HEDGE:30,RAFT:31,FAKE_DOOR:32,LOCKED_GATE:33,KEY_TILE:34,STAMINA_PAD:35,PEACH_TREE:36,SECRET_DOOR:37,PAVILION:38
-};
-const DIRS4=[[1,0],[-1,0],[0,1],[0,-1]];
-const DIRS8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-const BALANCE={maxFloor:25,maxLevel:18,hungerMax:125,hungerSafe:50,hungerWarn:25,hungerTick:5,baseDrop:.18,bossSkillPoints:0};
+
+
+
+
+
+
 const SPAWN_RULES=[
   {from:1,to:1,count:[5,5],safe:10},
   {from:2,to:5,count:[6,8],safe:10},
