@@ -715,3 +715,14 @@ function summonUpdateButtons(){
  const slot=document.getElementById('summonButton105');if(!slot)return;const books=summonShortcutBooks();slot.hidden=!books.length||runState57()!=='playing'||!!state?.debugBattle57;slot.classList.toggle('summonSplit105',books.length>1);
  for(const [n,button]of [...slot.querySelectorAll('button')].entries()){const book=books[n],ready=!!SUMMON_RACES[book?.summonElement105];button.hidden=!book;button.disabled=!ready;button.classList.toggle('available',ready);button.dataset.bookId=book?.summonBookId105||'';button.title=book?`${book.name} +${book.upgrade} · ${SUMMON_RACES[book.summonElement105]?.name||'속성부적 없음'}`:'';button.setAttribute('aria-label',button.title);}
 }
+  const blockTap=(ms=180)=>UX.closeBlockUntil=Math.max(UX.closeBlockUntil,now()+ms);
+  function equipData(){const p=state.player;return[['weapon','무기',p.weapon,'검'],['armor','갑옷',p.armor,'갑'],['cloak','망토',p.cloak,'망'],['relic','유물',p.relic,'유'],['trinket','장신구',p.trinket,'장']]}
+  const bow52=()=>state?.player?.weapon?.kind==='bow';
+  function openDoorCandidates964(){
+    if(!state?.player)return[];const p=state.player,fdx=p.facing?.x||0,fdy=p.facing?.y||0;
+    const dirs=[[fdx,fdy],[1,0],[-1,0],[0,1],[0,-1]],seen=new Set(),out=[];
+    for(const [dx,dy] of dirs){if(!dx&&!dy)continue;const x=p.x+dx,y=p.y+dy,key=`${x},${y}`;if(seen.has(key))continue;seen.add(key);if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||state.map[y][x]!==TT.OPEN_DOOR)continue;out.push({x,y,dirMatch:dx===fdx&&dy===fdy})}
+    return out.sort((a,b)=>(b.dirMatch?1:0)-(a.dirMatch?1:0));
+  }
+  /* ---------- Shattered-style inspect: one description source, top window, complete terrain codex ---------- */
+  let pendingInspect984=null;

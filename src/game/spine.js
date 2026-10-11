@@ -2292,7 +2292,7 @@ const UX={
 
   const uiBlocking=()=>activeGameplayPanels57().length>0;
   const viewerOpen=()=>!!(inventoryOpen||helpOpen||martialOpen||isDrawerOpen()||isInspectOpen()||isMapOpen());
-  const blockTap=(ms=180)=>UX.closeBlockUntil=Math.max(UX.closeBlockUntil,now()+ms);
+
   
 
 
@@ -2315,7 +2315,7 @@ const UX={
 
 
 
-  function equipData(){const p=state.player;return[['weapon','무기',p.weapon,'검'],['armor','갑옷',p.armor,'갑'],['cloak','망토',p.cloak,'망'],['relic','유물',p.relic,'유'],['trinket','장신구',p.trinket,'장']]}
+
   function tabCount(kind){
     const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
   }
@@ -2592,7 +2592,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
   
 
-  const bow52=()=>state?.player?.weapon?.kind==='bow';
+
   
   
 
@@ -5034,12 +5034,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   // Bridge the last pre-ammo generator into the newer release closure without another wrapper.
   MANRU_GENERATION_PIPELINE.density=addDensityMonsters964;
 
-  function openDoorCandidates964(){
-    if(!state?.player)return[];const p=state.player,fdx=p.facing?.x||0,fdy=p.facing?.y||0;
-    const dirs=[[fdx,fdy],[1,0],[-1,0],[0,1],[0,-1]],seen=new Set(),out=[];
-    for(const [dx,dy] of dirs){if(!dx&&!dy)continue;const x=p.x+dx,y=p.y+dy,key=`${x},${y}`;if(seen.has(key))continue;seen.add(key);if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||state.map[y][x]!==TT.OPEN_DOOR)continue;out.push({x,y,dirMatch:dx===fdx&&dy===fdy})}
-    return out.sort((a,b)=>(b.dirMatch?1:0)-(a.dirMatch?1:0));
-  }
+
 
   function closeAdjacentDoor964(quiet=false){
     const act=playerAction57('closeDoor',{stunMessage:'몸이 굳어 문을 닫지 못했다.'});if(!act.ok)return !!act.consumed;const cands=openDoorCandidates964();if(!cands.length){if(!quiet)toast('닫을 열린 문이 없다.');return false}
@@ -5431,8 +5426,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   /* Desktop zoom owns wheel/trackpad input at window capture, before legacy handlers can quantize it. */
   window.addEventListener('wheel',InputRouter,{capture:true,passive:false});InputRouter.noteListener('window:wheel');
 
-  /* ---------- Shattered-style inspect: one description source, top window, complete terrain codex ---------- */
-  let pendingInspect984=null;
+
   const TERRAIN986=new Map([
     [TT.PALACE_ROCK,{...palaceInspect(TT.PALACE_ROCK),inspectPriority57:'terrain'}],
     [TT.WALL,{desc:'두꺼운 내벽. 층을 거듭 증축하면서 오래된 벽 위에 새 벽을 덧댄 흔적이 남아 있다.'}],
