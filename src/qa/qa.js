@@ -118,15 +118,15 @@ window.__MANRU_ASURA61__.probe=()=>{
 function screenOf70(x,y){return globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenterToClient(x,y)}
 function structureHit70(cx,cy){return globalThis.__MANRU_WORLD_HITTEST12__.nearestCell(cx,cy,{radius:2,predicate:(x,y)=>STRUCT70.has(state.map[y]?.[x])&&VisibilityService.isSeen(x,y)})}
 window.__MANRU_RELEASE__.bench=bench70;
-window.__MANRU_RELEASE__.slotLoad=n=>loadSlot70(n);
-window.__MANRU_RELEASE__.snapshot=()=>envelope70('test');
+window.__MANRU_RELEASE__.slotLoad=n=>loadSlot(n);
+window.__MANRU_RELEASE__.snapshot=()=>buildSaveEnvelope('test');
 window.__MANRU_RELEASE__.diagonal=(dx,dy)=>{ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}).value;return{x:state.player.x,y:state.player.y,turn:state.turn}};
 window.__MANRU_RELEASE__.pacing=()=>({recovery:[...(state?.items||[]),...(state?.player?.inventory||[])].filter(recovery70).length,tactical:[...(state?.items||[]),...(state?.player?.inventory||[])].filter(tactical70).length});
 window.__MANRU_RELEASE__.stress=(n=300)=>{
-      if(!state)return null;const raw=rawEnvelope70('stress-backup'),oldMon=state.monsters;state.monsters=[];state.player.hp=state.player.maxHp;state.player.hunger=125;const t=performance.now();
+      if(!state)return null;const raw=rawEnvelope('stress-backup'),oldMon=state.monsters;state.monsters=[];state.player.hp=state.player.maxHp;state.player.hunger=125;const t=performance.now();
       for(let i=0;i<n;i++){state.player.hunger=125;state.player.hp=state.player.maxHp;globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:.25,reason:"diagnostic"}).value}
       const ms=performance.now()-t,out={turns:n,ms:+ms.toFixed(1),perTurn:+(ms/n).toFixed(3),log:state.log.length,decals:state.decals.length,fields:state.tempFields?.length||0};
-      if(raw){const env=parseEnvelope70(raw);restoreState70(env.state)}
+      if(raw){const env=parseEnvelope(raw);restoreState70(env.state)}
       return out;
     };
 window.__MANRU_RELEASE__.resetTips=resetTips70;
@@ -287,12 +287,12 @@ window.__MANRU_STORY992__.prime=storyPrimeFinalBoss992;
 window.__MANRU_STORY992__.breakMask=()=>{const b=state?.monsters?.find(m=>m.boss);return storyBreakFriendMask992(b)};
 window.__MANRU_V1002__={sprite:(id='wanderer')=>ACTOR_ART1012.classPreviewData(id),actorBox:()=>({width:32,height:36,topOverflow:4,bottomOverflow:0,scale:1}),boot:bootScreen1002};
 window.__MANRU_V1004__={
-      version:V1004,
+      version:SAVE_RELEASE_TAG,
       actorBox:()=>({width:32,height:36,topOverflow:4,bottomOverflow:0}),
       player:(id='wanderer',gear=null,dir='down')=>ACTOR_ART1012.player(id,gear||ACTOR_ART1012.startGear(id),dir,false).toDataURL('image/png'),
       gearKey:()=>state?gearKey1004(state.player):null,
-      saveAudit:()=>({screen:currentScreen(),current:!!currentRaw1004(),currentVersion:(()=>{try{return JSON.parse(currentRaw1004()||'null')?.saveVersion1004||null}catch(_){return null}})(),legacyRun:!!localStorage.getItem(LEGACY_RUN1004),legacyDeath:!!localStorage.getItem(LEGACY_DEATH1004),death:deathMeta1004(),deadRuns:deadRuns1004().size,lateItems:state?.lateItemRepair1004||null}),
-      forceSave:writeRun1004,
+      saveAudit:()=>({screen:currentScreen(),current:!!currentRaw(),currentVersion:(()=>{try{return JSON.parse(currentRaw()||'null')?.saveVersion1004||null}catch(_){return null}})(),legacyRun:!!localStorage.getItem(LEGACY_RUN),legacyDeath:!!localStorage.getItem(LEGACY_DEATH1004),death:deathMeta1004(),deadRuns:deadRuns1004().size,lateItems:state?.lateItemRepair1004||null}),
+      forceSave:writeRun,
       clearCurrent:()=>{const result=SaveService.transact([[SAVE1004,null]],'diagnostic-clear');RunLifecycle.refreshContinue();return result}
     };
 if(window.__MANRU_V1004__){
@@ -576,5 +576,5 @@ window.__MANRU_V1005_TEST__={
 };
 globalThis.__MANRU_TURN_PIPELINE_FINAL__={active:()=>globalThis.__MANRU_TURN_PIPELINE__?.active?.()===true,stages:()=>globalThis.__MANRU_TURN_PIPELINE__?.stages?.()||[],core:()=>globalThis.__MANRU_TURN_PIPELINE__?.core?.()||'missing'};
 globalThis.__MANRU_GENERATION_R18__={generate:NormalFloorGenerator.generate,core:globalThis.__MANRU_GENERATE_CORE983__,active:()=>globalThis.__MANRU_GENERATION_R18__.generate===NormalFloorGenerator.generate,pipeline:()=>state?.generationPipelineR18||null,stages:()=>({base:MANRU_GENERATION_PIPELINE.base?.id||null,pre:MANRU_GENERATION_PIPELINE.pre.map(x=>x.id),post:MANRU_GENERATION_PIPELINE.post.map(x=>x.id)}),seed:()=>state?.generationSeedR59||null,signature:()=>{if(!state)return null;const mons=(state.monsters||[]).map(m=>[m.name,m.x,m.y,m.hp]).sort(),items=(state.items||[]).map(i=>[i.name,i.x,i.y,i.count||1]).sort(),map=state.map.map(r=>r.join(',')).join(';');let h=2166136261>>>0;const text=JSON.stringify([state.floor,state.layoutName,map,mons,items,state.decor||[]]);for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return{floor:state.floor,runId:state.runId984||window.__MANRU_RUN_SEED984||null,hash:(h>>>0).toString(16).padStart(8,'0'),monsters:mons.length,items:items.length,decor:(state.decor||[]).length,attempts:state.generationFinalKeyAttemptsR48,seed:state.generationSeedR59}}};
-window.__MANRU_RELEASE__.save=writeRun1004;window.__MANRU_RELEASE__.autosave=writeRun1004;window.__MANRU_RELEASE__.load=()=>loadGame();
+window.__MANRU_RELEASE__.save=writeRun;window.__MANRU_RELEASE__.autosave=writeRun;window.__MANRU_RELEASE__.load=()=>loadGame();
 window.__MANRU_RELEASE__.build=RELEASE_INFO.build;

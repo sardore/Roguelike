@@ -2,6 +2,7 @@
  "closure": [
   "kernel.js",
   "catalog.js",
+  "save.js",
   "spine.js"
  ],
  "afterClosure": [
