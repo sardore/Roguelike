@@ -1871,3 +1871,19 @@ function finishEntryDocumentDoors67(){
    }group=[]};for(const q of side){if(opening(q))group.push(q);else finish()}finish()}
  }
 }
+function makeBoss(def,pos){return{x:pos.x,y:pos.y,name:def.name,hp:def.hp,maxHp:def.hp,atk:def.atk,def:def.def,eva:def.eva,xp:def.xp,color:def.color,shape:def.shape,kind:def.kind,boss:true,bossPattern:def.bossPattern,ranged:def.ranged||false,range:def.range||6,weakened:0}}
+  function lockPlanProgressed96(plan=state.keyPlan96){
+    if(!plan)return false;
+    if((plan.keys||[]).some(q=>q.active===false))return true;
+    if((plan.doors||[]).some(d=>d.open===true||state.map?.[d.y]?.[d.x]!==TT.LOCKED_GATE))return true;
+    return Object.values(plan.ring||{}).some(v=>(+v||0)>0);
+  }
+  function stripLockPlan96(plan=state.keyPlan96){
+    if(!plan)return;
+    for(const d of plan.doors||[])if(state.map?.[d.y]?.[d.x]===TT.LOCKED_GATE)setTerrainTile58(state.map,d.x,d.y,TT.DOOR);
+    for(const q of plan.keys||[])if(state.map?.[q.y]?.[q.x]===TT.KEY_TILE)setTerrainTile58(state.map,q.x,q.y,TT.FLOOR);
+    state.keyPlan96=null;
+  }
+function snapshotEntities1020(){return{items:(state.items||[]).map(v=>v),monsters:(state.monsters||[]).map(v=>v)}}
+function clearEntities1020(){state.items=[];state.monsters=[]}
+const RESTAURANT_MONSTERS42=new Set(['취객','시종','객잔 쥐','객잔 경비병']);
