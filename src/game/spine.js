@@ -448,94 +448,7 @@ const ClientEnvironment=Object.freeze({
 
 
 
-const InputRouter=Object.freeze({
-  handleEvent(e){return ClientEnvironment.routeEvent(e)},
-  owner(){
-    if(RuntimeState.ui.generationPending)return{kind:'blocking',panels:['mapGenerationNotice57']};
-    if(OrientationGate.active()&&runState57()==='playing')return{kind:'orientation',panels:activeGameplayPanels57().map(panel=>panel.id)};
-    const current=gameplayInputOwner57();return{kind:current.kind,panels:current.panels.map(panel=>panel.id)};
-  },
-  result(command,status,owner,consumed=false){
-    const type=command.type,entry={serial:++INPUT_ROUTER57_AUDIT.serial,command:type,source:command.source||'unknown',status,owner,consumed:!!consumed};
-    INPUT_ROUTER57_AUDIT.attempts[type]=(INPUT_ROUTER57_AUDIT.attempts[type]||0)+1;INPUT_ROUTER57_AUDIT[status]++;
-    if(status==='handled')INPUT_ROUTER57_AUDIT.handledCommands[type]=(INPUT_ROUTER57_AUDIT.handledCommands[type]||0)+1;
-    INPUT_ROUTER57_AUDIT.history.push(entry);if(INPUT_ROUTER57_AUDIT.history.length>200)INPUT_ROUTER57_AUDIT.history.shift();return entry;
-  },
-  dispatch(command){
-    if(!command||!INPUT_COMMANDS57.includes(command.type))return this.result({type:command?.type||'UNKNOWN',source:command?.source},'ignored','none');
-    const type=command.type,owner=this.owner(),kind=owner.kind,panels=owner.panels;
-    // Closing an active dialog belongs to the UI, before world-input gates.
-    if(type==='TARGET_CANCEL'||type==='MODAL_CANCEL'){
-      const dialog=gameplayInputOwner57();
-      if(!['targeting','modal'].includes(dialog.kind))return this.result(command,'ignored',kind);
-      return this.result(command,'handled',dialog.kind,type==='TARGET_CANCEL'?ActionDispatcher.dispatch(command).value:!!dismissGameplayInput57());
-    }
-    if(state?.debugBattle57)return this.result(command,'blocked','debug-battle');
-    if(OrientationGate.blocks(command))return this.result(command,'blocked','orientation');
-    if(type==='STORY_OPEN_NOTE')return this.result(command,kind==='modal'&&panels.includes('storyModal992')&&globalThis.__MANRU_STORY992__?.open?.(command.id)?'handled':'blocked',kind);
-    if(type==='STORY_CONTINUE')return this.result(command,kind==='modal'&&panels.includes('storyScene992')&&globalThis.__MANRU_STORY992__?.continueScene?.()?'handled':'blocked',kind);
-    if(type==='STORY_SELECT_ENDING')return this.result(command,runState57()==='victory'&&globalThis.__MANRU_STORY992__?.selectEnding?.(command.choice)?'handled':'blocked',kind);
-    if(type==='STORY_CONFIRM_ENDING'){if(runState57()!=='victory'||!RuntimeState.ui.storyChoice)return this.result(command,'blocked',kind);globalThis.__MANRU_STORY992__.ending(RuntimeState.ui.storyChoice);return this.result(command,'handled',kind)}
-    if(type==='CIPHER_DIGIT'||type==='CIPHER_CLEAR')return this.result(command,kind==='modal'&&panels.includes('cipherPanel')&&editCipherGuess8(type==='CIPHER_CLEAR'?null:command.digit)?'handled':'blocked',kind);
-    if(type==='LOAD'&&kind==='terminal')return this.result(command,'handled',kind,!!loadGame());
-    if(type==='TOGGLE_SFX'){const value=globalThis.__MANRU_SFX54__?.toggle?.();return this.result(command,value===undefined?'ignored':'handled',kind,value!==undefined)}
-    if(type==='TARGET_MOVE'){
-      if(kind!=='targeting')return this.result(command,'blocked',kind);
-      if(!worldTargetActive57())return this.result(command,'blocked',kind);
-      return this.result(command,'handled',kind,!!ActionDispatcher.dispatch(command).value);
-    }
-    if(type==='TARGET_CONFIRM'){
-      if(kind!=='targeting'||!command.cell)return this.result(command,'blocked',kind);
-      const action=ActionDispatcher.dispatch(command);return this.result(command,action.attempted?'handled':'ignored',kind,action.value);
-    }
-    if(kind==='terminal'||kind==='blocking'||kind==='orientation'||kind==='targeting')return this.result(command,'blocked',kind);
-    if(kind==='modal'){
-      const selfInventory=type==='TOGGLE_INVENTORY'&&panels.length===1&&panels[0]==='inventory';
-      const selfHelp=type==='TOGGLE_HELP'&&panels.length===1&&panels[0]==='helpPanel'&&command.key==='?';
-      const selfRelease=type==='TOGGLE_RELEASE'&&panels.length===1&&panels[0]==='rc70';
-      const drawerSave=type==='SAVE'&&panels.length===1&&panels[0]==='mobileDrawer';
-      if(!selfInventory&&!selfHelp&&!selfRelease&&!drawerSave)return this.result(command,'blocked',kind);
-    }
-    let consumed=false,status='handled';
-    if(type==='MOVE'){cancelAutoWalk();consumed=!!ActionDispatcher.dispatch({type:'MOVE',args:[command.dx,command.dy]}).value}
-    else if(type==='ATTACK'){cancelAutoWalk();consumed=!!ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}
-    else if(type==='REST'){cancelAutoWalk();consumed=!!ActionDispatcher.dispatch({type:'REST',args:[]}).value}
-    else if(type==='PICKUP')consumed=!!ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value
-    else if(type==='CONTEXT_ACTION'){cancelAutoWalk();consumed=!!ActionDispatcher.dispatch({type:'CONTEXT_ACTION',args:[]}).value}
-    else if(type==='DESCEND')consumed=!!ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value
-    else if(type==='BLINK'){cancelAutoWalk();consumed=!!ActionDispatcher.dispatch({type:'BLINK',args:[]}).value}
-    else if(type==='QUICK_MARTIAL'){consumed=!!globalThis.__MANRU_SKILL991_INPUT__?.activateIndex(command.index)}
-    else if(type==='CLASS_SKILL'){cancelAutoWalk();consumed=!!useClassSkill()}
-    else if(type==='OPEN_MARTIAL')consumed=!!openMartial()
-    else if(type==='TOGGLE_SKILL_QUICK')consumed=!!globalThis.__MANRU_SKILL991_INPUT__?.toggle?.()
-    else if(type==='OPEN_SUMMON105'){const book=summonShortcutBooks()[command.slot||0];if(book)consumed=!!summonOpen(book.summonBookId105)}
-    else if(type==='TOGGLE_INVENTORY')consumed=!!toggleInventory()
-    else if(type==='TOGGLE_HELP')consumed=!!toggleHelp()
-    else if(type==='OPEN_MOBILE_DRAWER')consumed=!!openMobileDrawer(command.tab||'status')
-    else if(type==='OPEN_MAP')consumed=!!openMapModal()
-    else if(type==='AUTO_EXPLORE')consumed=!!autoExplore()
-    else if(type==='WORLD_SELECT')consumed=!!globalThis.__MANRU_RUNTIME81__?.Automation81?.go?.(command.cell)
-    else if(type==='WORLD_INSPECT')consumed=!!globalThis.__MANRU_RUNTIME81__?.inspect?.(command.cell)
-    else if(type==='CAMERA_PAN'){const camera=globalThis.__MANRU_RUNTIME81__?.Camera81;consumed=!!(command.phase==='end'?camera?.endPan?.():camera?.panScreen?.(command.dx,command.dy))}
-    else if(type==='CAMERA_ZOOM'){
-      if(Number.isFinite(command.scale))consumed=!!globalThis.__MANRU_CAMERA984__?.zoomByScale?.(command.scale,command.anchor||null);
-      else if(Number.isFinite(command.value))consumed=!!globalThis.__MANRU_V984_SET_ZOOM__?.(command.value,command.anchor||null);
-      else if(command.reset)consumed=!!globalThis.__MANRU_V984_SET_ZOOM__?.(1,null);
-      else consumed=!!globalThis.__MANRU_RUNTIME81__?.Zoom81?.step?.(command.delta);
-    }
-    else if(type==='CAMERA_CENTER')consumed=!!globalThis.__MANRU_RUNTIME81__?.Camera81?.center?.()
-    else if(type==='CLOSE_DOOR')consumed=!!ActionDispatcher.dispatch(command).value
-    else if(type==='QUICK_SLOT')consumed=!!ActionDispatcher.dispatch(command).value
-    else if(type==='TOGGLE_RELEASE'){const api=globalThis.__MANRU_RELEASE__;consumed=panels.includes('rc70')?!!api?.closePanel?.():!!api?.openPanel?.()}
-    else if(type==='SAVE'){saveGame();consumed=true}
-    else if(type==='LOAD')consumed=!!loadGame()
-    else status='ignored';
-    return this.result(command,status,kind,consumed);
-  },
-  noteListener(id){INPUT_ROUTER57_AUDIT.listeners.add(id)},
-  resetAudit(){INPUT_ROUTER57_AUDIT.serial=0;INPUT_ROUTER57_AUDIT.handled=0;INPUT_ROUTER57_AUDIT.blocked=0;INPUT_ROUTER57_AUDIT.ignored=0;INPUT_ROUTER57_AUDIT.handledCommands={};INPUT_ROUTER57_AUDIT.attempts={};INPUT_ROUTER57_AUDIT.history=[];return this.snapshot()},
-  snapshot(){const owner=this.owner();return{priority:[...INPUT_PRIORITY57],commands:[...INPUT_COMMANDS57],owner:owner.kind,panels:[...owner.panels],handled:INPUT_ROUTER57_AUDIT.handled,blocked:INPUT_ROUTER57_AUDIT.blocked,ignored:INPUT_ROUTER57_AUDIT.ignored,handledCommands:{...INPUT_ROUTER57_AUDIT.handledCommands},attempts:{...INPUT_ROUTER57_AUDIT.attempts},history:INPUT_ROUTER57_AUDIT.history.map(row=>({...row})),listenerCount:INPUT_ROUTER57_AUDIT.listeners.size,listeners:[...INPUT_ROUTER57_AUDIT.listeners].sort()}}
-});
+
 C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:pointerdown');
 C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:pointerup');
 C.addEventListener('click',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:click');
@@ -3449,7 +3362,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  function qaMark60(){qaSnapshot60=captureGenerationSnapshot();return{floor:state.floor,hash:qaHash60()}}
+
 
 
 
@@ -6164,8 +6077,7 @@ const STORY_VERSION992='v9.9.3-story-system';
   document.getElementById('runtimeInput81')?.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});InputRouter.noteListener('world:contextmenu-inspect');
 
 
-  /* v10.0.2: one canonical screen state, instead of leaving the class picker alive behind display:none. */
-  const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
+RuntimeState.ui.screen=SCREEN1002;
 
 
       RUN_END_EFFECTS53.push(()=>setScreen('ending'));
@@ -6225,7 +6137,7 @@ const STORY_VERSION992='v9.9.3-story-system';
 
 
 
-    const LEGACY_DEATH1004='manru984_last_death';
+
 
 
 
