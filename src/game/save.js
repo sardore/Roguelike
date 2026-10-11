@@ -83,8 +83,8 @@ const GameState=Object.freeze({
     source.passiveRecoveryUnlocked57=source.passiveRecoveryUnlocked57??(source.floor>=11);
     source.lastDamageAgencyTurn57=Number.isFinite(source.lastDamageAgencyTurn57)?source.lastDamageAgencyTurn57:(source.playerAgencyTurns57||0);
     source.recentPlayerCells57=Array.isArray(source.recentPlayerCells57)?source.recentPlayerCells57:[];
-    source.naturalPopulation57=source.naturalPopulation57||{initial:(source.monsters||[]).filter(isNaturalMonster57).length,generation:0,nextAgency:null};
-    noiseBudget57=null;delete source.noiseHistory01;
+    source.naturalPopulation57=source.naturalPopulation57||{initial:(source.monsters||[]).filter(isNaturalMonster).length,generation:0,nextAgency:null};
+    noiseBudget=null;delete source.noiseHistory01;
     if(source.noiseHistory01){const h=source.noiseHistory01;h.multiplier=clamp(Number(h.multiplier)||1,1,3);h.pending=!!h.pending;h.lastNoiseTurn=Number.isFinite(h.lastNoiseTurn)?h.lastNoiseTurn:source.turn||0}
     const profile=source.generationProfile93??source.roomGraph93?.profile??null;
     source.generationProfile93=['braid','offset-halls','cluster-loop'].includes(profile)?profile:null;
@@ -291,7 +291,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       if(a.source==='primary')return a;if(b.source==='primary')return b;
       return a;
     }
-    const TRANSACTION='manru1004_transaction',TERMINAL_INTENT='manru1004_terminal_intent';
+
     const SaveService=Object.freeze({
       commit:writeRun,
       recover(){

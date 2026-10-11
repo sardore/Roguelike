@@ -19,3 +19,6 @@
 | F-12 | 도달성 감사 실패 처리 | 수리 루프의 도달성 감사(`mechanicalReachAudit`)가 예외를 던지면 "도달 불가 없음"으로 통과시키던 것을, **실패로 처리**하도록 고쳤다(사용자 결정). 오류를 `console.error`로 남기고 다시 던지면 층 생성 루프(최대 32회)가 그 층을 다시 만들고, 32회를 넘으면 "final connectivity/key progression rejected" 오류로 끝난다. 계측상 한 번도 던진 적이 없어 기존 경로의 동작은 같다(floors·floorsind 일치로 확인). | 수정 |
 | F-13 | 버전 표기 덮어쓰기 | `RELEASE.build`, `document.title`, 하단 버전 표기가 로드 중 20여 번 덮어써지고 마지막 값(`10.0.6`, 창해 용궁)만 남는다. 빈 catch가 있던 3곳은 덮어써지는 죽은 코드라 삭제했고 나머지는 다음 정리에서 한 곳으로 모은다. | 부분 수정 |
 | F-14 | F-09 회귀 (F1 설정 패널) | F-09 분리(`d9c3770`)가 `__MANRU_RELEASE__.openPanel`을 QA 쪽으로 잘못 옮겨, **출시 빌드에서 F1(설정 패널)이 열리지 않았다.** 입력 라우터가 `const api=globalThis.__MANRU_RELEASE__; api?.openPanel?.()`로 읽는데, 읽기 분석이 같은 이름 `api`를 쓰는 다른 별칭과 섞여 이 읽기를 놓쳤다. QA 빌드에서는 멤버가 있어서 기존 테스트가 통과했다. 수정: 함수와 멤버를 런타임으로 되돌리고(`openReleasePanel`), 재발 방지로 (1) 구조 검사에 `qaLeak` 지표(런타임이 QA 파일에만 있는 이름·멤버·브리지를 읽으면 실패, 별칭은 스코프 기준으로 해석)를 넣고, (2) `release` 시나리오가 F1·H 패널을 열고 닫는지 모든 출시 빌드에서 확인한다. `d9c3770`의 런타임은 새 시나리오에서 실패한다. | 수정 |
+
+## F-15 의도(intent) 시스템이 두 벌 있다 (monsters.js)
+`setIntent54`/`executeIntent54`(보스 장판 예고)와 `setIntent61`/`executeIntent61`(일반 몬스터 예고)이 비슷한 일을 하는 별개 구현이다. 구조 정리 중이라 합치지 않았다(동작 보존). 합칠 수 있는지, 일부러 둘로 나눈 것인지 기획 확인이 필요하다. 지금은 역할을 드러내는 이름(`setBossIntent`/`setMonsterIntent`)으로만 구분해 두었다.

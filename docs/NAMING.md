@@ -16,3 +16,7 @@
 ## combat.js
 - 접미사 제거(기계) 89개, 수동 5개(`martialForm1005→martialFormOf`, `openMartialManual1005→showMartialManual`, `hurt61→monsterAttacksTarget`, `critBonus47→cursedBladeCritBonus`, `defBonus47→earthGauntletDefBonus`). 한 줄 정의만 보고 정한 이름이라 확인 필요.
 - 이번에 옮기지 않은 것: 부적(TALISMAN*) 묶음 — 아이템과 전투 양쪽 성격이라 도메인 결정 후 옮긴다. `martialLanding`처럼 이름은 무술이지만 이동 쪽 성격인 것은 같이 옮겼다.
+
+## monsters.js
+- 접미사 제거(기계) 160개, 수동 13개. 수동 이름은 한 줄 정의만 보고 정한 것이라 확인 필요: `setIntent54→setBossIntent`, `executeIntent54→executeBossIntent`, `charge54→bossCharge`, `setIntent61→setMonsterIntent`, `executeIntent61→executeMonsterIntent`, `ROLE61→MONSTER_ROLE_TABLE`, `BOSS60→BOSS_FLOORS`, `AIM52→AIM_STATE` 등.
+- 이름 키워드로 잡혔지만 다른 도메인이라 옮기지 않은 것: `silk970`(방 장식), `monsterInfo986`(정보창), QA 전용 `asura*61`, `bossGateOpen1020`, `selectBowTarget52`, `monsterName1011`.

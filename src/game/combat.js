@@ -76,7 +76,7 @@ function chooseMartialManual(index){
  const applicable=MARTIAL_RULES.ids.includes(c.id)&&(c.form==='breakthrough'?!p.martialBreakthrough[c.id]:!martialFormOf(c.id,p)&&Object.hasOwn(MARTIAL_FORMS[martialFamily(c.id,p)],c.form));
  if(!applicable){toast('이 후보는 이미 완성됐다. 다른 확정 후보를 선택해라.');return false}
  const oldHp=p.maxHp;if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
- if(c.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(c.id==='roar'){state.martialEcho=null;if(p.classState?.aimPower>0)setAimPower58(p.classState.aimPower)}
+ if(c.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(c.id==='roar'){state.martialEcho=null;if(p.classState?.aimPower>0)setAimPower(p.classState.aimPower)}
  if(c.id==='constitution')recomputeMaxHp(p);p.focus=Math.min(p.focus,getStats().maxFocus);
  consumeItemQuantity(item);state.pendingMartialManualChoice=null;globalThis.__MANRU_ITEM_IDENTITY991__.closeChoice();
  const v=martialPresentation(c.id,MARTIAL_INFO[c.id],p);addLog(c.form==='breakthrough'?`${v.name}: 5단에 이르는 길이 열렸다. 무술 포인트로 마지막 경지를 익힐 수 있다.`:`후천무술 습득: ${v.name}. 현재 ${p.martial[c.id]}단계 유지.`);martialFx('unlock',p);commitPlayerAction57(act,1);updateAll();return true;
@@ -100,7 +100,7 @@ function resolveDrive(mon,lv,origin){
 function performRoar(createEcho=true,actor=state.player){
  const p=actor,lv=p.martial.roar,form=martialFormOf('roar',p),range=martialRoarRange(lv),damage=form==='silent'?Math.min(8,2+lv*2):2+lv*2;
  if(form!=='silent')alertNearby(p.x,p.y,state.floor>=11?12:8,'roar');
- for(const target of martialTargets(p))if(entityDistance57(target,p)<=range&&entityCombatLineCheckR8(p,target,{range,ignore:target,units:false}).ok){damageEntity(target,damage,p);if(target===state.player)applyHostileStatus('stun',lv>=2?2:1,1,{stagger:true});else applyMartialControl1005(target,lv>=2?2:1);martialCheckDeath(target,p)}
+ for(const target of martialTargets(p))if(entityDistance57(target,p)<=range&&entityCombatLineCheckR(p,target,{range,ignore:target,units:false}).ok){damageEntity(target,damage,p);if(target===state.player)applyHostileStatus('stun',lv>=2?2:1,1,{stagger:true});else applyMartialControl1005(target,lv>=2?2:1);martialCheckDeath(target,p)}
  impact(p.x,p.y,'#d8b06c',5);addLog(`${p.name} · ${martialPresentation('roar',MARTIAL_INFO.roar,p).name}: 반경 ${range} · 피해 ${damage}.`);
  if(createEcho&&form==='echo'){const f=p.facing||{x:0,y:1},x=p.x+Math.sign(f.x)*lv,y=p.y+Math.sign(f.y)*lv;if(p===state.player){state.martialEcho=null;if(safeEchoCell1005(x,y)){state.martialEcho={x,y,floor:state.floor};martialFx('echo',state.martialEcho)}}}
 }
@@ -184,7 +184,7 @@ function applyStatusTick(){
     state.makgeolliRecoveryTurns57--;
   }
   if(state.dead)return;
-  tickMonsterCombatStatuses57();
+  tickMonsterCombatStatuses();
   for(const q of ['foodHaste57','warm57','fireCoat57','poisonResist57','vitality57','freeStamina57'])if(state.status[q]>0)state.status[q]--;
   if(state.status.vitality57<=0&&state.player.foodVital57>0){const n=state.player.foodVital57;state.player.foodVital57=0;state.player.temporaryMaxHpBonus=Math.max(0,(state.player.temporaryMaxHpBonus||0)-n);recomputeMaxHp(state.player);addLog('보신 전골의 기운이 가셨다. 최대 HP가 돌아왔다.')}
 
@@ -259,7 +259,7 @@ function damageFormula(att, defVal, isCrit=false,opts=null){
 function combatShotCheckR(mon){
   if(!state||!isHostileTarget57(mon)||mon.hidden)return{ok:false,reason:'유효한 적대 표적이 아니다.'};
   const p=state.player,w=p.weapon||{},range=weaponRange();if(!(w.ranged||w.kind==='bow'))return{ok:false,reason:'원거리 무기가 아니다.'};
-  if(!isThreatVisibleToPlayer(mon))return{ok:false,reason:'현재 관측 가능한 적이 아니다.'};return entityCombatLineCheckR8(p,mon,{range,ignore:mon})
+  if(!isThreatVisibleToPlayer(mon))return{ok:false,reason:'현재 관측 가능한 적이 아니다.'};return entityCombatLineCheckR(p,mon,{range,ignore:mon})
 }
 function rangedJarTargetR(){
  const candidates=[];for(const key of state.visible){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]!==TT.JAR)continue;const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q).ok)candidates.push(q);}return candidates.sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0]||null;
@@ -272,7 +272,7 @@ function bestRangedTargetR(){
 function applyPlayerPostHitR(target,w,range){
   if(target.hp>0&&w.knockback)knockMonster(target,w.knockback);if(target.hp>0&&w.shred){target.def=Math.max(0,target.def-1);target.shredDef105=(target.shredDef105||0)+1;}
   if(target.hp>0&&w.execute&&target.hp/target.maxHp<=w.execute&&!target.boss){target.hp=0;killMonster(target);addLog('종결. 약해진 적을 단번에 끝냈다.')}
-  if(w.wide)for(const m of [...state.monsters])if(m!==target&&isHostileTarget57(m)&&entityDistance57(m,target)<=1&&entityDistance57(m,state.player)<=range+1&&entityCombatLineCheckR8(state.player,m,{range:range+1,ignore:m,units:false}).ok){damageEntity(m,Math.max(1,Math.floor(getStats().atk*.45)), state.player);if(m.hp<=0)killMonster(m)}
+  if(w.wide)for(const m of [...state.monsters])if(m!==target&&isHostileTarget57(m)&&entityDistance57(m,target)<=1&&entityDistance57(m,state.player)<=range+1&&entityCombatLineCheckR(state.player,m,{range:range+1,ignore:m,units:false}).ok){damageEntity(m,Math.max(1,Math.floor(getStats().atk*.45)), state.player);if(m.hp<=0)killMonster(m)}
 }
 function adjacentAttackTargetR(){if(!state)return null;const p=state.player,forced=state._forcedAdjacentTargetR8;state._forcedAdjacentTargetR8=null;if(forced&&isThreatVisibleToPlayer(forced)&&entityDistance57(forced,p)<=1)return forced;return selectFacingAdjacentTarget57(state.monsters.filter(isThreatVisibleToPlayer),(a,b)=>(b.boss?1:0)-(a.boss?1:0)||(b.alerted?1:0)-(a.alerted?1:0))}
 function basicAttack(){
@@ -288,12 +288,12 @@ function basicAttack(){
   else for(let i=1;i<=range;i++){const x=p.x+f.x*i,y=p.y+f.y*i;if(x<0||y<0||x>=COLS||y>=ROWS)break;last={x,y};const mon=findMonsterAt(x,y);if(isEntityObservableToPlayer57(mon)){if(isHostileTarget57(mon))target=mon;break}if(state.map[y][x]===TT.JAR){const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(weaponElement105(w)&&elementalWorldTarget105(x,y))break;if(tileBlocksSight(state.map[y][x])&&!w.cornerHit)break}
   const wasStealthed=state.status.stealth>0;
   if(state.status.stealth>0){state.status.stealth=0;globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('ghostBreak',430);burst(p.x,p.y,'#c8d7db',11,.68);addLog('공격 동작과 함께 은신이 풀렸다.')}
-  if(target&&!target.type&&!ranged&&martialFormOf('brawl')==='reach'&&(!p.weapon||isBrawlWeapon(w))&&!entityCombatLineCheckR8(p,target,{range,ignore:target}).ok){state._activeAmmo967=null;toast('장타 사선이 막혔다.');return false}
+  if(target&&!target.type&&!ranged&&martialFormOf('brawl')==='reach'&&(!p.weapon||isBrawlWeapon(w))&&!entityCombatLineCheckR(p,target,{range,ignore:target}).ok){state._activeAmmo967=null;toast('장타 사선이 막혔다.');return false}
   const turn0=state.turn,shotPower=p.classState?.aimPower||0;
   const second=ranged&&martialFormOf('roar')==='divine'&&shotPower>5&&(!ammoCtx?.active||itemQuantity(ammoCtx.ammo)>=2)?state.monsters.find(m=>m!==target&&combatShotCheckR(m).ok):null;
   try{
     if(target){const targets=second?[target,second]:[target];for(let i=0;i<targets.length;i++){const m=targets[i];if(i>0&&!combatShotCheckR(m).ok)continue;if(ammoCtx?.active&&!globalThis.__MANRU_AMMO_ATTACK__.consume(ammoCtx.ammo))break;if(ammoCtx)ammoCtx.consumed=true;
-      const connected=attackPlayer(m,0,{wasStealthed:i===0&&wasStealthed,shotBundle:ranged,aimPower:shotPower})===true;if(connected)applyPlayerPostHitR(m,w,range);if(ranged&&shotPower>0)setAimPower58((p.classState.aimPower||0)-1,'attack');if(i>0){projectileFX(p.x,p.y,m.x,m.y,'#f1d9db');martialFx('divine',m)}}state._manualRangedTargetR8=!target.type&&target.hp>0?target:null;state._manualTerrainTargetR8=null;}
+      const connected=attackPlayer(m,0,{wasStealthed:i===0&&wasStealthed,shotBundle:ranged,aimPower:shotPower})===true;if(connected)applyPlayerPostHitR(m,w,range);if(ranged&&shotPower>0)setAimPower((p.classState.aimPower||0)-1,'attack');if(i>0){projectileFX(p.x,p.y,m.x,m.y,'#f1d9db');martialFx('divine',m)}}state._manualRangedTargetR8=!target.type&&target.hp>0?target:null;state._manualTerrainTargetR8=null;}
     else{presentPlayerAction58('attack',last);const elem=weaponElement105(w);if(elem&&combatLineCheckR8(p.x,p.y,last.x,last.y,{range,units:false}).ok)emitElementContact105(elem,[last],effectSource57(p),{baseDamage:getStats().atk})}
     commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
@@ -308,40 +308,40 @@ function runAttackStagesR(kind,args){
   return call(stages.length-1,args);
 }
 function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStagesR('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
-function attackPlayerInitialCoreR(mon,bonusAtk=0){state.playerAttackUntil=performance.now()+145;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;if(state.floor<11)alertNearby(mon.x,mon.y,4);const st=getStats(),w=state.player.weapon||{},ranged=!!(w.ranged||w.kind==='bow');let bonus=bonusAtk;if((state.status?.drunk||0)>0){const drunk=drunkAttackOutcome();if(drunk==='whiff'){setPlayerAttackOutcome('miss',mon,{reason:'drunk-whiff'});floatText(state.player.x,state.player.y,'비틀','#d7c39e',10);addLog('취기가 손끝을 틀어 공격이 허공을 갈랐다.');return false}if(drunk==='heavy'){bonus+=DRUNK_RULES.attackHeavyBonus;floatText(state.player.x,state.player.y,'취중 강타','#e5c987',9)}}if(globalThis.__MANRU_RANDOM57__()<entityAttackMissChance(state.player,mon,{base:.05,max:.45})){setPlayerAttackOutcome('miss',mon,{reason:'evasion'});addLog(mon.name+'이 공격을 피했다.');floatText(mon.x,mon.y,'빗나감','#a9bed2',10);return false}if(!ranged&&state.player.strongReady>0){bonus+=2+state.player.strongReady*2;addLog(`강타 ${state.player.strongReady}단계 발동.`);state.player.strongReady=0}const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity(mon,damageFormula(st.atk+bonus,mon.def-(mon.weakened>0?2:0),crit));setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});if(mon.hp>0)setMonsterAttackInvestigation57(mon,state.player);mon.hitUntil=performance.now()+115;if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?15:13);addLog(`${state.player.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}`);if(w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0)damageEntity(mon,3,state.player);if(w.stun&&globalThis.__MANRU_RANDOM57__()<w.stun)mon.stunned=Math.max(mon.stunned||0,1);if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true}
+function attackPlayerInitialCoreR(mon,bonusAtk=0){state.playerAttackUntil=performance.now()+145;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;if(state.floor<11)alertNearby(mon.x,mon.y,4);const st=getStats(),w=state.player.weapon||{},ranged=!!(w.ranged||w.kind==='bow');let bonus=bonusAtk;if((state.status?.drunk||0)>0){const drunk=drunkAttackOutcome();if(drunk==='whiff'){setPlayerAttackOutcome('miss',mon,{reason:'drunk-whiff'});floatText(state.player.x,state.player.y,'비틀','#d7c39e',10);addLog('취기가 손끝을 틀어 공격이 허공을 갈랐다.');return false}if(drunk==='heavy'){bonus+=DRUNK_RULES.attackHeavyBonus;floatText(state.player.x,state.player.y,'취중 강타','#e5c987',9)}}if(globalThis.__MANRU_RANDOM57__()<entityAttackMissChance(state.player,mon,{base:.05,max:.45})){setPlayerAttackOutcome('miss',mon,{reason:'evasion'});addLog(mon.name+'이 공격을 피했다.');floatText(mon.x,mon.y,'빗나감','#a9bed2',10);return false}if(!ranged&&state.player.strongReady>0){bonus+=2+state.player.strongReady*2;addLog(`강타 ${state.player.strongReady}단계 발동.`);state.player.strongReady=0}const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity(mon,damageFormula(st.atk+bonus,mon.def-(mon.weakened>0?2:0),crit));setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});if(mon.hp>0)setMonsterAttackInvestigation(mon,state.player);mon.hitUntil=performance.now()+115;if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?15:13);addLog(`${state.player.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}`);if(w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0)damageEntity(mon,3,state.player);if(w.stun&&globalThis.__MANRU_RANDOM57__()<w.stun)mon.stunned=Math.max(mon.stunned||0,1);if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true}
 function combatEntityStats(actor){if(actor===state.player)return getStats();return applyCombatDebuffStats57({...actor,vision:actor.vision||monsterSenseRadius(actor)},actor)}
 function combatDefenseBonus(target){
- if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth57(target);
+ if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
  if(target.shell61>0)bonus+=floor>=16?8:7;
  if(target.role61==='formation'&&state.monsters.some(a=>a!==target&&a.hp>0&&a.role61==='formation'&&entitiesAllied57(a,target)&&entityDistance57(a,target)<=1))bonus+=floor>=21?5:floor>=16?4:floor>=11?3:2;
  return bonus;
 }
 function damageEntity(entity,amount,source=null,element=null,context={}){
  if(!entity||entity.hp<=0||!Number.isFinite(amount)||amount<=0)return 0;
- const invulnerability=combatInvulnerability57(entity);if(invulnerability){floatText(entity.x,entity.y,'무적','#e8d29e',11);addLog(invulnerability);return 0;}
+ const invulnerability=combatInvulnerability(entity);if(invulnerability){floatText(entity.x,entity.y,'무적','#e8d29e',11);addLog(invulnerability);return 0;}
  source=combatEffectActor(source)||source;const before=entity.hp;
  if(entity.bossPattern==='master'&&entity.storyPhase992!==1){
-  const stage=entity.coreStage54||0,threshold=BOSS_ARENA_RULES54.master.thresholds[stage];
+  const stage=entity.coreStage54||0,threshold=BOSS_ARENA_RULES.master.thresholds[stage];
   if(threshold!=null&&before-amount<=Math.ceil(entity.maxHp*threshold)){
    // Resolve the destination before committing either HP or encounter state.
-   const destination=selectCoreDestination54(entity,combatTargetValid57(entity,source)?source:selectCombatOpponent57(entity)||entity);if(!destination)throw new Error('천실핵 사념체: 도달 가능한 전투 공간이 없습니다.');
-   entity.hp=Math.min(before,Math.ceil(entity.maxHp*threshold));beginCorePhase54(entity,stage+1,destination);return before-entity.hp;
+   const destination=selectCoreDestination54(entity,combatTargetValid57(entity,source)?source:selectCombatOpponent(entity)||entity);if(!destination)throw new Error('천실핵 사념체: 도달 가능한 전투 공간이 없습니다.');
+   entity.hp=Math.min(before,Math.ceil(entity.maxHp*threshold));beginCorePhase(entity,stage+1,destination);return before-entity.hp;
   }
  }
  if((entity===state?.player||entity.martialActor105)&&amount>=entity.hp&&martialFormOf('constitution',entity)==='revive'&&entity.martial.constitution>0){
   const bundle=RuntimeState.martialDamageBundle1005,revived=bundle&&(bundle.revivedTargets105||(bundle.revivedTargets105=new Set()));if(!revived?.has(entity)){if(revived)revived.add(entity);const lv=entity.martial.constitution;entity.martial.constitution--;entity.hp=Math.max(1,Math.round(entity.maxHp*.8));martialFx('revive',entity);addLog(`필사즉생 — 죽음을 밀어냈다. 체력단련 ${lv}→${lv-1}`);return 0}
  }
- if(combatTargetValid57(entity,source))entity.lastDamageOpponent57=source===state.player?'player':combatantId54(source);entity.lastDamageElement105=element;entity.hp-=amount;if(entity.equipmentActor105&&entity.hp>0)updateEquipmentPhase105(entity);if(entity.bossPattern==='needle'){if(entity.hp>0)prepareBossArena54(entity);if(context.delivery==='ranged'&&entity.hp>0)entity.needleGasShotReady54=true;if(entity.hp>0)needleEscape54(entity,source);}if(entity.bossPattern==='keeper'&&entity.hp>0)tickKeeperLava54(entity,source);
- if(entity!==state?.player&&entity.hp>0&&combatTargetValid57(entity,source)){entity.retaliationId53=source===state.player?'player':(source.allyId53||combatantId54(source));entity.retaliationUntilTurn54=state.turn+4;entity.retaliationLastPosition54={x:source.x,y:source.y};entity.alerted=true;}
+ if(combatTargetValid57(entity,source))entity.lastDamageOpponent57=source===state.player?'player':combatantId(source);entity.lastDamageElement105=element;entity.hp-=amount;if(entity.equipmentActor105&&entity.hp>0)updateEquipmentPhase105(entity);if(entity.bossPattern==='needle'){if(entity.hp>0)prepareBossArena(entity);if(context.delivery==='ranged'&&entity.hp>0)entity.needleGasShotReady54=true;if(entity.hp>0)needleEscape(entity,source);}if(entity.bossPattern==='keeper'&&entity.hp>0)tickKeeperLava54(entity,source);
+ if(entity!==state?.player&&entity.hp>0&&combatTargetValid57(entity,source)){entity.retaliationId53=source===state.player?'player':(source.allyId53||combatantId(source));entity.retaliationUntilTurn54=state.turn+4;entity.retaliationLastPosition54={x:source.x,y:source.y};entity.alerted=true;}
  if(entity.hiveTree105)mountainHiveDamaged105(entity);
  if(!state.debugBattle57&&entity!==state?.player&&entity.hpThreshold57&&before>entity.maxHp*(entity.hpThreshold57.ratio??.5)&&entity.hp<=entity.maxHp*(entity.hpThreshold57.ratio??.5))globalThis.__MANRU_SPECIAL_FLOORS60__?.onMonsterHpThreshold?.(entity,entity.hpThreshold57);
- if(entity!==state?.player&&entity.hp>0&&source&&factionsHostile57(entityFaction57(entity),entityFaction57(source))){
-  if(source===state.player)setMonsterAttackInvestigation57(entity,state.player);
-  if(!state.debugBattle57&&entity.boss&&BOSS_ARENA_RULES54.containment.patterns.includes(entity.bossPattern)){
-   prepareBossArena54(entity);if(!entity.arena54.mistActive57){entity.arena54.mistActive57=true;addLog(entity.name+'의 결계가 닫혔다. 본거지 중심 31×31 밖은 짙은 독안개다! 안쪽에서 싸워라.');floatText(entity.x,entity.y,'외곽 독안개','#b9d46a',14)}
+ if(entity!==state?.player&&entity.hp>0&&source&&factionsHostile57(entityFaction(entity),entityFaction(source))){
+  if(source===state.player)setMonsterAttackInvestigation(entity,state.player);
+  if(!state.debugBattle57&&entity.boss&&BOSS_ARENA_RULES.containment.patterns.includes(entity.bossPattern)){
+   prepareBossArena(entity);if(!entity.arena54.mistActive57){entity.arena54.mistActive57=true;addLog(entity.name+'의 결계가 닫혔다. 본거지 중심 31×31 밖은 짙은 독안개다! 안쪽에서 싸워라.');floatText(entity.x,entity.y,'외곽 독안개','#b9d46a',14)}
   }
  }
- if(entity===state?.player&&entity.hp<before){state.lastDamageAgencyTurn57=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);if(entity.classState?.aimPower>0&&martialFormOf('roar',entity)!=='focus')setAimPower58(0);}return before-entity.hp;
+ if(entity===state?.player&&entity.hp<before){state.lastDamageAgencyTurn57=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);if(entity.classState?.aimPower>0&&martialFormOf('roar',entity)!=='focus')setAimPower(0);}return before-entity.hp;
 }
 // World target callbacks receive (cell, inputSource); action context is a separate argument.
 function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
@@ -354,7 +354,7 @@ function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
 function setPlayerStatus(key,turns){
  if(!state?.status||turns<=0)return 0;
  state.status[key]=Math.max(state.status[key]||0,turns);
- if(STATUS_META57[key]?.harmful&&state.player.classState?.aimPower>0&&martialFormOf('roar')!=='focus')setAimPower58(0);
+ if(STATUS_META57[key]?.harmful&&state.player.classState?.aimPower>0&&martialFormOf('roar')!=='focus')setAimPower(0);
  return state.status[key];
 }
 const CLASS_MARTIAL={
@@ -391,7 +391,7 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     const p=state.player,st=getStats(),w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow');
     state.playerAttackUntil=performance.now()+150;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;const noiseRadius=state.floor<11?4:ranged?6:state.player.strongReady>0?7:5;
     const aim=ranged?(context.aimPower??p.classState?.aimPower??0):0,ammo=ranged?(globalThis.MANRU_AMMO||[]).find(a=>a.ammoKind===state._activeAmmo967?.ammoKind):null;
-    if(aim>0&&!context.shotBundle)setAimPower58(aim-1,'attack');
+    if(aim>0&&!context.shotBundle)setAimPower(aim-1,'attack');
     const missChance=entityAttackMissChance(p,mon,{base:.05,max:mon.boss?.26:.34,evaScale:aim?.5:1,evaIgnore:ranged&&w.tracking?6:0});
     if(globalThis.__MANRU_RANDOM57__()<missChance){alertNearby(mon.x,mon.y,noiseRadius,ranged?'projectile':'combat');setPlayerAttackOutcome('miss',mon,{reason:'evasion'});mon.evadeUntil=performance.now()+220;floatText(mon.x,mon.y,'회피','#b7c8d4',11);addLog(mon.name+'이 공격을 피했다.');sfx54('miss');return false}
     const ready=!ranged?p.strongReady:0;let bonus=bonusAtk+(ammo?.atkBonus||0);if(ready>0){bonus+=strongBonus(ready)-(martialFormOf('strong')==='drive'?2:0);addLog(`${martialPresentation('strong',MARTIAL_INFO.strong,p).name} ${ready}단계 발동.`);p.strongReady=0}
@@ -400,12 +400,12 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity(mon,damageFormula(st.atk+bonus+holy,combatEntityStats(mon).def,crit,{defenseBonus,defenseIgnore:ammo?.pierce||0,defenseScale:(w.armorPierce?.25:1)*(aim?.5:1),damageScale:aim?aim/4:1}), state.player,null,{delivery:ranged?'ranged':'melee'});
     alertNearby(mon.x,mon.y,noiseRadius,ranged?'projectile':'combat',dmg);
     setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});mon.hitUntil=performance.now()+170;mon.hitDir={x:Math.sign(mon.x-p.x),y:Math.sign(mon.y-p.y)};slashFX(p.x,p.y,mon.x,mon.y,crit?'#ffe8a2':'#e7d4d4');impact(mon.x,mon.y,crit?'#ffe09a':'#e7c8c8',crit?5:3);if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?16:13);addLog(`${p.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}${w.armorPierce?' · 방어관통':''}`);sfx54(crit?'crit':'hit');
-    if(context.wasStealthed&&martialFormOf('ghost')==='assassin'&&mon.hp>0){setMonsterWeakened57(mon,MARTIAL_RULES.assassinTurns);martialFx('assassin',mon)}if(ready>0&&martialFormOf('strong')==='drive'&&mon.hp>0)resolveDrive(mon,ready,p);
+    if(context.wasStealthed&&martialFormOf('ghost')==='assassin'&&mon.hp>0){setMonsterWeakened(mon,MARTIAL_RULES.assassinTurns);martialFx('assassin',mon)}if(ready>0&&martialFormOf('strong')==='drive'&&mon.hp>0)resolveDrive(mon,ready,p);
     if(dmg>0&&!mon.statusImmune&&w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0)damageEntity(mon,3, state.player);
-    if(dmg>0&&w.stun&&mon.hp>0){if(mon.boss){mon.controlCd54=Math.max(0,mon.controlCd54||0);if(mon.controlCd54<=0&&globalThis.__MANRU_RANDOM57__()<w.stun*.45){setMonsterStatus57(mon,'stunned',1);mon.controlCd54=4;mon.controlCdTurn54=state.turn;floatText(mon.x,mon.y,'경직','#d5c58e',10)}}else if(globalThis.__MANRU_RANDOM57__()<w.stun)setMonsterStatus57(mon,'stunned',Math.max(mon.stunned||0,1))}
+    if(dmg>0&&w.stun&&mon.hp>0){if(mon.boss){mon.controlCd54=Math.max(0,mon.controlCd54||0);if(mon.controlCd54<=0&&globalThis.__MANRU_RANDOM57__()<w.stun*.45){setMonsterStatus(mon,'stunned',1);mon.controlCd54=4;mon.controlCdTurn54=state.turn;floatText(mon.x,mon.y,'경직','#d5c58e',10)}}else if(globalThis.__MANRU_RANDOM57__()<w.stun)setMonsterStatus(mon,'stunned',Math.max(mon.stunned||0,1))}
     if(mon.guardReady1005>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(mon);else consumeMartialGuard(mon);}if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true;
   }
-  function monsterAttacksTarget(m,bonus=0,context={}){context={target:selectCombatOpponent57(m)||state.player,...context};if(state.dead)return monsterAttackResultR25(m,context,{attempted:false,blocked:true,reason:'dead'});return attackMonster(m,bonus,context)}
+  function monsterAttacksTarget(m,bonus=0,context={}){context={target:selectCombatOpponent(m)||state.player,...context};if(state.dead)return monsterAttackResultR(m,context,{attempted:false,blocked:true,reason:'dead'});return attackMonster(m,bonus,context)}
   function martialPulse(type,duration=680){FX965.pulse={type,start:performance.now(),until:performance.now()+duration};globalThis.__MANRU_RENDER47__?.invalidate?.()}
   function martialUsedFx(id){if(!state)return false;if(id==='ghost'){martialPulse('ghost',780);burst(state.player.x,state.player.y,'#9dcad4',22,1.05);impact(state.player.x,state.player.y,'#718e9b',7);floatText(state.player.x,state.player.y,martialPresentation('ghost',MARTIAL_INFO.ghost,state.player).name,'#c7eef0',14);globalThis.__MANRU_SFX54__?.play?.('evade')}else if(id==='strong'){martialPulse('strong',840);burst(state.player.x,state.player.y,'#efaa48',18,.95);floatText(state.player.x,state.player.y,'축기','#ffd38a',13);globalThis.__MANRU_SFX54__?.play?.('warn')}else if(id==='roar'){martialPulse(playerClassRules58(state.player).roar==='aim'?'aim':'roar',740);burst(state.player.x,state.player.y,'#dca45a',30,1.3);floatText(state.player.x,state.player.y,martialPresentation('roar',MARTIAL_INFO.roar,state.player).name,'#ffe2a0',15)}return true}
 function cursedBladeCritBonus(){return equipped47('curse_blade')?cursedEquipped47()*.05:0}
@@ -422,12 +422,12 @@ function executeMartialActor(actor,id,cell=null){
  actor.focus-=info.cost;
  if(id==='strong'){actor.strongReady=form==='guard'?0:lv;actor.guardReady1005=form==='guard'?strongBonus(lv):0;actor.guardCharges1005=form==='guard'?MARTIAL_RULES.guardActions:0;martialFx(form==='guard'?'guard':'drive',actor)}
  else if(id==='ghost'){const duration=ghostDuration(lv)+(player?1:0);status.stealth=Math.max(status.stealth||0,duration);status.evade=Math.max(status.evade||0,duration);if(player)for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('assassin',actor)}
- else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower58(5+lv)}
+ else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower(5+lv)}
  else if(family==='smoke'){
   const center=form==='cloud'?actor:cell,cells=form==='cloud'?smokeCells(center,lv):martialSmokeCells(center,lv);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
   for(const m of martialTargets(actor))if(cells.some(c=>monCovers(m,c.x,c.y))&&!globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,actor)){damageEntity(m,lv*3,actor);martialCheckDeath(m,actor)}
   const owner=player?'player':actor.dojoActorId105;if(form==='cloud')state.tempFields=(state.tempFields||[]).filter(f=>!(f.martialSmoke&&f.smokeForm==='cloud'&&f.owner===owner));
-  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:lv*3,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction57(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
+  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:lv*3,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
  }else performRoar(true,actor);
  installMartialJar(actor);floatText(actor.x,actor.y,info.name,lv===5?'#f5e9d0':'#d6b77d',12);addLog(`${actor.name} · ${info.name} ${lv}단 · 기 ${info.cost} 소모.`);if(lv===5)martialFx('transcend',actor);return true;
 }
@@ -450,9 +450,9 @@ function applyWeaponBrandHit(actor,target,damage,contact=entityFootprintCells57(
  else if(elem==='water'&&globalThis.__MANRU_RANDOM57__()<.28)applyCombatStatus(target,'weaken',2,1,{source:actor});
  else if(elem==='ice'&&globalThis.__MANRU_RANDOM57__()<.16){if(target.boss){if((target.controlCd54||0)<=0&&globalThis.__MANRU_RANDOM57__()<.45)applyMartialControl1005(target,1)}else applyCombatStatus(target,'stun',1,1,{source:actor,element:elem});}
  else if(elem==='grass'&&globalThis.__MANRU_RANDOM57__()<.32)applyCombatStatus(target,'poison',3,1,{source:actor});
- else if(elem==='earth'){hurt(target,3);if(target.hp>0&&globalThis.__MANRU_RANDOM57__()<.25)resolveForcedMovement57(target,actor,1,{mode:'push',hostile:true,creditPlayer:entityFaction57(actor)==='player'})}
+ else if(elem==='earth'){hurt(target,3);if(target.hp>0&&globalThis.__MANRU_RANDOM57__()<.25)resolveForcedMovement57(target,actor,1,{mode:'push',hostile:true,creditPlayer:entityFaction(actor)==='player'})}
 }
-function finishMartialStrike(mon,target,result,ready,stealth,ctx={}){if(mon.equipmentActor105&&ctx.delivery==='area')return;if(!mon.martialActor105){if(mon.weapon?.focusChain&&Number.isFinite(mon.focus)&&Number.isFinite(mon.maxFocus))equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted&&(mon.weapon||mon.upset>0)){const cost=weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0));mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,cost-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(result.hit&&result.damage>0&&mon.weapon){equipmentHit105(mon,target);}return}if(mon.martialActor105){equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted){mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0))-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(mon.martialStatus105)mon.martialStatus105.stealth=0;if(result.hit&&result.damage>0){equipmentHit105(mon,target);if(target===state.player&&target.hp<=0)die(mon.name);mon.strongReady=0;if(stealth&&martialFormOf('ghost',mon)==='assassin')(target===state.player?applyHostileStatus('weaken',MARTIAL_RULES.assassinTurns,1):setMonsterWeakened57(target,MARTIAL_RULES.assassinTurns));if(ready&&martialFormOf('strong',mon)==='drive')resolveDrive(target,ready,mon)}syncMartialActorStats(mon);}}
+function finishMartialStrike(mon,target,result,ready,stealth,ctx={}){if(mon.equipmentActor105&&ctx.delivery==='area')return;if(!mon.martialActor105){if(mon.weapon?.focusChain&&Number.isFinite(mon.focus)&&Number.isFinite(mon.maxFocus))equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted&&(mon.weapon||mon.upset>0)){const cost=weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0));mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,cost-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(result.hit&&result.damage>0&&mon.weapon){equipmentHit105(mon,target);}return}if(mon.martialActor105){equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted){mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0))-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(mon.martialStatus105)mon.martialStatus105.stealth=0;if(result.hit&&result.damage>0){equipmentHit105(mon,target);if(target===state.player&&target.hp<=0)die(mon.name);mon.strongReady=0;if(stealth&&martialFormOf('ghost',mon)==='assassin')(target===state.player?applyHostileStatus('weaken',MARTIAL_RULES.assassinTurns,1):setMonsterWeakened(target,MARTIAL_RULES.assassinTurns));if(ready&&martialFormOf('strong',mon)==='drive')resolveDrive(target,ready,mon)}syncMartialActorStats(mon);}}
 function resolveCombatIllness(target){
  if(!target||target===state.player||target.hp<=0)return 0;const source=target.illnessSource105;target.illness105=0;target.illnessSource105=null;
  const damage=damageEntity(target,STATUS_META57.illness.monsterDamage57,source);if(damage>0){floatText(target.x,target.y,`중병 -${damage}`,'#c892d5',13);addLog(`${target.name}의 중병이 발현되어 ${damage} 피해를 입었다.`);}if(target.hp<=0)killMonster(target);return damage;
@@ -461,12 +461,12 @@ function applyCombatStatus(target,key,turns,chance=1,opts={}){
  if(!state||!target||target.hp<=0||turns<=0)return false;
  const kind=STATUS_META57[key]?key:Object.keys(STATUS_META57).find(k=>STATUS_META57[k].monsterField57===key)||key,meta=STATUS_META57[kind];
  if(target===state.player)return applyHostileStatus(kind,turns,chance,opts);
- const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune57(target)||(opts.element==='ice'||opts.cold)&&entityElementGuard57(target,'ice'))return false;
+ const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune(target)||(opts.element==='ice'||opts.cold)&&entityElementGuard57(target,'ice'))return false;
  if(opts.stagger||kind==='stun'){const resist=clamp(Number(cloak.staggerResist)||0,0,.95);if(resist&&globalThis.__MANRU_RANDOM57__()<resist){floatText(target.x,target.y,'경직 저항','#b9d7cd',9);return false}}
  if(chance<1&&globalThis.__MANRU_RANDOM57__()>=hostileStatusChance(chance,target.will||0))return false;
  const field=meta?.monsterField57||kind;
  if(kind==='illness'&&target.illness105>0){if(opts.source)target.illnessSource105=effectSource57(opts.source);target.illness105=Math.max(0,target.illness105-6);if(!target.illness105)resolveCombatIllness(target);return true}
  if(kind==='illness')target.illnessBorn105=state.turn;
- if(kind==='weaken')return setMonsterWeakened57(target,turns);
- return !!setMonsterStatus57(target,field,Math.max(combatStatusTurns(target,kind),turns),opts.source||null,{resistanceHandled105:true});
+ if(kind==='weaken')return setMonsterWeakened(target,turns);
+ return !!setMonsterStatus(target,field,Math.max(combatStatusTurns(target,kind),turns),opts.source||null,{resistanceHandled105:true});
 }

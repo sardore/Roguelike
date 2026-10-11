@@ -5,6 +5,7 @@
   "save.js",
   "items.js",
   "combat.js",
+  "monsters.js",
   "spine.js"
  ],
  "afterClosure": [
