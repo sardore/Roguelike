@@ -33,14 +33,7 @@
 
 
 
-const SPAWN_RULES=[
-  {from:1,to:1,count:[5,5],safe:10},
-  {from:2,to:5,count:[6,8],safe:10},
-  {from:6,to:10,count:[7,9],safe:10},
-  {from:11,to:15,count:[8,10],safe:9},
-  {from:16,to:20,count:[9,11],safe:9},
-  {from:21,to:24,count:[9,12],safe:8}
-];
+
 const SPECIAL_BASE_COUNTS={2:6,4:5,6:6,8:8,11:7,13:8,16:0,18:8,21:7,22:8,23:7,24:4};
 
 
@@ -788,7 +781,7 @@ findItemCell(origin,opt={}){
 
 
 
-function effectSource57(source,opts={}){if(source?.sourceFaction&&source!==state?.player&&!(state?.monsters||[]).includes(source))return{sourceFaction:opts.sourceFaction||source.sourceFaction,owner:opts.owner??source.owner??null,credit:opts.credit??source.credit??null,friendlyFire:opts.friendlyFire??!!source.friendlyFire};const owner=opts.owner??source??null;return{sourceFaction:opts.sourceFaction||entityFaction(owner),owner:owner===state?.player?'player':(state?.monsters||[]).includes(owner)?combatantId(owner):owner?.id57??owner?.name??owner,credit:opts.credit??(entityFaction(owner)==='player'?'player':null),friendlyFire:!!opts.friendlyFire}}
+
 
 
 function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
@@ -1059,15 +1052,12 @@ function releaseTerrainUnderlay58(x,y,fallback=TT.FLOOR){
 
 function isToolBreakableTerrain57(tile){return TOOL_BREAKABLE_KEYS57.some(name=>Number.isFinite(TT[name])&&tile===TT[name])}
 function furnitureFloor57(x,y){return terrainUnderlayAt58(x,y)??inferTerrainUnderlay58(x,y)}
-const JAR_GAS_VISUAL_START57=new WeakMap();
+
 function jarGasState57(){return state?state.jarGasFields57:[]}
 
 
-function jarGasCellKey57(x,y){return `${x},${y}`}
-function jarGasAddCell57(field,x,y,d,concentration,bornAge){
-  const kk=jarGasCellKey57(x,y),old=field.cells.find(c=>c.x===x&&c.y===y);if(old){old.c=Math.max(old.c,concentration);old.bornAge=Math.min(old.bornAge,bornAge);return old}
-  const cell={x,y,d,c:concentration,bornAge};field.cells.push(cell);return cell
-}
+
+
 
 function jarGasConcentrationMap57(status='poison',target=null){
   const out=new Map();for(const f of jarGasState57())if((f.status57||'poison')===status&&(!target||!f.sourceFaction||effectCanAffect57(f,target)))for(const c of f.cells||[])if(c.c>0){const kk=jarGasCellKey57(c.x,c.y),v=out.get(kk)||0;if(c.c>v)out.set(kk,c.c)}return out
@@ -1104,7 +1094,7 @@ function moveGroundItemStep57(it,toward){
   for(const[dx,dy]of DIRS4){const x=it.x+dx,y=it.y+dy,d=Math.abs(toward.x-x)+Math.abs(toward.y-y);if(d>=before||!canMoveGroundItem57(it,x,y))continue;candidates.push({x,y,d,axis:Math.abs(toward.x-it.x)>=Math.abs(toward.y-it.y)?(dx?0:1):(dy?0:1)})}
   candidates.sort((a,b)=>a.d-b.d||a.axis-b.axis||a.y-b.y||a.x-b.x);const q=candidates[0];if(!q)return false;return PlacementService.moveItem(it,q.x,q.y);
 }
-function pullNearbyLoot(){const c=playerCloak(),r=c.magnet||0;if(!r||!state)return;for(const it of state.items){const d=entityDistance57(it,state.player);if(d>0&&d<=r)moveGroundItemStep57(it,state.player)}}
+
 
 function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
@@ -1172,7 +1162,7 @@ function withJosa57(value,pair='이/가'){
 
 function makeBoss(def,pos){return{x:pos.x,y:pos.y,name:def.name,hp:def.hp,maxHp:def.hp,atk:def.atk,def:def.def,eva:def.eva,xp:def.xp,color:def.color,shape:def.shape,kind:def.kind,boss:true,bossPattern:def.bossPattern,ranged:def.ranged||false,range:def.range||6,weakened:0}}
 
-function spawnNamed(...a){return configureMonsterTraits(placeNamedMonster(...a))}
+
 
 
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
@@ -1192,7 +1182,7 @@ function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if
 function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
 function entityFootprintCells57(entity,x=entity?.x,y=entity?.y){if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return[];const offsets=entity===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(entity);return offsets.map(([ox,oy])=>({x:x+ox,y:y+oy}))}
 
-function entityDistance57(a,b){return entityDistanceAt(a,a?.x,a?.y,b)}
+
 
 
 
@@ -1231,7 +1221,6 @@ compute(){
 
 
 
-function spawnRuleForFloor(){return SPAWN_RULES.find(r=>state.floor>=r.from&&state.floor<=r.to)||SPAWN_RULES[SPAWN_RULES.length-1]}
 
 
 
@@ -1240,20 +1229,8 @@ function spawnRuleForFloor(){return SPAWN_RULES.find(r=>state.floor>=r.from&&sta
 
 
 
-function spawnFloorPopulation(){
-  const rule=spawnRuleForFloor(),count=Math.ceil((SPECIAL_BASE_COUNTS[state.floor]??rand(rule.count[0],rule.count[1]))*(state.floor>=6?1.3:1));
-  const defs=floorEnemyDefinitions();if(!defs.length||count<=0)return;
-  // F20 keeps the ordinary 16–20F population budget, but its three floor-specific definitions must actually be represented.
-  // They are seeded inside this canonical population owner; no second post-generation monster spawner is allowed.
-  const forced=state.floor===1?['객잔 쥐','객잔 쥐','시종','취객','객잔 쥐','취객','시종','취객','객잔 쥐','취객'].map(name=>defs.find(d=>d.name===name)).filter(Boolean):state.floor===20?['수비병','강철이','살라맨더'].map(name=>defs.find(d=>d.name===name)).filter(Boolean):[];
-  state.visible=new Set();state.seen=new Set();VisibilityService.compute();
-  const dist=ReachabilityService.distances(state.player),roomUse=new Map(),spawnCtx57=PlacementService.generationContext(dist,rule.safe);
-  let placed=0,guard=0;
-  while(placed<count&&guard++<220){
-    const def=forced[0]||ordinaryEnemyPick(defs),mon=scaledMonster(def),p=initialSpawnPosition(mon,dist,rule.safe,roomUse,spawnCtx57);if(!p)continue;
-    Object.assign(mon,p);if(state.floor===20){mon.f20Resident1020=true;mon.spawnProvenance57='floor20-normal-population'}OccupancyService.addMonster(mon);PlacementService.registerGenerationMonster(spawnCtx57,mon);placed++;if(forced[0]===def)forced.shift();
-  }
-}
+
+
 function adjacentBranchPortal105(){
   if(!state?.player)return null;const p=state.player,near=(state.branchPortals105||[]).filter(q=>Math.max(Math.abs(q.x-p.x),Math.abs(q.y-p.y))<=1&&state.map[q.y]?.[q.x]===TT.PORTAL);
   return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;
@@ -1437,12 +1414,7 @@ function terrainHasPendingRecovery57(x,y){
 
 
 
-function isEntityObservableToPlayer57(entity){
-  const revivalCorpse=entity?.revivePhase57==='corpse'&&entity?.revivalLives57;
-  if(!state||!entity||entity.hidden||entity.martialStatus105?.stealth>0||(entity.hp<=0&&!revivalCorpse))return false;
-  const offsets=typeof footprintOffsets==='function'?footprintOffsets(entity):[[0,0]];
-  return offsets.some(([ox,oy])=>{const x=entity.x+ox,y=entity.y+oy;return x>=0&&y>=0&&x<COLS&&y<ROWS&&state.visible.has(k(x,y))});
-}
+
 
 function playerAction57(kind,opts={}){
   if(runState57()!=='playing'){ActionDispatcher.denied('inactive');return{ok:false,kind,reason:'inactive'}};
@@ -1668,13 +1640,7 @@ function applyRecoveryPotion57(actor,item){
  addLog(`${actor===state.player?'':actor.name+' · '}${item.name}: HP +${displayNumber53(Math.round(actor.hp-before))}${cleansed?' · 출혈 제거':''}.`);
  if(actor.equipmentActor105)updateEquipmentPhase105(actor);return true;
 }
-function monsterIdleRecovery105(mon,target){
- if(!mon?.idlePotionKind105||mon.hp<=0||mon.hp>mon.maxHp*.5||mon.intent54||mon.stunned>0||mon.weaponRecovery105>0||mon.palaceRecoverUntil105>=state.floorTurn)return false;
- const reach=mon.ranged?(mon.range||6):(mon.reach||1);
- if(target&&combatTargetValid57(mon,target)&&actorDetectedTarget57(mon,target,monsterSenseRadius(mon))&&(mon.nextEquipmentStrike105||0)<=state.floorTurn&&monsterAttackLineR(mon,reach,{target}).ok)return false;
- const item=mon.inventory?.find(i=>i.type==='potion'&&i.potionKind===mon.idlePotionKind105&&itemQuantity(i)>0);if(!item)return false;
- if(!applyRecoveryPotion57(mon,item))return false;burst(mon.x,mon.y,item.color||'#b65b4c',12,.75);floatText(mon.x,mon.y,item.name,'#a1e4b4',11);return true;
-}
+
 
 
 
@@ -1698,10 +1664,7 @@ function recordPlayerSight105(){
 }
 
 
-function captureMovementDiscovery105(){
- recordPlayerSight105();observePlayerDiscovery105();
- return{run:state,map:state.map,x:state.player.x,y:state.player.y,unseen:new Set((state.monsters||[]).filter(mon=>!monsterDiscoverySpent(mon)))};
-}
+
 
 function movementDiscoveryEvades105(mon,ctx){
  const grace=state?._movementDiscovery105;
@@ -1725,11 +1688,7 @@ function playAmbushReveal57(mon,reason='proximity'){if(!mon)return;const grass=!
 
 
 
-function updateKeeperLavaOrigin54(mon,phase,target=null){
- phase.origin={x:mon.x,y:mon.y};if(phase.stage!==1)return;
- const opponent=target||[state.player,...state.monsters].find(t=>t.hp>0&&(t===state.player?'player':t.combatantId54)===phase.targetId);
- if(combatTargetValid57(mon,opponent))phase.target={x:opponent.x,y:opponent.y};
-}
+
 
 
 function releaseKeeperExit54(mon){
@@ -1754,10 +1713,7 @@ function releaseKeeperExit54(mon){
 
 
 
-function silkConnectionCells54(a,b){
- const ray=combatLineCellsR8(a.x,a.y,b.x,b.y);if(ray.some(c=>tileBlocksSight(state.map[c.y]?.[c.x])))return null;
- const cells=ray.filter(c=>!(c.x===a.x&&c.y===a.y||c.x===b.x&&c.y===b.y));return cells.length?cells:null;
-}
+
 
 
 
@@ -2846,7 +2802,7 @@ const UX={
     turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
   }
   const MANRU_TURN_ABORT=Symbol('MANRU_TURN_ABORT');
-  const TURN_AUDIT5={serial:0,history:[]};
+
 
   RuntimeState.turn=TURN_AUDIT5;
   globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
@@ -3422,18 +3378,7 @@ if(state)ensureFoodState();
   try{if(localStorage.getItem('manruPad58')==='0')document.body.classList.add('pad58-hidden')}catch(error){ignoreError('pad visibility unreadable',error)}
   pad58.onclick=e=>{e.preventDefault();e.stopPropagation();document.body.classList.toggle('pad58-hidden');try{localStorage.setItem('manruPad58',document.body.classList.contains('pad58-hidden')?'0':'1')}catch(error){ignoreError('pad visibility could not be saved',error)}};
 
-  // ---- restore canonical special-floor enemy density lost by renamed monsters
-  function ensureCanonExtras58(){
-    if(!state||state.dead)return;
-    if(state.floor===2){
-      for(const n of ['시종','객잔 경비병','떠돌이 도둑']) spawnNamed(n);
-    }else if(state.floor===4){
-      for(const n of ['취객','떠돌이 도둑','거대 거미']) spawnNamed(n);
-    }else if(state.floor===6){
-      let fish=state.monsters.filter(m=>m.name==='식인 물고기').length,guard=0;
-      while(fish<5&&guard++<12){if(spawnNamed('식인 물고기'))fish++;else break}
-    }
-  }
+
 
   // ---- kitchen should be uncommon, not every other floor
   function clearKitchen58(fr){
@@ -3595,7 +3540,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   TT.CRUMBLE=42;
   TT.LIGHT_GRASS=43;TERRAIN_LAYER_CACHE58=null;
 
-  const SPECIAL60=new Set([2,4,6,8,11,13,16,18,21,22,23,24]);
+
 
   const SIZE60={
     2:[87,57],4:[85,55],5:[73,51],6:[89,59],8:[87,57],10:[75,53],11:[93,63],13:[89,59],15:[75,53],
@@ -3687,14 +3632,9 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  /* ---------- custom population for rebuilt geometry ---------- */
-  function spawnNear60(name,x,y,r=5){const d=MONSTERS.find(v=>v.name===name);if(!d)return null;const mon=scaledMonster(d),reach=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;for(let rad=0;rad<=r;rad++)for(let oy=-rad;oy<=rad;oy++)for(let ox=-rad;ox<=rad;ox++){const xx=x+ox,yy=y+oy;if(xx<=0||yy<=0||xx>=COLS-1||yy>=ROWS-1||(reach&&!reach.has(k(xx,yy))))continue;if(PlacementService.monsterCanStand(mon,xx,yy)){Object.assign(mon,{x:xx,y:yy});OccupancyService.addMonster(mon);return mon}}return null}
 
-function spawnAuthoredEncounters60(){
-    if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}return true}
-    if(state.floor===24){const q=state.floor24,g=spawnNear60('구미묘',q.gumimyoSpawn.x,q.gumimyoSpawn.y,5);if(!g)throw new Error('F24 gumimyo spawn failed');g.livesRemaining57=g.revivalLives57;g.revivePhase57='normal';g.dormant57=true;g.baseAtk57=g.atk;g.baseDef57=g.def;g.baseEva57=g.eva;applyMonsterRevivalStats(g);const guard=spawnNear60('보주의 파수꾼',q.entranceKey.x+3,q.entranceKey.y,4);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}return true}
-    return false;
-  }
+
+
   
 
   function repairRequired60(){
@@ -3877,12 +3817,10 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
 
 
-  function farEnough61(x,y){return Math.abs(x-state.player.x)+Math.abs(y-state.player.y)>=8&&!state.visible.has(k(x,y))}
 
-  function encounterAnchors61(){const rs=(state.featureRooms?.length?state.featureRooms:state.rooms||[]).filter(r=>r&&r.w>=4&&r.h>=4).map(r=>({x:Math.floor(r.x+r.w/2),y:Math.floor(r.y+r.h/2)})).filter(p=>farEnough61(p.x,p.y));if(!rs.length)rs.push({x:COLS-5,y:5});return rs}
-  function populate61(){const target=TARGET61[state.floor],hasBoss=state.monsters.some(m=>m.boss);if(!target||hasBoss)return;const packs=PACKS61[state.floor]||[],anchors=encounterAnchors61(),alive=()=>state.monsters.filter(m=>m.hp>0&&!m.boss).length;let guard=0,pi=0;
-    while(alive()<target&&guard++<120){const defs=floorEnemyDefinitions(),pack=packs.length?packs[pi++%packs.length]:(defs.length?[choice(defs).name]:[]),anchor=anchors[pi%anchors.length];for(const name of pack){if(alive()>=target)break;spawnAt61(name,anchor)}}
-  }
+
+
+
 
 
 
@@ -3940,24 +3878,16 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  /* small DCSS-style minivaults: reuse existing rooms instead of adding giant fixed maps */
-  const MV62=[
-    {id:'barricade',name:'봉쇄 보급실',hint:'문 하나와 파괴물 뒤에 전술 보급이 숨겨져 있다.'},
-    {id:'crossfire',name:'교차 사격실',hudName:'십자 사격실',hint:'전열과 원거리 적이 서로 시야를 보완한다.'},
-    {id:'snare',name:'포박 감실',hint:'좁은 출입구와 함정 때문에 진입 순서가 중요하다.'},
-    {id:'shrine',name:'잔불 사당',hint:'사당 주변은 위험하지만 부적이나 비약을 노릴 만하다.'},
-    {id:'pantry',name:'봉인 찬방',hint:'식량과 회복품이 있지만 출입구가 좁다.'},
-    {id:'watch',name:'감시 객실',hint:'문을 열기 전 원거리 위협을 대비해야 한다.'}
-  ];
+
   function roomFree62(r,x,y){return x>r.x&&y>r.y&&x<r.x+r.w-1&&y<r.y+r.h-1&&state.map[y]?.[x]===TT.FLOOR&&(x!==state.player.x||y!==state.player.y)&&(x!==state.stairs.x||y!==state.stairs.y)}
   function overlapRoom62(a,b){return !(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y)}
   function chooseVaultRoom62(){const features=state.featureRooms||[],a=(state.rooms||[]).filter(r=>r.w>=7&&r.h>=6&&!(state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)&&!(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h)&&!features.some(f=>overlapRoom62(r,f)));return a.length?choice(a):null}
-  function put62(r,x,y,t){if(roomFree62(r,x,y)){setTerrainTile58(state.map,x,y,t);return true}return false}
+
   function existingEnemies62(r){const pad=1;return state.monsters.filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.ranged&&m.hp>0&&m.x>=r.x-pad&&m.x<r.x+r.w+pad&&m.y>=r.y-pad&&m.y<r.y+r.h+pad)}
 
 
   function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
-  function rewardInRoom62(r,kind='strategy'){const p=itemCellInRoom62(r);if(!p)return false;let pool=[];if(kind==='talisman')pool=(window.MANRU_TALISMANS||[]).filter(x=>state.floor>=(x.minFloor||1));else if(kind==='recovery')pool=(window.MANRU_POTIONS||[]).filter(x=>['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(x.potionKind)&&state.floor>=(x.minFloor||1));else pool=(window.MANRU_POTIONS||[]).filter(x=>!['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(x.potionKind)&&state.floor>=(x.minFloor||1));if(!pool.length)return false;const i=clone(choice(pool));Object.assign(i,{x:p.x,y:p.y,count:1});PlacementService.placeItem(i);return true}
+
 
 
 
@@ -6727,7 +6657,7 @@ const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,w
 const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
 
 function hz(){return state?state.hazard1005:null}
-function remain(kind){const h=hz();if(!h)return 0;const u=kind==='drown'?h.drownUntil:h.voidUntil;return Math.max(0,(u||0)-(state.turn||0))}
+
 function hazardTile(t){return t===TT.WATER?'water':t===TT.VOID?'void':t===TT.LAVA?'lava':t===TT.MERCURY?'mercury':null}
 
 
@@ -6740,58 +6670,11 @@ function nearestLandFor1005(e,x,y,prefer=null){
 
 function consumeWard(kind){const p=state.player,r=p.relic;if(!r)return false;const ok=kind==='drown'?r.drownWard1005:r.voidWard1005;if(!ok)return false;const nm=r.name;p.relic=null;addLog(`${nm}이 치명적인 ${kind==='drown'?'익사':'공허 추락'}를 대신 받아냈다.`);wardPulse(kind,10);return true}
 
-function resolveEntityHazard1005(e,t,nx,ny,origin,opt={}){
-  const kind=hazardTile(t);if(!kind||!e)return null;const player=entityIsPlayer(e),consumeTurn=opt.consumeTurn!==false,standing=opt.standing===true;
-  if(entityAdapted(e,kind,nx,ny)){
-    if(!standing){OccupancyService.move(e,nx,ny);if(player){resetVisualState?.();if(kind==='water'&&remain('drown')>0)addLog(`익사 면역 ${remain('drown')}턴 · 물 위를 버틴다.`);if(kind==='void'&&remain('void')>0)addLog(`공허 면역 ${remain('void')}턴 · 발밑의 공허를 견딘다.`);bumpTileAction(nx,ny,{cause:opt.landingCause57||'hazard'});if(consumeTurn)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:moveTurnCost(),reason:"resolveEntityHazard1005"}).value}}
-    return'adapted'
-  }
-  if(!standing){OccupancyService.move(e,nx,ny);if(player)resetVisualState?.()}
-  if(kind==='water'){
-    const ax=standing?e.x:nx,ay=standing?e.y:ny,land=nearestLandFor1005(e,ax,ay,standing?null:origin);
-    if(land){
-      const before=Math.max(1,e.hp||1);e.hp=Math.max(1,Math.floor(before*.5));
-      if(player){burst(nx,ny,'#79cbd2',24,1.1);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',11);addLog(standing?'발밑이 물로 변했지만 가까운 뭍을 붙잡았다. 체력이 절반으로 깎였다.':'물에 빠졌지만 바로 붙잡을 뭍이 있었다. 체력이 절반으로 깎이고 간신히 기어올랐다.')}
-      else if(state?.visible?.has?.(k(nx,ny))){burst(nx,ny,'#79cbd2',16,.8);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',10);addLog(`${e.name}이 물에 빠졌다가 가까운 뭍을 붙잡았다. 체력이 절반으로 줄었다.`)}
-      if(player){resolvePlayerLanding57(land.x,land.y,{cause:'water-rescue',hazard:false,resetVisual:true});if(consumeTurn&&!state.dead)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"resolveEntityHazard1005"}).value}else{OccupancyService.move(e,land.x,land.y)}
-      return'rescued'
-    }
-    if(player&&consumeWard('drown')){if(consumeTurn)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"resolveEntityHazard1005"}).value;return'ward'}
-    if(player){addLog('붙잡을 뭍이 없다. 물 아래로 가라앉는다.');die('익사')}else monsterHazardDeath(e,'water');
-    return'dead'
-  }
-  if(kind==='mercury'){
-    const ax=standing?e.x:nx,ay=standing?e.y:ny,land=nearestLandFor1005(e,ax,ay,standing?null:origin);
-    if(land){
-      const before=Math.max(1,e.hp||1);e.hp=1;
-      if(player){burst(nx,ny,'#c0cdca',24,1.05);floatText(nx,ny,`HP ${before}->1`,'#d6e2dd',11);addLog(standing?'발밑이 수은으로 변했다. 가까운 뭍을 붙잡았지만 HP 1만 남았다.':'수은에 빠졌다가 겨우 뭍을 붙잡았다. HP 1만 남았다.')}
-      else if(state?.visible?.has?.(k(nx,ny))){burst(nx,ny,'#c0cdca',16,.75);floatText(nx,ny,`HP ${before}->1`,'#d6e2dd',10);addLog(`${e.name}이 수은에서 빠져나왔지만 HP 1만 남았다.`)}
-      if(player){resolvePlayerLanding57(land.x,land.y,{cause:'mercury-rescue',hazard:false,resetVisual:true});if(consumeTurn&&!state.dead)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"resolveEntityHazard1005"}).value}else{OccupancyService.move(e,land.x,land.y)}
-      return'rescued'
-    }
-    if(player){addLog('수은이 몸을 붙잡아 끌어내렸다. 붙잡을 뭍이 없다.');die('수은 침식')}else monsterHazardDeath(e,'mercury');
-    return'dead'
-  }
-  if(kind==='void'){
-    if(player&&consumeWard('void')){if(consumeTurn)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"resolveEntityHazard1005"}).value;return'ward'}
-    if(player){addLog('발밑의 공간이 사라졌다. 되돌아올 바닥이 없다.');die('공허 추락')}else monsterHazardDeath(e,'void');
-    return'dead'
-  }
-  if(player){addLog('용암에 발을 디디는 순간 몸이 불길에 삼켜졌다.');die('용암')}else monsterHazardDeath(e,'lava');
-  return'dead'
-}
 
-function resolveStandingHazard1005(e=state?.player,cause='standing'){
-  if(!state||state.dead||state.victory||!e||e.hp<=0)return false;const q=entityHazardCell1005(e);if(!q)return false;return resolveEntityHazard1005(e,q.t,q.x,q.y,null,{consumeTurn:false,standing:true,landingCause57:cause})||false
-}
-function resolveAllStandingHazards1005(cause='standing'){
-  if(!state||state.victory)return[];const out=[];if(state.player&&!state.dead)out.push({entity:'player',result:resolveStandingHazard1005(state.player,cause)});if(state.dead)return out;
-  for(const m of [...(state.monsters||[])])if(m.hp>0)out.push({entity:m.name||'monster',friendly:isPlayerAlly57(m),result:resolveStandingHazard1005(m,cause)});return out
-}
-function revalidateHazardAt1005(x,y,cause='terrain-mutation'){
-  if(!state)return[];const entities=[];if(state.player?.x===x&&state.player?.y===y)entities.push(state.player);for(const m of state.monsters||[])if(m.hp>0&&monCovers(m,x,y)&&!entities.includes(m))entities.push(m);
-  return entities.map(e=>({entity:entityIsPlayer(e)?'player':e.name||'monster',friendly:isPlayerAlly57(e),result:resolveStandingHazard1005(e,cause)}))
-}
+
+
+
+
 
 
 /* r15: voluntary movement, forced movement and knockback call this shared hazard core directly from their canonical base functions. */
@@ -6807,28 +6690,11 @@ function collapseFragileAt105(x,y,kind='paper'){
 }
 
 
-function collapsePaperAfterAction1005(){
-  const h=hz(),turn=state.turn||0,agency=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
-  for(const [kk,a] of Object.entries(h.armed)){
-    if(a.kind!=='paper')continue;
-    if(state.map?.[a.y]?.[a.x]!==TT.PAPER_BRIDGE){delete h.armed[kk];continue}
-    // Old saves used world-turn deadlines. Migrate them conservatively: never collapse until the player gets one fresh real action.
-    if(!Number.isFinite(a.collapseAgency57)){a.armedAgency57=agency;a.collapseAgency57=agency+1;a.migratedAgency57=true}
-    if(agency<a.collapseAgency57)continue;
-    const rr=RuntimeTerrainOwner.mutate(a.x,a.y,TT.WATER,{source:'paper-collapse1005'});if(!rr.ok)continue;
-    if(branchLeafAt(a.x,a.y)){delete h.armed[kk];burst(a.x,a.y,'#8ead72',10,.6);addLog('잎이 물속으로 가라앉았다. 다시 떠오르지 않는다.');continue}
-    h.collapsed[kk]={x:a.x,y:a.y,restoreTile:TT.PAPER_BRIDGE,baseTile:TT.WATER,restoreTurn:turn+10,kind:'paper',mutationVersion57:rr.version57};
-    delete h.armed[kk];burst(a.x,a.y,'#86cbd1',15,.75);addLog(`종이 다리가 물속으로 주저앉았다. 10턴 뒤 다시 이어진다.`)
-  }
-}
+
 function collapseCrumbleLeft1005(){const h=hz(),cur=state.player,prev=state._lastPlayerPos60;if(prev&&(prev.x!==cur.x||prev.y!==cur.y)&&state.map?.[prev.y]?.[prev.x]===TT.CRUMBLE){const kk=k(prev.x,prev.y),base=state.crumbleBase60?.[kk]??TT.VOID,rr=RuntimeTerrainOwner.mutate(prev.x,prev.y,base,{source:'crumble-collapse1005'});if(rr.ok){h.collapsed[kk]={x:prev.x,y:prev.y,restoreTile:TT.CRUMBLE,baseTile:base,restoreTurn:(state.turn||0)+11,kind:'crumble',mutationVersion57:rr.version57};delete h.armed[kk];burst(prev.x,prev.y,'#8870a8',10,.55);addLog('불안정한 발판이 아래로 무너졌다. 10턴 뒤 구조가 되돌아온다.')}}state._lastPlayerPos60={x:cur.x,y:cur.y}}
-function restoreFragiles(){const h=hz();for(const[kk,c]of Object.entries(h.collapsed)){if((state.turn||0)<c.restoreTurn)continue;if(!state.map?.[c.y]){delete h.collapsed[kk];continue}const current=state.map[c.y][c.x],version=state.terrainMutationVersion57?.[kk];if(current!==c.baseTile||(c.mutationVersion57!=null&&version!==c.mutationVersion57)){delete h.collapsed[kk];continue}const rr=RuntimeTerrainOwner.mutate(c.x,c.y,c.restoreTile,{source:`${c.kind}-restore1005`});if(rr.ok){if(c.restoreTile===TT.CRUMBLE){state.crumbleBase60=state.crumbleBase60||{};state.crumbleBase60[kk]=c.baseTile}burst(c.x,c.y,c.kind==='paper'?'#e4d5ac':'#bfa0d2',14,.7);if(state.visible?.has(kk)){toast(c.kind==='paper'?'종이 다리 복구':'붕괴 발판 복구');addLog(c.kind==='paper'?'젖은 종이가 다시 겹쳐지며 다리가 이어졌다.':'무너졌던 발판이 기묘하게 원래 자리로 돌아왔다.')}}delete h.collapsed[kk]}}
-function wardCountdownLog(beforeD,beforeV){for(const [kind,b] of [['drown',beforeD],['void',beforeV]]){const r=remain(kind);if(b>r&&[5,3,2,1,0].includes(r)){const nm=kind==='drown'?'익사 면역':'공허 면역';addLog(r?`${nm} ${r}턴 남음.`:`${nm}이 끝났다.`);if(r<=3)toast(r?`${nm} ${r}턴`:`${nm} 종료`)}}}
-function wardExpiry1005(beforeD,beforeV){
-  if(!state||state.dead)return;const d=remain('drown'),v=remain('void'),t=state.map?.[state.player.y]?.[state.player.x];
-  if(beforeD>0&&d===0&&t===TT.WATER)resolveStandingHazard1005(state.player,'ward-expiry');
-  if(!state.dead&&beforeV>0&&v===0&&t===TT.VOID)resolveStandingHazard1005(state.player,'ward-expiry');
-}
+
+
+
 globalThis.__MANRU_TURN_PIPELINE__.register('hazard1005',{pre:ctx=>{if(!state)return;resolveAllStandingHazards1005('turn-start');if(state.dead)return globalThis.__MANRU_TURN_PIPELINE__.abort;ctx.hazard1005={beforeD:remain('drown'),beforeV:remain('void')};collapseCrumbleLeft1005()},post:ctx=>{if(!state)return;const h=ctx.hazard1005||{};collapsePaperAfterAction1005();restoreFragiles();wardCountdownLog(h.beforeD??0,h.beforeV??0);wardExpiry1005(h.beforeD??0,h.beforeV??0);updateWardHud()}});
 
 /* HUD: the remaining ward time must be impossible to miss. */
@@ -7399,27 +7265,7 @@ function fixedEncounterMonster1027(m){return !!(m?.boss||m?.elite1023||m?.storyP
 
 
 
-function rebalanceMonsterCrowding1027(){
-  if(!state)return null;
-  const live=(state.monsters||[]).filter(m=>m.hp>0),size=COLS*ROWS,roomIndex=new Int32Array(size);roomIndex.fill(-1);const rooms=(state.rooms||[]),areas=rooms.map(r=>r.w*r.h);
-  for(let ri=0;ri<rooms.length;ri++){const r=rooms[ri];for(let y=Math.max(1,r.y);y<Math.min(ROWS-1,r.y+r.h);y++)for(let x=Math.max(1,r.x);x<Math.min(COLS-1,r.x+r.w);x++){const idx=y*COLS+x,old=roomIndex[idx];if(old<0||areas[ri]<areas[old])roomIndex[idx]=ri}}
-  const contextCell=new Uint8Array(size);for(const f of state.featureRooms||[])if(/보스|최종|봉인|심부|성소|수문장|제단|고문서고/.test(f.name||''))for(let y=Math.max(1,f.y);y<Math.min(ROWS-1,f.y+f.h);y++)for(let x=Math.max(1,f.x);x<Math.min(COLS-1,f.x+f.w);x++)contextCell[y*COLS+x]=1;
-  const denseRoom=new Uint8Array(rooms.length);for(let ri=0;ri<rooms.length;ri++)if(denseRoom1027(rooms[ri]))denseRoom[ri]=1;
-  const occ=new Uint8Array(size),local=new Uint16Array(size),wide=new Uint16Array(size),roomCount=new Uint16Array(rooms.length),placed=[],moved=[],preserved=[],caps=latePackCaps1027(),rule=spawnRuleForFloor?.()||{safe:6};
-  const capsAt=(x,y)=>{const idx=y*COLS+x,ri=roomIndex[idx],context=!!contextCell[idx],dense=ri>=0&&!!denseRoom[ri],roomCap=ri<0||areas[ri]>320?Infinity:(context?caps.context:(dense?caps.dense:caps.normal));return{ri,roomCap,localCap:context?caps.contextLocal:(dense?caps.denseLocal:caps.local),wideCap:context?caps.contextWide:(dense?caps.denseWide:caps.wide)}};
-  const canAt=(m,x,y)=>{if(state.map[y]?.[x]===TT.STAIR)return false;for(const[ox,oy]of footprintOffsets(m)){const xx=x+ox,yy=y+oy;if(xx<1||yy<1||xx>=COLS-1||yy>=ROWS-1||occ[yy*COLS+xx]||(xx===state.player.x&&yy===state.player.y)||!PlacementService.terrainStandable(m,state.map[yy][xx]))return false}return true};
-  const add=(m)=>{placed.push(m);for(const[ox,oy]of footprintOffsets(m)){const x=m.x+ox,y=m.y+oy;if(x>=0&&y>=0&&x<COLS&&y<ROWS)occ[y*COLS+x]=1}const ri=roomIndex[m.y*COLS+m.x];if(ri>=0)roomCount[ri]++;for(let y=Math.max(1,m.y-8);y<=Math.min(ROWS-2,m.y+8);y++)for(let x=Math.max(1,m.x-8);x<=Math.min(COLS-2,m.x+8);x++){const d=Math.max(Math.abs(m.x-x),Math.abs(m.y-y)),idx=y*COLS+x;if(d<=4)local[idx]++;wide[idx]++}};
-  const acceptable=(m,x,y)=>{if(!canAt(m,x,y))return false;const idx=y*COLS+x,c=capsAt(x,y),d=Math.abs(x-state.player.x)+Math.abs(y-state.player.y);if(d<Math.max(5,rule.safe||5)||state.visible?.has(K1020(x,y)))return false;return(c.ri<0||roomCount[c.ri]<c.roomCap)&&local[idx]<c.localCap&&wide[idx]<c.wideCap};
-  const bestCell=(m)=>{let best=null,bestScore=Infinity,bestTie=Infinity;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){if(!acceptable(m,x,y))continue;const idx=y*COLS+x,c=capsAt(x,y),d=Math.abs(x-state.player.x)+Math.abs(y-state.player.y),score=local[idx]*120+wide[idx]*40+(c.ri>=0&&Number.isFinite(c.roomCap)?roomCount[c.ri]*24:0)+Math.abs(d-20)*.04,tie=(y*COLS+x);if(score<bestScore||(score===bestScore&&tie<bestTie)){bestScore=score;bestTie=tie;best={x,y}}}return best};
-  for(const m of live){
-    if(fixedEncounterMonster1027(m)&&canAt(m,m.x,m.y)){add(m);preserved.push(m.name);continue}
-    const idx=(m.y>=0&&m.y<ROWS&&m.x>=0&&m.x<COLS)?m.y*COLS+m.x:-1,c=idx>=0?capsAt(m.x,m.y):null,ok=idx>=0&&canAt(m,m.x,m.y)&&(c.ri<0||roomCount[c.ri]<c.roomCap)&&local[idx]<c.localCap&&wide[idx]<c.wideCap;
-    if(!ok){const p=bestCell(m);if(p){moved.push({name:m.name,from:[m.x,m.y],to:[p.x,p.y]});m.x=p.x;m.y=p.y}}
-    if(canAt(m,m.x,m.y))add(m)
-  }
-  let maxLocal=0,maxWide=0,maxRoomCompact=0;for(const m of placed){const idx=m.y*COLS+m.x;maxLocal=Math.max(maxLocal,local[idx]);maxWide=Math.max(maxWide,wide[idx]);const ri=roomIndex[idx];if(ri>=0&&areas[ri]<=320)maxRoomCompact=Math.max(maxRoomCompact,roomCount[ri])}
-  state.monsters=placed;state.monsterCrowding1027={floor:state.floor,total:placed.length,moved:moved.length,maxLocal,maxWide,maxRoomCompact,overlaps:0,preserved};return state.monsterCrowding1027;
-}
+
 
 
 const RETIRED_DECOR64=new Set(["lantern","banner","statue","cabinet","shelf","jars","planter","basin","cushion","screen","crate","rack","weaponrack","altar","brazier","incense","tea","bench","pillar","lampstand"]);
@@ -7952,7 +7798,7 @@ function guard47(elem){return elem==='fire'&&possesses47('ember_axe')}
 function fireAbsorb47(){return possesses47('ember_axe')&&state?.player?.armor?.elementGuard74==='fire'}
 function healFire47(n=1){n=Math.max(0,Math.round(Number(n)||0));if(!state||!fireAbsorb47())return 0;const p=state.player,b=p.hp;p.hp=Math.min(p.maxHp,p.hp+n);const g=p.hp-b;if(g>0)floatText(p.x,p.y,`화염흡수 +${g}`,'#ffb365',9);return g}
 function fireField47(x,y,ttl=4,source=state.player){emitElementContact105('fire',elementCells105(x,y),effectSource57(source));state.legendFireFields47=state.legendFireFields47||[];if(!insideMapInterior(x,y)||tileBlocks(state.map[y][x]))return false;const provenance=effectSource57(source),q=state.legendFireFields47.find(f=>f.x===x&&f.y===y&&fieldProvenance57(f).sourceFaction===provenance.sourceFaction);if(q)q.ttl=Math.max(q.ttl,ttl);else state.legendFireFields47.push({x,y,ttl,born:state.turn,...provenance});return true}
-function chain47(mon,dmg,max=2){dmg=Math.max(0,Math.round(Number(dmg)||0));const arr=(state.monsters||[]).filter(m=>m!==mon&&isHostileTarget57(m)&&entityDistance57(m,mon)<=2).sort((a,b)=>entityDistance57(a,mon)-entityDistance57(b,mon)).slice(0,max);for(const m of arr){const dealtDamage=damageEntity(m,dmg, state.player);projectileFX(mon.x,mon.y,m.x,m.y,'#8ddcff');if(dealtDamage>0)floatText(m.x,m.y,`청뢰 -${dealtDamage}`,'#9de4ff',10,'shock');if(m.hp<=0)killMonster(m)}}
+
 
 
 function tempLava47(cx,cy){emitElementContact105('fire',elementCells105(cx,cy,1),effectSource57(state.player));for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=cx+dx,y=cy+dy;if(!insideMapInterior(x,y))continue;const old=state.map[y]?.[x];if(!(old>=500&&old<660&&(old-500)%16<4)&&![TT.FLOOR,TT.GRASS,TT.OPEN_DOOR,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].includes(old))continue;if(state.artifactExit46?.x===x&&state.artifactExit46?.y===y)continue;RuntimeTerrainOwner.temporary(x,y,TT.LAVA,5,'legend-lava',{allowedOld:[old],source:'lava-bow47'})}burst(cx,cy,'#f06f33',30,1.2)}
