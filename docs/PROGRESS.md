@@ -42,6 +42,7 @@
 | F-23 | 분할 회귀 3건 되돌림(선언을 채우기 문장 뒤로) + values 시나리오 | 7801 | 541 / 584 | 755 | 69.9% | 되돌린 선언 3개와 주석 3줄로 spine.js가 6줄 늘었다. 3차 이동 커밋 6개는 기준선을 낮추지 않았고 이 커밋에서 한꺼번에 낮췄다. |
 | rest→mapgen | rest 중 사용처 과반이 mapgen.js인 선언 → mapgen.js (규칙 a) | 7758 | 526 / 584 | 755 | 70.1% | - |
 | rest→items | rest 중 사용처 과반이 items.js인 선언 → items.js (규칙 a) | 7735 | 510 / 584 | 755 | 70.2% | - |
+| rest→monsters | rest 중 사용처 과반이 monsters.js인 선언 → monsters.js (규칙 a) | 7713 | 494 / 584 | 755 | 70.3% | - |
 
 ## 현재 파일별 줄 수
 
@@ -52,15 +53,15 @@
 | save.js | 698 |
 | items.js | 947 |
 | combat.js | 651 |
-| monsters.js | 2168 |
+| monsters.js | 2206 |
 | render.js | 4843 |
 | mapgen.js | 3173 |
 | special.js | 1873 |
 | branches.js | 2360 |
 | elements.js | 247 |
-| spine.js | 7735 |
+| spine.js | 7713 |
 | input.js | 148 |
 | story.js | 213 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25968 |
+| (total) | 25984 |

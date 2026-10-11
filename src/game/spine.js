@@ -34,7 +34,7 @@
 
 
 
-const SPECIAL_BASE_COUNTS={2:6,4:5,6:6,8:8,11:7,13:8,16:0,18:8,21:7,22:8,23:7,24:4};
+
 
 
 
@@ -858,12 +858,7 @@ function canMoveGroundItem57(it,x,y){
   if((state.items||[]).some(other=>other!==it&&other.x===x&&other.y===y))return false;
   return true;
 }
-function moveGroundItemStep57(it,toward){
-  if(!state||!it||!toward)return false;
-  const before=Math.abs(toward.x-it.x)+Math.abs(toward.y-it.y),candidates=[];
-  for(const[dx,dy]of DIRS4){const x=it.x+dx,y=it.y+dy,d=Math.abs(toward.x-x)+Math.abs(toward.y-y);if(d>=before||!canMoveGroundItem57(it,x,y))continue;candidates.push({x,y,d,axis:Math.abs(toward.x-it.x)>=Math.abs(toward.y-it.y)?(dx?0:1):(dy?0:1)})}
-  candidates.sort((a,b)=>a.d-b.d||a.axis-b.axis||a.y-b.y||a.x-b.x);const q=candidates[0];if(!q)return false;return PlacementService.moveItem(it,q.x,q.y);
-}
+
 
 
 function cancelAutoWalk(){return Auto81.stop('manual',true)}
@@ -1085,7 +1080,7 @@ const PLAYER_ENTRY_PICKUP_FIRST57=new Set([TT.BRAZIER,TT.COOKPOT,TT.ARMORY,TT.FO
 
 
 
-function markCombatBlink57(entity){if(entity&&state)entity.combatBlinkTurn57=state.turn;}
+
 
 function resolvePlayerLanding57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,moved:false,reason:'bounds'};
@@ -1117,7 +1112,7 @@ function resolvePlayerLanding57(x,y,opts={}){
   const entry=opts.entry===false?false:bumpTileAction(x,y,{cause,activeInteraction});return{ok:true,moved:p.x!==origin.x||p.y!==origin.y,cause,entry,x:p.x,y:p.y}
 }
 
-const RUNTIME_ENTRY_REACTIVE57=new Set([TT.PAPER_BRIDGE,TT.CRUMBLE,TT.PORTAL,TT.RUMOR,TT.TRAP,TT.MIRROR,TT.SNARE,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION].filter(v=>Number.isFinite(v)));
+
 
 
 function terrainHasPendingRecovery57(x,y){
@@ -1216,7 +1211,7 @@ ActionDispatcher.register('BLINK',useBlink);
 
 
 
-function combatFieldBlocksSight57(x,y){return !!state?.tempFields?.some(f=>['smoke','steam'].includes(f.kind)&&f.ttl>0&&(f.cells?f.cells.some(c=>c.x===x&&c.y===y):Math.abs(x-f.x)<=1&&Math.abs(y-f.y)<=1))}
+
 function combatLineCheckR8(x0,y0,x1,y1,opts={}){
   const maxRange=Number.isFinite(opts.range)?opts.range:Infinity,dist=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));if(dist>maxRange)return{ok:false,reason:`사거리 밖 · ${dist}/${maxRange}칸`,dist};
   const cells=combatLineCellsR8(x0,y0,x1,y1);
@@ -1263,7 +1258,7 @@ try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){i
 
 
 
-function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&mon.hp<=mon.maxHp*.5?3:2):1}
+
 
 
 setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
@@ -1338,12 +1333,6 @@ function safeLootGround42(x,y){
 
 
 
-function movementDiscoveryEvades105(mon,ctx){
- const grace=state?._movementDiscovery105;
- return !!(grace&&grace.map===state.map&&grace.monsters.has(mon)&&['melee','ranged'].includes(ctx.delivery));
-}
-
-function playAmbushReveal57(mon,reason='proximity'){if(!mon)return;const grass=!!mon.grassHide57,color=grass?'#9fc77a':(mon.color||'#c6ad88'),terrainLost=reason==='terrain';if(!terrainLost)vfVibrate(HAPTIC_PATTERN57.ambush);burst(mon.x,mon.y,color,grass?28:22,grass?1.15:.95);impact(mon.x,mon.y,color,grass?6:5);floatText(mon.x,mon.y,terrainLost?'은신 해제':grass?'풀숲 기습!':'기습!',color,grass?13:12);mon.hitUntil=Math.max(mon.hitUntil||0,performance.now()+220);if(terrainLost)addLog(`${mon.name}의 은신처가 사라져 모습을 드러냈다.`);else addLog(`${mon.name}이 숨어 있던 곳에서 튀어나왔다.`)}
 
 
 
@@ -1363,21 +1352,10 @@ function playAmbushReveal57(mon,reason='proximity'){if(!mon)return;const grass=!
 
 
 
-function releaseKeeperExit54(mon){
- const phase=mon.keeperLava54?.phases.filter(p=>p.resolved).at(-1);if(!phase||!state.stairs)return;
- const owned=new Set(keeperLavaCells(mon,phase).map(c=>k(c.x,c.y))),tileAt=(x,y,project=false)=>{
-  const tile=state.map[y]?.[x];if(project&&tile===TT.LAVA&&owned.has(k(x,y)))return TT.STONE_PATH;
-  if(globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile)||[TT.WATER,TT.MERCURY,TT.VOID,TT.LAVA].includes(tile))return TT.WALL;
-  if(state.bossExitGate1020?.x===x&&state.bossExitGate1020?.y===y)return TT.OPEN_DOOR;
-  return tile;
- };
- const search=project=>ReachabilityService.playerSearch(state.player,{ignoreOccupants:true,goal:state.stairs,tileAt:(x,y)=>tileAt(x,y,project)});
- if(ReachabilityService.playerPath(search(false),state.stairs))return;
- const path=ReachabilityService.playerPath(search(true),state.stairs);if(!path)return;
- const cooling=[{x:state.player.x,y:state.player.y},...path].filter(c=>state.map[c.y]?.[c.x]===TT.LAVA&&owned.has(k(c.x,c.y)));
- layKeeperBridge54(mon,cooling,[],3);OccupancyService.endShared();
- if(cooling.length){floatText(mon.x,mon.y,'퇴로 개방','#d5c29d',14);addLog('간수가 쓰러지자 출구로 이어지는 용암이 굳어 석교가 됐다. 나머지 용암은 남아 있다.');}
-}
+
+
+
+
 
 
 
@@ -2465,7 +2443,7 @@ const UX={
     turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();
     turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
   }
-  const MANRU_TURN_ABORT=Symbol('MANRU_TURN_ABORT');
+
 
 
   RuntimeState.turn=TURN_AUDIT5;
@@ -2633,7 +2611,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
 
   
-  const modal52=()=>!gameplayInputAllowed57();
+
   const bow52=()=>state?.player?.weapon?.kind==='bow';
   
   
@@ -3282,7 +3260,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
   function onMonsterHpThreshold60(mon,threshold){if(state.floor!==23||threshold?.event!=='f23-progress-key'||!state.floor23)return false;const q=state.floor23;if(q.thresholdTriggered)return false;q.thresholdTriggered=true;const p=safeProgressDrop23(mon);if(!p)throw new Error('F23 progress key has no reachable safe drop');const item={name:'수은 심부 열쇠',type:'progress_key23',rarity:'rare',identified:true,count:1,stackable:false,x:p.x,y:p.y,color:'#d8f2ef'};PlacementService.placeItem(item,p);addLog('여의 수룡의 힘이 절반 아래로 꺾이자 수은 심부 열쇠가 튕겨 나왔다.');burst(p.x,p.y,'#d8f2ef',22,1);return true}
-  function onTypedGateOpened60(plan,keyId){if(state.floor!==24||keyId!=='brass'||plan?.kind!=='f24-grand-entrance'||!state.floor24)return false;state.floor24.chaseStarted=true;const g=(state.monsters||[]).find(m=>m.floor24Chaser57);if(g){g.dormant57=false;g.alerted=true;g.exitPressureSpeedBudget57=0;g.searchTurns=Math.max(g.searchTurns||0,18);g.lastSeenPosition={x:state.player.x,y:state.player.y,bornTurn:state.floorTurn||0}}addLog('대형 현관이 열리자 건물 깊숙한 곳에서 구미묘의 울음이 울렸다.');return true}
+
 
 
 
@@ -3330,7 +3308,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,16],[21,24,14,18]];
   for(const r of SPAWN_RULES){const q=spawnRanges61.find(v=>r.from===v[0]&&r.to===v[1]);if(q)r.count=[q[2],q[3]]}
   Object.assign(SPECIAL_BASE_COUNTS,{2:10,4:11,6:12,8:12,11:13,13:14,16:13,18:14,20:9,21:13,22:15,23:14,24:12});
-  const TARGET61={2:13,4:16,6:25,8:24,11:26,13:29,16:32,18:32,21:28,22:43,23:12,24:9};
+
   const PACKS61={
     2:[['객잔 경비병','시종'],['취객','객잔 쥐','객잔 쥐'],['떠돌이 도둑','시종'],['거대 거미','객잔 쥐']],
     4:[['객잔 경비병','시종'],['취객','취객','객잔 쥐'],['떠돌이 도둑','거대 거미']],
@@ -6675,9 +6653,9 @@ function shapeFloor8Garden1028(){
 function sameRoom1027(a,b){return a&&b&&a.x===b.x&&a.y===b.y&&a.w===b.w&&a.h===b.h}
 function denseRoom1027(r){return !!r&&(state.monsterDenseRooms||[]).some(d=>sameRoom1027(r,d)||(r.cx>=d.x&&r.cx<d.x+d.w&&r.cy>=d.y&&r.cy<d.y+d.h))}
 
-function latePackCaps1027(){const f=state?.floor||1;if(f>=24)return{normal:4,dense:5,context:6,local:4,denseLocal:5,contextLocal:6,wide:7,denseWide:8,contextWide:9};if(f===23)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:5,wide:6,denseWide:7,contextWide:8};if(f===22)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:4,wide:5,denseWide:6,contextWide:7};if(f===21)return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6};return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6}}
 
-function fixedEncounterMonster1027(m){return !!(m?.boss||m?.elite1023||m?.storyPhase992||m?.name==='여의 수룡'||m?.fixedEncounter1027)}
+
+
 
 
 
@@ -7565,7 +7543,7 @@ function buildIndoorLandmark105(map,r,id){
 
 
 
-function equipmentOpeningBonus105(actor,target){const w=actor?.weapon||{};return (w.edgeBonus&&target?.maxHp>0&&target.hp/target.maxHp>=.75?4:0)+(w.breakPower&&target?.kind==='construct'?Math.max(1,w.breakPower):0)}
+
 
 
 
