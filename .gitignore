@@ -1,0 +1,10 @@
+node_modules/
+dist/
+android/
+app/www/
+app/node_modules/
+tests/artifacts/
+*.tsbuildinfo
+dist-qa/
+dist-dev/
+.work/

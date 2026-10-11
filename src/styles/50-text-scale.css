@@ -1,0 +1,35 @@
+:root { --ui-font-scale: 1; font-size: calc(16px * var(--ui-font-scale)); }
+/* Larger text reflows presentation only. The default profile keeps prior geometry. */
+#rcTextScale70 { color: #ead1a4; background: #16100b; border: 1px solid #755130; padding: 7px; font-size: calc(12px * var(--ui-font-scale)); max-width: 100%; }
+:root[data-ui-text-large] .uxSlot { height: auto !important; min-height: 78px; }
+:root[data-ui-text-large] .uxSlot .nm,
+:root[data-ui-text-large] .uxEq .en { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.5; }
+:root[data-ui-text-large] .uxEq { height: auto !important; min-height: 64px; }
+:root[data-ui-text-large] .uxActions button,
+:root[data-ui-text-large] .uxTabs button,
+:root[data-ui-text-large] .rc70Save button,
+:root[data-ui-text-large] .rc70Row button { height: auto !important; min-height: 43px; padding-top: 6px !important; padding-bottom: 6px !important; white-space: normal; }
+:root[data-ui-text-large] .rc70Save small { height: auto; min-height: 36px; }
+:root[data-ui-text-large] .uxDetailHead h3 { overflow-wrap: anywhere; }
+:root[data-ui-text-large] .uxDesc { overflow-wrap: anywhere; }
+:root[data-ui-text-large] #mobileHud .mBlock b { overflow: visible; text-overflow: clip; }
+:root[data-ui-text-large] #mobileHud .hp { width: auto; min-width: 106px !important; }
+:root[data-ui-text-large] #mobileHud .mBlock { line-height: 1; }
+:root[data-ui-text-large] #mobileHud .mBlock span { line-height: 1; }
+:root[data-ui-text-large] #mobileControls button { line-height: 1; }
+:root[data-ui-text-large] .rc70Head { flex-wrap: wrap; }
+:root[data-ui-text-large] .rc70Head > div { min-width: 0; flex: 1; }
+:root[data-ui-text-large] #storyModal992 .storyClose992 { width: calc(38px * var(--ui-font-scale)) !important; height: calc(38px * var(--ui-font-scale)) !important; }
+:root[data-ui-text-large] #storyModal992 button:not(.storyClose992) { height: auto !important; min-height: 38px; padding: 8px 14px !important; line-height: 1.5; }
+:root[data-ui-text-large] #card:has(.death94) { max-height: 100dvh !important; min-height: 0 !important; overflow-y: auto !important; }
+:root[data-ui-text-large] #inventory .uxEq { flex-basis: 130px; min-height: 72px !important; height: auto !important; }
+:root[data-ui-text-large] #inventory .uxEquipRail { height: auto !important; min-height: 72px; }
+
+/* R63 engraved bronze corners, shared by native panel markup. */
+.uiCorners63{position:absolute;inset:0;pointer-events:none;z-index:2;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20transform%3D%22rotate%280%2024%2024%29%22%20fill%3D%22none%22%20stroke%3D%22%23c3a16b%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M4%2044V4H44%20M9%2037V9H37%20M14%2030V14H30%20M4%2023H8%20M23%204V8%20M14%2021Q21%2021%2021%2014%20M24%2015L29%2020L24%2025L19%2020Z%20M30%2010Q38%2010%2038%2018%20M10%2030Q10%2038%2018%2038%22%2F%3E%3Cpath%20d%3D%22M4%204L9%209M14%2014L18%2018%22%20stroke%3D%22%23f4ddb0%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2220%22%20r%3D%221%22%20fill%3D%22%23e5cfa0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20transform%3D%22rotate%2890%2024%2024%29%22%20fill%3D%22none%22%20stroke%3D%22%23c3a16b%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M4%2044V4H44%20M9%2037V9H37%20M14%2030V14H30%20M4%2023H8%20M23%204V8%20M14%2021Q21%2021%2021%2014%20M24%2015L29%2020L24%2025L19%2020Z%20M30%2010Q38%2010%2038%2018%20M10%2030Q10%2038%2018%2038%22%2F%3E%3Cpath%20d%3D%22M4%204L9%209M14%2014L18%2018%22%20stroke%3D%22%23f4ddb0%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2220%22%20r%3D%221%22%20fill%3D%22%23e5cfa0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20transform%3D%22rotate%28180%2024%2024%29%22%20fill%3D%22none%22%20stroke%3D%22%23c3a16b%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M4%2044V4H44%20M9%2037V9H37%20M14%2030V14H30%20M4%2023H8%20M23%204V8%20M14%2021Q21%2021%2021%2014%20M24%2015L29%2020L24%2025L19%2020Z%20M30%2010Q38%2010%2038%2018%20M10%2030Q10%2038%2018%2038%22%2F%3E%3Cpath%20d%3D%22M4%204L9%209M14%2014L18%2018%22%20stroke%3D%22%23f4ddb0%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2220%22%20r%3D%221%22%20fill%3D%22%23e5cfa0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cg%20transform%3D%22rotate%28270%2024%2024%29%22%20fill%3D%22none%22%20stroke%3D%22%23c3a16b%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M4%2044V4H44%20M9%2037V9H37%20M14%2030V14H30%20M4%2023H8%20M23%204V8%20M14%2021Q21%2021%2021%2014%20M24%2015L29%2020L24%2025L19%2020Z%20M30%2010Q38%2010%2038%2018%20M10%2030Q10%2038%2018%2038%22%2F%3E%3Cpath%20d%3D%22M4%204L9%209M14%2014L18%2018%22%20stroke%3D%22%23f4ddb0%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2220%22%20r%3D%221%22%20fill%3D%22%23e5cfa0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-position:left -4px top -4px,right -4px top -4px,right -4px bottom -4px,left -4px bottom -4px;background-size:48px 48px;background-repeat:no-repeat;opacity:.85}
+.coachSheet58,.death94,.inspectCard,.mapCard,.storyArchive992,.storySceneCard992{position:relative!important}
+.death94{padding:38px 28px 30px!important;border:1px solid #826345;background:radial-gradient(ellipse at 50% 0,#794a292b,transparent 60%),linear-gradient(150deg,#211810,#100e0c);box-shadow:inset 0 0 0 5px #100c08,inset 0 0 0 6px #4f3b27,0 20px 70px #0009}
+.death94 .deathSeal94{border:1px solid #b07853;box-shadow:inset 0 0 0 4px #2d1711,inset 0 0 0 5px #b0785366,0 0 40px #ba633719;transform:rotate(-4deg)}
+
+
+.cipherSheet,.uxInv,.cookSheet57,.f74sheet,.choice991Card,.shopSheet58{position:relative}.uxInv>.uiCorners63{opacity:.45;background-size:28px 28px;background-position:left -2px top -2px,right -2px top -2px,right -2px bottom -2px,left -2px bottom -2px}

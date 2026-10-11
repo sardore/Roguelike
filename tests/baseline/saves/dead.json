@@ -1,0 +1,21 @@
+{
+ "note": "archer stepped into lava at 1 HP on floor 1 (death record, no active run)",
+ "storage": [
+  [
+   "manru1004_dead_runs",
+   "[\"00000000-0000-4000-8000-000000000001\"]"
+  ],
+  [
+   "manru1004_last_death",
+   "{\"at\":1767225611980,\"runId\":\"00000000-0000-4000-8000-000000000001\",\"floor\":1,\"turn\":0,\"version\":\"v10.0.6\"}"
+  ],
+  [
+   "manruTutorialAccount66",
+   "{\"version\":1,\"seen\":{\"start\":true}}"
+  ],
+  [
+   "manruZoom984",
+   "1"
+  ]
+ ]
+}

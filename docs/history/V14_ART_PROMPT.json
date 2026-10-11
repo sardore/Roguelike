@@ -1,0 +1,6 @@
+{
+  "method": "built-in image_gen",
+  "prompt": "Edit target: attached Manru dragon king pixel sprite sheet, exactly 2 idle frames. Change only TWO things: 1) Enlarge the dragon FACE (brow, eye, cheek, snout, jaw) by approximately 12-15 percent, leaving whole body's displayed size, antler horns, pose, robe and pressure tank same. Show clear facial features at tiny 40x46 game size. 2) Replace the universal black outline with selective colored outlines: dark teal at teal face/robe/tail, dark warm umber at bronze antlers/tank, muted brown-gray at pale ivory belly/beard, allow lit edges to use midtone. NO solid black border around entire character. Keep the simple design from this reference, short clean beard, restrained large pixel clusters; do not add details or objects. Two side-by-side nearly identical idle frames, identical placement/layout, sheet conceptually128x72 with each64x72. Genuine transparent background. Crisp pixel art, no blur/anti-aliasing, no text, no weapon (weapon drawn by game). Preserve all other design and silhouette except locally larger face; no global scaling, no decorative whiskers or new props.",
+  "source": "V13 current king asset",
+  "integration": "Nearest-neighbor resize to 128x72; preserved generated alpha; no extra outline applied by game."
+}

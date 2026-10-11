@@ -1,0 +1,16 @@
+{
+ "parse": 0,
+ "rebind": 0,
+ "alias": 2,
+ "crossFileDuplicate": 0,
+ "styleInject": 0,
+ "defineProperty": 6,
+ "mutationObserver": 1,
+ "duplicateSelector": 276,
+ "important": 2186,
+ "suffixFunction": 1950,
+ "emptyCatch": 0,
+ "timer": 53,
+ "sameBody": 3,
+ "qaLeak": 0
+}

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Structure guard: refuses the commit when a ratcheted metric grew (see AGENTS.md).
+# Enabled by `npm install` (prepare script sets core.hooksPath=.githooks).
+if git diff --cached --name-only | grep -qE '^(src/|tools/check-structure\.mjs|tools/structure-baseline\.json|tools/lib/)'; then
+  node tools/check-structure.mjs || exit 1
+fi

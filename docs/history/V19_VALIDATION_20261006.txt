@@ -1,0 +1,39 @@
+V19 검증 기록
+추가 수정: 적 4칸 이내에서만 용미 시작. 평소 쿨 15턴 / 최고 수위 10턴.
+저장 복원: 탐색·시야 Set 복원을 조수 갱신보다 먼저 실행. 용궁 연속 불러오기 정상.
+거리 1~8칸·순환 순서 0~2·대각선·몬스터 상대·쿨/기봉인/기절/벽·기존 준비 유지·이전 쿨 1회 연장: PC/모바일 각각 82개 검사 통과.
+Chromium / Playwright 실제 브라우저 실행. PC 1400×1000 및 모바일 390×844.
+무계측 최종 단일 HTML: PC/모바일 시작→직업 선택→게임 진입 성공, QA hook 없음, pageerror 없음.
+용미: 원형 반경 1→5, 실제 턴 엔진, 다중 행동 비용, 스턴·이동·벽·맵 경계, 준비 단계 1~5 저장 복원, 플레이어/몬스터 전 방향 상태 패킷(중병 없음), 면역·범위 밖, 공용 무적, 중독/원소 피해 차단, 취소/종료 후 정상 피해.
+인벤: 8개 초기 구성, 기존 수류 합성 3개, 각인·실제 장비 동일 참조, HP 경계, 공격/기술 우선, 비약 1회 소비, 저장 복원 시 재생성 없음, 7개/8개 드롭, 중복 사망 차단, 배치 불가 드롭 복구, 디버그·소환 드롭 차단.
+용궁: 최고 수위 10턴 쿨, 실제 반사 공격 무적, 실제 철두창 수류 각인 발동, 인벤 돌 투척과 철창 해제, 소지 돌 중복 없음, 배수·격파·사망 저장 복원, 별도 보상 생성 없음, 미리보기 보상 RNG 소비 없음.
+예고 UI: PC/모바일 실제 조사 창에서 용미 설명 표시. 공용 렌더의 시간별 픽셀 변화, 숨긴 셀 비표시, 머리 위 예고 글씨 호출 없음.
+외형: 용왕 80×88 소스와 96×96 내부 캔버스의 해당 픽셀 전부 동일. 98개 기존 프레임 변경 없음. 벌집나무·벌떼·고목 목매 실제 소환 프레임 동일. 실제 전장에 용왕/쇠사슬 간수 배치 후 전투·무적 공격 확인. 벌집나무 실제 전장 2진영 2프레임 동일, 벌떼 4마리 제한·진영 상속.
+능력치: V18과 V19의 1/9/24층 일반·디버그·소환 459개 항목 비교, 차이 0. 기존 흑산 설귀 고정 능력치 유지.
+방어 기술 회귀: 기존 2회 방어·연격·차단·회피·반사·저장 복원 검사 통과.
+
+palace-v19-actors-results.json: {"compared": 459, "changes": [], "errors": []}
+palace-v19-art-results.json: {"errors": []}
+  PC / checks 렌더·전투·소환 또는 실행 검사
+  Mobile / checks 렌더·전투·소환 또는 실행 검사
+palace-v19-guard-results.json: {"errors": []}
+  PC / checks 35
+  Mobile / checks 36
+palace-v19-hive-results.json: {"errors": []}
+  PC / checks 렌더·전투·소환 또는 실행 검사
+  Mobile / checks 렌더·전투·소환 또는 실행 검사
+palace-v19-inventory-results.json: {"errors": []}
+  PC / checks 41
+  Mobile / checks 41
+palace-v19-proximity-results.json: {"errors": []}
+  PC / checks 82
+  Mobile / checks 82
+palace-v19-release-results.json: {"errors": []}
+  PC / checks 렌더·전투·소환 또는 실행 검사
+  Mobile / checks 렌더·전투·소환 또는 실행 검사
+palace-v19-sweep-results.json: {"errors": []}
+  PC / checks 155
+  Mobile / checks 153
+palace-v19-world-results.json: {"errors": []}
+  PC / checks 18
+  Mobile / checks 18

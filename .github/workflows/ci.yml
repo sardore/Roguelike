@@ -1,22 +1,40 @@
 name: CI
 on:
   push:
-    branches: [main]
   pull_request:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npm test
-      - run: npm run build
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Structure check
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx --yes playwright@1.56.1 install --with-deps chromium
+      - name: Behaviour and screenshots on the QA build (seeded replay, V40 saves, floors, debug arena, pinned fonts)
+        run: npm test -- --skip render
+      - name: Release source publishes no QA hooks and saves the same data
+        run: npm run build:dev && npm test -- --target src --label src
+      - name: Same behaviour from the single HTML build
+        run: npm test -- --target single --label single
+      - name: Installable app (manifest, service worker, offline relaunch, offline new run)
+        run: npm test -- --target app --label app
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: behaviour-artifacts
+          path: tests/artifacts
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: site-dist
+          name: manru-dist
           path: dist
           if-no-files-found: error
