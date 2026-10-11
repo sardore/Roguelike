@@ -7,6 +7,7 @@
   "combat.js",
   "monsters.js",
   "render.js",
+  "mapgen.js",
   "spine.js",
   "input.js",
   "story.js",

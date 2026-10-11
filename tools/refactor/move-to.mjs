@@ -24,6 +24,8 @@ let text = fs.readFileSync(workFile, 'utf8');
 const names = fs.readFileSync(namesFile, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
 if (new Set(names).size !== names.length) throw new Error('names.txt lists a name twice');
 
+// code inside a function runs later, except an immediately invoked one ((function(){...})() runs where it stands)
+const deferred = (anc) => anc.some((a, i) => /Function/.test(a.type) && !(i > 0 && anc[i - 1].type === 'CallExpression' && anc[i - 1].callee === a));
 const parse = (t) => acorn.parse(t, { ecmaVersion: 'latest', locations: true });
 const topOf = (ast) => ast.body[0].expression.callee.body.body;
 const declNames = (s) => (s.type === 'FunctionDeclaration' ? [s.id.name] : s.type === 'VariableDeclaration' ? s.declarations.flatMap((d) => (d.id.type === 'Identifier' ? [d.id.name] : ['<pattern>'])) : s.type === 'ClassDeclaration' ? [s.id.name] : []);
@@ -36,7 +38,7 @@ function initPairs(t) {
   top.forEach((s, i) => {
     if (s.type !== 'VariableDeclaration' && s.type !== 'ClassDeclaration') return;
     walk.ancestor(s, { Identifier(id, _st, anc) {
-      if (anc.some((a) => /Function/.test(a.type))) return;
+      if (deferred(anc)) return;
       const p = pos.get(id.name); if (!p || p.kind === 'fn' || p.i === i) return;
       pairs.add(`${declNames(s)[0]}>${id.name}:${p.i < i ? 'ok' : 'late'}`);
     } });
@@ -61,6 +63,14 @@ for (const n of names) {
   picked.add(s);
 }
 const stmts = [...picked].sort((a, b) => a.start - b.start);
+const insertAt = (() => {
+  const segIdx = (file) => marks.findIndex((m) => m.file === file);
+  const tIdx = segIdx(target);
+  if (tIdx >= 0) return tIdx + 1 < marks.length ? marks[tIdx + 1].at : text.length;
+  const refIdx = segIdx(createAfter || createBefore);
+  if (refIdx < 0) return undefined;
+  return createBefore ? marks[refIdx].at : refIdx + 1 < marks.length ? marks[refIdx + 1].at : text.length;
+})();
 // a moved const/let (not a function: those are hoisted) that a statement staying behind reads at load time (outside any function)
 // would be read before it exists whenever the new file loads after that statement
 {
@@ -68,8 +78,9 @@ const stmts = [...picked].sort((a, b) => a.start - b.start);
   for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) movedValues.set(n, s);
   for (const s of top) {
     if (picked.has(s) || s.type === 'FunctionDeclaration') continue;
+    if (insertAt !== undefined && s.start >= insertAt) continue; // loads after the new file: it exists by then
     walk.ancestor(s, { Identifier(id, _st, anc) {
-      if (!movedValues.has(id.name) || anc.some((a) => /Function/.test(a.type))) return;
+      if (!movedValues.has(id.name) || deferred(anc)) return;
       if (s.type === 'VariableDeclaration' && declNames(s).includes(id.name)) return;
       throw new Error(`${id.name}: read at load time by a statement that stays (line ${id.loc?.start.line ?? '?'}): its place is fixed by that statement`);
     } });
@@ -81,23 +92,49 @@ for (const s of stmts) {
   if (s.type === 'VariableDeclaration') {
     // an initialiser that reads window/globalThis at load time depends on the loose statements that publish those members first
     let reads = null;
-    walk.ancestor(s, { Identifier(id, _st, anc) { if ((id.name === 'window' || id.name === 'globalThis') && !anc.some((a) => /Function/.test(a.type))) reads = id.name; } });
+    walk.ancestor(s, { Identifier(id, _st, anc) { if ((id.name === 'window' || id.name === 'globalThis') && !deferred(anc)) reads = id.name; } });
     if (reads) throw new Error(`${declNames(s)[0]}: the initialiser reads ${reads}.* at load time; the statements that publish it fix its place`);
   }
   if (seg.file === 'qa/qa.js') throw new Error(`${declNames(s)[0]} is declared in qa/qa.js (test-only code): it must not move into the game`);
 }
 
+// a moved const/let initialiser that reads members of an object (X.a) captures them when it runs; a statement that stays and
+// mutates X between the new place and the old one (X.a=..., Object.assign(X,..), X.push(..)) would then run after the capture
+{
+  const MUTATORS = /^(push|add|set|splice|unshift|delete|assign|defineProperty|defineProperties|freeze)$/;
+  for (const s of stmts) {
+    if (s.type !== 'VariableDeclaration') continue;
+    const read = new Set();
+    walk.ancestor(s, { MemberExpression(m, _st, anc) {
+      if (deferred(anc)) return;
+      let root = m; while (root.type === 'MemberExpression') root = root.object;
+      if (root.type === 'Identifier') read.add(root.name);
+    } });
+    if (!read.size || insertAt === undefined) continue;
+    for (const o of top) {
+      if (picked.has(o) || o.type === 'FunctionDeclaration' || o.start >= s.start || o.start < insertAt) continue;
+      walk.ancestor(o, {
+        AssignmentExpression(a, _st, anc) {
+          if (deferred(anc)) return;
+          let root = a.left; while (root.type === 'MemberExpression') root = root.object;
+          if (root.type === 'Identifier' && read.has(root.name) && a.left.type === 'MemberExpression') throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place assigns ${root.name}.* (line ${a.loc.start.line}): its place is fixed by that statement`);
+        },
+        CallExpression(c, _st, anc) {
+          if (deferred(anc)) return;
+          const f = c.callee; if (f.type !== 'MemberExpression') return;
+          const name = f.property.name || '';
+          if (!MUTATORS.test(name)) return;
+          let root = /^(assign|defineProperty|defineProperties|freeze)$/.test(name) ? c.arguments[0] : f.object; while (root?.type === 'MemberExpression') root = root.object;
+          if (root?.type === 'Identifier' && read.has(root.name)) throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place calls ${name} on ${root.name} (line ${c.loc.start.line}): its place is fixed by that statement`);
+        },
+      });
+    }
+  }
+}
+
 // the same, one call away: a function a load-time statement (outside any function, before the new file) calls
 // must not read a moved const/let either
 {
-  const segIdx = (file) => marks.findIndex((m) => m.file === file);
-  const tIdx = segIdx(target);
-  let insertAt;
-  if (tIdx >= 0) insertAt = tIdx + 1 < marks.length ? marks[tIdx + 1].at : text.length;
-  else {
-    const refIdx = segIdx(createAfter || createBefore);
-    if (refIdx >= 0) insertAt = createBefore ? marks[refIdx].at : refIdx + 1 < marks.length ? marks[refIdx + 1].at : text.length;
-  }
   if (insertAt !== undefined) {
     const movedValues = new Set();
     for (const s of stmts) if (s.type !== 'FunctionDeclaration') for (const n of declNames(s)) movedValues.add(n);
@@ -107,7 +144,7 @@ for (const s of stmts) {
     const queue = [];
     const reach = (node, via, skipFns) => {
       walk.ancestor(node, { Identifier(id, _st, anc) {
-        if (skipFns && anc.some((a) => /Function/.test(a.type))) return;
+        if (skipFns && deferred(anc)) return;
         const f = fnByName.get(id.name);
         if (f && !eager.has(id.name)) { eager.set(id.name, via); queue.push(f); }
       } });
