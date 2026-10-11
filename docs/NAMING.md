@@ -25,3 +25,23 @@
 - 접미사 제거(기계) 178개, 수동 23개(스프라이트 상수·캐시·플레이어/액터 그리기 함수 등, 한 줄 정의만 보고 정한 이름이라 확인 필요). `Camera81→CameraController`, `Zoom81→ZoomController`, `PERF49→RENDER_PERF_STATE`, `PERF58→FRAME_PERF_STATE`, `syncGameViewport47→syncCanvasWrapViewport` 등.
 - 패널을 그리는 `render*`(상점·인벤토리·도움말·조합·분류 화면 등)는 ui 도메인으로 남겼다. 방 장식 `paintLoop972/980`, `LEGEND_TILES49`(LEGENDS47을 로드 시 읽음), `Cam96`, `legacyPotionIcon/Draw`는 옮기지 않았다.
 - `savedMode`/`savedZoom`은 `cameraData12`가 로드 시 읽어서 같이 옮겼다.
+
+### render.js 수동 이름 23개 검증 (사용처를 직접 읽은 근거)
+| 새 이름 | 옛 이름 | 근거(사용처) | 판정 |
+|---|---|---|---|
+| `syncCanvasWrapViewport` | `syncGameViewport47` | 정의 render.js: `#canvasWrap`의 padding을 뺀 크기·`P47.renderDpr`로 `VIEW.w/h`·캔버스 크기를 맞춘다. 디버그 전장이면 `syncGameViewport`로 넘긴다. 호출 spine.js 1곳(부팅 직후 동기화) | 맞음 |
+| `RENDER_PERF_STATE` | `PERF49` | 정의: `dirty/panelDirty/miniDirty/lastFrame/emaCost…`. 이동 후 이벤트(`registerMovePost`)가 `.dirty=true`, 미니맵 갱신이 `.miniDirty/.lastMini` 사용 (23회) | 맞음 |
+| `FRAME_PERF_STATE` | `PERF58` | 정의 `{last,lastMini,lastHud,lastViewport,dirty,avg,lastCost,frames}`. 프레임 루프 끝에서 `.last/.lastCost/.frames++/.avg` 갱신 (9회) | 맞음 |
+| `drawDoorAt` | `drawDoor60` | 타일 좌표(x,y)로 위·아래 벽 여부를 계산해 `drawDoor`를 호출. 호출처 2곳 모두 문/열린 문 그리기 | 맞음 |
+| `CameraController` | `Camera81` | 정의: `__MANRU_CAMERA_STATE12__`로 위임하는 얇은 객체(state/set/beginInspect/panScreen/endPan/cancelInertia/resume/center). 사용처 spine.js 세 곳이 `resume`, `cancelInertia` 호출 | 맞음(이미 있던 위임 객체; 새로 만든 것 아님) |
+| `ZoomController` | `Zoom81` | 정의 "actual zoom controller", 핀치 처리에서 `.value()`로 현재 배율을 읽음 (5회) | 맞음 |
+| `PLAYER_SPRITE_W/H` | `PW1004/PH1004` | 플레이어 스프라이트 캔버스 `clearRect(0,0,W,H)`에만 사용(32×36) | 맞음 |
+| `PLAYER_RARITY_HI` | `rarityHi1004` | 플레이어의 망토·갑옷·유물 윤곽색 `PLAYER_RARITY_HI[item.rarity]` 3곳 | 맞음 |
+| `ACTOR_RARITY_HI` | `rarityHi1012` | 액터(플레이어/동료) 갑옷·망토·유물 색, 5곳 | 맞음 |
+| `drawPlayerCloak/Relic/Trinket` | `drawCloak/Relic/Trinket1004` | 정의는 `(q,p)`로 플레이어 장비를 그림. 호출은 `playerSprite`의 한 곳(갑옷 상세→유물→장신구→손에 든 무기 순) | 맞음 |
+| `HERO_SPRITE_W/H/CACHE` | `SW/SH/SPR1011` | `HERO_SPRITE_CACHE`는 영웅 스프라이트 캐시(spine.js의 `__MANRU_ACTOR_CACHE1011__.clear`에서도 비움). `W/H`는 **QA 파일만** 읽는다(qa.js:340) | 맞음 |
+| `ACTOR_OUTLINE`, `ACTOR_INK` | `OUT1012`, `INK1012` | 몬스터·동료 스프라이트의 외곽선색(12회)과 먹색(4회) | 맞음 |
+| `ACTOR_CACHE` | `CACHE1012` | `monsterCanvas`가 키(`종:무기:프레임…`)로 조회·저장(17회) | 맞음 |
+| `ACTOR_SPEC` | `SPEC1012` | `ACTOR_SPEC[m.name]`/`[m.spriteSpecies]`로 종별 그림 규격 조회(6회) | 맞음 |
+| `drawLegendMotif` | `motif49` | 전설 던전 월드(`drawLegendWorld`) 그리기에서 `(q,T,x,y,kind,size)`로 문양을 그림, 9회 | 맞음 |
+| `ACTOR_CELL_W/H` | `CW/CH1012` | **사용처가 한 곳도 없어서 삭제**(선언만 있었음). 같은 32×36 크기가 `PLAYER_SPRITE_*`, `HERO_SPRITE_*`와 세 벌로 존재(FINDINGS F-17) | 삭제 |

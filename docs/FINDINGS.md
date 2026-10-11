@@ -23,5 +23,10 @@
 ## F-15 의도(intent) 시스템이 두 벌 있다 (monsters.js)
 `setIntent54`/`executeIntent54`(보스 장판 예고)와 `setIntent61`/`executeIntent61`(일반 몬스터 예고)이 비슷한 일을 하는 별개 구현이다. 구조 정리 중이라 합치지 않았다(동작 보존). 합칠 수 있는지, 일부러 둘로 나눈 것인지 기획 확인이 필요하다. 지금은 역할을 드러내는 이름(`setBossIntent`/`setMonsterIntent`)으로만 구분해 두었다.
 
-## F-16 남은 동일 본문 함수 3건은 지역 함수라 합치지 못했다 (render)
+## F-16 (해결) 동일 본문 지역 함수 3건: drawKit(q)로 통합 (render)
 `r`/`rect`(`q.fillStyle=c;q.fillRect(...)`), `poly`/`polygon` 등은 각각 다른 그리기 함수 안에서 지역 `q`(캔버스 컨텍스트)를 닫아 쓰는 한 줄 도우미다. 본문은 같지만 서로 다른 `q`를 가리켜서 `merge-duplicates`가 거부한다. 합치려면 `q`를 인자로 받는 공용 함수로 만들고 호출처 수십 곳의 서명을 바꿔야 해서(래퍼를 새로 만들지 않는 원칙에 따라) 이번 이동에서는 하지 않았다. 필요하면 별도 작업으로 결정해 달라.
+
+## F-17 스프라이트 크기 32×36 상수가 세 벌이다 (render)
+`PLAYER_SPRITE_W/H`(플레이어), `HERO_SPRITE_W/H`(영웅, QA만 읽음), `ACTOR_CELL_W/H`(사용처 없음, 삭제함)가 모두 32×36이다. 같은 값을 따로 둔 이유는 확인되지 않는다. 합칠지(예: 한 상수) 기획·소유자 판단이 필요하다. 지금은 사용 중인 두 벌만 남겼다.
+
+**처리(사용자 지시)**: render.js의 `drawKit(q)`가 `{r, poly}`(사각형·다각형 채우기)를 돌려준다. 같은 본문의 지역 도우미 31개(26개 선언문)를 `const {r,poly}=drawKit(q)` 형태로 바꿨고 호출처는 건드리지 않았다(`tools/refactor/draw-kit.mjs`; 컨텍스트가 대입되지 않는 const/param이고 도우미보다 먼저 선언된 경우만). sameBody 3 → 0.

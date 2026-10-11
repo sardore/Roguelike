@@ -11,6 +11,6 @@
  "suffixFunction": 1446,
  "emptyCatch": 0,
  "timer": 53,
- "sameBody": 3,
+ "sameBody": 0,
  "qaLeak": 0
 }
