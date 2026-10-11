@@ -57,7 +57,7 @@ const CLASSES=[
 
 
 
-function bodyPowerDuration58(p=state?.player){return 20+Math.max(0,Math.min(5,Math.floor(Number(p?.martial?.constitution)||0)))*5}
+
 function bodyPowerExhaustion58(p=state?.player){return bodyPowerDuration58(p)}
 
 function identifyStartingItems58(){
@@ -210,13 +210,7 @@ function burst(x,y,color="#ffffff",count=9,power=1){
 
 
 
-function armoryEvent(x,y){
-  setTerrainTile58(state.map,x,y,TT.FLOOR);
-  addLog("잠긴 무기고를 발견했다.");
-  dropRandomItem({x,y}, true);
-  if(globalThis.__MANRU_RANDOM57__()<0.55) dropRandomItem({x,y}, true);
-  burst(x,y,"#d4b46b",16,1);
-}
+
 
 
 
@@ -225,13 +219,6 @@ function adjacentSilkTrap57(){
  return selectFacingAdjacentTarget57(DIRS8.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).filter(q=>canDisarmSilkTrap57(q.x,q.y)));
 }
 
-function cacheEvent(x,y){
-  setTerrainTile58(state.map,x,y,TT.FLOOR);
-  dropRandomItem({x,y}, true);
-  if(globalThis.__MANRU_RANDOM57__()<0.5) dropRandomItem({x,y}, false);
-  burst(x,y,"#b9d3a2",14,.8);
-  addLog("숨겨진 보급함 발견.");
-}
 
 
 
@@ -239,14 +226,8 @@ function cacheEvent(x,y){
 
 
 
-function vaultEvent(x,y){
-  setTerrainTile58(state.map,x,y,TT.FLOOR);
-  dropRandomItem({x,y}, true);
-  if(globalThis.__MANRU_RANDOM57__()<0.78) dropRandomItem({x,y}, true);
-  if(globalThis.__MANRU_RANDOM57__()<0.35) spawnMonster(PlacementService.randomFloor(1), false);
-  burst(x,y,"#e0be6b",18,1);
-  addLog("객주 금고 개방. 전리품 획득.");
-}
+
+
 
 
 
@@ -1785,7 +1766,7 @@ ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
 let inventoryFiltered;
 
 
-const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
+
 function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
 
 
@@ -2932,9 +2913,9 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   };
 
 
-  const TALISMAN_BY_KIND=new Map(TALISMANS.map(t=>[t.talismanKind,t]));
 
-  const TALISMAN_APP_BY_ID=new Map(TALISMAN_APPEARANCES.map(a=>[a.id,a]));
+
+
   window.MANRU_TALISMANS=TALISMANS;
   for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 
@@ -2949,17 +2930,8 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   const IDENTIFY_TALISMAN_THEME56=Object.freeze({id:'identify',name:'감정부적',paper:'#dfc78e',paper2:'#b8955b',ink:'#9d3126',seal:'鑑'});
   
 
-  function talismanApp56(item){
-    if(!item||item.type!=='talisman')return GENERIC_TALISMAN56;
-    if(item.mineItem105==='mystery')return {...TALISMAN_APPEARANCES[0],seal:'玄'};
-    if(item.fusion74)return {id:'fusion',name:item.name,paper:'#d8bf83',paper2:'#a8844f',ink:'#8b2d28',seal:item.seal||'合'};
-    if(item.talismanKind==='identify')return IDENTIFY_TALISMAN_THEME56;
-    const K=state?.knowledge56,id=item.appearance56||K?.talismanMap?.[item.talismanKind];
-    // The shuffled appearance itself is the texture. Identification changes knowledge/text only.
-    // Unidentified talismans keep the same body/frame and only differ by their run-stable rune/color theme.
-    return TALISMAN_APP_BY_ID.get(id)||TALISMAN_APPEARANCES[0];
-  }
-  function publicTalismanName56(item){return knownTalisman56(item)?item.name:GENERIC_TALISMAN56.name}
+
+
 
 
   
@@ -2979,9 +2951,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     return{label:'출처 불명',text:'발견 위치만으로는 약성을 좁히기 어렵다.',kinds:[],strength:0};
   }
 
-  function migrateScroll56(item){
-    if(!item||item.type!=='scroll')return item;const n=String(item.name||''),kind=n.includes('감정')||n.includes('식별')?'identify':n.includes('지도')?'mapping':n.includes('이동')||n.includes('귀환')?'blink':n.includes('분노')||n.includes('응징')||n.includes('파쇄')?'blast':n.includes('수면')||n.includes('공포')?'bind':'ward',t=TALISMAN_BY_KIND.get(kind)||TALISMANS[0],keep={x:item.x,y:item.y,count:item.count||1};Object.keys(item).forEach(k=>delete item[k]);Object.assign(item,clone(t),keep);return item
-  }
+
 
 
 
@@ -3778,11 +3748,9 @@ const RC={
 
   /* ---------- resource pacing / consumable strategy ---------- */
 
-  function recovery70(i){return i&&(i.type==='food'||(i.type==='potion'&&['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)))}
-  function tactical70(i){return i&&(i.type==='talisman'||(i.type==='potion'&&!['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind))||(i.type==='food'&&['전력 주먹밥','매콤한 육포','한방 생선찜','보신 전골','얼음 복숭아'].includes(i.name)))}
-  function placeItem70(proto){
-    if(!proto)return false;const p=PlacementService.randomFloor(0);if(!p)return false;const i=clone(proto);Object.assign(i,{x:p.x,y:p.y,count:i.count||1});PlacementService.placeItem(i);return true
-  }
+
+
+
   function recoveryPool70(){
     const food=CONSUMABLES.filter(i=>i.type==='food'&&!['relic','sealed'].includes(i.rarity)&&!i.recipeResult57);
     const pots=(window.MANRU_POTIONS||[]).filter(i=>['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)&&(state.floor>=(i.minFloor||1)));
@@ -3980,7 +3948,7 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
 
 
-  const key74=(a,b)=>[a,b].sort().join('+');
+
 
   // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
   addFusionRecipe('elem_fire','upgrade',{kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'});
@@ -4037,7 +4005,7 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
 
 
 
-  const esc74=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 
 
 
@@ -4067,7 +4035,7 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
 fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';document.body.appendChild(fusion);
   const gearInfusionPanel=document.createElement('div');gearInfusionPanel.id='gear74';gearInfusionPanel.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';document.body.appendChild(gearInfusionPanel);
   fusion.querySelector('[data-f74close]').onclick=()=>closeFusion();gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear();
-  function basicTalismans74(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.type==='talisman'&&!v.item.branchExclusive105&&!v.item.fusion74&&known74(v.item))}
+
 
 
 
@@ -4093,8 +4061,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
     addLog(`괴력 발동 · ${d}턴 동안 ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복. 종료 후 ${p.classState.powerExhaustion}턴 실명·배탈.`);
     globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useBodyPower74"}).value;return true;
   }
-  /* fused effects */
-  const targetHud74=()=>document.getElementById('talismanTarget56');
+
 
 
 
@@ -5868,20 +5835,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   }
 
 
-  function monsterInfo986(mon){
-    if(mon?.treeMimic105&&mon.mimicDormant105!==false)return mountainDeadTreeInfo();
-    const desc=monsterConcept(mon);
-    const hints=[],stats=[`HP ${displayHealth(mon.hp)}/${displayHealth(mon.maxHp)}`,`ATK ${displayNumber53(mon.atk)}`,`DEF ${displayNumber53(mon.def)}`,`EVA ${displayNumber53(mon.eva||0)}`],meta=[];
-    if(mon.combustion105){hints.push(`연소 기본 피해 ${COMBUSTION_RULES105.damage}, 불바닥 위에서는 기본 피해 3. 식물은 화염에 더 약하다. 물·냉기로 꺼지며 주변을 자동 점화하지 않는다.`)}
-    if(mon.sleeping105){hints.push(mon.doorSleep105?'봉인된 쥐굴의 잠. 이 방의 경고문을 열기 전에는 접근·소음으로 깨어나지 않는다. 문이 열리면 같은 방의 쥐들이 함께 깨어난다.':'잠든 동안 행동하지 않는다. 은신하지 않은 채 1칸 이내로 접근하거나, 전해지는 소음을 듣거나, 피해를 받으면 깨어난다.');}
-    if(mon.ranged)stats.push(`사거리 ${displayNumber53(mon.range||6)}`);else if((mon.reach||1)>1)stats.push(`공격거리 ${displayNumber53(mon.reach)}`);
-    if(mon.boss)meta.push('보스');else if(mon.legendElite47||mon.miniBoss)meta.push('정예');else meta.push(isPlayerAlly57(mon)?'아군 개체':'적대 개체');
-    if(mon.kind)meta.push(({human:'인간',beast:'야수',spirit:'영체',undead:'망자',plant:'식물',construct:'구조체',slime:'점액'})[mon.kind]||mon.kind);
-    if(mon.flying)meta.push('비행');if(mon.aquatic)meta.push('수생');if(monsterMovementLocked57(mon))meta.push('고정');
-    if(aquaticStranded(mon)){meta.push('뭍에 남음');hints.push('물이 빠진 자리에서 몸을 뒤틀며 펄떡인다. 다시 물이 차면 헤엄치는 모습을 되찾는다.')}
-    if(mon.legendElite47)meta.push('문지기 강화');
-    if(mon.palaceLotus105)hints.push(palaceWet(mon)?'개화 · 완전 견인 사용 가능':'닫힌 꽃봉오리 · 견인 불가');if(mon.equipmentActor105)hints.push('무기: '+(mon.weapon?.name||'없음'));if(mon.martialActor105){stats.push(`기 ${Math.floor(mon.focus)}/${mon.maxFocus}`);hints.push(dojoInspect(mon,{battle:!!state.debugBattle57}));}return{name:mon.name,meta,stats,statuses:combatStatusRows(mon),desc,skills:monsterSkills(mon),martialCards:mon.martialActor105?Object.keys(MARTIAL_INFO).filter(id=>mon.martial[id]>0).map(id=>({id,actor:mon})):null,blink:mon.martialActor105&&mon.dojoRank105>=3,hint:[...new Set(hints)].join(' ')};
-  }
+
 
 
 
@@ -6886,16 +6840,7 @@ function shapeFloor8Garden1028(){
   state.floor8GardenCourts1028={courts:made,houses:houses.length,pathCells:madeCells.size,routeProtected:path.length};return state.floor8GardenCourts1028;
 }
 
-/* R37 THEME-2 DESIGN — quiet ink/wood/stone materials, with deliberate indoor/outdoor room identities. */
-function refineTheme2Rooms1027(){
-  state.theme2RoomIdentity1027=null;if(![7,9].includes(state.floor))return null;const rooms=[...(state.rooms||[])].filter(r=>r&&r.w>=6&&r.h>=5).sort((a,b)=>b.w*b.h-a.w*a.h),out={floor:state.floor,indoor:0,garden:0,rooms:[]};
-  const floorish=t=>[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.WOOD_FLOOR,TT.DARK_WOOD].includes(t),meta=[];
-  for(const r of rooms){const q=roomProbe1026(r),nm=r.name||r.label||'',seed=hash1022(floorSeedKey(`t2room:${state.floor}:${r.x},${r.y}`)),namedIndoor=/객실|서고|가옥|오두막|실내|본관|장옥|연회|공방/.test(nm),enclosure=q?.enclosure||0;meta.push({r,seed,enclosure,namedIndoor,indoor:namedIndoor||enclosure>=.34||(enclosure>=.23&&seed%100<36)})}
-  // At least a quarter of anonymous rooms become gardens when the generator otherwise reads as one giant brown interior.
-  const anon=meta.filter(v=>!v.namedIndoor).sort((a,b)=>a.enclosure-b.enclosure||a.seed-b.seed),wantGarden=Math.min(anon.length,Math.max(meta.length>=4?1:0,Math.round(meta.length*.28)));for(let i=0;i<wantGarden;i++)anon[i].indoor=false;
-  for(const v of meta){const {r,seed,indoor}=v;for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++){const t=state.map[y]?.[x];if(!floorish(t))continue;if(indoor){const border=x===r.x+1||x===r.x+r.w-2||y===r.y+1||y===r.y+r.h-2;setTerrainTile58(state.map,x,y,border&&r.w>=9&&r.h>=7?TT.DARK_WOOD:TT.WOOD_FLOOR)}else{const cross=x===r.cx||y===r.cy;setTerrainTile58(state.map,x,y,cross?TT.STONE_PATH:((x+y+seed)%6===0?TT.LIGHT_GRASS:TT.GRASS))}}if(indoor)out.indoor++;else out.garden++;out.rooms.push({x:r.x,y:r.y,w:r.w,h:r.h,indoor,enclosure:v.enclosure})}
-  state.theme2RoomIdentity1027=out;return out;
-}
+
 
 
 
