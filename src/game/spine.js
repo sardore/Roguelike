@@ -3173,7 +3173,6 @@ C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
 
 const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','이동 / 자동 탐사');b.textContent='行';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
 
-globalThis.__MANRU_LIFECYCLE__.registerNew('autowalk-v10',{post:()=>{addLog('좌클릭/탭: 자동 이동 · X/이동: 자동 탐사. 적이 보이거나 피격되면 즉시 멈춘다.')}});
 
 // r53: mobile help text is canonical in renderMobileDrawer.
 
@@ -3234,7 +3233,6 @@ document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{const cid=CLAS
 // Lifecycle: every generated floor receives the stable décor layer; old saves rebuild safely.
 // generation décor is emitted by the canonical base/stages; no lifecycle wrapper.
 // The later v3 robust loader owns legacy-load decor rebuild directly; this superseded wrapper is retired.
-globalThis.__MANRU_LIFECYCLE__.registerNew('visual-floor-decor',{post:()=>{if(state){vfBuildDecor();addLog('지역별 타일·벽 장식·몬스터 스프라이트가 활성화되었다.');updateAll()}}});
 if(state){vfBuildDecor();updateAll()}
 
 vfAuto.id='vfAutoState';document.getElementById('canvasWrap').appendChild(vfAuto);
@@ -3435,8 +3433,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
   
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('v3-map-art',{post:()=>{addLog('48px 세밀 스프라이트 · 가변 지도 크기 · 전술 금고방이 활성화되었다.');updateAll()}});
-
+  
 
 
 
@@ -3546,8 +3543,7 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
   /* R7 refactor: obsolete early potion visual wrapper removed. */
   
   function addP(fr,names){const pool=names.map(n=>POTIONS.find(p=>p.name===n)).filter(Boolean).filter(p=>state.floor>=(p.minFloor||1)),p=freeRoomCell(fr);if(pool.length&&p)PlacementService.placeItem({...clone(choice(pool)),x:p.x,y:p.y,count:1})}function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='연금술방'){addP(fr,['소회복 비약','중회복 비약','청심탕','해독산']);addP(fr,['경신약','강골주','연막병','화유병','청심탕'])}else if(fr.name==='사당')addP(fr,['청심탕','해독산','강골주']);else if(fr.name==='무기고'&&globalThis.__MANRU_RANDOM57__()<.82)addP(fr,['연막병','화유병','강골주']);else if(fr.name==='감방'&&globalThis.__MANRU_RANDOM57__()<.68)addP(fr,['중회복 비약','강골주','연막병']);else if(fr.name==='주방'&&globalThis.__MANRU_RANDOM57__()<.42)addP(fr,['소회복 비약','해독산'])}}
-  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});globalThis.__MANRU_LIFECYCLE__.registerNew('potions41',{post:()=>{pstate();addLog('비약·연막병·화유병이 활성화됐다.');updateAll()}});
-  
+  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});  
   globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
   
   pstate();
@@ -4100,8 +4096,7 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   /* removed overwritten updateAll */
   /* removed overwritten visualLoop */
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('camera49',{post:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=true}});
-
+  
   syncGameViewport();
 
 
@@ -4478,8 +4473,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
   function onFloorGenerated56(){ensureKnowledge56();decorateAllItems56();contextualRewards56();decorateAllItems56();state.roomHints56={};if(typeof vfBuildDecor==='function')vfBuildDecor()}
   registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
-  globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
-
+  
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
   function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
 
@@ -4584,7 +4578,6 @@ registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards5
 
 registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
-globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}});
 
 
 if(state)ensureFoodState();
@@ -5647,8 +5640,7 @@ const RC={
     closeCurrentTip(true);lsSet('manruTutorialAccount66',JSON.stringify({version:1,seen:{}}));if(state)state.tutorialSeen59={};RC.tutorialQueue=[];closeReleasePanel();tip70('start','탭/클릭한 칸까지 자동 이동한다. 모바일과 PC 모두 8방향 이동을 지원한다.','모바일 길게 누르기 / PC 우클릭 = 조사 · Q 짧게 = 무술 · Q 길게 = 강화');showFloorTips();
   }
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('runtime70',{post:()=>{closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();if(!state?.tutorialEntry60)tip70('start','탭/클릭한 칸까지 이동한다. 방향키와 WASD로도 이동할 수 있다.','한 번 행동하면 적도 움직인다.')}});
-
+  
 
 
   registerPickupStageR25('coach70',{post:ctx=>{
@@ -6222,8 +6214,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'element74',draw:drawElementOverlay});
 
   registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
-  globalThis.__MANRU_LIFECYCLE__.registerNew('talisman74',{post:()=>{ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}});
-  
+    
   globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
@@ -6747,8 +6738,7 @@ const CONFIG81=Object.freeze({
 
   /* Reapply after start/load without adding switches or changing user policy. */
   registerGenerationStage('runtime81','post',()=>{Integrity81.repair();ConnectedDecor81.build();queuePlace81()});
-  globalThis.__MANRU_LIFECYCLE__.registerNew('runtime81',{post:()=>{CameraController.center();ConnectedDecor81.build();queuePlace81()}});
-  
+    
   addEventListener('pointerup',stopHeldInput,{passive:true});addEventListener('pointercancel',stopHeldInput,{passive:true});addEventListener('blur',stopHeldInput,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 
   cleanViewportUI();makeInput();rebindControls();ConnectedDecor81.build();CameraController.resume(false);
@@ -8413,11 +8403,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   
     globalThis.__MANRU_TURN_PIPELINE__.register('camera-save984',{post:()=>{if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}});
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
-  globalThis.__MANRU_LIFECYCLE__.registerNew('camera-save984',{
-    pre:ctx=>{const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}},
-    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): the zoom limits depend on the game screen's laid-out size, which exists only after the screen switch that follows this stage; 90 ms waits for that layout. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
-  });
-  // r53: overwritten save implementation retired.
+    // r53: overwritten save implementation retired.
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
 
 
@@ -8509,8 +8495,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   // r18: generation side effects are invoked by the single canonical generation pipeline below; no wrapper stacking here.
-  globalThis.__MANRU_LIFECYCLE__.registerNew('curse-story991',{post:()=>{for(const slot of GEAR_SLOT_TYPES)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}});
-
+  
 
 
 
@@ -8699,8 +8684,7 @@ const STORY_VERSION992='v9.9.3-story-system';
   const SCREEN1002={mode:'title',booted:false};RuntimeState.ui.screen=SCREEN1002;
 
 
-  globalThis.__MANRU_LIFECYCLE__.registerNew('screen1002',{post:()=>{if(state&&!state.dead&&!state.victory)setScreen('game')}});
-    RUN_END_EFFECTS53.push(()=>setScreen('ending'));
+      RUN_END_EFFECTS53.push(()=>setScreen('ending'));
 
   function bootScreen1002(){
     if(SCREEN1002.booted)return;SCREEN1002.booted=true;
@@ -9205,7 +9189,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.tur
 
 
 /* keep old saves and newly generated instances in sync with audited definitions */
-globalThis.__MANRU_LIFECYCLE__.registerNew('normalize1006',{post:()=>{normalizeAllItems()}});
 // r18: item normalization/door pruning are explicit canonical generation stages.
 
 

@@ -6,18 +6,12 @@ function migrateRetiredItems(run){if(!run?.player)return{inventory:0,ground:0,pe
 function captureGenerationSnapshot(){return{state:structuredClone(state),cols:COLS,rows:ROWS}}
 function restoreGenerationSnapshot(snap){if(!snap?.state)return false;state=structuredClone(snap.state);COLS=snap.cols;ROWS=snap.rows;return true}
 let saveGame;
-/* ===== CANONICAL NEW/LOAD LIFECYCLE PIPELINE =====
-   Historical releases used nested `old=newGame/loadGame; fn=function(){old();...}` chains.
-   Keep one stable public entrypoint and register explicit wrapper-equivalent stages instead.
-   Registration order is historical inner -> outer order.  Pre hooks therefore run in reverse,
-   then the core runs once, then post hooks unwind in forward order. */
-const MANRU_NEW_LIFECYCLE_STAGES=[];
+/* ===== NEW/LOAD LIFECYCLE =====
+   One public entrypoint per kind (RunLifecycle.runNew / runLoad). Each runs its before-step, the core once, then its
+   after-step: beforeNewRun/afterNewRun and beforeLoad/afterLoad below list the steps in the order they run.
+   A before-step may reject the run by returning {stage, value} (readLoadRequest does, through manruLifecycleAbort). */
 const MANRU_LIFECYCLE_ABORT=Symbol('MANRU_LIFECYCLE_ABORT');
 function manruLifecycleAbort(value){return{tag:MANRU_LIFECYCLE_ABORT,value}}
-function manruRegisterLifecycle(list,id,spec={}){
-  const old=list.findIndex(s=>s.id===id);const stage={id,pre:typeof spec.pre==='function'?spec.pre:null,post:typeof spec.post==='function'?spec.post:null};
-  if(old>=0)list.splice(old,1,stage);else list.push(stage);return stage;
-}
 /* Phase 7: the live `state` object remains the one gameplay authority. Persistence is an
    explicit allowlisted projection; process-only identities live under RuntimeState. */
 const GAMESTATE_FIELDS=Object.freeze('terrainReactions105,branchWorld105,branchContext105,branchTerrain105,branchPortals105,pendingMartialManualChoice,martialManualDrops,martialEcho,martialDamageSequence,martialProgression1005,naturalPopulation57,recentPlayerCells57,noiseSequence57,lastDamageAgencyTurn57,passiveRecoveryUnlocked57,floor2Choice63,makgeolliRecoveryTurns57,silkTraps57,earlyHallVariant58,tutorialEntryAudit60,specialProgressionValidation57,tutorialEntry60,tutorialSeen59,earlyRecoveryProgress58,floor23,floor24,earlyProgression58,__arch89,__arch90,__arch91,__arch93,_lastPlayerPos60,alert,ammoGeneration972,ammoSpawn967,archDecor1020,archDecor1023,architecture1020,architectureConnections51,artifactClaimed46,artifactDungeon46,artifactExit46,artifactHistory46,artifactPortal46,artifactReturn46,artifactReward46,bookWallMap1022,bookWalls1022,bossDefeated,bossDrop55,bossExitGate1020,bossPos60,bossZones54,branchLeaves92,branchRooms92,buildingPartition1026,choiceSideRooms95,choiceVariant60,cipher,coherentDecorCount94,connectedDecor81,cookbook57,coreLoot982,coreLootAudit982,corridorCells59,crumbleBase60,curseClocks991,dead,decals,decor,decorCanonical1029,decorRouteRepair1029,deepKey24_1020,discoveredPortals981,doorCleanup86,doorCount59,drunkBornTurn57,elementFields74,elementWard74,emergencyPath981,enemyDensity964,enemyEnergy,f20BossLock1020,f20Chambers1020,f20Content1020,f20Furnaces1020,f20KeyDepth1020,f20MazeZones1020,f20RewardSpots1020,f20WoodWings1020,f22HolyCells1023,f22Population43,f6Elite1023,f6LibraryGateR8,f6LibraryKeyR8,f6LibraryPrizeR8,f6Prize1023,featureRooms,finalConnectivity51,fixedExit,fixedStart,floor,floor21BlinkAuditR43,floor21FinalBlinkChoiceAuditR46,floor22RouteR44,floor23MercuryRepair1029,floor6GrandLibraryR8,floor6WaterBalanceR8,floor8GardenCourts1028,floorColorRollback971,floorFeeling62,floorKeys,floorKeysRequired,floorPattern1022,floorSeed60,floorStyle980,floorTrait47,floorTurn,focalRooms89,formalSymmetry1029,functional89,gazeBursts57,generatedBuild,generationBaseAttemptsR18,generationFinalKeyAttemptsR48,generationFinalKeyFailureR48,generationPipelineR18,generationProfile93,generationRejected51,generationRepair,generationRngAuditR59,generationSeedR59,goldIndoor1020,grandDecor90,grandRoom89,grassTone1020,grassTufts1020,guaranteedRelic1005,guardRooms59,harvested,hazard1005,hiddenBase60,hiddenGroups60,hiddenLookup60,hiddenReplacement60,holy991,intentBudget61,ironGate18_1020,itemBiasMoved94,itemBiasZones94,itemReach981,items,jarGasFields57,keyIntegrity48,keyPlan96,keyTrial94,knowledge56,landmarkCells71,landmarks,landmarks71,lastCombat57,lastCombat991,lastCombatReason57,lastKitchenFloor58,lastTrait47,lateItemRepair1004,layoutMode59,layoutMode85,layoutName,legacyUpgradeMigrated982,legendBuildings49,legendDecor47,legendDecorGrid47,legendFireFields47,legendIntegrity49,legendLandmark47,legendLights49,legendObjects49,legendPalette47,legendPaths49,legendPattern47,legendRegion49,legendSanctums47,legendSeed49,legendSkyAxes47,legendTerrain47,legendTheme47,libraryDesks52,libraryScrolls1022,libraryZones1022,log,lootHistory47,mainPathRooms92,mainRooms90,makgeolliHealHundredths57,map,midGate22_1020,midKey22_1020,miniVault62,minorPurpose90,noiseHistory01,monsterCrowding1027,monsterDenseRooms,monsters,neutralInteractables58,nextAllyId53,nextCombatantId54,orphanDoorsPruned1006,outdoorGate24_1020,outerWall94,peachBudget52,peachGeneration53,pendingGroundItems57,player,playerAgencyTurns57,portalEdges981,portalLinks981,portalMonsterLoad981,portalRooms981,portals981,postRouteLockAudit1005,preRouteKeyPlan1005,purposeCount90,purposeGuards90,purposeRooms90,qualityAudit981,qualityBaseAttempts980,qualityLockConservative980,qualityLockFallback980,qualityModules980,qualityRejected980,qualityVersion980,qualityVersion981,raftAudit981,raftFallback981,raftMain981,rafts,regionComplex71,repair60,repairedEntities71,repairedMonsters70,requiresBlink,restaurantRooms42,riverGenerationAttempts982,riverRule982,roomGraph92,roomGraph93,roomHints56,roomSplits89,roomTemplate92,roomTemplate93,rooms,routeDesign1005,routeKeyShrine1005,routeMetric1005,routeTags,rugPattern1022,rumorSpaceAudit1030,rumorSpaceClues1030,rumorSpaces1030,runEndEffects57,runId,runId984,runState57,saveSchema1004,saveSeq1004,saveVersion1004,saveWrittenAt1004,secretTreasure,seen,shopIntermission,skillHoldHint991,specialDecor1024,specialFloor,specialPlaces52,specialRevision60,stairMarkerAudit1029,stairs,status,story992,storyMap992,storyMode992,strategy85,strictLockAudit1004,subthemeFloors972,subthemeWalls970,switches,tempFields,tempTerrain74,terrainAttachment58,terrainMutationSeq57,terrainMutationVersion57,terrainUnderlay58,terrainUnderlayVersion58,theme2RoomIdentity1027,theme2Symmetry1027,themeDecorGroups1022,themeMotifCount1022,themeZones970,themedRooms87,turn,uniqueKilled,vaults,victory,visionPenalty,wallDecorSanitize1029,wallStyle980,windowRemoved88,windows86'.split(','));
@@ -78,16 +72,38 @@ const GameState=Object.freeze({
   project:projectGameState,migrate:migrateGameState,
   snapshot:()=>({owner:'GameState',schema:1,fields:[...GAMESTATE_FIELDS],runtimeFields:[...GAMESTATE_RUNTIME_FIELDS],derivedFields:['visible']})
 });
-const NEW_RUN_STEPS={
-  before(ctx){
-    ctx.entered=new Set();
-    for(let i=MANRU_NEW_LIFECYCLE_STAGES.length-1;i>=0;i--){const st=MANRU_NEW_LIFECYCLE_STAGES[i];if(st.pre){const out=st.pre(ctx,...ctx.args);if(out?.tag===MANRU_LIFECYCLE_ABORT)return{stage:st.id,value:out.value}}ctx.entered.add(i)}
-    return null;
-  },
-  after(ctx){
-    for(let i=0;i<MANRU_NEW_LIFECYCLE_STAGES.length;i++)if(ctx.entered.has(i)&&MANRU_NEW_LIFECYCLE_STAGES[i].post){const out=MANRU_NEW_LIFECYCLE_STAGES[i].post(ctx,ctx.result,...ctx.args);if(out!==undefined)ctx.result=out}
-  },
-};
+/* ===== NEW-RUN PIPELINE: what a new run does around newGameCoreLifecycle, in order =====
+   They replace the new-run stage registry (registerNew): the order below is the order the 14 registered stages ran in. */
+function prepareNewRunSeed(ctx){const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}}
+function logAutoWalkHelp(){addLog('좌클릭/탭: 자동 이동 · X/이동: 자동 탐사. 적이 보이거나 피격되면 즉시 멈춘다.')}
+function buildFloorDecorForNewRun(){if(state){vfBuildDecor();addLog('지역별 타일·벽 장식·몬스터 스프라이트가 활성화되었다.');updateAll()}}
+function logMapArtNotice(){addLog('48px 세밀 스프라이트 · 가변 지도 크기 · 전술 금고방이 활성화되었다.');updateAll()}
+function initPotionStateForNewRun(){pstate();addLog('비약·연막병·화유병이 활성화됐다.');updateAll()}
+function markRedrawForNewRun(){RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=true}
+function initKnowledgeForNewRun(){ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}
+function initFoodForNewRun(){ensureFoodState();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}
+function resetTipsForNewRun(){closeCurrentTip(true);RC.tutorialQueue=[];RC.tutorialShowing=false;clearTimeout(coachTimer);coach.style.removeProperty('display');RC.lastActionAt=performance.now();if(!state?.tutorialEntry60)tip70('start','탭/클릭한 칸까지 이동한다. 방향키와 WASD로도 이동할 수 있다.','한 번 행동하면 적도 움직인다.')}
+function initTalismansForNewRun(){ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}
+function centerCameraForNewRun(){CameraController.center();ConnectedDecor81.build();queuePlace81()}
+function setupCameraForNewRun(ctx){const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): the zoom limits depend on the game screen's laid-out size, which exists only after the screen switch that follows this stage; 90 ms waits for that layout. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
+function initCursesForNewRun(){for(const slot of GEAR_SLOT_TYPES)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}
+function beforeNewRun(ctx){prepareNewRunSeed(ctx);return null}
+function afterNewRun(ctx){
+  logAutoWalkHelp();
+  buildFloorDecorForNewRun();
+  logMapArtNotice();
+  initPotionStateForNewRun();
+  markRedrawForNewRun();
+  initKnowledgeForNewRun();
+  initFoodForNewRun();
+  resetTipsForNewRun();
+  initTalismansForNewRun();
+  centerCameraForNewRun();
+  setupCameraForNewRun(ctx);
+  initCursesForNewRun();
+  showGameScreenIfPlaying();
+  normalizeAllItems();
+}
 /* ===== LOAD PIPELINE: what a load does around loadGameCore, in order =====
    beforeLoad runs before the core and may reject the load; afterLoad runs after it. They replace the stage
    registry (registerLoad/resetLoad): the order below is the order the 15 registered stages ran in. */
@@ -110,7 +126,7 @@ function restoreCoreLootAudit(){
   }
 function restoreCameraAfterLoad(ctx,r){if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): same wait for the laid-out game screen as in the new-run stage above. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
 function syncCurseClockAfterLoad(){if(state){state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}
-function showGameScreenAfterLoad(){if(state&&!state.dead&&!state.victory)setScreen('game')}
+function showGameScreenIfPlaying(){if(state&&!state.dead&&!state.victory)setScreen('game')}
 function sanitizeAfterLoad(ctx,r){sanitizeTransient1003();if(state){resetVisualState();updateAll()}return r}
 function auditStrictLocksAfterLoad(){if(state&&!state.artifactDungeon46&&!state.branchContext105&&strictKeyFloors1004.has(state.floor))state.strictLockAudit1004=lockAudit96()||null}
 function resolveHazardsAfterLoad(){if(state){hz();resolveAllStandingHazards1005('load');updateWardHud();VisibilityService.compute();updateAll()}}
@@ -129,7 +145,7 @@ function afterLoad(ctx){
   restoreCoreLootAudit();
   const camera=restoreCameraAfterLoad(ctx,ctx.result);if(camera!==undefined)ctx.result=camera;
   syncCurseClockAfterLoad();
-  showGameScreenAfterLoad();
+  showGameScreenIfPlaying();
   const clean=sanitizeAfterLoad(ctx,ctx.result);if(clean!==undefined)ctx.result=clean;
   auditStrictLocksAfterLoad();
   resolveHazardsAfterLoad();
@@ -168,11 +184,9 @@ const RunLifecycle={
       RuntimeState.lifecycle.depth--;save.clearPending();RunLifecycle.refreshContinue();
     }
   },
-  registerNew:(id,spec)=>manruRegisterLifecycle(MANRU_NEW_LIFECYCLE_STAGES,id,spec),
   abort:manruLifecycleAbort,
-  runNew:(...args)=>RunLifecycle.run(newGameCoreLifecycle,NEW_RUN_STEPS,args,'new'),
+  runNew:(...args)=>RunLifecycle.run(newGameCoreLifecycle,{before:beforeNewRun,after:afterNewRun},args,'new'),
   runLoad:(...args)=>RunLifecycle.run(loadGameCore,{before:beforeLoad,after:afterLoad},args,'load'),
-  audit:()=>({newCore:'base-new',newStages:MANRU_NEW_LIFECYCLE_STAGES.map(s=>s.id)}),
   busy(){return RuntimeState.lifecycle.depth>0},
   generation(){return RuntimeState.lifecycle.generation},
   isCurrent(generation){return generation===RuntimeState.lifecycle.generation},

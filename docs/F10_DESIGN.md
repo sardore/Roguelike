@@ -30,7 +30,7 @@
 
 ## 3.55 진행 (2026-10-11)
 - `MANRU_LOAD_CORE`/`MANRU_LOAD_CORE_ID`/`resetLoad`/`snapshotLoad`/`registerLoad`와 도달 불가한 `loadGameV0Legacy`, `legacyLoadCore`를 삭제했다(`alias` 2→1). 불러오기 코어는 `loadGameCore` 하나이고 `RunLifecycle.runLoad`가 직접 쓴다. `RuntimeState.lifecycle.validate/parse`는 처음부터 `validateSaveState`/`parseEnvelope`이다.
-- 실행되던 15개 단계는 `save.js`의 `beforeLoad`(거절 가능, 이전의 `camera-save984` pre) 한 곳과 `afterLoad`(14개 post를 같은 순서로 호출) 한 곳에 순서대로 적혀 있다. 각 단계는 이름 있는 함수가 되었다(`docs/NAMING.md`). 새 런 쪽 `registerNew` 등록은 아직 남아 있다(`NEW_RUN_STEPS`가 그 목록을 돌린다): 다음 단계에서 같은 방식으로 `afterNewRun`으로 합칠 수 있다.
+- 실행되던 15개 단계는 `save.js`의 `beforeLoad`(거절 가능, 이전의 `camera-save984` pre) 한 곳과 `afterLoad`(14개 post를 같은 순서로 호출) 한 곳에 순서대로 적혀 있다. 각 단계는 이름 있는 함수가 되었다(`docs/NAMING.md`). 새 런 쪽도 같은 방식으로 합쳤다: `registerNew` 등록 14개와 `MANRU_NEW_LIFECYCLE_STAGES`·`manruRegisterLifecycle`·`NEW_RUN_STEPS`를 지우고 `beforeNewRun`(이전 `camera-save984` pre) + `afterNewRun`(14개 post를 등록 순서대로)으로 적었다. 검증: 이전 커밋의 각 단계 본문과 새 함수 본문이 공백 제외 동일, 반환값을 쓰는 단계 없음, 호출 순서 = 등록 순서, `npm test` 기준선 그대로.
 - 남은 F-10b(`typedKeyMeta96`)는 별도 결정 대기.
 
 ## 3.6 실험 결과 요약 (자세한 표는 FINDINGS F-19)
