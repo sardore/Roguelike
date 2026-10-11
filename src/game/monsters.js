@@ -1947,4 +1947,4 @@ function summonMigrateSpecies105(q){
  }
  q.speciesVersion105=1;OccupancyService.endShared();
 }
-function summonTalismanElement105(item){return item?.type==='talisman'&&globalThis.__MANRU_TALISMAN_PUBLIC__?.known(item)&&itemQuantity(item)>0&&SUMMON_RACES[item.element74]?item.element74:null;}
+

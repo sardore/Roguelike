@@ -513,26 +513,10 @@ function normalizeItemContainers57(){
     else PlacementService.placeItem(item,{x:item.x,y:item.y},{requireReachable:false});
   }PlacementService.flushPendingItems()
 }
-function terrainReactions105(){
- const r=state.terrainReactions105||(state.terrainReactions105=newTerrainReactions105());r.burning||={};r.unlit||={};
- // Migrate old decorative/ember records exactly once into the ordinary item container.
- if(r.char){state.items||=[];for(const c of Object.values(r.char)){if(!Number.isInteger(c.x)||!Number.isInteger(c.y)||state.map?.[c.y]?.[c.x]==null||c.remaining===0)continue;
-  const item={...clone(foodDef('검게 탄 숯')),x:c.x,y:c.y,count:1};
-  if(c.remaining>0){item.charcoalBurn105={remaining:Math.min(2,c.remaining),lit:!!c.lit,born:c.born??state.turn,source:c.source||{sourceFaction:'neutral',credit:null}};if(!c.lit)coolCharcoal105(item)}state.items.push(item);
- }delete r.char;r.version=2}return r;
-}
-function elementCells105(x,y,radius=0,cells=null){
- const result=[],seen=new Set(),candidates=cells??Array.from({length:radius*2+1},(_,i)=>Array.from({length:radius*2+1},(_,j)=>({x:x+j-radius,y:y+i-radius}))).flat();
- for(const q of candidates){if(!Number.isInteger(q.x)||!Number.isInteger(q.y)||q.x<0||q.y<0||q.x>=COLS||q.y>=ROWS)continue;const key=k(q.x,q.y);if(seen.has(key))continue;if(!cells&&(q.x!==x||q.y!==y)&&!lineClear(x,y,q.x,q.y))continue;seen.add(key);result.push({x:q.x,y:q.y})}return result;
-}
-function coolCharcoal105(item){
- const remaining=item.charcoalBurn105?.remaining??2;
- if(remaining>=2)delete item.charcoalBurn105;else item.charcoalBurn105={remaining,lit:false};
-}
-function dropBurntCharcoal105(x,y){
- // Spent material is a collectible item, never a fresh autonomous fire source.
- const item={...clone(foodDef('검게 탄 숯')),x,y,count:1};state.items.push(item);return item;
-}
+
+
+
+
 function cookingFireAvailable105(source){if(source!=='pot'&&source!=='brazier')return true;const p=state.player,t=source==='pot'?TT.COOKPOT:TT.BRAZIER;return DIRS8.concat([[0,0]]).some(([dx,dy])=>state.map[p.y+dy]?.[p.x+dx]===t&&!terrainUnlit105(p.x+dx,p.y+dy))}
 function jarReward57(x,y){
  if(globalThis.__MANRU_RANDOM57__()>=.20)return null;
@@ -698,7 +682,7 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
   function near74(x,y,r=1){return[...state.monsters].filter(m=>isHostileTarget57(m)&&!m.hidden&&entityDistance57(m,{x,y})<=r)}
   function push74(mon,fx,fy,n=1){return resolveForcedMovement57(mon,{x:fx,y:fy},n,{mode:'push',hostile:true,creditPlayer:true}).moved>0}
   function tempTile74(x,y,tile,ttl,kind){return RuntimeTerrainOwner.temporary(x,y,tile,ttl,kind,{allowedOld:[TT.FLOOR,TT.GRASS,TT.OPEN_DOOR],source:'element74'})}
-  function addElemField74(kind,x,y,ttl,damage=3){const cells=elementCells105(x,y,1);emitElementContact105(kind,cells,effectSource57(state.player));state.elementFields74=state.elementFields74.filter(f=>!(f.kind===kind&&f.x===x&&f.y===y));state.elementFields74.push({kind,x,y,ttl,damage:Math.max(1,Math.round(damage)),cells,bornTurn:state.turn+1,...effectSource57(state.player)})}
+
   function fuse74(a,b){if(!playerClassRules58().talismanFusion){closeFusion();toast('천하장사는 부적을 합성할 수 없다.');return false}const action=playerAction57('modal-action',{uiOwner:'fusion74'});if(!action.ok)return false;if(!a||!b||a===b||!known74(a)||!known74(b)){toast('감정된 서로 다른 기본 부적이 필요하다.');return false}const r=compatible74(a,b);if(!r){toast('두 부적의 기운이 안정적으로 합쳐지지 않는다.');return false}const result=recipeItem(r);consumeRef(a);consumeRef(b);addInventoryItem(result);K74().talismanKnown[result.talismanKind]=true;closeFusion();burst(state.player.x,state.player.y,E74[r.element]?.color||'#d8b06c',24,.9);addLog(`부적 합성 · ${r.name} 완성.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"fuse74"}).value;return true}
   function reveal74(){let n=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));if(state.map[y][x]===TT.SECRET_DOOR)n++}VisibilityService.compute();return n}
   const randInt967=(a,b)=>Math.floor(globalThis.__MANRU_RANDOM57__()*(b-a+1))+a;

@@ -4014,9 +4014,7 @@ function displayCombatText58(value){
     .replace(/(→[^:\n]+:\s*)(\d+\.\d+(?:e[+-]?\d+)?)/g,(_,prefix,n)=>prefix+Math.round(Number(n)));
 }
 function automationPresentationRate70(){return globalThis.__MANRU_RUNTIME81__?.Automation81?.presentationRate?.()||1}
-function wallMaterial105(x,y,world=state){
- return authoredWoodWall(x,y,world)&&world.terrainReactions105?.wallMaterials105?.cells?.[k(x,y)]==='wood'&&!protectedProp105(x,y,world)?'wood':'stone';
-}
+
 function terrainUnlit105(x,y){const lamp=state?.branchTerrain105?.mine105?.lanterns?.find(l=>l.x===x&&l.y===y);return lamp?!lamp.lit:!!state?.terrainReactions105?.unlit?.[k(x,y)]}
 function beginStructureMotion105(oldKey,key,from,x,y){
   const now=performance.now();let motions=STRUCTURE_MOTION105.get(state.map);if(!motions){motions=new Map();STRUCTURE_MOTION105.set(state.map,motions)}

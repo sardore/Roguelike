@@ -2089,15 +2089,10 @@ function pressureSwitchVariant105(button){
  return Number(pressed)+2*Number(!!latched);
 }
 function k(x,y){ return x+","+y; }
-function isWaterTile105(tile){return tile===TT.WATER||tile===TT.SHALLOW_WATER;}
+
 function effectCanAffect57(effect,target){return !!target&&target.hp>0&&(effect?.friendlyFire||factionsHostile57(effect?.sourceFaction||'neutral',entityFaction(target)))}
-function elementalStructureAt105(x,y){
- const object=mineState()?.carts.find(c=>c.alive&&c.x===x&&c.y===y&&c.material105);
- return object?{type:'mine-structure',object,material:object.material105}:null;
-}
-function destroyElementStructure105(target,elem){
- return !!(target?.object?.alive&&elementAffectsMaterial105(elem,target.material)&&destroyMineStructure(target.object,elem));
-}
+
+
 function breakFurnitureTerrain57(x,y,weapon,options={}){
   if(!state)return false;const t=state.map?.[y]?.[x],key=k(x,y),usedBed=options.cause==='bed-use'&&t===TT.BED,crush=usedBed||['rising-gate','wave'].includes(options.cause);
   if(!crush&&state.terrainAttachment58?.[key]==='secret-wall')return !!globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,null)?.result;

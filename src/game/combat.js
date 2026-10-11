@@ -525,13 +525,8 @@ function presentPlayerAction58(kind,target=null){
  const now=performance.now(),p=state.player,a=ACTION_PRESENTATION58,rate=automationPresentationRate70();
  Object.assign(a,{run:state,start:now,until:now+(kind==='attack'?260:240)/rate,inputUntil:now+85/rate,rate,kind,source:{x:p.x,y:p.y},target:target?{x:target.x,y:target.y}:null,entity:target,pending:true,weapon:p.weapon?.kind||'brawl',hit:false,crit:false,strong:false});
 }
-function elementMaterial105(t,kind,x,y){
- if(kind==='wood'&&t===TT.WOOD_FLOOR&&state.branchContext105?.id==='palace'&&state.branchTerrain105?.palace105?.materials?.[k(x,y)]===t)return true;
- if(t===TT.WALL&&kind==='structural-stone')return true;
- if(t===TT.WALL)return kind==='wood'&&Number.isInteger(x)&&Number.isInteger(y)&&wallMaterial105(x,y)==='wood';
- return t!=null&&ELEMENT_MATERIALS105[kind]?.some(name=>TT[name]===t);
-}
-function weaponElement105(w=state?.player?.weapon){return w?.elementBrand74||({ember_axe:'fire',lava_bow:'fire',water_crossbow:'water',thunder_spear:'shock',earth_gauntlet:'earth'}[w?.artifactId46])||null}
+
+
 function drunkMovementOutcome57(){if(globalThis.__MANRU_RANDOM57__()>=DRUNK_RULES.movementUnstable)return'steady';return globalThis.__MANRU_RANDOM57__()<DRUNK_RULES.movementWanderWithinUnstable?'misstep':'stumble'}
 function applyCombatDebuffStats57(stats,actor=state?.player){
  if(!stats||!actor)return stats;
