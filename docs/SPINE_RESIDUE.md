@@ -26,4 +26,4 @@
 | 위 분기 상수 약 25개와 `LEGENDS47`·`LEGEND_TILES49`·`LEGEND_THEMES47`·`DEF47`, `LEGEND_SKILLS986` | branches | L(추이적), T/전설 표 순서(`DEF47`·`LEGEND_TILES49`가 `LEGENDS47`을 로드 시 읽음) | 호출 경로를 끊는 부팅 단계 정리 뒤 한 번에 이동 |
 
 ## 느슨한 문장 (이유 P)
-현재 spine.js에 느슨한 문장(등록·호출·대입) 약 630개, 920줄이 남아 있다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
+현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

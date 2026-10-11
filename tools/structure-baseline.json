@@ -12,5 +12,8 @@
  "emptyCatch": 0,
  "timer": 41,
  "sameBody": 0,
- "qaLeak": 0
+ "qaLeak": 0,
+ "spineLines": 11246,
+ "spineDeclarations": 1289,
+ "spineLooseStatements": 584
 }
