@@ -51,6 +51,7 @@
 | rest→ui | rest 중 사용처 과반이 ui.js인 선언 → ui.js (규칙 a) | 7658 | 453 / 584 | 755 | 70.6% | - |
 | rest→input | rest 중 사용처 과반이 input.js인 선언 → input.js (규칙 a) | 7658 | 452 / 584 | 755 | 70.6% | - |
 | rest→plurality | 혼합 rest 6개 → 최다 사용 도메인 | 7645 | 446 / 584 | 755 | 70.6% | - |
+| F-22 | 로드 중 이른 이어하기 판정 3회 삭제(동작 변경) | 7643 | 446 / 582 | 755 | 70.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -67,9 +68,9 @@
 | special.js | 1889 |
 | branches.js | 2381 |
 | elements.js | 247 |
-| spine.js | 7645 |
+| spine.js | 7643 |
 | input.js | 149 |
 | story.js | 213 |
-| ui.js | 729 |
+| ui.js | 728 |
 | start.js | 6 |
-| (total) | 26032 |
+| (total) | 26029 |

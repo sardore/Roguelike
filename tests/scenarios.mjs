@@ -317,11 +317,12 @@ export const scenarios = {
       if (enabled !== (name !== 'dead')) throw new Error(`continue button for the ${name} save is ${enabled ? 'enabled' : 'disabled'} at boot`);
       // F-21: the continue check made while the game loads must accept the run by itself (the boot-end re-check that
       // used to repair the branch save is gone, so the enabled check above covers it) and must reject nothing on the
-      // way: the branch save used to read BRANCH_DEFS105 before its declaration. The class history is recorded too
-      // (F-22: the checks that run before the save service is published always disable the button first).
+      // way: the branch save used to read BRANCH_DEFS105 before its declaration. F-22: the load-time check runs once,
+      // after the save service is published, so a resumable run never sees its button disabled first.
       const boot = await s.page.evaluate(() => window.__QA_BOOT_PROBE__);
       out[`saves.${name}.boot`] = JSON.stringify(boot);
       if (boot.warnings.some((w) => w.includes('cannot be continued'))) throw new Error(`the ${name} save was rejected during boot: ${boot.warnings.join(' | ')}`);
+      if (name !== 'dead' && boot.continueClass.length) throw new Error(`the continue button changed while the ${name} save booted: ${boot.continueClass.join(' -> ')}`);
       if (name !== 'dead') {
         await s.page.click('#continueBtn');
         await s.tick(3000);

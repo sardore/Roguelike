@@ -1783,7 +1783,6 @@ document.addEventListener('keydown',InputRouter,true);InputRouter.noteListener('
 
 const classGrid = document.getElementById("classGrid");
 const startGate=document.getElementById('startGate'),pickWrap=document.getElementById('classPickWrap'),enterBtn=document.getElementById('enterBtn'),continueBtn=document.getElementById('continueBtn'),classBackBtn=document.getElementById('classBackBtn');
-RunLifecycle.refreshContinue();
 bindMobileTopButtons();
 renderMobileDrawer();
 
@@ -3613,7 +3612,7 @@ const RC={
 
 
     
-  refreshSlots();refreshSfx();refreshContinueStatus();
+  refreshSlots();refreshSfx();refreshStorageStatus();
 
   window.__MANRU_RELEASE__={
     openPanel:openReleasePanel,closePanel:closeReleasePanel,markAction:()=>{RC.lastActionAt=performance.now();return RC.lastActionAt},tip:tip70,floorTutorial:showFloorTips,closeTip:closeCurrentTip,suspendTip:suspendTips,entryTutorial:advanceEntryTutorial,closePanel:closeReleasePanel
@@ -5626,7 +5625,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
 
 
-  RunLifecycle.refreshContinue();
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
   for(const id of ['rcLoadAuto70','rcExport70','rcImport70']){const b=document.getElementById(id);if(b){b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('퍼마데스 런에서는 과거 세이브를 불러올 수 없다.')}}}
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});

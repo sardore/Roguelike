@@ -60,8 +60,13 @@
 
 **수정(사용자 결정 (1), 2026-10-11)**: `BRANCH_DEFS105`를 branches.js(spine.js보다 앞)로 옮겼다. start.js의 부팅 끝 재확인(`__MANRU_LIFECYCLE__.refreshContinue()`)을 같은 커밋에서 삭제했다. 결과: 로드 중 판정이 분기 세이브도 받아들이고 경고가 사라졌다. 부수 효과: 분기 세이브로 부팅하면 로드 중 판정이 이주(`migrate`)를 끝까지 실행하므로, 다른 세이브(진행·전설)처럼 로드 끝에 지형 레이어 캐시(`TERRAIN_LAYER_CACHE58`)가 이미 만들어져 있다(수정 전에는 null; `3bce75f`와 `224e0c0` 빌드의 로드 끝 값 비교로 확인). 고친 뒤 다시 계측하면 spine.js 값 283개 중 TDZ 읽기는 0이다(TDZ 뒤 건너뛰던 같은 경로의 읽기도 포함). 테스트: `saves` 시나리오가 부팅 중 `계속` 클래스 변화와 콘솔 경고를 기록하고(`saves.*.boot`), 거부 경고가 있으면 실패한다. 수정 전 빌드는 `the branch save was rejected during boot`로, 재확인만 지우고 상수를 안 옮긴 빌드는 `continue button for the branch save is disabled at boot`로 실패한다.
 
-## F-22 (결정 필요) 세이브 서비스가 공개되기 전에 이어하기 판정이 세 번 불린다
+## F-22 (수정, 동작 변경) 세이브 서비스가 공개되기 전에 이어하기 판정이 세 번 불렸다
 F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 번 불린다(spine.js의 느슨한 문장 두 곳과 설정 패널 초기화의 `refreshContinueStatus`, 그리고 세이브 서비스를 공개하는 구획 안의 호출). 앞의 세 번은 `globalThis.__MANRU_SAVE_SERVICE__`가 아직 공개되기 전이라 `recover()`가 `undefined`이고, 세이브 종류와 상관없이 `계속`에 `noSave`를 붙인다. 네 번째(세이브 서비스 공개 뒤)가 실제 판정이다. V40도 같다. 화면에는 부팅이 끝난 뒤의 결과만 보이므로 사용자에게 보이는 차이는 없다. 선택지: (1) 앞의 세 호출을 지운다(같은 판정의 무의미한 사전 호출), (2) 그대로 둔다. 그 세 호출은 `continueBtn.onclick`도 설정하지만 네 번째 호출이 같은 값으로 다시 설정한다.
+
+**수정(사용자 결정, 2026-10-11)**: 앞의 세 호출을 지웠다. spine.js의 느슨한 문장 두 곳(`RunLifecycle.refreshContinue();`)과 설정 패널 초기화의 `refreshContinueStatus()` 안 호출이다. 그 함수에 남은 일(저장소 영구성 문구)은 이름을 `refreshStorageStatus`로 바꿔 그대로 둔다. 로드 중 판정은 세이브 서비스가 공개된 뒤 한 번만 일어난다.
+확인:
+- `saves` 시나리오: 이어갈 수 있는 세이브(진행·분기·전설)는 부팅 중 `계속` 클래스가 한 번도 바뀌지 않는다(바뀌면 실패). 사망 기록 세이브는 `noSave`가 한 번 붙는다. 수정 전 빌드는 `the continue button changed while the progress save booted: continueBtn -> continueBtn noSave`로 실패한다. 기준선 `saves.progress/branch/legend.boot`가 이에 맞게 바뀌었다.
+- `tests/title-frames.mjs`(타이틀 스크린캐스트, PC·모바일, `--storage`로 세이브 지정): 세이브 있음(진행·분기)에서는 첫 프레임 전후 모두 클래스 변화 0, 세이브 없음·사망 기록에서는 첫 표시 프레임 전에 `noSave`가 한 번 붙고 그 뒤 변화 0. 모든 경우 표시된 모든 프레임에서 버튼 영역이 최종 타이틀과 같다. 수정 전 빌드는 진행 세이브에서 첫 프레임 전에 두 번 바뀌었다(`noSave` 붙었다 떨어짐). 화면에 보이는 차이는 수정 전에도 없었다(모든 변화가 첫 표시 프레임 전).
 
 ## F-23 (회귀 수정) 이전 분할 커밋 3개가 V40 값 세 개를 바꿔 놓았다
 모든 최상위 값의 로드 끝 값을 분할 전 빌드(`12a8032^`)와 비교해서 찾았다(`tools/refactor/load-reads.mjs --snapshot`, 이름은 `docs/NAMING.tsv`로 대응; 4,284개 비교). 셋 다 move-to에 "객체 채우기(T)" 검사가 생기기 전의 분할에서 생겼다. 선언이 자기가 담는 값을 채우는 문장보다 앞으로 옮겨진 경우다.
