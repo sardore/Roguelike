@@ -562,6 +562,11 @@ export const scenarios = {
         const ret = await s.page.evaluate(() => { const r = window.__MANRU_RELEASE__.load(); return JSON.stringify(r === undefined ? 'void' : r); });
         const post = await s.page.evaluate(() => JSON.stringify({ aim: globalThis.__MANRU_QA_LOAD__.aim(), perf: globalThis.__MANRU_QA_LOAD__.perf() }));
         out[`loadhooks.${variant}.${form}.aim`] = JSON.stringify({ pre, ret, post });
+        // the same with a jar target (a cell) set before the load
+        await s.page.evaluate(() => { const st = window.__MANRU_DEBUG__.get(); globalThis.__MANRU_QA_LOAD__.setAim(null, { x: st.player.x + 2, y: st.player.y }); });
+        const preJar = await s.page.evaluate(() => JSON.stringify(globalThis.__MANRU_QA_LOAD__.aim()));
+        const retJar = await s.page.evaluate(() => { const r = window.__MANRU_RELEASE__.load(); return JSON.stringify(r === undefined ? 'void' : r); });
+        out[`loadhooks.${variant}.${form}.aimjar`] = JSON.stringify({ pre: preJar, ret: retJar, post: await s.page.evaluate(() => JSON.stringify(globalThis.__MANRU_QA_LOAD__.aim())) });
         await s.tick(600);
         out[`loadhooks.${variant}.${form}.state`] = await snapshot(s);
         // what the player sees: the bag after the load (names of unidentified potions and talismans)

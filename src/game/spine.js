@@ -4719,7 +4719,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
 
   registerGenerationStage('aim-reset52','pre',()=>{AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('aim52',{pre:()=>{AIM_STATE.target=null;AIM_STATE.jar=null;if(state)state._manualTerrainTargetR8=null}});
   registerMovePostR8(()=>{if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetValid()){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}});
 
 

@@ -244,6 +244,8 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       const env=request?.state?{state:request.state,settings:request.settings||{}}:parseEnvelope(raw),st=env.state;
       if(st?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(st.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
       restoreState(st);
+      // the aim target is runtime-only state of the previous run (a monster object or a jar cell): it must not outlive a load
+      AIM_STATE.target=null;AIM_STATE.jar=null;if(state)state._manualTerrainTargetR8=null;
       if(env.settings?.camera)try{globalThis.__MANRU_CAMERA_STATE12__.setMode(env.settings.camera)}catch(error){ignoreError('saved camera mode could not be applied',error)}
       if(Number.isFinite(env.settings?.uiVolume)){RC.uiVolume=env.settings.uiVolume;lsSet('manruUiVolume70',String(RC.uiVolume))}
       RC.lastActionAt=performance.now();if(!request?.label)toast('불러오기 완료.');return true

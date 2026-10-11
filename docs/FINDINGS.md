@@ -49,3 +49,6 @@
 질문: (1) `monster-config61`: 삭제(현재 동작 유지, 불러온 몬스터도 새 게임과 같게)로 갈까요? (2) `knowledge56`, `camera49`: 삭제로 갈까요? (3) `aim52`: 위 안(불러오기 본체에서 직접 초기화)을 동작 변경 커밋으로 진행할까요?
 
 **결정(사용자, 2026-10-11)**: `monster-config61`, `knowledge56`, `camera49`의 불러오기 쪽 등록은 삭제한다(현재 동작 유지). 그 훅만 쓰던 `normalizeAsuraAttack`(참조 0)도 삭제했다. `aim52`는 훅을 되살리지 않고 불러오기 본체에서 직접 초기화하는 동작 변경 커밋으로 처리한다(아래 F-20).
+
+## F-20 (버그 수정, 동작 변경) 불러온 뒤에도 이전 조준 대상이 남던 문제
+증상: 몬스터나 병 투척 칸을 조준한 채 불러오기를 하면 `AIM_STATE.target`/`jar`(이전 런의 몬스터 객체 또는 칸)가 불러온 뒤에도 남았다. 원인: 조준을 비우던 `registerLoad('aim52')` 훅이 `resetLoad`가 단계 목록을 비워서 한 번도 실행되지 않았다(F-10, F-19). 수정(사용자 결정): 훅을 되살리지 않고 불러오기 본체 `loadGameCore`가 `restoreState(st)` 성공 직후 `AIM_STATE.target=null; AIM_STATE.jar=null; state._manualTerrainTargetR8=null`을 직접 한다. 확인: `loadhooks` 시나리오에 몬스터 조준과 투척 칸 조준(`aim`, `aimjar`) 불러오기를 넣었고, 수정 전 빌드와 수정 후 빌드를 같은 시나리오로 비교하면 달라지는 것은 이 두 키뿐이다(상태·가방·60입력 뒤 상태는 동일). 기준선 변경은 의도한 것이다(`loadhooks.*.aim`: 대상이 남음→null, `aimjar` 추가).
