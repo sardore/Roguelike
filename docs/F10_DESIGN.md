@@ -22,5 +22,14 @@
 - 부수 정리: 위 이름들의 버전 접미사는 같은 단계에서 역할명으로 바꾼다(`keyMeta1006`→`lockedKeyMeta` 등; NAMING.md에 근거 기록).
 - 검증: 열쇠가 있는 층(6층, 전설 던전)의 화면·상태 시나리오가 변경 전과 같아야 한다.
 
+## 3.5 최종 목표 (사용자 지시)
+불러오기 단계 등록 구조(`MANRU_LOAD_LIFECYCLE_STAGES`, `registerLoad`, `resetLoad`, `manruRegisterLifecycle`)를 없애고, 불러오기 후 처리를 **순서대로 적은 함수 하나**(`afterLoad`)로 합친다. 새 런 쪽(`registerNew`)도 같은 방식으로 `afterNewRun` 하나로 정리한다.
+- 순서의 근거: 지금 실행되는 불러오기 단계 15개의 등록 순서(`resume70, talisman74, runtime81, quality94, locks96, quality-current983, camera-save984, curse-clock991, screen1002, permadeath1003, strict-lock1004, hazard1005, normalize1006, architecture1020, artifact46`)를 그대로 함수 안의 호출 순서로 옮긴다. 각 단계의 `pre`/`post` 구분과 `ctx.data` 전달(예: `camera984` 값)도 그대로 유지한다.
+- 이 순서는 `audit()` 출력과 `loadhooks`·`saves`·`saveload` 시나리오로 변경 전후 동일함을 확인한다. 단계 등록 때문에 파일 곳곳에 흩어진 `registerLoad` 호출은 한 함수로 모이므로, 어느 단계가 언제 도는지는 그 함수 한 곳만 읽으면 된다.
+- 선행 조건: 아래 실험 결과(F-19)의 4개 훅(`camera49`, `knowledge56`, `monster-config61`, `aim52`)에 대한 사용자 결정. 두 개(`potions41`, `food57`의 불러오기 쪽)는 결과가 같아 이미 삭제했다.
+
+## 3.6 실험 결과 요약 (자세한 표는 FINDINGS F-19)
+죽은 훅 6개를 켠 빌드와 비교: 상태가 완전히 같은 것 2개(삭제함), 재그리기 표시만 다른 것 1개, 상태 필드만 다른 것 1개(이름 가림은 같음), 동작이 달라지는 것 2개(몬스터 경비 위치, 조준 대상).
+
 ## 4. 진행 방식
 사용자 확인 전에는 코드를 바꾸지 않는다. 확인되면 도메인 이동과 별개의 커밋 하나로 처리하고(`alias` 2 → 0, 죽은 등록 6개 삭제 포함), 위 검증을 모두 통과해야 푸시한다.

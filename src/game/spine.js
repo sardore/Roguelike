@@ -4129,7 +4129,7 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
   /* R7 refactor: obsolete early potion visual wrapper removed. */
   
   function addP(fr,names){const pool=names.map(n=>POTIONS.find(p=>p.name===n)).filter(Boolean).filter(p=>state.floor>=(p.minFloor||1)),p=freeRoomCell(fr);if(pool.length&&p)PlacementService.placeItem({...clone(choice(pool)),x:p.x,y:p.y,count:1})}function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='연금술방'){addP(fr,['소회복 비약','중회복 비약','청심탕','해독산']);addP(fr,['경신약','강골주','연막병','화유병','청심탕'])}else if(fr.name==='사당')addP(fr,['청심탕','해독산','강골주']);else if(fr.name==='무기고'&&globalThis.__MANRU_RANDOM57__()<.82)addP(fr,['연막병','화유병','강골주']);else if(fr.name==='감방'&&globalThis.__MANRU_RANDOM57__()<.68)addP(fr,['중회복 비약','강골주','연막병']);else if(fr.name==='주방'&&globalThis.__MANRU_RANDOM57__()<.42)addP(fr,['소회복 비약','해독산'])}}
-  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});globalThis.__MANRU_LIFECYCLE__.registerNew('potions41',{post:()=>{pstate();addLog('비약·연막병·화유병이 활성화됐다.');updateAll()}});globalThis.__MANRU_LIFECYCLE__.registerLoad('potions41',{post:()=>{pstate();updateAll()}});
+  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});globalThis.__MANRU_LIFECYCLE__.registerNew('potions41',{post:()=>{pstate();addLog('비약·연막병·화유병이 활성화됐다.');updateAll()}});
   
   globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
   
@@ -5170,7 +5170,7 @@ registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards5
 
 registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
-globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}});globalThis.__MANRU_LIFECYCLE__.registerLoad('food57',{post:()=>{if(state){ensureFoodState();updateAll()}}});
+globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}});
 
 
 if(state)ensureFoodState();
@@ -11000,11 +11000,11 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
   globalThis.__MANRU_LIFECYCLE__.registerNew('camera-save984',{
     pre:ctx=>{const runSeed=(crypto?.randomUUID?.()||String(Date.now())+'-'+globalThis.__MANRU_RANDOM57__().toString(36).slice(2));window.__MANRU_RUN_SEED984=runSeed;ctx.data.camera984={desiredZoom:1,runSeed}},
-    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
+    post:ctx=>{const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): the zoom limits depend on the game screen's laid-out size, which exists only after the screen switch that follows this stage; 90 ms waits for that layout. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??1,false)},90)}}
   });
   globalThis.__MANRU_LIFECYCLE__.registerLoad('camera-save984',{
     pre:(ctx,request)=>{let raw=request?.raw||null,requested=request?.state||null;if(!raw&&!requested)try{raw=globalThis.__MANRU_SAVE1004__?.raw?.()}catch(error){console.warn('[manru] active run save unreadable',error)}if(!raw&&!requested){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return globalThis.__MANRU_LIFECYCLE__.abort(false)}const desiredZoom=request?.settings?.camera??cameraData.zoom,meta=requested||(()=>{try{const q=JSON.parse(raw);return q?.format==='MANRU_SAVE'&&q.state?q.state:q}catch(_){return null}})();window.__MANRU_RUN_SEED984=meta?.runId984||window.__MANRU_RUN_SEED984||'legacy';ctx.data.camera984={desiredZoom}},
-    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
+    post:(ctx,r)=>{if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): same wait for the laid-out game screen as in the new-run stage above. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
   });
 // r53: overwritten save implementation retired.
   RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});

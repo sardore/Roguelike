@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openSession, startRun, snapshot, dismissModals, storageDump } from './harness.mjs';
+import { openSession, startRun, snapshot, dismissModals, storageDump, sha } from './harness.mjs';
 
 const savesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'baseline', 'saves');
 
@@ -524,6 +524,62 @@ export const scenarios = {
       }
       out[`uiactions.${form}.errors`] = JSON.stringify(s.errors);
       await s.close();
+    }
+    return out;
+  },
+
+  // What a load leaves behind: the state after saving and loading, with unidentified potions/talismans in the bag, an aim
+  // target set before the load, saved monsters, and a save stripped of the fields the post-load hooks (re)create. Used to
+  // decide which of the load stages registered before resetLoad (camera49, aim52, knowledge56, monster-config61, food57,
+  // potions41) change anything: run against a build with and a build without them and diff the artifacts.
+  async loadhooks(browser, root) {
+    const out = {};
+    const monsterSrc = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'monsters.js'), 'utf8');
+    const fields = [...monsterSrc.match(/function configureMonsterTraits\(m\)\{[^]*?for\(const field of \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    for (const variant of ['plain', 'stripped']) {
+      for (const form of ['pc', 'mobile']) {
+        const s = await openSession(browser, root, { seed: 51, hash: 'debug', ...(form === 'mobile' ? { viewport: { width: 390, height: 844 }, mobile: true } : {}) });
+        await startRun(s, 'swordsman');
+        await s.page.evaluate(({ variant, fields }) => {
+          const st = window.__MANRU_DEBUG__.get();
+          const cp = (o) => JSON.parse(JSON.stringify(o));
+          const potions = (window.MANRU_POTIONS || []).slice(0, 3).map((p) => ({ ...cp(p), count: 1 }));
+          const tals = (window.MANRU_TALISMANS || []).filter((t) => t.talismanKind !== 'identify').slice(0, 3).map((t) => ({ ...cp(t), count: 1 }));
+          st.player.inventory.push(...potions, ...tals);
+          for (const p of potions.slice(0, 1)) st.items.push({ ...cp(p), x: st.player.x + 1, y: st.player.y });
+          globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();
+          if (variant === 'stripped') {
+            delete st.knowledge56; delete st.roomHints56; delete st.cookbook57; delete st.tempFields;
+            for (const k of ['foodHaste57', 'warm57', 'fireCoat57', 'poisonResist57', 'vitality57', 'freeStamina57', 'swift', 'fortify', 'willBoost']) delete st.status?.[k];
+            delete st.player.foodVital57;
+            for (const m of st.monsters) for (const f of fields) delete m[f];
+          }
+        }, { variant, fields });
+        out[`loadhooks.${variant}.${form}.saved`] = await s.page.evaluate(() => { const ok = window.__MANRU_RELEASE__.save(); return JSON.stringify(ok === undefined ? 'void' : ok); });
+        // aim at the first monster, force the redraw flags off, then load
+        await s.page.evaluate(() => { const st = window.__MANRU_DEBUG__.get(); globalThis.__MANRU_QA_LOAD__.setAim(st.monsters[0] || null); globalThis.__MANRU_QA_LOAD__.clearPerf(); });
+        const pre = await s.page.evaluate(() => JSON.stringify({ aim: globalThis.__MANRU_QA_LOAD__.aim(), perf: globalThis.__MANRU_QA_LOAD__.perf() }));
+        const ret = await s.page.evaluate(() => { const r = window.__MANRU_RELEASE__.load(); return JSON.stringify(r === undefined ? 'void' : r); });
+        const post = await s.page.evaluate(() => JSON.stringify({ aim: globalThis.__MANRU_QA_LOAD__.aim(), perf: globalThis.__MANRU_QA_LOAD__.perf() }));
+        out[`loadhooks.${variant}.${form}.aim`] = JSON.stringify({ pre, ret, post });
+        await s.tick(600);
+        out[`loadhooks.${variant}.${form}.state`] = await snapshot(s);
+        // what the player sees: the bag after the load (names of unidentified potions and talismans)
+        await s.page.keyboard.press('i'); await s.tick(500);
+        out[`loadhooks.${variant}.${form}.bag`] = await s.page.evaluate(() => JSON.stringify({
+          text: (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim(),
+          names: (window.__MANRU_DEBUG__.get().player.inventory || []).map((i) => [i.name, globalThis.__MANRU_CONSUMABLE56_ACTIONS__.publicName?.(i), i.type === 'potion' ? !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(i) : null]),
+          floor: (window.__MANRU_DEBUG__.get().items || []).filter((i) => i.type === 'potion').map((i) => [i.name, globalThis.__MANRU_CONSUMABLE56_ACTIONS__.publicName?.(i)]),
+          hints: window.__MANRU_DEBUG__.get().roomHints56 ?? null,
+        }));
+        await s.page.keyboard.press('Escape'); await s.tick(300);
+        // what 60 further inputs do on the loaded run
+        const rnd = pick(7771);
+        for (let step = 1; step <= 60; step++) { const key = KEYS[rnd(KEYS.length)]; await s.page.keyboard.press(key); await s.tick(key === 'x' ? 1500 : 220); if (key === 'i' || key === 'f' || key === 'q') await dismissModals(s, 1); }
+        out[`loadhooks.${variant}.${form}.after60`] = await snapshot(s);
+        out[`loadhooks.${variant}.${form}.errors`] = JSON.stringify(s.errors);
+        await s.close();
+      }
     }
     return out;
   },

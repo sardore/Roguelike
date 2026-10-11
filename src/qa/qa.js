@@ -580,3 +580,10 @@ window.__MANRU_RELEASE__.save=writeRun;window.__MANRU_RELEASE__.autosave=writeRu
 window.__MANRU_RELEASE__.build=RELEASE_INFO.build;
 // the identification entry points, so a test can run them while the inventory is open
 globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56};
+// load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
+globalThis.__MANRU_QA_LOAD__={
+  setAim:(m,jar=null)=>{AIM_STATE.target=m;AIM_STATE.jar=jar;if(state)state._manualTerrainTargetR8=jar?{}:null},
+  aim:()=>({target:AIM_STATE.target?{name:AIM_STATE.target.name,x:AIM_STATE.target.x,y:AIM_STATE.target.y}:null,jar:AIM_STATE.jar?'set':null,manual:!!state?._manualTerrainTargetR8}),
+  perf:()=>({dirty:RENDER_PERF_STATE.dirty,panelDirty:RENDER_PERF_STATE.panelDirty,miniDirty:RENDER_PERF_STATE.miniDirty}),
+  clearPerf:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=false},
+};

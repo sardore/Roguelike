@@ -33,3 +33,17 @@
 
 ## F-18 직업 초상화 함수가 두 벌이다 (ui)
 `classPortrait95`(→`classPortraitCanvas`, 64px 캔버스에 직접 그림)와 `classPortrait1001`(→`classArtSpanHtml`, 스프라이트 시트를 잘라 쓰는 `<span>` HTML), `classPortraitHtml1001`이 함께 있다. 둘 다 호출처가 있어(`refreshClassPortraits95`와 직업 선택 화면) 지우지 않았다. 어느 쪽이 현재 화면에 쓰이는지, 한쪽이 폐기 후보인지 확인이 필요하다.
+
+## F-19 불러오기 때 실행되지 않는 후처리 훅 6개의 실험 결과 (결정 필요)
+초기화 때 `resetLoad`가 불러오기 단계 목록을 비워서, 코드에는 있지만 한 번도 실행되지 않는 `registerLoad` 6개가 있다(`docs/F10_DESIGN.md`). 이것들을 작업용 복사본에서 켜고(`resetLoad`의 목록 비우기만 제거) 켠 빌드와 현재 빌드의 불러오기 결과를 비교했다. 시나리오 `loadhooks`(`tests/scenarios.mjs`): 미감정 약병 3종·부적 3종과 바닥 약병을 가방에 넣고, 몬스터를 조준한 채 저장→불러오기, 그리고 훅이 만들어 주는 필드를 모두 지운 "stripped" 세이브, PC·모바일, 불러온 뒤 입력 60개를 더 재생. V40 세이브 4종은 기존 `saves` 시나리오로 비교했다. 현재 빌드는 두 번 돌려 결과가 같음(결정적)을 확인했다.
+
+| 훅 | 켰을 때 달라진 것 | 판정 |
+|---|---|---|
+| `potions41` | 달라진 필드 없음 (`status.swift/fortify/willBoost`, `tempFields`를 지운 세이브도 결과 동일) | **삭제함** |
+| `food57` | 달라진 필드 없음 (`cookbook57`, `status.*57`, `player.foodVital57`을 지운 세이브도 동일) | **삭제함** |
+| `camera49` | 불러온 직후 `RENDER_PERF_STATE.dirty/panelDirty/miniDirty`가 false→true. 게임 상태·화면 문자열·60입력 뒤 상태는 같음 | 재그리기 표시만 다름. 삭제 vs 부활 결정 필요(화면은 `updateAll`과 렌더 루프가 어차피 그림) |
+| `knowledge56` | 가방·바닥의 미감정 약병/부적에 `appearance56`(예: azure), `origin56`가 미리 붙고 `state.roomHints56={}`가 생김. V40 전설 던전 세이브의 바닥 약병 2개(items.0/1)에서도 같은 차이. **이름 가림은 켜든 끄든 같음**: 가방 이름 목록·`publicName`(회청색 약병, 미확인 부적…)·인벤토리 화면 텍스트·바닥 약병 이름 모두 동일 | 상태 필드만 다름(지연 장식과 같은 값으로 채움). 게임 동작은 같아 보임. 삭제 vs 부활 결정 필요 |
+| `monster-config61` | 불러온 몬스터의 `guardHome57`이 채워짐(예: 객잔 쥐 {x:54,y:25,room}). 60입력 뒤에도 같은 차이. **새 층에서 막 생성된 몬스터는 `guardHome57`이 없다**(저장 전에도 undefined) | 켜면 불러온 경비 몬스터만 "집으로 복귀/순찰 범위" 규칙(`monsterPatrolAllows`, 줄 558 등)을 받게 되어 새 게임과 달라진다. 지금 동작(훅 없음)이 새 게임과 같다. **동작이 바뀌는 사안: 결정 필요(삭제 권장)** |
+| `aim52` | 불러오기 전에 조준 중이던 대상(`AIM_STATE.target`)이 불러온 뒤에도 남음(현재). 켜면 불러오기 직전에 비워짐 | **실제 버그로 보임**: 다른 런/세이브의 몬스터 객체를 가리키는 조준 대상이 남는다. 안: 훅을 되살리지 않고 불러오기 본체(`loadGameCore`)에서 `AIM_STATE.target=null; AIM_STATE.jar=null; state._manualTerrainTargetR8=null`을 직접 한다. 동작 변화(버그 수정)이므로 결정 후 처리 |
+
+질문: (1) `monster-config61`: 삭제(현재 동작 유지, 불러온 몬스터도 새 게임과 같게)로 갈까요? (2) `knowledge56`, `camera49`: 삭제로 갈까요? (3) `aim52`: 위 안(불러오기 본체에서 직접 초기화)을 동작 변경 커밋으로 진행할까요?
