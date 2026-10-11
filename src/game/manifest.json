@@ -6,6 +6,7 @@
   "items.js",
   "combat.js",
   "monsters.js",
+  "render.js",
   "spine.js"
  ],
  "afterClosure": [

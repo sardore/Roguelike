@@ -20,3 +20,8 @@
 ## monsters.js
 - 접미사 제거(기계) 160개, 수동 13개. 수동 이름은 한 줄 정의만 보고 정한 것이라 확인 필요: `setIntent54→setBossIntent`, `executeIntent54→executeBossIntent`, `charge54→bossCharge`, `setIntent61→setMonsterIntent`, `executeIntent61→executeMonsterIntent`, `ROLE61→MONSTER_ROLE_TABLE`, `BOSS60→BOSS_FLOORS`, `AIM52→AIM_STATE` 등.
 - 이름 키워드로 잡혔지만 다른 도메인이라 옮기지 않은 것: `silk970`(방 장식), `monsterInfo986`(정보창), QA 전용 `asura*61`, `bossGateOpen1020`, `selectBowTarget52`, `monsterName1011`.
+
+## render.js
+- 접미사 제거(기계) 178개, 수동 23개(스프라이트 상수·캐시·플레이어/액터 그리기 함수 등, 한 줄 정의만 보고 정한 이름이라 확인 필요). `Camera81→CameraController`, `Zoom81→ZoomController`, `PERF49→RENDER_PERF_STATE`, `PERF58→FRAME_PERF_STATE`, `syncGameViewport47→syncCanvasWrapViewport` 등.
+- 패널을 그리는 `render*`(상점·인벤토리·도움말·조합·분류 화면 등)는 ui 도메인으로 남겼다. 방 장식 `paintLoop972/980`, `LEGEND_TILES49`(LEGENDS47을 로드 시 읽음), `Cam96`, `legacyPotionIcon/Draw`는 옮기지 않았다.
+- `savedMode`/`savedZoom`은 `cameraData12`가 로드 시 읽어서 같이 옮겼다.
