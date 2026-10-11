@@ -328,7 +328,7 @@ function chooseMartialManual1005(index){
  const oldHp=p.maxHp;if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
  if(c.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(c.id==='roar'){state.martialEcho=null;if(p.classState?.aimPower>0)setAimPower58(p.classState.aimPower)}
  if(c.id==='constitution')recomputeMaxHp1005(p);p.focus=Math.min(p.focus,getStats().maxFocus);
- consumeItemQuantity57(item);state.pendingMartialManualChoice=null;globalThis.__MANRU_ITEM_IDENTITY991__.closeChoice();
+ consumeItemQuantity(item);state.pendingMartialManualChoice=null;globalThis.__MANRU_ITEM_IDENTITY991__.closeChoice();
  const v=martialPresentation58(c.id,MARTIAL_INFO[c.id],p);addLog(c.form==='breakthrough'?`${v.name}: 5단에 이르는 길이 열렸다. 무술 포인트로 마지막 경지를 익힐 수 있다.`:`후천무술 습득: ${v.name}. 현재 ${p.martial[c.id]}단계 유지.`);martialFx1005('unlock',p);commitPlayerAction57(act,1);updateAll();return true;
 }
 function applyMartialControl1005(mon,turns){if(!mon||mon.hp<=0)return false;if(mon.boss){if((mon.controlCd54||0)>0||!setMonsterStatus57(mon,'stunned',1))return false;mon.controlCd54=4;mon.controlCdTurn54=state.turn;return true}return setMonsterStatus57(mon,'stunned',Math.max(mon.stunned||0,turns))}
@@ -667,7 +667,7 @@ function statusSummary(){
   return out.length?out.join(' · '):'상태 이상 없음.';
 }
 function applyStatusTick(){
-  if(!state||state.dead)return;ensureFoodState57();
+  if(!state||state.dead)return;ensureFoodState();
   if(state.status.poisonResist57>0)state.status.poison=0;
   if(state.status.poison>0){
     const dmg=damageEntity61(state.player,combatDebuffDamage57(state.player,'poison'));
@@ -755,7 +755,7 @@ function cacheEvent(x,y){
 
 
 
-function fountainEvent(x,y){const r=drinkFromFountain(x,y);giveItem57(foodDef57('깨끗한 물'),x,y);addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');return r}
+function fountainEvent(x,y){const r=drinkFromFountain(x,y);giveItem(foodDef('깨끗한 물'),x,y);addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');return r}
 function drinkFromFountain(x,y){
   setTerrainTile58(state.map,x,y,TT.FLOOR);
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10);
@@ -763,7 +763,7 @@ function drinkFromFountain(x,y){
   cleanseStatuses57();
   burst(x,y,"#8bd0f3",16,.9);
   addLog("정화의 샘. HP/FOCUS 회복, 상태이상 정화.");
-  giveItem57(foodDef57('깨끗한 물'),x,y);
+  giveItem(foodDef('깨끗한 물'),x,y);
   addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');
 }
 
@@ -1315,7 +1315,7 @@ function gameplayPanels57(){return[
   {id:'mobileDrawer',body:'mobile-drawer-open',close:closeMobileDrawer},
   {id:'mobileMapModal',css:'open',close:closeMapModal},
   {id:'mobileInspect',css:'open',close:closeInspect},
-  {id:'cook57',css:'show',close:closeCooking57},
+  {id:'cook57',css:'show',close:closeCooking},
   {id:'fusion74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
   {id:'gear74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
   {id:'choice991',css:'open',close:globalThis.__MANRU_ITEM_IDENTITY991__?.closeChoice},
@@ -1324,7 +1324,7 @@ function gameplayPanels57(){return[
   {id:'rc70',body:'rc70-open',close:globalThis.__MANRU_RELEASE__?.closePanel},
   {id:'potionTargetHud',css:'show',kind:'targeting',close:globalThis.__MANRU_POTION41_ACTIONS__?.cancelTarget},
   {id:'talismanTarget56',css:'show',kind:'targeting',close:clearTalismanInput57},
-  {id:'foodTarget57',css:'show',kind:'targeting',close:cancelFoodTarget57},
+  {id:'foodTarget57',css:'show',kind:'targeting',close:cancelFoodTarget},
   {id:'anvilPanel105',kind:'modal',close:closeAnvil105},
   {id:'summonPanel105',kind:'modal',close:closeSummonPanel105},
   {id:'worldTarget57',css:'show',kind:'targeting',close:cancelWorldTarget57}
@@ -1538,7 +1538,7 @@ const ActionDispatcher=Object.freeze({
         else if(potion?.target?.())result.value=!!potion.throwAt?.(q.x,q.y);
         else if(fusion?.target?.())result.value=!!fusion.castTarget?.(q.x,q.y);
         else if(talisman?.target?.())result.value=!!talisman.castTarget?.(q.x,q.y);
-        else if(typeof V57!=='undefined'&&V57.foodTarget)result.value=!!throwFood57(q.x,q.y);
+        else if(typeof V57!=='undefined'&&V57.foodTarget)result.value=!!throwFood(q.x,q.y);
         else{result.attempted=false;result.reason='no-target'}
       }
       completed=true;return result;
@@ -1656,62 +1656,15 @@ C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});InputRo
 C.addEventListener('click',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:click');
 document.addEventListener('keyup',InputRouter);InputRouter.noteListener('document:keyup');
 
-function itemQuantity57(item){const n=item?.count??1;if(!Number.isSafeInteger(n)||n<0)throw new Error('invalid item quantity');return n}
-function itemStackPrototype57(item){
-  if(item?.mineItem105)return MINE_ITEMS105[item.mineItem105]||null;
-  if(!item||!['food','ingredient','potion','talisman','ammo'].includes(item.type))return null;
-  const field={food:'foodKind',ingredient:'foodKind',potion:'potionKind',talisman:'talismanKind',ammo:'ammoKind'}[item.type];
-  const pool=item.type==='potion'?(globalThis.MANRU_POTIONS||[]):item.type==='talisman'?(globalThis.MANRU_TALISMANS||[]):item.type==='ammo'?(globalThis.MANRU_AMMO||[]):CONSUMABLES;
-  return pool.find(p=>p.type===item.type&&(item[field]?p[field]===item[field]:p.name===item.name))||CONSUMABLES.find(p=>p.type===item.type&&(item[field]?p[field]===item[field]:p.name===item.name))||null;
-}
-function itemStackLimit57(item){
-  if(item?.charcoalBurn105?.lit)return 1;
-  if(['weapon','armor','cloak','relic','trinket'].includes(item?.type))return 1;
-  const proto=itemStackPrototype57(item),n=proto?.stackMax??(item?.fusion74?2:item?.stackMax??1);
-  if(!Number.isSafeInteger(n)||n<1)throw new Error('invalid stack limit');return n;
-}
+
+
+
 // Placement provenance is needed by ground reward audits, but never changes a carried item's effect.
 const ITEM_PLACEMENT_FIELDS58=Object.freeze(['floor2Bonus66','floor2BonusIndex66','restaurantReward42','restaurantId42','restaurantRewardSpot42','miniVaultOrigin62','f20LooseLoot1020','r8LibraryPrize','f6Prize1023','resource48','resource53','bossDrop55','coreDrop982','coreHoly991','rumorSpaceId1030','f22Holy1023','generatedPeach53','branchReward105','branchFoodLevel105']);
-function itemStackIdentity57(item,inventory=false){
-  const consumable=['food','ingredient','potion','talisman','ammo'].includes(item?.type),proto=consumable?itemStackPrototype57(item):null;
-  const ignored=new Set(['x','y','count']);
-  if(item?.summonItem105==='picture')ignored.add('summonPortrait105');
-  if(consumable){
-    for(const k of ['stackMax','desc','ability','color','seal','appearance56','identified','isIdentified','unidentified','origin56','minFloor','maxFloor','craftedOnly57','naturalOnly57','weight','weight74','spawnMin','spawnMax'])ignored.add(k);
-    // Ground placement tags remain distinct until pickup; no room reward/topology data is merged on the map.
-    if(inventory){ignored.add('placement57');for(const k of ITEM_PLACEMENT_FIELDS58)ignored.add(k);}
-  }
-  const data={},source=proto?{...proto,...item}:item;
-  // Older field-cooked fish retained the raw input flag; cooked food has no raw effect.
-  if(item?.foodKind==='grilled_fish')ignored.add('raw');
-  for(const key of Object.keys(source).sort())if(!ignored.has(key)&&source[key]!==undefined)data[key]=source[key];
-  const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>[k,stable(v[k])])):v;
-  return JSON.stringify(stable(data));
-}
-function transferItemQuantity57(item,source,target,quantity=itemQuantity57(item),opts={}){
-  if(!item||!Array.isArray(target)||source===target)return{moved:0,remaining:item?itemQuantity57(item):0};
-  const total=itemQuantity57(item);if(!Number.isSafeInteger(quantity)||quantity<0||quantity>total)throw new Error('invalid quantity transfer');
-  if(source&&!source.includes(item))return{moved:0,remaining:total};
-  const carried=!opts.position&&item.foodKind==='charcoal'?structuredClone(item):item;if(carried!==item)coolCharcoal105(carried);
-  const limit=itemStackLimit57(carried),capacity=opts.capacity??Infinity,key=itemStackIdentity57(carried,!opts.position),merges=[];let left=quantity;
-  for(const stack of target){if(left===0)break;if(opts.position&&(stack.x!==opts.position.x||stack.y!==opts.position.y))continue;if(itemStackLimit57(stack)!==limit||itemStackIdentity57(stack,!opts.position)!==key)continue;const room=Math.max(0,limit-itemQuantity57(stack)),n=Math.min(room,left);if(n){merges.push({stack,n});left-=n}}
-  const chunks=[];for(let slots=Math.max(0,capacity-target.length);left>0&&slots>0;slots--){const n=Math.min(limit,left);chunks.push(n);left-=n}
-  const moved=quantity-left;if(!moved)return{moved:0,remaining:total};
-  for(const entry of merges)entry.stack.count=itemQuantity57(entry.stack)+entry.n;
-  const remaining=total-moved;let reused=false;
-  for(const n of chunks){const stack=!remaining&&!reused?item:structuredClone(item);reused=true;stack.count=n;if(opts.position){stack.x=opts.position.x;stack.y=opts.position.y}else{delete stack.x;delete stack.y;if(stack.foodKind==='charcoal')coolCharcoal105(stack);if(['food','ingredient','potion','talisman','ammo'].includes(stack.type))for(const key of ['placement57',...ITEM_PLACEMENT_FIELDS58])delete stack[key]}target.push(stack)}
-  if(remaining)item.count=remaining;else if(source)source.splice(source.indexOf(item),1);
-  if(target===state?.player?.inventory&&item.artifactId46)globalThis.__MANRU_LEGEND47__?.recordAcquisition?.();return{moved,remaining}
-}
-function consumeItemQuantity57(item,quantity=1,container=state?.player?.inventory){
-  if(!item||!container?.includes(item)||!Number.isSafeInteger(quantity)||quantity<1||itemQuantity57(item)<quantity)return false;
-  const remaining=itemQuantity57(item)-quantity;if(remaining)item.count=remaining;else container.splice(container.indexOf(item),1);return true
-}
-function splitItemQuantity57(item,quantity,container){
-  if(!container?.includes(item)||!Number.isSafeInteger(quantity)||quantity<1||quantity>itemQuantity57(item))return null;
-  if(quantity===itemQuantity57(item)){container.splice(container.indexOf(item),1);return item}
-  const split=structuredClone(item);split.count=quantity;item.count=itemQuantity57(item)-quantity;return split
-}
+
+
+
+
 const OccupancyService=(()=>{
  let shared=null,sharedState=null,sharedMap=null,indexed=new WeakMap(),rebuilds=0,queries=0,linearFallbacks=0;
  const category=new WeakMap();
@@ -1740,7 +1693,7 @@ placeItem(item,origin={x:item?.x,y:item?.y},opts={}){
   if(branch&&state.generationInProgress57){const prior=opts.restrict,route=branch.branches?.find(r=>r.id===item.floor2Bonus66);opts={...opts,restrict:p=>(!prior||prior(p))&&(route?route.cells.includes(k(p.x,p.y)):branch.commonZones.some(r=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h))}}
   const existing=state.items.includes(item),point=PlacementService.findItemCell(origin,{...opts,allowPlayer:opts.allowPlayer!==false,allowItems:true,preferEmpty:opts.preferEmpty??(!existing&&!state.generationInProgress57&&opts.requireReachable!==false),requireReachable:!state.generationInProgress57&&opts.requireReachable!==false});
   if(existing)return point?PlacementService.moveItem(item,point.x,point.y):false;
-  if(point){const moved=transferItemQuantity57(item,null,state.items,itemQuantity57(item),{position:point});if(!moved.remaining){if(state.pendingGroundItems57)state.pendingGroundItems57=state.pendingGroundItems57.filter(q=>q.item!==item);return true}}
+  if(point){const moved=transferItemQuantity(item,null,state.items,itemQuantity(item),{position:point});if(!moved.remaining){if(state.pendingGroundItems57)state.pendingGroundItems57=state.pendingGroundItems57.filter(q=>q.item!==item);return true}}
   state.pendingGroundItems57=state.pendingGroundItems57||[];
   if(!state.pendingGroundItems57.some(q=>q.item===item))state.pendingGroundItems57.push({item,origin:{...origin}});
   return false
@@ -1806,9 +1759,9 @@ generationContext(dist,safe,groupSize=1){
 reconcileBossDrop(){
   if(!state?.bossDrop55||state.bossDrop55.granted)return state?.bossDrop55||null;
   const requested=Math.max(0,Math.floor(Number(state.bossDrop55.requested)||0));if(!requested)return state.bossDrop55;
-  const world=(state.items||[]).filter(i=>i?.bossDrop55).reduce((n,i)=>n+itemQuantity57(i),0),pending=(state.pendingGroundItems57||[]).filter(q=>q?.item?.bossDrop55).reduce((n,q)=>n+itemQuantity57(q.item),0);
+  const world=(state.items||[]).filter(i=>i?.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0),pending=(state.pendingGroundItems57||[]).filter(q=>q?.item?.bossDrop55).reduce((n,q)=>n+itemQuantity(q.item),0);
   state.bossDrop55.count=world;state.bossDrop55.pendingCount=pending;state.bossDrop55.pending=pending>0;
-  if(world===requested&&pending===0){const expanded=[],seen=new Set();for(const item of state.items||[]){if(!item?.bossDrop55)continue;for(let n=0;n<itemQuantity57(item);n++){const key=k(item.x,item.y),stacked=seen.has(key);seen.add(key);expanded.push({name:item.name,type:item.type,potionKind:item.potionKind||null,talismanKind:item.talismanKind||null,x:item.x,y:item.y,stacked})}}state.bossDrop55.granted=true;state.bossDrop55.pending=false;state.bossDrop55.pendingCount=0;state.bossDrop55.healCount=expanded.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length;state.bossDrop55.stackedFallbacks=expanded.filter(v=>v.stacked).length;state.bossDrop55.items=expanded;addLog(`보스 전리품 ${world}개를 주변 바닥에 놓았다.`)}
+  if(world===requested&&pending===0){const expanded=[],seen=new Set();for(const item of state.items||[]){if(!item?.bossDrop55)continue;for(let n=0;n<itemQuantity(item);n++){const key=k(item.x,item.y),stacked=seen.has(key);seen.add(key);expanded.push({name:item.name,type:item.type,potionKind:item.potionKind||null,talismanKind:item.talismanKind||null,x:item.x,y:item.y,stacked})}}state.bossDrop55.granted=true;state.bossDrop55.pending=false;state.bossDrop55.pendingCount=0;state.bossDrop55.healCount=expanded.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length;state.bossDrop55.stackedFallbacks=expanded.filter(v=>v.stacked).length;state.bossDrop55.items=expanded;addLog(`보스 전리품 ${world}개를 주변 바닥에 놓았다.`)}
   return state.bossDrop55
 },
 findItemCell(origin,opt={}){
@@ -1834,10 +1787,7 @@ findItemCell(origin,opt={}){
 });
 
 
-function addInventoryItem57(item,origin=state?.player){
-  if(!state||!item)return false;const r=transferItemQuantity57(item,null,state.player.inventory,itemQuantity57(item),{capacity:inventoryCapacity()});
-  if(r.remaining){if(r.moved)item.count=r.remaining;PlacementService.placeItem(item,origin)}return r.moved>0
-}
+
 
 function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
 
@@ -1845,11 +1795,11 @@ function normalizeItemContainers57(){
   if(!state?.player)return;
   const normalizeWeapon=item=>{if(!item||item.type!=='weapon')return;const d=WEAPONS.find(w=>w.name===item.name);if(d?.heavyStrikeBalance105&&!item.legendaryWeapon47&&!item.artifactWeapon46){if((item.heavyStrikeBalance105||0)<d.heavyStrikeBalance105){const old=((item.heavyStrikeBalance105||0)>=2?{'무쇠 메':16,'대형 오해머':20,'대장간 망치':21}:item.heavyStrikeBalance105?{'무쇠 메':13,'대형 오해머':16,'대장간 망치':21}:{'무쇠 메':8,'대형 오해머':10,'대장간 망치':14})[item.name];item.atk=Number.isFinite(item.atk)?item.atk+d.atk-old:d.atk+(item.upgrade||0);item.heavyStrikeBalance105=d.heavyStrikeBalance105;}item.speed=d.speed;}if(item.kind==='spear'&&!item.legendaryWeapon47&&!item.artifactWeapon46){const tier=item.tier||1;item.range=tier===1?3:tier>=4?5:4}if(item.name==='낫')item.ability='광역타격';else if(item.name==='암살용 비수')item.ability='치명 +10%';else if(item.name==='별운검')item.ability='치명 +14%';else if(item.name==='철참도'){item.ability='없음';item.atk=10+Math.max(0,Math.floor(Number(item.upgrade)||0))}};
   for(const item of [...(state.player.inventory||[]),...(state.items||[]),...(state.pendingGroundItems57||[]).map(q=>q?.item)]){if(item?.foodKind==='charcoal')item.desc=CONSUMABLES.find(i=>i.foodKind==='charcoal').desc;if(item?.foodKind==='coin_candy'){item.focusPercent57=.60;item.stackMax=99;item.desc=CONSUMABLES.find(i=>i.foodKind==='coin_candy').desc}if(item?.foodKind==='grilled_fish'){delete item.raw;delete item.naturalOnly57}normalizeWeapon(item)}normalizeWeapon(state.player.weapon);
-  const inventory=[...(state.player.inventory||[])];state.player.inventory=[];for(const item of inventory)addInventoryItem57(item);
+  const inventory=[...(state.player.inventory||[])];state.player.inventory=[];for(const item of inventory)addInventoryItem(item);
   const ground=[...(state.items||[])];state.items=[];for(const item of ground){
     // Restoring an existing pile is not a fresh drop. A monster standing on its
     // valid saved cell must not push the pile elsewhere during normalization.
-    if(Number.isInteger(item.x)&&Number.isInteger(item.y)&&safeLootGround42(item.x,item.y))transferItemQuantity57(item,null,state.items,itemQuantity57(item),{position:{x:item.x,y:item.y}});
+    if(Number.isInteger(item.x)&&Number.isInteger(item.y)&&safeLootGround42(item.x,item.y))transferItemQuantity(item,null,state.items,itemQuantity(item),{position:{x:item.x,y:item.y}});
     else PlacementService.placeItem(item,{x:item.x,y:item.y},{requireReachable:false});
   }PlacementService.flushPendingItems()
 }
@@ -1931,7 +1881,7 @@ function terrainReactions105(){
  const r=state.terrainReactions105||(state.terrainReactions105=newTerrainReactions105());r.burning||={};r.unlit||={};
  // Migrate old decorative/ember records exactly once into the ordinary item container.
  if(r.char){state.items||=[];for(const c of Object.values(r.char)){if(!Number.isInteger(c.x)||!Number.isInteger(c.y)||state.map?.[c.y]?.[c.x]==null||c.remaining===0)continue;
-  const item={...clone(foodDef57('검게 탄 숯')),x:c.x,y:c.y,count:1};
+  const item={...clone(foodDef('검게 탄 숯')),x:c.x,y:c.y,count:1};
   if(c.remaining>0){item.charcoalBurn105={remaining:Math.min(2,c.remaining),lit:!!c.lit,born:c.born??state.turn,source:c.source||{sourceFaction:'neutral',credit:null}};if(!c.lit)coolCharcoal105(item)}state.items.push(item);
  }delete r.char;r.version=2}return r;
 }
@@ -1955,12 +1905,12 @@ function igniteCharcoal105(item,source={}){
  if(!state.items.includes(item)||item.charcoalBurn105?.lit)return false;
  const remaining=item.charcoalBurn105?.remaining??2;if(remaining<=0)return false;
  // One piece burns; the rest remain normal, collectible charcoal of the same type.
- if(itemQuantity57(item)>1){const piece=structuredClone(item);piece.count=1;item.count--;item=piece;state.items.push(item)}
+ if(itemQuantity(item)>1){const piece=structuredClone(item);piece.count=1;item.count--;item=piece;state.items.push(item)}
  item.charcoalBurn105={born:state.turn,remaining,lit:true,source:{sourceFaction:source.sourceFaction||'neutral',credit:source.credit||null}};return true;
 }
 function dropBurntCharcoal105(x,y){
  // Spent material is a collectible item, never a fresh autonomous fire source.
- const item={...clone(foodDef57('검게 탄 숯')),x,y,count:1};state.items.push(item);return item;
+ const item={...clone(foodDef('검게 탄 숯')),x,y,count:1};state.items.push(item);return item;
 }
 function destroyElementProp105(x,y,elem){
  const t=state.map[y]?.[x];if(protectedProp105(x,y)||!elementMaterial105(t,elem==='fire'?'wood':'stone',x,y))return false;
@@ -2224,7 +2174,7 @@ function emitElementContact105(elem,cells,source={},contact={}){
  if(!state?.map||!['fire','water','earth','ice','shock','grass','holy'].includes(elem))return 0;
  const footprint=elementCells105(0,0,0,cells),r=terrainReactions105(),keys=new Set(footprint.map(q=>k(q.x,q.y)));let changed=0,melted=0;
  // Water trims actual fire footprints, including fields whose origin lies outside the water.
- if(elem==='fire')for(const item of state.items||[])if(item.name==='신선한 생선 살'&&keys.has(k(item.x,item.y))){const {x,y}=item,count=item.count||1;delete item.raw;delete item.naturalOnly57;Object.assign(item,clone(foodDef57('구운 생선 살')),{x,y,count});if(state.visible?.has(k(x,y)))addLog('불기운이 닿은 생선 살이 노릇하게 익었다.')}
+ if(elem==='fire')for(const item of state.items||[])if(item.name==='신선한 생선 살'&&keys.has(k(item.x,item.y))){const {x,y}=item,count=item.count||1;delete item.raw;delete item.naturalOnly57;Object.assign(item,clone(foodDef('구운 생선 살')),{x,y,count});if(state.visible?.has(k(x,y)))addLog('불기운이 닿은 생선 살이 노릇하게 익었다.')}
  const steamCells=[];if(elem==='water')for(const name of ['tempFields','elementFields74','legendFireFields47']){
   state[name]=(state[name]||[]).filter(f=>{if(name!=='legendFireFields47'&&f.kind!=='fire')return true;
    const before=f.cells??elementCells105(f.x,f.y,name==='legendFireFields47'?0:1);for(const q of before)if(keys.has(k(q.x,q.y)))steamCells.push(q);f.cells=before.filter(q=>!keys.has(k(q.x,q.y)));return f.cells.length>0;
@@ -2274,7 +2224,7 @@ function tickTerrainReactions105(){
  }
  for(const item of embers){const burn=item.charcoalBurn105;if(!state.items.includes(item)||!burn?.lit||state.turn<=burn.born)continue;
   emitElementContact105('fire',[{x:item.x,y:item.y},...DIRS4.map(([dx,dy])=>({x:item.x+dx,y:item.y+dy}))],burn.source,{propagation:true});
-  if(--burn.remaining<=0)consumeItemQuantity57(item,1,state.items);
+  if(--burn.remaining<=0)consumeItemQuantity(item,1,state.items);
  }
  for(const e of [state.player,...state.monsters]){const b=e.combustion105;if(e.hp<=0||!b||state.turn<=b.born||b.lastTick===state.turn)continue;b.lastTick=state.turn;
   const floorDamage=b.floorDamageTurn105===state.turn?b.floorDamage105||0:0;resolveElementDamage57(e,'fire',floorDamage||COMBUSTION_RULES105.damage,{contactHandled105:true,effect:{...b.source,friendlyFire:true},source:floorDamage?'불바닥':'연소',color:'#ee812b'});if(b.refreshed!==state.turn&&--b.remaining<=0)delete e.combustion105;
@@ -2594,7 +2544,7 @@ function forcedJarAccident57(x,y){
 function jarReward57(x,y){
  if(globalThis.__MANRU_RANDOM57__()>=.20)return null;
  let item;if(globalThis.__MANRU_RANDOM57__()<.05){item={...clone(RELICS.find(r=>r.jarOnly57)),count:1};globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item,{x,y});}
- else{const before=new Map(state.items.map(i=>[i,itemQuantity57(i)])),pending=state.pendingGroundItems57?.length||0;dropRandomItem({x,y},false);item=state.items.find(i=>!before.has(i)||itemQuantity57(i)>before.get(i))||state.pendingGroundItems57?.slice(pending)[0]?.item;}
+ else{const before=new Map(state.items.map(i=>[i,itemQuantity(i)])),pending=state.pendingGroundItems57?.length||0;dropRandomItem({x,y},false);item=state.items.find(i=>!before.has(i)||itemQuantity(i)>before.get(i))||state.pendingGroundItems57?.slice(pending)[0]?.item;}
  if(item)addLog('장독 속에 감춰져 있던 물건이 모습을 드러냈다.');return item||null;
 }
 function installMartialJar57(actor){
@@ -2633,8 +2583,8 @@ function combatTerrainTargetCheckR8(target,range=weaponRange()){
   if(!state||!target||!['jar','terrain'].includes(target.type)||!elementalWorldTarget105(target.x,target.y))return{ok:false,reason:'공격할 가구가 없다.'};if(!state.seen.has(k(target.x,target.y)))return{ok:false,reason:'확인하지 못한 가구다.'};return combatLineCheckR8(state.player.x,state.player.y,target.x,target.y,{range,units:!!(state.player.weapon?.ranged||state.player.weapon?.kind==='bow')})
 }
 
-function itemTypeLabel(t){if(t==='ammo')return'탄약';if(t==='ingredient')return'조리 재료';if(t==='talisman')return'부적';if(t==='potion')return'비약 / 약병';if(t==='painting')return '화공의 그림';if(t==='book')return '소환술서';if(t==='guide')return '안내서';if(t==='martial_manual')return '무술비급';return({weapon:'무기',armor:'방어구',cloak:'망토',relic:'유물',trinket:'장신구',food:'음식'})[t]||'물품'}
-function itemGlyph(item){if(item?.type==='ammo')return'탄';if(item?.mineItem105)return item.mineItem105==='stone'?'石':item.mineItem105==='oil'?'油':'玄';if(item?.type==='ingredient')return item.foodKind==='seaweed'?'초':item.name==='깨끗한 물'?'수':'빙';if(item?.type==='potion')return'약';if(item?.type==='talisman')return publicTalismanSeal56(item);if(item?.summonItem105==='picture')return '畵';if(item?.summonItem105)return '召';if(item?.type==='martial_manual')return '秘';if(item.type==='weapon'){if(item.kind==='brawl')return'권';if(item.kind==='bow')return'활';if(item.kind==='spear')return'창';if(item.kind==='blunt')return'둔';return'검'}if(item.type==='armor')return'갑';if(item.type==='cloak')return'망';if(item.type==='relic')return'유';if(item.type==='trinket')return'장';if(item.type==='food')return'식';return'물'}
+
+
 function visualPlayerPosition57(){if(!state)return{x:0,y:0,worldX:TILE/2,worldY:TILE/2};const x=Number.isFinite(VIS.playerX)?VIS.playerX:state.player.x,y=Number.isFinite(VIS.playerY)?VIS.playerY:state.player.y;return{x,y,worldX:x*TILE+TILE/2,worldY:y*TILE+TILE/2}}
 function cameraFollowPosition57(){
  if(state?.debugBattle57){const mon=debugBattleSubject57(),p=mon?v8CreatureCoords(mon):DEBUG_BATTLE57.lastSubjectPosition||{x:COLS/2,y:ROWS/2};return{x:p.x,y:p.y,worldX:(p.x+.5)*TILE,worldY:(p.y+.5)*TILE}}
@@ -2698,7 +2648,7 @@ function toast(msg){
   t._tm = setTimeout(()=>t.style.opacity=0, 1300);
 }
 
-function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!knownPotion56(p))identifyPotion56(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
+function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!isPotionKnownByPlayer(p))identifyPotion(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
 function logWithCategory(msg){writeLogLine(msg);if(state){const [kind,ico]=cls(msg);meta.unshift({msg,kind,ico,turn:state.turn});if(meta.length>50)meta.length=50}}
 function writeLogLine(msg){
   if(!state) return;
@@ -2847,7 +2797,7 @@ function spawnNamed(...a){return configure61(placeNamedMonster(...a))}
 function placeNamedMonster(name,pos=null,opts={}){const d=opts.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(opts.legendDungeon47).find(x=>x.name===name):MONSTERS.find(x=>x.name===name);if(!d)return null;const mon=scaledMonster(d,opts.combatFloor??branchCombatFloor105()),point=PlacementService.findMonster(mon,{placementMode:pos?'exact':'floor',...opts,origin:opts.origin||pos||state.player});if(!point)return null;mon.x=point.x;mon.y=point.y;mon.spawnProvenance57=opts.provenance||'generation';OccupancyService.addMonster(mon);return mon}
 
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
-function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan105();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype57(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem57(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen8();updateAll()}
+function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan105();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen8();updateAll()}
 function projectRunningScreen8(){document.body.classList.add('run-active');const overlay=document.getElementById('overlay');if(overlay)overlay.style.display='none'}
 function peachTerrain53(){
  if(!state||state.floor<6||state.floor>10||state.artifactDungeon46)return TT.PEACH_TREE;
@@ -3048,17 +2998,13 @@ function scaledMonster(def,combatFloor=branchCombatFloor105(),opts={}){
 }
 function tierForFloor(floor=state.floor){if(floor>=24)return globalThis.__MANRU_RANDOM57__()<.42?5:4;if(floor>=21)return globalThis.__MANRU_RANDOM57__()<.38?4:3;if(floor>=16)return globalThis.__MANRU_RANDOM57__()<.40?4:3;if(floor>=11)return globalThis.__MANRU_RANDOM57__()<.55?3:2;if(floor>=6)return globalThis.__MANRU_RANDOM57__()<.48?2:1;return 1}
 function clone(o){return JSON.parse(JSON.stringify(o))}
-  function ordinaryPotionPool105(tactical,floor=state.floor){
-    const pool=(window.MANRU_POTIONS||[]).filter(p=>floor>=(p.minFloor||1)&&(tactical?!['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(p.potionKind):['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(p.potionKind)));
-    // 전술 소모품 상향은 유지하되 회복 비약의 과도한 가중만 낮춘다.
-    const out=[];for(const p of pool){let w=1;if(p.potionKind==='heal_small')w=2;else if(p.potionKind==='smoke')w=4;for(let i=0;i<w;i++)out.push(p)}return out
-  }
-function ordinaryGearPool105(tier,floor){const lo=Math.max(1,tier-1),hi=Math.min(5,tier+(floor>=16?1:0)),all=[...WEAPONS.map(x=>({...x,type:'weapon'})),...ARMORS.map(x=>({...x,type:'armor'})),...CLOAKS.map(x=>({...x,type:'cloak'}))];const pool=all.filter(x=>(x.tier||1)>=lo&&(x.tier||1)<=hi);return pool.length?pool:all.filter(x=>(x.tier||1)<=tier)}
+
+
 function pickByTier(arr,tier){const pool=arr.filter(x=>(x.tier||1)<=tier);return clone(choice(pool.length?pool:arr))}
-function dropRandomItem(pos,special=false){if(state?.branchContext105?.id==='granary'){const roll=globalThis.__MANRU_RANDOM57__();let item;if(roll<.30)item=naturalFoodPick57();else if(roll<.78)item=clone(choice((window.MANRU_POTIONS||[]).filter(p=>(p.minFloor||1)<=state.floor&&!p.craftedOnly57)));else if(roll<.90)item=makeAmmo967(weightedAmmo967(),false);if(item){PlacementService.placeItem(item,pos);return item}}if(state&&pos){const chance=special ? .20 : .13;if(globalThis.__MANRU_RANDOM57__()<chance){const item=makeAmmo967(weightedAmmo967(),false);item.x=pos.x;item.y=pos.y;PlacementService.placeItem(item);return item}}return dropLootWithNaturalFood(pos,special)}
-function dropLootWithNaturalFood(pos,special=false){const n=state.items.length,r=dropLootWithTalismans(pos,special);for(let i=n;i<state.items.length;i++){const it=state.items[i];if(it?.type==='food'&&(it.craftedOnly57||it.naturalOnly57||(it.minFloor||1)>state.floor)){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}if(it?.type==='ingredient'){const repl=naturalFoodPick57();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}}return r}
+function dropRandomItem(pos,special=false){if(state?.branchContext105?.id==='granary'){const roll=globalThis.__MANRU_RANDOM57__();let item;if(roll<.30)item=naturalFoodPick();else if(roll<.78)item=clone(choice((window.MANRU_POTIONS||[]).filter(p=>(p.minFloor||1)<=state.floor&&!p.craftedOnly57)));else if(roll<.90)item=makeAmmo(weightedAmmo(),false);if(item){PlacementService.placeItem(item,pos);return item}}if(state&&pos){const chance=special ? .20 : .13;if(globalThis.__MANRU_RANDOM57__()<chance){const item=makeAmmo(weightedAmmo(),false);item.x=pos.x;item.y=pos.y;PlacementService.placeItem(item);return item}}return dropLootWithNaturalFood(pos,special)}
+function dropLootWithNaturalFood(pos,special=false){const n=state.items.length,r=dropLootWithTalismans(pos,special);for(let i=n;i<state.items.length;i++){const it=state.items[i];if(it?.type==='food'&&(it.craftedOnly57||it.naturalOnly57||(it.minFloor||1)>state.floor)){const repl=naturalFoodPick();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}if(it?.type==='ingredient'){const repl=naturalFoodPick();Object.assign(repl,{x:it.x,y:it.y,count:1});state.items[i]=repl}}return r}
 function dropLootWithTalismans(pos,special=false){if(mountainOutdoor105(pos)){if(globalThis.__MANRU_RANDOM57__()<.10){const item=clone(MOUNTAIN_BERRY105);PlacementService.placeItem(item,pos);return item}return null}if(state&&globalThis.__MANRU_RANDOM57__()<(special?.34:.20)){const t=talismanPick56();if(t){PlacementService.placeItem({...t,x:pos.x,y:pos.y,count:1});return}}const n=state?.items?.length||0,r=dropFloorLoot(pos,special);for(const i of(state?.items||[]).slice(n))decoratePotion56(i,i.x,i.y);return r}
-function dropFloorLoot(pos,fromSpecial=false){const tier=Math.min(5,tierForFloor()+(fromSpecial&&globalThis.__MANRU_RANDOM57__()<.42?1:0)),r=globalThis.__MANRU_RANDOM57__();let item;if(r<(fromSpecial?.50:.40))item=deckPick47(gear47(tier),'gear');else if(r<(fromSpecial?.68:.68)){const foods=CONSUMABLES.filter(x=>x.type==='food'&&(x.rarity!=='relic'||state.floor>=16));item=deckPick47([...foods,...ordinaryPotionPool105(false)],'recovery')}else if(r<(fromSpecial?.86:.88))item=deckPick47(ordinaryPotionPool105(true),'strategy');else{const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),pool=relics47().filter(x=>!owned.has(x.name));item=clone(choice(pool.length?pool:relics47()))}if(!item)return;item.x=pos.x;item.y=pos.y;item.count=item.count||1;globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item)}
+function dropFloorLoot(pos,fromSpecial=false){const tier=Math.min(5,tierForFloor()+(fromSpecial&&globalThis.__MANRU_RANDOM57__()<.42?1:0)),r=globalThis.__MANRU_RANDOM57__();let item;if(r<(fromSpecial?.50:.40))item=deckPick47(gear47(tier),'gear');else if(r<(fromSpecial?.68:.68)){const foods=CONSUMABLES.filter(x=>x.type==='food'&&(x.rarity!=='relic'||state.floor>=16));item=deckPick47([...foods,...ordinaryPotionPool(false)],'recovery')}else if(r<(fromSpecial?.86:.88))item=deckPick47(ordinaryPotionPool(true),'strategy');else{const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),pool=relics47().filter(x=>!owned.has(x.name));item=clone(choice(pool.length?pool:relics47()))}if(!item)return;item.x=pos.x;item.y=pos.y;item.count=item.count||1;globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item)}
 function hungerMods(){return{atk:0,eva:0}}
 function isBrawlWeapon42(it){return !!(it&&it.type==='weapon'&&(it.brawlWeapon||it.kind==='brawl'))}
 function brawlUpgradeEffect42(it){return isBrawlWeapon42(it)?Math.floor((it.upgrade||0)/3):(it?.upgrade||0)}
@@ -3094,7 +3040,7 @@ function triggerSwitch(x,y){
   if(sw.kind==='f23-center'||sw.kind==='f23-reveal'||sw.kind==='branch-reveal'){const r=globalThis.__MANRU_SPECIAL_FLOORS60__?.activateSwitch?.(sw);if(r?.handled)return true}
   if(sw.used)return false;sw.used=true;for(const t of sw.targets||[])if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN);addLog('도개교가 거친 소리를 내며 내려왔다.');impact(x,y,'#d6a85f',3);return true
 }
-function giveFood(name,x=state.player.x,y=state.player.y){const proto=CONSUMABLES.find(v=>v.name===name);if(!proto)return false;return giveItem57(proto,x,y)}
+
 function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}
 function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
 function lockProgressText(){const q=globalThis.__MANRU_TYPED_KEYS__?.summary?.();if(q?.active&&q.rows?.length)return q.rows.map(r=>`${r.name} ×${r.have} · 잠금 ${r.closed}`).join(' / ');if(state?.floor===6&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]!==TT.LOCKED_GATE)return '봉인 고문서고 · 해제됨';if((state?.floorKeysRequired||0)>0)return `${legacyKeyLabel()} ${state.floorKeys||0}/${state.floorKeysRequired||0}`;return '잠금 상태 없음'}
@@ -3146,8 +3092,8 @@ function bumpTileAction(x,y,opts={}){
     if(link){cancelAutoWalk?.();const landing=resolvePortalLanding57(link);if(!landing){addLog('접힌 문의 반대편 착지 공간이 막혀 이동하지 못했다.');toast('포탈 반대편에 안전한 착지점이 없다.');return true}burst(x,y,'#bf8fe8',14,.8);resolvePlayerLanding57(landing.x,landing.y,{cause:'portal',hazard:false});burst(state.player.x,state.player.y,'#8fd8e6',16,.9);VisibilityService.compute();addLog('접힌 문이 열리며 전혀 다른 내실로 이동했다.');state.discoveredPortals981=state.discoveredPortals981||{};const destPortalKey=k(link.destPortal.x,link.destPortal.y);state.discoveredPortals981[portalKey]=destPortalKey;return true;}
   }
   // Stations and deliberate containers remain walk-only interactions. Forced/teleport landing never opens a UI or loots a station for the player.
-  if(active&&tile===TT.BRAZIER){openCooking57('brazier');return true;}
-  if(active&&tile===TT.COOKPOT){openCooking57('pot');return true;}
+  if(active&&tile===TT.BRAZIER){openCooking('brazier');return true;}
+  if(active&&tile===TT.COOKPOT){openCooking('pot');return true;}
   if(tile===TT.RUMOR){const record=state.branchTerrain105?.citadel105?.features105?.find(f=>f.x===x&&f.y===y&&f.theme==='archive');if(record&&state.branchContext105?.id==='citadel'){const district=CITADEL_TOWERS105[record.tower105].district105,release=CITADEL_RELEASES105.find(r=>CITADEL_TOWERS105[r.tower].district105===district&&r.key!=='central-shortcut');addLog(release?`성채 기록: ${CITADEL_TOWERS105[release.tower].name} ${release.level}층에서 ${release.targetLevel}층 ${release.label}의 걸쇠를 풀 수 있다.`:'성채 기록: 동쪽 상층 연결교를 따라 중앙탑 4층에 진입한 뒤 최하층으로 내려가라.');addLog('미궁 기록: 세 걸쇠의 순서는 자유다. 두 등불은 불로 켜고, 동쪽 바위는 옆 피난길에서 돌을 던져 풀어라. 내측 철창은 빠르지만 5턴 뒤 닫힌다.');}else rumorEvent();setTerrainTile58(state.map,x,y,TT.FLOOR);return true;}
   if(tile===TT.TRAP){trapEvent(x,y);return true;}
   if(active&&citadelAnvilAt105(x,y))return anvilOpen105({x,y});
@@ -3529,7 +3475,7 @@ function basicAttack(){
   if(state.status.stealth>0){state.status.stealth=0;globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('ghostBreak',430);burst(p.x,p.y,'#c8d7db',11,.68);addLog('공격 동작과 함께 은신이 풀렸다.')}
   if(target&&!target.type&&!ranged&&martialForm1005('brawl')==='reach'&&(!p.weapon||isBrawlWeapon42(w))&&!entityCombatLineCheckR8(p,target,{range,ignore:target}).ok){state._activeAmmo967=null;toast('장타 사선이 막혔다.');return false}
   const turn0=state.turn,shotPower=p.classState?.aimPower||0;
-  const second=ranged&&martialForm1005('roar')==='divine'&&shotPower>5&&(!ammoCtx?.active||itemQuantity57(ammoCtx.ammo)>=2)?state.monsters.find(m=>m!==target&&combatShotCheckR8(m).ok):null;
+  const second=ranged&&martialForm1005('roar')==='divine'&&shotPower>5&&(!ammoCtx?.active||itemQuantity(ammoCtx.ammo)>=2)?state.monsters.find(m=>m!==target&&combatShotCheckR8(m).ok):null;
   try{
     if(target){const targets=second?[target,second]:[target];for(let i=0;i<targets.length;i++){const m=targets[i];if(i>0&&!combatShotCheckR8(m).ok)continue;if(ammoCtx?.active&&!globalThis.__MANRU_AMMO_ATTACK__.consume(ammoCtx.ammo))break;if(ammoCtx)ammoCtx.consumed=true;
       const connected=attackPlayer(m,0,{wasStealthed:i===0&&wasStealthed,shotBundle:ranged,aimPower:shotPower})===true;if(connected)applyPlayerPostHitR8(m,w,range);if(ranged&&shotPower>0)setAimPower58((p.classState.aimPower||0)-1,'attack');if(i>0){projectileFX(p.x,p.y,m.x,m.y,'#f1d9db');martialFx1005('divine',m)}}state._manualRangedTargetR8=!target.type&&target.hp>0?target:null;state._manualTerrainTargetR8=null;}
@@ -3538,7 +3484,7 @@ function basicAttack(){
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
 ActionDispatcher.register('ATTACK',basicAttack);
-function updateAttackButton(...args){const r=markAttackButtonAim(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo967();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo967()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r}
+function updateAttackButton(...args){const r=markAttackButtonAim(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r}
 function markAttackButtonAim(){
     paintAttackButton();const b=document.getElementById('attackActionBtn');if(!b)return;
     const valid=targetValid52()&&(!!AIM52.jar||bow52());b.classList.toggle('aim52',!!valid);const sm=b.querySelector('small');
@@ -3676,15 +3622,15 @@ function dropBossConsumables55(mon){
     if(!q)return queueBossDropTransaction55(plan,origin,floor)
     reserved.add(k(q.x,q.y));spots.push({...q,stacked})
   }
-  const before=structuredClone(state.items||[]),beforeQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity57(i),0),dropped=[];
+  const before=structuredClone(state.items||[]),beforeQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0),dropped=[];
   try{
     for(let i=0;i<plan.length;i++){
-      const def=plan[i],q=spots[i],it={...clone(def),count:1,bossDrop55:true},moved=transferItemQuantity57(it,null,state.items,1,{position:q});
+      const def=plan[i],q=spots[i],it={...clone(def),count:1,bossDrop55:true},moved=transferItemQuantity(it,null,state.items,1,{position:q});
       if(moved.moved!==1)throw new Error(`boss drop ${i} transfer failed`);
       dropped.push({name:def.name,type:def.type,potionKind:def.potionKind||null,talismanKind:def.talismanKind||null,x:q.x,y:q.y,stacked:q.stacked});
     }
   }catch(e){state.items=before;state.bossDrop55={granted:false,floor,requested:plan.length,count:0,healCount:0,names:plan.map(v=>v.name),items:[],reason:'transaction-rollback',error:String(e?.message||e)};addLog('보스 전리품 배치 트랜잭션이 롤백됐다. 보상 일부 지급은 발생하지 않았다.');return false}
-  const afterQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity57(i),0),worldCount=afterQty-beforeQty,healCount=dropped.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length,stackedFallbacks=dropped.filter(v=>v.stacked).length;
+  const afterQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0),worldCount=afterQty-beforeQty,healCount=dropped.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length,stackedFallbacks=dropped.filter(v=>v.stacked).length;
   state.bossDrop55={granted:worldCount===plan.length&&healCount===2,floor,requested:plan.length,count:worldCount,healCount,stackedFallbacks,names:dropped.map(v=>v.name),items:dropped};
   if(state.bossDrop55.granted)addLog(`보스가 전투 소모품 ${worldCount}개를 떨어뜨렸다. 회복 2개 + 전술 소모품 4개${stackedFallbacks?` · 공간 부족으로 ${stackedFallbacks}개 중첩 배치`:''}.`);
   else addLog(`보스 전리품 배치 이상: ${worldCount}/${plan.length} · 회복 ${healCount}/2.`);
@@ -3813,7 +3759,7 @@ function combatInvulnerability57(entity){
 }
 function applyRecoveryPotion57(actor,item){
  const rules={heal_small:{minimum:10,fraction:.32},heal_medium:{minimum:18,fraction:.60}},rule=item?.type==='potion'?rules[item.potionKind]:null;if(!actor||actor.hp<=0||!rule)return false;
- const used=splitItemQuantity57(item,1,actor.inventory);if(!used)return false;
+ const used=splitItemQuantity(item,1,actor.inventory);if(!used)return false;
  const before=actor.hp;actor.hp=Math.min(actor.maxHp,actor.hp+Math.max(rule.minimum,Math.ceil(actor.maxHp*rule.fraction)));
  const cleansed=item.potionKind==='heal_medium'&&combatStatusTurns57(actor,'bleed')>0&&globalThis.__MANRU_RANDOM57__()<.5;
  if(cleansed){if(actor===state.player)state.status.bleed=0;else setMonsterStatus57(actor,STATUS_META57.bleed.monsterField57,0);}
@@ -3824,7 +3770,7 @@ function monsterIdleRecovery105(mon,target){
  if(!mon?.idlePotionKind105||mon.hp<=0||mon.hp>mon.maxHp*.5||mon.intent54||mon.stunned>0||mon.weaponRecovery105>0||mon.palaceRecoverUntil105>=state.floorTurn)return false;
  const reach=mon.ranged?(mon.range||6):(mon.reach||1);
  if(target&&combatTargetValid57(mon,target)&&actorDetectedTarget57(mon,target,monsterSenseRadius(mon))&&(mon.nextEquipmentStrike105||0)<=state.floorTurn&&monsterAttackLineR8(mon,reach,{target}).ok)return false;
- const item=mon.inventory?.find(i=>i.type==='potion'&&i.potionKind===mon.idlePotionKind105&&itemQuantity57(i)>0);if(!item)return false;
+ const item=mon.inventory?.find(i=>i.type==='potion'&&i.potionKind===mon.idlePotionKind105&&itemQuantity(i)>0);if(!item)return false;
  if(!applyRecoveryPotion57(mon,item))return false;burst(mon.x,mon.y,item.color||'#b65b4c',12,.75);floatText(mon.x,mon.y,item.name,'#a1e4b4',11);return true;
 }
 function damageEntity61(entity,amount,source=null,element=null,context={}){
@@ -4956,7 +4902,7 @@ function pickupBaseR25(){
   const item=state.items.find(it=>it.x===state.player.x&&it.y===state.player.y);if(!item){toast('발밑에 아이템이 없다.');return false}
   if(item.type==='progress_key23'){state.items.splice(state.items.indexOf(item),1);if(state.floor23)state.floor23.keyAcquired=true;addLog('수은 심부 열쇠를 획득했다. 이제 계단의 봉인이 풀린다.');burst(state.player.x,state.player.y,'#d8f2ef',15,.8);updateAll();return true}
   if(item.type==='story_note'){state.items.splice(state.items.indexOf(item),1);globalThis.storyCollectNote992?.(item.storyId);return true}
-  const result=transferItemQuantity57(item,state.items,state.player.inventory,itemQuantity57(item),{capacity:inventoryCapacity()});
+  const result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
   if(result.moved){if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
 }
 function pickup(...args){
@@ -4988,8 +4934,8 @@ function sellShop58(item){
  const shop=state?.shopIntermission,inv=state?.player?.inventory,index=inv?.indexOf(item),value=ShopMapBuilder.saleValue(item);
  if(!shop?.active||!adjacentMerchant58()||shop.purchaseId||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
  if(index<0||!value)return{ok:false,reason:'ineligible'};
- const staged=structuredClone(inv);if(!consumeItemQuantity57(staged[index],1,staged))return{ok:false,reason:'quantity'};
- const candy={...CONSUMABLES.find(i=>i.foodKind==='coin_candy'),count:value},transfer=transferItemQuantity57(candy,null,staged,value,{capacity:inventoryCapacity()});
+ const staged=structuredClone(inv);if(!consumeItemQuantity(staged[index],1,staged))return{ok:false,reason:'quantity'};
+ const candy={...CONSUMABLES.find(i=>i.foodKind==='coin_candy'),count:value},transfer=transferItemQuantity(candy,null,staged,value,{capacity:inventoryCapacity()});
  if(transfer.remaining){toast('엽전 엿을 받을 공간이 없다.');return{ok:false,reason:'capacity'}}
  state.player.inventory=staged;
  if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;toast('저장하지 못해 판매를 취소했다.');return{ok:false,reason:'save'}}
@@ -5066,7 +5012,7 @@ restore(){
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
 function adjacentMerchant58(){return(state?.neutralInteractables58||[]).find(n=>n.kind==='merchant'&&entityDistance57(n,state.player)<=1)||null}
 function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop58();return true}
-function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity57(i),0)}
+function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity(i),0)}
 function purchaseShop58(id){
  const shop=state?.shopIntermission;if(!shop?.active||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
  const stock=shop.stock.find(s=>s.id===id);if(!stock)return{ok:false,reason:'missing'};if(stock.soldOut)return{ok:false,reason:'soldOut'};
@@ -5075,9 +5021,9 @@ function purchaseShop58(id){
  const inv=state.player.inventory;if(shopCurrency58(inv)<price){toast('엽전 엿이 부족하다.');return{ok:false,reason:'funds'}}
  // Preflight uses the canonical transfer contract on a detached candidate inventory.
  // Currency slots are not assumed to disappear: a full bag fails without any debit.
- const staged=structuredClone(inv),item=structuredClone(stock.item),r=transferItemQuantity57(item,null,staged,itemQuantity57(item),{capacity:inventoryCapacity()});
+ const staged=structuredClone(inv),item=structuredClone(stock.item),r=transferItemQuantity(item,null,staged,itemQuantity(item),{capacity:inventoryCapacity()});
  if(r.remaining){toast('행낭에 상품을 넣을 공간이 없다.');return{ok:false,reason:'capacity'}}
- let left=price;for(const candy of [...staged]){if(candy.foodKind!=='coin_candy')continue;const n=Math.min(left,itemQuantity57(candy));if(n&&!consumeItemQuantity57(candy,n,staged))throw new Error('shop quantity contract');left-=n;if(!left)break}if(left)throw new Error('shop debit contract');
+ let left=price;for(const candy of [...staged]){if(candy.foodKind!=='coin_candy')continue;const n=Math.min(left,itemQuantity(candy));if(n&&!consumeItemQuantity(candy,n,staged))throw new Error('shop quantity contract');left-=n;if(!left)break}if(left)throw new Error('shop debit contract');
  // Publish inventory and stock together; no turn, drop, or gameplay callback occurs between them.
  state.player.inventory=staged;stock.soldOut=true;
  if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;stock.soldOut=false;toast('저장하지 못해 교환을 취소했다.');return{ok:false,reason:'save'}}
@@ -5111,7 +5057,7 @@ function closeShop58(){setInteraction8('shop58',false);if(state?.shopIntermissio
 function renderShop58(){
  const panel=document.getElementById('shop58'),s=state?.shopIntermission;if(!panel||!s?.active)return;
  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),purchase=s.stock.find(r=>r.id===s.purchaseId&&!r.soldOut),items=purchase?[purchase.item]:state.player.inventory;
- panel.innerHTML=`<section class="shopSheet58" role="dialog" aria-modal="true" aria-label="${purchase?'진열품 구매 확인':'내 행낭 · 물품 판매'}"><span class="uiCorners63" aria-hidden="true"></span><header><div><small>${esc(SHOP_RULES58[s.theme].room)} · ${esc(s.merchant.name)}</small><h2>${purchase?'이 물건을 살까?':'내 행낭 · 물품 판매'}</h2><p>보유 엽전 엿 <b>${shopCurrency58()}</b>개</p></div><button class="uxClose" data-shop-close aria-label="닫기">×</button></header><div class="ShopMapBuilder.stock ${purchase?'shopConfirm58':''}">${items.map((item,index)=>{const pub=shopPublic58(item),value=ShopMapBuilder.saleValue(item),enabled=!!purchase||value>0;return`<article class="shopItem58 ${enabled?'eligible':'ineligible'}"><div class="shopArt58">${globalThis.__MANRU_ITEM_ART_R7__?.iconHtml?.(item)||''}</div><div><small style="color:${rarityColor(item.rarity)}">${esc(({common:'일반',rare:'희귀',relic:'유물',sealed:'봉인'})[item.rarity]||'특수')} · ${itemQuantity57(item)}개</small><h3>${esc(pub.name)}</h3><p>${esc(pub.description)}</p></div>${purchase?`<button data-shop-buy="${esc(purchase.id)}" ${shopCurrency58()<purchase.price?'disabled':''}>엽전 엿 ${purchase.price}개 지불 · 구매</button>`:`<button data-shop-sell="${index}" ${value?'':'disabled'}>${value?`1개 판매 · 엽전 엿 ${value}개 받기`:'판매 불가'}</button>`}</article>`}).join('')||'<p>행낭이 비어 있다.</p>'}</div><footer>${purchase?'구매를 확정할 때만 엽전 엿이 차감된다.':'밝게 표시된 물건만 판매 가능 · 유물 1개 / 봉인급 2개 받기'}<button data-shop-cancel>${purchase?'두고 가기':'닫기'}</button></footer></section>`;
+ panel.innerHTML=`<section class="shopSheet58" role="dialog" aria-modal="true" aria-label="${purchase?'진열품 구매 확인':'내 행낭 · 물품 판매'}"><span class="uiCorners63" aria-hidden="true"></span><header><div><small>${esc(SHOP_RULES58[s.theme].room)} · ${esc(s.merchant.name)}</small><h2>${purchase?'이 물건을 살까?':'내 행낭 · 물품 판매'}</h2><p>보유 엽전 엿 <b>${shopCurrency58()}</b>개</p></div><button class="uxClose" data-shop-close aria-label="닫기">×</button></header><div class="ShopMapBuilder.stock ${purchase?'shopConfirm58':''}">${items.map((item,index)=>{const pub=shopPublic58(item),value=ShopMapBuilder.saleValue(item),enabled=!!purchase||value>0;return`<article class="shopItem58 ${enabled?'eligible':'ineligible'}"><div class="shopArt58">${globalThis.__MANRU_ITEM_ART_R7__?.iconHtml?.(item)||''}</div><div><small style="color:${rarityColor(item.rarity)}">${esc(({common:'일반',rare:'희귀',relic:'유물',sealed:'봉인'})[item.rarity]||'특수')} · ${itemQuantity(item)}개</small><h3>${esc(pub.name)}</h3><p>${esc(pub.description)}</p></div>${purchase?`<button data-shop-buy="${esc(purchase.id)}" ${shopCurrency58()<purchase.price?'disabled':''}>엽전 엿 ${purchase.price}개 지불 · 구매</button>`:`<button data-shop-sell="${index}" ${value?'':'disabled'}>${value?`1개 판매 · 엽전 엿 ${value}개 받기`:'판매 불가'}</button>`}</article>`}).join('')||'<p>행낭이 비어 있다.</p>'}</div><footer>${purchase?'구매를 확정할 때만 엽전 엿이 차감된다.':'밝게 표시된 물건만 판매 가능 · 유물 1개 / 봉인급 2개 받기'}<button data-shop-cancel>${purchase?'두고 가기':'닫기'}</button></footer></section>`;
  panel.querySelector('[data-shop-close]').onclick=closeShop58;panel.querySelector('[data-shop-cancel]').onclick=closeShop58;
  panel.querySelectorAll('[data-shop-buy]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'SHOP_BUY',args:[b.dataset.shopBuy]}).value);
  panel.querySelectorAll('[data-shop-sell]').forEach(b=>{const item=items[+b.dataset.shopSell];b.onclick=()=>ActionDispatcher.dispatch({type:'SHOP_SELL',args:[item]}).value});
@@ -5177,80 +5123,22 @@ function renderMartialPanel(){const box=document.getElementById('martialPanel');
 function openMartial(){
   if(!gameplayUiOpen57()||cipherOpen)return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();if(!state||cipherOpen)return;globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();martialOpen=true;renderMartialPanel();document.getElementById('martialPanel').style.display='block';globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
 }function closeMartial(){martialOpen=false;document.getElementById('martialPanel').style.display='none';globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
-function itemSummary(item){if(item?.type==='ammo'){const d=ammoDef967(item.ammoKind)||item,a=[];if(d.atkBonus)a.push(`공격 +${d.atkBonus}`);if(d.pierce)a.push(`방어 ${d.pierce} 무시`);return `활 탄약 · ${a.length?a.join(' · '):'표준 화살'} · ${item.count||1}발`}return describeItemWithBrands(item)}
-function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
-function describeIdentifiedItem(item){if(item?.type==='potion'&&!knownPotion56(item))return `${POTION_META[item.potionKind]?.family||'미확인 약성'} · ${item.origin56?.label||'출처 불명'}`;if(item?.type==='talisman'&&!knownTalisman56(item))return '미확인 부적 · 술법 불명';if(item?.type==='talisman')return item.ability||item.desc||'';return describeItemStats(item)}
-function describeItemStats(item){return displayText53(stats53(item).join(' · '))}
 
-function consumeOne(idx){return consumeItemQuantity57(state?.player?.inventory?.[idx])}
+
+
+
+
+
 function useInventoryBaseR30(idx){
   const p=state.player,item=p.inventory[idx];if(!item)return;
-  if(['weapon','armor','cloak','relic','trinket'].includes(item.type)){const old=p[item.type];p[item.type]=item;p.inventory.splice(idx,1);mountainEquip105(item,old);if(old)addInventoryItem57(old);branchInventoryOverflow105();globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(item.name+' 장착.');closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInventoryBaseR30"}).value;return}
-  if(item.type==='food')return consumeFood57(item,idx);
+  if(['weapon','armor','cloak','relic','trinket'].includes(item.type)){const old=p[item.type];p[item.type]=item;p.inventory.splice(idx,1);mountainEquip105(item,old);if(old)addInventoryItem(old);branchInventoryOverflow105();globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(item.name+' 장착.');closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInventoryBaseR30"}).value;return}
+  if(item.type==='food')return consumeFood(item,idx);
   if(item.type==='ingredient'){toast('화로나 솥에서 사용하는 조리 재료다.');return}
   consumeOne(idx);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInventoryBaseR30"}).value
 }
-/* r30 canonical item-use resolver: one ordered decision tree replaces the historical useInventoryItem wrapper stack. */
-function useInventoryItem(idx,...rest){
-  const pending=state?.player?.inventory?.[idx];
-  if(pending?.talismanKind==='upgrade'&&bodyPowerActive58()){toast('이미 괴력이 폭발하고 있다.');return false}
-  const act=playerAction57('item',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 물건을 사용하지 못했다.'});if(!act.ok)return !!act.consumed;const item=state?.player?.inventory?.[idx];if(!item)return false;
-  const identity991=globalThis.__MANRU_ITEM_IDENTITY991__;
-  const library1022=globalThis.__MANRU_LIBRARY1022_ACTIONS__;
-  const talisman74=globalThis.__MANRU_TALISMAN74_ACTIONS__;
-  const consumable56=globalThis.__MANRU_CONSUMABLE56_ACTIONS__;
-  const potion41=globalThis.__MANRU_POTION41_ACTIONS__;
-  const ux45=globalThis.__MANRU_UX45_ACTIONS__;
-  const runtime70=globalThis.__MANRU_RELEASE__;
 
-  // Special library scrolls are owned by the library subsystem through one explicit action service.
-  if(item.branchGuide105){showInspect(item.name,item.desc);return true}
-  if(item.summonItem105)return summonUse105(item,idx);
-  if(item.mineItem105)return mineUseItem105(item);
-  if(item.type==='martial_manual')return openMartialManual1005(item);
-  if(item.libraryScroll1022)return library1022?.consume?.(idx,item)??false;
-
-  // Gear identity / curse handling is resolved before equip. No IIFE-private helper is referenced here.
-  if(item.type==='talisman'){
-    if(item.talismanKind==='identify')return identity991?.useIdentify?.(item)??false;
-    if(item.talismanKind==='holy')return identity991?.useHoly?.(item)??false;
-    if(item.fusion74&&(String(item.fusionEffect74||'').startsWith('holy_')||item.fusionEffect74==='identify_all991'))return identity991?.useHolyFusion?.(item)??false;
-  }
-  if(identity991?.isGear?.(item)){
-    const cur=state.player[item.type];
-    if(cur?.curseActive991){toast(`${cur.name}의 저주가 장착을 봉인하고 있다. 성부로 먼저 정화해야 한다.`);return false}
-    identity991.identifyGear(item,'착용');
-    if(item.curse991){const nextStacks=identity991.activateCurse?.(item)||(identity991.curseStacks?.(item.curse991)||1),power=Math.pow(2,Math.max(0,nextStacks-1));identity991.revealCurse(item);addLog(`저주 발현 · ${item.name}: ${identity991.curseDef(item)?.name||'알 수 없는 저주'}${nextStacks>1?` · 중첩 ${nextStacks}단계 / 효과 ×${power}`:''}. 성부 없이는 벗을 수 없다.`)}
-  }
-
-  if(item.type==='ammo'){state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} 장전 선택.`);toast(`${item.name} 장전 · ${item.count||1}발`);renderInventory();updateAll();return true}
-
-  // v7.4 owns elemental/upgrade/fused talisman families. A handled result never falls through.
-  if(item.type==='talisman'){
-    const dispatch=talisman74?.dispatch?.(item);
-    if(dispatch?.handled)return dispatch.result;
-  }
-
-  if(item.type==='potion'&&item.throwable)runtime70?.tip?.('throw','투척 약병은 목표 칸을 지정해 지형을 만든다. 연막으로 사선을 자르고 화유병으로 통로를 막아라.','소모품을 전투 지형처럼 쓰는 것이 핵심');
-  runtime70?.markAction?.();if(!item.throwable)presentPlayerAction58('item');
-
-  // v5.6 owns ordinary talisman target/instant effects.
-  if(item.type==='talisman')return consumable56?.useTalisman?.(item)??false;
-
-  if(item.type==='upgrade'){cancelAutoWalk();state.player.upgradeMarks=(state.player.upgradeMarks||0)+1;consumeOne(idx);inventoryTab='gear';inventorySelection=-1;addLog('개량 인장을 펼쳤다. 장비를 고르면 개량할 수 있다.');renderInventory();return true}
-
-  ux45?.markDirty?.();
-  let result=false;
-  if(item.throwable)result=potion41?.beginTarget?.(item)??false;
-  else if(item.type==='potion')result=potion41?.drink?.(item)??false;
-  else result=useInventoryBaseR30(idx,...rest);
-
-  // Keep an unidentified throwable's public appearance in the target banner without reaching into v5.6 internals.
-  if(item.type==='potion'&&item.throwable&&!consumable56?.knownPotion?.(item))setTimeout(()=>{const e=document.getElementById('potionTargetName');if(e)e.textContent=`${consumable56?.publicName?.(item)||item.name} 투척`},0);
-  return result;
-}
 ActionDispatcher.register('ITEM_USE',useInventoryItem);
-function dropInventoryItem(idx){const act=playerAction57('drop',{allowInventory:true});if(!act.ok)return !!act.consumed;const item=splitItemQuantity57(state.player.inventory[idx],1,state.player.inventory);if(!item)return false;PlacementService.placeItem(item,state.player);renderInventory();updateAll();return true}
+
 ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
 let inventoryFiltered;
 function inventoryDetailHtml(item,idx){if(!item)return'<div class="invDetailEmpty">물품을 골라 자세히 살펴본다.</div>';const stats=[];if(item.atk)stats.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)stats.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)stats.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.speed)stats.push(`속도 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);if(item.range)stats.push(`사거리 ${item.range}`);if(item.hunger)stats.push(`허기력 +${item.hunger}`);if(item.vision)stats.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.will)stats.push(`WILL +${item.will}`);const gear=['weapon','armor','cloak','relic','trinket'].includes(item.type),fx=hiEffectSummary(item),desc=item.desc||'설명이 없다.';return `<div class="vfDetailTop">${vfIconHtml(item,'large')}<div><h3>${item.name}${(item.count||1)>1?` ×${item.count}`:''}</h3><div class="typeLine">${item.legendaryWeapon47?'전설의 무기':itemTypeLabel(item.type)} · ${item.tier?`${item.tier} TIER · `:''}${item.legendaryWeapon47?'강화 불가':(item.rarity||'common').toUpperCase()}${item.type==='weapon'?' · TURN-BASED':''}</div></div></div><div class="invStats">${stats.map(x=>`<span class="invStatChip">${x}</span>`).join('')}</div>${item.ability&&item.ability!=='없음'?`<div class="invAbility"><b>능력 · ${item.ability}</b><br>${fx}</div>`:''}<div class="desc">${desc}</div><div class="invActions"><button class="primary" data-invuse="${idx}">${gear?'장착':'사용'}</button><button data-invdrop="${idx}">버리기</button><button class="wide" data-invinspect="${idx}">세부 정보</button></div>`}
@@ -6107,7 +5995,7 @@ function renderMobileDrawer(){if(!interactionActive8('mobileDrawer'))return;cons
 
 function showInspect(title,html){
     const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
-    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem986(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
+    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
     const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect984('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),null);return}
     const txt=dedupeProse986(textOnly984(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
     directOpenInspect984(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
@@ -6278,11 +6166,7 @@ function vfHash(x,y,s=0){return hash2(x,y,1901+(state?.floor||0)*37+s)}
 function vfRegion(){return Math.max(0,Math.min(4,regionIndex()))}
 function vfItemKind(item){if(item?.type==='weapon')return item.kind==='brawl'?'blunt':item.kind==='spear'?'spear':item.kind==='bow'?'bow':item.kind==='blunt'?'blunt':'blade';if(['armor','cloak','relic','trinket','food'].includes(item?.type))return item.type;return 'other'}
 function vfIconPos(item){const idx=VF_ASSETS.item_meta[vfItemKind(item)]??VF_ASSETS.item_meta.other;return `${-(idx%VF_ASSETS.item_cols)*32}px ${-Math.floor(idx/VF_ASSETS.item_cols)*32}px`}
-function itemPrototype57(name){if(name==='만령 소환술서')return summonBookItem105();if(name==='만령부적')return summonSealItem105();const mine=Object.values(MINE_ITEMS105).find(i=>i.name===name);if(mine)return {...mine};
-    const pools=[[WEAPONS,'weapon'],[ARMORS,'armor'],[CLOAKS,'cloak'],[RELICS,'relic'],[TRINKETS,'trinket'],[CONSUMABLES,null],[window.MANRU_POTIONS||[],'potion'],[window.MANRU_TALISMANS||[],'talisman'],[window.MANRU_AMMO||[],'ammo']];
-    for(const [pool,type] of pools){const it=pool?.find?.(x=>x.name===name);if(it)return {...it,type:it.type||type}}
-    return null
-  }
+
 function vfIconHtml(item,cls=''){const impl=globalThis.__MANRU_ICON_HTML_IMPL_R7__;if(typeof impl==='function')return impl(item,cls);return `<span class="vfIcon ${cls} vfRarity-${item?.rarity||'common'}" style="background-position:${vfIconPos(item)}"></span>`}
 
 // Camera allows atmospheric overscan at world edges instead of pinning the player to a corner.
@@ -6353,7 +6237,7 @@ const vfAuto=document.createElement('div');vfAuto.id='vfAutoState';document.getE
 if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
   get:()=>state,elementDamage61:(entity,elem,amount)=>resolveElementDamage57(entity,elem,amount,{ground:false}),tutorial60:()=>tutorialEntryAudit60(),presentation58:()=>({busy:actionPresentationBusy58(),kind:ACTION_PRESENTATION58.kind,frame:(()=>{const f=actionFrame58();return f?{source:f.source,target:f.target,t:f.t,hit:f.a.hit,weapon:f.a.weapon}:null})(),remaining:Math.max(0,ACTION_PRESENTATION58.until-performance.now())}),
   floor:(n)=>{if(!state)return false;state.floor=clamp(+n||1,1,25);NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();updateAll();return true},
-  inventory:()=>{if(!state)return false;state.player.inventory=[];for(const w of WEAPONS.slice(0,8)){const it=clone(w);it.type='weapon';addInventoryItem57(it)}for(const a of ARMORS.slice(1,4)){const it=clone(a);it.type='armor';addInventoryItem57(it)}for(const c of CLOAKS.slice(0,4)){const it=clone(c);it.type='cloak';addInventoryItem57(it)}for(const f of CONSUMABLES.slice(0,4))addInventoryItem57(clone(f));openInventory();return true},
+  inventory:()=>{if(!state)return false;state.player.inventory=[];for(const w of WEAPONS.slice(0,8)){const it=clone(w);it.type='weapon';addInventoryItem(it)}for(const a of ARMORS.slice(1,4)){const it=clone(a);it.type='armor';addInventoryItem(it)}for(const c of CLOAKS.slice(0,4)){const it=clone(c);it.type='cloak';addInventoryItem(it)}for(const f of CONSUMABLES.slice(0,4))addInventoryItem(clone(f));openInventory();return true},
   close:()=>{closeInventory();closeMartial();closeHelp();return true},
   settle:()=>{FX.transition=null;bossIntroTimer&&clearTimeout(bossIntroTimer);document.getElementById('bossIntro')?.classList.remove('show');drawMap();return true}
 }}
@@ -6663,7 +6547,7 @@ const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
   const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
   const blocked=()=>inputNow()<U.blockUntil;
   const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(error){ignoreError('a long-press cancel callback threw',error)}}U.longPresses.clear()};
-  const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`FOCUS +${it.focusGain}`);if(it.hunger)a.push(`허기력 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
+
   const itemInspectHtml=(it)=>{
     if(!it)return'장착된 아이템 없음.';
     const icon=typeof vfIconHtml==='function'?vfIconHtml(it,'inspectIcon'):'';
@@ -6757,17 +6641,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function applyFeatureRooms(){if(!state||state.specialFloor)return;state.featureRooms=[];const pool=[['연금술방',alchemy],['주방',kitchen],['사당',shrine],['무기고',armoryRoom],['서고',study],['감방',cells]],c=(state.rooms||[]).filter(r=>r.w>=8&&r.h>=7&&!contains(r,state.player.x,state.player.y)&&!contains(r,state.stairs.x,state.stairs.y));if(!c.length)return;c.sort((a,b)=>b.w*b.h-a.w*a.h);const want=Math.min(state.floor>=11?2:1,c.length),used=new Set();for(let i=0;i<want;i++){const r=c[i];let j=Math.floor(hash2(r.x,r.y,state.floor+503)*pool.length)%pool.length,g=0;while(used.has(pool[j][0])&&g++<pool.length)j=(j+1)%pool.length;used.add(pool[j][0]);pool[j][1](r);state.featureRooms.push({name:pool[j][0],x:r.x,y:r.y,w:r.w,h:r.h})}if(state.featureRooms.length)addLog(`특수방 감지: ${state.featureRooms.map(v=>v.name).join(' / ')}`)}
   registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
 
-  const POTIONS=[
-    {name:'소회복 비약',type:'potion',potionKind:'heal_small',tier:1,rarity:'common',stackMax:3,minFloor:1,color:'#c64f49',ability:'최대 HP의 32% 회복 (최소 10)',desc:'상처를 빠르게 봉합하는 붉은 비약. 최대 HP의 32%를 회복하며 최소 회복량은 10이다.',useCost:.8},
-    {name:'중회복 비약',type:'potion',potionKind:'heal_medium',tier:2,rarity:'rare',stackMax:3,minFloor:4,color:'#d66b57',ability:'최대 HP의 60% 회복 (최소 18) · 출혈 완화',desc:'농축된 금창 약액. 최대 HP의 60%를 회복하며 최소 회복량은 18이고, 50% 확률로 출혈을 제거한다.',useCost:.8},
-    {name:'막걸리',type:'potion',potionKind:'makgeolli',tier:2,rarity:'rare',stackMax:3,minFloor:4,color:'#e3dcc7',ability:'취함 8턴 · 매턴 최대 HP 9% 누적 회복 · 총 약 72%',desc:'탁한 쌀술. 마시면 8턴 동안 취해 이동과 공격 판단이 불안정해지지만, 취함이 유지되는 동안 최대 HP의 9%씩 회복량을 누적해 정수 HP로 회복한다. 8턴 총 잠재 회복량은 최대 HP의 약 72%다.',useCost:.8,drunkTurns57:8,regenPercent57:.09,regenMin57:2},
-    {name:'청심탕',type:'potion',potionKind:'focus',tier:2,rarity:'rare',stackMax:3,minFloor:3,color:'#55a7b8',ability:'기력 +20 · WILL +2',desc:'정신을 맑게 하는 푸른 탕약. 기력을 20 회복하고 5턴 동안 WILL +2.',useCost:.8},
-    {name:'해독산',type:'potion',potionKind:'cleanse',tier:1,rarity:'common',stackMax:3,minFloor:1,color:'#d9d6b6',ability:'중병·독·출혈·약화·배탈 해제 · 최대 HP의 12% 회복',desc:'독기와 중병, 피멎음, 쇠약과 배탈을 다스리는 백색 약산. 독·중병·출혈·약화·배탈을 제거하고 최대 HP의 12%를 회복하며 최소 회복량은 4이다.',useCost:.8},
-    {name:'경신약',type:'potion',potionKind:'swift',tier:3,rarity:'rare',stackMax:2,minFloor:6,color:'#70b46a',ability:'6턴 신속',desc:'6턴 동안 이동·공격 행동비용 20% 감소, EVA +10.',useCost:.8},
-    {name:'강골주',type:'potion',potionKind:'fortify',tier:3,rarity:'rare',stackMax:2,minFloor:7,color:'#b7884c',ability:'8턴 DEF +3',desc:'뼈와 힘줄을 굳히는 독한 약주. 8턴 동안 DEF +3.',useCost:.8},
-    {name:'연막병',type:'potion',potionKind:'smoke',tier:3,rarity:'rare',stackMax:2,minFloor:7,color:'#747b84',ability:'투척 · 3×3 연막 5턴',desc:'사거리 4칸. 깨진 지점 주변 3×3에 5턴 동안 시야를 가리는 연막을 만든다.',throwable:true,throwRange:4,useCost:1},
-    {name:'화유병',type:'potion',potionKind:'fire',tier:4,rarity:'rare',stackMax:2,minFloor:12,color:'#df6a32',ability:'투척 · 3×3 화염 4턴',desc:'사거리 4칸. 직격 6 피해 후 주변 3×3을 4턴 동안 불태워 턴당 3 피해를 준다.',throwable:true,throwRange:4,useCost:1}
-  ];
+
   for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);window.MANRU_POTIONS=POTIONS;
   function pstate(){if(!state)return;state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};for(const q of['swift','fortify','willBoost'])if(!Number.isFinite(state.status[q]))state.status[q]=0}
   function pcolor(i){return i?.color||'#b65b4c'}
@@ -6776,8 +6650,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   registerPlayerStatStage55('potions41',s=>{if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s});registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
-  // v4.5 canonical turn core below owns field/status ticking; the obsolete duplicate field ticker was removed.
-  function consumeRef(item){const i=state.player.inventory.indexOf(item);if(i<0)return false;consumeOne(i);return true}
+
   function drink(item){const p=state.player;pstate();const recovery=['heal_small','heal_medium'].includes(item.potionKind);if(recovery){if(!applyRecoveryPotion57(p,item))return false;}else switch(item.potionKind){case'makgeolli':{const turns=Math.max(1,Math.floor(item.drunkTurns57||8));state.status.drunk=Math.max(state.status.drunk||0,turns+1);state.makgeolliRecoveryTurns57=state.status.drunk;state.drunkBornTurn57=state.turn+1;state.makgeolliHealHundredths57=0;addLog(`${item.name}: 취함 ${turns}턴 · 매턴 지속 회복. 취기는 중첩되지 않고 남은 시간을 ${turns}턴까지 새로 고친다.`);break}case'focus':{const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+20);state.status.willBoost=Math.max(state.status.willBoost,6);addLog(`${item.name}: 기력 +${p.focus-b} · WILL 강화.`);break}case'cleanse':{const b=p.hp,h=Math.max(4,Math.ceil(p.maxHp*.12));p.hp=Math.min(p.maxHp,p.hp+h);state.status.illness=0;state.status.poison=0;state.status.bleed=0;state.status.weaken=0;state.status.upset=0;addLog(`${item.name}: 독·출혈·약화·배탈 해제 · HP +${displayNumber53(Math.round(p.hp-b))}.`);break}case'swift':state.status.swift=Math.max(state.status.swift,7);addLog(`${item.name}: 6턴 신속.`);break;case'fortify':state.status.fortify=Math.max(state.status.fortify,9);addLog(`${item.name}: 8턴 DEF 강화.`);break;default:return false}burst(p.x,p.y,pcolor(item),12,.75);if(!recovery)consumeRef(item);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||.8,reason:"drink"}).value;return true}
   function throwAt(tx,ty){const act=playerAction57('target',{uiOwner:'potionTargetHud'});if(!act.ok)return false;if(!potionTarget||!state)return false;const item=potionTarget.item,r=potionTarget.range||4,p=state.player;if(!state.player.inventory.includes(item)){cancelTarget(true);return false}if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>r){toast(`사거리 ${r}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('보지 못한 곳이다.');return false}if(!lineClear(p.x,p.y,tx,ty)){toast('던질 경로가 막혔다.');return false}if(state.floor>=11)alertNearby(tx,ty,item.throwElement105?4:item.potionKind==='smoke'?6:8,item.throwElement105||item.potionKind==='smoke'?'projectile':'explosion');projectileFX(p.x,p.y,tx,ty,pcolor(item));burst(tx,ty,pcolor(item),18,1);if(item.throwElement105==='water'||item.throwElement105==='ice'){emitElementContact105(item.throwElement105,elementCells105(tx,ty,1),effectSource57(p));addLog(`${item.name}: 주변 3×3에 ${item.throwElement105==='water'?'물기운':'냉기'}가 퍼졌다.`)}else if(item.potionKind==='smoke'){addField('smoke',tx,ty,6);addLog(`${item.name}: 3×3 연막 5턴.`)}else{const m=findMonsterAt(tx,ty),observed=isEntityObservableToPlayer57(m),direct=isThreatVisibleToPlayer57(m)?m:null;if(observed&&m&&!isHostileTarget57(m)){toast('아군에게 공격용 약병을 던질 수 없다.');return false}if(direct){markCombatActivity57('potion-throw');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(direct,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${direct.name}의 아수라장이 투척 직격을 지웠다.`)}else{const dealt=damageEntity61(direct,6,state.player,'fire');if(dealt>0){dojoRememberHit105(direct,'area');floatText(tx,ty,'-'+dealt,'#ff9d5c',14,'fire');}if(direct.hp<=0)killMonster(direct)}}addField('fire',tx,ty,5);addLog(`${item.name}: 3×3 화염 4턴.`)}consumeRef(item);cancelTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||1,reason:"throwAt"}).value;return true}
   // r30: potion dispatch is integrated in canonical useInventoryItem.
@@ -7156,7 +7029,7 @@ const UX={
     box.querySelectorAll('[data-uxdrop-equip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'DROP_EQUIPPED',args:[p,b.dataset.uxdropEquip],source:'inventory'}).value}));
   });
 
-  function unequipAction5(p,slot){const act=playerAction57('unequip',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 장비를 해제하지 못했다.'});if(!act.ok)return;const it=p[slot];if(!it)return;if(p.inventory.length>=inventoryCapacity()&&it.branchEffect105!=='capacity'){toast('행낭이 가득 찼다.');return}UX.modalDirty=true;UX.paused=null;p[slot]=null;branchInventoryOverflow105();addInventoryItem57(it);globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(`${it.name} 해제.`);UX.invEquipSlot=null;inventorySelection=p.inventory.length-1;renderInventory();commitPlayerAction57(act,1)}
+  function unequipAction5(p,slot){const act=playerAction57('unequip',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 장비를 해제하지 못했다.'});if(!act.ok)return;const it=p[slot];if(!it)return;if(p.inventory.length>=inventoryCapacity()&&it.branchEffect105!=='capacity'){toast('행낭이 가득 찼다.');return}UX.modalDirty=true;UX.paused=null;p[slot]=null;branchInventoryOverflow105();addInventoryItem(it);globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(`${it.name} 해제.`);UX.invEquipSlot=null;inventorySelection=p.inventory.length-1;renderInventory();commitPlayerAction57(act,1)}
   ActionDispatcher.register('UNEQUIP',unequipAction5);
   function dropEquippedAction5(p,slot){const act=playerAction57('dropEquipped',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 장비를 내려놓지 못했다.'});if(!act.ok)return;const it=p[slot];if(!it)return;UX.modalDirty=true;UX.paused=null;p[slot]=null;branchInventoryOverflow105();PlacementService.placeItem({...it,x:p.x,y:p.y});globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(`${it.name}을 바닥에 놓았다.`);UX.invEquipSlot=null;renderInventory();commitPlayerAction57(act,1)}
   ActionDispatcher.register('DROP_EQUIPPED',dropEquippedAction5);
@@ -7307,13 +7180,13 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   registerInventoryRenderR34('r47-tab-normalize','pre',()=>{if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'});registerInventoryRenderR34('r47-decorate','post',()=>decorateInventory47());
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
-  function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick57(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
-  function gear47(tier){return ordinaryGearPool105(tier,state.floor)}
+  function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
+  function gear47(tier){return ordinaryGearPool(tier,state.floor)}
   function relics47(){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&state.floor>=(f[x.name]||1))}
   function place47(t){if(!t)return;const p=PlacementService.randomFloor(0);PlacementService.placeItem({...clone(t),x:p.x,y:p.y,count:1})}
   function trait47(){if(state.specialFloor)return null;const a=[['보급','회복 자원이 풍부함'],['경계','적과 장비 보상이 증가'],['불온','함정과 전술 물품 증가'],['비밀','보급함과 유물 발견 가능']];let pool=a.filter(v=>v[0]!==state.lastTrait47);if(!pool.length)pool=a;const pick=choice(pool);state.lastTrait47=pick[0];return pick}
   
-  function applyStrategy47(){state.player.upgradeMarks=state.player.upgradeMarks||0;state.floorTrait47=trait47();if(state.floorTrait47){const n=state.floorTrait47[0];if(n==='보급')place47(deckPick47(ordinaryPotionPool105(false),'traitRecover'));else if(n==='경계'){place47(deckPick47(gear47(Math.min(5,tierForFloor()+1)),'traitGear'));const d=choice(floorEnemyDefinitions());if(d){const m=scaledMonster(d),p=PlacementService.randomMonsterCell(m);if(p){Object.assign(m,p);OccupancyService.addMonster(m)}}}else if(n==='불온'){for(let i=0;i<2;i++){const p=PlacementService.randomFloor(0,{avoidSafeChoice:true});if(state.map[p.y][p.x]===TT.FLOOR)setTerrainTile58(state.map,p.x,p.y,TT.TRAP)}place47(deckPick47(ordinaryPotionPool105(true),'traitTactic'))}else if(n==='비밀'){const p=PlacementService.randomFloor(0);setTerrainTile58(state.map,p.x,p.y,TT.CACHE);const rr=relics47();if(rr.length&&globalThis.__MANRU_RANDOM57__()<.55)place47(choice(rr))}}VisibilityService.compute();vfBuildDecor();P47.force=true;P47.cullKey=''}
+  function applyStrategy47(){state.player.upgradeMarks=state.player.upgradeMarks||0;state.floorTrait47=trait47();if(state.floorTrait47){const n=state.floorTrait47[0];if(n==='보급')place47(deckPick47(ordinaryPotionPool(false),'traitRecover'));else if(n==='경계'){place47(deckPick47(gear47(Math.min(5,tierForFloor()+1)),'traitGear'));const d=choice(floorEnemyDefinitions());if(d){const m=scaledMonster(d),p=PlacementService.randomMonsterCell(m);if(p){Object.assign(m,p);OccupancyService.addMonster(m)}}}else if(n==='불온'){for(let i=0;i<2;i++){const p=PlacementService.randomFloor(0,{avoidSafeChoice:true});if(state.map[p.y][p.x]===TT.FLOOR)setTerrainTile58(state.map,p.x,p.y,TT.TRAP)}place47(deckPick47(ordinaryPotionPool(true),'traitTactic'))}else if(n==='비밀'){const p=PlacementService.randomFloor(0);setTerrainTile58(state.map,p.x,p.y,TT.CACHE);const rr=relics47();if(rr.length&&globalThis.__MANRU_RANDOM57__()<.55)place47(choice(rr))}}VisibilityService.compute();vfBuildDecor();P47.force=true;P47.cullKey=''}
   registerGenerationStage('strategy47','post',()=>applyStrategy47());
   // r54: dead pre-v49 floor trait wrapper removed.
 
@@ -7323,7 +7196,7 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   function guaranteedResource48(){
     if(!state||state.specialFloor)return;
     // One recovery checkpoint per chapter. Like SPD's limited drops, this prevents pure RNG starvation.
-    if([3,8,13,18,23].includes(state.floor)&&!floorHasRole48('recovery')){const p=deckPick47(ordinaryPotionPool105(false),'limitedRecovery48');if(p)place47(p)}
+    if([3,8,13,18,23].includes(state.floor)&&!floorHasRole48('recovery')){const p=deckPick47(ordinaryPotionPool(false),'limitedRecovery48');if(p)place47(p)}
     // Gameplay items are persistent state; rendering owns any visual culling.
   }
   registerGenerationStage('resource48','post',()=>{guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true});
@@ -7574,19 +7447,10 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     if(item.curse)a.push(`저주 · ${item.curse}`);
     return uniq53(a);
   }
-  function itemHtml53(item,dist=null){
-    if(!item)return '<div class="clean53"><div class="clean53Desc">정보가 없다.</div></div>';
-    const chips=stats53(item),ability=(item.ability&&item.ability!=='없음')?String(item.ability).trim():'',desc=String(item.desc||'').trim(),parts=[];
-    if(chips.length)parts.push(`<div class="clean53Meta">${chips.map(x=>`<span class="clean53Chip">${esc53(x)}</span>`).join('')}</div>`);
-    if(ability&&ability!==desc)parts.push(`<div class="clean53Ability"><b>능력</b> · ${esc53(ability)}</div>`);
-    if(desc)parts.push(`<div class="clean53Desc">${esc53(desc)}</div>`);
-    else if(!ability&&!chips.length)parts.push('<div class="clean53Desc">별도 설명이 없다.</div>');
-    if(dist!=null)parts.push(`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`);
-    return `<div class="clean53">${parts.join('')}</div>`;
-  }
+
 
   // 요약은 수치만. 설명/능력을 섞지 않는다.
-  window.__MANRU_CLEAN_INSPECT53={item:itemHtml53};
+  window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
 
   const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
   for(const type of ['selectstart','dragstart','copy','cut']){
@@ -7598,8 +7462,8 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
   registerInventoryRenderR34('r53-inspect-bindings','post',()=>{
     const box=document.getElementById('inventory');if(!box||!state)return;
-    box.querySelectorAll('[data-invinspect]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player.inventory[+n.dataset.invinspect];if(it)showInspect(it.name,itemHtml53(it))})});
-    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml53(it))})});
+    box.querySelectorAll('[data-invinspect]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player.inventory[+n.dataset.invinspect];if(it)showInspect(it.name,itemHtml(it))})});
+    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml(it))})});
   });
 
 
@@ -7713,29 +7577,9 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
   const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
   const RECOVERY_KINDS=new Set(['heal_small','heal_medium','makgeolli','focus','cleanse']);
-  const APPEARANCES=[
-    {id:'crimson',name:'탁한 주홍색 약병',color:'#a8493e',glass:'#d08b78'},
-    {id:'jade',name:'맑은 비취색 약병',color:'#5b9d72',glass:'#a8cba9'},
-    {id:'azure',name:'푸른 유리 약병',color:'#4d83a8',glass:'#a7c6d7'},
-    {id:'ivory',name:'우윳빛 약병',color:'#c9c2a5',glass:'#eee8d4'},
-    {id:'amber',name:'호박빛 약병',color:'#b77b3e',glass:'#e2bc78'},
-    {id:'smoke',name:'회청색 약병',color:'#6d7781',glass:'#b7c0c5'},
-    {id:'violet',name:'자줏빛 약병',color:'#855b8c',glass:'#c6a2ca'},
-    {id:'ink',name:'먹빛 약병',color:'#3e4148',glass:'#8c939c'},
-    {id:'ochre',name:'황갈색 유리 약병',color:'#9a805e',glass:'#c9b58f'}
-  ];
-  const APP_BY_ID=new Map(APPEARANCES.map(a=>[a.id,a]));
-  const POTION_META={
-    heal_small:{sense:'묽고 따뜻하다. 약한 쇠 냄새가 나며 천천히 피부를 당긴다.',candidates:['heal_small','heal_medium','makgeolli','cleanse'],family:'상처·정화 계열'},
-    heal_medium:{sense:'점성이 높고 따뜻하다. 마른 피와 약초를 섞은 냄새가 난다.',candidates:['heal_medium','heal_small','makgeolli','fortify'],family:'회복·강화 계열'},
-    makgeolli:{sense:'점성이 있고 따뜻하다. 약초와 발효된 약재 같은 향이 섞여 있어 회복제인지 강화제인지 단정하기 어렵다.',candidates:['makgeolli','heal_medium','heal_small','fortify'],family:'회복·강화 계열'},
-    focus:{sense:'차갑고 맑은 향이 코끝을 찌른다. 흔들면 가느다란 푸른 거품이 오래 남는다.',candidates:['focus','cleanse','swift'],family:'정신·기동 계열'},
-    cleanse:{sense:'가루가 바닥에 가라앉지 않는다. 쓴 향 뒤로 흰 연기가 금세 사라진다.',candidates:['cleanse','focus','heal_small'],family:'정화·회복 계열'},
-    swift:{sense:'병 안의 액체가 손보다 먼저 움직이는 듯 출렁인다. 풀잎과 박하 향이 강하다.',candidates:['swift','focus','smoke'],family:'기동·연막 계열'},
-    fortify:{sense:'무겁고 매운 향이 난다. 병벽을 두드리면 금속처럼 둔한 울림이 돌아온다.',candidates:['fortify','heal_medium','fire'],family:'강화·열기 계열'},
-    smoke:{sense:'마개 틈으로 회색 실오라기가 샌다. 불꽃 가까이 가져가도 온도가 거의 오르지 않는다.',candidates:['smoke','swift','fire'],family:'연막·기동 계열'},
-    fire:{sense:'병을 잡은 손바닥이 서서히 뜨거워진다. 기름과 유황 냄새가 약하게 배어 있다.',candidates:['fire','fortify','smoke'],family:'열기·전투 계열'}
-  };
+
+
+
   const ROOM_CONTEXT={
     '연금술방':{text:'조제대에 금창약·해독재·청심초가 함께 놓여 있다.',kinds:['heal_small','heal_medium','makgeolli','cleanse','focus']},
     '주방':{text:'식재료 옆에 소독재와 보양 약재가 놓여 있다.',kinds:['heal_small','makgeolli','cleanse','focus']},
@@ -7802,8 +7646,8 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     return K;
   }
   function app56(item){if(item?.mineItem105==='oil')return {...APPEARANCES[0],color:'#bc7135',glass:'#e3c791',name:item.name};const K=state?.knowledge56,id=item?.appearance56||K?.potionMap?.[item?.potionKind];return APP_BY_ID.get(id)||APPEARANCES[0]}
-  function knownPotion56(item){if(item?.mineItem105)return true;return item?.type==='potion'&&!!state?.knowledge56?.potionKnown?.[item.potionKind]}
-  function truePotion56(item){return POTION_BY_KIND.get(item?.potionKind)||item}
+
+
   const GENERIC_TALISMAN56=Object.freeze({id:'unknown',name:'미확인 부적',paper:'#d8c79b',paper2:'#b49b6d',ink:'#8a2f28',seal:'?'});
   const IDENTIFY_TALISMAN_THEME56=Object.freeze({id:'identify',name:'감정부적',paper:'#dfc78e',paper2:'#b8955b',ink:'#9d3126',seal:'鑑'});
   
@@ -7820,7 +7664,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   }
   function publicTalismanName56(item){return knownTalisman56(item)?item.name:GENERIC_TALISMAN56.name}
   function publicTalismanSeal56(item){if(item?.branchExclusive105||item?.fusion74)return item.seal||'合';return talismanApp56(item)?.seal||'符'}
-  function publicName56(item){if(!item)return'';if(item.type==='potion'&&!knownPotion56(item))return app56(item).name;if(item.type==='talisman')return publicTalismanName56(item);return item.name}
+  function publicName56(item){if(!item)return'';if(item.type==='potion'&&!isPotionKnownByPlayer(item))return app56(item).name;if(item.type==='talisman')return publicTalismanName56(item);return item.name}
   
   window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
   function featureAt56(x,y){return(state?.featureRooms||[]).find(r=>x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h)||null}
@@ -7849,10 +7693,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     if(!a.includes(item.potionKind))a.unshift(item.potionKind);
     a=[...new Set(a)];if(seen>=2&&a.length>2)a=a.slice(0,2);const off=(app56(item).id.charCodeAt(0)+seen)%Math.max(1,a.length);return a.slice(off).concat(a.slice(0,off));
   }
-  function potionClueHTML56(item,compact=false){
-    const K=state.knowledge56,meta=POTION_META[item.potionKind]||{},origin=item.origin56||{label:'출처 불명',text:'발견 위치만으로는 약성을 좁히기 어렵다.',strength:0},seen=K.potionSeen[item.potionKind]||0,cands=candidateKinds56(item).map(k=>POTION_BY_KIND.get(k)?.name||k),certainty=cands.length===1?'거의 확실':origin.strength>=2?'맥락 강함':seen>=2?'반복 관찰':'초기 추정',head=compact?`<div class="v56CompactCert"><b>추정 신뢰도</b><span>${certainty}</span></div>`:`<div class="v56MysteryHead"><b>${esc56(app56(item).name)}</b><span>${certainty}</span></div>`;
-    return `${head}<div class="v56Clue"><b>감각</b>${esc56(meta.sense||'특징을 잡기 어렵다.')}</div><div class="v56Clue"><b>${esc56(origin.label)}</b>${esc56(origin.text)}</div><div class="v56Candidates"><b>가능성</b>${cands.map(n=>`<span>${esc56(n)}</span>`).join('')}</div><div class="v56KnowledgeHint">같은 빛의 약병은 이번 탐험에서 항상 같은 효과다. 사용하거나 감정부적를 펼치면 확정된다.</div>`;
-  }
+
   function talismanHTML56(item){
     if(!knownTalisman56(item)){const a=talismanApp56(item);return `<div class="v56TalismanInfo v56TalismanUnknown"><b>성질을 알 수 없는 부적</b><p>${esc56(a.name)}. 주사와 종이의 결만으로는 어떤 술법인지 판별할 수 없다.</p><span>펼치기 1.0턴 · 사용하거나 감정부적로 식별</span></div>`}
     const classDesc=classItemDescription58(item);
@@ -7860,14 +7701,12 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   }
   function inspectHTML56(item,dist=null){
     if(!item)return'<div class="clean53"><div class="clean53Desc">정보가 없다.</div></div>';
-    if(item.type==='potion'&&!knownPotion56(item))return `<div class="v56Inspect">${potionClueHTML56(item)}${dist!=null?`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`:''}</div>`;
+    if(item.type==='potion'&&!isPotionKnownByPlayer(item))return `<div class="v56Inspect">${potionClueHTML(item)}${dist!=null?`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`:''}</div>`;
     if(item.type==='talisman')return `<div class="v56Inspect">${talismanHTML56(item)}${dist!=null?`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`:''}</div>`;
-    if(item.type==='potion'){const p=truePotion56(item);return `<div class="clean53"><div class="clean53Ability"><b>효과</b> · ${esc56(p.ability||'')}</div><div class="clean53Desc">${esc56(p.desc||'')}</div>${dist!=null?`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`:''}</div>`}
+    if(item.type==='potion'){const p=truePotion(item);return `<div class="clean53"><div class="clean53Ability"><b>효과</b> · ${esc56(p.ability||'')}</div><div class="clean53Desc">${esc56(p.desc||'')}</div>${dist!=null?`<div class="clean53Hint">거리 ${Number(dist)}칸 · 탭하면 목표 이동/습득</div>`:''}</div>`}
     return V56.baseCleanItem?V56.baseCleanItem(item,dist):`<div class="clean53"><div class="clean53Desc">${esc56(item.desc||itemSummary(item)||'')}</div></div>`;
   }
-  function identifyPotion56(kind,reason='효과를 직접 확인했다'){
-    const K=ensureKnowledge56();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=POTION_BY_KIND.get(kind),a=APP_BY_ID.get(K.potionMap[kind]);logWithCategory(`약병 식별 · ${a?.name||'미확인 약병'} = ${p?.name||kind} (${reason}).`);burst(state.player.x,state.player.y,a?.color||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
-  }
+
   function identifyTalisman56(kind,reason='효과를 직접 확인했다'){
     const K=ensureKnowledge56();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=TALISMAN_BY_KIND.get(kind);if(!t)return false;const a=TALISMAN_APP_BY_ID.get(K.talismanMap[kind])||TALISMAN_APPEARANCES[0];K.talismanKnown[kind]=true;logWithCategory(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);setTimeout(()=>{if(inventoryOpen)renderInventory();updateAll()},0);return true
   }
@@ -7877,11 +7716,11 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
   const targetHud=document.createElement('div');targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';document.body.appendChild(targetHud);
 
-  function potionIconHtml56R26(item,cls=''){const a=app56(item),mark=knownPotion56(item)?'':'?';return `<span class="vfHiIcon ${cls} v56PotionIcon" style="--liquid:${a.color};--glass:${a.glass}"><i class="neck"></i><i class="bottle"></i><i class="shine"></i><b class="mark">${mark}</b></span>`}
-  function drawPotionWorld56R26(item){const px=item.x*TILE,py=item.y*TILE;X.save();X.fillStyle='rgba(0,0,0,.45)';X.fillRect(px+9,py+26,14,3);const a=app56(item);X.fillStyle='#5a3b27';X.fillRect(px+14,py+6,5,6);X.fillStyle='#bba782';X.fillRect(px+13,py+9,7,3);X.fillStyle='#4b2d20';X.fillRect(px+10,py+12,13,14);X.fillStyle=a.color;X.fillRect(px+12,py+14,9,10);X.fillStyle=a.glass;X.globalAlpha=.38;X.fillRect(px+13,py+15,2,7);X.globalAlpha=1;if(!knownPotion56(item)){X.fillStyle='#e3cfaa';X.font='900 8px ui-monospace,monospace';X.fillText('?',px+24,py+10)}X.restore()}
+  function potionIconHtml56R26(item,cls=''){const a=app56(item),mark=isPotionKnownByPlayer(item)?'':'?';return `<span class="vfHiIcon ${cls} v56PotionIcon" style="--liquid:${a.color};--glass:${a.glass}"><i class="neck"></i><i class="bottle"></i><i class="shine"></i><b class="mark">${mark}</b></span>`}
+  function drawPotionWorld56R26(item){const px=item.x*TILE,py=item.y*TILE;X.save();X.fillStyle='rgba(0,0,0,.45)';X.fillRect(px+9,py+26,14,3);const a=app56(item);X.fillStyle='#5a3b27';X.fillRect(px+14,py+6,5,6);X.fillStyle='#bba782';X.fillRect(px+13,py+9,7,3);X.fillStyle='#4b2d20';X.fillRect(px+10,py+12,13,14);X.fillStyle=a.color;X.fillRect(px+12,py+14,9,10);X.fillStyle=a.glass;X.globalAlpha=.38;X.fillRect(px+13,py+15,2,7);X.globalAlpha=1;if(!isPotionKnownByPlayer(item)){X.fillStyle='#e3cfaa';X.font='900 8px ui-monospace,monospace';X.fillText('?',px+24,py+10)}X.restore()}
   globalThis.__MANRU_POTION_ART_56__={iconHtml:potionIconHtml56R26,worldDraw:drawPotionWorld56R26};
 
-  function role56(item){if(!item)return'other';if(item.mineItem105==='stone')return'strategy';if(['weapon','armor','cloak'].includes(item.type))return'gear';if(['relic','trinket'].includes(item.type))return'relic';if(item.type==='food')return'recovery';if(item.type==='upgrade'||item.type==='talisman')return'strategy';if(item.type==='potion')return knownPotion56(item)?(RECOVERY_KINDS.has(item.potionKind)?'recovery':'strategy'):'strategy';return'other'}
+  function role56(item){if(!item)return'other';if(item.mineItem105==='stone')return'strategy';if(['weapon','armor','cloak'].includes(item.type))return'gear';if(['relic','trinket'].includes(item.type))return'relic';if(item.type==='food')return'recovery';if(item.type==='upgrade'||item.type==='talisman')return'strategy';if(item.type==='potion')return isPotionKnownByPlayer(item)?(RECOVERY_KINDS.has(item.potionKind)?'recovery':'strategy'):'strategy';return'other'}
   inventoryFiltered=function inventoryFilteredCanonical(){
     const all=state.player.inventory.map((item,idx)=>({item,idx}));
     const tab=inventoryTab,role=tab==='gear'?'gear':['recovery','food'].includes(tab)?'recovery':['strategy','potion'].includes(tab)?'strategy':['relic','treasure'].includes(tab)?'relic':null;
@@ -7897,21 +7736,21 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
   function patchInventory56(){
     if(!inventoryOpen||!state)return;const box=document.getElementById('inventory');if(!box)return;
-    const count=tab=>inventoryFilteredFor56(tab).length,unknownCount=state.player.inventory.filter(i=>(i.type==='potion'&&!knownPotion56(i))||(i.type==='talisman'&&!knownTalisman56(i))).length,defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy',unknownCount?'전술·?':'전술'],['relic','유물']];
+    const count=tab=>inventoryFilteredFor56(tab).length,unknownCount=state.player.inventory.filter(i=>(i.type==='potion'&&!isPotionKnownByPlayer(i))||(i.type==='talisman'&&!knownTalisman56(i))).length,defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy',unknownCount?'전술·?':'전술'],['relic','유물']];
     box.querySelectorAll('.uxTabs [data-invtab]').forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];if(b.firstChild)b.firstChild.nodeValue=d[1];const s=b.querySelector('span');if(s)s.textContent=count(d[0])});
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const item=state.player.inventory[+el.dataset.invslot];if(!item)return;const n=el.querySelector('.nm,.invSlotName');if(n)n.textContent=publicName56(item);const t=el.querySelector('.tier,.invTier');if(t&&((item.type==='potion'&&!knownPotion56(item))||(item.type==='talisman'&&!knownTalisman56(item))))t.textContent='?';el.classList.toggle('v56Unknown',(item.type==='potion'&&!knownPotion56(item))||(item.type==='talisman'&&!knownTalisman56(item)));el.classList.toggle('v56Talisman',item.type==='talisman');el.setAttribute('aria-label',`${publicName56(item)} · ${item.type==='potion'&&!knownPotion56(item)?'미확인 비약':item.type==='talisman'&&!knownTalisman56(item)?'미확인 부적':role56(item)}`);const role=el.querySelector('.uxRole47');if(role){role.textContent=item.type==='talisman'?(knownTalisman56(item)?'부적':'미확인'):item.type==='potion'&&!knownPotion56(item)?'미확인':({gear:'장비',recovery:'회복',strategy:'전술',relic:'유물'})[role56(item)]||'기타';role.classList.toggle('v56RoleMystery',(item.type==='potion'&&!knownPotion56(item))||(item.type==='talisman'&&!knownTalisman56(item)))}});
+    box.querySelectorAll('[data-invslot]').forEach(el=>{const item=state.player.inventory[+el.dataset.invslot];if(!item)return;const n=el.querySelector('.nm,.invSlotName');if(n)n.textContent=publicName56(item);const t=el.querySelector('.tier,.invTier');if(t&&((item.type==='potion'&&!isPotionKnownByPlayer(item))||(item.type==='talisman'&&!knownTalisman56(item))))t.textContent='?';el.classList.toggle('v56Unknown',(item.type==='potion'&&!isPotionKnownByPlayer(item))||(item.type==='talisman'&&!knownTalisman56(item)));el.classList.toggle('v56Talisman',item.type==='talisman');el.setAttribute('aria-label',`${publicName56(item)} · ${item.type==='potion'&&!isPotionKnownByPlayer(item)?'미확인 비약':item.type==='talisman'&&!knownTalisman56(item)?'미확인 부적':role56(item)}`);const role=el.querySelector('.uxRole47');if(role){role.textContent=item.type==='talisman'?(knownTalisman56(item)?'부적':'미확인'):item.type==='potion'&&!isPotionKnownByPlayer(item)?'미확인':({gear:'장비',recovery:'회복',strategy:'전술',relic:'유물'})[role56(item)]||'기타';role.classList.toggle('v56RoleMystery',(item.type==='potion'&&!isPotionKnownByPlayer(item))||(item.type==='talisman'&&!knownTalisman56(item)))}});
     const meta=box.querySelector('.uxInvMeta');if(meta&&!meta.querySelector('.v56KnowledgeMeter')){const K=state.knowledge56,known=Object.values(K.potionKnown).filter(Boolean).length,tKnown=TALISMANS.filter(t=>knownTalisman56(t)).length;meta.insertAdjacentHTML('beforeend',`<span class="v56KnowledgeMeter">약 ${known}/${POTION_LIST.length} · 부 ${tKnown}/${TALISMANS.length}</span>`)}
     const eq=box.querySelector('.uxEq.selected'),selected=eq?state.player[eq.dataset.uxeq]:(inventorySelection>=0?state.player.inventory[inventorySelection]:null),detail=box.querySelector('.uxDetail');
     if(selected&&detail&&(selected.type==='potion'||selected.type==='talisman')){
-      const h=detail.querySelector('h3');if(h)h.textContent=publicName56(selected)+((selected.count||1)>1?` ×${selected.count}`:'');const sub=detail.querySelector('small');if(sub)sub.textContent=selected.type==='talisman'?(knownTalisman56(selected)?`식별된 부적 · 일회용${selected.targeted?` · 사거리 ${selected.targetRange}`:''}`:'미확인 부적 · 술법 불명'):(knownPotion56(selected)?'식별된 비약':'미확인 비약 · 단서로 추정 가능');const stats=detail.querySelector('.uxStats');if(stats)stats.innerHTML=selected.type==='talisman'?(knownTalisman56(selected)?`<span class="uxStat">${esc56(classItemDescription58(selected)?'괴력 · 매턴 HP 2% 회복':selected.ability||'일회용 술법')}</span>`:`<span class="uxStat">문양 ${esc56(publicTalismanSeal56(selected))}</span><span class="uxStat">효과 ?</span>`):(knownPotion56(selected)?`<span class="uxStat">${esc56(truePotion56(selected).ability||'식별됨')}</span>`:`<span class="uxStat">${esc56(POTION_META[selected.potionKind]?.family||'미확인')}</span><span class="uxStat">${esc56(selected.origin56?.label||'출처 불명')}</span>`);const desc=detail.querySelector('.uxDesc');if(desc)desc.innerHTML=selected.type==='talisman'?talismanHTML56(selected):(knownPotion56(selected)?`<div class="v56Clue"><b>확정 효과</b>${esc56(truePotion56(selected).desc||'')}</div>`:potionClueHTML56(selected,true));const primary=detail.querySelector('[data-invuse]');if(primary)primary.textContent=selected.type==='talisman'?'펼치기':(!knownPotion56(selected)?'사용':(selected.throwable?'투척':'마시기'));const info=detail.querySelector('[data-invinspect]');if(info){const n=info.cloneNode(true);info.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(typeof globalThis.__MANRU_TERRAIN_CODEX986__?.openItem==='function')globalThis.__MANRU_TERRAIN_CODEX986__.openItem(selected);else showInspectSheet(publicName56(selected),inspectHTML56(selected))})}
+      const h=detail.querySelector('h3');if(h)h.textContent=publicName56(selected)+((selected.count||1)>1?` ×${selected.count}`:'');const sub=detail.querySelector('small');if(sub)sub.textContent=selected.type==='talisman'?(knownTalisman56(selected)?`식별된 부적 · 일회용${selected.targeted?` · 사거리 ${selected.targetRange}`:''}`:'미확인 부적 · 술법 불명'):(isPotionKnownByPlayer(selected)?'식별된 비약':'미확인 비약 · 단서로 추정 가능');const stats=detail.querySelector('.uxStats');if(stats)stats.innerHTML=selected.type==='talisman'?(knownTalisman56(selected)?`<span class="uxStat">${esc56(classItemDescription58(selected)?'괴력 · 매턴 HP 2% 회복':selected.ability||'일회용 술법')}</span>`:`<span class="uxStat">문양 ${esc56(publicTalismanSeal56(selected))}</span><span class="uxStat">효과 ?</span>`):(isPotionKnownByPlayer(selected)?`<span class="uxStat">${esc56(truePotion(selected).ability||'식별됨')}</span>`:`<span class="uxStat">${esc56(POTION_META[selected.potionKind]?.family||'미확인')}</span><span class="uxStat">${esc56(selected.origin56?.label||'출처 불명')}</span>`);const desc=detail.querySelector('.uxDesc');if(desc)desc.innerHTML=selected.type==='talisman'?talismanHTML56(selected):(isPotionKnownByPlayer(selected)?`<div class="v56Clue"><b>확정 효과</b>${esc56(truePotion(selected).desc||'')}</div>`:potionClueHTML(selected,true));const primary=detail.querySelector('[data-invuse]');if(primary)primary.textContent=selected.type==='talisman'?'펼치기':(!isPotionKnownByPlayer(selected)?'사용':(selected.throwable?'투척':'마시기'));const info=detail.querySelector('[data-invinspect]');if(info){const n=info.cloneNode(true);info.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(typeof globalThis.__MANRU_TERRAIN_CODEX986__?.openItem==='function')globalThis.__MANRU_TERRAIN_CODEX986__.openItem(selected);else showInspectSheet(publicName56(selected),inspectHTML56(selected))})}
     }
   }
   function inventoryFilteredFor56(tab){const old=inventoryTab;inventoryTab=tab;const r=inventoryFiltered();inventoryTab=old;return r}
   registerInventoryRenderR34('r56-identification','post',()=>patchInventory56());
 
-  function observePotion56(item){if(!item||item.type!=='potion')return;decoratePotion56(item);const K=ensureKnowledge56(),n=(K.potionSeen[item.potionKind]||0)+1;K.potionSeen[item.potionKind]=n;if(!knownPotion56(item)&&!K.clueSeen[item.potionKind]){K.clueSeen[item.potionKind]=1;logWithCategory(`약병 단서 기록 · ${app56(item).name}: ${POTION_META[item.potionKind]?.family||'약성 불명'} / ${item.origin56?.label||'출처 불명'}.`)}}
+
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
-  registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion56(item)}});
+  registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}});
 
   function talismanPick56(){
     const K=ensureKnowledge56(),pool=TALISMANS.filter(t=>t.talismanKind!=='upgrade'&&state.floor>=(t.minFloor||1)),h=K.talismanHistory;
@@ -7932,10 +7771,10 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   function useInstantTalisman56(item){
     cancelAutoWalk();
     if(item.talismanKind==='identify'){
-      const unknownPotion=state.player.inventory.filter(i=>i.type==='potion'&&!knownPotion56(i)).sort((a,b)=>(b.count||1)-(a.count||1))[0];
+      const unknownPotion=state.player.inventory.filter(i=>i.type==='potion'&&!isPotionKnownByPlayer(i)).sort((a,b)=>(b.count||1)-(a.count||1))[0];
       const unknownTalisman=state.player.inventory.filter(i=>i.type==='talisman'&&!knownTalisman56(i)).sort((a,b)=>(b.count||1)-(a.count||1))[0];
       if(!unknownPotion&&!unknownTalisman){toast('감응할 미확인 약병이나 부적이 없다.');return false}
-      if(unknownPotion)identifyPotion56(unknownPotion.potionKind,'감정부적 해독');else identifyTalisman56(unknownTalisman.talismanKind,'감정부적 해독');
+      if(unknownPotion)identifyPotion(unknownPotion.potionKind,'감정부적 해독');else identifyTalisman56(unknownTalisman.talismanKind,'감정부적 해독');
       consumeRef(item);closeInventory();burst(state.player.x,state.player.y,'#d9ba73',18,.7);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInstantTalisman56"}).value;return true
     }
     if(item.talismanKind==='mapping'){if(state.branchContext105?.id==='dojo'){toast('도장의 결계가 등명부를 봉한다.');return false;}const n=revealMap();identifyTalisman56(item.talismanKind,'사용 효과 관찰');consumeRef(item);closeInventory();addLog(`등명부: 층의 구조를 드러냈다${n?` · 숨은 문 ${n}개`:''}.`);burst(state.player.x,state.player.y,'#d9c57a',22,.75);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useInstantTalisman56"}).value;return true}
@@ -7968,7 +7807,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('knowledge56',{post:()=>{if(state){ensureKnowledge56();decorateAllItems56();state.roomHints56=state.roomHints56||{};updateAll()}}});
 
-  globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:knownPotion56,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget56(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget56(item);return true}return !!useInstantTalisman56(item)}});
+  globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget56(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget56(item);return true}return !!useInstantTalisman56(item)}});
   function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
 
   if(state){ensureKnowledge56();decorateAllItems56()}
@@ -7976,36 +7815,17 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 /* ===== MANRU v5.7 · PDF 앞쪽 몬스터 초안 + 음식/비방 조리 완성 패스 ===== */
 const V57={cookOpen:false,cookSource:'pot',selected:new Set(),foodTarget:null};RuntimeState.ui.food=V57;
-const POTION_LOOK57={crimson:'탁한 주홍색 약병',jade:'맑은 비취색 약병',azure:'푸른 유리 약병',ivory:'우윳빛 약병',amber:'호박빛 약병',smoke:'회청색 약병',violet:'자줏빛 약병',ink:'먹빛 약병',ochre:'황갈색 유리 약병'};
-const FOOD_RECIPES57=[
-  {id:'grilled_fish',name:'구운 생선 살',ingredients:['신선한 생선 살'],stations:['brazier'],hint:'날생선을 불에 직접 익힌다.'},
-  {id:'power_riceball',name:'전력 주먹밥',ingredients:['주먹밥','엽전 엿'],hint:'밥과 단것을 함께 뭉친다.'},
-  {id:'spicy_jerky',name:'매콤한 육포',ingredients:['말린 육포','화유병'],alternatives:{'화유병':['화룡유']},hint:'육포에 화염 기름을 한 방울 바른다.'},
-  {id:'medicinal_fish',name:'한방 생선찜',ingredients:['신선한 생선 살','독버섯 꼬치'],hint:'독기를 약재로 중화해 생선을 찐다.'},
-  {id:'talisman_sungnyung',name:'원력 숭늉',ingredients:['식어버린 국밥','깨끗한 물'],hint:'식은 국물에 맑은 물을 붓는다.'},
-  {id:'vital_hotpot',name:'보신 전골',ingredients:['말린 육포','신선한 생선 살','깨끗한 물'],hint:'육지와 바다의 재료를 물에 고아낸다.'},
-  {id:'ice_peach',name:'얼음 복숭아',ingredients:['신선도','빙결액'],hint:'영험한 복숭아를 차가운 액체에 담근다.'},
-  {id:'seaweed_recovery',name:'중회복 비약',ingredients:['해초','소회복 비약'],stations:['pot'],hint:'솥에서 바다 약초로 작은 회복 비약을 농축한다.'},
-  {id:'palace_roll',name:'창해말이',ingredients:['해초','주먹밥','구운 생선 살','매콤한 육포'],stations:['pot','brazier'],yield:10,hint:'해초로 밥과 익힌 생선, 매콤한 고기를 말아 열 조각으로 썬다.'}
-];
-const COOKING_INGREDIENT_LIMIT57=Math.max(...FOOD_RECIPES57.map(r=>r.ingredients.length));
-window.MANRU_FOOD57={recipes:FOOD_RECIPES57};
 
-function foodOccurrencePick57(pool,unit=globalThis.__MANRU_RANDOM57__()){
- const candy=pool.filter(i=>i==='엽전 엿'||i?.foodKind==='coin_candy'),others=pool.filter(i=>i!=='엽전 엿'&&i?.foodKind!=='coin_candy');if(!candy.length||!others.length)return pool[Math.floor(unit*pool.length)];
- const chance=candy.length/pool.length/3;return unit<chance?candy[Math.min(candy.length-1,Math.floor(unit/chance*candy.length))]:others[Math.min(others.length-1,Math.floor((unit-chance)/(1-chance)*others.length))];
-}
-function foodDef57(name){return CONSUMABLES.find(i=>i.name===name)}
-function ensureFoodState57(){
-  if(!state)return;
-  state.status=state.status||{};
-  for(const q of ['foodHaste57','warm57','fireCoat57','poisonResist57','vitality57','freeStamina57'])if(!Number.isFinite(state.status[q]))state.status[q]=0;
-  state.cookbook57=state.cookbook57||{grilled_fish:true};
-  state.player.foodVital57=Number(state.player.foodVital57)||0;
-}
-function consumeStack57(item){return consumeItemQuantity57(item)}
-function giveItem57(proto,x=state.player.x,y=state.player.y){if(!proto)return false;const item=clone(proto);addInventoryItem57(item,{x,y});addLog(`${item.name} 획득.`);return true}
-function cleanseFood57(){return cleanseStatuses57()}
+
+const COOKING_INGREDIENT_LIMIT57=Math.max(...FOOD_RECIPES.map(r=>r.ingredients.length));
+window.MANRU_FOOD57={recipes:FOOD_RECIPES};
+
+
+
+
+
+
+
 
 // PDF 포만감 규칙: 허기 0에서만 공격력 20% 감소. 기존 단계별 ATK/EVA 패널티는 제거.
 
@@ -8018,75 +7838,41 @@ registerMoveCostStage55('food57',c=>{if(state?.status?.freeStamina57>0)c*=.50;re
 
 globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}},post:ctx=>{const b=ctx.food57||{};if(state&&!state.dead&&state.turn!==b.turn&&state.turn%10===0&&state.player.hunger<=0){const raw=(playerCloak().focusRegen||1)>=2?2:1,gained=Math.max(0,state.player.focus-(b.focus??state.player.focus));state.player.focus=Math.max(0,state.player.focus-Math.min(gained,raw*.5));if(typeof updatePanels==='function')updatePanels()}}});
 
-function consumeFood57(item,idx){const c=playerCloak?.()||{},old=item?.eatCost57;if(item&&c.eatSpeed&&Number.isFinite(old))item.eatCost57=Math.max(.25,old/c.eatSpeed);try{return consumeFoodAtCost(item,idx)}finally{if(item&&Number.isFinite(old))item.eatCost57=old}}
-function consumeFoodAtCost(item,idx){
-  if(!state||!item)return;ensureFoodState57();const p=state.player;
-  if(item.throwableFood57){beginFoodTarget57(item);return}
-  if(item.hungerFull57)p.hunger=BALANCE.hungerMax;else p.hunger=Math.min(BALANCE.hungerMax,p.hunger+(item.hunger||0));
-  if(item.focusFull)p.focus=getStats().maxFocus;
-  if(item.focusPercent57)p.focus=Math.min(getStats().maxFocus,p.focus+Math.ceil(getStats().maxFocus*(item.foodKind==='coin_candy'?foodDef57('엽전 엿').focusPercent57:item.focusPercent57)));
-  if(item.regenTurns)state.status.regen=Math.max(state.status.regen,item.regenTurns+1);
-  if(item.raw&&globalThis.__MANRU_RANDOM57__()<.15){state.status.upset=Math.max(state.status.upset,5);addLog('날생선을 잘못 먹어 배탈이 났다. 이동 행동비용이 증가한다.')}
-  if(item.poisonSelf&&state.status.poisonResist57<=0)state.status.poison=Math.max(state.status.poison,5);
-  if(item.cleanse)cleanseFood57();
-  if(item.foodHasteTurns57)state.status.foodHaste57=Math.max(state.status.foodHaste57,item.foodHasteTurns57+1);
-  if(item.warmTurns57)state.status.warm57=Math.max(state.status.warm57,item.warmTurns57+1);
-  if(item.fireCoatTurns57)state.status.fireCoat57=Math.max(state.status.fireCoat57,item.fireCoatTurns57+1);
-  if(item.poisonResistTurns57){state.status.poison=0;state.status.poisonResist57=Math.max(state.status.poisonResist57,item.poisonResistTurns57+1)}
-  if(item.vitalityTurns57){if(!p.foodVital57){p.foodVital57=10;p.temporaryMaxHpBonus+=10;recomputeMaxHp1005(p,true)}state.status.vitality57=Math.max(state.status.vitality57,item.vitalityTurns57+1)}
-  if(item.freeStaminaTurns57)state.status.freeStamina57=Math.max(state.status.freeStamina57,item.freeStaminaTurns57+1);
-  if(item.charcoalDamage57){const dealt=damageEntity61(p,item.charcoalDamage57);if(dealt>0)floatText(p.x,p.y,`-${dealt}`,'#b28a6c',12);if(p.hp<=0){consumeOne(idx);closeInventory();die('검게 탄 숯');return}}
-  floatText(p.x,p.y,'냠냠','#e5c98e',10);addLog(`${item.name} 섭취 · 허기 ${Math.round(p.hunger)}/${BALANCE.hungerMax}.`);consumeOne(idx);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.eatCost57??1,reason:"consumeFood57"}).value
-}
+
+
 
 // 몬스터 초안 행동 보강
 // Movement behavior is canonical in moveMonsterToward.
 
 function retreatMonster57(mon,target=state.player){const p=target,opts=DIRS4.map(([dx,dy])=>({x:mon.x+dx,y:mon.y+dy})).filter(q=>PlacementService.monsterCanStand(mon,q.x,q.y)).sort((a,b)=>entityDistance57(b,p)-entityDistance57(a,p));if(opts[0])OccupancyService.move(mon,opts[0].x,opts[0].y)}
-registerMonsterAttackStageR25('food-ai57',(next,mon,bonus=0,context={},...rest)=>{const ctx=monsterAttackContextR25(context);ensureFoodState57();if(mon?.drunk57||mon?.drunk>0){const drunk=drunkAttackOutcome57();if(drunk==='whiff'){floatText(mon.x,mon.y,'비틀','#c4a87c',10);addLog(`${mon.name}이 비틀거리며 공격을 허공에 휘둘렀다.`);return monsterAttackResultR25(mon,ctx,{hit:false,reason:'drunk-whiff'})}if(drunk==='heavy')bonus+=DRUNK_RULES57.attackHeavyBonus}const r=next(mon,bonus,ctx,...rest);if(r?.hit&&mon?.thiefRetreat57&&!state.dead)retreatMonster57(mon,ctx.target||state.player);return r});
-registerPlayerAttackStageR25('guard-fire57',(next,mon,...args)=>{const hp0=mon?.hp??0,r=next(mon,...args);ensureFoodState57();if(mon&&mon.hp>0&&mon.hp<hp0&&state.status.fireCoat57>0&&globalThis.__MANRU_RANDOM57__()<.12){emitElementContact105('fire',entityFootprintCells57(mon),effectSource57(state.player));const dealt=damageEntity61(mon,2,state.player,'fire');if(dealt>0)floatText(mon.x,mon.y,'화염 -'+dealt,'#ff9c55',11,'fire');if(mon.hp<=0)killMonster(mon)}return r});
+registerMonsterAttackStageR25('food-ai57',(next,mon,bonus=0,context={},...rest)=>{const ctx=monsterAttackContextR25(context);ensureFoodState();if(mon?.drunk57||mon?.drunk>0){const drunk=drunkAttackOutcome57();if(drunk==='whiff'){floatText(mon.x,mon.y,'비틀','#c4a87c',10);addLog(`${mon.name}이 비틀거리며 공격을 허공에 휘둘렀다.`);return monsterAttackResultR25(mon,ctx,{hit:false,reason:'drunk-whiff'})}if(drunk==='heavy')bonus+=DRUNK_RULES57.attackHeavyBonus}const r=next(mon,bonus,ctx,...rest);if(r?.hit&&mon?.thiefRetreat57&&!state.dead)retreatMonster57(mon,ctx.target||state.player);return r});
+registerPlayerAttackStageR25('guard-fire57',(next,mon,...args)=>{const hp0=mon?.hp??0,r=next(mon,...args);ensureFoodState();if(mon&&mon.hp>0&&mon.hp<hp0&&state.status.fireCoat57>0&&globalThis.__MANRU_RANDOM57__()<.12){emitElementContact105('fire',entityFootprintCells57(mon),effectSource57(state.player));const dealt=damageEntity61(mon,2,state.player,'fire');if(dealt>0)floatText(mon.x,mon.y,'화염 -'+dealt,'#ff9c55',11,'fire');if(mon.hp<=0)killMonster(mon)}return r});
 /* v9.8.6 inspect cleanup: removed legacy concept57 prose-append wrapper. */
 
 // 새 명칭이 기존 고해상도 아틀라스를 재사용하도록 시각 별칭을 지정한다.
 if(typeof VF_ASSETS==='object'&&VF_ASSETS.creature_meta){const a=VF_ASSETS.creature_meta,m={'취객':'윈도','시종':'윈도','객잔 경비병':'수비병','떠돌이 도둑':'윈도','정원사 망령':'강시','독꽃':'가시 덩굴','검은 뱀':'그림자 살모사','먹물 정령':'먹물 개구리','수목 궁수':'수비병','정원 바위괴물':'돌 거북','식인 물고기':'피라냐','수은 물고기':'피라냐'};for(const [n,o] of Object.entries(m))if(!a[n]&&a[o])a[n]=a[o]}
 
-// 독버섯 꼬치 투척
-const foodTarget57=document.createElement('div');foodTarget57.id='foodTarget57';foodTarget57.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';document.body.appendChild(foodTarget57);
-function cancelFoodTarget57(silent=false){V57.foodTarget=null;foodTarget57.classList.remove('show');syncWorldTargetInput57();endTargetInput57(320);if(!silent)toast('꼬치 투척을 취소했다.');drawMap(true)}
-function beginFoodTarget57(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();closeInventory();V57.foodTarget={item,range:item.throwRange57||4};foodTarget57.classList.add('show');syncWorldTargetInput57();document.getElementById('foodTargetName57').textContent=`${item.name} 투척`;drawMap(true)}
-function throwFood57(tx,ty){const act=playerAction57('target',{uiOwner:'foodTarget57'});if(!act.ok)return false;const a=V57.foodTarget;if(!a||!state)return false;const p=state.player;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(`사거리 ${a.range}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))||!lineClear(p.x,p.y,tx,ty)){toast('꼬치를 던질 길이 막혔다.');return false}const m=findMonsterAt(tx,ty);if(!isThreatVisibleToPlayer57(m)){toast('먹일 적대 요괴가 없다.');return false}markCombatActivity57('food-throw');if(state.floor>=11)alertNearby(tx,ty,6,'projectile');projectileFX(p.x,p.y,tx,ty,'#9bb061');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${m.name}의 아수라장이 투척물을 튕겨냈다.`)}else if(m.kind==='construct'){floatText(tx,ty,'무효','#a6a29a',10);addLog(`${m.name}은 독버섯을 먹지 않는다.`)}else{setMonsterStatus57(m,'poisoned57',Math.max(m.poisoned57||0,5),p);if(m.poisoned57>0)setMonsterAttackInvestigation57(m,p);setMonsterWeakened57(m,3);floatText(tx,ty,'중독 5','#9dc77e',10);addLog(`${m.name}에게 독버섯 꼬치를 먹였다.`)}consumeStack57(a.item);cancelFoodTarget57(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'reference-effect'});return true}
-foodTarget57.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+foodTargetPanel.id='foodTarget57';foodTargetPanel.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';document.body.appendChild(foodTargetPanel);
 
 
-// 비방 조리 UI
-const cooking57=document.createElement('div');cooking57.id='cook57';cooking57.innerHTML=`<div class="cookSheet57"><span class="uiCorners63" aria-hidden="true"></span><div class="cookHead57"><div><h2>비방 조리</h2><small id="cookStation57">솥에서 재료를 실험한다.</small></div><button class="uxClose" id="cookClose57" aria-label="닫기">×</button></div><div class="cookPreview57" id="cookPreview57">재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.</div><div class="cookBody57"><div class="cookInv57" id="cookInv57"></div><section class="cookBook57"><h3>조리 도감</h3><div id="cookBookList57"></div></section></div><div class="cookFoot57"><button id="cookClear57">선택 해제</button><button class="primary" id="cookDo57">조리</button></div></div>`;document.body.appendChild(cooking57);
-function potionKnown57(item){return item?.type!=='potion'||(item.potionKind==='mine_fire105'&&item.identified===true)||!!state?.knowledge56?.potionKnown?.[item.potionKind]}
-function cookingName57(item){if(item?.type==='potion'&&!potionKnown57(item))return POTION_LOOK57[item.appearance56]||'미확인 약병';return item?.name||'물품'}
+
+foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+
+
+cookingPanel.id='cook57';cookingPanel.innerHTML=`<div class="cookSheet57"><span class="uiCorners63" aria-hidden="true"></span><div class="cookHead57"><div><h2>비방 조리</h2><small id="cookStation57">솥에서 재료를 실험한다.</small></div><button class="uxClose" id="cookClose57" aria-label="닫기">×</button></div><div class="cookPreview57" id="cookPreview57">재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.</div><div class="cookBody57"><div class="cookInv57" id="cookInv57"></div><section class="cookBook57"><h3>조리 도감</h3><div id="cookBookList57"></div></section></div><div class="cookFoot57"><button id="cookClear57">선택 해제</button><button class="primary" id="cookDo57">조리</button></div></div>`;document.body.appendChild(cookingPanel);
+
+
 function ingredientKey57(item){if(item?.type==='potion'){const proto=(globalThis.MANRU_POTIONS||[]).find(p=>p.potionKind===item.potionKind);return item.potionKind==='fire'?'화유병':proto?.name||item.name||'';}return item?.name||''}
-function eligibleCooking57(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.mineItem105!=='stone'&&(v.item.type==='food'||v.item.type==='ingredient'||['fire','mine_fire105','heal_small'].includes(v.item.potionKind)))}
-function selectedCooking57(){return [...V57.selected].map(idx=>({idx,item:state.player.inventory[idx]})).filter(v=>v.item)}
-function matchRecipe57(items){return FOOD_RECIPES57.find(r=>{if(r.stations&&!r.stations.includes(V57.cookSource))return false;const keys=items.map(v=>{const key=ingredientKey57(v.item);return Object.keys(r.alternatives||{}).find(base=>r.alternatives[base].includes(key))||key}).sort((a,b)=>a.localeCompare(b,'ko'));return r.ingredients.slice().sort((a,b)=>a.localeCompare(b,'ko')).join('|')===keys.join('|')})||null}
-function renderCooking57(){document.getElementById('cookStation57').textContent=V57.cookSource==='brazier'?'화로 · 날것을 굽거나 비방을 조리한다':`솥 · 최대 ${COOKING_INGREDIENT_LIMIT57}종 재료를 실험한다`;const a=eligibleCooking57(),sel=selectedCooking57(),rec=matchRecipe57(sel),allKnown=sel.every(v=>potionKnown57(v.item));document.getElementById('cookPreview57').innerHTML=!sel.length?`재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.`:rec?(state.cookbook57[rec.id]&&allKnown?`예상 결과 · <b>${rec.name}</b> ${(rec.yield||1)}개`:'재료가 반응한다. 조리하면 정체를 알 수 있다.'):'맞는 비방이 보이지 않는다. 그대로 조리하면 <b>검게 탄 숯</b>이 된다.';const inv=document.getElementById('cookInv57');inv.innerHTML=a.length?a.map(({item,idx})=>`<button class="cookItem57 ${V57.selected.has(idx)?'sel':''}" data-cook57="${idx}">${typeof vfIconHtml==='function'?vfIconHtml(item,'small'):''}<b>${cookingName57(item)}</b><span>${item.count||1}개</span></button>`).join(''):'<div style="grid-column:1/-1;padding:24px;text-align:center;color:#7e674e">조리할 재료가 없다.</div>';inv.querySelectorAll('[data-cook57]').forEach(b=>b.onclick=()=>{const idx=+b.dataset.cook57;if(V57.selected.has(idx))V57.selected.delete(idx);else if(V57.selected.size<COOKING_INGREDIENT_LIMIT57)V57.selected.add(idx);else toast(`재료는 최대 ${COOKING_INGREDIENT_LIMIT57}종까지 넣을 수 있다.`);renderCooking57()});const book=document.getElementById('cookBookList57');book.innerHTML=FOOD_RECIPES57.map(r=>state.cookbook57[r.id]?`<div><b style="color:#d7b77d">${r.name}</b> ${(r.yield||1)}개${r.stations?.length===1?` · ${r.stations[0]==='pot'?'솥 전용':'화로 전용'}`:''} · ${r.ingredients.map(key=>[key,...(r.alternatives?.[key]||[])].join(' 또는 ')).join(' + ')}</div>`:`<div>??? · ${r.hint}</div>`).join('')}
-function openCooking57(source='pot'){if(!gameplayUiOpen57())return false;if(!cookingFireAvailable105(source)){toast('불씨가 꺼져 있다. 불속성으로 다시 지펴야 한다.');return false;}if(!state)return;ensureFoodState57();cancelAutoWalk();if(inventoryOpen)closeInventory();if(typeof closeMobileDrawer==='function')closeMobileDrawer();if(typeof closeInspect==='function')closeInspect();V57.cookSource=source;V57.selected.clear();V57.cookOpen=true;cooking57.classList.add('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0);renderCooking57()}
-function closeCooking57(){V57.cookOpen=false;V57.selected.clear();cooking57.classList.remove('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0)}
-function consumeCookingSelection57(sel){for(const {idx} of [...sel].sort((a,b)=>b.idx-a.idx)){const it=state.player.inventory[idx];if(!it)continue;consumeItemQuantity57(it)}}
-function cookSelected57(){
- const action=playerAction57('cook',{uiOwner:'cook57'});if(!action.ok)return false;
- if(!cookingFireAvailable105(V57.cookSource)){toast('조리할 불씨가 꺼져 있다.');return false;}
- const sel=selectedCooking57();if(!sel.length){toast('재료를 고르시오.');return false;}
- if(sel.length>COOKING_INGREDIENT_LIMIT57){toast(`재료는 최대 ${COOKING_INGREDIENT_LIMIT57}종까지 넣을 수 있다.`);return false;}
- const rec=matchRecipe57(sel),proto=itemPrototype57(rec?.name||'검게 탄 숯');if(!proto)return false;
- const result={...clone(proto),count:rec?.yield||1},first=rec&&!state.cookbook57[rec.id];
- consumeCookingSelection57(sel);
- if(state.knowledge56?.potionKnown){for(const {item} of sel)if(item.type==='potion')state.knowledge56.potionKnown[item.potionKind]=true;if(result.type==='potion')state.knowledge56.potionKnown[result.potionKind]=true;}
- if(rec)state.cookbook57[rec.id]=true;
- giveItem57(result);closeCooking57();burst(state.player.x,state.player.y,rec?'#d5b56b':'#514036',rec?18:10,.75);
- addLog(rec?`${rec.name} ${rec.yield||1}개 조리 완료.${first?' 새 비방이 도감에 기록됐다.':''}`:'비방이 맞지 않아 검게 탄 숯이 나왔다.');
- globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:rec?.id==='vital_hotpot'?1.5:1,reason:"cookSelected57"}).value;
- return true;
-}
-ActionDispatcher.register('COOK',cookSelected57);
-cooking57.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking57()};cooking57.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking57()};cooking57.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
+
+
+
+function renderCooking57(){document.getElementById('cookStation57').textContent=V57.cookSource==='brazier'?'화로 · 날것을 굽거나 비방을 조리한다':`솥 · 최대 ${COOKING_INGREDIENT_LIMIT57}종 재료를 실험한다`;const a=eligibleCooking(),sel=selectedCooking(),rec=matchRecipe(sel),allKnown=sel.every(v=>isPotionKindVisible(v.item));document.getElementById('cookPreview57').innerHTML=!sel.length?`재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.`:rec?(state.cookbook57[rec.id]&&allKnown?`예상 결과 · <b>${rec.name}</b> ${(rec.yield||1)}개`:'재료가 반응한다. 조리하면 정체를 알 수 있다.'):'맞는 비방이 보이지 않는다. 그대로 조리하면 <b>검게 탄 숯</b>이 된다.';const inv=document.getElementById('cookInv57');inv.innerHTML=a.length?a.map(({item,idx})=>`<button class="cookItem57 ${V57.selected.has(idx)?'sel':''}" data-cook57="${idx}">${typeof vfIconHtml==='function'?vfIconHtml(item,'small'):''}<b>${cookingName(item)}</b><span>${item.count||1}개</span></button>`).join(''):'<div style="grid-column:1/-1;padding:24px;text-align:center;color:#7e674e">조리할 재료가 없다.</div>';inv.querySelectorAll('[data-cook57]').forEach(b=>b.onclick=()=>{const idx=+b.dataset.cook57;if(V57.selected.has(idx))V57.selected.delete(idx);else if(V57.selected.size<COOKING_INGREDIENT_LIMIT57)V57.selected.add(idx);else toast(`재료는 최대 ${COOKING_INGREDIENT_LIMIT57}종까지 넣을 수 있다.`);renderCooking57()});const book=document.getElementById('cookBookList57');book.innerHTML=FOOD_RECIPES.map(r=>state.cookbook57[r.id]?`<div><b style="color:#d7b77d">${r.name}</b> ${(r.yield||1)}개${r.stations?.length===1?` · ${r.stations[0]==='pot'?'솥 전용':'화로 전용'}`:''} · ${r.ingredients.map(key=>[key,...(r.alternatives?.[key]||[])].join(' 또는 ')).join(' + ')}</div>`:`<div>??? · ${r.hint}</div>`).join('')}
+
+
+
+
+ActionDispatcher.register('COOK',cookSelected);
+cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking57()};cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
 
@@ -8094,9 +7880,9 @@ registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open dire
 
 
 // 획득 구조: 주방, 샘, 피라냐, 복숭아나무 + 설계 공백을 메운 빙결액 배치
-window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState57();const unknown=FOOD_RECIPES57.filter(v=>!state.cookbook57[v.id]);if(unknown.length&&globalThis.__MANRU_RANDOM57__()<.40){const rec=choice(unknown);state.cookbook57[rec.id]=true;addLog(`찢어진 조리서 · ${rec.name}: ${rec.ingredients.join(' + ')}.`);return rec.id}return null};
+window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState();const unknown=FOOD_RECIPES.filter(v=>!state.cookbook57[v.id]);if(unknown.length&&globalThis.__MANRU_RANDOM57__()<.40){const rec=choice(unknown);state.cookbook57[rec.id]=true;addLog(`찢어진 조리서 · ${rec.name}: ${rec.ingredients.join(' + ')}.`);return rec.id}return null};
 function roomFreeFood57(fr){const a=[];for(let y=fr.y+1;y<fr.y+fr.h-1;y++)for(let x=fr.x+1;x<fr.x+fr.w-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y))a.push({x,y});return a.length?choice(a):PlacementService.randomFloor(0)}
-function placeFood57(name,fr=null){const d=foodDef57(name);if(!d)return;const p=fr?roomFreeFood57(fr):PlacementService.randomFloor(0);PlacementService.placeItem({...clone(d),x:p.x,y:p.y,count:1})}
+function placeFood57(name,fr=null){const d=foodDef(name);if(!d)return;const p=fr?roomFreeFood57(fr):PlacementService.randomFloor(0);PlacementService.placeItem({...clone(d),x:p.x,y:p.y,count:1})}
 const GUARANTEED_FOOD_PER_NONBOSS_FLOOR57=1;
 const EXTRA_FOOD_CHANCE_NONBOSS57=.20;
 function foodFloorRewards57(){
@@ -8105,31 +7891,30 @@ function foodFloorRewards57(){
   // guaranteed one-ration floor quota (= four guaranteed rations per theme). Supply is
   // nudged only slightly above that baseline with one independent 20% bonus ration roll.
   for(let i=0;i<GUARANTEED_FOOD_PER_NONBOSS_FLOOR57;i++){
-    const ration=naturalFoodPick57();if(ration)placeFood57(ration.name);
+    const ration=naturalFoodPick();if(ration)placeFood57(ration.name);
   }
-  if(globalThis.__MANRU_RANDOM57__()<EXTRA_FOOD_CHANCE_NONBOSS57){const ration=naturalFoodPick57();if(ration)placeFood57(ration.name)}
+  if(globalThis.__MANRU_RANDOM57__()<EXTRA_FOOD_CHANCE_NONBOSS57){const ration=naturalFoodPick();if(ration)placeFood57(ration.name)}
   for(const fr of state.featureRooms||[])if(fr.name==='주방'){
     placeFood57(choice(['주먹밥','말린 육포','식어버린 국밥']),fr);
-    placeFood57(foodOccurrencePick57([...Array(5).fill('주먹밥'),...Array(5).fill('말린 육포'),...Array(10).fill('엽전 엿'),...Array(5).fill('독버섯 꼬치')]),fr);
+    placeFood57(foodOccurrencePick([...Array(5).fill('주먹밥'),...Array(5).fill('말린 육포'),...Array(10).fill('엽전 엿'),...Array(5).fill('독버섯 꼬치')]),fr);
     if(globalThis.__MANRU_RANDOM57__()<.45)placeFood57('깨끗한 물',fr);
     if(state.floor>=16&&globalThis.__MANRU_RANDOM57__()<.18)placeFood57('신선로',fr);
   }
   if(state.floor===6||state.floor===23)placeFood57('빙결액');
   else if(state.floor>=6&&state.floor<=10&&globalThis.__MANRU_RANDOM57__()<.16)placeFood57('빙결액');
 }
-registerGenerationStage('food57','post',()=>{ensureFoodState57();foodFloorRewards57()});
+registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards57()});
 
-// 랜덤 드랍에서는 완성 요리/재료/날생선을 제외하고 PDF 기본 음식만 가중치로 선택한다.
-function naturalFoodPick57(){const pool=[];const add=(n,w)=>{const d=foodDef57(n);if(d&&state.floor>=(d.minFloor||1))for(let i=0;i<w;i++)pool.push(d)};add('주먹밥',30);add('말린 육포',28);add('식어버린 국밥',18);add('엽전 엿',21);if(state.floor>=6)add('독버섯 꼬치',8);if(state.floor>=16)add('신선로',3);if(state.floor>=21)add('신선도',1);return clone(foodOccurrencePick57(pool))}
+
 
 // 인벤토리 분류와 버튼 문구
 
 registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
-globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState57();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}});globalThis.__MANRU_LIFECYCLE__.registerLoad('food57',{post:()=>{if(state){ensureFoodState57();updateAll()}}});
+globalThis.__MANRU_LIFECYCLE__.registerNew('food57',{post:()=>{ensureFoodState();addLog('화로나 솥에서 재료를 조합해 비방을 발견할 수 있다.');updateAll()}});globalThis.__MANRU_LIFECYCLE__.registerLoad('food57',{post:()=>{if(state){ensureFoodState();updateAll()}}});
 
 
-if(state)ensureFoodState57();
+if(state)ensureFoodState();
 
 /* ===== MANRU v5.8: PERFORMANCE / DENSITY / KOREAN UI HOTFIX ===== */
 const UI58_FONT='"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif';
@@ -10019,7 +9804,7 @@ const V62={lastFeeling:null,lastRoomKey:'',beltSig:'',beltPlayer:null,beltOrder:
     {id:'secrets',name:'비밀',glyph:'은',desc:'숨은 보급과 유물 가능성이 높은 층. 벽과 막다른 길을 의심할 가치가 있다.'}
   ];
   const feelEl=document.createElement('div');feelEl.id='floorFeeling62';document.getElementById('canvasWrap')?.appendChild(feelEl);
-  const belt=document.createElement('div');belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt);
+belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt);
 
   function isMajor62(){return !!(state?.specialFloor||[5,10,15,20,25].includes(state?.floor))}
   function feeling62(){return state?.floorFeeling62||null}
@@ -10081,33 +9866,20 @@ const V62={lastFeeling:null,lastRoomKey:'',beltSig:'',beltPlayer:null,beltOrder:
 
   function strategyItem62(i){if(!i)return false;if(i.type==='talisman')return true;if(i.type==='potion')return !['heal_small','heal_medium','makgeolli','focus'].includes(i.potionKind);if(i.type==='food')return ['전력 주먹밥','매콤한 육포','한방 생선찜','보신 전골','얼음 복숭아'].includes(i.name);return false}
   function glyph62(i){if(i.type==='talisman')return window.__MANRU_TALISMAN_PUBLIC__?.seal?.(i)||'부';if(i.type==='potion')return i.throwable?'병':'약';if(i.type==='food')return'식';return'물'}
-  function beltItemKnown62(item){
-    const svc=globalThis.__MANRU_CONSUMABLE56_ACTIONS__;
-    if(item?.type==='potion')return svc?.knownPotion?.(item)===true;
-    if(item?.type==='talisman')return svc?.knownTalisman?.(item)===true;
-    return !!item&&item.identified!==false;
-  }
+
   function beltItemKey62(item){return JSON.stringify([item.type,item.talismanKind||item.potionKind||item.name])}
-  function beltItems62(){
-    const p=state?.player;if(!p)return [];
-    if(V62.beltPlayer!==p){V62.beltPlayer=p;V62.beltOrder=[];V62.beltSig=''}
-    const groups=new Map();
-    p.inventory.forEach((item,idx)=>{if(!beltItemKnown62(item)||!strategyItem62(item))return;const key=beltItemKey62(item);if(!groups.has(key))groups.set(key,{item,idx,key})});
-    V62.beltOrder=V62.beltOrder.filter(key=>groups.has(key));
-    for(const key of groups.keys())if(!V62.beltOrder.includes(key))V62.beltOrder.push(key);
-    return V62.beltOrder.slice(0,3).map(key=>groups.get(key));
-  }
+
   function renderBelt62(){
     if(!state||state.dead||state.victory){belt.classList.remove('show');return}
-    const a=beltItems62(),pub=v=>globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.publicName?.(v.item)||v.item.name;
+    const a=beltItems(),pub=v=>globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.publicName?.(v.item)||v.item.name;
     const sig=JSON.stringify(a.map(v=>[v.key,v.idx,pub(v),v.item.count||1]));
     if(sig===V62.beltSig&&belt.childElementCount===a.length){belt.classList.toggle('show',a.length>0);return}V62.beltSig=sig;
     const scroll=belt.scrollLeft;
-    belt.innerHTML=a.map((v,n)=>`<button class="beltSlot62" data-belt62="${n}" aria-label="${escBelt62(pub(v))}"><i>${n+1}</i><b>${escBelt62(glyph62(v.item))}</b><small>${escBelt62(pub(v))}</small>${(v.item.count||1)>1?`<em>×${v.item.count}</em>`:''}</button>`).join('');belt.classList.toggle('show',a.length>0);belt.scrollLeft=scroll;
-    belt.querySelectorAll('[data-belt62]').forEach(b=>{const key=a[+b.dataset.belt62].key;b.onclick=e=>{e.preventDefault();e.stopPropagation();const v=beltItems62().find(v=>v.key===key);if(v)ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value}});
+    belt.innerHTML=a.map((v,n)=>`<button class="beltSlot62" data-belt62="${n}" aria-label="${escBelt(pub(v))}"><i>${n+1}</i><b>${escBelt(glyph62(v.item))}</b><small>${escBelt(pub(v))}</small>${(v.item.count||1)>1?`<em>×${v.item.count}</em>`:''}</button>`).join('');belt.classList.toggle('show',a.length>0);belt.scrollLeft=scroll;
+    belt.querySelectorAll('[data-belt62]').forEach(b=>{const key=a[+b.dataset.belt62].key;b.onclick=e=>{e.preventDefault();e.stopPropagation();const v=beltItems().find(v=>v.key===key);if(v)ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value}});
   }
-  function escBelt62(text){return String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems62(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems62().map(v=>({key:v.key,idx:v.idx}))}});
+
+  globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
   registerPanelHook54('feeling62',()=>{updateFeelingUI62();renderBelt62();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`});
 
@@ -10365,7 +10137,7 @@ const RC={
     if(state.monsters.some(m=>m.boss)){state.floorFeeling62=null;state.miniVault62=null;return;}
     const ground=state.items||[],inv=state.player.inventory||[],all=[...ground,...inv];
     const preBoss=[4,9,14,19,24].includes(state.floor);
-    if(!all.some(recovery70))placeItem70(foodOccurrencePick57(recoveryPool70()));
+    if(!all.some(recovery70))placeItem70(foodOccurrencePick(recoveryPool70()));
     const dangerSpecial=[16,18,21,22,23].includes(state.floor);
     if((preBoss||dangerSpecial||state.floorFeeling62?.id==='traps'||state.floorFeeling62?.id==='war')&&!all.some(tactical70))placeItem70(choice(tacticalPool70()));
     // Ground clutter cap: preserve upgrades, relics, talismans and tactical items first.
@@ -10821,64 +10593,64 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
   };
   const ELEMENT_KIND74={elem_fire:'fire',elem_shock:'shock',elem_water:'water',elem_ice:'ice',elem_grass:'grass',elem_earth:'earth'};
   const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
-  const RECIPES74=[];
-  const recipe74=(a,b,o)=>RECIPES74.push({a,b,...o});
+
+
   const key74=(a,b)=>[a,b].sort().join('+');
 
   // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
-  recipe74('elem_fire','upgrade',{kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'});
-  recipe74('elem_shock','upgrade',{kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'});
-  recipe74('elem_water','upgrade',{kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'});
-  recipe74('elem_ice','upgrade',{kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'});
-  recipe74('elem_grass','upgrade',{kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'});
-  recipe74('elem_earth','upgrade',{kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'});
+  addFusionRecipe('elem_fire','upgrade',{kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'});
+  addFusionRecipe('elem_shock','upgrade',{kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'});
+  addFusionRecipe('elem_water','upgrade',{kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'});
+  addFusionRecipe('elem_ice','upgrade',{kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'});
+  addFusionRecipe('elem_grass','upgrade',{kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'});
+  addFusionRecipe('elem_earth','upgrade',{kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'});
 
   // 원소 + 폭발 : 생원소의 자기역류를 없애고 목표 지점에 집중한다.
-  recipe74('elem_fire','blast',{kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 층 비례 화염폭발 + 화염지대',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'});
-  recipe74('elem_shock','blast',{kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'층 비례 연쇄 뇌격 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'});
-  recipe74('elem_water','blast',{kind:'f_water_blast',name:'조수 폭쇄부적',seal:'潮',element:'water',mode:'target',effect:'bomb_water',range:5,ability:'층 비례 수압 폭발 · 강한 밀치기 · 소화',desc:'강한 층 비례 수압 피해와 밀치기로 진형을 붕괴시키는 수압 폭탄이다.'});
-  recipe74('elem_ice','blast',{kind:'f_ice_blast',name:'빙폭부적',seal:'雪',element:'ice',mode:'target',effect:'bomb_ice',range:5,ability:'층 비례 빙결폭발 · 비보스 경직',desc:'강해지는 급랭 피해와 경직으로 각개격파 시간을 번다.'});
-  recipe74('elem_grass','blast',{kind:'f_grass_blast',name:'목폭부적',seal:'荊',element:'grass',mode:'target',effect:'bomb_grass',range:5,ability:'층 비례 독분폭발 · 뿌리 구속',desc:'강한 직접 피해와 독·구속을 함께 퍼뜨린다.'});
-  recipe74('elem_earth','blast',{kind:'f_earth_blast',name:'지폭부적',seal:'震',element:'earth',mode:'target',effect:'bomb_earth',range:5,ability:'층 비례 고충격 폭발 · 밀치기/경직',desc:'층이 깊어질수록 강해지는 충격파로 지상 적의 진형을 무너뜨린다.'});
+  addFusionRecipe('elem_fire','blast',{kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 층 비례 화염폭발 + 화염지대',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'});
+  addFusionRecipe('elem_shock','blast',{kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'층 비례 연쇄 뇌격 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'});
+  addFusionRecipe('elem_water','blast',{kind:'f_water_blast',name:'조수 폭쇄부적',seal:'潮',element:'water',mode:'target',effect:'bomb_water',range:5,ability:'층 비례 수압 폭발 · 강한 밀치기 · 소화',desc:'강한 층 비례 수압 피해와 밀치기로 진형을 붕괴시키는 수압 폭탄이다.'});
+  addFusionRecipe('elem_ice','blast',{kind:'f_ice_blast',name:'빙폭부적',seal:'雪',element:'ice',mode:'target',effect:'bomb_ice',range:5,ability:'층 비례 빙결폭발 · 비보스 경직',desc:'강해지는 급랭 피해와 경직으로 각개격파 시간을 번다.'});
+  addFusionRecipe('elem_grass','blast',{kind:'f_grass_blast',name:'목폭부적',seal:'荊',element:'grass',mode:'target',effect:'bomb_grass',range:5,ability:'층 비례 독분폭발 · 뿌리 구속',desc:'강한 직접 피해와 독·구속을 함께 퍼뜨린다.'});
+  addFusionRecipe('elem_earth','blast',{kind:'f_earth_blast',name:'지폭부적',seal:'震',element:'earth',mode:'target',effect:'bomb_earth',range:5,ability:'층 비례 고충격 폭발 · 밀치기/경직',desc:'층이 깊어질수록 강해지는 충격파로 지상 적의 진형을 무너뜨린다.'});
 
   // 일부 원소 + 기능 조합
-  recipe74('elem_fire','ward',{kind:'f_fire_ward',name:'화막부적',seal:'熾',element:'fire',mode:'instant',effect:'fireward',ability:'7턴 보호막 + 일시 화염저항',desc:'몸을 화염 장막으로 감싸고 주변에 불길을 남긴다.'});
-  recipe74('elem_shock','blink',{kind:'f_shock_blink',name:'뇌섬부적',seal:'閃',element:'shock',mode:'target',effect:'shockblink',range:7,ability:'순간이동 + 출발/도착 뇌격',desc:'축지의 양끝에 짧은 뇌격을 남긴다.'});
-  recipe74('elem_water','ward',{kind:'f_water_ward',name:'정수부적',seal:'淨',element:'water',mode:'instant',effect:'pureward',ability:'상태이상 정화 + 8턴 보호막',desc:'상처를 씻고 보호막을 만든다.'});
-  recipe74('elem_ice','bind',{kind:'f_ice_bind',name:'빙쇄부적',seal:'鎖',element:'ice',mode:'target',effect:'icebind',range:6,ability:'3×3 강빙결',desc:'봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다.'});
-  recipe74('elem_grass','mapping',{kind:'f_grass_map',name:'생맥부적',seal:'脈',element:'grass',mode:'instant',effect:'lifemap',ability:'전체 지도 + HP 8 회복',desc:'건물의 틈과 살아 있는 기운을 함께 읽는다.'});
-  recipe74('elem_earth','ward',{kind:'f_earth_ward',name:'석갑부적',seal:'壁',element:'earth',mode:'instant',effect:'stoneward',ability:'8턴 보호막 + 일시 대지저항',desc:'몸을 암반 같은 기운으로 감싼다.'});
+  addFusionRecipe('elem_fire','ward',{kind:'f_fire_ward',name:'화막부적',seal:'熾',element:'fire',mode:'instant',effect:'fireward',ability:'7턴 보호막 + 일시 화염저항',desc:'몸을 화염 장막으로 감싸고 주변에 불길을 남긴다.'});
+  addFusionRecipe('elem_shock','blink',{kind:'f_shock_blink',name:'뇌섬부적',seal:'閃',element:'shock',mode:'target',effect:'shockblink',range:7,ability:'순간이동 + 출발/도착 뇌격',desc:'축지의 양끝에 짧은 뇌격을 남긴다.'});
+  addFusionRecipe('elem_water','ward',{kind:'f_water_ward',name:'정수부적',seal:'淨',element:'water',mode:'instant',effect:'pureward',ability:'상태이상 정화 + 8턴 보호막',desc:'상처를 씻고 보호막을 만든다.'});
+  addFusionRecipe('elem_ice','bind',{kind:'f_ice_bind',name:'빙쇄부적',seal:'鎖',element:'ice',mode:'target',effect:'icebind',range:6,ability:'3×3 강빙결',desc:'봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다.'});
+  addFusionRecipe('elem_grass','mapping',{kind:'f_grass_map',name:'생맥부적',seal:'脈',element:'grass',mode:'instant',effect:'lifemap',ability:'전체 지도 + HP 8 회복',desc:'건물의 틈과 살아 있는 기운을 함께 읽는다.'});
+  addFusionRecipe('elem_earth','ward',{kind:'f_earth_ward',name:'석갑부적',seal:'壁',element:'earth',mode:'instant',effect:'stoneward',ability:'8턴 보호막 + 일시 대지저항',desc:'몸을 암반 같은 기운으로 감싼다.'});
 
   // 일부 원소 + 원소
-  recipe74('elem_fire','elem_water',{kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'});
-  recipe74('elem_water','elem_ice',{kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'});
-  recipe74('elem_water','elem_grass',{kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'});
-  recipe74('elem_fire','elem_earth',{kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'});
-  recipe74('elem_grass','elem_earth',{kind:'f_bulwark',name:'목석부적',seal:'壘',mode:'instant',effect:'bulwark',ability:'임시 암벽 + 6턴 보호막',desc:'뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다.'});
-  recipe74('elem_shock','elem_water',{kind:'f_thunderpool',name:'폭뢰부적',seal:'轟',mode:'target',effect:'thunderpool',range:6,ability:'수기 전도 연쇄뇌격',desc:'물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다.'});
+  addFusionRecipe('elem_fire','elem_water',{kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'});
+  addFusionRecipe('elem_water','elem_ice',{kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'});
+  addFusionRecipe('elem_water','elem_grass',{kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'});
+  addFusionRecipe('elem_fire','elem_earth',{kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'});
+  addFusionRecipe('elem_grass','elem_earth',{kind:'f_bulwark',name:'목석부적',seal:'壘',mode:'instant',effect:'bulwark',ability:'임시 암벽 + 6턴 보호막',desc:'뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다.'});
+  addFusionRecipe('elem_shock','elem_water',{kind:'f_thunderpool',name:'폭뢰부적',seal:'轟',mode:'target',effect:'thunderpool',range:6,ability:'수기 전도 연쇄뇌격',desc:'물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다.'});
 
   // 일부 기능 + 기능
-  recipe74('blast','bind',{kind:'f_bindblast',name:'봉폭부적',seal:'禁',mode:'target',effect:'bindblast',range:5,ability:'층 비례 폭발 + 일반 적 3턴 봉인',desc:'폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다.'});
-  recipe74('identify','mapping',{kind:'f_heaveneye',name:'천안부적',seal:'眼',mode:'instant',effect:'heaveneye',ability:'전체 지도 + 미확인 2종 감정',desc:'지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다.'});
-  recipe74('identify','upgrade',{kind:'f_identify_upgrade',name:'감강부적',seal:'鑑',mode:'instant',effect:'identify_all991',ability:'인벤토리의 모든 미감정 아이템 완전 감정',desc:'감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다.'});
-  recipe74('ward','blink',{kind:'f_guardblink',name:'호축부적',seal:'遁',mode:'target',effect:'guardblink',range:6,ability:'안전 순간이동 + 6턴 보호막',desc:'도망과 방어를 한 번에 해결하는 비상탈출 부적이다.'});
+  addFusionRecipe('blast','bind',{kind:'f_bindblast',name:'봉폭부적',seal:'禁',mode:'target',effect:'bindblast',range:5,ability:'층 비례 폭발 + 일반 적 3턴 봉인',desc:'폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다.'});
+  addFusionRecipe('identify','mapping',{kind:'f_heaveneye',name:'천안부적',seal:'眼',mode:'instant',effect:'heaveneye',ability:'전체 지도 + 미확인 2종 감정',desc:'지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다.'});
+  addFusionRecipe('identify','upgrade',{kind:'f_identify_upgrade',name:'감강부적',seal:'鑑',mode:'instant',effect:'identify_all991',ability:'인벤토리의 모든 미감정 아이템 완전 감정',desc:'감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다.'});
+  addFusionRecipe('ward','blink',{kind:'f_guardblink',name:'호축부적',seal:'遁',mode:'target',effect:'guardblink',range:6,ability:'안전 순간이동 + 6턴 보호막',desc:'도망과 방어를 한 번에 해결하는 비상탈출 부적이다.'});
 
   // 성부는 생원소와 기능부적 양쪽 합성계에 정식 참여한다. 미감정 상태에서는 아래 진짜 인장/색을 노출하지 않는다.
-  recipe74('holy','elem_fire',{kind:'f_holy_fire',name:'성화부적',seal:'輝',mode:'instant',effect:'holy_elem_fire991',ability:'성광 정화 + 화염 가호',desc:'성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다.'});
-  recipe74('holy','elem_shock',{kind:'f_holy_shock',name:'성뢰부적',seal:'閃',mode:'instant',effect:'holy_elem_shock991',ability:'성광 정화 + 뇌전 가호',desc:'성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다.'});
-  recipe74('holy','elem_water',{kind:'f_holy_water',name:'성수부적',seal:'淨',mode:'instant',effect:'holy_elem_water991',ability:'강한 정화 + 수류 가호',desc:'깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다.'});
-  recipe74('holy','elem_ice',{kind:'f_holy_ice',name:'성빙부적',seal:'雪',mode:'instant',effect:'holy_elem_ice991',ability:'성광 정화 + 빙결 가호',desc:'차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다.'});
-  recipe74('holy','elem_grass',{kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'});
-  recipe74('holy','elem_earth',{kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'});
-  recipe74('holy','identify',{kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'});
-  recipe74('holy','upgrade',{kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'});
-  recipe74('holy','blast',{kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'주변 성광 폭발 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'});
-  recipe74('holy','mapping',{kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'});
-  recipe74('holy','ward',{kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'});
-  recipe74('holy','blink',{kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'});
-  recipe74('holy','bind',{kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'});
+  addFusionRecipe('holy','elem_fire',{kind:'f_holy_fire',name:'성화부적',seal:'輝',mode:'instant',effect:'holy_elem_fire991',ability:'성광 정화 + 화염 가호',desc:'성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다.'});
+  addFusionRecipe('holy','elem_shock',{kind:'f_holy_shock',name:'성뢰부적',seal:'閃',mode:'instant',effect:'holy_elem_shock991',ability:'성광 정화 + 뇌전 가호',desc:'성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다.'});
+  addFusionRecipe('holy','elem_water',{kind:'f_holy_water',name:'성수부적',seal:'淨',mode:'instant',effect:'holy_elem_water991',ability:'강한 정화 + 수류 가호',desc:'깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다.'});
+  addFusionRecipe('holy','elem_ice',{kind:'f_holy_ice',name:'성빙부적',seal:'雪',mode:'instant',effect:'holy_elem_ice991',ability:'성광 정화 + 빙결 가호',desc:'차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다.'});
+  addFusionRecipe('holy','elem_grass',{kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'});
+  addFusionRecipe('holy','elem_earth',{kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'});
+  addFusionRecipe('holy','identify',{kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'});
+  addFusionRecipe('holy','upgrade',{kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'});
+  addFusionRecipe('holy','blast',{kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'주변 성광 폭발 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'});
+  addFusionRecipe('holy','mapping',{kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'});
+  addFusionRecipe('holy','ward',{kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'});
+  addFusionRecipe('holy','blink',{kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'});
+  addFusionRecipe('holy','bind',{kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'});
 
-  const RECIPE74=new Map(RECIPES74.map(r=>[key74(r.a,r.b),r]));
+
 
   const esc74=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const APP_IDS74=['redthread','jadepaper','inkwash','violet','goldedge','ashgray','cobalt','blueglass','frostwhite','moss','ochre','cinnabar','roughpaper','waxpaper','palepaper'];
@@ -10901,13 +10673,9 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
   function public74(item){if(!item)return'';if(item.branchExclusive105||item.fusion74)return item.name;return window.__MANRU_TALISMAN_PUBLIC__?.name?.(item)||item.name}
   
   function app74(item){return window.__MANRU_TALISMAN_PUBLIC__?.app?.(item)||{name:'미확인 부적',ink:'#9b7448'}}
-  function identifyKind74(kind,reason='효과 관찰'){
-    const K=K74();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=BASE_KIND74.get(kind);if(!t)return false;const a=app74(t);K.talismanKnown[kind]=true;addLog(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);return true
-  }
-  function identifyPotionKind74(kind,reason='천안부 관찰'){
-    const K=K74();if(!kind||K.potionKnown[kind])return false;K.potionKnown[kind]=true;const p=(window.MANRU_POTIONS||[]).find(x=>x.potionKind===kind);addLog(`약병 식별 · ${p?.name||kind} (${reason}).`);return true
-  }
-  function recipeItem74(r){return{name:r.name,type:'talisman',talismanKind:r.kind,fusion74:true,element74:r.element||null,seal:r.seal,tier:3,rarity:r.kind.includes('upgrade')?'sealed':'rare',stackMax:2,count:1,targeted:r.mode==='target',targetRange:r.range||5,fusionMode74:r.mode,fusionEffect74:r.effect||null,ability:r.ability,desc:r.desc}}
+
+
+
   function baseElem74(item){return item?.element74||ELEMENT_KIND74[item?.talismanKind]||null}
   function guard74(elem){return entityElementGuard57(state?.player,elem)}
   
@@ -10927,7 +10695,7 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
 
   function woodEffect105(damage,requireSight=true){const p=state.player,targets=near74(p.x,p.y,2).filter(m=>!requireSight||entityCombatLineCheckR8(p,m,{range:2,units:false}).ok);for(const m of targets){hurtMon74(m,'grass',damage);if(m.hp>0){setMonsterStatus57(m,'poison74',Math.max(m.poison74||0,3));if(!m.boss)setMonsterStatus57(m,'stunned',Math.max(m.stunned||0,1))}burst(m.x,m.y,'#94ad6c',7,.4)}return targets.length}
   function rawElement74(item){
-    if(!item)return false;ensure74();const elem=baseElem74(item),p=state.player;if(!elem)return false;cancelAutoWalk();closeInventory();identifyKind74(item.talismanKind,'생원소 폭주 관찰');const depthStep=Math.floor((state.floor-1)/5),targets=near74(p.x,p.y,elem==='fire'?1:2);const contactCells=elementCells105(p.x,p.y,elem==='fire'?1:2);emitElementContact105(elem,contactCells,effectSource57(p),{baseDamage:20+depthStep*5});elementAttackFx105(elem,contactCells,p);
+    if(!item)return false;ensure74();const elem=baseElem74(item),p=state.player;if(!elem)return false;cancelAutoWalk();closeInventory();identifyKind(item.talismanKind,'생원소 폭주 관찰');const depthStep=Math.floor((state.floor-1)/5),targets=near74(p.x,p.y,elem==='fire'?1:2);const contactCells=elementCells105(p.x,p.y,elem==='fire'?1:2);emitElementContact105(elem,contactCells,effectSource57(p),{baseDamage:20+depthStep*5});elementAttackFx105(elem,contactCells,p);
     if(elem==='fire'){for(const m of targets)hurtMon74(m,'fire',29+depthStep*6,true);addElemField74('fire',p.x,p.y,4,4);hurtSelf74('fire',5);addLog(`화염부적 폭주: ${targets.length}체를 태우고 불길이 번졌다.`)}
     else if(elem==='shock'){targets.sort((a,b)=>entityDistance57(a,p)-entityDistance57(b,p));for(const m of targets.slice(0,5))hurtMon74(m,'shock',28+depthStep*6,true);hurtSelf74('shock',4,'stun');addLog(`뇌전부적 폭주: 전류가 ${Math.min(5,targets.length)}체를 연쇄 타격했다.`)}
     else if(elem==='water'){for(const m of targets){hurtMon74(m,'water',24+depthStep*5,true);if(m.hp>0)push74(m,p.x,p.y,1)}extinguish74(p.x,p.y,2);hurtSelf74('water',3,'weaken');addLog(`수류부적 폭주: ${targets.length}체를 밀어내고 주변 불길을 껐다.`)}
@@ -10937,36 +10705,34 @@ const V74={first:null,target:null,gearScroll:null,modal:null};
     burst(p.x,p.y,E74[elem].color,28,1);consumeRef(item);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'reference-effect'});return true
   }
 
-  /* fusion UI */
-  const fusion=document.createElement('div');fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';document.body.appendChild(fusion);
+fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';document.body.appendChild(fusion);
   const gearInfusionPanel=document.createElement('div');gearInfusionPanel.id='gear74';gearInfusionPanel.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';document.body.appendChild(gearInfusionPanel);
-  fusion.querySelector('[data-f74close]').onclick=()=>closeFusion74();gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear74();
+  fusion.querySelector('[data-f74close]').onclick=()=>closeFusion();gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear();
   function basicTalismans74(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.type==='talisman'&&!v.item.branchExclusive105&&!v.item.fusion74&&known74(v.item))}
-  function compatible74(a,b){return RECIPE74.get(key74(a.talismanKind,b.talismanKind))||null}
-  function openFusion74(first=null){if(!playerClassRules58().talismanFusion){closeFusion74();toast('천하장사는 부적을 합성할 수 없다.');return false}if(!gameplayUiOpen57())return false;cancelAutoWalk();closeInventory();V74.first=first;setInteraction8('fusion74',true);renderFusion74()}
-  function closeFusion74(){V74.first=null;setInteraction8('fusion74',false);if(state)updateAll()}
+  function compatible74(a,b){return RECIPE.get(key74(a.talismanKind,b.talismanKind))||null}
+
+
   function renderFusion74(){
     const host=document.getElementById('fusion74body'),items=basicTalismans74();if(items.length<2){host.innerHTML='<div class="f74none">합성하려면 감정된 기본 부적이 2장 이상 필요하다.</div>';return}
     if(!V74.first){host.innerHTML='<div class="f74hint">첫 번째 부적을 고른다. 미감정부적은 합성 목록에 표시되지 않는다.</div><div class="f74grid">'+items.map(v=>`<button class="f74card" data-f74first="${v.idx}"><span class="sig">${esc74(v.item.seal||'부')}</span><span><b>${esc74(v.item.name)}${(v.item.count||1)>1?` ×${v.item.count}`:''}</b><small>${esc74(v.item.ability||'')}</small></span></button>`).join('')+'</div>';host.querySelectorAll('[data-f74first]').forEach(b=>b.onclick=()=>{V74.first=state.player.inventory[+b.dataset.f74first];renderFusion74()});return}
     const first=V74.first,cands=items.filter(v=>v.item!==first).map(v=>({...v,r:compatible74(first,v.item)})).filter(v=>v.r);host.innerHTML=`<div class="f74hint f74picked"><span><b>${esc74(first.name)}</b>를 첫 재료로 선택했다. 만들 수 있는 부적을 골라라.</span><button data-f74reset>첫 재료 변경</button></div><div class="f74grid">${cands.length?cands.map(v=>`<button class="f74card compat" data-f74second="${v.idx}"><span class="sig">${esc74(v.r.seal)}</span><span><b>${esc74(v.r.name)}</b><small>${esc74(first.name)} + ${esc74(v.item.name)}<br>${esc74(v.r.ability)}</small></span></button>`).join(''):'<div class="f74none">지금 만들 수 있는 조합이 없다.<br><small>첫 재료를 바꿔 다른 조합을 확인할 수 있다.</small></div>'}<div class="f74result"><b>합성 규칙</b><br>결과를 누르면 합성 · 1턴 소모 · 재료 각 1장 · 강화 + 원소 → 속성 각인</div></div>`;host.querySelector('[data-f74reset]')?.addEventListener('click',()=>{V74.first=null;renderFusion74()});host.querySelectorAll('[data-f74second]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'FUSE',args:[first,state.player.inventory[+b.dataset.f74second]]}).value)
   }
-  function fuse74(a,b){if(!playerClassRules58().talismanFusion){closeFusion74();toast('천하장사는 부적을 합성할 수 없다.');return false}const action=playerAction57('modal-action',{uiOwner:'fusion74'});if(!action.ok)return false;if(!a||!b||a===b||!known74(a)||!known74(b)){toast('감정된 서로 다른 기본 부적이 필요하다.');return false}const r=compatible74(a,b);if(!r){toast('두 부적의 기운이 안정적으로 합쳐지지 않는다.');return false}const result=recipeItem74(r);consumeRef(a);consumeRef(b);addInventoryItem57(result);K74().talismanKnown[result.talismanKind]=true;closeFusion74();burst(state.player.x,state.player.y,E74[r.element]?.color||'#d8b06c',24,.9);addLog(`부적 합성 · ${r.name} 완성.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"fuse74"}).value;return true}
+  function fuse74(a,b){if(!playerClassRules58().talismanFusion){closeFusion();toast('천하장사는 부적을 합성할 수 없다.');return false}const action=playerAction57('modal-action',{uiOwner:'fusion74'});if(!action.ok)return false;if(!a||!b||a===b||!known74(a)||!known74(b)){toast('감정된 서로 다른 기본 부적이 필요하다.');return false}const r=compatible74(a,b);if(!r){toast('두 부적의 기운이 안정적으로 합쳐지지 않는다.');return false}const result=recipeItem(r);consumeRef(a);consumeRef(b);addInventoryItem(result);K74().talismanKnown[result.talismanKind]=true;closeFusion();burst(state.player.x,state.player.y,E74[r.element]?.color||'#d8b06c',24,.9);addLog(`부적 합성 · ${r.name} 완성.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"fuse74"}).value;return true}
 ActionDispatcher.register('FUSE',fuse74);
 
-  /* gear application */
-  function gearEntries74(){const a=[],p=state.player;if(p.weapon)a.push({item:p.weapon,label:'장착 무기'});if(p.armor)a.push({item:p.armor,label:'장착 방어구'});for(const it of p.inventory)if(['weapon','armor'].includes(it.type))a.push({item:it,label:'행낭'});if(V74.gearScroll?.talismanKind==='upgrade')for(const it of p.inventory)if(it.summonItem105==='book')a.push({item:it,label:'소환술 · HP '+summonHpCost105(null,it.upgrade||0)+' → '+summonHpCost105(null,1+(it.upgrade||0))+' · 기운 회복 '+summonRecovery105(it.upgrade||0)+' → '+summonRecovery105(1+(it.upgrade||0))+'턴'});return a}
-  function openGear74(scroll){if(scroll?.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return useBodyPower74(scroll);if(!gameplayUiOpen57())return false;V74.gearScroll=scroll;closeInventory();setInteraction8('gear74',true);renderGear74()}
-  function closeGear74(){V74.gearScroll=null;setInteraction8('gear74',false)}
-  function renderGear74(){const s=V74.gearScroll,host=document.getElementById('gear74body');if(!s){host.innerHTML='';return}document.getElementById('gear74title').textContent=['upgrade','reinforce105'].includes(s.talismanKind)?`${s.name} · 장비 선택`:`${s.name} · 각인 대상`;document.getElementById('gear74sub').textContent=s.talismanKind==='upgrade'?'강화 횟수 제한 없음 · 방어구는 초반 약 +1.8~2.0 DEF에서 시작해 강화할수록 회당 상승량이 점차 감소 · 내부 계산은 소수, 표시는 정수 반올림 · 권갑은 3강마다 실질 ATK +1 · 소환술서는 소모 HP·기운 회복 시간 감소(강화할수록 감소 폭이 작아짐) · 이전 강화는 반환되지 않음.':'장비 각인은 무기 1개 / 방어구 1개만 유지되며 새 각인이 기존 각인을 교체한다. 성광 각인은 무기 언데드 추가피해 +5, 방어구 언데드 직접피해 15% 감소.';const entries=gearEntries74().filter(v=>(s.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost'||v.item.summonItem105==='book')&&(s.talismanKind!=='reinforce105'||(!v.item.artifactWeapon46&&(v.item.tier||1)<=2)));if(s.talismanKind==='reinforce105')document.getElementById('gear74sub').textContent='T2 이하 무기·방어구만 +1 강화 · 일반 강화와 같은 효과 · 천하장사도 장비에 사용';host.innerHTML=`<div class="f74gear">${entries.map((v,n)=>{const e=E74[v.item.elementBrand74||v.item.elementGuard74];return`<button data-g74="${n}"><b>${esc74(v.item.name)} ${v.item.upgrade?`+${v.item.upgrade}`:''}</b><small>${v.label} · ${v.item.summonItem105==='book'?'소환술서':v.item.type==='weapon'?'무기':'방어구'}</small>${e?`<div class="f74brand">현재 ${e.name} 각인</div>`:''}</button>`}).join('')}</div>`;if(!entries.length)host.innerHTML='<div class="f74none">사용 가능한 T2 이하 무기·방어구가 없다. 부적은 소비되지 않았다.</div>';host.querySelectorAll('[data-g74]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'GEAR_APPLY',args:[entries[+b.dataset.g74]]}).value);if(s.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'){const power=document.createElement('button');power.textContent='육체에 괴력 부여';power.onclick=()=>{closeGear74();useBodyPower74(s);};host.append(power);}}
-  function applyGear74(entry){if(V74.gearScroll?.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'&&entry?.item?.summonItem105!=='book'){closeGear74();return false}const action=playerAction57('gear',{uiOwner:'gear74'});if(!action.ok)return false;const scroll=V74.gearScroll,it=entry?.item;if(!scroll||!it||!state.player.inventory.includes(scroll)||!gearEntries74().some(e=>e.item===it))return false;if(scroll.talismanKind==='reinforce105'&&((it.tier||1)>2||it.artifactWeapon46)){toast('보강부적은 T2 이하 일반 무기·방어구에만 사용할 수 있다.');return false}if(['upgrade','reinforce105'].includes(scroll.talismanKind)){if(it.artifactWeapon46){toast('전설의 무기는 강화할 수 없다.');return false}if(it.summonItem105==='book'){summonState105();it.upgrade=(it.upgrade||0)+1;state.player.summoning105.activeBook105=it.summonBookId105;summonState105();}else if(it.type==='weapon')applyWeaponUpgrade42(it);else if(it.type==='armor')applyArmorUpgrade42(it);else{it.upgrade=(it.upgrade||0)+1;it.def=(it.def||0)+1;}identifyKind74('upgrade','강화 효과 관찰');consumeRef(scroll);addLog(`${it.name} +${it.upgrade} 강화.`)}else{const elem=scroll.element74;if(!elem)return false;if(it.type==='weapon')it.elementBrand74=elem;else it.elementGuard74=elem;consumeRef(scroll);addLog(`${it.name}에 ${E74[elem].name} 각인을 새겼다.`)}closeGear74();burst(state.player.x,state.player.y,E74[scroll.element74]?.color||'#d8b06c',18,.7);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"applyGear74"}).value;return true}
-ActionDispatcher.register('GEAR_APPLY',applyGear74);
+
+
+
+  function renderGear74(){const s=V74.gearScroll,host=document.getElementById('gear74body');if(!s){host.innerHTML='';return}document.getElementById('gear74title').textContent=['upgrade','reinforce105'].includes(s.talismanKind)?`${s.name} · 장비 선택`:`${s.name} · 각인 대상`;document.getElementById('gear74sub').textContent=s.talismanKind==='upgrade'?'강화 횟수 제한 없음 · 방어구는 초반 약 +1.8~2.0 DEF에서 시작해 강화할수록 회당 상승량이 점차 감소 · 내부 계산은 소수, 표시는 정수 반올림 · 권갑은 3강마다 실질 ATK +1 · 소환술서는 소모 HP·기운 회복 시간 감소(강화할수록 감소 폭이 작아짐) · 이전 강화는 반환되지 않음.':'장비 각인은 무기 1개 / 방어구 1개만 유지되며 새 각인이 기존 각인을 교체한다. 성광 각인은 무기 언데드 추가피해 +5, 방어구 언데드 직접피해 15% 감소.';const entries=gearEntries().filter(v=>(s.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost'||v.item.summonItem105==='book')&&(s.talismanKind!=='reinforce105'||(!v.item.artifactWeapon46&&(v.item.tier||1)<=2)));if(s.talismanKind==='reinforce105')document.getElementById('gear74sub').textContent='T2 이하 무기·방어구만 +1 강화 · 일반 강화와 같은 효과 · 천하장사도 장비에 사용';host.innerHTML=`<div class="f74gear">${entries.map((v,n)=>{const e=E74[v.item.elementBrand74||v.item.elementGuard74];return`<button data-g74="${n}"><b>${esc74(v.item.name)} ${v.item.upgrade?`+${v.item.upgrade}`:''}</b><small>${v.label} · ${v.item.summonItem105==='book'?'소환술서':v.item.type==='weapon'?'무기':'방어구'}</small>${e?`<div class="f74brand">현재 ${e.name} 각인</div>`:''}</button>`}).join('')}</div>`;if(!entries.length)host.innerHTML='<div class="f74none">사용 가능한 T2 이하 무기·방어구가 없다. 부적은 소비되지 않았다.</div>';host.querySelectorAll('[data-g74]').forEach(b=>b.onclick=()=>ActionDispatcher.dispatch({type:'GEAR_APPLY',args:[entries[+b.dataset.g74]]}).value);if(s.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'){const power=document.createElement('button');power.textContent='육체에 괴력 부여';power.onclick=()=>{closeGear();useBodyPower74(s);};host.append(power);}}
+
+ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   function useBodyPower74(item){
     if(bodyPowerActive58()){toast('이미 괴력이 폭발하고 있다.');return false}
     if(!state?.player?.inventory.includes(item)||item.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost')return false;
     const p=state.player,d=bodyPowerDuration58(p),born=(state.playerAgencyTurns57||0)+1;
     p.classState={powerTurns:d,powerTotal:d,powerHealHundredths:p.classState?.powerHealHundredths||0,powerRulesVersion:3,powerExhaustion:bodyPowerExhaustion58(p),powerBornAgencyTurn:born,powerLastAgencyTurn:born};
-    identifyKind74('upgrade','괴력 발현');consumeRef(item);closeGear74();closeInventory();cancelAutoWalk();
+    identifyKind('upgrade','괴력 발현');consumeRef(item);closeGear();closeInventory();cancelAutoWalk();
     burst(p.x,p.y,'#dfad51',30,1);impact(p.x,p.y,'#e9bd65',6);floatText(p.x,p.y,`괴력 ${d}턴`,'#ffdc8a',17);vfVibrate([60,30,100]);
     globalThis.__MANRU_SFX54__?.play('bodyPower58');
     addLog(`괴력 발동 · ${d}턴 동안 ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복. 종료 후 ${p.classState.powerExhaustion}턴 실명·배탈.`);
@@ -10978,23 +10744,9 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   function startTarget74(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();clearHeldInput53();V74.target={item,range:item.targetRange||5,effect:item.fusionEffect74};closeInventory();const h=targetHud74();h?.classList.add('show');syncWorldTargetInput57();const a=document.getElementById('talismanTargetTitle'),b=document.getElementById('talismanTargetText');if(a)a.textContent=`${item.name} · ${item.seal}`;if(b)b.textContent=`목표 지정 · 사거리 ${V74.target.range}`;drawMap(true)}
   function cancelTarget74(silent=false){V74.target=null;targetHud74()?.classList.remove('show');syncWorldTargetInput57();endTargetInput57(320);if(!silent)toast('부적 사용을 취소했다.');drawMap(true)}
   function reveal74(){let n=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));if(state.map[y][x]===TT.SECRET_DOOR)n++}VisibilityService.compute();return n}
-  function identifyN74(n){let done=0;for(let c=0;c<n;c++){const tal=state.player.inventory.find(i=>i.type==='talisman'&&!known74(i));if(tal){identifyKind74(tal.talismanKind,'천안부 해독');done++;continue}const pot=state.player.inventory.find(i=>i.type==='potion'&&!K74().potionKnown[i.potionKind]);if(pot){identifyPotionKind74(pot.potionKind,'천안부 해독');done++;continue}break}return done}
-  function castFusion74(tx,ty){const action=playerAction57('modal-action',{uiOwner:'talismanTarget56'});if(!action.ok)return false;
-    const a=V74.target;if(!a)return false;const item=a.item,e=a.effect,p=state.player;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range||!state.seen.has(k(tx,ty))){toast(`사거리 ${a.range}칸 안의 확인한 칸을 골라야 한다.`);return false}if(typeof lineClear==='function'&&!lineClear(p.x,p.y,tx,ty)&&!['guardblink','shockblink'].includes(e)){toast('부적의 기운이 벽에 막힌다.');return false}const ts=near74(tx,ty,1),depthStep=Math.floor((state.floor-1)/5),depth2=depthStep*2;projectileFX(p.x,p.y,tx,ty,E74[item.element74]?.color||'#d7b46d');
-    const contactElem=({bomb_fire:'fire',bomb_shock:'shock',thunderpool:'shock',bomb_grass:'grass',bomb_water:'water',bomb_earth:'earth',bomb_ice:'ice',frostfield:'ice',icebind:'ice',lava:'fire'})[e];if(contactElem){const cells=elementCells105(tx,ty,['bomb_water','bomb_shock','thunderpool'].includes(e)?2:1),attackCells=e==='bomb_water'?elementCells105(tx,ty,1):cells;emitElementContact105(contactElem,cells,effectSource57(p),{baseDamage:18+depthStep*4});elementAttackFx105(contactElem,attackCells,p)}
-    if(e==='bomb_fire'){for(const m of ts)hurtMon74(m,'fire',32+depthStep*6,true);addElemField74('fire',tx,ty,5,4)}
-    else if(e==='bomb_shock'||e==='thunderpool'){const pool=[...state.monsters].filter(m=>isHostileTarget57(m)&&!m.hidden&&entityDistance57(m,{x:tx,y:ty})<=2).sort((m,n)=>entityDistance57(m,{x:tx,y:ty})-entityDistance57(n,{x:tx,y:ty}));for(const m of pool.slice(0,e==='thunderpool'?6:5))hurtMon74(m,'shock',e==='thunderpool'?27+depthStep*5:31+depthStep*6,true)}
-    else if(e==='bomb_water'){for(const m of ts){hurtMon74(m,'water',26+depthStep*5,true);if(m.hp>0)push74(m,tx,ty,2)}}
-    else if(e==='bomb_ice'||e==='frostfield'||e==='icebind'){for(const m of ts){hurtMon74(m,'ice',e==='bomb_ice'?24+depthStep*5:16+depthStep*3,true);if(m.hp>0){if(m.boss){if((m.controlCd54||0)<=0){m.stunned=1;m.controlCd54=4;m.controlCdTurn54=state.turn}}else m.stunned=Math.max(m.stunned||0,e==='icebind'||e==='frostfield'?2:1)}}}
-    else if(e==='bomb_grass'){for(const m of ts){hurtMon74(m,'grass',23+depthStep*5,true);if(m.hp>0){m.poison74=Math.max(m.poison74||0,4);if(!m.boss)m.stunned=Math.max(m.stunned||0,1)}}}
-    else if(e==='bomb_earth'){for(const m of ts){hurtMon74(m,'earth',27+depthStep*5,true);if(m.hp>0){push74(m,tx,ty,1);if(!m.boss)m.stunned=Math.max(m.stunned||0,1)}}}
-    else if(e==='steam'){const cells=elementCells105(tx,ty,1);emitElementContact105('water',cells,effectSource57(p));for(const q of cells)steamCell105(q.x,q.y);elementAttackFx105('water',cells,p);VisibilityService.compute()}
-    else if(e==='lava'){for(const m of ts)hurtMon74(m,'fire',24+depthStep*5,true);for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++)if(Math.abs(ox)+Math.abs(oy)<=1)tempTile74(tx+ox,ty+oy,TT.LAVA,5,'lava')}
-    else if(e==='bindblast'){const dmg=24+depthStep*5;for(const m of ts){const dealt=damageEntity61(m,dmg,state.player);if(dealt>0)floatText(m.x,m.y,`-${dealt}`,'#e7c17b',12);if(m.hp<=0)killMonster(m);else if(m.boss){m.controlCd54=Math.max(0,m.controlCd54||0);if(m.controlCd54<=0){m.stunned=Math.max(m.stunned||0,1);m.controlCd54=4;m.controlCdTurn54=state.turn}}else m.stunned=Math.max(m.stunned||0,3)}}
-    else if(e==='shockblink'||e==='guardblink'){if(!safeBlink74(tx,ty)){toast('현재 열린 진행 구역 안의 안전한 칸만 접을 수 있다.');return false}const ox=p.x,oy=p.y,landing=resolvePlayerLanding57(tx,ty,{cause:'fusion-blink',resetVisual:true});if(!landing.ok){toast('이동부적이 공간을 접지 못했다.');return false}if(e==='shockblink'){const cells=elementCells105(0,0,0,[...elementCells105(ox,oy,1),...elementCells105(tx,ty,1)]);emitElementContact105('shock',cells,effectSource57(p),{baseDamage:18+depthStep*4});elementAttackFx105('shock',cells,{x:ox,y:oy});const unique=[...new Set([...near74(ox,oy,1),...near74(tx,ty,1)])];for(const m of unique)if(m.hp>0)hurtMon74(m,'shock',18+depthStep*4,true)}else state.status.ward=Math.max(state.status.ward||0,7)}
-    burst(tx,ty,E74[item.element74]?.color||'#d9b66f',24,.9);consumeRef(item);cancelTarget74(true);addLog(`${item.name}: ${item.ability}.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"castFusion74"}).value;return true
-  }
-  function useFusionInstant74(item){const e=item.fusionEffect74,p=state.player;if(item.fusionMode74==='gear'){openGear74(item);return true}if(e==='fireward'){state.status.ward=Math.max(state.status.ward||0,8);state.elementWard74={element:'fire',ttl:8};addElemField74('fire',p.x,p.y,3,3)}else if(e==='pureward'){cleanseStatuses57();state.status.ward=Math.max(state.status.ward||0,9);state.elementWard74={element:'water',ttl:9}}else if(e==='lifemap'){reveal74();p.hp=Math.min(p.maxHp,p.hp+8)}else if(e==='stoneward'){state.status.ward=Math.max(state.status.ward||0,9);state.elementWard74={element:'earth',ttl:9}}else if(e==='regrowth'){state.status.regen=Math.max(state.status.regen||0,7);for(const m of near74(p.x,p.y,1))if(!m.boss)m.stunned=Math.max(m.stunned||0,1)}else if(e==='bulwark'){state.status.ward=Math.max(state.status.ward||0,7);let n=0;for(const[dx,dy]of randOrder74(DIRS4))if(n<3&&tempTile74(p.x+dx,p.y+dy,TT.WALL,5,'bulwark'))n++}else if(e==='heaveneye'){const n=reveal74(),ids=identifyN74(2);addLog(`천안부적: 지도 공개 · 숨은 문 ${n} · 감정 ${ids}종.`)}else return false;consumeRef(item);burst(p.x,p.y,E74[item.element74]?.color||'#d9b66f',22,.8);if(e!=='heaveneye')addLog(`${item.name}: ${item.ability}.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useFusionInstant74"}).value;return true}
+
+
+
 
   /* equipment effects */
   registerPlayerStatStage55('elements74',s=>{const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s});
@@ -11007,7 +10759,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
-  registerInventoryRenderR34('r74-talisman-fusion','post',()=>{const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion74()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion74(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})});
+  registerInventoryRenderR34('r74-talisman-fusion','post',()=>{const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})});
   // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
   targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
   function drawElementOverlay74(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor54(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
@@ -11017,7 +10769,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear74);
   globalThis.__MANRU_LIFECYCLE__.registerNew('talisman74',{post:()=>{ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('talisman74',{post:()=>{if(state){ensure74(true);updateAll()}}});
 
-  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES74.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem74),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion74(x,y),cancelTarget:()=>{cancelTarget74(true);return true},closePanels:()=>{closeFusion74();closeGear74();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear74(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear74(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant74(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind74('upgrade','강화 효과 관찰');openGear74(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
+  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTarget74(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
 /* ===== MANRU v7.5: CLEAN SHATTERED-LIKE HUD / UNIFIED INPUT / FUSION QA ===== */
@@ -12050,14 +11802,14 @@ const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
   
 
   function roomFreeCells90(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(floorOnly88(x,y))a.push({x,y});return a}
-  function addItem90(r,special=false){const a=roomFreeCells90(r);if(!a.length)return false;const p=a[Math.floor(globalThis.__MANRU_RANDOM57__()*a.length)];try{dropRandomItem(p,special);return true}catch(_){return false}}
+
   function purposeTile90(type,z){
     if(type==='supply')return TT.CACHE;if(type==='armory')return TT.ARMORY;if(type==='shrine')return z===4?TT.ALTAR:TT.BRAZIER;if(type==='kitchen')return TT.COOKPOT;if(type==='archive')return z===2?TT.MIRROR:TT.RUMOR;if(type==='medic')return TT.FOUNTAIN;return TT.CACHE;
   }
   function purposeRooms90(z){
     const leaves=[...(state.branchLeaves92||[])],fallback=[...(state.branchRooms92||[])].sort((a,b)=>(b.branchDepth92||0)-(a.branchDepth92||0));const src=leaves.length?leaves:fallback;state.purposeRooms90=[];
     const used=new Set(),wanted=Math.min(6,src.length);for(let i=0;i<wanted;i++){const r=src[i],rk=`${r.x},${r.y}`;if(used.has(rk))continue;used.add(rk);const type=['supply','armory','medic','archive','shrine','trapcache'][(state.floor+z+i*2)%6],cells=roomFreeCells90(r);if(!cells.length)continue;const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]),t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
-      if(['supply','armory','archive','trapcache'].includes(type))addItem90(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
+      if(['supply','armory','archive','trapcache'].includes(type))addItem(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
       const rr={...r,purpose90:type};state.purposeRooms90.push(rr);feature89(({supply:'보급실',armory:'무기고',medic:'회복실',archive:'기록실',shrine:'제단실',trapcache:'위험 보관실'})[type],r,'purpose');
     }
     state.purposeCount90=state.purposeRooms90.length;
@@ -12362,11 +12114,7 @@ function buildTutorialEntry60(m,rooms){
   
   function installKeyTrial94(){return false}
   function zoneCells94(r){const out=[];if(!r)return out;for(let y=Math.max(1,r.y+1);y<Math.min(ROWS-1,r.y+r.h-1);y++)for(let x=Math.max(1,r.x+1);x<Math.min(COLS-1,r.x+r.w-1);x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&(x!==state.player.x||y!==state.player.y))out.push({x,y});return out}
-  function biasItems94(){
-    if(!state?.items?.length)return;const important=[...(state.itemBiasZones94||[]),...(state.purposeRooms90||[]),...(state.featureRooms||[]).filter(r=>/보급|병기|저장|비밀|사당|성소|정자|굴|제단|외곽/.test(r.name||''))];if(!important.length)return;const occupiedItems=new Set(state.items.map(i=>key85(i.x,i.y)));let moved=0;
-    for(const it of state.items){if(globalThis.__MANRU_RANDOM57__()>(state.specialFloor?.68:.50))continue;if(important.some(r=>it.x>=r.x&&it.x<r.x+r.w&&it.y>=r.y&&it.y<r.y+r.h))continue;const r=choice(important),cells=zoneCells94(r).filter(p=>!occupiedItems.has(key85(p.x,p.y)));if(!cells.length)continue;const p=choice(cells);occupiedItems.delete(key85(it.x,it.y));it.x=p.x;it.y=p.y;occupiedItems.add(key85(p.x,p.y));moved++}
-    state.itemBiasMoved94=moved;
-  }
+
   function coherentDecor94(){
     if(!state||state.specialFloor)return;const rawZones=[...(state.featureRooms||[]),...(state.purposeRooms90||[]),state.grandRoom89,...(state.mainPathRooms92||[]).filter(r=>r?.role93==='hall').slice(0,2)].filter(r=>r&&r.w>=5&&r.h>=5),seenZones=new Set(),zones=rawZones.filter(r=>{const q=`${r.x},${r.y},${r.w},${r.h}`;if(seenZones.has(q))return false;seenZones.add(q);return true});const z=regionIndex(),tiles=z===0?[TT.LANTERN_POST,TT.BENCH,TT.CRATE]:z===1?[TT.FLOWERBED,TT.ROCK,TT.LOW_FENCE]:z===2?[TT.STATUE,TT.MIRROR,TT.WALL_BANNER]:z===3?[TT.CRATE,TT.RACK,TT.STONE_PILLAR]:[TT.STONE_PILLAR,TT.STATUE,TT.CARPET];let used=0;
     const put=(x,y,t)=>{if(in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y][x])&&!OccupancyService.isOccupied(x,y)){setTerrainTile58(state.map,x,y,t);used++;return true}return false};
@@ -12417,7 +12165,7 @@ function buildTutorialEntry60(m,rooms){
 
 
   registerGenerationStage('quality94-pre','pre',()=>{state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null});
-  registerGenerationStage('quality94-post','post',()=>{state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial94();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems94();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
+  registerGenerationStage('quality94-post','post',()=>{state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial94();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
   globalThis.__MANRU_LIFECYCLE__.registerLoad('quality94',{post:()=>{if(state){state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];VisibilityService.compute();updateAll()}}});
 
 
@@ -12946,23 +12694,18 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   
 
-/* ===== MANRU v9.6.7: COMMON AMMUNITION / BOW-BIASED FLOOR LOOT ===== */
-const AMMO967=[
-    {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:10,spawnMax:18,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 한 묶음에 많이 들어 있어 가장 흔하게 발견된다.'},
-    {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:8,spawnMax:14,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 약간 더 강한 타격을 준다.'},
-    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:5,spawnMax:10,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 명중 시 적 방어를 2만큼 무시한다.'}
-  ];
-  window.MANRU_AMMO=AMMO967;
+
+  window.MANRU_AMMO=AMMO_TYPES;
   for(const w of WEAPONS)if(w.kind==='bow')w.ammoFamily='arrow';
   const randInt967=(a,b)=>Math.floor(globalThis.__MANRU_RANDOM57__()*(b-a+1))+a;
   const isBow967=()=>state?.player?.weapon?.kind==='bow';
-  const ammoStacks967=()=>state?.player?.inventory?.filter(i=>i?.type==='ammo'&&(i.count||0)>0)||[];
-  const totalAmmo967=()=>ammoStacks967().reduce((n,i)=>n+(i.count||1),0);
-  function ammoDef967(kind){return AMMO967.find(a=>a.ammoKind===kind)||null}
-  function weightedAmmo967(){const pool=AMMO967.filter(a=>(a.minFloor||1)<=Math.max(1,state?.floor||1));let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=globalThis.__MANRU_RANDOM57__()*Math.max(1,sum);for(const a of pool){r-=a.weight||1;if(r<=0)return a}return pool[0]||AMMO967[0]}
-  function makeAmmo967(def=weightedAmmo967(),boost=false){const q=clone(def);q.count=randInt967(q.spawnMin||6,q.spawnMax||12);if(boost)q.count+=randInt967(2,5);return q}
-  function selectedAmmo967(){if(!state?.player)return null;const stacks=ammoStacks967();if(!stacks.length)return null;let a=stacks.find(i=>i.ammoKind===state.player.loadedAmmoKind);if(!a){const order=['wood_arrow','iron_arrow','piercing_arrow'];a=[...stacks].sort((x,y)=>order.indexOf(x.ammoKind)-order.indexOf(y.ammoKind))[0];state.player.loadedAmmoKind=a.ammoKind}return a}
-  function consumeAmmo967(stack){if(!consumeItemQuantity57(stack))return false;if(!state.player.inventory.some(i=>i.ammoKind===state.player.loadedAmmoKind)){state.player.loadedAmmoKind=null;selectedAmmo967()}return true}
+
+
+
+
+
+
+
   
   
   
@@ -13079,8 +12822,8 @@ const AMMO967=[
   // r30: ammunition selection is integrated in canonical useInventoryItem.
   registerInventoryRenderR34('r967-ammo','post',()=>{const box=document.getElementById('inventory');if(box&&state){box.querySelectorAll('[data-invuse]').forEach(b=>{const it=state.player.inventory[+b.dataset.invuse];if(it?.type==='ammo')b.textContent=it.ammoKind===state.player.loadedAmmoKind?'장전됨':'장전'});box.querySelectorAll('[data-invslot]').forEach(b=>{const it=state.player.inventory[+b.dataset.invslot];if(it?.type==='ammo'){if(it.ammoKind===state.player.loadedAmmoKind)b.classList.add('ammo967-loaded');const role=b.querySelector('.uxRole47');if(role)role.textContent='탄약'}})}});
   /* R7 refactor: ammo inventory/world visuals now use the canonical exact-item renderer. */
-  registerPlayerAttackStageR25('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef967(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
-  globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo967,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo967();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo967(ctx.ammo)}};
+  registerPlayerAttackStageR25('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
+  globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
 
   
 
@@ -13230,18 +12973,8 @@ const AMMO967=[
     else if(z===3){ A.forEach(styleStorage972); B.forEach(styleCellar972); }
     else if(z===4){ A.forEach(styleSanctum972); B.forEach(styleSpiritGarden972); }
   }
-  function ammoUnit972(salt=0){
-    const src=`${state?.runId984||window.__MANRU_RUN_SEED984||'legacy'}|${state?.floor||1}|${salt}`;let h=2166136261>>>0;
-    for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619)>>>0}h^=h>>>16;h=Math.imul(h,2246822507)>>>0;h^=h>>>13;return(h>>>0)/4294967296;
-  }
-  function controlledAmmo972(index=0){
-    const pool=AMMO967.filter(a=>(a.minFloor||1)<=Math.max(1,state?.floor||1));if(!pool.length)return null;
-    let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=ammoUnit972(100+index)*Math.max(1,sum),def=pool[0];for(const a of pool){r-=a.weight||1;if(r<=0){def=a;break}}
-    const item=clone(def),lo=def.spawnMin||1,hi=def.spawnMax||lo;item.count=lo+Math.floor(ammoUnit972(200+index)*(hi-lo+1));
-    const ok=(x,y)=>x>0&&y>0&&x<COLS-1&&y<ROWS-1&&ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!(state.player.x===x&&state.player.y===y)&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y);
-    const cells=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(ok(x,y))cells.push({x,y});if(!cells.length)return null;
-    const start=Math.floor(ammoUnit972(300+index)*cells.length)%cells.length,p0=cells[start];item.x=p0.x;item.y=p0.y;PlacementService.placeItem(item);return item;
-  }
+
+
   function applyRegionArchitecture972(bowBefore=false){
     if(!state)return;
     state.themeZones970=null; state.subthemeWalls970={}; state.subthemeFloors972={};
@@ -13252,7 +12985,7 @@ const AMMO967=[
     // Floor-start ammunition is a dedicated run/floor stream: equipment can neither increase nor decrease it.
     if(state.ammoGeneration972===state.floor)return;state.ammoGeneration972=state.floor;
     const rolls=[.72,.24];let made=0;
-    for(let i=0;i<rolls.length;i++)if(ammoUnit972(i)<rolls[i]&&controlledAmmo972(i))made++;
+    for(let i=0;i<rolls.length;i++)if(ammoUnit(i)<rolls[i]&&controlledAmmo(i))made++;
     state.ammoSpawn967={bowBoost:false,bundles:made,rolls:[...rolls],equipmentIndependent:true};
     VisibilityService.compute();
   }
@@ -14216,11 +13949,11 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
     const heals=[omitted,second].sort((a,b)=>a-b);
     return C.chapters[key]={upgrades,heals};
   }
-  function upgradeProto982(){return (window.MANRU_TALISMANS||[]).find(i=>i.talismanKind==='upgrade')||null}
+
   function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
   function nonUpgradeTalisman982(){const p=(window.MANRU_TALISMANS||[]).filter(i=>i.talismanKind!=='upgrade'&&(i.minFloor||1)<=state.floor);return p.length?clone(choice(p)):null}
-  function isLegacyUpgrade982(i){return !!i&&(i.name==='개량 인장'||i.type==='upgrade')}
-  function isUpgrade982(i){return !!i&&(i.talismanKind==='upgrade'||isLegacyUpgrade982(i))}
+
+
   function safeAnchor982(){
     const anchors=(state.items||[]).filter(i=>Number.isFinite(i.x)&&Number.isFinite(i.y));
     const tries=shuffle(anchors.map(i=>({x:i.x,y:i.y})));
@@ -14232,19 +13965,19 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
     return{x:state.player.x,y:state.player.y};
   }
   function placeCore982(proto,tag){if(!proto)return false;const p=safeAnchor982(),i=clone(proto);Object.assign(i,{x:p.x,y:p.y,count:1,coreDrop982:tag});PlacementService.placeItem(i);return true}
-  function replaceForbiddenGround982(){if(!state?.items)return 0;let n=0;const items=state.items;state.items=[];for(const item of items){let replacement=item;if(isUpgrade982(item)){const generated=nonUpgradeTalisman982();if(generated){replacement={...generated,count:itemQuantity57(item),origin56:item.origin56};n++}}PlacementService.placeItem(replacement,{x:item.x,y:item.y})}return n}
+  function replaceForbiddenGround982(){if(!state?.items)return 0;let n=0;const items=state.items;state.items=[];for(const item of items){let replacement=item;if(isUpgrade(item)){const generated=nonUpgradeTalisman982();if(generated){replacement={...generated,count:itemQuantity(item),origin56:item.origin56};n++}}PlacementService.placeItem(replacement,{x:item.x,y:item.y})}return n}
 
   function applyCoreFloor982(){
     if(!state)return;const C=core982(),S=schedule982();if(!C||!S)return;
     replaceForbiddenGround982();
     const f=state.floor;
-    if(S.upgrades.includes(f)){placeCore982(upgradeProto982(),'chapter-upgrade');C.spawned.upgrade[f]=true}
+    if(S.upgrades.includes(f)){placeCore982(upgradeProto(),'chapter-upgrade');C.spawned.upgrade[f]=true}
     if(S.heals.includes(f)){placeCore982(healProto982(f),'chapter-heal');C.spawned.heal[f]=true}
     state.coreLootAudit982={floor:f,chapter:chapter982()+1,upgrades:[...S.upgrades],heals:[...S.heals],groundUpgrades:(state.items||[]).filter(i=>i.talismanKind==='upgrade').length,groundHealing:(state.items||[]).filter(i=>i.type==='potion'&&['heal_small','heal_medium'].includes(i.potionKind)).length};
   }
 
   // Remove the old parallel upgrade economy from future loot tables.
-  const upMeta=upgradeProto982();if(upMeta){upMeta.minFloor=1;upMeta.stackMax=15;upMeta.desc='장비 하나의 기본 성능을 한 단계 개량한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 다른 장비로 되돌릴 수 없다.'}
+  const upMeta=upgradeProto();if(upMeta){upMeta.minFloor=1;upMeta.stackMax=15;upMeta.desc='장비 하나의 기본 성능을 한 단계 개량한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 다른 장비로 되돌릴 수 없다.'}
 
   // Random upgrade rolls are normalized after floor generation: all incidental upgrade items are
   // converted before the chapter-scheduled upgrade is inserted. Regions 2-4 are balanced by the
@@ -14738,34 +14471,14 @@ const V984='v9.9.6-initial-zoom-100';
     if(mon.legendElite47)meta.push('문지기 강화');
     if(mon.palaceLotus105)hints.push(palaceWet105(mon)?'개화 · 완전 견인 사용 가능':'닫힌 꽃봉오리 · 견인 불가');if(mon.equipmentActor105)hints.push('무기: '+(mon.weapon?.name||'없음'));if(mon.martialActor105){stats.push(`기 ${Math.floor(mon.focus)}/${mon.maxFocus}`);hints.push(dojoInspect105(mon,{battle:!!state.debugBattle57}));}return{name:mon.name,meta,stats,statuses:combatStatusRows57(mon),desc,skills:monsterSkills986(mon),martialCards:mon.martialActor105?Object.keys(MARTIAL_INFO).filter(id=>mon.martial[id]>0).map(id=>({id,actor:mon})):null,blink:mon.martialActor105&&mon.dojoRank105>=3,hint:[...new Set(hints)].join(' ')};
   }
-  function unidentifiedItem986(it){
-    if(!it||it.mineItem105||it.branchExclusive105)return false;const api=globalThis.__MANRU_CONSUMABLE56_ACTIONS__;
-    if(it.type==='potion')return !api?.knownPotion?.(it);
-    if(it.type==='talisman')return !api?.knownTalisman?.(it);
-    return it.identified===false||it.isIdentified===false||it.unidentified===true;
-  }
-  function itemPublicName986(it){if(it?.mineItem105)return it.name;if(it?.branchExclusive105)return it.name;
-    if(it?.type==='potion'||it?.type==='talisman')return globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.publicName?.(it)||(it.type==='potion'?'미확인 약병':'미확인 부적');
-    if(it&&(it.identified===false||it.isIdentified===false||it.unidentified===true))return'미감정 물건';
-    return it?.name||'물품';
-  }
+
+
   function itemFromTitle986(title){
-    const all=[...(state?.player?.inventory||[]),...(state?.items||[])].filter(Boolean),exact=all.find(i=>i.name===title&&(!unidentifiedItem986(i)||itemPublicName986(i)===title));if(exact)return exact;
-    const publicMatches=all.filter(i=>itemPublicName986(i)===title);return publicMatches.length===1?publicMatches[0]:null;
+    const all=[...(state?.player?.inventory||[]),...(state?.items||[])].filter(Boolean),exact=all.find(i=>i.name===title&&(!unidentifiedItem(i)||itemPublicName(i)===title));if(exact)return exact;
+    const publicMatches=all.filter(i=>itemPublicName(i)===title);return publicMatches.length===1?publicMatches[0]:null;
   }
-  function unidentifiedInfo986(it){
-    if(it?.type==='potion')return{name:itemPublicName986(it),desc:'아직 감정되지 않은 약병이다. 겉으로 보이는 색과 용기 외에는 효과나 성능을 알 수 없다.',hint:''};
-    if(it?.type==='talisman')return{name:itemPublicName986(it),desc:'아직 감정되지 않은 부적이다. 종이와 문양 외에는 어떤 술법이 묶였는지 알 수 없다.',hint:''};
-    return{name:'미감정 물건',desc:'아직 감정되지 않은 물건이다. 정체와 성능은 감정하기 전에는 확인할 수 없다.',hint:''};
-  }
-  function itemInfo986(it){
-    if(unidentifiedItem986(it))return unidentifiedInfo986(it);
-    const classDesc=classItemDescription58(it);if(classDesc)return{name:itemPublicName986(it),meta:[itemTypeLabel(it.type)],stats:[],ability:'괴력 · ATK +2 · DEF +7',desc:classDesc,hint:'장비 강화 불가 · 괴력 중 재사용 불가'};
-    const hint=it?.branchGuide105?(it.guideHint105||'인벤토리에서 읽기를 눌러 안내 내용을 다시 확인할 수 있다.'):state?.artifactDungeon46&&it?.legendaryWeapon47?'전설무기를 확보했다면 입구 쪽 귀환문으로 돌아가 원래 만루 층에 복귀할 수 있다.':'',stats=[],meta=[];
-    meta.push(it.legendaryWeapon47?'전설의 무기':itemTypeLabel(it.type));if(it.tier)meta.push(`TIER ${it.tier}`);if(it.rarity)meta.push(String(it.rarity).toUpperCase());if((it.upgrade||0)>0)meta.push(`강화 +${it.upgrade}`);if((it.count||1)>1)meta.push(`수량 ×${it.count}`);
-    if(it.atk)stats.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)stats.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)stats.push(`EVA ${it.eva>0?'+':''}${displayNumber53(it.eva)}`);if(it.will)stats.push(`WILL +${displayNumber53(it.will)}`);if(it.vision)stats.push(`VIS ${it.vision>0?'+':''}${displayNumber53(it.vision)}`);if(it.focus)stats.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)stats.push(`공격속도 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)stats.push(`사거리 ${displayNumber53(it.range)}`);if(it.heal)stats.push(`HP +${displayNumber53(it.heal)}`);if(it.focusGain)stats.push(`FOCUS +${displayNumber53(it.focusGain)}`);if(it.hunger)stats.push(`허기 +${displayNumber53(it.hunger)}`);if(it.curse991){const svc=globalThis.__MANRU_ITEM_IDENTITY991__,c=svc?.curseDef?.(it),stacks=it.curseActive991?(svc?.curseStacks?.(it.curse991)||1):0,power=stacks?svc?.cursePower?.(it.curse991)||1:1;stats.push(`저주 · ${c?.name||it.curse991}${stacks>1?` · 중첩 ${stacks} / 효과 ×${power}`:''}`)}else if(it.curse)stats.push(`저주 · ${it.curse}`);
-    return{name:itemPublicName986(it),meta,stats,ability:it.ability&&it.ability!=='없음'?it.ability:'',desc:dedupeProse986(String(it.desc||'누군가 남겨 둔 물건이다.').replace(/거리\s*\d+칸[^.。]*[.。]?/g,'')),hint};
-  }
+
+
   function simpleHtml986(info){const desc=dedupeProse986(info.desc||''),ability=dedupeProse986(info.ability||''),hint=dedupeProse986(info.hint||'',[desc,ability].filter(Boolean).join(' ')),meta=Array.isArray(info.meta)?info.meta.filter(Boolean):[],stats=Array.isArray(info.stats)?info.stats.filter(Boolean):[];return`${meta.length?`<div class="inspectMeta986">${meta.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${stats.length?`<div class="inspectStats986">${stats.map(x=>`<span>${esc984(x)}</span>`).join('')}</div>`:''}${info.statuses?.length?`<section class="inspectStatuses57" aria-label="상태이상">${info.statuses.map(r=>`<span class="inspectStatus57" data-status-key="${esc984(r.key)}" style="--status-color:${r.color}"><b aria-hidden="true">${combatStatusIconHtml57(r)}</b>${esc984(r.label)}${r.turns!==null?` <small>${displayNumber53(r.turns)}턴</small>`:''}</span>`).join('')}</section>`:''}${ability?`<div class="inspectAbility986"><b>능력</b>${esc984(ability)}</div>`:''}<p class="inspectDesc986">${esc984(desc)}</p>${info.martialCards?`<section class="inspectMartials105" aria-label="보유 무술"><b>보유 무술</b>${info.martialCards.map(c=>`<article class="${martialCardClasses1005(c.id,c.actor)} inspectMartial105">${martialCardContent1005(c.id,c.actor,'','',true)}</article>`).join('')}${info.blink?`<article class="martialCard991 skill-ghost inspectMartial105"><div class="skillSig991">縮</div><div class="skillCopy991"><h4>점멸</h4><div class="martialLv991">기력 ${DOJO_BLINK105.cost}</div><p>${DOJO_BLINK105.range}칸 이동 · 재사용 ${DOJO_BLINK105.cooldown}턴</p></div></article>`:''}</section>`:''}${info.skills?.length?`<section class="inspectMartials105 inspectSkills986" aria-label="기술·특성"><b>기술·특성</b>${info.skills.map(c=>`<details class="martialCard991 skill-${esc984(c.style)} inspectMartial105 inspectSkill986" data-skill-id="${esc984(c.id)}"><summary><div class="skillSig991" aria-hidden="true">${esc984(c.seal)}</div><div class="skillCopy991"><h4>${esc984(c.name)}</h4><div class="martialLv991">${esc984(c.type)} · ${esc984(c.meta)}</div></div><span class="inspectSkillToggle986" aria-hidden="true">＋</span></summary><p class="inspectSkillEffect986">${esc984(c.desc)}</p></details>`).join('')}</section>`:''}${hint?`<div class="inspectHint986"><b>힌트</b>${esc984(hint)}</div>`:''}`}
   function directOpenInspect984(title,html,target=null,previewItem=null){
     const canonicalTitle=title;title=displayText53(title);html=displayText53(html);
@@ -14775,7 +14488,7 @@ const V984='v9.9.6-initial-zoom-100';
     setInteraction8('mobileInspect',true);wrap?.setAttribute('aria-hidden','false');document.body.classList.add('manru-inspect-open');
     requestAnimationFrame(()=>{renderPreview984(canonicalTitle,target,previewItem)});
   }
-  function openItemInspect986(it,target=null){if(!it)return false;const info=itemInfo986(it);directOpenInspect984(info.name,simpleHtml986(info),target,it);return true}
+  function openItemInspect986(it,target=null){if(!it)return false;const info=itemInfo(it);directOpenInspect984(info.name,simpleHtml986(info),target,it);return true}
   window.__MANRU_INSPECT984__=function(q){
     if(!q||!state)return;const x=q.x,y=q.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
     const target={x,y};
@@ -14786,7 +14499,7 @@ const V984='v9.9.6-initial-zoom-100';
     const mon=findMonsterAt(x,y),it=(state.items||[]).find(v=>v.x===x&&v.y===y),t=state.map[y][x];
     if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo986();directOpenInspect984(info.name,simpleHtml986(info),target);return}
     if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect984(info.name,simpleHtml986(info),target);return}
-    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo986(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect984(info.name,simpleHtml986(info),target,stock.item);return}
+    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect984(info.name,simpleHtml986(info),target,stock.item);return}
     const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect984(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
     if(it){openItemInspect986(it,target);return}
     const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect984(info.name,simpleHtml986(info),target);return}
@@ -14800,7 +14513,7 @@ const V984='v9.9.6-initial-zoom-100';
     const box=ensurePreview984();if(!box)return;box.innerHTML='';delete box.dataset.redacted;
     if(target&&state){
       const ground=itemOverride||(state.items||[]).find(v=>v.x===target.x&&v.y===target.y);
-      if(ground&&unidentifiedItem986(ground)){
+      if(ground&&unidentifiedItem(ground)){
         if((ground.type==='potion'||ground.type==='talisman')&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(ground,'inspect984Icon');box.dataset.redacted='physical-only';return}
         const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return;
       }
@@ -14809,8 +14522,8 @@ const V984='v9.9.6-initial-zoom-100';
       try{const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=cam.zoom,dpr=VIEW.dpr||1,pad=.42,src=TILE*z*dpr*(1+pad*2),point=globalThis.__MANRU_CAMERA_PROJECTION12__.worldToViewport((target.x-pad)*TILE,(target.y-pad)*TILE,cam),sx=point.x*dpr,sy=point.y*dpr;cx.drawImage(C,sx,sy,src,src,0,0,96,96)}catch(_){cx.fillStyle='#130c08';cx.fillRect(0,0,96,96)}
       return;
     }
-    const item=itemOverride||itemFromTitle986(title);if(item&&unidentifiedItem986(item)&&item.type!=='potion'&&item.type!=='talisman'){const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return}
-    if(item&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(item,'inspect984Icon');if(unidentifiedItem986(item))box.dataset.redacted='physical-only';return}
+    const item=itemOverride||itemFromTitle986(title);if(item&&unidentifiedItem(item)&&item.type!=='potion'&&item.type!=='talisman'){const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return}
+    if(item&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(item,'inspect984Icon');if(unidentifiedItem(item))box.dataset.redacted='physical-only';return}
     const r=document.createElement('span');r.className='inspect984Rune';r.textContent=String(title||'?').trim().slice(0,1);box.appendChild(r);
   }
   /* Final inspect owner. It bypasses the historical append-wrappers that duplicated monster/item prose. */
@@ -14855,79 +14568,37 @@ const V984='v9.9.6-initial-zoom-100';
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});
 
 
-/* ===== MANRU v9.9.1 CURSE / HOLY / IDENTIFY / SKILL UX ===== */
-const GEAR991=new Set(['weapon','armor','cloak','relic','trinket']);
-  const CURSE_RATE991=.15;
-  const CURSE_CATALOG991=[
-    {id:'thirst',name:'갈증',desc:'공격이 빗나가면 기력 1을 잃는다.'},
-    {id:'blood_hunger',name:'피의 굶주림',desc:'전투가 8턴 이상 끊기면 3턴마다 허기 1을 잃는다.'},
-    {id:'binding',name:'속박',desc:'이동 행동 비용이 12% 증가한다.'},
-    {id:'clang',name:'쇠울림',desc:'적의 기본 감지 거리가 2칸 늘어난다.'},
-    {id:'presence',name:'기척',desc:'평소 감지 범위 밖에서도 적이 2칸 더 멀리서 기척을 잡는다.'},
-    {id:'drain',name:'흡기',desc:'최대 기력 +2를 얻지만 5턴마다 현재 기력을 1 흡수한다.'},
-    {id:'nightmare',name:'악몽',desc:'시야 -1 · WILL -2.'},
-    {id:'clumsy',name:'둔손',desc:'공격 행동 비용이 8% 증가한다.'},
-    {id:'brittle',name:'균열',desc:'DEF -1 · EVA -1.'},
-    {id:'frailty_cycle',name:'쇠약진',desc:'11턴마다 쇠약에 2턴 빠진다.',periodic:{period:11,status:'weaken',turns:2}},
-    {id:'venom_cycle',name:'독맥',desc:'12턴마다 중독에 2턴 빠진다.',periodic:{period:12,status:'poison',turns:2}},
-    {id:'blood_clock',name:'혈루',desc:'13턴마다 출혈에 2턴 빠진다.',periodic:{period:13,status:'bleed',turns:2}},
-    {id:'blind_cycle',name:'암막',desc:'14턴마다 실명에 2턴 빠진다.',periodic:{period:14,status:'blind',turns:2}},
-    {id:'seal_cycle',name:'기봉진',desc:'15턴마다 기봉인에 2턴 빠진다.',periodic:{period:15,status:'skillSeal',turns:2}},
-    {id:'upset_cycle',name:'역위',desc:'17턴마다 배탈에 2턴 빠진다.',periodic:{period:17,status:'upset',turns:2}},
-    {id:'spasm_cycle',name:'경련',desc:'19턴마다 기절에 1턴 빠진다.',periodic:{period:19,status:'stun',turns:1}}
-  ];
-  // Curse kind is not fixed to an equipment category. Every ordinary gear slot draws from
-  // the same catalog, so the same curse can appear on different equipment and truly stack.
-  const CURSES991=Object.fromEntries([...GEAR991].map(type=>[type,CURSE_CATALOG991]));
-  const CURSE_BY_ID991=new Map(CURSE_CATALOG991.map(v=>[v.id,v]));
-  const publicGearType991=t=>({weapon:'무기',armor:'갑옷',cloak:'망토',relic:'유물',trinket:'장신구'})[t]||'장비';
-  const isGear991=i=>!!i&&GEAR991.has(i.type);
-  const curseDef991=i=>CURSE_BY_ID991.get(i?.curse991)||null;
-  const isUnknownPotion991=i=>i?.type==='potion'&&i.potionKind&&!state?.knowledge56?.potionKnown?.[i.potionKind];
+
+
+
+
+
+
+
+
+
   const isUnknownTalisman991=i=>i?.type==='talisman'&&!i.branchExclusive105&&!i.fusion74&&i.talismanKind!=='identify'&&!state?.knowledge56?.talismanKnown?.[i.talismanKind];
-  const isUnknownGear991=i=>isGear991(i)&&i.identified===false;
-  const isUnknown991=i=>!!i&&(isUnknownPotion991(i)||isUnknownTalisman991(i)||isUnknownGear991(i)||i.identified===false||i.isIdentified===false||i.unidentified===true);
-  const displayName991=i=>isUnknownPotion991(i)?'미감정 약병':isUnknownTalisman991(i)?'미감정 부적':(i?.name||'물품');
 
-  function chooseCurse991(item){
-    const pool=CURSES991[item.type]||[];return pool.length?pool[Math.floor(globalThis.__MANRU_RANDOM57__()*pool.length)]:null;
-  }
-  function curseStacks991(id,actor=state?.player){let n=0;for(const slot of GEAR991){const it=actor?.[slot];if(it?.curseActive991&&it.curse991===id)n++}return n}
-  function cursePower991(id,actor=state?.player){const n=curseStacks991(id,actor);return n>0?Math.pow(2,n-1):0}
+
+  const displayName991=i=>isUnknownPotion(i)?'미감정 약병':isUnknownTalisman991(i)?'미감정 부적':(i?.name||'물품');
+
+
+
+
   function curseClocks991(actor=state?.player){if(!state||!actor)return{};const owner=actor===state.player?state:actor;owner.curseClocks991=owner.curseClocks991&&typeof owner.curseClocks991==='object'?owner.curseClocks991:{};return owner.curseClocks991}
-  function armCurseClock991(id,turn=state?.turn??0,actor=state?.player){if(!state||!id)return null;const clocks=curseClocks991(actor),def=CURSE_BY_ID991.get(id);if(def?.periodic)clocks[id]={next:turn+def.periodic.period,period:def.periodic.period};else if(id==='drain')clocks[id]={next:turn+5,period:5};else if(id==='blood_hunger'){const combat=state.lastCombat57??state.lastCombat991??turn;clocks[id]={next:Math.max(turn+8,combat+8),period:3,lastCombat:combat}}return clocks[id]||null}
-  function syncCurseClocks991(actor=state?.player){if(!state)return{};const clocks=curseClocks991(actor);for(const c of CURSE_CATALOG991){const active=curseStacks991(c.id,actor)>0;if(!active){delete clocks[c.id];continue}if(!clocks[c.id])armCurseClock991(c.id,state.turn??0,actor);if(c.id==='blood_hunger'){const combat=state.lastCombat57??state.lastCombat991??(state.turn??0),clock=clocks[c.id];if(clock&&combat!==clock.lastCombat){clock.lastCombat=combat;clock.next=combat+8}}}return clocks}
-  function activateCurse991(item,actor=state?.player){if(!item?.curse991)return 0;const prior=curseStacks991(item.curse991,actor);item.curseActive991=true;item.curseActivatedTurn991=state?.turn??0;if(prior===0)armCurseClock991(item.curse991,item.curseActivatedTurn991,actor);else syncCurseClocks991(actor);return prior+1}
-  function canReceiveHostileCurse991(item){return isGear991(item)&&!item.curse991&&!item.curseImmune991&&!item.curseImmune&&!item.storyId&&!item.storyItem&&!item.keyId&&!item.combatFixture54&&!item.artifactWeapon46&&!item.legendaryWeapon47&&!item.artifactId46&&item.name!=='용의 여의주 파편'}
-function undeadItemCurse991(p=state.player){
-    if(!p)return false;if(p.weapon?.elementBrand74==='holy'||p.armor?.elementGuard74==='holy')return false;
-    const chance=Number.isFinite(p.itemCurseChance991)?p.itemCurseChance991:.05;
-    if(globalThis.__MANRU_RANDOM57__()<chance){const gear=[...new Set([...[...GEAR991].map(slot=>p[slot]),...(p.inventory||[])])].filter(canReceiveHostileCurse991);if(gear.length){const item=choice(gear);markGear991(item,{hostile:true,actor:p});if(item.curse991){p.itemCurseChance991=.01;addLog('차가운 원념이 소지품에 스며들었다.');return true}}}
-    p.itemCurseChance991=Math.min(.05,chance+.005);return false;
-  }
-function markGear991(item,opt={}){
-    if(!isGear991(item))return item;
-    if(opt.hostile){if(!canReceiveHostileCurse991(item))return item;const curse=chooseCurse991(item);if(curse){item.curse991=curse.id;item.curseRoll991=true;if([...GEAR991].some(slot=>(opt.actor||state.player)[slot]===item)){activateCurse991(item,opt.actor||state.player);revealCurse991(item)}else if(item.identified)revealCurse991(item)}return item}
-    if(item.curseImmune991||item.name==='용의 여의주 파편'){item.curseImmune991=true;item.identified=true;delete item.curse991;delete item.curse;return item}
-    if(opt.known){item.identified=true;return item}
-    if(item.identified==null)item.identified=false;
-    if(item.curseRoll991==null){item.curseRoll991=true;if(globalThis.__MANRU_RANDOM57__()<CURSE_RATE991){const c=chooseCurse991(item);if(c)item.curse991=c.id}}
-    return item;
-  }
-  function revealCurse991(item){const c=curseDef991(item);if(c)item.curse=`${c.name} — ${c.desc} · 같은 저주를 중복 장착하면 효과가 1→2→4→8배로 증폭된다.`;else delete item.curse;return c}
-  function identifyGear991(item,reason='감정'){if(!isGear991(item))return false;const was=item.identified===false;item.identified=true;const c=revealCurse991(item);if(was)addLog(`${item.name} 완전 감정${c?` · 저주 ${c.name}`:' · 저주 없음'} (${reason}).`);return was}
-  function identifyOne991(item,reason='감정부적'){
-    if(!item)return false;
-    if(isUnknownGear991(item))return identifyGear991(item,reason);
-    if(isUnknownPotion991(item)){state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.potionKnown[item.potionKind]=true;addLog(`약병 완전 감정 · ${item.name} (${reason}).`);return true}
-    if(isUnknownTalisman991(item)){state.knowledge56=state.knowledge56||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};state.knowledge56.talismanKnown[item.talismanKind]=true;addLog(`부적 완전 감정 · ${item.name} (${reason}).`);return true}
-    if(item.identified===false||item.isIdentified===false||item.unidentified===true){item.identified=true;item.isIdentified=true;item.unidentified=false;addLog(`물품 완전 감정 · ${item.name||'물품'} (${reason}).`);return true}
-    return false;
-  }
-  function identifyAllInventory991(reason='감강부적'){let n=0;for(const it of state?.player?.inventory||[])if(identifyOne991(it,reason))n++;if(inventoryOpen)renderInventory();updateAll();return n}
+  function armCurseClock991(id,turn=state?.turn??0,actor=state?.player){if(!state||!id)return null;const clocks=curseClocks991(actor),def=CURSE_BY_ID.get(id);if(def?.periodic)clocks[id]={next:turn+def.periodic.period,period:def.periodic.period};else if(id==='drain')clocks[id]={next:turn+5,period:5};else if(id==='blood_hunger'){const combat=state.lastCombat57??state.lastCombat991??turn;clocks[id]={next:Math.max(turn+8,combat+8),period:3,lastCombat:combat}}return clocks[id]||null}
+  function syncCurseClocks991(actor=state?.player){if(!state)return{};const clocks=curseClocks991(actor);for(const c of CURSE_CATALOG){const active=curseStackCount(c.id,actor)>0;if(!active){delete clocks[c.id];continue}if(!clocks[c.id])armCurseClock991(c.id,state.turn??0,actor);if(c.id==='blood_hunger'){const combat=state.lastCombat57??state.lastCombat991??(state.turn??0),clock=clocks[c.id];if(clock&&combat!==clock.lastCombat){clock.lastCombat=combat;clock.next=combat+8}}}return clocks}
 
-  function purifyGear991(item){if(!isGear991(item)||!item.curse991)return false;const id=item.curse991,c=curseDef991(item);delete item.curse991;delete item.curse;delete item.curseActive991;delete item.curseActivatedTurn991;item.cursePurified991=true;item.identified=true;if(curseStacks991(id)===0)delete curseClocks991()[id];else syncCurseClocks991();addLog(`${item.name}의 ${c?.name||'저주'}가 정화됐다. 장비와 강화 수치는 그대로다.`);return true}
-  function cursedEntries991(){const p=state?.player;if(!p)return[];const out=[];for(const slot of GEAR991){const it=p[slot];if(it?.curse991)out.push({item:it,slot,equipped:true})}for(const it of p.inventory||[])if(isGear991(it)&&it.curse991&&!isUnknownGear991(it))out.push({item:it,slot:null,equipped:false});return out}
+  function canReceiveHostileCurse991(item){return isGearItem(item)&&!item.curse991&&!item.curseImmune991&&!item.curseImmune&&!item.storyId&&!item.storyItem&&!item.keyId&&!item.combatFixture54&&!item.artifactWeapon46&&!item.legendaryWeapon47&&!item.artifactId46&&item.name!=='용의 여의주 파편'}
+
+
+
+
+
+  function identifyAllInventory991(reason='감강부적'){let n=0;for(const it of state?.player?.inventory||[])if(useIdentifyScrollOn(it,reason))n++;if(inventoryOpen)renderInventory();updateAll();return n}
+
+
+
   
 
   // Item choice modal shared by identify, holy purification and holy-upgrade.
@@ -14936,7 +14607,7 @@ function markGear991(item,opt={}){
   function closeChoice991(){setInteraction8('choice991',false);choiceCancel991=null}
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
-  function openChoice991(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGear991(it)?publicGearType991(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
+  function openChoice991(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGearItem(it)?publicGearType(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
 
   function openMartialManualChoice1005(pending){
     if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();
@@ -14950,94 +14621,70 @@ function markGear991(item,opt={}){
       b.onclick=()=>ActionDispatcher.dispatch({type:'MARTIAL_MANUAL_CHOICE',args:[index],source:'martial-manual'}).value;list.appendChild(b);
     });setInteraction8('choice991',true);return true;
   }
-  function identifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;const target=e?.item||e;if(!identifyOne991(target,'감정부적')){toast('이미 감정된 물건이다. 다른 대상을 고르시오.');return}consumeRef991(item);closeChoice991();burst(state.player.x,state.player.y,'#d9ba73',18,.7);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"identifyChoiceAction5"}).value}
+  function identifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;const target=e?.item||e;if(!useIdentifyScrollOn(target,'감정부적')){toast('이미 감정된 물건이다. 다른 대상을 고르시오.');return}consumeInventoryItem(item);closeChoice991();burst(state.player.x,state.player.y,'#d9ba73',18,.7);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"identifyChoiceAction5"}).value}
   ActionDispatcher.register('IDENTIFY_CHOICE',identifyChoiceAction5);
-  function purifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;if(!purifyGear991(e.item))return;consumeRef991(item);closeChoice991();burst(state.player.x,state.player.y,'#f1d786',22,.8);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"purifyChoiceAction5"}).value}
+  function purifyChoiceAction5(e,item){const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return;if(!purifyGearItem(e.item))return;consumeInventoryItem(item);closeChoice991();burst(state.player.x,state.player.y,'#f1d786',22,.8);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"purifyChoiceAction5"}).value}
   ActionDispatcher.register('PURIFY_CHOICE',purifyChoiceAction5);
-  function consumeRef991(item){const i=state?.player?.inventory?.indexOf(item)??-1;if(i<0)return false;consumeOne(i);return true}
-  function markHolyKnown991(){if(!state)return;state.knowledge56=state.knowledge56||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};state.knowledge56.talismanKnown.holy=true}
-  function cleanseOne991(){const removed=cleanseStatuses57(state.status,1);if(removed.length)addLog('성광이 해로운 상태를 씻어 냈다.');return removed[0]||null}
-  function holyNova991(power=8,radius=2){if(state.floor>=11)alertNearby(state.player.x,state.player.y,9,'explosion');let n=0;for(const m of [...(state?.monsters||[])]){if(m.hp<=0||entityDistance57(m,state.player)>radius)continue;if(!['undead','spirit'].includes(m.kind)&&!monsterIsEvil(m))continue;if(n===0)markCombatActivity57('holy-nova');const dmg=Math.max(3,Math.round((power+Math.floor((state.floor-1)/5)*2)*(m.boss?.6:1)));const dealtDamage=damageEntity61(m,dmg, state.player);if(dealtDamage>0)floatText(m.x,m.y,`-${dealtDamage}`,'#ffe7a0',13,'holy');impact(m.x,m.y,'#f1cf73',5);n++;if(m.hp<=0)killMonster(m)}burst(state.player.x,state.player.y,'#f2d783',24,.85);return n}
-  function useHoly991(item){
-    markHolyKnown991();const cursed=cursedEntries991();
-    if(cursed.length){openChoice991('성부 · 저주 정화','정화할 장비 하나를 고른다. 장비와 강화 수치는 유지된다.',cursed,{type:'PURIFY_CHOICE',args:[item]});return true}
-    const cleansed=cleanseOne991(),n=holyNova991(18,2);consumeRef991(item);closeInventory();addLog(`성부: 성광이 번졌다${n?` · 사기 ${n}체 타격`:''}${cleansed?' · 상태 정화':''}.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHoly991"}).value;return true;
-  }
 
-  function useIdentify991(item){const entries=(state?.player?.inventory||[]).filter(v=>v!==item&&isUnknown991(v));if(!entries.length){toast('감정할 미감정 아이템이 없다. 감정부적은 소모되지 않는다.');if(inventoryOpen)renderInventory();return false}openChoice991('감정부적 · 완전 감정','미감정 아이템 하나를 직접 고른다.',entries,{type:'IDENTIFY_CHOICE',args:[item]});return true}
+
+  function cleanseOne991(){const removed=cleanseStatuses57(state.status,1);if(removed.length)addLog('성광이 해로운 상태를 씻어 냈다.');return removed[0]||null}
+
+
+
+
 
   function revealMap(){let secrets=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secrets++}VisibilityService.compute();return secrets}
-  function useHolyFusion991(item){
-    const e=item.fusionEffect74||'',p=state.player;
-    if(e==='identify_all991'){const n=identifyAllInventory991('감강부적');consumeRef991(item);closeInventory();burst(p.x,p.y,'#e1c77f',24,.85);addLog(`감강부적: 행낭의 미감정 아이템 ${n}개를 완전 감정했다.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_identify991'){let n=0;for(const it of p.inventory||[])if(isUnknownGear991(it)&&identifyGear991(it,'성감부적'))n++;consumeRef991(item);closeInventory();holyNova991(13,1);addLog(`성감부적: 미감정 장비 ${n}개를 감정해 저주 여부를 드러냈다.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e.startsWith('holy_elem_')){const elem=e.slice('holy_elem_'.length,-3);const names={fire:'화염',shock:'뇌전',water:'수류',ice:'빙결',grass:'목령',earth:'대지'};cleanseStatuses57(state.status);state.status.ward=Math.max(state.status.ward||0,6);state.elementWard74={element:elem,ttl:7};const n=holyNova991(16,2);consumeRef991(item);closeInventory();addLog(`${item.name}: 성광 정화 · ${names[elem]||elem} 가호 · 사기 ${n}체 타격.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_blast991'){const n=holyNova991(30,3);cleanseOne991();consumeRef991(item);closeInventory();addLog(`성폭부적: 성광 폭발로 사기 ${n}체를 태웠다.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_mapping991'){const n=revealMap();cleanseStatuses57(state.status);consumeRef991(item);closeInventory();addLog(`성안부적: 층을 밝혔다 · 숨은 문 ${n}개 · 상태 정화.`);burst(p.x,p.y,'#f0da8a',22,.8);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_ward991'){cleanseStatuses57(state.status);state.status.ward=Math.max(state.status.ward||0,11);consumeRef991(item);closeInventory();addLog('성호부적: 해로운 상태를 씻고 강한 보호막을 둘렀다.');burst(p.x,p.y,'#f0da8a',24,.85);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_blink991'){const f=p.facing||{x:0,y:-1};let best={x:p.x,y:p.y};for(let d=1;d<=5;d++){const x=p.x+f.x*d,y=p.y+f.y*d,t=state.map[y]?.[x];if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>=COLS||y>=ROWS||!ReachabilityService.playerPassable(x,y)||OccupancyService.isOccupied(x,y)||[TT.TRAP,TT.SNARE,TT.LAVA,TT.WATER,TT.VOID,TT.MERCURY].includes(t))break;if(validatePlayerTransfer57(x,y,{cause:'holy-blink'}).ok)best={x,y};if(t===TT.PORTAL)break}if(best.x===p.x&&best.y===p.y){toast('성광이 짚을 안전한 착지점이 없다.');return false}const landing=resolvePlayerLanding57(best.x,best.y,{cause:'holy-blink',resetVisual:true});if(!landing.ok){toast('성광이 현재 열린 길을 넘지 못했다.');return false}cleanseStatuses57(state.status);consumeRef991(item);closeInventory();burst(p.x,p.y,'#f5df9a',22,.8);addLog('성축부적: 안전한 발판을 짚어 점멸하고 몸을 정화했다.');globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    if(e==='holy_bind991'){let n=0;for(const m of state.monsters||[]){if(m.hp<=0||entityDistance57(m,p)>2)continue;const evil=['undead','spirit'].includes(m.kind)||monsterIsEvil(m);if(m.boss)m.stunned=Math.max(m.stunned||0,evil?1:0);else m.stunned=Math.max(m.stunned||0,evil?3:1);n++}consumeRef991(item);closeInventory();burst(p.x,p.y,'#ecd48c',22,.75);addLog(`성봉부적: 주변 ${n}체를 봉박했다.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useHolyFusion991"}).value;return true}
-    return false;
-  }
+
 
   // Explicit v9.9.1 item-identity service. Outer canonical item-use code may use only this boundary;
   // keeping the lexical helpers private prevents another silent scope break when item routing is refactored.
-  globalThis.__MANRU_ITEM_IDENTITY991__=Object.freeze({hostileHit:undeadItemCurse991,openMartialManual:openMartialManualChoice1005,closeChoice:closeChoice991,
-    isGear:isGear991,
-    curseDef:curseDef991,
-    curseStacks:curseStacks991,
-    cursePower:cursePower991,curseStats:applyCurseStats991,tickCurses:tickActorCurses991,
+  globalThis.__MANRU_ITEM_IDENTITY991__=Object.freeze({hostileHit:undeadItemCurse,openMartialManual:openMartialManualChoice1005,closeChoice:closeChoice991,
+    isGear:isGearItem,
+    curseDef:curseDefOf,
+    curseStacks:curseStackCount,
+    cursePower:curseMultiplier,curseStats:applyCurseStats,tickCurses:tickActorCurses,
     curseClocks:()=>structuredClone(syncCurseClocks991()),
-    activateCurse:activateCurse991,
-    markGear:markGear991,
-    identifyGear:identifyGear991,
-    revealCurse:revealCurse991,
-    identifyOne:identifyOne991,
-    isUnknown:isUnknown991,
-    useIdentify:useIdentify991,
-    useHoly:useHoly991,
-    useHolyFusion:useHolyFusion991,
+    activateCurse:activateItemCurse,
+    markGear:prepareGearCurse,
+    identifyGear:identifyGearItem,
+    revealCurse:revealItemCurse,
+    identifyOne:useIdentifyScrollOn,
+    isUnknown:isUnidentifiedItem,
+    useIdentify:useIdentifyItem,
+    useHoly:useHolyItem,
+    useHolyFusion:useHolyFusionItem,
     closeSkillQuick:closeSkillQuick991,
     closeChoice:closeChoice991,
-    purifyGear:purifyGear991
+    purifyGear:purifyGearItem
   });
 
-  // Curse assignment is a real 15% roll on generated gear only. Starter gear and boss uniques are excluded.
-  // Canonical dropRandomItem marks runtime drops through __MANRU_ITEM_IDENTITY991__.markGear;
-  // applyCurses991 below covers every generated/restored gear container after final geometry.
-  function applyCurses991(){if(!state)return;for(const it of state.items||[])markGear991(it);for(const it of state.player?.inventory||[])if(isGear991(it)&&it.identified==null)markGear991(it);for(const slot of GEAR991){const it=state.player?.[slot];if(it){it.identified=true;if(it.curse991)revealCurse991(it)}}}
+
 
   // r18: generation side effects are invoked by the single canonical generation pipeline below; no wrapper stacking here.
-  globalThis.__MANRU_LIFECYCLE__.registerNew('curse-story991',{post:()=>{for(const slot of GEAR991)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}});
+  globalThis.__MANRU_LIFECYCLE__.registerNew('curse-story991',{post:()=>{for(const slot of GEAR_SLOT_TYPES)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}});
 
-  // One guaranteed holy talisman per five-floor chapter, plus its low-weight normal random inclusion.
-  function holyProto991(){return(window.MANRU_TALISMANS||[]).find(t=>t.talismanKind==='holy')}
-  function holySchedule991(){if(!state)return null;state.holy991=state.holy991||{schedule:{},spawned:{}};const ch=Math.max(0,Math.min(4,Math.floor((state.floor-1)/5))),k=String(ch);if(!state.holy991.schedule[k]){const lo=ch===0?2:ch*5+1,hi=ch*5+5;state.holy991.schedule[k]=lo+Math.floor(globalThis.__MANRU_RANDOM57__()*(hi-lo+1))}return{ch,k,floor:state.holy991.schedule[k]}}
-  function holyCell991(){for(let n=0;n<80;n++){const q=PlacementService.randomFloor(0),t=state.map[q.y]?.[q.x];if(ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y)&&!state.items.some(i=>i.x===q.x&&i.y===q.y)&&![TT.STAIR,TT.TRAP,TT.SNARE,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(t))return q}return{x:state.player.x,y:state.player.y}}
-  function ensureHolyDrop991(){const h=holySchedule991(),proto=holyProto991();if(!h||!proto||h.floor!==state.floor||state.holy991.spawned[h.k])return false;const q=holyCell991(),it=clone(proto);Object.assign(it,{x:q.x,y:q.y,count:1,coreHoly991:true});PlacementService.placeItem(it);state.holy991.spawned[h.k]=true;return true}
-  globalThis.__MANRU_GEN991__={applyCurses:applyCurses991,ensureHoly:ensureHolyDrop991};
+
+
+
+
+  globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
 
   // Existing generated floor may have been built before the new wrapper was installed.
-  if(state){applyCurses991();ensureHolyDrop991();syncCurseClocks991()}
+  if(state){applyCursesToAllGear();ensureHolyDrop();syncCurseClocks991()}
   globalThis.__MANRU_LIFECYCLE__.registerLoad('curse-clock991',{post:()=>{if(state){state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}});
 
   // Curse effects preserve the base item stats. Equal active curse ids across equipped slots
   // share one geometric strength: 1 stack=1x, 2=2x, 3=4x, 4=8x, 5=16x.
-  registerPlayerAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=cursePower991('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
-  registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=cursePower991('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
-  registerMoveCostStage55('curse991',c=>{const power=cursePower991('binding');if(power>0)c*=1+.12*power;return c});
-  registerAttackCostStage55('curse991',c=>{const power=cursePower991('clumsy');if(power>0)c*=1+.08*power;return c});
-  function applyCurseStats991(stats,actor=state.player){const drainStacks=curseStacks991('drain',actor),nightmare=cursePower991('nightmare',actor),brittle=cursePower991('brittle',actor);if(drainStacks>0)stats.maxFocus+=2*drainStacks;if(nightmare>0){stats.will-=Math.round(2*nightmare);stats.vision-=Math.round(nightmare)}if(brittle>0){stats.def-=Math.round(brittle);stats.eva-=Math.round(brittle)}return stats}
-  registerPlayerStatStage55('curse991',s=>applyCurseStats991(s));
-  function triggerPeriodicCurse991(c,clocks=syncCurseClocks991(),actor=state.player){const power=cursePower991(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus105(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
-  function tickActorCurses991(actor){
-   if(!state||!actor||actor.hp<=0||actor.curseTick105===state.turn)return false;actor.curseTick105=state.turn;let dirty=false;const clocks=syncCurseClocks991(actor),blood=cursePower991('blood_hunger',actor),bloodClock=clocks.blood_hunger;
-   if(blood>0&&bloodClock&&state.turn>=bloodClock.next){const loss=Math.max(1,Math.round(blood));if(Number.isFinite(actor.hunger))actor.hunger=Math.max(0,actor.hunger-loss);while(bloodClock.next<=state.turn)bloodClock.next+=3;dirty=true}
-   const drain=cursePower991('drain',actor),drainClock=clocks.drain;if(drain>0&&drainClock&&state.turn>=drainClock.next){while(drainClock.next<=state.turn)drainClock.next+=5;if(actor.focus>0){const loss=Math.min(actor.focus,Math.max(1,Math.round(drain)));actor.focus-=loss;addLog(`흡기의 저주가 현재 기력을 ${loss} 빨아들였다.`);dirty=true}}
-   for(const c of CURSE_CATALOG991)if(c.periodic&&triggerPeriodicCurse991(c,clocks,actor))dirty=true;return dirty;
-  }
+  registerPlayerAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
+  registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
+  registerMoveCostStage55('curse991',c=>{const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c});
+  registerAttackCostStage55('curse991',c=>{const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c});
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('curse-story991',{pre:ctx=>{ctx.curse991={turn:state?.turn||0}},post:ctx=>{if(!state||state.dead||state.victory)return;if(tickActorCurses991(state.player))updateAll();globalThis.storyTick992?.()}});
+  registerPlayerStatStage55('curse991',s=>applyCurseStats(s));
+
+
+
+  globalThis.__MANRU_TURN_PIPELINE__.register('curse-story991',{pre:ctx=>{ctx.curse991={turn:state?.turn||0}},post:ctx=>{if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}});
 
   // Equip reveals the item and activates its curse. A manifested curse binds that slot until purified.
   // r30: v9.9.1 identity/holy/curse equipment dispatch is integrated in canonical useInventoryItem.
@@ -15045,15 +14692,14 @@ function markGear991(item,opt={}){
   // Prevent explicit unequip/drop of a manifested cursed slot from the modern inventory renderer.
   document.addEventListener('click',e=>{const b=e.target?.closest?.('[data-uxunequip],[data-uxdrop-equip]');if(!b||!state)return;const slot=b.dataset.uxunequip||b.dataset.uxdropEquip,it=state.player?.[slot];if(it?.curseActive991){e.preventDefault();e.stopImmediatePropagation();toast(`${it.name}의 저주가 장비를 붙잡고 있다. 성부로 정화해야 한다.`)}},true);
 
-  // Gear identity is public from the moment it appears. Identification hides only the rolled +n, curse and magic details.
-  function baseGearDef991(it){if(!isGear991(it)||!it?.name)return null;const pool=it.type==='weapon'?WEAPONS:it.type==='armor'?ARMORS:it.type==='cloak'?CLOAKS:it.type==='relic'?RELICS:TRINKETS;return pool.find(v=>v.name===it.name)||null}
-  function publicGearStats991(it){const b=baseGearDef991(it)||it,out=[];if(b.atk)out.push(`ATK +${b.atk}`);if(b.def)out.push(`DEF ${b.def>0?'+':''}${displayDef42(b.def)}`);if(b.eva)out.push(`EVA ${b.eva>0?'+':''}${b.eva}`);if(b.speed)out.push(`속도 ${b.speed}×`);if(b.range)out.push(`사거리 ${b.range}`);if(b.vision)out.push(`VIS ${b.vision>0?'+':''}${b.vision}`);if(b.will)out.push(`WILL +${b.will}`);return out}
+
+
   registerInventoryRenderR34('r991-gear-identity','post',()=>{if(!state||!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];const knownCurse=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',knownCurse);if(knownCurse){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}const nm=el.querySelector('.nm,.invSlotName');if(nm&&isGear991(it))nm.textContent=it.name});
+    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];const knownCurse=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',knownCurse);if(knownCurse){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}const nm=el.querySelector('.nm,.invSlotName');if(nm&&isGearItem(it))nm.textContent=it.name});
     box.querySelectorAll('[data-uxeq],[data-eqslot]').forEach(el=>{const slot=el.dataset.uxeq||el.dataset.eqslot,it=state.player[slot],known=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',known);if(known){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}});
     const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,d=box.querySelector('.uxDetail,.invDetail');
-    if(isUnknownGear991(selected)&&d){const h=d.querySelector('h3');if(h)h.textContent=selected.name;const sub=d.querySelector('.uxDetailHead small,.typeLine');if(sub)sub.textContent=`${publicGearType991(selected.type)} · 종류 확인 · 세부 미감정`;const stats=d.querySelector('.uxStats,.invStats');if(stats)stats.innerHTML=publicGearStats991(selected).map(x=>`<span class="invStatChip">${x}</span>`).join('');const desc=d.querySelector('.uxDesc,.desc');if(desc)desc.textContent='종류와 기본 외형은 확인됐다. 강화 수치, 저주 여부와 숨은 마법 옵션은 감정 전까지 드러나지 않는다.'}
-    else if(selected?.identified===true&&selected?.curse991&&d){const stats=d.querySelector('.uxStats,.invStats');if(stats&&!stats.querySelector('.curse991Chip')){const c=curseDef991(selected),stacks=selected.curseActive991?curseStacks991(selected.curse991):0,power=stacks?cursePower991(selected.curse991):1,sp=document.createElement('span');sp.className='uxStat curse991Chip';sp.textContent=`저주 · ${c?.name||'불명'}${stacks>1?` · 중첩 ${stacks} / ×${power}`:''}`;stats.appendChild(sp)}}});
+    if(isUnknownGear(selected)&&d){const h=d.querySelector('h3');if(h)h.textContent=selected.name;const sub=d.querySelector('.uxDetailHead small,.typeLine');if(sub)sub.textContent=`${publicGearType(selected.type)} · 종류 확인 · 세부 미감정`;const stats=d.querySelector('.uxStats,.invStats');if(stats)stats.innerHTML=publicGearStats(selected).map(x=>`<span class="invStatChip">${x}</span>`).join('');const desc=d.querySelector('.uxDesc,.desc');if(desc)desc.textContent='종류와 기본 외형은 확인됐다. 강화 수치, 저주 여부와 숨은 마법 옵션은 감정 전까지 드러나지 않는다.'}
+    else if(selected?.identified===true&&selected?.curse991&&d){const stats=d.querySelector('.uxStats,.invStats');if(stats&&!stats.querySelector('.curse991Chip')){const c=curseDefOf(selected),stacks=selected.curseActive991?curseStackCount(selected.curse991):0,power=stacks?curseMultiplier(selected.curse991):1,sp=document.createElement('span');sp.className='uxStat curse991Chip';sp.textContent=`저주 · ${c?.name||'불명'}${stacks>1?` · 중첩 ${stacks} / ×${power}`:''}`;stats.appendChild(sp)}}});
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
   const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
@@ -15258,7 +14904,7 @@ function presentStoryEnding8(type){const card=document.getElementById('card');if
     for(const [name,count] of (cls.startItems||[]))out.push({name,count:count||1});
     return out;
   }
-  function classItemHtml1001(it){const nm=(it.count||1)>1?`${it.name}×${it.count}`:it.name;return `<span class="classItem1001" data-item-name="${encodeURIComponent(it.name)}">${vfIconHtml(itemPrototype57(it.name),'classStartIcon1001')}<span>${nm}</span></span>`}
+  function classItemHtml1001(it){const nm=(it.count||1)>1?`${it.name}×${it.count}`:it.name;return `<span class="classItem1001" data-item-name="${encodeURIComponent(it.name)}">${vfIconHtml(itemPrototype(it.name),'classStartIcon1001')}<span>${nm}</span></span>`}
   let selectedClass1001=CLASSES[0].id;
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
   const CLASS1001_STATS=[['hp','생명'],['focus','기'],['atk','공격'],['def','방어'],['eva','회피'],['will','의지'],['vision','시야']];
@@ -16042,12 +15688,7 @@ patchDef('두꺼운 면망토',{trapGuard:.35,desc:'철침·독침 같은 일반
 delete defBy('두꺼운 면망토').hazardResist
 
 
-function normalizeAllItems1006(){
-  if(!state?.player)return;
-  for(const slot of ['weapon','armor','cloak','relic','trinket'])normalizeSavedItem(state.player[slot]);
-  for(const it of state.player.inventory||[])normalizeSavedItem(it);
-  for(const it of state.items||[])normalizeSavedItem(it);
-}
+
 
 /* breakPower was also data-only: make it useful without allowing route/lock bypass. */
 /* r8: breakPower is handled by the central basicAttack facing branch. */
@@ -16097,10 +15738,10 @@ function pruneOrphanDoors1006(){
 }
 
 /* keep old saves and newly generated instances in sync with audited definitions */
-globalThis.__MANRU_LIFECYCLE__.registerNew('normalize1006',{post:()=>{normalizeAllItems1006()}});
-globalThis.__MANRU_LIFECYCLE__.registerLoad('normalize1006',{post:()=>{normalizeAllItems1006()}});
+globalThis.__MANRU_LIFECYCLE__.registerNew('normalize1006',{post:()=>{normalizeAllItems()}});
+globalThis.__MANRU_LIFECYCLE__.registerLoad('normalize1006',{post:()=>{normalizeAllItems()}});
 // r18: item normalization/door pruning are explicit canonical generation stages.
-queueMicrotask(normalizeAllItems1006);
+queueMicrotask(normalizeAllItems);
 
 
 
@@ -16838,7 +16479,7 @@ function applyLibrary1022(){if(state.floor===6&&state.floor6GrandLibraryR8){stat
    region architecture cannot erase it. It deliberately subdivides only a corner/side slice of a normal
    room; it never replaces the full room and never runs on boss/special floors. */
 const RESTAURANT_VARIANTS42=['객잔 식당','작은 주방','배식실','술상방','찬방'];
-const RESTAURANT_FOODS42=['주먹밥','말린 육포','식어버린 국밥','엽전 엿','깨끗한 물'];
+
 const RESTAURANT_MONSTERS42=new Set(['취객','시종','객잔 쥐','객잔 경비병']);
 function restaurantSeed42(){return state?.runId984||window.__MANRU_RUN_SEED984||state?.runId||'run'}
 function restaurantEligibleFloor42(f=state?.floor){return [1,2,3,4,16,17,18,19].includes(+f)}
@@ -17048,7 +16689,7 @@ function paintRestaurantFinal42(fr){
 }
 function restaurantRewardSpot42(fr,salt=0){const a=restaurantFreeCells42(fr);if(!a.length)return null;return a[hash1022(`${state.floor}:${fr.x},${fr.y}:reward:${salt}`)%a.length]}
 function placeRestaurantRewards42(fr){
-  const put=(salt)=>{const q=restaurantRewardSpot42(fr,salt);if(!q)return false;const name=foodOccurrencePick57(RESTAURANT_FOODS42,hash1022(`${restaurantSeed42()}:${state.floor}:food:${salt}`)/4294967296),def=CONSUMABLES.find(v=>v.name===name);if(!def)return false;PlacementService.placeItem({...structuredClone(def),x:q.x,y:q.y,count:1,restaurantReward42:true,restaurantId42:fr.restaurantId42});return true};
+  const put=(salt)=>{const q=restaurantRewardSpot42(fr,salt);if(!q)return false;const name=foodOccurrencePick(RESTAURANT_FOODS,hash1022(`${restaurantSeed42()}:${state.floor}:food:${salt}`)/4294967296),def=CONSUMABLES.find(v=>v.name===name);if(!def)return false;PlacementService.placeItem({...structuredClone(def),x:q.x,y:q.y,count:1,restaurantReward42:true,restaurantId42:fr.restaurantId42});return true};
   if(!put(0))return false;fr.rewardCount42=1;if(hash1022(`${restaurantSeed42()}:${state.floor}:food2`)%100<28&&put(1))fr.rewardCount42=2;return true;
 }
 function restaurantMonsterSpot42(fr,salt=0){const a=restaurantFreeCells42(fr);if(!a.length)return null;return a[hash1022(`${fr.x},${fr.y}:mon:${salt}`)%a.length]}
@@ -17119,7 +16760,7 @@ function wallLibraryOverlay1022(px,py,x,y,colors){
  drawSpecialMaterial52(px,py,x,y,true);
  if(!state||!Array.isArray(state.bookWalls1022)||!state.bookWalls1022.includes(K1020(x,y)))return;const h=hash1022(`${state.floor}:${x}:${y}`),z=region1020(),woods=['#603b22','#47543a','#5b354a','#4a4039','#5c4826'],wood=woods[z];X.save();X.imageSmoothingEnabled=false;X.fillStyle='#160d08';X.fillRect(px+2,py+3,28,28);X.fillStyle=wood;X.fillRect(px+4,py+4,24,24);X.fillStyle=z===4?'#b08a3c':'#9a6736';for(const yy of [5,13,21,28])X.fillRect(px+5,py+yy,22,2);const cols=z===1?['#365c50','#8b6b39','#594a31','#6d7a4e','#3b555c']:z===2?['#713f63','#9b5e68','#4e5268','#8e743d','#573f60']:z===3?['#6d4c35','#4e5558','#8c673c','#3e474a','#7c493c']:z===4?['#765126','#a28137','#504027','#8e6931','#65471f']:['#7d2f2d','#345d63','#8b6a30','#5d3b67','#47643e'];for(let row=0;row<3;row++){let xx=6,idx=(h+row*7)%cols.length;while(xx<27){const bw=2+((h+xx+row)%3),bh=4+((h+row*13+xx)%3);X.fillStyle='#110b07';X.fillRect(px+xx-1,py+8+row*8+(6-bh),bw+1,bh+1);X.fillStyle=cols[idx%cols.length];X.fillRect(px+xx,py+8+row*8+(6-bh),bw,bh);xx+=bw+1;idx++}}X.fillStyle='rgba(255,218,145,.16)';X.fillRect(px+5,py+4,1,24);X.fillStyle='rgba(0,0,0,.42)';X.fillRect(px+3,py+29,27,3);X.restore();}
 /* R7 refactor: library scroll visuals are part of canonical exact-item art. */
-function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const pool=(state.player.inventory||[]).filter(v=>{if(v===item)return false;if(['weapon','armor','cloak','relic','trinket'].includes(v.type))return v.identified!==true;if(v.type==='potion')return !!v.potionKind&&!state.knowledge56?.potionKnown?.[v.potionKind];if(v.type==='talisman')return !!v.talismanKind&&!state.knowledge56?.talismanKnown?.[v.talismanKind];return false}).slice(0,3);state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};for(const it of pool){if(it.type==='potion')state.knowledge56.potionKnown[it.potionKind]=true;else if(it.type==='talisman')state.knowledge56.talismanKnown[it.talismanKind]=true;else it.identified=true}addLog(`도서관 감식록: 미감정 물품 ${pool.length}개 감정.`);toast(`감정 ${pool.length}개`)}else{cleanseStatuses57();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity57(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
+function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const pool=(state.player.inventory||[]).filter(v=>{if(v===item)return false;if(['weapon','armor','cloak','relic','trinket'].includes(v.type))return v.identified!==true;if(v.type==='potion')return !!v.potionKind&&!state.knowledge56?.potionKnown?.[v.potionKind];if(v.type==='talisman')return !!v.talismanKind&&!state.knowledge56?.talismanKnown?.[v.talismanKind];return false}).slice(0,3);state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};for(const it of pool){if(it.type==='potion')state.knowledge56.potionKnown[it.potionKind]=true;else if(it.type==='talisman')state.knowledge56.talismanKnown[it.talismanKind]=true;else it.identified=true}addLog(`도서관 감식록: 미감정 물품 ${pool.length}개 감정.`);toast(`감정 ${pool.length}개`)}else{cleanseStatuses57();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
 // r30: library scroll dispatch is integrated in canonical useInventoryItem.
 globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
 
@@ -17419,7 +17060,7 @@ function budgetPeaches52(){
  const before=trees+items;if(before>budget.limit)throw new Error('theme 2 peach producer exceeded shared generation budget');
  const reach=finalReachSet1029(),candidates=[];
  for(const id of reach){const [x,y]=id.split(',').map(Number),t=state.map[y]?.[x];if(!Number.isFinite(x)||!Number.isFinite(y)||tileBlocks(t)||HAZ1020().has(t)||[TT.KEY_TILE,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.CACHE,TT.ARMORY,TT.VAULT].includes(t)||state.items.some(i=>i.x===x&&i.y===y)||state.monsters.some(m=>monCovers(m,x,y))||entityDistance57({x,y},state.player)<3)continue;candidates.push({x,y,h:hash1022(seed1022(`peach-resource53:${x},${y}`))})}
- candidates.sort((a,b)=>a.h-b.h);for(let i=before;i<budget.limit;i++){const q=candidates.pop();if(!q)throw new Error('no reachable peach resource placement');PlacementService.placeItem({...structuredClone(foodDef57('신선도')),count:1,x:q.x,y:q.y,generatedPeach53:true})}
+ candidates.sort((a,b)=>a.h-b.h);for(let i=before;i<budget.limit;i++){const q=candidates.pop();if(!q)throw new Error('no reachable peach resource placement');PlacementService.placeItem({...structuredClone(foodDef('신선도')),count:1,x:q.x,y:q.y,generatedPeach53:true})}
  state.peachBudget52={floor:state.floor,before,limit:budget.limit,after:budget.limit,trees,items:budget.limit-trees,sources:['shared budget tree generators','reachable resource allocation'],policy:'one guaranteed, 35% second, no post-generation deletion'};
 }
 
@@ -17879,7 +17520,7 @@ function rumorValidateShape1030(r){rumorConnectInterior1030(r);let reach=Reachab
 function rumorEntranceStyle1030(){return choice(['crack','secret','screen','rack','window'])}
 function rumorRegisterCells1030(r,used){r.cells=[];for(let y=r.rect.y1;y<=r.rect.y2;y++)for(let x=r.rect.x1;x<=r.rect.x2;x++){const kk=rumorSpaceKey1030(x,y);r.cells.push({x,y});used.add(kk);state.seen?.delete?.(kk);state.visible?.delete?.(kk)}for(let y=r.rect.y1-1;y<=r.rect.y2+1;y++)for(let x=r.rect.x1-1;x<=r.rect.x2+1;x++)used.add(rumorSpaceKey1030(x,y));used.add(rumorSpaceKey1030(r.entry.x,r.entry.y))}
 function rumorPlaceClue1030(existing){const reach=finalReachSet1029(),cells=[];for(const kk of reach){const[x,y]=kk.split(',').map(Number),t=state.map[y]?.[x];if(!RUMOR_SPACE_CLUE_TILES1030().has(t)||Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<8||Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)<5||state.items.some(i=>i.x===x&&i.y===y)||state.monsters.some(m=>monCovers(m,x,y)))continue;if(existing.some(q=>Math.abs(q.x-x)+Math.abs(q.y-y)<10))continue;cells.push({x,y})}if(!cells.length)return null;const q=choice(cells);setTerrainTile58(state.map,q.x,q.y,TT.RUMOR);return q}
-function rumorRewardProto1030(kind){const floor=state.floor,food=(CONSUMABLES||[]).filter(i=>i.type==='food'&&!i.craftedOnly57&&!i.naturalOnly57&&(i.minFloor||1)<=floor&&!['신선로','신선도'].includes(i.name)),potion=(window.MANRU_POTIONS||[]).filter(i=>(i.minFloor||1)<=floor),ammo=(window.MANRU_AMMO||[]),tal=(window.MANRU_TALISMANS||[]).filter(i=>(i.minFloor||1)<=floor&&!i.fusion74&&!['upgrade','holy'].includes(i.talismanKind));if(kind==='food')return foodOccurrencePick57(food.length?food:potion);if(kind==='medical')return foodOccurrencePick57(potion.filter(i=>['heal_small','heal_medium','makgeolli','cleanse','focus'].includes(i.potionKind)).length?potion.filter(i=>['heal_small','heal_medium','makgeolli','cleanse','focus'].includes(i.potionKind)):food);if(kind==='nature')return foodOccurrencePick57([...food,...potion.filter(i=>['cleanse','focus'].includes(i.potionKind))]);if(kind==='supply')return foodOccurrencePick57([...food,...potion,...ammo]);if(kind==='hazard')return foodOccurrencePick57([...potion,...tal]);if(kind==='gear'){const tier=Math.max(1,Math.min(4,Math.ceil(floor/5))),pool=[...WEAPONS.map(x=>({...x,type:'weapon'})),...ARMORS.map(x=>({...x,type:'armor'})),...CLOAKS.map(x=>({...x,type:'cloak'}))].filter(i=>(i.tier||1)<=tier);return foodOccurrencePick57(pool)}if(kind==='combat')return foodOccurrencePick57([...potion,...ammo,...tal,...food]);if(kind==='scattered')return foodOccurrencePick57([...food,...potion,...ammo]);return foodOccurrencePick57([...food,...potion,...ammo,...tal])}
+function rumorRewardProto1030(kind){const floor=state.floor,food=(CONSUMABLES||[]).filter(i=>i.type==='food'&&!i.craftedOnly57&&!i.naturalOnly57&&(i.minFloor||1)<=floor&&!['신선로','신선도'].includes(i.name)),potion=(window.MANRU_POTIONS||[]).filter(i=>(i.minFloor||1)<=floor),ammo=(window.MANRU_AMMO||[]),tal=(window.MANRU_TALISMANS||[]).filter(i=>(i.minFloor||1)<=floor&&!i.fusion74&&!['upgrade','holy'].includes(i.talismanKind));if(kind==='food')return foodOccurrencePick(food.length?food:potion);if(kind==='medical')return foodOccurrencePick(potion.filter(i=>['heal_small','heal_medium','makgeolli','cleanse','focus'].includes(i.potionKind)).length?potion.filter(i=>['heal_small','heal_medium','makgeolli','cleanse','focus'].includes(i.potionKind)):food);if(kind==='nature')return foodOccurrencePick([...food,...potion.filter(i=>['cleanse','focus'].includes(i.potionKind))]);if(kind==='supply')return foodOccurrencePick([...food,...potion,...ammo]);if(kind==='hazard')return foodOccurrencePick([...potion,...tal]);if(kind==='gear'){const tier=Math.max(1,Math.min(4,Math.ceil(floor/5))),pool=[...WEAPONS.map(x=>({...x,type:'weapon'})),...ARMORS.map(x=>({...x,type:'armor'})),...CLOAKS.map(x=>({...x,type:'cloak'}))].filter(i=>(i.tier||1)<=tier);return foodOccurrencePick(pool)}if(kind==='combat')return foodOccurrencePick([...potion,...ammo,...tal,...food]);if(kind==='scattered')return foodOccurrencePick([...food,...potion,...ammo]);return foodOccurrencePick([...food,...potion,...ammo,...tal])}
 function rumorPlaceReward1030(r,proto,index=0){if(!proto)return false;const reach=ReachabilityService.rumorRoomReach({rumorSpaceKey1030},r),cells=[...reach].map(kk=>{const[x,y]=kk.split(',').map(Number);return{x,y}}).filter(q=>safeFloorTile1020(state.map[q.y]?.[q.x])&&!state.items.some(i=>i.x===q.x&&i.y===q.y)&&!state.monsters.some(m=>monCovers(m,q.x,q.y))&&Math.abs(q.x-r.innerEntry.x)+Math.abs(q.y-r.innerEntry.y)>=2);if(!cells.length)return false;cells.sort((a,b)=>Math.abs(b.x-r.innerEntry.x)+Math.abs(b.y-r.innerEntry.y)-Math.abs(a.x-r.innerEntry.x)-Math.abs(a.y-r.innerEntry.y));const q=cells[Math.min(index,cells.length-1)],it=clone(proto);it.count=it.count||1;it.x=q.x;it.y=q.y;it.rumorSpaceId1030=r.id;if(['weapon','armor','cloak','relic','trinket'].includes(it.type))globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(it);return !!PlacementService.placeItem(it,q,{requireReachable:false,restrict:p=>p.x>=r.rect.x1&&p.x<=r.rect.x2&&p.y>=r.rect.y1&&p.y<=r.rect.y2})}
 function rumorEnemyDefs1030(r,ranged=false,elite=false){const floor=state.floor,maxEarly=floor+2,id=r?.type?.id||'',allowed=d=>!d.miniBoss&&!d.summonOnly57&&(!ranged||d.ranged);const ordinary=MONSTERS.filter(d=>allowed(d)&&d.min<=maxEarly&&d.max>=floor);const prefNames=({guard_supply:['수비병','강철이','살라맨더','경비 인형 - 보병','경비 인형 - 포병','성채 비행 감시자','해자 잠복꾼','화염 가고일','녹아내린 슬라임'],crossfire:['수비병','경비 인형 - 포병','성채 비행 감시자','살라맨더','비단 술래','구미호','신전 사제 망령'],duel_ring:['강철이','경비 인형 - 보병','강시','식귀','살라맨더','천수 아수라'],grid_store:['수비병','경비 인형 - 포병','성채 비행 감시자'],guard_quarters:['수비병','경비 인형 - 보병'],gas_chamber:['녹아내린 슬라임','화염 가고일','환각의 향로','살라맨더'],flooded_store:['악어','해자 잠복꾼']})[id]||[];if(!prefNames.length)return ordinary;/* Rumor spaces are deliberate anomalies/previews: their curated residents bypass the ordinary floor-era min/max gate. Only safety exclusions (boss/summon-only) and requested ranged role still apply. */const preferred=MONSTERS.filter(d=>allowed(d)&&prefNames.includes(d.name));if(!preferred.length)return ordinary;const ordinaryUnique=ordinary.filter(d=>!prefNames.includes(d.name)),out=[];const prefWeight=id==='guard_supply'||id==='crossfire'||elite?6:4;for(const d of preferred)for(let i=0;i<prefWeight;i++)out.push(d);for(const d of ordinaryUnique)out.push(d);return out}
 function rumorSpawnEnemy1030(r,ranged=false,elite=false){const defs=rumorEnemyDefs1030(r,ranged,elite);if(!defs.length)return null;const bag=[...defs],order=[];while(bag.length){const d=bag.splice(Math.floor(globalThis.__MANRU_RANDOM57__()*bag.length),1)[0];if(!order.some(q=>q.name===d.name))order.push(d)}for(const d of order){const m=scaledMonster(d),eraMismatch=d.min>state.floor||d.max<state.floor;if(eraMismatch){m.rumorEraOverride1030=true;m.rumorNativeFloor1030={min:d.min,max:d.max}}if(elite){m.hp=m.maxHp=Math.round(m.maxHp*1.12);m.atk+=1}const all=[...ReachabilityService.rumorRoomReach({rumorSpaceKey1030},r)].map(kk=>{const[x,y]=kk.split(',').map(Number);return{x,y,dist:Math.abs(x-r.innerEntry.x)+Math.abs(y-r.innerEntry.y)}}).filter(q=>PlacementService.canPlaceEntity(m,q.x,q.y));if(!all.length)continue;const far=all.filter(q=>q.dist>=3),pool=(far.length?far:all).sort((a,b)=>b.dist-a.dist),cap=Math.max(1,Math.ceil(pool.length*.35)),q=choice(pool.slice(0,cap));m.x=q.x;m.y=q.y;m.alerted=false;m.spawnProvenance57='rumor-space';m.rumorSpaceId1030=r.id;OccupancyService.addMonster(m);return m}return null}
@@ -18028,7 +17669,7 @@ generate(...args){
     remodel();
     updateWardHud();
     pruneOrphanDoors1006();
-    normalizeAllItems1006();
+    normalizeAllItems();
     applyArchitecture1020();
     window.__MANRU_GEN991__?.applyCurses?.();
     window.__MANRU_GEN991__?.ensureHoly?.();
@@ -18812,16 +18453,16 @@ function friendCanvas1012(boss=false,echo=false,frame=0){const key=`friend-r10|$
   if(boss){ // Preserve the same investigator silhouette while corruption grows through it rather than replacing it with a generic red box.
     q.globalAlpha=.75;for(const [x1,y1,x2,y2]of[[8,13,3,4],[22,14,30,7],[10,25,3,33],[21,24,29,34]])lR9(q,x1,y1+b,x2,y2,'#9d3a32',2);q.globalAlpha=.32;glowR9(q,16,19,13,'rgba(184,53,43,.60)');q.globalAlpha=1;eyePairR9(q,13.5,19,7+b,'#ff6b58')}
   q.globalAlpha=1;CACHE1012.set(key,c);return c}
-function startGear1012(id){const cls=CLASSES.find(c=>c.id===id);return{weapon:cls?.startWeapon?{...(WEAPONS.find(w=>w.name===cls.startWeapon)||{}),name:cls.startWeapon}:null,armor:{...(ARMORS[0]||{}),name:ARMORS[0]?.name||'경량복',tier:1,rarity:'common'},cloak:null,relic:null,trinket:null}}
+
 // r40: the visible class-selection art from v10.0.4 is the canonical player source requested by the user. Use that source itself; do not redraw a parallel preview skin.
 const canonicalPlayerCanvas1012=playerCanvasForClass||playerCanvas1012;
 const ACTOR_ART1012=Object.freeze({
-  player:(id='wanderer',gear=null,dir='down',attack=false)=>canonicalPlayerCanvas1012(id,gear||startGear1012(id),dir,attack),
+  player:(id='wanderer',gear=null,dir='down',attack=false)=>canonicalPlayerCanvas1012(id,gear||startingGearFor(id),dir,attack),
   friend:(boss=false,echo=false,frame=0)=>friendCanvas1012(!!boss,!!echo,frame|0),
   monster:(m,frame=0)=>monsterCanvas1012(m,frame|0),
-  startGear:startGear1012,
-  classPreview:(id='wanderer')=>canonicalPlayerCanvas1012(id,startGear1012(id),'down',false),
-  classPreviewData:(id='wanderer')=>canonicalPlayerCanvas1012(id,startGear1012(id),'down',false).toDataURL('image/png'),
+  startGear:startingGearFor,
+  classPreview:(id='wanderer')=>canonicalPlayerCanvas1012(id,startingGearFor(id),'down',false),
+  classPreviewData:(id='wanderer')=>canonicalPlayerCanvas1012(id,startingGearFor(id),'down',false).toDataURL('image/png'),
   friendPreviewData:(boss=false)=>friendCanvas1012(!!boss,false,0).toDataURL('image/png'),
   drawWorld:drawWorldCreature1012,
   clear:()=>{CACHE1012.clear();PCACHE1012.clear();clearPlayerArt();renderClassGrid1001();return true}
@@ -19664,7 +19305,7 @@ function walkPortal46(id){if(!state||state.artifactDungeon46)return false;const 
 function walkReturn46(){const p=state?.artifactExit46;if(!p)return false;const a=DIRS8.map(([dx,dy])=>({x:p.x-dx,y:p.y-dy,dx,dy})).find(q=>insideMapInterior(q.x,q.y)&&ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y));if(!a)return false;state.player.x=a.x;state.player.y=a.y;resetVisualState();VisibilityService.compute();ActionDispatcher.dispatch({type:'MOVE',args:[a.dx,a.dy]}).value;return{returned:!state.artifactDungeon46,floor:state.floor,dims:[COLS,ROWS]}}
 function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan105();if(citadelReservedRelic105(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
 function effectProbe47(id){const a=adef46(id);if(!a||!state)return null;const old={weapon:state.player.weapon,hp:state.player.hp,maxHp:state.player.maxHp,armor:state.player.armor,monsters:state.monsters,status:structuredClone(state.status),fire:state.legendFireFields47,terrain:state.legendTerrain47};state.player.weapon=clone(a);syncEquip47();state.legendFireFields47=[];state.legendTerrain47=[];const base=MONSTERS.find(m=>!m.boss)||MONSTERS[0],mk=(x,y,hp=80)=>{const m=scaledMonster(base);Object.assign(m,{x,y,hp,maxHp:hp,def:0,eva:0,alerted:false,hidden:false,kind:'human'});return m},p=state.player,t=mk(p.x+Math.min(3,a.range||1),p.y,id==='curse_spear'||id==='lava_bow'?1:120),s1=mk(t.x,t.y+1,80),s2=mk(t.x+1,t.y,80);state.monsters=[t,s1,s2];if(id==='ember_axe'){for(let i=0;i<10;i++){if(!state.monsters.includes(t)){state.monsters=[mk(p.x+2,p.y,200),s1,s2]}attackPlayer(state.monsters[0])}}else if(id==='earth_gauntlet'){t.hp=t.maxHp=500;for(let i=0;i<6;i++)attackPlayer(t)}else if(id==='ward_hammer'){t.hp=t.maxHp=500;for(let i=0;i<3;i++)attackPlayer(t)}else attackPlayer(t);const out={id,stacks:{ember:p.legendEmberStacks47||0,earth:p.legendEarthStacks47||0,ward:p.legendWardHits47||0},status:{...state.status},friends:state.monsters.filter(m=>m.friendly47).length,fields:state.legendFireFields47.length,terrain:state.legendTerrain47.length,secondary:[s1.hp,s2.hp],stats:getStats()};state.player.weapon=old.weapon;state.player.hp=old.hp;state.player.maxHp=old.maxHp;state.player.armor=old.armor;state.monsters=old.monsters;state.status=old.status;state.legendFireFields47=old.fire;state.legendTerrain47=old.terrain;delete state.player.legendCurseActive47;delete state.player.legendCurseBaseMax47;delete state.player.legendCurseCut47;syncEquip47();return out}
-const API47={gatekeeper:applyLegendGatekeeper47,mobCatalog:()=>Object.keys(DUNGEON_MOBS47).flatMap(mobDefs47),version:'R49',enemyDefinitions:id=>mobDefs47(id).map(d=>({...d})),build:(id,seed,quiet=true)=>LegendaryDungeonBuilder.build(adef46(id),{seed,quiet}),integrity:()=>GenerationValidator.legendary(),assets:()=>legendAssetAudit49(),defs:()=>LEGENDS47.map(a=>({...a})),debugKeys:()=>{const zs=state?.legendSanctums47||[];return{dungeon:state?.artifactDungeon46?.id||null,player:state?.player?{x:state.player.x,y:state.player.y}:null,sanctums:structuredClone(zs),plan:structuredClone(state?.keyPlan96||null),reward:state?.artifactReward46?{...state.artifactReward46}:null,mapAround:zs.map(z=>{const rows=[];for(let yy=z.cy-z.r-1;yy<=z.cy+z.r+1;yy++){const row=[];for(let xx=z.cx-z.r-1;xx<=z.cx+z.r+1;xx++)row.push(state.map?.[yy]?.[xx]??null);rows.push(row)}return{keyId:z.keyId,cx:z.cx,cy:z.cy,r:z.r,gate:z.gate,rows}})}},handlePortalAt:handlePortalAt46,enter:LegendaryDungeonBuilder.enter,restore:LegendaryDungeonBuilder.restore,forcePortal:forcePortal47,forceDungeon:(id=LEGENDS47[0].id)=>LegendaryDungeonBuilder.enter(id),reveal:()=>{if(!state?.artifactDungeon46)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}updateAll();return true},keyAudit:()=>keyProgressAudit48(false),audit:()=>({floor:state?.floor,inDungeon:!!state?.artifactDungeon46,dungeon:state?.artifactDungeon46||null,portal:state?.artifactPortal46||null,exit:state?.artifactExit46||null,reward:state?.items?.filter(i=>i.legendaryWeapon47).map(i=>({name:i.name,x:i.x,y:i.y}))||[],owned:[state?.player?.weapon,...(state?.player?.inventory||[])].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),reach:reachAudit46(),map:mapSignature46(),dims:[COLS,ROWS],monsters:state?.monsters?.filter(m=>!m.friendly47).length||0,legendMobs:state?.monsters?.filter(m=>m.legendMob47).map(m=>m.name)||[],decor:state?.legendDecor47?.length||0}),recordAcquisition:claimAudit46,claimReward:claimReward46,walkPortal:walkPortal46,walkReturn:walkReturn46,give:(id)=>{const a=adef46(id);if(!a||!state)return false;addInventoryItem57({...clone(a),count:1});claimAudit46();return true},upgradeProbe:(id)=>{const a=clone(adef46(id)||LEGENDS47[0]);const before={atk:a.atk,upgrade:a.upgrade||0};const r=applyWeaponUpgrade42(a);return{before,after:{atk:a.atk,upgrade:a.upgrade||0},result:r}},effectProbe:effectProbe47,regen:f=>{state.floor=clamp(+f||6,1,25);NormalFloorGenerator.generate();resetVisualState();VisibilityService.compute();updateAll();return{floor:state.floor,portal:state.artifactPortal46||null}},atkBonus:atkBonus47,critBonus:critBonus47,defBonus:defBonus47,syncEquip:syncEquip47,guard:guard47,fireAbsorb:fireAbsorb47,healFire:healFire47,allyTurn:allyTurn57,enemySpecial:enemySpecial47,owns:owns47,possesses:possesses47,claimed:claimed47,cursedEquipped:cursedEquipped47};
+const API47={gatekeeper:applyLegendGatekeeper47,mobCatalog:()=>Object.keys(DUNGEON_MOBS47).flatMap(mobDefs47),version:'R49',enemyDefinitions:id=>mobDefs47(id).map(d=>({...d})),build:(id,seed,quiet=true)=>LegendaryDungeonBuilder.build(adef46(id),{seed,quiet}),integrity:()=>GenerationValidator.legendary(),assets:()=>legendAssetAudit49(),defs:()=>LEGENDS47.map(a=>({...a})),debugKeys:()=>{const zs=state?.legendSanctums47||[];return{dungeon:state?.artifactDungeon46?.id||null,player:state?.player?{x:state.player.x,y:state.player.y}:null,sanctums:structuredClone(zs),plan:structuredClone(state?.keyPlan96||null),reward:state?.artifactReward46?{...state.artifactReward46}:null,mapAround:zs.map(z=>{const rows=[];for(let yy=z.cy-z.r-1;yy<=z.cy+z.r+1;yy++){const row=[];for(let xx=z.cx-z.r-1;xx<=z.cx+z.r+1;xx++)row.push(state.map?.[yy]?.[xx]??null);rows.push(row)}return{keyId:z.keyId,cx:z.cx,cy:z.cy,r:z.r,gate:z.gate,rows}})}},handlePortalAt:handlePortalAt46,enter:LegendaryDungeonBuilder.enter,restore:LegendaryDungeonBuilder.restore,forcePortal:forcePortal47,forceDungeon:(id=LEGENDS47[0].id)=>LegendaryDungeonBuilder.enter(id),reveal:()=>{if(!state?.artifactDungeon46)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(k(x,y));VisibilityService.addVisibleKey(k(x,y))}updateAll();return true},keyAudit:()=>keyProgressAudit48(false),audit:()=>({floor:state?.floor,inDungeon:!!state?.artifactDungeon46,dungeon:state?.artifactDungeon46||null,portal:state?.artifactPortal46||null,exit:state?.artifactExit46||null,reward:state?.items?.filter(i=>i.legendaryWeapon47).map(i=>({name:i.name,x:i.x,y:i.y}))||[],owned:[state?.player?.weapon,...(state?.player?.inventory||[])].filter(Boolean).filter(i=>i.legendaryWeapon47).map(i=>i.name),reach:reachAudit46(),map:mapSignature46(),dims:[COLS,ROWS],monsters:state?.monsters?.filter(m=>!m.friendly47).length||0,legendMobs:state?.monsters?.filter(m=>m.legendMob47).map(m=>m.name)||[],decor:state?.legendDecor47?.length||0}),recordAcquisition:claimAudit46,claimReward:claimReward46,walkPortal:walkPortal46,walkReturn:walkReturn46,give:(id)=>{const a=adef46(id);if(!a||!state)return false;addInventoryItem({...clone(a),count:1});claimAudit46();return true},upgradeProbe:(id)=>{const a=clone(adef46(id)||LEGENDS47[0]);const before={atk:a.atk,upgrade:a.upgrade||0};const r=applyWeaponUpgrade42(a);return{before,after:{atk:a.atk,upgrade:a.upgrade||0},result:r}},effectProbe:effectProbe47,regen:f=>{state.floor=clamp(+f||6,1,25);NormalFloorGenerator.generate();resetVisualState();VisibilityService.compute();updateAll();return{floor:state.floor,portal:state.artifactPortal46||null}},atkBonus:atkBonus47,critBonus:critBonus47,defBonus:defBonus47,syncEquip:syncEquip47,guard:guard47,fireAbsorb:fireAbsorb47,healFire:healFire47,allyTurn:allyTurn57,enemySpecial:enemySpecial47,owns:owns47,possesses:possesses47,claimed:claimed47,cursedEquipped:cursedEquipped47};
 globalThis.__MANRU_LEGEND47__=API47;globalThis.__MANRU_ARTIFACT46__=API47;
 
 // Inactive floors are immutable snapshots. Encode once when leaving, decode once
@@ -20070,7 +19711,7 @@ function palaceResolveIntent105(mon,I){
 
  }else if(state.turn<(I.data.resolveTurn105??I.armedPlayerTurn+1))return true;
  if(I.type==='palaceWave105'){palaceStartWave105(mon,I.data.wave105);}
- else if(I.type==='palaceStone105'){const button=palaceKingSwitch105(mon,I.data.buttonId105),stone=mon.inventory?.find(i=>i.mineItem105==='stone'&&itemQuantity57(i)>0);if(button&&stone)resolveMineStone105(mon,stone,button);}
+ else if(I.type==='palaceStone105'){const button=palaceKingSwitch105(mon,I.data.buttonId105),stone=mon.inventory?.find(i=>i.mineItem105==='stone'&&itemQuantity(i)>0);if(button&&stone)resolveMineStone105(mon,stone,button);}
  else if(I.type==='palaceRoots105'){for(const c of I.cells){const old=state.map[c.y]?.[c.x];if(!palaceRootFloor105(c.x,c.y))continue;if(RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,1,'palace-root-wall105',{allowedOld:[old],source:'palace-roots',overlapSolid:true})){const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=state.turn+1;Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,'earth');t.rootWall105={id:combatantId54(mon),faction:entityFaction57(mon),credit:isPlayerAlly57(mon)?'player':null,atk:mon.atk,stunTurns:1};const effect={sourceFaction:t.rootWall105.faction,owner:t.rootWall105.id,credit:t.rootWall105.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target))applyCombatStatus105(target,'stun',t.rootWall105.stunTurns,1,{source:effect});}}}
  else if(I.type==='palacePull105'){const target=[state.player,...state.monsters].find(t=>t===state.player?I.data.targetId105==='player':combatantId54(t)===I.data.targetId105);if(palaceWet105(mon)&&target&&combatTargetValid57(mon,target)&&entityDistance57(mon,target)<=6&&monsterAttackLineR8(mon,6,{target}).ok){playHookPullFx57(mon,target);resolveForcedMovement57(target,mon,Math.max(COLS,ROWS),{mode:'pull',hostile:true,creditPlayer:isPlayerAlly57(mon)});attackMonster(mon,3,{target,delivery:'melee',range:6});}}
  else if(I.type==='palaceRoyal105'){const w=palaceWorld105();w.royalUntil=w.time+8;palaceApplyTide105();addLog('왕의 밀물: 자연 조수에 수위 +1, 최대 3 · 8턴.');}
@@ -20113,7 +19754,7 @@ function drawPalaceWaves105(q,now){q.save();q.imageSmoothingEnabled=true;for(con
 function palaceKingSwitch105(mon,buttonId=null){return mineState105()?.buttons.find(b=>(buttonId==null||b.id===buttonId)&&b.bossRelease105&&state.map[b.y]?.[b.x]===TT.SWITCH&&mineState105().walls.some(w=>w.buttonIds?.includes(b.id)&&!w.open));}
 
 function palaceKingTurn105(mon,target){palaceEquipKing105(mon);if(mon.intent54)return palaceResolveIntent105(mon,mon.intent54);if(mon.stunned>0){mon.stunned--;return true;}if(mon.palaceRecoverUntil105>=state.floorTurn)return true;if(mon.skillSeal105>0)return monsterIdleRecovery105(mon,target);const now=state.floorTurn,tide=state.branchContext105?.id==='palace'?palaceTide105().level:0,d=entityDistance57(mon,target);
- if(mon.hp<=mon.maxHp*.5&&mon.inventory?.some(i=>i.mineItem105==='stone'&&itemQuantity57(i)>0)){const button=palaceKingSwitch105(mon);if(button){if(entityDistance57(mon,button)>MINE_RULES105.stoneRange||!lineClear(mon.x,mon.y,button.x,button.y)){moveMonsterToward(mon,button);return true;}return setIntent54(mon,'palaceStone105',[{x:button.x,y:button.y}],'광산의 돌 · 철창 스위치',{resolveTurn105:state.turn+1,buttonId105:button.id});}}
+ if(mon.hp<=mon.maxHp*.5&&mon.inventory?.some(i=>i.mineItem105==='stone'&&itemQuantity(i)>0)){const button=palaceKingSwitch105(mon);if(button){if(entityDistance57(mon,button)>MINE_RULES105.stoneRange||!lineClear(mon.x,mon.y,button.x,button.y)){moveMonsterToward(mon,button);return true;}return setIntent54(mon,'palaceStone105',[{x:button.x,y:button.y}],'광산의 돌 · 철창 스위치',{resolveTurn105:state.turn+1,buttonId105:button.id});}}
  if(mon.hp<=mon.maxHp*.5&&!mon.palaceRoyalUsed105&&state.branchContext105?.id==='palace'){mon.palaceRoyalUsed105=true;const d=state.branchTerrain105.palace105,cells=Object.keys(d.floors).filter(key=>d.floors[key]<2&&!d.permanentWater?.[key]).map(key=>{const[x,y]=key.split(',').map(Number);return{x,y};});return setIntent54(mon,'palaceRoyal105',cells,'왕의 밀물 · 3턴 뒤 수위 상승',{resolveTurn105:state.turn+3});}
  if(!actorDetectedTarget57(mon,target,12)||now<(mon.nextPalaceAction105||0))return monsterIdleRecovery105(mon,target);const interval=tide===3?3:5;mon.nextPalaceAction105=now+interval;const seq=(mon.palaceSequence105||0)%3;mon.palaceSequence105=seq+1;
  if(d<=4&&now>=(mon.nextPalaceSweep105||0)){const cells=palaceSweepCells105(mon,1);if(cells.length){mon.nextPalaceSweep105=now+(tide===3?PALACE_SWEEP_RULES105.highTideCooldownTurns:PALACE_SWEEP_RULES105.cooldownTurns);return setIntent54(mon,'palaceSweep105',cells,'용미 쓸기 · 전방위 1/5칸',{shape57:'circle',sweepRevision105:2,origin57:{x:mon.x,y:mon.y},radius105:1,nextExpandTurn105:state.turn+1,invulnerable57:true});}}
@@ -20311,7 +19952,7 @@ function buildPalace105(level){
   for(const n of nodes){for(const sign of[-1,1]){const x=n.x+sign,y=n.y;if(!d.routeCells[k(x,y)]&&m[y]?.[x]!==TT.SWITCH)prop(x,y,TT.JAR,'진주 봉인의 해주 장독','jar');}const wx=n.x,wy=n.y-2;if(m[wy]?.[wx]===TT.WALL){d.facades[k(wx,wy)]={style:'bronze'};wallLamp(wx,wy,0,1,'bronze');}}
   const leaf=nodes.filter(n=>n!==root&&links.filter(l=>l.a===n||l.b===n).length===1),rewards=leaf.length?leaf:[nodes[0],nodes[3]];
   d.switchMaze105={x:mx,y:my,w:mw,h:mh,entry,nodes,links:links.map(l=>({a:[l.a.x,l.a.y],b:[l.b.x,l.b.y]})),rewards:[]};
-  for(const[n,q]of rewards.slice(0,3).entries()){const item=n%2?ordinaryPotionPool105(false,9).find(p=>p.potionKind==='heal_small'):foodDef57('말린 육포');if(item){const reward={...clone(item),count:1,identified:true,palaceMazeReward105:true};PlacementService.placeItem(reward,q,{placementMode:'exact',requireReachable:false});d.switchMaze105.rewards.push({x:q.x,y:q.y,name:item.name});}}
+  for(const[n,q]of rewards.slice(0,3).entries()){const item=n%2?ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_small'):foodDef('말린 육포');if(item){const reward={...clone(item),count:1,identified:true,palaceMazeReward105:true};PlacementService.placeItem(reward,q,{placementMode:'exact',requireReachable:false});d.switchMaze105.rewards.push({x:q.x,y:q.y,name:item.name});}}
   d.generation105.zones.push({id:r.id,stage:8,algorithm:r.algorithm105,chambers:nodes.length,links:links.length});
  }
  if(level===2){const arena=d.arena105,px=arena.x+arena.w-8,py=arena.y+1,cell='palace-royal-cell',gate={x:px+3,y:py+6},button={id:'palace-royal-release',x:px+3,y:py+7,activation105:['player','stone'],gateOnly:true,bossRelease105:true,prisonCell105:cell,prisonEntry105:'out'};rect(px+1,py+1,5,5,3,'throne',14);for(let xx=px;xx<=px+6;xx++){wall(xx,py,'bronze');wall(xx,py+6,'bronze');}for(let yy=py;yy<=py+6;yy++){wall(px,yy,'bronze');wall(px+6,yy,'bronze');}delete d.props[k(button.x,button.y)];put(button.x,button.y,3,'throne',14);setTerrainTile58(m,button.x,button.y,TT.SWITCH);d.facades[k(gate.x,gate.y)]={style:'iron-grate'};ter.mine105.buttons.push(button);ter.mine105.walls.push({id:cell,prisonCell105:cell,buttonIds:[button.id],cells:[gate],open:false,until:0,persistent105:true,floorTile105:TT.PALACE_HIGH});d.prison105={cell,bounds:{x:px+1,y:py+1,w:5,h:5},gate,button:{x:button.x,y:button.y},spawn:{x:px+3,y:py+3}};}
@@ -20340,9 +19981,9 @@ function buildPalace105(level){
  // Apothecary herbs are authored room supplies, never part of ordinary loot pools.
  for(const r of d.rooms.filter(r=>r.theme105==='apothecary')){
   const nodes=r.nodes105.filter(n=>!n.basin105),anchors=[nodes[0],nodes[nodes.length>>1],nodes[nodes.length-1]].filter(Boolean);
-  for(const n of anchors)supply({...clone(foodDef57('해초')),count:2,identified:true}, {...r,cx:n.x,cy:n.y});
+  for(const n of anchors)supply({...clone(foodDef('해초')),count:2,identified:true}, {...r,cx:n.x,cy:n.y});
  }
- const recovery=ordinaryPotionPool105(false,9).find(p=>p.potionKind==='heal_medium');for(const id of[banquet.id,armory.id,altar.id]){const r=d.rooms.find(r=>r.id===id);if(recovery&&r)supply({...clone(recovery),count:1,identified:true,palaceExploration105:true},r);}
+ const recovery=ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_medium');for(const id of[banquet.id,armory.id,altar.id]){const r=d.rooms.find(r=>r.id===id);if(recovery&&r)supply({...clone(recovery),count:1,identified:true,palaceExploration105:true},r);}
  const provisions=CONSUMABLES.find(f=>f.foodKind==='jerky');for(const id of[guest.id,bedroom.id,machine.id]){const r=d.rooms.find(r=>r.id===id);if(provisions&&r)supply({...clone(provisions),count:3,identified:true,palaceExploration105:true},r);}
  const guide={type:'guide',branchGuide105:true,name:'용궁 조수 안내서',rarity:'common',count:1,identified:true,desc:'야외 수원을 지나 궁전의 구역 순서와 방 테마는 매번 달라지며, 감실 미궁을 돌아 중심으로 들어간다. 각 구역의 갈래길과 순환로를 탐색하고, 상아 금테 석단에서 조수를 기다릴 수 있다. 수위0→1→2→3→2→1은 8턴마다 변한다. 높이2 회랑과 금테 석단은 안전한 육로다. 낮은 갈래와 오목한 석단은 썰물을 기다려 건널 수 있다. 외원의 끊긴 물길은 뗏목을 기다려 반드시 건넌다. 내궁 동쪽의 압력판 보상 미로와 종이다리는 선택 탐색 구역이다. 벽에 달린 진주 등롱은 통로를 막지 않는다. 환류 수문은 이 방만 6턴간 수위-1, 재사용16턴.'};PlacementService.placeItem(guide,{x:cx+2,y:hi});
  state.generationInProgress57=false;palaceApplyTide105();VisibilityService.compute();return true;
@@ -20779,8 +20420,8 @@ const BRANCH_REWARDS105=Object.freeze({
  canal:{name:'수문지기의 접힌 행낭',type:'trinket',branchEffect105:'capacity',identified:true,curseImmune991:true,desc:'수로 깊은 곳에서 건진 장신구. 착용하면 인벤토리가 5칸 늘어난다. 다른 능력은 없다. 벗거나 다른 장신구로 교체하면 넘친 물품은 주변의 빈 바닥에 내려놓는다.'},
  granary:{name:'창고지기의 밥주머니',type:'trinket',branchEffect105:'levelFood',eva:-1,identified:true,curseImmune991:true,desc:'식량창고의 전용 장신구. 착용 중 레벨이 오를 때마다 일반 음식 하나를 주변의 빈 바닥에 떨어뜨린다. 회피 -1. 착용 전에 오른 레벨에는 적용되지 않는다.'}
 });
-function branchInventoryOverflow105(){const p=state?.player;if(!p)return 0;let n=0;while(p.inventory.length>inventoryCapacity()){const it=p.inventory.at(-1),q=splitItemQuantity57(it,itemQuantity57(it),p.inventory);if(q){PlacementService.placeItem(q,p);n++}else break}if(n)addLog(`행낭이 줄어 넘친 물품 ${n}묶음을 주변 안전 바닥에 내려놓았다.`);return n}
-function branchLevelFood105(){if(state?.player?.trinket?.branchEffect105!=='levelFood')return;const food=naturalFoodPick57();if(!food)return;const item={...clone(food),count:1,placement57:{branchFoodLevel105:state.player.level}};PlacementService.placeItem(item,state.player);addLog(`밥주머니가 ${item.name}을 하나 내놓았다.`)}
+function branchInventoryOverflow105(){const p=state?.player;if(!p)return 0;let n=0;while(p.inventory.length>inventoryCapacity()){const it=p.inventory.at(-1),q=splitItemQuantity(it,itemQuantity(it),p.inventory);if(q){PlacementService.placeItem(q,p);n++}else break}if(n)addLog(`행낭이 줄어 넘친 물품 ${n}묶음을 주변 안전 바닥에 내려놓았다.`);return n}
+function branchLevelFood105(){if(state?.player?.trinket?.branchEffect105!=='levelFood')return;const food=naturalFoodPick();if(!food)return;const item={...clone(food),count:1,placement57:{branchFoodLevel105:state.player.level}};PlacementService.placeItem(item,state.player);addLog(`밥주머니가 ${item.name}을 하나 내놓았다.`)}
 function branchLeafAt105(x,y){return !!state?.branchTerrain105?.leaves?.[k(x,y)]}
 function branchWake105(m,cause){if(!m?.sleeping105||m.doorSleep105)return false;m.sleeping105=false;m.alerted=true;m.searchTurns=Math.max(m.searchTurns||0,6);if(state.visible?.has(k(m.x,m.y))){floatText(m.x,m.y,'!', '#efad62',9);addLog(`${m.name}이 ${cause}에 깨어났다.`)}return true}
 function branchWarningDoor105(x,y){const d=state?.branchTerrain105?.warningDoors?.find(v=>v.x===x&&v.y===y);if(!d||d.triggered)return false;for(const q of state.branchTerrain105.warningDoors)if(q.group===d.group)q.triggered=true;let n=0;for(const m of state.monsters)if(m.warningGroup105===d.group&&m.hp>0){m.doorSleep105=false;n+=Number(branchWake105(m,'경고문 개방'));}alertNearby(x,y,7,'door');addLog(`녹슨 경고문이 울렸다. 굶주린 쥐 ${n}마리가 잠에서 깨어났다.`);return true}
@@ -20867,9 +20508,9 @@ function buildIndoorBranch105(id,level){
   for(let y=r.y+2;y<r.y+r.h-2;y++)for(let x=r.x+2;x<r.x+r.w-2;x++)if((!r.landmarkRatBounds105||x<=r.landmarkRatBounds105.x||x>=r.landmarkRatBounds105.x+4||y<=r.landmarkRatBounds105.y||y>=r.landmarkRatBounds105.y+4)&&terrainSurface58(m[y][x])&&![TT.WATER,TT.VOID,TT.LAVA,TT.MERCURY].includes(m[y][x])&&!reserve.has(k(x,y))&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&!state.switches.some(q=>q.x===x&&q.y===y))cells.push({x,y});
   const pick=()=>{if(!cells.length)throw Error('Giant room lacks clear supply positions');return cells.splice(rand(0,cells.length-1),1)[0]};
   if(r.ratGroup105!=null){for(const q of r.landmarkRatCells105)spawn('굶주린 창고 쥐',q,true,r.ratGroup105);}else spawn('객잔 경비병',pick(),!canal);
-  r.rewardCells105=[];for(let i=0;i<2;i++){const q=i===0&&r.landmarkRatReward105?r.landmarkRatReward105:pick();r.rewardCells105.push(q);const placed=PlacementService.placeItem({...clone(naturalFoodPick57()),count:1,placement57:{branchReward105:{id,level,source:'giant-room',kind:r.landmark105}}},q,{placementMode:'exact',restrict:p=>p.x===q.x&&p.y===q.y,requireReachable:false});if(!placed)throw Error('Giant reward placement failed');}
+  r.rewardCells105=[];for(let i=0;i<2;i++){const q=i===0&&r.landmarkRatReward105?r.landmarkRatReward105:pick();r.rewardCells105.push(q);const placed=PlacementService.placeItem({...clone(naturalFoodPick()),count:1,placement57:{branchReward105:{id,level,source:'giant-room',kind:r.landmark105}}},q,{placementMode:'exact',restrict:p=>p.x===q.x&&p.y===q.y,requireReachable:false});if(!placed)throw Error('Giant reward placement failed');}
  }
- const supplies=canal?6:8;for(let i=0;i<supplies;i++){const r=g.rooms[(i*3+1)%g.rooms.length],p={x:r.cx,y:r.cy},food=naturalFoodPick57();PlacementService.placeItem({...clone(food),count:1,placement57:{branchReward105:{id,level,source:'supplies',index:i}}},p,{requireReachable:false})}
+ const supplies=canal?6:8;for(let i=0;i<supplies;i++){const r=g.rooms[(i*3+1)%g.rooms.length],p={x:r.cx,y:r.cy},food=naturalFoodPick();PlacementService.placeItem({...clone(food),count:1,placement57:{branchReward105:{id,level,source:'supplies',index:i}}},p,{requireReachable:false})}
  const audit=validateIndoorBranch105();if(!audit.ok)throw Error('Indoor validation '+JSON.stringify(audit));ter.audit={...audit,layoutVersion:5,giants:ter.giantRooms105.map(r=>r.landmark105),districts:g.rooms.length,links:g.edges.length,monsters:state.monsters.length,ramps:0};state.layoutName=`${def.name} ${level}층 · ${canal?'석조 분수로와 침수 구획':'좁은 곡물고와 긴 운송로'}`;state.generationInProgress57=false;BRANCH_TILE_CACHE105.clear();
 }
 function validateIndoorBranch105(){
@@ -20972,7 +20613,7 @@ function mountainMimicTurn105(mon,target=selectCombatOpponent57(mon)){
  if(mon.mimicDormant105!==false){if(!mon.summonOwner105&&mon.hp===mon.maxHp&&!close)return true;mon.mimicDormant105=false;mon.alerted=true;burst(mon.x,mon.y,'#ab9a78',14,.7);floatText(mon.x,mon.y,'고목이 움직인다!','#d7c5a1',11);addLog('메마른 나무가 목매로 깨어났다. 가지가 손목을 노린다.');}
  if(mon.stunned>0)return false;
  if(close&&p.weapon){
- const weapon=p.weapon,result=attackMonster(mon,0,{target:p,delivery:'melee',range:1});if(!result.hit||result.damage<=0||p.hp<=0)return true;const dmg=result.damage;p.weapon=null;const bag=p===state.player?addInventoryItem57(weapon,p):(p.inventory||(p.inventory=[]),p.inventory.push(weapon),true);if(p.martialActor105)syncMartialActorStats105(p);if(p===state.player)globalThis.__MANRU_LEGEND47__?.syncEquip?.();
+ const weapon=p.weapon,result=attackMonster(mon,0,{target:p,delivery:'melee',range:1});if(!result.hit||result.damage<=0||p.hp<=0)return true;const dmg=result.damage;p.weapon=null;const bag=p===state.player?addInventoryItem(weapon,p):(p.inventory||(p.inventory=[]),p.inventory.push(weapon),true);if(p.martialActor105)syncMartialActorStats105(p);if(p===state.player)globalThis.__MANRU_LEGEND47__?.syncEquip?.();
  if(p===state.player){state.playerHitUntil=performance.now()+130;vfVibrate(HAPTIC_PATTERN57.hurt)}else p.hitUntil=performance.now()+130;impact(p.x,p.y,'#b88a63',4);burst(p.x,p.y,'#bcb183',12,.6);floatText(p.x,p.y,`무장 해제 -${dmg}`,'#f0cb84',13);addLog(`${mon.name}이 ${weapon.name}을 쳐내며 ${dmg} 피해를 입혔다. ${bag?'무기는 행낭으로 돌아갔다.':'행낭이 가득 차 주변 빈 바닥에 떨어졌다.'}`);updateAll();if(p.hp<=0){if(p===state.player)die(mon.name);else killMonster(p);}return true;
  }return false;
 }
@@ -21078,10 +20719,10 @@ function mountainFort105(b,put,height,rnd,black){
  b.maze105={rooms:rooms.length,links:edges.length,profile};
 }
 const MOUNTAIN_GEAR_CHANCE105={plus2:.10,plus1:.30};
-function naturalGearUpgrade105(item,rnd){const roll=rnd(),n=roll<MOUNTAIN_GEAR_CHANCE105.plus2?2:roll<MOUNTAIN_GEAR_CHANCE105.plus2+MOUNTAIN_GEAR_CHANCE105.plus1?1:0;for(let i=0;i<n;i++)if(item.type==='armor')applyArmorUpgrade42(item);else if(item.type==='weapon')applyWeaponUpgrade42(item);item.naturalUpgrade105=n;return item;}
+
 function mountainRewardGear105(black,rnd){
  const armor=rnd()<.5,item=pickByTier(armor?ARMORS:WEAPONS,2);item.type=armor?'armor':'weapon';
- if(black){naturalGearUpgrade105(item,rnd);globalThis.__MANRU_ITEM_IDENTITY991__.markGear(item);}
+ if(black){naturalGearUpgrade(item,rnd);globalThis.__MANRU_ITEM_IDENTITY991__.markGear(item);}
  return item;
 }
 const BLACK_OUTDOOR105={
@@ -21209,7 +20850,7 @@ function buildMountainBranch105(id,level){
  const free=q=>!OccupancyService.isOccupied(q.x,q.y)&&entityDistance57(q,up)>5&&state.branchPortals105.every(p=>entityDistance57(q,p)>2);
  const spawn=(name,q,extra={})=>{if(!q)return;const mon=spawnNamed(name,q,{placementMode:'exact',provenance:'subbranch-canonical',...extra});if(!mon)throw Error('Mountain spawn failed '+name);mon.branch105=id;return mon};
  for(const b of t.buildings){for(let i=0;i<(black&&level===2?(b.summit?3:1):(b.summit?12:2));i++){const choices=candidates.filter(q=>free(q)&&q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1&&(!b.summit||q.y>b.y+10));const q=choices[Math.floor(rnd()*choices.length)];spawn(black?(i%2?'경비 인형 - 포병':'경비 인형 - 보병'):(i%2?'떠돌이 도둑':'객잔 경비병'),q)}
-  for(let i=0;i<(b.summit?5:2);i++){const choices=candidates.filter(q=>q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1);const q=choices[Math.floor(rnd()*choices.length)];let item;if(i===0)item=mountainRewardGear105(black,rnd);else if(i===1)item=clone((window.MANRU_POTIONS||[]).find(i=>i.name==='소회복 비약'));else item=naturalFoodPick57();if(item)PlacementService.placeItem({...item,placement57:{branchReward105:{id,level,source:b.summit?'summit':'outpost'}}},q)}
+  for(let i=0;i<(b.summit?5:2);i++){const choices=candidates.filter(q=>q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1);const q=choices[Math.floor(rnd()*choices.length)];let item;if(i===0)item=mountainRewardGear105(black,rnd);else if(i===1)item=clone((window.MANRU_POTIONS||[]).find(i=>i.name==='소회복 비약'));else item=naturalFoodPick();if(item)PlacementService.placeItem({...item,placement57:{branchReward105:{id,level,source:b.summit?'summit':'outpost'}}},q)}
  }
  for(const n of nodes.filter(n=>n.i!==0&&n.i!==13)){const pool=candidates.filter(q=>free(q)&&owner[q.y][q.x]===n.i&&mountainOutdoor105(q));for(let i=0;i<3&&pool.length;i++){const q=pool.splice(Math.floor(rnd()*pool.length),1)[0];if(!free(q))continue;const entry=black?BLACK_OUTDOOR105[level][i===0?n.i%2:i===1?2:3]:{name:i===0?(n.i%2?'벌집나무':'고목 목매'):i===1?'독꽃':'수목 궁수'};spawn(entry.name,q,entry)}if(n.i%2===1){const q=pool.find(free);if(q)PlacementService.placeItem(clone(MOUNTAIN_BERRY105),q)}}
  if(black&&level===2){const boss=spawn('흑산 설귀',{x:crown.gate.x,y:crown.y+5});t.frostBoss105={x:boss.x,y:boss.y};t.enemyBalanceRevision105=1;}
@@ -21305,21 +20946,21 @@ function mineUseItem105(item){
  for(let y=Math.max(0,p.y-range);y<=Math.min(ROWS-1,p.y+range);y++)for(let x=Math.max(0,p.x-range);x<=Math.min(COLS-1,p.x+range);x++)if(state.visible.has(k(x,y))&&!runtimeTerrainSolid57(state.map[y][x])&&lineClear(p.x,p.y,x,y))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
  if(!cells.length)return false;closeInventory();return beginWorldTarget57({kind:'mine-throw',title:item.name,text:`사거리 ${range}칸 · 한 개 투척 · 목표 칸 선택`,range,cells,meta:{item},onPick:mineThrow105});
 }
-function resolveMineStone105(actor,item,cell){if(!actor||actor.hp<=0||item?.mineItem105!=='stone'||state.map[cell?.y]?.[cell?.x]==null||entityDistance57(actor,cell)>MINE_RULES105.stoneRange||runtimeTerrainSolid57(state.map[cell.y][cell.x])||!lineClear(actor.x,actor.y,cell.x,cell.y))return false;const thrown=splitItemQuantity57(item,1,actor.inventory);if(!thrown)return false;projectileFX(actor.x,actor.y,cell.x,cell.y,'#c0b39b');alertNearby(cell.x,cell.y,7,'projectile');for(const target of [state.player,...state.monsters])if(combatTargetValid57(actor,target)&&entityFootprintCells57(target).some(c=>c.x===cell.x&&c.y===cell.y)){damageEntity61(target,MINE_RULES105.stoneDamage,actor);if(target.hp<=0){if(target===state.player)die('광산의 돌');else killMonster(target);}}triggerPressureTile105(cell.x,cell.y,null,'stone');if(![TT.VOID,TT.LAVA].includes(state.map[cell.y][cell.x]))transferItemQuantity57(thrown,null,state.items,1,{position:cell});addLog('광산의 돌이 부딪혔다. 남은 돌은 다시 주울 수 있다.');return true;}
+function resolveMineStone105(actor,item,cell){if(!actor||actor.hp<=0||item?.mineItem105!=='stone'||state.map[cell?.y]?.[cell?.x]==null||entityDistance57(actor,cell)>MINE_RULES105.stoneRange||runtimeTerrainSolid57(state.map[cell.y][cell.x])||!lineClear(actor.x,actor.y,cell.x,cell.y))return false;const thrown=splitItemQuantity(item,1,actor.inventory);if(!thrown)return false;projectileFX(actor.x,actor.y,cell.x,cell.y,'#c0b39b');alertNearby(cell.x,cell.y,7,'projectile');for(const target of [state.player,...state.monsters])if(combatTargetValid57(actor,target)&&entityFootprintCells57(target).some(c=>c.x===cell.x&&c.y===cell.y)){damageEntity61(target,MINE_RULES105.stoneDamage,actor);if(target.hp<=0){if(target===state.player)die('광산의 돌');else killMonster(target);}}triggerPressureTile105(cell.x,cell.y,null,'stone');if(![TT.VOID,TT.LAVA].includes(state.map[cell.y][cell.x]))transferItemQuantity(thrown,null,state.items,1,{position:cell});addLog('광산의 돌이 부딪혔다. 남은 돌은 다시 주울 수 있다.');return true;}
 function mineThrow105(cell,inputSource='pointer'){
  const item=WORLD_TARGET?.meta?.item,act=playerAction57('item',{uiOwner:'worldTarget57'});if(!act.ok||!item||!state.player.inventory.includes(item))return false;
  const p=state.player,stone=item.mineItem105==='stone',range=stone?MINE_RULES105.stoneRange:4;
  if(!state.visible.has(k(cell.x,cell.y))||entityDistance57(p,cell)>range||runtimeTerrainSolid57(state.map[cell.y]?.[cell.x])||!lineClear(p.x,p.y,cell.x,cell.y))return false;
  if(stone){if(!resolveMineStone105(p,item,cell))return false;}
- else{const thrown=splitItemQuantity57(item,1,p.inventory);if(!thrown)return false;projectileFX(p.x,p.y,cell.x,cell.y,'#ef9a44');alertNearby(cell.x,cell.y,10,'explosion');addField('fire',cell.x,cell.y,5);burst(cell.x,cell.y,'#ffa152',15,.8);addLog('화룡유가 터져 불길을 펼쳤다.');}
+ else{const thrown=splitItemQuantity(item,1,p.inventory);if(!thrown)return false;projectileFX(p.x,p.y,cell.x,cell.y,'#ef9a44');alertNearby(cell.x,cell.y,10,'explosion');addField('fire',cell.x,cell.y,5);burst(cell.x,cell.y,'#ffa152',15,.8);addLog('화룡유가 터져 불길을 펼쳤다.');}
  commitPlayerAction57(act,1);return true;
 }
 function mineMysteryPool105(){return [...WEAPONS.map(i=>({...i,type:'weapon'})),...ARMORS.map(i=>({...i,type:'armor'})),...CLOAKS.map(i=>({...i,type:'cloak'})),...RELICS.map(i=>({...i,type:'relic'})),...TRINKETS.map(i=>({...i,type:'trinket'})),...CONSUMABLES,...(window.MANRU_POTIONS||[]),...(window.MANRU_TALISMANS||[]),...(window.MANRU_AMMO||[]),...Object.values(MINE_ITEMS105).filter(i=>i.mineItem105!=='mystery')].filter(i=>i.name&&!i.jarOnly57&&!i.branchGuide105&&!i.branchExclusive105&&!i.artifactWeapon46&&!i.legendaryWeapon47&&!['key','guide'].includes(i.type));}
 function mineMystery105(item){
  const act=playerAction57('item',{allowInventory:true});if(!act.ok||!state.player.inventory.includes(item))return false;
  const pool=mineMysteryPool105(),roll=rand(0,pool.length),world=state.branchWorld105||(state.branchWorld105={version:1,pages:{}});world.mysterySequence105=(world.mysterySequence105||0)+1;
- const reward=roll===pool.length?makeMartialManual105({kind:'mine-mystery',sequence:world.mysterySequence105},`${state.runId984}:mystery:${world.mysterySequence105}`):{...clone(foodOccurrencePick57(pool)),count:1};
- splitItemQuantity57(item,1,state.player.inventory);giveItem57(reward,state.player.x,state.player.y);closeInventory();burst(state.player.x,state.player.y,'#e0d0a4',20,.8);addLog(`신비부적이 펼쳐졌다. ${reward.name} 획득.`);commitPlayerAction57(act,1);return true;
+ const reward=roll===pool.length?makeMartialManual105({kind:'mine-mystery',sequence:world.mysterySequence105},`${state.runId984}:mystery:${world.mysterySequence105}`):{...clone(foodOccurrencePick(pool)),count:1};
+ splitItemQuantity(item,1,state.player.inventory);giveItem(reward,state.player.x,state.player.y);closeInventory();burst(state.player.x,state.player.y,'#e0d0a4',20,.8);addLog(`신비부적이 펼쳐졌다. ${reward.name} 획득.`);commitPlayerAction57(act,1);return true;
 }
 function mineInspect105(t,x,y){const own=citadelInspect105(t,x,y);if(own)return own;const m=mineState105();if(!m)return null;if(m.palaceControls105){const b=mineButton105(x,y),w=m.walls.find(w=>w.cells.some(c=>c.x===x&&c.y===y));if(b?.bossRelease105)return{name:'왕좌전 철창 스위치',desc:'발이나 광산의 돌로 작동하면 쇠사슬 간수의 철창을 연다. 창해군은 반피에 이 스위치를 노린다.',hint:'열린 철창은 다시 닫히지 않는다.'};if(w?.persistent105)return{name:w.open?'열린 간수 철창':'간수 감방 철창',desc:'흑성채의 청동 걸쇠와 철창으로 봉인한 감방.',hint:w.open?'수감자가 탈출할 수 있다.':'바깥 스위치와 연결되어 있다. 이동과 투사체를 막는다.'};if(b)return{name:'藏珠閣 청동 압력판',desc:'밟거나 돌을 올려 놓으면 연결된 승강 석벽이 5턴 동안 가라앉는다. 벽 양쪽에 압력판이 있다.',hint:'작은 물자를 찾는 선택 미로. 열려 있는 동안 지나가거나 반대편 압력판으로 다시 열 수 있다.'};if(w)return{name:w.open?'잠긴 조정 석벽':'승강 조정 석벽',desc:'청동 수압틀에 물결 석재가 끼워진 승강벽. 상승 중 생물이 걸리면 그 칸은 올라가지 않고 파편 피해 18을 준다.',hint:w.open?`복구까지 ${Math.max(0,w.until-mineClock105()).toFixed(1)}턴`:'양쪽 청동 압력판으로 열 수 있다. 조수와 독립적으로 작동하며 궁전에서 보낸 시간이 저장된다.'};return null;}const l=m.lanterns.find(q=>q.x===x&&q.y===y);if(l)return{name:l.lit?(state.branchContext105.id==='citadel'?'성채 등불':'광산등롱'):(state.branchContext105.id==='citadel'?'꺼진 성채 등불':'꺼진 광산등롱'),desc:l.lit?'주황빛 불씨가 암벽 아래를 비춘다. 주변 5칸의 어둠을 밝힌다. 시야가 닿는 곳만 보이며, 벽 너머나 먼 구획은 드러나지 않는다.':'아직 불씨가 없는 등롱. 화룡유·불장판·화염 공격이 닿으면 켜지고 물속성 공격이 닿으면 꺼진다. 미탐색 상태에서도 위치가 표시된다.',hint:'발광바닥은 등롱빛만으로 드러나지 않는다. 직접 인접해야 한다.'};const b=mineButton105(x,y);if(b)return{name:m.palaceControls105?'청동 압력판':'광산버튼',desc:'발이나 돌의 무게로 걸쇠를 푼다. 같은 가로·세로선의 동차가 이쪽으로 돌진한다. 연결된 수상한 돌벽은 5턴 동안 내려간다.',hint:'적은 대개 버튼을 피해 다닌다. 밀어 넣거나 광산의 돌을 던져 작동시킬 수 있다.'};const wall=m.walls.find(w=>w.cells.some(q=>q.x===x&&q.y===y));if(wall)return{name:m.palaceControls105?(wall.open?'잠긴 조정 석벽':'승강 조정 석벽'):(wall.open?'내려간 돌벽':'수상한 돌벽'),desc:'광산버튼에 연결된 승강 암벽. 5턴 뒤 다시 올라온다. 누군가 걸리면 그 칸만 복구가 늦춰지고 끼인 동안 매 턴 파편 피해 18을 입는다.',hint:wall.open?`복구까지 ${Math.max(0,wall.until-mineClock105())}턴`:'양쪽 광산버튼으로 열 수 있다. 상승 칸의 동차·가구는 부서지고 생물이 끼면 피해를 받으며 복구가 늦어진다.'};if(m.carts.some(c=>c.alive&&c.x===x&&c.y===y))return{name:'동차',desc:'돌을 실은 나무 운반차. 광산버튼에 반응해 한 턴 안에 돌진한다. 충돌 피해 26. 적은 진행 방향으로 밀어낸다. 벽·동차와 부딪히거나 20칸을 달리면 부서지고, 낭떠러지에서는 추락한다.',hint:'적재 지점에서 동차가 없으면 25턴마다 보충된다.'};if(m.luminous[k(x,y)]&&!m.specialCells?.[k(x,y)])return{name:'발광바닥',desc:'어둠에 잠겨 있던 판자 다리. 인접하면 희미한 광물이 빛나며 영구히 모습을 드러낸다.',hint:'발판 밖으로 나가면 추락한다. 그림자 절벽은 이동·시야를 막는 벽이 아니다.'};if(t===TT.VOID)return{name:'광산 낭떠러지',desc:'판자 아래로 바닥 없는 골짜기가 벌어져 있다. 절벽의 그림자는 벽이 아니며 시야를 가리지 않는다.',hint:'발판을 벗어나면 추락한다.'};const feature=m.specialCells?.[k(x,y)],features={treasury:['등롱 보물실','등롱 네 개가 승강 돌벽으로 둘러싸인 보물고를 비춘다. 바깥 버튼으로 열고 들어가 물자를 챙긴 뒤 안쪽 버튼으로 다시 열어 나가자.'], 'cart-store':['동차 보관실','석조 칸막이 사이 두 적재열에 동차 여섯 대가 놓였다. 가운데 작업 통로에서 양쪽 광산버튼에 접근할 수 있다. 버튼과 같은 줄에 서지 않도록 주의하자.'], 'oil-cache':['방화 기름 저장고','어긋난 석조 칸막이가 기름 보관칸을 나눈다. 좁은 작업 통로에서 화룡유를 챙길 수 있다.'], 'washery':['물굽이 선광장','광석을 씻던 물길이 작업대 사이로 굽이쳐 흐른다. 깊은 물에 내려서지 말고 마른 건넘길로 돌아가자.'], 'supply-deck':['옹벽 보급 적재대','옹벽과 물자 칸막이가 골짜기 위의 발판을 받친다. 안쪽 보급칸에 식량을 모아 두었다. 발광바닥은 인접하면 드러난다.']};if(feature&&features[feature]&&t!==TT.WALL)return{name:features[feature][0],desc:features[feature][1],hint:''};if(t===TT.WALL)return{name:'광맥 암벽',desc:'쪼개진 암석 사이로 가느다란 광맥이 이어진다. 파낸 갱도의 가장자리를 받치는 단단한 암반.',hint:'이동과 시야를 막는다.'};if(t===TT.STONE_PATH||t===TT.FLOOR)return{name:'채굴 갱도',desc:'돌가루와 젖은 흙이 발밑에 깔렸다. 수레가 드나든 좁은 길이 암반 사이로 이어진다.',hint:''};return null;}
 function buildMine105(level,attempt=0){
@@ -21437,11 +21078,11 @@ function buildMine105(level,attempt=0){
  const pick=n=>{const pool=n.cells.filter(q=>dry(q)&&!busy(q)&&!treasuryInside(q));if(!pool.length)throw Error('Mine supply has no dry cell');return pool[ri(0,pool.length-1)];};
  const reward=(item,q,restricted=false)=>{const ok=PlacementService.placeItem({...clone(item),placement57:{branchReward105:{id:'mine',level,source:'authored'}}},q,restricted?{restrict:p=>p.x===q.x&&p.y===q.y}:{});if(!ok)throw Error('Mine reward placement failed: '+JSON.stringify({name:item.name,q,restricted}));};
  const population=['떠돌이 도둑','객잔 경비병','강시','갱도 투석꾼'];
- for(const n of nodes){if(n!==start)for(let i=0;i<(n.indoor?(level===2?2:1):1);i++)spawnNamed(population[(n.id+i+level)%4],pick(n),{placementMode:'exact',provenance:'mine-canonical'});const q=pick(n);reward(naturalFoodPick57(),q);data.supplyCells.push(q);}
- for(const area of data.specials){if(area.kind==='treasury'){area.rewardCells.forEach((q,i)=>reward(i===1?{...clone(ARMORS.find(a=>a.tier===2)||ARMORS[0]),type:'armor'}:naturalFoodPick57(),q,true));}if(area.kind==='oil-cache')for(const q of area.rewardCells)reward({...MINE_ITEMS105.oil,count:1},q,true);if(area.kind==='supply-deck')for(const q of area.rewardCells){reward(naturalFoodPick57(),q,true);data.supplyCells.push(q);}}
+ for(const n of nodes){if(n!==start)for(let i=0;i<(n.indoor?(level===2?2:1):1);i++)spawnNamed(population[(n.id+i+level)%4],pick(n),{placementMode:'exact',provenance:'mine-canonical'});const q=pick(n);reward(naturalFoodPick(),q);data.supplyCells.push(q);}
+ for(const area of data.specials){if(area.kind==='treasury'){area.rewardCells.forEach((q,i)=>reward(i===1?{...clone(ARMORS.find(a=>a.tier===2)||ARMORS[0]),type:'armor'}:naturalFoodPick(),q,true));}if(area.kind==='oil-cache')for(const q of area.rewardCells)reward({...MINE_ITEMS105.oil,count:1},q,true);if(area.kind==='supply-deck')for(const q of area.rewardCells){reward(naturalFoodPick(),q,true);data.supplyCells.push(q);}}
  reward({...MINE_ITEMS105.stone,count:8},pick(start));for(const n of nodes.filter(n=>n.indoor&&n!==start))reward({...MINE_ITEMS105.stone,count:ri(2,4)},pick(n));
  if(level===1)for(const n of[start,nodes[1],nodes[2],nodes[6]])reward({...MINE_ITEMS105.oil,count:2},pick(n));else{reward({...MINE_ITEMS105.mystery,count:1},exit);reward({...MOUNTAIN_REWARDS105.stockade,count:1},pick(last));terrain.rewardBalanceRevision105=1;}
- for(const w of data.workings){const pool=w.cells.filter(q=>dry(q)&&!busy(q)&&!treasuryInside(q)).sort((a,b)=>Math.abs(a.x-w.cx)+Math.abs(a.y-w.cy)-Math.abs(b.x-w.cx)-Math.abs(b.y-w.cy));const q=pool.shift();if(!q)throw Error('Mine working cache has no dry cell');reward(w.indoor?{...MINE_ITEMS105.stone,count:3}:naturalFoodPick57(),q);w.reward={...q};if(!w.indoor)data.supplyCells.push(q);const light=pool.shift();if(light)lamp(light,level===1||w.id===0);if(w.id<2){const mon=state.monsters.filter(m=>!m.boss)[w.id],spot=pool.find(q=>!OccupancyService.isOccupied(q.x,q.y));if(mon&&spot)OccupancyService.move(mon,spot.x,spot.y);}}
+ for(const w of data.workings){const pool=w.cells.filter(q=>dry(q)&&!busy(q)&&!treasuryInside(q)).sort((a,b)=>Math.abs(a.x-w.cx)+Math.abs(a.y-w.cy)-Math.abs(b.x-w.cx)-Math.abs(b.y-w.cy));const q=pool.shift();if(!q)throw Error('Mine working cache has no dry cell');reward(w.indoor?{...MINE_ITEMS105.stone,count:3}:naturalFoodPick(),q);w.reward={...q};if(!w.indoor)data.supplyCells.push(q);const light=pool.shift();if(light)lamp(light,level===1||w.id===0);if(w.id<2){const mon=state.monsters.filter(m=>!m.boss)[w.id],spot=pool.find(q=>!OccupancyService.isOccupied(q.x,q.y));if(mon&&spot)OccupancyService.move(mon,spot.x,spot.y);}}
  state.generationInProgress57=false;const audit=validateMine105();if(!audit.ok)throw Error('Mine generation rejected: '+JSON.stringify(audit));terrain.audit=audit;BRANCH_TILE_CACHE105.clear();VisibilityService.compute();
 }
 // Validate progression without mutating the generated map: only reachable switches open gates.
@@ -21888,15 +21529,15 @@ function dojoMartialTurn105(mon,sees,d,target=state.player){
 function dojoWeaponFits105(actor,w){const form=martialForm1005('brawl',actor);if(form==='close')return !!w&&!w.ranged&&w.kind!=='bow'&&!isBrawlWeapon42(w)&&weaponRange({...actor,weapon:w})===1;if(form==='reach'||actor.dojoLoadout105==='unarmed')return !w||isBrawlWeapon42(w);return !!w&&!w.ranged&&w.kind!=='bow'&&!isBrawlWeapon42(w);}
 function dojoEquipWeapon105(m){
  const fist=martialForm1005('brawl',m)==='reach'||m.dojoLoadout105==='unarmed';
- if(fist){if(globalThis.__MANRU_RANDOM57__()<.06){const w=clone(WEAPONS.find(w=>w.name==='연철 권갑'));w.count=1;w.identified=true;if(m.dojoRank105===4)naturalGearUpgrade105(w,globalThis.__MANRU_RANDOM57__);m.weapon=w;}else m.weapon=null;}
+ if(fist){if(globalThis.__MANRU_RANDOM57__()<.06){const w=clone(WEAPONS.find(w=>w.name==='연철 권갑'));w.count=1;w.identified=true;if(m.dojoRank105===4)naturalGearUpgrade(w,globalThis.__MANRU_RANDOM57__);m.weapon=w;}else m.weapon=null;}
  else m.weapon=dojoGear105('weapon',m.dojoRank105,m);
  if(!dojoWeaponFits105(m,m.weapon))throw Error('도장 장비와 무술 형태 불일치');
 }
 function dojoGear105(slot,rank,actor=null){
- const pool=ordinaryGearPool105(tierForFloor(12),12).filter(i=>i.type===slot&&(rank!==1||(i.tier||1)<=2)&&!i.artifactWeapon46&&!i.legendaryWeapon47&&(slot!=='weapon'||(!i.ranged&&i.kind!=='bow'&&(!actor||dojoWeaponFits105(actor,i)))));if(!pool.length){if(slot==='weapon'&&actor)throw Error('도장 무술 형태에 맞는 무기 없음');return null;}
+ const pool=ordinaryGearPool(tierForFloor(12),12).filter(i=>i.type===slot&&(rank!==1||(i.tier||1)<=2)&&!i.artifactWeapon46&&!i.legendaryWeapon47&&(slot!=='weapon'||(!i.ranged&&i.kind!=='bow'&&(!actor||dojoWeaponFits105(actor,i)))));if(!pool.length){if(slot==='weapon'&&actor)throw Error('도장 무술 형태에 맞는 무기 없음');return null;}
  // Select real generated candidates: pupils favor the lower tier, masters the higher.
  const eligible=rank===1?pool.filter(i=>(i.tier||1)===Math.min(...pool.map(v=>v.tier||1))):pool;const rolls=Array.from({length:rank>=3?2:1},()=>clone(choice(eligible)));rolls.sort((a,b)=>(rank===1?1:-1)*((a.tier||1)-(b.tier||1)));const item=rolls[0];item.count=1;item.identified=true;
- if(rank===4&&['weapon','armor'].includes(slot))naturalGearUpgrade105(item,globalThis.__MANRU_RANDOM57__);return item;
+ if(rank===4&&['weapon','armor'].includes(slot))naturalGearUpgrade(item,globalThis.__MANRU_RANDOM57__);return item;
 }
 const DOJO_STYLE_WEIGHTS105=Object.freeze([
  {name:'적송 · 타격',loadout:[5,3,1,1],strong:[5,4,1],family:[8,2],ghost:[7,3],roar:[7,3],smoke:[7,3]},
@@ -22066,7 +21707,7 @@ function buildDojo105(level,attempt=0){
   // Ground loot is authored on safe, distant room nodes, using existing item producers.
   const lootTargets=[nodes[sec.maze105?.deadEnd>=0?sec.maze105.deadEnd:1],nodes[3],nodes[5],final?{cx:x+6,cy:y+40}:nodes[11],final?{cx:x+32,cy:y+40}:nodes[9]];
   for(let i=0;i<lootTargets.length;i++){const target=lootTargets[i],q=PlacementService.findItemCell({x:target.cx,y:target.cy},{requireReachable:false,restrict:p=>p.x>=x&&p.x<x+40&&p.y>=y&&p.y<y+51,preferEmpty:true});if(!q)throw Error('도장 보급 배치 공간 부족');let item;
-   if(i===0)item=clone(CONSUMABLES.find(v=>v.name==='주먹밥'));else if(i===1)item=naturalFoodPick57();else if(i===2)item=clone(choice(ordinaryPotionPool105(false,12)));else if(i===3)item=clone(choice(ordinaryPotionPool105(true,12)));else{const before=new Set(state.items);dropRandomItem(q,false);item=state.items.find(v=>!before.has(v));if(!item||item.x<x||item.x>=x+40||item.y<y||item.y>=y+51)throw Error('도장 일반 전리품 구획 이탈');}
+   if(i===0)item=clone(CONSUMABLES.find(v=>v.name==='주먹밥'));else if(i===1)item=naturalFoodPick();else if(i===2)item=clone(choice(ordinaryPotionPool(false,12)));else if(i===3)item=clone(choice(ordinaryPotionPool(true,12)));else{const before=new Set(state.items);dropRandomItem(q,false);item=state.items.find(v=>!before.has(v));if(!item||item.x<x||item.x>=x+40||item.y<y||item.y>=y+51)throw Error('도장 일반 전리품 구획 이탈');}
    if(i!==4){item.count=1;const placed=PlacementService.placeItem(item,q,{placementMode:'exact',restrict:p=>p.x===q.x&&p.y===q.y,requireReachable:false});if(!placed)throw Error('도장 전리품 배치 실패');}
    d.supplies.push({x:item.x,y:item.y,sector:unified?0:n,zone:n,kind:i<2?'food':i===4?'random':'supply'});
   }
@@ -22088,13 +21729,13 @@ function buildDojo105(level,attempt=0){
    else{for(let yy=r.y;yy<r.y+7;yy++)for(let xx=r.x+10;xx<r.x+r.w;xx++)put(xx,yy,TT.VOID,'void');for(let yy=r.y+2;yy<r.y+9;yy++)put(r.x+6,yy,TT.WALL);}
    for(const [xx,yy]of [[r.x+2,r.y+2],[r.x+r.w-3,r.y+2]])if(state.map[yy][xx]!==TT.VOID)put(xx,yy,TT.RACK);
    const mon=dojoCreateMartialist105(4,0,80+i,false,dojoPaletteIndexForZone105(2,r.zone));mon.dojoZone105=r.zone;mon.dojoHidden105=true;Object.assign(mon,{x:r.cx,y:r.cy});OccupancyService.addMonster(mon);
-   for(let j=0;j<2;j++){const q={x:r.x+2+j*3,y:r.y+r.h-3};if(j===0){const it=clone(choice(ordinaryPotionPool105(false,12)));it.count=1;PlacementService.placeItem(it,q,{placementMode:'exact',requireReachable:false});}else dropRandomItem(q,false);}
+   for(let j=0;j<2;j++){const q={x:r.x+2+j*3,y:r.y+r.h-3};if(j===0){const it=clone(choice(ordinaryPotionPool(false,12)));it.count=1;PlacementService.placeItem(it,q,{placementMode:'exact',requireReachable:false});}else dropRandomItem(q,false);}
    d.hidden.push({x:r.x,y:r.y,w:r.w,h:r.h,kind:r.kind,screen:r.screen});
   }
  }
  for(const sec of d.zones){const rooms=d.spaces.filter(r=>(unified?r.zone===sec.id:r.sector===sec.id)&&r.theme105==='archive');for(const r of rooms){const cells=[];for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++)if(Math.abs(x-r.cx)>=2&&Math.abs(y-r.cy)>=1&&[TT.WOOD_FLOOR,TT.STONE_PATH].includes(state.map[y][x])&&!state.items.some(i=>i.x===x&&i.y===y)&&!state.monsters.some(m=>m.x===x&&m.y===y)&&DIRS4.some(([dx,dy])=>safeLootGround42(x+dx,y+dy)))cells.push({x,y});if(cells.length){for(const q of [cells[0],cells.at(-1)].filter((q,i,a)=>i===0||entityDistance57(q,a[0])>2)){if(!dojoRoomPropFits105(r,q.x,q.y))continue;put(q.x,q.y,TT.BED,'wood');d.beds105.push({...q,uses:0});}r.theme105='bedroom';break;}}}
  if(unified){
-  for(const zone of [1,3]){const r=d.spaces.find(r=>r.zone===zone&&r.theme105==='bedroom')||d.spaces.find(r=>r.zone===zone),q=PlacementService.findItemCell({x:r.cx,y:r.cy},{requireReachable:false,restrict:p=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h});if(q){const item=naturalFoodPick57();item.count=1;PlacementService.placeItem(item,q,{placementMode:'exact',requireReachable:false});d.supplies.push({...q,sector:0,zone,kind:'food'});}}
+  for(const zone of [1,3]){const r=d.spaces.find(r=>r.zone===zone&&r.theme105==='bedroom')||d.spaces.find(r=>r.zone===zone),q=PlacementService.findItemCell({x:r.cx,y:r.cy},{requireReachable:false,restrict:p=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h});if(q){const item=naturalFoodPick();item.count=1;PlacementService.placeItem(item,q,{placementMode:'exact',requireReachable:false});d.supplies.push({...q,sector:0,zone,kind:'food'});}}
   for(const z of d.zones)for(let y=z.y-1;y<=z.y+z.h;y++)for(let x=z.x-1;x<=z.x+z.w;x++)d.cellZones105[k(x,y)]=z.id;
   for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(d.cellZones105[k(x,y)]==null&&state.map[y][x]===TT.WALL){const owner=DIRS8.map(([dx,dy])=>state.map[y+dy][x+dx]!==TT.WALL?d.cellZones105[k(x+dx,y+dy)]:null).find(v=>v!=null);if(owner!=null)d.cellZones105[k(x,y)]=owner;}
   const doors=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.DOOR)doors.push({x,y});
@@ -22749,7 +22390,7 @@ function buildCitadel105(level){
   for(const room of ownRooms)route({x:room.cx,y:room.cy});
   const ports=[];for(const [dx,dy]of (tower.portDirections105||(level===1&&tower.id===12?[[0,1]]:DIRS4))){const landing=tower.portLandings105?.[k(dx,dy)];let n=0;if(!landing)while(citadelInside105(tower,tower.x+dx*(n+1),tower.y+dy*(n+1)))n++;const q={x:tower.x+(landing?.[0]??dx*n),y:tower.y+(landing?.[1]??dy*n),dx,dy};route(q);ports.push(q);}data.towers[data.towers.length-1].ports105=ports;
   const prisons=ownRooms.filter(r=>r.theme105==='prison');for(const [index,room]of prisons.entries()){room.prison105={id:`cell-${level}-${tower.id}-${room.authoredIndex105}`,captive105:index<Math.min(3,prisons.length),elite105:index===0,bounds:{x:room.x,y:room.y,w:room.w,h:room.h}};if(room.prison105.captive105&&room.prison105.elite105&&!room.supply105)room.supply105='oil';}
-  for(const room of ownRooms){props(room,tower);if(room.supply105){const pos={x:room.cx,y:room.cy},item=room.supply105==='oil'?clone(MINE_ITEMS105.oil):naturalFoodPick57();if(!PlacementService.placeItem({...item,count:room.prison105?.elite105?2:1,placement57:{branchReward105:{id:'citadel',level,source:'optional-cell'}}},pos,{requireReachable:false,restrict:p=>p.x===pos.x&&p.y===pos.y}))throw Error('Optional cell supply placement');}}
+  for(const room of ownRooms){props(room,tower);if(room.supply105){const pos={x:room.cx,y:room.cy},item=room.supply105==='oil'?clone(MINE_ITEMS105.oil):naturalFoodPick();if(!PlacementService.placeItem({...item,count:room.prison105?.elite105?2:1,placement57:{branchReward105:{id:'citadel',level,source:'optional-cell'}}},pos,{requireReachable:false,restrict:p=>p.x===pos.x&&p.y===pos.y}))throw Error('Optional cell supply placement');}}
   const serviceThemes={armory:[TT.ARMORY],infirmary:[TT.FOUNTAIN],archive:[TT.RUMOR],kitchen:[TT.COOKPOT],store:[TT.CACHE]};
   for(const theme of Object.keys(serviceThemes)){const room=ownRooms.filter(r=>r.theme105===theme&&!r.relicSite105).sort((a,b)=>Number(b.authoredIndex105===tower.purpose105?.goalRoom105)-Number(a.authoredIndex105===tower.purpose105?.goalRoom105))[0];if(!room||tower.id===12&&level===1&&theme!=='infirmary')continue;const tile=serviceThemes[theme][0],x=room.cx+Number(tower.plannedControls105?.some(b=>b.x===room.cx-tower.x&&b.y===room.cy-tower.y)||CITADEL_RELEASES105.some(r=>r.level===level&&r.tower===tower.id&&r.theme===theme)||tower.stairLandings105?.down?.[0]===room.cx-tower.x&&tower.stairLandings105?.down?.[1]===room.cy-tower.y),y=room.cy;if(m[y][x]!==TT.STONE_PATH)throw Error('Citadel service outside room');put(x,y,tile,'citadel-'+CITADEL_ROOM_THEMES105[theme].floor);delete ter.props[k(x,y)];const text={armory:'무기고를 열어 전투 물자를 확보할 수 있다.',infirmary:'한 번만 체력·기력을 회복하고 상태이상을 정화한다.',archive:'흑성채의 연결교와 미궁 공략 기록이 보관되어 있다.',kitchen:'기존 취사 시설에서 가진 식재료를 조리할 수 있다.',store:'한 번만 보급함을 열어 물자를 챙긴다.'}[theme];room.function105=text;data.features105.push({x,y,tile,theme,tower105:tower.id,name:CITADEL_ROOM_THEMES105[theme].name,desc:text});}
   for(const [index,shortcut]of (tower.shortcuts105||[]).entries()){const cells=shortcut.cells.map(([dx,dy])=>({x:tower.x+dx,y:tower.y+dy})),mid=Math.floor(cells.length/2),q=cells[mid],id=`inner-${tower.id}-${index}`;if(cells.some(c=>!citadelInside105(tower,c.x,c.y)||![TT.STONE_PATH,TT.DOOR].includes(m[c.y][c.x])))throw Error('Invalid authored shortcut '+id);const buttons=[cells[mid-1],cells[mid+1]];const wall={id,buttonIds:[id+':a',id+':b'],cells:[q],open:false,until:0,shortcut105:true};mine.walls.push(wall);put(q.x,q.y,TT.WALL,'iron-grate');delete ter.props[k(q.x,q.y)];for(const [n,b]of buttons.entries()){put(b.x,b.y,TT.SWITCH);delete ter.props[k(b.x,b.y)];mine.buttons.push({...b,id:id+(n?':b':':a'),gateOnly:true,shortcut105:true});}data.shortcuts105.push({tower105:tower.id,name:shortcut.name,cells,gate:id});}
@@ -22823,7 +22464,7 @@ function buildCitadel105(level){
   const entry={id:site.id,tower:site.tower,room:room.name,x:q.x,y:q.y,real:trueSite,scattered:[]};data.relicSites105.push(entry);
   const place=(item,pos)=>{if(!PlacementService.placeItem({...clone(item),placement57:{branchReward105:{id:'citadel',level,source:'relic-chamber'}}},pos,{requireReachable:false,restrict:p=>p.x===pos.x&&p.y===pos.y}))throw Error('Citadel relic chamber placement');entry.scattered.push(pos);};
   if(trueSite&&!plan.issued&&!globalThis.__MANRU_LEGEND47__.claimed(site.id)&&!globalThis.__MANRU_LEGEND47__.possesses(site.id)){place(globalThis.__MANRU_LEGEND47__.defs().find(d=>d.id===site.id),q);plan.issued=true;}
-  if(!trueSite){const coal=foodDef57('검게 탄 숯');for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++)if(m[y][x]===TT.STONE_PATH&&!ter.props[k(x,y)]&&!mine.lanterns.some(l=>l.x===x&&l.y===y)&&(x===q.x||y===q.y||hash2(x,y,1461)<.60))place({...coal,count:1},{x,y});}
+  if(!trueSite){const coal=foodDef('검게 탄 숯');for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++)if(m[y][x]===TT.STONE_PATH&&!ter.props[k(x,y)]&&!mine.lanterns.some(l=>l.x===x&&l.y===y)&&(x===q.x||y===q.y||hash2(x,y,1461)<.60))place({...coal,count:1},{x,y});}
  }
  const reserved=q=>state.items.some(i=>i.x===q.x&&i.y===q.y)||!!ter.props[k(q.x,q.y)]||state.branchPortals105.some(p=>entityDistance57(q,p)<3)||mine.buttons.some(p=>entityDistance57(q,p)<2)||mine.lanterns.some(p=>p.x===q.x&&p.y===q.y)||mine.walls.some(w=>w.cells.some(c=>c.x===q.x&&c.y===q.y))||entityDistance57(q,data.reward)<3;
  for(const tower of data.towers){const cells=[];for(let y=tower.y-tower.r;y<=tower.y+tower.r;y++)for(let x=tower.x-tower.r;x<=tower.x+tower.r;x++)if(citadelInside105(tower,x,y,1)&&m[y][x]===TT.STONE_PATH&&!reserved({x,y}))cells.push({x,y});
@@ -22849,7 +22490,7 @@ function buildCitadel105(level){
   const chambers=data.rooms.filter(r=>r.citadelTower105===tower.id&&r.theme105!=='stair'&&!r.relicSite105).sort((a,b)=>tower.purpose105?Number(b.authoredIndex105===tower.purpose105.supplyRoom105)-Number(a.authoredIndex105===tower.purpose105.supplyRoom105):Math.abs(b.cx-tower.x)+Math.abs(b.cy-tower.y)-Math.abs(a.cx-tower.x)-Math.abs(a.cy-tower.y));
   const options=[];for(const [rank,chamber]of chambers.entries())for(let y=chamber.y;y<chamber.y+chamber.h;y++)for(let x=chamber.x;x<chamber.x+chamber.w;x++)if(m[y][x]===TT.STONE_PATH&&!reserved({x,y})&&!OccupancyService.isOccupied(x,y))options.push({x,y,chamber,rank});
   options.sort((a,b)=>a.rank-b.rank||Math.abs(a.x-a.chamber.cx)+Math.abs(a.y-a.chamber.cy)-Math.abs(b.x-b.chamber.cx)-Math.abs(b.y-b.chamber.cy));const q=options[0];if(!q)throw Error('Citadel branch reward has no free chamber cell '+tower.name+' '+level);const chamber=q.chamber;
-  const item=tower.concept105==='archive'?{...MINE_ITEMS105.oil,count:1}:tower.concept105==='armory'||tower.concept105==='siege'?{...MINE_ITEMS105.stone,count:3}:naturalFoodPick57();
+  const item=tower.concept105==='archive'?{...MINE_ITEMS105.oil,count:1}:tower.concept105==='armory'||tower.concept105==='siege'?{...MINE_ITEMS105.stone,count:3}:naturalFoodPick();
   if(!PlacementService.placeItem({...clone(item),placement57:{branchReward105:{id:'citadel',level,source:'side-chamber'}}},q,{requireReachable:false,restrict:p=>p.x===q.x&&p.y===q.y}))throw Error('Citadel chamber reward placement failed');
   (data.supplyRooms105||=[]).push({tower105:tower.id,x:q.x,y:q.y,room:chamber.name,item:item.name});
  }
@@ -22881,21 +22522,21 @@ function citadelReward105(){
  if(state.branchContext105?.id!=='citadel'||state.branchContext105.level!==1||entityDistance57(state.player,d.reward)>1||!state.visible.has(k(d.reward.x,d.reward.y)))return false;
  if(t.status!=='active'||state.turn>=t.deadline||t.seals.length!==3){toast('180턴 안에 세 걸쇠를 풀고 전승 제단에 도달해야 한다.');return false;}if(!ready()){toast('시험실의 일곱 수호자를 모두 쓰러뜨려야 한다.');return false;}
   const upgrade=(window.MANRU_TALISMANS||[]).find(i=>i.talismanKind==='upgrade');if(!upgrade)throw Error('Missing citadel reward definition');
-  const panel=summonPanel105('흑성채의 전승',`시험 보상은 강화부적 1장이다. 남은 ${t.deadline-state.turn}턴.`),button=document.createElement('button');button.textContent=upgrade.name+' × 1';button.onclick=()=>{if(!ready())return;world.rewardClaimed=true;world.rewardChoice105='upgrade';t.status='completed';addInventoryItem57({...clone(upgrade),count:1});addLog('흑성 미궁을 통과해 강화부적 1장을 받았다.');closeSummonPanel105();globalThis.__MANRU_SAVE_SERVICE__?.request?.();};panel.append(button);return true;
+  const panel=summonPanel105('흑성채의 전승',`시험 보상은 강화부적 1장이다. 남은 ${t.deadline-state.turn}턴.`),button=document.createElement('button');button.textContent=upgrade.name+' × 1';button.onclick=()=>{if(!ready())return;world.rewardClaimed=true;world.rewardChoice105='upgrade';t.status='completed';addInventoryItem({...clone(upgrade),count:1});addLog('흑성 미궁을 통과해 강화부적 1장을 받았다.');closeSummonPanel105();globalThis.__MANRU_SAVE_SERVICE__?.request?.();};panel.append(button);return true;
 }
 let ANVIL_SESSION105=null;
 function citadelAnvilAt105(x,y){return state?.branchContext105?.id==='citadel'&&state.branchTerrain105?.props?.[k(x,y)]==='anvil'&&terrainSurface58(terrainBaseTile58(x,y));}
 function anvilNearby105(q){const p=state?.player;return !!p&&entityDistance57(q,p)<=1&&(q.x===p.x||q.y===p.y||!runtimeTerrainSolid57(state.map[p.y]?.[q.x])&&!runtimeTerrainSolid57(state.map[q.y]?.[p.x]));}
 function citadelAdjacentAnvil105(){if(!state?.player)return null;const p=state.player,near=[];for(const [dx,dy]of [[0,0],...DIRS8])if(citadelAnvilAt105(p.x+dx,p.y+dy)&&anvilNearby105({x:p.x+dx,y:p.y+dy}))near.push({x:p.x+dx,y:p.y+dy});return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;}
-function anvilGear105(item){return !!item&&['weapon','armor'].includes(item.type)&&!item.artifactWeapon46&&!item.artifactId46&&!item.curse991&&!item.curse&&!item.curseActive991&&(item.count??1)===1;}
-function anvilPair105(base,donor){const p=state?.player;return !!p&&base!==donor&&anvilGear105(base)&&anvilGear105(donor)&&(p.weapon===base||p.armor===base||p.inventory.includes(base))&&p.inventory.includes(donor)&&base.type===donor.type&&base.name===donor.name&&(base.upgrade||0)===(donor.upgrade||0);}
+
+function anvilPair105(base,donor){const p=state?.player;return !!p&&base!==donor&&anvilGear(base)&&anvilGear(donor)&&(p.weapon===base||p.armor===base||p.inventory.includes(base))&&p.inventory.includes(donor)&&base.type===donor.type&&base.name===donor.name&&(base.upgrade||0)===(donor.upgrade||0);}
 function closeAnvil105(){ANVIL_SESSION105=null;document.getElementById('anvilPanel105')?.remove();setInteraction8('anvilPanel105',false);}
 function anvilOpen105(q=citadelAdjacentAnvil105()){
  if(!q||!gameplayUiOpen57()||!citadelAnvilAt105(q.x,q.y)||!anvilNearby105(q))return false;
  closeInventory();cancelAutoWalk();clearHeldInput53();ANVIL_SESSION105={map:state.map,x:q.x,y:q.y};
  const panel=document.createElement('section');panel.id='anvilPanel105';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.style.cssText='position:fixed;z-index:300;top:50%;left:50%;transform:translate(-50%,-50%);width:min(740px,calc(100vw - 24px));max-height:90vh;box-sizing:border-box;overflow:auto;padding:16px;background:#171d23;border:2px solid #a8956b;border-radius:12px;color:#eee0bc;box-shadow:0 15px 90px #000c;display:flex;flex-direction:column;gap:10px;';
  const title=document.createElement('h2');title.textContent='모루 · 장비 합성';const desc=document.createElement('p');desc.textContent='같은 종류·같은 강화치의 미저주 무기 또는 방어구 2개 → 강화 +1 장비 하나. 재료 1개를 소모하며, 남길 장비의 각인과 특성은 유지한다. 전설 무기는 합성할 수 없다. 합성 1턴.';const close=document.createElement('button');close.textContent='닫기';close.onclick=closeAnvil105;panel.append(title,desc,close);
- const p=state.player,entries=[p.weapon,p.armor,...p.inventory].filter(anvilGear105),pairs=[];
+ const p=state.player,entries=[p.weapon,p.armor,...p.inventory].filter(anvilGear),pairs=[];
  const detail=it=>`${it.name} +${it.upgrade||0}${p.weapon===it||p.armor===it?' · 장착 중':''}${it.elementBrand74||it.elementGuard74?' · 각인 '+({fire:'화염',water:'수류',wind:'풍압',earth:'대지',wood:'목령',grass:'목령',shock:'뇌전',holy:'성광',ice:'빙결',thunder:'뇌전'}[it.elementBrand74||it.elementGuard74]||'원소'):''}`;
  for(const base of entries)for(const donor of p.inventory){if(!anvilPair105(base,donor))continue;pairs.push([base,donor]);const button=document.createElement('button');button.style.cssText='text-align:left;white-space:pre-line;padding:12px;';button.textContent=`남김: ${detail(base)} → +${(base.upgrade||0)+1}\n소모: ${detail(donor)}`;button.onclick=()=>ActionDispatcher.dispatch({type:'ANVIL_FUSE105',args:[base,donor]}).value;panel.append(button);}
  if(!pairs.length){const empty=document.createElement('p');empty.textContent='합성할 장비 쌍이 없다. 같은 종류와 강화치의 미저주 무기·방어구를 모아 오자.';panel.append(empty);}
@@ -22904,7 +22545,7 @@ function anvilOpen105(q=citadelAdjacentAnvil105()){
 function anvilFuse105(base,donor){
  const session=ANVIL_SESSION105;if(!session||session.map!==state?.map||!citadelAnvilAt105(session.x,session.y)||!anvilNearby105(session)||!anvilPair105(base,donor)){toast('모루와 합성 재료를 다시 확인하자.');return false;}
  const act=playerAction57('anvil',{uiOwner:'anvilPanel105'});if(!act.ok)return false;
- if(!consumeItemQuantity57(donor,1))return false;if(base.type==='weapon')applyWeaponUpgrade42(base);else applyArmorUpgrade42(base);
+ if(!consumeItemQuantity(donor,1))return false;if(base.type==='weapon')applyWeaponUpgrade42(base);else applyArmorUpgrade42(base);
  closeAnvil105();burst(session.x,session.y,'#e8bc6b',18,.7);addLog(`모루 합성 · ${base.name} 2개를 합쳐 +${base.upgrade} 하나를 만들었다. 남긴 장비의 각인과 특성은 유지된다.`);commitPlayerAction57(act,1);updateAll();return true;
 }
 ActionDispatcher.register('ANVIL_FUSE105',anvilFuse105);
@@ -23153,18 +22794,18 @@ function summonInstallPicture105(item,bookId){
  if(!state?.player||state.debugBattle57||!state.player.inventory.includes(item)||item.summonItem105!=='picture')return false;
  const q=summonState105();normalizeSummonSpeciesItem105(item);const book=summonBook105(bookId),entry=summonCatalog105().find(e=>e.name===item.summonSpecies105);if(!book||!entry)return false;
  const before=book.summonPictures105[entry.name]?.count||0;if(!Number.isSafeInteger(before+1))return false;
- const act=playerAction57('item',{uiOwner:'summonPanel105',allowInventory:true});if(!act.ok)return false;if(!consumeItemQuantity57(item,1))return false;
+ const act=playerAction57('item',{uiOwner:'summonPanel105',allowInventory:true});if(!act.ok)return false;if(!consumeItemQuantity(item,1))return false;
  book.summonPictures105[entry.name]={count:before+1,portrait:book.summonPictures105[entry.name]?.portrait||clone(item.summonPortrait105||entry.actor||entry.def)};q.activeBook105=book.summonBookId105;
  addLog(`${entry.name} 그림을 술서에 끼웠다 · ${before+1}장 · 추가 층배율 +${before}.`);closeSummonPanel105();closeInventory();commitPlayerAction57(act,1);updateAll();return true;
 }
-function summonTalismanElement105(item){return item?.type==='talisman'&&globalThis.__MANRU_TALISMAN_PUBLIC__?.known(item)&&itemQuantity57(item)>0&&SUMMON_RACES105[item.element74]?item.element74:null;}
+function summonTalismanElement105(item){return item?.type==='talisman'&&globalThis.__MANRU_TALISMAN_PUBLIC__?.known(item)&&itemQuantity(item)>0&&SUMMON_RACES105[item.element74]?item.element74:null;}
 function summonBindTalisman105(item,bookId,name=null){
  if(!state?.player||state.debugBattle57||!state.player.inventory.includes(item))return false;const q=summonState105(),book=summonBook105(bookId),element=summonTalismanElement105(item);if(!book||!element)return false;
  if(book.summonElement105===element){
   if(!name)return summonOpen105(book.summonBookId105,'copy',item);
   const entry=summonCatalog105().find(e=>e.name===name),picture=book.summonPictures105[name];if(!entry||!picture||!Number.isSafeInteger(picture.count)||picture.count<1||!Number.isSafeInteger(picture.count+1)||!summonMatches105(entry.actor||entry.def,element))return false;
  }else if(name)return false;
- const act=playerAction57('item',{uiOwner:'summonPanel105'});if(!act.ok)return false;if(!consumeItemQuantity57(item,1))return false;
+ const act=playerAction57('item',{uiOwner:'summonPanel105'});if(!act.ok)return false;if(!consumeItemQuantity(item,1))return false;
  if(name){book.summonPictures105[name].count++;addLog(`${item.name}의 기운으로 ${name} 그림을 한 장 더 새겼다 · ${book.summonPictures105[name].count}장.`);}
  else{book.summonElement105=element;addLog(`${item.name}를 술서에 끼웠다 · ${SUMMON_RACES105[element].name} 소환.`);}
  q.activeBook105=book.summonBookId105;closeSummonPanel105();commitPlayerAction57(act,1);updateAll();return true;
@@ -23203,7 +22844,7 @@ function summonOpenMaterials105(bookId,kind){
  if(!gameplayUiOpen57())return false;summonState105();const book=summonBook105(bookId);if(!book)return false;
  const panel=summonPanel105(kind==='picture'?'그림을 끼운다':'부적을 끼운다'),body=panel.querySelector('.summonBody105'),list=document.createElement('div');list.className='summonPictures105';body.append(list);SUMMON_PANEL_SESSION105={run:state,bookId,mode:kind};
  const items=state.player.inventory.filter(i=>kind==='picture'?i.summonItem105==='picture':!!summonTalismanElement105(i));
- for(const item of items){const element=summonTalismanElement105(item),same=element&&book.summonElement105===element;const b=summonChoice105(list,item.name,kind==='picture'?`보유 ${itemQuantity57(item)}장 · 한 장을 끼운다`:`${SUMMON_RACES105[element].name} · ${same?'끼운 그림 하나에 기운을 더한다':'책의 종족을 바꾼다'} · 1장 소모`,item,()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:kind==='picture'?'SUMMON_PICTURE105':'SUMMON_TALISMAN105',args:[item,bookId]});});b.dataset.summonMaterial=kind;b.dataset.summonMaterialName=item.name;}
+ for(const item of items){const element=summonTalismanElement105(item),same=element&&book.summonElement105===element;const b=summonChoice105(list,item.name,kind==='picture'?`보유 ${itemQuantity(item)}장 · 한 장을 끼운다`:`${SUMMON_RACES105[element].name} · ${same?'끼운 그림 하나에 기운을 더한다':'책의 종족을 바꾼다'} · 1장 소모`,item,()=>{if(SUMMON_PANEL_SESSION105?.run!==state)return;ActionDispatcher.dispatch({type:kind==='picture'?'SUMMON_PICTURE105':'SUMMON_TALISMAN105',args:[item,bookId]});});b.dataset.summonMaterial=kind;b.dataset.summonMaterialName=item.name;}
  if(!items.length){const empty=document.createElement('p');empty.className='summonEmpty105';empty.textContent=kind==='picture'?`행낭에 그림이 없다. 술서를 지니고 같은 적을 기본 ${SUMMON_RULES105.pictureKills}회, 테마 후반 일반 적은 ${SUMMON_RULES105.latePictureKills}회 처치하자.`:'행낭에 끼울 속성부적이 없다.';list.append(empty);}const back=document.createElement('button');back.textContent='책으로 돌아간다';back.onclick=()=>summonOpen105(bookId);body.append(back);return true;
 }
 function summonUse105(item,idx){

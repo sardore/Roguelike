@@ -61,7 +61,17 @@ for (const n of names) {
   picked.add(s);
 }
 const stmts = [...picked].sort((a, b) => a.start - b.start);
-for (const s of stmts) if (!segOf(s.start)) throw new Error('statement outside any file segment');
+for (const s of stmts) {
+  const seg = segOf(s.start);
+  if (!seg) throw new Error('statement outside any file segment');
+  if (s.type === 'VariableDeclaration') {
+    // an initialiser that reads window/globalThis at load time depends on the loose statements that publish those members first
+    let reads = null;
+    walk.ancestor(s, { Identifier(id, _st, anc) { if ((id.name === 'window' || id.name === 'globalThis') && !anc.some((a) => /Function/.test(a.type))) reads = id.name; } });
+    if (reads) throw new Error(`${declNames(s)[0]}: the initialiser reads ${reads}.* at load time; the statements that publish it fix its place`);
+  }
+  if (seg.file === 'qa/qa.js') throw new Error(`${declNames(s)[0]} is declared in qa/qa.js (test-only code): it must not move into the game`);
+}
 
 // ---- the text of each statement with the comments directly above and a trailing comment
 function blockOf(s) {

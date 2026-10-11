@@ -3,6 +3,7 @@
   "kernel.js",
   "catalog.js",
   "save.js",
+  "items.js",
   "spine.js"
  ],
  "afterClosure": [

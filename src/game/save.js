@@ -250,10 +250,10 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     }catch(e){toast('저장 데이터를 복구하지 못했다.');return false}
   }
   function migrateLegacyInventory(){
-    if(!state?.player||state.legacyUpgradeMigrated982)return 0;let n=0;const up=upgradeProto982();if(!up)return 0;
-    const kept=[];for(const i of state.player.inventory||[]){if(isLegacyUpgrade982(i)){n+=i.count||1}else kept.push(i)}state.player.inventory=kept;
+    if(!state?.player||state.legacyUpgradeMigrated982)return 0;let n=0;const up=upgradeProto();if(!up)return 0;
+    const kept=[];for(const i of state.player.inventory||[]){if(isLegacyUpgrade(i)){n+=i.count||1}else kept.push(i)}state.player.inventory=kept;
     n+=Math.max(0,state.player.upgradeMarks||0);state.player.upgradeMarks=0;state.legacyUpgradeMigrated982=true;
-    if(n){const item=clone(up);item.count=n;addInventoryItem57(item);addLog(`구형 개량 자원 ${n}개를 강화부적으로 전환했다.`)}
+    if(n){const item=clone(up);item.count=n;addInventoryItem(item);addLog(`구형 개량 자원 ${n}개를 강화부적으로 전환했다.`)}
     return n;
   }
   /* ===== MANRU v10.0.4: Nevanda-informed compact heroes r2 / equipment layers / isolated saves ===== */
