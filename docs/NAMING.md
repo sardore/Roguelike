@@ -12,3 +12,7 @@
 ## items.js
 - 접미사 제거(기계) 97개, 수동 이름 24개. 수동 이름은 접미사를 떼면 이미 다른 곳(속성명·지역변수)에서 쓰는 이름과 겹쳐서 역할명을 붙인 것이다. 정의 한 줄만 보고 정한 이름이라 의미가 어긋났을 수 있다(확인 필요): `identifyOne991→useIdentifyScrollOn`, `cursePower991→curseMultiplier`, `potionKnown57→isPotionKindVisible`, `prepareGearCurse`(markGear991), `foodTargetPanel`/`cookingPanel`(DOM 요소라 UI 성격).
 - 옮기지 않은 것: `POTION_LIST`, `POTION_BY_KIND`(로드 시 `window.MANRU_POTIONS`를 읽는다. 그 값을 만드는 느슨한 문장 뒤에 있어야 한다), `allPrototypes`(QA 전용 함수).
+
+## combat.js
+- 접미사 제거(기계) 89개, 수동 5개(`martialForm1005→martialFormOf`, `openMartialManual1005→showMartialManual`, `hurt61→monsterAttacksTarget`, `critBonus47→cursedBladeCritBonus`, `defBonus47→earthGauntletDefBonus`). 한 줄 정의만 보고 정한 이름이라 확인 필요.
+- 이번에 옮기지 않은 것: 부적(TALISMAN*) 묶음 — 아이템과 전투 양쪽 성격이라 도메인 결정 후 옮긴다. `martialLanding`처럼 이름은 무술이지만 이동 쪽 성격인 것은 같이 옮겼다.

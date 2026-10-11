@@ -72,7 +72,7 @@ function projectGameState(source=state){
 function migrateGameState(candidate){
   if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw Error('GameState object required');
   const schema=candidate.saveSchema1004==null?0:Number(candidate.saveSchema1004);if(!Number.isInteger(schema)||schema<0||schema>1)throw Error('Unsupported GameState schema');
-  const migrated=projectGameState(candidate);if(!migrated)throw Error('GameState migration failed');branchPruneWorld105(migrated);branchUnpackWorld105(migrated);initializeMartial1005(migrated);return migrated;
+  const migrated=projectGameState(candidate);if(!migrated)throw Error('GameState migration failed');branchPruneWorld105(migrated);branchUnpackWorld105(migrated);initializeMartial(migrated);return migrated;
 }
 const GameState=Object.freeze({
   initialize(source){
@@ -98,7 +98,7 @@ const GameState=Object.freeze({
     const knowledge=source.knowledge56=source.knowledge56||{};
     for(const key of ['potionMap','potionKnown','potionSeen','roomHints','clueSeen','talismanMap','talismanKnown','talismanSeen'])knowledge[key]=knowledge[key]||{};
     knowledge.talismanHistory=knowledge.talismanHistory||[];knowledge.talismanKnown.identify=true;
-    source.player.foodVital57=Number(source.player.foodVital57)||0;initializeMartial1005(source);
+    source.player.foodVital57=Number(source.player.foodVital57)||0;initializeMartial(source);
     const h=source.hazard1005=source.hazard1005||{armed:{},collapsed:{},drownUntil:0,voidUntil:0,lastWarn:{}};
     h.armed=h.armed||{};h.collapsed=h.collapsed||{};h.lastWarn=h.lastWarn||{};
     return source;
@@ -417,6 +417,6 @@ function normalizeSavedItem(it){
     if(Object.prototype.hasOwnProperty.call(d,k))it[k]=d[k];else if(['focusChain','edgeBonus','chain','parry','tracking','staggerResist','focusRegen','eatSpeed','trapGuard'].includes(k))delete it[k];
   }
   if(it.type==='ingredient'&&d.throwElement105)for(const key of ['throwable','throwRange','throwElement105','color','useCost'])it[key]=d[key];
-  if(it.type==='armor')syncArmorDefense42(it);if(it.name==='두꺼운 면망토')delete it.hazardResist;
+  if(it.type==='armor')syncArmorDefense(it);if(it.name==='두꺼운 면망토')delete it.hazardResist;
   return it;
 }

@@ -4,6 +4,7 @@
   "catalog.js",
   "save.js",
   "items.js",
+  "combat.js",
   "spine.js"
  ],
  "afterClosure": [

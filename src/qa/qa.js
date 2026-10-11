@@ -5,7 +5,7 @@ globalThis.__MANRU_MOVE_HOOKS__=MOVE_HOOKS_R8;
 globalThis.__MANRU_PLAYER_MATH55__={stats:()=>PLAYER_STAT_STAGES55.map(v=>v.id),attack:()=>ATTACK_COST_STAGES55.map(v=>v.id),move:()=>MOVE_COST_STAGES55.map(v=>v.id)};
 globalThis.__MANRU_ACTION_DISPATCHER__=ActionDispatcher;
 globalThis.__MANRU_INPUT_ROUTER__=InputRouter;
-globalThis.__MANRU_ATTACK_PIPELINE_R25__=MANRU_ATTACK_PIPELINE_R25;
+globalThis.__MANRU_ATTACK_PIPELINE_R25__=MANRU_ATTACK_PIPELINE_R;
 globalThis.__MANRU_COMBATANTS57__=Object.freeze({faction:entityFaction57,hostile:entitiesHostile57,allied:entitiesAllied57,targetValid:combatTargetValid57,setFaction:setEntityFaction57,inheritFaction:inheritCombatFaction57,attack:executeMonsterAttackBundle57});
 globalThis.__MANRU_BOSS_REWARD55__={
   stages:()=>({pre:BOSS_REWARD_STAGES55.pre.map(v=>v.id),post:BOSS_REWARD_STAGES55.post.map(v=>v.id)}),
@@ -93,7 +93,7 @@ function asuraSectorOpen61(m,r,dx,dy){
 function asuraApproachCount61(m,r=m?.asuraRadius47||3){return m?ReachabilityService.asuraApproachSectors({asuraSafeLand61,asuraSectorOpen61},m,r).length:0}
 function approach61(tx,ty){const out=[];for(const[dx,dy]of DIRS8){const x=tx+dx,y=ty+dy;if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||!ReachabilityService.playerPassable(x,y)||OccupancyService.isOccupied(x,y))continue;const path=ReachabilityService.visiblePath(x,y);if(path)out.push({x,y,path})}out.sort((a,b)=>a.path.length-b.path.length);return out[0]||null}
 function finishInteract61(tx,ty){const t=state.map[ty]?.[tx];const dx=Math.sign(tx-state.player.x),dy=Math.sign(ty-state.player.y);if(entityDistance57({x:tx,y:ty},state.player)>1){toast('대상 바로 옆까지 갈 수 없다.');return false}if(t===TT.DOOR){ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}).value;return true}return ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[tx,ty]}).value}
-function runApproach61(path,tx,ty){cancelAutoWalk();const token=++autoWalkToken;VIS.autoPath=path.map(p=>({...p}));v10AutoChip(state.map[ty][tx]===TT.DOOR?'문으로 이동':'구조물로 이동');const step=()=>{if(token!==autoWalkToken||!state||state.dead||state.victory||uiInputBlocked()){VIS.autoPath=null;v10AutoChip(null);return}const q=path.shift();if(!q){VIS.autoPath=null;v10AutoChip(null);finishInteract61(tx,ty);return}const ox=state.player.x,oy=state.player.y,hp=state.player.hp,before=state.monsters.filter(isThreatVisibleToPlayer57).length;ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-ox),Math.sign(q.y-oy)]}).value;if(state.player.x===ox&&state.player.y===oy){VIS.autoPath=null;v10AutoChip(null);return}VIS.autoPath=path.map(p=>({...p}));const after=state.monsters.filter(isThreatVisibleToPlayer57).length;if(state.player.hp<hp||after>before||state.monsters.some(m=>isThreatVisibleToPlayer57(m)&&entityDistance57(m,state.player)<=1)){VIS.autoPath=null;v10StopForDanger();return}autoWalkTimer=setTimeout(step,76)};step()}
+function runApproach61(path,tx,ty){cancelAutoWalk();const token=++autoWalkToken;VIS.autoPath=path.map(p=>({...p}));v10AutoChip(state.map[ty][tx]===TT.DOOR?'문으로 이동':'구조물로 이동');const step=()=>{if(token!==autoWalkToken||!state||state.dead||state.victory||uiInputBlocked()){VIS.autoPath=null;v10AutoChip(null);return}const q=path.shift();if(!q){VIS.autoPath=null;v10AutoChip(null);finishInteract61(tx,ty);return}const ox=state.player.x,oy=state.player.y,hp=state.player.hp,before=state.monsters.filter(isThreatVisibleToPlayer).length;ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(q.x-ox),Math.sign(q.y-oy)]}).value;if(state.player.x===ox&&state.player.y===oy){VIS.autoPath=null;v10AutoChip(null);return}VIS.autoPath=path.map(p=>({...p}));const after=state.monsters.filter(isThreatVisibleToPlayer).length;if(state.player.hp<hp||after>before||state.monsters.some(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,state.player)<=1)){VIS.autoPath=null;v10StopForDanger();return}autoWalkTimer=setTimeout(step,76)};step()}
 function interact61(tx,ty){if(uiInputBlocked()||!state.seen.has(k(tx,ty)))return false;const t=state.map[ty]?.[tx];if(!INTERACT61.has(t))return false;if(entityDistance57({x:tx,y:ty},state.player)<=1)return finishInteract61(tx,ty);const a=approach61(tx,ty);if(!a){toast('대상 곁으로 갈 수 없다.');return true}runApproach61(a.path,tx,ty);return true}
 window.__MANRU_INTERACT61__=interact61;
 window.__MANRU_ASURA61__.find=()=>state?.monsters?.find(m=>m.role61==='asura'&&m.hp>0)||null;
@@ -543,7 +543,7 @@ function inspectTile52(x,y){
     showInspect(terrainName(t),`${extra?`<b>${extra}</b><br>`:''}${state.layoutName||regionFor(state.floor)[2]}<br><span style="color:#a79374">${stairs||'길게 눌러 확인한 지형이다.'}</span><br><span style="color:#6f604e">좌표 ${x}, ${y} · 거리 ${dist}칸</span>`);
   }
 window.__MANRU_V52_TEST__={
-    selectAt:(x,y)=>elementalWorldTarget105(x,y)?selectJarTarget52(x,y,false):(()=>{const m=findMonsterAt(x,y);return isThreatVisibleToPlayer57(m)?selectBowTarget52(m,false):false})(),
+    selectAt:(x,y)=>elementalWorldTarget105(x,y)?selectJarTarget52(x,y,false):(()=>{const m=findMonsterAt(x,y);return isThreatVisibleToPlayer(m)?selectBowTarget52(m,false):false})(),
     selectJar:(x,y)=>selectJarTarget52(x,y,false),
     fire:()=>ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value,
     inspectAt:(x,y)=>inspectTile52(x,y),
