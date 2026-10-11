@@ -30,5 +30,29 @@
 | `ASURA_HAZ` | monsters | T(F-23): `TT.CRUMBLE` 할당 뒤 | `TT` 할당을 kernel로 모은 뒤(F-24 결정 필요) |
 | `CITADEL_PROP_TILES` | render | T(F-23): `Object.assign(TT,{STONE_PILLAR…})` 뒤 | 같은 조건 |
 
+## rest 처리 결과 (2026-10-11)
+
+규칙: rest의 모든 선언은 (a) 가장 많이 쓰는 도메인에 붙이거나, (b) 안 쓰면 삭제하거나, (c) 정말 공용이면 이유를 적어 남긴다. util/misc 같은 서랍 도메인은 만들지 않는다.
+
+- 처음 rest: 1,539줄(550문장, 2026-10-11 오전 rest-plan 기준).
+- (b) 삭제: 23개(쓰는 곳 없음, `ab34520`).
+- (a) 이동: 사용처 과반이 한 도메인인 선언 89개(`290b5e0`~`2c252c6`), 최다 사용처가 기존 도메인인 혼합 선언 6개. 앞선 고정 문장 이동(1~3차)으로 rest였던 선언 상당수가 도메인으로 갔다.
+- 남은 rest: 186문장, 395줄. 아래 표가 전부다.
+
+| 묶음 | 문장 수 | 이유 | 선언 |
+|---|---:|---|---|
+| (c) 부팅 문장 전용 | 61 | 사용처가 spine.js의 느슨한 문장(등록·로드 중 호출)뿐이다. 등록 API(`register*`)와 그 표가 대부분이다. 느슨한 문장을 순서대로 부팅 파일로 옮길 때 같이 옮긴다. | `registerMovePreR8`, `registerMovePostR8`, `registerPlayerStatStage55`, `registerAttackCostStage55`, `registerMoveCostStage55`, `setGenerationBase`, `registerBossRewardStage55`, `registerPickupStageR25`, `DESCEND_EFFECTS53`, `descend`, `rest`, `RUN_END_EFFECTS53`, `registerPanelHook54`, `updateMobileHud`, `startRuntimeLoop57`, `m`, `VF_IMG`, `inspectOpen`, `oldClose`, `wrap`, `combatHud`, `adorn`, `feed`, `throwAt`, `tuneButtons`, `fixEntities`, `beginViewer45`, `tabCount`, `restoreInventoryScroll45`, `swipeModalCancel45`, `mapOpen49`, `editable53`, `V54`, `hold`, `rule`, `qtyKind56`, `pad58`, `inferCorridors59`, `doorAudit59`, `onMonsterHpThreshold60`, `spawnRanges61`, `asuraDomainDist61`, `releaseStamp`, `mb`, `releaseGearButton`, `dg`, `corners`, `ghost`, `textScaleControl`, `public74`, `gearInfusionPanel`, `Automation81`, `killIdentifyBar88`, `plannedSet980`, `upMeta`, `panelHead`, `wanderer1001`, `patchDef`, `RUMOR_SPACE_VERSION1030`, `resetPortal46`, `initSummon105` |
+| 보류: 사용처가 rest | 30 | 사용처가 아직 spine.js의 다른 rest 선언이다. 사용처가 도메인으로 가면 (a)로 따라간다. | `PLAYER_STAT_STAGES55`, `ATTACK_COST_STAGES55`, `MOVE_COST_STAGES55`, `SIGHT_BLOCKING_TILES57`, `dungeonVisionScale50`, `runDescendEffects53`, `PANEL_HOOKS54`, `visualLoop`, `runtimeLoopStarted57`, `runtimeReady57`, `hk,rn`, `pcolor`, `interior`, `inside43`, `safePut44`, `effectLog56`, `V59`, `BREAK61`, `SIGHT85`, `clear88`, `segment93`, `DECAL986`, `ARTIFACT_PLAYER_SCOPE46`, `ARTIFACT_RUN_SCOPE46`, `snapshotSerializable46`, `artifactCarry46`, `snapshot46`, `rng49`, `DUNGEON_MOBS47`, `fireAbsorb47` |
+| 보류: 사용처가 layout 후보 | 22 | 사용처가 layout 후보(방·통로·층 모양 생성 코드)다. layout 도메인을 만들면 같이 간다. | `put`, `clear`, `hline`, `vline`, `tag`, `put43`, `clear43`, `h43`, `v43`, `v44`, `imp78`, `doorPoint88`, `add89`, `corridor89`, `purposeTile90`, `reset91`, `canPlace93`, `addCompact93`, `pathPoints93`, `GRASS_PAL1020`, `CARPET1020`, `F22_BUDGET43` |
+| (c) QA가 가장 많이 쓰지만 게임도 씀 | 17 | qa.js로 옮기면 출시 빌드가 QA 파일을 읽게 된다(qaLeak). 게임 쪽 사용처의 도메인이 정해지면 다시 본다. | `autoWalkTimer`, `autoWalkToken`, `MANRU_PICKUP_PIPELINE_R25`, `safeBlink56`, `castTalisman56`, `revealHidden60`, `uiInputBlocked`, `audit70`, `bench70`, `V85`, `naturalInterval94`, `decalInfo986`, `WARD_DROWN`, `WARD_VOID`, `defBy`, `LegendaryDungeonBuilder`, `mapSignature46` |
+| (c) 공용 | 15 | 세 개 이상의 도메인 파일이 쓴다(QA 제외). 한 도메인에 붙이면 나머지가 그 도메인을 부르게 된다. kernel(상태·상수·공용 도우미)로 옮길 후보: `state`, `clamp`, `addLog`, `runState57`. | `state`, `burst`, `clamp`, `runState57`, `gameplayInputAllowed57`, `closeGameplayInteractionState57`, `cancelAutoWalk`, `addLog`, `withJosa57`, `tileBlocksSight`, `monCovers`, `combatLineCheckR8`, `safeLootGround42`, `showInspect`, `hz` |
+| 결정 필요: QA 전용 | 15 | QA 코드(src/qa/qa.js)만 쓴다. (a)를 따르면 qa.js로 가고 출시 빌드에서 빠진다(출시 동작은 같다). move-to는 지금 qa.js로 옮기지 않는다. | `ASURA_HAZ`, `INTERACT61`, `STRUCT70`, `FUNCTION90`, `Cam96`, `STORY_VERSION992`, `V1003`, `ACTIVE1003`, `DEATH1003`, `PW1003,PH1003,PLAYER1003_CACHE`, `V`, `ROUTE_BUILD`, `rarity1011`, `BUILD`, `STATIC_EXTRA_R7` |
+| (a) 대상이지만 로드 순서로 고정 | 9 | 가장 많이 쓰는 도메인은 있지만 move-to가 실제 순서 제약(T: TT 채우기 뒤, L: 로드 중 읽힘)으로 거부했다. 위 선언 표의 이유와 같다. | `identifyStartingItems58`, `featureAt56`, `nearTypes56`, `BASE_KIND74`, `CITADEL_PROP_TILES`, `WALLLIKE88`, `V964`, `EMPTY_ACTOR1001`, `BRANCH_INTERACTIVE_OVERLAYS105` |
+| 보류: 사용처가 world 후보 | 6 | 사용처가 world 후보(지형 상태·점유·위험 지형)다. world 도메인을 만들면 같이 간다. | `pushableAt105`, `FLYING_BLOCKING_TILES57`, `AQUATIC_STAND_TILES57`, `PLAYER_ENTRY_PICKUP_FIRST57`, `dangerousLootTerrain42`, `pickup` |
+| 보류: 사용처가 로드 순서로 남은 branches 선언 | 6 | 사용처가 spine에 남은 branches 소속 선언이다. | `owns47`, `mobDefs47`, `handlePortalAt46`, `healFire47`, `claimAudit46`, `claimReward46` |
+| 보류: 사용처가 turn | 2 | 사용처가 턴·입력 진행 코드(spine)다. | `AUTO_MOVE_RATE70`, `targeting81` |
+| 보류: 사용처가 로드 순서로 남은 ui 선언 | 2 | 사용처가 spine에 남은 ui 소속 선언이다. | `clearTalismanInput57`, `cipherResult` |
+| 보류: 사용처가 로드 순서로 남은 items 선언 | 1 | 사용처가 spine에 남은 items 소속 선언이다. | `typedKeyMeta96` |
+
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

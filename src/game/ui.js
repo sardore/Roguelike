@@ -726,3 +726,4 @@ function summonUpdateButtons(){
   }
   /* ---------- Shattered-style inspect: one description source, top window, complete terrain codex ---------- */
   let pendingInspect984=null;
+  const inputNow=()=>performance.now();

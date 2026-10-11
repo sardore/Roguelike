@@ -2375,3 +2375,7 @@ function resolvePortalLanding57(link){
   const px=preferred?.x??link.destPortal?.x??room.cx??room.x,py=preferred?.y??link.destPortal?.y??room.cy??room.y;
   return source.filter(q=>portalLandingValid57(link,q.x,q.y)).sort((a,b)=>Math.abs(a.x-px)+Math.abs(a.y-py)-Math.abs(b.x-px)-Math.abs(b.y-py)||Math.abs(a.x-(link.destPortal?.x??px))+Math.abs(a.y-(link.destPortal?.y??py))-Math.abs(b.x-(link.destPortal?.x??px))-Math.abs(b.y-(link.destPortal?.y??py))||a.y-b.y||a.x-b.x)[0]||null;
 }
+function adjacentSilkTrap57(){
+ if(!state?.player)return null;const p=state.player;
+ return selectFacingAdjacentTarget57(DIRS8.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).filter(q=>canDisarmSilkTrap57(q.x,q.y)));
+}

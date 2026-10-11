@@ -3171,3 +3171,4 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   function diameter93(adj){const a=farNode93(adj,0).node,b=farNode93(adj,a).node;return{a,b,path:shortestNodes93(adj,a,b)}}
   function graphDistance93(adj,a,b){const p=shortestNodes93(adj,a,b);return p.length?p.length-1:99}
   function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
+function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop();return true}

@@ -50,6 +50,7 @@
 | rest→combat | rest 중 사용처 과반이 combat.js인 선언 → combat.js (규칙 a) | 7664 | 458 / 584 | 755 | 70.5% | - |
 | rest→ui | rest 중 사용처 과반이 ui.js인 선언 → ui.js (규칙 a) | 7658 | 453 / 584 | 755 | 70.6% | - |
 | rest→input | rest 중 사용처 과반이 input.js인 선언 → input.js (규칙 a) | 7658 | 452 / 584 | 755 | 70.6% | - |
+| rest→plurality | 혼합 rest 6개 → 최다 사용 도메인 | 7645 | 446 / 584 | 755 | 70.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -58,17 +59,17 @@
 | kernel.js | 16 |
 | catalog.js | 173 |
 | save.js | 708 |
-| items.js | 947 |
-| combat.js | 659 |
-| monsters.js | 2206 |
+| items.js | 958 |
+| combat.js | 660 |
+| monsters.js | 2207 |
 | render.js | 4877 |
-| mapgen.js | 3173 |
+| mapgen.js | 3174 |
 | special.js | 1889 |
-| branches.js | 2377 |
+| branches.js | 2381 |
 | elements.js | 247 |
-| spine.js | 7658 |
+| spine.js | 7645 |
 | input.js | 149 |
 | story.js | 213 |
-| ui.js | 728 |
+| ui.js | 729 |
 | start.js | 6 |
-| (total) | 26026 |
+| (total) | 26032 |

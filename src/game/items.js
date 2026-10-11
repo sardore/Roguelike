@@ -945,3 +945,14 @@ const EXTRA_FOOD_CHANCE_NONBOSS57=.20;
   }
   function app74(item){return window.__MANRU_TALISMAN_PUBLIC__?.app?.(item)||{name:'미확인 부적',ink:'#9b7448'}}
   let choiceCancel991=null;
+  function useBodyPower74(item){
+    if(bodyPowerActive()){toast('이미 괴력이 폭발하고 있다.');return false}
+    if(!state?.player?.inventory.includes(item)||item.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost')return false;
+    const p=state.player,d=bodyPowerDuration58(p),born=(state.playerAgencyTurns57||0)+1;
+    p.classState={powerTurns:d,powerTotal:d,powerHealHundredths:p.classState?.powerHealHundredths||0,powerRulesVersion:3,powerExhaustion:bodyPowerExhaustion58(p),powerBornAgencyTurn:born,powerLastAgencyTurn:born};
+    identifyKind('upgrade','괴력 발현');consumeRef(item);closeGear();closeInventory();cancelAutoWalk();
+    burst(p.x,p.y,'#dfad51',30,1);impact(p.x,p.y,'#e9bd65',6);floatText(p.x,p.y,`괴력 ${d}턴`,'#ffdc8a',17);vfVibrate([60,30,100]);
+    globalThis.__MANRU_SFX54__?.play('bodyPower58');
+    addLog(`괴력 발동 · ${d}턴 동안 ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복. 종료 후 ${p.classState.powerExhaustion}턴 실명·배탈.`);
+    globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useBodyPower74"}).value;return true;
+  }

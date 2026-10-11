@@ -208,10 +208,7 @@ function burst(x,y,color="#ffffff",count=9,power=1){
 
 
 
-function adjacentSilkTrap57(){
- if(!state?.player)return null;const p=state.player;
- return selectFacingAdjacentTarget57(DIRS8.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).filter(q=>canDisarmSilkTrap57(q.x,q.y)));
-}
+
 
 
 
@@ -1038,7 +1035,7 @@ function submitCipher(){const act=playerAction57('cipher',{allowCipher:true,stun
 ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
-function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}
+
 function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
 
 
@@ -1484,7 +1481,7 @@ function shopPrice58(item){return({common:1,rare:2,relic:3,sealed:5})[item.rarit
 
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
 function adjacentMerchant58(){return(state?.neutralInteractables58||[]).find(n=>n.kind==='merchant'&&entityDistance57(n,state.player)<=1)||null}
-function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop();return true}
+
 function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity(i),0)}
 function purchaseShop58(id){
  const shop=state?.shopIntermission;if(!shop?.active||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
@@ -1999,7 +1996,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
    Fixes Android ghost-click reopen, stacked long-press handlers, and game-input leakage while inspect is open.
 */
 const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
-  const inputNow=()=>performance.now();
+
   const inspectWrap=()=>document.getElementById('mobileInspect');
   const inspectOpen=()=>!!interactionActive8('mobileInspect');
   const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
@@ -3821,17 +3818,7 @@ ActionDispatcher.register('FUSE',fuse74);
 
 ActionDispatcher.register('GEAR_APPLY',applyGear);
 
-  function useBodyPower74(item){
-    if(bodyPowerActive()){toast('이미 괴력이 폭발하고 있다.');return false}
-    if(!state?.player?.inventory.includes(item)||item.talismanKind!=='upgrade'||playerClassRules58().upgradeTalismanMode!=='bodyBoost')return false;
-    const p=state.player,d=bodyPowerDuration58(p),born=(state.playerAgencyTurns57||0)+1;
-    p.classState={powerTurns:d,powerTotal:d,powerHealHundredths:p.classState?.powerHealHundredths||0,powerRulesVersion:3,powerExhaustion:bodyPowerExhaustion58(p),powerBornAgencyTurn:born,powerLastAgencyTurn:born};
-    identifyKind('upgrade','괴력 발현');consumeRef(item);closeGear();closeInventory();cancelAutoWalk();
-    burst(p.x,p.y,'#dfad51',30,1);impact(p.x,p.y,'#e9bd65',6);floatText(p.x,p.y,`괴력 ${d}턴`,'#ffdc8a',17);vfVibrate([60,30,100]);
-    globalThis.__MANRU_SFX54__?.play('bodyPower58');
-    addLog(`괴력 발동 · ${d}턴 동안 ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복. 종료 후 ${p.classState.powerExhaustion}턴 실명·배탈.`);
-    globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useBodyPower74"}).value;return true;
-  }
+
 
 
 
@@ -7128,7 +7115,7 @@ function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal
 
 registerGenerationStage('artifact-reset46','pre',resetPortal46);registerGenerationStage('artifact-portal46','post',maybePortal46);
 
-function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor','cloak','relic','trinket'].reduce((n,k0)=>n+((p[k0]?.curse991||p[k0]?.curseActive991)?1:0),0)}
+
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*3:0}
 
 
