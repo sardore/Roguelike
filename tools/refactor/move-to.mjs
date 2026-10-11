@@ -31,6 +31,7 @@ const topOf = (ast) => ast.body[0].expression.callee.body.body;
 const declNames = (s) => (s.type === 'FunctionDeclaration' ? [s.id.name] : s.type === 'VariableDeclaration' ? s.declarations.flatMap((d) => (d.id.type === 'Identifier' ? [d.id.name] : ['<pattern>'])) : s.type === 'ClassDeclaration' ? [s.id.name] : []);
 
 // ---- the order constraints a const/let initialiser imposes (identifier read outside any function)
+const lateInfo = new Map();
 function initPairs(t) {
   const ast = parse(t), top = topOf(ast), pos = new Map();
   top.forEach((s, i) => { for (const n of declNames(s)) pos.set(n, { i, kind: s.type === 'FunctionDeclaration' ? 'fn' : 'data' }); });
@@ -40,7 +41,7 @@ function initPairs(t) {
     walk.ancestor(s, { Identifier(id, _st, anc) {
       if (deferred(anc)) return;
       const p = pos.get(id.name); if (!p || p.kind === 'fn' || p.i === i) return;
-      pairs.add(`${declNames(s)[0]}>${id.name}:${p.i < i ? 'ok' : 'late'}`);
+      pairs.add(`${declNames(s)[0]}>${id.name}:${p.i < i ? 'ok' : 'late'}`); if (p.i >= i) lateInfo.set(`${declNames(s)[0]}>${id.name}:late`, `reader#${i} reads decl#${p.i}`);
     } });
   });
   return { pairs, late: [...pairs].filter((x) => x.endsWith(':late')) };
@@ -173,6 +174,7 @@ function blockOf(s) {
       const prevStart = text.lastIndexOf('\n', prevEnd - 1) + 1;
       const line = text.slice(prevStart, prevEnd);
       const t = line.trim();
+      if (/^\/\*@@FILE [^@]+@@\*\/$/.test(t)) break; // a segment sentinel is not a comment of the statement below it
       if (t.startsWith('//') || (t.startsWith('/*') && t.endsWith('*/'))) { start = prevStart; continue; }
       if (t.endsWith('*/')) { const open = text.lastIndexOf('/*', prevEnd); const openLine = text.lastIndexOf('\n', open - 1) + 1; if (text.slice(openLine, open).trim() === '') { start = openLine; continue; } }
       break;
@@ -228,5 +230,5 @@ parse(out);
 const after = initPairs(out);
 const newlyLate = after.late.filter((x) => !before.late.includes(x));
 console.log(`moved ${stmts.length} statements (${names.length} names) into ${target}; initialiser order violations: ${newlyLate.length}`);
-if (newlyLate.length) { console.log(newlyLate.slice(0, 15).join('\n')); throw new Error('the move would break the load order'); }
+if (newlyLate.length) { console.log(newlyLate.slice(0, 15).map((x) => x + ' ' + (lateInfo.get(x) || '')).join('\n')); throw new Error('the move would break the load order'); }
 if (!dry) fs.writeFileSync(workFile, out);

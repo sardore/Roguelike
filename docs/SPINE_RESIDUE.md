@@ -23,6 +23,7 @@
 | `debugBattle*`, `Auto81`, 한두 글자 최상위 상수 | ui | (순서 문제가 아니라 도메인/이름 미정) | 디버그 전장 파일, 이동 도메인, 역할명 단계 |
 | `PlacementService`, `OccupancyService`, `BLOCK85` | mapgen | L (함수 `aquaticStranded`가 렌더 경로를 통해 스파인의 로드 문장에서 호출되고 이 값을 읽음) | 호출하는 로드 문장과 함께 이동 |
 | `ConnectedDecor81`, `floorSet980`, `immutable980` | mapgen | T (초기화식이 `TT.*`/`window.*` 값을 로드 시점에 집합·객체로 담는데, 그 값을 채우는 스파인의 문장(줄 12495 부근 `TT.*=`)이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 이동 |
+| 위 분기 상수 약 25개와 `LEGENDS47`·`LEGEND_TILES49`·`LEGEND_THEMES47`·`DEF47`, `LEGEND_SKILLS986` | branches | L(추이적), T/전설 표 순서(`DEF47`·`LEGEND_TILES49`가 `LEGENDS47`을 로드 시 읽음) | 호출 경로를 끊는 부팅 단계 정리 뒤 한 번에 이동 |
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 약 630개, 920줄이 남아 있다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

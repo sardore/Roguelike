@@ -287,7 +287,7 @@ traversalTile(x,y,opts={}){
 playerTerrainPassable(x,y,opts={}){
   if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
   const t=ReachabilityService.traversalTile(x,y,opts);if(t==null)return false;
-  if(!citadelAccess105(x,y))return false;
+  if(!citadelAccess(x,y))return false;
   if(opts.excludeRafts&&t===TT.RAFT)return false;
   const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(t);
   if(kind)return !!opts.allowHazardEntry||!!haz?.adapted?.(state.player,kind);
@@ -2461,7 +2461,7 @@ generate(...args){
     repairLateItems();
     validateTerrainUnderlays();
     populateFloor2Branches();
-    branchEntrance105();
+    branchEntrance();
 
     const exitMarker=ensureFinalExitMarker()||{ok:false,reason:'missing-exit-marker-audit'};
     if(!exitMarker.ok){lastFailure={attempt:finalAttempt,exitMarker};rejected.push({attempt:finalAttempt,exitMarker:true});continue}

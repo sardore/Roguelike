@@ -86,7 +86,7 @@ function useInventoryItem(idx,...rest){
   // Special library scrolls are owned by the library subsystem through one explicit action service.
   if(item.branchGuide105){showInspect(item.name,item.desc);return true}
   if(item.summonItem105)return summonUse(item,idx);
-  if(item.mineItem105)return mineUseItem105(item);
+  if(item.mineItem105)return mineUseItem(item);
   if(item.type==='martial_manual')return showMartialManual(item);
   if(item.libraryScroll1022)return library1022?.consume?.(idx,item)??false;
 
@@ -493,5 +493,5 @@ function normalizeAllItems(){
 }
 const RESTAURANT_FOODS=['주먹밥','말린 육포','식어버린 국밥','엽전 엿','깨끗한 물'];
 function startingGearFor(id){const cls=CLASSES.find(c=>c.id===id);return{weapon:cls?.startWeapon?{...(WEAPONS.find(w=>w.name===cls.startWeapon)||{}),name:cls.startWeapon}:null,armor:{...(ARMORS[0]||{}),name:ARMORS[0]?.name||'경량복',tier:1,rarity:'common'},cloak:null,relic:null,trinket:null}}
-function naturalGearUpgrade(item,rnd){const roll=rnd(),n=roll<MOUNTAIN_GEAR_CHANCE105.plus2?2:roll<MOUNTAIN_GEAR_CHANCE105.plus2+MOUNTAIN_GEAR_CHANCE105.plus1?1:0;for(let i=0;i<n;i++)if(item.type==='armor')applyArmorUpgrade(item);else if(item.type==='weapon')applyWeaponUpgrade(item);item.naturalUpgrade105=n;return item;}
+function naturalGearUpgrade(item,rnd){const roll=rnd(),n=roll<MOUNTAIN_GEAR_CHANCE.plus2?2:roll<MOUNTAIN_GEAR_CHANCE.plus2+MOUNTAIN_GEAR_CHANCE.plus1?1:0;for(let i=0;i<n;i++)if(item.type==='armor')applyArmorUpgrade(item);else if(item.type==='weapon')applyWeaponUpgrade(item);item.naturalUpgrade105=n;return item;}
 function anvilGear(item){return !!item&&['weapon','armor'].includes(item.type)&&!item.artifactWeapon46&&!item.artifactId46&&!item.curse991&&!item.curse&&!item.curseActive991&&(item.count??1)===1;}

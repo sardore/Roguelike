@@ -9,6 +9,7 @@
   "render.js",
   "mapgen.js",
   "special.js",
+  "branches.js",
   "spine.js",
   "input.js",
   "story.js",

@@ -39,12 +39,12 @@ function projectGameState(source=state){
   plain.saveWrittenAt1004=Number(source.saveWrittenAt1004)||Date.now();plain.saveSeq1004=Number(source.saveSeq1004)||1;
   if(plain.player){delete plain.player.nextAttackAt;delete plain.player.busyUntil}
   for(const m of plain.monsters){delete m.hitUntil;delete m.evadeUntil;delete m.attackUntil;delete m.attackTarget;delete m.hitDir}
-  branchPackWorld105(plain);return plain;
+  branchPackWorld(plain);return plain;
 }
 function migrateGameState(candidate){
   if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw Error('GameState object required');
   const schema=candidate.saveSchema1004==null?0:Number(candidate.saveSchema1004);if(!Number.isInteger(schema)||schema<0||schema>1)throw Error('Unsupported GameState schema');
-  const migrated=projectGameState(candidate);if(!migrated)throw Error('GameState migration failed');branchPruneWorld105(migrated);branchUnpackWorld105(migrated);initializeMartial(migrated);return migrated;
+  const migrated=projectGameState(candidate);if(!migrated)throw Error('GameState migration failed');branchPruneWorld(migrated);branchUnpackWorld(migrated);initializeMartial(migrated);return migrated;
 }
 const GameState=Object.freeze({
   initialize(source){
