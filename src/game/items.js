@@ -288,7 +288,6 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
   function escBelt(text){return String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   const RECIPES=[];
   const addFusionRecipe=(a,b,o)=>RECIPES.push({a,b,...o});
-  const RECIPE=new Map(RECIPES.map(r=>[key74(r.a,r.b),r]));
   function identifyKind(kind,reason='효과 관찰'){
     const K=K74();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=BASE_KIND74.get(kind);if(!t)return false;const a=app74(t);K.talismanKnown[kind]=true;addLog(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);return true
   }

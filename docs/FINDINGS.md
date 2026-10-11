@@ -58,7 +58,20 @@
 
 **F-01과의 관계**: F-01의 증상(분기 세이브인데 부팅 직후 `계속`이 비활성)이 바로 이 TDZ 때문이었다. F-01은 원인을 그대로 두고 부팅 끝에 판정을 한 번 더 하는 장치를 붙여 결과만 맞췄다. 같은 판정이 두 곳에서 정해지는 구조라 F-21에서 원인을 고치고 그 장치를 지웠다.
 
-**수정(사용자 결정 (1), 2026-10-11)**: `BRANCH_DEFS105`를 branches.js(spine.js보다 앞)로 옮겼다. start.js의 부팅 끝 재확인(`__MANRU_LIFECYCLE__.refreshContinue()`)을 같은 커밋에서 삭제했다. 결과: 로드 중 판정이 분기 세이브도 받아들이고 경고가 사라졌다. 고친 뒤 다시 계측하면 spine.js 값 283개 중 TDZ 읽기는 0이다(TDZ 뒤 건너뛰던 같은 경로의 읽기도 포함). 테스트: `saves` 시나리오가 부팅 중 `계속` 클래스 변화와 콘솔 경고를 기록하고(`saves.*.boot`), 거부 경고가 있으면 실패한다. 수정 전 빌드는 `the branch save was rejected during boot`로, 재확인만 지우고 상수를 안 옮긴 빌드는 `continue button for the branch save is disabled at boot`로 실패한다.
+**수정(사용자 결정 (1), 2026-10-11)**: `BRANCH_DEFS105`를 branches.js(spine.js보다 앞)로 옮겼다. start.js의 부팅 끝 재확인(`__MANRU_LIFECYCLE__.refreshContinue()`)을 같은 커밋에서 삭제했다. 결과: 로드 중 판정이 분기 세이브도 받아들이고 경고가 사라졌다. 부수 효과: 분기 세이브로 부팅하면 로드 중 판정이 이주(`migrate`)를 끝까지 실행하므로, 다른 세이브(진행·전설)처럼 로드 끝에 지형 레이어 캐시(`TERRAIN_LAYER_CACHE58`)가 이미 만들어져 있다(수정 전에는 null; `3bce75f`와 `224e0c0` 빌드의 로드 끝 값 비교로 확인). 고친 뒤 다시 계측하면 spine.js 값 283개 중 TDZ 읽기는 0이다(TDZ 뒤 건너뛰던 같은 경로의 읽기도 포함). 테스트: `saves` 시나리오가 부팅 중 `계속` 클래스 변화와 콘솔 경고를 기록하고(`saves.*.boot`), 거부 경고가 있으면 실패한다. 수정 전 빌드는 `the branch save was rejected during boot`로, 재확인만 지우고 상수를 안 옮긴 빌드는 `continue button for the branch save is disabled at boot`로 실패한다.
 
 ## F-22 (결정 필요) 세이브 서비스가 공개되기 전에 이어하기 판정이 세 번 불린다
 F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 번 불린다(spine.js의 느슨한 문장 두 곳과 설정 패널 초기화의 `refreshContinueStatus`, 그리고 세이브 서비스를 공개하는 구획 안의 호출). 앞의 세 번은 `globalThis.__MANRU_SAVE_SERVICE__`가 아직 공개되기 전이라 `recover()`가 `undefined`이고, 세이브 종류와 상관없이 `계속`에 `noSave`를 붙인다. 네 번째(세이브 서비스 공개 뒤)가 실제 판정이다. V40도 같다. 화면에는 부팅이 끝난 뒤의 결과만 보이므로 사용자에게 보이는 차이는 없다. 선택지: (1) 앞의 세 호출을 지운다(같은 판정의 무의미한 사전 호출), (2) 그대로 둔다. 그 세 호출은 `continueBtn.onclick`도 설정하지만 네 번째 호출이 같은 값으로 다시 설정한다.
+
+## F-23 (회귀 수정) 이전 분할 커밋 3개가 V40 값 세 개를 바꿔 놓았다
+모든 최상위 값의 로드 끝 값을 분할 전 빌드(`12a8032^`)와 비교해서 찾았다(`tools/refactor/load-reads.mjs --snapshot`, 이름은 `docs/NAMING.tsv`로 대응; 4,284개 비교). 셋 다 move-to에 "객체 채우기(T)" 검사가 생기기 전의 분할에서 생겼다. 선언이 자기가 담는 값을 채우는 문장보다 앞으로 옮겨진 경우다.
+- `RECIPE`(부적 융합표, items 분할 `b87a1fd`): `RECIPES`를 채우는 `addFusionRecipe(...)` 호출들보다 먼저 만들어져 **빈 Map**이 됐다. 그 사이 빌드에서는 부적 융합 화면(`fuse74`, `compatible74`)이 맞는 짝을 하나도 찾지 못했다. 이 경우는 T 검사도 못 잡는다(채우기가 함수 호출 안의 `push`).
+- `ASURA_HAZ`(monsters 분할 `c2a2e8e`): `TT.CRUMBLE=42` 할당보다 앞으로 가서 42 대신 `undefined`를 담았다. 이 값을 읽는 곳은 QA 코드(`qa.js`의 `asuraSafeLand61`)뿐이라 출시 게임 동작에는 영향이 없었다.
+- `CITADEL_PROP_TILES`(render 분할 `75ce46e`): `Object.assign(TT,{STONE_PILLAR:44,…})`보다 앞으로 가서 소품 타일 ID 21개가 `undefined`였다. 흑성채 소품 그리기(`CITADEL_PROP_TILES[prop]`)가 그 소품들의 타일을 찾지 못했다.
+수정: 세 선언을 각자 채우기 문장 바로 뒤(spine.js)로 되돌렸다. 되돌린 뒤 분할 전 빌드와 다른 값은 의도한 둘뿐이다(`RunLifecycle` 구조, F-21의 `TERRAIN_LAYER_CACHE58`). 재발 방지: `values` 시나리오가 빈 저장소와 분기 세이브로 부팅해 클로저의 모든 최상위 값(614개)을 로드 끝에 직렬화하고 기준선과 비교한다(`tools/lib/load-probe.mjs`). 수정 전 빌드에서는 위 세 값이 다르게 나온다.
+
+## F-24 (결정 필요) V40부터 있던, 할당 전 타일 ID를 담는 집합 두 개
+같은 계산(로드 중 `TT.X`를 읽는데 `X`가 더 뒤에서 할당됨)에서 V40 원래 순서에서도 그런 값이 둘 있다. 지금 동작은 V40과 같다.
+- `TEMP_TERRAIN_IMMUTABLE57`: `TT.PORTAL`(68, 뒤의 `Object.assign(TT,{PORTAL:68})`에서 할당)을 담으려 했지만 `undefined`가 들어 있다. 임시 지형 변경에서 포탈이 보호되지 않는다.
+- `RUNTIME_ENTRY_REACTIVE57`: `TT.CRUMBLE`과 `TT.PORTAL`이 아직 없어서 `filter(Number.isFinite)`로 빠진다. 진입 반응 지형에 무너지는 바닥과 포탈이 없다.
+선택지: (1) 의도대로 고친다(할당을 kernel의 `TT` 정의로 옮기면 두 집합이 값을 담게 된다; 동작 변경 커밋), (2) 그대로 둔다.

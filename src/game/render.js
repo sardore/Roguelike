@@ -3622,7 +3622,6 @@ function drawMineGeology(q,x,y,wall,zone,ore=false){
  }
  q.restore();
 }
-const CITADEL_PROP_TILES=Object.freeze({"bed":TT.BED,"white-bed":TT.RUMOR_BED,"prison-bed":TT.RUMOR_BED,"bench":TT.BENCH,"shelf":TT.RACK,"desk":TT.TABLE,"mapdesk":TT.TABLE,"table":TT.TABLE,"supplies":TT.CRATE,"stove":TT.COOKPOT,"medicine":TT.RUMOR_MED_CABINET,"sarcophagus":TT.STONE_PILLAR,"tomb":TT.STONE_PILLAR,"urns":TT.JAR,"chains":TT.RUMOR_WEAPON_RACK,"ritual":TT.ALTAR,"sigil":TT.ALTAR,"candles":TT.INCENSE_STAND,"treasure":TT.VAULT,"bell":TT.INCENSE_STAND,"crossbow":TT.RUMOR_WEAPON_RACK,"rack":TT.RUMOR_WEAPON_RACK,"iron-mask":TT.ARMORY,"shield":TT.ARMORY,"banner":TT.SCREEN,"furnace":TT.BRAZIER,"anvil":TT.ARMORY,"coal":TT.CRATE,"books":TT.BOOK_STACK,"statue":TT.STATUE,"incense":TT.INCENSE_STAND,"screen":TT.SCREEN});
 function drawCitadelMotif(q,a,x,y){
  // Chamber ornament is baked into the existing terrain material cache.
  if(a.kind==='chamber'){

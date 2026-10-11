@@ -26,6 +26,9 @@
 | `PlacementService`, `OccupancyService`, `BLOCK85` | mapgen | L (함수 `aquaticStranded`가 렌더 경로를 통해 스파인의 로드 문장에서 호출되고 이 값을 읽음) | 호출하는 로드 문장과 함께 이동 |
 | `ConnectedDecor81`, `floorSet980`, `immutable980` | mapgen | T (초기화식이 `TT.*`/`window.*` 값을 로드 시점에 집합·객체로 담는데, 그 값을 채우는 스파인의 문장(줄 12495 부근 `TT.*=`)이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 이동 |
 | `BRANCH_INTERACTIVE_OVERLAYS105` | branches | T (`TT.*`를 로드 시점에 담는데 채우는 문장이 더 뒤) | `TT`를 채우는 문장을 kernel로 옮긴 뒤 |
+| `RECIPE` | items | 채우기 순서(F-23): `addFusionRecipe(...)` 호출들 뒤에서 만들어져야 한다 | 호출 묶음을 items로 옮길 때 같이 |
+| `ASURA_HAZ` | monsters | T(F-23): `TT.CRUMBLE` 할당 뒤 | `TT` 할당을 kernel로 모은 뒤(F-24 결정 필요) |
+| `CITADEL_PROP_TILES` | render | T(F-23): `Object.assign(TT,{STONE_PILLAR…})` 뒤 | 같은 조건 |
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

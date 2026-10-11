@@ -14,8 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as acorn from 'acorn';
-import { analyze } from '../lib/scope.mjs';
+import { instrumentRuntime } from '../lib/load-probe.mjs';
 import { launch, openSession } from '../../tests/harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -31,44 +30,9 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.cpSync(root, out, { recursive: true });
 const rtFile = path.join(out, 'scripts', '10-runtime.js');
 const text = fs.readFileSync(rtFile, 'utf8');
-const ast = acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
-const closure = ast.body.find((s) => s.type === 'ExpressionStatement' && s.expression.type === 'CallExpression' && /Function/.test(s.expression.callee.type));
-if (!closure) throw new Error('game closure not found in ' + rtFile);
-const body = closure.expression.callee.body;
-const A = analyze(ast);
-const found = new Set();
-const edits = [];
-for (const b of A.bindings) {
-  if (b.scope !== body || !names.has(b.name)) continue;
-  found.add(b.name);
-  for (const r of b.refs) {
-    const p = r.parent;
-    if (p.type === 'UpdateExpression') continue;
-    // a write target (also inside a destructuring pattern or a for-in/of head) is not a read
-    const anc = [...r.ancestors, r.node];
-    if (anc.some((a, i) => i + 1 < anc.length && ((a.type === 'AssignmentExpression' && a.left === anc[i + 1]) || (/^For(In|Of)Statement$/.test(a.type) && a.left === anc[i + 1])))) continue;
-    const probe = `__MANRU_LOAD_PROBE__(${JSON.stringify(b.name)},()=>${b.name})`;
-    if (p.type === 'Property' && p.shorthand) edits.push({ start: p.start, end: p.end, text: `${b.name}:${probe}` });
-    else edits.push({ start: r.node.start, end: r.node.end, text: probe });
-  }
-}
+const { text: instrumented, found, sites } = instrumentRuntime(text, { probe: names, snapshot: snapshotFile ? names : null });
 for (const n of names) if (!found.has(n)) console.log(`warning: ${n} is not a top-level binding of the game closure`);
-const seen = new Set();
-const unique = edits.filter((e) => (seen.has(e.start) ? false : seen.add(e.start))).sort((a, b) => b.start - a.start);
-let rewritten = text;
-for (const e of unique) rewritten = rewritten.slice(0, e.start) + e.text + rewritten.slice(e.end);
-// the closure finishes loading at its last statement: mark the end there (before a final return, if any)
-const last = body.body[body.body.length - 1];
-const serialize = `(v)=>{const seen=new Map();const go=(x,d)=>{if(x===null||typeof x!=='object'&&typeof x!=='function')return typeof x==='number'&&!Number.isFinite(x)?String(x):x===undefined?'<undefined>':x;if(typeof x==='function')return'<fn '+(x.name||'?')+'>';if(typeof Node!=='undefined'&&x instanceof Node)return'<'+(x.nodeName||'node')+(x.id?'#'+x.id:'')+(x.getAttribute?.('src')?' '+x.getAttribute('src').length+':'+x.getAttribute('src').slice(-40):'')+'>';if(seen.has(x))return'<cycle '+seen.get(x)+'>';seen.set(x,d);if(d>6)return'<deep>';if(x instanceof Map)return{'<Map>':[...x].map(([k,w])=>[go(k,d+1),go(w,d+1)])};if(x instanceof Set)return{'<Set>':[...x].map((w)=>go(w,d+1))};if(Array.isArray(x))return x.map((w)=>go(w,d+1));const o={};for(const k of Object.keys(x))o[k]=go(x[k],d+1);return o};return go(v,0)}`;
-const snapNames = [...found].filter((n) => A.bindings.some((b) => b.scope === body && b.name === n && b.kind !== 'function'));
-const endMark = 'globalThis.__MANRU_LOADING__=false;' + (snapshotFile ? `{const __s=${serialize};globalThis.__MANRU_SNAPSHOT__={${snapNames.map((n) => `${JSON.stringify(n)}:(()=>{try{return __s(${n})}catch(e){return '<error '+e.message+'>'}})()`).join(',')}}}` : '');
-const at = last.type === 'ReturnStatement' ? last.start : last.end;
-const shift = unique.filter((e) => e.start < at).reduce((d, e) => d + e.text.length - (e.end - e.start), 0);
-rewritten = rewritten.slice(0, at + shift) + '\n' + endMark + '\n' + rewritten.slice(at + shift);
-const prelude = `globalThis.__MANRU_LOADING__=true;globalThis.__MANRU_LOAD_HITS__={};
-globalThis.__MANRU_LOAD_PROBE__=(n,f)=>{if(!globalThis.__MANRU_LOADING__)return f();const h=(globalThis.__MANRU_LOAD_HITS__[n]||={ok:0,tdz:0,okSite:null,tdzSite:null});const site=()=>String(new Error().stack).split('\\n').slice(2,12).map((l)=>l.trim()).join(' < ');try{const v=f();h.ok++;h.okSite||=site();return v}catch(e){if(e instanceof ReferenceError){h.tdz++;h.tdzSite||=site()}throw e}};
-`;
-fs.writeFileSync(rtFile, prelude + rewritten);
+fs.writeFileSync(rtFile, instrumented);
 
 const situations = [
   ['empty storage', {}],
@@ -94,7 +58,7 @@ for (const [label, o] of situations) {
 }
 await browser.close();
 if (snapshotFile) fs.writeFileSync(path.resolve(snapshotFile), JSON.stringify(snapshots, null, 1));
-console.log(`probed ${found.size} names, ${unique.length} read sites, ${situations.length} boots`);
+console.log(`probed ${found.size} names, ${sites} read sites, ${situations.length} boots`);
 for (const n of [...found].sort()) {
   const t = total[n];
   if (!t) console.log(`${n}\tnot read at load`);

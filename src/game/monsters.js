@@ -924,7 +924,6 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     m.intent61=null;return true
   }
   function moveAway(m,target=state.player){if(state.floor>=11){const step=ReachabilityService.retreatStep(m,target);return !!step&&moveMonsterToward(m,step,step)}const p=target,opts=DIRS8.map(([dx,dy])=>({x:m.x+dx,y:m.y+dy})).filter(q=>PlacementService.monsterCanStand(m,q.x,q.y)).sort((a,b)=>entityDistance57(b,p)-entityDistance57(a,p));if(opts.length&&entityDistance57(opts[0],p)>entityDistance57(m,p)){OccupancyService.move(m,opts[0].x,opts[0].y);return true}return false}
-  const ASURA_HAZ=new Set([TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.PAPER_BRIDGE,TT.CRUMBLE,TT.SNARE,TT.DRAWBRIDGE_DOWN,TT.DRAWBRIDGE_UP,TT.LOCKED_GATE]);
   function asuraTurn(m,d,target=state.player){
     const radius=m.asuraRadius47||3,duration=m.asuraDuration47||5,maxRange=m.asuraRange47||9;
     if((m.asuraZone61||0)>0){

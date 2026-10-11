@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openSession, startRun, snapshot, dismissModals, storageDump, sha } from './harness.mjs';
+import { instrumentRuntime } from '../tools/lib/load-probe.mjs';
 
 const savesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'baseline', 'saves');
 
@@ -273,6 +274,29 @@ export const scenarios = {
     out['saveload.after'] = await snapshot(r);
     out['saveload.errors'] = JSON.stringify(r.errors);
     await r.close();
+    return out;
+  },
+
+  // Every top-level value of the game closure when it has finished loading (tools/lib/load-probe.mjs), booted with
+  // no save and with the V40 branch save. A declaration moved before the statements that fill what it captures
+  // (TT.* tile ids, a recipe list) holds a different value here even when no other scenario reaches it.
+  async values(browser, root) {
+    const out = {};
+    const src = typeof root === 'string' ? root : root.dir;
+    const copy = path.join(path.dirname(fileURLToPath(import.meta.url)), 'artifacts', 'values-build');
+    fs.rmSync(copy, { recursive: true, force: true });
+    fs.cpSync(src, copy, { recursive: true });
+    const rt = path.join(copy, 'scripts', '10-runtime.js');
+    fs.writeFileSync(rt, instrumentRuntime(fs.readFileSync(rt, 'utf8'), { snapshot: 'all' }).text);
+    const branch = JSON.parse(fs.readFileSync(path.join(savesDir, 'branch.json'), 'utf8'));
+    for (const [name, opts] of [['empty', {}], ['branch', { storage: branch.storage }]]) {
+      const s = await openSession(browser, copy, { seed: 1, ...opts });
+      const snap = await s.page.evaluate(() => globalThis.__MANRU_SNAPSHOT__);
+      if (!snap) throw new Error(`values: the closure did not finish loading (${JSON.stringify(s.errors)})`);
+      // function names are not values: a rename must not count as a change
+      out[`values.${name}`] = Object.keys(snap).sort().map((k) => `${k}\t${String(JSON.stringify(snap[k])).replace(/<fn [^>]*>/g, '<fn>')}`).join('\n');
+      await s.close();
+    }
     return out;
   },
 

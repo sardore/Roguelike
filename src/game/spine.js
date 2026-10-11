@@ -3168,6 +3168,8 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   TT.HIDDEN_WALL=41;
   TT.CRUMBLE=42;
   TT.LIGHT_GRASS=43;TERRAIN_LAYER_CACHE58=null;
+  /* Captures TT.CRUMBLE, assigned just above: it must stay after this statement (F-23). */
+  const ASURA_HAZ=new Set([TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.PAPER_BRIDGE,TT.CRUMBLE,TT.SNARE,TT.DRAWBRIDGE_DOWN,TT.DRAWBRIDGE_UP,TT.LOCKED_GATE]);
 
 
 
@@ -3887,6 +3889,8 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   addFusionRecipe('holy','ward',{kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'});
   addFusionRecipe('holy','blink',{kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'});
   addFusionRecipe('holy','bind',{kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'});
+  /* Built from RECIPES once every addFusionRecipe call above has run (F-23). */
+  const RECIPE=new Map(RECIPES.map(r=>[key74(r.a,r.b),r]));
 
 
 
@@ -4446,6 +4450,8 @@ const CONFIG81=Object.freeze({
     RUMOR_BED:69,RUMOR_MED_CABINET:70,RUMOR_GAS_PIPE:71,RUMOR_FLOOD_GRATE:72,RUMOR_ARCHIVE_PILE:73,RUMOR_WEAPON_RACK:74,RUMOR_SILK_DIVAN:75,RUMOR_RITUAL_OBELISK:76,RUMOR_CHARRED_COUNTER:77,RUMOR_INVESTIGATION_BOARD:78,RUMOR_SMUGGLER_BUNDLE:79,RUMOR_GREENHOUSE_FRAME:80,BED:81,BOOK_STACK:82
   });
   TERRAIN_LAYER_CACHE58=null;
+  /* Captures the tile ids assigned by the Object.assign above: it must stay after it (F-23). */
+  const CITADEL_PROP_TILES=Object.freeze({"bed":TT.BED,"white-bed":TT.RUMOR_BED,"prison-bed":TT.RUMOR_BED,"bench":TT.BENCH,"shelf":TT.RACK,"desk":TT.TABLE,"mapdesk":TT.TABLE,"table":TT.TABLE,"supplies":TT.CRATE,"stove":TT.COOKPOT,"medicine":TT.RUMOR_MED_CABINET,"sarcophagus":TT.STONE_PILLAR,"tomb":TT.STONE_PILLAR,"urns":TT.JAR,"chains":TT.RUMOR_WEAPON_RACK,"ritual":TT.ALTAR,"sigil":TT.ALTAR,"candles":TT.INCENSE_STAND,"treasure":TT.VAULT,"bell":TT.INCENSE_STAND,"crossbow":TT.RUMOR_WEAPON_RACK,"rack":TT.RUMOR_WEAPON_RACK,"iron-mask":TT.ARMORY,"shield":TT.ARMORY,"banner":TT.SCREEN,"furnace":TT.BRAZIER,"anvil":TT.ARMORY,"coal":TT.CRATE,"books":TT.BOOK_STACK,"statue":TT.STATUE,"incense":TT.INCENSE_STAND,"screen":TT.SCREEN});
   const BLOCK85=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.RUMOR_BED,TT.RUMOR_MED_CABINET,TT.RUMOR_GAS_PIPE,TT.RUMOR_ARCHIVE_PILE,TT.RUMOR_WEAPON_RACK,TT.RUMOR_SILK_DIVAN,TT.RUMOR_RITUAL_OBELISK,TT.RUMOR_CHARRED_COUNTER,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_SMUGGLER_BUNDLE,TT.RUMOR_GREENHOUSE_FRAME,TT.BED,TT.BOOK_STACK]);
   const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
 
