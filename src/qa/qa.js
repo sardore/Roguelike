@@ -115,9 +115,6 @@ window.__MANRU_ASURA61__.probe=()=>{
       const result={warningTurn:first===true&&warning,domainTurn:second===true&&active,zoneStart,safeApproaches:arena.approaches,outsideBlocked,insideAllowed,volleyWarn,volleyExecuted,volleyDamage,cooldown,cooldownExpected:m.asuraCooldown47||6,unsafeApproaches:unsafe?.approaches??null,unsafeActivated,multiAttack:!!m.multiAttack,enrage:!!m.enrage,meleeHitsFull:m.multiAttack?2:1,meleeHitsHalf:m.multiAttack&&m.enrage?3:(m.multiAttack?2:1),radius:rad,duration:m.asuraDuration47||5,range};result.ok=result.warningTurn&&result.domainTurn&&result.safeApproaches>=2&&result.outsideBlocked&&result.insideAllowed&&result.volleyWarn&&result.volleyExecuted&&result.cooldown===result.cooldownExpected&&result.multiAttack&&result.meleeHitsFull===2&&result.meleeHitsHalf===3&&(unsafeActivated!==false);
       state.player.x=ps.x;state.player.y=ps.y;state.player.hp=ps.hp;state.player.maxHp=ps.maxHp;state.player.strongReady=ps.strongReady;state.dead=ps.dead;resetVisualState();VisibilityService.compute();updateAll();return result
     };
-function openPanel70(){if(!gameplayUiOpen57())return false;
-    if(RC.panelOpen)return;cancelAutoWalk();RC.panelOpen=true;panel.classList.add('open');document.body.classList.add('rc70-open');window.__MANRU_PAUSE_RENDER61=true;refreshSlots70();refreshSfx70();uiTone70(520,.035);
-  }
 function screenOf70(x,y){return globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenterToClient(x,y)}
 function structureHit70(cx,cy){return globalThis.__MANRU_WORLD_HITTEST12__.nearestCell(cx,cy,{radius:2,predicate:(x,y)=>STRUCT70.has(state.map[y]?.[x])&&VisibilityService.isSeen(x,y)})}
 window.__MANRU_RELEASE__.bench=bench70;
@@ -133,7 +130,6 @@ window.__MANRU_RELEASE__.stress=(n=300)=>{
       return out;
     };
 window.__MANRU_RELEASE__.resetTips=resetTips70;
-window.__MANRU_RELEASE__.openPanel=openPanel70;
 window.__MANRU_RELEASE__.regen=f=>{state.floor=f;NormalFloorGenerator.generate();resetVisualState();resetTurnState();FX.transition=null;VisibilityService.compute();updateAll();return audit70()};
 window.__MANRU_RELEASE__.storage=()=>({persistent:RC.storagePersistent,keys:lsKeys70().filter(k=>k.startsWith('manruRC70')||k==='manruV08Save')});
 window.__MANRU_RELEASE__.screen=screenOf70;

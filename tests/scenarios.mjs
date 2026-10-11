@@ -92,6 +92,16 @@ export const scenarios = {
       await s.tick(key === 'x' ? 1500 : 220);
       if (key === 'i' || key === 'f' || key === 'q') await dismissModals(s, 1);
     }
+    // Panels reached only through the keyboard bridge in the real game (these broke once when QA hooks were split off).
+    const panels = {};
+    const bodyClass = (c) => s.page.evaluate((c) => document.body.classList.contains(c), c);
+    await dismissModals(s, 2);
+    await s.page.keyboard.press('F1'); await s.tick(300); panels.settingsOpen = await bodyClass('rc70-open');
+    await s.page.keyboard.press('F1'); await s.tick(300); panels.settingsClosed = !(await bodyClass('rc70-open'));
+    await s.page.keyboard.press('h'); await s.tick(300); panels.helpOpen = await s.page.evaluate(() => { const e = document.getElementById('helpPanel'); return !!e && getComputedStyle(e).display !== 'none'; });
+    await s.page.keyboard.press('Escape'); await s.tick(300); panels.helpClosed = await s.page.evaluate(() => { const e = document.getElementById('helpPanel'); return !e || getComputedStyle(e).display === 'none'; });
+    out['release.panels'] = JSON.stringify(panels);
+    if (!(panels.settingsOpen && panels.settingsClosed && panels.helpOpen && panels.helpClosed)) throw new Error('panel keys do not work: ' + JSON.stringify(panels));
     out['release.storage'] = JSON.stringify(await storageDump(s));
     out['release.errors'] = JSON.stringify(s.errors);
     if (target !== 'qa') {

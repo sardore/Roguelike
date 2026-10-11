@@ -294,8 +294,18 @@ for (const [sel, uses] of selectorUses) {
   report('duplicateSelector', uses[0].file, uses[0].line, `${sel} ×${uses.length} (${uses.map((u) => `${u.file}:${u.line}${u.context ? ' ' + u.context : ''}`).join(', ')})`);
 }
 
+// ---------------------------------------------------------------- QA leak
+// The release build omits src/qa/qa.js; the runtime must not read anything only that file provides.
+{
+  const qaFile = path.join(srcDir, 'qa', 'qa.js'), rtFile = path.join(srcDir, 'scripts', '10-runtime.js');
+  if (fs.existsSync(qaFile) && fs.existsSync(rtFile)) {
+    const { findQaLeaks } = await import('./lib/qa-leak.mjs');
+    for (const leak of findQaLeaks(fs.readFileSync(rtFile, 'utf8'), fs.readFileSync(qaFile, 'utf8'))) report('qaLeak', 'src/scripts/10-runtime.js', 0, leak);
+  }
+}
+
 // ---------------------------------------------------------------- ratchet
-const METRICS = ['parse', 'rebind', 'alias', 'crossFileDuplicate', 'styleInject', 'defineProperty', 'mutationObserver', 'duplicateSelector', 'important', 'suffixFunction', 'emptyCatch', 'timer', 'sameBody'];
+const METRICS = ['parse', 'rebind', 'alias', 'crossFileDuplicate', 'styleInject', 'defineProperty', 'mutationObserver', 'duplicateSelector', 'important', 'suffixFunction', 'emptyCatch', 'timer', 'sameBody', 'qaLeak'];
 const counts = Object.fromEntries(METRICS.map((m) => [m, (violations[m] || []).length]));
 
 if (args.includes('--report')) {

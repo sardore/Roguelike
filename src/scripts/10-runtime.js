@@ -10607,6 +10607,9 @@ const RC={
 
   /* ---------- release panel owner (physical routing is canonical in InputRouter) ---------- */
   RuntimeState.ui.release=RC;
+  function openReleasePanel(){if(!gameplayUiOpen57())return false;
+    if(RC.panelOpen)return;cancelAutoWalk();RC.panelOpen=true;panel.classList.add('open');document.body.classList.add('rc70-open');window.__MANRU_PAUSE_RENDER61=true;refreshSlots70();refreshSfx70();uiTone70(520,.035);
+  }
   function closePanel70(){
     if(!RC.panelOpen)return;RC.panelOpen=false;panel.classList.remove('open');document.body.classList.remove('rc70-open');window.__MANRU_PAUSE_RENDER61=false;RC.lastActionAt=performance.now();if(state)updateAll();
   }
@@ -10844,7 +10847,7 @@ const RC={
   refreshSlots70();refreshSfx70();refreshContinue70();
 
   window.__MANRU_RELEASE__={
-    closePanel:closePanel70,markAction:()=>{RC.lastActionAt=performance.now();return RC.lastActionAt},tip:tip70,floorTutorial:floorTutorial66,closeTip:closeTip70,suspendTip:suspendTip60,entryTutorial:entryTutorial60,closePanel:closePanel70
+    openPanel:openReleasePanel,closePanel:closePanel70,markAction:()=>{RC.lastActionAt=performance.now();return RC.lastActionAt},tip:tip70,floorTutorial:floorTutorial66,closeTip:closeTip70,suspendTip:suspendTip60,entryTutorial:entryTutorial60,closePanel:closePanel70
   };
 
 /* ===== MANRU v7.0.1: ANDROID BACKGROUND / RESUME RECOVERY ===== */
