@@ -24,6 +24,7 @@
 | F-21 | BRANCH_DEFS105 → branches.js, 부팅 끝 재확인 삭제(동작 변경) | 9401 | 878 / 584 | 770 | 63.6% | - |
 | elements | 원소 반응 42문장 → elements.js (사용자 지정 도메인) | 9226 | 848 / 584 | 770 | 64.3% | - |
 | unused | 안 쓰는 선언 23개 삭제 | 9011 | 825 / 584 | 755 | 64.9% | - |
+| pinned:render (2차) | 앞선 이동 뒤 render.js 쪽 참조가 많아진 문장 → render.js | 8593 | 754 / 584 | 755 | 66.6% | 참조 친화도를 반복 적용(수렴까지 5회 시뮬레이션). |
 
 ## 현재 파일별 줄 수
 
@@ -35,14 +36,14 @@
 | items.js | 702 |
 | combat.js | 612 |
 | monsters.js | 1950 |
-| render.js | 4352 |
+| render.js | 4841 |
 | mapgen.js | 2963 |
 | special.js | 1802 |
 | branches.js | 2202 |
 | elements.js | 247 |
-| spine.js | 9011 |
+| spine.js | 8593 |
 | input.js | 148 |
 | story.js | 212 |
 | ui.js | 717 |
 | start.js | 6 |
-| (total) | 25647 |
+| (total) | 25718 |

@@ -4350,3 +4350,492 @@ function closeDebugBattle57(){
  syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__.restore(previous.camera);globalThis.__MANRU_RENDER47__?.invalidate?.();renderUpdatePending=cameraRenderPending=true;if(state&&runState57()==='playing')updateAll(true);
  (previous.focus?.isConnected?previous.focus:document.getElementById('enterBtn'))?.focus();if(previous.storyNote&&previous.screen==='game')globalThis.__MANRU_STORY992__?.open(previous.storyNote);return true;
 }
+function normalizeHealthState58(run){
+  if(!run)return;
+  for(const e of [run.player,...(run.monsters||[])]){
+    if(!e)continue;
+    if(Number.isFinite(e.maxHp))e.maxHp=Math.max(1,Math.round(e.maxHp));
+    if(Number.isFinite(e.hp))e.hp=Math.min(e.maxHp??Infinity,e.hp>0?Math.max(1,Math.round(e.hp)):0);
+  }
+  if(Array.isArray(run.log))run.log=run.log.map(displayCombatText58);
+}
+function resetVisualState(){if(!state)return;const now=performance.now();VIS.playerX=state.player.x;VIS.playerY=state.player.y;VIS.last=now;VIS.forced105=null;forcedMotionUntil=0;VIS.camInit=false;for(const m of state.monsters||[])MON_VIS.set(m,{x:m.x,y:m.y,last:now})}
+function jarContents105(x,y){return regionIndex()===3?'poison':['water','oil','poison','wine'][Math.floor(hash2(x,y,state.floor+4105)*4)%4]}
+// Presentation-only displacement, owned by the current map; never serialized.
+const STRUCTURE_MOTION105=new WeakMap();
+function writeLogLine(msg){
+  if(!state) return;
+  state.log.unshift(displayText53(displayCombatText58(msg)));
+  state.log = state.log.slice(0, 18);
+}
+function rollbackFloorColors971(){
+    if(!state)return 0;
+    // Authored late-game special floors own their material map. Recoloring them here destroys
+    // producer-authored wood/stone zoning and used to leave furniture underlays out of sync.
+    if(state.specialFloor&&[23,24].includes(state.floor)){state.floorColorRollback971=0;return 0}
+    let n=0;const legacy=new Set([TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR]),layers=terrainMapLayers58(state.map);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      const key=k(x,y),top=state.map[y][x],under=layers.underlay[key];
+      if(legacy.has(top)||legacy.has(under)){const before=terrainBaseTile58(x,y);setTerrainSurface65(state.map,x,y,TT.FLOOR);if(terrainBaseTile58(x,y)!==before)n++}
+    }
+    state.floorColorRollback971=n;return n;
+  }
+let updatePanels;
+function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.lineJoin='round';X.lineCap='round';X.strokeStyle=strong?'rgba(236,190,94,.78)':'rgba(216,224,229,.34)';X.lineWidth=strong?2.4:1.6;X.beginPath();X.moveTo(VIS.playerX*TILE+16,VIS.playerY*TILE+16);for(const q of path)X.lineTo(q.x*TILE+16,q.y*TILE+16);X.stroke();for(let i=0;i<path.length;i++){const q=path[i];X.fillStyle=strong?'rgba(237,190,91,.72)':'rgba(220,229,234,.48)';X.fillRect(q.x*TILE+14,q.y*TILE+14,4,4)}X.restore()}
+  const HI_CACHE={floor:new Map(),wall:new Map(),terrain:new Map(),decor:new Map(),creature:new Map()};
+  const ctx2=c=>{const q=c.getContext('2d');q.imageSmoothingEnabled=false;return q};
+  const hiHash=(s)=>{let h=2166136261>>>0;for(let i=0;i<String(s).length;i++){h^=String(s).charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+  function organicNooks43(){
+    if(!state||state.specialFloor)return;
+    const featureKeys=new Set((state.featureRooms||[]).map(r=>`${r.x},${r.y},${r.w},${r.h}`));
+    for(const r of state.rooms||[]){
+      if(r.w<7||r.h<7||featureKeys.has(`${r.x},${r.y},${r.w},${r.h}`))continue;
+      if((state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)||(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h))continue;
+      const m=Math.floor(hash2(r.x,r.y,8700+state.floor*43)*4),cx=r.cx,cy=r.cy;
+      if(m===0){ // chamfer all corners
+        for(const [x,y] of [[r.x+1,r.y+1],[r.x+r.w-2,r.y+1],[r.x+1,r.y+r.h-2],[r.x+r.w-2,r.y+r.h-2]])setTerrainTile58(state.map,x,y,TT.WALL);
+      }else if(m===1&&r.w>=9){ // paired internal buttresses
+        for(const y of [r.y+2,r.y+r.h-3]){setTerrainTile58(state.map,cx-2,y,TT.WALL);setTerrainTile58(state.map,cx+2,y,TT.WALL)}
+      }else if(m===2&&r.h>=9){ // one asymmetric alcove
+        const side=(hash2(r.x,r.y,8711)>.5)?r.x+2:r.x+r.w-3;for(let y=r.y+2;y<=r.y+r.h-4;y++)if(Math.abs(y-cy)>1)setTerrainTile58(state.map,side,y,TT.WALL);
+      }else if(m===3&&r.w>=10&&r.h>=8){ // shallow stage / nook
+        const y=r.y+2;for(let x=r.x+2;x<=r.x+r.w-3;x++)if(Math.abs(x-cx)>2)setTerrainTile58(state.map,x,y,TT.WALL);
+      }
+    }
+  }
+  function pauseAutoForUI(){
+    if(!state)return;
+    if(!UX.paused && VIS.autoPath?.length){
+      UX.paused={path:VIS.autoPath.map(q=>({...q})),meta:{...(UX.autoMeta||{})},turn:state.turn,x:state.player.x,y:state.player.y};
+      UX.modalDirty=false;
+    }
+    cancelAutoWalk();
+  }
+  const ART60={
+    2:{floor:'#4b1715',floorAlt:'#62201b',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0d0203',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)'},
+    4:{floor:'#302034',floorAlt:'#402847',wall:'#71436f',wallDark:'#1b111f',accent:'#d7a3e1',light:'#f4d7ff',fog:'#09050d',tint:'rgba(95,48,112,.30)',glow:'rgba(230,171,244,.09)'},
+    5:{floor:'#481411',floorAlt:'#5e1d17',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0d0202',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)'},
+    6:{floor:'#26383a',floorAlt:'#304847',wall:'#52645d',wallDark:'#182522',accent:'#8da78d',light:'#d4d0ae',fog:'#0a1110',tint:'rgba(45,72,67,.20)',glow:'rgba(177,194,166,.055)'},
+    8:{floor:'#293729',floorAlt:'#344630',wall:'#53644d',wallDark:'#172119',accent:'#91a56f',light:'#d8d2a7',fog:'#0a0f0a',tint:'rgba(58,78,55,.18)',glow:'rgba(185,194,151,.05)'},
+    10:{floor:'#24363b',floorAlt:'#2d4548',wall:'#4c625f',wallDark:'#162528',accent:'#88a8a0',light:'#d0d3b8',fog:'#091114',tint:'rgba(44,70,73,.20)',glow:'rgba(171,193,185,.05)'},
+    11:{floor:'#3c213c',floorAlt:'#4e2c50',wall:'#754a70',wallDark:'#1c0f1d',accent:'#ef94cf',light:'#ffd8f0',fog:'#0b050d',tint:'rgba(112,49,107,.30)',glow:'rgba(244,129,205,.09)'},
+    13:{floor:'#321b38',floorAlt:'#46234d',wall:'#774977',wallDark:'#1a0d1d',accent:'#e084c2',light:'#ffd1ec',fog:'#09040c',tint:'rgba(99,42,106,.30)',glow:'rgba(226,111,190,.09)'},
+    15:{floor:'#35172f',floorAlt:'#4b2040',wall:'#824a73',wallDark:'#190b17',accent:'#ef82b5',light:'#ffd1e7',fog:'#090309',tint:'rgba(110,38,87,.32)',glow:'rgba(242,102,171,.10)'},
+    16:{floor:'#454b50',floorAlt:'#555d63',wall:'#777f86',wallDark:'#1b2024',accent:'#e77e3e',light:'#e6d4ba',fog:'#080a0b',tint:'rgba(82,89,94,.20)',glow:'rgba(218,224,227,.07)'},
+    18:{floor:'#303940',floorAlt:'#3e4a52',wall:'#65717a',wallDark:'#151b20',accent:'#c88351',light:'#d6c3a7',fog:'#080b0d',tint:'rgba(62,75,83,.26)',glow:'rgba(206,221,226,.06)'},
+    20:{floor:'#2d2928',floorAlt:'#3a3331',wall:'#6d5c56',wallDark:'#171212',accent:'#cf5b4c',light:'#f0b395',fog:'#080606',tint:'rgba(73,61,58,.32)',glow:'rgba(202,76,58,.09)'},
+    21:{floor:'#161a35',floorAlt:'#20294c',wall:'#535f91',wallDark:'#070a18',accent:'#52e1df',light:'#c2ffff',fog:'#01030a',tint:'rgba(31,43,104,.34)',glow:'rgba(67,229,226,.13)'},
+    22:{floor:'#62635a',floorAlt:'#74766a',wall:'#97998c',wallDark:'#292b27',accent:'#59c9bc',light:'#fff0c8',fog:'#0a0c0b',tint:'rgba(137,139,128,.18)',glow:'rgba(103,218,204,.08)'},
+    23:{floor:'#354550',floorAlt:'#49606d',wall:'#718894',wallDark:'#121b21',accent:'#d5fbff',light:'#ffffff',fog:'#050a0e',tint:'rgba(70,102,117,.28)',glow:'rgba(201,248,255,.12)'},
+    24:{floor:'#2f6a38',floorAlt:'#67a943',wall:'#5d7e54',wallDark:'#102015',accent:'#ff86b5',light:'#f5ff9f',fog:'#061008',tint:'rgba(70,148,61,.20)',glow:'rgba(194,255,104,.10)'},
+    25:{floor:'#12142a',floorAlt:'#1b1c39',wall:'#4c4a78',wallDark:'#080914',accent:'#f0c44f',light:'#fff1a4',fog:'#020208',tint:'rgba(31,30,90,.40)',glow:'rgba(238,187,62,.12)'}
+  };
+  function qaHash60(){
+    let h=2166136261>>>0;const mix=v=>{h^=(+v||0)&255;h=Math.imul(h,16777619)>>>0};
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y][x]||0;mix(v);mix(v>>>8)}
+    return h.toString(16).padStart(8,'0');
+  }
+  function qaSummary60(){
+    if(!state)return null;
+    return{floor:state.floor,hash:qaHash60(),generationFailure:state.generationFinalKeyFailureR48||null,player:{x:state.player.x,y:state.player.y,hp:state.player.hp},stairs:{...state.stairs},
+      f23:state.floor23?{switchIds:[...(state.floor23.switchIds||[])],centerUnlocked:!!state.floor23.centerUnlocked,keyAcquired:!!state.floor23.keyAcquired,thresholdTriggered:!!state.floor23.thresholdTriggered,reveal:state.floor23.reveal?{districtId:state.floor23.reveal.districtId,switchId:state.floor23.reveal.switchId,materialized:!!state.floor23.reveal.materialized,used:!!state.floor23.reveal.used,spawnBatches:state.floor23.reveal.spawnBatches||0}:null}:null,
+      f24:state.floor24?{entranceKey:{...state.floor24.entranceKey},gateCells:(state.floor24.entranceGateCells||[]).map(c=>({...c})),protectedCount:(state.floor24.reinforcementProtectedCells||[]).length,cap:state.floor24.reinforcementCap57||3}:null};
+  }
+  function qaActivate23ById60(id){if(state.floor!==23)return{ok:false,reason:'not-f23'};const sw=(state.switches||[]).find(v=>v.id===id);if(!sw)return{ok:false,reason:'missing-switch',id};return{ok:true,result:activateFloor23Switch60(sw),used:!!sw.used,disabled:!!sw.disabled,hash:qaHash60()}}
+  function qaRun23Order60(order,timing=-1){
+    if(state.floor!==23)return{ok:false,reason:'not-f23'};if(qaSnapshot60&&!qaRestore60())return{ok:false,reason:'restore-failed'};
+    const q=state.floor23,ids=[...(q.switchIds||[])],reveal=q.reveal?.switchId,seq=Array.isArray(order)&&order.length===ids.length?order:ids;
+    const steps=[];for(let i=0;i<=seq.length;i++){if(i===timing&&reveal)steps.push({reveal:qaActivate23ById60(reveal)});if(i<seq.length)steps.push({normal:seq[i],out:qaActivate23ById60(seq[i])})}
+    const v=validate23Progress60(),normalUsed=ids.every(id=>(state.switches||[]).find(sw=>sw.id===id)?.used),revealState=q.reveal?{materialized:!!q.reveal.materialized,spawnBatches:q.reveal.spawnBatches||0,disabled:!!(state.switches||[]).find(sw=>sw.id===q.reveal.switchId)?.disabled}:null;
+    return{ok:normalUsed&&q.centerUnlocked&&v.ok,order:seq,timing,normalUsed,centerUnlocked:!!q.centerUnlocked,revealState,hash:qaHash60(),validation:v,steps};
+  }
+  function qaRevealSaveLoad60(){
+    if(state.floor!==23||!state.floor23?.reveal?.materialized)return{ok:false,reason:'reveal-not-materialized'};
+    const before={floor:state.floor,districtId:state.floor23.reveal.districtId,materialized:state.floor23.reveal.materialized,used:state.floor23.reveal.used,spawnBatches:state.floor23.reveal.spawnBatches,disabled:!!(state.switches||[]).find(sw=>sw.id===state.floor23.reveal.switchId)?.disabled,hash:qaHash60()};
+    const wrote=!!globalThis.__MANRU_SAVE1004__?.write?.(),raw=globalThis.__MANRU_SAVE1004__?.raw?.();if(!wrote||!raw)return{ok:false,reason:'save-failed',wrote,hasRaw:!!raw};
+    const r=state.floor23.reveal;for(const c of r.cells||[])setTerrainTile58(state.map,c.x,c.y,TT.MERCURY);r.materialized=false;r.used=false;r.spawnBatches=0;const sw=(state.switches||[]).find(v=>v.id===r.switchId);if(sw){sw.used=false;sw.disabled=false}
+    const loadResult=loadGame({raw,label:'qa-f23-reveal'}),after=state?.floor23?.reveal?{floor:state.floor,districtId:state.floor23.reveal.districtId,materialized:state.floor23.reveal.materialized,used:state.floor23.reveal.used,spawnBatches:state.floor23.reveal.spawnBatches,disabled:!!(state.switches||[]).find(v=>v.id===state.floor23.reveal.switchId)?.disabled,hash:qaHash60()}:null,loaded=!!after&&after.materialized===true&&after.used===true&&after.spawnBatches===1&&after.disabled===true;
+    return{ok:loaded,before,after,loaded,loadResult:!!loadResult};
+  }
+  function qaHazard23_60(entityKind='monster'){
+    if(state.floor!==23)return{ok:false,reason:'not-f23'};const q=state.floor23,control=(q.controls||[]).find(c=>(c.changes||[]).some(ch=>ch.before!==TT.MERCURY&&ch.after===TT.MERCURY));if(!control)return{ok:false,reason:'no-flood-control'};
+    const sw=(state.switches||[]).find(v=>v.id===control.switchId),ch=(control.changes||[]).find(c=>c.before!==TT.MERCURY&&c.after===TT.MERCURY);if(!sw||!ch)return{ok:false,reason:'missing-target'};
+    let entity=null;
+    if(entityKind==='player'){entity=state.player;entity.x=ch.x;entity.y=ch.y;OccupancyService.move(entity,entity.x,entity.y)}
+    else{entity=(state.monsters||[]).find(m=>m.hp>0&&!m.boss&&!m.floor24Chaser57&&!globalThis.__MANRU_HAZARD_CORE__?.adapted?.(m,'mercury'));if(!entity)return{ok:false,reason:'no-unadapted-monster'};entity.x=ch.x;entity.y=ch.y;OccupancyService.move(entity,entity.x,entity.y)}
+    const before={x:entity.x,y:entity.y,hp:entity.hp},adapted=!!globalThis.__MANRU_HAZARD_CORE__?.adapted?.(entity,'mercury'),out=activateFloor23Switch60(sw),after={x:entity.x,y:entity.y,hp:entity.hp},resolved=adapted||after.hp<before.hp||after.x!==before.x||after.y!==before.y;
+    return{ok:!!out.changed&&resolved&&state.map[ch.y]?.[ch.x]===TT.MERCURY,entityKind,control:control.switchId,cell:{x:ch.x,y:ch.y},out,before,after,adapted,resolved};
+  }
+/* ===== MANRU v7.0.1: ANDROID BACKGROUND / RESUME RECOVERY ===== */
+let resumeTimer71=0;
+  const recovery71={attempts:0,failures:0,last:null};
+  function scheduleResume71(reason,delay=50){
+    clearTimeout(resumeTimer71);resumeTimer71=setTimeout(()=>resume71(reason),delay);
+  }
+  function symmetricFunctional78(){
+    if(state.monsters?.some(m=>m.boss))return;
+    const z=regionIndex(),hasEnd=r=>{const inside=p=>p&&p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;return inside(state.player)||inside(state.stairs)},rooms=[...(state.rooms||[])].filter(r=>r.w>=8&&r.h>=7&&!hasEnd(r));
+    for(const r of rooms.slice(0,state.specialFloor?4:5)){
+      const pts=[[r.cx-3,r.cy],[r.cx+3,r.cy],[r.cx,r.cy-3],[r.cx,r.cy+3]], candidates=pts.filter(([x,y])=>safeFloor78(x,y));
+      if(candidates.length<2)continue;
+      const pair=z===0?[TT.BRAZIER,TT.TABLE]:z===1?[TT.FOUNTAIN,TT.HEDGE]:z===2?[TT.MIRROR,TT.SCREEN]:z===3?[TT.JAR,TT.CACHE]:[TT.GOLD,TT.ALTAR];
+      for(let i=0;i<candidates.length;i++){
+        const [x,y]=candidates[i],t=pair[i%2];
+        if([TT.TABLE,TT.HEDGE,TT.SCREEN].includes(t)&&Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<7)continue;
+        setTerrainTile58(state.map,x,y,t);
+      }
+    }
+  }
+  function polish78(){
+    if(!state)return;
+    symmetricFunctional78();preservePath78();vfBuildDecor();;
+    state.fullDetail78={decor:state.decor?.length||0,region:regionIndex(),floor:state.floor};
+  }
+/* ===== MANRU v8.5: TRUE STRUCTURAL MAP REBUILD / DECOR VOCABULARY ===== */
+const NORMAL85=new Set([1,3,7,9,12,14,17,19]);
+  function autoWindows86(){
+    if(!state||state.specialFloor)return 0;sanitizeWindows88();const z=regionIndex();if(z!==0&&z!==2){state.windows86=0;return 0}let placed=0;
+    for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){if(state.map[y][x]!==TT.WALL||!validWindow88(x,y))continue;if(DIRS8.some(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WINDOW))continue;if(hash2(x,y,90000+state.floor*37)<.91)continue;setTerrainTile58(state.map,x,y,TT.WINDOW);placed++}
+    state.windows86=placed;return placed;
+  }
+  function harmonizeDecor86(){if(!state||state.specialFloor)return;sanitizeWindows88();state.decor=[]}
+  function cleanupMap85(){if(!state)return;cleanupMapGeometry();if(NORMAL85.has(state.floor)&&!state.specialFloor)scrubNormal88();sanitizeWindows88()}
+  function cleanupMapGeometry(){
+    if(!state)return;if(state.specialFloor&&(state.floor23?.preserveAuthoredGeometry||state.floor24?.preserveAuthoredGeometry)){state.routeTags=[];return}
+    // Remove the floor kanji route markers everywhere. They are not collectible nor mechanically useful.
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.map[y][x]===TT.FLOOR)setTerrainTile58(state.map,x,y,state.floor===24?TT.LIGHT_GRASS:TT.FLOOR);
+    state.routeTags=[];
+    const z=regionIndex();
+    // Diversify old table/screen leftovers without changing collision semantics.
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
+      const t=state.map[y][x];if(t!==TT.TABLE&&t!==TT.SCREEN)continue;
+      const h=hash2(x,y,8500+state.floor*17);if(h<.26)continue;
+      if(z===0)setTerrainTile58(state.map,x,y,t===TT.TABLE?(h<.63?TT.BENCH:TT.CRATE):(h<.65?TT.WALL_BANNER:TT.LOW_FENCE));
+      else if(z===1)setTerrainTile58(state.map,x,y,h<.5?TT.ROCK:(h<.75?TT.FLOWERBED:TT.LOW_FENCE));
+      else if(z===2)setTerrainTile58(state.map,x,y,t===TT.SCREEN?(h<.65?TT.WALL_BANNER:TT.STATUE):(h<.6?TT.BENCH:TT.STATUE));
+      else if(z===3)setTerrainTile58(state.map,x,y,h<.45?TT.CRATE:(h<.75?TT.RACK:TT.STONE_PILLAR));
+      else setTerrainTile58(state.map,x,y,h<.55?TT.STONE_PILLAR:TT.STATUE);
+    }
+    if(state.floor===11){
+      // Stone gorge vocabulary only: no silk screens / dining furniture in the river canyon.
+      for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
+        if(state.map[y][x]===TT.SCREEN)setTerrainTile58(state.map,x,y,hash2(x,y,11880)<.55?TT.ROCK:TT.STONE_PILLAR);
+        else if(state.map[y][x]===TT.JAR)setTerrainTile58(state.map,x,y,hash2(x,y,11881)<.5?TT.LANTERN_POST:TT.CRATE);
+        else if(state.map[y][x]===TT.TABLE)setTerrainTile58(state.map,x,y,TT.ROCK);
+      }
+    }
+  }
+  function pruneDecor85(){if(NORMAL85.has(state.floor)&&!state.specialFloor){state.decor=[];return}return pruneDecorNearStructures()}
+  function pruneDecorNearStructures(){
+    if(!state?.decor)return;
+    const nearStructure=d=>DIRS8.some(([dx,dy])=>{const x=d.x+dx,y=d.y+dy;if(x<0||y<0||x>=COLS||y>=ROWS)return false;const t=state.map[y][x];return tileBlocks(t)||[TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE].includes(t)});
+    const feature=d=>(state.featureRooms||[]).some(r=>d.x>=r.x-1&&d.y>=r.y-1&&d.x<r.x+r.w+1&&d.y<r.y+r.h+1);
+    const picked=[];
+    for(const d of state.decor){
+      if(picked.length>=(state.specialFloor?22:14))break;
+      if(feature(d)||nearStructure(d)){if(hash2(d.x,d.y,8591+state.floor*9)>.28)picked.push(d)}
+    }
+    state.decor=picked;
+  }
+  function themeDecor88(z){smallTheme90(z)}
+  function sanitizeWindows88(){if(state?.specialFloor&&(state.floor23?.preserveAuthoredGeometry||state.floor24?.preserveAuthoredGeometry))return 0;let removed=0;const z=regionIndex();for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.WINDOW){const old=state.map[y][x];setTerrainTile58(state.map,x,y,TT.WALL);if(z!==0&&z!==2||!validWindow88(x,y)){removed++;continue}setTerrainTile58(state.map,x,y,old)}state.windowRemoved88=removed;return removed}
+  function scrubNormal88(){
+    if(!state||state.specialFloor||!NORMAL85.has(state.floor))return;
+    const z=regionIndex();state.routeTags=[];
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
+      const t=state.map[y][x];
+      if(t===TT.FLOOR){setTerrainTile58(state.map,x,y,TT.FLOOR);continue}
+      // Remove the two legacy scatter props completely. They were the main visual noise source.
+      if(t===TT.TABLE||t===TT.SCREEN){setTerrainTile58(state.map,x,y,TT.FLOOR);continue}
+      // Strip v8.5/8.7 decorative blockers before rebuilding the room's theme deliberately.
+      if(DECOR88.has(t)){setTerrainTile58(state.map,x,y,(t===TT.STONE_PATH&&z===1)?TT.GRASS:TT.FLOOR);continue}
+      // Garden/inner-room legacy style objects are normalized; functional hazards/rewards remain.
+      if(z===1&&(t===TT.BAMBOO||t===TT.HEDGE||t===TT.PAVILION))setTerrainTile58(state.map,x,y,TT.GRASS);
+    }
+    state.decor=[];
+  }
+  function coherentDecor94(){
+    if(!state||state.specialFloor)return;const rawZones=[...(state.featureRooms||[]),...(state.purposeRooms90||[]),state.grandRoom89,...(state.mainPathRooms92||[]).filter(r=>r?.role93==='hall').slice(0,2)].filter(r=>r&&r.w>=5&&r.h>=5),seenZones=new Set(),zones=rawZones.filter(r=>{const q=`${r.x},${r.y},${r.w},${r.h}`;if(seenZones.has(q))return false;seenZones.add(q);return true});const z=regionIndex(),tiles=z===0?[TT.LANTERN_POST,TT.BENCH,TT.CRATE]:z===1?[TT.FLOWERBED,TT.ROCK,TT.LOW_FENCE]:z===2?[TT.STATUE,TT.MIRROR,TT.WALL_BANNER]:z===3?[TT.CRATE,TT.RACK,TT.STONE_PILLAR]:[TT.STONE_PILLAR,TT.STATUE,TT.CARPET];let used=0;
+    const put=(x,y,t)=>{if(in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y][x])&&!OccupancyService.isOccupied(x,y)){setTerrainTile58(state.map,x,y,t);used++;return true}return false};
+    for(let zi=0;zi<zones.length&&used<24;zi++){
+      const r=zones[zi],t=tiles[zi%tiles.length],corner=[[r.x+1,r.y+1],[r.x+r.w-2,r.y+1],[r.x+1,r.y+r.h-2],[r.x+r.w-2,r.y+r.h-2]];
+      for(const [x,y] of corner.slice(0,zi===0?4:2))put(x,y,t);
+      if(r.w>=9&&used<24){const t2=tiles[(zi+1)%tiles.length];put(r.cx-2,r.y+1,t2);put(r.cx+2,r.y+1,t2)}
+      if(r.h>=9&&used<24&&zi%2===0){put(r.x+1,r.cy-1,t);put(r.x+1,r.cy+1,t)}
+    }
+    if(used<8){for(const r of (state.mainPathRooms92||[]).filter(q=>q&&q.w>=7&&q.h>=6)){if(used>=8)break;const t=tiles[used%tiles.length];put(r.x+1,r.y+1,t);put(r.x+r.w-2,r.y+1,t)}}
+    state.coherentDecorCount94=used;
+  }
+    /* ---------- transient animation state: never survives a browser session ---------- */
+    function sanitizeTransient1003(st=state){
+      if(!st)return false;
+      st.playerHitUntil=0;st.playerAttackUntil=0;st.attackUntil=0;st.evadeUntil=0;
+      if(st.player){st.player.nextAttackAt=0;st.player.busyUntil=0}
+      for(const m of st.monsters||[]){m.hitUntil=0;m.evadeUntil=0;m.attackUntil=0;m.attackTarget=null;m.hitDir=null}
+      try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
+      return true;
+    }
+    function armorTone1004(a,base){
+      if(!a||a.name==='경량복')return base;
+      return choose1004(a,['#46545a','#5c5148','#4e5e52','#63504d','#46536a','#59605d']);
+    }
+    function cloakTone1004(c){return choose1004(c,['#51342d','#354a4a','#4a3c55','#5a4730','#3d4658','#49343d'])}
+    function baseSummoner1004(q,p,dir){
+      const coat=armorTone1004(p.armor,'#eee1c8'),lit=p.armor&&p.armor.name!=='경량복'?'#c4b8ae':'#fff0d8';
+      const r=(x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(x,y,w,h)},poly=(pts,c)=>{q.fillStyle=c;q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill()};
+      // Female mudang: pinned black hair, red ribbon, ivory jeogori and a long crimson chima.
+      r(12,3,8,3,'#211820');r(10,6,12,8,'#211820');r(12,2,7,3,'#322332');r(11,4,11,1,'#b88849');px1004(q,21,4,'#f4d59a');r(8,6,3,3,'#a43c49');r(8,9,2,6,'#c85e6b');r(7,13,2,4,'#8e303e');
+      r(12,8,8,6,'#e7bb9e');r(13,8,6,2,'#f4d1b5');r(11,7,10,2,'#291c23');px1004(q,12,9,'#291c23');px1004(q,19,9,'#291c23');r(13,11,1,2,'#332029');r(18,11,1,2,'#332029');px1004(q,12,12,'#d89595');px1004(q,19,12,'#d89595');r(15,13,2,1,'#b0686e');
+      r(14,14,4,2,'#d3a289');poly([[10,16],[22,16],[25,21],[23,26],[9,26],[7,21]],'#402a32');
+      poly([[11,16],[21,16],[24,21],[22,25],[10,25],[8,21]],coat);poly([[12,16],[15,17],[18,20],[16,23],[11,20]],lit);poly([[20,16],[16,20],[14,17],[13,18],[17,22],[21,18]],'#bf5362');
+      poly([[9,18],[6,21],[5,25],[8,27],[11,22]],coat);poly([[23,18],[26,21],[27,25],[24,27],[21,22]],coat);r(6,23,3,2,lit);r(23,23,3,2,lit);r(6,26,3,2,'#e4b89c');r(24,26,2,2,'#e4b89c');
+      poly([[11,24],[21,24],[25,33],[24,35],[8,35],[7,33]],'#4c2335');poly([[12,24],[20,24],[23,33],[22,34],[10,34],[9,33]],'#a84661');poly([[12,25],[15,25],[13,33],[10,33]],'#d0768a');poly([[18,25],[20,25],[22,33],[19,33]],'#7e334d');r(10,34,12,1,'#d3a27b');r(10,35,5,1,'#231923');r(18,35,5,1,'#231923');
+      r(15,21,6,2,'#ad3b53');r(19,23,2,6,'#d68a9b');r(20,28,2,3,'#ece2bc');r(13,24,3,4,'#518f80');px1004(q,14,25,'#b8d3b1');r(13,28,3,2,'#c6a868');
+      r(2,23,7,9,'#30242b');r(3,24,5,7,'#7b5769');r(4,25,3,4,'#e5d2a2');px1004(q,5,26,'#86594b');r(3,30,5,1,'#c4a572');
+    }
+    function baseWanderer1004(q,p){
+      // Inspector: slim Nevanda-like read — small head, clean gat, narrow coat, visible legs.
+      const coat=armorTone1004(p.armor,'#b9a37b'),coatHi=p.armor&&p.armor.name!=='경량복'?'#8d928c':'#d8c69f';
+      // gat: actual art begins at y=2 => only two world pixels can overhang the tile.
+      q.fillStyle='#0e0b09';q.fillRect(10,3,12,2);q.fillRect(8,5,16,2);q.fillRect(6,6,20,1);
+      q.fillStyle='#49301f';q.fillRect(12,2,8,2);q.fillRect(10,4,12,1);px1004(q,20,3,'#755238');
+      // face/hair, deliberately only 8px wide.
+      q.fillStyle='#3b2a20';q.fillRect(12,7,8,1);q.fillRect(11,8,10,4);q.fillRect(12,12,8,3);q.fillStyle='#caa77d';q.fillRect(12,8,8,5);q.fillRect(13,13,6,1);q.fillStyle='#e0bd8f';q.fillRect(13,8,6,2);
+      px1004(q,13,11,'#211a16');px1004(q,18,11,'#211a16');px1004(q,16,12,'#b88464');q.fillStyle='#704936';q.fillRect(15,13,3,1);
+      // neck + sloped shoulders.
+      q.fillStyle='#8e6549';q.fillRect(14,14,4,2);q.fillStyle='#231b17';q.beginPath();q.moveTo(10,16);q.lineTo(22,16);q.lineTo(25,20);q.lineTo(23,29);q.lineTo(9,29);q.lineTo(7,20);q.closePath();q.fill();
+      q.fillStyle=coat;q.beginPath();q.moveTo(11,16);q.lineTo(21,16);q.lineTo(23,20);q.lineTo(21,29);q.lineTo(11,29);q.lineTo(9,20);q.closePath();q.fill();
+      q.fillStyle=coatHi;q.beginPath();q.moveTo(12,17);q.lineTo(16,17);q.lineTo(15,28);q.lineTo(11,28);q.lineTo(10,20);q.closePath();q.fill();
+      // sleeves/hands, one sleeve slightly asymmetric so the silhouette doesn't read as a rectangle.
+      q.fillStyle=coat;q.beginPath();q.moveTo(9,18);q.lineTo(6,21);q.lineTo(7,27);q.lineTo(10,26);q.lineTo(11,20);q.closePath();q.fill();q.beginPath();q.moveTo(22,18);q.lineTo(25,20);q.lineTo(25,26);q.lineTo(22,27);q.lineTo(21,20);q.closePath();q.fill();
+      q.fillStyle='#c89e73';q.fillRect(6,26,3,2);q.fillRect(23,26,3,2);
+      // official red waist strip / small badge gives class identity at 1x.
+      q.fillStyle='#7f2f2a';q.fillRect(14,17,4,10);q.fillStyle='#b98647';q.fillRect(15,19,2,5);px1004(q,16,20,'#e2c976');
+      q.fillStyle='#4a3025';q.fillRect(8,25,4,4);q.fillStyle='#8d6740';q.fillRect(9,26,2,1);px1004(q,10,27,'#d4af67');
+      q.fillStyle='#4a3025';q.fillRect(11,29,10,2);q.fillStyle='#2a1d18';q.fillRect(11,31,4,4);q.fillRect(18,31,4,4);q.fillStyle='#110e0c';q.fillRect(10,34,6,2);q.fillRect(17,34,7,2);
+      // two-pixel coat hem breaks the square lower body.
+      q.fillStyle=coat;q.fillRect(9,28,4,2);q.fillRect(20,28,3,2);
+    }
+    function baseStrongman1004(q,p,powered,dir,attack){
+      // Pixel-authored anatomy: deltoids, trapezius, chest and forearms change independently of the head.
+      const skin='#b98255',lit='#e2b17b',shade='#794a33',edge='#211713',vest=armorTone1004(p.armor,'#754332');
+      const r=(x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(x,y,w,h)},poly=(pts,c)=>{q.fillStyle=c;q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill()};
+      // Broad planted stance and wrapped boots, unchanged floor anchor at y=36.
+      poly([[9,26],[23,26],[25,33],[19,34],[16,30],[13,34],[7,33]],'#262e31');
+      r(8,30,5,4,'#495050');r(19,30,5,4,'#3a4040');r(8,32,5,1,'#b6a084');r(19,32,5,1,'#a68d73');r(6,34,8,2,'#141414');r(18,34,8,2,'#141414');
+      const outer=powered?2:4,top=powered?12:15;
+      poly([[outer,top+2],[10,top],[13,11],[20,11],[23,top],[32-outer,top+2],[29,25],[23,27],[9,27],[3,25]],edge);
+      poly([[outer+1,top+3],[10,top+1],[13,12],[20,12],[23,top+1],[31-outer,top+3],[25,24],[22,27],[10,27],[7,24]],skin);
+      // Neck tendons and trapezius highlights.
+      poly([[11,top+2],[14,12],[15,16],[12,19],[8,18]],lit);poly([[18,12],[21,top+1],[24,18],[20,19],[17,16]],'#c99563');
+      // Independent swollen deltoids and forward braced forearms.
+      for(const side of [0,1]){const x=side?24:outer,y=top+2+(attack&&side===1?-1:0),w=powered?6:4;
+        poly([[x,y],[x+w-1,y],[x+w,y+4],[x+w-1,25],[x+1,27],[x-1,24]],shade);
+        r(x,y+1,w-1,4,skin);r(x+1,y+1,2,3,lit);r(x,22,w-1,3,'#bd8a5d');r(x,24,w,3,'#473a2e');r(x,24,w,1,'#c8b188');r(x+1,27,w-2,2,skin);
+      }
+      // Cross-lapped sleeveless service jacket, brass rank fasteners, thick sash.
+      poly([[10,17],[15,19],[19,16],[23,18],[22,25],[10,25],[8,20]],vest);
+      poly([[10,17],[15,20],[20,16],[22,17],[16,23],[10,21]],'#a47a50');r(15,21,2,4,'#d0ac68');r(10,25,13,3,'#392723');r(9,25,14,1,'#986344');r(14,25,5,3,'#c29950');r(15,26,3,1,'#f0d28a');r(20,28,3,3,'#773b2c');
+      if(powered){r(8,18,3,1,lit);r(21,18,3,1,lit);r(10,22,3,1,'#ce9660')}
+      // Small stern face and tied headband: no head scaling during transformation.
+      r(12,3,8,3,'#16191a');r(15,1,4,3,'#202528');r(11,5,10,8,edge);r(12,6,8,7,skin);r(13,6,6,3,lit);r(12,5,8,2,'#773d2e');r(12,5,8,1,'#bd8652');r(20,6,3,2,'#773d2e');r(21,8,2,3,'#542c24');
+      r(12,9,3,1,'#3b2922');r(17,9,3,1,'#3b2922');r(13,10,1,1,'#141a1a');r(18,10,1,1,'#141a1a');r(16,10,1,2,'#e8b27a');r(14,12,4,1,'#583a2c');r(14,13,4,1,'#805139');
+    }
+    function baseEscort1004(q,p){
+      // Guard: compact lamellar silhouette, small helm/face and separated greaves.
+      const arm=armorTone1004(p.armor,'#4e5552'),armHi=p.armor&&p.armor.name!=='경량복'?'#7b8178':'#807463';
+      // short crest + helmet, also capped to two-pixel overhang.
+      q.fillStyle='#7d302b';q.fillRect(15,2,2,3);q.fillRect(17,3,2,2);q.fillStyle='#1a2021';q.fillRect(10,5,12,4);q.fillStyle='#4e5b5c';q.fillRect(12,4,8,2);q.fillRect(9,7,14,2);q.fillStyle='#89908c';q.fillRect(13,5,5,1);
+      q.fillStyle='#3b322b';q.fillRect(12,9,8,1);q.fillRect(11,10,10,4);q.fillRect(12,14,8,2);q.fillStyle='#b7926d';q.fillRect(12,10,8,4);q.fillRect(13,14,6,1);q.fillStyle='#d0ad80';q.fillRect(13,10,6,2);px1004(q,13,12,'#20201e');px1004(q,18,12,'#20201e');px1004(q,16,13,'#9c745a');q.fillStyle='#62483a';q.fillRect(15,14,3,1);
+      q.fillStyle='#2a2521';q.fillRect(14,15,4,2);
+      // sloped pauldrons and narrower waist than shoulders.
+      q.fillStyle='#242522';q.beginPath();q.moveTo(9,16);q.lineTo(22,16);q.lineTo(26,20);q.lineTo(23,30);q.lineTo(9,30);q.lineTo(6,20);q.closePath();q.fill();
+      q.fillStyle=arm;q.beginPath();q.moveTo(10,17);q.lineTo(21,17);q.lineTo(24,20);q.lineTo(22,29);q.lineTo(10,29);q.lineTo(8,20);q.closePath();q.fill();
+      q.fillStyle=armHi;q.fillRect(11,18,10,2);q.fillStyle='#a38b68';q.fillRect(11,21,10,1);q.fillRect(10,24,12,1);q.fillRect(11,27,10,1);
+      q.fillStyle='#413a32';q.beginPath();q.moveTo(8,19);q.lineTo(5,21);q.lineTo(6,28);q.lineTo(9,27);q.closePath();q.fill();q.beginPath();q.moveTo(23,19);q.lineTo(26,21);q.lineTo(25,28);q.lineTo(22,27);q.closePath();q.fill();
+      q.fillStyle='#b58f69';q.fillRect(5,27,3,2);q.fillRect(24,27,3,2);
+      q.fillStyle='#6b2b28';q.fillRect(10,29,12,2);q.fillStyle='#2b2926';q.fillRect(11,31,4,4);q.fillRect(18,31,4,4);q.fillStyle='#141311';q.fillRect(10,34,6,2);q.fillRect(17,34,7,2);
+      // tiny brass clasp instead of a giant chest block.
+      q.fillStyle='#b28c55';q.fillRect(15,18,2,2);px1004(q,16,18,'#e1c47a');
+    }
+    function baseSwordsman1004(q,p){
+      // Scout swordsman: asymmetry + diagonals like Nevanda's readable human tiles.
+      const coat=armorTone1004(p.armor,'#4e7078'),coatHi=p.armor&&p.armor.name!=='경량복'?'#7d8c8d':'#72929a';
+      q.fillStyle='#0f1719';q.fillRect(11,5,11,3);q.fillRect(13,3,8,3);q.fillRect(19,2,3,3);q.fillStyle='#263a3e';q.fillRect(12,4,9,1);q.fillStyle='#11191b';q.fillRect(21,4,3,8);
+      q.fillStyle='#3b3130';q.fillRect(12,8,8,1);q.fillRect(11,9,10,4);q.fillRect(12,13,8,3);q.fillStyle='#c0a39a';q.fillRect(12,9,8,5);q.fillRect(13,14,6,1);q.fillStyle='#d8bcb0';q.fillRect(13,9,6,2);px1004(q,13,12,'#202629');px1004(q,18,12,'#202629');px1004(q,16,13,'#a98079');q.fillStyle='#694943';q.fillRect(15,14,3,1);
+      // red scarf, one tail visible outside the torso.
+      q.fillStyle='#8c342e';q.fillRect(11,16,10,2);q.beginPath();q.moveTo(20,17);q.lineTo(26,18);q.lineTo(23,22);q.closePath();q.fill();
+      q.fillStyle='#202c2e';q.beginPath();q.moveTo(10,17);q.lineTo(22,17);q.lineTo(24,21);q.lineTo(21,29);q.lineTo(10,29);q.lineTo(7,21);q.closePath();q.fill();
+      q.fillStyle=coat;q.beginPath();q.moveTo(11,18);q.lineTo(21,18);q.lineTo(22,21);q.lineTo(20,28);q.lineTo(11,28);q.lineTo(9,21);q.closePath();q.fill();
+      q.fillStyle=coatHi;q.beginPath();q.moveTo(12,19);q.lineTo(16,19);q.lineTo(14,28);q.lineTo(11,28);q.lineTo(10,21);q.closePath();q.fill();
+      // diagonal cross-body strap and asymmetric forearms.
+      q.strokeStyle='#253b40';q.lineWidth=2;q.beginPath();q.moveTo(20,18);q.lineTo(11,28);q.stroke();q.fillStyle='#9a6b46';q.fillRect(15,23,3,2);
+      q.fillStyle='#3b5960';q.beginPath();q.moveTo(9,19);q.lineTo(6,22);q.lineTo(7,28);q.lineTo(10,27);q.closePath();q.fill();q.fillStyle='#263c42';q.beginPath();q.moveTo(22,19);q.lineTo(25,21);q.lineTo(24,27);q.lineTo(21,27);q.closePath();q.fill();
+      q.fillStyle='#c09d90';q.fillRect(6,27,3,2);q.fillRect(23,27,3,2);
+      q.fillStyle='#1b292d';q.fillRect(11,29,10,2);q.fillRect(11,31,4,4);q.fillRect(18,31,4,4);q.fillStyle='#0c1315';q.fillRect(10,34,6,2);q.fillRect(17,34,7,2);
+      // class sheath: slim and diagonal, not a giant side rectangle.
+      q.strokeStyle='#3b241c';q.lineWidth=2;q.beginPath();q.moveTo(8,24);q.lineTo(5,34);q.stroke();q.fillStyle='#a17445';q.fillRect(6,23,5,2);
+    }
+function wardPulse(kind,turns=10){
+  const h=hz(),name=kind==='drown'?'익사 면역':'공허 면역';if(kind==='drown')h.drownUntil=(state.turn||0)+turns+1;else h.voidUntil=(state.turn||0)+turns+1;
+  FX.flashUntil=performance.now()+620;FX.flashColor=kind==='drown'?'#70d8e8':'#aa79df';FX.shakeUntil=performance.now()+180;FX.shakePower=2.2;
+  burst(state.player.x,state.player.y,kind==='drown'?'#77ddeb':'#b687ef',30,1.4);toast(`${name} ${turns}턴`);addLog(`유물이 산산이 부서졌다. ${name} ${turns}턴.`);updateWardHud();
+}
+/* ---------- key silhouettes: type = material + geometry, not color only ---------- */
+const KEY_META1006={
+  'f2-danger-exit':{id:'f2-danger-exit',name:'혈문 출구열쇠',color:'#d88069',dark:'#613329',glow:'#f0dfc5',shape:'iron'},
+  'f2-east-safe-exit':{id:'f2-east-safe-exit',name:'동쪽 회랑 출구열쇠',color:'#d7c084',dark:'#625538',glow:'#f0dfc5',shape:'brass'},
+  'f2-west-safe-exit':{id:'f2-west-safe-exit',name:'서쪽 회랑 출구열쇠',color:'#99caba',dark:'#375f53',glow:'#f0dfc5',shape:'jade'},
+  'f2-unknown-exit':{id:'f2-unknown-exit',name:'암실 출구열쇠',color:'#c3a6d1',dark:'#56405d',glow:'#f0dfc5',shape:'iron'},
+  'choice-copper':{id:'choice-copper',name:'동제 갈림열쇠',color:'#e29c65',dark:'#63341e',glow:'#ffe0bc',shape:'brass'},
+  'choice-silver':{id:'choice-silver',name:'은제 갈림열쇠',color:'#b9d2e4',dark:'#34475f',glow:'#e5f3ff',shape:'jade'},
+  iron:{id:'iron',name:'철제 톱니열쇠',color:'#d9e0e3',dark:'#46525b',glow:'#f1f5f4',shape:'iron'},
+  jade:{id:'jade',name:'청옥 패형열쇠',color:'#5fe0ad',dark:'#174d3a',glow:'#c7ffe5',shape:'jade'},
+  brass:{id:'brass',name:'황동 삼지열쇠',color:'#f0b84e',dark:'#654313',glow:'#ffe5a2',shape:'brass'}
+};
+function rgb1020(h){h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function mix1020(a,b,t){const A=rgb1020(a),B=rgb1020(b);return`rgb(${Math.round(A[0]+(B[0]-A[0])*t)},${Math.round(A[1]+(B[1]-A[1])*t)},${Math.round(A[2]+(B[2]-A[2])*t)})`}
+function objectAt1025(x,y){return !inside1020(x,y)||!GRAD_TERRAIN1025.has(terrainBaseTile58(x,y))}
+const shadow=q=>{ell(q,'rgba(0,0,0,.30)',24,41,13,4);rect(q,14,43,20,2,'rgba(0,0,0,.13)')};
+const KEY=(it)=>{
+  if(!it)return'none';
+  if(it.summonItem105==='picture')return`picture:${it.summonSpecies105||it.name}:${summonPictureGrade(it.pictureCopies105||1)}:${hash(JSON.stringify(it.summonPortrait105||null))}`;
+  let extra='';
+  // Talisman cache identity follows its assigned physical appearance, not known/unknown state.
+  if(it.type==='talisman'){const pub=window.__MANRU_TALISMAN_PUBLIC__,a=pub?.app?.(it);extra=`:${a?.id||''}:${pub?.seal?.(it)||a?.seal||''}:${a?.paper||''}:${a?.paper2||''}:${a?.ink||''}`}
+  if(it.type==='ammo')extra+=`:${it.ammoKind||''}`;
+  if(it.summonItem105)extra+=`:${it.summonElement105||''}:${it.pictureCopies105||1}:${hash(JSON.stringify(it.summonPortrait105||null))}`;
+  return`${it.name||''}:${it.type||''}:${it.kind||''}:${it.tier||0}:${it.rarity||''}:${it.artifactId46||''}:${it.artifactWeapon46?1:0}${extra}`;
+};
+const WEAPON_STYLE={
+'조잡한 단검':'rough_dagger','나무 몽둥이':'club','무딘 소검':'short_sword','대나무창':'bamboo_spear','사냥용 목궁':'hunt_bow','낡은 장도리':'claw_hammer',
+'수련용 환도':'hwando','강철 보검':'steel_sword','철두창':'iron_spear','낫':'sickle','손도끼':'hand_axe','병사용 반궁':'mil_bow',
+'쌍날 단도':'twin_dagger','암살용 비수':'assassin','편곤':'flail','삼각창':'tri_spear','강화 각궁':'horn_bow','무쇠 메':'iron_maul',
+'연철 권갑':'iron_gauntlet','육각 철봉':'hex_staff','장갑 도끼':'battle_axe','협도':'glaive','철참도':'heavy_sword','정량궁':'siege_bow','대형 오해머':'warhammer',
+'별운검':'royal_sword','태도':'tachi','당파':'dangpa','금강령 퇴':'vajra','단단한 철궁':'iron_bow','대장간 망치':'forge_hammer'
+};
+function debugBattleCards57(){
+ const b=DEBUG_BATTLE57,select=document.getElementById('battleMonster57'),area=document.getElementById('battleCards57');area.replaceChildren();
+ for(const option of select.options){const entry=b.catalog[Number(option.value)],card=document.createElement('button');card.type='button';card.className='battleMonsterCard57'+(option.selected?' selected':'');card.setAttribute('aria-pressed',String(option.selected));card.setAttribute('aria-label',entry.def.name+' 선택');
+  const art=document.createElement('canvas');art.width=96;art.height=96;const ctx=art.getContext('2d');ctx.imageSmoothingEnabled=false;const image=globalThis.__MANRU_ACTOR_ART__.monster(entry.def,0);ctx.drawImage(image,16,12,64,72);
+  const name=document.createElement('b');name.textContent=entry.def.name;const badge=document.createElement('span');badge.textContent=entry.group;
+  card.append(art,name,badge);card.onclick=()=>{select.value=option.value;debugBattlePreview57();for(const child of area.children){const chosen=child===card;child.classList.toggle('selected',chosen);child.setAttribute('aria-pressed',String(chosen))}};area.append(card);
+ }
+ if(!select.options.length){const empty=document.createElement('p');empty.textContent='해당 몬스터가 없습니다.';area.append(empty)}
+ document.getElementById('battleCatalogCount57').textContent=select.options.length+'종';
+}
+function debugBattleMessage57(message){document.getElementById('battleMessage57').textContent=message;document.getElementById('battleWatchMessage57').textContent=message}
+function debugBattlePause57(){const b=DEBUG_BATTLE57;b.playing=false;clearTimeout(b.timer);b.timer=null;document.getElementById('battlePlay57').textContent='▶ 시작 / 계속';document.getElementById('battleWatchPlay57').textContent='▶ 계속'}
+function debugBattleCreateWorld57(fresh=false){
+ const b=DEBUG_BATTLE57;debugBattlePause57();debugBattleCancelGesture57();closeInspect();OccupancyService.endShared();let skipped=0;
+ // DOM events are not the fresh-map command.
+ const before={state,cols:COLS,rows:ROWS,template:b.mapTemplate,key:b.mapKey,anchors:b.spawnAnchors,room:b.roomKey};
+ try{debugBattleMap57(fresh===true);}catch(error){OccupancyService.endShared();state=before.state;COLS=before.cols;ROWS=before.rows;Object.assign(b,{mapTemplate:before.template,mapKey:before.key,spawnAnchors:before.anchors,roomKey:before.room});console.error('debug map generation rejected',error);debugBattleMessage57('지도 생성 실패: '+error.message);debugBattleRender57();return false;}VisibilityService.compute();
+ b.round=0;b.winner=null;b.serial=0;b.motionFrom=null;b.subjectId=null;b.lastSubjectPosition=null;for(const key of ['particles','floats','slashes','rings','projectiles','doors'])FX[key]=[];FX.transition=null;FX.shakeUntil=0;FX.shakePower=0;FX.flashUntil=0;resetVisualState();
+ const room=b.rooms.find(e=>e.i===b.roomKey)?.r;
+ for(const side of ['A','B'])for(const row of b.roster.filter(r=>r.side===side))for(let i=0;i<row.count;i++){
+  const mon=debugBattleMonster57(b.catalog[row.catalog],row.floor,row.gatekeeper),anchor=b.spawnAnchors[side],other=b.spawnAnchors[side==='A'?'B':'A'];
+  Object.assign(mon,{debugSide57:side,debugId57:++b.serial,debugFloor57:row.floor,alerted:true,hidden:false,mimicDormant105:false,spawnProvenance57:'debug-battle',rewardPolicy57:{xp:false,kills:false,drops:false}});
+  setEntityFaction57(mon,side==='A'?'player':'hostile');mon.alerted=true;
+  const positions=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
+   if(!PlacementService.canPlaceEntity(mon,x,y))continue;const d=Math.hypot(x-anchor.x,y-anchor.y),op=Math.hypot(x-other.x,y-other.y),outside=room&&(x<room.x||y<room.y||x>=room.x+room.w||y>=room.y+room.h);
+   positions.push({x,y,d:d+(d>op?30:0)+(outside?60:0)});
+  }
+  positions.sort((a,c)=>a.d-c.d);if(!positions.length){skipped++;continue}Object.assign(mon,{x:positions[0].x,y:positions[0].y});OccupancyService.addMonster(mon);
+ }
+ debugBattleMessage57(skipped?`배치 실패 ${skipped}마리 · 지형 제한을 해제하거나 수량을 줄이세요.`:'실제 맵 배치 완료 · 조사 / 드래그 / 두 손가락 확대 가능');debugBattleSubjects57();debugBattleCamera57(true);debugBattleRender57();
+}
+function debugBattlePlay57(){
+ const b=DEBUG_BATTLE57;if(b.playing){debugBattlePause57();debugBattleMessage57('일시정지');return}
+ if(b.winner){debugBattleMessage57('전투 종료 · 재대결을 누르세요.');return}
+ if(!['A','B'].every(side=>state.monsters.some(m=>m.debugSide57===side))){debugBattleMessage57('A/B 양쪽에 몬스터를 추가하세요.');return}
+ debugBattleWatch57();b.playing=true;if(innerWidth<=1000)document.getElementById('battleSetupDetails57').open=false;document.getElementById('battlePlay57').textContent='Ⅱ 일시정지';document.getElementById('battleWatchPlay57').textContent='Ⅱ 일시정지';
+ const tick=()=>{if(!b.open||!b.playing)return;debugBattleRound57();if(b.playing)b.timer=setTimeout(tick,800/Number(document.getElementById('battleSpeed57').value))};tick();
+}
+function debugBattlePreview57(){
+ const b=DEBUG_BATTLE57,select=document.getElementById('battleMonster57'),entry=b.catalog[Number(select.value)];if(!entry||!select.options.length){document.getElementById('battlePreview57').textContent='검색 결과가 없습니다.';return}
+ const floor=clamp(Math.floor(Number(document.getElementById('battleFloor57').value)||1),1,100),m=debugBattleMonster57(entry,floor,document.getElementById('battleGatekeeper57').checked,true);
+ document.getElementById('battlePreview57').textContent=`${m.name} · ${floor}층 기준${entry.dojo?' (무술·장비 편성 예시)':entry.def.boss?' (보스 · 층 배율 없음)':entry.def.fixedStats57?' (고정 능력치)':''}\n체력 ${m.maxHp} / 공격 ${m.atk} / 방어 ${m.def} / 회피 ${m.eva}\n${m.ranged?'원거리':'근접'} · 사거리 ${m.ranged?m.range:m.reach}${m.fast?' · 빠름':''}${m.revivalLives57?' · 부활':''}${m.split?' · 분열':''}${m.legendElite47?' · 문지기 강화':''}${m.martialActor105?'\n기력 '+m.focus+' / '+m.maxFocus+' · '+dojoInspect(m,{battle:true}):''}`;
+}
+function debugBattleFilter57(){
+ const b=DEBUG_BATTLE57,select=document.getElementById('battleMonster57'),old=select.value,query=document.getElementById('battleSearch57').value.trim().toLowerCase(),group=document.getElementById('battleGroup57').value;
+ select.replaceChildren();b.catalog.forEach((entry,index)=>{if((!group||entry.group===group)&&entry.def.name.toLowerCase().includes(query)){const option=document.createElement('option');option.value=index;option.textContent=entry.def.name+' · '+entry.group;select.append(option)}});
+ if([...select.options].some(o=>o.value===old))select.value=old;debugBattleCards57();debugBattlePreview57();
+}
+function debugBattleAdd57(side){
+ const b=DEBUG_BATTLE57,index=Number(document.getElementById('battleMonster57').value);if(!b.catalog[index]||!document.getElementById('battleMonster57').options.length)return;
+ const floor=clamp(Math.floor(Number(document.getElementById('battleFloor57').value)||1),1,100),count=clamp(Math.floor(Number(document.getElementById('battleCount57').value)||1),1,20);
+ if(b.roster.filter(r=>r.side===side).reduce((n,r)=>n+r.count,0)+count>20){debugBattleMessage57('진영당 최대 20마리까지 배치할 수 있습니다.');return}
+ const gatekeeper=document.getElementById('battleGatekeeper57').checked,old=b.roster.find(r=>r.side===side&&r.catalog===index&&r.floor===floor&&!!r.gatekeeper===gatekeeper);if(old)old.count+=count;else b.roster.push({side,catalog:index,floor,count,gatekeeper});
+ debugBattleRoster57();debugBattleCreateWorld57();
+}
+function debugBattleRoster57(){
+ const b=DEBUG_BATTLE57;for(const side of ['A','B']){
+  const area=document.getElementById('battleRoster'+side+'57');area.replaceChildren();const rows=b.roster.filter(r=>r.side===side);
+  if(!rows.length){const p=document.createElement('p');p.className='battleEmpty57';p.textContent='몬스터를 골라 '+side+' 진영에 추가하세요.';area.append(p)}
+  for(const row of rows){const el=document.createElement('div');el.className='battleRow57';const label=document.createElement('span');label.textContent=b.catalog[row.catalog].def.name+(row.gatekeeper?' · 문지기':'')+' · '+row.floor+'층 × '+row.count;const remove=document.createElement('button');remove.textContent='삭제';remove.setAttribute('aria-label',label.textContent+' 삭제');remove.onclick=()=>{b.roster.splice(b.roster.indexOf(row),1);debugBattleRoster57();debugBattleCreateWorld57()};el.append(label,remove);area.append(el)}
+ }
+}
+function debugBattleFrame57(now){const b=DEBUG_BATTLE57;if(!b.open||now-(b.lastFrame||0)<42)return;b.lastFrame=now;PresentationState.advance(now);debugBattleRender57(false,now);}
+function debugBattleRender57(refreshUI=true,now=performance.now(),resetSurface=false){
+ const b=DEBUG_BATTLE57;if(!b.open)return;debugBattleSubject57();syncGameViewport();drawMap(true);b.viewDirty=false;
+ if(b.watching)debugBattleWatchHud57();if(!refreshUI)return;debugBattleSubjects57();document.getElementById('battleRound57').textContent=b.round+'턴';
+ for(const side of ['A','B']){const live=state.monsters.filter(m=>m.debugSide57===side&&m.hp>0);document.getElementById('battleAlive'+side+'57').textContent=side+' 진영 · 생존 '+live.length+' · 체력 '+live.reduce((n,m)=>n+m.hp,0);}
+ const log=document.getElementById('battleLog57');log.textContent=state.log.slice(0,10).reverse().map(v=>typeof v==='string'?v:v.text||v.msg||JSON.stringify(v)).join('\n');log.scrollTop=log.scrollHeight;
+ const units=document.getElementById('battleUnits57');units.replaceChildren();for(const m of state.monsters){const row=document.createElement('button');row.type='button';row.textContent=`${m.debugSide57}${m.debugId57} ${m.name} · HP ${Math.max(0,m.hp)}/${m.maxHp}${m.stunned?' · 기절':''}${m.revivePhase57==='corpse'?' · 부활 대기':''}`;row.className='battleUnit'+m.debugSide57+'57';row.onclick=()=>debugBattleInspect57({x:m.x,y:m.y});units.append(row)}
+}
+function debugBattleInspect57(cell){if(!cell||state?.map[cell.y]?.[cell.x]==null)return;debugBattlePause57();globalThis.__MANRU_INSPECT984__(cell);}
+function debugBattleCancelGesture57(){const b=DEBUG_BATTLE57;for(const p of b.pointers?.values()||[])clearTimeout(p.hold);b.pointers=new Map();b.gesture=null;b.inspectRelease57=null;globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia();}
+function debugBattleSubject57(){
+ const b=DEBUG_BATTLE57;if(!b.open)return null;
+ const available=state.monsters.filter(m=>!m.combatFixture54&&(m.hp>0||m.revivePhase57==='corpse'));
+ let mon=available.find(m=>m.debugId57===b.subjectId);
+ if(!mon){const origin=b.lastSubjectPosition;mon=available.filter(m=>m.debugSide57===b.subjectSide).sort((a,c)=>origin?Math.hypot(a.x-origin.x,a.y-origin.y)-Math.hypot(c.x-origin.x,c.y-origin.y):0)[0]||available[0];b.subjectId=mon?.debugId57??null}
+ if(mon){b.subjectSide=mon.debugSide57;b.lastSubjectPosition=v8CreatureCoords(mon)}return mon||null;
+}
+function debugBattleSubjects57(){
+ const mon=debugBattleSubject57(),select=document.getElementById('battleSubject57'),list=state.monsters.filter(m=>!m.combatFixture54&&(m.hp>0||m.revivePhase57==='corpse')),key=list.map(m=>m.debugId57+':'+m.name).join('|');
+ if(select.dataset.units!==key){select.dataset.units=key;select.replaceChildren();for(const m of list){const option=document.createElement('option');option.value=m.debugId57;option.textContent=m.debugSide57+m.debugId57+' · '+m.name;select.append(option)}if(!list.length){const option=document.createElement('option');option.textContent='관전할 몬스터 없음';option.value='';select.append(option)}}
+ select.value=mon?String(mon.debugId57):'';select.disabled=!list.length;
+}
+function debugBattleWatchHud57(){
+ const b=DEBUG_BATTLE57,mon=debugBattleSubject57();document.getElementById('battleSubject57').value=mon?String(mon.debugId57):'';
+ document.getElementById('battleWatchStats57').textContent=mon?mon.debugSide57+' 진영 · HP '+Math.max(0,mon.hp)+' / '+mon.maxHp+(mon.revivePhase57==='corpse'?' · 부활 대기':''):'전투 종료';
+ document.getElementById('battleWatchRound57').textContent=b.round+'턴 · A '+state.monsters.filter(m=>m.debugSide57==='A'&&m.hp>0&&!m.combatFixture54).length+' : B '+state.monsters.filter(m=>m.debugSide57==='B'&&m.hp>0&&!m.combatFixture54).length;
+ const art=document.getElementById('battleSubjectArt57'),ctx=art.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;if(mon)ctx.drawImage(globalThis.__MANRU_ACTOR_ART__.monster(mon,Math.floor(performance.now()/170)%2),8,5,48,54);
+}
+function debugBattleSetup57(){
+ const b=DEBUG_BATTLE57;if(!b.watching)return;debugBattlePause57();debugBattleCancelGesture57();b.watching=false;document.getElementById('battleViewport57').append(C);
+ document.getElementById('debugBattle57').classList.remove('watching57');document.getElementById('battleWatch57').hidden=true;document.getElementById('battleSetupDetails57').open=true;syncGameViewport();debugBattleRender57();document.getElementById('battlePlay57').focus();
+}
+function debugBattleStep57(){debugBattlePause57();if(DEBUG_BATTLE57.winner){debugBattleMessage57(DEBUG_BATTLE57.winner+' · 재대결을 누르세요.');return}if(['A','B'].every(s=>state.monsters.some(m=>m.debugSide57===s)))debugBattleRound57();else debugBattleMessage57('A/B 양쪽에 몬스터를 추가하세요.')}
+function initDebugBattle57(){
+ const panel=document.createElement('section');panel.id='debugBattle57';panel.hidden=true;panel.setAttribute('aria-label','디버그 전장');panel.innerHTML=`<div class="battleShell57"><header class="battleHeader57"><div><h2>디버그 전장</h2><p>몬스터를 편성하고 진영 간 전투를 관찰합니다. 진행 기록과 보상에 영향이 없습니다.</p></div><button id="battleExit57">← 로비로</button></header><div class="battleMain57"><aside><details id="battleSetupDetails57" open><summary>몬스터 편성<span>스프라이트 선택 → 층·수량 → 진영 추가</span></summary><section class="battlePanel57"><label>이름 검색<input id="battleSearch57" placeholder="몬스터 이름 검색" autocomplete="off"></label><div class="battleInputs57"><label>분류<select id="battleGroup57"><option value="">전체</option><option>일반</option><option>보스</option><option>별관</option><option>무도가</option></select></label><label>수량<input id="battleCount57" type="number" min="1" max="20" value="1"></label></div><div class="battleCatalogHeader57"><b>몬스터 선택</b><span id="battleCatalogCount57"></span></div><select id="battleMonster57" hidden aria-label="선택된 몬스터"></select><div id="battleCards57" aria-label="몬스터 스프라이트 목록"></div><div class="battleInputs57"><label>기준 층<input id="battleFloor57" type="number" min="1" max="100" value="1"></label><div><label>배치 한도</label>각 진영 20마리</div></div><label class="battleTerrainLabel57"><input id="battleTerrain57" type="checkbox" checked> 물 전용 이동 제한 해제</label><label class="battleTerrainLabel57"><input id="battlePlantMove57" type="checkbox"> 식물 이동 허용 (기본: 고정)</label><label class="battleTerrainLabel57"><input id="battleGatekeeper57" type="checkbox"> 문지기 강화 적용</label><div class="battlePreview57" id="battlePreview57"></div><div class="battleTeamButtons57"><button class="battleA57" id="battleAddA57">+ A 진영</button><button class="battleB57" id="battleAddB57">+ B 진영</button></div><p style="font-size:12px;margin-top:12px">일반은 층별 생성식 · 보스는 고정 능력치<br>무도가는 도장 원본 무술·장비로 개체별 편성<br>문지기 강화는 기준 층의 원본 공식을 적용합니다.</p></section><section class="battlePanel57"><h3 class="battleUnitA57">A 진영 · 청색</h3><div id="battleRosterA57"></div></section><section class="battlePanel57"><h3 class="battleUnitB57">B 진영 · 적색</h3><div id="battleRosterB57"></div><button id="battleClear57">전체 편성 비우기</button></section></details></aside><main><section class="battlePanel57"><div class="battleScores57"><span id="battleAliveA57" class="battleUnitA57"></span><span id="battleAliveB57" class="battleUnitB57"></span><span id="battleRound57">0턴</span></div><div class="battleInputs57"><label>전장 지도<select id="battleMap57"><option value="normal">일반 테마 · 실제 9층</option><option value="palace1">용궁 테마 · 외궁</option><option value="palace2">용궁 테마 · 내궁</option><option value="main">실제 본관 지도 · 층 선택</option><option value="current">내 탐험 지도 복사</option></select></label><label>지도 층<input id="battleMapFloor57" type="number" min="1" max="25" value="9"></label><label>교전 구역<select id="battleRoom57"></select></label><button id="battleNewMap57">새 지도 생성</button></div><p style="font-size:12px">기존 몹·바닥 아이템은 비우고, 지형·가구·조명은 유지합니다. 재대결은 같은 지도입니다.</p><div class="battleMapToolbar57"><span id="battleMapName57"></span><label>배율<select id="battleZoom57"><option value="0">전체 보기</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label><label><input id="battleFollow57" type="checkbox" checked> 교전 추적</label><label>터치<select id="battleTool57"><option value="inspect">조사</option><option value="follow">관전 대상 선택</option><option value="A">A 출발점 지정</option><option value="B">B 출발점 지정</option></select></label><span>드래그 이동 · 두 손가락 확대 · 길게 눌러 조사</span></div><div id="battleViewport57" aria-label="실제 맵 전장"></div><div id="battleMessage57" role="status" aria-live="polite"></div><div class="battleControls57"><button id="battleView57">전체 화면 관전</button><button id="battlePlay57">▶ 시작 / 계속</button><button id="battleStep57">한 턴 진행</button><button id="battleReset57">↻ 재대결</button><label>속도<select id="battleSpeed57"><option value="0.5">0.5배</option><option value="1" selected>1배</option><option value="2">2배</option><option value="4">4배</option></select></label></div></section><p style="font-size:12px">공통 이동·근접·원거리·피격·상태이상·분열·부활 판정을 사용합니다. 보스의 예고·범위 공격·소환·거울·사념체도 진영에 맞게 작동합니다. 무도가의 무술과 조사관의 권총·봉쇄부적도 같은 전투 경로를 사용합니다. 스토리 진행은 발생하지 않습니다. 매 턴 선공 순서를 교대합니다.</p><div class="battleBottom57"><section class="battlePanel57"><h3>개체 상태</h3><div id="battleUnits57"></div></section><section class="battlePanel57"><h3>전투 기록</h3><pre id="battleLog57"></pre></section></div></main></div></div>`;
+ panel.insertAdjacentHTML('beforeend',`<section id="battleWatch57" hidden aria-label="몬스터 관전"><header id="battleWatchHeader57"><canvas id="battleSubjectArt57" width="64" height="64" aria-hidden="true"></canvas><div><label>관전 몬스터<select id="battleSubject57"></select></label><div id="battleWatchStats57"></div></div><span id="battleWatchRound57"></span></header><div id="battleWatchViewport57" aria-label="게임 화면"></div><footer id="battleWatchFooter57"><div id="battleWatchControls57"><button id="battleWatchPlay57">Ⅱ 일시정지</button><button id="battleWatchStep57">한 턴</button><button id="battleWatchReset57">재대결</button><select id="battleWatchSpeed57" aria-label="전투 속도"><option value="0.5">0.5배속</option><option value="1" selected>1배속</option><option value="2">2배속</option><option value="4">4배속</option></select><select id="battleWatchZoom57" aria-label="화면 배율"><option value="0">전체 보기</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select><button id="battleWatchMinus57" aria-label="축소">−</button><button id="battleWatchPlus57" aria-label="확대">＋</button><button id="battleWatchCenter57">대상 추적</button><button id="battleWatchInspect57">대상 조사</button><button id="battleWatchSetup57">편성으로</button><button id="battleWatchExit57">로비로</button></div><div id="battleWatchMessage57" role="status"></div></footer></section>`);
+ document.body.append(panel);
+ 
+ document.getElementById('debugBattleBtn57').onclick=openDebugBattle57;
+ document.getElementById('battleGatekeeper57').addEventListener('change',debugBattlePreview57);
+ for(const id of ['battleSearch57','battleGroup57'])document.getElementById(id).addEventListener('input',debugBattleFilter57);
+ for(const id of ['battleMonster57','battleFloor57'])document.getElementById(id).addEventListener('input',debugBattlePreview57);
+ for(const side of ['A','B'])document.getElementById('battleAdd'+side+'57').onclick=()=>debugBattleAdd57(side);
+ document.getElementById('battleZoom57').onchange=e=>{const v=Number(e.target.value);if(v===0){debugBattleCamera57(true);debugBattleRender57(false);}else debugBattleZoom57(v);};document.getElementById('battleFollow57').onchange=e=>{if(e.target.checked)globalThis.__MANRU_CAMERA_STATE12__.center();else globalThis.__MANRU_CAMERA_STATE12__.beginInspect();debugBattleRender57(false);};
+ for(const id of ['battleMap57','battleMapFloor57'])document.getElementById(id).onchange=()=>debugBattleCreateWorld57();
+ document.getElementById('battleNewMap57').onclick=()=>debugBattleCreateWorld57(true);
+ document.getElementById('battleRoom57').onchange=e=>{DEBUG_BATTLE57.roomKey=Number(e.target.value);DEBUG_BATTLE57.spawnAnchors=null;debugBattleCreateWorld57();};
+ document.getElementById('battlePlantMove57').onchange=e=>{state.debugBattlePlantMove57=e.target.checked;debugBattleMessage57(e.target.checked?'식물 이동 허용 · 종 특성은 그대로 유지':'식물 원래 이동 규칙 적용');};
+ document.getElementById('battleView57').onclick=debugBattleWatch57;debugBattleBindViewport57(document.getElementById('battleViewport57'));
+ document.getElementById('battleExit57').onclick=closeDebugBattle57;document.getElementById('battlePlay57').onclick=debugBattlePlay57;
+ document.getElementById('battleStep57').onclick=debugBattleStep57;
+ document.getElementById('battleWatchStep57').onclick=debugBattleStep57;document.getElementById('battleWatchPlay57').onclick=debugBattlePlay57;document.getElementById('battleWatchReset57').onclick=debugBattleCreateWorld57;document.getElementById('battleWatchSetup57').onclick=debugBattleSetup57;document.getElementById('battleWatchExit57').onclick=closeDebugBattle57;
+ document.getElementById('battleWatchSpeed57').onchange=e=>{document.getElementById('battleSpeed57').value=e.target.value};document.getElementById('battleWatchZoom57').onchange=e=>debugBattleZoom57(Number(e.target.value));
+ document.getElementById('battleSubject57').onchange=e=>{document.getElementById('battleFollow57').checked=true;DEBUG_BATTLE57.subjectId=Number(e.target.value);debugBattleSubject57();globalThis.__MANRU_CAMERA_STATE12__.center();debugBattleRender57()};
+ debugBattleBindViewport57(document.getElementById('battleWatchViewport57'));
+ document.getElementById('battleWatchMinus57').onclick=()=>debugBattleZoom57(globalThis.__MANRU_CAMERA_STATE12__.desiredZoom()/1.25);
+ document.getElementById('battleWatchPlus57').onclick=()=>debugBattleZoom57(globalThis.__MANRU_CAMERA_STATE12__.desiredZoom()*1.25);
+ document.getElementById('battleWatchCenter57').onclick=()=>{document.getElementById('battleFollow57').checked=true;globalThis.__MANRU_CAMERA_STATE12__.center();debugBattleRender57();};
+ document.getElementById('battleWatchInspect57').onclick=()=>{const m=debugBattleSubject57();if(m)debugBattleInspect57(m);};
+ document.getElementById('battleReset57').onclick=debugBattleCreateWorld57;document.getElementById('battleTerrain57').onchange=debugBattleCreateWorld57;
+ document.getElementById('battleClear57').onclick=()=>{DEBUG_BATTLE57.roster=[];debugBattleRoster57();debugBattleCreateWorld57()};
+ panel.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape'){event.preventDefault();if(document.body.classList.contains('manru-inspect-open'))closeInspect();else closeDebugBattle57()}});
+}
