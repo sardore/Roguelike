@@ -322,7 +322,7 @@ export const scenarios = {
       await s.tick(600);
       out[`screens.render.floor${String(f).padStart(2, '0')}.canvas.png`] = await canvas(s);
     }
-    out['screens.render.errors'] = JSON.stringify(s.errors);
+    out['render.errors'] = JSON.stringify(s.errors);
     await s.close();
     for (const name of ['branch', 'legend', 'progress']) {
       const fixture = JSON.parse(fs.readFileSync(path.join(savesDir, name + '.json'), 'utf8'));
