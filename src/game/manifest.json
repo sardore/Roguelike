@@ -8,7 +8,8 @@
   "monsters.js",
   "render.js",
   "spine.js",
-  "input.js"
+  "input.js",
+  "story.js"
  ],
  "afterClosure": [
   "start.js"

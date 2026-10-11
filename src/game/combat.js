@@ -382,7 +382,7 @@ function openMartial(){
   if(!gameplayUiOpen57()||cipherOpen)return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();if(!state||cipherOpen)return;globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();martialOpen=true;renderMartialPanel();document.getElementById('martialPanel').style.display='block';globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
 }
 function closeMartial(){martialOpen=false;document.getElementById('martialPanel').style.display='none';globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
-function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.ui.deathCause=by;vfVibrate(HAPTIC_PATTERN57.death);beginEndingPresentation8();addLog('사망 원인: '+by);updateAll();presentDeath8(by)}
+function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.ui.deathCause=by;vfVibrate(HAPTIC_PATTERN57.death);beginEndingPresentation();addLog('사망 원인: '+by);updateAll();presentDeath8(by)}
   /* ---------- combat math fixes: armor pierce, holy, fair boss control ---------- */
   function attackPlayerCore54R(mon,bonusAtk=0,context={}){
     if(!state||!mon)return false;

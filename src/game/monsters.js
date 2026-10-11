@@ -128,7 +128,7 @@ function bossReward(mon){if(mon.bossPattern==='palaceKing105')return;if(mon.bran
   if(state.floor===25&&runState57()==='playing'){if(typeof globalThis.storyShowEndingChoice992==='function')globalThis.storyShowEndingChoice992();else showEnding()}
   for(const stage of BOSS_REWARD_STAGES.post)stage.run(mon)
 }
-function trainingActive(){return !!(state?.tutorialEntry60&&!state.tutorialEntry60.completed&&inTutorialEntry60(state.player.x,state.player.y))}
+function trainingActive(){return !!(state?.tutorialEntry60&&!state.tutorialEntry60.completed&&inTutorialEntry(state.player.x,state.player.y))}
 function monsterExitPressureSpeed(mon,progress=floor24PressureProgress57()){
   const trait=mon?.exitPressureSpeed57;if(!trait)return 1;const min=Number.isFinite(trait.min)?trait.min:.5,max=Number.isFinite(trait.max)?trait.max:1.5;
   return clamp(min+(max-min)*clamp(progress,0,1),Math.min(min,max),Math.max(min,max))

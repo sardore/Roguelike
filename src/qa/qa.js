@@ -278,13 +278,13 @@ window.__MANRU_TERRAIN_CODEX986__.inspectSampleMonster=()=>{const m=(state?.mons
 window.__MANRU_IDENTIFY991__={one:useIdentifyScrollOn,all:identifyAllInventory991,unknown:isUnidentifiedItem};
 window.__MANRU_USE_HOLY991__=useHolyItem;
 window.__MANRU_STORY992__.version=STORY_VERSION992;
-window.__MANRU_STORY992__.docs=()=>STORY_DOCS992;
-window.__MANRU_STORY992__.state=()=>storyEnsureState992();
-window.__MANRU_STORY992__.archive=storyOpenArchive992;
-window.__MANRU_STORY992__.collect=storyCollectNote992;
-window.__MANRU_STORY992__.tick=storyTick992;
-window.__MANRU_STORY992__.prime=storyPrimeFinalBoss992;
-window.__MANRU_STORY992__.breakMask=()=>{const b=state?.monsters?.find(m=>m.boss);return storyBreakFriendMask992(b)};
+window.__MANRU_STORY992__.docs=()=>STORY_DOCS;
+window.__MANRU_STORY992__.state=()=>storyEnsureState();
+window.__MANRU_STORY992__.archive=storyOpenArchive;
+window.__MANRU_STORY992__.collect=storyCollectNote;
+window.__MANRU_STORY992__.tick=storyTick;
+window.__MANRU_STORY992__.prime=storyPrimeFinalBoss;
+window.__MANRU_STORY992__.breakMask=()=>{const b=state?.monsters?.find(m=>m.boss);return storyBreakFriendMask(b)};
 window.__MANRU_V1002__={sprite:(id='wanderer')=>ACTOR_ART.classPreviewData(id),actorBox:()=>({width:32,height:36,topOverflow:4,bottomOverflow:0,scale:1}),boot:bootScreen1002};
 window.__MANRU_V1004__={
       version:SAVE_RELEASE_TAG,

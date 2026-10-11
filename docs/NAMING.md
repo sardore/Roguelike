@@ -49,3 +49,7 @@
 ## input.js
 - 접미사 제거(기계) 9개, 수동 0개. 옮긴 것은 이벤트 처리 함수·키 표·길게 누르기/스와이프 도우미 12개다. 리스너를 등록하는 느슨한 문장은 `spine.js`에 남아 있어 등록 순서는 그대로이고, `input.listeners.*` 지문과 입력 재생 37개 검사로 확인했다.
 - 옮기지 못한 입력 코드(`InputRouter`, `ClientEnvironment`, `Runtime81`, `DesktopClient`, `CONFIG81`)는 스파인의 느슨한 문장이 로드 시점에 읽어서 `docs/SPINE_RESIDUE.md`에 이유와 함께 적었다. 이름도 아직 바꾸지 않았다(옮길 때 `POINTER_CONFIG`, `PointerRuntime`으로 바꿀 계획: `CONFIG81`은 드래그 임계값·길게 누르기 지연·반복 간격만 담고, `Runtime81`은 `pointers/gesture/held/repeatTick/qa` 상태를 담는다는 사용처 확인에 근거).
+
+## story.js
+- 접미사 제거(기계) 50개, 수동 4개. 수동 이름의 근거(사용처 확인): `floorTutorial66→showFloorTips`(매 행동 뒤 호출되어 5·6·11층에서 팁을 띄움), `entryTutorial60→advanceEntryTutorial`(`tutorialEntry60` 상태가 진행 중일 때 안내를 띄움), `storyDoc992→findStoryDoc`(`STORY_DOCS[id]||null`, 5곳), `esc992→escapeHtmlText`(HTML 이스케이프, 16곳).
+- 옮기지 않은 것: `coach`, `STORY_VERSION992`(스파인의 느슨한 문장이 로드 시 읽음; `docs/SPINE_RESIDUE.md`), 이름이 비슷해도 다른 도메인인 `autoExplore`, `fullscreenPending65`, `pendingInspect984`, 분기 진입 대기(`branchEntrancePending105`, `retryPendingBranchEntrance105`), `installPendingCustomLocks1020`, `terrainHasPendingRecovery57`.
