@@ -43,8 +43,10 @@ for (const b of A.bindings) {
   found.add(b.name);
   for (const r of b.refs) {
     const p = r.parent;
-    if (p.type === 'AssignmentExpression' && p.left === r.node) continue;
     if (p.type === 'UpdateExpression') continue;
+    // a write target (also inside a destructuring pattern or a for-in/of head) is not a read
+    const anc = [...r.ancestors, r.node];
+    if (anc.some((a, i) => i + 1 < anc.length && ((a.type === 'AssignmentExpression' && a.left === anc[i + 1]) || (/^For(In|Of)Statement$/.test(a.type) && a.left === anc[i + 1])))) continue;
     const probe = `__MANRU_LOAD_PROBE__(${JSON.stringify(b.name)},()=>${b.name})`;
     if (p.type === 'Property' && p.shorthand) edits.push({ start: p.start, end: p.end, text: `${b.name}:${probe}` });
     else edits.push({ start: r.node.start, end: r.node.end, text: probe });
