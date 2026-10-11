@@ -1019,7 +1019,7 @@ function tierForFloor(floor=state.floor){if(floor>=24)return globalThis.__MANRU_
 
 function hungerMods(){return{atk:0,eva:0}}
 
-function brawlUpgradeEffect42(it){return isBrawlWeapon(it)?Math.floor((it.upgrade||0)/3):(it?.upgrade||0)}
+
 
 
 
