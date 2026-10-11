@@ -4684,7 +4684,6 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
   /* removed overwritten visualLoop */
 
   globalThis.__MANRU_LIFECYCLE__.registerNew('camera49',{post:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=true}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('camera49',{post:()=>{if(state){RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=true}}});
 
   syncGameViewport();
 
@@ -5064,7 +5063,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   function onFloorGenerated56(){ensureKnowledge56();decorateAllItems56();contextualRewards56();decorateAllItems56();state.roomHints56={};if(typeof vfBuildDecor==='function')vfBuildDecor()}
   registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
   globalThis.__MANRU_LIFECYCLE__.registerNew('knowledge56',{post:()=>{ensureKnowledge56();decorateAllItems56();logWithCategory('약병과 부적은 외형만으로 정체를 알 수 없다. 직업 시작품은 모두 식별되어 있으며, 새로 발견한 미감정품은 사용하거나 감정부적으로 확인한다.');updateAll()}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('knowledge56',{post:()=>{if(state){ensureKnowledge56();decorateAllItems56();state.roomHints56=state.roomHints56||{};updateAll()}}});
 
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
   function currentTalismanTarget(){return V56.target?{kind:V56.target.kind,range:V56.target.range}:null}
@@ -6783,7 +6781,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
   function trimDecor61(){if(!state?.decor||state.decor.length<=120)return;const src=state.decor,keep=[],step=src.length/120;for(let i=0;i<120;i++)keep.push(src[Math.floor(i*step)]);state.decor=keep}
   registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
-  globalThis.__MANRU_LIFECYCLE__.registerLoad('monster-config61',{post:()=>{if(state){for(const m of state.monsters){configureMonsterTraits(m);normalizeAsuraAttack(m)}}}});
 
 
 /* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */

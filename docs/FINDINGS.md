@@ -47,3 +47,5 @@
 | `aim52` | 불러오기 전에 조준 중이던 대상(`AIM_STATE.target`)이 불러온 뒤에도 남음(현재). 켜면 불러오기 직전에 비워짐 | **실제 버그로 보임**: 다른 런/세이브의 몬스터 객체를 가리키는 조준 대상이 남는다. 안: 훅을 되살리지 않고 불러오기 본체(`loadGameCore`)에서 `AIM_STATE.target=null; AIM_STATE.jar=null; state._manualTerrainTargetR8=null`을 직접 한다. 동작 변화(버그 수정)이므로 결정 후 처리 |
 
 질문: (1) `monster-config61`: 삭제(현재 동작 유지, 불러온 몬스터도 새 게임과 같게)로 갈까요? (2) `knowledge56`, `camera49`: 삭제로 갈까요? (3) `aim52`: 위 안(불러오기 본체에서 직접 초기화)을 동작 변경 커밋으로 진행할까요?
+
+**결정(사용자, 2026-10-11)**: `monster-config61`, `knowledge56`, `camera49`의 불러오기 쪽 등록은 삭제한다(현재 동작 유지). 그 훅만 쓰던 `normalizeAsuraAttack`(참조 0)도 삭제했다. `aim52`는 훅을 되살리지 않고 불러오기 본체에서 직접 초기화하는 동작 변경 커밋으로 처리한다(아래 F-20).
