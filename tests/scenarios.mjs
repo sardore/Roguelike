@@ -64,6 +64,42 @@ async function capture(out, key, s) {
   out[key + '.css'] = await computedStyles(s.page);
 }
 
+
+// Records every addEventListener call in registration order (target, type, options), without the handler text,
+// so the fingerprint survives renames but not a changed order, a dropped or an added listener.
+const LISTENER_LOG = () => {
+  const log = (window.__listenerLog = []);
+  const label = (t) => {
+    if (t === window) return 'window';
+    if (t === document) return 'document';
+    if (t === document.documentElement) return 'html';
+    if (t === document.body) return 'body';
+    if (t && t.tagName) return t.tagName.toLowerCase() + (t.id ? '#' + t.id : '') + (t.classList && t.classList.length ? '.' + [...t.classList].slice(0, 3).join('.') : '');
+    return Object.prototype.toString.call(t);
+  };
+  const orig = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, fn, opt) {
+    const o = typeof opt === 'object' && opt ? opt : { capture: !!opt };
+    log.push([label(this), type, !!o.capture, o.passive === undefined ? '-' : !!o.passive, !!o.once].join('|'));
+    return orig.call(this, type, fn, opt);
+  };
+};
+const listenerLog = (s) => s.page.evaluate(() => (window.__listenerLog || []).join('\n'));
+async function inputState(s) {
+  return s.page.evaluate(() => {
+    const env = window.__MANRU_RELEASE__.snapshot();
+    if (env) delete env.savedAt;
+    // pointer timestamps are real time, so inertia drifts by a fraction of a pixel between runs: record the camera coarsely
+    const c0 = globalThis.__MANRU_CAMERA_STATE12__?.snapshot?.();
+    const q = (v) => Math.round(v / 32);
+    const cam = c0 && { mode: c0.mode, zoom: Math.round(c0.zoom * 20) / 20, cx: q(c0.cx), cy: q(c0.cy) };
+    const open = [...document.querySelectorAll('[id]')].filter((e) => /panel|modal|drawer|overlay|sheet|menu/i.test(e.id) && getComputedStyle(e).display !== 'none' && e.offsetParent !== null).map((e) => e.id).sort();
+    const shown = [...document.querySelectorAll('.show, .open, .active, [aria-hidden="false"]')].map((e) => (e.id || e.tagName.toLowerCase()) + '.' + [...e.classList].sort().join('.')).sort();
+    return JSON.stringify({ env, cam, open, shown, screen: document.body.dataset.manruScreen || document.documentElement.dataset.manruScreen || null, cls: document.body.className });
+  });
+}
+const KEYS2 = ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'w', 'a', 's', 'd', 'h', 'j', 'k', 'l', 'y', 'u', 'b', 'n', '1', '2', '3', 'z', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Control+ArrowRight', '?', 'Tab', 'Enter', 'Escape', 'm', 'r', 't', 'p', 'v', ' ', '.', ','];
+
 export const scenarios = {
   // New game for every class: floor 1 generation, starting kit, story state.
   async newgame(browser, root) {
@@ -338,6 +374,89 @@ export const scenarios = {
   },
 
   // Screens: pixels and computed styles. Local-only (fonts and GPU differ between machines).
+  // Keyboard (with modifiers, auto-repeat and Q hold), mouse (click, double click, right click, long press, drag, wheel)
+  // and touch (tap, long press, drag, pinch) on PC and mobile, plus the registration order of every event listener.
+  async input(browser, root) {
+    const out = {};
+    // ---- PC
+    {
+      const s = await openSession(browser, root, { seed: 21, init: LISTENER_LOG });
+      out['input.listeners.title'] = await listenerLog(s);
+      await startRun(s, 'swordsman');
+      out['input.listeners.run'] = await listenerLog(s);
+      const rnd = pick(4243);
+      for (let step = 1; step <= 120; step++) {
+        const key = KEYS2[rnd(KEYS2.length)];
+        await s.page.keyboard.press(key);
+        await s.tick(220);
+        if (step % 20 === 0) out[`input.pc.keys.${step}`] = await inputState(s);
+      }
+      await dismissModals(s);
+      // auto-repeat: hold a direction for a second (keydown with repeat), then release
+      await s.page.keyboard.down('ArrowRight');
+      for (let i = 0; i < 6; i++) { await s.tick(150); await s.page.keyboard.down('ArrowRight'); }
+      await s.page.keyboard.up('ArrowRight');
+      await s.tick(300);
+      out['input.pc.repeat'] = await inputState(s);
+      // Q held past its threshold, then released; and a short tap
+      await s.page.keyboard.down('q'); await s.tick(900); await s.page.keyboard.up('q'); await s.tick(300);
+      out['input.pc.qhold'] = await inputState(s);
+      await dismissModals(s, 2);
+      await s.page.keyboard.down('q'); await s.tick(80); await s.page.keyboard.up('q'); await s.tick(300);
+      out['input.pc.qtap'] = await inputState(s);
+      await dismissModals(s, 2);
+      // mouse on the canvas
+      const box = await s.page.evaluate(() => { const r = document.getElementById('game').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+      const at = (fx, fy) => ({ x: box.x + box.w * fx, y: box.y + box.h * fy });
+      for (const [i, [fx, fy]] of [[.5, .5], [.62, .5], [.5, .38], [.3, .6]].entries()) { const p = at(fx, fy); await s.page.mouse.click(p.x, p.y); await s.tick(400); out[`input.pc.click.${i}`] = await inputState(s); }
+      { const p = at(.55, .55); await s.page.mouse.dblclick(p.x, p.y); await s.tick(400); out['input.pc.dblclick'] = await inputState(s); }
+      { const p = at(.45, .5); await s.page.mouse.click(p.x, p.y, { button: 'right' }); await s.tick(400); out['input.pc.rightclick'] = await inputState(s); await dismissModals(s, 2); }
+      { const p = at(.5, .5); await s.page.mouse.move(p.x, p.y); await s.page.mouse.down(); await s.tick(900); await s.page.mouse.up(); await s.tick(400); out['input.pc.longpress'] = await inputState(s); await dismissModals(s, 2); }
+      for (const [i, [a, b]] of [[[.7, .5], [.35, .45]], [[.3, .7], [.62, .3]]].entries()) {
+        const p0 = at(...a), p1 = at(...b);
+        await s.page.mouse.move(p0.x, p0.y); await s.page.mouse.down();
+        for (let k = 1; k <= 8; k++) { await s.page.mouse.move(p0.x + (p1.x - p0.x) * k / 8, p0.y + (p1.y - p0.y) * k / 8); await s.tick(40); }
+        await s.page.mouse.up(); await s.tick(500); out[`input.pc.drag.${i}`] = await inputState(s);
+      }
+      { const p = at(.5, .5); await s.page.mouse.move(p.x, p.y); for (const dy of [-120, -120, 120, 240]) { await s.page.mouse.wheel(0, dy); await s.tick(250); } out['input.pc.wheel'] = await inputState(s); }
+      out['input.listeners.after'] = await listenerLog(s);
+      out['input.pc.errors'] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    // ---- mobile (touch through CDP so long press, drag and pinch are real touch sequences)
+    {
+      const s = await openSession(browser, root, { seed: 22, viewport: { width: 390, height: 844 }, mobile: true, init: LISTENER_LOG });
+      out['input.listeners.mobile.title'] = await listenerLog(s);
+      await startRun(s, 'archer');
+      out['input.listeners.mobile.run'] = await listenerLog(s);
+      const cdp = await s.page.context().newCDPSession(s.page);
+      const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map((p, i) => ({ x: p.x, y: p.y, id: i })) });
+      const box = await s.page.evaluate(() => { const r = document.getElementById('game').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+      const at = (fx, fy) => ({ x: box.x + box.w * fx, y: box.y + box.h * fy });
+      for (const [i, [fx, fy]] of [[.5, .5], [.7, .45], [.4, .6]].entries()) { const p = at(fx, fy); await touch('touchStart', [p]); await s.tick(60); await touch('touchEnd', []); await s.tick(500); out[`input.mobile.tap.${i}`] = await inputState(s); }
+      { const p = at(.5, .5); await touch('touchStart', [p]); await s.tick(300); out['input.mobile.holdpreview'] = await inputState(s); await s.tick(600); out['input.mobile.holding'] = await inputState(s); await touch('touchEnd', []); await s.tick(500); out['input.mobile.longpress'] = await inputState(s); await dismissModals(s, 2); }
+      for (const [i, [a, b]] of [[[.75, .5], [.3, .45]], [[.3, .7], [.7, .3]]].entries()) {
+        const p0 = at(...a), p1 = at(...b);
+        await touch('touchStart', [p0]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: p0.x + (p1.x - p0.x) * k / 8, y: p0.y + (p1.y - p0.y) * k / 8 }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(600); out[`input.mobile.drag.${i}`] = await inputState(s);
+      }
+      { // pinch out then in
+        const c = at(.5, .5);
+        await touch('touchStart', [{ x: c.x - 30, y: c.y }, { x: c.x + 30, y: c.y }]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: c.x - 30 - k * 2.5, y: c.y }, { x: c.x + 30 + k * 2.5, y: c.y }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(500); out['input.mobile.pinchout'] = await inputState(s);
+        await touch('touchStart', [{ x: c.x - 100, y: c.y }, { x: c.x + 100, y: c.y }]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: c.x - 100 + k * 5, y: c.y }, { x: c.x + 100 - k * 5, y: c.y }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(500); out['input.mobile.pinchin'] = await inputState(s);
+      }
+      out['input.listeners.mobile.after'] = await listenerLog(s);
+      out['input.mobile.errors'] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   async screens(browser, root) {
     const out = {};
     for (const [form, opts] of [['pc', { viewport: { width: 1280, height: 800 } }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }]]) {
