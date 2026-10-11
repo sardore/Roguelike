@@ -933,7 +933,7 @@ function makeBoss(def,pos){return{x:pos.x,y:pos.y,name:def.name,hp:def.hp,maxHp:
 function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate();resetVisualState();resetTurnState();startFloorTransition();addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.');addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
 
 
-const BLOCKING_TILES57=new Set([TT.WALL,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.DRAWBRIDGE_UP,TT.BAMBOO,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.PEACH_TREE]);
+
 const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
@@ -1077,16 +1077,12 @@ function resolvePortalLanding57(link){
 
 
 const PLAYER_ENTRY_PICKUP_FIRST57=new Set([TT.BRAZIER,TT.COOKPOT,TT.ARMORY,TT.FOUNTAIN,TT.ALTAR,TT.VAULT,TT.CACHE,TT.JAR,TT.SWITCH].filter(v=>Number.isFinite(v)));
-const PLAYER_TRANSFER_UNSAFE57=new Set([TT.DOOR,TT.TRAP,TT.SNARE,TT.LAVA,TT.WATER,TT.VOID,TT.MERCURY].filter(v=>Number.isFinite(v)));
 
 
 
 
-function playerTransferPolicy57(cause){
-  if(cause==='talisman-blink'||cause==='fusion-blink')return{seen:true,safe:true,authorized:true,excludeOrigin:true};
-  if(cause==='holy-blink'||cause==='mirror-teleport'||cause==='boss-teleport')return{seen:false,safe:true,authorized:true,excludeOrigin:true};
-  return null;
-}
+
+
 
 
 function markCombatBlink57(entity){if(entity&&state)entity.combatBlinkTurn57=state.turn;}
@@ -1208,34 +1204,7 @@ function resolveForcedMovement57(entity,source,steps=1,opts={}){
   if(moved&&opts.log)addLog(opts.log);return{moved,resisted:false,collision,broken,slid}
 }
 function resetFloorScopedState57(){if(!state)return;state.terrainReactions105=newTerrainReactions105();state.martialEcho=null;state.player.smokeInside1005=false;state.recentPlayerCells57=[];state.naturalPopulation57=null;state.noiseSequence57=null;noiseBudget=null;state.silkTraps57={};delete state.tutorialEntry60;delete state.floor23;delete state.floor24;for(const key of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendTerrain47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])if(Array.isArray(state[key]))state[key]=[];state._manualRangedTargetR8=null;state._manualTerrainTargetR8=null;state._lastPlayerPos60=null;state.crumbleBase60={};if(state.hazard1005){const drown=state.hazard1005?.drownUntil||0,voidWard=state.hazard1005?.voidUntil||0;state.hazard1005={armed:{},collapsed:{},lastWarn:{},drownUntil:drown,voidUntil:voidWard}}}
-function movePlayer(dx,dy){
- if(state?.shopIntermission?.active){
-  if(!gameplayInputAllowed57())return false;const p=state.player,x=p.x+dx,y=p.y+dy,npc=neutralInteractableAt58(x,y);if(npc)return interactNeutral58(npc);
-  if(!ReachabilityService.playerStepAllowed(p,x,y)||OccupancyService.isOccupied(x,y))return false;
-  p.facing={x:dx,y:dy};if(state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}
-  const landing=resolvePlayerLanding57(x,y,{cause:'walk'});if(!landing.ok)return false;
-  VisibilityService.compute();updateAll();globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
- }
 
-  const p0=state?.player,ctx={dx,dy,beforeX:p0?.x,beforeY:p0?.y,targetX:(p0?.x??0)+dx,targetY:(p0?.y??0)+dy,targetTile:state?.map?.[(p0?.y??0)+dy]?.[(p0?.x??0)+dx],result:undefined};
-  for(let i=MOVE_HOOKS_R8.pre.length-1;i>=0;i--)if(MOVE_HOOKS_R8.pre[i](ctx)===false)return false;
-  try{
-    const act=playerAction57('move',{stunMessage:'몸이 굳어 한 턴을 잃었다.'});if(!act.ok)return act.consumed||false;
-    const p=state.player,intended={x:dx,y:dy},ix=p.x+dx,iy=p.y+dy,intendedMon=ix>=0&&iy>=0&&ix<COLS&&iy<ROWS?findMonsterAt(ix,iy):null;
-    p.facing={...intended};if(intendedMon&&isHostileTarget57(intendedMon)){state._forcedAdjacentTargetR8=intendedMon;ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}
-    if((state.status?.drunk||0)>0){const drunk=drunkMovementOutcome57();if(drunk==='stumble'){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 묶어 제자리에서 휘청거렸다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}if(drunk==='misstep'){const choices=[];for(const[ddx,ddy]of DIRS8){const x=p.x+ddx,y=p.y+ddy;if(x<0||y<0||x>=COLS||y>=ROWS||findMonsterAt(x,y))continue;const tile=state.map?.[y]?.[x],hazard=globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile);if(ReachabilityService.playerStepAllowed(p,x,y,{allowHazardEntry:!!hazard}))choices.push({dx:ddx,dy:ddy})}if(!choices.length){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 꼬았지만 비틀어 갈 곳이 없었다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}const q=choice(choices);dx=q.dx;dy=q.dy;ctx.dx=dx;ctx.dy=dy;ctx.targetX=p.x+dx;ctx.targetY=p.y+dy;ctx.targetTile=state.map?.[ctx.targetY]?.[ctx.targetX];floatText(p.x,p.y,'비틀','#d7c39e',10);addLog('취기에 방향 감각이 흐려져 발걸음이 빗나갔다.')}}
-    p.facing={x:dx,y:dy};const nx=p.x+dx,ny=p.y+dy;if(nx<0||ny<0||nx>=COLS||ny>=ROWS){ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[nx,ny,act]}).value;return}
-    const mon=findMonsterAt(nx,ny);if(mon){if(!isHostileTarget57(mon)){ctx.result=resolveOccupancyInteraction57(p,mon);if(ctx.result)commitPlayerAction57(act,moveTurnCost());return ctx.result}state._forcedAdjacentTargetR8=mon;ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}
-    const t=state.map[ny][nx];if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x:nx,y:ny};ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(t);
-    if(!ReachabilityService.playerStepAllowed(p,nx,ny,{allowHazardEntry:!!kind})){ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[nx,ny,act]}).value;return}
-    const discovery105=captureMovementDiscovery105();
-    if(t===TT.DOOR){setTerrainTile58(state.map,nx,ny,TT.OPEN_DOOR);branchWarningDoor(nx,ny);doorFX(nx,ny);addLog('문을 밀어 열었다.')}
-    const landing=resolvePlayerLanding57(nx,ny,{cause:'walk',discovery105});if(!landing.ok){ctx.result=false;return false}if(state.dead){ctx.result=true;return true}if(WorldTransition57.commit(act,moveTurnCost())){ctx.result=true;return true}if(state.map[ny][nx]===TT.STAIR)toast('다음 층으로 이어지는 문이다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true
-  }finally{
-    ctx.afterX=state?.player?.x;ctx.afterY=state?.player?.y;ctx.moved=!!state&&(ctx.afterX!==ctx.beforeX||ctx.afterY!==ctx.beforeY);
-    for(const fn of MOVE_HOOKS_R8.post)try{fn(ctx)}catch(e){console.error('move post hook',e)}
-  }
-}
 ActionDispatcher.register('MOVE',movePlayer);
 
 
@@ -3173,10 +3142,7 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  const SIZE60={
-    2:[87,57],4:[85,55],5:[73,51],6:[89,59],8:[87,57],10:[75,53],11:[93,63],13:[89,59],15:[75,53],
-    16:[95,63],18:[93,61],20:[111,85],21:[99,67],22:[95,65],23:[95,65],24:[95,63],25:[89,59]
-  };
+
 
 
 
@@ -3351,24 +3317,16 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   }
 
 
-  function qaClearHostiles60(){const n=(state.monsters||[]).filter(m=>m.hp>0).length;state.monsters=[];return n}
 
 
 
 
 
 
-  function qaF24VisualTargets60(){
-    if(state.floor!==24)return null;
-    const roomKind=name=>{const r=(state.featureRooms||[]).find(v=>v.estate24&&v.kind60===name);return r?{x:r.cx??r.x+Math.floor(r.w/2),y:r.cy??r.y+Math.floor(r.h/2),kind:name,name:r.name}:null},
-      roomNamed=text=>{const r=(state.featureRooms||[]).find(v=>v.estate24&&String(v.name||'').includes(text));return r?{x:r.cx??r.x+Math.floor(r.w/2),y:r.cy??r.y+Math.floor(r.h/2),kind:r.kind60,name:r.name}:null};
-    const hall=roomKind('great-hall');
-    return{greatHall:hall,banquet:hall,library:roomKind('library'),bedroom:roomKind('inner-wing'),study:roomKind('sarangchae'),tea:roomKind('tea-room'),service:roomKind('haengrang'),courtyard:roomNamed('비정형 중정')||roomKind('courtyard'),northGallery:roomNamed('북측 분절 창호 추격회랑')||roomKind('north-eaves'),exit:{x:state.stairs.x,y:state.stairs.y,kind:'exit'}}
-  }
 
-  function qaCleanHud60(on=true){
-    document.documentElement.classList.toggle('qa-clean-capture60',!!on);return document.documentElement.classList.contains('qa-clean-capture60')
-  }
+
+
+
 
   globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 
@@ -3475,7 +3433,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   function overlapRoom62(a,b){return !(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y)}
   function chooseVaultRoom62(){const features=state.featureRooms||[],a=(state.rooms||[]).filter(r=>r.w>=7&&r.h>=6&&!(state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)&&!(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h)&&!features.some(f=>overlapRoom62(r,f)));return a.length?choice(a):null}
 
-  function existingEnemies62(r){const pad=1;return state.monsters.filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.ranged&&m.hp>0&&m.x>=r.x-pad&&m.x<r.x+r.w+pad&&m.y>=r.y-pad&&m.y<r.y+r.h+pad)}
+
 
 
   function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
@@ -3753,8 +3711,7 @@ const RC={
   }
   window.__MANRU_RESUME_R6__={schedule:scheduleResume71};
 
-/* ===== MANRU v7.1: REGIONAL COMPLEXITY / LANDMARK OVERHAUL ===== */
-const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
+
   
   const PALETTE71=[
     {floor:'#4a211a',floorAlt:'#5a291f',wall:'#7d382c',wallDark:'#2b0f0d',accent:'#e99150',light:'#ffd18c',fog:'#0b0403'},
@@ -4762,7 +4719,7 @@ const CONFIG81=Object.freeze({
     }
     state.purposeCount90=state.purposeRooms90.length;
   }
-  function fillUnused90(){state.minorPurpose90=0;return 0}
+
   function guardPurposes90(){
     const mons=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);let mi=0,guards=0;
     for(const r of state.purposeRooms90||[]){if(mi>=mons.length)break;if(['medic','kitchen'].includes(r.purpose90))continue;const mon=mons[mi++];let placed=false;for(let rad=0;rad<=3&&!placed;rad++)for(let y=r.cy-rad;y<=r.cy+rad&&!placed;y++)for(let x=r.cx-rad;x<=r.cx+rad;x++){if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;guards++;placed=true;break}}}
@@ -4845,14 +4802,14 @@ const CONFIG81=Object.freeze({
   V85.version='v9.3-asymmetric-clusters-variable-halls';
 
 
-  function reset93(m){delete state.tutorialEntry60;clear88(m);state.rooms=[];state.featureRooms=[];state.routeTags=[];state.grandRoom89=null;state.focalRooms89=[];state.purposeRooms90=[];state.mainRooms90=[];state.branchRooms92=[];state.branchLeaves92=[];state.mainPathRooms92=[];state.roomGraph92=null;state.roomTemplate92=null;state.roomGraph93=null;state.roomTemplate93=null;}
+
   function canPlace93(x,y,w,h,pad=1){return x>=2&&y>=(state.floor===1?17:2)&&x+w<COLS-2&&y+h<ROWS-2&&!roomOverlap91(x,y,w,h,pad)}
   function addCompact93(m,x,y,w,h,kind='room',shape='rect',role='room'){const r=add89(m,x,y,w,h,kind,shape);r.node93=state.rooms.length-1;r.role93=role;state.mainRooms90.push(r);return r}
 
   function shortestNodes93(adj,s,t){const q=[s],prev=Array(adj.length).fill(-2);prev[s]=-1;for(let i=0;i<q.length;i++){const u=q[i];if(u===t)break;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}if(prev[t]===-2)return[];const out=[];for(let u=t;u!==-1;u=prev[u])out.push(u);return out.reverse()}
   function farNode93(adj,s){const q=[s],d=Array(adj.length).fill(-1);d[s]=0;for(let i=0;i<q.length;i++){const u=q[i];for(const v of adj[u])if(d[v]<0){d[v]=d[u]+1;q.push(v)}}let b=s;for(let i=0;i<d.length;i++)if(d[i]>d[b])b=i;return{node:b,dist:d[b],d}}
-  function diameter93(adj){const a=farNode93(adj,0).node,b=farNode93(adj,a).node;return{a,b,path:shortestNodes93(adj,a,b)}}
-  function graphDistance93(adj,a,b){const p=shortestNodes93(adj,a,b);return p.length?p.length-1:99}
+
+
 
 
 
@@ -5507,7 +5464,7 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
 
 
 
-  function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
+
 
 
 
