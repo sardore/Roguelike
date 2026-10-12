@@ -1486,7 +1486,7 @@ mutate(x,y,tile,opts={}){
 temporary(x,y,tile,ttl,kind='temporary',opts={}){
   if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1||!Number.isFinite(ttl)||ttl<=0)return false;
   state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];const old=state.map[y]?.[x],allowed=opts.allowedOld;
-  // PORTAL is registered after these base sets; read its live tile value here.
+  // TEMP_TERRAIN_IMMUTABLE57 holds the stairs, portal, key, gate, secret door, switch and drawbridge tiles.
   if(TEMP_TERRAIN_IMMUTABLE57.has(old)||(allowed&&!allowed.includes(old)))return false;
   const prior=state.tempTerrain74.find(t=>t.x===x&&t.y===y);
   if(prior){if(state.map[y][x]!==prior.tile||prior.tile!==tile)return false;prior.ttl=Math.max(prior.ttl,ttl);prior.kind=kind;return true}
