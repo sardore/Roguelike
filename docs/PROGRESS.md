@@ -67,6 +67,7 @@
 | P1→world | SPINE_RESIDUE P1: 사용처 과반이 world.js인 잎 선언 → world.js | 5927 | 189 / 573 | 755 | 77.4% | - |
 | P1→monsters | SPINE_RESIDUE P1: 사용처 과반이 monsters.js인 잎 선언 → monsters.js | 5880 | 185 / 573 | 755 | 77.6% | - |
 | P1→branches | SPINE_RESIDUE P1: 사용처 과반이 branches.js인 잎 선언 → branches.js | 5873 | 184 / 573 | 755 | 77.6% | - |
+| P1→layout | SPINE_RESIDUE P1: 사용처 과반이 layout.js인 잎 선언 → layout.js | 5872 | 179 / 573 | 755 | 77.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -84,10 +85,10 @@
 | branches.js | 2391 |
 | elements.js | 248 |
 | world.js | 480 |
-| layout.js | 740 |
+| layout.js | 746 |
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 931 |
-| spine.js | 5873 |
+| spine.js | 5872 |
 | start.js | 6 |
-| (total) | 26255 |
+| (total) | 26260 |
