@@ -477,7 +477,7 @@ function pickup(...args){
 function protectedProp105(x,y,world=state){
  return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
 }
-const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
+const MANRU_PICKUP_PIPELINE_R25={stages:[{id:'closed-bag-dom45',pre:undefined,post:clearClosedBagPanel},{id:'pickup-feedback54',pre:pickupFeedbackBefore,post:pickupFeedbackAfter},{id:'potion-observe56',pre:potionObserveBefore,post:potionObserveAfter},{id:'coach70',pre:undefined,post:coachAfterPickup}],handlers:[]};
 function environmentStanding105(entity){
  if(!entity||entity.hp<=0)return;
  const r=terrainReactions105(),cells=entityFootprintCells57(entity);

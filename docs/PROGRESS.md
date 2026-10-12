@@ -92,6 +92,7 @@
 | P3→panels | P3: PANEL_HOOKS54 registrations become an array literal (2 stages, named functions) | 5698 | 136 / 510 | 751 | 78.3% | - |
 | P3→inventory | P3: INVENTORY_RENDER_R34 registrations become an array literal (10 stages, named functions) | 5655 | 135 / 500 | 750 | 78.5% | - |
 | P3→boss | P3: BOSS_REWARD_STAGES registrations become an array literal (1 stages, named functions) | 5653 | 134 / 499 | 749 | 78.5% | - |
+| P3→pickup | P3: MANRU_PICKUP_PIPELINE_R25 registrations become an array literal (6 stages, named functions) | 5640 | 133 / 495 | 748 | 78.5% | - |
 
 ## 현재 파일별 줄 수
 
@@ -100,7 +101,7 @@
 | kernel.js | 25 |
 | catalog.js | 173 |
 | save.js | 755 |
-| items.js | 1043 |
+| items.js | 1045 |
 | combat.js | 666 |
 | monsters.js | 2280 |
 | render.js | 4950 |
@@ -111,8 +112,8 @@
 | world.js | 498 |
 | layout.js | 746 |
 | input.js | 256 |
-| story.js | 213 |
-| ui.js | 993 |
-| spine.js | 5653 |
+| story.js | 222 |
+| ui.js | 996 |
+| spine.js | 5640 |
 | start.js | 6 |
-| (total) | 26282 |
+| (total) | 26283 |

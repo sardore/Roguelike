@@ -211,3 +211,12 @@ const BRANCH_LORE=Object.freeze({
     const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
   }
   function seenTip70(id){return !!tipLedger66().seen[id]}
+function coachAfterPickup(ctx){
+    const ground=ctx.ground;
+    if(ground){
+      if(ground.type==='potion')tip70('potion','약병은 런마다 색과 정체가 바뀐다. 발견 장소와 냄새·색 단서로 후보를 좁히고, 마시거나 감정부적으로 식별한다.','미확인 약병은 역할 탭도 숨겨진다.');
+      else if(ground.type==='talisman')tip70('talisman','부적은 주문서와 폭탄 역할을 겸한다. 위기 탈출·봉쇄·지도·광역 공격에 아끼지 말고 써라.','전술벨트에서 빠르게 사용 가능');
+      else if(ground.type==='food')tip70('food','음식은 허기 관리뿐 아니라 보스 전 도핑과 조리 재료다. 화로나 솥에서 비방 조합을 실험할 수 있다.','국밥처럼 먹는 턴이 긴 음식은 안전한 곳에서 사용');
+      else if(ground.type==='weapon'&&ground.range>=7)tip70('bow','활은 적을 한 번 눌러 조준하고 다시 누르거나 공격을 눌러 발사한다. 사선과 장애물을 확인하라.','적을 길게 누르면 사격 가능 여부도 표시');
+    }
+  }

@@ -891,7 +891,6 @@ setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
 
 
-function registerPickupStageR25(id,hooks){if(MANRU_PICKUP_PIPELINE_R25.stages.some(x=>x.id===id))throw new Error('duplicate pickup stage: '+id);MANRU_PICKUP_PIPELINE_R25.stages.push({id,pre:hooks?.pre,post:hooks?.post});return hooks}
 
 
 
@@ -1625,7 +1624,6 @@ RuntimeState.ui.inventory=UX;
 
   ActionDispatcher.register('DROP_EQUIPPED',dropEquippedAction5);
   // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
-  registerPickupStageR25('closed-bag-dom45',{post:()=>{if(!inventoryOpen){const box=document.getElementById('inventory');if(box)box.innerHTML=''}}});
 
   // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
   
@@ -1903,7 +1901,6 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
   /* ---------- terrain footsteps ---------- */
   registerMovePostR8(ctx=>{if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}});
-  registerPickupStageR25('pickup-feedback54',{pre:ctx=>{ctx.invBefore54=state?.player?.inventory?.length||0},post:ctx=>{const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}});
 
   /* ---------- feature room visual signatures ---------- */
   
@@ -2000,7 +1997,6 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
 
 
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
-  registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}});
 
 
 
@@ -2543,15 +2539,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   
 
 
-  registerPickupStageR25('coach70',{post:ctx=>{
-    const ground=ctx.ground;
-    if(ground){
-      if(ground.type==='potion')tip70('potion','약병은 런마다 색과 정체가 바뀐다. 발견 장소와 냄새·색 단서로 후보를 좁히고, 마시거나 감정부적으로 식별한다.','미확인 약병은 역할 탭도 숨겨진다.');
-      else if(ground.type==='talisman')tip70('talisman','부적은 주문서와 폭탄 역할을 겸한다. 위기 탈출·봉쇄·지도·광역 공격에 아끼지 말고 써라.','전술벨트에서 빠르게 사용 가능');
-      else if(ground.type==='food')tip70('food','음식은 허기 관리뿐 아니라 보스 전 도핑과 조리 재료다. 화로나 솥에서 비방 조합을 실험할 수 있다.','국밥처럼 먹는 턴이 긴 음식은 안전한 곳에서 사용');
-      else if(ground.type==='weapon'&&ground.range>=7)tip70('bow','활은 적을 한 번 눌러 조준하고 다시 누르거나 공격을 눌러 발사한다. 사선과 장애물을 확인하라.','적을 길게 누르면 사격 가능 여부도 표시');
-    }
-  }});
   registerMovePreR8(ctx=>{RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true});
   // r30: runtime item coaching/activity bookkeeping is integrated in canonical useInventoryItem.
 
