@@ -668,14 +668,7 @@ ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
 ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
-function portalLandingValid57(link,x,y){
-  if(!state||!link||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const room=state.portalRooms981?.[link.destRoom]||state.rooms?.[link.destRoom];
-  if(room&&(x<room.x||y<room.y||x>=room.x+room.w||y>=room.y+room.h))return false;
-  const t=state.map?.[y]?.[x];
-  if(t===TT.PORTAL||dangerousLootTerrain42(t)||!playerTransferLandingSafe57(x,y))return false;
-  return true;
-}
+
 
 
 

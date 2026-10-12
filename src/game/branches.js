@@ -2381,3 +2381,11 @@ function adjacentSilkTrap57(){
 }
 function normalizeRunState57(){if(!state)return;if(!state.generationInProgress57&&!state.terrainReactions105?.wallMaterials105)produceWallMaterials105();const next=state.runState57||(state.dead?'death':state.victory?'victory':'playing');state.runState57=next;state.dead=next==='death';state.victory=next==='victory';if(state.player?.summoning105)summonState()}
 function furnitureFloor57(x,y){return terrainUnderlayAt58(x,y)??inferTerrainUnderlay58(x,y)}
+function portalLandingValid57(link,x,y){
+  if(!state||!link||x<0||y<0||x>=COLS||y>=ROWS)return false;
+  const room=state.portalRooms981?.[link.destRoom]||state.rooms?.[link.destRoom];
+  if(room&&(x<room.x||y<room.y||x>=room.x+room.w||y>=room.y+room.h))return false;
+  const t=state.map?.[y]?.[x];
+  if(t===TT.PORTAL||dangerousLootTerrain42(t)||!playerTransferLandingSafe57(x,y))return false;
+  return true;
+}
