@@ -73,6 +73,7 @@
 | P1→special | SPINE_RESIDUE P1: 사용처 과반이 special.js인 잎 선언 → special.js | 5855 | 169 / 573 | 755 | 77.7% | - |
 | P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5855 | 167 / 573 | 755 | 77.7% | - |
 | P2→branches | SPINE_RESIDUE P2: 공용 선언 → branches.js | 5845 | 164 / 573 | 755 | 77.8% | - |
+| P2→items | SPINE_RESIDUE P2: 공용 선언 → items.js | 5836 | 162 / 573 | 755 | 77.8% | - |
 
 ## 현재 파일별 줄 수
 
@@ -81,7 +82,7 @@
 | kernel.js | 24 |
 | catalog.js | 173 |
 | save.js | 740 |
-| items.js | 966 |
+| items.js | 977 |
 | combat.js | 662 |
 | monsters.js | 2275 |
 | render.js | 4939 |
@@ -94,6 +95,6 @@
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 931 |
-| spine.js | 5845 |
+| spine.js | 5836 |
 | start.js | 6 |
-| (total) | 26275 |
+| (total) | 26277 |
