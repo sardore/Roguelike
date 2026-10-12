@@ -43,30 +43,6 @@
 
 
 
-const CLASSES=[
-  {id:'wanderer',name:'감찰관',color:'#d4c2a2',desc:'정부 특임 감찰관. 장비와 무술 선택에 따라 어느 길로든 성장할 수 있다.',hp:34,focus:9,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'장비와 무술을 조합해 자유롭게 성장한다.',skillCost:0,startWeapon:'조잡한 단검',startItems:[['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 감정부적 · 주먹밥'},
-  {id:'escort',name:'금위 표사',color:'#b78c65',desc:'정부 호위 임무 출신. 체급이 높고 초반 장비가 나빠도 버틴다.',hp:40,focus:7,atk:5,def:2,eva:2,will:4,vision:7,skillName:'무술',skillDesc:'튼튼한 체격으로 버티며 적의 빈틈을 노린다.',skillCost:0,startWeapon:'나무 몽둥이',startItems:[['말린 육포',2]],startLabel:'경량복 · 나무 몽둥이 · 말린 육포×2'},
-  {id:'swordsman',name:'척후 검객',color:'#96a9b0',desc:'정부 척후대 출신. 공격·회피가 높고 무기 효율이 좋다.',hp:31,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'무술',skillDesc:'빠른 발과 날카로운 검으로 전장을 누빈다.',skillCost:0,startWeapon:'무딘 소검',startItems:[['엽전 엿',1],['주먹밥',1]],startLabel:'경량복 · 무딘 소검 · 엽전 엿 · 주먹밥'},
-  {id:'archer',name:'척후 궁사',color:'#a6b18b',rules:{roar:'aim'},desc:'정부 척후대의 궁사. 사격을 준비해 갑옷과 회피의 빈틈을 꿰뚫는다.',hp:30,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'명중',skillDesc:'제자리에 서 있으면 조준이 쌓인다. 이동하거나 공격하면 한 단계 줄고, 피해를 받거나 해로운 상태에 걸리면 풀린다.',skillCost:3,startWeapon:'사냥용 목궁',startItems:[['목제 화살',36],['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 사냥용 목궁 · 목제 화살×36 · 감정부적 · 주먹밥'},
-  {id:'infiltrator',name:'잠행객',color:'#8fa1b5',rules:{roar:'smoke'},desc:'연막으로 시선을 가리고 좁은 틈으로 잠입하는 조사원.',hp:30,focus:11,atk:5,def:1,eva:7,will:4,vision:8,skillName:'연막',skillDesc:'기 4 · 목표 지점에 피해를 주고 5턴 동안 사선을 가리는 연막을 펼친다.',skillCost:4,startWeapon:'조잡한 단검',startItems:[['연막병',1],['경신약',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 연막병 · 경신약 · 주먹밥'},
-  {id:'strongman',name:'천하장사',color:'#c49a58',rules:{talismanFusion:false,upgradeTalismanMode:'bodyBoost'},desc:'정면에서 버티며 싸우는 장사다. 부적 합성 불가. 강화부적으로 괴력·재생을 얻고, 끝나면 같은 시간 탈진한다.',hp:50,focus:8,atk:7,def:3,eva:1,will:5,vision:7,skillName:'무술',skillDesc:'괴력 20~45턴 · 매턴 HP 2% 회복',skillCost:0,startWeapon:'나무 몽둥이',startItems:[['강화부적',1],['말린 육포',2]],startLabel:'경량복 · 나무 몽둥이 · 강화부적×1 · 말린 육포×2'},
-  {id:'summoner',name:'무당',gender:'female',color:'#c48da4',desc:'그림에 담긴 영을 부르는 무당. 무술에는 재능이 없지만 스스로의 체력을 바쳐 원하는 영을 부를 수 있다.',hp:34,focus:4,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'그림과 속성부적으로 영을 부른다. 술서 강화는 소모 HP와 기운 회복 시간을 줄인다.',skillCost:0,startWeapon:'조잡한 단검',startItems:[['만령 소환술서',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 만령 소환술서 · 주먹밥'}
-];
-
-
-
-
-function bodyPowerExhaustion58(p=state?.player){return bodyPowerDuration58(p)}
-
-function identifyStartingItems58(){
-  const p=state.player,K=state.knowledge56=state.knowledge56||{};
-  K.potionKnown=K.potionKnown||{};K.talismanKnown=K.talismanKnown||{};
-  for(const it of [...p.inventory,p.weapon,p.armor,p.cloak,p.relic,p.trinket]){
-    if(!it)continue;it.identified=true;
-    if(it.type==='potion'&&it.potionKind)K.potionKnown[it.potionKind]=true;
-    if(it.type==='talisman'&&it.talismanKind)K.talismanKnown[it.talismanKind]=true;
-  }
-}
 
 
 
@@ -124,7 +100,15 @@ function identifyStartingItems58(){
 
 
 
-let state = null;
+
+
+
+
+
+
+
+
+
 
 
 
@@ -188,17 +172,7 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-function burst(x,y,color="#ffffff",count=9,power=1){
-  const now=performance.now();
-  for(let i=0;i<count;i++){
-    const a=globalThis.__MANRU_RANDOM57__()*Math.PI*2, sp=(0.45+globalThis.__MANRU_RANDOM57__()*1.4)*power;
-    FX.particles.push({
-      x:x*TILE+TILE/2,y:y*TILE+TILE/2,
-      vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
-      color,start:now,life:260+globalThis.__MANRU_RANDOM57__()*420,size:1+globalThis.__MANRU_RANDOM57__()*2.4
-    });
-  }
-}
+
 
 
 
@@ -243,7 +217,7 @@ function startFloorTransition(){
 
 
 
-function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
 
 
 globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
@@ -251,11 +225,11 @@ globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
-function inventoryCapacity(){return 25+(state?.player?.trinket?.branchEffect105==='capacity'?5:0)}
 
 
 
-const MOVE_HOOKS_R8={pre:[],post:[]};
+
+
 function registerMovePreR8(fn){MOVE_HOOKS_R8.pre.push(fn);return fn}
 function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
@@ -278,7 +252,7 @@ function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id
 
 
 
-function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}
+
 
 
 const AUTO_MOVE_RATE70=1.5;
@@ -291,42 +265,23 @@ const AUTO_MOVE_RATE70=1.5;
 
 
 
-function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
 
 
 
 
-function activeGameplayPanels57(){return gameplayPanels57().filter(panel=>interactionActive8(panel.id))}
-function gameplayInputOwner57(){
-  if(runState57()!=='playing')return{kind:'terminal',panels:[]};const panels=activeGameplayPanels57();
-  if(panels.length)return{kind:panels.some(p=>p.kind!=='targeting')?'modal':'targeting',panels};
-  return{kind:'none',panels:[]}
-}
-function gameplayInputAllowed57(opts={}){
-  if(state?.debugBattle57)return false;
-  if(RuntimeState.ui.generationPending)return false;
-  if(OrientationGate.active()&&runState57()==='playing')return false;
-  const owner=gameplayInputOwner57();if(owner.kind==='terminal')return false;if(owner.kind==='none')return true;
-  const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
-  return owner.panels.every(p=>allowed.has(p.id))
-}
-
-function dismissGameplayInput57(all=false){
-  const panels=activeGameplayPanels57();if(!panels.length)return false;
-  for(const panel of all?panels:[panels[panels.length-1]])panel.close?.(true);clearHeldInput53();return true
-}
-function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
-
-const INPUT_COMMANDS57=Object.freeze(['MOVE','ATTACK','REST','PICKUP','CONTEXT_ACTION','DESCEND','BLINK','CLASS_SKILL','OPEN_MARTIAL','TOGGLE_SKILL_QUICK','QUICK_MARTIAL','OPEN_SUMMON105','TOGGLE_INVENTORY','TOGGLE_HELP','OPEN_MOBILE_DRAWER','OPEN_MAP','AUTO_EXPLORE','TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','MODAL_CANCEL','WORLD_SELECT','WORLD_INSPECT','CAMERA_PAN','CAMERA_ZOOM','CAMERA_CENTER','CLOSE_DOOR','QUICK_SLOT','TOGGLE_RELEASE','TOGGLE_SFX','STORY_OPEN_NOTE','STORY_SELECT_ENDING','STORY_CONFIRM_ENDING','STORY_CONTINUE','CIPHER_DIGIT','CIPHER_CLEAR','SAVE','LOAD']);
-const INPUT_ROUTER57_AUDIT={serial:0,handled:0,blocked:0,ignored:0,handledCommands:{},attempts:{},history:[],listeners:new Set()};
 
 
-function clientCommand9(client,command){
-  const audit=RuntimeState.client[client.kind];
-  if(!client.active()){audit.inactiveAttempts++;return{command:command?.type||'UNKNOWN',source:command?.source||'unknown',status:'ignored',owner:'inactive-client',consumed:false}}
-  if(OrientationGate.blocks(command)){audit.gated++;return InputRouter.dispatch(command)}
-  audit.emissions++;return InputRouter.dispatch(command)
-}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -373,7 +328,6 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
 
 
 
@@ -393,30 +347,9 @@ function fieldProvenance57(field){if(field.sourceFaction)return field;return{...
 
 
 
-// Environmental reactions share contact, occupancy and temporary-field owners.
-function protectedProp105(x,y,world=state){
- return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
-}
 
 
 
-function environmentStanding105(entity){
- if(!entity||entity.hp<=0)return;
- const r=terrainReactions105(),cells=entityFootprintCells57(entity);
- for(const q of cells){const t=state.map[q.y]?.[q.x],spill=r.spills?.[k(q.x,q.y)];
-  if(isWaterTile105(t)||(!entity.flying&&spill?.kind==='water')){combustionContact105(entity,'water');continue;}
-  if(!entity.flying){
-   const fields=[...(state.tempFields||[]).filter(f=>f.kind==='fire').map(f=>({...f,cells:tempFieldCells57(f),damage:3})),...(state.elementFields74||[]).filter(f=>f.kind==='fire').map(f=>({...f,cells:f.cells??elementCells105(f.x,f.y,1)})),...(state.legendFireFields47||[]).map(f=>({...f,cells:f.cells??[{x:f.x,y:f.y}],damage:3}))].filter(f=>f.ttl>0&&f.cells.some(c=>c.x===q.x&&c.y===q.y));
-   const field=fields.sort((a,b)=>(b.damage||3)-(a.damage||3))[0],burn=r.burning[k(q.x,q.y)];
-   if(field||burn)combustionContact105(entity,'fire',field?fieldProvenance57(field):burn.source||{},{floorDamage:field?Math.max(3,field.damage||3):0});
-  }
-  if(!entity.flying&&spill&&spill.lastHit?.[entity===state.player?'player':entity.id57||entity.name+':'+entity.x+','+entity.y]!==state.turn){
-   const id=entity===state.player?'player':entity.id57||entity.name+':'+entity.x+','+entity.y;spill.lastHit||={};spill.lastHit[id]=state.turn;
-   if(spill.kind==='poison')applyCombatStatus(entity,'poison',3);
-   if(spill.kind==='wine')applyCombatStatus(entity,'drunk',2);
-  }
- }
-}
 
 
 
@@ -454,11 +387,6 @@ function environmentStanding105(entity){
 
 
 
-function resolveOccupancyInteraction57(actor,target){
-  if(!occupancySwapAllowed57(actor,target))return false;
-  const ax=actor.x,ay=actor.y,tx=target.x,ty=target.y;
-  OccupancyService.move(target,ax,ay);resolvePlayerLanding57(tx,ty,{cause:'ally-swap'});globalThis.__MANRU_HAZARD_CORE__?.standing?.(target,'ally-swap');return true
-}
 
 
 
@@ -528,18 +456,9 @@ function resolveOccupancyInteraction57(actor,target){
 
 
 
-function canMoveGroundItem57(it,x,y){
-  if(!state||!it||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const t=state.map?.[y]?.[x];
-  if(tileBlocks(t)||dangerousLootTerrain42(t)||t===TT.DOOR||t===TT.STAIR||t===TT.KEY_TILE||t===TT.PORTAL)return false;
-  if((state.monsters||[]).some(m=>m.hp>0&&monCovers(m,x,y)))return false;
-  if((state.items||[]).some(other=>other!==it&&other.x===x&&other.y===y))return false;
-  return true;
-}
 
 
 
-function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
@@ -554,14 +473,16 @@ function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
-function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!isPotionKnownByPlayer(p))identifyPotion(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
 
 
-function withJosa57(value,pair='이/가'){
-  const word=String(value??''),parts=String(pair).split('/'),withBatchim=parts[0]||'',withoutBatchim=parts[1]??withBatchim,last=word.at(-1)||'',code=last.charCodeAt(0);
-  if(code>=0xAC00&&code<=0xD7A3)return word+(((code-0xAC00)%28)?withBatchim:withoutBatchim);
-  return word+withoutBatchim;
-}
+
+
+
+
+
+
+
+
 
 
 
@@ -613,11 +534,11 @@ const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HED
 
 
 
-function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
 
 
-function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
-function entityFootprintCells57(entity,x=entity?.x,y=entity?.y){if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return[];const offsets=entity===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(entity);return offsets.map(([ox,oy])=>({x:x+ox,y:y+oy}))}
+
+
+
 
 
 
@@ -685,7 +606,7 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 
 
 
-function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
+
 
 
 
@@ -698,14 +619,6 @@ ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
 ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
-function portalLandingValid57(link,x,y){
-  if(!state||!link||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const room=state.portalRooms981?.[link.destRoom]||state.rooms?.[link.destRoom];
-  if(room&&(x<room.x||y<room.y||x>=room.x+room.w||y>=room.y+room.h))return false;
-  const t=state.map?.[y]?.[x];
-  if(t===TT.PORTAL||dangerousLootTerrain42(t)||!playerTransferLandingSafe57(x,y))return false;
-  return true;
-}
 
 
 
@@ -735,16 +648,8 @@ function portalLandingValid57(link,x,y){
 
 
 
-function playerAction57(kind,opts={}){
-  if(runState57()!=='playing'){ActionDispatcher.denied('inactive');return{ok:false,kind,reason:'inactive'}};
-  if(!gameplayInputAllowed57(opts)){ActionDispatcher.denied('blocked');return{ok:false,kind,reason:'blocked'}};
-  if(ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.inputUntil){ActionDispatcher.denied('presenting');return{ok:false,kind,reason:'presenting'}}
-  if(dojoSleeping()){ActionDispatcher.denied('asleep');return{ok:false,kind,reason:'asleep'};}
-  if(state.shopIntermission?.active)return{ok:true,kind,committed:false};
-  if((state.status?.stun||0)>0){ActionDispatcher.denied('stun');state.status.stun--;if(opts.closeMartial)closeMartial();if(opts.closeInventory)closeInventory();addLog(opts.stunMessage||'몸이 굳어 행동하지 못했다.');globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"playerAction57",...{playerAgency:false,reason:'stun-skip'}}).value;return{ok:false,kind,reason:'stun',consumed:true,stunned:true}}
-  if(opts.skill&&(state.status?.skillSeal||0)>0){ActionDispatcher.denied('skillSeal');toast('기력이 봉인되어 이 행동을 할 수 없다.');return{ok:false,kind,reason:'skillSeal'}}
-  return{ok:true,kind,committed:false}
-}
+
+
 
 
 
@@ -769,13 +674,7 @@ ActionDispatcher.register('BLINK',useBlink);
 
 
 
-function combatLineCheckR8(x0,y0,x1,y1,opts={}){
-  const maxRange=Number.isFinite(opts.range)?opts.range:Infinity,dist=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));if(dist>maxRange)return{ok:false,reason:`사거리 밖 · ${dist}/${maxRange}칸`,dist};
-  const cells=combatLineCellsR8(x0,y0,x1,y1);
-  for(let i=0;i<cells.length;i++){const c=cells[i],last=i===cells.length-1;
-    if(combatFieldBlocksSight57(c.x,c.y))return{ok:false,reason:'연막이나 증기가 사선을 끊는다.',dist};if(!last&&tileBlocksSight(state.map[c.y]?.[c.x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};if(!last&&opts.units!==false){const block=findMonsterAt(c.x,c.y);if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block}}}
-  return{ok:true,dist,range:maxRange}
-}
+
 
 
 
@@ -840,11 +739,6 @@ function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[p
 
 
 
-function safeLootGround42(x,y){
-  if(state?.generationInProgress57&&inTutorialEntry(x,y))return false;
-  if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const t=state.map[y]?.[x];return !dangerousLootTerrain42(t)&&!tileBlocks(t)&&t!==TT.STAIR&&t!==TT.KEY_TILE&&t!==TT.PORTAL&&t!==TT.DOOR;
-}
 
 
 
@@ -919,9 +813,6 @@ function safeLootGround42(x,y){
 
 
 
-function silkThreadAt54(x,y){
- return !!state?.monsters?.some(mon=>mon.hp>0&&mon.bossPattern==='needle'&&entitiesHostile57(mon,state.player)&&mon.silk54?.links.some(l=>l.cells.some(c=>c.x===x&&c.y===y)));
-}
 
 
 
@@ -1005,7 +896,9 @@ function silkThreadAt54(x,y){
 
 
 
-const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
+
+
+
 function registerPickupStageR25(id,hooks){if(MANRU_PICKUP_PIPELINE_R25.stages.some(x=>x.id===id))throw new Error('duplicate pickup stage: '+id);MANRU_PICKUP_PIPELINE_R25.stages.push({id,pre:hooks?.pre,post:hooks?.post});return hooks}
 
 
@@ -1027,7 +920,7 @@ function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)retur
 
 
 
-function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
+
 
 
 
@@ -1264,13 +1157,7 @@ Object.defineProperty(globalThis,'__MANRU_RUNTIME_START57__',{value:Object.freez
 
 
 
-function showInspect(title,html){
-    const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
-    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
-    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),null);return}
-    const txt=dedupeProse986(textOnly(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
-    directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
-  }
+
 
 
 
@@ -1654,7 +1541,7 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
   
-  const interior=(r,x,y)=>x>=r.x+2&&y>=r.y+2&&x<=r.x+r.w-3&&y<=r.y+r.h-3;
+
 
 
 
@@ -1672,8 +1559,7 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
 
-/* ===== MANRU v4.3 VISUAL-COMPARE REFINEMENT ===== */
-const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
+
 
 
 
@@ -1692,7 +1578,7 @@ const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
 
 
 
-  const safePut44=(r,x,y,t)=>{if(!inRoom44(r,x,y))return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;setTerrainTile58(state.map,x,y,t);return true};
+
   
 
 
@@ -1801,45 +1687,7 @@ RuntimeState.ui.inventory=UX;
   // r54: superseded minimap throttle removed; the canonical function owns throttling.
   
 
-  // remove the v3.8 double-update-per-turn path: integrate field/status tick into one endTurn render.
-  function endTurnCore45(cost=1,turnOpts=null,turnResult){
-    if(!state||state.dead||state.victory)return;
-    const c=cost,playerAgency=turnOpts?.playerAgency!==false;
-    state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
-    if(playerAgency){state.playerAgencyTurns57++;if(state.status.illness>0&&--state.status.illness===0){addLog('중병의 유예가 끝났다.');die('중병');turnResult.aborted=true;turnResult.abortStage='illness';return}}
-    state._turnAgencyCounted57=playerAgency;
-    state.turn++;palaceAdvance(c);summonCleanup();summonUpdateButtons();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
-    turnResult.stageOrder.push('core:regen');dojoBedTick();if(state.status.regen>0){state.player.hp=Math.min(state.player.maxHp,state.player.hp+1);state.status.regen--}
-    turnResult.stageOrder.push('core:status');applyStatusTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:status';return}turnResult.stageOrder.push('core:hunger');hungerTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:hunger';return}
-    tickBossArenaMist(playerAgency);if(state.dead){turnResult.aborted=true;return}
-    turnResult.stageOrder.push('core:durations');for(const q of ['haste','weaken','evade','markCrit','poison','bleed','ward','upset','drunk','blind','skillSeal'])if(state.status[q]>0)state.status[q]--;
-    turnResult.stageOrder.push('core:loot');pullNearbyLoot();turnResult.stageOrder.push('core:summon-escort');summonEscortTurn();turnResult.stageOrder.push('core:energy');turnResult.energyAdded=c;state.enemyEnergy=(state.enemyEnergy||0)+c;let acted=0;
-    while(state.enemyEnergy>=1&&acted<3&&!state.dead&&!state.victory){state.enemyEnergy-=1;state.floorTurn++;turnResult.enemyRounds++;turnResult.stageOrder.push('core:rafts');updateRafts();turnResult.stageOrder.push('core:monsters');monsterTurn();if(!state.dead&&!state.victory){turnResult.stageOrder.push('core:allies');alliesTurn()}acted++}
-    turnResult.stageOrder.push('core:stealth');if(playerAgency&&state.status.stealth>0&&(state.player.stealthBornAgency1005??-1)<state.playerAgencyTurns57)state.status.stealth--;
-    turnResult.stageOrder.push('core:focus');recoverActorFocus105(state.player,state.turn);
-    // potion fields / temporary potion buffs
-    turnResult.stageOrder.push('core:fields');state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};
-    if(!tickCombatFields57()){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
-    turnResult.stageOrder.push('core:potion-buffs');for(const q of ['swift','fortify','willBoost'])if(state.status[q]>0)state.status[q]--;
-    turnResult.stageOrder.push('core:field-expiry');expireCombatFields();
-    if(playerAgency&&state.player.classState?.aimPower>0){const cs=state.player.classState,agency=state.playerAgencyTurns57;if(agency>cs.aimBornAgency&&agency!==cs.aimMoveAgency&&agency!==cs.aimAttackAgency)setAimPower(cs.aimPower+1)}
-    turnResult.stageOrder.push('core:body-power');if(playerAgency&&bodyPowerActive()){
-      const cs=state.player.classState,agency=state.playerAgencyTurns57;
-      if(agency>cs.powerBornAgencyTurn&&agency>cs.powerLastAgencyTurn){
-        cs.powerLastAgencyTurn=agency;
-        if(!state.dead)bodyPowerHeal(state.player);
-        cs.powerTurns--;
-        if(cs.powerTurns===0){
-          const duration=cs.powerExhaustion??cs.powerTotal;cs.powerTotal=0;cs.powerExhaustion=0;
-          applyHostileStatus('blind',duration,1);applyHostileStatus('upset',duration,1);
-          burst(state.player.x,state.player.y,'#b89870',12,.5);floatText(state.player.x,state.player.y,'탈진','#d7ab85',15);
-          addLog('괴력이 가셨다. 무리한 팽창의 반동으로 시야와 속이 무너진다.');
-        }
-      }
-    }
-    turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();
-    turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
-  }
+
 
 
 
@@ -2064,8 +1912,7 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);
   const rule=document.createElement('div');rule.id='bossRule54';document.getElementById('canvasWrap')?.appendChild(rule);
 
-  /* ---------- lightweight procedural SFX ---------- */
-  function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}
+
 
 
 
@@ -2149,7 +1996,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
 
-  const GENERIC_TALISMAN56=Object.freeze({id:'unknown',name:'미확인 부적',paper:'#d8c79b',paper2:'#b49b6d',ink:'#8a2f28',seal:'?'});
+
 
   
 
@@ -2159,8 +2006,8 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
   
   window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
-  function featureAt56(x,y){return(state?.featureRooms||[]).find(r=>x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h)||null}
-  function nearTypes56(x,y,r=2){const s=new Set();for(let yy=Math.max(0,y-r);yy<=Math.min(ROWS-1,y+r);yy++)for(let xx=Math.max(0,x-r);xx<=Math.min(COLS-1,x+r);xx++)s.add(state.map[yy]?.[xx]);return s}
+
+
 
 
 
@@ -2536,13 +2383,8 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  function qaPickupProgressKey23_60(){
-    if(state.floor!==23)return{ok:false,reason:'not-f23'};const item=(state.items||[]).find(i=>i.type==='progress_key23');if(!item)return{ok:false,reason:'missing-progress-key'};
-    state.player.x=item.x;state.player.y=item.y;OccupancyService.move(state.player,state.player.x,state.player.y);const picked=pickupBaseR25();return{ok:!!picked&&!!state.floor23?.keyAcquired,picked:!!picked,keyAcquired:!!state.floor23?.keyAcquired};
-  }
-  function qaDescend60(){
-    if(!state?.stairs)return{ok:false,reason:'no-stairs'};const from=state.floor,beforeOwner=gameplayInputOwner57().kind;closeGameplayInteractionState57();const pre={run:runState57(),input:gameplayInputAllowed57(),stun:state.status?.stun||0,dead:!!state.dead,victory:!!state.victory,beforeOwner,owner:gameplayInputOwner57().kind};state.player.x=state.stairs.x;state.player.y=state.stairs.y;OccupancyService.move(state.player,state.player.x,state.player.y);const result=descend();return{ok:!!result&&state.floor===from+1,result:!!result,from,to:state.floor,pre};
-  }
+
+
 
 
 
@@ -2648,7 +2490,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
+
 
 
 
@@ -3370,8 +3212,8 @@ document.body.classList.add('mf75-clean');
 
   const V85={version:'v8.7-nethack-dense-modules',recent:[],samples:[]};
 
-  const CITADEL_PROP_TILES=Object.freeze({"bed":TT.BED,"white-bed":TT.RUMOR_BED,"prison-bed":TT.RUMOR_BED,"bench":TT.BENCH,"shelf":TT.RACK,"desk":TT.TABLE,"mapdesk":TT.TABLE,"table":TT.TABLE,"supplies":TT.CRATE,"stove":TT.COOKPOT,"medicine":TT.RUMOR_MED_CABINET,"sarcophagus":TT.STONE_PILLAR,"tomb":TT.STONE_PILLAR,"urns":TT.JAR,"chains":TT.RUMOR_WEAPON_RACK,"ritual":TT.ALTAR,"sigil":TT.ALTAR,"candles":TT.INCENSE_STAND,"treasure":TT.VAULT,"bell":TT.INCENSE_STAND,"crossbow":TT.RUMOR_WEAPON_RACK,"rack":TT.RUMOR_WEAPON_RACK,"iron-mask":TT.ARMORY,"shield":TT.ARMORY,"banner":TT.SCREEN,"furnace":TT.BRAZIER,"anvil":TT.ARMORY,"coal":TT.CRATE,"books":TT.BOOK_STACK,"statue":TT.STATUE,"incense":TT.INCENSE_STAND,"screen":TT.SCREEN});
-  const BLOCK85=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.RUMOR_BED,TT.RUMOR_MED_CABINET,TT.RUMOR_GAS_PIPE,TT.RUMOR_ARCHIVE_PILE,TT.RUMOR_WEAPON_RACK,TT.RUMOR_SILK_DIVAN,TT.RUMOR_RITUAL_OBELISK,TT.RUMOR_CHARRED_COUNTER,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_SMUGGLER_BUNDLE,TT.RUMOR_GREENHOUSE_FRAME,TT.BED,TT.BOOK_STACK]);
+
+
   const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
 
 
@@ -3475,9 +3317,6 @@ document.body.classList.add('mf75-clean');
   /* ===== MANRU v8.8: v8.0 STRUCTURE REBASE + DISCIPLINED THEME DECOR ===== */
   V85.version='v8.8-v80-structure-theme-decor';
   
-  const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);
-
-  function clear88(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL);state.rooms=[]}
 
 
 
@@ -3486,19 +3325,22 @@ document.body.classList.add('mf75-clean');
 
 
 
-  
-  
+
+
 
   
   
-  
+
   
   
   
   
   
+  
+  
+  
 
-  function floorOnly88(x,y){return in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET].includes(state.map[y][x])&&!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.stairs.x===x&&state.stairs.y===y)}
+
 
   
 
@@ -3561,27 +3403,13 @@ document.body.classList.add('mf75-clean');
   // Theme identity now comes primarily from structure and a handful of focal props, not room-by-room prop spam.
   
 
-  function sparsePair89(r,t,side='top'){
-    if(!r)return 0;let pts=[];
-    if(side==='top')pts=[[r.x+2,r.y+2],[r.x+r.w-3,r.y+2]];
-    else if(side==='bottom')pts=[[r.x+2,r.y+r.h-3],[r.x+r.w-3,r.y+r.h-3]];
-    else pts=[[r.x+2,r.cy],[r.x+r.w-3,r.cy]];
-    let n=0;for(const [x,y] of pts)if(floorOnly88(x,y)){setTerrainTile58(state.map,x,y,t);n++}return n;
-  }
+
 
   // Windows remain themes 1 and 3 only, and are substantially rarer.
 
 
   
-  function relocateEntities89(savedMonsters,savedItems){
-    state.monsters=[];
-    for(const mon of savedMonsters||[]){
-      if(mon.boss)continue;const pos=PlacementService.randomMonsterCell(mon);if(pos){mon.x=pos.x;mon.y=pos.y;mon.alerted=false;OccupancyService.addMonster(mon)}
-    }
-    const used=new Set();state.items=[];
-    const candidates=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!(x===state.player.x&&y===state.player.y)&&!OccupancyService.isOccupied(x,y))candidates.push({x,y});
-    for(const it of savedItems||[]){if(!candidates.length)break;let idx=Math.floor(globalThis.__MANRU_RANDOM57__()*candidates.length),pos=candidates.splice(idx,1)[0];it.x=pos.x;it.y=pos.y;PlacementService.placeItem(it);used.add(pos.x+','+pos.y)}
-  }
+
   
   ;
 
@@ -3655,15 +3483,15 @@ document.body.classList.add('mf75-clean');
 
 
 
-  function shortestNodes93(adj,s,t){const q=[s],prev=Array(adj.length).fill(-2);prev[s]=-1;for(let i=0;i<q.length;i++){const u=q[i];if(u===t)break;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}if(prev[t]===-2)return[];const out=[];for(let u=t;u!==-1;u=prev[u])out.push(u);return out.reverse()}
-  function farNode93(adj,s){const q=[s],d=Array(adj.length).fill(-1);d[s]=0;for(let i=0;i<q.length;i++){const u=q[i];for(const v of adj[u])if(d[v]<0){d[v]=d[u]+1;q.push(v)}}let b=s;for(let i=0;i<d.length;i++)if(d[i]>d[b])b=i;return{node:b,dist:d[b],d}}
 
 
 
 
 
 
-  function segment93(out,x,y,tx,ty){while(x!==tx||y!==ty){const px=x,py=y;if(x!==tx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);out.push({x,y,dir:x!==px?'h':'v'})}return{x,y}}
+
+
+
 
 
 
@@ -4029,8 +3857,8 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-  const plannedSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.KEY_TILE,TT.PAVILION,TT.FLOOR,TT.GOLD]);
-  const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
+
+
 
 
 
@@ -4539,16 +4367,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   window.__MANRU_STORY992__={resume:()=>{const st=storyEnsureState();if(st?.dispatchPending60)return storyOpenNote('dispatch');return false},close:storyCloseModal,closeScene:storyCloseScene,selectEnding:storySelectEnding,continueScene:storyContinueScene,project:projectStoryUI,open:storyOpenNote,ending:storyResolveEnding};
 
 
-  /* ===== v10.0.1: class selection / player sprite / desktop right-click inspect ===== */
-  const CLASS1001_META={
-    wanderer:{seal:'感',role:'특임 감찰관 · 균형형',tag:'감찰'},
-    escort:{seal:'護',role:'금위 표사 · 생존형',tag:'호위'},
-    swordsman:{seal:'劍',role:'척후 검객 · 기동형',tag:'척후'},
-    archer:{seal:'弓',role:'척후 궁사 · 정밀 사격',tag:'궁사'},
-    infiltrator:{seal:'霧',role:'잠행객 · 연막 잠입',tag:'잠행'},
-    strongman:{seal:'力',role:'천하장사 · 초심자 생존형',tag:'장사'},
-    summoner:{seal:'巫',role:'소환형',tag:'소환'}
-  };
+
 
   // Final requested starting loadout. Inspector deliberately has no starting weapon.
   const wanderer1001=CLASSES.find(c=>c.id==='wanderer');
@@ -4563,7 +4382,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   
   
-  const EMPTY_ACTOR1001='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+
 
 
 
@@ -4571,16 +4390,8 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   let selectedClass1001=CLASSES[0].id;
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
-  const CLASS1001_STATS=[['hp','생명'],['focus','기'],['atk','공격'],['def','방어'],['eva','회피'],['will','의지'],['vision','시야']];
-  const CLASS1001_STAT_PATHS=Object.freeze({
-    hp:'M12 20 3.5 11.5C-1 6 6 1 12 7c6-6 13-1 8.5 4.5Z',
-    focus:'M12 2c1 5 6 7 6 12a6 6 0 0 1-12 0c0-3 2-5 4-7v6c3-2 3-6 2-11Z',
-    atk:'M9 12 18 3h3v3l-9 9ZM6 10l8 8M10 14l-5 5M3.5 17.5l3 3M12 12l6-6',
-    def:'M12 2 21 6v6c0 5-5 9-9 10-4-1-9-5-9-10V6ZM12 6v11M7 10h10',
-    eva:'M8 3c2 0 3 2 3 4v7l7 3c2 1 2 4 0 4H6l-1-6 1-8c0-2 0-4 2-4ZM2 8h2M1 12h3M2 16h2',
-    will:'M7 3h10v18H7ZM10 7h4M12 5v6M10 14l2-2 2 2-2 4Z',
-    vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
-  });
+
+
 
 
 
@@ -4727,7 +4538,7 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 
-    function classGear(cls){return{weapon:cls?.startWeapon?{...(WEAPONS.find(w=>w.name===cls.startWeapon)||{}),name:cls.startWeapon}:null,armor:{...(ARMORS?.[0]||{}),name:ARMORS?.[0]?.name||'경량복',tier:1,rarity:'common'},cloak:null,relic:null,trinket:null}}
+
 
     
     
@@ -4748,7 +4559,7 @@ RuntimeState.ui.screen=SCREEN1002;
 const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
 const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
 
-function hz(){return state?state.hazard1005:null}
+
 
 
 
@@ -5001,8 +4812,7 @@ globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.tur
 
 
 
-/* r5: floor edge blending is terrain-only; never paint gradients across doors or decoration cells. */
-const GRAD_TERRAIN1025=new Set([TT.FLOOR,TT.GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.GOLD].filter(v=>v!=null));
+
 
 
 
@@ -5313,7 +5123,7 @@ if(typeof globalThis.__MANRU_GENERATE_CORE983__!=='function')throw new Error('Ma
 
 
 
-function playerKey1012(id,p,dir,attack){const g=x=>x?`${x.name||''}:${x.tier||0}:${x.rarity||''}:${x.upgrade||0}`:'-';return`${id}|${dir}|${attack?1:0}|${heldWeaponKey1001(p?.weapon)}|${g(p?.weapon)}|${g(p?.armor)}|${g(p?.cloak)}|${g(p?.relic)}|${g(p?.trinket)}`}
+
 
 
 
@@ -5446,7 +5256,7 @@ enter(id){if(id==='water_crossbow'){toast('창해 수압연노는 본관 9층 �
 });
 
 for(const [id,t] of Object.entries(LEGEND_TILES49))for(const [n,v] of Object.entries({PAVING:t.base,INLAY:t.base+1,PLATES:t.base+2,COURT:t.base+3,ASHLAR:t.base+4,BUTTRESS:t.base+5,ROCK:t.base+6,BRIDGE:t.bridge,STRUCTURE:t.solid}))TT['LEGEND_'+id.toUpperCase()+'_'+n]=v;
-let rng49=RngService.nativeRuntime();
+
 
 
 
@@ -5827,17 +5637,8 @@ const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GAT
 
 
 
-function debugBattleCatalog57(){
- const list=monsterSpeciesCatalog();
- list.push({def:storyInvestigatorDefinition(),group:'보스'},{def:PALACE_KING105,group:'보스'});
- const martial=(rank,style,final=false,pursuer=false)=>{const spec={rank,style,final,pursuer,level:final||pursuer?2:1},def=dojoCreateMartialist(rank,-1,style*10+rank,final,style,{level:spec.level,pursuer});if(!final)def.name=DOJO_STYLE_WEIGHTS105[style].name.split(' · ')[0]+' '+def.name;list.push({def,group:'무도가',dojo:spec});};
- for(let style=0;style<DOJO_STYLE_WEIGHTS105.length;style++){for(let rank=1;rank<=4;rank++)martial(rank,style);martial(4,style,false,true);}martial(4,5,true);
- const seen=new Set();return list.filter(e=>{if(seen.has(e.def.name))return false;seen.add(e.def.name);return true}).sort((a,b)=>a.def.name.localeCompare(b.def.name,'ko'));
-}
-function debugBattleMonster57(entry,floor,gatekeeper=false,preview=false){
- let mon;if(entry.dojo){const d=entry.dojo;mon=preview?clone(entry.def):dojoCreateMartialist(d.rank,-1,DEBUG_BATTLE57.serial+1,d.final,d.style,{level:d.level,pursuer:d.pursuer});mon.name=entry.def.name;}else mon=scaledMonster(clone(entry.def),floor,{inventory:!preview});
- if(mon.equipmentActor105)updateEquipmentPhase105(mon);if(gatekeeper)globalThis.__MANRU_LEGEND47__.gatekeeper(mon,floor);return mon;
-}
+
+
 
 
 
@@ -5952,7 +5753,7 @@ ActionDispatcher.register('ANVIL_FUSE105',anvilFuse);
 
 
 
-function summonPlaceFollowers105(list){for(const mon of list){if(!summonActive(mon))continue;const q=PlacementService.findMonster(mon,{placementMode:'local',origin:state.player,radius:5});if(!q)throw Error('추종 소환체 착지 공간 부족');Object.assign(mon,q);const delta=state.floorTurn-(mon.summonTravelFloorTurn105??state.floorTurn);for(const key of ['nextSummonTurn57','nextAction54','nextShot54','corpseUntilFloorTurn57','reviveFullTurn57'])if(Number.isFinite(mon[key]))mon[key]+=delta;delete mon.summonTravelFloorTurn105;delete mon.allyLastActionRound57;delete mon.allyTargetId54;delete mon.allyLastSeenPosition54;delete mon.allySearchUntilTurn54;delete mon.intent54;delete mon.intent61;if(!OccupancyService.addMonster(mon))throw Error('추종 소환체 계약 불일치');}}
+
 
 
 

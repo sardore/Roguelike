@@ -248,3 +248,9 @@ const CONFIG81=Object.freeze({
   };
   const canAct81=()=>gameplayInputAllowed57();
   function queuePlace81(){requestAnimationFrame(placeInput)}
+function clientCommand9(client,command){
+  const audit=RuntimeState.client[client.kind];
+  if(!client.active()){audit.inactiveAttempts++;return{command:command?.type||'UNKNOWN',source:command?.source||'unknown',status:'ignored',owner:'inactive-client',consumed:false}}
+  if(OrientationGate.blocks(command)){audit.gated++;return InputRouter.dispatch(command)}
+  audit.emissions++;return InputRouter.dispatch(command)
+}

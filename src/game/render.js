@@ -4913,3 +4913,38 @@ function polyPlanter105(q,c,ps){q.fillStyle=c;q.beginPath();ps.forEach(([x,y],i)
     state.strategy85={mainPath:path.length,sideRooms:sideRooms.length,rewardRoom:rewardRoom?{x:rewardRoom.cx,y:rewardRoom.cy}:null,guardedDoors:doors.length};
   }
   const DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.CARPET,TT.STONE_PATH]);
+  const CITADEL_PROP_TILES=Object.freeze({"bed":TT.BED,"white-bed":TT.RUMOR_BED,"prison-bed":TT.RUMOR_BED,"bench":TT.BENCH,"shelf":TT.RACK,"desk":TT.TABLE,"mapdesk":TT.TABLE,"table":TT.TABLE,"supplies":TT.CRATE,"stove":TT.COOKPOT,"medicine":TT.RUMOR_MED_CABINET,"sarcophagus":TT.STONE_PILLAR,"tomb":TT.STONE_PILLAR,"urns":TT.JAR,"chains":TT.RUMOR_WEAPON_RACK,"ritual":TT.ALTAR,"sigil":TT.ALTAR,"candles":TT.INCENSE_STAND,"treasure":TT.VAULT,"bell":TT.INCENSE_STAND,"crossbow":TT.RUMOR_WEAPON_RACK,"rack":TT.RUMOR_WEAPON_RACK,"iron-mask":TT.ARMORY,"shield":TT.ARMORY,"banner":TT.SCREEN,"furnace":TT.BRAZIER,"anvil":TT.ARMORY,"coal":TT.CRATE,"books":TT.BOOK_STACK,"statue":TT.STATUE,"incense":TT.INCENSE_STAND,"screen":TT.SCREEN});
+  function floorOnly88(x,y){return in85(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET].includes(state.map[y][x])&&!OccupancyService.isOccupied(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.stairs.x===x&&state.stairs.y===y)}
+  function sparsePair89(r,t,side='top'){
+    if(!r)return 0;let pts=[];
+    if(side==='top')pts=[[r.x+2,r.y+2],[r.x+r.w-3,r.y+2]];
+    else if(side==='bottom')pts=[[r.x+2,r.y+r.h-3],[r.x+r.w-3,r.y+r.h-3]];
+    else pts=[[r.x+2,r.cy],[r.x+r.w-3,r.cy]];
+    let n=0;for(const [x,y] of pts)if(floorOnly88(x,y)){setTerrainTile58(state.map,x,y,t);n++}return n;
+  }
+    function classGear(cls){return{weapon:cls?.startWeapon?{...(WEAPONS.find(w=>w.name===cls.startWeapon)||{}),name:cls.startWeapon}:null,armor:{...(ARMORS?.[0]||{}),name:ARMORS?.[0]?.name||'경량복',tier:1,rarity:'common'},cloak:null,relic:null,trinket:null}}
+/* r5: floor edge blending is terrain-only; never paint gradients across doors or decoration cells. */
+const GRAD_TERRAIN1025=new Set([TT.FLOOR,TT.GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.GOLD].filter(v=>v!=null));
+function playerKey1012(id,p,dir,attack){const g=x=>x?`${x.name||''}:${x.tier||0}:${x.rarity||''}:${x.upgrade||0}`:'-';return`${id}|${dir}|${attack?1:0}|${heldWeaponKey1001(p?.weapon)}|${g(p?.weapon)}|${g(p?.armor)}|${g(p?.cloak)}|${g(p?.relic)}|${g(p?.trinket)}`}
+function debugBattleCatalog57(){
+ const list=monsterSpeciesCatalog();
+ list.push({def:storyInvestigatorDefinition(),group:'보스'},{def:PALACE_KING105,group:'보스'});
+ const martial=(rank,style,final=false,pursuer=false)=>{const spec={rank,style,final,pursuer,level:final||pursuer?2:1},def=dojoCreateMartialist(rank,-1,style*10+rank,final,style,{level:spec.level,pursuer});if(!final)def.name=DOJO_STYLE_WEIGHTS105[style].name.split(' · ')[0]+' '+def.name;list.push({def,group:'무도가',dojo:spec});};
+ for(let style=0;style<DOJO_STYLE_WEIGHTS105.length;style++){for(let rank=1;rank<=4;rank++)martial(rank,style);martial(4,style,false,true);}martial(4,5,true);
+ const seen=new Set();return list.filter(e=>{if(seen.has(e.def.name))return false;seen.add(e.def.name);return true}).sort((a,b)=>a.def.name.localeCompare(b.def.name,'ko'));
+}
+function debugBattleMonster57(entry,floor,gatekeeper=false,preview=false){
+ let mon;if(entry.dojo){const d=entry.dojo;mon=preview?clone(entry.def):dojoCreateMartialist(d.rank,-1,DEBUG_BATTLE57.serial+1,d.final,d.style,{level:d.level,pursuer:d.pursuer});mon.name=entry.def.name;}else mon=scaledMonster(clone(entry.def),floor,{inventory:!preview});
+ if(mon.equipmentActor105)updateEquipmentPhase105(mon);if(gatekeeper)globalThis.__MANRU_LEGEND47__.gatekeeper(mon,floor);return mon;
+}
+function burst(x,y,color="#ffffff",count=9,power=1){
+  const now=performance.now();
+  for(let i=0;i<count;i++){
+    const a=globalThis.__MANRU_RANDOM57__()*Math.PI*2, sp=(0.45+globalThis.__MANRU_RANDOM57__()*1.4)*power;
+    FX.particles.push({
+      x:x*TILE+TILE/2,y:y*TILE+TILE/2,
+      vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+      color,start:now,life:260+globalThis.__MANRU_RANDOM57__()*420,size:1+globalThis.__MANRU_RANDOM57__()*2.4
+    });
+  }
+}

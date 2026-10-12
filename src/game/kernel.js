@@ -20,3 +20,6 @@ const TT = {
 const DIRS4=[[1,0],[-1,0],[0,1],[0,-1]];
 const DIRS8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 const BALANCE={maxFloor:25,maxLevel:18,hungerMax:125,hungerSafe:50,hungerWarn:25,hungerTick:5,baseDrop:.18,bossSkillPoints:0};
+let state = null;
+function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}

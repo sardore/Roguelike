@@ -738,3 +738,9 @@ function buildIndoorLandmark105(map,r,id){
  // The room centre is the existing generator's navigation anchor.
  setTerrainTile58(map,r.cx,r.cy,TT.FLOOR);
 }
+  const interior=(r,x,y)=>x>=r.x+2&&y>=r.y+2&&x<=r.x+r.w-3&&y<=r.y+r.h-3;
+/* ===== MANRU v4.3 VISUAL-COMPARE REFINEMENT ===== */
+const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
+  const safePut44=(r,x,y,t)=>{if(!inRoom44(r,x,y))return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;setTerrainTile58(state.map,x,y,t);return true};
+  function segment93(out,x,y,tx,ty){while(x!==tx||y!==ty){const px=x,py=y;if(x!==tx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);out.push({x,y,dir:x!==px?'h':'v'})}return{x,y}}
+let rng49=RngService.nativeRuntime();

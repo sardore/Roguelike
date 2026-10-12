@@ -57,8 +57,8 @@
 
 | 순위 | 묶음 | 선언 수 | 상태 | 해소 방법 |
 |---|---|---:|---|---|
-| P1 | 사용처의 과반이 한 도메인인 잎 선언 | 51 | `move-to`가 지금 통과시킨다(F-24와 순서 변경으로 풀림) | 도메인별 커밋으로 규칙 (a) 이동. `values`·`features`가 지킨다. 예외: `RECIPE`는 `addFusionRecipe(...)` 호출들 뒤에 있어야 한다 — `move-to`는 함수 호출 안의 `push`로 채워지는 객체를 못 본다(F-23과 같은 구멍). 호출들을 items.js로 옮기는 P3과 함께 옮긴다 |
-| P2 | 3개 이상 도메인이 나눠 쓰는 공용 선언 | 22 | 통과한다 | 서랍을 만들지 않는다. 함수는 호이스팅되므로 순서 제약이 없다: 최다 사용 도메인에 붙인다(`addLog`→monsters가 아니라 사용처 최다인 items/monsters 중, 판정은 커밋에 근거 수치로). 값인 `state`·`clamp`·`hz`·`burst`·`CLASSES`만 로드 시 읽힘을 계측(`load-reads`)한 뒤 kernel(`state`, `clamp`)이나 사용 최다 도메인으로 간다 |
+| P1 | 사용처의 과반이 한 도메인인 잎 선언 | 51 → 처리됨 50 (남은 1: `RECIPE`) | 완료(2026-10-12, 브랜치 `claude/boot-p1-leaf-declarations`, 도메인별 13커밋). 남은 선언 219 → 169 | 도메인별 커밋으로 규칙 (a) 이동. `values`·`features`가 지킨다. 예외: `RECIPE`는 `addFusionRecipe(...)` 호출들 뒤에 있어야 한다 — `move-to`는 함수 호출 안의 `push`로 채워지는 객체를 못 본다(F-23과 같은 구멍). 호출들을 items.js로 옮기는 P3과 함께 옮긴다 |
+| P2 | 3개 이상 도메인이 나눠 쓰는 공용 선언 | 23 → 처리됨 23 | 완료(2026-10-12, 같은 브랜치, 도메인별 11커밋). 남은 선언 169 → 146 | 아래 "P2 위치 규칙과 결정" 참조 |
 | P3 | 등록 API와 단계 표: `register*` 10개(`registerMovePreR8` … `registerPanelHook54`)와 그 표 20개(`*_STAGES55`, `V54`, `PANEL_HOOKS54`, `RUN_END_EFFECTS53`, `startFloorTransition` 등; 사용처가 도메인 1곳 + spine 선언·문장) | 30 | 사용처가 도메인 한 곳과 spine의 등록 문장뿐 | 불러오기·새 게임에서 한 방식으로: 등록 구조를 없애고 순서대로 적은 함수 하나로 합친다. 등록 순서 지문(`input.listeners.*` 포함)으로 검증. 사용자 결정 필요(F-10 설계와 같은 종류) |
 | P4 | 부팅 문장만 쓰는 나머지(패널·버튼 연결용 지역 변수, 루프 시작 상태, 전설 던전 `*46`/`*47` 묶음 등) | 95 | 사용처가 spine의 느슨한 문장(패널·버튼 연결, 루프 시작) | 느슨한 문장 573개를 실행 순서 그대로 부팅 구획으로 묶을 때 같이 간다. 구획 경계는 `docs/F10_DESIGN.md` 방식(문장 순서 = 동작)으로 정하고 `input.listeners` 지문과 `screens`가 지킨다 |
 | P5 | 로드 시 DOM을 만드는 요소 7개 | 7 | `move-to`가 거부(`document`를 읽고 앞 문장이 DOM을 바꿈) | `feelEl`·`panel`·`coach`·`modal`·`skillQuick`·`classDetail1001`/`classStart1001`·`hud`: 요소 생성과 `appendChild` 문장이 한 묶음이다. 그 묶음(생성+부착)을 ui.js의 한 초기화 함수 `buildPanels`로 만들어 부팅 구획에서 같은 순서로 부른다. DOM 순서(745개)·`uiactions`·`screens`로 검증 |
@@ -67,7 +67,27 @@
 | P8 | 채워지는 객체를 담는 3개 | 3 | 거부 | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
 | P9 | 전역으로 공개되어 쓰이는 1개 | 1 | `TYPED_KEYS96`는 미사용처럼 보이지만 `globalThis.__MANRU_TYPED_KEYS__`로 공개되어 ui·special·spine이 읽는다 | 유지. 공개 전역을 직접 호출로 바꾸는 별도 정리 때 |
 
-합계 51+22+30+95+7+5+5+3+1 = 219. 실행 순서 제안: P1 → P2 → P5~P8(각각 작음) → P3·P4(부팅 구획과 함께, 사용자 결정 후). 각 단계는 한 커밋이고, 커밋 전 `values`·`features`·`npm test` 전체를 통과시킨다.
+합계 51+23+30+95+7+5+5+3+1 = 219. 실행 순서 제안: P1 → P2 → P5~P8(각각 작음) → P3·P4(부팅 구획과 함께, 사용자 결정 후). 각 단계는 한 커밋이고, 커밋 전 `values`·`features`·`npm test` 전체를 통과시킨다.
+
+## P2 위치 규칙과 결정 (2026-10-12)
+서랍을 만들지 않는다. 공용 선언의 위치는 두 가지 검사로 정한다.
+
+1. **사용 폭**: 8개 이상의 도메인이 참조하고 최다 도메인 점유율이 과반 미만이면 kernel 후보다. 아니면 최다 사용 도메인에 붙이고, 동률이면 주제·같은 계열이 있는 도메인으로 정한다.
+2. **의존 방향**: kernel 후보는 kernel 선언만 참조해야 한다. 위쪽 도메인의 선언을 참조하면(예: items.js, render.js) kernel에 두면 아래가 위를 의존하게 되므로, 그 선언이 의존하는 도메인에 둔다.
+
+점유율만으로는 판단하지 않는다(사용자 확인: 사용 폭만 보고 addLog·burst를 kernel로 보내자는 제안은 의존 방향 검사로 기각).
+
+| 선언 | 사용 | 위치 | 이유 |
+|---|---|---|---|
+| state, clamp | 14 / 8 도메인, 최다 25% / 40% | kernel | 두 검사 통과, 의존 없음 |
+| runState57 | 8 도메인, ui 33% | kernel | 두 검사 통과, `state`만 참조 |
+| addLog | 12 도메인, monsters 24% | items | 폭은 통과하나 포션 이름 가림(`isPotionKnownByPlayer`, `identifyPotion`, `logWithCategory`, `sanitize56`, `POTION_LIST`)이 items.js를 가리킴 |
+| burst | 11 도메인, monsters 29% | render | 폭은 통과하나 `FX`(render.js)를 가리킴 |
+| hz | 5 도메인(8 미만), monsters 3 / branches 3 동률 | world | 주제: 재해 상태 접근자 |
+| cancelAutoWalk | 9 도메인, ui 10 | ui | 최다 사용. `Auto81`이 spine.js에 남아 있으므로 P7에서 다시 본다 |
+| 나머지 14개 | 3~8 도메인 | 최다 사용 도메인, 동률은 계열 | 커밋마다 근거 수치 기록 |
+
+결합 후보(지금은 고치지 않는다): `addLog`가 items의 포션 이름 가림 처리를 직접 참조한다. 나중에 로그 출력과 이름 가림을 분리하는 것을 검토한다.
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

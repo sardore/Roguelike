@@ -58,27 +58,51 @@
 | layout | layout 도메인 생성(70문장) — world 뒤, spine 앞 | 6503 | 331 / 573 | 755 | 75.1% | - |
 | layout 후보→도메인 | layout 이름 후보 중 다른 도메인이 주로 쓰는 50개 → 그 도메인 (규칙 a) | 6196 | 283 / 573 | 755 | 76.3% | - |
 | boot 1-2 | input/story/ui를 spine 앞으로, 고정 ui 54·input 10 → 제자리 | 5980 | 219 / 573 | 755 | 77.2% | - |
+| P1→items | SPINE_RESIDUE P1: 사용처 과반이 items.js인 잎 선언 → items.js | 5980 | 215 / 573 | 755 | 77.2% | - |
+| P1→save | SPINE_RESIDUE P1: 사용처 과반이 save.js인 잎 선언 → save.js | 5969 | 211 / 573 | 755 | 77.2% | - |
+| P1→ui | SPINE_RESIDUE P1: 사용처 과반이 ui.js인 잎 선언 → ui.js | 5952 | 204 / 573 | 755 | 77.3% | - |
+| P1→mapgen | SPINE_RESIDUE P1: 사용처 과반이 mapgen.js인 잎 선언 → mapgen.js | 5935 | 193 / 573 | 755 | 77.4% | - |
+| P1→input | SPINE_RESIDUE P1: 사용처 과반이 input.js인 잎 선언 → input.js | 5930 | 192 / 573 | 755 | 77.4% | - |
+| P1→elements | SPINE_RESIDUE P1: 사용처 과반이 elements.js인 잎 선언 → elements.js | 5930 | 191 / 573 | 755 | 77.4% | - |
+| P1→world | SPINE_RESIDUE P1: 사용처 과반이 world.js인 잎 선언 → world.js | 5927 | 189 / 573 | 755 | 77.4% | - |
+| P1→monsters | SPINE_RESIDUE P1: 사용처 과반이 monsters.js인 잎 선언 → monsters.js | 5880 | 185 / 573 | 755 | 77.6% | - |
+| P1→branches | SPINE_RESIDUE P1: 사용처 과반이 branches.js인 잎 선언 → branches.js | 5873 | 184 / 573 | 755 | 77.6% | - |
+| P1→layout | SPINE_RESIDUE P1: 사용처 과반이 layout.js인 잎 선언 → layout.js | 5872 | 179 / 573 | 755 | 77.6% | - |
+| P1→combat | SPINE_RESIDUE P1: 사용처 과반이 combat.js인 잎 선언 → combat.js | 5871 | 178 / 573 | 755 | 77.6% | - |
+| P1→render | SPINE_RESIDUE P1: 사용처 과반이 render.js인 잎 선언 → render.js | 5855 | 170 / 573 | 755 | 77.7% | - |
+| P1→special | SPINE_RESIDUE P1: 사용처 과반이 special.js인 잎 선언 → special.js | 5855 | 169 / 573 | 755 | 77.7% | - |
+| P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5855 | 167 / 573 | 755 | 77.7% | - |
+| P2→branches | SPINE_RESIDUE P2: 공용 선언 → branches.js | 5845 | 164 / 573 | 755 | 77.8% | - |
+| P2→items | SPINE_RESIDUE P2: 공용 선언 → items.js | 5836 | 162 / 573 | 755 | 77.8% | - |
+| P2→mapgen | SPINE_RESIDUE P2: 공용 선언 → mapgen.js | 5836 | 160 / 573 | 755 | 77.8% | - |
+| P2→world | SPINE_RESIDUE P2: 공용 선언 → world.js | 5820 | 158 / 573 | 755 | 77.9% | - |
+| P2→monsters | SPINE_RESIDUE P2: 공용 선언 → monsters.js | 5820 | 156 / 573 | 755 | 77.9% | - |
+| P2→save | SPINE_RESIDUE P2: 공용 선언 → save.js | 5809 | 153 / 573 | 755 | 77.9% | - |
+| P2→special | SPINE_RESIDUE P2: 공용 선언 → special.js | 5809 | 152 / 573 | 755 | 77.9% | - |
+| P2→ui | SPINE_RESIDUE P2: 공용 선언 → ui.js | 5791 | 148 / 573 | 755 | 78% | - |
+| P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5791 | 147 / 573 | 755 | 78% | - |
+| P2→render | SPINE_RESIDUE P2: 공용 선언 → render.js | 5781 | 146 / 573 | 755 | 78% | - |
 
 ## 현재 파일별 줄 수
 
 | file | lines |
 |---|---:|
-| kernel.js | 22 |
+| kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 725 |
-| items.js | 962 |
-| combat.js | 660 |
-| monsters.js | 2224 |
-| render.js | 4915 |
-| mapgen.js | 3302 |
-| special.js | 2036 |
-| branches.js | 2383 |
-| elements.js | 247 |
-| world.js | 475 |
-| layout.js | 740 |
-| input.js | 250 |
+| save.js | 754 |
+| items.js | 977 |
+| combat.js | 662 |
+| monsters.js | 2277 |
+| render.js | 4950 |
+| mapgen.js | 3332 |
+| special.js | 2038 |
+| branches.js | 2404 |
+| elements.js | 248 |
+| world.js | 498 |
+| layout.js | 746 |
+| input.js | 256 |
 | story.js | 213 |
-| ui.js | 907 |
-| spine.js | 5980 |
+| ui.js | 953 |
+| spine.js | 5781 |
 | start.js | 6 |
-| (total) | 26220 |
+| (total) | 26293 |
