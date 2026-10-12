@@ -116,7 +116,7 @@ const CLASSES=[
 
 
 
-let state = null;
+
 
 
 
@@ -235,7 +235,7 @@ function startFloorTransition(){
 
 
 
-function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
 
 
 globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
