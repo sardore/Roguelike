@@ -478,3 +478,21 @@ function protectedProp105(x,y,world=state){
  return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
 }
 const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
+function environmentStanding105(entity){
+ if(!entity||entity.hp<=0)return;
+ const r=terrainReactions105(),cells=entityFootprintCells57(entity);
+ for(const q of cells){const t=state.map[q.y]?.[q.x],spill=r.spills?.[k(q.x,q.y)];
+  if(isWaterTile105(t)||(!entity.flying&&spill?.kind==='water')){combustionContact105(entity,'water');continue;}
+  if(!entity.flying){
+   const fields=[...(state.tempFields||[]).filter(f=>f.kind==='fire').map(f=>({...f,cells:tempFieldCells57(f),damage:3})),...(state.elementFields74||[]).filter(f=>f.kind==='fire').map(f=>({...f,cells:f.cells??elementCells105(f.x,f.y,1)})),...(state.legendFireFields47||[]).map(f=>({...f,cells:f.cells??[{x:f.x,y:f.y}],damage:3}))].filter(f=>f.ttl>0&&f.cells.some(c=>c.x===q.x&&c.y===q.y));
+   const field=fields.sort((a,b)=>(b.damage||3)-(a.damage||3))[0],burn=r.burning[k(q.x,q.y)];
+   if(field||burn)combustionContact105(entity,'fire',field?fieldProvenance57(field):burn.source||{},{floorDamage:field?Math.max(3,field.damage||3):0});
+  }
+  if(!entity.flying&&spill&&spill.lastHit?.[entity===state.player?'player':entity.id57||entity.name+':'+entity.x+','+entity.y]!==state.turn){
+   const id=entity===state.player?'player':entity.id57||entity.name+':'+entity.x+','+entity.y;spill.lastHit||={};spill.lastHit[id]=state.turn;
+   if(spill.kind==='poison')applyCombatStatus(entity,'poison',3);
+   if(spill.kind==='wine')applyCombatStatus(entity,'drunk',2);
+  }
+ }
+}
+function hz(){return state?state.hazard1005:null}

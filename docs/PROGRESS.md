@@ -75,6 +75,7 @@
 | P2→branches | SPINE_RESIDUE P2: 공용 선언 → branches.js | 5845 | 164 / 573 | 755 | 77.8% | - |
 | P2→items | SPINE_RESIDUE P2: 공용 선언 → items.js | 5836 | 162 / 573 | 755 | 77.8% | - |
 | P2→mapgen | SPINE_RESIDUE P2: 공용 선언 → mapgen.js | 5836 | 160 / 573 | 755 | 77.8% | - |
+| P2→world | SPINE_RESIDUE P2: 공용 선언 → world.js | 5820 | 158 / 573 | 755 | 77.9% | - |
 
 ## 현재 파일별 줄 수
 
@@ -91,11 +92,11 @@
 | special.js | 2037 |
 | branches.js | 2404 |
 | elements.js | 248 |
-| world.js | 480 |
+| world.js | 498 |
 | layout.js | 746 |
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 931 |
-| spine.js | 5836 |
+| spine.js | 5820 |
 | start.js | 6 |
-| (total) | 26279 |
+| (total) | 26281 |
