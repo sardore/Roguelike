@@ -11,6 +11,7 @@
   "special.js",
   "branches.js",
   "elements.js",
+  "world.js",
   "spine.js",
   "input.js",
   "story.js",
