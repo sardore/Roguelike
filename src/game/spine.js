@@ -310,12 +310,7 @@ function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const pan
 
 
 
-function clientCommand9(client,command){
-  const audit=RuntimeState.client[client.kind];
-  if(!client.active()){audit.inactiveAttempts++;return{command:command?.type||'UNKNOWN',source:command?.source||'unknown',status:'ignored',owner:'inactive-client',consumed:false}}
-  if(OrientationGate.blocks(command)){audit.gated++;return InputRouter.dispatch(command)}
-  audit.emissions++;return InputRouter.dispatch(command)
-}
+
 
 
 
