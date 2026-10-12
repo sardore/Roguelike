@@ -991,7 +991,6 @@ let inventoryFiltered;
 
 
 
-function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
 
 
 
@@ -1621,31 +1620,6 @@ RuntimeState.ui.inventory=UX;
   }
 
   // replace the accumulated inventory implementations with one thumb-friendly renderer.
-  registerInventoryRenderR34('ux45-core','core',function inventoryCoreUX45(){
-    if(!inventoryOpen||!state)return;
-    const box=document.getElementById('inventory'),p=state.player;if(!box)return;
-    let filtered=inventoryFiltered();
-    if(!UX.invEquipSlot && filtered.length && !filtered.some(v=>v.idx===inventorySelection)){inventorySelection=filtered[0].idx}
-    if(!filtered.length && !UX.invEquipSlot)inventorySelection=-1;
-    const selected=UX.invEquipSlot?p[UX.invEquipSlot]:(inventorySelection>=0?p.inventory[inventorySelection]:null);
-    const tabs=[['all','전체'],['gear','장비'],['food','음식'],['treasure','유물'],['potion','비약']];
-    const equips=equipData().map(([slot,label,item,rune])=>`<button class="uxEq ${item?'':'empty'} ${UX.invEquipSlot===slot?'selected':''}" data-uxeq="${slot}">${item?uxIcon(item,'uxEqIcon'):''}<span class="ek">${label}</span><span class="en">${item?item.name:'비어 있음'}</span><span class="er">${rune}</span></button>`).join('');
-    const cells=filtered.length?filtered.map(({item,idx})=>`<button class="uxSlot ${!UX.invEquipSlot&&idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="tier">${item.tier?`T${item.tier}`:''}</span><span class="rar"></span>${uxIcon(item,'uxSlotIcon')}<span class="nm">${item.name}</span>${(item.count||1)>1?`<span class="count">×${item.count}</span>`:''}</button>`).join(''):`<div class="uxEmpty"><b>${p.inventory.length?'이 분류는 비어 있음':'행낭이 비어 있음'}</b><p>${p.inventory.length?'다른 분류를 보거나 전체 목록으로 돌아가면 된다.':'바닥의 물품은 줍 버튼이나 아이템 칸 터치로 바로 주울 수 있다.'}</p>${p.inventory.length&&inventoryTab!=='all'?'<button id="uxShowAll">전체 보기</button>':''}</div>`;
-    box.innerHTML=`<div class="uxInv"><span class="uiCorners63" aria-hidden="true"></span><div class="uxInvHead"><div class="uxTitle"><h2>행낭</h2><small>한 번 눌러 선택 · 아래 큰 버튼으로 사용/장착</small></div><div class="uxInvMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><span class="turn">TURN ${state.turn}</span></div><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div><div class="uxEquipRail">${equips}</div><div class="uxTabs">${tabs.map(([id,lab])=>`<button class="${inventoryTab===id?'active':''}" data-invtab="${id}">${lab}<span>${tabCount(id)}</span></button>`).join('')}</div><div class="uxInvMain"><div class="uxGrid" id="uxGrid">${cells}</div>${selected?detailHTML(selected,inventorySelection,UX.invEquipSlot):''}</div></div>`;
-    restoreInventoryScroll45(box.querySelector('#uxGrid'));
-    const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);if(inventoryOpen)closeInventory()};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
-    box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
-    box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
-    box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
-    box.querySelectorAll('[data-uxeq]').forEach(b=>b.addEventListener('click',()=>{const slot=b.dataset.uxeq;if(!p[slot])return;rememberInventoryScroll();UX.invEquipSlot=slot;inventorySelection=-1;renderInventory()}));
-    box.querySelectorAll('[data-bookmaterial105]').forEach(b=>b.addEventListener('click',()=>{summonState();const book=p.inventory[+b.dataset.bookindex105];if(book?.summonItem105==='book')summonOpenMaterials(book.summonBookId105,b.dataset.bookmaterial105);}));
-    box.querySelectorAll('[data-invuse]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value));
-    box.querySelectorAll('[data-invdrop]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value));
-    box.querySelectorAll('[data-invinspect]').forEach(b=>b.addEventListener('click',()=>{const it=p.inventory[+b.dataset.invinspect];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
-    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>b.addEventListener('click',()=>{const it=p[b.dataset.uxinspectequip];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
-    box.querySelectorAll('[data-uxunequip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'UNEQUIP',args:[p,b.dataset.uxunequip],source:'inventory'}).value}));
-    box.querySelectorAll('[data-uxdrop-equip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'DROP_EQUIPPED',args:[p,b.dataset.uxdropEquip],source:'inventory'}).value}));
-  });
 
 
   ActionDispatcher.register('UNEQUIP',unequipAction5);
@@ -1715,7 +1689,6 @@ RuntimeState.ui.inventory=UX;
 
   ActionDispatcher.register('UPGRADE_GEAR',upgradeGearAction5);
 
-  registerInventoryRenderR34('r47-tab-normalize','pre',()=>{if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'});registerInventoryRenderR34('r47-decorate','post',()=>decorateInventory());
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
 
@@ -1735,7 +1708,6 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  registerInventoryRenderR34('r48-clean-taxonomy','post',()=>cleanInventory());
 
   /* ---------- v4.8 test hooks ---------- */
   
@@ -1886,11 +1858,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(error){ignoreError('getSelection unavailable',error)}}},{capture:true,passive:true});
 
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
-  registerInventoryRenderR34('r53-inspect-bindings','post',()=>{
-    const box=document.getElementById('inventory');if(!box||!state)return;
-    box.querySelectorAll('[data-invinspect]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player.inventory[+n.dataset.invinspect];if(it)showInspect(it.name,itemHtml(it))})});
-    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml(it))})});
-  });
 
 
 /* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
@@ -2032,7 +1999,6 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
 
 
 
-  registerInventoryRenderR34('r56-identification','post',()=>patchInventory56());
 
 
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
@@ -2151,7 +2117,6 @@ registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards5
 
 // 인벤토리 분류와 버튼 문구
 
-registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
 
 
@@ -2814,7 +2779,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
-  registerInventoryRenderR34('r74-talisman-fusion','post',()=>{const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})});
   // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
   targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
 
@@ -3730,7 +3694,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   // v9.8.3 load quality pass is registered in the canonical lifecycle below.
   
   // r30: ammunition selection is integrated in canonical useInventoryItem.
-  registerInventoryRenderR34('r967-ammo','post',()=>{const box=document.getElementById('inventory');if(box&&state){box.querySelectorAll('[data-invuse]').forEach(b=>{const it=state.player.inventory[+b.dataset.invuse];if(it?.type==='ammo')b.textContent=it.ammoKind===state.player.loadedAmmoKind?'장전됨':'장전'});box.querySelectorAll('[data-invslot]').forEach(b=>{const it=state.player.inventory[+b.dataset.invslot];if(it?.type==='ammo'){if(it.ammoKind===state.player.loadedAmmoKind)b.classList.add('ammo967-loaded');const role=b.querySelector('.uxRole47');if(role)role.textContent='탄약'}})}});
   /* R7 refactor: ammo inventory/world visuals now use the canonical exact-item renderer. */
   registerPlayerAttackStageR('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
   globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
@@ -4201,12 +4164,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  registerInventoryRenderR34('r991-gear-identity','post',()=>{if(!state||!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];const knownCurse=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',knownCurse);if(knownCurse){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}const nm=el.querySelector('.nm,.invSlotName');if(nm&&isGearItem(it))nm.textContent=it.name});
-    box.querySelectorAll('[data-uxeq],[data-eqslot]').forEach(el=>{const slot=el.dataset.uxeq||el.dataset.eqslot,it=state.player[slot],known=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',known);if(known){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}});
-    const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,d=box.querySelector('.uxDetail,.invDetail');
-    if(isUnknownGear(selected)&&d){const h=d.querySelector('h3');if(h)h.textContent=selected.name;const sub=d.querySelector('.uxDetailHead small,.typeLine');if(sub)sub.textContent=`${publicGearType(selected.type)} · 종류 확인 · 세부 미감정`;const stats=d.querySelector('.uxStats,.invStats');if(stats)stats.innerHTML=publicGearStats(selected).map(x=>`<span class="invStatChip">${x}</span>`).join('');const desc=d.querySelector('.uxDesc,.desc');if(desc)desc.textContent='종류와 기본 외형은 확인됐다. 강화 수치, 저주 여부와 숨은 마법 옵션은 감정 전까지 드러나지 않는다.'}
-    else if(selected?.identified===true&&selected?.curse991&&d){const stats=d.querySelector('.uxStats,.invStats');if(stats&&!stats.querySelector('.curse991Chip')){const c=curseDefOf(selected),stacks=selected.curseActive991?curseStackCount(selected.curse991):0,power=stacks?curseMultiplier(selected.curse991):1,sp=document.createElement('span');sp.className='uxStat curse991Chip';sp.textContent=`저주 · ${c?.name||'불명'}${stacks>1?` · 중첩 ${stacks} / ×${power}`:''}`;stats.appendChild(sp)}}});
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
   const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
