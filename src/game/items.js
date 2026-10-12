@@ -1030,3 +1030,6 @@ function curseStats(s){return applyCurseStats(s)}
 function potionAttackCost(c,item){return state?.status?.swift>0?clamp(c*.8,.45,1.8):c}
 function foodAttackCost(c,item){if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)}
 function curseAttackCost(c){const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c}
+function potionMoveCost(c){return state?.status?.swift>0?clamp(c*.8,.55,1.15):c}
+function foodMoveCost(c){if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,1.8)}
+function curseMoveCost(c){const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c}

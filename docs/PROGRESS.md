@@ -88,6 +88,7 @@
 | P3→runend-move | P3: RUN_END_EFFECTS53 declaration moves to save.js (the previous commit said it did) | 5722 | 144 / 528 | 755 | 78.2% | - |
 | P3→playerstats | P3: PLAYER_STAT_STAGES55 registrations become an array literal (5 stages, named functions) | 5716 | 142 / 523 | 754 | 78.3% | - |
 | P3→attackcost | P3: ATTACK_COST_STAGES55 registrations become an array literal (4 stages, named functions) | 5711 | 140 / 519 | 753 | 78.3% | - |
+| P3→movecost | P3: MOVE_COST_STAGES55 registrations become an array literal (4 stages, named functions) | 5705 | 138 / 515 | 752 | 78.3% | - |
 
 ## 현재 파일별 줄 수
 
@@ -96,19 +97,19 @@
 | kernel.js | 25 |
 | catalog.js | 173 |
 | save.js | 755 |
-| items.js | 1032 |
+| items.js | 1035 |
 | combat.js | 666 |
-| monsters.js | 2277 |
+| monsters.js | 2278 |
 | render.js | 4950 |
 | mapgen.js | 3332 |
 | special.js | 2038 |
 | branches.js | 2404 |
-| elements.js | 250 |
+| elements.js | 251 |
 | world.js | 498 |
 | layout.js | 746 |
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 956 |
-| spine.js | 5711 |
+| spine.js | 5705 |
 | start.js | 6 |
-| (total) | 26288 |
+| (total) | 26287 |
