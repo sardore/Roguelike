@@ -86,6 +86,7 @@
 | P3→descend | P3: DESCEND_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5725 | 145 / 530 | 755 | 78.2% | - |
 | P3→runend | P3: RUN_END_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5723 | 145 / 528 | 755 | 78.2% | - |
 | P3→runend-move | P3: RUN_END_EFFECTS53 declaration moves to save.js (the previous commit said it did) | 5722 | 144 / 528 | 755 | 78.2% | - |
+| P3→playerstats | P3: PLAYER_STAT_STAGES55 registrations become an array literal (5 stages, named functions) | 5716 | 142 / 523 | 754 | 78.3% | - |
 
 ## 현재 파일별 줄 수
 
@@ -94,19 +95,19 @@
 | kernel.js | 25 |
 | catalog.js | 173 |
 | save.js | 755 |
-| items.js | 1026 |
-| combat.js | 663 |
+| items.js | 1029 |
+| combat.js | 665 |
 | monsters.js | 2277 |
 | render.js | 4950 |
 | mapgen.js | 3332 |
 | special.js | 2038 |
 | branches.js | 2404 |
-| elements.js | 248 |
+| elements.js | 249 |
 | world.js | 498 |
 | layout.js | 746 |
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 956 |
-| spine.js | 5722 |
+| spine.js | 5716 |
 | start.js | 6 |
 | (total) | 26288 |

@@ -241,11 +241,8 @@ function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
 
 
-const PLAYER_STAT_STAGES55=[];
-registerPlayerStatStage55('class-body-power58',s=>{if(bodyPowerActive()){s.atk+=2;s.def+=7}return s});
 const ATTACK_COST_STAGES55=[];
 const MOVE_COST_STAGES55=[];
-function registerPlayerStatStage55(id,run){if(PLAYER_STAT_STAGES55.some(v=>v.id===id))throw new Error('duplicate stat stage '+id);PLAYER_STAT_STAGES55.push({id,run})}
 function registerAttackCostStage55(id,run){if(ATTACK_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate attack cost stage '+id);ATTACK_COST_STAGES55.push({id,run})}
 function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate move cost stage '+id);MOVE_COST_STAGES55.push({id,run})}
 
@@ -1488,7 +1485,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function pcolor(i){return i?.color||'#b65b4c'}
 ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
 ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
-  registerPlayerStatStage55('potions41',s=>{if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s});registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
+  registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
 
@@ -2102,7 +2099,6 @@ window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 // PDF 포만감 규칙: 허기 0에서만 공격력 20% 감소. 기존 단계별 ATK/EVA 패널티는 제거.
 
-registerPlayerStatStage55('food57',s=>{if(state?.player?.hunger<=0)s.atk=Math.max(1,Math.round(s.atk*.8*10)/10);return s});
 registerAttackCostStage55('food57',(c,item)=>{if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)});
 registerMoveCostStage55('food57',c=>{if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,1.8)});
 /* r58 debuff overhaul: food buffs are read by the canonical statusSummary; no status wrapper here. */
@@ -2823,7 +2819,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
 
   /* equipment effects */
-  registerPlayerStatStage55('elements74',s=>{const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s});
   registerAttackCostStage55('elements74',(c,item)=>{if(item?.elementBrand74==='shock')c*=.90;return clamp(c,.25,2.2)});
   registerMoveCostStage55('elements74',c=>{if(state?.player?.armor?.elementGuard74==='shock')c*=.92;return clamp(c,.50,1.15)});
   /* r15: earth stagger guard is handled by canonical applyKnockback. */
@@ -4211,7 +4206,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   registerMoveCostStage55('curse991',c=>{const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c});
   registerAttackCostStage55('curse991',c=>{const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c});
 
-  registerPlayerStatStage55('curse991',s=>applyCurseStats(s));
 
 
 

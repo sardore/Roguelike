@@ -1024,3 +1024,6 @@ function playerAction57(kind,opts={}){
   if(opts.skill&&(state.status?.skillSeal||0)>0){ActionDispatcher.denied('skillSeal');toast('기력이 봉인되어 이 행동을 할 수 없다.');return{ok:false,kind,reason:'skillSeal'}}
   return{ok:true,kind,committed:false}
 }
+function potionStats(s){if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s}
+function hungerStats(s){if(state?.player?.hunger<=0)s.atk=Math.max(1,Math.round(s.atk*.8*10)/10);return s}
+function curseStats(s){return applyCurseStats(s)}

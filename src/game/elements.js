@@ -246,3 +246,4 @@ function tickElementFields57(){
     burst(p.x,p.y,E74[elem].color,28,1);consumeRef(item);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'reference-effect'});return true
   }
 function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
+function elementGuardStats(s){const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s}

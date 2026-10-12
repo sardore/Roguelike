@@ -661,3 +661,5 @@ function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor',
   /* ---------- lightweight procedural SFX ---------- */
   function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}
 function stairsSound(){return sfx54('stairs')}
+function classBodyPowerStats(s){if(bodyPowerActive()){s.atk+=2;s.def+=7}return s}
+const PLAYER_STAT_STAGES55=[{id:'class-body-power58',run:classBodyPowerStats},{id:'potions41',run:potionStats},{id:'food57',run:hungerStats},{id:'elements74',run:elementGuardStats},{id:'curse991',run:curseStats}];
