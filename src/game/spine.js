@@ -304,7 +304,7 @@ function gameplayInputAllowed57(opts={}){
 }
 
 
-function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
+
 
 
 
@@ -969,7 +969,7 @@ function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)retur
 
 
 
-function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
+
 
 
 
