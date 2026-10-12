@@ -2034,3 +2034,4 @@ function spreadFloor22R43(){
   for(const m of state.monsters){counts[floor22Zone43(m.y)]++;maxLocal=Math.max(maxLocal,floor22Density43(m.x,m.y,3));if(!finalReach.has(K1020(m.x,m.y)))unreachable++;if(!PlacementService.monsterCanStand(m,m.x,m.y))badTerrain++}
   state.f22Population43={ok:state.monsters.length===target&&counts.lower===F22_BUDGET43.lower&&counts.central===F22_BUDGET43.central&&counts.upper===F22_BUDGET43.upper&&maxLocal<=4&&!unreachable&&!badTerrain,count:state.monsters.length,counts,maxLocal,unreachable,badTerrain,anchors:anchors.map(a=>({...a}))};return state.f22Population43
 }
+  const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);

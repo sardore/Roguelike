@@ -3391,7 +3391,7 @@ document.body.classList.add('mf75-clean');
   /* ===== MANRU v8.8: v8.0 STRUCTURE REBASE + DISCIPLINED THEME DECOR ===== */
   V85.version='v8.8-v80-structure-theme-decor';
   
-  const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);
+
 
 
 
