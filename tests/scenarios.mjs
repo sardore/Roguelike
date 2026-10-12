@@ -345,6 +345,30 @@ export const scenarios = {
     return out;
   },
 
+  // The stage tables through their real consumers (src/qa/qa.js __MANRU_QA_CONSUMERS__): a blocked and a normal move
+  // (move hooks), picking up real floor items (pickup stages), the floor-5 boss reward (boss reward stages). Test stages
+  // at both ends of the move and pickup tables record the direction the reader walks them. The expected directions are
+  // asserted here, so a reader that changes direction fails even if the tables are unchanged.
+  async consumers(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 21 });
+    await startRun(s, 'wanderer');
+    const moves = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.moves());
+    out['consumers.moves'] = JSON.stringify(moves);
+    if (moves.error || moves.zoom.result !== false || !moves.zoom.at || moves.cook.result !== false || !moves.cook.at || !moves.normal.moved) throw new Error(`consumers: move hooks do not block or move as expected: ${JSON.stringify(moves)}`);
+    if (JSON.stringify(moves.trace) !== JSON.stringify(['pre-last', 'pre-first', 'post-first', 'post-last'])) throw new Error(`consumers: move hook directions changed: ${JSON.stringify(moves.trace)}`);
+    const pickups = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.pickups());
+    out['consumers.pickups'] = JSON.stringify(pickups);
+    if (!pickups.picked.length || pickups.picked.every((p) => !p.gained)) throw new Error(`consumers: nothing was picked up: ${JSON.stringify(pickups)}`);
+    for (const p of pickups.picked) if (p.trace.join() !== ['pre-last', 'pre-first', 'post-first', 'post-last'].join()) throw new Error(`consumers: pickup stage directions changed: ${p.trace}`);
+    const boss = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.boss());
+    out['consumers.boss'] = JSON.stringify(boss);
+    if (boss.error || !(boss.xpGain > 0) || !boss.defeated) throw new Error(`consumers: boss reward did not run: ${JSON.stringify(boss)}`);
+    out['consumers.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Features a declaration move can break without changing any snapshot the other scenarios take (F-23): the
   // talisman fusion screen must offer every recipe's result for its pair, and every citadel furnishing must be
   // queued for drawing with a tile (src/qa/qa.js __MANRU_QA_FEATURES__ runs the real code paths).

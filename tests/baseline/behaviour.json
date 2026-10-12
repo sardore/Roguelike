@@ -270,5 +270,9 @@
  "stages.descend": "1215ba8cb24db75ce90c2ea376582f6c4881d458",
  "stages.counts": "d91e082504ac1b25fbbb461a3770b2889c06beef",
  "stages.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "features.stages": "0af6a6e5969307ead097a3de53114a0c7b1d74cd"
+ "features.stages": "0af6a6e5969307ead097a3de53114a0c7b1d74cd",
+ "consumers.moves": "3c513b0835d20ebab189ba43a45121da13fa3bc9",
+ "consumers.pickups": "6ce87973df38938818c07d7978f46f0a56a05160",
+ "consumers.boss": "6ead12b4eb36b1dd5f9ee3682cb59824d52e5578",
+ "consumers.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

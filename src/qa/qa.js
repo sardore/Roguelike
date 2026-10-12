@@ -623,6 +623,53 @@ globalThis.__MANRU_QA_STAGES__=()=>{
   DESCEND_EFFECTS53.forEach(s=>add('descend','',s));
   return rows;
 };
+// Consumer paths of the stage tables the `stages` scenario cannot reach through getStats/costs (the `consumers` scenario),
+// each run through the real entry point: movePlayer (move hooks: a blocked move, a normal move), pickup (pickup stages on
+// real floor items) and bossReward (the boss reward stages on the floor-5 boss). Test stages added at both ends of a table
+// record the direction the reader walks it: move `pre` hooks and pickup `pre` stages run last-to-first, `post` first-to-last.
+globalThis.__MANRU_QA_CONSUMERS__={
+  moves(){
+    const p=state.player,out={};
+    const dir=[[1,0],[-1,0],[0,1],[0,-1]].find(([dx,dy])=>{const x=p.x+dx,y=p.y+dy,t=state.map[y]?.[x];return t!==undefined&&t!==TT.DOOR&&ReachabilityService.playerStepAllowed(p,x,y)&&!OccupancyService.isOccupied(x,y)});
+    if(!dir)return{error:'no free neighbour'};
+    const [dx,dy]=dir,at=()=>p.x+','+p.y,start=at();
+    window.__manruZoomActive=true;out.zoom={result:movePlayer(dx,dy),at:at()===start};window.__manruZoomActive=false;
+    V57.cookOpen=true;out.cook={result:movePlayer(dx,dy),at:at()===start};V57.cookOpen=false;
+    const trace=[],first=()=>{trace.push('pre-first');return true},last=()=>{trace.push('pre-last');return true},pf=()=>{trace.push('post-first')},pl=()=>{trace.push('post-last')};
+    MOVE_HOOKS_R8.pre.unshift(first);MOVE_HOOKS_R8.pre.push(last);MOVE_HOOKS_R8.post.unshift(pf);MOVE_HOOKS_R8.post.push(pl);
+    RENDER_PERF_STATE.dirty=false;
+    out.normal={result:movePlayer(dx,dy),moved:at()!==start,dirty:RENDER_PERF_STATE.dirty};
+    MOVE_HOOKS_R8.pre.shift();MOVE_HOOKS_R8.pre.pop();MOVE_HOOKS_R8.post.shift();MOVE_HOOKS_R8.post.pop();
+    out.trace=trace;
+    out.counts={pre:MOVE_HOOKS_R8.pre.length,post:MOVE_HOOKS_R8.post.length};
+    return out;
+  },
+  pickups(){
+    const p=state.player,trace=[],out={picked:[]};
+    const test=(name)=>({id:'qa-'+name,pre:()=>{trace.push('pre-'+name)},post:()=>{trace.push('post-'+name)}});
+    MANRU_PICKUP_PIPELINE_R25.stages.unshift(test('first'));MANRU_PICKUP_PIPELINE_R25.stages.push(test('last'));
+    const types=new Set();
+    for(const it of state.items.slice()){
+      if(types.has(it.type)||out.picked.length>=4)continue;types.add(it.type);
+      p.x=it.x;p.y=it.y;const before=p.inventory.length;trace.length=0;
+      const r=pickup();
+      out.picked.push({type:it.type,name:it.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice()});
+    }
+    // a potion on the ground: its stage decorates the potion before it is picked up
+    const proto=itemPrototype(POTION_LIST[0].name);
+    if(proto){const pot={...clone(proto),x:p.x,y:p.y};state.items.push(pot);const before=p.inventory.length;trace.length=0;const r=pickup();out.picked.push({type:'potion',name:pot.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice(),decorated:Object.keys(pot).sort().join(',')})}
+    MANRU_PICKUP_PIPELINE_R25.stages.shift();MANRU_PICKUP_PIPELINE_R25.stages.pop();
+    out.stages=MANRU_PICKUP_PIPELINE_R25.stages.length;
+    return out;
+  },
+  boss(){
+    window.__reseed(555);window.__MANRU_RELEASE__.regen(5);
+    const mon=state.monsters.find(m=>m.boss);if(!mon)return{error:'no boss on floor 5'};
+    const p=state.player,xp=p.xp,lvl=p.level,inv=p.inventory.length,floorItems=state.items.length;
+    bossReward(mon);
+    return{boss:mon.name,xpGain:p.xp-xp,level:p.level-lvl,items:p.inventory.length-inv,dropped:state.items.length-floorItems,defeated:!!state.bossDefeated,blink:p.blinkLevel,log:meta.slice(0,3).map(m=>m.msg)};
+  },
+};
 // Feature checks (the `features` scenario): run the real code paths of features a declaration move can silently
 // break, and report what they produced.
 globalThis.__MANRU_QA_FEATURES__={
