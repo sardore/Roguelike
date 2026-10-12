@@ -300,6 +300,26 @@ export const scenarios = {
     return out;
   },
 
+  // Features a declaration move can break without changing any snapshot the other scenarios take (F-23): the
+  // talisman fusion screen must offer every recipe's result for its pair, and every citadel furnishing must be
+  // queued for drawing with a tile (src/qa/qa.js __MANRU_QA_FEATURES__ runs the real code paths).
+  async features(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 12 });
+    await startRun(s, 'wanderer');
+    const fusion = await s.page.evaluate(() => globalThis.__MANRU_QA_FEATURES__.fusion());
+    out['features.fusion'] = JSON.stringify(fusion);
+    const notOffered = fusion.filter((r) => !r.offered);
+    if (!fusion.length || notOffered.length) throw new Error(`fusion screen does not offer ${notOffered.length} of ${fusion.length} recipes: ${notOffered.slice(0, 3).map((r) => r.pair).join(', ')}`);
+    const citadel = await s.page.evaluate(() => globalThis.__MANRU_QA_FEATURES__.citadel());
+    out['features.citadel'] = JSON.stringify(citadel);
+    const failed = citadel.kinds.filter((k) => k.failed || k.drawn !== k.cells);
+    if (!citadel.entered || !citadel.cells || failed.length) throw new Error(`citadel furnishings not drawn: ${failed.slice(0, 3).map((k) => `${k.prop} ${k.drawn}/${k.cells} ${k.error || ''}`).join('; ')}`);
+    out['features.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Saves written by V40 (tests/baseline/saves, made by make-save-fixtures.mjs) loaded by this build.
   async saves(browser, root) {
     const out = {};

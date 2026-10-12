@@ -75,6 +75,14 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 - `CITADEL_PROP_TILES`(render 분할 `75ce46e`): `Object.assign(TT,{STONE_PILLAR:44,…})`보다 앞으로 가서 소품 타일 ID 21개가 `undefined`였다. 흑성채 소품 그리기(`CITADEL_PROP_TILES[prop]`)가 그 소품들의 타일을 찾지 못했다.
 수정: 세 선언을 각자 채우기 문장 바로 뒤(spine.js)로 되돌렸다. 되돌린 뒤 분할 전 빌드와 다른 값은 의도한 둘뿐이다(`RunLifecycle` 구조, F-21의 `TERRAIN_LAYER_CACHE58`). 재발 방지: `values` 시나리오가 빈 저장소와 분기 세이브로 부팅해 클로저의 모든 최상위 값(614개)을 로드 끝에 직렬화하고 기준선과 비교한다(`tools/lib/load-probe.mjs`). 수정 전 빌드에서는 위 세 값이 다르게 나온다.
 
+**F-23 후속 확인(2026-10-11)**
+- 기능 시나리오 `features`(QA 훅 `__MANRU_QA_FEATURES__`가 실제 코드 경로를 돈다): 부적 융합표의 41개 짝마다 두 부적을 들고 융합 화면을 열어 결과가 제시되는지, 흑성채 1층의 소품 칸 1,112개를 지도 칸 그리기(`drawBranchCell`)에 넣어 전경 그리기 목록에 타일로 들어가는지 확인한다. 현재: 41/41 제시, 1,112/1,112 그려짐. F-23 수정 전 빌드(`13d737a`): 융합 0/41, 소품 799칸이 `Unknown citadel furnishing …` 오류를 던졌다(침대·벤치·책 등 15종). 즉 그 사이 빌드에서는 흑성채에서 그 소품들이 보이는 칸을 그릴 때 오류가 났다.
+- 분할 전(`12a8032^`)과 현재 비교:
+  - 최상위 값(이름은 NAMING.tsv로 대응, 4,284개 × 7 부팅 상황): 다른 것은 의도한 변경뿐이다 — `RunLifecycle`(단계 등록 구조 제거), `TERRAIN_LAYER_CACHE58`(분기 세이브, F-21), `TEMP_TERRAIN_IMMUTABLE57`·`RUNTIME_ENTRY_REACTIVE57`(F-24).
+  - `TT.*` 읽기: 분할 전 5,593곳(로드 중 실행 388), 현재 5,552곳(368). 로드 중에 할당 전 ID를 읽는 곳: 분할 전 7곳(`TEMP_TERRAIN_IMMUTABLE57`, `RUNTIME_ENTRY_REACTIVE57`, 그리고 쓰이지 않아 삭제된 `LAVA_STAND_TILES57`), 현재 0곳.
+  - Map/Set 크기(최상위 값과 그 안의 Map/Set): 빈 저장소 96개 대 93개 중 이름이 맞는 93개 비교, 다른 것은 F-24의 두 집합(7→8, 10→12)뿐. 분할 전에만 있는 3개는 삭제한 미사용 선언(`LAVA_STAND_TILES57`, `SILENT_DECOR88`, `SPECIAL_KEY94`). 분기 세이브에서는 F-21의 지형 캐시 집합 3개가 더 있다.
+  - DOM 구조(요소 순서·id·클래스): 빈 저장소·분기 세이브 모두 745개 요소가 같다.
+
 ## F-24 (수정, 동작 변경) V40부터 있던, 할당 전 타일 ID를 담는 집합 두 개
 같은 계산(로드 중 `TT.X`를 읽는데 `X`가 더 뒤에서 할당됨)에서 V40 원래 순서에서도 그런 값이 둘 있다. 지금 동작은 V40과 같다.
 - `TEMP_TERRAIN_IMMUTABLE57`: `TT.PORTAL`(68, 뒤의 `Object.assign(TT,{PORTAL:68})`에서 할당)을 담으려 했지만 `undefined`가 들어 있다. 임시 지형 변경에서 포탈이 보호되지 않는다.

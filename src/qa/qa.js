@@ -603,3 +603,36 @@ globalThis.__MANRU_QA_LOAD__={
   perf:()=>({dirty:RENDER_PERF_STATE.dirty,panelDirty:RENDER_PERF_STATE.panelDirty,miniDirty:RENDER_PERF_STATE.miniDirty}),
   clearPerf:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=false},
 };
+// Feature checks (the `features` scenario): run the real code paths of features a declaration move can silently
+// break, and report what they produced.
+globalThis.__MANRU_QA_FEATURES__={
+  // talisman fusion: for every recipe, hold both talismans (identified), open the fusion screen on the first one and
+  // read which results the screen offers
+  fusion(){
+    const out=[];
+    for(const r of RECIPES){
+      const a=TALISMAN_BY_KIND.get(r.a),b=TALISMAN_BY_KIND.get(r.b);
+      if(!a||!b){out.push({pair:r.a+'+'+r.b,result:r.name,offered:false,missing:!a?r.a:r.b});continue}
+      const before=state.player.inventory.length,K=ensureKnowledge56();
+      const ia={...clone(a),count:1},ib={...clone(b),count:1};
+      state.player.inventory.push(ia,ib);K.talismanKnown[r.a]=true;K.talismanKnown[r.b]=true;
+      openFusion(ia);
+      const body=document.getElementById('fusion74body')?.textContent||'';
+      out.push({pair:r.a+'+'+r.b,result:r.name,offered:body.includes(r.name)});
+      closeFusion();state.player.inventory.length=before;
+    }
+    return out;
+  },
+  // citadel furnishings: enter the citadel branch and draw every furnished cell through the map's cell painter
+  // (drawBranchCell, which queues the furnishing for the foreground pass); report per furnishing kind how many cells
+  // were queued with a tile and how many failed
+  citadel(){
+    const ok=branchTransition({id:'qa-features',to:'citadel:1',arrival:'up'});
+    const props=Object.entries(state.branchTerrain105?.props||{}),kinds={};
+    for(const [key,prop] of props){
+      const [x,y]=key.split(",").map(Number),fg=[],r=(kinds[prop]||={cells:0,drawn:0,failed:0,tile:null});r.cells++;
+      X.save();try{drawBranchCell(state.map[y][x],x*TILE,y*TILE,x,y,fg);const item=fg.find(v=>v.x===x&&v.y===y&&Number.isFinite(v.t));if(item){r.drawn++;r.tile=item.t}}catch(e){r.failed++;r.error=String(e.message||e)}finally{X.restore()}
+    }
+    return{entered:ok!==false&&state.branchContext105?.id==='citadel',cells:props.length,kinds:Object.keys(kinds).sort().map(p=>({prop:p,...kinds[p]}))};
+  },
+};
