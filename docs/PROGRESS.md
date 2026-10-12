@@ -59,6 +59,7 @@
 | layout 후보→도메인 | layout 이름 후보 중 다른 도메인이 주로 쓰는 50개 → 그 도메인 (규칙 a) | 6196 | 283 / 573 | 755 | 76.3% | - |
 | boot 1-2 | input/story/ui를 spine 앞으로, 고정 ui 54·input 10 → 제자리 | 5980 | 219 / 573 | 755 | 77.2% | - |
 | P1→items | SPINE_RESIDUE P1: 사용처 과반이 items.js인 잎 선언 → items.js | 5980 | 215 / 573 | 755 | 77.2% | - |
+| P1→save | SPINE_RESIDUE P1: 사용처 과반이 save.js인 잎 선언 → save.js | 5969 | 211 / 573 | 755 | 77.2% | - |
 
 ## 현재 파일별 줄 수
 
@@ -66,7 +67,7 @@
 |---|---:|
 | kernel.js | 22 |
 | catalog.js | 173 |
-| save.js | 725 |
+| save.js | 740 |
 | items.js | 966 |
 | combat.js | 660 |
 | monsters.js | 2224 |
@@ -80,6 +81,6 @@
 | input.js | 250 |
 | story.js | 213 |
 | ui.js | 907 |
-| spine.js | 5980 |
+| spine.js | 5969 |
 | start.js | 6 |
-| (total) | 26224 |
+| (total) | 26228 |

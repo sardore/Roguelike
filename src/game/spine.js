@@ -58,15 +58,7 @@ const CLASSES=[
 
 
 
-function identifyStartingItems58(){
-  const p=state.player,K=state.knowledge56=state.knowledge56||{};
-  K.potionKnown=K.potionKnown||{};K.talismanKnown=K.talismanKnown||{};
-  for(const it of [...p.inventory,p.weapon,p.armor,p.cloak,p.relic,p.trinket]){
-    if(!it)continue;it.identified=true;
-    if(it.type==='potion'&&it.potionKind)K.potionKnown[it.potionKind]=true;
-    if(it.type==='talisman'&&it.talismanKind)K.talismanKnown[it.talismanKind]=true;
-  }
-}
+
 
 
 
@@ -311,14 +303,11 @@ function gameplayInputAllowed57(opts={}){
   return owner.panels.every(p=>allowed.has(p.id))
 }
 
-function dismissGameplayInput57(all=false){
-  const panels=activeGameplayPanels57();if(!panels.length)return false;
-  for(const panel of all?panels:[panels[panels.length-1]])panel.close?.(true);clearHeldInput53();return true
-}
+
 function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
 
-const INPUT_COMMANDS57=Object.freeze(['MOVE','ATTACK','REST','PICKUP','CONTEXT_ACTION','DESCEND','BLINK','CLASS_SKILL','OPEN_MARTIAL','TOGGLE_SKILL_QUICK','QUICK_MARTIAL','OPEN_SUMMON105','TOGGLE_INVENTORY','TOGGLE_HELP','OPEN_MOBILE_DRAWER','OPEN_MAP','AUTO_EXPLORE','TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','MODAL_CANCEL','WORLD_SELECT','WORLD_INSPECT','CAMERA_PAN','CAMERA_ZOOM','CAMERA_CENTER','CLOSE_DOOR','QUICK_SLOT','TOGGLE_RELEASE','TOGGLE_SFX','STORY_OPEN_NOTE','STORY_SELECT_ENDING','STORY_CONFIRM_ENDING','STORY_CONTINUE','CIPHER_DIGIT','CIPHER_CLEAR','SAVE','LOAD']);
-const INPUT_ROUTER57_AUDIT={serial:0,handled:0,blocked:0,ignored:0,handledCommands:{},attempts:{},history:[],listeners:new Set()};
+
+
 
 
 function clientCommand9(client,command){
