@@ -230,8 +230,6 @@ globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
-function registerMovePreR8(fn){MOVE_HOOKS_R8.pre.push(fn);return fn}
-function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
 
 
@@ -1302,7 +1300,6 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
 zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">－</button><span class="zoomVal" id="zoomVal">100%</span><button type="button" id="zoomInBtn">＋</button>';document.getElementById('canvasWrap').appendChild(zoomHud);zoomHud.querySelector('#zoomOutBtn').onclick=()=>adjustZoom(-1);zoomHud.querySelector('#zoomInBtn').onclick=()=>adjustZoom(1);
 
-  registerMovePreR8(()=>!window.__manruZoomActive);
   C.addEventListener('click',e=>{if(performance.now()<window.__manruZoomSuppressUntil){e.preventDefault();e.stopImmediatePropagation()}}, {capture:true});
   
   /* r53: removed overwritten camera implementation. */
@@ -1630,7 +1627,6 @@ RuntimeState.ui.inventory=UX;
 
 
   // mobile drawer/map/inspect should block world controls but not eat their own buttons.
-  registerMovePreR8(()=>!(uiBlocking()&&!UX.modalOpening));
   /* r8: attack input blocking is handled in attackInputBlockedR8; no basicAttack wrapper. */
 
 
@@ -1758,7 +1754,6 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
 
   /* ---------- camera: default auto-follow, temporary look-pan, explicit free mode ---------- */
 
-  registerMovePostR8(ctx=>{if(ctx.moved)RENDER_PERF_STATE.dirty=true});
 
 
 
@@ -1831,7 +1826,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
 
   registerGenerationStage('aim-reset52','pre',()=>{AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null});
-  registerMovePostR8(()=>{if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetValid()){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}});
 
 
 
@@ -1900,7 +1894,6 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   
 
   /* ---------- terrain footsteps ---------- */
-  registerMovePostR8(ctx=>{if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}});
 
   /* ---------- feature room visual signatures ---------- */
   
@@ -2095,7 +2088,7 @@ cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stop
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
 
-registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open directly. */
+/* r8: basicAttack reads ux-modal-open directly. */
 
 
 // 획득 구조: 주방, 샘, 피라냐, 복숭아나무 + 설계 공백을 메운 빙결액 배치
@@ -2166,7 +2159,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   /* ---------- doors become real information gates ---------- */
   // Closed-door sight blocking is owned by the canonical SIGHT_BLOCKING_TILES57 set.
   // Door opening is canonical in moveMonsterToward.
-  registerMovePostR8(ctx=>{if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)});
 
 
 
@@ -2539,7 +2531,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   
 
 
-  registerMovePreR8(ctx=>{RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true});
   // r30: runtime item coaching/activity bookkeeping is integrated in canonical useInventoryItem.
 
 
@@ -3041,8 +3032,6 @@ document.body.classList.add('mf75-clean');
   };
 
   /* Auto-pickup is permanent. A movement also exits temporary camera inspection. */
-  registerMovePreR8(ctx=>{ctx.automationSerial81=Auto81.serial;if(Runtime81.cameraInspecting)CameraController.resume(false);return true});
-  registerMovePostR8(ctx=>{if(ctx.moved){Runtime81.qa.manualMoves++;if(ctx.automationSerial81===Auto81.serial)Auto81.pickupAll()}});
 
 
 

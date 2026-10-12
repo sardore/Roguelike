@@ -3300,7 +3300,7 @@ function enclosedRoomScore1026(r){
   const named=!!(r.name||r.label||r.append1020),indoorName=/객실|서고|보존|창고|장고|가옥|오두막|본관|내실|실내|연회|공방|병기|숙소|회랑실/.test(r.name||r.label||''),enclosed=q.enclosure>=.24||q.indoorRatio>=.36||indoorName||(named&&q.enclosure>=.16);
   return enclosed?q:null;
 }
-const MOVE_HOOKS_R8={pre:[],post:[]};
+const MOVE_HOOKS_R8={pre:[blockWhileZooming,blockWhileModalOpen,blockWhileCooking,moveCoachTip,resumeCameraOnMove],post:[markMoveDirty,clearInvalidAim,footstepFeedback,alertOnDoorOpen,trackManualMoves]};
 function resolveOccupancyInteraction57(actor,target){
   if(!occupancySwapAllowed57(actor,target))return false;
   const ax=actor.x,ay=actor.y,tx=target.x,ty=target.y;

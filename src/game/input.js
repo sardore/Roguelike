@@ -254,3 +254,5 @@ function clientCommand9(client,command){
   if(OrientationGate.blocks(command)){audit.gated++;return InputRouter.dispatch(command)}
   audit.emissions++;return InputRouter.dispatch(command)
 }
+function resumeCameraOnMove(ctx){ctx.automationSerial81=Auto81.serial;if(Runtime81.cameraInspecting)CameraController.resume(false);return true}
+function trackManualMoves(ctx){if(ctx.moved){Runtime81.qa.manualMoves++;if(ctx.automationSerial81===Auto81.serial)Auto81.pickupAll()}}

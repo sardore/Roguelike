@@ -994,3 +994,5 @@ function ammoInventory(){const box=document.getElementById('inventory');if(box&&
 function clearClosedBagPanel(){if(!inventoryOpen){const box=document.getElementById('inventory');if(box)box.innerHTML=''}}
 function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.length||0}
 function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
+function blockWhileZooming(){return !window.__manruZoomActive}
+function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}

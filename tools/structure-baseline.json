@@ -8,12 +8,12 @@
  "mutationObserver": 1,
  "duplicateSelector": 276,
  "important": 2180,
- "suffixFunction": 748,
+ "suffixFunction": 746,
  "emptyCatch": 0,
  "timer": 41,
  "sameBody": 0,
  "qaLeak": 0,
- "spineLines": 5640,
- "spineDeclarations": 133,
- "spineLooseStatements": 495
+ "spineLines": 5629,
+ "spineDeclarations": 131,
+ "spineLooseStatements": 485
 }

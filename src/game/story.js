@@ -220,3 +220,4 @@ function coachAfterPickup(ctx){
       else if(ground.type==='weapon'&&ground.range>=7)tip70('bow','활은 적을 한 번 눌러 조준하고 다시 누르거나 공격을 눌러 발사한다. 사선과 장애물을 확인하라.','적을 길게 누르면 사격 가능 여부도 표시');
     }
   }
+function moveCoachTip(ctx){RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true}
