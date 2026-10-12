@@ -206,7 +206,7 @@ const RunLifecycle={
     if(!state||!['death','victory'].includes(next)||runState57()!=='playing')return false;
     if(next==='victory'&&state.player.hp<=0){die('동시 효과');return false}
     state.runState57=next;state.dead=next==='death';state.victory=next==='victory';RuntimeState.lifecycle.phase=next==='death'?'dead':'terminal';RuntimeState.lifecycle.generation++;
-    runEndEffects53(next);
+    runEndEffects(next);
     if(!RunLifecycle.busy()){const persistence=globalThis.__MANRU_SAVE_SERVICE__.terminal(next);RuntimeState.lifecycle.last={ok:persistence.ok,kind:next,persistence};if(persistence.ok&&next==='death')RuntimeState.lifecycle.phase='tombstoned';if(!persistence.ok)toast('종료 기록 저장에 실패했다.');RunLifecycle.refreshContinue()}
     return true;
   },
@@ -471,7 +471,7 @@ function requestGameFullscreen65(){
  fullscreenPending65=true;
  document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{fullscreenResume66=false}).catch(()=>{fullscreenResume66=true}).finally(()=>{fullscreenPending65=false});return true;
 }
-function runEndEffects53(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS53)effect(kind);return true}
+function runEndEffects(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS)effect(kind);return true}
   function qaRestore60(){if(!qaSnapshot60)return false;restoreGenerationSnapshot(qaSnapshot60);resetVisualState();resetTurnState();FX.transition=null;VisibilityService.compute();updateAll();return true}
   /* ---------- contextual tutorial ---------- */
   function tipLedger66(){
@@ -752,4 +752,4 @@ function gameplayInputAllowed57(opts={}){
   const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
   return owner.panels.every(p=>allowed.has(p.id))
 }
-const RUN_END_EFFECTS53=[markDeathSeal,showEndingScreen];
+const RUN_END_EFFECTS=[markDeathSeal,showEndingScreen];

@@ -3130,7 +3130,7 @@ function movePlayer(dx,dy){
  }
 
   const p0=state?.player,ctx={dx,dy,beforeX:p0?.x,beforeY:p0?.y,targetX:(p0?.x??0)+dx,targetY:(p0?.y??0)+dy,targetTile:state?.map?.[(p0?.y??0)+dy]?.[(p0?.x??0)+dx],result:undefined};
-  for(let i=MOVE_HOOKS_R8.pre.length-1;i>=0;i--)if(MOVE_HOOKS_R8.pre[i](ctx)===false)return false;
+  for(let i=MOVE_HOOKS.pre.length-1;i>=0;i--)if(MOVE_HOOKS.pre[i](ctx)===false)return false;
   try{
     const act=playerAction57('move',{stunMessage:'몸이 굳어 한 턴을 잃었다.'});if(!act.ok)return act.consumed||false;
     const p=state.player,intended={x:dx,y:dy},ix=p.x+dx,iy=p.y+dy,intendedMon=ix>=0&&iy>=0&&ix<COLS&&iy<ROWS?findMonsterAt(ix,iy):null;
@@ -3145,7 +3145,7 @@ function movePlayer(dx,dy){
     const landing=resolvePlayerLanding57(nx,ny,{cause:'walk',discovery105});if(!landing.ok){ctx.result=false;return false}if(state.dead){ctx.result=true;return true}if(WorldTransition57.commit(act,moveTurnCost())){ctx.result=true;return true}if(state.map[ny][nx]===TT.STAIR)toast('다음 층으로 이어지는 문이다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true
   }finally{
     ctx.afterX=state?.player?.x;ctx.afterY=state?.player?.y;ctx.moved=!!state&&(ctx.afterX!==ctx.beforeX||ctx.afterY!==ctx.beforeY);
-    for(const fn of MOVE_HOOKS_R8.post)try{fn(ctx)}catch(e){console.error('move post hook',e)}
+    for(const fn of MOVE_HOOKS.post)try{fn(ctx)}catch(e){console.error('move post hook',e)}
   }
 }
   const SIZE60={
@@ -3300,7 +3300,7 @@ function enclosedRoomScore1026(r){
   const named=!!(r.name||r.label||r.append1020),indoorName=/객실|서고|보존|창고|장고|가옥|오두막|본관|내실|실내|연회|공방|병기|숙소|회랑실/.test(r.name||r.label||''),enclosed=q.enclosure>=.24||q.indoorRatio>=.36||indoorName||(named&&q.enclosure>=.16);
   return enclosed?q:null;
 }
-const MOVE_HOOKS_R8={pre:[blockWhileZooming,blockWhileModalOpen,blockWhileCooking,moveCoachTip,resumeCameraOnMove],post:[markMoveDirty,clearInvalidAim,footstepFeedback,alertOnDoorOpen,trackManualMoves]};
+const MOVE_HOOKS={pre:[blockWhileZooming,blockWhileModalOpen,blockWhileCooking,moveCoachTip,resumeCameraOnMove],post:[markMoveDirty,clearInvalidAim,footstepFeedback,alertOnDoorOpen,trackManualMoves]};
 function resolveOccupancyInteraction57(actor,target){
   if(!occupancySwapAllowed57(actor,target))return false;
   const ax=actor.x,ay=actor.y,tx=target.x,ty=target.y;

@@ -153,7 +153,7 @@ globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 function endScreen(){document.body.classList.add('end-screen95');for(const id of ['coach70','toast','autoMoveChip','vfAutoState']){const n=document.getElementById(id);if(n){n.classList.remove('show');n.style.display='none'}}}
 function presentDeath(by){document.getElementById('overlay').style.display='flex';const pct=Math.min(100,Math.round(state.floor/25*100));document.getElementById('card').innerHTML=`<div class="death94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">亡</div><div class="brand">만루 · 탐사 기록 종료</div><h1>등불이 꺼졌다</h1><div class="deathCause94">${by}</div><div class="deathStats94"><span><b>${state.floor}</b><small>도달 층</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:${pct}%"></i></div><p>객주의 복도 어딘가에서 감찰 기록이 끊겼다.<br>남은 등불들은 아무 일도 없었다는 듯 다시 흔들린다.</p><button class="deathRetry94" onclick="location.reload()">다시 침투</button></div>`}
 function presentVictory(){document.getElementById('overlay').style.display='flex';document.getElementById('card').innerHTML=`<div class="death94 victory94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">만</div><div class="brand">만루 · 천 개의 방이 잠들다</div><h1>천 개의 방이 멎었다</h1><div class="deathCause94">만루보주 격파</div><div class="deathStats94"><span><b>25</b><small>최심부</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:100%"></i></div><p>좌우와 위아래로 뒤틀리던 객실이 처음으로 제자리에서 멎는다.<br>만루의 마지막 등불이 조용히 꺼졌다.</p><button class="deathRetry94" onclick="location.reload()">새 기록 시작</button></div>`}
-function runPanelHooks(){for(const h of PANEL_HOOKS54)h.run()}
+function runPanelHooks(){for(const h of PANEL_HOOKS)h.run()}
 function setMobileTab(tab){
   mobileTab = tab;
   document.querySelectorAll(".mTab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
@@ -955,7 +955,7 @@ function markActionTime(){RC.lastActionAt=performance.now()}
 function markDeathSeal(kind){if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}}
 function showEndingScreen(){return setScreen('ending')}
 function updateFeelingPanel(){updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`}
-const PANEL_HOOKS54=[{id:'combat-hud36',run:updateCH},{id:'roles61',run:updateRolePanel},{id:'feeling62',run:updateFeelingPanel},{id:'desktop962',run:updateDesktopSide962},{id:'door964',run:refreshDoorContext}];
+const PANEL_HOOKS=[{id:'combat-hud36',run:updateCH},{id:'roles61',run:updateRolePanel},{id:'feeling62',run:updateFeelingPanel},{id:'desktop962',run:updateDesktopSide962},{id:'door964',run:refreshDoorContext}];
 function renderInventoryCore(){
     if(!inventoryOpen||!state)return;
     const box=document.getElementById('inventory'),p=state.player;if(!box)return;

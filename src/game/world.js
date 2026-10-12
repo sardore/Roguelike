@@ -352,10 +352,10 @@ function dangerousLootTerrain42(t){
 function pickup(...args){
   const action=playerAction57('pickup');if(!action.ok)return !!action.consumed;
   const ctx={args,ground:state?.items?.find(i=>i.x===state?.player?.x&&i.y===state?.player?.y)||null};
-  for(let i=MANRU_PICKUP_PIPELINE_R25.handlers.length-1;i>=0;i--){const out=MANRU_PICKUP_PIPELINE_R25.handlers[i].fn(ctx);if(out?.handled)return out.result}
-  for(let i=MANRU_PICKUP_PIPELINE_R25.stages.length-1;i>=0;i--)MANRU_PICKUP_PIPELINE_R25.stages[i].pre?.(ctx);
+  for(let i=PICKUP_PIPELINE.handlers.length-1;i>=0;i--){const out=PICKUP_PIPELINE.handlers[i].fn(ctx);if(out?.handled)return out.result}
+  for(let i=PICKUP_PIPELINE.stages.length-1;i>=0;i--)PICKUP_PIPELINE.stages[i].pre?.(ctx);
   const r=pickupBaseR25(...args);ctx.result=r;
-  for(const st of MANRU_PICKUP_PIPELINE_R25.stages)st.post?.(ctx);
+  for(const st of PICKUP_PIPELINE.stages)st.post?.(ctx);
   return r;
 }
   function terrainKey(tile,region,variant,frame,extra=''){return `${tile}:${region}:${variant}:${frame}:${extra}`}
@@ -477,7 +477,7 @@ function pickup(...args){
 function protectedProp105(x,y,world=state){
  return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
 }
-const MANRU_PICKUP_PIPELINE_R25={stages:[{id:'closed-bag-dom45',pre:undefined,post:clearClosedBagPanel},{id:'pickup-feedback54',pre:pickupFeedbackBefore,post:pickupFeedbackAfter},{id:'potion-observe56',pre:potionObserveBefore,post:potionObserveAfter},{id:'coach70',pre:undefined,post:coachAfterPickup}],handlers:[]};
+const PICKUP_PIPELINE={stages:[{id:'closed-bag-dom45',pre:undefined,post:clearClosedBagPanel},{id:'pickup-feedback54',pre:pickupFeedbackBefore,post:pickupFeedbackAfter},{id:'potion-observe56',pre:potionObserveBefore,post:potionObserveAfter},{id:'coach70',pre:undefined,post:coachAfterPickup}],handlers:[]};
 function environmentStanding105(entity){
  if(!entity||entity.hp<=0)return;
  const r=terrainReactions105(),cells=entityFootprintCells57(entity);

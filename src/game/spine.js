@@ -900,8 +900,8 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-const DESCEND_EFFECTS53=[stairsSound,markActionTime];
-function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS53)effect({fromFloor,toFloor:state.floor})}
+const DESCEND_EFFECTS=[stairsSound,markActionTime];
+function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS)effect({fromFloor,toFloor:state.floor})}
 
 
 
@@ -943,7 +943,7 @@ function descend(){
       restoreGenerationSnapshot(descentSnapshot57);resetVisualState();resetTurnState();VisibilityService.compute();setGenerationPresentation8(false);updateAll();console.error('descend generation rejected',e);toast('다음 층의 구조가 불안정해 이동하지 못했다.');return false
     }
     try{
-      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects53(fromFloor);
+      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects(fromFloor);
       if(leavingShop57){
         // Present the new map before releasing the shop-exit input lock.
         syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__?.resume?.(true);updateAll(true);
