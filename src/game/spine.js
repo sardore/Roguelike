@@ -377,10 +377,7 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-// Environmental reactions share contact, occupancy and temporary-field owners.
-function protectedProp105(x,y,world=state){
- return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
-}
+
 
 
 
@@ -985,7 +982,7 @@ function silkThreadAt54(x,y){
 
 
 
-const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
+
 function registerPickupStageR25(id,hooks){if(MANRU_PICKUP_PIPELINE_R25.stages.some(x=>x.id===id))throw new Error('duplicate pickup stage: '+id);MANRU_PICKUP_PIPELINE_R25.stages.push({id,pre:hooks?.pre,post:hooks?.post});return hooks}
 
 

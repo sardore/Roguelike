@@ -473,3 +473,8 @@ function pickup(...args){
     const legendHint=legendTerrainHint(t,x,y);
     const materialHint=elementMaterial105(t,'wood',x,y)?'불속성이 닿으면 3턴간 타며 인접 가연물로 번진다. 물속성으로 끌 수 있다.':elementMaterial105(t,'stone')?'땅속성이 닿으면 돌가루와 파편을 튀기며 부서진다.':lightAt(x,y)?'물속성으로 끄고 불속성으로 다시 지필 수 있다.':'';return{name,desc,hint:[legendHint||base.hint||'',materialHint].filter(Boolean).join(' ')};
   }
+// Environmental reactions share contact, occupancy and temporary-field owners.
+function protectedProp105(x,y,world=state){
+ return world.terrainAttachment58?.[k(x,y)]==='secret-wall'||world.map[y]?.[x]===TT.SECRET_DOOR||world.map[y]?.[x]===TT.LOCKED_GATE||world.branchPortals105?.some(q=>q.x===x&&q.y===y)||world.keyPlan96?.groups?.some(g=>(g.doors||[]).some(q=>q.x===x&&q.y===y))||(world===state&&globalThis.__MANRU_RUMOR_SPACES1030__?.mutationLocked?.(x,y));
+}
+const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
