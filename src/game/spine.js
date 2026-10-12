@@ -262,7 +262,7 @@ function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id
 
 
 
-function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}
+
 
 
 const AUTO_MOVE_RATE70=1.5;
