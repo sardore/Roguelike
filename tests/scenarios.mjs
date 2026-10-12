@@ -8,6 +8,27 @@ import { instrumentRuntime } from '../tools/lib/load-probe.mjs';
 
 const savesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'baseline', 'saves');
 
+// The text of a stage function without what a move may change: the name, whitespace, and whether it is an arrow
+// function or a function declaration (`s=>{...}` and `function f(s){...}` compare equal; so do `()=>X` and
+// `function f(){return X}`). The parameters and the body must be the same.
+export function stageBody(src) {
+  if (src == null) return null;
+  const s = src.trim().replace(/^async\s+/, '');
+  let params, body;
+  const arrow = /^(\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*([\s\S]*)$/.exec(s);
+  if (arrow) [, params, body] = arrow;
+  else {
+    const fn = /^function\s*[\w$]*\s*(\([^)]*\))\s*([\s\S]*)$/.exec(s);
+    if (!fn) return 'raw:' + s.replace(/\s+/g, ' ');
+    [, params, body] = fn;
+  }
+  params = params.replace(/^\(|\)$/g, '').replace(/\s+/g, '');
+  body = body.trim();
+  const ret = /^\{\s*return\s+([\s\S]*?);?\s*\}$/.exec(body);
+  if (ret && !/;\s*\S/.test(ret[1])) body = ret[1];
+  return `(${params})${body.replace(/\s+/g, ' ')}`;
+}
+
 export const CLASSES = ['wanderer', 'escort', 'swordsman', 'archer', 'infiltrator', 'strongman', 'summoner'];
 
 const KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'g', 'x', 'q', 'e', 'f', 'c', 'i', 'Escape'];
@@ -300,6 +321,30 @@ export const scenarios = {
     return out;
   },
 
+  // The spine-owned stage tables (move hooks, stat/cost stages, boss reward, pickup, inventory render, panel hooks,
+  // run-end/descend effects): per table the stages in run order with their ids and a hash of each function's
+  // parameters and body (stageBody), so a move that reorders a table, drops or duplicates a stage, or edits a body
+  // changes the baseline. Ids must be unique per table (this replaces the duplicate-id errors the register functions threw).
+  async stages(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 1 });
+    const rows = await s.page.evaluate(() => globalThis.__MANRU_QA_STAGES__());
+    const tables = {};
+    for (const r of rows) (tables[r.table] ||= []).push(r);
+    for (const [table, list] of Object.entries(tables)) {
+      const ids = new Map();
+      for (const r of list) if (r.id != null) {
+        if (ids.has(r.id)) throw new Error(`stages: ${table} registers the id ${r.id} twice`);
+        ids.set(r.id, true);
+      }
+      out[`stages.${table}`] = list.map((r) => [r.phase, r.id ?? '-', ...['fn', 'run', 'pre', 'post'].map((k) => (r[k] == null ? '' : sha(stageBody(r[k])).slice(0, 12)))].join('\t')).join('\n');
+    }
+    out['stages.counts'] = Object.entries(tables).map(([t, l]) => `${t}\t${l.length}`).join('\n');
+    out['stages.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Features a declaration move can break without changing any snapshot the other scenarios take (F-23): the
   // talisman fusion screen must offer every recipe's result for its pair, and every citadel furnishing must be
   // queued for drawing with a tile (src/qa/qa.js __MANRU_QA_FEATURES__ runs the real code paths).
@@ -315,6 +360,8 @@ export const scenarios = {
     out['features.citadel'] = JSON.stringify(citadel);
     const failed = citadel.kinds.filter((k) => k.failed || k.drawn !== k.cells);
     if (!citadel.entered || !citadel.cells || failed.length) throw new Error(`citadel furnishings not drawn: ${failed.slice(0, 3).map((k) => `${k.prop} ${k.drawn}/${k.cells} ${k.error || ''}`).join('; ')}`);
+    const stages = await s.page.evaluate(() => globalThis.__MANRU_QA_FEATURES__.stages());
+    out['features.stages'] = JSON.stringify(stages);
     out['features.errors'] = JSON.stringify(s.errors);
     await s.close();
     return out;

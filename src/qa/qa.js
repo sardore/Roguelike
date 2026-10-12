@@ -604,6 +604,25 @@ globalThis.__MANRU_QA_LOAD__={
   perf:()=>({dirty:RENDER_PERF_STATE.dirty,panelDirty:RENDER_PERF_STATE.panelDirty,miniDirty:RENDER_PERF_STATE.miniDirty}),
   clearPerf:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=false},
 };
+// Stage tables (the `stages` scenario): every spine-owned table in run order, with the source of each stage function,
+// so a test can compare order, ids and bodies before and after the tables move.
+globalThis.__MANRU_QA_STAGES__=()=>{
+  const src=f=>typeof f==='function'?Function.prototype.toString.call(f):null;
+  const rows=[];
+  const add=(table,phase,s)=>rows.push(typeof s==='function'?{table,phase,id:null,fn:src(s)}:{table,phase,id:s.id,run:src(s.run),fn:src(s.fn),pre:src(s.pre),post:src(s.post)});
+  MOVE_HOOKS_R8.pre.forEach(s=>add('moveHooks','pre',s));MOVE_HOOKS_R8.post.forEach(s=>add('moveHooks','post',s));
+  PLAYER_STAT_STAGES55.forEach(s=>add('playerStats','',s));
+  ATTACK_COST_STAGES55.forEach(s=>add('attackCost','',s));
+  MOVE_COST_STAGES55.forEach(s=>add('moveCost','',s));
+  BOSS_REWARD_STAGES.pre.forEach(s=>add('bossReward','pre',s));BOSS_REWARD_STAGES.post.forEach(s=>add('bossReward','post',s));
+  MANRU_PICKUP_PIPELINE_R25.stages.forEach(s=>add('pickup','',s));
+  if(INVENTORY_RENDER_R34.core)add('inventoryRender','core',INVENTORY_RENDER_R34.core);
+  INVENTORY_RENDER_R34.pre.forEach(s=>add('inventoryRender','pre',s));INVENTORY_RENDER_R34.post.forEach(s=>add('inventoryRender','post',s));
+  PANEL_HOOKS54.forEach(s=>add('panelHooks','',s));
+  RUN_END_EFFECTS53.forEach(s=>add('runEnd','',s));
+  DESCEND_EFFECTS53.forEach(s=>add('descend','',s));
+  return rows;
+};
 // Feature checks (the `features` scenario): run the real code paths of features a declaration move can silently
 // break, and report what they produced.
 globalThis.__MANRU_QA_FEATURES__={
@@ -623,6 +642,27 @@ globalThis.__MANRU_QA_FEATURES__={
       closeFusion();state.player.inventory.length=before;
     }
     return out;
+  },
+  // stage tables through their consumers: the player stats and the attack/move costs under presets that reach every
+  // stat/cost stage, the panel hooks and the inventory renderer (a digest of the page they leave), the descend effects.
+  // Every preset starts from the same saved pieces of the run and puts them back.
+  stages(){
+    const digest=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
+    const p=state.player,saved=clone({status:state.status,hunger:p.hunger,armor:p.armor,weapon:p.weapon});
+    const put=()=>{const c=clone(saved);state.status=c.status;p.hunger=c.hunger;p.armor=c.armor;p.weapon=c.weapon};
+    const curse=(slot,id)=>()=>{p[slot]||={name:'qa-'+slot,type:slot};p[slot].curseActive991=true;p[slot].curse991=id};
+    const presets=[['none',()=>{}],['swift',()=>{state.status.swift=3}],['fortify+will',()=>{state.status.fortify=3;state.status.willBoost=3}],['hungry',()=>{p.hunger=0}],['foodHaste',()=>{state.status.foodHaste57=3}],['freeStamina',()=>{state.status.freeStamina57=3}],
+      ['swift+food+free',()=>{state.status.swift=3;state.status.foodHaste57=3;state.status.freeStamina57=3}],
+      ['guard ice',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='ice'}],['guard earth',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='earth'}],['guard shock',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='shock'}],
+      ['curse binding',curse('armor','binding')],['curse clumsy',curse('weapon','clumsy')],['curse nightmare',curse('armor','nightmare')],['curse drain',curse('armor','drain')],
+      ['all',()=>{state.status.swift=3;state.status.fortify=3;state.status.willBoost=3;state.status.foodHaste57=3;state.status.freeStamina57=3;p.hunger=0;p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='shock';curse('armor','binding')();curse('weapon','clumsy')()}]];
+    const costs=presets.map(([name,set])=>{put();set();return{name,stats:getStats(),attack:attackTurnCost(p.weapon||undefined),attackShock:attackTurnCost({...(p.weapon||{}),elementBrand74:'shock'}),move:moveTurnCost()}});
+    put();
+    const page=()=>digest(document.body.innerHTML);
+    runPanelHooks();const panels=page();runPanelHooks();if(page()!==panels)throw new Error('panel hooks are not repeatable');
+    renderInventory();const inventory=page();renderInventory();if(page()!==inventory)throw new Error('inventory render is not repeatable');
+    const from=state.floor-1;let descend='ok';try{runDescendEffects53(from)}catch(e){descend=String(e.message||e)}
+    return{costs,panels,inventory,descend};
   },
   // citadel furnishings: enter the citadel branch and draw every furnished cell through the map's cell painter
   // (drawBranchCell, which queues the furnishing for the foreground pass); report per furnishing kind how many cells

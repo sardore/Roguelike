@@ -257,5 +257,18 @@
  "values.branch": "94ab29791f47d267e72305bc826beca631dfac3f",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
- "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "stages.moveHooks": "95be9cff9b5b43ec262c96d5c943b1fe52e9bb0f",
+ "stages.playerStats": "a79594bbc338266b98cd9f0877cb2bd4d1ed0835",
+ "stages.attackCost": "5399b18bf1a99409f0c9a545173190dafef04657",
+ "stages.moveCost": "0d42ab23e1e4b6371546a668b5f89b61ecbe5469",
+ "stages.bossReward": "a70bac680bd3bdab9d375fea2c554a81e997b311",
+ "stages.pickup": "3fc5537982c0198126c647304ed125d9bd574fcb",
+ "stages.inventoryRender": "ef2617b54615545cd8ac7b21f5de7a5a807a89da",
+ "stages.panelHooks": "33172b36c362081b62da4aaff21d841f3b5dab30",
+ "stages.runEnd": "8dd0e9b5e259de0814cdabe95ce7f90edbf0c9bf",
+ "stages.descend": "1215ba8cb24db75ce90c2ea376582f6c4881d458",
+ "stages.counts": "d91e082504ac1b25fbbb461a3770b2889c06beef",
+ "stages.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "features.stages": "0af6a6e5969307ead097a3de53114a0c7b1d74cd"
 }
