@@ -247,3 +247,4 @@ function tickElementFields57(){
   }
 function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
 function elementGuardStats(s){const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s}
+function elementBrandAttackCost(c,item){if(item?.elementBrand74==='shock')c*=.90;return clamp(c,.25,2.2)}

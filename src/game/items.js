@@ -1027,3 +1027,6 @@ function playerAction57(kind,opts={}){
 function potionStats(s){if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s}
 function hungerStats(s){if(state?.player?.hunger<=0)s.atk=Math.max(1,Math.round(s.atk*.8*10)/10);return s}
 function curseStats(s){return applyCurseStats(s)}
+function potionAttackCost(c,item){return state?.status?.swift>0?clamp(c*.8,.45,1.8):c}
+function foodAttackCost(c,item){if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)}
+function curseAttackCost(c){const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c}

@@ -241,9 +241,7 @@ function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
 
 
-const ATTACK_COST_STAGES55=[];
 const MOVE_COST_STAGES55=[];
-function registerAttackCostStage55(id,run){if(ATTACK_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate attack cost stage '+id);ATTACK_COST_STAGES55.push({id,run})}
 function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate move cost stage '+id);MOVE_COST_STAGES55.push({id,run})}
 
 
@@ -1485,7 +1483,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function pcolor(i){return i?.color||'#b65b4c'}
 ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
 ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
-  registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
+  registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
 
@@ -2099,7 +2097,6 @@ window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 // PDF 포만감 규칙: 허기 0에서만 공격력 20% 감소. 기존 단계별 ATK/EVA 패널티는 제거.
 
-registerAttackCostStage55('food57',(c,item)=>{if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)});
 registerMoveCostStage55('food57',c=>{if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,1.8)});
 /* r58 debuff overhaul: food buffs are read by the canonical statusSummary; no status wrapper here. */
 
@@ -2819,7 +2816,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
 
   /* equipment effects */
-  registerAttackCostStage55('elements74',(c,item)=>{if(item?.elementBrand74==='shock')c*=.90;return clamp(c,.25,2.2)});
   registerMoveCostStage55('elements74',c=>{if(state?.player?.armor?.elementGuard74==='shock')c*=.92;return clamp(c,.50,1.15)});
   /* r15: earth stagger guard is handled by canonical applyKnockback. */
   registerPlayerAttackStageR('element-brand74',(next,mon,b=0,...rest)=>{const before=mon?.hp??0,contact=mon?entityFootprintCells57(mon):[],r=next(mon,b,...rest);if(mon&&mon.hp<before)applyWeaponBrandHit(state.player,mon,before-mon.hp,contact);return r});
@@ -4204,7 +4200,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   registerPlayerAttackStageR('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
   registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
   registerMoveCostStage55('curse991',c=>{const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c});
-  registerAttackCostStage55('curse991',c=>{const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c});
 
 
 

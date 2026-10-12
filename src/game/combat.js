@@ -663,3 +663,4 @@ function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor',
 function stairsSound(){return sfx54('stairs')}
 function classBodyPowerStats(s){if(bodyPowerActive()){s.atk+=2;s.def+=7}return s}
 const PLAYER_STAT_STAGES55=[{id:'class-body-power58',run:classBodyPowerStats},{id:'potions41',run:potionStats},{id:'food57',run:hungerStats},{id:'elements74',run:elementGuardStats},{id:'curse991',run:curseStats}];
+const ATTACK_COST_STAGES55=[{id:'potions41',run:potionAttackCost},{id:'food57',run:foodAttackCost},{id:'elements74',run:elementBrandAttackCost},{id:'curse991',run:curseAttackCost}];
