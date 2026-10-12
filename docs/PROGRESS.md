@@ -91,6 +91,7 @@
 | P3→movecost | P3: MOVE_COST_STAGES55 registrations become an array literal (4 stages, named functions) | 5705 | 138 / 515 | 752 | 78.3% | - |
 | P3→panels | P3: PANEL_HOOKS54 registrations become an array literal (2 stages, named functions) | 5698 | 136 / 510 | 751 | 78.3% | - |
 | P3→inventory | P3: INVENTORY_RENDER_R34 registrations become an array literal (10 stages, named functions) | 5655 | 135 / 500 | 750 | 78.5% | - |
+| P3→boss | P3: BOSS_REWARD_STAGES registrations become an array literal (1 stages, named functions) | 5653 | 134 / 499 | 749 | 78.5% | - |
 
 ## 현재 파일별 줄 수
 
@@ -101,7 +102,7 @@
 | save.js | 755 |
 | items.js | 1043 |
 | combat.js | 666 |
-| monsters.js | 2279 |
+| monsters.js | 2280 |
 | render.js | 4950 |
 | mapgen.js | 3332 |
 | special.js | 2038 |
@@ -112,6 +113,6 @@
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 993 |
-| spine.js | 5655 |
+| spine.js | 5653 |
 | start.js | 6 |
-| (total) | 26283 |
+| (total) | 26282 |

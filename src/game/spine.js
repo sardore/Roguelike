@@ -722,7 +722,6 @@ setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
-function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[phase];if(!list)throw new Error('invalid boss reward phase '+phase);if(list.some(v=>v.id===id))throw new Error('duplicate boss reward stage '+id);list.push({id,run})}
 
 
 
@@ -1897,7 +1896,6 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
   
 
-  registerBossRewardStage55('boss54','pre',mon=>{if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLog(`보스 경험치 +${mon.xp}`);checkLevel()}if(mon?.bossPattern==='master')state.visionPenalty=0});
 
   /* ---------- death residue, directional damage feedback, boss mark renderer ---------- */
   

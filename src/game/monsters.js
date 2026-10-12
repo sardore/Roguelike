@@ -119,7 +119,7 @@ function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  if(player&&target.hp<=0)die(mon.name);
  return monsterAttackResultR(mon,ctx,{hit:true,damage:dmg,attackerAlive:mon.hp>0});
 }
-const BOSS_REWARD_STAGES={pre:[],post:[]};
+const BOSS_REWARD_STAGES={pre:[{id:'boss54',run:bossExperience}],post:[]};
 function bossReward(mon){if(mon.bossPattern==='palaceKing105')return;if(mon.branchBoss105){if(state.branchTerrain105.frostReward105)return;for(const stage of BOSS_REWARD_STAGES.pre)stage.run(mon);return mountainBossReward(mon);}if(state.floor===10&&mon.boss&&!state.passiveRecoveryUnlocked57){state.passiveRecoveryUnlocked57=true;state.lastDamageAgencyTurn57=state.playerAgencyTurns57||0;addLog('화공의 기운이 흩어진다. 숨을 고르면 상처가 빠르게 아물기 시작한다.')}
   for(const stage of BOSS_REWARD_STAGES.pre)stage.run(mon);
   state.bossDefeated=true;grantMartialManual(mon);addLog('구역 보스 격파.');
@@ -2277,3 +2277,4 @@ function entityFootprintCells57(entity,x=entity?.x,y=entity?.y){if(!entity||!Num
 function summonPlaceFollowers105(list){for(const mon of list){if(!summonActive(mon))continue;const q=PlacementService.findMonster(mon,{placementMode:'local',origin:state.player,radius:5});if(!q)throw Error('추종 소환체 착지 공간 부족');Object.assign(mon,q);const delta=state.floorTurn-(mon.summonTravelFloorTurn105??state.floorTurn);for(const key of ['nextSummonTurn57','nextAction54','nextShot54','corpseUntilFloorTurn57','reviveFullTurn57'])if(Number.isFinite(mon[key]))mon[key]+=delta;delete mon.summonTravelFloorTurn105;delete mon.allyLastActionRound57;delete mon.allyTargetId54;delete mon.allyLastSeenPosition54;delete mon.allySearchUntilTurn54;delete mon.intent54;delete mon.intent61;if(!OccupancyService.addMonster(mon))throw Error('추종 소환체 계약 불일치');}}
 const MOVE_COST_STAGES55=[{id:'potions41',run:potionMoveCost},{id:'food57',run:foodMoveCost},{id:'elements74',run:elementGuardMoveCost},{id:'curse991',run:curseMoveCost}];
 function updateRolePanel(){if(state){const near=state.monsters.filter(m=>m.role61&&isThreatVisibleToPlayer(m)).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0],el=document.getElementById('monsterInfo');if(near&&el&&!el.innerHTML.includes('role61'))el.innerHTML+=`<div class="role61" style="margin-top:5px;color:#d5b57d"><b>${ROLE_RUNE[near.role61]||'적'} ${near.role61}</b> · ${near.roleDesc61}</div>`}}
+function bossExperience(mon){if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLog(`보스 경험치 +${mon.xp}`);checkLevel()}if(mon?.bossPattern==='master')state.visionPenalty=0}
