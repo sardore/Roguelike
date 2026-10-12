@@ -13,6 +13,7 @@
 //   5 one CSS selector defined in more than one rule block (media variants of one block allowed)
 //   6 ratchet: !important, version-suffixed functions, empty catch, duplicate selectors, timers
 //   7 functions whose normalised bodies are identical (same job under different names)
+//   8 what is left in src/game/spine.js: lines, top-level declarations, loose top-level statements
 // Every metric is ratcheted against tools/structure-baseline.json: it may only go down.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -311,8 +312,22 @@ for (const [sel, uses] of selectorUses) {
 }
 
 // ---------------------------------------------------------------- ratchet
-const METRICS = ['parse', 'rebind', 'alias', 'crossFileDuplicate', 'styleInject', 'defineProperty', 'mutationObserver', 'duplicateSelector', 'important', 'suffixFunction', 'emptyCatch', 'timer', 'sameBody', 'qaLeak'];
-const counts = Object.fromEntries(METRICS.map((m) => [m, (violations[m] || []).length]));
+// ---------------------------------------------------------------- spine residue
+// What is still in src/game/spine.js (docs/SPINE_RESIDUE.md): its line count, its top-level declarations and its
+// loose top-level statements (calls, registrations, assignments). The split may only shrink them.
+const spineFile = path.join(srcDir, 'game', 'spine.js');
+const spine = { spineLines: 0, spineDeclarations: 0, spineLooseStatements: 0 };
+if (fs.existsSync(spineFile)) {
+  const spineText = fs.readFileSync(spineFile, 'utf8');
+  spine.spineLines = spineText.split('\n').length - (spineText.endsWith('\n') ? 1 : 0);
+  for (const s of acorn.parse(spineText, { ecmaVersion: 'latest', sourceType: 'script', allowReturnOutsideFunction: true }).body) {
+    if (/^(Function|Variable|Class)Declaration$/.test(s.type)) spine.spineDeclarations++;
+    else spine.spineLooseStatements++;
+  }
+}
+
+const METRICS = ['parse', 'rebind', 'alias', 'crossFileDuplicate', 'styleInject', 'defineProperty', 'mutationObserver', 'duplicateSelector', 'important', 'suffixFunction', 'emptyCatch', 'timer', 'sameBody', 'qaLeak', 'spineLines', 'spineDeclarations', 'spineLooseStatements'];
+const counts = Object.fromEntries(METRICS.map((m) => [m, m in spine ? spine[m] : (violations[m] || []).length]));
 
 if (args.includes('--report')) {
   const only = args[args.indexOf('--report') + 1];

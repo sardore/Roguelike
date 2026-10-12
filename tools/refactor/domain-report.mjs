@@ -72,6 +72,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (s.type === 'FunctionDeclaration') continue;
     for (const id of eager(s)) { const b = byBinding.get(id.name); if (!b || b.kind === 'function') continue; const decl = owner.get(id.name); if (!decl || decl === s) continue; if (topIndex.get(decl) < topIndex.get(s)) initDeps.push({ from: topIndex.get(s), to: topIndex.get(decl), name: id.name }); }
   }
+  const listIdx = process.argv.indexOf('--list');
+  if (listIdx >= 0) { for (const i of info) if (dom.get(i.name) === process.argv[listIdx + 1]) console.log(i.name, i.kind, lineCount(i.node)); process.exit(0); }
   const report = { surface: Object.fromEntries(Object.entries(surface).map(([k, v]) => [k, v.size])), top: top.length, functions: info.filter((i) => i.kind === 'function').length, consts: info.filter((i) => i.kind === 'const').length, lets: lets.length, loose: loose.length, count, lines, edges, initDeps: initDeps.length };
   if (process.argv.includes('--json')) console.log(JSON.stringify(report));
   else {

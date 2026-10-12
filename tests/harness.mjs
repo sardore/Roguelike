@@ -55,7 +55,7 @@ export async function launch() {
 }
 
 // root is a source directory, or {dir, entry} for a built page (dist/MANRU.html).
-export async function openSession(browser, root, { seed = 1, viewport = { width: 1280, height: 800 }, mobile = false, storage = null, hash = '', query = '', context = null } = {}) {
+export async function openSession(browser, root, { seed = 1, viewport = { width: 1280, height: 800 }, mobile = false, storage = null, hash = '', query = '', context = null, init = null } = {}) {
   const { dir, entry } = typeof root === 'string' ? { dir: root, entry: '' } : root;
   const server = await serve(dir);
   const ctx = context || (await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1 }));
@@ -65,6 +65,7 @@ export async function openSession(browser, root, { seed = 1, viewport = { width:
   await page.clock.install({ time: new Date(EPOCH) });
   await page.clock.pauseAt(new Date(Date.parse(EPOCH) + 1000));
   await page.addInitScript(seedScript, seed);
+  if (init) await page.addInitScript(init);
   if (storage) {
     await page.addInitScript((entries) => {
       if (sessionStorage.getItem('__manru_test_seeded')) return;

@@ -2,6 +2,20 @@
  "closure": [
   "kernel.js",
   "catalog.js",
+  "save.js",
+  "items.js",
+  "combat.js",
+  "monsters.js",
+  "render.js",
+  "mapgen.js",
+  "special.js",
+  "branches.js",
+  "elements.js",
+  "world.js",
+  "layout.js",
+  "input.js",
+  "story.js",
+  "ui.js",
   "spine.js"
  ],
  "afterClosure": [

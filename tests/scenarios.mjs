@@ -3,7 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openSession, startRun, snapshot, dismissModals, storageDump } from './harness.mjs';
+import { openSession, startRun, snapshot, dismissModals, storageDump, sha } from './harness.mjs';
+import { instrumentRuntime } from '../tools/lib/load-probe.mjs';
 
 const savesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'baseline', 'saves');
 
@@ -63,6 +64,53 @@ async function capture(out, key, s) {
   if (canvas) out[key + '.canvas.png'] = Buffer.from(canvas.split(',')[1], 'base64');
   out[key + '.css'] = await computedStyles(s.page);
 }
+
+
+// Records every addEventListener call in registration order (target, type, options), without the handler text,
+// so the fingerprint survives renames but not a changed order, a dropped or an added listener.
+const LISTENER_LOG = () => {
+  const log = (window.__listenerLog = []);
+  const label = (t) => {
+    if (t === window) return 'window';
+    if (t === document) return 'document';
+    if (t === document.documentElement) return 'html';
+    if (t === document.body) return 'body';
+    if (t && t.tagName) return t.tagName.toLowerCase() + (t.id ? '#' + t.id : '') + (t.classList && t.classList.length ? '.' + [...t.classList].slice(0, 3).join('.') : '');
+    return Object.prototype.toString.call(t);
+  };
+  const orig = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, fn, opt) {
+    const o = typeof opt === 'object' && opt ? opt : { capture: !!opt };
+    log.push([label(this), type, !!o.capture, o.passive === undefined ? '-' : !!o.passive, !!o.once].join('|'));
+    return orig.call(this, type, fn, opt);
+  };
+};
+const listenerLog = (s) => s.page.evaluate(() => (window.__listenerLog || []).join('\n'));
+async function inputState(s) {
+  return s.page.evaluate(() => {
+    const env = window.__MANRU_RELEASE__.snapshot();
+    if (env) delete env.savedAt;
+    // pointer timestamps are real time, so inertia drifts by a fraction of a pixel between runs: record the camera coarsely
+    const c0 = globalThis.__MANRU_CAMERA_STATE12__?.snapshot?.();
+    const q = (v) => Math.round(v / 32);
+    const cam = c0 && { mode: c0.mode, zoom: Math.round(c0.zoom * 20) / 20, cx: q(c0.cx), cy: q(c0.cy) };
+    const open = [...document.querySelectorAll('[id]')].filter((e) => /panel|modal|drawer|overlay|sheet|menu/i.test(e.id) && getComputedStyle(e).display !== 'none' && e.offsetParent !== null).map((e) => e.id).sort();
+    const shown = [...document.querySelectorAll('.show, .open, .active, [aria-hidden="false"]')].map((e) => (e.id || e.tagName.toLowerCase()) + '.' + [...e.classList].sort().join('.')).sort();
+    return JSON.stringify({ env, cam, open, shown, screen: document.body.dataset.manruScreen || document.documentElement.dataset.manruScreen || null, cls: document.body.className });
+  });
+}
+const KEYS2 = ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'w', 'a', 's', 'd', 'h', 'j', 'k', 'l', 'y', 'u', 'b', 'n', '1', '2', '3', 'z', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Control+ArrowRight', '?', 'Tab', 'Enter', 'Escape', 'm', 'r', 't', 'p', 'v', ' ', '.', ','];
+
+// Installed before the page's scripts (openSession init): records the continue button's class before each change
+// while the game boots, and console warnings.
+const BOOT_PROBE = () => {
+  const probe = (window.__QA_BOOT_PROBE__ = { continueClass: [], warnings: [] });
+  const warn = console.warn.bind(console);
+  console.warn = (...a) => { probe.warnings.push(a.map(String).join(' ').slice(0, 160)); warn(...a); };
+  // observer records arrive batched, so each record keeps the value the class had before that change
+  new MutationObserver((list) => { for (const m of list) if (m.target.id === 'continueBtn') probe.continueClass.push(m.oldValue); })
+    .observe(document, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ['class'] });
+};
 
 export const scenarios = {
   // New game for every class: floor 1 generation, starting kit, story state.
@@ -229,12 +277,55 @@ export const scenarios = {
     return out;
   },
 
+  // Every top-level value of the game closure when it has finished loading (tools/lib/load-probe.mjs), booted with
+  // no save and with the V40 branch save. A declaration moved before the statements that fill what it captures
+  // (TT.* tile ids, a recipe list) holds a different value here even when no other scenario reaches it.
+  async values(browser, root) {
+    const out = {};
+    const src = typeof root === 'string' ? root : root.dir;
+    const copy = path.join(path.dirname(fileURLToPath(import.meta.url)), 'artifacts', 'values-build');
+    fs.rmSync(copy, { recursive: true, force: true });
+    fs.cpSync(src, copy, { recursive: true });
+    const rt = path.join(copy, 'scripts', '10-runtime.js');
+    fs.writeFileSync(rt, instrumentRuntime(fs.readFileSync(rt, 'utf8'), { snapshot: 'all' }).text);
+    const branch = JSON.parse(fs.readFileSync(path.join(savesDir, 'branch.json'), 'utf8'));
+    for (const [name, opts] of [['empty', {}], ['branch', { storage: branch.storage }]]) {
+      const s = await openSession(browser, copy, { seed: 1, ...opts });
+      const snap = await s.page.evaluate(() => globalThis.__MANRU_SNAPSHOT__);
+      if (!snap) throw new Error(`values: the closure did not finish loading (${JSON.stringify(s.errors)})`);
+      // function names are not values: a rename must not count as a change
+      out[`values.${name}`] = Object.keys(snap).sort().map((k) => `${k}\t${String(JSON.stringify(snap[k])).replace(/<fn [^>]*>/g, '<fn>')}`).join('\n');
+      await s.close();
+    }
+    return out;
+  },
+
+  // Features a declaration move can break without changing any snapshot the other scenarios take (F-23): the
+  // talisman fusion screen must offer every recipe's result for its pair, and every citadel furnishing must be
+  // queued for drawing with a tile (src/qa/qa.js __MANRU_QA_FEATURES__ runs the real code paths).
+  async features(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 12 });
+    await startRun(s, 'wanderer');
+    const fusion = await s.page.evaluate(() => globalThis.__MANRU_QA_FEATURES__.fusion());
+    out['features.fusion'] = JSON.stringify(fusion);
+    const notOffered = fusion.filter((r) => !r.offered);
+    if (!fusion.length || notOffered.length) throw new Error(`fusion screen does not offer ${notOffered.length} of ${fusion.length} recipes: ${notOffered.slice(0, 3).map((r) => r.pair).join(', ')}`);
+    const citadel = await s.page.evaluate(() => globalThis.__MANRU_QA_FEATURES__.citadel());
+    out['features.citadel'] = JSON.stringify(citadel);
+    const failed = citadel.kinds.filter((k) => k.failed || k.drawn !== k.cells);
+    if (!citadel.entered || !citadel.cells || failed.length) throw new Error(`citadel furnishings not drawn: ${failed.slice(0, 3).map((k) => `${k.prop} ${k.drawn}/${k.cells} ${k.error || ''}`).join('; ')}`);
+    out['features.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Saves written by V40 (tests/baseline/saves, made by make-save-fixtures.mjs) loaded by this build.
   async saves(browser, root) {
     const out = {};
     for (const name of ['progress', 'dead', 'branch', 'legend']) {
       const fixture = JSON.parse(fs.readFileSync(path.join(savesDir, name + '.json'), 'utf8'));
-      const s = await openSession(browser, root, { seed: 50, storage: fixture.storage });
+      const s = await openSession(browser, root, { seed: 50, storage: fixture.storage, init: BOOT_PROBE });
       out[`saves.${name}.title`] = await s.page.evaluate(() => JSON.stringify({
         continue: document.getElementById('continueBtn')?.className,
         text: document.getElementById('continueBtn')?.textContent.replace(/\s+/g, ' ').trim(),
@@ -244,6 +335,14 @@ export const scenarios = {
       // branch saves used to be rejected during boot because branch data was not initialised yet).
       const enabled = await s.page.evaluate(() => !document.getElementById('continueBtn').classList.contains('noSave'));
       if (enabled !== (name !== 'dead')) throw new Error(`continue button for the ${name} save is ${enabled ? 'enabled' : 'disabled'} at boot`);
+      // F-21: the continue check made while the game loads must accept the run by itself (the boot-end re-check that
+      // used to repair the branch save is gone, so the enabled check above covers it) and must reject nothing on the
+      // way: the branch save used to read BRANCH_DEFS105 before its declaration. F-22: the load-time check runs once,
+      // after the save service is published, so a resumable run never sees its button disabled first.
+      const boot = await s.page.evaluate(() => window.__QA_BOOT_PROBE__);
+      out[`saves.${name}.boot`] = JSON.stringify(boot);
+      if (boot.warnings.some((w) => w.includes('cannot be continued'))) throw new Error(`the ${name} save was rejected during boot: ${boot.warnings.join(' | ')}`);
+      if (name !== 'dead' && boot.continueClass.length) throw new Error(`the continue button changed while the ${name} save booted: ${boot.continueClass.join(' -> ')}`);
       if (name !== 'dead') {
         await s.page.click('#continueBtn');
         await s.tick(3000);
@@ -338,6 +437,221 @@ export const scenarios = {
   },
 
   // Screens: pixels and computed styles. Local-only (fonts and GPU differ between machines).
+  // Keyboard (with modifiers, auto-repeat and Q hold), mouse (click, double click, right click, long press, drag, wheel)
+  // and touch (tap, long press, drag, pinch) on PC and mobile, plus the registration order of every event listener.
+  async input(browser, root) {
+    const out = {};
+    // ---- PC
+    {
+      const s = await openSession(browser, root, { seed: 21, init: LISTENER_LOG });
+      out['input.listeners.title'] = await listenerLog(s);
+      await startRun(s, 'swordsman');
+      out['input.listeners.run'] = await listenerLog(s);
+      const rnd = pick(4243);
+      for (let step = 1; step <= 120; step++) {
+        const key = KEYS2[rnd(KEYS2.length)];
+        await s.page.keyboard.press(key);
+        await s.tick(220);
+        if (step % 20 === 0) out[`input.pc.keys.${step}`] = await inputState(s);
+      }
+      await dismissModals(s);
+      // auto-repeat: hold a direction for a second (keydown with repeat), then release
+      await s.page.keyboard.down('ArrowRight');
+      for (let i = 0; i < 6; i++) { await s.tick(150); await s.page.keyboard.down('ArrowRight'); }
+      await s.page.keyboard.up('ArrowRight');
+      await s.tick(300);
+      out['input.pc.repeat'] = await inputState(s);
+      // Q held past its threshold, then released; and a short tap
+      await s.page.keyboard.down('q'); await s.tick(900); await s.page.keyboard.up('q'); await s.tick(300);
+      out['input.pc.qhold'] = await inputState(s);
+      await dismissModals(s, 2);
+      await s.page.keyboard.down('q'); await s.tick(80); await s.page.keyboard.up('q'); await s.tick(300);
+      out['input.pc.qtap'] = await inputState(s);
+      await dismissModals(s, 2);
+      // mouse on the canvas
+      const box = await s.page.evaluate(() => { const r = document.getElementById('game').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+      const at = (fx, fy) => ({ x: box.x + box.w * fx, y: box.y + box.h * fy });
+      for (const [i, [fx, fy]] of [[.5, .5], [.62, .5], [.5, .38], [.3, .6]].entries()) { const p = at(fx, fy); await s.page.mouse.click(p.x, p.y); await s.tick(400); out[`input.pc.click.${i}`] = await inputState(s); }
+      { const p = at(.55, .55); await s.page.mouse.dblclick(p.x, p.y); await s.tick(400); out['input.pc.dblclick'] = await inputState(s); }
+      { const p = at(.45, .5); await s.page.mouse.click(p.x, p.y, { button: 'right' }); await s.tick(400); out['input.pc.rightclick'] = await inputState(s); await dismissModals(s, 2); }
+      { const p = at(.5, .5); await s.page.mouse.move(p.x, p.y); await s.page.mouse.down(); await s.tick(900); await s.page.mouse.up(); await s.tick(400); out['input.pc.longpress'] = await inputState(s); await dismissModals(s, 2); }
+      for (const [i, [a, b]] of [[[.7, .5], [.35, .45]], [[.3, .7], [.62, .3]]].entries()) {
+        const p0 = at(...a), p1 = at(...b);
+        await s.page.mouse.move(p0.x, p0.y); await s.page.mouse.down();
+        for (let k = 1; k <= 8; k++) { await s.page.mouse.move(p0.x + (p1.x - p0.x) * k / 8, p0.y + (p1.y - p0.y) * k / 8); await s.tick(40); }
+        await s.page.mouse.up(); await s.tick(500); out[`input.pc.drag.${i}`] = await inputState(s);
+      }
+      { const p = at(.5, .5); await s.page.mouse.move(p.x, p.y); for (const dy of [-120, -120, 120, 240]) { await s.page.mouse.wheel(0, dy); await s.tick(250); } out['input.pc.wheel'] = await inputState(s); }
+      out['input.listeners.after'] = await listenerLog(s);
+      out['input.pc.errors'] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    // ---- mobile (touch through CDP so long press, drag and pinch are real touch sequences)
+    {
+      const s = await openSession(browser, root, { seed: 22, viewport: { width: 390, height: 844 }, mobile: true, init: LISTENER_LOG });
+      out['input.listeners.mobile.title'] = await listenerLog(s);
+      await startRun(s, 'archer');
+      out['input.listeners.mobile.run'] = await listenerLog(s);
+      const cdp = await s.page.context().newCDPSession(s.page);
+      const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map((p, i) => ({ x: p.x, y: p.y, id: i })) });
+      const box = await s.page.evaluate(() => { const r = document.getElementById('game').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+      const at = (fx, fy) => ({ x: box.x + box.w * fx, y: box.y + box.h * fy });
+      for (const [i, [fx, fy]] of [[.5, .5], [.7, .45], [.4, .6]].entries()) { const p = at(fx, fy); await touch('touchStart', [p]); await s.tick(60); await touch('touchEnd', []); await s.tick(500); out[`input.mobile.tap.${i}`] = await inputState(s); }
+      { const p = at(.5, .5); await touch('touchStart', [p]); await s.tick(300); out['input.mobile.holdpreview'] = await inputState(s); await s.tick(600); out['input.mobile.holding'] = await inputState(s); await touch('touchEnd', []); await s.tick(500); out['input.mobile.longpress'] = await inputState(s); await dismissModals(s, 2); }
+      for (const [i, [a, b]] of [[[.75, .5], [.3, .45]], [[.3, .7], [.7, .3]]].entries()) {
+        const p0 = at(...a), p1 = at(...b);
+        await touch('touchStart', [p0]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: p0.x + (p1.x - p0.x) * k / 8, y: p0.y + (p1.y - p0.y) * k / 8 }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(600); out[`input.mobile.drag.${i}`] = await inputState(s);
+      }
+      { // pinch out then in
+        const c = at(.5, .5);
+        await touch('touchStart', [{ x: c.x - 30, y: c.y }, { x: c.x + 30, y: c.y }]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: c.x - 30 - k * 2.5, y: c.y }, { x: c.x + 30 + k * 2.5, y: c.y }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(500); out['input.mobile.pinchout'] = await inputState(s);
+        await touch('touchStart', [{ x: c.x - 100, y: c.y }, { x: c.x + 100, y: c.y }]);
+        for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: c.x - 100 + k * 5, y: c.y }, { x: c.x + 100 - k * 5, y: c.y }]); await s.tick(40); }
+        await touch('touchEnd', []); await s.tick(500); out['input.mobile.pinchin'] = await inputState(s);
+      }
+      out['input.listeners.mobile.after'] = await listenerLog(s);
+      out['input.mobile.errors'] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
+  // The UI actions whose deferred follow-ups were replaced by direct calls: closing the inventory with its button (touch and
+  // click), the sound toggle in the settings panel, the throw banner of an unidentified potion, and the static first state
+  // of the pad, the context button and the settings buttons.
+  async uiactions(browser, root) {
+    const out = {};
+    for (const [form, opts] of [['pc', { viewport: { width: 1280, height: 800 } }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }]]) {
+      const s = await openSession(browser, root, { seed: 31, hash: 'debug', ...opts });
+      out[`uiactions.${form}.static`] = await s.page.evaluate(() => JSON.stringify(['.pad [data-act=rest]', '#contextActionBtn', '#mobileAutoBtn', '#releaseGear70', '#releaseGearDesktop70', '#inspectClose'].map((q) => { const e = document.querySelector(q); return e && { attrs: [...e.attributes].filter((a) => !a.name.startsWith('data-mf')).map((a) => a.name + '=' + a.value).sort(), text: e.textContent }; })));
+      await startRun(s, 'swordsman');
+      // inventory: open, close with the button
+      await s.page.keyboard.press('i'); await s.tick(500);
+      out[`uiactions.${form}.inv.open`] = await inputState(s);
+      if (form === 'mobile') { const b = await s.page.locator('#invCloseBtn').boundingBox(); await s.page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); } else await s.page.click('#invCloseBtn');
+      await s.tick(400);
+      out[`uiactions.${form}.inv.closed`] = await inputState(s);
+      // sound toggle: the label right after the click and after the clock moved
+      await s.page.keyboard.press('F1'); await s.tick(400);
+      const sfx = [];
+      for (let i = 0; i < 2; i++) { await s.page.click('#rcSfx70'); sfx.push(await s.page.evaluate(() => [document.getElementById('rcSfx70').textContent, localStorage.getItem('manruSfx54')])); await s.tick(60); sfx.push(await s.page.evaluate(() => [document.getElementById('rcSfx70').textContent, localStorage.getItem('manruSfx54')])); }
+      out[`uiactions.${form}.sfx`] = JSON.stringify(sfx);
+      await s.page.keyboard.press('Escape'); await s.tick(300);
+      // identification while the inventory is open: the list must show the identified potion once the clock moved
+      await s.page.keyboard.press('i'); await s.tick(400);
+      const ident = await s.page.evaluate(() => {
+        const st = window.__MANRU_DEBUG__.get();
+        const proto = (window.MANRU_POTIONS || []).find((p) => !p.throwable) || window.MANRU_POTIONS[0];
+        const potion = { ...JSON.parse(JSON.stringify(proto)), count: 1 };
+        st.player.inventory.push(potion);
+        const text = () => (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim();
+        const known0 = !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(potion);
+        const before = text();
+        const ret = globalThis.__MANRU_QA_IDENTIFY__.potion(potion.potionKind, 'test');
+        return { real: potion.name, known0, ret, known1: !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(potion), before, sync: text() };
+      });
+      await s.tick(60);
+      ident.after = await s.page.evaluate(() => (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim());
+      ident.afterShowsName = ident.after.includes(ident.real);
+      out[`uiactions.${form}.identify`] = JSON.stringify(ident);
+      await s.page.keyboard.press('Escape'); await s.tick(300);
+      // throw banner of an unidentified throwable potion
+      const banner = await s.page.evaluate(() => {
+        const st = window.__MANRU_DEBUG__.get();
+        const proto = (window.MANRU_POTIONS || []).find((p) => p.throwable);
+        if (!proto) return { error: 'no throwable potion' };
+        const item = { ...JSON.parse(JSON.stringify(proto)), count: 1 };
+        st.player.inventory.push(item);
+        const known = !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.knownPotion?.(item);
+        const ret = globalThis.__MANRU_ACTION_DISPATCHER__.dispatch({ type: 'ITEM_USE', args: [st.player.inventory.length - 1] });
+        return { known, real: item.name, started: !!ret?.value, sync: document.getElementById('potionTargetName')?.textContent, shown: document.getElementById('potionTargetHud')?.classList.contains('show') };
+      });
+      await s.tick(20);
+      banner.after = await s.page.evaluate(() => document.getElementById('potionTargetName')?.textContent);
+      out[`uiactions.${form}.banner`] = JSON.stringify(banner);
+      // rotation: the canvas size follows the viewport (resize and the orientationchange event, then the clock moves)
+      if (form === 'mobile') {
+        const dims = () => s.page.evaluate(() => { const c = document.getElementById('game'); return [c.width, c.height, innerWidth, innerHeight, Math.round(c.getBoundingClientRect().width), Math.round(c.getBoundingClientRect().height)]; });
+        const rot = [await dims()];
+        await s.page.setViewportSize({ width: 844, height: 390 });
+        await s.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+        await s.tick(300); rot.push(await dims());
+        await s.page.setViewportSize({ width: 390, height: 844 });
+        await s.page.evaluate(() => window.dispatchEvent(new Event('orientationchange')));
+        await s.tick(300); rot.push(await dims());
+        out['uiactions.mobile.rotate'] = JSON.stringify(rot);
+      }
+      out[`uiactions.${form}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
+  // What a load leaves behind: the state after saving and loading, with unidentified potions/talismans in the bag, an aim
+  // target set before the load, saved monsters, and a save stripped of the fields the post-load hooks (re)create. Used to
+  // decide which of the load stages registered before resetLoad (camera49, aim52, knowledge56, monster-config61, food57,
+  // potions41) change anything: run against a build with and a build without them and diff the artifacts.
+  async loadhooks(browser, root) {
+    const out = {};
+    const monsterSrc = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'monsters.js'), 'utf8');
+    const fields = [...monsterSrc.match(/function configureMonsterTraits\(m\)\{[^]*?for\(const field of \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    for (const variant of ['plain', 'stripped']) {
+      for (const form of ['pc', 'mobile']) {
+        const s = await openSession(browser, root, { seed: 51, hash: 'debug', ...(form === 'mobile' ? { viewport: { width: 390, height: 844 }, mobile: true } : {}) });
+        await startRun(s, 'swordsman');
+        await s.page.evaluate(({ variant, fields }) => {
+          const st = window.__MANRU_DEBUG__.get();
+          const cp = (o) => JSON.parse(JSON.stringify(o));
+          const potions = (window.MANRU_POTIONS || []).slice(0, 3).map((p) => ({ ...cp(p), count: 1 }));
+          const tals = (window.MANRU_TALISMANS || []).filter((t) => t.talismanKind !== 'identify').slice(0, 3).map((t) => ({ ...cp(t), count: 1 }));
+          st.player.inventory.push(...potions, ...tals);
+          for (const p of potions.slice(0, 1)) st.items.push({ ...cp(p), x: st.player.x + 1, y: st.player.y });
+          globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();
+          if (variant === 'stripped') {
+            delete st.knowledge56; delete st.roomHints56; delete st.cookbook57; delete st.tempFields;
+            for (const k of ['foodHaste57', 'warm57', 'fireCoat57', 'poisonResist57', 'vitality57', 'freeStamina57', 'swift', 'fortify', 'willBoost']) delete st.status?.[k];
+            delete st.player.foodVital57;
+            for (const m of st.monsters) for (const f of fields) delete m[f];
+          }
+        }, { variant, fields });
+        out[`loadhooks.${variant}.${form}.saved`] = await s.page.evaluate(() => { const ok = window.__MANRU_RELEASE__.save(); return JSON.stringify(ok === undefined ? 'void' : ok); });
+        // aim at the first monster, force the redraw flags off, then load
+        await s.page.evaluate(() => { const st = window.__MANRU_DEBUG__.get(); globalThis.__MANRU_QA_LOAD__.setAim(st.monsters[0] || null); globalThis.__MANRU_QA_LOAD__.clearPerf(); });
+        const pre = await s.page.evaluate(() => JSON.stringify({ aim: globalThis.__MANRU_QA_LOAD__.aim(), perf: globalThis.__MANRU_QA_LOAD__.perf() }));
+        const ret = await s.page.evaluate(() => { const r = window.__MANRU_RELEASE__.load(); return JSON.stringify(r === undefined ? 'void' : r); });
+        const post = await s.page.evaluate(() => JSON.stringify({ aim: globalThis.__MANRU_QA_LOAD__.aim(), perf: globalThis.__MANRU_QA_LOAD__.perf() }));
+        out[`loadhooks.${variant}.${form}.aim`] = JSON.stringify({ pre, ret, post });
+        // the same with a jar target (a cell) set before the load
+        await s.page.evaluate(() => { const st = window.__MANRU_DEBUG__.get(); globalThis.__MANRU_QA_LOAD__.setAim(null, { x: st.player.x + 2, y: st.player.y }); });
+        const preJar = await s.page.evaluate(() => JSON.stringify(globalThis.__MANRU_QA_LOAD__.aim()));
+        const retJar = await s.page.evaluate(() => { const r = window.__MANRU_RELEASE__.load(); return JSON.stringify(r === undefined ? 'void' : r); });
+        out[`loadhooks.${variant}.${form}.aimjar`] = JSON.stringify({ pre: preJar, ret: retJar, post: await s.page.evaluate(() => JSON.stringify(globalThis.__MANRU_QA_LOAD__.aim())) });
+        await s.tick(600);
+        out[`loadhooks.${variant}.${form}.state`] = await snapshot(s);
+        // what the player sees: the bag after the load (names of unidentified potions and talismans)
+        await s.page.keyboard.press('i'); await s.tick(500);
+        out[`loadhooks.${variant}.${form}.bag`] = await s.page.evaluate(() => JSON.stringify({
+          text: (document.getElementById('inventory')?.innerText || '').replace(/\s+/g, ' ').trim(),
+          names: (window.__MANRU_DEBUG__.get().player.inventory || []).map((i) => [i.name, globalThis.__MANRU_CONSUMABLE56_ACTIONS__.publicName?.(i), i.type === 'potion' ? !!globalThis.__MANRU_CONSUMABLE56_ACTIONS__.knownPotion(i) : null]),
+          floor: (window.__MANRU_DEBUG__.get().items || []).filter((i) => i.type === 'potion').map((i) => [i.name, globalThis.__MANRU_CONSUMABLE56_ACTIONS__.publicName?.(i)]),
+          hints: window.__MANRU_DEBUG__.get().roomHints56 ?? null,
+        }));
+        await s.page.keyboard.press('Escape'); await s.tick(300);
+        // what 60 further inputs do on the loaded run
+        const rnd = pick(7771);
+        for (let step = 1; step <= 60; step++) { const key = KEYS[rnd(KEYS.length)]; await s.page.keyboard.press(key); await s.tick(key === 'x' ? 1500 : 220); if (key === 'i' || key === 'f' || key === 'q') await dismissModals(s, 1); }
+        out[`loadhooks.${variant}.${form}.after60`] = await snapshot(s);
+        out[`loadhooks.${variant}.${form}.errors`] = JSON.stringify(s.errors);
+        await s.close();
+      }
+    }
+    return out;
+  },
+
   async screens(browser, root) {
     const out = {};
     for (const [form, opts] of [['pc', { viewport: { width: 1280, height: 800 } }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }]]) {
