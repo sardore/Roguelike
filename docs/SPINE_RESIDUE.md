@@ -52,5 +52,22 @@
 | 보류: 사용처가 로드 순서로 남은 ui 선언 | 2 | 사용처가 spine에 남은 ui 소속 선언이다. | `clearTalismanInput57`, `cipherResult` |
 | 보류: 사용처가 로드 순서로 남은 items 선언 | 1 | 사용처가 spine에 남은 items 소속 선언이다. | `typedKeyMeta96` |
 
+## 남은 선언 219개 해소 계획 (2026-10-12, 우선순위순)
+`manifest`에서 input·story·ui가 spine.js 앞으로 온 뒤 모든 선언을 다시 분석했다(각 선언의 사용처를 파일별로 세고, 가장 많이 쓰는 도메인으로 `move-to --dry`를 돌려 거부 이유를 모았다). spine.js를 `boot.js`로 바꾸는 시점은 선언이 모두 빠진 뒤이며, 그때 남는 것은 부팅 문장 573개뿐이다.
+
+| 순위 | 묶음 | 선언 수 | 상태 | 해소 방법 |
+|---|---|---:|---|---|
+| P1 | 사용처의 과반이 한 도메인인 잎 선언 | 51 | `move-to`가 지금 통과시킨다(F-24와 순서 변경으로 풀림) | 도메인별 커밋으로 규칙 (a) 이동. `values`·`features`가 지킨다. 예외: `RECIPE`는 `addFusionRecipe(...)` 호출들 뒤에 있어야 한다 — `move-to`는 함수 호출 안의 `push`로 채워지는 객체를 못 본다(F-23과 같은 구멍). 호출들을 items.js로 옮기는 P3과 함께 옮긴다 |
+| P2 | 3개 이상 도메인이 나눠 쓰는 공용 선언 | 22 | 통과한다 | 서랍을 만들지 않는다. 함수는 호이스팅되므로 순서 제약이 없다: 최다 사용 도메인에 붙인다(`addLog`→monsters가 아니라 사용처 최다인 items/monsters 중, 판정은 커밋에 근거 수치로). 값인 `state`·`clamp`·`hz`·`burst`·`CLASSES`만 로드 시 읽힘을 계측(`load-reads`)한 뒤 kernel(`state`, `clamp`)이나 사용 최다 도메인으로 간다 |
+| P3 | 등록 API와 단계 표: `register*` 10개(`registerMovePreR8` … `registerPanelHook54`)와 그 표 20개(`*_STAGES55`, `V54`, `PANEL_HOOKS54`, `RUN_END_EFFECTS53`, `startFloorTransition` 등; 사용처가 도메인 1곳 + spine 선언·문장) | 30 | 사용처가 도메인 한 곳과 spine의 등록 문장뿐 | 불러오기·새 게임에서 한 방식으로: 등록 구조를 없애고 순서대로 적은 함수 하나로 합친다. 등록 순서 지문(`input.listeners.*` 포함)으로 검증. 사용자 결정 필요(F-10 설계와 같은 종류) |
+| P4 | 부팅 문장만 쓰는 나머지(패널·버튼 연결용 지역 변수, 루프 시작 상태, 전설 던전 `*46`/`*47` 묶음 등) | 95 | 사용처가 spine의 느슨한 문장(패널·버튼 연결, 루프 시작) | 느슨한 문장 573개를 실행 순서 그대로 부팅 구획으로 묶을 때 같이 간다. 구획 경계는 `docs/F10_DESIGN.md` 방식(문장 순서 = 동작)으로 정하고 `input.listeners` 지문과 `screens`가 지킨다 |
+| P5 | 로드 시 DOM을 만드는 요소 7개 | 7 | `move-to`가 거부(`document`를 읽고 앞 문장이 DOM을 바꿈) | `feelEl`·`panel`·`coach`·`modal`·`skillQuick`·`classDetail1001`/`classStart1001`·`hud`: 요소 생성과 `appendChild` 문장이 한 묶음이다. 그 묶음(생성+부착)을 ui.js의 한 초기화 함수 `buildPanels`로 만들어 부팅 구획에서 같은 순서로 부른다. DOM 순서(745개)·`uiactions`·`screens`로 검증 |
+| P6 | 로드 시 `window.*`/`globalThis.*`를 읽는 초기화식 5개 | 5 | 거부 | `V56`·`POTION_LIST`(`window.MANRU_POTIONS`를 만드는 문장 뒤여야 한다)·`BASE_KIND74`·`legacyPotionIcon`/`legacyPotionDraw`. 값을 만드는 문장을 소유 도메인으로 옮기고 그 뒤에 선언한다 |
+| P7 | 로드 순서가 서로 걸린 5개 | 5(231줄) | 거부 | `RuntimeState`(231줄; `INPUT`을 로드 시 읽음 — input.js가 앞이므로 `INPUT` 이동 뒤 가능), `Auto81`, `selectedClass1001`(`CLASSES` 뒤), `POTION_BY_KIND`(`POTION_LIST` 뒤), `strictKeyFloors1004`(special.js의 `LOCK_SPECIAL`을 `strictLockFloors()`로 읽음 — save.js가 아니라 special.js 뒤여야 한다) |
+| P8 | 채워지는 객체를 담는 3개 | 3 | 거부 | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
+| P9 | 전역으로 공개되어 쓰이는 1개 | 1 | `TYPED_KEYS96`는 미사용처럼 보이지만 `globalThis.__MANRU_TYPED_KEYS__`로 공개되어 ui·special·spine이 읽는다 | 유지. 공개 전역을 직접 호출로 바꾸는 별도 정리 때 |
+
+합계 51+22+30+95+7+5+5+3+1 = 219. 실행 순서 제안: P1 → P2 → P5~P8(각각 작음) → P3·P4(부팅 구획과 함께, 사용자 결정 후). 각 단계는 한 커밋이고, 커밋 전 `values`·`features`·`npm test` 전체를 통과시킨다.
+
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
