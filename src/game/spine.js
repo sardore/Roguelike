@@ -583,7 +583,7 @@ const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HED
 
 
 
-function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if(t===TT.PALACE_ROCK||t===TT.PALACE_WALL_LAMP)return true;if(t>=500&&t<660)return t!==undefined&&[4,5,6,8].includes((t-500)%16);return SIGHT_BLOCKING_TILES57.has(t)}
+
 
 
 function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
@@ -732,13 +732,7 @@ ActionDispatcher.register('BLINK',useBlink);
 
 
 
-function combatLineCheckR8(x0,y0,x1,y1,opts={}){
-  const maxRange=Number.isFinite(opts.range)?opts.range:Infinity,dist=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));if(dist>maxRange)return{ok:false,reason:`사거리 밖 · ${dist}/${maxRange}칸`,dist};
-  const cells=combatLineCellsR8(x0,y0,x1,y1);
-  for(let i=0;i<cells.length;i++){const c=cells[i],last=i===cells.length-1;
-    if(combatFieldBlocksSight57(c.x,c.y))return{ok:false,reason:'연막이나 증기가 사선을 끊는다.',dist};if(!last&&tileBlocksSight(state.map[c.y]?.[c.x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};if(!last&&opts.units!==false){const block=findMonsterAt(c.x,c.y);if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block}}}
-  return{ok:true,dist,range:maxRange}
-}
+
 
 
 
@@ -803,11 +797,7 @@ function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[p
 
 
 
-function safeLootGround42(x,y){
-  if(state?.generationInProgress57&&inTutorialEntry(x,y))return false;
-  if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const t=state.map[y]?.[x];return !dangerousLootTerrain42(t)&&!tileBlocks(t)&&t!==TT.STAIR&&t!==TT.KEY_TILE&&t!==TT.PORTAL&&t!==TT.DOOR;
-}
+
 
 
 
