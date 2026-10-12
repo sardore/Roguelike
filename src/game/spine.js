@@ -357,7 +357,7 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}
+
 
 
 

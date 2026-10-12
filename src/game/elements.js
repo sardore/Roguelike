@@ -245,3 +245,4 @@ function tickElementFields57(){
     else if(elem==='earth'){for(const m of targets){hurtMon74(m,'earth',26+depthStep*6,true);if(m.hp>0)push74(m,p.x,p.y,1)}let made=0;for(const[dx,dy]of randOrder74(DIRS4))if(made<2&&tempTile74(p.x+dx*2,p.y+dy*2,TT.WALL,5,'earthwall'))made++;hurtSelf74('earth',4,'stun');addLog('대지부적 폭주: 낙석과 암벽이 솟았다.')}
     burst(p.x,p.y,E74[elem].color,28,1);consumeRef(item);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'reference-effect'});return true
   }
+function fieldProvenance57(field){if(field.sourceFaction)return field;return{...field,...effectSource57(null,{sourceFaction:field.owner57||'player',owner:field.owner57||'player',credit:field.owner57==='hostile'?null:'player'})}}

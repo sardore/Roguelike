@@ -63,6 +63,7 @@
 | P1→ui | SPINE_RESIDUE P1: 사용처 과반이 ui.js인 잎 선언 → ui.js | 5952 | 204 / 573 | 755 | 77.3% | - |
 | P1→mapgen | SPINE_RESIDUE P1: 사용처 과반이 mapgen.js인 잎 선언 → mapgen.js | 5935 | 193 / 573 | 755 | 77.4% | - |
 | P1→input | SPINE_RESIDUE P1: 사용처 과반이 input.js인 잎 선언 → input.js | 5930 | 192 / 573 | 755 | 77.4% | - |
+| P1→elements | SPINE_RESIDUE P1: 사용처 과반이 elements.js인 잎 선언 → elements.js | 5930 | 191 / 573 | 755 | 77.4% | - |
 
 ## 현재 파일별 줄 수
 
@@ -78,7 +79,7 @@
 | mapgen.js | 3330 |
 | special.js | 2036 |
 | branches.js | 2383 |
-| elements.js | 247 |
+| elements.js | 248 |
 | world.js | 475 |
 | layout.js | 740 |
 | input.js | 256 |
@@ -86,4 +87,4 @@
 | ui.js | 931 |
 | spine.js | 5930 |
 | start.js | 6 |
-| (total) | 26247 |
+| (total) | 26248 |
