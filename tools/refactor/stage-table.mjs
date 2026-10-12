@@ -39,7 +39,8 @@ for (const stmt of closure.body) {
   if (reg) calls.push({ stmt, call, reg: reg[1], via: reg[0] });
   else if (direct && cal.type === 'MemberExpression' && cal.object.name === table && cal.property.name === 'push') calls.push({ stmt, call, reg: { shape: 'bare', phase: null, fnArg: 0 }, via: 'push' });
 }
-if (!calls.length) throw new Error(`no registration of ${table} found`);
+const relocateOnly = !calls.length && spec.moveTo;
+if (!calls.length && !relocateOnly) throw new Error(`no registration of ${table} found`);
 
 const slice = (n) => text.slice(n.start, n.end);
 const taken = new Set(A.bindings.filter((b) => b.scope === closure).map((b) => b.name));
@@ -104,7 +105,20 @@ else if (table === 'MANRU_PICKUP_PIPELINE_R25') literal = `{stages:${list('')},h
 else if (table === 'INVENTORY_RENDER_R34') literal = `{core:${(entries.core || [null])[0]},pre:${list('pre')},post:${list('post')}}`;
 else literal = list('');
 
-const edits = [{ start: d.init.start, end: d.init.end, text: literal }];
+const segEnd = (file) => {
+  const m = marks.find((x) => x.file === file);
+  if (!m) throw new Error(`no segment ${file}`);
+  const next = marks.find((x) => x.at > m.at);
+  return next ? next.at : text.indexOf('\n})();', m.at);
+};
+// the table's declaration: rewritten in place, or moved to the file that reads it (the literal only names function
+// declarations, which are hoisted, so its position inside the closure does not matter)
+const edits = [];
+if (spec.moveTo && spec.moveTo !== fileAt(d.start)) {
+  if (decl.declarations.length !== 1) throw new Error(`${table} shares its declaration`);
+  const lit = relocateOnly ? slice(d.init) : literal;
+  edits.push({ start: decl.start, end: decl.end, text: '\u0001' }, { start: segEnd(spec.moveTo), end: segEnd(spec.moveTo), text: `const ${table}=${lit};\n` });
+} else if (!relocateOnly) edits.push({ start: d.init.start, end: d.init.end, text: literal });
 for (const c of calls) edits.push({ start: c.stmt.start, end: c.stmt.end, text: '\u0001' });
 // register functions that are no longer used
 const removed = new Set(calls.map((c) => c.stmt));
@@ -121,10 +135,7 @@ for (const name of spec.remove || []) {
 const byFile = {};
 for (const f of newFns) (byFile[f.dest] ||= []).push(f.text);
 for (const [file, fns] of Object.entries(byFile)) {
-  const m = marks.find((x) => x.file === file);
-  if (!m) throw new Error(`no segment ${file}`);
-  const next = marks.find((x) => x.at > m.at);
-  const at = next ? next.at : text.indexOf('\n})();', m.at);
+  const at = segEnd(file);
   edits.push({ start: at, end: at, text: fns.join('\n') + '\n' });
 }
 edits.sort((a, b) => b.start - a.start);

@@ -85,6 +85,7 @@
 | P3→recipe | P3-1: RECIPE becomes one literal (FUSION_RECIPES) next to the Map built from it | 5727 | 145 / 532 | 755 | 78.2% | - |
 | P3→descend | P3: DESCEND_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5725 | 145 / 530 | 755 | 78.2% | - |
 | P3→runend | P3: RUN_END_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5723 | 145 / 528 | 755 | 78.2% | - |
+| P3→runend-move | P3: RUN_END_EFFECTS53 declaration moves to save.js (the previous commit said it did) | 5722 | 144 / 528 | 755 | 78.2% | - |
 
 ## 현재 파일별 줄 수
 
@@ -92,7 +93,7 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 754 |
+| save.js | 755 |
 | items.js | 1026 |
 | combat.js | 663 |
 | monsters.js | 2277 |
@@ -106,6 +107,6 @@
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 956 |
-| spine.js | 5723 |
+| spine.js | 5722 |
 | start.js | 6 |
 | (total) | 26288 |

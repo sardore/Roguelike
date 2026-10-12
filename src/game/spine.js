@@ -1053,7 +1053,6 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 
 
 
-const RUN_END_EFFECTS53=[markDeathSeal,showEndingScreen];
 
 
 

@@ -752,3 +752,4 @@ function gameplayInputAllowed57(opts={}){
   const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
   return owner.panels.every(p=>allowed.has(p.id))
 }
+const RUN_END_EFFECTS53=[markDeathSeal,showEndingScreen];
