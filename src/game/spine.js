@@ -1053,7 +1053,7 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 
 
 
-const RUN_END_EFFECTS53=[];
+const RUN_END_EFFECTS53=[markDeathSeal,showEndingScreen];
 
 
 
@@ -4106,7 +4106,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     globalThis.__MANRU_TURN_PIPELINE__.register('camera-save984',{post:()=>{if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}});
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
     // r53: overwritten save implementation retired.
-  RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
 
 
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
@@ -4366,7 +4365,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 RuntimeState.ui.screen=SCREEN1002;
 
 
-      RUN_END_EFFECTS53.push(()=>setScreen('ending'));
 
   function bootScreen1002(){
     if(SCREEN1002.booted)return;SCREEN1002.booted=true;

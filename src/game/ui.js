@@ -952,3 +952,5 @@ function showInspect(title,html){
     directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   }
 function markActionTime(){RC.lastActionAt=performance.now()}
+function markDeathSeal(kind){if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}}
+function showEndingScreen(){return setScreen('ending')}
