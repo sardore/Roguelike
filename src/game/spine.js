@@ -2767,60 +2767,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
-  addFusionRecipe('elem_fire','upgrade',{kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'});
-  addFusionRecipe('elem_shock','upgrade',{kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'});
-  addFusionRecipe('elem_water','upgrade',{kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'});
-  addFusionRecipe('elem_ice','upgrade',{kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'});
-  addFusionRecipe('elem_grass','upgrade',{kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'});
-  addFusionRecipe('elem_earth','upgrade',{kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'});
-
-  // 원소 + 폭발 : 생원소의 자기역류를 없애고 목표 지점에 집중한다.
-  addFusionRecipe('elem_fire','blast',{kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 층 비례 화염폭발 + 화염지대',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'});
-  addFusionRecipe('elem_shock','blast',{kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'층 비례 연쇄 뇌격 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'});
-  addFusionRecipe('elem_water','blast',{kind:'f_water_blast',name:'조수 폭쇄부적',seal:'潮',element:'water',mode:'target',effect:'bomb_water',range:5,ability:'층 비례 수압 폭발 · 강한 밀치기 · 소화',desc:'강한 층 비례 수압 피해와 밀치기로 진형을 붕괴시키는 수압 폭탄이다.'});
-  addFusionRecipe('elem_ice','blast',{kind:'f_ice_blast',name:'빙폭부적',seal:'雪',element:'ice',mode:'target',effect:'bomb_ice',range:5,ability:'층 비례 빙결폭발 · 비보스 경직',desc:'강해지는 급랭 피해와 경직으로 각개격파 시간을 번다.'});
-  addFusionRecipe('elem_grass','blast',{kind:'f_grass_blast',name:'목폭부적',seal:'荊',element:'grass',mode:'target',effect:'bomb_grass',range:5,ability:'층 비례 독분폭발 · 뿌리 구속',desc:'강한 직접 피해와 독·구속을 함께 퍼뜨린다.'});
-  addFusionRecipe('elem_earth','blast',{kind:'f_earth_blast',name:'지폭부적',seal:'震',element:'earth',mode:'target',effect:'bomb_earth',range:5,ability:'층 비례 고충격 폭발 · 밀치기/경직',desc:'층이 깊어질수록 강해지는 충격파로 지상 적의 진형을 무너뜨린다.'});
-
-  // 일부 원소 + 기능 조합
-  addFusionRecipe('elem_fire','ward',{kind:'f_fire_ward',name:'화막부적',seal:'熾',element:'fire',mode:'instant',effect:'fireward',ability:'7턴 보호막 + 일시 화염저항',desc:'몸을 화염 장막으로 감싸고 주변에 불길을 남긴다.'});
-  addFusionRecipe('elem_shock','blink',{kind:'f_shock_blink',name:'뇌섬부적',seal:'閃',element:'shock',mode:'target',effect:'shockblink',range:7,ability:'순간이동 + 출발/도착 뇌격',desc:'축지의 양끝에 짧은 뇌격을 남긴다.'});
-  addFusionRecipe('elem_water','ward',{kind:'f_water_ward',name:'정수부적',seal:'淨',element:'water',mode:'instant',effect:'pureward',ability:'상태이상 정화 + 8턴 보호막',desc:'상처를 씻고 보호막을 만든다.'});
-  addFusionRecipe('elem_ice','bind',{kind:'f_ice_bind',name:'빙쇄부적',seal:'鎖',element:'ice',mode:'target',effect:'icebind',range:6,ability:'3×3 강빙결',desc:'봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다.'});
-  addFusionRecipe('elem_grass','mapping',{kind:'f_grass_map',name:'생맥부적',seal:'脈',element:'grass',mode:'instant',effect:'lifemap',ability:'전체 지도 + HP 8 회복',desc:'건물의 틈과 살아 있는 기운을 함께 읽는다.'});
-  addFusionRecipe('elem_earth','ward',{kind:'f_earth_ward',name:'석갑부적',seal:'壁',element:'earth',mode:'instant',effect:'stoneward',ability:'8턴 보호막 + 일시 대지저항',desc:'몸을 암반 같은 기운으로 감싼다.'});
-
-  // 일부 원소 + 원소
-  addFusionRecipe('elem_fire','elem_water',{kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'});
-  addFusionRecipe('elem_water','elem_ice',{kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'});
-  addFusionRecipe('elem_water','elem_grass',{kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'});
-  addFusionRecipe('elem_fire','elem_earth',{kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'});
-  addFusionRecipe('elem_grass','elem_earth',{kind:'f_bulwark',name:'목석부적',seal:'壘',mode:'instant',effect:'bulwark',ability:'임시 암벽 + 6턴 보호막',desc:'뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다.'});
-  addFusionRecipe('elem_shock','elem_water',{kind:'f_thunderpool',name:'폭뢰부적',seal:'轟',mode:'target',effect:'thunderpool',range:6,ability:'수기 전도 연쇄뇌격',desc:'물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다.'});
-
-  // 일부 기능 + 기능
-  addFusionRecipe('blast','bind',{kind:'f_bindblast',name:'봉폭부적',seal:'禁',mode:'target',effect:'bindblast',range:5,ability:'층 비례 폭발 + 일반 적 3턴 봉인',desc:'폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다.'});
-  addFusionRecipe('identify','mapping',{kind:'f_heaveneye',name:'천안부적',seal:'眼',mode:'instant',effect:'heaveneye',ability:'전체 지도 + 미확인 2종 감정',desc:'지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다.'});
-  addFusionRecipe('identify','upgrade',{kind:'f_identify_upgrade',name:'감강부적',seal:'鑑',mode:'instant',effect:'identify_all991',ability:'인벤토리의 모든 미감정 아이템 완전 감정',desc:'감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다.'});
-  addFusionRecipe('ward','blink',{kind:'f_guardblink',name:'호축부적',seal:'遁',mode:'target',effect:'guardblink',range:6,ability:'안전 순간이동 + 6턴 보호막',desc:'도망과 방어를 한 번에 해결하는 비상탈출 부적이다.'});
-
-  // 성부는 생원소와 기능부적 양쪽 합성계에 정식 참여한다. 미감정 상태에서는 아래 진짜 인장/색을 노출하지 않는다.
-  addFusionRecipe('holy','elem_fire',{kind:'f_holy_fire',name:'성화부적',seal:'輝',mode:'instant',effect:'holy_elem_fire991',ability:'성광 정화 + 화염 가호',desc:'성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다.'});
-  addFusionRecipe('holy','elem_shock',{kind:'f_holy_shock',name:'성뢰부적',seal:'閃',mode:'instant',effect:'holy_elem_shock991',ability:'성광 정화 + 뇌전 가호',desc:'성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다.'});
-  addFusionRecipe('holy','elem_water',{kind:'f_holy_water',name:'성수부적',seal:'淨',mode:'instant',effect:'holy_elem_water991',ability:'강한 정화 + 수류 가호',desc:'깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_ice',{kind:'f_holy_ice',name:'성빙부적',seal:'雪',mode:'instant',effect:'holy_elem_ice991',ability:'성광 정화 + 빙결 가호',desc:'차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_grass',{kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_earth',{kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'});
-  addFusionRecipe('holy','identify',{kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'});
-  addFusionRecipe('holy','upgrade',{kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'});
-  addFusionRecipe('holy','blast',{kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'주변 성광 폭발 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'});
-  addFusionRecipe('holy','mapping',{kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'});
-  addFusionRecipe('holy','ward',{kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'});
-  addFusionRecipe('holy','blink',{kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'});
-  addFusionRecipe('holy','bind',{kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'});
-  /* Built from RECIPES once every addFusionRecipe call above has run (F-23). */
-  const RECIPE=new Map(RECIPES.map(r=>[key74(r.a,r.b),r]));
 
 
 
@@ -2898,7 +2844,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
     
-  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
+  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>FUSION_RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
 /* ===== MANRU v7.5: CLEAN SHATTERED-LIKE HUD / UNIFIED INPUT / FUSION QA ===== */

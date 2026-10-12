@@ -12,23 +12,11 @@ import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
 import { analyze } from '../lib/scope.mjs';
 import { assembleGame, locate } from '../lib/game.mjs';
+import { REGISTERS, DIRECT_TABLES } from '../lib/stage-tables.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const json = process.argv.includes('--json');
 
-// register function -> { table, idArg, phaseArg, fnArg }; direct tables are written by `<table>.push(fn)`
-export const REGISTERS = {
-  registerMovePreR8: { table: 'MOVE_HOOKS_R8', phase: 'pre', fnArg: 0 },
-  registerMovePostR8: { table: 'MOVE_HOOKS_R8', phase: 'post', fnArg: 0 },
-  registerPlayerStatStage55: { table: 'PLAYER_STAT_STAGES55', idArg: 0, fnArg: 1 },
-  registerAttackCostStage55: { table: 'ATTACK_COST_STAGES55', idArg: 0, fnArg: 1 },
-  registerMoveCostStage55: { table: 'MOVE_COST_STAGES55', idArg: 0, fnArg: 1 },
-  registerBossRewardStage55: { table: 'BOSS_REWARD_STAGES', idArg: 0, phaseArg: 1, fnArg: 2 },
-  registerPickupStageR25: { table: 'MANRU_PICKUP_PIPELINE_R25', idArg: 0, fnArg: 1 },
-  registerInventoryRenderR34: { table: 'INVENTORY_RENDER_R34', idArg: 0, phaseArg: 1, fnArg: 2 },
-  registerPanelHook54: { table: 'PANEL_HOOKS54', idArg: 0, fnArg: 1 },
-};
-export const DIRECT_TABLES = ['RUN_END_EFFECTS53', 'DESCEND_EFFECTS53'];
 
 const { text, parts } = assembleGame(path.join(repo, 'src'));
 const ast = acorn.parse(text, { ecmaVersion: 'latest', locations: true });

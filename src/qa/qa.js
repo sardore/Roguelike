@@ -630,7 +630,7 @@ globalThis.__MANRU_QA_FEATURES__={
   // read which results the screen offers
   fusion(){
     const out=[];
-    for(const r of RECIPES){
+    for(const r of FUSION_RECIPES){
       const a=TALISMAN_BY_KIND.get(r.a),b=TALISMAN_BY_KIND.get(r.b);
       if(!a||!b){out.push({pair:r.a+'+'+r.b,result:r.name,offered:false,missing:!a?r.a:r.b});continue}
       const before=state.player.inventory.length,K=ensureKnowledge56();
