@@ -40,16 +40,40 @@ const declNames = (s) => (s.type === 'FunctionDeclaration' ? [s.id.name] : s.typ
 
 // ---- the order constraints a const/let initialiser imposes (identifier read outside any function)
 const lateInfo = new Map();
+// An initialiser also reads, when it runs, the values read by the functions it mentions (transitively; any mention
+// counts, as for the call-path check below). Those reads are paired too, so a move that puts a value after an
+// initialiser that reaches it through a function is refused (strictKeyFloors -> strictLockFloors() -> LOCK_SPECIAL).
 function initPairs(t) {
-  const ast = parse(t), top = topOf(ast), pos = new Map();
-  top.forEach((s, i) => { for (const n of declNames(s)) pos.set(n, { i, kind: s.type === 'FunctionDeclaration' ? 'fn' : 'data' }); });
+  const ast = parse(t), top = topOf(ast), pos = new Map(), fnStmt = new Map();
+  top.forEach((s, i) => { for (const n of declNames(s)) pos.set(n, { i, kind: s.type === 'FunctionDeclaration' ? 'fn' : 'data' }); if (s.type === 'FunctionDeclaration') fnStmt.set(s.id.name, s); });
+  const fnReads = new Map(); // function name -> Set of value names its body (and the functions it mentions) reads
+  const readsOf = (name) => {
+    if (fnReads.has(name)) return fnReads.get(name);
+    const out = new Set(); fnReads.set(name, out);
+    const stack = [name], seen = new Set([name]);
+    while (stack.length) {
+      const f = fnStmt.get(stack.pop()); if (!f) continue;
+      walk.simple(f.body, { Identifier(id) {
+        const p = pos.get(id.name); if (!p) return;
+        if (p.kind === 'fn') { if (!seen.has(id.name)) { seen.add(id.name); stack.push(id.name); } } else out.add(id.name);
+      } });
+    }
+    return out;
+  };
   const pairs = new Set();
   top.forEach((s, i) => {
     if (s.type !== 'VariableDeclaration' && s.type !== 'ClassDeclaration') return;
+    const reader = declNames(s)[0];
+    const add = (name, via) => {
+      const p = pos.get(name); if (!p || p.i === i) return;
+      const key = `${reader}>${name}:${p.i < i ? 'ok' : 'late'}`; pairs.add(key);
+      if (p.i >= i) lateInfo.set(key, `reader#${i} reads decl#${p.i}${via ? ' through ' + via + '()' : ''}`);
+    };
     walk.ancestor(s, { Identifier(id, _st, anc) {
       if (deferred(anc)) return;
-      const p = pos.get(id.name); if (!p || p.kind === 'fn' || p.i === i) return;
-      pairs.add(`${declNames(s)[0]}>${id.name}:${p.i < i ? 'ok' : 'late'}`); if (p.i >= i) lateInfo.set(`${declNames(s)[0]}>${id.name}:late`, `reader#${i} reads decl#${p.i}`);
+      const p = pos.get(id.name); if (!p) return;
+      if (p.kind === 'fn') { for (const v of readsOf(id.name)) add(v, id.name); return; }
+      add(id.name, null);
     } });
   });
   return { pairs, late: [...pairs].filter((x) => x.endsWith(':late')) };

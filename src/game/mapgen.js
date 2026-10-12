@@ -3172,3 +3172,131 @@ const NORMAL71=new Set([1,3,7,9,12,14,17,19]);
   function graphDistance93(adj,a,b){const p=shortestNodes93(adj,a,b);return p.length?p.length-1:99}
   function healProto982(f=state?.floor||1){const P=window.MANRU_POTIONS||[];const kind=f>=6?'heal_medium':'heal_small';return P.find(i=>i.potionKind===kind)||P.find(i=>i.potionKind==='heal_small')||null}
 function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermission?.active||!gameplayInputAllowed57()||entityDistance57(n,state.player)>1)return false;cancelAutoWalk();clearHeldInput53();openShop();return true}
+  function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){placeFeatureTile(r.x+1,y,TT.JAR);placeFeatureTile(r.x+r.w-2,y,TT.TABLE)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);placeFeatureTile(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
+  function armoryRoom(r){placeFeatureTile(r.cx,r.cy,TT.ARMORY);for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let x=r.x+2;x<=r.x+r.w-3;x+=3)placeFeatureTile(x,r.y+r.h-2,TT.CACHE);sigil(r.x+1,r.y+1,'무기고')}
+  function repairRequired60(){
+    const start={x:state.player.x,y:state.player.y},goal={x:state.stairs.x,y:state.stairs.y},id=(x,y)=>y*COLS+x,xy=i=>({x:i%COLS,y:Math.floor(i/COLS)});
+    const walkable=t=>!tileBlocksByTerrain(t);
+    if(ReachabilityService.requiredExitReach({start,goal,walkable}))return 0;
+    const N=COLS*ROWS,dist=Array(N).fill(Infinity),prev=Array(N).fill(-1),done=Array(N).fill(false),sid=id(start.x,start.y),gid=id(goal.x,goal.y);dist[sid]=0;
+    const cost=t=>walkable(t)?1:t===TT.DOOR?1:[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t)?3:[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO].includes(t)?5:(t===TT.WALL?7:40);
+    for(let step=0;step<N;step++){let u=-1,best=Infinity;for(let i=0;i<N;i++)if(!done[i]&&dist[i]<best){best=dist[i];u=i}if(u<0||u===gid)break;done[u]=true;const p=xy(u);for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)continue;const v=id(x,y),nd=dist[u]+cost(state.map[y][x]);if(nd<dist[v]){dist[v]=nd;prev[v]=u}}}
+    if(!isFinite(dist[gid]))return 0;const path=[];for(let at=gid;at!==sid&&at>=0;at=prev[at])path.push(xy(at));let repairs=0;
+    for(const p of path){const t=state.map[p.y][p.x];if(walkable(t))continue;if(t===TT.WATER)setTerrainTile58(state.map,p.x,p.y,TT.PAPER_BRIDGE);else if(t===TT.MERCURY)setTerrainTile58(state.map,p.x,p.y,TT.DRAWBRIDGE_DOWN);else if(t===TT.WALL)setTerrainTile58(state.map,p.x,p.y,TT.DOOR);else setTerrainTile58(state.map,p.x,p.y,TT.FLOOR);repairs++}
+    state.repair60=(state.repair60||0)+repairs;return repairs;
+  }
+  function relocate60(monsters,items){
+    const pool=relocatePool60(),size=COLS*ROWS,occupied60=new Uint8Array(size),itemUsed60=new Uint8Array(size),live=[],reachable60=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;
+    const markMon=m=>{for(const[ox,oy]of footprintOffsets(m)){const x=m.x+ox,y=m.y+oy;if(x>=0&&y>=0&&x<COLS&&y<ROWS)occupied60[y*COLS+x]=1}};
+    const canMon=(m,x,y)=>{for(const[ox,oy]of footprintOffsets(m)){const xx=x+ox,yy=y+oy;if(xx<1||yy<1||xx>=COLS-1||yy>=ROWS-1||occupied60[yy*COLS+xx]||(xx===state.player.x&&yy===state.player.y)||(reachable60&&!reachable60.has(k(xx,yy)))||!PlacementService.terrainStandable(m,state.map[yy][xx]))return false}return state.map[y][x]!==TT.STAIR};
+    state.monsters=[];
+    for(let mi=0;mi<monsters.length;mi++){
+      const m=monsters[mi];m.x=-99;m.y=-99;
+      if(m.boss&&state.bossPos60){m.x=state.bossPos60.x;m.y=state.bossPos60.y;if(canMon(m,m.x,m.y)){live.push(m);markMon(m)}continue}
+      if(!pool.count)continue;const start=Math.floor(globalThis.__MANRU_RANDOM57__()*pool.count)%pool.count;let found=-1;
+      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0;if(canMon(m,x,y)){found=idx;break}}
+      if(found>=0){m.x=found%COLS;m.y=(found/COLS)|0;live.push(m);markMon(m)}
+    }
+    state.monsters=live;
+    state.items=[];
+    for(let ii=0;ii<items.length;ii++){
+      const it=items[ii];if(!pool.count){it.x=state.player.x;it.y=state.player.y;PlacementService.placeItem(it);continue}
+      const start=Math.floor(globalThis.__MANRU_RANDOM57__()*pool.count)%pool.count;let found=-1;
+      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0,t=state.map[y][x];if(itemUsed60[idx]||occupied60[idx]||t===TT.STAIR||(x===state.player.x&&y===state.player.y)||(reachable60&&!reachable60.has(k(x,y)))||!ReachabilityService.playerTerrainPassable(x,y)||globalThis.__MANRU_HAZARD_CORE__?.kind?.(t))continue;found=idx;break}
+      if(found<0)found=state.player.y*COLS+state.player.x;it.x=found%COLS;it.y=(found/COLS)|0;itemUsed60[found]=1;PlacementService.placeItem(it)
+    }
+  }
+  function chooseRoom71(minW=8,minH=7,used=new Set()){
+    const pool=(state.rooms||[]).filter(r=>r.w>=minW&&r.h>=minH&&!roomHasEndpoint(r)&&!used.has(`${r.x},${r.y}`));
+    if(!pool.length)return null;
+    pool.sort((a,b)=>b.w*b.h-a.w*a.h);
+    const rr=pool[Math.min(pool.length-1,rand(0,Math.min(4,pool.length-1)))];
+    used.add(`${rr.x},${rr.y}`);return rr;
+  }
+  function purposeRooms90(z){
+    const leaves=[...(state.branchLeaves92||[])],fallback=[...(state.branchRooms92||[])].sort((a,b)=>(b.branchDepth92||0)-(a.branchDepth92||0));const src=leaves.length?leaves:fallback;state.purposeRooms90=[];
+    const used=new Set(),wanted=Math.min(6,src.length);for(let i=0;i<wanted;i++){const r=src[i],rk=`${r.x},${r.y}`;if(used.has(rk))continue;used.add(rk);const type=['supply','armory','medic','archive','shrine','trapcache'][(state.floor+z+i*2)%6],cells=roomFreeCells90(r);if(!cells.length)continue;const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]),t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
+      if(['supply','armory','archive','trapcache'].includes(type))addItem(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
+      const rr={...r,purpose90:type};state.purposeRooms90.push(rr);feature89(({supply:'보급실',armory:'무기고',medic:'회복실',archive:'기록실',shrine:'제단실',trapcache:'위험 보관실'})[type],r,'purpose');
+    }
+    state.purposeCount90=state.purposeRooms90.length;
+  }
+  function guardPurposes90(){
+    const mons=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);let mi=0,guards=0;
+    for(const r of state.purposeRooms90||[]){if(mi>=mons.length)break;if(['medic','kitchen'].includes(r.purpose90))continue;const mon=mons[mi++];let placed=false;for(let rad=0;rad<=3&&!placed;rad++)for(let y=r.cy-rad;y<=r.cy+rad&&!placed;y++)for(let x=r.cx-rad;x<=r.cx+rad;x++){if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;guards++;placed=true;break}}}
+    state.purposeGuards90=guards;
+  }
+  function organic91(m,z){
+    reset91(m);const target=rand(12,16),cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);let tries=0;
+    // One larger anchor room near, but not exactly at, the center. It is the only deliberately grand volume.
+    const gw=Math.min(13,Math.max(10,Math.floor(COLS*.22))),gh=Math.min(10,Math.max(8,Math.floor(ROWS*.22))),gx=clamp(cx-Math.floor(gw/2)+rand(-3,3),2,COLS-gw-3),gy=clamp(cy-Math.floor(gh/2)+rand(-2,2),2,ROWS-gh-3);
+    const grand=add89(m,gx,gy,gw,gh,'grand',globalThis.__MANRU_RANDOM57__()<.45?'chamfer':'rect');grand.grand90=true;state.mainRooms90.push(grand);
+    while(state.rooms.length<target&&tries++<950){
+      const w=rand(6,11),h=rand(5,9),x=rand(2,Math.max(2,COLS-w-3)),y=rand(2,Math.max(2,ROWS-h-3));
+      if(roomOverlap91(x,y,w,h,2))continue;
+      const roll=globalThis.__MANRU_RANDOM57__(),shape=roll<.14?'chamfer':roll<.21&&w>=9&&h>=7?'cross':'rect',r=add89(m,x,y,w,h,'room',shape);state.mainRooms90.push(r);
+    }
+    // If random packing under-fills, add compact rooms in the remaining walls.
+    for(let t=0;state.rooms.length<10&&t<500;t++){
+      const w=6,h=5,x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(roomOverlap91(x,y,w,h,1))continue;const r=add89(m,x,y,w,h,'room','rect');state.mainRooms90.push(r);
+    }
+    const rooms=[...state.rooms];
+    // V7-like nearest-neighbour tree: every room joins its nearest already-connected room.
+    const connected=[grand],left=rooms.filter(r=>r!==grand);
+    while(left.length){let best=null,bd=1e9,bi=-1,ba=null;for(let i=0;i<left.length;i++)for(const a of connected){const d=Math.abs(left[i].cx-a.cx)+Math.abs(left[i].cy-a.cy);if(d<bd){bd=d;best=left[i];bi=i;ba=a}}if(!best)break;corridor89(m,ba,best,globalThis.__MANRU_RANDOM57__()<.28?'Z':globalThis.__MANRU_RANDOM57__()<.12?'diag':'L');connected.push(best);left.splice(bi,1)}
+    // Only local crosslinks: short alternative routes, never one giant outside bypass.
+    const pairs=[];for(let i=0;i<rooms.length;i++)for(let j=i+1;j<rooms.length;j++){const a=rooms[i],b=rooms[j],d=Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);if(d>=8&&d<=Math.max(15,Math.floor((COLS+ROWS)*.18)))pairs.push({a,b,d})}
+    pairs.sort((a,b)=>a.d-b.d);let links=0;for(const q of pairs){if(links>=rand(2,3))break;if(globalThis.__MANRU_RANDOM57__()<.42)continue;corridor89(m,q.a,q.b,links%2?'Z':'L');links++}
+    // Split only several large non-grand rooms; the wall plan does the work instead of decorative clutter.
+    const split=[...rooms].filter(r=>r!==grand&&r.w>=9&&r.h>=7).sort((a,b)=>b.w*b.h-a.w*a.h).slice(0,rand(2,4));split.forEach((r,i)=>splitRoom89(m,r,i%2?'h':'v',1));
+    // One or two compact annexes in wall pockets, echoing the v7 side-room feel.
+    let annex=0;for(let t=0;t<360&&annex<2;t++){
+      const w=rand(6,8),h=rand(5,7),x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(roomOverlap91(x,y,w,h,2))continue;
+      const r=add89(m,x,y,w,h,'annex','rect');state.mainRooms90.push(r);let near=null,bd=1e9;for(const a of state.rooms){if(a===r)continue;const d=Math.abs(a.cx-r.cx)+Math.abs(a.cy-r.cy);if(d<bd){bd=d;near=a}}if(near)corridor89(m,near,r,globalThis.__MANRU_RANDOM57__()<.5?'Z':'L');annex++;
+    }
+    state.grandRoom89=grand;const sorted=[...state.rooms].filter(r=>r!==grand).sort((a,b)=>Math.abs(a.cx-grand.cx)+Math.abs(a.cy-grand.cy)-(Math.abs(b.cx-grand.cx)+Math.abs(b.cy-grand.cy)));state.focalRooms89=[sorted[Math.floor(sorted.length*.33)],sorted[Math.floor(sorted.length*.72)]].filter(Boolean);
+    feature89('중앙 대실',grand,'grand');state.layoutMode85='v7-organic';state.layoutName='불규칙 객실군 · 근거리 연결 회랑 / 국소 순환 / 부속실';
+  }
+  function connectVar93(m,a,b,style='L',width=1,options=null){if(options)return connectProfileRooms105(m,a,b,width,options);const da=doorPoint88(a,b),db=doorPoint88(b,a);setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);corridorCell(m,da.ox,da.oy);corridorCell(m,db.ox,db.oy);const pts=pathPoints93({x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style);let lastDir=null;for(const p of pts){if(lastDir&&p.dir!==lastDir&&width>1)carveSquare(m,p.x,p.y,1,!!options);if(options){for(let o=0;o<width;o++)corridorCell(m,p.x+(p.dir==='v'?o:0),p.y+(p.dir==='h'?o:0),true);}else carveBand(m,p.x,p.y,p.dir,width);lastDir=p.dir}if(width>1){carveSquare(m,da.ox,da.oy,1,!!options);carveSquare(m,db.ox,db.oy,1,!!options)}return options?pts:null}
+  function placeRooms93(m,z,profile=null){
+    if(profile)return placeProfileRooms105(m,profile);
+    const rooms=[],target=state.floor===1?rand(10,13):rand(15,20),cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);let tries=0;
+    if(state.floor===1||globalThis.__MANRU_RANDOM57__()<.34){const gw=rand(11,15),gh=rand(7,10),gx=clamp(cx-Math.floor(gw/2)+rand(-6,6),2,COLS-gw-3),gy=clamp(cy-Math.floor(gh/2)+rand(-5,5),state.floor===1?17:2,ROWS-gh-3);if(canPlace93(gx,gy,gw,gh,2)){const g=addCompact93(m,gx,gy,gw,gh,'grand',globalThis.__MANRU_RANDOM57__()<.35?'chamfer':'pillars','hall');g.grand90=true;state.grandRoom89=g;if(state.floor===1){g.name='등불 대청';for(let yy=g.y+1;yy<g.y+g.h-1;yy++)for(let xx=g.x+1;xx<g.x+g.w-1;xx++)if(m[yy][xx]===TT.FLOOR)setTerrainTile58(m,xx,yy,Math.abs(xx-g.cx)<=1?TT.CARPET:(yy===g.y+1||yy===g.y+g.h-2)?TT.STONE_PATH:TT.WOOD_FLOOR);for(const xx of [g.x+2,g.x+g.w-3])for(const yy of [g.y+2,g.y+g.h-3])if(terrainSurface58(m[yy][xx]))setTerrainTile58(m,xx,yy,TT.LANTERN_POST)}rooms.push(g)}}
+    if(globalThis.__MANRU_RANDOM57__()<.48){const wide=globalThis.__MANRU_RANDOM57__()<.58,w=wide?rand(11,15):rand(5,7),h=wide?rand(4,6):rand(9,12),x=clamp(cx-Math.floor(w/2)+rand(-9,9),2,COLS-w-3),y=clamp(cy-Math.floor(h/2)+rand(-8,8),2,ROWS-h-3);if(canPlace93(x,y,w,h,1))rooms.push(addCompact93(m,x,y,w,h,'hall',globalThis.__MANRU_RANDOM57__()<.28?'chamfer':'rect','hall'))}
+    while(rooms.length<target&&tries++<1600){
+      let w,h,shape='rect',role='room';const roll=globalThis.__MANRU_RANDOM57__();
+      if(roll<.14){w=rand(11,15);h=rand(4,6);role='hall';shape=globalThis.__MANRU_RANDOM57__()<.25?'chamfer':'rect';}
+      else if(roll<.22){w=rand(5,7);h=rand(9,12);role='hall';shape='rect';}
+      else{w=rand(6,11);h=rand(5,9);shape=roll<.34?'chamfer':roll<.41&&w>=9&&h>=7?'cross':roll<.48&&w>=9&&h>=8?'pillars':'rect'}
+      let x,y;
+      if(rooms.length<3||globalThis.__MANRU_RANDOM57__()<.22){x=rand(2,Math.max(2,COLS-w-3));y=rand(2,Math.max(2,ROWS-h-3));}
+      else{const seed=choice(rooms),rx=seed.cx+rand(-13,13)-Math.floor(w/2),ry=seed.cy+rand(-10,10)-Math.floor(h/2);x=clamp(rx,2,COLS-w-3);y=clamp(ry,2,ROWS-h-3)}
+      if(!canPlace93(x,y,w,h,role==='hall'?1:1))continue;
+      if(rooms.length>=4){let near=1e9;for(const r of rooms)near=Math.min(near,Math.abs((x+Math.floor(w/2))-r.cx)+Math.abs((y+Math.floor(h/2))-r.cy));if(near>(role==='hall'?20:18)+(z>=3?2:0))continue}
+      rooms.push(addCompact93(m,x,y,w,h,role==='hall'?'hall':'room',shape,role));
+    }
+    for(let t=0;rooms.length<(state.floor===1?10:13)&&t<1350;t++){const w=globalThis.__MANRU_RANDOM57__()<.3?rand(9,13):6,h=globalThis.__MANRU_RANDOM57__()<.3?rand(4,6):5,x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(!canPlace93(x,y,w,h,1))continue;rooms.push(addCompact93(m,x,y,w,h,'room','rect',w>=9||h>=8?'hall':'room'))}
+    return rooms;
+  }
+  function softenRooms93(m,rooms,edges){
+    const deg=Array(rooms.length).fill(0);for(const e of edges){deg[e.a]++;deg[e.b]++;}
+    rooms.forEach((r,i)=>{if(deg[i]>=3&&r.w>=7&&r.h>=6){for(let yy=r.cy-1;yy<=r.cy+1;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(insideMapInterior(xx,yy)&&m[yy][xx]!==TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR)}
+      if(globalThis.__MANRU_RANDOM57__()<.24&&r.w>=8&&r.h>=7){const side=rand(0,3);if(side===0&&r.y>2)for(let yy=r.y-2;yy<r.y;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===1&&r.y+r.h<ROWS-2)for(let yy=r.y+r.h;yy<=r.y+r.h+1;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===2&&r.x>2)for(let xx=r.x-2;xx<r.x;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===3&&r.x+r.w<COLS-2)for(let xx=r.x+r.w;xx<=r.x+r.w+1;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);}
+    })
+  }
+  function strictLockFloors(){return [...new Set([...LOCK_SPECIAL.keys(),...LOCK_NORMAL.keys()])]}
+  const floorSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.GOLD]);
+  function floor21Stand981(x,y,opt={}){
+    if(!in980(x,y))return false;const t=tileReveal981(x,y,opt);
+    // 21F generation must never pass merely because the current run happens to carry a temporary hazard ward.
+    if([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].includes(t))return false;
+    return ReachabilityService.playerTerrainPassable(x,y,{...opt,tileAt:(x,y)=>tileReveal981(x,y,opt)});
+  }
+function enclosedRoomScore1026(r){
+  if(!r||r.w<8||r.h<6||r.w>38||r.h>28||roomTouchesProtected(r))return null;
+  const q=roomProbe1026(r);if(!q||q.area<48||q.area>520)return null;
+  // Only open interior plates are candidates. Existing furniture/partitions win over this pass.
+  if(q.openRatio<.61||q.wallRatio>.105||q.specialRatio>.25)return null;
+  const named=!!(r.name||r.label||r.append1020),indoorName=/객실|서고|보존|창고|장고|가옥|오두막|본관|내실|실내|연회|공방|병기|숙소|회랑실/.test(r.name||r.label||''),enclosed=q.enclosure>=.24||q.indoorRatio>=.36||indoorName||(named&&q.enclosure>=.16);
+  return enclosed?q:null;
+}

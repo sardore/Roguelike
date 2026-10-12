@@ -2205,3 +2205,20 @@ function latePackCaps1027(){const f=state?.floor||1;if(f>=24)return{normal:4,den
 function fixedEncounterMonster1027(m){return !!(m?.boss||m?.elite1023||m?.storyPhase992||m?.name==='여의 수룡'||m?.fixedEncounter1027)}
 function equipmentOpeningBonus105(actor,target){const w=actor?.weapon||{};return (w.edgeBonus&&target?.maxHp>0&&target.hp/target.maxHp>=.75?4:0)+(w.breakPower&&target?.kind==='construct'?Math.max(1,w.breakPower):0)}
 function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}
+  const PACKS61={
+    2:[['객잔 경비병','시종'],['취객','객잔 쥐','객잔 쥐'],['떠돌이 도둑','시종'],['거대 거미','객잔 쥐']],
+    4:[['객잔 경비병','시종'],['취객','취객','객잔 쥐'],['떠돌이 도둑','거대 거미']],
+    6:[['정원 바위괴물','수목 궁수'],['독꽃','검은 뱀'],['정원사 망령','먹물 정령'],['식인 물고기','식인 물고기']],
+    8:[['독꽃','검은 뱀'],['정원사 망령','수목 궁수'],['먹물 정령','검은 뱀'],['정원 바위괴물','독꽃']],
+    11:[['비단 술래','윈도'],['향기요정','비단 술래'],['분홍거미','윈도']],
+    13:[['비단 술래','윈도','윈도'],['환각의 향로','향기요정'],['분홍거미','비단 술래']],
+    16:[['경비 인형 - 보병','경비 인형 - 포병'],['성채 비행 감시자','경비 인형 - 보병'],['화염 가고일','경비 인형 - 보병'],['해자 잠복꾼','녹아내린 슬라임']],
+    18:[['강시','식귀'],['산성 슬라임','굶주린 창고 쥐'],['경비 인형 - 보병','강시'],['식귀','식귀','굶주린 창고 쥐']],
+    21:[['공허 가오리','차원 포식자'],['천수 아수라','신전 사제 망령'],['만루의 수호상','신전 사제 망령']],
+    22:[['만루의 수호상','신전 사제 망령'],['천수 아수라','신전 사제 망령'],['차원 포식자','공허 가오리'],['공허 가오리','공허 가오리','천수 아수라']],
+    23:[['천수 아수라','공허 가오리','공허 가오리'],['신전 사제 망령','차원 포식자','천수 아수라'],['만루의 수호상','천수 아수라'],['공허 가오리','천수 아수라','신전 사제 망령','공허 가오리']],
+    24:[['보주의 파수꾼','신전 사제 망령','천수 아수라'],['차원 포식자','공허 가오리','공허 가오리'],['천수 아수라','신전 사제 망령','차원 포식자'],['보주의 파수꾼','천수 아수라','신전 사제 망령','공허 가오리']]
+  };
+  function roomFree62(r,x,y){return x>r.x&&y>r.y&&x<r.x+r.w-1&&y<r.y+r.h-1&&state.map[y]?.[x]===TT.FLOOR&&(x!==state.player.x||y!==state.player.y)&&(x!==state.stairs.x||y!==state.stairs.y)}
+  function chooseVaultRoom62(){const features=state.featureRooms||[],a=(state.rooms||[]).filter(r=>r.w>=7&&r.h>=6&&!(state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)&&!(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h)&&!features.some(f=>overlapRoom62(r,f)));return a.length?choice(a):null}
+function denseRoom1027(r){return !!r&&(state.monsterDenseRooms||[]).some(d=>sameRoom1027(r,d)||(r.cx>=d.x&&r.cx<d.x+d.w&&r.cy>=d.y&&r.cy<d.y+d.h))}

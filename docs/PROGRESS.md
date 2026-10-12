@@ -56,6 +56,7 @@
 | qa-only | QA만 쓰는 선언 15개 → qa.js | 7614 | 431 / 573 | 755 | 70.7% | - |
 | world | world 도메인 생성(30문장) — elements 뒤, spine 앞 | 7171 | 401 / 573 | 755 | 72.5% | - |
 | layout | layout 도메인 생성(70문장) — world 뒤, spine 앞 | 6503 | 331 / 573 | 755 | 75.1% | - |
+| layout 후보→도메인 | layout 이름 후보 중 다른 도메인이 주로 쓰는 50개 → 그 도메인 (규칙 a) | 6196 | 283 / 573 | 755 | 76.3% | - |
 
 ## 현재 파일별 줄 수
 
@@ -63,20 +64,20 @@
 |---|---:|
 | kernel.js | 22 |
 | catalog.js | 173 |
-| save.js | 708 |
-| items.js | 958 |
+| save.js | 725 |
+| items.js | 962 |
 | combat.js | 660 |
-| monsters.js | 2207 |
-| render.js | 4877 |
-| mapgen.js | 3174 |
-| special.js | 1889 |
-| branches.js | 2381 |
+| monsters.js | 2224 |
+| render.js | 4915 |
+| mapgen.js | 3302 |
+| special.js | 2036 |
+| branches.js | 2383 |
 | elements.js | 247 |
 | world.js | 475 |
 | layout.js | 740 |
-| spine.js | 6503 |
+| spine.js | 6196 |
 | input.js | 149 |
 | story.js | 213 |
 | ui.js | 728 |
 | start.js | 6 |
-| (total) | 26110 |
+| (total) | 26156 |

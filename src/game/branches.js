@@ -2379,3 +2379,5 @@ function adjacentSilkTrap57(){
  if(!state?.player)return null;const p=state.player;
  return selectFacingAdjacentTarget57(DIRS8.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).filter(q=>canDisarmSilkTrap57(q.x,q.y)));
 }
+function normalizeRunState57(){if(!state)return;if(!state.generationInProgress57&&!state.terrainReactions105?.wallMaterials105)produceWallMaterials105();const next=state.runState57||(state.dead?'death':state.victory?'victory':'playing');state.runState57=next;state.dead=next==='death';state.victory=next==='victory';if(state.player?.summoning105)summonState()}
+function furnitureFloor57(x,y){return terrainUnderlayAt58(x,y)??inferTerrainUnderlay58(x,y)}

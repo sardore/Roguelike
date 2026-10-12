@@ -706,3 +706,20 @@ function newGameCoreLifecycle(cls){state=createRunState57(cls);citadelEnsurePlan
 function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
 function autoExplore(resume=false){return Auto81.explore(resume)}
 function restoreLibraryVisual1022(){state.bookWalls1022=Array.isArray(state.bookWalls1022)?state.bookWalls1022:[];state.libraryZones1022=Array.isArray(state.libraryZones1022)?state.libraryZones1022:[];state.libraryScrolls1022=Array.isArray(state.libraryScrolls1022)?state.libraryScrolls1022:[]}
+function migrateFloor2Layout67(){
+ const layout=state.floor===2&&state.floor2Choice63;if(!layout||layout.version>=3)return;
+ const court=layout.court,cx=Math.floor(COLS/2);
+ if(court){for(let y=court.y;y<court.y+court.h;y++)for(let x=court.x;x<court.x+court.w;x++){
+  setTerrainTile58(state.map,x,y,y<=47&&Math.abs(x-cx)<=1?TT.CARPET:TT.FLOOR);
+  const kk=K1020(x,y);for(const field of ['subthemeWalls970','archDecor1020','archDecor1023','outerWall94'])if(state[field])delete state[field][kk];
+ }delete layout.court}
+ for(let x=19;x<=28;x++)setTerrainTile58(state.map,x,43,TT.FLOOR);
+ for(let x=54;x<=57;x++)setTerrainTile58(state.map,x,43,TT.FLOOR);
+ const g=state.specialPlaces52;for(const z of g?.zones||[])if(z.y===40&&z.w===11&&z.h===8)encloseEntryDocumentRoom(g,z);
+ finishEntryDocumentDoors67();layout.version=3;
+}
+function retireLegacyVisualDecor64(){
+ if(!state)return;state.decor=(state.decor||[]).filter(d=>!RETIRED_DECOR64.has(d.kind));
+ for(const name of ['archDecor1020','archDecor1023']){const src=state[name]||{};state[name]=Object.fromEntries(Object.entries(src).filter(([,kind])=>kind==='goldSeal'||kind==='holyIcon1023'))}
+ state.decorCanonical1029=null;
+}

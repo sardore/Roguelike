@@ -279,7 +279,7 @@ function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id
 
 
 function runState57(){if(!state)return'inactive';return state.runState57||(state.dead?'death':state.victory?'victory':'playing')}
-function normalizeRunState57(){if(!state)return;if(!state.generationInProgress57&&!state.terrainReactions105?.wallMaterials105)produceWallMaterials105();const next=state.runState57||(state.dead?'death':state.victory?'victory':'playing');state.runState57=next;state.dead=next==='death';state.victory=next==='victory';if(state.player?.summoning105)summonState()}
+
 
 const AUTO_MOVE_RATE70=1.5;
 
@@ -606,7 +606,7 @@ function combatStatusIconHtml57(row){
 
 
 
-function furnitureFloor57(x,y){return terrainUnderlayAt58(x,y)??inferTerrainUnderlay58(x,y)}
+
 
 
 
@@ -758,7 +758,7 @@ function setGenerationBase(id,fn){if(typeof fn!=='function')throw new TypeError(
 setGenerationBase('base-original',generateFloorOriginal);
 
 
-function tierForFloor(floor=state.floor){if(floor>=24)return globalThis.__MANRU_RANDOM57__()<.42?5:4;if(floor>=21)return globalThis.__MANRU_RANDOM57__()<.38?4:3;if(floor>=16)return globalThis.__MANRU_RANDOM57__()<.40?4:3;if(floor>=11)return globalThis.__MANRU_RANDOM57__()<.55?3:2;if(floor>=6)return globalThis.__MANRU_RANDOM57__()<.48?2:1;return 1}
+
 
 
 
@@ -1738,9 +1738,9 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 
-  function kitchen(r){for(let y=r.y+1;y<=r.y+r.h-2;y+=2){placeFeatureTile(r.x+1,y,TT.JAR);placeFeatureTile(r.x+r.w-2,y,TT.TABLE)}placeFeatureTile(r.cx,r.cy,TT.COOKPOT);placeFeatureTile(r.cx-2,r.cy,TT.TABLE);placeFeatureTile(r.cx+2,r.cy,TT.TABLE);sigil(r.x+1,r.cy,'주방')}
 
-  function armoryRoom(r){placeFeatureTile(r.cx,r.cy,TT.ARMORY);for(let x=r.x+1;x<=r.x+r.w-2;x+=2)placeFeatureTile(x,r.y+1,TT.TABLE);for(let x=r.x+2;x<=r.x+r.w-3;x+=3)placeFeatureTile(x,r.y+r.h-2,TT.CACHE);sigil(r.x+1,r.y+1,'무기고')}
+
+
 
 
 
@@ -2050,8 +2050,7 @@ const UX={
   // r54: dead pre-v49 floor trait wrapper removed.
 
 
-  /* ---------- v4.8 loot ecology: guaranteed core resources without item spam ---------- */
-  function floorHasRole48(role){return(state.items||[]).some(i=>role47(i)===role)}
+
 
   registerGenerationStage('resource48','post',()=>{guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true});
 
@@ -2467,7 +2466,7 @@ registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open dire
 
 // 획득 구조: 주방, 샘, 피라냐, 복숭아나무 + 설계 공백을 메운 빙결액 배치
 window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState();const unknown=FOOD_RECIPES.filter(v=>!state.cookbook57[v.id]);if(unknown.length&&globalThis.__MANRU_RANDOM57__()<.40){const rec=choice(unknown);state.cookbook57[rec.id]=true;addLog(`찢어진 조리서 · ${rec.name}: ${rec.ingredients.join(' + ')}.`);return rec.id}return null};
-function roomFreeFood57(fr){const a=[];for(let y=fr.y+1;y<fr.y+fr.h-1;y++)for(let x=fr.x+1;x<fr.x+fr.w-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y))a.push({x,y});return a.length?choice(a):PlacementService.randomFloor(0)}
+
 
 
 
@@ -2663,40 +2662,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
   
 
-  function repairRequired60(){
-    const start={x:state.player.x,y:state.player.y},goal={x:state.stairs.x,y:state.stairs.y},id=(x,y)=>y*COLS+x,xy=i=>({x:i%COLS,y:Math.floor(i/COLS)});
-    const walkable=t=>!tileBlocksByTerrain(t);
-    if(ReachabilityService.requiredExitReach({start,goal,walkable}))return 0;
-    const N=COLS*ROWS,dist=Array(N).fill(Infinity),prev=Array(N).fill(-1),done=Array(N).fill(false),sid=id(start.x,start.y),gid=id(goal.x,goal.y);dist[sid]=0;
-    const cost=t=>walkable(t)?1:t===TT.DOOR?1:[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t)?3:[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO].includes(t)?5:(t===TT.WALL?7:40);
-    for(let step=0;step<N;step++){let u=-1,best=Infinity;for(let i=0;i<N;i++)if(!done[i]&&dist[i]<best){best=dist[i];u=i}if(u<0||u===gid)break;done[u]=true;const p=xy(u);for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)continue;const v=id(x,y),nd=dist[u]+cost(state.map[y][x]);if(nd<dist[v]){dist[v]=nd;prev[v]=u}}}
-    if(!isFinite(dist[gid]))return 0;const path=[];for(let at=gid;at!==sid&&at>=0;at=prev[at])path.push(xy(at));let repairs=0;
-    for(const p of path){const t=state.map[p.y][p.x];if(walkable(t))continue;if(t===TT.WATER)setTerrainTile58(state.map,p.x,p.y,TT.PAPER_BRIDGE);else if(t===TT.MERCURY)setTerrainTile58(state.map,p.x,p.y,TT.DRAWBRIDGE_DOWN);else if(t===TT.WALL)setTerrainTile58(state.map,p.x,p.y,TT.DOOR);else setTerrainTile58(state.map,p.x,p.y,TT.FLOOR);repairs++}
-    state.repair60=(state.repair60||0)+repairs;return repairs;
-  }
-
-
-  function relocate60(monsters,items){
-    const pool=relocatePool60(),size=COLS*ROWS,occupied60=new Uint8Array(size),itemUsed60=new Uint8Array(size),live=[],reachable60=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;
-    const markMon=m=>{for(const[ox,oy]of footprintOffsets(m)){const x=m.x+ox,y=m.y+oy;if(x>=0&&y>=0&&x<COLS&&y<ROWS)occupied60[y*COLS+x]=1}};
-    const canMon=(m,x,y)=>{for(const[ox,oy]of footprintOffsets(m)){const xx=x+ox,yy=y+oy;if(xx<1||yy<1||xx>=COLS-1||yy>=ROWS-1||occupied60[yy*COLS+xx]||(xx===state.player.x&&yy===state.player.y)||(reachable60&&!reachable60.has(k(xx,yy)))||!PlacementService.terrainStandable(m,state.map[yy][xx]))return false}return state.map[y][x]!==TT.STAIR};
-    state.monsters=[];
-    for(let mi=0;mi<monsters.length;mi++){
-      const m=monsters[mi];m.x=-99;m.y=-99;
-      if(m.boss&&state.bossPos60){m.x=state.bossPos60.x;m.y=state.bossPos60.y;if(canMon(m,m.x,m.y)){live.push(m);markMon(m)}continue}
-      if(!pool.count)continue;const start=Math.floor(globalThis.__MANRU_RANDOM57__()*pool.count)%pool.count;let found=-1;
-      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0;if(canMon(m,x,y)){found=idx;break}}
-      if(found>=0){m.x=found%COLS;m.y=(found/COLS)|0;live.push(m);markMon(m)}
-    }
-    state.monsters=live;
-    state.items=[];
-    for(let ii=0;ii<items.length;ii++){
-      const it=items[ii];if(!pool.count){it.x=state.player.x;it.y=state.player.y;PlacementService.placeItem(it);continue}
-      const start=Math.floor(globalThis.__MANRU_RANDOM57__()*pool.count)%pool.count;let found=-1;
-      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0,t=state.map[y][x];if(itemUsed60[idx]||occupied60[idx]||t===TT.STAIR||(x===state.player.x&&y===state.player.y)||(reachable60&&!reachable60.has(k(x,y)))||!ReachabilityService.playerTerrainPassable(x,y)||globalThis.__MANRU_HAZARD_CORE__?.kind?.(t))continue;found=idx;break}
-      if(found<0)found=state.player.y*COLS+state.player.x;it.x=found%COLS;it.y=(found/COLS)|0;itemUsed60[found]=1;PlacementService.placeItem(it)
-    }
-  }
 
 
 
@@ -2704,17 +2669,12 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  function syncFloor23Gate60(){const q=state.floor23;if(state.floor!==23||!q)return false;for(const c of q.gateCells||[])setTerrainTile58(state.map,c.x,c.y,q.centerUnlocked?TT.DRAWBRIDGE_DOWN:TT.WALL);return true}
-  function materializeFloor23Reveal60(sw){
-    const branch=sw?.kind==='branch-reveal',q=state.floor23,r=branch?state.branchTerrain105?.reveals?.find(v=>v.switchId===sw.id):q?.reveal;if((!branch&&state.floor!==23)||!r||sw?.id!==r.switchId)return{handled:false};if(r.materialized||sw.used||sw.disabled)return{handled:true,changed:false,materialized:!!r.materialized};
-    if(branch&&(r.cells||[]).some(c=>branchLeafAt(c.x,c.y)&&state.map[c.y]?.[c.x]===TT.PAPER_BRIDGE)){toast('잎사귀가 걸려 수문이 작동하지 않는다. 모든 잎을 없애야 한다.');return{handled:true,changed:false,reason:'leaves-block'}}
-    const occupiedBefore=(r.cells||[]).filter(c=>runtimeTerrainOccupants57(c.x,c.y).length);if(occupiedBefore.length){toast('침수 구역에 누군가 있다. 뭍으로 물러나야 한다.');return{handled:true,changed:false,reason:'reveal-occupied',occupied:occupiedBefore.length}}
-    if(branch&&(r.cells||[]).some(c=>tileBlocks(c.t)&&state.items.some(i=>i.x===c.x&&i.y===c.y))){toast('올라올 구조물 위에 물품이 걸려 있다.');return{handled:true,changed:false,reason:'reveal-item-occupied'}}
-    for(const c of r.cells||[]){if(Number.isInteger(c.underlay)){const base=RuntimeTerrainOwner.mutate(c.x,c.y,c.underlay,{source:'f23-reveal-drain-base'});if(!base.ok)throw new Error(`F23 reveal base restore failed ${c.x},${c.y}:${base.reason}`)}const rr=RuntimeTerrainOwner.mutate(c.x,c.y,c.t,{source:'f23-reveal-drain'});if(!rr.ok||state.map[c.y]?.[c.x]!==c.t)throw new Error(`F23 reveal restore failed ${c.x},${c.y}:${rr.reason||'tile-rejected'}`)}
-    const legal=(r.cells||[]).filter(c=>!tileBlocks(state.map[c.y]?.[c.x])&&![TT.MERCURY,TT.WATER,TT.LAVA,TT.VOID,TT.STAIR,TT.DOOR,TT.OPEN_DOOR].includes(state.map[c.y]?.[c.x])).sort((a,b)=>(Math.abs(b.x-sw.x)+Math.abs(b.y-sw.y))-(Math.abs(a.x-sw.x)+Math.abs(a.y-sw.y))),spawned=[];
-    for(let i=0;i<(r.monsterNames||[]).length;i++){const name=r.monsterNames[i];let mon=null;for(const c of legal){if(spawned.some(v=>v.x===c.x&&v.y===c.y))continue;mon=spawnNamed(name,{x:c.x,y:c.y},{placementMode:'exact',provenance:'f23-reveal'});if(mon)break}if(mon)spawned.push({name:mon.name,x:mon.x,y:mon.y})}
-    produceWallMaterials105();r.materialized=true;r.used=true;r.spawnBatches=(r.spawnBatches||0)+1;r.spawnedIds=spawned.map(v=>`${v.name}@${v.x},${v.y}`);sw.used=true;sw.disabled=true;impact(sw.x,sw.y,'#bde8e6',5);for(const c of (r.cells||[]).filter((_,i)=>i%Math.max(1,Math.floor((r.cells||[]).length/10))===0).slice(0,10))impact(c.x,c.y,'#d7f4f2',2);if(branch)branchRevealReward(r);addLog(branch?'수위가 낮아지며 물 아래의 석조 구조물이 솟아올랐다.':`제 ${r.districtId}구역의 수은 수위가 내려가며 잠겨 있던 건물군이 드러났다.`);toast('침수 구역 배수 완료');VisibilityService.compute();updateAll();return{handled:true,changed:true,materialized:true,spawned}
-  }
+
+
+
+
+
+
 
 
 
@@ -2771,20 +2731,7 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
   for(const r of SPAWN_RULES){const q=spawnRanges61.find(v=>r.from===v[0]&&r.to===v[1]);if(q)r.count=[q[2],q[3]]}
   Object.assign(SPECIAL_BASE_COUNTS,{2:10,4:11,6:12,8:12,11:13,13:14,16:13,18:14,20:9,21:13,22:15,23:14,24:12});
 
-  const PACKS61={
-    2:[['객잔 경비병','시종'],['취객','객잔 쥐','객잔 쥐'],['떠돌이 도둑','시종'],['거대 거미','객잔 쥐']],
-    4:[['객잔 경비병','시종'],['취객','취객','객잔 쥐'],['떠돌이 도둑','거대 거미']],
-    6:[['정원 바위괴물','수목 궁수'],['독꽃','검은 뱀'],['정원사 망령','먹물 정령'],['식인 물고기','식인 물고기']],
-    8:[['독꽃','검은 뱀'],['정원사 망령','수목 궁수'],['먹물 정령','검은 뱀'],['정원 바위괴물','독꽃']],
-    11:[['비단 술래','윈도'],['향기요정','비단 술래'],['분홍거미','윈도']],
-    13:[['비단 술래','윈도','윈도'],['환각의 향로','향기요정'],['분홍거미','비단 술래']],
-    16:[['경비 인형 - 보병','경비 인형 - 포병'],['성채 비행 감시자','경비 인형 - 보병'],['화염 가고일','경비 인형 - 보병'],['해자 잠복꾼','녹아내린 슬라임']],
-    18:[['강시','식귀'],['산성 슬라임','굶주린 창고 쥐'],['경비 인형 - 보병','강시'],['식귀','식귀','굶주린 창고 쥐']],
-    21:[['공허 가오리','차원 포식자'],['천수 아수라','신전 사제 망령'],['만루의 수호상','신전 사제 망령']],
-    22:[['만루의 수호상','신전 사제 망령'],['천수 아수라','신전 사제 망령'],['차원 포식자','공허 가오리'],['공허 가오리','공허 가오리','천수 아수라']],
-    23:[['천수 아수라','공허 가오리','공허 가오리'],['신전 사제 망령','차원 포식자','천수 아수라'],['만루의 수호상','천수 아수라'],['공허 가오리','천수 아수라','신전 사제 망령','공허 가오리']],
-    24:[['보주의 파수꾼','신전 사제 망령','천수 아수라'],['차원 포식자','공허 가오리','공허 가오리'],['천수 아수라','신전 사제 망령','차원 포식자'],['보주의 파수꾼','천수 아수라','신전 사제 망령','공허 가오리']]
-  };
+
 
 
 
@@ -2853,9 +2800,9 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  function roomFree62(r,x,y){return x>r.x&&y>r.y&&x<r.x+r.w-1&&y<r.y+r.h-1&&state.map[y]?.[x]===TT.FLOOR&&(x!==state.player.x||y!==state.player.y)&&(x!==state.stairs.x||y!==state.stairs.y)}
 
-  function chooseVaultRoom62(){const features=state.featureRooms||[],a=(state.rooms||[]).filter(r=>r.w>=7&&r.h>=6&&!(state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h)&&!(state.stairs.x>=r.x&&state.stairs.x<r.x+r.w&&state.stairs.y>=r.y&&state.stairs.y<r.y+r.h)&&!features.some(f=>overlapRoom62(r,f)));return a.length?choice(a):null}
+
+
 
 
 
@@ -3125,13 +3072,7 @@ const RC={
 
 
 
-  function chooseRoom71(minW=8,minH=7,used=new Set()){
-    const pool=(state.rooms||[]).filter(r=>r.w>=minW&&r.h>=minH&&!roomHasEndpoint(r)&&!used.has(`${r.x},${r.y}`));
-    if(!pool.length)return null;
-    pool.sort((a,b)=>b.w*b.h-a.w*a.h);
-    const rr=pool[Math.min(pool.length-1,rand(0,Math.min(4,pool.length-1)))];
-    used.add(`${rr.x},${rr.y}`);return rr;
-  }
+
 
 
 
@@ -3324,7 +3265,7 @@ document.body.classList.add('mf75-clean');
 
 
 
-  function safeFloor78(x,y){return x>1&&y>1&&x<COLS-2&&y<ROWS-2&&!imp78(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y]?.[x])}
+
   
 
 
@@ -3727,15 +3668,6 @@ const CONFIG81=Object.freeze({
 
 
 
-  function normalizeDoors86(){
-    if(!state||state.specialFloor)return 0;let removed=0;
-    const pass=(x,y)=>in85(x,y)&&!tileBlocks(state.map[y][x]);
-    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.DOOR){
-      const l=pass(x-1,y),r=pass(x+1,y),u=pass(x,y-1),d=pass(x,y+1),n=(l?1:0)+(r?1:0)+(u?1:0)+(d?1:0),valid=(l&&r&&!u&&!d)||(u&&d&&!l&&!r);
-      if(!valid){setTerrainTile58(state.map,x,y,TT.FLOOR);removed++;}
-    }
-    state.doorCleanup86=removed;return removed;
-  }
 
 
 
@@ -3743,22 +3675,8 @@ const CONFIG81=Object.freeze({
 
 
 
-  function strategicPlacement85(path){
-    if(!NORMAL85.has(state.floor)||!path?.length)return;
-    const pathSet=new Set(path.map(p=>key85(p.x,p.y))),distPath=r=>{let best=1e9;for(const p of path){const d=Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy);if(d<best)best=d}return best};
-    const sideRooms=(state.rooms||[]).filter(r=>r.w>=5&&r.h>=5&&!pathSet.has(key85(r.cx,r.cy))).sort((a,b)=>distPath(b)-distPath(a));
-    const rewardRoom=sideRooms.find(r=>distPath(r)>=4);
-    if(rewardRoom&&ReachabilityService.playerPassable(rewardRoom.cx,rewardRoom.cy)&&!(state.items||[]).some(i=>Math.abs(i.x-rewardRoom.cx)+Math.abs(i.y-rewardRoom.cy)<3)){
-      try{dropRandomItem({x:rewardRoom.cx,y:rewardRoom.cy},true);state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:'측면 보급실',x:rewardRoom.x,y:rewardRoom.y,w:rewardRoom.w,h:rewardRoom.h,kind85:'reward'})}catch(error){ignoreError('side-room reward could not be placed; generation continues without it',error)}
-    }
-    const movable=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);
-    const moveNear=(mon,anchor)=>{if(!mon||!anchor)return false;for(let r=0;r<=4;r++)for(let y=anchor.y-r;y<=anchor.y+r;y++)for(let x=anchor.x-r;x<=anchor.x+r;x++){if(!in85(x,y)||Math.max(Math.abs(x-anchor.x),Math.abs(y-anchor.y))!==r)continue;if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;return true}}return false};
-    if(rewardRoom&&movable[0])moveNear(movable[0],{x:rewardRoom.cx,y:rewardRoom.cy});
-    const doors=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)if(state.map[y][x]===TT.DOOR&&pathSet.has(key85(x,y)))doors.push({x,y});
-    if(doors.length&&movable[1])moveNear(movable[1],doors[Math.floor(doors.length*.55)]);
-    if(sideRooms[1]&&movable[2])moveNear(movable[2],{x:sideRooms[1].cx,y:sideRooms[1].cy});
-    state.strategy85={mainPath:path.length,sideRooms:sideRooms.length,rewardRoom:rewardRoom?{x:rewardRoom.cx,y:rewardRoom.cy}:null,guardedDoors:doors.length};
-  }
+
+
   
   registerMinimapHook('architecture85',({sx,sy})=>{if(state)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.seen.has(k(x,y))){if(state.map[y][x]===TT.WINDOW){MX.fillStyle='#83a2a7';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}else if(state.map[y][x]===TT.GARDEN_TREE){MX.fillStyle='#456b45';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}}});
   registerGenerationStage('architecture85','post',finishArchitecture90);
@@ -3773,7 +3691,7 @@ const CONFIG81=Object.freeze({
   V85.version='v8.8-v80-structure-theme-decor';
   
   const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);
-  const DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.CARPET,TT.STONE_PATH]);
+
   function clear88(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL);state.rooms=[]}
 
 
@@ -3907,20 +3825,9 @@ const CONFIG81=Object.freeze({
 
 
 
-  function purposeRooms90(z){
-    const leaves=[...(state.branchLeaves92||[])],fallback=[...(state.branchRooms92||[])].sort((a,b)=>(b.branchDepth92||0)-(a.branchDepth92||0));const src=leaves.length?leaves:fallback;state.purposeRooms90=[];
-    const used=new Set(),wanted=Math.min(6,src.length);for(let i=0;i<wanted;i++){const r=src[i],rk=`${r.x},${r.y}`;if(used.has(rk))continue;used.add(rk);const type=['supply','armory','medic','archive','shrine','trapcache'][(state.floor+z+i*2)%6],cells=roomFreeCells90(r);if(!cells.length)continue;const center=cells.reduce((b,p)=>Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy)<Math.abs(b.x-r.cx)+Math.abs(b.y-r.cy)?p:b,cells[0]),t=purposeTile90(type,z);setTerrainTile58(state.map,center.x,center.y,t);
-      if(['supply','armory','archive','trapcache'].includes(type))addItem(r,type!=='supply');if(type==='trapcache'){const q=cells.find(p=>Math.abs(p.x-center.x)+Math.abs(p.y-center.y)>=2);if(q)setTerrainTile58(state.map,q.x,q.y,z===2?TT.SNARE:TT.TRAP)}
-      const rr={...r,purpose90:type};state.purposeRooms90.push(rr);feature89(({supply:'보급실',armory:'무기고',medic:'회복실',archive:'기록실',shrine:'제단실',trapcache:'위험 보관실'})[type],r,'purpose');
-    }
-    state.purposeCount90=state.purposeRooms90.length;
-  }
 
-  function guardPurposes90(){
-    const mons=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);let mi=0,guards=0;
-    for(const r of state.purposeRooms90||[]){if(mi>=mons.length)break;if(['medic','kitchen'].includes(r.purpose90))continue;const mon=mons[mi++];let placed=false;for(let rad=0;rad<=3&&!placed;rad++)for(let y=r.cy-rad;y<=r.cy+rad&&!placed;y++)for(let x=r.cx-rad;x<=r.cx+rad;x++){if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;guards++;placed=true;break}}}
-    state.purposeGuards90=guards;
-  }
+
+
 
 
   
@@ -3937,37 +3844,7 @@ const CONFIG81=Object.freeze({
 
   
 
-  function organic91(m,z){
-    reset91(m);const target=rand(12,16),cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);let tries=0;
-    // One larger anchor room near, but not exactly at, the center. It is the only deliberately grand volume.
-    const gw=Math.min(13,Math.max(10,Math.floor(COLS*.22))),gh=Math.min(10,Math.max(8,Math.floor(ROWS*.22))),gx=clamp(cx-Math.floor(gw/2)+rand(-3,3),2,COLS-gw-3),gy=clamp(cy-Math.floor(gh/2)+rand(-2,2),2,ROWS-gh-3);
-    const grand=add89(m,gx,gy,gw,gh,'grand',globalThis.__MANRU_RANDOM57__()<.45?'chamfer':'rect');grand.grand90=true;state.mainRooms90.push(grand);
-    while(state.rooms.length<target&&tries++<950){
-      const w=rand(6,11),h=rand(5,9),x=rand(2,Math.max(2,COLS-w-3)),y=rand(2,Math.max(2,ROWS-h-3));
-      if(roomOverlap91(x,y,w,h,2))continue;
-      const roll=globalThis.__MANRU_RANDOM57__(),shape=roll<.14?'chamfer':roll<.21&&w>=9&&h>=7?'cross':'rect',r=add89(m,x,y,w,h,'room',shape);state.mainRooms90.push(r);
-    }
-    // If random packing under-fills, add compact rooms in the remaining walls.
-    for(let t=0;state.rooms.length<10&&t<500;t++){
-      const w=6,h=5,x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(roomOverlap91(x,y,w,h,1))continue;const r=add89(m,x,y,w,h,'room','rect');state.mainRooms90.push(r);
-    }
-    const rooms=[...state.rooms];
-    // V7-like nearest-neighbour tree: every room joins its nearest already-connected room.
-    const connected=[grand],left=rooms.filter(r=>r!==grand);
-    while(left.length){let best=null,bd=1e9,bi=-1,ba=null;for(let i=0;i<left.length;i++)for(const a of connected){const d=Math.abs(left[i].cx-a.cx)+Math.abs(left[i].cy-a.cy);if(d<bd){bd=d;best=left[i];bi=i;ba=a}}if(!best)break;corridor89(m,ba,best,globalThis.__MANRU_RANDOM57__()<.28?'Z':globalThis.__MANRU_RANDOM57__()<.12?'diag':'L');connected.push(best);left.splice(bi,1)}
-    // Only local crosslinks: short alternative routes, never one giant outside bypass.
-    const pairs=[];for(let i=0;i<rooms.length;i++)for(let j=i+1;j<rooms.length;j++){const a=rooms[i],b=rooms[j],d=Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);if(d>=8&&d<=Math.max(15,Math.floor((COLS+ROWS)*.18)))pairs.push({a,b,d})}
-    pairs.sort((a,b)=>a.d-b.d);let links=0;for(const q of pairs){if(links>=rand(2,3))break;if(globalThis.__MANRU_RANDOM57__()<.42)continue;corridor89(m,q.a,q.b,links%2?'Z':'L');links++}
-    // Split only several large non-grand rooms; the wall plan does the work instead of decorative clutter.
-    const split=[...rooms].filter(r=>r!==grand&&r.w>=9&&r.h>=7).sort((a,b)=>b.w*b.h-a.w*a.h).slice(0,rand(2,4));split.forEach((r,i)=>splitRoom89(m,r,i%2?'h':'v',1));
-    // One or two compact annexes in wall pockets, echoing the v7 side-room feel.
-    let annex=0;for(let t=0;t<360&&annex<2;t++){
-      const w=rand(6,8),h=rand(5,7),x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(roomOverlap91(x,y,w,h,2))continue;
-      const r=add89(m,x,y,w,h,'annex','rect');state.mainRooms90.push(r);let near=null,bd=1e9;for(const a of state.rooms){if(a===r)continue;const d=Math.abs(a.cx-r.cx)+Math.abs(a.cy-r.cy);if(d<bd){bd=d;near=a}}if(near)corridor89(m,near,r,globalThis.__MANRU_RANDOM57__()<.5?'Z':'L');annex++;
-    }
-    state.grandRoom89=grand;const sorted=[...state.rooms].filter(r=>r!==grand).sort((a,b)=>Math.abs(a.cx-grand.cx)+Math.abs(a.cy-grand.cy)-(Math.abs(b.cx-grand.cx)+Math.abs(b.cy-grand.cy)));state.focalRooms89=[sorted[Math.floor(sorted.length*.33)],sorted[Math.floor(sorted.length*.72)]].filter(Boolean);
-    feature89('중앙 대실',grand,'grand');state.layoutMode85='v7-organic';state.layoutName='불규칙 객실군 · 근거리 연결 회랑 / 국소 순환 / 부속실';
-  }
+
   
 
 
@@ -4004,42 +3881,18 @@ const CONFIG81=Object.freeze({
   function segment93(out,x,y,tx,ty){while(x!==tx||y!==ty){const px=x,py=y;if(x!==tx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);out.push({x,y,dir:x!==px?'h':'v'})}return{x,y}}
 
 
-  function connectVar93(m,a,b,style='L',width=1,options=null){if(options)return connectProfileRooms105(m,a,b,width,options);const da=doorPoint88(a,b),db=doorPoint88(b,a);setTerrainTile58(m,da.x,da.y,TT.DOOR);setTerrainTile58(m,db.x,db.y,TT.DOOR);corridorCell(m,da.ox,da.oy);corridorCell(m,db.ox,db.oy);const pts=pathPoints93({x:da.ox,y:da.oy},{x:db.ox,y:db.oy},style);let lastDir=null;for(const p of pts){if(lastDir&&p.dir!==lastDir&&width>1)carveSquare(m,p.x,p.y,1,!!options);if(options){for(let o=0;o<width;o++)corridorCell(m,p.x+(p.dir==='v'?o:0),p.y+(p.dir==='h'?o:0),true);}else carveBand(m,p.x,p.y,p.dir,width);lastDir=p.dir}if(width>1){carveSquare(m,da.ox,da.oy,1,!!options);carveSquare(m,db.ox,db.oy,1,!!options)}return options?pts:null}
+
 
 
 
 
 globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
-  function placeRooms93(m,z,profile=null){
-    if(profile)return placeProfileRooms105(m,profile);
-    const rooms=[],target=state.floor===1?rand(10,13):rand(15,20),cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);let tries=0;
-    if(state.floor===1||globalThis.__MANRU_RANDOM57__()<.34){const gw=rand(11,15),gh=rand(7,10),gx=clamp(cx-Math.floor(gw/2)+rand(-6,6),2,COLS-gw-3),gy=clamp(cy-Math.floor(gh/2)+rand(-5,5),state.floor===1?17:2,ROWS-gh-3);if(canPlace93(gx,gy,gw,gh,2)){const g=addCompact93(m,gx,gy,gw,gh,'grand',globalThis.__MANRU_RANDOM57__()<.35?'chamfer':'pillars','hall');g.grand90=true;state.grandRoom89=g;if(state.floor===1){g.name='등불 대청';for(let yy=g.y+1;yy<g.y+g.h-1;yy++)for(let xx=g.x+1;xx<g.x+g.w-1;xx++)if(m[yy][xx]===TT.FLOOR)setTerrainTile58(m,xx,yy,Math.abs(xx-g.cx)<=1?TT.CARPET:(yy===g.y+1||yy===g.y+g.h-2)?TT.STONE_PATH:TT.WOOD_FLOOR);for(const xx of [g.x+2,g.x+g.w-3])for(const yy of [g.y+2,g.y+g.h-3])if(terrainSurface58(m[yy][xx]))setTerrainTile58(m,xx,yy,TT.LANTERN_POST)}rooms.push(g)}}
-    if(globalThis.__MANRU_RANDOM57__()<.48){const wide=globalThis.__MANRU_RANDOM57__()<.58,w=wide?rand(11,15):rand(5,7),h=wide?rand(4,6):rand(9,12),x=clamp(cx-Math.floor(w/2)+rand(-9,9),2,COLS-w-3),y=clamp(cy-Math.floor(h/2)+rand(-8,8),2,ROWS-h-3);if(canPlace93(x,y,w,h,1))rooms.push(addCompact93(m,x,y,w,h,'hall',globalThis.__MANRU_RANDOM57__()<.28?'chamfer':'rect','hall'))}
-    while(rooms.length<target&&tries++<1600){
-      let w,h,shape='rect',role='room';const roll=globalThis.__MANRU_RANDOM57__();
-      if(roll<.14){w=rand(11,15);h=rand(4,6);role='hall';shape=globalThis.__MANRU_RANDOM57__()<.25?'chamfer':'rect';}
-      else if(roll<.22){w=rand(5,7);h=rand(9,12);role='hall';shape='rect';}
-      else{w=rand(6,11);h=rand(5,9);shape=roll<.34?'chamfer':roll<.41&&w>=9&&h>=7?'cross':roll<.48&&w>=9&&h>=8?'pillars':'rect'}
-      let x,y;
-      if(rooms.length<3||globalThis.__MANRU_RANDOM57__()<.22){x=rand(2,Math.max(2,COLS-w-3));y=rand(2,Math.max(2,ROWS-h-3));}
-      else{const seed=choice(rooms),rx=seed.cx+rand(-13,13)-Math.floor(w/2),ry=seed.cy+rand(-10,10)-Math.floor(h/2);x=clamp(rx,2,COLS-w-3);y=clamp(ry,2,ROWS-h-3)}
-      if(!canPlace93(x,y,w,h,role==='hall'?1:1))continue;
-      if(rooms.length>=4){let near=1e9;for(const r of rooms)near=Math.min(near,Math.abs((x+Math.floor(w/2))-r.cx)+Math.abs((y+Math.floor(h/2))-r.cy));if(near>(role==='hall'?20:18)+(z>=3?2:0))continue}
-      rooms.push(addCompact93(m,x,y,w,h,role==='hall'?'hall':'room',shape,role));
-    }
-    for(let t=0;rooms.length<(state.floor===1?10:13)&&t<1350;t++){const w=globalThis.__MANRU_RANDOM57__()<.3?rand(9,13):6,h=globalThis.__MANRU_RANDOM57__()<.3?rand(4,6):5,x=rand(2,COLS-w-3),y=rand(2,ROWS-h-3);if(!canPlace93(x,y,w,h,1))continue;rooms.push(addCompact93(m,x,y,w,h,'room','rect',w>=9||h>=8?'hall':'room'))}
-    return rooms;
-  }
+
 
 
   
-  function softenRooms93(m,rooms,edges){
-    const deg=Array(rooms.length).fill(0);for(const e of edges){deg[e.a]++;deg[e.b]++;}
-    rooms.forEach((r,i)=>{if(deg[i]>=3&&r.w>=7&&r.h>=6){for(let yy=r.cy-1;yy<=r.cy+1;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(insideMapInterior(xx,yy)&&m[yy][xx]!==TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR)}
-      if(globalThis.__MANRU_RANDOM57__()<.24&&r.w>=8&&r.h>=7){const side=rand(0,3);if(side===0&&r.y>2)for(let yy=r.y-2;yy<r.y;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===1&&r.y+r.h<ROWS-2)for(let yy=r.y+r.h;yy<=r.y+r.h+1;yy++)for(let xx=r.cx-1;xx<=r.cx+1;xx++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===2&&r.x>2)for(let xx=r.x-2;xx<r.x;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);else if(side===3&&r.x+r.w<COLS-2)for(let xx=r.x+r.w;xx<=r.x+r.w+1;xx++)for(let yy=r.cy-1;yy<=r.cy+1;yy++)if(m[yy][xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.FLOOR);}
-    })
-  }
+
 
 
 
@@ -4224,7 +4077,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
 
 
-  function strictLockFloors(){return [...new Set([...LOCK_SPECIAL.keys(),...LOCK_NORMAL.keys()])]}
+
   
 
 
@@ -4390,7 +4243,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-  const floorSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.GOLD]);
+
   const plannedSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.KEY_TILE,TT.PAVILION,TT.FLOOR,TT.GOLD]);
   const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
 
@@ -4487,12 +4340,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
   
-  function floor21Stand981(x,y,opt={}){
-    if(!in980(x,y))return false;const t=tileReveal981(x,y,opt);
-    // 21F generation must never pass merely because the current run happens to carry a temporary hazard ward.
-    if([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].includes(t))return false;
-    return ReachabilityService.playerTerrainPassable(x,y,{...opt,tileAt:(x,y)=>tileReveal981(x,y,opt)});
-  }
+
   /* 21F canonical movement audit: the player chooses any legal landing 1..range tiles away on one of 8 rays.
      Direction input resolves to the farthest candidate, while pointer/touch may choose any nearer candidate. */
   
@@ -4556,7 +4404,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-function repairFloor21Blink(){return ensureFloor21Blink(4)}
+
 
   /* v9.8.3 direct monster stats / core loot / clean current-generation pipeline */
 if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU pipeline density stage missing');
@@ -4634,7 +4482,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
     ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
   ]);
-  const KNOWN_DECOR986=['trim','scroll','vines','roots','silk','chains','relief','rug','papers','rubble','bones','c81:runner','c81:roots','c81:silk','c81:chain','c81:vein','c81:canopy'];
 
 
 
@@ -5272,7 +5119,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.tur
 
 
 
-function safeFloorTile1020(t){return !tileBlocks(t)&&!HAZ1020().has(t)&&t!==TT.STAIR&&t!==TT.PORTAL&&t!==TT.SWITCH&&t!==TT.RAFT&&t!==TT.KEY_TILE}
 
 
 
@@ -5321,10 +5167,8 @@ function safeFloorTile1020(t){return !tileBlocks(t)&&!HAZ1020().has(t)&&t!==TT.S
 
 
 
-function restoreFloor20BossKeys1020(){
-  if(state.floor!==20||!state.f20BossLock1020)return null;
-  const p=installFloor20BossKeys();globalThis.__MANRU_TYPED_KEYS__?.restoreSurfaces?.();return p
-}
+
+
 
 
 
@@ -5369,25 +5213,7 @@ function restoreFloor20BossKeys1020(){
 
 
 
-function normalizeGrass1020(){
-  state.grassTufts1020=new Set();state.grassTone1020={};
-  const light=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.LIGHT_GRASS)light.push({x,y});
-  const lightSet=new Set(light.map(p=>K1020(p.x,p.y))),seenLight=new Set();
-  for(const p of light){const kk=K1020(p.x,p.y);if(seenLight.has(kk))continue;const q=[p],comp=[];seenLight.add(kk);for(let i=0;i<q.length;i++){const a=q[i];comp.push(a);for(const[dx,dy]of DIRS4){const nk=K1020(a.x+dx,a.y+dy);if(lightSet.has(nk)&&!seenLight.has(nk)){seenLight.add(nk);q.push({x:a.x+dx,y:a.y+dy})}}}
-    if(comp.length<=10){for(const a of comp){let base=TT.FLOOR,best=0;const c=new Map();for(const[dx,dy]of DIRS8){const tt=state.map[a.y+dy]?.[a.x+dx];if(tt!=null&&tt!==TT.LIGHT_GRASS&&tt!==TT.GRASS&&!tileBlocks(tt)&&!HAZ1020().has(tt)&&![TT.KEY_TILE,TT.STAIR,TT.PORTAL,TT.SWITCH,TT.RAFT,TT.LOCKED_GATE].filter(v=>v!=null).includes(tt))c.set(tt,(c.get(tt)||0)+1)}for(const[tt,n]of c)if(n>best){base=tt;best=n}setTerrainTile58(state.map,a.x,a.y,base);state.grassTufts1020.add(K1020(a.x,a.y))}}
-    else for(const a of comp)setTerrainTile58(state.map,a.x,a.y,TT.GRASS);
-  }
-  // Each connected lawn gets ONE smooth directional colour field. No per-tile random noise.
-  const grassSet=new Set();for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.GRASS)grassSet.add(K1020(x,y));
-  const seen=new Set(),fields={};let ci=0;
-  for(const kk0 of grassSet){if(seen.has(kk0))continue;const [sx,sy]=kk0.split(',').map(Number),q=[{x:sx,y:sy}],comp=[];seen.add(kk0);for(let i=0;i<q.length;i++){const a=q[i];comp.push(a);for(const[dx,dy]of DIRS4){const nk=K1020(a.x+dx,a.y+dy);if(grassSet.has(nk)&&!seen.has(nk)){seen.add(nk);q.push({x:a.x+dx,y:a.y+dy})}}}
-    const dirs=[[1,0],[0,1],[.7071,.7071],[.7071,-.7071]],pick=((state.floor||1)*17+sx*7+sy*13+ci*5)&3,[vx,vy]=dirs[pick],ux=-vy,uy=vx;let mn=1e9,mx=-1e9;for(const a of comp){const pr=a.x*vx+a.y*vy;mn=Math.min(mn,pr);mx=Math.max(mx,pr)}const span=Math.max(5,mx-mn),phase=((sx*11+sy*5+(state.floor||1)*19)%31)/31*Math.PI*2;
-    for(const a of comp){const pr=a.x*vx+a.y*vy,ort=a.x*ux+a.y*uy,t=(pr-mn)/span;fields[K1020(a.x,a.y)]=clamp1020(.18+.64*t+.035*Math.sin(ort/13+phase)+.018*Math.sin(pr/23+phase*.5),.12,.88)}ci++;
-  }
-  // two local smoothing passes keep adjacent tiles gradual while retaining the large directional change.
-  let vals=fields;for(let pass=0;pass<2;pass++){const nv={...vals};for(const kk of Object.keys(vals)){const [x,y]=kk.split(',').map(Number);let s=vals[kk]*4,n=4;for(const[dx,dy]of DIRS4){const v=vals[K1020(x+dx,y+dy)];if(v!=null){s+=v;n++}}nv[kk]=s/n}vals=nv}
-  state.grassTone1020=vals;
-}
+
 
 
 /* r5: floor edge blending is terrain-only; never paint gradients across doors or decoration cells. */
@@ -5403,7 +5229,6 @@ const GRAD_TERRAIN1025=new Set([TT.FLOOR,TT.GRASS,TT.CARPET,TT.STONE_PATH,TT.WOO
 
 
 
-function basicFloor1022(t){return [TT.FLOOR,TT.GRASS,TT.STONE_PATH,TT.WOOD_FLOOR,TT.DARK_WOOD,TT.CARPET,TT.GILDED_FLOOR,TT.MOON_STONE,TT.GOLD].filter(v=>v!=null).includes(t)}
 
 
 
@@ -5453,13 +5278,14 @@ function basicFloor1022(t){return [TT.FLOOR,TT.GRASS,TT.STONE_PATH,TT.WOOD_FLOOR
 
 
 
-function relocateRestaurantMonster42(m,fr){const reach=reachableSet1020({unlock:true,openBoss:true});let best=null,bd=1e9;for(const kk of reach){const[x,y]=kk.split(',').map(Number);if(restaurantInside(fr,x,y,0)||!candidateFinal1020(x,y,m))continue;const d=Math.abs(x-m.x)+Math.abs(y-m.y);if(d<bd){bd=d;best={x,y}}}if(best){m.x=best.x;m.y=best.y;return true}return false}
 
 
 
 
 
-function repairRestaurantRewards42(){for(const fr of state?.restaurantRooms42||[])for(const it of state.items||[])if(it.restaurantReward42&&it.restaurantId42===fr.restaurantId42)PlacementService.placeItem(it,{x:it.x,y:it.y},{restrict:p=>restaurantInside(fr,p.x,p.y,1),reachable:finalReachSet1029()})}
+
+
+
 
 
 
@@ -5512,18 +5338,6 @@ TERRAIN_R41_ARCH.specialAfter=(tile,px,py,x,y,now,r)=>{specialBlendOverlay1020(t
 
 
 
-function migrateFloor2Layout67(){
- const layout=state.floor===2&&state.floor2Choice63;if(!layout||layout.version>=3)return;
- const court=layout.court,cx=Math.floor(COLS/2);
- if(court){for(let y=court.y;y<court.y+court.h;y++)for(let x=court.x;x<court.x+court.w;x++){
-  setTerrainTile58(state.map,x,y,y<=47&&Math.abs(x-cx)<=1?TT.CARPET:TT.FLOOR);
-  const kk=K1020(x,y);for(const field of ['subthemeWalls970','archDecor1020','archDecor1023','outerWall94'])if(state[field])delete state[field][kk];
- }delete layout.court}
- for(let x=19;x<=28;x++)setTerrainTile58(state.map,x,43,TT.FLOOR);
- for(let x=54;x<=57;x++)setTerrainTile58(state.map,x,43,TT.FLOOR);
- const g=state.specialPlaces52;for(const z of g?.zones||[])if(z.y===40&&z.w===11&&z.h===8)encloseEntryDocumentRoom(g,z);
- finishEntryDocumentDoors67();layout.version=3;
-}
 
 
 
@@ -5539,63 +5353,20 @@ function migrateFloor2Layout67(){
 
 
 
-function rebalanceFloor6WaterR8(targetRatio=.36){
-  if(state.floor!==6)return null;const interior=(COLS-2)*(ROWS-2),nearPavilion=(x,y)=>{for(let yy=Math.max(1,y-2);yy<=Math.min(ROWS-2,y+2);yy++)for(let xx=Math.max(1,x-2);xx<=Math.min(COLS-2,x+2);xx++)if(state.map[yy]?.[xx]===TT.PAVILION||state.map[yy]?.[xx]===TT.RAFT)return true;return false};
-  const count=()=>{let n=0;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.WATER)n++;return n};let before=count(),goal=Math.floor(interior*targetRatio),water=before,passes=0;
-  while(water>goal&&passes++<8){const c=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){if(state.map[y][x]!==TT.WATER||nearPavilion(x,y))continue;let n4=0,n8=0;for(const[dx,dy]of DIRS8){const t=state.map[y+dy]?.[x+dx];if(t!==TT.WATER&&!tileBlocks(t)&&!HAZ1020().has(t)){n8++;if(!dx||!dy)n4++}}if(!n4)continue;const h=hash1022(floorSeedKey(`f6-shore:${x},${y}:${passes}`));c.push({x,y,score:n4*12+n8*2+(h%1000)/1000,h})}c.sort((a,b)=>b.score-a.score);const take=Math.min(water-goal,Math.max(90,Math.floor(c.length*.55)));if(!take)break;for(let i=0;i<take;i++){const q=c[i];if(!q)break;setTerrainTile58(state.map,q.x,q.y,(q.h%7===0)?TT.GRASS:(q.h%5===0?TT.STONE_PATH:TT.LIGHT_GRASS));}water=count()}
-  state.floor6WaterBalanceR8={before,after:water,goal,ratio:water/interior,passes};return state.floor6WaterBalanceR8
-}
 
 
 
 
 
 
-function enclosedRoomScore1026(r){
-  if(!r||r.w<8||r.h<6||r.w>38||r.h>28||roomTouchesProtected(r))return null;
-  const q=roomProbe1026(r);if(!q||q.area<48||q.area>520)return null;
-  // Only open interior plates are candidates. Existing furniture/partitions win over this pass.
-  if(q.openRatio<.61||q.wallRatio>.105||q.specialRatio>.25)return null;
-  const named=!!(r.name||r.label||r.append1020),indoorName=/객실|서고|보존|창고|장고|가옥|오두막|본관|내실|실내|연회|공방|병기|숙소|회랑실/.test(r.name||r.label||''),enclosed=q.enclosure>=.24||q.indoorRatio>=.36||indoorName||(named&&q.enclosure>=.16);
-  return enclosed?q:null;
-}
 
 
 
 
-/* R39 THEME-2 GARDEN COURTS — floor 8 keeps its authored house but the surrounding field is divided into optional courtyards/alleys instead of one giant lawn. */
-function shapeFloor8Garden1028(){
-  if(state.floor!==8)return null;
-  const snap=cloneTerrainMap58(state.map),path=walkPath(),route=new Set(path.map(p=>K1020(p.x,p.y))),madeCells=new Set();
-  const houses=(state.rooms||[]).filter(r=>/오두막|장옥|가옥|찻집|공방/.test(r.name||r.label||''));
-  const insideHouse=(x,y)=>houses.some(r=>x>=r.x-1&&x<r.x+r.w+1&&y>=r.y-1&&y<r.y+r.h+1);
-  const floorish=t=>[TT.GRASS,TT.LIGHT_GRASS,TT.FLOOR,TT.STONE_PATH].includes(t);
-  const putPath=(x,y)=>{if(!inside1020(x,y)||insideHouse(x,y)||!floorish(state.map[y]?.[x]))return false;setTerrainTile58(state.map,x,y,TT.STONE_PATH);madeCells.add(K1020(x,y));return true};
-  const joinRoute=(x,y)=>{let best=null,bd=1e9;for(const kk of route){const [rx,ry]=kk.split(',').map(Number),d=Math.abs(rx-x)+Math.abs(ry-y);if(d<bd){bd=d;best={x:rx,y:ry}}}if(!best)return;let cx=x,cy=y;while(cx!==best.x){putPath(cx,cy);cx+=Math.sign(best.x-cx)}while(cy!==best.y){putPath(cx,cy);cy+=Math.sign(best.y-cy)}putPath(best.x,best.y)};
-  let made=0;const centers=[];
-  const carve=(fx,fy,w,h,tag)=>{const cx=clamp1020(Math.round(COLS*fx),7,COLS-8),cy=clamp1020(Math.round(ROWS*fy),6,ROWS-7),x=cx-Math.floor(w/2),y=cy-Math.floor(h/2);let eligible=0,bad=0;
-    for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++){if(!inside1020(xx,yy)||insideHouse(xx,yy))bad++;else if(floorish(state.map[yy]?.[xx]))eligible++;else bad++}
-    if(eligible<Math.floor(w*h*.58)||bad>Math.floor(w*h*.42))return false;
-    const gates=new Set([K1020(cx,y),K1020(cx,y+h-1),K1020(x,cy),K1020(x+w-1,cy)]);
-    for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++){if(!floorish(state.map[yy]?.[xx]))continue;const kk=K1020(xx,yy),edge=xx===x||xx===x+w-1||yy===y||yy===y+h-1;
-      if(route.has(kk)){putPath(xx,yy);gates.add(kk);continue}
-      if(edge&&!gates.has(kk))setTerrainTile58(state.map,xx,yy,TT.HEDGE);
-      else if(!edge){if(xx===cx||yy===cy)putPath(xx,yy);else setTerrainTile58(state.map,xx,yy,hash1022(floorSeedKey(`r41-f8:${tag}:${xx},${yy}`))%7===0?TT.LIGHT_GRASS:TT.GRASS)}
-    }
-    for(const [xx,yy] of [[x+2,y+2],[x+w-3,y+2],[x+2,y+h-3],[x+w-3,y+h-3]])if(floorish(state.map[yy]?.[xx])&&!route.has(K1020(xx,yy))){setTerrainTile58(state.map,xx,yy,TT.BAMBOO)}
-    joinRoute(cx,cy);state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:`대나무 중정 ${made+1}`,x,y,w,h,cx,cy});centers.push({x:cx,y:cy});made++;return true
-  };
-  const specs=[[.18,.27,15,11],[.44,.22,13,9],[.72,.28,15,11],[.22,.68,15,11],[.53,.72,13,9],[.78,.66,15,11]];
-  for(let i=0;i<specs.length;i++)carve(...specs[i],`main${i}`);
-  // A random generator occasionally leaves only one or two sufficiently clean large courts.  Fill the same planned
-  // garden anchors with smaller courts rather than accepting a giant undivided lawn.  This still uses existing
-  // walkable garden cells and never cuts authored houses or the critical route.
-  if(made<3){const fallback=[[.30,.43,11,7],[.61,.45,11,7],[.38,.78,11,7],[.72,.76,11,7]];for(let i=0;i<fallback.length&&made<3;i++)carve(...fallback[i],`small${i}`)}
-  // Tie nearby court axes together with narrow stone alleys where the intervening cells are already garden floor.
-  centers.sort((a,b)=>a.x-b.x||a.y-b.y);for(let i=1;i<centers.length;i++){const a=centers[i-1],b=centers[i],mx=Math.round((a.x+b.x)/2);for(let x=Math.min(a.x,mx);x<=Math.max(a.x,mx);x++)putPath(x,a.y);for(let y=Math.min(a.y,b.y);y<=Math.max(a.y,b.y);y++)putPath(mx,y);for(let x=Math.min(mx,b.x);x<=Math.max(mx,b.x);x++)putPath(x,b.y)}
-  if(!reach1020(state.stairs,{unlock:true,openBoss:true})){state.map=snap;made=0;madeCells.clear()}
-  state.floor8GardenCourts1028={courts:made,houses:houses.length,pathCells:madeCells.size,routeProtected:path.length};return state.floor8GardenCourts1028;
-}
+
+
+
+
 
 
 
@@ -5610,7 +5381,6 @@ function shapeFloor8Garden1028(){
 /* R39 ENCOUNTER DISTRIBUTION — small contextual packs are allowed; ordinary generation cannot collapse into a mob ball. */
 
 
-function denseRoom1027(r){return !!r&&(state.monsterDenseRooms||[]).some(d=>sameRoom1027(r,d)||(r.cx>=d.x&&r.cx<d.x+d.w&&r.cy>=d.y&&r.cy<d.y+d.h))}
 
 
 
@@ -5622,59 +5392,6 @@ function denseRoom1027(r){return !!r&&(state.monsterDenseRooms||[]).some(d=>same
 
 
 
-function retireLegacyVisualDecor64(){
- if(!state)return;state.decor=(state.decor||[]).filter(d=>!RETIRED_DECOR64.has(d.kind));
- for(const name of ['archDecor1020','archDecor1023']){const src=state[name]||{};state[name]=Object.fromEntries(Object.entries(src).filter(([,kind])=>kind==='goldSeal'||kind==='holyIcon1023'))}
- state.decorCanonical1029=null;
-}
-function sanitizeWallDecor1029(){
-  if(!state?.decor)return{removed:0};const before=state.decor.length;state.decor=state.decor.filter(d=>d.layer!=='wall'||(state.map?.[d.y]?.[d.x]===TT.WALL&&state.map?.[d.y+1]?.[d.x]!==TT.WALL));const out={removed:before-state.decor.length};state.wallDecorSanitize1029=out;return out;
-}
-
-
-function repairBlockingPhysicalDecor1029(){
-  if(!state||[11,13,21].includes(state.floor)){state.decorRouteRepair1029={removed:0,mechanicFloor:[11,13,21].includes(state.floor)};return state.decorRouteRepair1029}
-  if(finalExitReach1029()){state.decorRouteRepair1029={removed:0,alreadyReachable:true};return state.decorRouteRepair1029}
-  const path=ReachabilityService.physicalDecorRoute({K1020,inside1020,PHYSICAL_DECOR_BLOCKERS1029,HAZ1020});if(!path){state.decorRouteRepair1029={removed:0,noDecorOnlyPath:true};return state.decorRouteRepair1029}
-  const removed=[];for(const p of path){const t=state.map[p.y][p.x];if(!PHYSICAL_DECOR_BLOCKERS1029.has(t))continue;const counts=new Map();for(const[dx,dy]of DIRS8){const n=state.map[p.y+dy]?.[p.x+dx];if(n!=null&&!tileBlocks(n)&&!HAZ1020().has(n))counts.set(n,(counts.get(n)||0)+1)}let base=terrainUnderlayAt58(p.x,p.y);if(!terrainSurface58(base)){let best=-1;base=TT.FLOOR;for(const[t0,n]of counts)if(n>best){base=t0;best=n}}setTerrainTile58(state.map,p.x,p.y,base);removed.push({x:p.x,y:p.y,t})}
-  state.decorRouteRepair1029={removed:removed.length,cells:removed,restored:finalExitReach1029()};return state.decorRouteRepair1029;
-}
-
-function connectArchitectureRooms51(){
-  if(state.floor===18&&state.ironGate18_1020){const g=state.ironGate18_1020;setTerrainTile58(state.map,g.x,g.y,TT.LOCKED_GATE)}
-  const carved=[];const protectedGate=(x,y)=>[state.bossExitGate1020,state.ironGate18_1020,state.outdoorGate24_1020,state.midGate22_1020].some(p=>p&&p.x===x&&p.y===y);
-  for(let attempt=0;attempt<160;attempt++){
-    const reach=finalReachSet1029(),targets=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(!tileBlocks(state.map[y][x])&&!HAZ1020().has(state.map[y][x])&&!reach.has(K1020(x,y)))targets.push({x,y});
-    if(!targets.length)break;
-    // Multi-source shortest wall crossing: never bridge hazards or overwrite a gate/key/reward.
-    const q=[],prev=new Map(),seen=new Set();for(const p of targets){const k=K1020(p.x,p.y);q.push(p);seen.add(k)}let end=null;
-    for(let i=0;i<q.length&&!end;i++){const p=q[i];for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy,k=K1020(x,y);if(!inside1020(x,y)||seen.has(k)||protectedGate(x,y))continue;const t=state.map[y][x];const water=t===TT.WATER||(state.floor===25&&t===TT.VOID),span=water?(p.waterSpan||0)+1:0;if((HAZ1020().has(t)&&!water)||span>(state.floor===11?2:6)||t===TT.LOCKED_GATE||t===TT.DRAWBRIDGE_UP)continue;if(tileBlocks(t)&&!water&&t!==TT.WALL&&t!==TT.BAMBOO&&t!==TT.HEDGE&&!PHYSICAL_DECOR_BLOCKERS1029.has(t))continue;seen.add(k);prev.set(k,K1020(p.x,p.y));if(reach.has(k)){end=k;break}q.push({x,y,waterSpan:span})}}
-    if(!end)break;let k=prev.get(end);while(k){const[x,y]=k.split(',').map(Number),t=state.map[y][x];if(tileBlocks(t)||t===TT.WATER||t===TT.VOID){setTerrainTile58(state.map,x,y,t===TT.WATER?TT.WOOD_FLOOR:t===TT.VOID?TT.MOON_STONE:TT.FLOOR);carved.push({x,y,old:t});delete state.bookWallMap1022?.[k];delete state.archDecor1023?.[k]}k=prev.get(k)}
-  }
-  state.architectureConnections51={carved:carved.length,cells:carved};return state.architectureConnections51;
-}
-
-function placeFloor6LibraryRewardR8(){
-  if(state.floor!==6||!state.f6LibraryPrizeR8)return false;const up=(window.MANRU_TALISMANS||[]).find(i=>i.talismanKind==='upgrade');if(!up)return false;
-  let q=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},state.f6LibraryPrizeR8.x,state.f6LibraryPrizeR8.y,null,p=>state.libraryZones1022?.some(z=>z.name==='봉인 고문서고'&&p.x>=z.x&&p.y>=z.y&&p.x<z.x+z.w&&p.y<z.y+z.h));
-  if(!q||occupiedFinal(q.x,q.y))q=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},state.f6LibraryPrizeR8.x,state.f6LibraryPrizeR8.y);if(!q)return false;
-  PlacementService.placeItem({...clone(up),x:q.x,y:q.y,count:1,r8LibraryPrize:true});state.f6LibraryPrizeR8={...q};return true
-}
-function repairFloor23MercuryConnectivity1029(){
-  if(!state||state.floor!==23)return{ok:true,bridges:0,components:0};
-  const safe=(x,y)=>inside1020(x,y)&&!tileBlocks(state.map[y][x])&&!HAZ1020().has(state.map[y][x])&&!globalThis.__MANRU_RUMOR_SPACES1030__?.isSealedInterior?.(x,y),protectedCell=(x,y)=>state.stairs&&(x===state.stairs.x&&y===state.stairs.y)||(state.player&&x===state.player.x&&y===state.player.y)||[TT.CACHE,TT.ARMORY,TT.VAULT,TT.ALTAR,TT.FOUNTAIN,TT.RUMOR,TT.PAVILION].includes(state.map[y]?.[x]);
-  let bridges=0,components=0;
-  for(let pass=0;pass<32;pass++){
-    const reach=finalReachSet1029(),unseen=new Set();for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(safe(x,y)&&!reach.has(K1020(x,y)))unseen.add(K1020(x,y));
-    if(!unseen.size)break;
-    const first=unseen.values().next().value,[sx,sy]=first.split(',').map(Number),comp=[],cq=[{x:sx,y:sy}];unseen.delete(first);for(let i=0;i<cq.length;i++){const p=cq[i];comp.push(p);for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy,kk=K1020(x,y);if(unseen.has(kk)){unseen.delete(kk);cq.push({x,y})}}}components++;
-    const q=[],prev=new Int32Array(COLS*ROWS);prev.fill(-2);for(const p of comp){const idx=p.y*COLS+p.x;prev[idx]=-1;q.push(p)}let end=-1;
-    for(let i=0;i<q.length&&end<0;i++){const p=q[i],pidx=p.y*COLS+p.x;for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(!inside1020(x,y))continue;const idx=y*COLS+x;if(prev[idx]!==-2)continue;const t=state.map[y][x],allowed=t===TT.MERCURY||t===TT.DRAWBRIDGE_DOWN||safe(x,y);if(!allowed||protectedCell(x,y)&&!reach.has(K1020(x,y)))continue;prev[idx]=pidx;if(reach.has(K1020(x,y))){end=idx;break}q.push({x,y})}}
-    if(end<0)break;
-    let at=end;while(at>=0){const x=at%COLS,y=(at/COLS)|0,t=state.map[y][x];if(t===TT.MERCURY){setTerrainTile58(state.map,x,y,TT.DRAWBRIDGE_DOWN);bridges++}at=prev[at]}
-  }
-  const audit=finalReachSet1029(),remaining=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(safe(x,y)&&!audit.has(K1020(x,y)))remaining.push({x,y});state.floor23MercuryRepair1029={ok:remaining.length===0,bridges,components,remaining:remaining.length};return state.floor23MercuryRepair1029;
-}
 
 
 
@@ -5683,42 +5400,18 @@ function repairFloor23MercuryConnectivity1029(){
 
 
 
-function spreadFloor22R43(){
-  if(!state||state.floor!==22)return null;
-  const living=(state.monsters||[]).filter(m=>m.hp>0&&!m.boss),target=43;
-  // population61 owns the count. This pass only makes the final expanded floor obey the structural encounter budget.
-  if(living.length!==target){state.f22Population43={ok:false,count:living.length,reason:'population-count-before-zoning'};return state.f22Population43}
-  const original=state.monsters,placed=[];state.monsters=[];
-  const quotas=[['lower',F22_BUDGET43.lower],['central',F22_BUDGET43.central],['upper',F22_BUDGET43.upper]];
-  const cells={lower:[],central:[],upper:[]};
-  const reach=reachableSet1020({unlock:true,openBoss:true});
-  for(const kk of reach){const[x,y]=kk.split(',').map(Number),z=floor22Zone43(y);if(z&&safeFloorTile1020(state.map[y]?.[x])&&!HAZ1020().has(state.map[y]?.[x])&&Math.abs(x-state.player.x)+Math.abs(y-state.player.y)>=10&&Math.abs(x-state.stairs.x)+Math.abs(y-state.stairs.y)>=5)cells[z].push({x,y})}
-  const score=(p,zone,idx)=>{const midx=Math.floor(COLS/2),midy=Math.floor((ROWS-1)/2);return ((Math.abs(p.x-midx)*7+Math.abs(p.y-midy)*3+idx*17+(zone==='central'?11:zone==='upper'?23:37))%101)};
-  for(const z of Object.keys(cells))cells[z].sort((a,b)=>score(a,z,0)-score(b,z,0)||a.y-b.y||a.x-b.x);
-  let mi=0;const anchors=[];
-  const placePack=(zone,mobs,packIndex)=>{
-    const cands=cells[zone].filter(p=>anchors.every(a=>a.zone!==zone||Math.abs(a.x-p.x)+Math.abs(a.y-p.y)>=9));
-    cands.sort((a,b)=>score(a,zone,packIndex)-score(b,zone,packIndex));
-    for(const a of cands){
-      const temp=[];let good=true;
-      for(const m of mobs){
-        const near=[];for(let r=0;r<=3;r++)for(let oy=-r;oy<=r;oy++)for(let ox=-r;ox<=r;ox++){if(Math.max(Math.abs(ox),Math.abs(oy))!==r)continue;const x=a.x+ox,y=a.y+oy;if(floor22CellOk43(m,x,y,zone)&&floor22Density43(x,y,3)<4)near.push({x,y})}
-        if(!near.length){good=false;break}near.sort((u,v)=>Math.abs(u.x-a.x)+Math.abs(u.y-a.y)-Math.abs(v.x-a.x)-Math.abs(v.y-a.y));const p=near[0];Object.assign(m,p,{alerted:false});OccupancyService.addMonster(m);temp.push(m)
-      }
-      if(good){anchors.push({x:a.x,y:a.y,zone});placed.push(...temp);return true}
-      for(const m of temp){const ix=state.monsters.indexOf(m);if(ix>=0)state.monsters.splice(ix,1)}
-    }
-    return false
-  };
-  for(const[zone,q]of quotas){let left=q,packIndex=0;while(left>0){const n=Math.min(3,left),mobs=living.slice(mi,mi+n);if(!placePack(zone,mobs,packIndex++)){
-        for(const m of mobs){let p=null;for(const c of cells[zone])if(floor22CellOk43(m,c.x,c.y,zone)&&floor22Density43(c.x,c.y,3)<4){p=c;break}if(!p)break;Object.assign(m,p,{alerted:false});OccupancyService.addMonster(m);placed.push(m)}
-      }mi+=n;left-=n}}
-  if(placed.length!==target){state.monsters=original;state.f22Population43={ok:false,count:placed.length,reason:'zoning-placement-failed'};return state.f22Population43}
-  const counts={lower:0,central:0,upper:0};let maxLocal=0,unreachable=0,badTerrain=0;
-  const finalReach=reachableSet1020({unlock:true,openBoss:true});
-  for(const m of state.monsters){counts[floor22Zone43(m.y)]++;maxLocal=Math.max(maxLocal,floor22Density43(m.x,m.y,3));if(!finalReach.has(K1020(m.x,m.y)))unreachable++;if(!PlacementService.monsterCanStand(m,m.x,m.y))badTerrain++}
-  state.f22Population43={ok:state.monsters.length===target&&counts.lower===F22_BUDGET43.lower&&counts.central===F22_BUDGET43.central&&counts.upper===F22_BUDGET43.upper&&maxLocal<=4&&!unreachable&&!badTerrain,count:state.monsters.length,counts,maxLocal,unreachable,badTerrain,anchors:anchors.map(a=>({...a}))};return state.f22Population43
-}
+
+
+
+
+
+
+
+
+
+
+
+
 /* ===== MANRU r58.1 RUMOR-REVEALED HIDDEN SPACES / CANONICAL MAP EXTENSION ===== */
 const RUMOR_SPACE_VERSION1030='r58.1-rumor-spaces';
 

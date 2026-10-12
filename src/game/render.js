@@ -4875,3 +4875,41 @@ function dir1012(m,player=false){if(player){const f=state?.player?.facing||{x:0,
 const ARMOR_STYLE={'경량복':'light','강화 가죽 갑옷':'leather','철제 흉갑':'breast','관원용 두정갑':'dujeong','총사령관 황금갑':'gold'};
 const CLOAK_EMBLEM={'질긴 가죽망토':'stitch','바람막이망토':'wind','여행자망토':'pocket','두꺼운 면망토':'quilt','암영망토':'eye','축지망토':'dash','자력망토':'magnet','무술망토':'knot','보호망토':'shield','반사망토':'mirror','용암망토':'flame','면역망토':'seal'};
 function polyPlanter105(q,c,ps){q.fillStyle=c;q.beginPath();ps.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();}
+  function syncFloor23Gate60(){const q=state.floor23;if(state.floor!==23||!q)return false;for(const c of q.gateCells||[])setTerrainTile58(state.map,c.x,c.y,q.centerUnlocked?TT.DRAWBRIDGE_DOWN:TT.WALL);return true}
+  function materializeFloor23Reveal60(sw){
+    const branch=sw?.kind==='branch-reveal',q=state.floor23,r=branch?state.branchTerrain105?.reveals?.find(v=>v.switchId===sw.id):q?.reveal;if((!branch&&state.floor!==23)||!r||sw?.id!==r.switchId)return{handled:false};if(r.materialized||sw.used||sw.disabled)return{handled:true,changed:false,materialized:!!r.materialized};
+    if(branch&&(r.cells||[]).some(c=>branchLeafAt(c.x,c.y)&&state.map[c.y]?.[c.x]===TT.PAPER_BRIDGE)){toast('잎사귀가 걸려 수문이 작동하지 않는다. 모든 잎을 없애야 한다.');return{handled:true,changed:false,reason:'leaves-block'}}
+    const occupiedBefore=(r.cells||[]).filter(c=>runtimeTerrainOccupants57(c.x,c.y).length);if(occupiedBefore.length){toast('침수 구역에 누군가 있다. 뭍으로 물러나야 한다.');return{handled:true,changed:false,reason:'reveal-occupied',occupied:occupiedBefore.length}}
+    if(branch&&(r.cells||[]).some(c=>tileBlocks(c.t)&&state.items.some(i=>i.x===c.x&&i.y===c.y))){toast('올라올 구조물 위에 물품이 걸려 있다.');return{handled:true,changed:false,reason:'reveal-item-occupied'}}
+    for(const c of r.cells||[]){if(Number.isInteger(c.underlay)){const base=RuntimeTerrainOwner.mutate(c.x,c.y,c.underlay,{source:'f23-reveal-drain-base'});if(!base.ok)throw new Error(`F23 reveal base restore failed ${c.x},${c.y}:${base.reason}`)}const rr=RuntimeTerrainOwner.mutate(c.x,c.y,c.t,{source:'f23-reveal-drain'});if(!rr.ok||state.map[c.y]?.[c.x]!==c.t)throw new Error(`F23 reveal restore failed ${c.x},${c.y}:${rr.reason||'tile-rejected'}`)}
+    const legal=(r.cells||[]).filter(c=>!tileBlocks(state.map[c.y]?.[c.x])&&![TT.MERCURY,TT.WATER,TT.LAVA,TT.VOID,TT.STAIR,TT.DOOR,TT.OPEN_DOOR].includes(state.map[c.y]?.[c.x])).sort((a,b)=>(Math.abs(b.x-sw.x)+Math.abs(b.y-sw.y))-(Math.abs(a.x-sw.x)+Math.abs(a.y-sw.y))),spawned=[];
+    for(let i=0;i<(r.monsterNames||[]).length;i++){const name=r.monsterNames[i];let mon=null;for(const c of legal){if(spawned.some(v=>v.x===c.x&&v.y===c.y))continue;mon=spawnNamed(name,{x:c.x,y:c.y},{placementMode:'exact',provenance:'f23-reveal'});if(mon)break}if(mon)spawned.push({name:mon.name,x:mon.x,y:mon.y})}
+    produceWallMaterials105();r.materialized=true;r.used=true;r.spawnBatches=(r.spawnBatches||0)+1;r.spawnedIds=spawned.map(v=>`${v.name}@${v.x},${v.y}`);sw.used=true;sw.disabled=true;impact(sw.x,sw.y,'#bde8e6',5);for(const c of (r.cells||[]).filter((_,i)=>i%Math.max(1,Math.floor((r.cells||[]).length/10))===0).slice(0,10))impact(c.x,c.y,'#d7f4f2',2);if(branch)branchRevealReward(r);addLog(branch?'수위가 낮아지며 물 아래의 석조 구조물이 솟아올랐다.':`제 ${r.districtId}구역의 수은 수위가 내려가며 잠겨 있던 건물군이 드러났다.`);toast('침수 구역 배수 완료');VisibilityService.compute();updateAll();return{handled:true,changed:true,materialized:true,spawned}
+  }
+  function safeFloor78(x,y){return x>1&&y>1&&x<COLS-2&&y<ROWS-2&&!imp78(x,y)&&[TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(state.map[y]?.[x])}
+  function normalizeDoors86(){
+    if(!state||state.specialFloor)return 0;let removed=0;
+    const pass=(x,y)=>in85(x,y)&&!tileBlocks(state.map[y][x]);
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.DOOR){
+      const l=pass(x-1,y),r=pass(x+1,y),u=pass(x,y-1),d=pass(x,y+1),n=(l?1:0)+(r?1:0)+(u?1:0)+(d?1:0),valid=(l&&r&&!u&&!d)||(u&&d&&!l&&!r);
+      if(!valid){setTerrainTile58(state.map,x,y,TT.FLOOR);removed++;}
+    }
+    state.doorCleanup86=removed;return removed;
+  }
+  function strategicPlacement85(path){
+    if(!NORMAL85.has(state.floor)||!path?.length)return;
+    const pathSet=new Set(path.map(p=>key85(p.x,p.y))),distPath=r=>{let best=1e9;for(const p of path){const d=Math.abs(p.x-r.cx)+Math.abs(p.y-r.cy);if(d<best)best=d}return best};
+    const sideRooms=(state.rooms||[]).filter(r=>r.w>=5&&r.h>=5&&!pathSet.has(key85(r.cx,r.cy))).sort((a,b)=>distPath(b)-distPath(a));
+    const rewardRoom=sideRooms.find(r=>distPath(r)>=4);
+    if(rewardRoom&&ReachabilityService.playerPassable(rewardRoom.cx,rewardRoom.cy)&&!(state.items||[]).some(i=>Math.abs(i.x-rewardRoom.cx)+Math.abs(i.y-rewardRoom.cy)<3)){
+      try{dropRandomItem({x:rewardRoom.cx,y:rewardRoom.cy},true);state.featureRooms=state.featureRooms||[];state.featureRooms.push({name:'측면 보급실',x:rewardRoom.x,y:rewardRoom.y,w:rewardRoom.w,h:rewardRoom.h,kind85:'reward'})}catch(error){ignoreError('side-room reward could not be placed; generation continues without it',error)}
+    }
+    const movable=(state.monsters||[]).filter(m=>!m.boss&&!m.fixed&&!m.aquatic&&!m.flying);
+    const moveNear=(mon,anchor)=>{if(!mon||!anchor)return false;for(let r=0;r<=4;r++)for(let y=anchor.y-r;y<=anchor.y+r;y++)for(let x=anchor.x-r;x<=anchor.x+r;x++){if(!in85(x,y)||Math.max(Math.abs(x-anchor.x),Math.abs(y-anchor.y))!==r)continue;if(PlacementService.monsterCanStand(mon,x,y)){mon.x=x;mon.y=y;mon.alerted=false;return true}}return false};
+    if(rewardRoom&&movable[0])moveNear(movable[0],{x:rewardRoom.cx,y:rewardRoom.cy});
+    const doors=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++)if(state.map[y][x]===TT.DOOR&&pathSet.has(key85(x,y)))doors.push({x,y});
+    if(doors.length&&movable[1])moveNear(movable[1],doors[Math.floor(doors.length*.55)]);
+    if(sideRooms[1]&&movable[2])moveNear(movable[2],{x:sideRooms[1].cx,y:sideRooms[1].cy});
+    state.strategy85={mainPath:path.length,sideRooms:sideRooms.length,rewardRoom:rewardRoom?{x:rewardRoom.cx,y:rewardRoom.cy}:null,guardedDoors:doors.length};
+  }
+  const DECOR88=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.CARPET,TT.STONE_PATH]);
