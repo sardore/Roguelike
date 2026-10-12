@@ -12,6 +12,7 @@
   "branches.js",
   "elements.js",
   "world.js",
+  "layout.js",
   "spine.js",
   "input.js",
   "story.js",

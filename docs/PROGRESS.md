@@ -55,6 +55,7 @@
 | F-24 | TT 할당을 kernel로, 두 집합 수정·보완 비교 삭제(동작 변경) | 7629 | 446 / 573 | 755 | 70.7% | - |
 | qa-only | QA만 쓰는 선언 15개 → qa.js | 7614 | 431 / 573 | 755 | 70.7% | - |
 | world | world 도메인 생성(30문장) — elements 뒤, spine 앞 | 7171 | 401 / 573 | 755 | 72.5% | - |
+| layout | layout 도메인 생성(70문장) — world 뒤, spine 앞 | 6503 | 331 / 573 | 755 | 75.1% | - |
 
 ## 현재 파일별 줄 수
 
@@ -72,9 +73,10 @@
 | branches.js | 2381 |
 | elements.js | 247 |
 | world.js | 475 |
-| spine.js | 7171 |
+| layout.js | 740 |
+| spine.js | 6503 |
 | input.js | 149 |
 | story.js | 213 |
 | ui.js | 728 |
 | start.js | 6 |
-| (total) | 26038 |
+| (total) | 26110 |
