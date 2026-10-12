@@ -13,10 +13,10 @@
   "elements.js",
   "world.js",
   "layout.js",
-  "spine.js",
   "input.js",
   "story.js",
-  "ui.js"
+  "ui.js",
+  "spine.js"
  ],
  "afterClosure": [
   "start.js"
