@@ -505,14 +505,7 @@ function environmentStanding105(entity){
 
 
 
-function canMoveGroundItem57(it,x,y){
-  if(!state||!it||x<0||y<0||x>=COLS||y>=ROWS)return false;
-  const t=state.map?.[y]?.[x];
-  if(tileBlocks(t)||dangerousLootTerrain42(t)||t===TT.DOOR||t===TT.STAIR||t===TT.KEY_TILE||t===TT.PORTAL)return false;
-  if((state.monsters||[]).some(m=>m.hp>0&&monCovers(m,x,y)))return false;
-  if((state.items||[]).some(other=>other!==it&&other.x===x&&other.y===y))return false;
-  return true;
-}
+
 
 
 
@@ -896,9 +889,7 @@ function safeLootGround42(x,y){
 
 
 
-function silkThreadAt54(x,y){
- return !!state?.monsters?.some(mon=>mon.hp>0&&mon.bossPattern==='needle'&&entitiesHostile57(mon,state.player)&&mon.silk54?.links.some(l=>l.cells.some(c=>c.x===x&&c.y===y)));
-}
+
 
 
 
@@ -1778,45 +1769,7 @@ RuntimeState.ui.inventory=UX;
   // r54: superseded minimap throttle removed; the canonical function owns throttling.
   
 
-  // remove the v3.8 double-update-per-turn path: integrate field/status tick into one endTurn render.
-  function endTurnCore45(cost=1,turnOpts=null,turnResult){
-    if(!state||state.dead||state.victory)return;
-    const c=cost,playerAgency=turnOpts?.playerAgency!==false;
-    state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
-    if(playerAgency){state.playerAgencyTurns57++;if(state.status.illness>0&&--state.status.illness===0){addLog('중병의 유예가 끝났다.');die('중병');turnResult.aborted=true;turnResult.abortStage='illness';return}}
-    state._turnAgencyCounted57=playerAgency;
-    state.turn++;palaceAdvance(c);summonCleanup();summonUpdateButtons();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
-    turnResult.stageOrder.push('core:regen');dojoBedTick();if(state.status.regen>0){state.player.hp=Math.min(state.player.maxHp,state.player.hp+1);state.status.regen--}
-    turnResult.stageOrder.push('core:status');applyStatusTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:status';return}turnResult.stageOrder.push('core:hunger');hungerTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:hunger';return}
-    tickBossArenaMist(playerAgency);if(state.dead){turnResult.aborted=true;return}
-    turnResult.stageOrder.push('core:durations');for(const q of ['haste','weaken','evade','markCrit','poison','bleed','ward','upset','drunk','blind','skillSeal'])if(state.status[q]>0)state.status[q]--;
-    turnResult.stageOrder.push('core:loot');pullNearbyLoot();turnResult.stageOrder.push('core:summon-escort');summonEscortTurn();turnResult.stageOrder.push('core:energy');turnResult.energyAdded=c;state.enemyEnergy=(state.enemyEnergy||0)+c;let acted=0;
-    while(state.enemyEnergy>=1&&acted<3&&!state.dead&&!state.victory){state.enemyEnergy-=1;state.floorTurn++;turnResult.enemyRounds++;turnResult.stageOrder.push('core:rafts');updateRafts();turnResult.stageOrder.push('core:monsters');monsterTurn();if(!state.dead&&!state.victory){turnResult.stageOrder.push('core:allies');alliesTurn()}acted++}
-    turnResult.stageOrder.push('core:stealth');if(playerAgency&&state.status.stealth>0&&(state.player.stealthBornAgency1005??-1)<state.playerAgencyTurns57)state.status.stealth--;
-    turnResult.stageOrder.push('core:focus');recoverActorFocus105(state.player,state.turn);
-    // potion fields / temporary potion buffs
-    turnResult.stageOrder.push('core:fields');state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};
-    if(!tickCombatFields57()){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
-    turnResult.stageOrder.push('core:potion-buffs');for(const q of ['swift','fortify','willBoost'])if(state.status[q]>0)state.status[q]--;
-    turnResult.stageOrder.push('core:field-expiry');expireCombatFields();
-    if(playerAgency&&state.player.classState?.aimPower>0){const cs=state.player.classState,agency=state.playerAgencyTurns57;if(agency>cs.aimBornAgency&&agency!==cs.aimMoveAgency&&agency!==cs.aimAttackAgency)setAimPower(cs.aimPower+1)}
-    turnResult.stageOrder.push('core:body-power');if(playerAgency&&bodyPowerActive()){
-      const cs=state.player.classState,agency=state.playerAgencyTurns57;
-      if(agency>cs.powerBornAgencyTurn&&agency>cs.powerLastAgencyTurn){
-        cs.powerLastAgencyTurn=agency;
-        if(!state.dead)bodyPowerHeal(state.player);
-        cs.powerTurns--;
-        if(cs.powerTurns===0){
-          const duration=cs.powerExhaustion??cs.powerTotal;cs.powerTotal=0;cs.powerExhaustion=0;
-          applyHostileStatus('blind',duration,1);applyHostileStatus('upset',duration,1);
-          burst(state.player.x,state.player.y,'#b89870',12,.5);floatText(state.player.x,state.player.y,'탈진','#d7ab85',15);
-          addLog('괴력이 가셨다. 무리한 팽창의 반동으로 시야와 속이 무너진다.');
-        }
-      }
-    }
-    turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();
-    turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
-  }
+
 
 
 
@@ -2620,7 +2573,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
+
 
 
 
