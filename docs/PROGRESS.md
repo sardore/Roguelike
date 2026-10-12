@@ -60,6 +60,7 @@
 | boot 1-2 | input/story/ui를 spine 앞으로, 고정 ui 54·input 10 → 제자리 | 5980 | 219 / 573 | 755 | 77.2% | - |
 | P1→items | SPINE_RESIDUE P1: 사용처 과반이 items.js인 잎 선언 → items.js | 5980 | 215 / 573 | 755 | 77.2% | - |
 | P1→save | SPINE_RESIDUE P1: 사용처 과반이 save.js인 잎 선언 → save.js | 5969 | 211 / 573 | 755 | 77.2% | - |
+| P1→ui | SPINE_RESIDUE P1: 사용처 과반이 ui.js인 잎 선언 → ui.js | 5952 | 204 / 573 | 755 | 77.3% | - |
 
 ## 현재 파일별 줄 수
 
@@ -80,7 +81,7 @@
 | layout.js | 740 |
 | input.js | 250 |
 | story.js | 213 |
-| ui.js | 907 |
-| spine.js | 5969 |
+| ui.js | 931 |
+| spine.js | 5952 |
 | start.js | 6 |
-| (total) | 26228 |
+| (total) | 26235 |

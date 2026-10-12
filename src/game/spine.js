@@ -243,7 +243,7 @@ globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
-function inventoryCapacity(){return 25+(state?.player?.trinket?.branchEffect105==='capacity'?5:0)}
+
 
 
 
@@ -283,7 +283,7 @@ const AUTO_MOVE_RATE70=1.5;
 
 
 
-function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
+
 
 
 
@@ -674,7 +674,7 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 
 
 
-function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
+
 
 
 
@@ -4528,16 +4528,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   window.__MANRU_STORY992__={resume:()=>{const st=storyEnsureState();if(st?.dispatchPending60)return storyOpenNote('dispatch');return false},close:storyCloseModal,closeScene:storyCloseScene,selectEnding:storySelectEnding,continueScene:storyContinueScene,project:projectStoryUI,open:storyOpenNote,ending:storyResolveEnding};
 
 
-  /* ===== v10.0.1: class selection / player sprite / desktop right-click inspect ===== */
-  const CLASS1001_META={
-    wanderer:{seal:'感',role:'특임 감찰관 · 균형형',tag:'감찰'},
-    escort:{seal:'護',role:'금위 표사 · 생존형',tag:'호위'},
-    swordsman:{seal:'劍',role:'척후 검객 · 기동형',tag:'척후'},
-    archer:{seal:'弓',role:'척후 궁사 · 정밀 사격',tag:'궁사'},
-    infiltrator:{seal:'霧',role:'잠행객 · 연막 잠입',tag:'잠행'},
-    strongman:{seal:'力',role:'천하장사 · 초심자 생존형',tag:'장사'},
-    summoner:{seal:'巫',role:'소환형',tag:'소환'}
-  };
+
 
   // Final requested starting loadout. Inspector deliberately has no starting weapon.
   const wanderer1001=CLASSES.find(c=>c.id==='wanderer');
@@ -4552,7 +4543,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   
   
-  const EMPTY_ACTOR1001='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+
 
 
 
@@ -4560,16 +4551,8 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   let selectedClass1001=CLASSES[0].id;
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
-  const CLASS1001_STATS=[['hp','생명'],['focus','기'],['atk','공격'],['def','방어'],['eva','회피'],['will','의지'],['vision','시야']];
-  const CLASS1001_STAT_PATHS=Object.freeze({
-    hp:'M12 20 3.5 11.5C-1 6 6 1 12 7c6-6 13-1 8.5 4.5Z',
-    focus:'M12 2c1 5 6 7 6 12a6 6 0 0 1-12 0c0-3 2-5 4-7v6c3-2 3-6 2-11Z',
-    atk:'M9 12 18 3h3v3l-9 9ZM6 10l8 8M10 14l-5 5M3.5 17.5l3 3M12 12l6-6',
-    def:'M12 2 21 6v6c0 5-5 9-9 10-4-1-9-5-9-10V6ZM12 6v11M7 10h10',
-    eva:'M8 3c2 0 3 2 3 4v7l7 3c2 1 2 4 0 4H6l-1-6 1-8c0-2 0-4 2-4ZM2 8h2M1 12h3M2 16h2',
-    will:'M7 3h10v18H7ZM10 7h4M12 5v6M10 14l2-2 2 2-2 4Z',
-    vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
-  });
+
+
 
 
 

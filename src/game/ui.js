@@ -905,3 +905,27 @@ const RC={
 /* R7 refactor: library scroll visuals are part of canonical exact-item art. */
 function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const pool=(state.player.inventory||[]).filter(v=>{if(v===item)return false;if(['weapon','armor','cloak','relic','trinket'].includes(v.type))return v.identified!==true;if(v.type==='potion')return !!v.potionKind&&!state.knowledge56?.potionKnown?.[v.potionKind];if(v.type==='talisman')return !!v.talismanKind&&!state.knowledge56?.talismanKnown?.[v.talismanKind];return false}).slice(0,3);state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};for(const it of pool){if(it.type==='potion')state.knowledge56.potionKnown[it.potionKind]=true;else if(it.type==='talisman')state.knowledge56.talismanKnown[it.talismanKind]=true;else it.identified=true}addLog(`도서관 감식록: 미감정 물품 ${pool.length}개 감정.`);toast(`감정 ${pool.length}개`)}else{cleanseStatuses();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
 let ANVIL_SESSION105=null;
+function inventoryCapacity(){return 25+(state?.player?.trinket?.branchEffect105==='capacity'?5:0)}
+function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
+function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
+  /* ===== v10.0.1: class selection / player sprite / desktop right-click inspect ===== */
+  const CLASS1001_META={
+    wanderer:{seal:'感',role:'특임 감찰관 · 균형형',tag:'감찰'},
+    escort:{seal:'護',role:'금위 표사 · 생존형',tag:'호위'},
+    swordsman:{seal:'劍',role:'척후 검객 · 기동형',tag:'척후'},
+    archer:{seal:'弓',role:'척후 궁사 · 정밀 사격',tag:'궁사'},
+    infiltrator:{seal:'霧',role:'잠행객 · 연막 잠입',tag:'잠행'},
+    strongman:{seal:'力',role:'천하장사 · 초심자 생존형',tag:'장사'},
+    summoner:{seal:'巫',role:'소환형',tag:'소환'}
+  };
+  const EMPTY_ACTOR1001='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+  const CLASS1001_STATS=[['hp','생명'],['focus','기'],['atk','공격'],['def','방어'],['eva','회피'],['will','의지'],['vision','시야']];
+  const CLASS1001_STAT_PATHS=Object.freeze({
+    hp:'M12 20 3.5 11.5C-1 6 6 1 12 7c6-6 13-1 8.5 4.5Z',
+    focus:'M12 2c1 5 6 7 6 12a6 6 0 0 1-12 0c0-3 2-5 4-7v6c3-2 3-6 2-11Z',
+    atk:'M9 12 18 3h3v3l-9 9ZM6 10l8 8M10 14l-5 5M3.5 17.5l3 3M12 12l6-6',
+    def:'M12 2 21 6v6c0 5-5 9-9 10-4-1-9-5-9-10V6ZM12 6v11M7 10h10',
+    eva:'M8 3c2 0 3 2 3 4v7l7 3c2 1 2 4 0 4H6l-1-6 1-8c0-2 0-4 2-4ZM2 8h2M1 12h3M2 16h2',
+    will:'M7 3h10v18H7ZM10 7h4M12 5v6M10 14l2-2 2 2-2 4Z',
+    vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
+  });
