@@ -1986,8 +1986,7 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);
   const rule=document.createElement('div');rule.id='bossRule54';document.getElementById('canvasWrap')?.appendChild(rule);
 
-  /* ---------- lightweight procedural SFX ---------- */
-  function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}
+
 
 
 
