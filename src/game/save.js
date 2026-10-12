@@ -738,3 +738,17 @@ function dismissGameplayInput57(all=false){
 }
 const INPUT_COMMANDS57=Object.freeze(['MOVE','ATTACK','REST','PICKUP','CONTEXT_ACTION','DESCEND','BLINK','CLASS_SKILL','OPEN_MARTIAL','TOGGLE_SKILL_QUICK','QUICK_MARTIAL','OPEN_SUMMON105','TOGGLE_INVENTORY','TOGGLE_HELP','OPEN_MOBILE_DRAWER','OPEN_MAP','AUTO_EXPLORE','TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','MODAL_CANCEL','WORLD_SELECT','WORLD_INSPECT','CAMERA_PAN','CAMERA_ZOOM','CAMERA_CENTER','CLOSE_DOOR','QUICK_SLOT','TOGGLE_RELEASE','TOGGLE_SFX','STORY_OPEN_NOTE','STORY_SELECT_ENDING','STORY_CONFIRM_ENDING','STORY_CONTINUE','CIPHER_DIGIT','CIPHER_CLEAR','SAVE','LOAD']);
 const INPUT_ROUTER57_AUDIT={serial:0,handled:0,blocked:0,ignored:0,handledCommands:{},attempts:{},history:[],listeners:new Set()};
+function activeGameplayPanels57(){return gameplayPanels57().filter(panel=>interactionActive8(panel.id))}
+function gameplayInputOwner57(){
+  if(runState57()!=='playing')return{kind:'terminal',panels:[]};const panels=activeGameplayPanels57();
+  if(panels.length)return{kind:panels.some(p=>p.kind!=='targeting')?'modal':'targeting',panels};
+  return{kind:'none',panels:[]}
+}
+function gameplayInputAllowed57(opts={}){
+  if(state?.debugBattle57)return false;
+  if(RuntimeState.ui.generationPending)return false;
+  if(OrientationGate.active()&&runState57()==='playing')return false;
+  const owner=gameplayInputOwner57();if(owner.kind==='terminal')return false;if(owner.kind==='none')return true;
+  const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
+  return owner.panels.every(p=>allowed.has(p.id))
+}

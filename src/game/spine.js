@@ -288,20 +288,9 @@ const AUTO_MOVE_RATE70=1.5;
 
 
 
-function activeGameplayPanels57(){return gameplayPanels57().filter(panel=>interactionActive8(panel.id))}
-function gameplayInputOwner57(){
-  if(runState57()!=='playing')return{kind:'terminal',panels:[]};const panels=activeGameplayPanels57();
-  if(panels.length)return{kind:panels.some(p=>p.kind!=='targeting')?'modal':'targeting',panels};
-  return{kind:'none',panels:[]}
-}
-function gameplayInputAllowed57(opts={}){
-  if(state?.debugBattle57)return false;
-  if(RuntimeState.ui.generationPending)return false;
-  if(OrientationGate.active()&&runState57()==='playing')return false;
-  const owner=gameplayInputOwner57();if(owner.kind==='terminal')return false;if(owner.kind==='none')return true;
-  const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
-  return owner.panels.every(p=>allowed.has(p.id))
-}
+
+
+
 
 
 
