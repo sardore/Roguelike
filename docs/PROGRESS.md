@@ -81,6 +81,7 @@
 | P2→special | SPINE_RESIDUE P2: 공용 선언 → special.js | 5809 | 152 / 573 | 755 | 77.9% | - |
 | P2→ui | SPINE_RESIDUE P2: 공용 선언 → ui.js | 5791 | 148 / 573 | 755 | 78% | - |
 | P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5791 | 147 / 573 | 755 | 78% | - |
+| P2→render | SPINE_RESIDUE P2: 공용 선언 → render.js | 5781 | 146 / 573 | 755 | 78% | - |
 
 ## 현재 파일별 줄 수
 
@@ -92,7 +93,7 @@
 | items.js | 977 |
 | combat.js | 662 |
 | monsters.js | 2277 |
-| render.js | 4939 |
+| render.js | 4950 |
 | mapgen.js | 3332 |
 | special.js | 2038 |
 | branches.js | 2404 |
@@ -102,6 +103,6 @@
 | input.js | 256 |
 | story.js | 213 |
 | ui.js | 953 |
-| spine.js | 5791 |
+| spine.js | 5781 |
 | start.js | 6 |
-| (total) | 26292 |
+| (total) | 26293 |

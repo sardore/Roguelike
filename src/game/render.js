@@ -4937,3 +4937,14 @@ function debugBattleMonster57(entry,floor,gatekeeper=false,preview=false){
  let mon;if(entry.dojo){const d=entry.dojo;mon=preview?clone(entry.def):dojoCreateMartialist(d.rank,-1,DEBUG_BATTLE57.serial+1,d.final,d.style,{level:d.level,pursuer:d.pursuer});mon.name=entry.def.name;}else mon=scaledMonster(clone(entry.def),floor,{inventory:!preview});
  if(mon.equipmentActor105)updateEquipmentPhase105(mon);if(gatekeeper)globalThis.__MANRU_LEGEND47__.gatekeeper(mon,floor);return mon;
 }
+function burst(x,y,color="#ffffff",count=9,power=1){
+  const now=performance.now();
+  for(let i=0;i<count;i++){
+    const a=globalThis.__MANRU_RANDOM57__()*Math.PI*2, sp=(0.45+globalThis.__MANRU_RANDOM57__()*1.4)*power;
+    FX.particles.push({
+      x:x*TILE+TILE/2,y:y*TILE+TILE/2,
+      vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+      color,start:now,life:260+globalThis.__MANRU_RANDOM57__()*420,size:1+globalThis.__MANRU_RANDOM57__()*2.4
+    });
+  }
+}

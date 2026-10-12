@@ -172,17 +172,7 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-function burst(x,y,color="#ffffff",count=9,power=1){
-  const now=performance.now();
-  for(let i=0;i<count;i++){
-    const a=globalThis.__MANRU_RANDOM57__()*Math.PI*2, sp=(0.45+globalThis.__MANRU_RANDOM57__()*1.4)*power;
-    FX.particles.push({
-      x:x*TILE+TILE/2,y:y*TILE+TILE/2,
-      vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
-      color,start:now,life:260+globalThis.__MANRU_RANDOM57__()*420,size:1+globalThis.__MANRU_RANDOM57__()*2.4
-    });
-  }
-}
+
 
 
 
