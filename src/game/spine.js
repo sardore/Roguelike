@@ -125,29 +125,29 @@ function identifyStartingItems58(){
 
 
 let state = null;
-let inventoryOpen = false;
 
-let helpOpen = false;
 
-let cipherOpen = false;
-let mobileTab = "status";
-let touchStart = null;
+
+
+
+
+
 
 
 let autoWalkTimer = null;
 let autoWalkToken = 0;
 
-let inventoryTab = 'all';
-let inventorySelection = -1;
-const INPUT={held:new Set(),nextMoveAt:0};
-
-function clearHeldInput53(){globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia?.();if(typeof RuntimeState!=='undefined'&&RuntimeState.input?.qHold61){clearTimeout(RuntimeState.input.qHold61.timer);RuntimeState.input.qHold61=null;}INPUT.held.clear();INPUT.nextMoveAt=0;globalThis.__MANRU_RUNTIME81__?.stopHeld?.()}
-
-function actionTargetOpen56(){return interactionActive8('potionTargetHud')||interactionActive8('talismanTarget56')||interactionActive8('foodTarget57')||worldTargetActive57()}
 
 
 
-function endTargetInput57(ms=320){targetFollowupSuppressUntil=Math.max(targetFollowupSuppressUntil,performance.now()+Math.max(0,ms));clearHeldInput53();touchStart=null;return targetFollowupSuppressUntil}
+
+
+
+
+
+
+
+
 
 
 
@@ -186,7 +186,7 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-function displayText53(value){return String(value).replace(/-?\d+\.\d{3,}(?:e[+-]?\d+)?/gi,n=>displayNumber53(n))}
+
 
 function burst(x,y,color="#ffffff",count=9,power=1){
   const now=performance.now();
@@ -290,44 +290,12 @@ const AUTO_MOVE_RATE70=1.5;
 
 
 
-function gameplayPanels57(){return[
-  {id:'coach70',css:'show',close:()=>globalThis.__MANRU_RELEASE__?.closeTip?.()},
-  {id:'shop58',css:'open',close:closeShop58},
-  {id:'inventory',active:inventoryOpen,close:closeInventory},
-  {id:'martialPanel',active:martialOpen,close:closeMartial},
-  {id:'helpPanel',active:helpOpen,close:closeHelp},
-  {id:'cipherPanel',active:cipherOpen,close:closeCipher},
-  {id:'mobileDrawer',body:'mobile-drawer-open',close:closeMobileDrawer},
-  {id:'mobileMapModal',css:'open',close:closeMapModal},
-  {id:'mobileInspect',css:'open',close:closeInspect},
-  {id:'cook57',css:'show',close:closeCooking},
-  {id:'fusion74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
-  {id:'gear74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
-  {id:'choice991',css:'open',close:globalThis.__MANRU_ITEM_IDENTITY991__?.closeChoice},
-  {id:'storyModal992',css:'open',close:globalThis.__MANRU_STORY992__?.close},
-  {id:'storyScene992',css:'open',close:globalThis.__MANRU_STORY992__?.closeScene},
-  {id:'rc70',body:'rc70-open',close:globalThis.__MANRU_RELEASE__?.closePanel},
-  {id:'potionTargetHud',css:'show',kind:'targeting',close:globalThis.__MANRU_POTION41_ACTIONS__?.cancelTarget},
-  {id:'talismanTarget56',css:'show',kind:'targeting',close:clearTalismanInput57},
-  {id:'foodTarget57',css:'show',kind:'targeting',close:cancelFoodTarget},
-  {id:'anvilPanel105',kind:'modal',close:closeAnvil},
-  {id:'summonPanel105',kind:'modal',close:closeSummonPanel},
-  {id:'worldTarget57',css:'show',kind:'targeting',close:cancelWorldTarget}
-]}
-function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
-function interactionActive8(id){
-  if(id==='inventory')return inventoryOpen;if(id==='martialPanel')return martialOpen;if(id==='helpPanel')return helpOpen;if(id==='cipherPanel')return cipherOpen;
-  if(id==='cook57')return !!RuntimeState.ui.food?.cookOpen;
-  if(id==='worldTarget57')return worldTargetActive57();
-  if(id==='potionTargetHud')return !!globalThis.__MANRU_POTION41_ACTIONS__?.target?.();
-  if(id==='talismanTarget56')return !!(globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.target?.()||globalThis.__MANRU_TALISMAN74_ACTIONS__?.target?.());
-  if(id==='foodTarget57')return !!RuntimeState.ui.food?.foodTarget;
-  if(id==='rc70')return !!RuntimeState.ui.release?.panelOpen;
-  return RuntimeState.ui.sessions.has(id);
-}
-function setInteraction8(id,active){if(active)RuntimeState.ui.sessions.add(id);else RuntimeState.ui.sessions.delete(id);projectInteractionUI()}
 
-function setGenerationPresentation8(active){RuntimeState.ui.generationPending=active;projectInteractionUI()}
+function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
+
+
+
+
 function activeGameplayPanels57(){return gameplayPanels57().filter(panel=>interactionActive8(panel.id))}
 function gameplayInputOwner57(){
   if(runState57()!=='playing')return{kind:'terminal',panels:[]};const panels=activeGameplayPanels57();
@@ -342,7 +310,7 @@ function gameplayInputAllowed57(opts={}){
   const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
   return owner.panels.every(p=>allowed.has(p.id))
 }
-function gameplayUiOpen57(){return !state?.debugBattle57&&runState57()==='playing'}
+
 function dismissGameplayInput57(all=false){
   const panels=activeGameplayPanels57();if(!panels.length)return false;
   for(const panel of all?panels:[panels[panels.length-1]])panel.close?.(true);clearHeldInput53();return true
@@ -361,80 +329,10 @@ function clientCommand9(client,command){
 }
 
 
-const DesktopClient=Object.freeze({
-  kind:'desktop',
-  active(){return RuntimeState.client.type==='desktop'},
-  emit(command){return clientCommand9(this,command)},
-  handleEvent(e){
-    if(!this.active()){RuntimeState.client.desktop.inactivePhysical++;return}
-    RuntimeState.client.desktop.physical++;
-    if(e.type==='keydown'||e.type==='keyup'){clientKeyboardEvent(this,e);return}
-    if(e.type==='contextmenu'){
-      e.preventDefault();if(!state)return;e.stopPropagation();e.stopImmediatePropagation();this.emit({type:'WORLD_INSPECT',cell:globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY),source:'contextmenu'});return;
-    }
-    if(e.type==='wheel'){
-      const path=e.composedPath(),surface=RuntimeState.input.device?.input;if(!state||state.debugBattle57||!path.includes(C)&&!path.includes(surface))return;
-      const r=C.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return;
-      const unit=e.deltaMode===1?16:e.deltaMode===2?VIEW.h:1,dy=Math.max(-180,Math.min(180,(e.deltaY||0)*unit)),result=this.emit({type:'CAMERA_ZOOM',scale:Math.exp(-dy*.00165),anchor:{clientX:e.clientX,clientY:e.clientY},source:'wheel'});
-      if(result.status==='handled'){e.preventDefault();e.stopImmediatePropagation()}return;
-    }
-    if(e.currentTarget===C)clientTargetEvent(this,e)
-  },
-  cancelPhysical(){clearHeldInput53()},
-  snapshot(){return{kind:this.kind,active:this.active(),...RuntimeState.client.desktop}}
-});
-const MobileClient=Object.freeze({
-  kind:'mobile',
-  active(){return RuntimeState.client.type==='mobile'},
-  emit(command){return clientCommand9(this,command)},
-  handleEvent(e){
-    if(!this.active()){RuntimeState.client.mobile.inactivePhysical++;return}
-    RuntimeState.client.mobile.physical++;
-    if(e.type==='keydown'||e.type==='keyup'){clientKeyboardEvent(this,e);return}
-    if(e.currentTarget===C)clientTargetEvent(this,e)
-  },
-  cancelPhysical(){
-    clearHeldInput53();const device=RuntimeState.input.device;if(!device)return;
-    globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia?.();
-    for(const pointer of device.pointers?.values?.()||[]){clearTimeout(pointer.holdShow);clearTimeout(pointer.holdFire);if(device.input?.hasPointerCapture?.(pointer.id))device.input.releasePointerCapture(pointer.id)}
-    for(const [button,contact]of device.actionPointers?.entries?.()||[]){contact.down=null;contact.ready=false;button.classList.remove('rt81-pressed')}
-    device.pointers?.clear?.();device.hold?.classList.remove('show');device.gesture=null;device.mousePan=null;globalThis.__MANRU_RUNTIME81__?.stopHeld?.();
-  },
-  snapshot(){return{kind:this.kind,active:this.active(),...RuntimeState.client.mobile}}
-});
-const OrientationGate=Object.freeze({
-  active(){return false},
-  blocks(command){return this.active()&&runState57()==='playing'&&CLIENT_GAMEPLAY_COMMANDS.has(command?.type)},
-  project(){
-    const active=this.active()&&runState57()==='playing',overlay=document.getElementById('orientationGate9');
-    document.body.classList.toggle('orientation-gate9',active);if(overlay){overlay.hidden=!active;overlay.setAttribute('aria-hidden',String(!active))}return active;
-  },
-  snapshot(){return{owner:'OrientationGate',active:this.active(),blocking:this.active()&&runState57()==='playing',orientation:RuntimeState.client.orientation,client:RuntimeState.client.type}}
-});
-const ClientEnvironment=Object.freeze({
-  capture(){
-    const touch=Number(navigator.maxTouchPoints||0)>0||'ontouchstart'in window,coarse=!!window.matchMedia?.('(pointer: coarse)')?.matches,narrow=!!window.matchMedia?.('(max-width: 1080px)')?.matches;
-    return{touch,coarse,narrow,width:innerWidth,height:innerHeight,orientation:innerHeight>innerWidth?'portrait':'landscape'};
-  },
-  initialize(){
-    if(RuntimeState.client.initialized)return this.snapshot();const environment=this.capture();
-    RuntimeState.client.initialized=true;RuntimeState.client.environment=environment;RuntimeState.client.type=environment.touch&&(environment.coarse||environment.narrow)?'mobile':'desktop';RuntimeState.client.selection={touch:environment.touch,coarse:environment.coarse,narrow:environment.narrow};RuntimeState.client.orientation=environment.orientation;
-    this.project();return this.snapshot();
-  },
-  handleEvent(){this.refresh('environment-change')},
-  refresh(reason='refresh'){
-    const environment=this.capture(),before=RuntimeState.client.orientation;RuntimeState.client.environment=environment;RuntimeState.client.orientation=environment.orientation;RuntimeState.client.refreshes++;RuntimeState.client.lastReason=reason;
-    if(before!==environment.orientation){RuntimeState.client.transitions++;if(environment.orientation==='portrait')MobileClient.cancelPhysical()}
-    this.project();return this.snapshot();
-  },
-  project(){
-    const type=RuntimeState.client.type;document.body.dataset.manruClient=type||'';document.body.classList.toggle('client-desktop9',type==='desktop');document.body.classList.toggle('client-mobile9',type==='mobile');document.body.classList.toggle('client-portrait9',type==='mobile'&&RuntimeState.client.orientation==='portrait');OrientationGate.project();
-  },
-  activeClient(){return RuntimeState.client.type==='mobile'?MobileClient:DesktopClient},
-  emit(command){return this.activeClient().emit(command)},
-  routeEvent(e){return this.activeClient().handleEvent(e)},
-  snapshot(){return{owner:'ClientEnvironment',type:RuntimeState.client.type,orientation:RuntimeState.client.orientation,orientationGate:OrientationGate.active(),selection:{...RuntimeState.client.selection},environment:{...RuntimeState.client.environment},refreshes:RuntimeState.client.refreshes,transitions:RuntimeState.client.transitions,owners:{desktop:DesktopClient.active()?1:0,mobile:MobileClient.active()?1:0},inactiveEmissions:{desktop:0,mobile:0},desktop:DesktopClient.snapshot(),mobile:MobileClient.snapshot()}}
-});
+
+
+
+
 
 
 
@@ -569,10 +467,7 @@ function resolveOccupancyInteraction57(actor,target){
 
 
 
-function combatStatusIconHtml57(row){
- if(!row.glyph)return '';let path='';for(let y=0;y<row.glyph.length;y++)for(let x=0;x<row.glyph[y].length;x++)if(row.glyph[y][x]==='1')path+=`M${x} ${y}h1v1h-1z`;
- return `<svg class="combatStatusIcon57" data-status-icon="${row.key}" aria-hidden="true" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="currentColor" d="${path}"/></svg>`;
-}
+
 
 
 
@@ -792,14 +687,14 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 
 function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
 
-function editCipherGuess8(digit){if(runState57()!=='playing'||!cipherOpen||!state?.cipher)return false;const c=state.cipher;if(digit===null)c.guess=[];else{if(!Number.isInteger(digit)||digit<1||digit>5||c.guess.length>=5)return false;c.guess.push(digit)}renderCipherPanel();return true}
 
-function submitCipher(){const act=playerAction57('cipher',{allowCipher:true,stunMessage:'몸이 굳어 암호 장치를 조작하지 못했다.'});if(!act.ok)return !!act.consumed;const c=state.cipher;if(!c||c.guess.length!==5){toast('다섯 자리를 모두 입력해야 한다.');return false}const result=cipherResult(c.secret,c.guess);c.history.push({guess:[...c.guess],result});const solved=result.every(v=>v==='O');c.guess=[];if(solved){c.solved=true;const sw=state.switches.find(v=>v.kind==='cipher');if(sw){sw.used=true;for(const t of sw.targets)if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN)}addLog('O O O O O — 자물쇠가 풀렸다. 도개교가 내려온다.');impact(sw?.x??15,sw?.y??Math.floor(ROWS/2),'#e0b266',5);closeCipher()}else{addLog(`암호 실패: ${result.join(' ')}. 성채가 침입자를 감지했다.`);if(globalThis.__MANRU_RANDOM57__()<.40)spawnNamed(globalThis.__MANRU_RANDOM57__()<.5?'경비 인형 - 보병':'성채 비행 감시자',null,{provenance:'repeatable-reinforcement'});renderCipherPanel()}commitPlayerAction57(act,1);return true}
+
+
 ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
 
-function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
+
 
 
 ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
@@ -858,7 +753,7 @@ function playerAction57(kind,opts={}){
 
 
 
-function forcedMovementResisted57(entity,opts={}){if(!state||!entity||opts.hostile===false)return false;if(entity.armor?.elementGuard74==='earth'){floatText(entity.x,entity.y,'버팀','#d7b77f',9);return true}const cloak=entity===state.player?playerCloak():(entity.cloak||{}),r=clamp(Number(cloak.staggerResist)||0,0,.95);if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(entity.x,entity.y,'경직 저항','#b9d7cd',9);addLog(`${cloak.name||entity.name}: 강제이동을 버텼다.`);return true}return false}
+
 
 function resetFloorScopedState57(){if(!state)return;state.terrainReactions105=newTerrainReactions105();state.martialEcho=null;state.player.smokeInside1005=false;state.recentPlayerCells57=[];state.naturalPopulation57=null;state.noiseSequence57=null;noiseBudget=null;state.silkTraps57={};delete state.tutorialEntry60;delete state.floor23;delete state.floor24;for(const key of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendTerrain47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])if(Array.isArray(state[key]))state[key]=[];state._manualRangedTargetR8=null;state._manualTerrainTargetR8=null;state._lastPlayerPos60=null;state.crumbleBase60={};if(state.hazard1005){const drown=state.hazard1005?.drownUntil||0,voidWard=state.hazard1005?.voidUntil||0;state.hazard1005={armed:{},collapsed:{},lastWarn:{},drownUntil:drown,voidUntil:voidWard}}}
 
@@ -904,7 +799,7 @@ ActionDispatcher.register('ATTACK',basicAttack);
 
 
 
-const HAPTIC57={enabled:true};
+
 
 try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){ignoreError('haptics preference unreadable',error)}
 
@@ -1113,13 +1008,7 @@ function silkThreadAt54(x,y){
 const MANRU_PICKUP_PIPELINE_R25={stages:[],handlers:[]};
 function registerPickupStageR25(id,hooks){if(MANRU_PICKUP_PIPELINE_R25.stages.some(x=>x.id===id))throw new Error('duplicate pickup stage: '+id);MANRU_PICKUP_PIPELINE_R25.stages.push({id,pre:hooks?.pre,post:hooks?.post});return hooks}
 
-function pickupBaseR25(){
-  const item=state.items.find(it=>it.x===state.player.x&&it.y===state.player.y);if(!item){toast('발밑에 아이템이 없다.');return false}
-  if(item.type==='progress_key23'){state.items.splice(state.items.indexOf(item),1);if(state.floor23)state.floor23.keyAcquired=true;addLog('수은 심부 열쇠를 획득했다. 이제 계단의 봉인이 풀린다.');burst(state.player.x,state.player.y,'#d8f2ef',15,.8);updateAll();return true}
-  if(item.type==='story_note'){state.items.splice(state.items.indexOf(item),1);globalThis.storyCollectNote992?.(item.storyId);return true}
-  const result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
-  if(result.moved){if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
-}
+
 
 ActionDispatcher.register('PICKUP',pickup);
 
@@ -1132,49 +1021,24 @@ ActionDispatcher.register('PICKUP',pickup);
 const DESCEND_EFFECTS53=[];
 function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS53)effect({fromFloor,toFloor:state.floor})}
 
-function sellShop58(item){
- const shop=state?.shopIntermission,inv=state?.player?.inventory,index=inv?.indexOf(item),value=ShopMapBuilder.saleValue(item);
- if(!shop?.active||!adjacentMerchant58()||shop.purchaseId||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
- if(index<0||!value)return{ok:false,reason:'ineligible'};
- const staged=structuredClone(inv);if(!consumeItemQuantity(staged[index],1,staged))return{ok:false,reason:'quantity'};
- const candy={...CONSUMABLES.find(i=>i.foodKind==='coin_candy'),count:value},transfer=transferItemQuantity(candy,null,staged,value,{capacity:inventoryCapacity()});
- if(transfer.remaining){toast('엽전 엿을 받을 공간이 없다.');return{ok:false,reason:'capacity'}}
- state.player.inventory=staged;
- if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;toast('저장하지 못해 판매를 취소했다.');return{ok:false,reason:'save'}}
- renderShop();updateAll();return{ok:true,value};
-}
-function shopPrice58(item){return({common:1,rare:2,relic:3,sealed:5})[item.rarity]||1}
+
+
 
 
 
 
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
-function adjacentMerchant58(){return(state?.neutralInteractables58||[]).find(n=>n.kind==='merchant'&&entityDistance57(n,state.player)<=1)||null}
 
-function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity(i),0)}
-function purchaseShop58(id){
- const shop=state?.shopIntermission;if(!shop?.active||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
- const stock=shop.stock.find(s=>s.id===id);if(!stock)return{ok:false,reason:'missing'};if(stock.soldOut)return{ok:false,reason:'soldOut'};
- if(state.player.x!==stock.x||state.player.y!==stock.y||shop.purchaseId!==id)return{ok:false,reason:'position'};
- const price=shopPrice58(stock.item);if(stock.price!==price)return{ok:false,reason:'price'};
- const inv=state.player.inventory;if(shopCurrency58(inv)<price){toast('엽전 엿이 부족하다.');return{ok:false,reason:'funds'}}
- // Preflight uses the canonical transfer contract on a detached candidate inventory.
- // Currency slots are not assumed to disappear: a full bag fails without any debit.
- const staged=structuredClone(inv),item=structuredClone(stock.item),r=transferItemQuantity(item,null,staged,itemQuantity(item),{capacity:inventoryCapacity()});
- if(r.remaining){toast('행낭에 상품을 넣을 공간이 없다.');return{ok:false,reason:'capacity'}}
- let left=price;for(const candy of [...staged]){if(candy.foodKind!=='coin_candy')continue;const n=Math.min(left,itemQuantity(candy));if(n&&!consumeItemQuantity(candy,n,staged))throw new Error('shop quantity contract');left-=n;if(!left)break}if(left)throw new Error('shop debit contract');
- // Publish inventory and stock together; no turn, drop, or gameplay callback occurs between them.
- state.player.inventory=staged;stock.soldOut=true;
- if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;stock.soldOut=false;toast('저장하지 못해 교환을 취소했다.');return{ok:false,reason:'save'}}
- closeShop58();updateAll();return{ok:true,price};
-}
+
+
+
 ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('SHOP_SELL',sellShop58);
 
 
 
 
 
-function closeShop58(){setInteraction8('shop58',false);if(state?.shopIntermission)state.shopIntermission.purchaseId=null;clearHeldInput53();globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.()}
+
 
 
 
@@ -1247,18 +1111,12 @@ function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw
 
 
 
-function toggleInventory(){
-  if(!state) return;
-  if(inventoryOpen) closeInventory(); else openInventory();
-}
 
 
 
 
-function toggleHelp(){
-  if(!state) return;
-  if(helpOpen) closeHelp(); else openHelp();
-}
+
+
 
 
 
@@ -1400,13 +1258,7 @@ function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeRea
 Object.defineProperty(globalThis,'__MANRU_RUNTIME_START57__',{value:Object.freeze({ready:runtimeReady57,start:startRuntimeLoop57,started:()=>runtimeLoopStarted57===1}),writable:false,configurable:false});
 
 
-function openMobileDrawer(tab=null){
-  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  if(tab) mobileTab = tab;
-  setInteraction8('mobileDrawer',true);
-  setMobileTab(mobileTab);
-globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
-}
+
 
 
 
@@ -1450,8 +1302,8 @@ document.addEventListener('keydown',InputRouter,true);InputRouter.noteListener('
 
 // R7 refactor: removed obsolete v7 item wrapper; later canonical renderer supersedes it.
 
-const classGrid = document.getElementById("classGrid");
-const startGate=document.getElementById('startGate'),pickWrap=document.getElementById('classPickWrap'),enterBtn=document.getElementById('enterBtn'),continueBtn=document.getElementById('continueBtn'),classBackBtn=document.getElementById('classBackBtn');
+
+
 bindMobileTopButtons();
 renderMobileDrawer();
 
@@ -1660,16 +1512,13 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-/* ===== MANRU v3.3 INPUT / MODAL CLEANUP =====
-   Fixes Android ghost-click reopen, stacked long-press handlers, and game-input leakage while inspect is open.
-*/
-const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
 
-  const inspectWrap=()=>document.getElementById('mobileInspect');
+
+
   const inspectOpen=()=>!!interactionActive8('mobileInspect');
-  const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
-  const blocked=()=>inputNow()<U.blockUntil;
-  const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(error){ignoreError('a long-press cancel callback threw',error)}}U.longPresses.clear()};
+
+
+
 
 
 
@@ -1751,7 +1600,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);window.MANRU_POTIONS=POTIONS;
 
   function pcolor(i){return i?.color||'#b65b4c'}
-  const ph=document.createElement('div');ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);let potionTarget=null;
+ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
 ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
   registerPlayerStatStage55('potions41',s=>{if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s});registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
@@ -1853,18 +1702,13 @@ const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
 
   registerGenerationStage('room-structure44','post',()=>{structuralOrdinaryRooms44();repair44()});
 
-/* ===== MANRU v4.5 MOBILE UX / INPUT / PERFORMANCE OVERHAUL ===== */
-const UX={
-    paused:null,autoMeta:null,modalOpening:false,modalDirty:false,
-    closeBlockUntil:0,invEquipSlot:null,lastMiniAt:0,lastMiniTurn:-1,
-    invScrollByTab:Object.create(null)
-  };RuntimeState.ui.inventory=UX;
+RuntimeState.ui.inventory=UX;
 
 
 
 
-  const uiBlocking=()=>activeGameplayPanels57().length>0;
-  const viewerOpen=()=>!!(inventoryOpen||helpOpen||martialOpen||isDrawerOpen()||isInspectOpen()||isMapOpen());
+
+
 
   
 
@@ -2028,8 +1872,7 @@ const UX={
 
 
 
-  /* ---------- item ecology + long-term upgrade choice ---------- */
-  const role47=i=>{if(!i)return'other';if(['weapon','armor','cloak'].includes(i.type))return'gear';if(['relic','trinket'].includes(i.type))return'relic';if(i.type==='upgrade'||i.type==='martial_manual')return'strategy';if(i.type==='food')return'recovery';if(i.type==='potion')return ['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)?'recovery':'strategy';return'other'};
+
   
 
 
@@ -2333,7 +2176,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
   function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
   if(window.__MANRU_CLEAN_INSPECT53)window.__MANRU_CLEAN_INSPECT53.item=inspectHTML56;
 
-  const targetHud=document.createElement('div');targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';document.body.appendChild(targetHud);
+targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';document.body.appendChild(targetHud);
 
 
 
@@ -2402,7 +2245,7 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 RuntimeState.ui.food=V57;
 
 
-const COOKING_INGREDIENT_LIMIT57=Math.max(...FOOD_RECIPES.map(r=>r.ingredients.length));
+
 window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 
@@ -2779,9 +2622,7 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
   registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
 
 
-/* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */
-/* v6.1 final render coordinator: one camera snapshot and one world renderer per update */
-  const R61={last:0,lastMini:0,lastHud:0,dirty:true};
+
 
   
 
@@ -2830,27 +2671,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'feeling62',draw:drawFeelingOverlay});
 
-/* ===== MANRU v7.0 RELEASE CANDIDATE CORE ===== */
-const RC={
-    build:'r57 INPUT LOCK / HONEST CHAIN / SAVE VALIDATION',
-    panelOpen:false,
-    lastActionAt:0,
-    lastDraw:0,
-    lastMini:0,
-    lastHud:0,
-    lastViewport:0,
-    vw:0,vh:0,
-    saveBusy:false,
-    autosaveTimer:0,
-    lastAutosaveAt:0,
-    tutorialQueue:[],
-    tutorialShowing:false,
-    uiAudio:null,
-    uiGain:null,
-    uiVolume:.35,
-    textScale:1,
-    perf:{frames:0,lastCost:0,ema:0}
-  };
+
 
 
 
@@ -2881,17 +2702,7 @@ const RC={
   const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정');mb?.appendChild(releaseGearButton);
   const dg=document.createElement('button');dg.id='releaseGearDesktop70';dg.type='button';dg.textContent='設';dg.setAttribute('aria-label','설정');document.body.appendChild(dg);
 
-  /* ---------- tiny UI sound ---------- */
-  function uiTone70(freq=360,dur=.028){
-    if(RC.uiVolume<=0)return;
-    try{
-      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-      if(!RC.uiAudio)RC.uiAudio=new AC();
-      if(RC.uiAudio.state==='suspended')RC.uiAudio.resume();
-      const o=RC.uiAudio.createOscillator(),g=RC.uiAudio.createGain();o.type='square';o.frequency.value=freq;g.gain.value=.018*RC.uiVolume;
-      g.gain.exponentialRampToValueAtTime(.0001,RC.uiAudio.currentTime+dur);o.connect(g).connect(RC.uiAudio.destination);o.start();o.stop(RC.uiAudio.currentTime+dur+.01);
-    }catch(error){ignoreError('ui sound could not play',error)}
-  }
+
   panel.addEventListener('pointerup',e=>{if(e.target.closest('button'))uiTone70(410,.025)},{passive:true});
 
 
@@ -3273,42 +3084,16 @@ document.body.classList.add('mf75-clean');
   registerGenerationStage('polish78','post',()=>{polish78();VisibilityService.compute()});
 
 
-/* ===== MANRU v8.1: ALWAYS-ON AUTOWALK / FOLLOW-PEEK CAMERA / CONNECTED DECOR =====
-   Input, automation, camera and viewport UI have one explicit owner.
-   Map taps always mean destination movement. Auto-pickup is a fixed policy.
-*/
-const CONFIG81=Object.freeze({
-    version:'v8.1-structured-runtime',
-    autoMove:true,
-    autoPickup:true,
-    dragThreshold:11,
-    holdPreviewMs:330,
-    holdInspectMs:660,
-    repeatDelayMs:360,
-    repeatEveryMs:125
-  });
 
-  const Runtime81={
-    input:null,
-    hold:null,
-    pointers:new Map(),
-    actionPointers:new Map(),
-    gesture:null,
-    held:null,
-    repeatDelay:0,
-    repeatTick:0,
-    mousePan:null,
-    suppressClickUntil:0,
-    cameraInspecting:false,
-    qa:{mapTaps:0,autoMoves:0,autoPickups:0,holds:0,drags:0,pinches:0,manualMoves:0}
-  };
+
+
   RuntimeState.input.device=Runtime81;
 
   
   
   const targeting81=()=>actionTargetOpen56();
 
-  const canAct81=()=>gameplayInputAllowed57();
+
   
 
 
@@ -3555,7 +3340,7 @@ const CONFIG81=Object.freeze({
 
 
 
-  function queuePlace81(){requestAnimationFrame(placeInput)}
+
 
 
 
@@ -4071,7 +3856,7 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
 
-  function updateDesktopSide962(){if(innerWidth<=1080||!state)return;buildDesktopSide();updateRadar();updateKeys()}
+
   buildDesktopSide();
   registerPanelHook54('desktop962',updateDesktopSide962);
   addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
@@ -4679,7 +4464,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
   const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
-  let quickOpen991=false;
+
 
 
 
@@ -4798,7 +4583,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   });
 
 
-  let classLight1001=null;
+
 
 
 
@@ -5289,8 +5074,7 @@ const GRAD_TERRAIN1025=new Set([TT.FLOOR,TT.GRASS,TT.CARPET,TT.STONE_PATH,TT.WOO
 
 
 
-/* R7 refactor: library scroll visuals are part of canonical exact-item art. */
-function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const pool=(state.player.inventory||[]).filter(v=>{if(v===item)return false;if(['weapon','armor','cloak','relic','trinket'].includes(v.type))return v.identified!==true;if(v.type==='potion')return !!v.potionKind&&!state.knowledge56?.potionKnown?.[v.potionKind];if(v.type==='talisman')return !!v.talismanKind&&!state.knowledge56?.talismanKnown?.[v.talismanKind];return false}).slice(0,3);state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};for(const it of pool){if(it.type==='potion')state.knowledge56.potionKnown[it.potionKind]=true;else if(it.type==='talisman')state.knowledge56.talismanKnown[it.talismanKind]=true;else it.identified=true}addLog(`도서관 감식록: 미감정 물품 ${pool.length}개 감정.`);toast(`감정 ${pool.length}개`)}else{cleanseStatuses();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
+
 // r30: library scroll dispatch is integrated in canonical useInventoryItem.
 globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
 
@@ -6118,7 +5902,7 @@ function debugBattleMonster57(entry,floor,gatekeeper=false,preview=false){
 
 
 
-let ANVIL_SESSION105=null;
+
 
 
 

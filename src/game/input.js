@@ -147,3 +147,104 @@ function attachLongPress(el,fn){
   }
   function bindSkillButton(){const old=document.querySelector('#mobileControls [data-act="skill"]');if(!old||old.dataset.v991==='1')return;const b=old.cloneNode(true);b.dataset.v991='1';old.replaceWith(b);let timer=0,long=false,down=false,x=0,y=0;const clear=()=>{clearTimeout(timer);timer=0;down=false;b.classList.remove('rt81-pressed')};b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0||b.hidden||!b.isConnected||b.getClientRects().length===0)return;e.preventDefault();e.stopPropagation();down=true;long=false;x=e.clientX;y=e.clientY;b.classList.add('rt81-pressed');try{b.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}timer=setTimeout(()=>{if(!down)return;long=true;clearTimeout(timer);timer=0;b.classList.remove('rt81-pressed');ClientEnvironment.emit({type:'OPEN_MARTIAL',source:'skill-long-press'})},520)},{passive:false});b.addEventListener('pointermove',e=>{if(down&&Math.hypot(e.clientX-x,e.clientY-y)>18)clear()},{passive:true});b.addEventListener('pointerup',e=>{if(!down&&!long)return;e.preventDefault();e.stopPropagation();const wasLong=long;clear();if(!wasLong)ClientEnvironment.emit({type:'TOGGLE_SKILL_QUICK',source:'mobile-action'})},{passive:false});b.addEventListener('pointercancel',clear,{passive:true});b.onclick=e=>{e.preventDefault();e.stopPropagation()};b.title='짧게: 기술 사용 · 길게: 기술 강화';for(const id of ['skill:pointerdown','skill:pointermove','skill:pointerup','skill:pointercancel','skill:click'])InputRouter.noteListener(id)}
   const now=()=>performance.now();
+let touchStart = null;
+const INPUT={held:new Set(),nextMoveAt:0};
+const DesktopClient=Object.freeze({
+  kind:'desktop',
+  active(){return RuntimeState.client.type==='desktop'},
+  emit(command){return clientCommand9(this,command)},
+  handleEvent(e){
+    if(!this.active()){RuntimeState.client.desktop.inactivePhysical++;return}
+    RuntimeState.client.desktop.physical++;
+    if(e.type==='keydown'||e.type==='keyup'){clientKeyboardEvent(this,e);return}
+    if(e.type==='contextmenu'){
+      e.preventDefault();if(!state)return;e.stopPropagation();e.stopImmediatePropagation();this.emit({type:'WORLD_INSPECT',cell:globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY),source:'contextmenu'});return;
+    }
+    if(e.type==='wheel'){
+      const path=e.composedPath(),surface=RuntimeState.input.device?.input;if(!state||state.debugBattle57||!path.includes(C)&&!path.includes(surface))return;
+      const r=C.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return;
+      const unit=e.deltaMode===1?16:e.deltaMode===2?VIEW.h:1,dy=Math.max(-180,Math.min(180,(e.deltaY||0)*unit)),result=this.emit({type:'CAMERA_ZOOM',scale:Math.exp(-dy*.00165),anchor:{clientX:e.clientX,clientY:e.clientY},source:'wheel'});
+      if(result.status==='handled'){e.preventDefault();e.stopImmediatePropagation()}return;
+    }
+    if(e.currentTarget===C)clientTargetEvent(this,e)
+  },
+  cancelPhysical(){clearHeldInput53()},
+  snapshot(){return{kind:this.kind,active:this.active(),...RuntimeState.client.desktop}}
+});
+const MobileClient=Object.freeze({
+  kind:'mobile',
+  active(){return RuntimeState.client.type==='mobile'},
+  emit(command){return clientCommand9(this,command)},
+  handleEvent(e){
+    if(!this.active()){RuntimeState.client.mobile.inactivePhysical++;return}
+    RuntimeState.client.mobile.physical++;
+    if(e.type==='keydown'||e.type==='keyup'){clientKeyboardEvent(this,e);return}
+    if(e.currentTarget===C)clientTargetEvent(this,e)
+  },
+  cancelPhysical(){
+    clearHeldInput53();const device=RuntimeState.input.device;if(!device)return;
+    globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia?.();
+    for(const pointer of device.pointers?.values?.()||[]){clearTimeout(pointer.holdShow);clearTimeout(pointer.holdFire);if(device.input?.hasPointerCapture?.(pointer.id))device.input.releasePointerCapture(pointer.id)}
+    for(const [button,contact]of device.actionPointers?.entries?.()||[]){contact.down=null;contact.ready=false;button.classList.remove('rt81-pressed')}
+    device.pointers?.clear?.();device.hold?.classList.remove('show');device.gesture=null;device.mousePan=null;globalThis.__MANRU_RUNTIME81__?.stopHeld?.();
+  },
+  snapshot(){return{kind:this.kind,active:this.active(),...RuntimeState.client.mobile}}
+});
+const ClientEnvironment=Object.freeze({
+  capture(){
+    const touch=Number(navigator.maxTouchPoints||0)>0||'ontouchstart'in window,coarse=!!window.matchMedia?.('(pointer: coarse)')?.matches,narrow=!!window.matchMedia?.('(max-width: 1080px)')?.matches;
+    return{touch,coarse,narrow,width:innerWidth,height:innerHeight,orientation:innerHeight>innerWidth?'portrait':'landscape'};
+  },
+  initialize(){
+    if(RuntimeState.client.initialized)return this.snapshot();const environment=this.capture();
+    RuntimeState.client.initialized=true;RuntimeState.client.environment=environment;RuntimeState.client.type=environment.touch&&(environment.coarse||environment.narrow)?'mobile':'desktop';RuntimeState.client.selection={touch:environment.touch,coarse:environment.coarse,narrow:environment.narrow};RuntimeState.client.orientation=environment.orientation;
+    this.project();return this.snapshot();
+  },
+  handleEvent(){this.refresh('environment-change')},
+  refresh(reason='refresh'){
+    const environment=this.capture(),before=RuntimeState.client.orientation;RuntimeState.client.environment=environment;RuntimeState.client.orientation=environment.orientation;RuntimeState.client.refreshes++;RuntimeState.client.lastReason=reason;
+    if(before!==environment.orientation){RuntimeState.client.transitions++;if(environment.orientation==='portrait')MobileClient.cancelPhysical()}
+    this.project();return this.snapshot();
+  },
+  project(){
+    const type=RuntimeState.client.type;document.body.dataset.manruClient=type||'';document.body.classList.toggle('client-desktop9',type==='desktop');document.body.classList.toggle('client-mobile9',type==='mobile');document.body.classList.toggle('client-portrait9',type==='mobile'&&RuntimeState.client.orientation==='portrait');OrientationGate.project();
+  },
+  activeClient(){return RuntimeState.client.type==='mobile'?MobileClient:DesktopClient},
+  emit(command){return this.activeClient().emit(command)},
+  routeEvent(e){return this.activeClient().handleEvent(e)},
+  snapshot(){return{owner:'ClientEnvironment',type:RuntimeState.client.type,orientation:RuntimeState.client.orientation,orientationGate:OrientationGate.active(),selection:{...RuntimeState.client.selection},environment:{...RuntimeState.client.environment},refreshes:RuntimeState.client.refreshes,transitions:RuntimeState.client.transitions,owners:{desktop:DesktopClient.active()?1:0,mobile:MobileClient.active()?1:0},inactiveEmissions:{desktop:0,mobile:0},desktop:DesktopClient.snapshot(),mobile:MobileClient.snapshot()}}
+});
+/* ===== MANRU v3.3 INPUT / MODAL CLEANUP =====
+   Fixes Android ghost-click reopen, stacked long-press handlers, and game-input leakage while inspect is open.
+*/
+const U={blockUntil:0,longPresses:new Set(),inspectOpenedAt:0};
+/* ===== MANRU v8.1: ALWAYS-ON AUTOWALK / FOLLOW-PEEK CAMERA / CONNECTED DECOR =====
+   Input, automation, camera and viewport UI have one explicit owner.
+   Map taps always mean destination movement. Auto-pickup is a fixed policy.
+*/
+const CONFIG81=Object.freeze({
+    version:'v8.1-structured-runtime',
+    autoMove:true,
+    autoPickup:true,
+    dragThreshold:11,
+    holdPreviewMs:330,
+    holdInspectMs:660,
+    repeatDelayMs:360,
+    repeatEveryMs:125
+  });
+  const Runtime81={
+    input:null,
+    hold:null,
+    pointers:new Map(),
+    actionPointers:new Map(),
+    gesture:null,
+    held:null,
+    repeatDelay:0,
+    repeatTick:0,
+    mousePan:null,
+    suppressClickUntil:0,
+    cameraInspecting:false,
+    qa:{mapTaps:0,autoMoves:0,autoPickups:0,holds:0,drags:0,pinches:0,manualMoves:0}
+  };
+  const canAct81=()=>gameplayInputAllowed57();
+  function queuePlace81(){requestAnimationFrame(placeInput)}

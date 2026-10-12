@@ -726,3 +726,182 @@ function summonUpdateButtons(){
   /* ---------- Shattered-style inspect: one description source, top window, complete terrain codex ---------- */
   let pendingInspect984=null;
   const inputNow=()=>performance.now();
+let inventoryOpen = false;
+let helpOpen = false;
+let cipherOpen = false;
+let mobileTab = "status";
+let inventoryTab = 'all';
+let inventorySelection = -1;
+function clearHeldInput53(){globalThis.__MANRU_CAMERA_STATE12__?.cancelInertia?.();if(typeof RuntimeState!=='undefined'&&RuntimeState.input?.qHold61){clearTimeout(RuntimeState.input.qHold61.timer);RuntimeState.input.qHold61=null;}INPUT.held.clear();INPUT.nextMoveAt=0;globalThis.__MANRU_RUNTIME81__?.stopHeld?.()}
+function actionTargetOpen56(){return interactionActive8('potionTargetHud')||interactionActive8('talismanTarget56')||interactionActive8('foodTarget57')||worldTargetActive57()}
+function endTargetInput57(ms=320){targetFollowupSuppressUntil=Math.max(targetFollowupSuppressUntil,performance.now()+Math.max(0,ms));clearHeldInput53();touchStart=null;return targetFollowupSuppressUntil}
+function displayText53(value){return String(value).replace(/-?\d+\.\d{3,}(?:e[+-]?\d+)?/gi,n=>displayNumber53(n))}
+function gameplayPanels57(){return[
+  {id:'coach70',css:'show',close:()=>globalThis.__MANRU_RELEASE__?.closeTip?.()},
+  {id:'shop58',css:'open',close:closeShop58},
+  {id:'inventory',active:inventoryOpen,close:closeInventory},
+  {id:'martialPanel',active:martialOpen,close:closeMartial},
+  {id:'helpPanel',active:helpOpen,close:closeHelp},
+  {id:'cipherPanel',active:cipherOpen,close:closeCipher},
+  {id:'mobileDrawer',body:'mobile-drawer-open',close:closeMobileDrawer},
+  {id:'mobileMapModal',css:'open',close:closeMapModal},
+  {id:'mobileInspect',css:'open',close:closeInspect},
+  {id:'cook57',css:'show',close:closeCooking},
+  {id:'fusion74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
+  {id:'gear74',css:'open',close:globalThis.__MANRU_TALISMAN74_ACTIONS__?.closePanels},
+  {id:'choice991',css:'open',close:globalThis.__MANRU_ITEM_IDENTITY991__?.closeChoice},
+  {id:'storyModal992',css:'open',close:globalThis.__MANRU_STORY992__?.close},
+  {id:'storyScene992',css:'open',close:globalThis.__MANRU_STORY992__?.closeScene},
+  {id:'rc70',body:'rc70-open',close:globalThis.__MANRU_RELEASE__?.closePanel},
+  {id:'potionTargetHud',css:'show',kind:'targeting',close:globalThis.__MANRU_POTION41_ACTIONS__?.cancelTarget},
+  {id:'talismanTarget56',css:'show',kind:'targeting',close:clearTalismanInput57},
+  {id:'foodTarget57',css:'show',kind:'targeting',close:cancelFoodTarget},
+  {id:'anvilPanel105',kind:'modal',close:closeAnvil},
+  {id:'summonPanel105',kind:'modal',close:closeSummonPanel},
+  {id:'worldTarget57',css:'show',kind:'targeting',close:cancelWorldTarget}
+]}
+function interactionActive8(id){
+  if(id==='inventory')return inventoryOpen;if(id==='martialPanel')return martialOpen;if(id==='helpPanel')return helpOpen;if(id==='cipherPanel')return cipherOpen;
+  if(id==='cook57')return !!RuntimeState.ui.food?.cookOpen;
+  if(id==='worldTarget57')return worldTargetActive57();
+  if(id==='potionTargetHud')return !!globalThis.__MANRU_POTION41_ACTIONS__?.target?.();
+  if(id==='talismanTarget56')return !!(globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.target?.()||globalThis.__MANRU_TALISMAN74_ACTIONS__?.target?.());
+  if(id==='foodTarget57')return !!RuntimeState.ui.food?.foodTarget;
+  if(id==='rc70')return !!RuntimeState.ui.release?.panelOpen;
+  return RuntimeState.ui.sessions.has(id);
+}
+function setInteraction8(id,active){if(active)RuntimeState.ui.sessions.add(id);else RuntimeState.ui.sessions.delete(id);projectInteractionUI()}
+function setGenerationPresentation8(active){RuntimeState.ui.generationPending=active;projectInteractionUI()}
+function gameplayUiOpen57(){return !state?.debugBattle57&&runState57()==='playing'}
+const OrientationGate=Object.freeze({
+  active(){return false},
+  blocks(command){return this.active()&&runState57()==='playing'&&CLIENT_GAMEPLAY_COMMANDS.has(command?.type)},
+  project(){
+    const active=this.active()&&runState57()==='playing',overlay=document.getElementById('orientationGate9');
+    document.body.classList.toggle('orientation-gate9',active);if(overlay){overlay.hidden=!active;overlay.setAttribute('aria-hidden',String(!active))}return active;
+  },
+  snapshot(){return{owner:'OrientationGate',active:this.active(),blocking:this.active()&&runState57()==='playing',orientation:RuntimeState.client.orientation,client:RuntimeState.client.type}}
+});
+function combatStatusIconHtml57(row){
+ if(!row.glyph)return '';let path='';for(let y=0;y<row.glyph.length;y++)for(let x=0;x<row.glyph[y].length;x++)if(row.glyph[y][x]==='1')path+=`M${x} ${y}h1v1h-1z`;
+ return `<svg class="combatStatusIcon57" data-status-icon="${row.key}" aria-hidden="true" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="currentColor" d="${path}"/></svg>`;
+}
+function editCipherGuess8(digit){if(runState57()!=='playing'||!cipherOpen||!state?.cipher)return false;const c=state.cipher;if(digit===null)c.guess=[];else{if(!Number.isInteger(digit)||digit<1||digit>5||c.guess.length>=5)return false;c.guess.push(digit)}renderCipherPanel();return true}
+function submitCipher(){const act=playerAction57('cipher',{allowCipher:true,stunMessage:'몸이 굳어 암호 장치를 조작하지 못했다.'});if(!act.ok)return !!act.consumed;const c=state.cipher;if(!c||c.guess.length!==5){toast('다섯 자리를 모두 입력해야 한다.');return false}const result=cipherResult(c.secret,c.guess);c.history.push({guess:[...c.guess],result});const solved=result.every(v=>v==='O');c.guess=[];if(solved){c.solved=true;const sw=state.switches.find(v=>v.kind==='cipher');if(sw){sw.used=true;for(const t of sw.targets)if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN)}addLog('O O O O O — 자물쇠가 풀렸다. 도개교가 내려온다.');impact(sw?.x??15,sw?.y??Math.floor(ROWS/2),'#e0b266',5);closeCipher()}else{addLog(`암호 실패: ${result.join(' ')}. 성채가 침입자를 감지했다.`);if(globalThis.__MANRU_RANDOM57__()<.40)spawnNamed(globalThis.__MANRU_RANDOM57__()<.5?'경비 인형 - 보병':'성채 비행 감시자',null,{provenance:'repeatable-reinforcement'});renderCipherPanel()}commitPlayerAction57(act,1);return true}
+function legacyKeyLabel(){return state?.floor===6?'봉인 고문서고 열쇠':state?.floor===18?'철판창고 열쇠':'구역 열쇠'}
+function forcedMovementResisted57(entity,opts={}){if(!state||!entity||opts.hostile===false)return false;if(entity.armor?.elementGuard74==='earth'){floatText(entity.x,entity.y,'버팀','#d7b77f',9);return true}const cloak=entity===state.player?playerCloak():(entity.cloak||{}),r=clamp(Number(cloak.staggerResist)||0,0,.95);if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(entity.x,entity.y,'경직 저항','#b9d7cd',9);addLog(`${cloak.name||entity.name}: 강제이동을 버텼다.`);return true}return false}
+const HAPTIC57={enabled:true};
+function pickupBaseR25(){
+  const item=state.items.find(it=>it.x===state.player.x&&it.y===state.player.y);if(!item){toast('발밑에 아이템이 없다.');return false}
+  if(item.type==='progress_key23'){state.items.splice(state.items.indexOf(item),1);if(state.floor23)state.floor23.keyAcquired=true;addLog('수은 심부 열쇠를 획득했다. 이제 계단의 봉인이 풀린다.');burst(state.player.x,state.player.y,'#d8f2ef',15,.8);updateAll();return true}
+  if(item.type==='story_note'){state.items.splice(state.items.indexOf(item),1);globalThis.storyCollectNote992?.(item.storyId);return true}
+  const result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
+  if(result.moved){if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
+}
+function sellShop58(item){
+ const shop=state?.shopIntermission,inv=state?.player?.inventory,index=inv?.indexOf(item),value=ShopMapBuilder.saleValue(item);
+ if(!shop?.active||!adjacentMerchant58()||shop.purchaseId||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
+ if(index<0||!value)return{ok:false,reason:'ineligible'};
+ const staged=structuredClone(inv);if(!consumeItemQuantity(staged[index],1,staged))return{ok:false,reason:'quantity'};
+ const candy={...CONSUMABLES.find(i=>i.foodKind==='coin_candy'),count:value},transfer=transferItemQuantity(candy,null,staged,value,{capacity:inventoryCapacity()});
+ if(transfer.remaining){toast('엽전 엿을 받을 공간이 없다.');return{ok:false,reason:'capacity'}}
+ state.player.inventory=staged;
+ if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;toast('저장하지 못해 판매를 취소했다.');return{ok:false,reason:'save'}}
+ renderShop();updateAll();return{ok:true,value};
+}
+function shopPrice58(item){return({common:1,rare:2,relic:3,sealed:5})[item.rarity]||1}
+function adjacentMerchant58(){return(state?.neutralInteractables58||[]).find(n=>n.kind==='merchant'&&entityDistance57(n,state.player)<=1)||null}
+function shopCurrency58(inventory=state?.player?.inventory||[]){return inventory.filter(i=>i.foodKind==='coin_candy').reduce((n,i)=>n+itemQuantity(i),0)}
+function purchaseShop58(id){
+ const shop=state?.shopIntermission;if(!shop?.active||gameplayInputOwner57().panels.some(p=>p.id!=='shop58'))return{ok:false,reason:'inactive'};
+ const stock=shop.stock.find(s=>s.id===id);if(!stock)return{ok:false,reason:'missing'};if(stock.soldOut)return{ok:false,reason:'soldOut'};
+ if(state.player.x!==stock.x||state.player.y!==stock.y||shop.purchaseId!==id)return{ok:false,reason:'position'};
+ const price=shopPrice58(stock.item);if(stock.price!==price)return{ok:false,reason:'price'};
+ const inv=state.player.inventory;if(shopCurrency58(inv)<price){toast('엽전 엿이 부족하다.');return{ok:false,reason:'funds'}}
+ // Preflight uses the canonical transfer contract on a detached candidate inventory.
+ // Currency slots are not assumed to disappear: a full bag fails without any debit.
+ const staged=structuredClone(inv),item=structuredClone(stock.item),r=transferItemQuantity(item,null,staged,itemQuantity(item),{capacity:inventoryCapacity()});
+ if(r.remaining){toast('행낭에 상품을 넣을 공간이 없다.');return{ok:false,reason:'capacity'}}
+ let left=price;for(const candy of [...staged]){if(candy.foodKind!=='coin_candy')continue;const n=Math.min(left,itemQuantity(candy));if(n&&!consumeItemQuantity(candy,n,staged))throw new Error('shop quantity contract');left-=n;if(!left)break}if(left)throw new Error('shop debit contract');
+ // Publish inventory and stock together; no turn, drop, or gameplay callback occurs between them.
+ state.player.inventory=staged;stock.soldOut=true;
+ if(!globalThis.__MANRU_SAVE1004__?.write?.().ok){state.player.inventory=inv;stock.soldOut=false;toast('저장하지 못해 교환을 취소했다.');return{ok:false,reason:'save'}}
+ closeShop58();updateAll();return{ok:true,price};
+}
+function closeShop58(){setInteraction8('shop58',false);if(state?.shopIntermission)state.shopIntermission.purchaseId=null;clearHeldInput53();globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.()}
+function toggleInventory(){
+  if(!state) return;
+  if(inventoryOpen) closeInventory(); else openInventory();
+}
+function toggleHelp(){
+  if(!state) return;
+  if(helpOpen) closeHelp(); else openHelp();
+}
+function openMobileDrawer(tab=null){
+  if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
+  if(tab) mobileTab = tab;
+  setInteraction8('mobileDrawer',true);
+  setMobileTab(mobileTab);
+globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
+}
+const classGrid = document.getElementById("classGrid");
+const startGate=document.getElementById('startGate'),pickWrap=document.getElementById('classPickWrap'),enterBtn=document.getElementById('enterBtn'),continueBtn=document.getElementById('continueBtn'),classBackBtn=document.getElementById('classBackBtn');
+  const inspectWrap=()=>document.getElementById('mobileInspect');
+  const block=(ms=360)=>{U.blockUntil=Math.max(U.blockUntil,inputNow()+ms);touchStart=null;if(typeof VIS==='object')VIS.tapTrack=null};
+  const blocked=()=>inputNow()<U.blockUntil;
+  const cancelLongPresses=()=>{for(const c of [...U.longPresses]){try{c()}catch(error){ignoreError('a long-press cancel callback threw',error)}}U.longPresses.clear()};
+  const ph=document.createElement('div');
+let potionTarget=null;
+/* ===== MANRU v4.5 MOBILE UX / INPUT / PERFORMANCE OVERHAUL ===== */
+const UX={
+    paused:null,autoMeta:null,modalOpening:false,modalDirty:false,
+    closeBlockUntil:0,invEquipSlot:null,lastMiniAt:0,lastMiniTurn:-1,
+    invScrollByTab:Object.create(null)
+  };
+  const uiBlocking=()=>activeGameplayPanels57().length>0;
+  const viewerOpen=()=>!!(inventoryOpen||helpOpen||martialOpen||isDrawerOpen()||isInspectOpen()||isMapOpen());
+  /* ---------- item ecology + long-term upgrade choice ---------- */
+  const role47=i=>{if(!i)return'other';if(['weapon','armor','cloak'].includes(i.type))return'gear';if(['relic','trinket'].includes(i.type))return'relic';if(i.type==='upgrade'||i.type==='martial_manual')return'strategy';if(i.type==='food')return'recovery';if(i.type==='potion')return ['heal_small','heal_medium','makgeolli','focus','cleanse'].includes(i.potionKind)?'recovery':'strategy';return'other'};
+  const targetHud=document.createElement('div');
+const COOKING_INGREDIENT_LIMIT57=Math.max(...FOOD_RECIPES.map(r=>r.ingredients.length));
+/* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */
+/* v6.1 final render coordinator: one camera snapshot and one world renderer per update */
+  const R61={last:0,lastMini:0,lastHud:0,dirty:true};
+/* ===== MANRU v7.0 RELEASE CANDIDATE CORE ===== */
+const RC={
+    build:'r57 INPUT LOCK / HONEST CHAIN / SAVE VALIDATION',
+    panelOpen:false,
+    lastActionAt:0,
+    lastDraw:0,
+    lastMini:0,
+    lastHud:0,
+    lastViewport:0,
+    vw:0,vh:0,
+    saveBusy:false,
+    autosaveTimer:0,
+    lastAutosaveAt:0,
+    tutorialQueue:[],
+    tutorialShowing:false,
+    uiAudio:null,
+    uiGain:null,
+    uiVolume:.35,
+    textScale:1,
+    perf:{frames:0,lastCost:0,ema:0}
+  };
+  /* ---------- tiny UI sound ---------- */
+  function uiTone70(freq=360,dur=.028){
+    if(RC.uiVolume<=0)return;
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+      if(!RC.uiAudio)RC.uiAudio=new AC();
+      if(RC.uiAudio.state==='suspended')RC.uiAudio.resume();
+      const o=RC.uiAudio.createOscillator(),g=RC.uiAudio.createGain();o.type='square';o.frequency.value=freq;g.gain.value=.018*RC.uiVolume;
+      g.gain.exponentialRampToValueAtTime(.0001,RC.uiAudio.currentTime+dur);o.connect(g).connect(RC.uiAudio.destination);o.start();o.stop(RC.uiAudio.currentTime+dur+.01);
+    }catch(error){ignoreError('ui sound could not play',error)}
+  }
+  function updateDesktopSide962(){if(innerWidth<=1080||!state)return;buildDesktopSide();updateRadar();updateKeys()}
+  let quickOpen991=false;
+  let classLight1001=null;
+/* R7 refactor: library scroll visuals are part of canonical exact-item art. */
+function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const pool=(state.player.inventory||[]).filter(v=>{if(v===item)return false;if(['weapon','armor','cloak','relic','trinket'].includes(v.type))return v.identified!==true;if(v.type==='potion')return !!v.potionKind&&!state.knowledge56?.potionKnown?.[v.potionKind];if(v.type==='talisman')return !!v.talismanKind&&!state.knowledge56?.talismanKnown?.[v.talismanKind];return false}).slice(0,3);state.knowledge56=state.knowledge56||{};state.knowledge56.potionKnown=state.knowledge56.potionKnown||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};for(const it of pool){if(it.type==='potion')state.knowledge56.potionKnown[it.potionKind]=true;else if(it.type==='talisman')state.knowledge56.talismanKnown[it.talismanKind]=true;else it.identified=true}addLog(`도서관 감식록: 미감정 물품 ${pool.length}개 감정.`);toast(`감정 ${pool.length}개`)}else{cleanseStatuses();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
+let ANVIL_SESSION105=null;

@@ -57,6 +57,7 @@
 | world | world 도메인 생성(30문장) — elements 뒤, spine 앞 | 7171 | 401 / 573 | 755 | 72.5% | - |
 | layout | layout 도메인 생성(70문장) — world 뒤, spine 앞 | 6503 | 331 / 573 | 755 | 75.1% | - |
 | layout 후보→도메인 | layout 이름 후보 중 다른 도메인이 주로 쓰는 50개 → 그 도메인 (규칙 a) | 6196 | 283 / 573 | 755 | 76.3% | - |
+| boot 1-2 | input/story/ui를 spine 앞으로, 고정 ui 54·input 10 → 제자리 | 5980 | 219 / 573 | 755 | 77.2% | - |
 
 ## 현재 파일별 줄 수
 
@@ -75,9 +76,9 @@
 | elements.js | 247 |
 | world.js | 475 |
 | layout.js | 740 |
-| spine.js | 6196 |
-| input.js | 149 |
+| input.js | 250 |
 | story.js | 213 |
-| ui.js | 728 |
+| ui.js | 907 |
+| spine.js | 5980 |
 | start.js | 6 |
-| (total) | 26156 |
+| (total) | 26220 |
