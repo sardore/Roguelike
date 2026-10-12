@@ -954,3 +954,5 @@ function showInspect(title,html){
 function markActionTime(){RC.lastActionAt=performance.now()}
 function markDeathSeal(kind){if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}}
 function showEndingScreen(){return setScreen('ending')}
+function updateFeelingPanel(){updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`}
+const PANEL_HOOKS54=[{id:'combat-hud36',run:updateCH},{id:'roles61',run:updateRolePanel},{id:'feeling62',run:updateFeelingPanel},{id:'desktop962',run:updateDesktopSide962},{id:'door964',run:refreshDoorContext}];

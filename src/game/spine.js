@@ -1056,8 +1056,6 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 
 
 
-const PANEL_HOOKS54=[];
-function registerPanelHook54(id,run){if(PANEL_HOOKS54.some(h=>h.id===id))throw new Error('duplicate panel hook '+id);PANEL_HOOKS54.push({id,run})}
 
 
 
@@ -1437,7 +1435,6 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(combatHud);
 
 
-  registerPanelHook54('combat-hud36',updateCH);
 
   /* ---------- action button motif ---------- */
   const hk={attack:'SPC',pickup:'G',open:'E',skill:'Q',inv:'I',rest:'R',summon0:'V',summon1:'T'},rn={attack:'칼',pickup:'줍',open:'점멸',skill:'무',inv:'행',rest:'숨',summon0:'',summon1:''};function adorn(){document.querySelectorAll('#mobileControls .quickbar button').forEach(b=>{if(b.dataset.mf36)return;b.dataset.mf36='1';const a=b.dataset.act||'';b.insertAdjacentHTML('beforeend',`<span class="mfKey">${hk[a]||''}</span><span class="mfRune">${rn[a]??'◆'}</span>`)})}adorn();
@@ -2445,7 +2442,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
     blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
   };
   /* v9.8.6 inspect cleanup: removed legacy tactical-role prose-append wrapper. */
-  registerPanelHook54('roles61',()=>{if(state){const near=state.monsters.filter(m=>m.role61&&isThreatVisibleToPlayer(m)).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0],el=document.getElementById('monsterInfo');if(near&&el&&!el.innerHTML.includes('role61'))el.innerHTML+=`<div class="role61" style="margin-top:5px;color:#d5b57d"><b>${ROLE_RUNE[near.role61]||'적'} ${near.role61}</b> · ${near.roleDesc61}</div>`}});
 
 
   registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
@@ -2495,7 +2491,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
   globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
-  registerPanelHook54('feeling62',()=>{updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`});
 
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'feeling62',draw:drawFeelingOverlay});
@@ -3615,7 +3610,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
   buildDesktopSide();
-  registerPanelHook54('desktop962',updateDesktopSide962);
   addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
 
 
@@ -3643,7 +3637,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 
-  registerPanelHook54('door964',refreshDoorContext);
 
   
 
