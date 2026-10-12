@@ -911,7 +911,7 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-const DESCEND_EFFECTS53=[];
+const DESCEND_EFFECTS53=[stairsSound,markActionTime];
 function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS53)effect({fromFloor,toFloor:state.floor})}
 
 
@@ -1951,7 +1951,6 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   /* ---------- terrain footsteps ---------- */
   registerMovePostR8(ctx=>{if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}});
   registerPickupStageR25('pickup-feedback54',{pre:ctx=>{ctx.invBefore54=state?.player?.inventory?.length||0},post:ctx=>{const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}});
-  DESCEND_EFFECTS53.push(()=>sfx54('stairs'));
 
   /* ---------- feature room visual signatures ---------- */
   
@@ -2626,7 +2625,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   registerGenerationStage('pacing70','post',()=>{pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()});
 
   /* ---------- autosave hooks (idle, not every turn) ---------- */
-  DESCEND_EFFECTS53.push(()=>{RC.lastActionAt=performance.now()});
   globalThis.__MANRU_TURN_PIPELINE__.register('runtime70',{pre:()=>{RC.lastActionAt=performance.now()},post:()=>{if(state){coachContext();if(state.log?.length>48)state.log=state.log.slice(0,48);if(state.decals?.length>24)state.decals.splice(0,state.decals.length-24);if(state.tempFields?.length>24)state.tempFields.splice(0,state.tempFields.length-24)}}});
 
   /* ---------- boss visual signature: one cheap pass only ---------- */

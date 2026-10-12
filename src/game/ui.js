@@ -951,3 +951,4 @@ function showInspect(title,html){
     const txt=dedupeProse986(textOnly(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
     directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   }
+function markActionTime(){RC.lastActionAt=performance.now()}

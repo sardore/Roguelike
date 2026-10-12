@@ -83,6 +83,7 @@
 | P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5791 | 147 / 573 | 755 | 78% | - |
 | P2→render | SPINE_RESIDUE P2: 공용 선언 → render.js | 5781 | 146 / 573 | 755 | 78% | - |
 | P3→recipe | P3-1: RECIPE becomes one literal (FUSION_RECIPES) next to the Map built from it | 5727 | 145 / 532 | 755 | 78.2% | - |
+| P3→descend | P3: DESCEND_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5725 | 145 / 530 | 755 | 78.2% | - |
 
 ## 현재 파일별 줄 수
 
@@ -92,7 +93,7 @@
 | catalog.js | 173 |
 | save.js | 754 |
 | items.js | 1026 |
-| combat.js | 662 |
+| combat.js | 663 |
 | monsters.js | 2277 |
 | render.js | 4950 |
 | mapgen.js | 3332 |
@@ -103,7 +104,7 @@
 | layout.js | 746 |
 | input.js | 256 |
 | story.js | 213 |
-| ui.js | 953 |
-| spine.js | 5727 |
+| ui.js | 954 |
+| spine.js | 5725 |
 | start.js | 6 |
 | (total) | 26288 |

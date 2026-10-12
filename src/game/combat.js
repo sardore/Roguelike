@@ -660,3 +660,4 @@ function fireField47(x,y,ttl=4,source=state.player){emitElementContact105('fire'
 function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor','cloak','relic','trinket'].reduce((n,k0)=>n+((p[k0]?.curse991||p[k0]?.curseActive991)?1:0),0)}
   /* ---------- lightweight procedural SFX ---------- */
   function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}
+function stairsSound(){return sfx54('stairs')}
