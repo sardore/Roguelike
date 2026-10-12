@@ -43,15 +43,7 @@
 
 
 
-const CLASSES=[
-  {id:'wanderer',name:'감찰관',color:'#d4c2a2',desc:'정부 특임 감찰관. 장비와 무술 선택에 따라 어느 길로든 성장할 수 있다.',hp:34,focus:9,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'장비와 무술을 조합해 자유롭게 성장한다.',skillCost:0,startWeapon:'조잡한 단검',startItems:[['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 감정부적 · 주먹밥'},
-  {id:'escort',name:'금위 표사',color:'#b78c65',desc:'정부 호위 임무 출신. 체급이 높고 초반 장비가 나빠도 버틴다.',hp:40,focus:7,atk:5,def:2,eva:2,will:4,vision:7,skillName:'무술',skillDesc:'튼튼한 체격으로 버티며 적의 빈틈을 노린다.',skillCost:0,startWeapon:'나무 몽둥이',startItems:[['말린 육포',2]],startLabel:'경량복 · 나무 몽둥이 · 말린 육포×2'},
-  {id:'swordsman',name:'척후 검객',color:'#96a9b0',desc:'정부 척후대 출신. 공격·회피가 높고 무기 효율이 좋다.',hp:31,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'무술',skillDesc:'빠른 발과 날카로운 검으로 전장을 누빈다.',skillCost:0,startWeapon:'무딘 소검',startItems:[['엽전 엿',1],['주먹밥',1]],startLabel:'경량복 · 무딘 소검 · 엽전 엿 · 주먹밥'},
-  {id:'archer',name:'척후 궁사',color:'#a6b18b',rules:{roar:'aim'},desc:'정부 척후대의 궁사. 사격을 준비해 갑옷과 회피의 빈틈을 꿰뚫는다.',hp:30,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'명중',skillDesc:'제자리에 서 있으면 조준이 쌓인다. 이동하거나 공격하면 한 단계 줄고, 피해를 받거나 해로운 상태에 걸리면 풀린다.',skillCost:3,startWeapon:'사냥용 목궁',startItems:[['목제 화살',36],['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 사냥용 목궁 · 목제 화살×36 · 감정부적 · 주먹밥'},
-  {id:'infiltrator',name:'잠행객',color:'#8fa1b5',rules:{roar:'smoke'},desc:'연막으로 시선을 가리고 좁은 틈으로 잠입하는 조사원.',hp:30,focus:11,atk:5,def:1,eva:7,will:4,vision:8,skillName:'연막',skillDesc:'기 4 · 목표 지점에 피해를 주고 5턴 동안 사선을 가리는 연막을 펼친다.',skillCost:4,startWeapon:'조잡한 단검',startItems:[['연막병',1],['경신약',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 연막병 · 경신약 · 주먹밥'},
-  {id:'strongman',name:'천하장사',color:'#c49a58',rules:{talismanFusion:false,upgradeTalismanMode:'bodyBoost'},desc:'정면에서 버티며 싸우는 장사다. 부적 합성 불가. 강화부적으로 괴력·재생을 얻고, 끝나면 같은 시간 탈진한다.',hp:50,focus:8,atk:7,def:3,eva:1,will:5,vision:7,skillName:'무술',skillDesc:'괴력 20~45턴 · 매턴 HP 2% 회복',skillCost:0,startWeapon:'나무 몽둥이',startItems:[['강화부적',1],['말린 육포',2]],startLabel:'경량복 · 나무 몽둥이 · 강화부적×1 · 말린 육포×2'},
-  {id:'summoner',name:'무당',gender:'female',color:'#c48da4',desc:'그림에 담긴 영을 부르는 무당. 무술에는 재능이 없지만 스스로의 체력을 바쳐 원하는 영을 부를 수 있다.',hp:34,focus:4,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'그림과 속성부적으로 영을 부른다. 술서 강화는 소모 HP와 기운 회복 시간을 줄인다.',skillCost:0,startWeapon:'조잡한 단검',startItems:[['만령 소환술서',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 만령 소환술서 · 주먹밥'}
-];
+
 
 
 
@@ -482,7 +474,6 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
@@ -500,11 +491,8 @@ function cancelAutoWalk(){return Auto81.stop('manual',true)}
 
 
 
-function withJosa57(value,pair='이/가'){
-  const word=String(value??''),parts=String(pair).split('/'),withBatchim=parts[0]||'',withoutBatchim=parts[1]??withBatchim,last=word.at(-1)||'',code=last.charCodeAt(0);
-  if(code>=0xAC00&&code<=0xD7A3)return word+(((code-0xAC00)%28)?withBatchim:withoutBatchim);
-  return word+withoutBatchim;
-}
+
+
 
 
 
@@ -1179,13 +1167,7 @@ Object.defineProperty(globalThis,'__MANRU_RUNTIME_START57__',{value:Object.freez
 
 
 
-function showInspect(title,html){
-    const titleKey=String(title??''),item=itemFromTitle986(titleKey);if(item){openItemInspect986(item,null);return}
-    const hiddenActual=[...(state?.player?.inventory||[]),...(state?.items||[])].find(i=>i&&i.name===titleKey&&unidentifiedItem(i));if(hiddenActual){openItemInspect986(hiddenActual,null);return}
-    const mon=state?.monsters?.find(v=>v.name===title&&v.hp>0);if(mon){if(!isEntityObservableToPlayer57(mon)){directOpenInspect('확인 불가',simpleHtml986({desc:'현재 시야에 없는 존재의 실시간 정보는 확인할 수 없다.',hint:''}),null);return}const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),null);return}
-    const txt=dedupeProse986(textOnly(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
-    directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
-  }
+
 
 
 
