@@ -57,7 +57,7 @@
 
 | 순위 | 묶음 | 선언 수 | 상태 | 해소 방법 |
 |---|---|---:|---|---|
-| P1 | 사용처의 과반이 한 도메인인 잎 선언 | 51 | `move-to`가 지금 통과시킨다(F-24와 순서 변경으로 풀림) | 도메인별 커밋으로 규칙 (a) 이동. `values`·`features`가 지킨다. 예외: `RECIPE`는 `addFusionRecipe(...)` 호출들 뒤에 있어야 한다 — `move-to`는 함수 호출 안의 `push`로 채워지는 객체를 못 본다(F-23과 같은 구멍). 호출들을 items.js로 옮기는 P3과 함께 옮긴다 |
+| P1 | 사용처의 과반이 한 도메인인 잎 선언 | 51 → 처리됨 50 (남은 1: `RECIPE`) | 완료(2026-10-12, 브랜치 `claude/boot-p1-leaf-declarations`, 도메인별 13커밋). 남은 선언 219 → 169 | 도메인별 커밋으로 규칙 (a) 이동. `values`·`features`가 지킨다. 예외: `RECIPE`는 `addFusionRecipe(...)` 호출들 뒤에 있어야 한다 — `move-to`는 함수 호출 안의 `push`로 채워지는 객체를 못 본다(F-23과 같은 구멍). 호출들을 items.js로 옮기는 P3과 함께 옮긴다 |
 | P2 | 3개 이상 도메인이 나눠 쓰는 공용 선언 | 22 | 통과한다 | 서랍을 만들지 않는다. 함수는 호이스팅되므로 순서 제약이 없다: 최다 사용 도메인에 붙인다(`addLog`→monsters가 아니라 사용처 최다인 items/monsters 중, 판정은 커밋에 근거 수치로). 값인 `state`·`clamp`·`hz`·`burst`·`CLASSES`만 로드 시 읽힘을 계측(`load-reads`)한 뒤 kernel(`state`, `clamp`)이나 사용 최다 도메인으로 간다 |
 | P3 | 등록 API와 단계 표: `register*` 10개(`registerMovePreR8` … `registerPanelHook54`)와 그 표 20개(`*_STAGES55`, `V54`, `PANEL_HOOKS54`, `RUN_END_EFFECTS53`, `startFloorTransition` 등; 사용처가 도메인 1곳 + spine 선언·문장) | 30 | 사용처가 도메인 한 곳과 spine의 등록 문장뿐 | 불러오기·새 게임에서 한 방식으로: 등록 구조를 없애고 순서대로 적은 함수 하나로 합친다. 등록 순서 지문(`input.listeners.*` 포함)으로 검증. 사용자 결정 필요(F-10 설계와 같은 종류) |
 | P4 | 부팅 문장만 쓰는 나머지(패널·버튼 연결용 지역 변수, 루프 시작 상태, 전설 던전 `*46`/`*47` 묶음 등) | 95 | 사용처가 spine의 느슨한 문장(패널·버튼 연결, 루프 시작) | 느슨한 문장 573개를 실행 순서 그대로 부팅 구획으로 묶을 때 같이 간다. 구획 경계는 `docs/F10_DESIGN.md` 방식(문장 순서 = 동작)으로 정하고 `input.listeners` 지문과 `screens`가 지킨다 |
