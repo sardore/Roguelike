@@ -80,3 +80,7 @@
 - 접미사 제거(기계) 202개, 수동 1개: `LAYOUT47`→`LEGEND_DUNGEON_LAYOUTS`(전설 무기 id별 방 배치 표; `LAYOUT47[a.id]`로 조회). 이름 바꾸기 거부는 없음(도구가 한 건도 거부하지 않음).
 - 옮기지 못한 것(`docs/SPINE_RESIDUE.md`): 상수 `BRANCH_DEFS105`, `BRANCH_RUN_FIELDS105`, `BRANCH_INTERACTIVE_OVERLAYS105`, `BRANCH_DISTRICT_LOOKUP105`, `PALACE_*`(KING/GARDENER/KING_IMAGE/GARDENER_IMAGE/LOTUS/TIDE/COLORS/INNER_COLORS/SWEEP_RULES), `CITADEL_*`(MOVED/COMBAT_OFFSET/ENEMIES), `DOJO_BLINK105`, `DOJO_STYLE_WEIGHTS105`, `MINE_ITEMS105`, `MOUNTAIN_REWARDS105`, `LEGEND_SKILLS986`, `LEGENDS47`·`LEGEND_TILES49`·`LEGEND_THEMES47`·`DEF47`(전설 무기 표). 이유는 대부분 같다: 이 값을 읽는 함수가 렌더·저장 이동 경로(`updateAll`, `drawMinimap`, `migrateGameState` 등)를 거쳐 스파인의 로드 문장에서 호출될 수 있어, 새 파일이 늦게 초기화되면 로드 시점에 읽힌다(`move-to`의 추이적 호출 검사). 호출을 통해 도달 가능하다는 보수적 판정이라, 실제로 로드 중 도달하는지는 확인하지 않았다.
 - 이름이 분기 던전이 아닌 것으로 뺀 것: `elementAffectsMaterial105`, `destroyElementStructure105`, `thawWater105`, `setTerrainSurface65`, `compactHudName58`, `hudLocation58`, `WorldTransition57`, `carryRunState57` 등 지형·HUD 공용 코드.
+
+## P3 stage tables (2026-10-12)
+- 단계 표 9개와 그 표를 도는 함수 2개의 접미사를 뗐다(`docs/NAMING.tsv` 마지막 구역). 수동 1개: `MANRU_PICKUP_PIPELINE_R25`→`PICKUP_PIPELINE`(`MANRU_` 접두사도 뗌; 이 파일 밖에서 같은 이름을 쓰는 전역은 `globalThis.__MANRU_PICKUP_PIPELINE_R25__`(QA 전용)이며 문자열이라 그대로 둠). 단계 id 문자열(`'potions41'`, `'r47-decorate'` 등)은 `stages` 기준선에 들어 있으므로 바꾸지 않았다.
+- 새로 만든 단계 함수 이름(`potionStats`, `foodAttackCost`, `blockWhileZooming` 등 46개)은 처음부터 접미사가 없다.

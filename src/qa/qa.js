@@ -18,8 +18,8 @@ const ROUTE_BUILD='10.0.4-route-hazard-r2-key-itemfix';
 const rarity1011={common:'#b8aa8e',uncommon:'#9ac09a',rare:'#8ebed2',epic:'#ba91ce',legendary:'#e0bb61',sealed:'#f0cb65',relic:'#d8bfe3'};
 const BUILD='10.0.6-r7-authored-branch-items';
 const STATIC_EXTRA_R7=[{"name":"개량 인장","type":"upgrade","tier":1,"rarity":"relic","seal":"改","ability":"장비 개량 1회","desc":"무기·갑옷·망토 하나에 영구 개량을 새긴다."},{"name":"도서관 지도첩","type":"scroll","rarity":"rare","libraryScroll1022":true,"libraryKind1022":"mapping"},{"name":"도서관 감식록","type":"scroll","rarity":"rare","libraryScroll1022":true,"libraryKind1022":"identify"},{"name":"도서관 수호장","type":"scroll","rarity":"relic","libraryScroll1022":true,"libraryKind1022":"ward"},{"name":"화강부적","type":"talisman","talismanKind":"f_fire_upgrade","fusion74":true,"element74":"fire","seal":"炎","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 화염각인 / 방어구 화염면역","desc":"무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다."},{"name":"뇌강부적","type":"talisman","talismanKind":"f_shock_upgrade","fusion74":true,"element74":"shock","seal":"淨","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 공속 +10% / 방어구 이동비용 -8%","desc":"전류를 장비의 움직임에 맞춰 흘린다."},{"name":"수강부적","type":"talisman","talismanKind":"f_water_upgrade","fusion74":true,"element74":"water","seal":"流","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 방어 약화 / 방어구 독·출혈 세척","desc":"수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다."},{"name":"빙강부적","type":"talisman","talismanKind":"f_ice_upgrade","fusion74":true,"element74":"ice","seal":"凍","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 냉각 경직 / 방어구 EVA +1","desc":"차가운 기운을 장비에 고정한다."},{"name":"목강부적","type":"talisman","talismanKind":"f_grass_upgrade","fusion74":true,"element74":"grass","seal":"芽","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 독분 각인 / 방어구 독 면역","desc":"살아 있는 기운을 장비 표면에 뿌리내린다."},{"name":"지강부적","type":"talisman","talismanKind":"f_earth_upgrade","fusion74":true,"element74":"earth","seal":"岩","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 중량타 / 방어구 DEF +1·밀치기 면역","desc":"장비의 무게와 지지력을 대지에 맞춘다."},{"name":"화폭부적","type":"talisman","talismanKind":"f_fire_blast","fusion74":true,"element74":"fire","seal":"炎","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_fire","ability":"3×3 층 비례 화염폭발 + 화염지대","desc":"원소 역류 없이 목표 지점에 화염을 집중한다."},{"name":"뇌폭부적","type":"talisman","talismanKind":"f_shock_blast","fusion74":true,"element74":"shock","seal":"電","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"bomb_shock","ability":"층 비례 연쇄 뇌격 · 물/금속 특효","desc":"목표 주변의 생체와 금속을 전류가 연쇄적으로 잇는다."},{"name":"조수 폭쇄부적","type":"talisman","talismanKind":"f_water_blast","fusion74":true,"element74":"water","seal":"潮","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_water","ability":"층 비례 수압 폭발 · 강한 밀치기 · 소화","desc":"강한 수압 피해와 진형 붕괴를 함께 노리는 수압 폭탄이다."},{"name":"빙폭부적","type":"talisman","talismanKind":"f_ice_blast","fusion74":true,"element74":"ice","seal":"雪","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_ice","ability":"층 비례 빙결폭발 · 비보스 경직","desc":"급랭으로 각개격파 시간을 번다."},{"name":"목폭부적","type":"talisman","talismanKind":"f_grass_blast","fusion74":true,"element74":"grass","seal":"荊","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_grass","ability":"층 비례 독분폭발 · 뿌리 구속","desc":"강한 직접 피해와 독·구속을 함께 퍼뜨린다."},{"name":"지폭부적","type":"talisman","talismanKind":"f_earth_blast","fusion74":true,"element74":"earth","seal":"震","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bomb_earth","ability":"층 비례 고충격 폭발 · 밀치기/경직","desc":"지상 적의 진형을 무너뜨리는 충격파를 만든다."},{"name":"화막부적","type":"talisman","talismanKind":"f_fire_ward","fusion74":true,"element74":"fire","seal":"熾","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"fireward","ability":"7턴 보호막 + 일시 화염저항","desc":"몸을 화염 장막으로 감싸고 주변에 불길을 남긴다."},{"name":"뇌섬부적","type":"talisman","talismanKind":"f_shock_blink","fusion74":true,"element74":"shock","seal":"閃","tier":3,"rarity":"rare","targeted":true,"targetRange":7,"fusionMode74":"target","fusionEffect74":"shockblink","ability":"순간이동 + 출발/도착 뇌격","desc":"축지의 양끝에 짧은 뇌격을 남긴다."},{"name":"정수부적","type":"talisman","talismanKind":"f_water_ward","fusion74":true,"element74":"water","seal":"淨","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"pureward","ability":"상태이상 정화 + 8턴 보호막","desc":"상처를 씻고 보호막을 만든다."},{"name":"빙쇄부적","type":"talisman","talismanKind":"f_ice_bind","fusion74":true,"element74":"ice","seal":"鎖","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"icebind","ability":"3×3 강빙결","desc":"봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다."},{"name":"생맥부적","type":"talisman","talismanKind":"f_grass_map","fusion74":true,"element74":"grass","seal":"脈","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"lifemap","ability":"전체 지도 + HP 8 회복","desc":"건물의 틈과 살아 있는 기운을 함께 읽는다."},{"name":"석갑부적","type":"talisman","talismanKind":"f_earth_ward","fusion74":true,"element74":"earth","seal":"壁","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"stoneward","ability":"8턴 보호막 + 일시 대지저항","desc":"몸을 암반 같은 기운으로 감싼다."},{"name":"증기부적","type":"talisman","talismanKind":"f_steam","fusion74":true,"element74":null,"seal":"霧","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"steam","ability":"3×3 증기 2턴 · 사선 차단","desc":"상극의 두 기운을 증기로 바꿔 사선을 끊는다."},{"name":"설빙부적","type":"talisman","talismanKind":"f_frostfield","fusion74":true,"element74":null,"seal":"霜","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"frostfield","ability":"3×3 강빙결장","desc":"수기를 얼려 강한 제압장으로 만든다."},{"name":"생장부적","type":"talisman","talismanKind":"f_regrowth","fusion74":true,"element74":null,"seal":"生","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"regrowth","ability":"재생 7턴 + 인접 적 뿌리구속","desc":"수기와 목기를 생장으로 바꾼다."},{"name":"용암부적","type":"talisman","talismanKind":"f_lava","fusion74":true,"element74":null,"seal":"熔","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"lava","ability":"화염 충격 + 임시 용암","desc":"대지를 녹여 좁은 길을 위험지대로 만든다."},{"name":"목석부적","type":"talisman","talismanKind":"f_bulwark","fusion74":true,"element74":null,"seal":"壘","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"bulwark","ability":"임시 암벽 + 6턴 보호막","desc":"뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다."},{"name":"폭뢰부적","type":"talisman","talismanKind":"f_thunderpool","fusion74":true,"element74":null,"seal":"轟","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"thunderpool","ability":"수기 전도 연쇄뇌격","desc":"물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다."},{"name":"봉폭부적","type":"talisman","talismanKind":"f_bindblast","fusion74":true,"element74":null,"seal":"禁","tier":3,"rarity":"rare","targeted":true,"targetRange":5,"fusionMode74":"target","fusionEffect74":"bindblast","ability":"층 비례 폭발 + 일반 적 3턴 봉인","desc":"폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다."},{"name":"천안부적","type":"talisman","talismanKind":"f_heaveneye","fusion74":true,"element74":null,"seal":"眼","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"heaveneye","ability":"전체 지도 + 미확인 2종 감정","desc":"지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다."},{"name":"감강부적","type":"talisman","talismanKind":"f_identify_upgrade","fusion74":true,"element74":null,"seal":"鑑","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"identify_all991","ability":"인벤토리의 모든 미감정 아이템 완전 감정","desc":"감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다."},{"name":"호축부적","type":"talisman","talismanKind":"f_guardblink","fusion74":true,"element74":null,"seal":"遁","tier":3,"rarity":"rare","targeted":true,"targetRange":6,"fusionMode74":"target","fusionEffect74":"guardblink","ability":"안전 순간이동 + 6턴 보호막","desc":"도망과 방어를 한 번에 해결하는 비상탈출 부적이다."},{"name":"성화부적","type":"talisman","talismanKind":"f_holy_fire","fusion74":true,"element74":null,"seal":"輝","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_fire991","ability":"성광 정화 + 화염 가호","desc":"성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다."},{"name":"성뢰부적","type":"talisman","talismanKind":"f_holy_shock","fusion74":true,"element74":null,"seal":"閃","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_shock991","ability":"성광 정화 + 뇌전 가호","desc":"성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다."},{"name":"성수부적","type":"talisman","talismanKind":"f_holy_water","fusion74":true,"element74":null,"seal":"淨","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_water991","ability":"강한 정화 + 수류 가호","desc":"깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다."},{"name":"성빙부적","type":"talisman","talismanKind":"f_holy_ice","fusion74":true,"element74":null,"seal":"雪","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_ice991","ability":"성광 정화 + 빙결 가호","desc":"차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다."},{"name":"성목부적","type":"talisman","talismanKind":"f_holy_grass","fusion74":true,"element74":null,"seal":"生","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_grass991","ability":"성광 정화 + 목령 가호","desc":"살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다."},{"name":"성토부적","type":"talisman","talismanKind":"f_holy_earth","fusion74":true,"element74":null,"seal":"震","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_elem_earth991","ability":"성광 정화 + 대지 가호","desc":"성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다."},{"name":"성감부적","type":"talisman","talismanKind":"f_holy_identify","fusion74":true,"element74":null,"seal":"明","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_identify991","ability":"모든 미감정 장비 감정 + 저주 드러냄","desc":"성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다."},{"name":"성강부적","type":"talisman","talismanKind":"f_holy_upgrade","fusion74":true,"element74":"holy","seal":"鍊","tier":3,"rarity":"sealed","targeted":false,"targetRange":5,"fusionMode74":"gear","fusionEffect74":null,"ability":"무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소","desc":"성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다."},{"name":"성폭부적","type":"talisman","talismanKind":"f_holy_blast","fusion74":true,"element74":null,"seal":"光","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_blast991","ability":"주변 성광 폭발 · 원혼/언데드 특효","desc":"성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다."},{"name":"성안부적","type":"talisman","talismanKind":"f_holy_mapping","fusion74":true,"element74":null,"seal":"眼","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_mapping991","ability":"전체 지도 + 숨은 문 + 해로운 상태 정화","desc":"성광이 벽과 몸의 탁한 결을 함께 훑는다."},{"name":"성호부적","type":"talisman","talismanKind":"f_holy_ward","fusion74":true,"element74":null,"seal":"護","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_ward991","ability":"강한 상태 정화 + 보호막","desc":"성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다."},{"name":"성축부적","type":"talisman","talismanKind":"f_holy_blink","fusion74":true,"element74":null,"seal":"縮","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_blink991","ability":"바라보는 방향 안전 점멸 + 정화","desc":"성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다."},{"name":"성봉부적","type":"talisman","talismanKind":"f_holy_bind","fusion74":true,"element74":null,"seal":"封","tier":3,"rarity":"rare","targeted":false,"targetRange":5,"fusionMode74":"instant","fusionEffect74":"holy_bind991","ability":"주변 구속 · 원혼/언데드 강구속","desc":"종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다."}];
-globalThis.__MANRU_MOVE_HOOKS__=MOVE_HOOKS_R8;
-globalThis.__MANRU_PLAYER_MATH55__={stats:()=>PLAYER_STAT_STAGES55.map(v=>v.id),attack:()=>ATTACK_COST_STAGES55.map(v=>v.id),move:()=>MOVE_COST_STAGES55.map(v=>v.id)};
+globalThis.__MANRU_MOVE_HOOKS__=MOVE_HOOKS;
+globalThis.__MANRU_PLAYER_MATH55__={stats:()=>PLAYER_STAT_STAGES.map(v=>v.id),attack:()=>ATTACK_COST_STAGES.map(v=>v.id),move:()=>MOVE_COST_STAGES.map(v=>v.id)};
 globalThis.__MANRU_ACTION_DISPATCHER__=ActionDispatcher;
 globalThis.__MANRU_INPUT_ROUTER__=InputRouter;
 globalThis.__MANRU_ATTACK_PIPELINE_R25__=MANRU_ATTACK_PIPELINE_R;
@@ -29,8 +29,8 @@ globalThis.__MANRU_BOSS_REWARD55__={
   last:()=>state?.bossDrop55?structuredClone(state.bossDrop55):null,
   qaKill:()=>{const mon=state?.monsters?.find(m=>m.boss&&m.hp>0);if(!mon)return{ok:false,reason:'no-live-boss',last:state?.bossDrop55?structuredClone(state.bossDrop55):null};mon.hp=0;const ok=killMonster(mon);return{ok,bossDefeated:!!state.bossDefeated,last:state?.bossDrop55?structuredClone(state.bossDrop55):null,items:(state.items||[]).filter(i=>i.bossDrop55).map(i=>({name:i.name,count:itemQuantity(i),potionKind:i.potionKind||null,talismanKind:i.talismanKind||null,x:i.x,y:i.y})),worldCount:(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0)}}
 };
-globalThis.__MANRU_PICKUP_PIPELINE_R25__=MANRU_PICKUP_PIPELINE_R25;
-globalThis.__MANRU_INVENTORY_RENDER_R34__={stages:()=>({core:INVENTORY_RENDER_R34.core?.id||'fallback-r34',pre:INVENTORY_RENDER_R34.pre.map(v=>v.id),post:INVENTORY_RENDER_R34.post.map(v=>v.id)})};
+globalThis.__MANRU_PICKUP_PIPELINE_R25__=PICKUP_PIPELINE;
+globalThis.__MANRU_INVENTORY_RENDER_R34__={stages:()=>({core:INVENTORY_RENDER.core?.id||'fallback-r34',pre:INVENTORY_RENDER.pre.map(v=>v.id),post:INVENTORY_RENDER.post.map(v=>v.id)})};
 globalThis.__MANRU_GAME_STATE__=GameState;
 globalThis.__MANRU_RUNTIME_STATE__=RuntimeState;
 globalThis.__MANRU_CLIENT_ENVIRONMENT__=ClientEnvironment;
@@ -604,6 +604,72 @@ globalThis.__MANRU_QA_LOAD__={
   perf:()=>({dirty:RENDER_PERF_STATE.dirty,panelDirty:RENDER_PERF_STATE.panelDirty,miniDirty:RENDER_PERF_STATE.miniDirty}),
   clearPerf:()=>{RENDER_PERF_STATE.dirty=RENDER_PERF_STATE.panelDirty=RENDER_PERF_STATE.miniDirty=false},
 };
+// Stage tables (the `stages` scenario): every spine-owned table in run order, with the source of each stage function,
+// so a test can compare order, ids and bodies before and after the tables move.
+globalThis.__MANRU_QA_STAGES__=()=>{
+  const src=f=>typeof f==='function'?Function.prototype.toString.call(f):null;
+  const rows=[];
+  const add=(table,phase,s)=>rows.push(typeof s==='function'?{table,phase,id:null,fn:src(s)}:{table,phase,id:s.id,run:src(s.run),fn:src(s.fn),pre:src(s.pre),post:src(s.post)});
+  MOVE_HOOKS.pre.forEach(s=>add('moveHooks','pre',s));MOVE_HOOKS.post.forEach(s=>add('moveHooks','post',s));
+  PLAYER_STAT_STAGES.forEach(s=>add('playerStats','',s));
+  ATTACK_COST_STAGES.forEach(s=>add('attackCost','',s));
+  MOVE_COST_STAGES.forEach(s=>add('moveCost','',s));
+  BOSS_REWARD_STAGES.pre.forEach(s=>add('bossReward','pre',s));BOSS_REWARD_STAGES.post.forEach(s=>add('bossReward','post',s));
+  PICKUP_PIPELINE.stages.forEach(s=>add('pickup','',s));
+  if(INVENTORY_RENDER.core)add('inventoryRender','core',INVENTORY_RENDER.core);
+  INVENTORY_RENDER.pre.forEach(s=>add('inventoryRender','pre',s));INVENTORY_RENDER.post.forEach(s=>add('inventoryRender','post',s));
+  PANEL_HOOKS.forEach(s=>add('panelHooks','',s));
+  RUN_END_EFFECTS.forEach(s=>add('runEnd','',s));
+  DESCEND_EFFECTS.forEach(s=>add('descend','',s));
+  return rows;
+};
+// Consumer paths of the stage tables the `stages` scenario cannot reach through getStats/costs (the `consumers` scenario),
+// each run through the real entry point: movePlayer (move hooks: a blocked move, a normal move), pickup (pickup stages on
+// real floor items) and bossReward (the boss reward stages on the floor-5 boss). Test stages added at both ends of a table
+// record the direction the reader walks it: move `pre` hooks and pickup `pre` stages run last-to-first, `post` first-to-last.
+globalThis.__MANRU_QA_CONSUMERS__={
+  moves(){
+    const p=state.player,out={};
+    const dir=[[1,0],[-1,0],[0,1],[0,-1]].find(([dx,dy])=>{const x=p.x+dx,y=p.y+dy,t=state.map[y]?.[x];return t!==undefined&&t!==TT.DOOR&&ReachabilityService.playerStepAllowed(p,x,y)&&!OccupancyService.isOccupied(x,y)});
+    if(!dir)return{error:'no free neighbour'};
+    const [dx,dy]=dir,at=()=>p.x+','+p.y,start=at();
+    window.__manruZoomActive=true;out.zoom={result:movePlayer(dx,dy),at:at()===start};window.__manruZoomActive=false;
+    V57.cookOpen=true;out.cook={result:movePlayer(dx,dy),at:at()===start};V57.cookOpen=false;
+    const trace=[],first=()=>{trace.push('pre-first');return true},last=()=>{trace.push('pre-last');return true},pf=()=>{trace.push('post-first')},pl=()=>{trace.push('post-last')};
+    MOVE_HOOKS.pre.unshift(first);MOVE_HOOKS.pre.push(last);MOVE_HOOKS.post.unshift(pf);MOVE_HOOKS.post.push(pl);
+    RENDER_PERF_STATE.dirty=false;
+    out.normal={result:movePlayer(dx,dy),moved:at()!==start,dirty:RENDER_PERF_STATE.dirty};
+    MOVE_HOOKS.pre.shift();MOVE_HOOKS.pre.pop();MOVE_HOOKS.post.shift();MOVE_HOOKS.post.pop();
+    out.trace=trace;
+    out.counts={pre:MOVE_HOOKS.pre.length,post:MOVE_HOOKS.post.length};
+    return out;
+  },
+  pickups(){
+    const p=state.player,trace=[],out={picked:[]};
+    const test=(name)=>({id:'qa-'+name,pre:()=>{trace.push('pre-'+name)},post:()=>{trace.push('post-'+name)}});
+    PICKUP_PIPELINE.stages.unshift(test('first'));PICKUP_PIPELINE.stages.push(test('last'));
+    const types=new Set();
+    for(const it of state.items.slice()){
+      if(types.has(it.type)||out.picked.length>=4)continue;types.add(it.type);
+      p.x=it.x;p.y=it.y;const before=p.inventory.length;trace.length=0;
+      const r=pickup();
+      out.picked.push({type:it.type,name:it.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice()});
+    }
+    // a potion on the ground: its stage decorates the potion before it is picked up
+    const proto=itemPrototype(POTION_LIST[0].name);
+    if(proto){const pot={...clone(proto),x:p.x,y:p.y};state.items.push(pot);const before=p.inventory.length;trace.length=0;const r=pickup();out.picked.push({type:'potion',name:pot.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice(),decorated:Object.keys(pot).sort().join(',')})}
+    PICKUP_PIPELINE.stages.shift();PICKUP_PIPELINE.stages.pop();
+    out.stages=PICKUP_PIPELINE.stages.length;
+    return out;
+  },
+  boss(){
+    window.__reseed(555);window.__MANRU_RELEASE__.regen(5);
+    const mon=state.monsters.find(m=>m.boss);if(!mon)return{error:'no boss on floor 5'};
+    const p=state.player,xp=p.xp,lvl=p.level,inv=p.inventory.length,floorItems=state.items.length;
+    bossReward(mon);
+    return{boss:mon.name,xpGain:p.xp-xp,level:p.level-lvl,items:p.inventory.length-inv,dropped:state.items.length-floorItems,defeated:!!state.bossDefeated,blink:p.blinkLevel,log:meta.slice(0,3).map(m=>m.msg)};
+  },
+};
 // Feature checks (the `features` scenario): run the real code paths of features a declaration move can silently
 // break, and report what they produced.
 globalThis.__MANRU_QA_FEATURES__={
@@ -611,7 +677,7 @@ globalThis.__MANRU_QA_FEATURES__={
   // read which results the screen offers
   fusion(){
     const out=[];
-    for(const r of RECIPES){
+    for(const r of FUSION_RECIPES){
       const a=TALISMAN_BY_KIND.get(r.a),b=TALISMAN_BY_KIND.get(r.b);
       if(!a||!b){out.push({pair:r.a+'+'+r.b,result:r.name,offered:false,missing:!a?r.a:r.b});continue}
       const before=state.player.inventory.length,K=ensureKnowledge56();
@@ -623,6 +689,27 @@ globalThis.__MANRU_QA_FEATURES__={
       closeFusion();state.player.inventory.length=before;
     }
     return out;
+  },
+  // stage tables through their consumers: the player stats and the attack/move costs under presets that reach every
+  // stat/cost stage, the panel hooks and the inventory renderer (a digest of the page they leave), the descend effects.
+  // Every preset starts from the same saved pieces of the run and puts them back.
+  stages(){
+    const digest=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
+    const p=state.player,saved=clone({status:state.status,hunger:p.hunger,armor:p.armor,weapon:p.weapon});
+    const put=()=>{const c=clone(saved);state.status=c.status;p.hunger=c.hunger;p.armor=c.armor;p.weapon=c.weapon};
+    const curse=(slot,id)=>()=>{p[slot]||={name:'qa-'+slot,type:slot};p[slot].curseActive991=true;p[slot].curse991=id};
+    const presets=[['none',()=>{}],['swift',()=>{state.status.swift=3}],['fortify+will',()=>{state.status.fortify=3;state.status.willBoost=3}],['hungry',()=>{p.hunger=0}],['foodHaste',()=>{state.status.foodHaste57=3}],['freeStamina',()=>{state.status.freeStamina57=3}],
+      ['swift+food+free',()=>{state.status.swift=3;state.status.foodHaste57=3;state.status.freeStamina57=3}],
+      ['guard ice',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='ice'}],['guard earth',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='earth'}],['guard shock',()=>{p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='shock'}],
+      ['curse binding',curse('armor','binding')],['curse clumsy',curse('weapon','clumsy')],['curse nightmare',curse('armor','nightmare')],['curse drain',curse('armor','drain')],
+      ['all',()=>{state.status.swift=3;state.status.fortify=3;state.status.willBoost=3;state.status.foodHaste57=3;state.status.freeStamina57=3;p.hunger=0;p.armor||={name:'qa-armor',type:'armor'};p.armor.elementGuard74='shock';curse('armor','binding')();curse('weapon','clumsy')()}]];
+    const costs=presets.map(([name,set])=>{put();set();return{name,stats:getStats(),attack:attackTurnCost(p.weapon||undefined),attackShock:attackTurnCost({...(p.weapon||{}),elementBrand74:'shock'}),move:moveTurnCost()}});
+    put();
+    const page=()=>digest(document.body.innerHTML);
+    runPanelHooks();const panels=page();runPanelHooks();if(page()!==panels)throw new Error('panel hooks are not repeatable');
+    renderInventory();const inventory=page();renderInventory();if(page()!==inventory)throw new Error('inventory render is not repeatable');
+    const from=state.floor-1;let descend='ok';try{runDescendEffects(from)}catch(e){descend=String(e.message||e)}
+    return{costs,panels,inventory,descend};
   },
   // citadel furnishings: enter the citadel branch and draw every furnished cell through the map's cell painter
   // (drawBranchCell, which queues the furnishing for the foreground pass); report per furnishing kind how many cells

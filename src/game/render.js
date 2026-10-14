@@ -4948,3 +4948,5 @@ function burst(x,y,color="#ffffff",count=9,power=1){
     });
   }
 }
+function markMoveDirty(ctx){if(ctx.moved)RENDER_PERF_STATE.dirty=true}
+function footstepFeedback(ctx){if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}}

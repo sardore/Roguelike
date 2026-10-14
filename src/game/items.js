@@ -286,8 +286,6 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
     return V62.beltOrder.slice(0,3).map(key=>groups.get(key));
   }
   function escBelt(text){return String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  const RECIPES=[];
-  const addFusionRecipe=(a,b,o)=>RECIPES.push({a,b,...o});
   function identifyKind(kind,reason='효과 관찰'){
     const K=K74();if(!kind||kind==='identify'||K.talismanKnown[kind])return false;const t=BASE_KIND74.get(kind);if(!t)return false;const a=app74(t);K.talismanKnown[kind]=true;addLog(`부적 식별 · ${a.name} = ${t.name} (${reason}).`);burst(state.player.x,state.player.y,a.ink||'#d6b071',13,.55);return true
   }
@@ -720,7 +718,7 @@ function applyRecoveryPotion57(actor,item){
  addLog(`${actor===state.player?'':actor.name+' · '}${item.name}: HP +${displayNumber53(Math.round(actor.hp-before))}${cleansed?' · 출혈 제거':''}.`);
  if(actor.equipmentActor105)updateEquipmentPhase105(actor);return true;
 }
-function renderInventory(...args){inventoryDirty=false;for(const s of INVENTORY_RENDER_R34.pre)s.fn(...args);const core=INVENTORY_RENDER_R34.core?.fn||renderInventoryFallbackR;const result=core(...args);for(const s of INVENTORY_RENDER_R34.post)s.fn(...args);return result}
+function renderInventory(...args){inventoryDirty=false;for(const s of INVENTORY_RENDER.pre)s.fn(...args);const core=INVENTORY_RENDER.core?.fn||renderInventoryFallbackR;const result=core(...args);for(const s of INVENTORY_RENDER.post)s.fn(...args);return result}
   /* ---------- rich log ---------- */
   const meta=[];
   function drink(item){const p=state.player;pstate();const recovery=['heal_small','heal_medium'].includes(item.potionKind);if(recovery){if(!applyRecoveryPotion57(p,item))return false;}else switch(item.potionKind){case'makgeolli':{const turns=Math.max(1,Math.floor(item.drunkTurns57||8));state.status.drunk=Math.max(state.status.drunk||0,turns+1);state.makgeolliRecoveryTurns57=state.status.drunk;state.drunkBornTurn57=state.turn+1;state.makgeolliHealHundredths57=0;addLog(`${item.name}: 취함 ${turns}턴 · 매턴 지속 회복. 취기는 중첩되지 않고 남은 시간을 ${turns}턴까지 새로 고친다.`);break}case'focus':{const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+20);state.status.willBoost=Math.max(state.status.willBoost,6);addLog(`${item.name}: 기력 +${p.focus-b} · WILL 강화.`);break}case'cleanse':{const b=p.hp,h=Math.max(4,Math.ceil(p.maxHp*.12));p.hp=Math.min(p.maxHp,p.hp+h);state.status.illness=0;state.status.poison=0;state.status.bleed=0;state.status.weaken=0;state.status.upset=0;addLog(`${item.name}: 독·출혈·약화·배탈 해제 · HP +${displayNumber53(Math.round(p.hp-b))}.`);break}case'swift':state.status.swift=Math.max(state.status.swift,7);addLog(`${item.name}: 6턴 신속.`);break;case'fortify':state.status.fortify=Math.max(state.status.fortify,9);addLog(`${item.name}: 8턴 DEF 강화.`);break;default:return false}burst(p.x,p.y,pcolor(item),12,.75);if(!recovery)consumeRef(item);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||.8,reason:"drink"}).value;return true}
@@ -855,7 +853,7 @@ function vaultEvent(x,y){
   burst(x,y,"#e0be6b",18,1);
   addLog("객주 금고 개방. 전리품 획득.");
 }
-const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
+const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r47-tab-normalize',fn:normalizeInventoryTab}],post:[{id:'r47-decorate',fn:decorateInventoryStage},{id:'r48-clean-taxonomy',fn:cleanInventoryTaxonomy},{id:'r53-inspect-bindings',fn:bindInspectButtons},{id:'r56-identification',fn:patchInventoryIdentification},{id:'r57-food-actions',fn:foodInventoryActions},{id:'r74-talisman-fusion',fn:talismanFusionInventory},{id:'r967-ammo',fn:ammoInventory},{id:'r991-gear-identity',fn:gearIdentityInventory}]};
   const TALISMAN_BY_KIND=new Map(TALISMANS.map(t=>[t.talismanKind,t]));
   const TALISMAN_APP_BY_ID=new Map(TALISMAN_APPEARANCES.map(a=>[a.id,a]));
   function talismanApp56(item){
@@ -878,6 +876,57 @@ const INVENTORY_RENDER_R34={core:null,pre:[],post:[]};
     if(!proto)return false;const p=PlacementService.randomFloor(0);if(!p)return false;const i=clone(proto);Object.assign(i,{x:p.x,y:p.y,count:i.count||1});PlacementService.placeItem(i);return true
   }
   const key74=(a,b)=>[a,b].sort().join('+');
+  /* The fusion recipes in the order the fusion screen and the talisman shop list them. RECIPE is built from this list. */
+  const FUSION_RECIPES=[
+  // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
+  {a:'elem_fire',b:'upgrade',kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'},
+  {a:'elem_shock',b:'upgrade',kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'},
+  {a:'elem_water',b:'upgrade',kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'},
+  {a:'elem_ice',b:'upgrade',kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'},
+  {a:'elem_grass',b:'upgrade',kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'},
+  {a:'elem_earth',b:'upgrade',kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'},
+  // 원소 + 폭발 : 생원소의 자기역류를 없애고 목표 지점에 집중한다.
+  {a:'elem_fire',b:'blast',kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 층 비례 화염폭발 + 화염지대',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'},
+  {a:'elem_shock',b:'blast',kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'층 비례 연쇄 뇌격 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'},
+  {a:'elem_water',b:'blast',kind:'f_water_blast',name:'조수 폭쇄부적',seal:'潮',element:'water',mode:'target',effect:'bomb_water',range:5,ability:'층 비례 수압 폭발 · 강한 밀치기 · 소화',desc:'강한 층 비례 수압 피해와 밀치기로 진형을 붕괴시키는 수압 폭탄이다.'},
+  {a:'elem_ice',b:'blast',kind:'f_ice_blast',name:'빙폭부적',seal:'雪',element:'ice',mode:'target',effect:'bomb_ice',range:5,ability:'층 비례 빙결폭발 · 비보스 경직',desc:'강해지는 급랭 피해와 경직으로 각개격파 시간을 번다.'},
+  {a:'elem_grass',b:'blast',kind:'f_grass_blast',name:'목폭부적',seal:'荊',element:'grass',mode:'target',effect:'bomb_grass',range:5,ability:'층 비례 독분폭발 · 뿌리 구속',desc:'강한 직접 피해와 독·구속을 함께 퍼뜨린다.'},
+  {a:'elem_earth',b:'blast',kind:'f_earth_blast',name:'지폭부적',seal:'震',element:'earth',mode:'target',effect:'bomb_earth',range:5,ability:'층 비례 고충격 폭발 · 밀치기/경직',desc:'층이 깊어질수록 강해지는 충격파로 지상 적의 진형을 무너뜨린다.'},
+  // 일부 원소 + 기능 조합
+  {a:'elem_fire',b:'ward',kind:'f_fire_ward',name:'화막부적',seal:'熾',element:'fire',mode:'instant',effect:'fireward',ability:'7턴 보호막 + 일시 화염저항',desc:'몸을 화염 장막으로 감싸고 주변에 불길을 남긴다.'},
+  {a:'elem_shock',b:'blink',kind:'f_shock_blink',name:'뇌섬부적',seal:'閃',element:'shock',mode:'target',effect:'shockblink',range:7,ability:'순간이동 + 출발/도착 뇌격',desc:'축지의 양끝에 짧은 뇌격을 남긴다.'},
+  {a:'elem_water',b:'ward',kind:'f_water_ward',name:'정수부적',seal:'淨',element:'water',mode:'instant',effect:'pureward',ability:'상태이상 정화 + 8턴 보호막',desc:'상처를 씻고 보호막을 만든다.'},
+  {a:'elem_ice',b:'bind',kind:'f_ice_bind',name:'빙쇄부적',seal:'鎖',element:'ice',mode:'target',effect:'icebind',range:6,ability:'3×3 강빙결',desc:'봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다.'},
+  {a:'elem_grass',b:'mapping',kind:'f_grass_map',name:'생맥부적',seal:'脈',element:'grass',mode:'instant',effect:'lifemap',ability:'전체 지도 + HP 8 회복',desc:'건물의 틈과 살아 있는 기운을 함께 읽는다.'},
+  {a:'elem_earth',b:'ward',kind:'f_earth_ward',name:'석갑부적',seal:'壁',element:'earth',mode:'instant',effect:'stoneward',ability:'8턴 보호막 + 일시 대지저항',desc:'몸을 암반 같은 기운으로 감싼다.'},
+  // 일부 원소 + 원소
+  {a:'elem_fire',b:'elem_water',kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'},
+  {a:'elem_water',b:'elem_ice',kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'},
+  {a:'elem_water',b:'elem_grass',kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'},
+  {a:'elem_fire',b:'elem_earth',kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'},
+  {a:'elem_grass',b:'elem_earth',kind:'f_bulwark',name:'목석부적',seal:'壘',mode:'instant',effect:'bulwark',ability:'임시 암벽 + 6턴 보호막',desc:'뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다.'},
+  {a:'elem_shock',b:'elem_water',kind:'f_thunderpool',name:'폭뢰부적',seal:'轟',mode:'target',effect:'thunderpool',range:6,ability:'수기 전도 연쇄뇌격',desc:'물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다.'},
+  // 일부 기능 + 기능
+  {a:'blast',b:'bind',kind:'f_bindblast',name:'봉폭부적',seal:'禁',mode:'target',effect:'bindblast',range:5,ability:'층 비례 폭발 + 일반 적 3턴 봉인',desc:'폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다.'},
+  {a:'identify',b:'mapping',kind:'f_heaveneye',name:'천안부적',seal:'眼',mode:'instant',effect:'heaveneye',ability:'전체 지도 + 미확인 2종 감정',desc:'지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다.'},
+  {a:'identify',b:'upgrade',kind:'f_identify_upgrade',name:'감강부적',seal:'鑑',mode:'instant',effect:'identify_all991',ability:'인벤토리의 모든 미감정 아이템 완전 감정',desc:'감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다.'},
+  {a:'ward',b:'blink',kind:'f_guardblink',name:'호축부적',seal:'遁',mode:'target',effect:'guardblink',range:6,ability:'안전 순간이동 + 6턴 보호막',desc:'도망과 방어를 한 번에 해결하는 비상탈출 부적이다.'},
+  // 성부는 생원소와 기능부적 양쪽 합성계에 정식 참여한다. 미감정 상태에서는 아래 진짜 인장/색을 노출하지 않는다.
+  {a:'holy',b:'elem_fire',kind:'f_holy_fire',name:'성화부적',seal:'輝',mode:'instant',effect:'holy_elem_fire991',ability:'성광 정화 + 화염 가호',desc:'성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다.'},
+  {a:'holy',b:'elem_shock',kind:'f_holy_shock',name:'성뢰부적',seal:'閃',mode:'instant',effect:'holy_elem_shock991',ability:'성광 정화 + 뇌전 가호',desc:'성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다.'},
+  {a:'holy',b:'elem_water',kind:'f_holy_water',name:'성수부적',seal:'淨',mode:'instant',effect:'holy_elem_water991',ability:'강한 정화 + 수류 가호',desc:'깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다.'},
+  {a:'holy',b:'elem_ice',kind:'f_holy_ice',name:'성빙부적',seal:'雪',mode:'instant',effect:'holy_elem_ice991',ability:'성광 정화 + 빙결 가호',desc:'차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다.'},
+  {a:'holy',b:'elem_grass',kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'},
+  {a:'holy',b:'elem_earth',kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'},
+  {a:'holy',b:'identify',kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'},
+  {a:'holy',b:'upgrade',kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'},
+  {a:'holy',b:'blast',kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'주변 성광 폭발 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'},
+  {a:'holy',b:'mapping',kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'},
+  {a:'holy',b:'ward',kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'},
+  {a:'holy',b:'blink',kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'},
+  {a:'holy',b:'bind',kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'},
+  ];
+  const RECIPE=new Map(FUSION_RECIPES.map(r=>[key74(r.a,r.b),r]));
   const esc74=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function basicTalismans74(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.type==='talisman'&&!v.item.branchExclusive105&&!v.item.fusion74&&known74(v.item))}
   /* fused effects */
@@ -975,3 +1024,23 @@ function playerAction57(kind,opts={}){
   if(opts.skill&&(state.status?.skillSeal||0)>0){ActionDispatcher.denied('skillSeal');toast('기력이 봉인되어 이 행동을 할 수 없다.');return{ok:false,kind,reason:'skillSeal'}}
   return{ok:true,kind,committed:false}
 }
+function potionStats(s){if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s}
+function hungerStats(s){if(state?.player?.hunger<=0)s.atk=Math.max(1,Math.round(s.atk*.8*10)/10);return s}
+function curseStats(s){return applyCurseStats(s)}
+function potionAttackCost(c,item){return state?.status?.swift>0?clamp(c*.8,.45,1.8):c}
+function foodAttackCost(c,item){if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)}
+function curseAttackCost(c){const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c}
+function potionMoveCost(c){return state?.status?.swift>0?clamp(c*.8,.55,1.15):c}
+function foodMoveCost(c){if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,1.8)}
+function curseMoveCost(c){const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c}
+function patchInventoryIdentification(){return patchInventory56()}
+function talismanFusionInventory(){const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})}
+function gearIdentityInventory(){if(!state||!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
+    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];const knownCurse=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',knownCurse);if(knownCurse){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}const nm=el.querySelector('.nm,.invSlotName');if(nm&&isGearItem(it))nm.textContent=it.name});
+    box.querySelectorAll('[data-uxeq],[data-eqslot]').forEach(el=>{const slot=el.dataset.uxeq||el.dataset.eqslot,it=state.player[slot],known=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',known);if(known){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}});
+    const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,d=box.querySelector('.uxDetail,.invDetail');
+    if(isUnknownGear(selected)&&d){const h=d.querySelector('h3');if(h)h.textContent=selected.name;const sub=d.querySelector('.uxDetailHead small,.typeLine');if(sub)sub.textContent=`${publicGearType(selected.type)} · 종류 확인 · 세부 미감정`;const stats=d.querySelector('.uxStats,.invStats');if(stats)stats.innerHTML=publicGearStats(selected).map(x=>`<span class="invStatChip">${x}</span>`).join('');const desc=d.querySelector('.uxDesc,.desc');if(desc)desc.textContent='종류와 기본 외형은 확인됐다. 강화 수치, 저주 여부와 숨은 마법 옵션은 감정 전까지 드러나지 않는다.'}
+    else if(selected?.identified===true&&selected?.curse991&&d){const stats=d.querySelector('.uxStats,.invStats');if(stats&&!stats.querySelector('.curse991Chip')){const c=curseDefOf(selected),stacks=selected.curseActive991?curseStackCount(selected.curse991):0,power=stacks?curseMultiplier(selected.curse991):1,sp=document.createElement('span');sp.className='uxStat curse991Chip';sp.textContent=`저주 · ${c?.name||'불명'}${stacks>1?` · 중첩 ${stacks} / ×${power}`:''}`;stats.appendChild(sp)}}}
+function potionObserveBefore(ctx){const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0}
+function potionObserveAfter(ctx){const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}
+function blockWhileCooking(){return !V57.cookOpen}

@@ -230,8 +230,6 @@ globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
-function registerMovePreR8(fn){MOVE_HOOKS_R8.pre.push(fn);return fn}
-function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
 
 
@@ -241,13 +239,6 @@ function registerMovePostR8(fn){MOVE_HOOKS_R8.post.push(fn);return fn}
 
 
 
-const PLAYER_STAT_STAGES55=[];
-registerPlayerStatStage55('class-body-power58',s=>{if(bodyPowerActive()){s.atk+=2;s.def+=7}return s});
-const ATTACK_COST_STAGES55=[];
-const MOVE_COST_STAGES55=[];
-function registerPlayerStatStage55(id,run){if(PLAYER_STAT_STAGES55.some(v=>v.id===id))throw new Error('duplicate stat stage '+id);PLAYER_STAT_STAGES55.push({id,run})}
-function registerAttackCostStage55(id,run){if(ATTACK_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate attack cost stage '+id);ATTACK_COST_STAGES55.push({id,run})}
-function registerMoveCostStage55(id,run){if(MOVE_COST_STAGES55.some(v=>v.id===id))throw new Error('duplicate move cost stage '+id);MOVE_COST_STAGES55.push({id,run})}
 
 
 
@@ -729,7 +720,6 @@ setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
-function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[phase];if(!list)throw new Error('invalid boss reward phase '+phase);if(list.some(v=>v.id===id))throw new Error('duplicate boss reward stage '+id);list.push({id,run})}
 
 
 
@@ -899,7 +889,6 @@ function registerBossRewardStage55(id,phase,run){const list=BOSS_REWARD_STAGES[p
 
 
 
-function registerPickupStageR25(id,hooks){if(MANRU_PICKUP_PIPELINE_R25.stages.some(x=>x.id===id))throw new Error('duplicate pickup stage: '+id);MANRU_PICKUP_PIPELINE_R25.stages.push({id,pre:hooks?.pre,post:hooks?.post});return hooks}
 
 
 
@@ -911,8 +900,8 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-const DESCEND_EFFECTS53=[];
-function runDescendEffects53(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS53)effect({fromFloor,toFloor:state.floor})}
+const DESCEND_EFFECTS=[stairsSound,markActionTime];
+function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS)effect({fromFloor,toFloor:state.floor})}
 
 
 
@@ -954,7 +943,7 @@ function descend(){
       restoreGenerationSnapshot(descentSnapshot57);resetVisualState();resetTurnState();VisibilityService.compute();setGenerationPresentation8(false);updateAll();console.error('descend generation rejected',e);toast('다음 층의 구조가 불안정해 이동하지 못했다.');return false
     }
     try{
-      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects53(fromFloor);
+      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects(fromFloor);
       if(leavingShop57){
         // Present the new map before releasing the shop-exit input lock.
         syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__?.resume?.(true);updateAll(true);
@@ -998,7 +987,6 @@ let inventoryFiltered;
 
 
 
-function registerInventoryRenderR34(id,phase,fn){if(typeof fn!=='function')throw new TypeError('inventory render stage must be a function');if(phase==='core'){INVENTORY_RENDER_R34.core={id,fn};return fn}const list=phase==='pre'?INVENTORY_RENDER_R34.pre:phase==='post'?INVENTORY_RENDER_R34.post:null;if(!list)throw new Error(`unknown inventory render phase: ${phase}`);const at=list.findIndex(v=>v.id===id);const rec={id,fn};if(at>=0)list[at]=rec;else list.push(rec);return fn}
 
 
 
@@ -1053,7 +1041,6 @@ for(const type of ['pointerdown','touchend','keydown'])document.addEventListener
 
 
 
-const RUN_END_EFFECTS53=[];
 
 
 
@@ -1064,8 +1051,6 @@ const RUN_END_EFFECTS53=[];
 
 
 
-const PANEL_HOOKS54=[];
-function registerPanelHook54(id,run){if(PANEL_HOOKS54.some(h=>h.id===id))throw new Error('duplicate panel hook '+id);PANEL_HOOKS54.push({id,run})}
 
 
 
@@ -1315,7 +1300,6 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
 zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">－</button><span class="zoomVal" id="zoomVal">100%</span><button type="button" id="zoomInBtn">＋</button>';document.getElementById('canvasWrap').appendChild(zoomHud);zoomHud.querySelector('#zoomOutBtn').onclick=()=>adjustZoom(-1);zoomHud.querySelector('#zoomInBtn').onclick=()=>adjustZoom(1);
 
-  registerMovePreR8(()=>!window.__manruZoomActive);
   C.addEventListener('click',e=>{if(performance.now()<window.__manruZoomSuppressUntil){e.preventDefault();e.stopImmediatePropagation()}}, {capture:true});
   
   /* r53: removed overwritten camera implementation. */
@@ -1445,7 +1429,6 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(combatHud);
 
 
-  registerPanelHook54('combat-hud36',updateCH);
 
   /* ---------- action button motif ---------- */
   const hk={attack:'SPC',pickup:'G',open:'E',skill:'Q',inv:'I',rest:'R',summon0:'V',summon1:'T'},rn={attack:'칼',pickup:'줍',open:'점멸',skill:'무',inv:'행',rest:'숨',summon0:'',summon1:''};function adorn(){document.querySelectorAll('#mobileControls .quickbar button').forEach(b=>{if(b.dataset.mf36)return;b.dataset.mf36='1';const a=b.dataset.act||'';b.insertAdjacentHTML('beforeend',`<span class="mfKey">${hk[a]||''}</span><span class="mfRune">${rn[a]??'◆'}</span>`)})}adorn();
@@ -1489,7 +1472,6 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   function pcolor(i){return i?.color||'#b65b4c'}
 ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
 ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
-  registerPlayerStatStage55('potions41',s=>{if(state?.status?.swift>0)s.eva+=10;if(state?.status?.fortify>0)s.def+=3;if(state?.status?.willBoost>0)s.will+=2;return s});registerAttackCostStage55('potions41',(c,item)=>state?.status?.swift>0?clamp(c*.8,.45,1.8):c);registerMoveCostStage55('potions41',c=>state?.status?.swift>0?clamp(c*.8,.55,1.15):c);
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
 
@@ -1633,45 +1615,18 @@ RuntimeState.ui.inventory=UX;
   }
 
   // replace the accumulated inventory implementations with one thumb-friendly renderer.
-  registerInventoryRenderR34('ux45-core','core',function inventoryCoreUX45(){
-    if(!inventoryOpen||!state)return;
-    const box=document.getElementById('inventory'),p=state.player;if(!box)return;
-    let filtered=inventoryFiltered();
-    if(!UX.invEquipSlot && filtered.length && !filtered.some(v=>v.idx===inventorySelection)){inventorySelection=filtered[0].idx}
-    if(!filtered.length && !UX.invEquipSlot)inventorySelection=-1;
-    const selected=UX.invEquipSlot?p[UX.invEquipSlot]:(inventorySelection>=0?p.inventory[inventorySelection]:null);
-    const tabs=[['all','전체'],['gear','장비'],['food','음식'],['treasure','유물'],['potion','비약']];
-    const equips=equipData().map(([slot,label,item,rune])=>`<button class="uxEq ${item?'':'empty'} ${UX.invEquipSlot===slot?'selected':''}" data-uxeq="${slot}">${item?uxIcon(item,'uxEqIcon'):''}<span class="ek">${label}</span><span class="en">${item?item.name:'비어 있음'}</span><span class="er">${rune}</span></button>`).join('');
-    const cells=filtered.length?filtered.map(({item,idx})=>`<button class="uxSlot ${!UX.invEquipSlot&&idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="tier">${item.tier?`T${item.tier}`:''}</span><span class="rar"></span>${uxIcon(item,'uxSlotIcon')}<span class="nm">${item.name}</span>${(item.count||1)>1?`<span class="count">×${item.count}</span>`:''}</button>`).join(''):`<div class="uxEmpty"><b>${p.inventory.length?'이 분류는 비어 있음':'행낭이 비어 있음'}</b><p>${p.inventory.length?'다른 분류를 보거나 전체 목록으로 돌아가면 된다.':'바닥의 물품은 줍 버튼이나 아이템 칸 터치로 바로 주울 수 있다.'}</p>${p.inventory.length&&inventoryTab!=='all'?'<button id="uxShowAll">전체 보기</button>':''}</div>`;
-    box.innerHTML=`<div class="uxInv"><span class="uiCorners63" aria-hidden="true"></span><div class="uxInvHead"><div class="uxTitle"><h2>행낭</h2><small>한 번 눌러 선택 · 아래 큰 버튼으로 사용/장착</small></div><div class="uxInvMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><span class="turn">TURN ${state.turn}</span></div><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div><div class="uxEquipRail">${equips}</div><div class="uxTabs">${tabs.map(([id,lab])=>`<button class="${inventoryTab===id?'active':''}" data-invtab="${id}">${lab}<span>${tabCount(id)}</span></button>`).join('')}</div><div class="uxInvMain"><div class="uxGrid" id="uxGrid">${cells}</div>${selected?detailHTML(selected,inventorySelection,UX.invEquipSlot):''}</div></div>`;
-    restoreInventoryScroll45(box.querySelector('#uxGrid'));
-    const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);if(inventoryOpen)closeInventory()};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
-    box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
-    box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
-    box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
-    box.querySelectorAll('[data-uxeq]').forEach(b=>b.addEventListener('click',()=>{const slot=b.dataset.uxeq;if(!p[slot])return;rememberInventoryScroll();UX.invEquipSlot=slot;inventorySelection=-1;renderInventory()}));
-    box.querySelectorAll('[data-bookmaterial105]').forEach(b=>b.addEventListener('click',()=>{summonState();const book=p.inventory[+b.dataset.bookindex105];if(book?.summonItem105==='book')summonOpenMaterials(book.summonBookId105,b.dataset.bookmaterial105);}));
-    box.querySelectorAll('[data-invuse]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value));
-    box.querySelectorAll('[data-invdrop]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value));
-    box.querySelectorAll('[data-invinspect]').forEach(b=>b.addEventListener('click',()=>{const it=p.inventory[+b.dataset.invinspect];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
-    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>b.addEventListener('click',()=>{const it=p[b.dataset.uxinspectequip];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
-    box.querySelectorAll('[data-uxunequip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'UNEQUIP',args:[p,b.dataset.uxunequip],source:'inventory'}).value}));
-    box.querySelectorAll('[data-uxdrop-equip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'DROP_EQUIPPED',args:[p,b.dataset.uxdropEquip],source:'inventory'}).value}));
-  });
 
 
   ActionDispatcher.register('UNEQUIP',unequipAction5);
 
   ActionDispatcher.register('DROP_EQUIPPED',dropEquippedAction5);
   // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
-  registerPickupStageR25('closed-bag-dom45',{post:()=>{if(!inventoryOpen){const box=document.getElementById('inventory');if(box)box.innerHTML=''}}});
 
   // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
   
 
 
   // mobile drawer/map/inspect should block world controls but not eat their own buttons.
-  registerMovePreR8(()=>!(uiBlocking()&&!UX.modalOpening));
   /* r8: attack input blocking is handled in attackInputBlockedR8; no basicAttack wrapper. */
 
 
@@ -1727,7 +1682,6 @@ RuntimeState.ui.inventory=UX;
 
   ActionDispatcher.register('UPGRADE_GEAR',upgradeGearAction5);
 
-  registerInventoryRenderR34('r47-tab-normalize','pre',()=>{if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'});registerInventoryRenderR34('r47-decorate','post',()=>decorateInventory());
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
 
@@ -1747,7 +1701,6 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  registerInventoryRenderR34('r48-clean-taxonomy','post',()=>cleanInventory());
 
   /* ---------- v4.8 test hooks ---------- */
   
@@ -1801,7 +1754,6 @@ const mapOpen49=()=>!!interactionActive8('mobileMapModal');
 
   /* ---------- camera: default auto-follow, temporary look-pan, explicit free mode ---------- */
 
-  registerMovePostR8(ctx=>{if(ctx.moved)RENDER_PERF_STATE.dirty=true});
 
 
 
@@ -1874,7 +1826,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
 
   registerGenerationStage('aim-reset52','pre',()=>{AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null});
-  registerMovePostR8(()=>{if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetValid()){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}});
 
 
 
@@ -1898,11 +1849,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(error){ignoreError('getSelection unavailable',error)}}},{capture:true,passive:true});
 
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
-  registerInventoryRenderR34('r53-inspect-bindings','post',()=>{
-    const box=document.getElementById('inventory');if(!box||!state)return;
-    box.querySelectorAll('[data-invinspect]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player.inventory[+n.dataset.invinspect];if(it)showInspect(it.name,itemHtml(it))})});
-    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml(it))})});
-  });
 
 
 /* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
@@ -1942,16 +1888,12 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
   
 
-  registerBossRewardStage55('boss54','pre',mon=>{if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLog(`보스 경험치 +${mon.xp}`);checkLevel()}if(mon?.bossPattern==='master')state.visionPenalty=0});
 
   /* ---------- death residue, directional damage feedback, boss mark renderer ---------- */
   
   
 
   /* ---------- terrain footsteps ---------- */
-  registerMovePostR8(ctx=>{if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}});
-  registerPickupStageR25('pickup-feedback54',{pre:ctx=>{ctx.invBefore54=state?.player?.inventory?.length||0},post:ctx=>{const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}});
-  DESCEND_EFFECTS53.push(()=>sfx54('stairs'));
 
   /* ---------- feature room visual signatures ---------- */
   
@@ -2045,11 +1987,9 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
 
 
 
-  registerInventoryRenderR34('r56-identification','post',()=>patchInventory56());
 
 
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
-  registerPickupStageR25('potion-observe56',{pre:ctx=>{const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0},post:ctx=>{const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}});
 
 
 
@@ -2104,9 +2044,6 @@ window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 // PDF 포만감 규칙: 허기 0에서만 공격력 20% 감소. 기존 단계별 ATK/EVA 패널티는 제거.
 
-registerPlayerStatStage55('food57',s=>{if(state?.player?.hunger<=0)s.atk=Math.max(1,Math.round(s.atk*.8*10)/10);return s});
-registerAttackCostStage55('food57',(c,item)=>{if(state?.status?.foodHaste57>0)c*=.90;if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,2.2)});
-registerMoveCostStage55('food57',c=>{if(state?.status?.freeStamina57>0)c*=.50;return clamp(c,.25,1.8)});
 /* r58 debuff overhaul: food buffs are read by the canonical statusSummary; no status wrapper here. */
 
 
@@ -2151,7 +2088,7 @@ cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stop
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
 
-registerMovePreR8(()=>!V57.cookOpen);/* r8: basicAttack reads ux-modal-open directly. */
+/* r8: basicAttack reads ux-modal-open directly. */
 
 
 // 획득 구조: 주방, 샘, 피라냐, 복숭아나무 + 설계 공백을 메운 빙결액 배치
@@ -2167,7 +2104,6 @@ registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards5
 
 // 인벤토리 분류와 버튼 문구
 
-registerInventoryRenderR34('r57-food-actions','post',()=>{const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'});
 
 
 
@@ -2223,7 +2159,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   /* ---------- doors become real information gates ---------- */
   // Closed-door sight blocking is owned by the canonical SIGHT_BLOCKING_TILES57 set.
   // Door opening is canonical in moveMonsterToward.
-  registerMovePostR8(ctx=>{if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)});
 
 
 
@@ -2458,7 +2393,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
     blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
   };
   /* v9.8.6 inspect cleanup: removed legacy tactical-role prose-append wrapper. */
-  registerPanelHook54('roles61',()=>{if(state){const near=state.monsters.filter(m=>m.role61&&isThreatVisibleToPlayer(m)).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0],el=document.getElementById('monsterInfo');if(near&&el&&!el.innerHTML.includes('role61'))el.innerHTML+=`<div class="role61" style="margin-top:5px;color:#d5b57d"><b>${ROLE_RUNE[near.role61]||'적'} ${near.role61}</b> · ${near.roleDesc61}</div>`}});
 
 
   registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
@@ -2508,7 +2442,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
   globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
-  registerPanelHook54('feeling62',()=>{updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`});
 
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'feeling62',draw:drawFeelingOverlay});
@@ -2598,16 +2531,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   
 
 
-  registerPickupStageR25('coach70',{post:ctx=>{
-    const ground=ctx.ground;
-    if(ground){
-      if(ground.type==='potion')tip70('potion','약병은 런마다 색과 정체가 바뀐다. 발견 장소와 냄새·색 단서로 후보를 좁히고, 마시거나 감정부적으로 식별한다.','미확인 약병은 역할 탭도 숨겨진다.');
-      else if(ground.type==='talisman')tip70('talisman','부적은 주문서와 폭탄 역할을 겸한다. 위기 탈출·봉쇄·지도·광역 공격에 아끼지 말고 써라.','전술벨트에서 빠르게 사용 가능');
-      else if(ground.type==='food')tip70('food','음식은 허기 관리뿐 아니라 보스 전 도핑과 조리 재료다. 화로나 솥에서 비방 조합을 실험할 수 있다.','국밥처럼 먹는 턴이 긴 음식은 안전한 곳에서 사용');
-      else if(ground.type==='weapon'&&ground.range>=7)tip70('bow','활은 적을 한 번 눌러 조준하고 다시 누르거나 공격을 눌러 발사한다. 사선과 장애물을 확인하라.','적을 길게 누르면 사격 가능 여부도 표시');
-    }
-  }});
-  registerMovePreR8(ctx=>{RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true});
   // r30: runtime item coaching/activity bookkeeping is integrated in canonical useInventoryItem.
 
 
@@ -2626,7 +2549,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   registerGenerationStage('pacing70','post',()=>{pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()});
 
   /* ---------- autosave hooks (idle, not every turn) ---------- */
-  DESCEND_EFFECTS53.push(()=>{RC.lastActionAt=performance.now()});
   globalThis.__MANRU_TURN_PIPELINE__.register('runtime70',{pre:()=>{RC.lastActionAt=performance.now()},post:()=>{if(state){coachContext();if(state.log?.length>48)state.log=state.log.slice(0,48);if(state.decals?.length>24)state.decals.splice(0,state.decals.length-24);if(state.tempFields?.length>24)state.tempFields.splice(0,state.tempFields.length-24)}}});
 
   /* ---------- boss visual signature: one cheap pass only ---------- */
@@ -2767,60 +2689,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
-  addFusionRecipe('elem_fire','upgrade',{kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'});
-  addFusionRecipe('elem_shock','upgrade',{kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'});
-  addFusionRecipe('elem_water','upgrade',{kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'});
-  addFusionRecipe('elem_ice','upgrade',{kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'});
-  addFusionRecipe('elem_grass','upgrade',{kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'});
-  addFusionRecipe('elem_earth','upgrade',{kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'});
-
-  // 원소 + 폭발 : 생원소의 자기역류를 없애고 목표 지점에 집중한다.
-  addFusionRecipe('elem_fire','blast',{kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 층 비례 화염폭발 + 화염지대',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'});
-  addFusionRecipe('elem_shock','blast',{kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'층 비례 연쇄 뇌격 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'});
-  addFusionRecipe('elem_water','blast',{kind:'f_water_blast',name:'조수 폭쇄부적',seal:'潮',element:'water',mode:'target',effect:'bomb_water',range:5,ability:'층 비례 수압 폭발 · 강한 밀치기 · 소화',desc:'강한 층 비례 수압 피해와 밀치기로 진형을 붕괴시키는 수압 폭탄이다.'});
-  addFusionRecipe('elem_ice','blast',{kind:'f_ice_blast',name:'빙폭부적',seal:'雪',element:'ice',mode:'target',effect:'bomb_ice',range:5,ability:'층 비례 빙결폭발 · 비보스 경직',desc:'강해지는 급랭 피해와 경직으로 각개격파 시간을 번다.'});
-  addFusionRecipe('elem_grass','blast',{kind:'f_grass_blast',name:'목폭부적',seal:'荊',element:'grass',mode:'target',effect:'bomb_grass',range:5,ability:'층 비례 독분폭발 · 뿌리 구속',desc:'강한 직접 피해와 독·구속을 함께 퍼뜨린다.'});
-  addFusionRecipe('elem_earth','blast',{kind:'f_earth_blast',name:'지폭부적',seal:'震',element:'earth',mode:'target',effect:'bomb_earth',range:5,ability:'층 비례 고충격 폭발 · 밀치기/경직',desc:'층이 깊어질수록 강해지는 충격파로 지상 적의 진형을 무너뜨린다.'});
-
-  // 일부 원소 + 기능 조합
-  addFusionRecipe('elem_fire','ward',{kind:'f_fire_ward',name:'화막부적',seal:'熾',element:'fire',mode:'instant',effect:'fireward',ability:'7턴 보호막 + 일시 화염저항',desc:'몸을 화염 장막으로 감싸고 주변에 불길을 남긴다.'});
-  addFusionRecipe('elem_shock','blink',{kind:'f_shock_blink',name:'뇌섬부적',seal:'閃',element:'shock',mode:'target',effect:'shockblink',range:7,ability:'순간이동 + 출발/도착 뇌격',desc:'축지의 양끝에 짧은 뇌격을 남긴다.'});
-  addFusionRecipe('elem_water','ward',{kind:'f_water_ward',name:'정수부적',seal:'淨',element:'water',mode:'instant',effect:'pureward',ability:'상태이상 정화 + 8턴 보호막',desc:'상처를 씻고 보호막을 만든다.'});
-  addFusionRecipe('elem_ice','bind',{kind:'f_ice_bind',name:'빙쇄부적',seal:'鎖',element:'ice',mode:'target',effect:'icebind',range:6,ability:'3×3 강빙결',desc:'봉박의 사슬을 냉기로 굳혀 더 오래 붙잡는다.'});
-  addFusionRecipe('elem_grass','mapping',{kind:'f_grass_map',name:'생맥부적',seal:'脈',element:'grass',mode:'instant',effect:'lifemap',ability:'전체 지도 + HP 8 회복',desc:'건물의 틈과 살아 있는 기운을 함께 읽는다.'});
-  addFusionRecipe('elem_earth','ward',{kind:'f_earth_ward',name:'석갑부적',seal:'壁',element:'earth',mode:'instant',effect:'stoneward',ability:'8턴 보호막 + 일시 대지저항',desc:'몸을 암반 같은 기운으로 감싼다.'});
-
-  // 일부 원소 + 원소
-  addFusionRecipe('elem_fire','elem_water',{kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'});
-  addFusionRecipe('elem_water','elem_ice',{kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'});
-  addFusionRecipe('elem_water','elem_grass',{kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'});
-  addFusionRecipe('elem_fire','elem_earth',{kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'});
-  addFusionRecipe('elem_grass','elem_earth',{kind:'f_bulwark',name:'목석부적',seal:'壘',mode:'instant',effect:'bulwark',ability:'임시 암벽 + 6턴 보호막',desc:'뿌리가 바위를 끌어올려 즉석 엄폐물을 만든다.'});
-  addFusionRecipe('elem_shock','elem_water',{kind:'f_thunderpool',name:'폭뢰부적',seal:'轟',mode:'target',effect:'thunderpool',range:6,ability:'수기 전도 연쇄뇌격',desc:'물기운을 전도체로 삼아 뇌격을 넓게 퍼뜨린다.'});
-
-  // 일부 기능 + 기능
-  addFusionRecipe('blast','bind',{kind:'f_bindblast',name:'봉폭부적',seal:'禁',mode:'target',effect:'bindblast',range:5,ability:'층 비례 폭발 + 일반 적 3턴 봉인',desc:'폭발 뒤 종이 사슬이 퍼져 살아남은 일반 적을 3턴 봉인한다. 보스는 제어 내성이 열려 있을 때 1턴만 경직된다.'});
-  addFusionRecipe('identify','mapping',{kind:'f_heaveneye',name:'천안부적',seal:'眼',mode:'instant',effect:'heaveneye',ability:'전체 지도 + 미확인 2종 감정',desc:'지도와 감정을 한 장으로 묶은 탐색용 고급 부적이다.'});
-  addFusionRecipe('identify','upgrade',{kind:'f_identify_upgrade',name:'감강부적',seal:'鑑',mode:'instant',effect:'identify_all991',ability:'인벤토리의 모든 미감정 아이템 완전 감정',desc:'감정의 결을 강화해 행낭 안의 미감정 물건을 한꺼번에 밝힌다.'});
-  addFusionRecipe('ward','blink',{kind:'f_guardblink',name:'호축부적',seal:'遁',mode:'target',effect:'guardblink',range:6,ability:'안전 순간이동 + 6턴 보호막',desc:'도망과 방어를 한 번에 해결하는 비상탈출 부적이다.'});
-
-  // 성부는 생원소와 기능부적 양쪽 합성계에 정식 참여한다. 미감정 상태에서는 아래 진짜 인장/색을 노출하지 않는다.
-  addFusionRecipe('holy','elem_fire',{kind:'f_holy_fire',name:'성화부적',seal:'輝',mode:'instant',effect:'holy_elem_fire991',ability:'성광 정화 + 화염 가호',desc:'성광과 화기를 겹쳐 저주와 탁기를 태우고 짧은 화염 가호를 남긴다.'});
-  addFusionRecipe('holy','elem_shock',{kind:'f_holy_shock',name:'성뢰부적',seal:'閃',mode:'instant',effect:'holy_elem_shock991',ability:'성광 정화 + 뇌전 가호',desc:'성광을 전류에 실어 주변의 사기를 태우고 뇌전 역류를 잠시 막는다.'});
-  addFusionRecipe('holy','elem_water',{kind:'f_holy_water',name:'성수부적',seal:'淨',mode:'instant',effect:'holy_elem_water991',ability:'강한 정화 + 수류 가호',desc:'깨끗한 수기와 성광으로 몸의 탁기를 씻고 잠시 수류의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_ice',{kind:'f_holy_ice',name:'성빙부적',seal:'雪',mode:'instant',effect:'holy_elem_ice991',ability:'성광 정화 + 빙결 가호',desc:'차갑게 가라앉힌 성광이 사기를 얼려 부수고 냉기의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_grass',{kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'});
-  addFusionRecipe('holy','elem_earth',{kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'});
-  addFusionRecipe('holy','identify',{kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'});
-  addFusionRecipe('holy','upgrade',{kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'});
-  addFusionRecipe('holy','blast',{kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'주변 성광 폭발 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'});
-  addFusionRecipe('holy','mapping',{kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'});
-  addFusionRecipe('holy','ward',{kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ability:'강한 상태 정화 + 보호막',desc:'성광을 장막으로 둘러 몸의 해로운 기운을 씻고 공격을 막는다.'});
-  addFusionRecipe('holy','blink',{kind:'f_holy_blink',name:'성축부적',seal:'縮',mode:'instant',effect:'holy_blink991',ability:'바라보는 방향 안전 점멸 + 정화',desc:'성광이 안전한 발판을 짚어 몸을 앞으로 접어 옮긴다.'});
-  addFusionRecipe('holy','bind',{kind:'f_holy_bind',name:'성봉부적',seal:'封',mode:'instant',effect:'holy_bind991',ability:'주변 구속 · 원혼/언데드 강구속',desc:'종이 사슬에 성광을 흘려 가까운 사기를 강하게 붙잡는다.'});
-  /* Built from RECIPES once every addFusionRecipe call above has run (F-23). */
-  const RECIPE=new Map(RECIPES.map(r=>[key74(r.a,r.b),r]));
 
 
 
@@ -2880,9 +2748,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
 
   /* equipment effects */
-  registerPlayerStatStage55('elements74',s=>{const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s});
-  registerAttackCostStage55('elements74',(c,item)=>{if(item?.elementBrand74==='shock')c*=.90;return clamp(c,.25,2.2)});
-  registerMoveCostStage55('elements74',c=>{if(state?.player?.armor?.elementGuard74==='shock')c*=.92;return clamp(c,.50,1.15)});
   /* r15: earth stagger guard is handled by canonical applyKnockback. */
   registerPlayerAttackStageR('element-brand74',(next,mon,b=0,...rest)=>{const before=mon?.hp??0,contact=mon?entityFootprintCells57(mon):[],r=next(mon,b,...rest);if(mon&&mon.hp<before)applyWeaponBrandHit(state.player,mon,before-mon.hp,contact);return r});
 
@@ -2890,7 +2755,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
-  registerInventoryRenderR34('r74-talisman-fusion','post',()=>{const box=document.getElementById('inventory');if(!box)return;const head=box.querySelector('.uxInvMeta,.mfInvMeta,.invMeta');if(head&&(basicTalismans74().length>=2||!playerClassRules58().talismanFusion)&&!head.querySelector('.f74FuseBtn')){const b=document.createElement('button');b.className='f74FuseBtn';b.textContent=playerClassRules58().talismanFusion?'부적 합성':'합성 불가';b.disabled=!playerClassRules58().talismanFusion;b.title=b.disabled?'천하장사는 부적을 합성할 수 없다.':'';b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion()};head.appendChild(b)}const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null;if(selected?.type==='talisman'&&known74(selected)&&!selected.fusion74){const detail=box.querySelector('.uxActions,.mfActions,.invActions');if(detail&&basicTalismans74().length>=2&&!detail.querySelector('[data-fuse-selected74]')){const b=document.createElement('button');b.dataset.fuseSelected74='1';b.textContent=playerClassRules58().talismanFusion?'이 부적으로 합성':'천하장사는 부적을 합성할 수 없다.';b.disabled=!playerClassRules58().talismanFusion;b.onclick=e=>{e.preventDefault();e.stopPropagation();openFusion(selected)};detail.appendChild(b)}}box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(it?.fusion74&&!el.querySelector('.f74badge'))el.insertAdjacentHTML('beforeend','<span class="f74badge">합</span>')})});
   // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
   targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
 
@@ -2898,7 +2762,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
     
-  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
+  globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>FUSION_RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
 
 /* ===== MANRU v7.5: CLEAN SHATTERED-LIKE HUD / UNIFIED INPUT / FUSION QA ===== */
@@ -3168,8 +3032,6 @@ document.body.classList.add('mf75-clean');
   };
 
   /* Auto-pickup is permanent. A movement also exits temporary camera inspection. */
-  registerMovePreR8(ctx=>{ctx.automationSerial81=Auto81.serial;if(Runtime81.cameraInspecting)CameraController.resume(false);return true});
-  registerMovePostR8(ctx=>{if(ctx.moved){Runtime81.qa.manualMoves++;if(ctx.automationSerial81===Auto81.serial)Auto81.pickupAll()}});
 
 
 
@@ -3686,7 +3548,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
   buildDesktopSide();
-  registerPanelHook54('desktop962',updateDesktopSide962);
   addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
 
 
@@ -3714,7 +3575,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 
-  registerPanelHook54('door964',refreshDoorContext);
 
   
 
@@ -3808,7 +3668,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   // v9.8.3 load quality pass is registered in the canonical lifecycle below.
   
   // r30: ammunition selection is integrated in canonical useInventoryItem.
-  registerInventoryRenderR34('r967-ammo','post',()=>{const box=document.getElementById('inventory');if(box&&state){box.querySelectorAll('[data-invuse]').forEach(b=>{const it=state.player.inventory[+b.dataset.invuse];if(it?.type==='ammo')b.textContent=it.ammoKind===state.player.loadedAmmoKind?'장전됨':'장전'});box.querySelectorAll('[data-invslot]').forEach(b=>{const it=state.player.inventory[+b.dataset.invslot];if(it?.type==='ammo'){if(it.ammoKind===state.player.loadedAmmoKind)b.classList.add('ammo967-loaded');const role=b.querySelector('.uxRole47');if(role)role.textContent='탄약'}})}});
   /* R7 refactor: ammo inventory/world visuals now use the canonical exact-item renderer. */
   registerPlayerAttackStageR('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
   globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
@@ -4162,7 +4021,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     globalThis.__MANRU_TURN_PIPELINE__.register('camera-save984',{post:()=>{if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}});
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
     // r53: overwritten save implementation retired.
-  RUN_END_EFFECTS53.push(kind=>{if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}});
 
 
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
@@ -4266,10 +4124,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   // share one geometric strength: 1 stack=1x, 2=2x, 3=4x, 4=8x, 5=16x.
   registerPlayerAttackStageR('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
   registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
-  registerMoveCostStage55('curse991',c=>{const power=curseMultiplier('binding');if(power>0)c*=1+.12*power;return c});
-  registerAttackCostStage55('curse991',c=>{const power=curseMultiplier('clumsy');if(power>0)c*=1+.08*power;return c});
 
-  registerPlayerStatStage55('curse991',s=>applyCurseStats(s));
 
 
 
@@ -4283,12 +4138,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  registerInventoryRenderR34('r991-gear-identity','post',()=>{if(!state||!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
-    box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];const knownCurse=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',knownCurse);if(knownCurse){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}const nm=el.querySelector('.nm,.invSlotName');if(nm&&isGearItem(it))nm.textContent=it.name});
-    box.querySelectorAll('[data-uxeq],[data-eqslot]').forEach(el=>{const slot=el.dataset.uxeq||el.dataset.eqslot,it=state.player[slot],known=!!(it?.identified===true&&it?.curse991);el.classList.toggle('knownCurse991',known);if(known){el.style.setProperty('border-color','#d44738','important');el.style.setProperty('background','linear-gradient(180deg,#35100d,#140706)','important');el.style.setProperty('box-shadow','inset 0 0 0 1px #6f1d18,0 0 13px rgba(224,55,42,.44)','important')}else{el.style.removeProperty('border-color');el.style.removeProperty('background');el.style.removeProperty('box-shadow')}});
-    const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,d=box.querySelector('.uxDetail,.invDetail');
-    if(isUnknownGear(selected)&&d){const h=d.querySelector('h3');if(h)h.textContent=selected.name;const sub=d.querySelector('.uxDetailHead small,.typeLine');if(sub)sub.textContent=`${publicGearType(selected.type)} · 종류 확인 · 세부 미감정`;const stats=d.querySelector('.uxStats,.invStats');if(stats)stats.innerHTML=publicGearStats(selected).map(x=>`<span class="invStatChip">${x}</span>`).join('');const desc=d.querySelector('.uxDesc,.desc');if(desc)desc.textContent='종류와 기본 외형은 확인됐다. 강화 수치, 저주 여부와 숨은 마법 옵션은 감정 전까지 드러나지 않는다.'}
-    else if(selected?.identified===true&&selected?.curse991&&d){const stats=d.querySelector('.uxStats,.invStats');if(stats&&!stats.querySelector('.curse991Chip')){const c=curseDefOf(selected),stacks=selected.curseActive991?curseStackCount(selected.curse991):0,power=stacks?curseMultiplier(selected.curse991):1,sp=document.createElement('span');sp.className='uxStat curse991Chip';sp.textContent=`저주 · ${c?.name||'불명'}${stacks>1?` · 중첩 ${stacks} / ×${power}`:''}`;stats.appendChild(sp)}}});
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
   const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
@@ -4422,7 +4271,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 RuntimeState.ui.screen=SCREEN1002;
 
 
-      RUN_END_EFFECTS53.push(()=>setScreen('ending'));
 
   function bootScreen1002(){
     if(SCREEN1002.booted)return;SCREEN1002.booted=true;

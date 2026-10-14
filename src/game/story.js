@@ -193,7 +193,7 @@ function buildTutorialEntry(m,rooms){
   }
   function storySelectEnding(type){if(runState57()!=='victory'||!['inherit','destroy'].includes(type))return false;RuntimeState.ui.storyChoice=type;presentStorySelection(type);return true}
   function presentStorySelection(type){const box=document.getElementById('storyJudge992');if(!box)return;document.querySelectorAll('.storyChoice992').forEach(b=>b.classList.toggle('selected',b.dataset.storyEnding===type));const text=type==='inherit'?'친구의 목소리를 보존한다는 말은 친구를 되살린다는 뜻이 아니다. 만루가 기억을 소유하는 방식 그대로 남긴다는 뜻이다. 인장을 잡는 순간 너는 밖으로 나가는 사람이 아니라 방을 유지하는 사람이 된다.':'핵을 부수면 방들은 외부 크기에 맞춰 무너진다. 그 과정에서 만루가 붙잡고 있던 목소리와 물건 일부도 함께 사라진다. 대신 다음 조사관이 같은 복도를 걷는 일은 끝난다.';box.innerHTML=`${escapeHtmlText(text)}<br><button id="storyConfirmEnding992">이 판단을 확정한다</button>`;box.classList.add('open');document.getElementById('storyConfirmEnding992').onclick=()=>InputRouter.dispatch({type:'STORY_CONFIRM_ENDING',source:'story-confirm'})}
-  function storyResolveEnding(type){if(runState57()!=='victory')return;const st=storyEnsureState();if(st){st.ending=type;if(!st.endCleanup992){st.endCleanup992=true;runEndEffects53('victory')}}presentStoryEnding(type)}
+  function storyResolveEnding(type){if(runState57()!=='victory')return;const st=storyEnsureState();if(st){st.ending=type;if(!st.endCleanup992){st.endCleanup992=true;runEndEffects('victory')}}presentStoryEnding(type)}
 function presentStoryEnding(type){const card=document.getElementById('card');if(!card)return;if(type==='inherit'){card.innerHTML=`<div class="storyEnd992 storyEndingResult992"><div class="brand">계승 기록</div><h2>새 만루보주</h2><p>인장을 손에 넣는 순간 천 개의 방이 네 호흡에 맞춰 조용히 자리를 바꾼다. 친구의 목소리는 돌아오지 않는다. 다만 그가 남긴 필체와 발자국과 마지막 말은 어느 방에서도 지워지지 않는다.<br><br>정부는 실종된 두 조사관을 끝내 회수하지 못한다.</p><p class="storyEndingLast992">몇 달 뒤, 관청에 새로운 민원이 접수되었다.<br>“객주의 방이 어제보다 하나 늘었습니다.”</p><button onclick="location.reload()">새 조사 시작</button></div>`}else{card.innerHTML=`<div class="storyEnd992 storyEndingResult992"><div class="brand">철거 완료 보고</div><h2>천 개의 방이 멎었다</h2><p>천실핵이 깨지자 외부의 크기보다 넓던 복도부터 차례로 접혀 사라진다. 챙겨 온 몇몇 유물은 빛을 잃고, 만루가 붙잡고 있던 목소리도 더 이상 들리지 않는다.<br><br>너는 친구의 신분패와 회수한 조사 기록만 들고 밖으로 나온다.</p><p class="storyEndingLast992">철거 보고서에는 건물 한 채가 사라졌다고 적혔다.<br>그 안에 천 개의 방이 있었다는 내용은 기록되지 않았다.</p><button onclick="location.reload()">새 조사 시작</button></div>`}}
   function projectStoryUI(){if(interactionActive8('storyScene992')&&RuntimeState.ui.storyScene){const v=RuntimeState.ui.storyScene;presentStoryScene(v.title,v.text,v.quote)}else if(interactionActive8('storyModal992')){const d=findStoryDoc(RuntimeState.ui.storyNote);if(d)presentStoryNote(d);else storyOpenArchive()}if(runState57()==='victory'){const ending=state?.story992?.ending;if(ending)presentStoryEnding(ending);else{presentStoryEndingChoice();if(RuntimeState.ui.storyChoice)presentStorySelection(RuntimeState.ui.storyChoice)}}}
 const BRANCH_LORE=Object.freeze({
@@ -211,3 +211,13 @@ const BRANCH_LORE=Object.freeze({
     const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
   }
   function seenTip70(id){return !!tipLedger66().seen[id]}
+function coachAfterPickup(ctx){
+    const ground=ctx.ground;
+    if(ground){
+      if(ground.type==='potion')tip70('potion','약병은 런마다 색과 정체가 바뀐다. 발견 장소와 냄새·색 단서로 후보를 좁히고, 마시거나 감정부적으로 식별한다.','미확인 약병은 역할 탭도 숨겨진다.');
+      else if(ground.type==='talisman')tip70('talisman','부적은 주문서와 폭탄 역할을 겸한다. 위기 탈출·봉쇄·지도·광역 공격에 아끼지 말고 써라.','전술벨트에서 빠르게 사용 가능');
+      else if(ground.type==='food')tip70('food','음식은 허기 관리뿐 아니라 보스 전 도핑과 조리 재료다. 화로나 솥에서 비방 조합을 실험할 수 있다.','국밥처럼 먹는 턴이 긴 음식은 안전한 곳에서 사용');
+      else if(ground.type==='weapon'&&ground.range>=7)tip70('bow','활은 적을 한 번 눌러 조준하고 다시 누르거나 공격을 눌러 발사한다. 사선과 장애물을 확인하라.','적을 길게 누르면 사격 가능 여부도 표시');
+    }
+  }
+function moveCoachTip(ctx){RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true}
