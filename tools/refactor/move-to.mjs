@@ -231,6 +231,7 @@ for (const b of [...blocks].sort((a, c) => c.start - a.start)) {
   if (out.slice(ls, le).trim() === '' && ls < le) out = out.slice(0, ls) + out.slice(le + 1);
 }
 const payload = moved.join('\n') + '\n';
+let writeNewFile = null;
 
 // ---- append to the target segment
 const targetMark = new RegExp(`^/\\*@@FILE ${target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@@\\*/\\n`, 'm');
@@ -250,17 +251,21 @@ if (m) {
   if (afterIdx < 0) throw new Error(`${ref} is not a file of the game`);
   const at = createBefore ? idx[afterIdx].index : afterIdx + 1 < idx.length ? idx[afterIdx + 1].index : out.length;
   out = out.slice(0, at) + SENTINEL(target) + '\n' + payload + out.slice(at);
-  if (!dry) {
+  // the manifest and the new file are written only after the load-order check below has passed: a refused move must leave nothing behind
+  writeNewFile = () => {
     const manifest = readManifest(srcDir);
     const list = manifest.closure.includes(ref) ? manifest.closure : manifest.afterClosure;
     list.splice(list.indexOf(ref) + (createBefore ? 0 : 1), 0, target);
     fs.writeFileSync(path.join(srcDir, 'game', 'manifest.json'), JSON.stringify(manifest, null, 1) + '\n');
     fs.writeFileSync(path.join(srcDir, 'game', target), '');
-  }
+  };
 }
 parse(out);
 const after = initPairs(out);
 const newlyLate = after.late.filter((x) => !before.late.includes(x));
 console.log(`moved ${stmts.length} statements (${names.length} names) into ${target}; initialiser order violations: ${newlyLate.length}`);
 if (newlyLate.length) { console.log(newlyLate.slice(0, 15).map((x) => x + ' ' + (lateInfo.get(x) || '')).join('\n')); throw new Error('the move would break the load order'); }
-if (!dry) fs.writeFileSync(workFile, out);
+if (!dry) {
+  writeNewFile?.();
+  fs.writeFileSync(workFile, out);
+}
