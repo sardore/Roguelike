@@ -3467,7 +3467,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   /* ===== MANRU v9.8.1: FIXED MAP DENSITY / RAFT SAFETY / PORTAL LABYRINTH / REACHABILITY ===== */
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
-  const V981={version:'v9.8.1-fixed-map-portal-reachability',errors:[],repairs:[],portalBuilds:0};
+
 
 
 
