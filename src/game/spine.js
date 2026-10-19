@@ -1812,7 +1812,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
   globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
-  globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54});
 
 
   setPlayerAttackBaseR('combat54',attackPlayerCore54R);
@@ -3512,7 +3511,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
     cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
   }
 ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
-  window.closeAdjacentDoor=closeAdjacentDoor964;
 
   globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 
