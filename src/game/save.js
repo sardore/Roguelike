@@ -753,3 +753,18 @@ function gameplayInputAllowed57(opts={}){
   return owner.panels.every(p=>allowed.has(p.id))
 }
 const RUN_END_EFFECTS=[markDeathSeal,showEndingScreen];
+function startFloorTransition(){
+  const side=!!state?.artifactDungeon46;
+  FX.transition={
+    start:performance.now(),
+    life:1450,
+    floor:state.floor,
+    side,
+    region:side?(state.artifactDungeon46?.name||state.layoutName||''):regionFor(state.floor)[2],
+    layout:''
+  };
+  const boss=state.monsters?.find(m=>m.boss&&m.hp>0);if(boss)setTimeout(()=>showBossIntro(boss),850);
+}
+/* ---------- item audit: definitions that previously had no mechanical reader ---------- */
+function defBy(name){return WEAPONS.find(x=>x.name===name)||ARMORS.find(x=>x.name===name)||CLOAKS.find(x=>x.name===name)||RELICS.find(x=>x.name===name)||TRINKETS.find(x=>x.name===name)||null}
+function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapon,...(state?.player?.inventory||[])])if(it?.artifactId46)ids.add(it.artifactId46);if(state&&ids.has('water_crossbow')){state.artifactHistory46||=[];if(!state.artifactHistory46.some(h=>h.id==='water_crossbow'&&h.status==='claimed'))state.artifactHistory46.push({id:'water_crossbow',status:'claimed',floor:9,source:[state.player.weapon,...state.player.inventory].some(i=>i?.artifactId46==='water_crossbow'&&i.palaceReward105)?'palace':'legacy',turn:state.turn});}if(state)state.artifactClaimed46=[...new Set([...(state.artifactClaimed46||[]),...ids])];const plan=state?.branchWorld105?.citadel105?.relicPlan105;if(plan&&ids.has(plan.realId))plan.claimed=true;}

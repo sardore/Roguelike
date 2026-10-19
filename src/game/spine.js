@@ -201,18 +201,7 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-function startFloorTransition(){
-  const side=!!state?.artifactDungeon46;
-  FX.transition={
-    start:performance.now(),
-    life:1450,
-    floor:state.floor,
-    side,
-    region:side?(state.artifactDungeon46?.name||state.layoutName||''):regionFor(state.floor)[2],
-    layout:''
-  };
-  const boss=state.monsters?.find(m=>m.boss&&m.hp>0);if(boss)setTimeout(()=>showBossIntro(boss),850);
-}
+
 
 
 
@@ -4494,8 +4483,7 @@ const TERRAIN_R41_1006=globalThis.__MANRU_TERRAIN_R41__=globalThis.__MANRU_TERRA
 globalThis.__MANRU_TYPED_KEYS__?.setMetaProvider?.(keyMeta1006);
 /* r45: key panel reads __MANRU_TYPED_KEYS__.meta() directly; removed the v10.0.6 naming wrapper. */
 
-/* ---------- item audit: definitions that previously had no mechanical reader ---------- */
-function defBy(name){return WEAPONS.find(x=>x.name===name)||ARMORS.find(x=>x.name===name)||CLOAKS.find(x=>x.name===name)||RELICS.find(x=>x.name===name)||TRINKETS.find(x=>x.name===name)||null}
+
 function patchDef(name,props){const d=defBy(name);if(d)Object.assign(d,props);return d}
 patchDef('수련용 환도',{focusChain:true,ability:'집중 연계',desc:'연속으로 공격을 2회 적중시키면 기력 1을 되찾습니다. 빗나가면 연계가 끊깁니다.'});
 patchDef('태도',{edgeBonus:true,knockback:1,ability:'밀치기 · 일섬',desc:'긴 날로 거리를 지배합니다. 체력이 75% 이상 남은 적에게 첫 일격 보너스 피해를 주고 한 칸 밀어냅니다.'});
@@ -5190,7 +5178,7 @@ globalThis.__MANRU_TURN_PIPELINE__.register('legendary47',{pre:()=>{syncEquip47(
 
 globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'legendary47',draw:drawLegendWorld});
 
-function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapon,...(state?.player?.inventory||[])])if(it?.artifactId46)ids.add(it.artifactId46);if(state&&ids.has('water_crossbow')){state.artifactHistory46||=[];if(!state.artifactHistory46.some(h=>h.id==='water_crossbow'&&h.status==='claimed'))state.artifactHistory46.push({id:'water_crossbow',status:'claimed',floor:9,source:[state.player.weapon,...state.player.inventory].some(i=>i?.artifactId46==='water_crossbow'&&i.palaceReward105)?'palace':'legacy',turn:state.turn});}if(state)state.artifactClaimed46=[...new Set([...(state.artifactClaimed46||[]),...ids])];const plan=state?.branchWorld105?.citadel105?.relicPlan105;if(plan&&ids.has(plan.realId))plan.claimed=true;}
+
 globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit46});
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 

@@ -95,6 +95,7 @@
 | P3→pickup | P3: MANRU_PICKUP_PIPELINE_R25 registrations become an array literal (6 stages, named functions) | 5640 | 133 / 495 | 748 | 78.5% | - |
 | P3→movehooks | P3: MOVE_HOOKS_R8 registrations become an array literal (10 stages, named functions) | 5629 | 131 / 485 | 746 | 78.6% | - |
 | P3 정리 | P3: 접미사 개명, 도구 삭제, 문서 | 5629 | 131 / 485 | 744 | 78.6% | - |
+| P5→save | spine 선언 → save.js (P3로 풀린 것) | 5617 | 128 / 485 | 744 | 78.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -102,7 +103,7 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 755 |
+| save.js | 770 |
 | items.js | 1046 |
 | combat.js | 666 |
 | monsters.js | 2282 |
@@ -111,11 +112,11 @@
 | special.js | 2038 |
 | branches.js | 2404 |
 | elements.js | 251 |
-| world.js | 498 |
+| world.js | 497 |
 | layout.js | 746 |
 | input.js | 258 |
 | story.js | 223 |
 | ui.js | 998 |
-| spine.js | 5629 |
+| spine.js | 5617 |
 | start.js | 6 |
-| (total) | 26282 |
+| (total) | 26284 |
