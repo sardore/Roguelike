@@ -11,7 +11,10 @@
     "dev": "node tools/dev.mjs",
     "test": "node tools/build.mjs --qa && node tests/run.mjs",
     "test:update-baseline": "node tools/build.mjs --qa && node tests/run.mjs --update",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "test:tools": "node --test tests/tools/*.test.mjs",
+    "gate": "node tools/gate.mjs",
+    "chain": "node tools/chain.mjs"
   },
   "devDependencies": {
     "acorn": "8.15.0",

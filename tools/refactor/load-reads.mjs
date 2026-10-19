@@ -48,8 +48,9 @@ for (const [label, o] of situations) {
   const s = await openSession(browser, out, { seed: 1, ...o });
   const r = await s.page.evaluate(() => ({ loading: globalThis.__MANRU_LOADING__, hits: globalThis.__MANRU_LOAD_HITS__, snapshot: globalThis.__MANRU_SNAPSHOT__ }));
   if (snapshotFile) snapshots[label] = r.snapshot;
-  if (r.loading !== false) console.log(`${label}: the closure did not finish loading (errors: ${JSON.stringify(s.errors)})`);
-  if (s.errors.length) console.log(`${label}: page errors ${JSON.stringify(s.errors)}`);
+  // a boot that failed is a failed measurement: say so on the exit status too, not only in the text
+  if (r.loading !== false) { console.log(`${label}: the closure did not finish loading (errors: ${JSON.stringify(s.errors)})`); process.exitCode = 1; }
+  if (s.errors.length) { console.log(`${label}: page errors ${JSON.stringify(s.errors)}`); process.exitCode = 1; }
   for (const [n, h] of Object.entries(r.hits || {})) {
     const t = (total[n] ||= { ok: 0, tdz: 0, okSite: null, tdzSite: null, situations: [] });
     t.ok += h.ok; t.tdz += h.tdz; t.okSite ||= h.okSite; t.tdzSite ||= h.tdzSite; t.situations.push(label);
