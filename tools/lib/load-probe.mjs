@@ -13,8 +13,10 @@ const PRELUDE = `globalThis.__MANRU_LOADING__=true;globalThis.__MANRU_LOAD_HITS_
 globalThis.__MANRU_LOAD_PROBE__=(n,f)=>{if(!globalThis.__MANRU_LOADING__)return f();const h=(globalThis.__MANRU_LOAD_HITS__[n]||={ok:0,tdz:0,okSite:null,tdzSite:null});const site=()=>String(new Error().stack).split('\\n').slice(2,12).map((l)=>l.trim()).join(' < ');try{const v=f();h.ok++;h.okSite||=site();return v}catch(e){if(e instanceof ReferenceError){h.tdz++;h.tdzSite||=site()}throw e}};
 `;
 
-// probe: Set of names (or null); snapshot: Set of names, 'all' (every top-level const/let/class) or null
-export function instrumentRuntime(text, { probe = null, snapshot = null } = {}) {
+// probe: Set of names (or null); snapshot: Set of names, 'all' (every top-level const/let/class) or null;
+// globals: Set of property names of globalThis whose value is also serialised when the closure has finished loading
+// (recorded as `globalThis.<name>`: what the game published for other files and for the tests)
+export function instrumentRuntime(text, { probe = null, snapshot = null, globals = null } = {}) {
   const ast = acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
   const closure = ast.body.find((s) => s.type === 'ExpressionStatement' && s.expression.type === 'CallExpression' && /Function/.test(s.expression.callee.type));
   if (!closure) throw new Error('game closure not found');
@@ -45,7 +47,8 @@ export function instrumentRuntime(text, { probe = null, snapshot = null } = {}) 
   const snapNames = snapshot === 'all' ? values : snapshot ? values.filter((n) => snapshot.has(n)) : [];
   // the closure finishes loading at its last statement: mark the end there (before a final return, if any)
   const last = body.body[body.body.length - 1];
-  const endMark = 'globalThis.__MANRU_LOADING__=false;' + (snapNames.length ? `{const __s=${SERIALIZE};globalThis.__MANRU_SNAPSHOT__={${snapNames.map((n) => `${JSON.stringify(n)}:(()=>{try{return __s(${n})}catch(e){return '<error '+e.message+'>'}})()`).join(',')}}}` : '');
+  const globalNames = globals ? [...globals] : [];
+  const endMark = 'globalThis.__MANRU_LOADING__=false;' + (snapNames.length || globalNames.length ? `{const __s=${SERIALIZE};globalThis.__MANRU_SNAPSHOT__={${[...snapNames.map((n) => `${JSON.stringify(n)}:(()=>{try{return __s(${n})}catch(e){return '<error '+e.message+'>'}})()`), ...globalNames.map((n) => `${JSON.stringify('globalThis.' + n)}:(()=>{try{return __s(globalThis[${JSON.stringify(n)}])}catch(e){return '<error '+e.message+'>'}})()`)].join(',')}}}` : '');
   const at = last.type === 'ReturnStatement' ? last.start : last.end;
   const shift = unique.filter((e) => e.start < at).reduce((d, e) => d + e.text.length - (e.end - e.start), 0);
   out = out.slice(0, at + shift) + '\n' + endMark + '\n' + out.slice(at + shift);

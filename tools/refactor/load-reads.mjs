@@ -8,7 +8,7 @@
 // (empty storage, each V40 save fixture, ?debug=1, mobile viewport) and prints, per name, the load-time reads seen
 // (ok = read after its declaration ran, tdz = read before) with the first call site of each kind.
 // A name with no load-time read can be declared anywhere earlier in the closure without changing behaviour.
-// --snapshot also records the value of every listed name when the closure has finished loading (functions by name,
+// --snapshot also records the value of every listed name (and of every `globalThis.NAME` line: a published global) when the closure has finished loading (functions by name,
 // DOM nodes by tag/id, cycles cut), per situation, into a JSON file: two builds' snapshots compared show whether a
 // move changed what a declaration holds.
 import fs from 'node:fs';
@@ -22,7 +22,10 @@ const args = process.argv.slice(2);
 const opt = (k, d) => (args.includes(k) ? args[args.indexOf(k) + 1] : d);
 const namesFile = args.find((a, i) => !a.startsWith('--') && !['--root', '--out', '--snapshot'].includes(args[i - 1]));
 const snapshotFile = opt('--snapshot', null);
-const names = new Set(fs.readFileSync(namesFile, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean));
+const listed = fs.readFileSync(namesFile, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
+// `globalThis.NAME` lines ask for the published global's value in the snapshot; the others are top-level bindings
+const globals = new Set(listed.filter((n) => n.startsWith('globalThis.')).map((n) => n.slice('globalThis.'.length)));
+const names = new Set(listed.filter((n) => !n.startsWith('globalThis.')));
 const root = path.resolve(repo, opt('--root', 'dist-qa'));
 const out = path.resolve(repo, opt('--out', '.work/load-reads'));
 
@@ -30,7 +33,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.cpSync(root, out, { recursive: true });
 const rtFile = path.join(out, 'scripts', '10-runtime.js');
 const text = fs.readFileSync(rtFile, 'utf8');
-const { text: instrumented, found, sites } = instrumentRuntime(text, { probe: names, snapshot: snapshotFile ? names : null });
+const { text: instrumented, found, sites } = instrumentRuntime(text, { probe: names, snapshot: snapshotFile ? names : null, globals: snapshotFile ? globals : null });
 for (const n of names) if (!found.has(n)) console.log(`warning: ${n} is not a top-level binding of the game closure`);
 fs.writeFileSync(rtFile, instrumented);
 
