@@ -101,6 +101,7 @@
 | P5→mapgen | spine 선언 → mapgen.js (P3로 풀린 것) | 5582 | 121 / 485 | 744 | 78.8% | - |
 | P5→ui | spine 선언 → ui.js (P3로 풀린 것) | 5575 | 116 / 485 | 744 | 78.8% | - |
 | P5→input | spine 선언 → input.js (P3로 풀린 것) | 5575 | 115 / 485 | 744 | 78.8% | - |
+| P5→items | spine 선언 → items.js (P3로 풀린 것) | 5568 | 111 / 485 | 744 | 78.8% | - |
 
 ## 현재 파일별 줄 수
 
@@ -109,7 +110,7 @@
 | kernel.js | 25 |
 | catalog.js | 173 |
 | save.js | 770 |
-| items.js | 1046 |
+| items.js | 1057 |
 | combat.js | 669 |
 | monsters.js | 2282 |
 | render.js | 4952 |
@@ -122,6 +123,6 @@
 | input.js | 259 |
 | story.js | 223 |
 | ui.js | 1010 |
-| spine.js | 5575 |
+| spine.js | 5568 |
 | start.js | 6 |
-| (total) | 26297 |
+| (total) | 26301 |
