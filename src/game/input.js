@@ -487,3 +487,5 @@ const RuntimeState={
     },
     state(){return{active:this.active,exploring:this.exploreMode,target:this.target?{type:this.target.type,...this.targetPos(this.target)}:null,path:this.path.length,lastStop:this.lastStop}}
   };
+let autoWalkTimer = null;
+let autoWalkToken = 0;

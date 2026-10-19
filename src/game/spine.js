@@ -118,8 +118,8 @@
 
 
 
-let autoWalkTimer = null;
-let autoWalkToken = 0;
+
+
 
 
 
