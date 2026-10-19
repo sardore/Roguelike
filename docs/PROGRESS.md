@@ -94,6 +94,7 @@
 | P3→boss | P3: BOSS_REWARD_STAGES registrations become an array literal (1 stages, named functions) | 5653 | 134 / 499 | 749 | 78.5% | - |
 | P3→pickup | P3: MANRU_PICKUP_PIPELINE_R25 registrations become an array literal (6 stages, named functions) | 5640 | 133 / 495 | 748 | 78.5% | - |
 | P3→movehooks | P3: MOVE_HOOKS_R8 registrations become an array literal (10 stages, named functions) | 5629 | 131 / 485 | 746 | 78.6% | - |
+| P6~P8 | 전역 공개 47개 이동·2개 삭제, 선언 24개 이동(P6 5 + 신규 9 + P7 4 + P8 6), 버전 문자열 10문장 정의에 합침 | 5243 | 83 / 426 | 744 | 80.1% | - |
 | P3 정리 | P3: 접미사 개명, 도구 삭제, 문서 | 5629 | 131 / 485 | 744 | 78.6% | - |
 | P5→save | spine 선언 → save.js (P3로 풀린 것) | 5617 | 128 / 485 | 744 | 78.6% | - |
 | P5→branches | spine 선언 → branches.js (P3로 풀린 것) | 5617 | 126 / 485 | 744 | 78.6% | - |

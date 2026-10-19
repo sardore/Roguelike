@@ -62,9 +62,9 @@
 | P3 | 등록 API와 단계 표: `register*` 9개와 그 표 | 30 → 처리됨 | 완료(2026-10-12, 브랜치 `claude/p3-stage-tables`, 표별 커밋). `RECIPE`도 함께 해소 | 설계·측정·결과는 `docs/P3_DESIGN.md`. 등록 문장을 표 선언의 배열 리터럴로, 단계 본문은 소유 도메인의 이름 있는 함수 선언으로. 순서·id·본문 해시는 `stages`가, 소비 경로는 `consumers`·`features.stages`가 지킨다 |
 | P4 | 부팅 문장만 쓰는 나머지(패널·버튼 연결용 지역 변수, 루프 시작 상태, 전설 던전 `*46`/`*47` 묶음 등) | 95 | 사용처가 spine의 느슨한 문장(패널·버튼 연결, 루프 시작) | 느슨한 문장 573개를 실행 순서 그대로 부팅 구획으로 묶을 때 같이 간다. 구획 경계는 `docs/F10_DESIGN.md` 방식(문장 순서 = 동작)으로 정하고 `input.listeners` 지문과 `screens`가 지킨다 |
 | P5 | 로드 시 DOM을 만드는 요소 7개 | 7 | `move-to`가 거부(`document`를 읽고 앞 문장이 DOM을 바꿈) | `feelEl`·`panel`·`coach`·`modal`·`skillQuick`·`classDetail1001`/`classStart1001`·`hud`: 요소 생성과 `appendChild` 문장이 한 묶음이다. 그 묶음(생성+부착)을 ui.js의 한 초기화 함수 `buildPanels`로 만들어 부팅 구획에서 같은 순서로 부른다. DOM 순서(745개)·`uiactions`·`screens`로 검증 |
-| P6 | 로드 시 `window.*`/`globalThis.*`를 읽는 초기화식 5개 | 5 | 거부 | `V56`·`POTION_LIST`(`window.MANRU_POTIONS`를 만드는 문장 뒤여야 한다)·`BASE_KIND74`·`legacyPotionIcon`/`legacyPotionDraw`. 값을 만드는 문장을 소유 도메인으로 옮기고 그 뒤에 선언한다 |
-| P7 | 로드 순서가 서로 걸린 5개 | 5(231줄) | 거부 | `RuntimeState`(231줄; `INPUT`을 로드 시 읽음 — input.js가 앞이므로 `INPUT` 이동 뒤 가능), `Auto81`, `selectedClass1001`(`CLASSES` 뒤), `POTION_BY_KIND`(`POTION_LIST` 뒤), `strictKeyFloors1004`(special.js의 `LOCK_SPECIAL`을 `strictLockFloors()`로 읽음 — save.js가 아니라 special.js 뒤여야 한다) |
-| P8 | 채워지는 객체를 담는 3개 | 3 | 거부 | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
+| P6 | 로드 시 `window.*`/`globalThis.*`를 읽는 초기화식 5개 | 5 | 완료(2026-10-19, 아래 "P6~P8 결과") | `V56`·`POTION_LIST`(`window.MANRU_POTIONS`를 만드는 문장 뒤여야 한다)·`BASE_KIND74`·`legacyPotionIcon`/`legacyPotionDraw`. 값을 만드는 문장을 소유 도메인으로 옮기고 그 뒤에 선언한다 |
+| P7 | 로드 순서가 서로 걸린 5개 | 5(231줄) | 완료(2026-10-19, 아래 "P6~P8 결과") | `RuntimeState`(231줄; `INPUT`을 로드 시 읽음 — input.js가 앞이므로 `INPUT` 이동 뒤 가능), `Auto81`, `selectedClass1001`(`CLASSES` 뒤), `POTION_BY_KIND`(`POTION_LIST` 뒤), `strictKeyFloors1004`(special.js의 `LOCK_SPECIAL`을 `strictLockFloors()`로 읽음 — save.js가 아니라 special.js 뒤여야 한다) |
+| P8 | 채워지는 객체를 담는 3개 | 3 | 완료(2026-10-19, 아래 "P6~P8 결과") | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
 | P9 | 전역으로 공개되어 쓰이는 1개 | 1 | `TYPED_KEYS96`는 미사용처럼 보이지만 `globalThis.__MANRU_TYPED_KEYS__`로 공개되어 ui·special·spine이 읽는다 | 유지. 공개 전역을 직접 호출로 바꾸는 별도 정리 때 |
 
 합계 51+23+30+95+7+5+5+3+1 = 219. 실행 순서 제안: P1 → P2 → P5~P8(각각 작음) → P3·P4(부팅 구획과 함께, 사용자 결정 후). 각 단계는 한 커밋이고, 커밋 전 `values`·`features`·`npm test` 전체를 통과시킨다.
@@ -91,6 +91,20 @@
 
 ## P3 이후 (2026-10-19)
 P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선언이 22개 생겼다. 도메인별 8커밋으로 옮겼다(save 3, branches 2, combat 2, mapgen 3, ui 5, input 1, items 4, monsters 2). 근거는 각 커밋 메시지(사용 도메인 수). 남은 선언은 109개, 느슨한 문장은 485개다. 나머지(P4~P8)의 측정과 방식 제안은 `docs/P4_DESIGN.md`(승인 대기).
+
+## P6~P8 결과 (2026-10-19)
+브랜치 `claude/boot-p5-p8`. 도구가 거부하던 이유를 하나씩 풀고(`tests/tools/move-to.test.mjs`에 시험 추가) 같은 게이트(`npm run check`·`npm test` 전체·옛 빌드와 새 빌드의 로드 직후 값 비교, differ 0)로 `tools/chain.mjs`가 커밋·푸시했다.
+
+| 거부 이유 | 풀이 | 옮긴 선언 |
+|---|---|---|
+| 초기화식이 `window.X`/`globalThis.X`를 로드 중 읽음 | 공개하는 문장이 새 위치보다 앞에 있고, 함수 안에서 공개하지 않고, 새 위치와 옛 위치 사이에서 X의 멤버를 바꾸지 않으면 허용(`defineProperty`·`Object.assign` 호출은 이름을 읽을 수 있을 때만 비교, 못 읽으면 거부) | `POTION_LIST`·`BASE_KIND74`(items), `V56`(ui), `legacyPotionIcon`·`legacyPotionDraw`(render) |
+| 함수를 값으로 저장만 하는데 호출로 셈 | 배열 원소·속성 값·초기화식 전체로 저장하는 함수는 호출이 아니다 | `DESCEND_EFFECTS`(mapgen) |
+| 채워지는 객체의 다른 멤버를 쓰는 문장 때문에 거부 | 읽는 멤버와 쓰는 멤버가 다르면(`TT['LEGEND_'+…]` 대 `TT.DOOR` 등) 허용. 같은 멤버·접두어가 겹치는 계산 키·접두어 없는 계산 키는 거부 | `BRANCH_INTERACTIVE_OVERLAYS105`(render) |
+| 읽는 값이 새 위치보다 뒤 | 읽는 값의 선언이 있는 파일로 목적지를 바꿈(`move-to`가 거부한 save.js 대신) | `strictKeyFloors1004`(special), `AUTO_MOVE_RATE70`·`Auto81`·`RuntimeState`(input), `POTION_BY_KIND`(items) |
+| 정의 뒤에 버전 이름을 덮어쓰는 문장 | V85(9번)·V980(1번)에 spine.js가 나중에 쓰던 버전 이름을 정의 안에 최종값으로 넣고 `V964`·`V981`에는 복사하던 시점의 값을 문자열로 넣었다. 문장 10개 삭제. `V85.version`(qa.js)과 `V980.version`(mapgen.js 함수)을 읽는 쪽은 같은 값을 본다. | `V964`(monsters), `V981`(mapgen) |
+| 그 밖에 신규로 옮겨진 것 | P3로 사용처가 정리된 뒤 `move-to`가 받아 준 것 | `resetFloorScopedState57`·`runDescendEffects`(mapgen), `throwAt`·`beginViewer45`·`decorInfo986`·`decalInfo986`·`DECAL986`(ui), `onMonsterHpThreshold60`(branches), `uiInputBlocked`(items), `DUNGEON_MOBS47`(monsters), `autoWalkTimer`·`autoWalkToken`(input) |
+
+남은 spine.js 선언 83개: P5의 DOM 요소 7개(사용자 승인 대기), 나머지는 부팅 루프·패널 연결·`TYPED_KEYS96` 등 spine에서만 쓰이는 것이다. `TYPED_KEYS96`: 상수 이름은 읽는 곳이 없지만 `const X=globalThis.Y={…}`에서 이름만 떼면 선언이 느슨한 문장이 되어 `spineLooseStatements`가 늘어 게이트가 막는다(시도해서 확인). 이 문장을 special.js로 옮기려면 `typedKeyMeta96`(let)을 함께 옮겨야 하므로 P9에서 같이 본다.
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
