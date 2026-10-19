@@ -75,3 +75,29 @@ P3로 풀린 선언 22개는 별도 이동 체인(브랜치 `claude/boot-p5-p8`,
 
 ## 8. 확인한 의문 (문제 아님, 기록)
 느슨한 문장 중 "변수 재대입" 7문장(`updateMobileHud=function …`, `updatePanels=…`, `inventoryFiltered=…`, `visualLoop=…`, `buildNormal=…` 등)은 덮어쓰기가 아니라 **앞서 값 없이 선언한 `let`의 단 한 번의 초기화**다. 5개 변수를 확인했다: 선언 1개, 대입 1개씩(`let updateMobileHud;` → 줄 1769에서 한 번 대입). 정의된 값을 감싸거나 바꾸는 것이 아니므로 `rebind` 지표 대상도 AGENTS.md의 덧씌우기 금지 대상도 아니다. 다만 이 5개는 "선언 위치와 값을 주는 위치가 떨어져 있다"는 점에서 단계 B의 초기화 함수 후보다. 나머지 2문장은 같은 모양이다(전부 확인하지는 않았다).
+
+## 9. P5 DOM 변수: 두 방식 비교 (2026-10-19, 승인 전)
+대상: `feelEl`, `panel`, `coach`, `modal`, `skillQuick`, `classDetail1001`+`classStart1001`(한 선언), `hud`. 모두 `const x=document.createElement(...)`로 만들어진 직후 같은 자리에서 `.id=`, `.innerHTML=`, `setAttribute`, `appendChild`, `.onclick=` 문장이 설정·부착한다.
+
+| 변수 | 함수 안에서 읽는 곳 | 로드 시 읽는 문장 | 사용 파일 |
+|---|---:|---:|---|
+| feelEl | 3 | 2 | ui, spine |
+| panel | 3 | 5 | ui, spine |
+| coach | 13 | 7 | ui, spine, save |
+| modal | 9 | 5 | ui, spine |
+| skillQuick | 6 | 2 | ui, spine |
+| classDetail1001 / classStart1001 | 4 / 1 | 0 / 1 | ui, spine |
+| hud | 5 | 3 | ui, spine |
+| 합계 | 44 | 25 | |
+
+`load-reads`(7개 부팅 상황): TDZ 0. 로드 시 읽는 문장은 전부 위 설정·부착 문장이다.
+
+| 항목 | A: `let` + 초기화 함수 | B: 초기화 함수가 요소를 돌려줌(`const` 유지) |
+|---|---|---|
+| spine 선언 | −7 | 0 |
+| spine 느슨한 문장 | −18 (설정 25 → 호출 7) | −25 |
+| 읽는 곳 44개 | 그대로 | 그대로 |
+| 실패 모드 | 초기화 전 읽기가 TDZ 오류 대신 `undefined`(현재 경로는 TDZ 0이라 동일) | `const` TDZ 보호 유지 |
+| 재대입 | 가능(`let`) | 불가 |
+| 부팅 함수화와의 관계 | spine에서 선언이 빠져 `boot.js`로 바꿀 수 있음 | spine에 `const` 7개가 남음 |
+제안: spine을 비우는 것이 목표면 A. 단 TDZ 보호가 사라지므로 초기화 직후 각 변수가 `undefined`가 아님을 확인하는 테스트를 같이 넣는다. 승인 전에는 구현하지 않는다.
