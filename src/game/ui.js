@@ -1008,3 +1008,26 @@ let inventoryFiltered;
   }
   const targeting81=()=>actionTargetOpen56();
   let selectedClass1001=CLASSES[0].id;
+globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
+globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishModalOpening,finishClose:finishViewerClose,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
+globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54,toggle(){V54.sfx=!V54.sfx;try{localStorage.setItem('manruSfx54',V54.sfx?'1':'0')}catch(error){console.warn('[manru] sound setting not stored',error)}toast(`효과음 ${V54.sfx?'켜짐':'꺼짐'}`);return V54.sfx},enabled(){return V54.sfx}});
+globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
+window.__MANRU_INSPECT984__=function(q){
+    if(!q||!state)return;const x=q.x,y=q.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
+    const target={x,y};
+    if(!state.seen.has(k(x,y))){directOpenInspect('미탐사 구역',simpleHtml986({desc:'등불과 시야가 닿지 않은 공간. 직접 확인하기 전에는 안쪽의 구조나 존재를 알 수 없다.',hint:''}),target);return}
+    const tile=state.map[y][x];if(TERRAIN986.get(tile)?.inspectPriority57==='terrain'){const info=terrainInfo986(tile,x,y);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const palaceWarning=palaceWarningInfo(x,y);if(palaceWarning){directOpenInspect(palaceWarning.name,simpleHtml986(palaceWarning),target);return}
+    const martialInfo=state.visible.has(k(x,y))?martialWorldInfo(x,y):null;if(martialInfo){directOpenInspect(martialInfo.name,simpleHtml986(martialInfo),target);return}
+    const mon=findMonsterAt(x,y),it=(state.items||[]).find(v=>v.x===x&&v.y===y),t=state.map[y][x];
+    if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo();directOpenInspect(info.name,simpleHtml986(info),target);return}
+    if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect(info.name,simpleHtml986(info),target,stock.item);return}
+    const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
+    if(it){openItemInspect986(it,target);return}
+    const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const decal=decalInfo986(x,y);if(decal){directOpenInspect(decal.name,simpleHtml986(decal),target);return}
+    const info=terrainInfo986(t,x,y);directOpenInspect(info.name,simpleHtml986(info),target);
+  };
+globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuickPanel();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
+globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
