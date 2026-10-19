@@ -1840,7 +1840,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
 
-  const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
+
 
 
 

@@ -1070,3 +1070,4 @@ globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureH
   // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
   function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
   const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
+  const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
