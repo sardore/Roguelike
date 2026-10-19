@@ -106,5 +106,24 @@ P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선
 
 남은 spine.js 선언 83개: P5의 DOM 요소 7개(사용자 승인 대기), 나머지는 부팅 루프·패널 연결·`TYPED_KEYS96` 등 spine에서만 쓰이는 것이다. `TYPED_KEYS96`: 상수 이름은 읽는 곳이 없지만 `const X=globalThis.Y={…}`에서 이름만 떼면 선언이 느슨한 문장이 되어 `spineLooseStatements`가 늘어 게이트가 막는다(시도해서 확인). 이 문장을 special.js로 옮기려면 `typedKeyMeta96`(let)을 함께 옮겨야 하므로 P9에서 같이 본다.
 
+## P3b 도메인 안 등록 API → 표 (2026-10-19)
+브랜치 `claude/boot-p5-p8`. 사용자 결정: 도메인 안 등록 API도 표로 합친다, 생성 단계는 맨 마지막, 그 전에 같은 시드로 여러 층의 지문(`genprint`)과 등록 표 지문(`registries`)을 먼저 둔다. P3와 같은 게이트(`npm run check`, `npm test` 전체 4벌, 옛/새 빌드 로드 직후 값 비교)로 표 하나씩 커밋했다. 도구: `tools/refactor/registry-table.mjs`(등록 호출 → 선언 안의 항목, 인라인 함수는 이름 붙은 선언으로, 시험 7개), `fold-patches.mjs`(시험 2개), `accept-values.mjs`(`values` 기준선을 바꿔야 할 때 옛/새 전체 스냅샷을 비교해 허용한 차이 외에는 거부).
+
+| 표 | 호출 수 | 결과 | 비고 |
+|---|---:|---|---|
+| `PRESENTATION_UPDATES` | 3 | `new Map([...])` | `PresentationState.register` 삭제. 이름 `martialPresentation`이 이미 있어 `martialPulseUpdate`로 명명 |
+| `MINIMAP_PIPELINE.hooks` | 3 | 배열 | `registerMinimapHook` 삭제 |
+| 플레이어 공격 단계 | 8 | `playerStages:[...]` | `registerPlayerAttackStageR` 삭제 |
+| 몬스터 공격 단계 | 3 | `monsterStages:[...]` | `registerMonsterAttackStageR25` 삭제 |
+| 공격 기본 | 2+1 | `playerBase`·`monsterBase` | 플레이어 기본은 두 번 설정되어(`initial`→`combat54`) 앞의 것이 읽히기 전에 덮였다. 마지막 것만 남기고 `attackPlayerInitialCoreR` 삭제 |
+| `TurnEngine.stages` | 15 | 배열 | `TurnEngine.register`와 `__MANRU_TURN_PIPELINE__.register` 삭제(공개 객체는 `{abort}`만 남음). 단계 함수 20개 명명, `runtime70`의 pre는 본문이 같은 기존 `markActionTime`을 가리킴(`sameBody` 방지) |
+| `ACTION_ROUTES` | 29 | `new Map([...])` | `ActionDispatcher.register` 삭제. 처리기는 모두 이미 이름이 있었다 |
+| `patchDef` | 10+1 delete | 정의 안에 합침 | `수련용 환도`·`태도`·`당파`·`단단한 철궁`·`낡은 장도리`·`손도끼`·`질긴 가죽망토`·`바람막이망토`·`여행자망토`·`두꺼운 면망토`. 기존 속성은 제자리, 새 속성은 호출 순서로 끝에 붙여 JSON 키 순서 유지. `delete defBy('두꺼운 면망토').hazardResist`는 속성 삭제. `patchDef` 삭제 |
+| 생성 파이프라인 | 31+2 | `pre`·`post`·`base`·`density` | 단계 함수 28개 명명. 기본(`base`)은 두 번 설정되어(`base-original`→`base-vaults38`) 마지막 것만 남기고 `generateFloorOriginal` 삭제. `GENERATION_PIPELINE.density=…` 대입은 리터럴의 `density`로 합치고, 그것이 함수인지 확인하던 `throw`는 지움 |
+
+공통 근거: 각 컨테이너를 로드 중에 읽는 곳을 `load-reads.mjs --sites`로 7개 부팅 상황에서 쟀다. 등록 함수(와 qa.js의 공개 문장)만 읽고, 마지막 등록 전에 소비하는 곳은 없다. 그러므로 컨테이너 선언 자리에서 표를 만들어도 달라지는 읽기가 없다. 등록 함수가 하던 중복 id 검사(`throw`)는 없어졌고, id가 겹치지 않음은 `registries` 시나리오가 확인한다(런타임 동작은 같다). 개명(`ACTION_ROUTES5`→`ACTION_ROUTES`, `MANRU_ATTACK_PIPELINE_R`→`ATTACK_PIPELINE`, `MANRU_GENERATION_PIPELINE`→`GENERATION_PIPELINE`, `runAttackStagesR`→`runAttackStages`)은 별도 커밋이다. 기준선 변화: `values.empty`·`values.branch`가 `register` 멤버 삭제(3커밋)와 개명(1커밋)으로 바뀌었고, 전체 1224개 값 스냅샷 비교에서 다른 차이는 없었다.
+
+남은 것: `replaceViewerQuickButton('inv'|'skill')`는 등록 API가 아니라 DOM 버튼을 복제해 옛 리스너를 떼는 부팅 코드라 표가 아니다(F-25). 부팅 함수화(P4 B 단계)·P5(DOM 변수)는 아직 승인 전이다.
+
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
