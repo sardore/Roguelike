@@ -209,8 +209,6 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
-globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
@@ -3279,7 +3277,6 @@ document.body.classList.add('mf75-clean');
 
 
 
-globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
 
@@ -3822,7 +3819,6 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
 
   
   
-  globalThis.__MANRU_GENERATE_CORE983__=NormalGenerationStages.riverAndCore;
 
   
 
