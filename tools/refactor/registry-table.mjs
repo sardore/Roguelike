@@ -144,6 +144,7 @@ for (const id of identRefs) {
   if (b && b.kind !== 'function' && b.idNode.start > declStmt.start) fail(`${id.name} is a ${b.kind} declared after ${spec.container.decl} (line ${b.idNode.loc.start.line}): the table would read it before it exists`);
 }
 const edits = [];
+const deadFns = [];
 const objectOf = (init) => (init.type === 'ObjectExpression' ? init : init.type === 'CallExpression' ? init.arguments.find((a) => a.type === 'ObjectExpression') : null);
 if (spec.container.kind === 'map') {
   if (!(d.init.type === 'NewExpression' && d.init.callee.name === 'Map' && !d.init.arguments.length)) fail(`${spec.container.decl} is not initialised with new Map()`);
@@ -165,6 +166,16 @@ if (spec.container.kind === 'map') {
   const pn = obj?.properties.find((p) => (p.key?.name ?? p.key?.value) === spec.container.prop);
   if (!pn || !(pn.value.type === 'Literal' && pn.value.value === null)) fail(`${spec.container.decl}.${spec.container.prop} is not null`);
   edits.push({ start: pn.value.start, end: pn.value.end, text: (entries[''] || [])[0] });
+  // a named function only an overwritten call pointed at is dead now: it goes with the call
+  for (const st of handled.slice(0, -1)) {
+    const a1 = st.expression.arguments[1];
+    if (a1?.type !== 'Identifier') continue;
+    const b = A.bindings.find((x) => x.name === a1.name && x.scope === closure);
+    const own = closure.body.find((t) => t.type === 'FunctionDeclaration' && t.id.name === a1.name);
+    if (!b || !own) continue;
+    const used = b.refs.some((r) => !(r.node.start >= own.start && r.node.end <= own.end) && !handled.slice(0, -1).some((h) => r.node.start >= h.start && r.node.end <= h.end));
+    if (!used) { edits.push({ start: own.start, end: own.end, text: '\u0001' }); deadFns.push(a1.name); }
+  }
   decisions.push(`dropped ${handled.length - 1} earlier call(s): ${handled.slice(0, -1).map((h) => slice(h.expression.arguments[0])).join(', ')}; kept ${slice(handled.at(-1).expression.arguments[0])}`);
 } else fail(`unknown container kind ${spec.container.kind}`);
 for (const st of handled) edits.push({ start: st.start, end: st.end, text: '\u0001' });
@@ -225,5 +236,5 @@ for (const e of edits) out = out.slice(0, e.start) + e.text + out.slice(e.end);
 out = out.split('\n').flatMap((l) => (l.includes('\u0001') ? (l.replace(/\u0001/g, '').trim() === '' ? [] : [l.replace(/\u0001/g, '')]) : [l])).join('\n');
 acorn.parse(out, { ecmaVersion: 'latest' });
 if (process.argv.includes('--verbose')) console.log(decisions.join('\n'));
-console.log(`${spec.container.decl}: ${handled.length} calls -> entries; ${newFns.length} new functions (${newFns.map((f) => `${f.name}@${f.dest}`).join(', ') || 'none'})`);
+console.log(`${spec.container.decl}: ${handled.length} calls -> entries; ${newFns.length} new functions (${newFns.map((f) => `${f.name}@${f.dest}`).join(', ') || 'none'})${deadFns.length ? `; removed ${deadFns.length} function(s) only an overwritten call used: ${deadFns.join(', ')}` : ''}`);
 if (!dry) fs.writeFileSync(work, out);

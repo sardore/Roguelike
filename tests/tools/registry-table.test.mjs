@@ -35,12 +35,14 @@ test('a Map of routes: calls become entries in source order, inline functions ar
 
 test('a value container keeps the last call and drops the earlier ones', () => {
   const k = work({
-    'a.js': 'const P={base:null,stages:[]};\nfunction setBase(id,fn){P.base={id,fn}}\nsetBase("one",function(){return 1});\nsetBase("two",function(){return 2});',
+    'a.js': 'const P={base:null,stages:[]};\nfunction setBase(id,fn){P.base={id,fn}}\nfunction oldBase(){return 0}\nfunction sharedBase(){return 9}\nsetBase("zero",oldBase);\nsetBase("one",sharedBase);\nsetBase("two",function(){return 2});\nconst keep=sharedBase;',
   }, { callees: ['setBase'], container: { decl: 'P', kind: 'value', prop: 'base' }, entry: { form: 'obj', fields: { id: 0, fn: 1 } }, autoName: { suffix: 'Base', defaultDest: 'a.js' }, removeFunctions: ['setBase'] });
   const r = k.run();
   assert.equal(r.code, 0, r.out);
   assert.match(r.after, /base:\{id:"two",fn:twoBase\}/);
   assert.doesNotMatch(r.after, /oneBase/);
+  assert.doesNotMatch(r.after, /oldBase/, 'a function only an overwritten call used goes with it');
+  assert.match(r.after, /function sharedBase/, 'a function that something else still uses stays');
 });
 
 test('refuses a call that is not a top-level statement, a function still used elsewhere, and a taken name; nothing is written', () => {
