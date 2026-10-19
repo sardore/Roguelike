@@ -89,5 +89,8 @@
 
 결합 후보(지금은 고치지 않는다): `addLog`가 items의 포션 이름 가림 처리를 직접 참조한다. 나중에 로그 출력과 이름 가림을 분리하는 것을 검토한다.
 
+## P3 이후 (2026-10-19)
+P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선언이 22개 생겼다. 도메인별 8커밋으로 옮겼다(save 3, branches 2, combat 2, mapgen 3, ui 5, input 1, items 4, monsters 2). 근거는 각 커밋 메시지(사용 도메인 수). 남은 선언은 109개, 느슨한 문장은 485개다. 나머지(P4~P8)의 측정과 방식 제안은 `docs/P4_DESIGN.md`(승인 대기).
+
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
