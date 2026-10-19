@@ -2838,7 +2838,7 @@ function selectCoreDestination54(owner=null,target=state.player){
   }
 /* ===== MANRU v9.8.0: RESEARCHED REGION ARCHITECTURE / VAULT MODULES / FULL-MAP QA ===== */
 const V980={
-    version:'v9.8.0-researched-region-architecture',
+    version:'v9.8.1-fixed-map-portal-reachability',
     normalFloors:new Set([7,9,12,14,17,19]),
     specialFloors:new Set([6,8,10,11,13,15,16,18,20,21,22,23,24,25]),
     modules:[],

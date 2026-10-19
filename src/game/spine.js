@@ -2755,7 +2755,7 @@ document.body.classList.add('mf75-clean');
 
 
 
-  const V85={version:'v8.7-nethack-dense-modules',recent:[],samples:[]};
+  const V85={version:'v9.6.5-martial-stealth-fx',recent:[],samples:[]};
 
 
 
@@ -2860,7 +2860,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v8.8: v8.0 STRUCTURE REBASE + DISCIPLINED THEME DECOR ===== */
-  V85.version='v8.8-v80-structure-theme-decor';
   
 
 
@@ -2914,7 +2913,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v8.9: CLEAN ARCHITECTURE + SPARSE FOCAL DECOR ===== */
-  V85.version='v8.9-clean-architecture-sparse-focal-decor';
   
 
   
@@ -2964,7 +2962,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v9.0: DENSE PURPOSEFUL ROOMS / NO WASTED WINGS ===== */
-  V85.version='v9.0-dense-purposeful-rooms';
   
 
   
@@ -2997,7 +2994,6 @@ document.body.classList.add('mf75-clean');
   
 
   /* ===== MANRU v9.1: V7-STYLE ORGANIC ROOMS / DENSE F2 / READABLE FLOOR / FAST PAN ===== */
-  V85.version='v9.1-v7rooms-readable-fastpan';
   
 
   
@@ -3021,7 +3017,6 @@ document.body.classList.add('mf75-clean');
   
 
   /* ===== MANRU v9.3: ASYMMETRIC CLUSTERS / VARIABLE-WIDTH HALLS / SHORT PURPOSEFUL BRANCHES ===== */
-  V85.version='v9.3-asymmetric-clusters-variable-halls';
 
 
 
@@ -3067,7 +3062,6 @@ document.body.classList.add('mf75-clean');
   
 
   /* ===== MANRU v9.4: KEY TRIALS / PURPOSEFUL LOOT / NATURAL RECOVERY / VISUAL STABILITY ===== */
-  V85.version='v9.5-expanded-complex-architecture';
   
 
 
@@ -3123,7 +3117,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v9.6: REAL LOCKED DOORS / STRUCTURAL SPECIAL FLOORS / PAN SNAPSHOT PERFORMANCE ===== */
-  V85.version='v9.6.3-follow-camera-toolbar-fix';
 
 
 
@@ -3238,8 +3231,7 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v9.6.4: DOOR CLOSING + 1.30x ENEMY POPULATION ===== */
-  V85.version='v9.6.4-close-door-enemy-130';
-  const V964={version:V85.version,density:1.30};
+  const V964={version:'v9.6.4-close-door-enemy-130',density:1.30};
 
 
   // Bridge the last pre-ammo generator into the newer release closure without another wrapper.
@@ -3259,7 +3251,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
 
   /* ===== MANRU v9.6.5: MARTIAL STEALTH + PRESENTATION FX ===== */
-  V85.version='v9.6.5-martial-stealth-fx';
   MARTIAL_INFO.ghost.desc='형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.';
   MARTIAL_INFO.strong.desc='기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.';
   MARTIAL_INFO.roar.desc='충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.';
@@ -3476,9 +3467,8 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
   /* ===== MANRU v9.8.1: FIXED MAP DENSITY / RAFT SAFETY / PORTAL LABYRINTH / REACHABILITY ===== */
-  V980.version='v9.8.1-fixed-map-portal-reachability';
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
-  const V981={version:V980.version,errors:[],repairs:[],portalBuilds:0};
+  const V981={version:'v9.8.1-fixed-map-portal-reachability',errors:[],repairs:[],portalBuilds:0};
 
 
 
