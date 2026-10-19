@@ -1595,8 +1595,6 @@ RuntimeState.ui.inventory=UX;
 
 
   RuntimeState.turn=TURN_AUDIT5;
-  globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
-  globalThis.__MANRU_TURN_PIPELINE__={register:TurnEngine.register,abort:MANRU_TURN_ABORT};
   TurnEngine.register('monster-durations57',{post:()=>tickMonsterDurations()});
   TurnEngine.register('temporary-terrain57',{post:()=>RuntimeTerrainOwner.tick()});
   TurnEngine.register('jar-gas57',{post:()=>{tickJarGasFields();tickTerrainReactions105()}});
@@ -2312,7 +2310,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
   // Shell / formation defense is owned by combatDefenseBonus57 in both native attack bases.
   registerPlayerAttackStageR('asura-domain61',(next,m,b=0,...rest)=>{configureMonsterTraits(m);if(m?.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(state.player,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28){setPlayerAttackOutcome('blocked',m,{reason:'asura-domain'});m.alerted=true;floatText(m.x,m.y,'영역 밖 공격 무효','#d7b16e',9);addLog(`${m.name}의 아수라장이 영역 밖에서 시작된 직접 공격을 지웠다.`);return false}return next(m,b,...rest)});
-  globalThis.__MANRU_AI61__={configure:configureMonsterTraits,special:specialTurn,artillery:artilleryTurn,intent:executeMonsterIntent};
 
 
   /* ---------- structure interaction: click/tap paths next to a blocked target, then opens or destroys it ---------- */
@@ -2323,9 +2320,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'role61',draw:drawRoleOverlay});
-  window.__MANRU_ASURA61__={
-    blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
-  };
   /* v9.8.6 inspect cleanup: removed legacy tactical-role prose-append wrapper. */
 
 

@@ -2282,3 +2282,9 @@ function clearInvalidAim(){if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetVal
 function alertOnDoorOpen(ctx){if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)}
   function asuraDomainDist61(a,b){return Math.hypot((a?.x??0)-(b?.x??0),(a?.y??0)-(b?.y??0))}
 function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}))}
+globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
+globalThis.__MANRU_TURN_PIPELINE__={register:TurnEngine.register,abort:MANRU_TURN_ABORT};
+globalThis.__MANRU_AI61__={configure:configureMonsterTraits,special:specialTurn,artillery:artilleryTurn,intent:executeMonsterIntent};
+window.__MANRU_ASURA61__={
+    blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
+  };
