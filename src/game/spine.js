@@ -987,7 +987,6 @@ const RuntimeState={
 };
 ClientEnvironment.initialize();
 
-globalThis.__MANRU_LIFECYCLE__=RunLifecycle;
 
 
 
@@ -3512,7 +3511,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   }
 ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
-  globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 
 
   
@@ -4271,7 +4269,6 @@ RuntimeState.ui.screen=SCREEN1002;
     
 
 
-    globalThis.__MANRU_SAVE_SERVICE__=SaveService;
 
 
 
@@ -4280,7 +4277,6 @@ RuntimeState.ui.screen=SCREEN1002;
     
 
     
-    globalThis.__MANRU_SAVE1004__=Object.freeze({raw:currentRaw,meta:()=>{const c=SaveService.recover().candidate;return c?{floor:c.meta.floor,turn:c.meta.turn,runId:c.meta.runId984,written:c.written,seq:c.seq,source:c.source}:null},write:writeRun,valid:()=>!!SaveService.recover().candidate});
 
     // The earlier v10.0.2 boot code may already have restored manru984_active_run before this patch runs.
     // At document boot there has been no user input yet, so discard that transient in-memory restore and show title.

@@ -13,7 +13,7 @@
  "timer": 41,
  "sameBody": 0,
  "qaLeak": 0,
- "spineLines": 5566,
+ "spineLines": 5562,
  "spineDeclarations": 109,
- "spineLooseStatements": 483
+ "spineLooseStatements": 479
 }
