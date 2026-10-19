@@ -298,7 +298,7 @@ function basicAttack(){
     commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
-const MANRU_ATTACK_PIPELINE_R={playerBase:null,monsterBase:null,playerStages:[{id:'guard-fire57',fn:guardFirePlayerAttack},{id:'asura-domain61',fn:asuraDomainPlayerAttack},{id:'element-brand74',fn:elementBrandPlayerAttack},{id:'martial-impact965',fn:martialImpactPlayerAttack},{id:'ammo967',fn:ammoPlayerAttack},{id:'curse991',fn:cursePlayerAttack},{id:'weapon1006',fn:weaponPlayerAttack},{id:'legendary47',fn:legendaryPlayerAttack}],monsterStages:[]};
+const MANRU_ATTACK_PIPELINE_R={playerBase:null,monsterBase:null,playerStages:[{id:'guard-fire57',fn:guardFirePlayerAttack},{id:'asura-domain61',fn:asuraDomainPlayerAttack},{id:'element-brand74',fn:elementBrandPlayerAttack},{id:'martial-impact965',fn:martialImpactPlayerAttack},{id:'ammo967',fn:ammoPlayerAttack},{id:'curse991',fn:cursePlayerAttack},{id:'weapon1006',fn:weaponPlayerAttack},{id:'legendary47',fn:legendaryPlayerAttack}],monsterStages:[{id:'food-ai57',fn:foodAiMonsterAttack},{id:'curse991',fn:curseMonsterAttack},{id:'parry-stagger1006',fn:parryStaggerMonsterAttack}]};
 function setPlayerAttackBaseR(id,fn){if(typeof fn!=='function')throw new TypeError('player attack base must be a function');MANRU_ATTACK_PIPELINE_R.playerBase={id,fn};return fn}
 function runAttackStagesR(kind,args){
   const base=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerBase:MANRU_ATTACK_PIPELINE_R.monsterBase,stages=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerStages:MANRU_ATTACK_PIPELINE_R.monsterStages;
@@ -556,7 +556,6 @@ const HAPTIC_PATTERN57=Object.freeze({
   ambush:Object.freeze([24,20,62]),summon:Object.freeze([26,18,26,18,70]),
   boss:Object.freeze([36,25,82]),death:Object.freeze([75,45,125])
 });
-function registerMonsterAttackStageR25(id,fn){if(typeof fn!=='function')throw new TypeError('monster attack stage must be a function');if(MANRU_ATTACK_PIPELINE_R.monsterStages.some(x=>x.id===id))throw new Error('duplicate monster attack stage: '+id);MANRU_ATTACK_PIPELINE_R.monsterStages.push({id,fn});return fn}
 // WILL is the player's universal resistance against chance-based hostile status effects.
 // Curve: effective proc chance = base chance * 6/(6+WILL). It never grants immunity;
 // explicit statusImmune gear remains the only full immunity source.

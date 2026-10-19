@@ -1954,7 +1954,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn
 // Movement behavior is canonical in moveMonsterToward.
 
 
-registerMonsterAttackStageR25('food-ai57',(next,mon,bonus=0,context={},...rest)=>{const ctx=monsterAttackContextR(context);ensureFoodState();if(mon?.drunk57||mon?.drunk>0){const drunk=drunkAttackOutcome();if(drunk==='whiff'){floatText(mon.x,mon.y,'비틀','#c4a87c',10);addLog(`${mon.name}이 비틀거리며 공격을 허공에 휘둘렀다.`);return monsterAttackResultR(mon,ctx,{hit:false,reason:'drunk-whiff'})}if(drunk==='heavy')bonus+=DRUNK_RULES.attackHeavyBonus}const r=next(mon,bonus,ctx,...rest);if(r?.hit&&mon?.thiefRetreat57&&!state.dead)retreatMonster(mon,ctx.target||state.player);return r});
 /* v9.8.6 inspect cleanup: removed legacy concept57 prose-append wrapper. */
 
 // 새 명칭이 기존 고해상도 아틀라스를 재사용하도록 시각 별칭을 지정한다.
@@ -3736,7 +3735,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   
   // Curse effects preserve the base item stats. Equal active curse ids across equipped slots
   // share one geometric strength: 1 stack=1x, 2=2x, 3=4x, 4=8x, 5=16x.
-  registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
 
 
 
@@ -4122,13 +4120,6 @@ delete defBy('두꺼운 면망토').hazardResist
 /* weapon effects: focus chain, opening edge, tracking, construct-breaking bonus */
 
 /* parry + actual stagger resistance */
-registerMonsterAttackStageR25('parry-stagger1006',(next,mon,bonus=0,context={},...rest)=>{
-  const ctx=monsterAttackContextR(context),p=ctx.target||state?.player,w=p?.weapon||{};
-  if(mon&&w.parry&&ctx.delivery==='melee'&&entityDistance57(mon,p)<=2&&globalThis.__MANRU_RANDOM57__()<w.parry){
-    applyCombatStatus(mon,'stun',1,1,{stagger:true,source:p});floatText(p.x,p.y,'패리','#e9d59b',11);addLog(`${w.name}: ${mon.name}의 근접 공격을 흘려냈다.`);return monsterAttackResultR(mon,ctx,{hit:false,parried:true,interrupted:true,reason:'parried'});
-  }
-  return next(mon,bonus,ctx,...rest);
-});
 
 /* common cloak trap effect; fatal terrain deliberately untouched */
 /* travel cloak eat speed */
