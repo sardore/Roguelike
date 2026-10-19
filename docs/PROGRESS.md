@@ -102,6 +102,7 @@
 | P5→ui | spine 선언 → ui.js (P3로 풀린 것) | 5575 | 116 / 485 | 744 | 78.8% | - |
 | P5→input | spine 선언 → input.js (P3로 풀린 것) | 5575 | 115 / 485 | 744 | 78.8% | - |
 | P5→items | spine 선언 → items.js (P3로 풀린 것) | 5568 | 111 / 485 | 744 | 78.8% | - |
+| P5→monsters | spine 선언 → monsters.js (P3로 풀린 것) | 5568 | 109 / 485 | 744 | 78.8% | - |
 
 ## 현재 파일별 줄 수
 
@@ -112,7 +113,7 @@
 | save.js | 770 |
 | items.js | 1057 |
 | combat.js | 669 |
-| monsters.js | 2282 |
+| monsters.js | 2284 |
 | render.js | 4952 |
 | mapgen.js | 3369 |
 | special.js | 2038 |
@@ -125,4 +126,4 @@
 | ui.js | 1010 |
 | spine.js | 5568 |
 | start.js | 6 |
-| (total) | 26301 |
+| (total) | 26303 |
