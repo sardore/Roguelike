@@ -274,5 +274,17 @@
  "consumers.moves": "3c513b0835d20ebab189ba43a45121da13fa3bc9",
  "consumers.pickups": "6ce87973df38938818c07d7978f46f0a56a05160",
  "consumers.boss": "6ead12b4eb36b1dd5f9ee3682cb59824d52e5578",
- "consumers.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "consumers.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "genprint.a": "1dbd57161975141ad9a2037ee5a8bb57967f0b9f",
+ "genprint.a.full": "90aa21558f3c85299e7a964dc70c2b8760581a00",
+ "genprint.a.stages": "e6ae7eed81e0b56e78f974a2abfa2d513b1f33ce",
+ "genprint.a.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "genprint.b": "a1912119fb4c1a4e8e41aa1ef5722261b1508adf",
+ "genprint.b.full": "d16b99290681fd6ef06e21f9a7ecc3652121803f",
+ "genprint.b.stages": "e6ae7eed81e0b56e78f974a2abfa2d513b1f33ce",
+ "genprint.b.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "genprint.c": "221e025834272f98137a3aaa4a4e2026eff9bf30",
+ "genprint.c.full": "e92dcfadf2d84095b523d2deb7278c581defbacd",
+ "genprint.c.stages": "e6ae7eed81e0b56e78f974a2abfa2d513b1f33ce",
+ "genprint.c.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

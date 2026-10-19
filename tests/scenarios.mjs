@@ -235,6 +235,52 @@ export const scenarios = {
     return out;
   },
 
+  // Fingerprint of the floor generator across seeds, classes and all 25 floors, for the generation pipeline tables to
+  // be moved against. The generator draws from its own seeded stream (RngService, started per floor from the run
+  // seed), whose seed, number of draws and final state it records in state.generationRngAuditR59; that record is
+  // the random consumption. Per floor 1-25 of three runs (three session seeds and classes) the floor is
+  // generated and recorded with that audit, the tile histogram, the structure (rooms, stairs, feature rooms, route
+  // tags), items and monsters, and the size of the whole saved state; per run also the whole final state and the
+  // stage ids of the pipeline in run order. A stage dropped, added, reordered, or one that draws a different
+  // number of random values changes the audit of the floors it touches.
+  async genprint(browser, root) {
+    const out = {};
+    for (const [name, seed, cls] of [['a', 31, 'wanderer'], ['b', 4242, 'strongman'], ['c', 90210, 'summoner']]) {
+      const s = await openSession(browser, root, { seed });
+      await startRun(s, cls);
+      const rows = [];
+      for (let f = 1; f <= 25; f++) {
+        rows.push(await s.page.evaluate(({ floor, base }) => {
+          window.__reseed(base * 100003 + floor * 7919);
+          window.__MANRU_RELEASE__.regen(floor);
+          const env = window.__MANRU_RELEASE__.snapshot();
+          const st = env.state;
+          const hist = {};
+          for (const row of st.map) for (const t of row) hist[t] = (hist[t] || 0) + 1;
+          delete env.savedAt;
+          const next = [Math.random(), Math.random(), Math.random()];
+          return JSON.stringify({
+            floor, rng: st.generationRngAuditR59, next, hist,
+            rooms: st.rooms, stairs: st.stairs, featureRooms: st.featureRooms, routeTags: st.routeTags, fixed: [st.fixedStart, st.fixedExit],
+            items: st.items.map((i) => [i.type, i.name, i.x, i.y]),
+            monsters: st.monsters.map((m) => [m.name, m.x, m.y, m.hp]),
+            state: JSON.stringify(env).length,
+          });
+        }, { floor: f, base: seed }));
+      }
+      out[`genprint.${name}`] = rows.join('\n');
+      out[`genprint.${name}.full`] = await s.page.evaluate(() => {
+        const env = window.__MANRU_RELEASE__.snapshot();
+        delete env.savedAt;
+        return JSON.stringify(env);
+      });
+      out[`genprint.${name}.stages`] = JSON.stringify(await s.page.evaluate(() => globalThis.__MANRU_GENERATION_R18__.stages()));
+      out[`genprint.${name}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   // Debug arena with the AGENTS.md regression species: real placement, then combat rounds.
   async battle(browser, root) {
     const out = {};
