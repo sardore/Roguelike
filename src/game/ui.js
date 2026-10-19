@@ -1037,3 +1037,7 @@ globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibrarySc
 const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
   function decorInfo986(d){const info=DECOR986.get(String(d?.kind||''))||{name:'이름 없는 장식',desc:'만루의 방을 채우는 작은 장식물. 기능보다 그 공간을 사용했던 사람들의 취향과 습관을 남긴다.'};return{name:info.name,desc:info.desc,hint:info.hint||''}}
   function decalInfo986(x,y){const d=[...(state?.decals||[])].reverse().find(v=>v.x===x&&v.y===y);if(!d)return null;const info=DECAL986.get(d.type)||null;return info?{name:info.name,desc:info.desc,hint:''}:null}
+  const DECAL986=new Map([
+    ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
+    ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
+  ]);
