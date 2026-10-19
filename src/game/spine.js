@@ -887,7 +887,7 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-const DESCEND_EFFECTS=[stairsSound,markActionTime];
+
 
 
 
