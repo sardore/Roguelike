@@ -56,3 +56,11 @@ test('accepts a global that nothing in the closure publishes, and a mutation tha
   k = work({ 'a.js': 'window.X={item:1};', 'spine.js': 'const L=window.X.item;\nwindow.X.item=2;' }, ['L']);
   assert.equal(k.run('a.js').code, 0);
 });
+
+test('a function stored in an array is not a call at load time; a call is', () => {
+  let k = work({ 'a.js': 'function f(){return RC.n}\nfunction g(){return 1}', 'spine.js': 'const RC={n:1};\nconst LIST=[f,g];' }, ['LIST']);
+  assert.equal(k.run('a.js').code, 0);
+  k = work({ 'a.js': 'function f(){return RC.n}', 'spine.js': 'const RC={n:1};\nconst LIST=[f()];' }, ['LIST']);
+  const r = k.run('a.js');
+  assert.equal(r.code, 1); assert.match(r.out, /load order/);
+});

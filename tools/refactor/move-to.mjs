@@ -72,7 +72,12 @@ function initPairs(t) {
     walk.ancestor(s, { Identifier(id, _st, anc) {
       if (deferred(anc)) return;
       const p = pos.get(id.name); if (!p) return;
-      if (p.kind === 'fn') { for (const v of readsOf(id.name)) add(v, id.name); return; }
+      if (p.kind === 'fn') {
+        // a function stored as a value (array element, property value, the whole initialiser) is not called while the initialiser runs
+        const parent = anc[anc.length - 2];
+        if (parent && (parent.type === 'ArrayExpression' || (parent.type === 'Property' && parent.value === id) || (parent.type === 'VariableDeclarator' && parent.init === id))) return;
+        for (const v of readsOf(id.name)) add(v, id.name); return;
+      }
       add(id.name, null);
     } });
   });
