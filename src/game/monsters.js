@@ -1719,8 +1719,8 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
  return moved;
 }
   const TurnEngine=Object.freeze({
-    stages:[],
-    register(id,{pre=null,post=null}={}){if(TurnEngine.stages.some(s=>s.id===id))throw new Error('duplicate turn stage: '+id);TurnEngine.stages.push({id,pre,post})},
+    stages:[{id:'monster-durations57',pre:null,post:monsterDurationsPostTurn},{id:'temporary-terrain57',pre:null,post:temporaryTerrainPostTurn},{id:'jar-gas57',pre:null,post:jarGasPostTurn},{id:'food57',pre:foodPreTurn,post:foodPostTurn},{id:'runtime70',pre:markActionTime,post:runtimePostTurn},{id:'elements74',pre:elementsPreTurn,post:elementsPostTurn},{id:'natural-heal94',pre:null,post:naturalHealPostTurn},{id:'camera-save984',pre:null,post:cameraSavePostTurn},{id:'curse-story991',pre:curseStoryPreTurn,post:curseStoryPostTurn},{id:'permadeath-clean1003',pre:null,post:permadeathCleanPostTurn},{id:'autosave1004',pre:null,post:autosavePostTurn},{id:'hazard1005',pre:hazardPreTurn,post:hazardPostTurn},{id:'cloak-focus1006',pre:cloakFocusPreTurn,post:cloakFocusPostTurn},{id:'legendary47',pre:legendaryPreTurn,post:legendaryPostTurn},{id:'artifact-claim46',pre:null,post:claimAudit46}],
+    
     advance(action={}){
       const cost=action.timeCost,turnOpts=action,entry=state,before={turn:state?.turn||0,floorTurn:state?.floorTurn||0,agency:state?.playerAgencyTurns57||0,energy:state?.enemyEnergy||0,run:state?.runId984,dead:!!state?.dead};
       const result={id:++TURN_AUDIT5.serial,reason:action.reason||'action',committed:action.committed===true,requestedCost:cost,timeCost:0,energyAdded:0,enemyRounds:0,logicalTurns:0,agencyTurns:0,advancesWorld:false,playerAgency:action.playerAgency!==false,playerDied:false,aborted:false,abortStage:null,stageOrder:[],value:undefined};
@@ -2282,7 +2282,7 @@ function alertOnDoorOpen(ctx){if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targ
   function asuraDomainDist61(a,b){return Math.hypot((a?.x??0)-(b?.x??0),(a?.y??0)-(b?.y??0))}
 function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}))}
 globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
-globalThis.__MANRU_TURN_PIPELINE__={register:TurnEngine.register,abort:MANRU_TURN_ABORT};
+globalThis.__MANRU_TURN_PIPELINE__={abort:MANRU_TURN_ABORT};
 globalThis.__MANRU_AI61__={configure:configureMonsterTraits,special:specialTurn,artillery:artilleryTurn,intent:executeMonsterIntent};
 window.__MANRU_ASURA61__={
     blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
@@ -2313,3 +2313,13 @@ function parryStaggerMonsterAttack(next,mon,bonus=0,context={},...rest){
   }
   return next(mon,bonus,ctx,...rest);
 }
+function monsterDurationsPostTurn(){return tickMonsterDurations()}
+function temporaryTerrainPostTurn(){return RuntimeTerrainOwner.tick()}
+function jarGasPostTurn(){tickJarGasFields();tickTerrainReactions105()}
+function foodPreTurn(ctx){ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}}
+function curseStoryPreTurn(ctx){ctx.curse991={turn:state?.turn||0}}
+function permadeathCleanPostTurn(){/* Persistence cleanup belongs to SaveService commit. */}
+function hazardPreTurn(ctx){if(!state)return;resolveAllStandingHazards1005('turn-start');if(state.dead)return globalThis.__MANRU_TURN_PIPELINE__.abort;ctx.hazard1005={beforeD:remain('drown'),beforeV:remain('void')};collapseCrumbleLeft1005()}
+function hazardPostTurn(ctx){if(!state)return;const h=ctx.hazard1005||{};collapsePaperAfterAction1005();restoreFragiles();wardCountdownLog(h.beforeD??0,h.beforeV??0);wardExpiry1005(h.beforeD??0,h.beforeV??0);updateWardHud()}
+function cloakFocusPreTurn(ctx){ctx.turn1006=state?.turn??0}
+function cloakFocusPostTurn(ctx){if(state&&!state.dead&&state.turn!==ctx.turn1006){const p=state.player,c=playerCloak?.()||{},fr=+c.focusRegen||1;if(fr>1&&fr<2){p.cloakFocusCarry1006=(p.cloakFocusCarry1006||0)+(fr-1)/10;while(p.cloakFocusCarry1006>=1){p.cloakFocusCarry1006-=1;const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+1);if(p.focus>b){floatText(p.x,p.y,'기 +1','#9fcdbf',9);addLog(`${c.name}: 바람을 타고 기력 +1.`)}}}}}

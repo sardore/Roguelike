@@ -1086,3 +1086,4 @@ function weaponPlayerAttack(next,mon,bonusAtk=0,...rest){
   return r;
 }
 function curseMonsterAttack(next,mon,...rest){const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r}
+function curseStoryPostTurn(ctx){if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}

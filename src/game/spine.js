@@ -1565,9 +1565,6 @@ RuntimeState.ui.inventory=UX;
 
 
   RuntimeState.turn=TURN_AUDIT5;
-  TurnEngine.register('monster-durations57',{post:()=>tickMonsterDurations()});
-  TurnEngine.register('temporary-terrain57',{post:()=>RuntimeTerrainOwner.tick()});
-  TurnEngine.register('jar-gas57',{post:()=>{tickJarGasFields();tickTerrainReactions105()}});
 
   document.body.classList.toggle('ux-modal-open',uiBlocking());
 
@@ -1942,7 +1939,6 @@ RuntimeState.ui.food=V57;
 
 
 
-globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}},post:ctx=>{const b=ctx.food57||{};if(state&&!state.dead&&state.turn!==b.turn&&state.turn%10===0&&state.player.hunger<=0){const raw=(playerCloak().focusRegen||1)>=2?2:1,gained=Math.max(0,state.player.focus-(b.focus??state.player.focus));state.player.focus=Math.max(0,state.player.focus-Math.min(gained,raw*.5));if(typeof updatePanels==='function')updatePanels()}}});
 
 
 
@@ -2429,7 +2425,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   registerGenerationStage('pacing70','post',()=>{pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()});
 
   /* ---------- autosave hooks (idle, not every turn) ---------- */
-  globalThis.__MANRU_TURN_PIPELINE__.register('runtime70',{pre:()=>{RC.lastActionAt=performance.now()},post:()=>{if(state){coachContext();if(state.log?.length>48)state.log=state.log.slice(0,48);if(state.decals?.length>24)state.decals.splice(0,state.decals.length-24);if(state.tempFields?.length>24)state.tempFields.splice(0,state.tempFields.length-24)}}});
 
   /* ---------- boss visual signature: one cheap pass only ---------- */
   
@@ -2629,7 +2624,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
   /* equipment effects */
   /* r15: earth stagger guard is handled by canonical applyKnockback. */
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('elements74',{pre:()=>ensure74(),post:()=>{if(!state||state.dead||state.victory)return;if(state.player.armor?.elementGuard74==='grass')state.status.poison=0;if(state.player.armor?.elementGuard74==='water'&&state.turn%2===0){state.status.poison=Math.max(0,(state.status.poison||0)-1);state.status.bleed=Math.max(0,(state.status.bleed||0)-1)}tickElementFields57();if(state.elementWard74){state.elementWard74.ttl--;if(state.elementWard74.ttl<=0)state.elementWard74=null}VisibilityService.compute();updateAll()}});
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
@@ -3057,14 +3051,6 @@ document.body.classList.add('mf75-clean');
   // Natural recovery replaces explicit Rest. Hunger controls the very slow recovery interval; combat/status suppresses it.
   function naturalInterval94(){const h=state?.player?.hunger??0;return h>=90?16:h>=65?22:h>=40?30:h>=20?42:Infinity}
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('natural-heal94',{post:ctx=>{
-    if(!ctx.playerAgency||!state||state.dead||state.victory)return;const p=state.player;
-    if(p.hp>=p.maxHp){state.earlyRecoveryProgress58=0;return}
-    const elapsed=(state.playerAgencyTurns57||0)-(state.lastDamageAgencyTurn57||0);let heal=0;
-    if(state.passiveRecoveryUnlocked57){if(p.hunger>0&&elapsed>=6){const ratio=p.hp/p.maxHp,spacing=ratio<.5?1:ratio<.75?2:ratio<.9?3:4,start=elapsed>=24?24:elapsed>=16?16:elapsed>=11?11:6,interval=(elapsed>=16?1:elapsed>=11?2:3)*spacing;if((elapsed-start)%interval===0)heal=elapsed>=24?2:1}}
-    else if(safeForNatural94()){const iv=naturalInterval94();if(Number.isFinite(iv)){state.earlyRecoveryProgress58=(Number(state.earlyRecoveryProgress58)||0)+(state.floor<=10?1.5:1)/iv;if(state.earlyRecoveryProgress58>=1-1e-9){heal=Math.floor(state.earlyRecoveryProgress58+1e-9);state.earlyRecoveryProgress58=Math.max(0,state.earlyRecoveryProgress58-heal)}}}
-    if(heal){p.hp=Math.min(p.maxHp,p.hp+heal);updateAll()}
-  }});
 
   // Center-pad wait behavior is implemented directly by the canonical rest() declaration.
 
@@ -3629,7 +3615,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   
   
   
-    globalThis.__MANRU_TURN_PIPELINE__.register('camera-save984',{post:()=>{if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}});
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
     // r53: overwritten save implementation retired.
 
@@ -3736,7 +3721,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('curse-story991',{pre:ctx=>{ctx.curse991={turn:state?.turn||0}},post:ctx=>{if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}});
 
   // Equip reveals the item and activates its curse. A manifested curse binds that slot until purified.
   // r30: v9.9.1 identity/holy/curse equipment dispatch is integrated in canonical useInventoryItem.
@@ -3916,7 +3900,6 @@ RuntimeState.ui.screen=SCREEN1002;
 
     /* ---------- permadeath hardening: reject a resurrected snapshot while its death tombstone remains ---------- */
     
-        globalThis.__MANRU_TURN_PIPELINE__.register('permadeath-clean1003',{post:()=>{/* Persistence cleanup belongs to SaveService commit. */}});
 
     // Any stale renderer timestamp loaded during the earlier v10.0.2 boot is neutralized now.
     sanitizeTransient1003();
@@ -3963,7 +3946,6 @@ RuntimeState.ui.screen=SCREEN1002;
       const ok=writeRun().ok,c=ok?SaveService.recover().candidate:null;
       toast(ok&&c?`기록 저장 완료 · ${c.meta.floor}층 T${c.meta.turn}`:'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return !!(ok&&c);
     };
-    globalThis.__MANRU_TURN_PIPELINE__.register('autosave1004',{post:()=>{if(state&&!state.dead&&!state.victory)SaveService.request('turn')}});
     // Descent requests persistence after every existing descent effect completes.
 
 
@@ -4037,7 +4019,6 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 
-globalThis.__MANRU_TURN_PIPELINE__.register('hazard1005',{pre:ctx=>{if(!state)return;resolveAllStandingHazards1005('turn-start');if(state.dead)return globalThis.__MANRU_TURN_PIPELINE__.abort;ctx.hazard1005={beforeD:remain('drown'),beforeV:remain('void')};collapseCrumbleLeft1005()},post:ctx=>{if(!state)return;const h=ctx.hazard1005||{};collapsePaperAfterAction1005();restoreFragiles();wardCountdownLog(h.beforeD??0,h.beforeV??0);wardExpiry1005(h.beforeD??0,h.beforeV??0);updateWardHud()}});
 
 /* HUD: the remaining ward time must be impossible to miss. */
 const hud=document.createElement('div');hud.id='hazardWard1005';hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';document.body.appendChild(hud);
@@ -4122,7 +4103,6 @@ delete defBy('두꺼운 면망토').hazardResist
 /* travel cloak eat speed */
 
 /* fractional focus regen so 1.35 is no longer rounded to the same result as 1.00 */
-globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.turn1006=state?.turn??0},post:ctx=>{if(state&&!state.dead&&state.turn!==ctx.turn1006){const p=state.player,c=playerCloak?.()||{},fr=+c.focusRegen||1;if(fr>1&&fr<2){p.cloakFocusCarry1006=(p.cloakFocusCarry1006||0)+(fr-1)/10;while(p.cloakFocusCarry1006>=1){p.cloakFocusCarry1006-=1;const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+1);if(p.focus>b){floatText(p.x,p.y,'기 +1','#9fcdbf',9);addLog(`${c.name}: 바람을 타고 기력 +1.`)}}}}}});
 
 
 
@@ -4747,7 +4727,6 @@ function healFire47(n=1){n=Math.max(0,Math.round(Number(n)||0));if(!state||!fire
 function tempLava47(cx,cy){emitElementContact105('fire',elementCells105(cx,cy,1),effectSource57(state.player));for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=cx+dx,y=cy+dy;if(!insideMapInterior(x,y))continue;const old=state.map[y]?.[x];if(!(old>=500&&old<660&&(old-500)%16<4)&&![TT.FLOOR,TT.GRASS,TT.OPEN_DOOR,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].includes(old))continue;if(state.artifactExit46?.x===x&&state.artifactExit46?.y===y)continue;RuntimeTerrainOwner.temporary(x,y,TT.LAVA,5,'legend-lava',{allowedOld:[old],source:'lava-bow47'})}burst(cx,cy,'#f06f33',30,1.2)}
 function resurrect47(mon,pos){if(!mon||mon.kind==='undead'||mon.boss||mon.miniBoss||globalThis.__MANRU_RANDOM57__()>=.62)return false;const ally={name:`타락한 ${mon.name}`,x:pos.x,y:pos.y,hp:Math.max(5,Math.round((mon.maxHp||20)*.65)),maxHp:Math.max(5,Math.round((mon.maxHp||20)*.65)),atk:Math.max(2,Math.round((mon.atk||6)*.25)),def:Math.max(0,Math.round((mon.def||0)*.80)),eva:Math.max(0,Math.round((mon.eva||0)*.55)),xp:0,color:'#76517c',shape:mon.shape||'undead',kind:'undead',faction57:'player',friendly47:true,spawnProvenance57:'resurrection',legendAlly47:true,allyId53:`ally-${state.turn}-${state.nextAllyId53=(state.nextAllyId53||0)+1}`,allyBornTurn47:state.turn,allyExpireTurn47:state.turn+24,ttl47:24,alerted:true,weakened:0};if(!OccupancyService.isOccupied(pos.x,pos.y)&&!tileBlocks(state.map[pos.y]?.[pos.x]))OccupancyService.addMonster(ally);else{const q=DIRS8.map(([dx,dy])=>({x:pos.x+dx,y:pos.y+dy})).find(q=>PlacementService.monsterCanStand(ally,q.x,q.y));if(q){ally.x=q.x;ally.y=q.y;OccupancyService.addMonster(ally)}else return false}burst(ally.x,ally.y,'#8f62a0',18,.8);addLog(`${mon.name}의 잔해가 타락한 언데드로 일어났다. 공격력은 원본의 일부뿐이다.`);return true}
 
-globalThis.__MANRU_TURN_PIPELINE__.register('legendary47',{pre:()=>{syncEquip47()},post:()=>{if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);tickLegendFields();state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}});
 
 
 
@@ -4755,7 +4734,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('legendary47',{pre:()=>{syncEquip47(
 globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'legendary47',draw:drawLegendWorld});
 
 
-globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit46});
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 
 

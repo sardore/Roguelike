@@ -772,3 +772,5 @@ globalThis.__MANRU_LIFECYCLE__=RunLifecycle;
 globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 globalThis.__MANRU_SAVE_SERVICE__=SaveService;
 globalThis.__MANRU_SAVE1004__=Object.freeze({raw:currentRaw,meta:()=>{const c=SaveService.recover().candidate;return c?{floor:c.meta.floor,turn:c.meta.turn,runId:c.meta.runId984,written:c.written,seq:c.seq,source:c.source}:null},write:writeRun,valid:()=>!!SaveService.recover().candidate});
+function elementsPreTurn(){return ensure74()}
+function autosavePostTurn(){if(state&&!state.dead&&!state.victory)SaveService.request('turn')}
