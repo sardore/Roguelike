@@ -3375,3 +3375,4 @@ function resetFloorScopedState57(){if(!state)return;state.terrainReactions105=ne
 function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS)effect({fromFloor,toFloor:state.floor})}
 const DESCEND_EFFECTS=[stairsSound,markActionTime];
   const V981={version:'v9.8.1-fixed-map-portal-reachability',errors:[],repairs:[],portalBuilds:0};
+function portalsDrawMinimap({sx,sy}){if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}}

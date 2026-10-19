@@ -2078,9 +2078,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   registerGenerationStage('guard59-post','post',()=>{guardedRooms59();inferCorridors59();doorAudit59();VisibilityService.compute();vfBuildDecor()});
 
 
-  registerMinimapHook('doors59',({sx,sy})=>{
-    if(!state)return;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.seen.has(k(x,y))&&[TT.DOOR,TT.OPEN_DOOR].includes(state.map[y][x])){MX.fillStyle=state.map[y][x]===TT.DOOR?'#d09a58':'#7d6040';MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}
-  });
 
 
   /* ---------- wall-embedded door art: front vs sideways like SPD raised/sideways doors ---------- */
@@ -2843,7 +2840,6 @@ document.body.classList.add('mf75-clean');
 
 
   
-  registerMinimapHook('architecture85',({sx,sy})=>{if(state)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.seen.has(k(x,y))){if(state.map[y][x]===TT.WINDOW){MX.fillStyle='#83a2a7';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}else if(state.map[y][x]===TT.GARDEN_TREE){MX.fillStyle='#456b45';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}}});
   registerGenerationStage('architecture85','post',finishArchitecture90);
   // r53: removed generation-on-load stage architecture85; saved geometry is authoritative.
 
@@ -3527,7 +3523,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   // v9.8.1 generation/load orchestration is executed by the single current pipeline below.
 
-  registerMinimapHook('portals981',({sx,sy})=>{if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}});
 
 
 
