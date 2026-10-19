@@ -3230,8 +3230,7 @@ document.body.classList.add('mf75-clean');
   
 
 
-  /* ===== MANRU v9.6.4: DOOR CLOSING + 1.30x ENEMY POPULATION ===== */
-  const V964={version:'v9.6.4-close-door-enemy-130',density:1.30};
+
 
 
   // Bridge the last pre-ammo generator into the newer release closure without another wrapper.
