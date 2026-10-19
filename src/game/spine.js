@@ -1342,7 +1342,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">ï¼
 
 
 
-  const inspectOpen=()=>!!interactionActive8('mobileInspect');
+
 
 
 
