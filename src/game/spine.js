@@ -1422,7 +1422,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
 
 
-  for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);window.MANRU_POTIONS=POTIONS;
+  for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
 
 
 ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
@@ -1787,7 +1787,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
   // 요약은 수치만. 설명/능력을 섞지 않는다.
-  window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
 
   const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
   for(const type of ['selectstart','dragstart','copy','cut']){
@@ -1867,7 +1866,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
 
-  window.MANRU_TALISMANS=TALISMANS;
   for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 
 
@@ -1886,7 +1884,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
   
-  window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
 
 
 
@@ -1972,7 +1969,6 @@ RuntimeState.ui.food=V57;
 
 
 
-window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 
 
@@ -2379,7 +2375,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
 
 
@@ -3549,7 +3544,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
 
 
-  window.MANRU_AMMO=AMMO_TYPES;
   for(const w of WEAPONS)if(w.kind==='bow')w.ammoFamily='arrow';
 
 
@@ -3934,9 +3928,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   /* Final inspect owner. It bypasses the historical append-wrappers that duplicated monster/item prose. */
-  window.__MANRU_TERRAIN_CODEX986__={
-    openItem:openItemInspect986
-  };
 
   /* ---------- ammunition: half bundle size, no equipped-bow bias, clearer arrow silhouettes ---------- */
   if(Array.isArray(window.MANRU_AMMO)){
@@ -4052,7 +4043,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
 
   // Existing generated floor may have been built before the new wrapper was installed.
   if(state){applyCursesToAllGear();ensureHolyDrop();syncCurseClocks991()}

@@ -1055,3 +1055,14 @@ function blockWhileCooking(){return !V57.cookOpen}
   };
   function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
+window.MANRU_POTIONS=POTIONS;
+window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
+window.MANRU_TALISMANS=TALISMANS;
+window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
+window.MANRU_FOOD57={recipes:FOOD_RECIPES};
+globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
+window.MANRU_AMMO=AMMO_TYPES;
+window.__MANRU_TERRAIN_CODEX986__={
+    openItem:openItemInspect986
+  };
+globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
