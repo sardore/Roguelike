@@ -97,6 +97,7 @@
 | P3 정리 | P3: 접미사 개명, 도구 삭제, 문서 | 5629 | 131 / 485 | 744 | 78.6% | - |
 | P5→save | spine 선언 → save.js (P3로 풀린 것) | 5617 | 128 / 485 | 744 | 78.6% | - |
 | P5→branches | spine 선언 → branches.js (P3로 풀린 것) | 5617 | 126 / 485 | 744 | 78.6% | - |
+| P5→combat | spine 선언 → combat.js (P3로 풀린 것) | 5616 | 124 / 485 | 744 | 78.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -106,7 +107,7 @@
 | catalog.js | 173 |
 | save.js | 770 |
 | items.js | 1046 |
-| combat.js | 666 |
+| combat.js | 669 |
 | monsters.js | 2282 |
 | render.js | 4952 |
 | mapgen.js | 3332 |
@@ -118,6 +119,6 @@
 | input.js | 258 |
 | story.js | 223 |
 | ui.js | 998 |
-| spine.js | 5617 |
+| spine.js | 5616 |
 | start.js | 6 |
-| (total) | 26286 |
+| (total) | 26288 |

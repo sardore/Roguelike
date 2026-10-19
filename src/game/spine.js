@@ -575,7 +575,7 @@ setGenerationBase('base-original',generateFloorOriginal);
 
 
 
-function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_blade:.85})[state?.artifactDungeon46?.id]||1}
+
 
 
 
@@ -1840,8 +1840,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
 
 
-/* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
-const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
+
   try{const s=localStorage.getItem('manruSfx54');if(s==='0')V54.sfx=false}catch(error){console.warn('[manru] sound setting not read',error)}
 
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);

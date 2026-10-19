@@ -664,3 +664,6 @@ function stairsSound(){return sfx54('stairs')}
 function classBodyPowerStats(s){if(bodyPowerActive()){s.atk+=2;s.def+=7}return s}
 const PLAYER_STAT_STAGES=[{id:'class-body-power58',run:classBodyPowerStats},{id:'potions41',run:potionStats},{id:'food57',run:hungerStats},{id:'elements74',run:elementGuardStats},{id:'curse991',run:curseStats}];
 const ATTACK_COST_STAGES=[{id:'potions41',run:potionAttackCost},{id:'food57',run:foodAttackCost},{id:'elements74',run:elementBrandAttackCost},{id:'curse991',run:curseAttackCost}];
+function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_blade:.85})[state?.artifactDungeon46?.id]||1}
+/* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
+const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
