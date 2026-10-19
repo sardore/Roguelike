@@ -3,7 +3,8 @@
 // a conversion removes a member from an object on purpose (a `register` method that became a table). This compares the whole
 // load-end snapshot of HEAD with the working tree, allows exactly the listed removals, and only then rewrites the two `values.*`
 // lines of tests/baseline/behaviour.json (node tests/run.mjs --only values --update). Any other difference stops it: exit 1.
-//   node tools/refactor/accept-values.mjs [--removed Name:member[,member]]...      (run in the repository root)
+//   node tools/refactor/accept-values.mjs [--removed Name:member[,member]]... [--renamed Old:New]...      (run in the repository root)
+// A renamed binding changes the `values` lines too (they are keyed by binding name): --renamed compares the old value under the new name.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -17,8 +18,11 @@ import { launch, openSession } from '../../tests/harness.mjs';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const node = process.execPath;
 const args = process.argv.slice(2);
-const removed = {};
-for (const [i, a] of args.entries()) if (args[i - 1] === '--removed') { const [n, m] = a.split(':'); (removed[n] ||= []).push(...m.split(',')); }
+const removed = {}, renamed = {};
+for (const [i, a] of args.entries()) {
+  if (args[i - 1] === '--removed') { const [n, m] = a.split(':'); (removed[n] ||= []).push(...m.split(',')); }
+  if (args[i - 1] === '--renamed') { const [from, to] = a.split(':'); renamed[from] = to; }
+}
 
 async function snapshotOf(browser, root, tmp, label) {
   const copy = path.join(tmp, 'values-' + label);
@@ -45,11 +49,12 @@ try {
   const a = await snapshotOf(browser, oldRoot, tmp, 'old'), b = await snapshotOf(browser, path.join(repo, 'dist-qa'), tmp, 'new');
   const fa = path.join(tmp, 'old.json'), fb = path.join(tmp, 'new.json');
   fs.writeFileSync(fa, JSON.stringify(a)); fs.writeFileSync(fb, JSON.stringify(b));
-  const cmp = compareSnapshots(fa, fb, {}, removed);
-  const extra = Object.keys(b).flatMap((situation) => Object.keys(b[situation]).filter((k) => !(k in a[situation])).map((k) => `${situation}: ${k} is new`));
+  const cmp = compareSnapshots(fa, fb, renamed, removed);
+  const newNames = new Set(Object.values(renamed));
+  const extra = Object.keys(b).flatMap((situation) => Object.keys(b[situation]).filter((k) => !(k in a[situation]) && !newNames.has(k)).map((k) => `${situation}: ${k} is new`));
   const problems = [...cmp.differing, ...extra];
   if (problems.length) { console.error(`ACCEPT-VALUES-REFUSED:\n${problems.slice(0, 20).join('\n')}`); process.exit(1); }
-  console.log(`values: ${cmp.compared} bindings compared, equal except the removed members ${JSON.stringify(removed)}`);
+  console.log(`values: ${cmp.compared} bindings compared, equal except the removed members ${JSON.stringify(removed)} and the renames ${JSON.stringify(renamed)}`);
 } finally {
   await browser?.close();
   fs.rmSync(tmp, { recursive: true, force: true });
