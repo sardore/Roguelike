@@ -2323,3 +2323,7 @@ function hazardPreTurn(ctx){if(!state)return;resolveAllStandingHazards1005('turn
 function hazardPostTurn(ctx){if(!state)return;const h=ctx.hazard1005||{};collapsePaperAfterAction1005();restoreFragiles();wardCountdownLog(h.beforeD??0,h.beforeV??0);wardExpiry1005(h.beforeD??0,h.beforeV??0);updateWardHud()}
 function cloakFocusPreTurn(ctx){ctx.turn1006=state?.turn??0}
 function cloakFocusPostTurn(ctx){if(state&&!state.dead&&state.turn!==ctx.turn1006){const p=state.player,c=playerCloak?.()||{},fr=+c.focusRegen||1;if(fr>1&&fr<2){p.cloakFocusCarry1006=(p.cloakFocusCarry1006||0)+(fr-1)/10;while(p.cloakFocusCarry1006>=1){p.cloakFocusCarry1006-=1;const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+1);if(p.focus>b){floatText(p.x,p.y,'기 +1','#9fcdbf',9);addLog(`${c.name}: 바람을 타고 기력 +1.`)}}}}}
+function aimResetPreGeneration(){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}
+function bossZonesPostPostGeneration(){state.bossZones54=[];for(const m of state.monsters||[])normalizeBoss(m)}
+function specialPostPostGeneration(){const f=state.floor;if(SPECIAL60.has(f)||BOSS_FLOORS.has(f))rebuildSpecial60(f)}
+function populationPostGeneration(){if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}}

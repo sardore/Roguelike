@@ -494,7 +494,6 @@ function peachTerrain(){
  if(budget.reserved>=budget.limit)return TT.GARDEN_TREE;
  budget.reserved++;return TT.PEACH_TREE;
 }
-function registerGenerationStage(id,phase,fn){if(typeof fn!=='function')throw new TypeError('generation stage must be a function');const list=phase==='pre'?MANRU_GENERATION_PIPELINE.pre:MANRU_GENERATION_PIPELINE.post;if(list.some(x=>x.id===id))throw new Error('duplicate generation stage: '+id);list.push({id,fn});return fn}
 function runRegisteredGenerationPipeline(...args){
   const base=MANRU_GENERATION_PIPELINE.base?.fn;if(typeof base!=='function')throw new Error('canonical generation base missing');
   // Wrapper nesting used to execute the most recently-added pre hook first, then
@@ -503,19 +502,6 @@ function runRegisteredGenerationPipeline(...args){
   const r=base(...args);
   for(const st of MANRU_GENERATION_PIPELINE.post){st.fn(...args);}
   return r;
-}
-function generateFloorOriginal(){
-  state.terrainUnderlay58={};state.terrainAttachment58={};state.rooms=[];state.items=[];state.monsters=[];state.decals=[];state.switches=[];state.rafts=[];state.routeTags=[];state.floorTurn=0;state.alert=0;state.bossDefeated=false;state.bossDrop55=null;
-  state.fixedStart=null;state.fixedExit=null;state.visionPenalty=0;state.specialFloor=false;state.floorKeys=0;state.floorKeysRequired=0;state.cipher=null;state.generationRepair=0;
-  state.seen=new Set();state.visible=new Set();
-  if([5,10,15,20,25].includes(state.floor)){generateBossFloor();return}
-  const m=makeEmptyMap();state.map=m;buildRegionLayout(m);chooseEnds();placeSpecials();ensureNormalConnectivity();
-  VisibilityService.compute();spawnFloorPopulation();spawnLayoutExtras();
-  for(let i=0;i<(state.floor===24?4:rand(6,9));i++){const p=PlacementService.randomFloor(0);dropRandomItem(p,false)}
-  if(state.secretTreasure){dropRandomItem(state.secretTreasure,true);dropRandomItem(state.secretTreasure,true)}
-  VisibilityService.compute();
-  addLog(`F${state.floor} · ${regionFor(state.floor)[2]}`);
-  if(globalThis.__MANRU_RANDOM57__()<.72)addLog(choice(REGION_AMBIENCE[regionIndex()]));
 }
   /* ----------------------- dynamic map dimensions and DCSS-style vaults ----------------------- */
   function sizeForFloor(f){
@@ -2508,7 +2494,7 @@ function tileBlocks(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WA
 /* ===== Canonical floor-generation stage registry =====
    Legacy releases used nested `old=generateFloor; generateFloor=...` wrappers.  The
    current runtime keeps one base generator plus explicit pre/post stages instead. */
-const MANRU_GENERATION_PIPELINE={base:null,pre:[],post:[]};
+const MANRU_GENERATION_PIPELINE={base:{id:'base-vaults38',fn:generateFloorBaseVaults},pre:[{id:'aim-reset52',fn:aimResetPreGeneration},{id:'boss-zones54-pre',fn:bossZonesPrePreGeneration},{id:'guard59-pre',fn:guardPrePreGeneration},{id:'special60-pre',fn:specialPrePreGeneration},{id:'region71-pre',fn:regionPrePreGeneration},{id:'quality94-pre',fn:qualityPrePreGeneration},{id:'artifact-reset46',fn:resetPortal46}],post:[{id:'feature-rooms41',fn:featureRoomsPostGeneration},{id:'potions41',fn:potionsPostGeneration},{id:'room-sculpt42',fn:roomSculptPostGeneration},{id:'organic-nooks43',fn:organicNooksPostGeneration},{id:'room-structure44',fn:roomStructurePostGeneration},{id:'strategy47',fn:strategyPostGeneration},{id:'resource48',fn:resourcePostGeneration},{id:'boss-zones54-post',fn:bossZonesPostPostGeneration},{id:'knowledge56',fn:knowledgePostGeneration},{id:'food57',fn:foodPostGeneration},{id:'canon58',fn:canonPostGeneration},{id:'guard59-post',fn:guardPostPostGeneration},{id:'special60-post',fn:specialPostPostGeneration},{id:'population61',fn:populationPostGeneration},{id:'feeling62',fn:feelingPostGeneration},{id:'pacing70',fn:pacingPostGeneration},{id:'region71-post',fn:regionPostPostGeneration},{id:'talisman74',fn:talismanPostGeneration},{id:'polish78',fn:polishPostGeneration},{id:'runtime81',fn:runtimePostGeneration},{id:'architecture85',fn:finishArchitecture90},{id:'quality94-post',fn:qualityPostPostGeneration},{id:'locks96',fn:locksPostGeneration},{id:'artifact-portal46',fn:maybePortal46}],density:addDensityMonsters964};
 function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityService.playerTerrainPassable(x,y)}
 function validatePlayerTransfer57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
@@ -3376,3 +3362,11 @@ function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;
 const DESCEND_EFFECTS=[stairsSound,markActionTime];
   const V981={version:'v9.8.1-fixed-map-portal-reachability',errors:[],repairs:[],portalBuilds:0};
 function portalsDrawMinimap({sx,sy}){if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}}
+function featureRoomsPostGeneration(){applyFeatureRooms();VisibilityService.compute();vfBuildDecor()}
+function strategyPostGeneration(){return applyStrategy()}
+function guardPrePreGeneration(){state.guardRooms59=[];state.layoutMode59=null}
+function specialPrePreGeneration(){state.featureRooms=[];state.landmarks=[];state.guardRooms59=[];state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={}}
+function regionPrePreGeneration(){state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null}
+function regionPostPostGeneration(){enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;}
+function runtimePostGeneration(){Integrity81.repair();ConnectedDecor81.build();queuePlace81()}
+function qualityPrePreGeneration(){state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null}

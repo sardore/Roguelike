@@ -2038,3 +2038,5 @@ function spreadFloor22R43(){
 function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
   /* v10.0.4 strict typed-key final pass: later architecture layers are not allowed to reopen a bypass. */
   const strictKeyFloors1004=new Set(strictLockFloors()||[]);
+function feelingPostGeneration(){if(state&&!state.monsters.some(m=>m.boss)){applyFeeling();applyMiniVault62();VisibilityService.compute();vfBuildDecor()}}
+function locksPostGeneration(){clearLegacyTrial();refineF2Floor96();densifySpecial96();installLockPlan();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()}

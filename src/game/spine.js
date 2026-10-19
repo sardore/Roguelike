@@ -537,11 +537,9 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-function setGenerationBase(id,fn){if(typeof fn!=='function')throw new TypeError('generation base must be a function');MANRU_GENERATION_PIPELINE.base={id,fn};return fn}
 
 
 
-setGenerationBase('base-original',generateFloorOriginal);
 
 
 
@@ -1276,7 +1274,6 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  setGenerationBase('base-vaults38',generateFloorBaseVaults);
 
   /* ----------------------- more decor kinds / context placement ----------------------- */
   
@@ -1375,7 +1372,6 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 
-  registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
 
 
   for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
@@ -1393,7 +1389,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
   /* R7 refactor: obsolete early potion visual wrapper removed. */
   
 
-  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});  
   
   pstate();
 
@@ -1444,7 +1439,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
   function fixEntities(){for(const it of state.items||[])if(tileBlocks(state.map[it.y]?.[it.x])){const p=PlacementService.randomFloor(0);it.x=p.x;it.y=p.y}for(const m of state.monsters||[])if(m.hp>0&&!PlacementService.monsterCanStand(m,m.x,m.y)){const p=PlacementService.randomMonsterCell(m)||PlacementService.randomFloor(0);m.x=p.x;m.y=p.y}}
 
-  registerGenerationStage('room-sculpt42','post',()=>{reshapeRooms();for(const fr of state.featureRooms||[])sculptFeature(fr);fixEntities();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()});
 
 
 
@@ -1460,7 +1454,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
 
-  registerGenerationStage('organic-nooks43','post',()=>{organicNooks43();for(const fr of state.featureRooms||[])sculptSmallFeature43(fr);repair43()});
 
 
   // test helper exists only with #debug and lets us inspect special-room art without changing normal play.
@@ -1478,7 +1471,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
 
-  registerGenerationStage('room-structure44','post',()=>{structuralOrdinaryRooms44();repair44()});
 
 RuntimeState.ui.inventory=UX;
 
@@ -1583,13 +1575,11 @@ RuntimeState.ui.inventory=UX;
 
   
 
-  registerGenerationStage('strategy47','post',()=>applyStrategy());
   // r54: dead pre-v49 floor trait wrapper removed.
 
 
 
 
-  registerGenerationStage('resource48','post',()=>{guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true});
 
 
 
@@ -1717,7 +1707,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
   
 
-  registerGenerationStage('aim-reset52','pre',()=>{AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null});
 
 
 
@@ -1786,7 +1775,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
 
   /* ---------- save/load/init compatibility ---------- */
-  registerGenerationStage('boss-zones54-pre','pre',()=>{V54.marks=[];rule.classList.remove('show')});registerGenerationStage('boss-zones54-post','post',()=>{state.bossZones54=[];for(const m of state.monsters||[])normalizeBoss(m)});
 
   // InputRouter owns the physical shortcut; this API remains the existing sound-setting owner.
 
@@ -1895,7 +1883,6 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
   
 
 
-  registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
   
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
 
@@ -1967,7 +1954,6 @@ window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState();const unknown=FOOD_RECIPES.
 
 
 
-registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards57()});
 
 
 
@@ -1991,7 +1977,6 @@ if(state)ensureFoodState();
 
 
 
-  registerGenerationStage('canon58','post',()=>{normalizeKitchens58();ensureCanonExtras58();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()});
 
 
 
@@ -2046,8 +2031,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
     state.doorCount59=doors;V59.doorLog.push({floor:state.floor,mode:state.layoutMode59,doors});
     if(V59.doorLog.length>30)V59.doorLog.shift();
   }
-  registerGenerationStage('guard59-pre','pre',()=>{state.guardRooms59=[];state.layoutMode59=null});
-  registerGenerationStage('guard59-post','post',()=>{guardedRooms59();inferCorridors59();doorAudit59();VisibilityService.compute();vfBuildDecor()});
 
 
 
@@ -2201,8 +2184,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  registerGenerationStage('special60-pre','pre',()=>{state.featureRooms=[];state.landmarks=[];state.guardRooms59=[];state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={}});
-  registerGenerationStage('special60-post','post',()=>{const f=state.floor;if(SPECIAL60.has(f)||BOSS_FLOORS.has(f))rebuildSpecial60(f)});
   // r53: removed generation-on-load stage special60; saved geometry is authoritative.
 
 
@@ -2253,7 +2234,6 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
   /* v9.8.6 inspect cleanup: removed legacy tactical-role prose-append wrapper. */
 
 
-  registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
 
 
 
@@ -2287,7 +2267,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('feeling62','post',()=>{if(state&&!state.monsters.some(m=>m.boss)){applyFeeling();applyMiniVault62();VisibilityService.compute();vfBuildDecor()}});
 
 
 
@@ -2403,7 +2382,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('pacing70','post',()=>{pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()});
 
   /* ---------- autosave hooks (idle, not every turn) ---------- */
 
@@ -2530,8 +2508,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('region71-pre','pre',()=>{state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null});
-  registerGenerationStage('region71-post','post',()=>{enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;});
 
 /* ===== MANRU v7.3: WALL APPROACH / 8-WAY AUTOPATH / DELAYED HOLD RING ===== */
 
@@ -2611,7 +2587,6 @@ fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorn
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'element74',draw:drawElementOverlay});
 
-  registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
     
   globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>FUSION_RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
@@ -2638,7 +2613,6 @@ document.body.classList.add('mf75-clean');
 
 
 
-  registerGenerationStage('polish78','post',()=>{polish78();VisibilityService.compute()});
 
 
 
@@ -2693,7 +2667,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* Reapply after start/load without adding switches or changing user policy. */
-  registerGenerationStage('runtime81','post',()=>{Integrity81.repair();ConnectedDecor81.build();queuePlace81()});
     
   addEventListener('pointerup',stopHeldInput,{passive:true});addEventListener('pointercancel',stopHeldInput,{passive:true});addEventListener('blur',stopHeldInput,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 
@@ -2806,7 +2779,6 @@ document.body.classList.add('mf75-clean');
 
 
   
-  registerGenerationStage('architecture85','post',finishArchitecture90);
   // r53: removed generation-on-load stage architecture85; saved geometry is authoritative.
 
 
@@ -3049,8 +3021,6 @@ document.body.classList.add('mf75-clean');
   // Higher quality death/victory cards.
 
 
-  registerGenerationStage('quality94-pre','pre',()=>{state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null});
-  registerGenerationStage('quality94-post','post',()=>{state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
   
 
   // Progression is owned by the canonical checkLevel() above; no late reassignment.
@@ -3155,7 +3125,6 @@ document.body.classList.add('mf75-clean');
   
   
 
-  registerGenerationStage('locks96','post',()=>{clearLegacyTrial();refineF2Floor96();densifySpecial96();installLockPlan();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
   
 
 
@@ -3181,7 +3150,6 @@ document.body.classList.add('mf75-clean');
 
 
   // Bridge the last pre-ammo generator into the newer release closure without another wrapper.
-  MANRU_GENERATION_PIPELINE.density=addDensityMonsters964;
 
 
 
@@ -3480,7 +3448,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* v9.8.3 direct monster stats / core loot / clean current-generation pipeline */
-if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU pipeline density stage missing');
 
 
 
@@ -4674,7 +4641,6 @@ function handlePortalAt46(x,y){if(!WorldTransition57.allowed())return false;if(s
 
 function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}
 
-registerGenerationStage('artifact-reset46','pre',resetPortal46);registerGenerationStage('artifact-portal46','post',maybePortal46);
 
 
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*3:0}
