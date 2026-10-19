@@ -461,7 +461,7 @@ function normalizeSavedItem(it){
 }
 function worldTargetActive57(){return !!WORLD_TARGET}
 // Phase 5: one invocation registry; entries reference their existing implementation.
-const ACTION_ROUTES5=new Map(),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
+const ACTION_ROUTES5=new Map([['CONTEXT_ACTION',contextAction],['CIPHER_SUBMIT',submitCipher],['STRUCTURE_INTERACT',bumpBlockedTile],['MOVE',movePlayer],['BLINK',useBlink],['ATTACK',basicAttack],['PICKUP',pickup],['SHOP_BUY',purchaseShop58],['SHOP_SELL',sellShop58],['DESCEND',descend],['REST',rest],['UPGRADE_MARTIAL',upgradeMartial],['MARTIAL_MANUAL_CHOICE',chooseMartialManual],['MARTIAL',activateMartial],['ITEM_USE',useInventoryItem],['ITEM_DROP',dropInventoryItem],['UNEQUIP',unequipAction5],['DROP_EQUIPPED',dropEquippedAction5],['UPGRADE_GEAR',upgradeGearAction5],['COOK',cookSelected],['FUSE',fuse74],['GEAR_APPLY',applyGear],['CLOSE_DOOR',closeAdjacentDoor964],['IDENTIFY_CHOICE',identifyChoiceAction5],['PURIFY_CHOICE',purifyChoiceAction5],['ANVIL_FUSE105',anvilFuse],['SUMMON_CAST105',summonCast],['SUMMON_PICTURE105',summonInstallPicture],['SUMMON_TALISMAN105',summonBindTalisman]]),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
 function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
 function requestGameFullscreen65(){
  fullscreenWanted66=true;
@@ -534,7 +534,7 @@ function debugBattleMap57(fresh=false){
 }
 function resetTurnState(){if(!state)return;/* fractional enemy-energy debt is intentionally preserved; zeroing it would let stair/reset actions erase scheduler cost */state.enemyEnergy=state.enemyEnergy||0}
 const ActionDispatcher=Object.freeze({
-  register(type,implementation){if(ACTION_ROUTES5.has(type))throw new Error('duplicate action route: '+type);ACTION_ROUTES5.set(type,implementation)},
+  
   denied(reason){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.denial=reason},
   commitNoTime(){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.committed=true},
   observeTurn(result){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.turns.push(result)},

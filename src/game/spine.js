@@ -534,7 +534,6 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-ActionDispatcher.register('CONTEXT_ACTION',contextAction);
 
 
 
@@ -582,14 +581,12 @@ setGenerationBase('base-original',generateFloorOriginal);
 
 
 
-ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
 
 
 
 
-ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
 
 
 
@@ -633,12 +630,10 @@ ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
 
 
 
-ActionDispatcher.register('MOVE',movePlayer);
 
 
 
 
-ActionDispatcher.register('BLINK',useBlink);
 
 
 
@@ -661,7 +656,6 @@ ActionDispatcher.register('BLINK',useBlink);
 
 
 
-ActionDispatcher.register('ATTACK',basicAttack);
 
 
 
@@ -870,7 +864,6 @@ try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){i
 
 
 
-ActionDispatcher.register('PICKUP',pickup);
 
 
 
@@ -892,7 +885,6 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('SHOP_SELL',sellShop58);
 
 
 
@@ -903,16 +895,7 @@ ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('
 
 
 
-ActionDispatcher.register('DESCEND',descend);
 function rest(){const act=playerAction57('rest',{stunMessage:'몸이 굳어 쉬지 못했다.'});if(!act.ok)return !!act.consumed;cancelAutoWalk();commitPlayerAction57(act,1);return true}
-ActionDispatcher.register('REST',rest);
-
-
-ActionDispatcher.register('UPGRADE_MARTIAL',upgradeMartial);
-ActionDispatcher.register('MARTIAL_MANUAL_CHOICE',chooseMartialManual);
-
-
-ActionDispatcher.register('MARTIAL',activateMartial);
 
 
 
@@ -925,9 +908,11 @@ ActionDispatcher.register('MARTIAL',activateMartial);
 
 
 
-ActionDispatcher.register('ITEM_USE',useInventoryItem);
 
-ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
+
+
+
+
 
 
 
@@ -1535,9 +1520,7 @@ RuntimeState.ui.inventory=UX;
   // replace the accumulated inventory implementations with one thumb-friendly renderer.
 
 
-  ActionDispatcher.register('UNEQUIP',unequipAction5);
 
-  ActionDispatcher.register('DROP_EQUIPPED',dropEquippedAction5);
   // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
 
   // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
@@ -1590,7 +1573,6 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  ActionDispatcher.register('UPGRADE_GEAR',upgradeGearAction5);
 
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
@@ -1971,7 +1953,6 @@ cookingPanel.id='cook57';cookingPanel.innerHTML=`<div class="cookSheet57"><span 
 
 
 
-ActionDispatcher.register('COOK',cookSelected);
 cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking()};cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
@@ -2602,14 +2583,12 @@ fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorn
 
 
 
-ActionDispatcher.register('FUSE',fuse74);
 
 
 
 
 
 
-ActionDispatcher.register('GEAR_APPLY',applyGear);
 
 
 
@@ -3211,7 +3190,6 @@ document.body.classList.add('mf75-clean');
     const d=cands[0],why=doorCloseBlock964(d.x,d.y);if(why){if(!quiet)toast(why);return false}
     cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
   }
-ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
@@ -3667,9 +3645,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  ActionDispatcher.register('IDENTIFY_CHOICE',identifyChoiceAction5);
 
-  ActionDispatcher.register('PURIFY_CHOICE',purifyChoiceAction5);
 
 
 
@@ -5102,7 +5078,6 @@ PALACE_GARDENER_IMAGE105.onload=()=>{globalThis.__MANRU_ACTOR_ART__?.clear?.();i
 
 
 
-ActionDispatcher.register('ANVIL_FUSE105',anvilFuse);
 
 
 
@@ -5148,9 +5123,6 @@ ActionDispatcher.register('ANVIL_FUSE105',anvilFuse);
 
 
 
-ActionDispatcher.register('SUMMON_CAST105',summonCast);
-ActionDispatcher.register('SUMMON_PICTURE105',summonInstallPicture);
-ActionDispatcher.register('SUMMON_TALISMAN105',summonBindTalisman);
 
 
 
