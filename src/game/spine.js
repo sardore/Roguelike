@@ -4862,8 +4862,8 @@ renderClassGrid();
 
 /* ===== R7 CANONICAL ITEM ART (outer game scope) ===== */
 
-const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
-const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
+
+
 
 
 
