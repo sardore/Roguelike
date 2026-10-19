@@ -1809,7 +1809,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
-  globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
 
 
   setPlayerAttackBaseR('combat54',attackPlayerCore54R);
@@ -3519,7 +3518,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-  globalThis.__MANRU_MARTIAL_FX965__=Object.freeze({pulse:martialPulse,used:martialUsedFx});
 
   registerPlayerAttackStageR('martial-impact965',(next,mon,...args)=>{
     const ready=state?.player?.strongReady||0,beforeHp=mon?.hp;

@@ -667,3 +667,5 @@ const ATTACK_COST_STAGES=[{id:'potions41',run:potionAttackCost},{id:'food57',run
 function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_blade:.85})[state?.artifactDungeon46?.id]||1}
 /* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
 const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
+globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
+globalThis.__MANRU_MARTIAL_FX965__=Object.freeze({pulse:martialPulse,used:martialUsedFx});
