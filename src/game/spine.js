@@ -1426,7 +1426,7 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
   
 
 
-  function throwAt(tx,ty){const act=playerAction57('target',{uiOwner:'potionTargetHud'});if(!act.ok)return false;if(!potionTarget||!state)return false;const item=potionTarget.item,r=potionTarget.range||4,p=state.player;if(!state.player.inventory.includes(item)){cancelTarget(true);return false}if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>r){toast(`사거리 ${r}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('보지 못한 곳이다.');return false}if(!lineClear(p.x,p.y,tx,ty)){toast('던질 경로가 막혔다.');return false}if(state.floor>=11)alertNearby(tx,ty,item.throwElement105?4:item.potionKind==='smoke'?6:8,item.throwElement105||item.potionKind==='smoke'?'projectile':'explosion');projectileFX(p.x,p.y,tx,ty,pcolor(item));burst(tx,ty,pcolor(item),18,1);if(item.throwElement105==='water'||item.throwElement105==='ice'){emitElementContact105(item.throwElement105,elementCells105(tx,ty,1),effectSource57(p));addLog(`${item.name}: 주변 3×3에 ${item.throwElement105==='water'?'물기운':'냉기'}가 퍼졌다.`)}else if(item.potionKind==='smoke'){addField('smoke',tx,ty,6);addLog(`${item.name}: 3×3 연막 5턴.`)}else{const m=findMonsterAt(tx,ty),observed=isEntityObservableToPlayer57(m),direct=isThreatVisibleToPlayer(m)?m:null;if(observed&&m&&!isHostileTarget57(m)){toast('아군에게 공격용 약병을 던질 수 없다.');return false}if(direct){markCombatActivity57('potion-throw');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(direct,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${direct.name}의 아수라장이 투척 직격을 지웠다.`)}else{const dealt=damageEntity(direct,6,state.player,'fire');if(dealt>0){dojoRememberHit(direct,'area');floatText(tx,ty,'-'+dealt,'#ff9d5c',14,'fire');}if(direct.hp<=0)killMonster(direct)}}addField('fire',tx,ty,5);addLog(`${item.name}: 3×3 화염 4턴.`)}consumeRef(item);cancelTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||1,reason:"throwAt"}).value;return true}
+
   // r30: potion dispatch is integrated in canonical useInventoryItem.
    // r34: obsolete potion-tab render wrapper removed.
   /* R7 refactor: obsolete early potion visual wrapper removed. */
@@ -1534,7 +1534,7 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  function beginViewer45(){UX.modalOpening=true;pauseAutoForUI();UX.invEquipSlot=null}
+
 
 
 
@@ -1838,8 +1838,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
 
-/* ===== MANRU v5.6 TALISMANS + CONTEXTUAL UNKNOWN POTIONS ===== */
-const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
+
 
   const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
 
@@ -3863,8 +3862,8 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  function decorInfo986(d){const info=DECOR986.get(String(d?.kind||''))||{name:'이름 없는 장식',desc:'만루의 방을 채우는 작은 장식물. 기능보다 그 공간을 사용했던 사람들의 취향과 습관을 남긴다.'};return{name:info.name,desc:info.desc,hint:info.hint||''}}
-  function decalInfo986(x,y){const d=[...(state?.decals||[])].reverse().find(v=>v.x===x&&v.y===y);if(!d)return null;const info=DECAL986.get(d.type)||null;return info?{name:info.name,desc:info.desc,hint:''}:null}
+
+
 
 
 
