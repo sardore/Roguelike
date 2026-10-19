@@ -2255,7 +2255,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 
 
 
@@ -4326,9 +4325,6 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 /* r15: voluntary movement, forced movement and knockback call this shared hazard core directly from their canonical base functions. */
-window.__MANRU_HAZARD_CORE__={
-  armFragile,collapseAt:collapseFragileAt105,kind:hazardTile,adapted:entityAdapted,resolve:resolveEntityHazard1005,standing:resolveStandingHazard1005,revalidateAt:revalidateHazardAt1005,revalidateAll:resolveAllStandingHazards1005
-};
 
 
 
@@ -5038,7 +5034,6 @@ GenerationValidator.legendary=function legendaryCandidate10(){const progression=
 
 
 
-globalThis.__MANRU_LEGEND_TERRAIN47__={drawCell:drawLegendCell,miniColor:legendMiniColor,theme:id=>LEGEND_THEMES47[id]||null,clear:()=>ART_CACHE.clear()};
 
 const DUNGEON_MOBS47={
  ember_axe:[['용철 화로지기',34,9,5,2,'#a65d42','guard','construct',{concept57:"식지 않는 화로를 지키는 철갑 문지기다.",role61:'shell',legendSkill47:'forgeBurst'}],['불씨 식귀',24,10,2,5,'#b9694e','human','undead',{concept57:"재 속에서 타다 남은 굶주림이 일어섰다.",fast:true,fireTrail:true}],['제련 도깨비',38,11,4,2,'#8d654b','brute','spirit',{concept57:"광석 대신 침입자를 두드리려는 제련장의 도깨비다.",wallBreak:true,knockback:true}]],
