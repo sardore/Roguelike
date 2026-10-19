@@ -84,3 +84,7 @@
 ## P3 stage tables (2026-10-12)
 - 단계 표 9개와 그 표를 도는 함수 2개의 접미사를 뗐다(`docs/NAMING.tsv` 마지막 구역). 수동 1개: `MANRU_PICKUP_PIPELINE_R25`→`PICKUP_PIPELINE`(`MANRU_` 접두사도 뗌; 이 파일 밖에서 같은 이름을 쓰는 전역은 `globalThis.__MANRU_PICKUP_PIPELINE_R25__`(QA 전용)이며 문자열이라 그대로 둠). 단계 id 문자열(`'potions41'`, `'r47-decorate'` 등)은 `stages` 기준선에 들어 있으므로 바꾸지 않았다.
 - 새로 만든 단계 함수 이름(`potionStats`, `foodAttackCost`, `blockWhileZooming` 등 46개)은 처음부터 접미사가 없다.
+
+## P3b registries (2026-10-19)
+- 등록 API를 표로 합친 뒤 표와 그 표를 도는 함수의 접미사를 뗐다(`docs/NAMING.tsv` 마지막 구역): `ACTION_ROUTES5`→`ACTION_ROUTES`, `runAttackStagesR`→`runAttackStages`. 수동 2개: `MANRU_ATTACK_PIPELINE_R`→`ATTACK_PIPELINE`, `MANRU_GENERATION_PIPELINE`→`GENERATION_PIPELINE`(`MANRU_` 접두사와 접미사를 뗌; 같은 이름을 쓰는 전역은 문자열 `globalThis.__MANRU_ATTACK_PIPELINE_R25__`(QA 전용)이라 그대로 둠).
+- 새로 만든 단계 함수 이름(`effectsUpdate`, `doorsDrawMinimap`, `guardFirePlayerAttack`, `monsterDurationsPostTurn` 등 약 60개)은 처음부터 접미사가 없다. 단계 id 문자열(`'runtime70'`, `'base-vaults38'` 등)은 저장·QA가 읽는 값이라 그대로 둔다.

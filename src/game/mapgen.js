@@ -495,12 +495,12 @@ function peachTerrain(){
  budget.reserved++;return TT.PEACH_TREE;
 }
 function runRegisteredGenerationPipeline(...args){
-  const base=MANRU_GENERATION_PIPELINE.base?.fn;if(typeof base!=='function')throw new Error('canonical generation base missing');
+  const base=GENERATION_PIPELINE.base?.fn;if(typeof base!=='function')throw new Error('canonical generation base missing');
   // Wrapper nesting used to execute the most recently-added pre hook first, then
   // unwind post hooks oldest-to-newest. Preserve that order explicitly.
-  for(let i=MANRU_GENERATION_PIPELINE.pre.length-1;i>=0;i--){MANRU_GENERATION_PIPELINE.pre[i].fn(...args);}
+  for(let i=GENERATION_PIPELINE.pre.length-1;i>=0;i--){GENERATION_PIPELINE.pre[i].fn(...args);}
   const r=base(...args);
-  for(const st of MANRU_GENERATION_PIPELINE.post){st.fn(...args);}
+  for(const st of GENERATION_PIPELINE.post){st.fn(...args);}
   return r;
 }
   /* ----------------------- dynamic map dimensions and DCSS-style vaults ----------------------- */
@@ -2178,7 +2178,7 @@ function reachableCells(opt={}){return (state.floor===21?ReachabilityService.mec
 base(...args){
     const bowBefore=isBow967();
     const r=runRegisteredGenerationPipeline(...args);
-    MANRU_GENERATION_PIPELINE.density();
+    GENERATION_PIPELINE.density();
     applyRegionArchitecture(bowBefore);
     return r;
   },
@@ -2494,7 +2494,7 @@ function tileBlocks(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WA
 /* ===== Canonical floor-generation stage registry =====
    Legacy releases used nested `old=generateFloor; generateFloor=...` wrappers.  The
    current runtime keeps one base generator plus explicit pre/post stages instead. */
-const MANRU_GENERATION_PIPELINE={base:{id:'base-vaults38',fn:generateFloorBaseVaults},pre:[{id:'aim-reset52',fn:aimResetPreGeneration},{id:'boss-zones54-pre',fn:bossZonesPrePreGeneration},{id:'guard59-pre',fn:guardPrePreGeneration},{id:'special60-pre',fn:specialPrePreGeneration},{id:'region71-pre',fn:regionPrePreGeneration},{id:'quality94-pre',fn:qualityPrePreGeneration},{id:'artifact-reset46',fn:resetPortal46}],post:[{id:'feature-rooms41',fn:featureRoomsPostGeneration},{id:'potions41',fn:potionsPostGeneration},{id:'room-sculpt42',fn:roomSculptPostGeneration},{id:'organic-nooks43',fn:organicNooksPostGeneration},{id:'room-structure44',fn:roomStructurePostGeneration},{id:'strategy47',fn:strategyPostGeneration},{id:'resource48',fn:resourcePostGeneration},{id:'boss-zones54-post',fn:bossZonesPostPostGeneration},{id:'knowledge56',fn:knowledgePostGeneration},{id:'food57',fn:foodPostGeneration},{id:'canon58',fn:canonPostGeneration},{id:'guard59-post',fn:guardPostPostGeneration},{id:'special60-post',fn:specialPostPostGeneration},{id:'population61',fn:populationPostGeneration},{id:'feeling62',fn:feelingPostGeneration},{id:'pacing70',fn:pacingPostGeneration},{id:'region71-post',fn:regionPostPostGeneration},{id:'talisman74',fn:talismanPostGeneration},{id:'polish78',fn:polishPostGeneration},{id:'runtime81',fn:runtimePostGeneration},{id:'architecture85',fn:finishArchitecture90},{id:'quality94-post',fn:qualityPostPostGeneration},{id:'locks96',fn:locksPostGeneration},{id:'artifact-portal46',fn:maybePortal46}],density:addDensityMonsters964};
+const GENERATION_PIPELINE={base:{id:'base-vaults38',fn:generateFloorBaseVaults},pre:[{id:'aim-reset52',fn:aimResetPreGeneration},{id:'boss-zones54-pre',fn:bossZonesPrePreGeneration},{id:'guard59-pre',fn:guardPrePreGeneration},{id:'special60-pre',fn:specialPrePreGeneration},{id:'region71-pre',fn:regionPrePreGeneration},{id:'quality94-pre',fn:qualityPrePreGeneration},{id:'artifact-reset46',fn:resetPortal46}],post:[{id:'feature-rooms41',fn:featureRoomsPostGeneration},{id:'potions41',fn:potionsPostGeneration},{id:'room-sculpt42',fn:roomSculptPostGeneration},{id:'organic-nooks43',fn:organicNooksPostGeneration},{id:'room-structure44',fn:roomStructurePostGeneration},{id:'strategy47',fn:strategyPostGeneration},{id:'resource48',fn:resourcePostGeneration},{id:'boss-zones54-post',fn:bossZonesPostPostGeneration},{id:'knowledge56',fn:knowledgePostGeneration},{id:'food57',fn:foodPostGeneration},{id:'canon58',fn:canonPostGeneration},{id:'guard59-post',fn:guardPostPostGeneration},{id:'special60-post',fn:specialPostPostGeneration},{id:'population61',fn:populationPostGeneration},{id:'feeling62',fn:feelingPostGeneration},{id:'pacing70',fn:pacingPostGeneration},{id:'region71-post',fn:regionPostPostGeneration},{id:'talisman74',fn:talismanPostGeneration},{id:'polish78',fn:polishPostGeneration},{id:'runtime81',fn:runtimePostGeneration},{id:'architecture85',fn:finishArchitecture90},{id:'quality94-post',fn:qualityPostPostGeneration},{id:'locks96',fn:locksPostGeneration},{id:'artifact-portal46',fn:maybePortal46}],density:addDensityMonsters964};
 function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityService.playerTerrainPassable(x,y)}
 function validatePlayerTransfer57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
