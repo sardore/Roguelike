@@ -163,9 +163,9 @@ function drawMartialVisual(now){
   else{polygon(x,y,r,4,Math.PI/4);X.stroke();polygon(x,y,r*.7,4,0);X.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;X.fillRect(x+Math.cos(a)*r-1*z,y+Math.sin(a)*r-1*z,2*z,2*z)}}
  }X.restore();
 }
-const PRESENTATION_UPDATES=new Map();
+const PRESENTATION_UPDATES=new Map([['effects',effectsUpdate],['monster-motion',monsterMotionUpdate],['martial965',martialPulseUpdate]]);
 const PresentationState=Object.freeze({
-  register(id,update){if(PRESENTATION_UPDATES.has(id))throw new Error('duplicate presentation owner: '+id);PRESENTATION_UPDATES.set(id,update);return update},
+  
   advance(now){for(const update of PRESENTATION_UPDATES.values())update(now)},
   cache(){return Object.freeze({monsterMotion:MON_VIS,effects:FX})}
 });
@@ -4969,3 +4969,11 @@ globalThis.__MANRU_DEBUG_BATTLE57__=Object.freeze({snapshot:()=>DEBUG_BATTLE57.o
 const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
 const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
 const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.SWITCH,TT.KEY_TILE,TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT]);
+function effectsUpdate(now){
+  FX.rings=FX.rings.filter(r=>now-r.start<r.life);FX.doors=FX.doors.filter(d=>now-d.start<d.life);FX.slashes=FX.slashes.filter(s=>now-s.start<s.life);FX.projectiles=FX.projectiles.filter(p=>now-p.start<p.life);FX.particles=FX.particles.filter(p=>now-p.start<p.life);FX.floats=FX.floats.filter(f=>now-f.start<f.life);
+  for(const p of FX.particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.vy+=.015}
+  if(FX.transition&&now-FX.transition.start>=FX.transition.life)FX.transition=null;
+  if(FX.particles.length>40)FX.particles.splice(0,FX.particles.length-40);if(FX.floats.length>12){const labels=FX.floats.filter(f=>!f.damage57).slice(-12);FX.floats=FX.floats.filter(f=>f.damage57||labels.includes(f))}
+}
+function monsterMotionUpdate(now){if(!state)return;for(const m of state.monsters||[]){let v=MON_VIS.get(m);if(!v){v={x:m.x,y:m.y,last:now};MON_VIS.set(m,v);continue}if(v.forced105){const f=forcedMotionSample(v.forced105,now);if(f){v.x=f.x;v.y=f.y;v.last=now;if(!f.done)continue}v.forced105=null}const dt=Math.min(.05,Math.max(.001,(now-v.last)/1000)),a=1-Math.exp(-dt*18*automationPresentationRate70());v.last=now;v.x+=(m.x-v.x)*a;v.y+=(m.y-v.y)*a}}
+function martialPulseUpdate(now){if(FX965.pulse&&now>=FX965.pulse.until)FX965.pulse=null}

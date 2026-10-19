@@ -152,17 +152,10 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldIn
 
 
 
-PresentationState.register('effects',now=>{
-  FX.rings=FX.rings.filter(r=>now-r.start<r.life);FX.doors=FX.doors.filter(d=>now-d.start<d.life);FX.slashes=FX.slashes.filter(s=>now-s.start<s.life);FX.projectiles=FX.projectiles.filter(p=>now-p.start<p.life);FX.particles=FX.particles.filter(p=>now-p.start<p.life);FX.floats=FX.floats.filter(f=>now-f.start<f.life);
-  for(const p of FX.particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.vy+=.015}
-  if(FX.transition&&now-FX.transition.start>=FX.transition.life)FX.transition=null;
-  if(FX.particles.length>40)FX.particles.splice(0,FX.particles.length-40);if(FX.floats.length>12){const labels=FX.floats.filter(f=>!f.damage57).slice(-12);FX.floats=FX.floats.filter(f=>f.damage57||labels.includes(f))}
-});
 
 
 
 
-PresentationState.register('monster-motion',now=>{if(!state)return;for(const m of state.monsters||[]){let v=MON_VIS.get(m);if(!v){v={x:m.x,y:m.y,last:now};MON_VIS.set(m,v);continue}if(v.forced105){const f=forcedMotionSample(v.forced105,now);if(f){v.x=f.x;v.y=f.y;v.last=now;if(!f.done)continue}v.forced105=null}const dt=Math.min(.05,Math.max(.001,(now-v.last)/1000)),a=1-Math.exp(-dt*18*automationPresentationRate70());v.last=now;v.x+=(m.x-v.x)*a;v.y+=(m.y-v.y)*a}});
 
 
 
@@ -3274,7 +3267,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
 
   // Cheap vector FX rendered after the world: no new textures or heavy sprite rebuilds.
-  PresentationState.register('martial965',now=>{if(FX965.pulse&&now>=FX965.pulse.until)FX965.pulse=null});
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'martial965',draw:drawMartialOverlay});
 
