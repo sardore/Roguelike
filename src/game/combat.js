@@ -298,9 +298,8 @@ function basicAttack(){
     commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
-const MANRU_ATTACK_PIPELINE_R={playerBase:null,monsterBase:null,playerStages:[],monsterStages:[]};
+const MANRU_ATTACK_PIPELINE_R={playerBase:null,monsterBase:null,playerStages:[{id:'guard-fire57',fn:guardFirePlayerAttack},{id:'asura-domain61',fn:asuraDomainPlayerAttack},{id:'element-brand74',fn:elementBrandPlayerAttack},{id:'martial-impact965',fn:martialImpactPlayerAttack},{id:'ammo967',fn:ammoPlayerAttack},{id:'curse991',fn:cursePlayerAttack},{id:'weapon1006',fn:weaponPlayerAttack},{id:'legendary47',fn:legendaryPlayerAttack}],monsterStages:[]};
 function setPlayerAttackBaseR(id,fn){if(typeof fn!=='function')throw new TypeError('player attack base must be a function');MANRU_ATTACK_PIPELINE_R.playerBase={id,fn};return fn}
-function registerPlayerAttackStageR(id,fn){if(typeof fn!=='function')throw new TypeError('player attack stage must be a function');if(MANRU_ATTACK_PIPELINE_R.playerStages.some(x=>x.id===id))throw new Error('duplicate player attack stage: '+id);MANRU_ATTACK_PIPELINE_R.playerStages.push({id,fn});return fn}
 function runAttackStagesR(kind,args){
   const base=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerBase:MANRU_ATTACK_PIPELINE_R.monsterBase,stages=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerStages:MANRU_ATTACK_PIPELINE_R.monsterStages;
   if(typeof base?.fn!=='function')throw new Error(kind+' attack base missing');
@@ -669,3 +668,11 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
 globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
 globalThis.__MANRU_MARTIAL_FX965__=Object.freeze({pulse:martialPulse,used:martialUsedFx});
+function martialImpactPlayerAttack(next,mon,...args){
+    const ready=state?.player?.strongReady||0,beforeHp=mon?.hp;
+    const r=next(mon,...args);
+    if(ready>0&&mon&&Number.isFinite(beforeHp)&&mon.hp<beforeHp&&(state?.player?.strongReady||0)===0){
+      ACTION_PRESENTATION58.strong=true;floatText(mon.x,mon.y,martialPresentation('strong',MARTIAL_INFO.strong,state.player).name,'#ffe3a0',15);globalThis.__MANRU_SFX54__?.play?.('crit')
+    }
+    return r;
+  }
