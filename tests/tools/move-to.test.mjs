@@ -64,3 +64,15 @@ test('a function stored in an array is not a call at load time; a call is', () =
   const r = k.run('a.js');
   assert.equal(r.code, 1); assert.match(r.out, /load order/);
 });
+
+test('an assignment to another member of an object, or to a computed member with another prefix, does not fix the place of a const that reads the object', () => {
+  const parts = (stmt) => ({ 'a.js': 'const TT={DOOR:3,WALL:0};', 'b.js': stmt, 'spine.js': 'const SET=new Set([TT.DOOR,TT.WALL]);' });
+  assert.equal(work(parts('TT.EXTRA=9;'), ['SET']).run('a.js').code, 0);
+  assert.equal(work(parts('for(const n of ["x"])TT["LEGEND_"+n.toUpperCase()+"_"+n]=1;'), ['SET']).run('a.js').code, 0);
+  let r = work(parts('TT.DOOR=4;'), ['SET']).run('a.js');
+  assert.equal(r.code, 1); assert.match(r.out, /assigns TT\.\*/);
+  r = work(parts('for(const n of ["x"])TT["DO"+n]=1;'), ['SET']).run('a.js');
+  assert.equal(r.code, 1);
+  r = work(parts('const k="DOOR";TT[k]=1;'), ['SET']).run('a.js');
+  assert.equal(r.code, 1);
+});

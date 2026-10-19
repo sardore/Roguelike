@@ -197,20 +197,33 @@ for (const s of stmts) {
   const MUTATORS = /^(push|add|set|splice|unshift|delete|assign|defineProperty|defineProperties|freeze)$/;
   for (const s of stmts) {
     if (s.type !== 'VariableDeclaration') continue;
-    const read = new Set();
+    const read = new Map(); // object name -> the first-level members the initialiser reads ('*' when the member is computed)
+    const firstMember = (m) => { let cur = m, last = null; while (cur.type === 'MemberExpression') { last = cur; cur = cur.object; } return { root: cur, first: last }; };
     walk.ancestor(s, { MemberExpression(m, _st, anc) {
       if (deferred(anc)) return;
-      let root = m; while (root.type === 'MemberExpression') root = root.object;
-      if (root.type === 'Identifier' && root.name !== 'window' && root.name !== 'globalThis') read.add(root.name); // window.X is followed by checkGlobalReads
+      const { root, first } = firstMember(m);
+      if (root.type !== 'Identifier' || root.name === 'window' || root.name === 'globalThis') return; // window.X is followed by checkGlobalReads
+      if (!read.has(root.name)) read.set(root.name, new Set());
+      read.get(root.name).add(first.computed ? '*' : first.property.name);
     } });
     if (!read.size || insertAt === undefined) continue;
+    // an assignment X.k = v only matters when the initialiser reads X.k; X['P_'+id] = v only when it reads a member that starts with P_
+    const touches = (name, first) => {
+      const props = read.get(name);
+      if (props.has('*')) return true;
+      if (!first.computed) return props.has(first.property.name);
+      let lead = first.property; while (lead.type === 'BinaryExpression' && lead.operator === '+') lead = lead.left; // the leftmost piece of a concatenation
+      const prefix = lead.type === 'Literal' && typeof lead.value === 'string' ? lead.value : lead.type === 'TemplateLiteral' ? lead.quasis[0].value.cooked : null;
+      return prefix === null || prefix === '' ? true : [...props].some((x) => x.startsWith(prefix));
+    };
     for (const o of top) {
       if (picked.has(o) || o.type === 'FunctionDeclaration' || o.start >= s.start || o.start < insertAt) continue;
       walk.ancestor(o, {
         AssignmentExpression(a, _st, anc) {
           if (deferred(anc)) return;
-          let root = a.left; while (root.type === 'MemberExpression') root = root.object;
-          if (root.type === 'Identifier' && read.has(root.name) && a.left.type === 'MemberExpression') throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place assigns ${root.name}.* (line ${a.loc.start.line}): its place is fixed by that statement`);
+          if (a.left.type !== 'MemberExpression') return;
+          const { root, first } = firstMember(a.left);
+          if (root.type === 'Identifier' && read.has(root.name) && touches(root.name, first)) throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place assigns ${root.name}.* (line ${a.loc.start.line}): its place is fixed by that statement`);
         },
         CallExpression(c, _st, anc) {
           if (deferred(anc)) return;
