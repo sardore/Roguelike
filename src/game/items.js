@@ -1066,3 +1066,7 @@ window.__MANRU_TERRAIN_CODEX986__={
     openItem:openItemInspect986
   };
 globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
+  const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
+  // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
+  function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
+  const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));

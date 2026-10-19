@@ -1840,7 +1840,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 /* ===== MANRU v5.6 TALISMANS + CONTEXTUAL UNKNOWN POTIONS ===== */
 const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
-  const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
+
   const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
 
 
@@ -2300,8 +2300,7 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
   /* ---------- structure interaction: click/tap paths next to a blocked target, then opens or destroys it ---------- */
   const BREAK61=new Set([TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
-  // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
-  function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
+
 
 
 
@@ -2596,7 +2595,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
+
 
 
 
