@@ -74,13 +74,13 @@ const WEAPONS=[
   {type:'weapon',name:'무딘 소검',tier:1,rarity:'common',atk:1,speed:1.4,range:2,kind:'blade',ability:'없음',desc:'가장 평범한 형태의 호신용 칼입니다.'},
   {type:'weapon',name:'대나무창',balance52:true,tier:1,rarity:'common',atk:0,speed:0.62,range:3,kind:'spear',knockback:1,ability:'밀치기',desc:'끝을 뾰족하게 깎은 긴 대나무입니다.'},
   {type:'weapon',name:'사냥용 목궁',balance52:true,tier:1,rarity:'common',atk:0,speed:0.48,range:6,kind:'bow',ranged:true,ability:'원거리',desc:'산짐승을 잡을 때 쓰던 낡은 활입니다.'},
-  {type:'weapon',name:'낡은 장도리',tier:1,rarity:'common',atk:2,speed:.5,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 파괴',desc:'무언가를 부수거나 고칠 때 쓰던 연장입니다.'},
+  {type:'weapon',name:'낡은 장도리',tier:1,rarity:'common',atk:2,speed:.5,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'},
   // 2티어 · 수묵원
-  {type:'weapon',name:'수련용 환도',tier:2,rarity:'rare',atk:2,speed:1.8,range:2,kind:'blade',focusChain:true,ability:'집중',desc:'무관 지망생들이 기본기를 익힐 때 쓰는 검입니다.'},
+  {type:'weapon',name:'수련용 환도',tier:2,rarity:'rare',atk:2,speed:1.8,range:2,kind:'blade',focusChain:true,ability:'집중 연계',desc:'연속으로 공격을 2회 적중시키면 기력 1을 되찾습니다. 빗나가면 연계가 끊깁니다.'},
   {type:'weapon',name:'강철 보검',tier:2,rarity:'rare',atk:4,speed:1.1,range:2,kind:'blade',ability:'없음',desc:'잘 연마되어 푸른 빛이 도는 강철 검입니다.'},
   {type:'weapon',name:'철두창',balance52:true,tier:2,rarity:'rare',atk:2,speed:0.55,range:4,kind:'spear',knockback:1,ability:'밀치기',desc:'창날이 무거워 찌르는 힘이 강력한 창입니다.'},
   {type:'weapon',name:'낫',tier:2,rarity:'rare',atk:3,speed:1.3,range:2,kind:'blade',wide:true,ability:'광역타격',desc:'수풀을 베기 위해 고안된 날카로운 곡선형 칼입니다.'},
-  {type:'weapon',name:'손도끼',tier:2,rarity:'rare',atk:5,speed:.6,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 쇄도',desc:'나무 문을 부수기에 아주 적합한 묵직한 도끼입니다.'},
+  {type:'weapon',name:'손도끼',tier:2,rarity:'rare',atk:5,speed:.6,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'},
   {type:'weapon',name:'병사용 반궁',balance52:true,tier:2,rarity:'rare',atk:2,speed:0.54,range:7,kind:'bow',ranged:true,ability:'원거리',desc:'군에서 정식으로 보급하는 표준형 활입니다.'},
   // 3티어 · 유혹의 내실
   {type:'weapon',name:'쌍날 단도',tier:3,rarity:'relic',atk:4,speed:2.5,range:1,kind:'blade',chain:.12,ability:'연격',desc:'양손에 쥐고 춤추듯 휘두를 수 있는 짧은 칼쌍입니다.'},
@@ -99,10 +99,10 @@ const WEAPONS=[
   {type:'weapon',name:'대형 오해머',tier:4,rarity:'sealed',heavyStrikeBalance105:3,atk:19,speed:.2,range:2,kind:'blunt',armorPierce:true,knockback:2,stun:.2,ability:'방어무시 · 압쇄',desc:'성문을 부술 때 사용하는 거대한 쇳덩이 망치입니다.'},
   // 5티어 · 만루의 심장
   {type:'weapon',name:'별운검',tier:5,rarity:'sealed',atk:9,speed:1.8,range:2,kind:'blade',crit:.14,ability:'치명 +14%',desc:'구름 문양이 새겨진 왕실의 검으로, 바람보다 빠르게 적을 벱니다.'},
-  {type:'weapon',name:'태도',tier:5,rarity:'sealed',atk:12,speed:.9,range:3,kind:'blade',edgeBonus:true,ability:'밀치기 · 일섬',desc:'극도로 길게 단련된 날은 적이 닿기도 전에 생명을 끊습니다.'},
-  {type:'weapon',name:'당파',balance52:true,tier:5,rarity:'sealed',atk:8,speed:0.53,range:5,kind:'spear',knockback:1,parry:.18,ability:'방어 · 얽기',desc:'공격을 막아내고 동시에 찌를 수 있는 완벽한 방어용 창입니다.'},
+  {type:'weapon',name:'태도',tier:5,rarity:'sealed',atk:12,speed:.9,range:3,kind:'blade',edgeBonus:true,ability:'밀치기 · 일섬',desc:'긴 날로 거리를 지배합니다. 체력이 75% 이상 남은 적에게 첫 일격 보너스 피해를 주고 한 칸 밀어냅니다.',knockback:1},
+  {type:'weapon',name:'당파',balance52:true,tier:5,rarity:'sealed',atk:8,speed:0.53,range:5,kind:'spear',knockback:1,parry:.12,ability:'방어 · 얽기',desc:'근접 공격을 12% 확률로 흘려내고 공격자를 잠깐 경직시킵니다.'},
   {type:'weapon',name:'금강령 퇴',tier:5,rarity:'sealed',atk:11,speed:.8,range:2,kind:'blunt',armorPierce:true,stun:.22,holy:2,ability:'방어무시 · 정화',desc:'법구의 형상을 한 둔기로, 타격 시 사악한 기운을 쫓아냅니다.'},
-  {type:'weapon',name:'단단한 철궁',balance52:true,tier:5,rarity:'sealed',atk:7,speed:0.4,range:10,kind:'bow',ranged:true,tracking:true,ability:'추적',desc:'현대 기술로도 재현하기 힘든 장력과 정교함을 가진 활입니다.'},
+  {type:'weapon',name:'단단한 철궁',balance52:true,tier:5,rarity:'sealed',atk:7,speed:0.4,range:10,kind:'bow',ranged:true,tracking:true,ability:'추적',desc:'조준 보정으로 원거리 공격 시 대상 EVA를 크게 무시합니다.'},
   {type:'weapon',name:'대장간 망치',tier:5,rarity:'sealed',heavyStrikeBalance105:2,atk:21,speed:.2,range:2,kind:'blunt',armorPierce:true,knockback:2,execute:.20,ability:'방어무시 · 종결',desc:'만루를 지은 장인의 혼이 깃든, 세상의 모든 것을 부술 수 있는 망치입니다.'}
 ];
 const ARMORS=[
@@ -113,10 +113,10 @@ const ARMORS=[
   {type:'armor',name:'총사령관 황금갑',tier:5,rarity:'sealed',def:12,eva:-2,will:1,desc:'정부 최고위 무관에게만 하사되는 황금 비늘 갑옷이다. 본래 방어력이 가장 높아 강화부적의 효과도 크다.'}
 ];
 const CLOAKS=[
-  {type:'cloak',name:'질긴 가죽망토',tier:1,rarity:'common',staggerResist:.12,desc:'짐승의 가죽을 대충 잘라 만든 망토. 피격 후 경직을 조금 줄입니다.'},
-  {type:'cloak',name:'바람막이망토',tier:1,rarity:'common',focusRegen:1.08,desc:'얇은 천으로 된 망토. 숨을 고를 때 기 회복이 약간 빨라집니다.'},
-  {type:'cloak',name:'여행자망토',tier:1,rarity:'common',eatSpeed:1.10,desc:'주머니가 많이 달려 있어 음식을 조금 더 빠르게 꺼내 먹습니다.'},
-  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',hazardResist:.10,desc:'솜을 얇게 넣어 지형 피해를 조금 줄입니다.'},
+  {type:'cloak',name:'질긴 가죽망토',tier:1,rarity:'common',staggerResist:.30,desc:'피격 시 30% 확률로 밀치기·속박·둔화를 버텨 자세가 흐트러지지 않습니다.'},
+  {type:'cloak',name:'바람막이망토',tier:1,rarity:'common',focusRegen:1.35,desc:'기본 기력 자연회복에 약 35%의 추가 회복을 누적합니다.'},
+  {type:'cloak',name:'여행자망토',tier:1,rarity:'common',eatSpeed:1.35,desc:'음식 사용 행동비용을 약 26% 줄여 전투 중 보급이 훨씬 안전해집니다.'},
+  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.',trapGuard:.35},
   {type:'cloak',name:'암영망토',tier:3,rarity:'relic',senseReduce:1,desc:'어둠 속에서 몸을 숨기기 좋게 제작되어 적의 인식 거리를 줄입니다.'},
   {type:'cloak',name:'축지망토',tier:3,rarity:'relic',moveSpeed:1.15,desc:'깃털처럼 가벼워 발걸음을 빠르게 만듭니다.'},
   {type:'cloak',name:'자력망토',tier:3,rarity:'relic',magnet:2,desc:'주변의 전리품을 몸 쪽으로 끌어당기는 기묘한 외투입니다.'},
