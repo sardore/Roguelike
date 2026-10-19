@@ -119,7 +119,7 @@ function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  if(player&&target.hp<=0)die(mon.name);
  return monsterAttackResultR(mon,ctx,{hit:true,damage:dmg,attackerAlive:mon.hp>0});
 }
-const BOSS_REWARD_STAGES={pre:[],post:[]};
+const BOSS_REWARD_STAGES={pre:[{id:'boss54',run:bossExperience}],post:[]};
 function bossReward(mon){if(mon.bossPattern==='palaceKing105')return;if(mon.branchBoss105){if(state.branchTerrain105.frostReward105)return;for(const stage of BOSS_REWARD_STAGES.pre)stage.run(mon);return mountainBossReward(mon);}if(state.floor===10&&mon.boss&&!state.passiveRecoveryUnlocked57){state.passiveRecoveryUnlocked57=true;state.lastDamageAgencyTurn57=state.playerAgencyTurns57||0;addLog('화공의 기운이 흩어진다. 숨을 고르면 상처가 빠르게 아물기 시작한다.')}
   for(const stage of BOSS_REWARD_STAGES.pre)stage.run(mon);
   state.bossDefeated=true;grantMartialManual(mon);addLog('구역 보스 격파.');
@@ -2138,7 +2138,7 @@ function rebalanceMonsterCrowding1027(){
   state.monsters=placed;state.monsterCrowding1027={floor:state.floor,total:placed.length,moved:moved.length,maxLocal,maxWide,maxRoomCompact,overlaps:0,preserved};return state.monsterCrowding1027;
 }
 function chain47(mon,dmg,max=2){dmg=Math.max(0,Math.round(Number(dmg)||0));const arr=(state.monsters||[]).filter(m=>m!==mon&&isHostileTarget57(m)&&entityDistance57(m,mon)<=2).sort((a,b)=>entityDistance57(a,mon)-entityDistance57(b,mon)).slice(0,max);for(const m of arr){const dealtDamage=damageEntity(m,dmg, state.player);projectileFX(mon.x,mon.y,m.x,m.y,'#8ddcff');if(dealtDamage>0)floatText(m.x,m.y,`청뢰 -${dealtDamage}`,'#9de4ff',10,'shock');if(m.hp<=0)killMonster(m)}}
-function moveTurnCost(destination=null){let cost=clamp(1/(playerCloak().moveSpeed||1),.72,1.15);for(const stage of MOVE_COST_STAGES55)cost=stage.run(cost);if(silkThreadAt54(state.player.x,state.player.y))cost+=.5;const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding')||0;return clamp(applyPlayerDebuffActionCost('move',cost),.25,cursed>0?6:2.4)*(terrainBaseTile58(destination?.x??state.player.x,destination?.y??state.player.y)===TT.SHALLOW_WATER?1.5:1)}
+function moveTurnCost(destination=null){let cost=clamp(1/(playerCloak().moveSpeed||1),.72,1.15);for(const stage of MOVE_COST_STAGES)cost=stage.run(cost);if(silkThreadAt54(state.player.x,state.player.y))cost+=.5;const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding')||0;return clamp(applyPlayerDebuffActionCost('move',cost),.25,cursed>0?6:2.4)*(terrainBaseTile58(destination?.x??state.player.x,destination?.y??state.player.y)===TT.SHALLOW_WATER?1.5:1)}
 const OccupancyService=(()=>{
  let shared=null,sharedState=null,sharedMap=null,indexed=new WeakMap(),rebuilds=0,queries=0,linearFallbacks=0;
  const category=new WeakMap();
@@ -2275,3 +2275,8 @@ function silkThreadAt54(x,y){
   function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
 function entityFootprintCells57(entity,x=entity?.x,y=entity?.y){if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return[];const offsets=entity===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(entity);return offsets.map(([ox,oy])=>({x:x+ox,y:y+oy}))}
 function summonPlaceFollowers105(list){for(const mon of list){if(!summonActive(mon))continue;const q=PlacementService.findMonster(mon,{placementMode:'local',origin:state.player,radius:5});if(!q)throw Error('추종 소환체 착지 공간 부족');Object.assign(mon,q);const delta=state.floorTurn-(mon.summonTravelFloorTurn105??state.floorTurn);for(const key of ['nextSummonTurn57','nextAction54','nextShot54','corpseUntilFloorTurn57','reviveFullTurn57'])if(Number.isFinite(mon[key]))mon[key]+=delta;delete mon.summonTravelFloorTurn105;delete mon.allyLastActionRound57;delete mon.allyTargetId54;delete mon.allyLastSeenPosition54;delete mon.allySearchUntilTurn54;delete mon.intent54;delete mon.intent61;if(!OccupancyService.addMonster(mon))throw Error('추종 소환체 계약 불일치');}}
+const MOVE_COST_STAGES=[{id:'potions41',run:potionMoveCost},{id:'food57',run:foodMoveCost},{id:'elements74',run:elementGuardMoveCost},{id:'curse991',run:curseMoveCost}];
+function updateRolePanel(){if(state){const near=state.monsters.filter(m=>m.role61&&isThreatVisibleToPlayer(m)).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0],el=document.getElementById('monsterInfo');if(near&&el&&!el.innerHTML.includes('role61'))el.innerHTML+=`<div class="role61" style="margin-top:5px;color:#d5b57d"><b>${ROLE_RUNE[near.role61]||'적'} ${near.role61}</b> · ${near.roleDesc61}</div>`}}
+function bossExperience(mon){if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLog(`보스 경험치 +${mon.xp}`);checkLevel()}if(mon?.bossPattern==='master')state.visionPenalty=0}
+function clearInvalidAim(){if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetValid()){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}}
+function alertOnDoorOpen(ctx){if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)}

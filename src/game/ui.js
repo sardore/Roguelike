@@ -153,7 +153,7 @@ globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 function endScreen(){document.body.classList.add('end-screen95');for(const id of ['coach70','toast','autoMoveChip','vfAutoState']){const n=document.getElementById(id);if(n){n.classList.remove('show');n.style.display='none'}}}
 function presentDeath(by){document.getElementById('overlay').style.display='flex';const pct=Math.min(100,Math.round(state.floor/25*100));document.getElementById('card').innerHTML=`<div class="death94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">亡</div><div class="brand">만루 · 탐사 기록 종료</div><h1>등불이 꺼졌다</h1><div class="deathCause94">${by}</div><div class="deathStats94"><span><b>${state.floor}</b><small>도달 층</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:${pct}%"></i></div><p>객주의 복도 어딘가에서 감찰 기록이 끊겼다.<br>남은 등불들은 아무 일도 없었다는 듯 다시 흔들린다.</p><button class="deathRetry94" onclick="location.reload()">다시 침투</button></div>`}
 function presentVictory(){document.getElementById('overlay').style.display='flex';document.getElementById('card').innerHTML=`<div class="death94 victory94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">만</div><div class="brand">만루 · 천 개의 방이 잠들다</div><h1>천 개의 방이 멎었다</h1><div class="deathCause94">만루보주 격파</div><div class="deathStats94"><span><b>25</b><small>최심부</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:100%"></i></div><p>좌우와 위아래로 뒤틀리던 객실이 처음으로 제자리에서 멎는다.<br>만루의 마지막 등불이 조용히 꺼졌다.</p><button class="deathRetry94" onclick="location.reload()">새 기록 시작</button></div>`}
-function runPanelHooks(){for(const h of PANEL_HOOKS54)h.run()}
+function runPanelHooks(){for(const h of PANEL_HOOKS)h.run()}
 function setMobileTab(tab){
   mobileTab = tab;
   document.querySelectorAll(".mTab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
@@ -951,3 +951,48 @@ function showInspect(title,html){
     const txt=dedupeProse986(textOnly(html).replace(/만루 기록/g,'').replace(/거리\s*\d+칸/g,'').replace(/좌표\s*\d+\s*,\s*\d+/g,'').replace(/\s+/g,' ').trim());
     directOpenInspect(title,simpleHtml986({desc:txt||'확인할 수 있는 정보가 없다.',hint:''}),null);
   }
+function markActionTime(){RC.lastActionAt=performance.now()}
+function markDeathSeal(kind){if(kind==='death'){const seal=document.querySelector('.deathSeal94');if(seal)seal.textContent='亡'}}
+function showEndingScreen(){return setScreen('ending')}
+function updateFeelingPanel(){updateFeelingUI();renderBelt();const d=document.getElementById('depthLore'),f=feeling62();if(d&&f&&!d.textContent.includes(`· ${f.name}`))d.textContent+=` · ${f.name}`}
+const PANEL_HOOKS=[{id:'combat-hud36',run:updateCH},{id:'roles61',run:updateRolePanel},{id:'feeling62',run:updateFeelingPanel},{id:'desktop962',run:updateDesktopSide962},{id:'door964',run:refreshDoorContext}];
+function renderInventoryCore(){
+    if(!inventoryOpen||!state)return;
+    const box=document.getElementById('inventory'),p=state.player;if(!box)return;
+    let filtered=inventoryFiltered();
+    if(!UX.invEquipSlot && filtered.length && !filtered.some(v=>v.idx===inventorySelection)){inventorySelection=filtered[0].idx}
+    if(!filtered.length && !UX.invEquipSlot)inventorySelection=-1;
+    const selected=UX.invEquipSlot?p[UX.invEquipSlot]:(inventorySelection>=0?p.inventory[inventorySelection]:null);
+    const tabs=[['all','전체'],['gear','장비'],['food','음식'],['treasure','유물'],['potion','비약']];
+    const equips=equipData().map(([slot,label,item,rune])=>`<button class="uxEq ${item?'':'empty'} ${UX.invEquipSlot===slot?'selected':''}" data-uxeq="${slot}">${item?uxIcon(item,'uxEqIcon'):''}<span class="ek">${label}</span><span class="en">${item?item.name:'비어 있음'}</span><span class="er">${rune}</span></button>`).join('');
+    const cells=filtered.length?filtered.map(({item,idx})=>`<button class="uxSlot ${!UX.invEquipSlot&&idx===inventorySelection?'selected':''}" data-invslot="${idx}" data-rarity="${item.rarity||'common'}"><span class="tier">${item.tier?`T${item.tier}`:''}</span><span class="rar"></span>${uxIcon(item,'uxSlotIcon')}<span class="nm">${item.name}</span>${(item.count||1)>1?`<span class="count">×${item.count}</span>`:''}</button>`).join(''):`<div class="uxEmpty"><b>${p.inventory.length?'이 분류는 비어 있음':'행낭이 비어 있음'}</b><p>${p.inventory.length?'다른 분류를 보거나 전체 목록으로 돌아가면 된다.':'바닥의 물품은 줍 버튼이나 아이템 칸 터치로 바로 주울 수 있다.'}</p>${p.inventory.length&&inventoryTab!=='all'?'<button id="uxShowAll">전체 보기</button>':''}</div>`;
+    box.innerHTML=`<div class="uxInv"><span class="uiCorners63" aria-hidden="true"></span><div class="uxInvHead"><div class="uxTitle"><h2>행낭</h2><small>한 번 눌러 선택 · 아래 큰 버튼으로 사용/장착</small></div><div class="uxInvMeta"><span><b>${p.inventory.length}</b> / ${inventoryCapacity()}</span><span class="turn">TURN ${state.turn}</span></div><button class="uxClose" id="invCloseBtn" aria-label="닫기">×</button></div><div class="uxEquipRail">${equips}</div><div class="uxTabs">${tabs.map(([id,lab])=>`<button class="${inventoryTab===id?'active':''}" data-invtab="${id}">${lab}<span>${tabCount(id)}</span></button>`).join('')}</div><div class="uxInvMain"><div class="uxGrid" id="uxGrid">${cells}</div>${selected?detailHTML(selected,inventorySelection,UX.invEquipSlot):''}</div></div>`;
+    restoreInventoryScroll45(box.querySelector('#uxGrid'));
+    const closeBtn=box.querySelector('#invCloseBtn');if(closeBtn){const finishClose=e=>{e?.preventDefault?.();e?.stopPropagation?.();e?.stopImmediatePropagation?.();blockTap(260);if(inventoryOpen)closeInventory()};closeBtn.ontouchend=finishClose;closeBtn.onpointerup=finishClose;closeBtn.onclick=finishClose;}
+    box.querySelector('#uxShowAll')?.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab='all';UX.invEquipSlot=null;const a=inventoryFiltered();inventorySelection=a.length?a[0].idx:-1;renderInventory()});
+    box.querySelectorAll('[data-invtab]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();inventoryTab=b.dataset.invtab;UX.invEquipSlot=null;const f=inventoryFiltered();inventorySelection=f.length?f[0].idx:-1;renderInventory()}));
+    box.querySelectorAll('[data-invslot]').forEach(b=>b.addEventListener('click',()=>{rememberInventoryScroll();UX.invEquipSlot=null;inventorySelection=+b.dataset.invslot;renderInventory()}));
+    box.querySelectorAll('[data-uxeq]').forEach(b=>b.addEventListener('click',()=>{const slot=b.dataset.uxeq;if(!p[slot])return;rememberInventoryScroll();UX.invEquipSlot=slot;inventorySelection=-1;renderInventory()}));
+    box.querySelectorAll('[data-bookmaterial105]').forEach(b=>b.addEventListener('click',()=>{summonState();const book=p.inventory[+b.dataset.bookindex105];if(book?.summonItem105==='book')summonOpenMaterials(book.summonBookId105,b.dataset.bookmaterial105);}));
+    box.querySelectorAll('[data-invuse]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_USE',args:[+b.dataset.invuse]}).value));
+    box.querySelectorAll('[data-invdrop]').forEach(b=>b.addEventListener('click',()=>ActionDispatcher.dispatch({type:'ITEM_DROP',args:[+b.dataset.invdrop]}).value));
+    box.querySelectorAll('[data-invinspect]').forEach(b=>b.addEventListener('click',()=>{const it=p.inventory[+b.dataset.invinspect];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
+    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>b.addEventListener('click',()=>{const it=p[b.dataset.uxinspectequip];if(it)showInspect(it.name,`${itemSummary(it)}<br><span style="color:#a79374">${it.desc||''}</span>`)}));
+    box.querySelectorAll('[data-uxunequip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'UNEQUIP',args:[p,b.dataset.uxunequip],source:'inventory'}).value}));
+    box.querySelectorAll('[data-uxdrop-equip]').forEach(b=>b.addEventListener('click',()=>{return ActionDispatcher.dispatch({type:'DROP_EQUIPPED',args:[p,b.dataset.uxdropEquip],source:'inventory'}).value}));
+  }
+function normalizeInventoryTab(){if(inventoryTab==='food')inventoryTab='recovery';if(inventoryTab==='potion')inventoryTab='strategy';if(inventoryTab==='treasure')inventoryTab='relic'}
+function decorateInventoryStage(){return decorateInventory()}
+function cleanInventoryTaxonomy(){return cleanInventory()}
+function bindInspectButtons(){
+    const box=document.getElementById('inventory');if(!box||!state)return;
+    box.querySelectorAll('[data-invinspect]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player.inventory[+n.dataset.invinspect];if(it)showInspect(it.name,itemHtml(it))})});
+    box.querySelectorAll('[data-uxinspectequip]').forEach(b=>{const n=b.cloneNode(true);b.replaceWith(n);n.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const it=state.player[n.dataset.uxinspectequip];if(it)showInspect(it.name,itemHtml(it))})});
+  }
+function foodInventoryActions(){const selected=inventorySelection>=0?state.player.inventory[inventorySelection]:null,btn=document.querySelector('#inventory [data-invuse]');if(btn&&(selected?.mineItem105==='stone'||selected?.throwable)){btn.textContent='투척';btn.disabled=false}else if(btn&&selected?.type==='ingredient'){btn.textContent='조리 전용';btn.disabled=true}else if(btn&&selected?.throwableFood57)btn.textContent='투척'}
+function ammoInventory(){const box=document.getElementById('inventory');if(box&&state){box.querySelectorAll('[data-invuse]').forEach(b=>{const it=state.player.inventory[+b.dataset.invuse];if(it?.type==='ammo')b.textContent=it.ammoKind===state.player.loadedAmmoKind?'장전됨':'장전'});box.querySelectorAll('[data-invslot]').forEach(b=>{const it=state.player.inventory[+b.dataset.invslot];if(it?.type==='ammo'){if(it.ammoKind===state.player.loadedAmmoKind)b.classList.add('ammo967-loaded');const role=b.querySelector('.uxRole47');if(role)role.textContent='탄약'}})}}
+function clearClosedBagPanel(){if(!inventoryOpen){const box=document.getElementById('inventory');if(box)box.innerHTML=''}}
+function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.length||0}
+function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
+function blockWhileZooming(){return !window.__manruZoomActive}
+function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}

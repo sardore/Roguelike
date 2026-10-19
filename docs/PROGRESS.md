@@ -82,6 +82,19 @@
 | P2→ui | SPINE_RESIDUE P2: 공용 선언 → ui.js | 5791 | 148 / 573 | 755 | 78% | - |
 | P2→kernel | SPINE_RESIDUE P2: 공용 선언 → kernel.js | 5791 | 147 / 573 | 755 | 78% | - |
 | P2→render | SPINE_RESIDUE P2: 공용 선언 → render.js | 5781 | 146 / 573 | 755 | 78% | - |
+| P3→recipe | P3-1: RECIPE becomes one literal (FUSION_RECIPES) next to the Map built from it | 5727 | 145 / 532 | 755 | 78.2% | - |
+| P3→descend | P3: DESCEND_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5725 | 145 / 530 | 755 | 78.2% | - |
+| P3→runend | P3: RUN_END_EFFECTS53 registrations become an array literal (2 stages, named functions) | 5723 | 145 / 528 | 755 | 78.2% | - |
+| P3→runend-move | P3: RUN_END_EFFECTS53 declaration moves to save.js (the previous commit said it did) | 5722 | 144 / 528 | 755 | 78.2% | - |
+| P3→playerstats | P3: PLAYER_STAT_STAGES55 registrations become an array literal (5 stages, named functions) | 5716 | 142 / 523 | 754 | 78.3% | - |
+| P3→attackcost | P3: ATTACK_COST_STAGES55 registrations become an array literal (4 stages, named functions) | 5711 | 140 / 519 | 753 | 78.3% | - |
+| P3→movecost | P3: MOVE_COST_STAGES55 registrations become an array literal (4 stages, named functions) | 5705 | 138 / 515 | 752 | 78.3% | - |
+| P3→panels | P3: PANEL_HOOKS54 registrations become an array literal (2 stages, named functions) | 5698 | 136 / 510 | 751 | 78.3% | - |
+| P3→inventory | P3: INVENTORY_RENDER_R34 registrations become an array literal (10 stages, named functions) | 5655 | 135 / 500 | 750 | 78.5% | - |
+| P3→boss | P3: BOSS_REWARD_STAGES registrations become an array literal (1 stages, named functions) | 5653 | 134 / 499 | 749 | 78.5% | - |
+| P3→pickup | P3: MANRU_PICKUP_PIPELINE_R25 registrations become an array literal (6 stages, named functions) | 5640 | 133 / 495 | 748 | 78.5% | - |
+| P3→movehooks | P3: MOVE_HOOKS_R8 registrations become an array literal (10 stages, named functions) | 5629 | 131 / 485 | 746 | 78.6% | - |
+| P3 정리 | P3: 접미사 개명, 도구 삭제, 문서 | 5629 | 131 / 485 | 744 | 78.6% | - |
 
 ## 현재 파일별 줄 수
 
@@ -89,20 +102,20 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 754 |
-| items.js | 977 |
-| combat.js | 662 |
-| monsters.js | 2277 |
-| render.js | 4950 |
+| save.js | 755 |
+| items.js | 1046 |
+| combat.js | 666 |
+| monsters.js | 2282 |
+| render.js | 4952 |
 | mapgen.js | 3332 |
 | special.js | 2038 |
 | branches.js | 2404 |
-| elements.js | 248 |
+| elements.js | 251 |
 | world.js | 498 |
 | layout.js | 746 |
-| input.js | 256 |
-| story.js | 213 |
-| ui.js | 953 |
-| spine.js | 5781 |
+| input.js | 258 |
+| story.js | 223 |
+| ui.js | 998 |
+| spine.js | 5629 |
 | start.js | 6 |
-| (total) | 26293 |
+| (total) | 26282 |
