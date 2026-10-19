@@ -84,7 +84,6 @@ function monsterAttackLineR(mon,range,context={}){const target=context.target||s
 function monsterIsEvil(mon){
   return ["undead","eldritch","mutant"].includes(mon.kind);
 }
-function setMonsterAttackBaseR(id,fn){if(typeof fn!=='function')throw new TypeError('monster attack base must be a function');MANRU_ATTACK_PIPELINE_R.monsterBase={id,fn};return fn}
 function monsterAttackContextR(context={}){
   const src=context&&typeof context==='object'&&!Array.isArray(context)?context:{};
   const delivery=['melee','ranged','area','hazard'].includes(src.delivery)?src.delivery:'melee',projectile=src.projectile??delivery==='ranged',reflectable=src.reflectable??projectile;

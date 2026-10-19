@@ -688,7 +688,6 @@ try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){i
 
 
 
-setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 
 
@@ -698,7 +697,6 @@ setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 
 
-setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
 
 
@@ -1778,7 +1776,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
 
 
-  setPlayerAttackBaseR('combat54',attackPlayerCore54R);
   /* r15: boss knockback cap is handled by canonical knockMonster. */
 
   /* ---------- boss telegraph / phase system ---------- */
