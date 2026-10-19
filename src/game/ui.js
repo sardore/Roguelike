@@ -996,3 +996,15 @@ function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.len
 function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
 function blockWhileZooming(){return !window.__manruZoomActive}
 function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}
+let inventoryFiltered;
+  function tabCount(kind){
+    const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
+  }
+  function restoreInventoryScroll45(grid,tab=inventoryTab){
+    if(!grid)return;
+    const top=Math.max(0,UX.invScrollByTab[tab]||0);
+    grid.scrollTop=top;
+    grid.addEventListener('scroll',()=>{UX.invScrollByTab[tab]=Math.max(0,grid.scrollTop||0)},{passive:true});
+  }
+  const targeting81=()=>actionTargetOpen56();
+  let selectedClass1001=CLASSES[0].id;

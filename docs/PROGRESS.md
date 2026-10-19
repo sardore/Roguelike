@@ -99,6 +99,7 @@
 | P5→branches | spine 선언 → branches.js (P3로 풀린 것) | 5617 | 126 / 485 | 744 | 78.6% | - |
 | P5→combat | spine 선언 → combat.js (P3로 풀린 것) | 5616 | 124 / 485 | 744 | 78.6% | - |
 | P5→mapgen | spine 선언 → mapgen.js (P3로 풀린 것) | 5582 | 121 / 485 | 744 | 78.8% | - |
+| P5→ui | spine 선언 → ui.js (P3로 풀린 것) | 5575 | 116 / 485 | 744 | 78.8% | - |
 
 ## 현재 파일별 줄 수
 
@@ -119,7 +120,7 @@
 | layout.js | 746 |
 | input.js | 258 |
 | story.js | 223 |
-| ui.js | 998 |
-| spine.js | 5582 |
+| ui.js | 1010 |
+| spine.js | 5575 |
 | start.js | 6 |
-| (total) | 26291 |
+| (total) | 26296 |

@@ -939,7 +939,7 @@ ActionDispatcher.register('MARTIAL',activateMartial);
 ActionDispatcher.register('ITEM_USE',useInventoryItem);
 
 ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
-let inventoryFiltered;
+
 
 
 
@@ -1557,18 +1557,11 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  function tabCount(kind){
-    const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
-  }
 
 
 
-  function restoreInventoryScroll45(grid,tab=inventoryTab){
-    if(!grid)return;
-    const top=Math.max(0,UX.invScrollByTab[tab]||0);
-    grid.scrollTop=top;
-    grid.addEventListener('scroll',()=>{UX.invScrollByTab[tab]=Math.max(0,grid.scrollTop||0)},{passive:true});
-  }
+
+
 
   // replace the accumulated inventory implementations with one thumb-friendly renderer.
 
@@ -2752,7 +2745,7 @@ document.body.classList.add('mf75-clean');
 
   
   
-  const targeting81=()=>actionTargetOpen56();
+
 
 
   
@@ -4192,7 +4185,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  let selectedClass1001=CLASSES[0].id;
+
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
 
 
