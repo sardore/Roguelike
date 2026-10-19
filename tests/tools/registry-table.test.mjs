@@ -89,3 +89,11 @@ test('a named function that is a const declared after the container is refused; 
   k = work({ 'a.js': 'const R=new Map();\nfunction reg(t,f){R.set(t,f)}\nreg("x",early);\nfunction early(){}' }, spec);
   assert.equal(k.run().code, 0);
 });
+
+test('an inline stage with the same parameters and body as an existing function points at that function', () => {
+  const k = work({ 'a.js': 'const R=new Map();\nfunction reg(t,f){R.set(t,f)}\nfunction mark(){return Date.now()}\nreg("x",()=>{return Date.now()});\nreg("y",function(){return Date.now()});' }, { callees: ['reg'], container: { decl: 'R', kind: 'map' }, entry: { form: 'pair' }, autoName: { suffix: 'Route', defaultDest: 'a.js' }, removeFunctions: ['reg'] });
+  const r = k.run();
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.after, /new Map\(\[\["x",mark\],\["y",mark\]\]\)/);
+  assert.doesNotMatch(r.after, /xRoute|yRoute/);
+});

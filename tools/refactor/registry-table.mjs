@@ -71,6 +71,7 @@ function plurality(node) {
   return Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 }
 const decisions = [];
+const reused = [];
 const identRefs = []; // named functions the table points at: they must exist when the table is built
 function fnRef(node, key) {
   if (!node) return 'null';
@@ -100,6 +101,10 @@ function fnRef(node, key) {
     const head = text.indexOf('(', node.id ? node.id.end : node.start);
     fn = `function ${name}${text.slice(head, node.end)}`;
   } else fail(`${key}: unsupported function node ${node.type}`);
+  // a stage that is the same function as one the program already has (same parameters, same body) points at that one
+  const norm = (t, n) => t.replace(`function ${n}`, 'function').replace(/\s+/g, ' ');
+  const same = closure.body.find((t) => t.type === 'FunctionDeclaration' && t.id.name !== name && norm(slice(t), t.id.name) === norm(fn, name));
+  if (same) { decisions.push(`${key}: same function as ${same.id.name}`); taken.delete(name); reused.push(`${key} -> ${same.id.name}`); return same.id.name; }
   newFns.push({ name, dest, text: fn });
   return name;
 }
@@ -236,5 +241,5 @@ for (const e of edits) out = out.slice(0, e.start) + e.text + out.slice(e.end);
 out = out.split('\n').flatMap((l) => (l.includes('\u0001') ? (l.replace(/\u0001/g, '').trim() === '' ? [] : [l.replace(/\u0001/g, '')]) : [l])).join('\n');
 acorn.parse(out, { ecmaVersion: 'latest' });
 if (process.argv.includes('--verbose')) console.log(decisions.join('\n'));
-console.log(`${spec.container.decl}: ${handled.length} calls -> entries; ${newFns.length} new functions (${newFns.map((f) => `${f.name}@${f.dest}`).join(', ') || 'none'})${deadFns.length ? `; removed ${deadFns.length} function(s) only an overwritten call used: ${deadFns.join(', ')}` : ''}`);
+console.log(`${spec.container.decl}: ${handled.length} calls -> entries; ${newFns.length} new functions (${newFns.map((f) => `${f.name}@${f.dest}`).join(', ') || 'none'})${reused.length ? `; reused existing functions: ${reused.join(', ')}` : ''}${deadFns.length ? `; removed ${deadFns.length} function(s) only an overwritten call used: ${deadFns.join(', ')}` : ''}`);
 if (!dry) fs.writeFileSync(work, out);
