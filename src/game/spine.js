@@ -508,7 +508,7 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
+
 
 
 
@@ -3065,7 +3065,7 @@ document.body.classList.add('mf75-clean');
 
 
 
-  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
+
 
 
   // Perfume River walls are stone mountain / gorge walls, not purple room walls.

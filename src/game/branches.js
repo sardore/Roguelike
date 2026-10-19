@@ -2402,3 +2402,5 @@ function safeLootGround42(x,y){
   if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
   const t=state.map[y]?.[x];return !dangerousLootTerrain42(t)&&!tileBlocks(t)&&t!==TT.STAIR&&t!==TT.KEY_TILE&&t!==TT.PORTAL&&t!==TT.DOOR;
 }
+const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
+  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
