@@ -146,3 +146,15 @@ test('snapdiff: differing, missing and mapped names; function names are ignored'
   assert.match(r.differing.join('\n'), /X differs/);
   assert.match(r.differing.join('\n'), /R is missing/);
 });
+
+test('snapdiff: a member removed on purpose is taken out of the old value; a removal that did not happen is reported', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snap-test-'));
+  const w = (n, o) => { const f = path.join(dir, n); fs.writeFileSync(f, JSON.stringify(o)); return f; };
+  const old = w('a', { boot: { Engine: { register: '<fn register>', stages: [1] } } });
+  const now = w('b', { boot: { Engine: { stages: [1] } } });
+  assert.deepEqual(compareSnapshots(old, now, {}, { Engine: ['register'] }).differing, []);
+  assert.match(compareSnapshots(old, now).differing.join('\n'), /Engine differs/);
+  const changed = w('c', { boot: { Engine: { stages: [1, 2] } } });
+  assert.match(compareSnapshots(old, changed, {}, { Engine: ['register'] }).differing.join('\n'), /Engine differs/);
+  assert.match(compareSnapshots(now, now, {}, { Engine: ['register'] }).differing.join('\n'), /Engine\.register is not a member/);
+});

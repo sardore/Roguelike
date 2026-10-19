@@ -61,6 +61,8 @@ function main() {
   const label = opt('--label') || 'gate';
   const summaryFile = opt('--summary');
   const map = Object.fromEntries(args.flatMap((a, i) => (args[i - 1] === '--map' ? [a.split('=')] : [])));
+  const removed = {};
+  for (const [i, a] of args.entries()) if (args[i - 1] === '--removed') { const [n, m] = a.split(':'); (removed[n] ||= []).push(...m.split(',')); }
   const steps = gateSteps();
   const done = runSteps(steps);
   const unchanged = done.filter((d) => d.stdout).map((d) => /behaviour unchanged: (\d+) checks/.exec(d.stdout)?.[1]);
@@ -74,7 +76,7 @@ function main() {
       const reads = path.join(repo, 'tools', 'refactor', 'load-reads.mjs');
       run([node, reads, namesFile, '--root', oldRoot, '--out', path.join(tmp, 'lr-old'), '--snapshot', path.join(tmp, 'old.json')], { cwd: repo, capture: true });
       run([node, reads, namesFile, '--out', path.join(tmp, 'lr-new'), '--snapshot', path.join(tmp, 'new.json')], { cwd: repo, capture: true });
-      const cmp = compareSnapshots(path.join(tmp, 'old.json'), path.join(tmp, 'new.json'), map);
+      const cmp = compareSnapshots(path.join(tmp, 'old.json'), path.join(tmp, 'new.json'), map, removed);
       summary.values = { compared: cmp.compared, differing: cmp.differing.length };
       if (cmp.differing.length) throw new Error(`load-end values differ:\n${cmp.differing.slice(0, 20).join('\n')}`);
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }

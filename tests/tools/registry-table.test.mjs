@@ -22,15 +22,15 @@ test('a Map of routes: calls become entries in source order, inline functions ar
   const k = work({
     'a.js': 'const A1=1;\nconst ROUTES=new Map();\nfunction reg(t,f){ROUTES.set(t,f)}\nreg("go",()=>A1);',
     'b.js': 'const B1=2;\nreg("stop",function(x){return B1+x});\nreg("same",existing);\nfunction existing(){}',
-  }, { callees: ['reg'], container: { decl: 'ROUTES', kind: 'map' }, entry: { form: 'pair' }, autoName: { suffix: 'Route', defaultDest: 'a.js' }, removeFunctions: ['reg'] });
+  }, { callees: ['reg'], container: { decl: 'ROUTES', kind: 'map' }, entry: { form: 'pair' }, names: { stop: 'haltHandler' }, autoName: { suffix: 'Route', defaultDest: 'a.js' }, removeFunctions: ['reg'] });
   const r = k.run();
   assert.equal(r.code, 0, r.out);
-  assert.match(r.after, /const ROUTES=new Map\(\[\["go",goRoute\],\["stop",stopRoute\],\["same",existing\]\]\)/);
+  assert.match(r.after, /const ROUTES=new Map\(\[\["go",goRoute\],\["stop",haltHandler\],\["same",existing\]\]\)/);
   assert.match(r.after, /function goRoute\(\)\{return A1\}/);
-  assert.match(r.after, /function stopRoute\(x\)\{return B1\+x\}/);
+  assert.match(r.after, /function haltHandler\(x\)\{return B1\+x\}/);
   assert.doesNotMatch(r.after, /reg\(/);
   assert.ok(r.after.indexOf('function goRoute') < r.after.indexOf('/*@@FILE b.js@@*/'), 'goRoute stays with A1 in a.js');
-  assert.ok(r.after.indexOf('function stopRoute') > r.after.indexOf('/*@@FILE b.js@@*/'), 'stopRoute goes to b.js with B1');
+  assert.ok(r.after.indexOf('function haltHandler') > r.after.indexOf('/*@@FILE b.js@@*/'), 'haltHandler goes to b.js with B1');
 });
 
 test('a value container keeps the last call and drops the earlier ones', () => {

@@ -6,7 +6,7 @@
 //     "gate": ["node", "tools/gate.mjs"],             optional; the names/map/summary options are added per step
 //     "baseline": ["node", "tools/check-structure.mjs", "--update-baseline"],   optional
 //     "steps": [ { "id": "mv-save", "apply": [["node", "tools/game.mjs", "assemble"], …],
-//                  "names": ".work/mv-save.names", "map": { "OLD": "NEW" },
+//                  "names": ".work/mv-save.names", "map": { "OLD": "NEW" }, "removed": { "Obj": ["member"] },
 //                  "subject": "…", "body": "text of the commit message body", "paths": ["src", "docs", "tools", "tests"] } ] }
 // A step: apply commands (each must exit 0) -> gate -> lower the structure baseline -> git add -> git commit -> git push.
 // Nothing is run through a shell and no command's output is piped: any command that fails stops the chain with exit 1
@@ -59,6 +59,7 @@ export function runChain(job, { cwd = process.cwd(), from = null, log = console.
       const gate = [...(job.gate || [node, path.join(path.dirname(fileURLToPath(import.meta.url)), 'gate.mjs')]), '--label', s.id, '--summary', summaryFile];
       if (s.names) gate.push('--names', s.names);
       for (const [k, v] of Object.entries(s.map || {})) gate.push('--map', `${k}=${v}`);
+      for (const [k, v] of Object.entries(s.removed || {})) gate.push('--removed', `${k}:${[].concat(v).join(',')}`);
       run(gate, { cwd });
       const summary = fs.existsSync(summaryFile) ? JSON.parse(fs.readFileSync(summaryFile, 'utf8')) : null;
       log(`step ${s.id}: lower baseline, commit, push`);

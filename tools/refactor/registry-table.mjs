@@ -19,7 +19,7 @@
 //   "fnFields": ["fn","pre","post"],                              fields whose value is a stage function (inline functions get a name)
 //   "names": { "<id>": "functionName" }, "dest": { "functionName": "combat.js" },   inline function -> declaration in that file
 //   "autoName": { "suffix": "Route", "defaultDest": "save.js" }   instead of "names"/"dest": the name is the id without digits, in camelCase, plus
-//                                                                 the suffix (a trailing "-pre"/"-post" stays); the file is the one whose declarations
+//                                                                 the suffix (a trailing "-pre"/"-post" stays; "names" may give one entry another name); the file is the one whose declarations
 //                                                                 the function uses most (outside spine.js), else defaultDest
 //   "removeFunctions": ["registerMinimapHook"],                   deleted when nothing but the handled calls used them
 //   "removeMembers": [{ "decl": "TurnEngine", "member": "register" }]   a method/property deleted from the declaration's object literal
@@ -74,7 +74,7 @@ function fnRef(node, key) {
   if (node.type === 'Identifier') return node.name;
   if (node.type === 'Literal' && node.value === null) return 'null';
   if (spec.autoName) {
-    const name = camel(key) + spec.autoName.suffix;
+    const name = spec.names?.[key] || camel(key) + spec.autoName.suffix; // "names" overrides the automatic name of one entry (when it is already taken)
     if (!spec.dest) spec.dest = {};
     spec.dest[name] ||= plurality(node) || spec.autoName.defaultDest;
     spec.names = { ...(spec.names || {}), [key]: name };
