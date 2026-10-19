@@ -5,6 +5,6 @@ if git diff --cached --name-only | grep -qE '^(src/|tools/check-structure\.mjs|t
   node tools/check-structure.mjs || exit 1
 fi
 # The refactor driver tools have failure-path tests (tests/tools); run them when those tools change.
-if git diff --cached --name-only | grep -qE '^(tools/(chain|gate)\.mjs|tools/refactor/(move-stmt|move-to|registry-table)\.mjs|tools/lib/(proc|snapdiff)\.mjs|tests/tools/)'; then
+if git diff --cached --name-only | grep -qE '^(tools/(chain|gate)\.mjs|tools/refactor/(move-stmt|move-to|registry-table|fold-patches)\.mjs|tools/lib/(proc|snapdiff)\.mjs|tests/tools/)'; then
   npm run --silent test:tools || exit 1
 fi
