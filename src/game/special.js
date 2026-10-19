@@ -2036,3 +2036,5 @@ function spreadFloor22R43(){
 }
   const WALLLIKE88=new Set([TT.WALL,TT.WINDOW]);
 function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+ox===x&&mon.y+oy===y)}
+  /* v10.0.4 strict typed-key final pass: later architecture layers are not allowed to reopen a bypass. */
+  const strictKeyFloors1004=new Set(strictLockFloors()||[]);

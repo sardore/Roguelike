@@ -4272,8 +4272,7 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 
-  /* v10.0.4 strict typed-key final pass: later architecture layers are not allowed to reopen a bypass. */
-  const strictKeyFloors1004=new Set(strictLockFloors()||[]);
+
   // r18: strict typed-key retries run inside the canonical generation pipeline so failed attempts
   // do not also consume holy/story/item side effects through nested generation wrappers.
   
