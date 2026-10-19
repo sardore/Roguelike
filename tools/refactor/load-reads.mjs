@@ -2,12 +2,14 @@
 // Measurement tool (read-only for src/): which top-level bindings of the game closure are actually read while the
 // closure is still loading, and which of those reads hit the temporal dead zone (a read before the declaration ran,
 // which throws and is then caught somewhere, or fails the boot).
-//   node tools/refactor/load-reads.mjs <names.txt> [--root dist-qa] [--out <dir>] [--snapshot <file.json>]
+//   node tools/refactor/load-reads.mjs <names.txt> [--root dist-qa] [--out <dir>] [--snapshot <file.json>] [--sites]
 // It copies the built tree (default dist-qa/, build it first) to <out>, rewrites every read of the listed names in
 // scripts/10-runtime.js into a probe, boots the copy in the situations that change what runs at load time
 // (empty storage, each V40 save fixture, ?debug=1, mobile viewport) and prints, per name, the load-time reads seen
 // (ok = read after its declaration ran, tdz = read before) with the first call site of each kind.
 // A name with no load-time read can be declared anywhere earlier in the closure without changing behaviour.
+// --sites lists, per name, every call site that read it while loading with the number of reads (the port of the test server is removed), to tell
+// the reads of a registration function from the reads of anything else.
 // --snapshot also records the value of every listed name (and of every `globalThis.NAME` line: a published global) when the closure has finished loading (functions by name,
 // DOM nodes by tag/id, cycles cut), per situation, into a JSON file: two builds' snapshots compared show whether a
 // move changed what a declaration holds.
@@ -33,7 +35,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.cpSync(root, out, { recursive: true });
 const rtFile = path.join(out, 'scripts', '10-runtime.js');
 const text = fs.readFileSync(rtFile, 'utf8');
-const { text: instrumented, found, sites } = instrumentRuntime(text, { probe: names, snapshot: snapshotFile ? names : null, globals: snapshotFile ? globals : null });
+const { text: instrumented, found, sites } = instrumentRuntime(text, { probe: names, snapshot: snapshotFile ? names : null, globals: snapshotFile ? globals : null, allSites: args.includes('--sites') });
 for (const n of names) if (!found.has(n)) console.log(`warning: ${n} is not a top-level binding of the game closure`);
 fs.writeFileSync(rtFile, instrumented);
 
@@ -55,7 +57,8 @@ for (const [label, o] of situations) {
   if (r.loading !== false) { console.log(`${label}: the closure did not finish loading (errors: ${JSON.stringify(s.errors)})`); process.exitCode = 1; }
   if (s.errors.length) { console.log(`${label}: page errors ${JSON.stringify(s.errors)}`); process.exitCode = 1; }
   for (const [n, h] of Object.entries(r.hits || {})) {
-    const t = (total[n] ||= { ok: 0, tdz: 0, okSite: null, tdzSite: null, situations: [] });
+    const t = (total[n] ||= { ok: 0, tdz: 0, okSite: null, tdzSite: null, situations: [], sites: {} });
+    for (const [k, c] of Object.entries(h.sites || {})) { const key = k.replace(/http:\/\/127\.0\.0\.1:\d+\/scripts\/10-runtime\.js:/g, 'L'); t.sites[key] = (t.sites[key] || 0) + c; }
     t.ok += h.ok; t.tdz += h.tdz; t.okSite ||= h.okSite; t.tdzSite ||= h.tdzSite; t.situations.push(label);
   }
   await s.close();
@@ -66,5 +69,5 @@ console.log(`probed ${found.size} names, ${sites} read sites, ${situations.lengt
 for (const n of [...found].sort()) {
   const t = total[n];
   if (!t) console.log(`${n}\tnot read at load`);
-  else console.log(`${n}\tok ${t.ok} tdz ${t.tdz}\t[${[...new Set(t.situations)].join(', ')}]${t.tdzSite ? `\n  tdz at ${t.tdzSite}` : ''}${t.okSite ? `\n  ok at ${t.okSite}` : ''}`);
+  else console.log(`${n}\tok ${t.ok} tdz ${t.tdz}\t[${[...new Set(t.situations)].join(', ')}]${t.tdzSite ? `\n  tdz at ${t.tdzSite}` : ''}${t.okSite ? `\n  ok at ${t.okSite}` : ''}${Object.entries(t.sites).map(([k, c]) => `\n  site ${k} x${c}`).join('')}`);
 }

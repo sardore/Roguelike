@@ -23,6 +23,8 @@
 //                                                                 the function uses most (outside spine.js), else defaultDest
 //   "removeFunctions": ["registerMinimapHook"],                   deleted when nothing but the handled calls used them
 //   "removeMembers": [{ "decl": "TurnEngine", "member": "register" }]   a method/property deleted from the declaration's object literal
+//                    [{ "global": "NAME", "member": "register" }]          ... or from the object literal assigned to globalThis.NAME at the top level
+//                                                                 (a removed member that is still referenced elsewhere, other than by a handled call, stops the tool)
 // }
 // The handled calls are top-level expression statements; every call of a callee anywhere in the program must be one of them
 // (otherwise the tool stops). Entries keep the source order of the calls. A new function takes the stage's parameters and body
@@ -69,9 +71,10 @@ function plurality(node) {
   return Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 }
 const decisions = [];
+const identRefs = []; // named functions the table points at: they must exist when the table is built
 function fnRef(node, key) {
   if (!node) return 'null';
-  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'Identifier') { identRefs.push(node); return node.name; }
   if (node.type === 'Literal' && node.value === null) return 'null';
   if (spec.autoName) {
     const name = spec.names?.[key] || camel(key) + spec.autoName.suffix; // "names" overrides the automatic name of one entry (when it is already taken)
@@ -135,6 +138,11 @@ for (const st of lastOnly ? handled.slice(-1) : handled) {
 const declStmt = closure.body.find((s) => s.type === 'VariableDeclaration' && s.declarations.some((d) => d.id.name === spec.container.decl));
 if (!declStmt) fail(`${spec.container.decl} is not declared at the top level`);
 const d = declStmt.declarations.find((x) => x.id.name === spec.container.decl);
+// a table is built where its container is declared: a const/let function (not hoisted) declared after that point would be read too early
+for (const id of identRefs) {
+  const b = A.bindings.find((x) => x.name === id.name && x.scope === closure);
+  if (b && b.kind !== 'function' && b.idNode.start > declStmt.start) fail(`${id.name} is a ${b.kind} declared after ${spec.container.decl} (line ${b.idNode.loc.start.line}): the table would read it before it exists`);
+}
 const edits = [];
 const objectOf = (init) => (init.type === 'ObjectExpression' ? init : init.type === 'CallExpression' ? init.arguments.find((a) => a.type === 'ObjectExpression') : null);
 if (spec.container.kind === 'map') {
@@ -160,11 +168,21 @@ if (spec.container.kind === 'map') {
   decisions.push(`dropped ${handled.length - 1} earlier call(s): ${handled.slice(0, -1).map((h) => slice(h.expression.arguments[0])).join(', ')}; kept ${slice(handled.at(-1).expression.arguments[0])}`);
 } else fail(`unknown container kind ${spec.container.kind}`);
 for (const st of handled) edits.push({ start: st.start, end: st.end, text: '\u0001' });
-for (const m of spec.removeMembers || []) {
+// the object literal a removeMembers entry names: the initialiser of a top-level declaration ({decl}), or the value assigned to a published global ({global})
+const literalOf = (m) => {
+  if (m.global) {
+    const st = closure.body.find((t) => t.type === 'ExpressionStatement' && t.expression.type === 'AssignmentExpression' && slice(t.expression.left).replace(/\s+/g, '') === `globalThis.${m.global}` && t.expression.right.type === 'ObjectExpression');
+    return st?.expression.right;
+  }
   const dd = closure.body.find((s) => s.type === 'VariableDeclaration' && s.declarations.some((x) => x.id.name === m.decl))?.declarations.find((x) => x.id.name === m.decl);
-  const obj = dd && objectOf(dd.init);
+  return dd && objectOf(dd.init);
+};
+const removedProps = [];
+for (const m of spec.removeMembers || []) {
+  const obj = literalOf(m);
   const pn = obj?.properties.find((p) => (p.key?.name ?? p.key?.value) === m.member);
-  if (!pn) fail(`${m.decl}.${m.member} not found`);
+  if (!pn) fail(`${m.decl || 'globalThis.' + m.global}.${m.member} not found`);
+  removedProps.push(pn);
   const after = text.slice(pn.end).match(/^\s*,/);
   if (after) edits.push({ start: pn.start, end: pn.end + after[0].length, text: '' });
   else {
@@ -172,6 +190,15 @@ for (const m of spec.removeMembers || []) {
     if (!before) fail(`${m.decl}.${m.member}: cannot tell its separator`);
     edits.push({ start: pn.start - before[0].length, end: pn.end, text: '' });
   }
+}
+// a removed member must not be referenced anywhere else: DECL.member outside the handled calls and the removed properties is a use that would break
+for (const m of (spec.removeMembers || []).filter((x) => x.decl)) {
+  (function walk(n) {
+    if (!n || typeof n.type !== 'string') return;
+    if (n.type === 'MemberExpression' && !n.computed && n.object.type === 'Identifier' && n.object.name === m.decl && n.property.name === m.member
+      && !handled.some((h) => h.expression.callee === n) && !removedProps.some((p) => p.start <= n.start && n.end <= p.end)) fail(`${m.decl}.${m.member} is still referenced at line ${n.loc.start.line} (not a handled call)`);
+    for (const k in n) { if (k === 'loc') continue; const v = n[k]; if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v.type === 'string') walk(v); }
+  })(ast);
 }
 const removed = new Set(handled);
 for (const name of spec.removeFunctions || []) {

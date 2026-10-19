@@ -66,3 +66,24 @@ test('an arrow function that uses this or arguments is refused; a stage object w
   assert.equal(r2.code, 0, r2.out);
   assert.match(r2.after, /stages:\[\{id:"t",pre:tPreTurn,post:tPostTurn\}\]/);
 });
+
+test('a removed member must not be referenced elsewhere; a published global loses its copy of the member', () => {
+  const base = { callees: ['E.register'], container: { decl: 'E', kind: 'prop', prop: 'stages' }, entry: { form: 'obj', fields: { id: 0, post: '1.post' }, defaults: { post: 'null' } }, fnFields: ['post'], autoName: { suffix: 'Turn', defaultDest: 'a.js' } };
+  let k = work({ 'a.js': 'const E={stages:[],register(id,s){E.stages.push({id,...s})}};\nE.register("t",{post(){return 1}});\nconst use=E.register;' }, { ...base, removeMembers: [{ decl: 'E', member: 'register' }] });
+  let r = k.run();
+  assert.equal(r.code, 1); assert.match(r.out, /E\.register is still referenced/); assert.equal(r.after, k.text);
+  k = work({ 'a.js': 'const E={stages:[],register(id,s){E.stages.push({id,...s})}};\nglobalThis.PUB={register:E.register,abort:1};\nE.register("t",{post(){return 1}});' }, { ...base, removeMembers: [{ decl: 'E', member: 'register' }, { global: 'PUB', member: 'register' }] });
+  r = k.run();
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.after, /globalThis\.PUB=\{abort:1\};/);
+  assert.doesNotMatch(r.after, /register/);
+});
+
+test('a named function that is a const declared after the container is refused; a hoisted one is accepted', () => {
+  const spec = { callees: ['reg'], container: { decl: 'R', kind: 'map' }, entry: { form: 'pair' }, autoName: { suffix: 'Route', defaultDest: 'a.js' } };
+  let k = work({ 'a.js': 'const R=new Map();\nfunction reg(t,f){R.set(t,f)}\nconst late=()=>1;\nreg("x",late);' }, spec);
+  let r = k.run();
+  assert.equal(r.code, 1); assert.match(r.out, /late is a const declared after R/); assert.equal(r.after, k.text);
+  k = work({ 'a.js': 'const R=new Map();\nfunction reg(t,f){R.set(t,f)}\nreg("x",early);\nfunction early(){}' }, spec);
+  assert.equal(k.run().code, 0);
+});

@@ -1,6 +1,7 @@
 // Rewrites a built runtime (dist-*/scripts/10-runtime.js) for load-time measurements of the game closure:
 // - probe: every read of the named top-level bindings goes through globalThis.__MANRU_LOAD_PROBE__, which counts the
 //   reads made while the closure loads (globalThis.__MANRU_LOAD_HITS__: ok = after the declaration ran, tdz = before);
+//   allSites also counts the reads per call site (the innermost stack frame), for "who reads this while loading";
 // - snapshot: when the closure has finished loading, the named top-level values (or all of them) are serialised into
 //   globalThis.__MANRU_SNAPSHOT__ (functions by name, DOM nodes by tag/id/src, cycles cut).
 // Used by tools/refactor/load-reads.mjs and the `values` test scenario.
@@ -9,14 +10,14 @@ import { analyze } from './scope.mjs';
 
 const SERIALIZE = `(v)=>{const seen=new Map();const go=(x,d)=>{if(x===null||typeof x!=='object'&&typeof x!=='function')return typeof x==='number'&&!Number.isFinite(x)?String(x):x===undefined?'<undefined>':x;if(typeof x==='function')return'<fn '+(x.name||'?')+'>';if(typeof Node!=='undefined'&&x instanceof Node)return'<'+(x.nodeName||'node')+(x.id?'#'+x.id:'')+(x.getAttribute?.('src')?' '+x.getAttribute('src').length+':'+x.getAttribute('src').slice(-40):'')+'>';if(seen.has(x))return'<cycle '+seen.get(x)+'>';seen.set(x,d);if(d>6)return'<deep>';if(x instanceof Map)return{'<Map>':[...x].map(([k,w])=>[go(k,d+1),go(w,d+1)])};if(x instanceof Set)return{'<Set>':[...x].map((w)=>go(w,d+1))};if(Array.isArray(x))return x.map((w)=>go(w,d+1));const o={};for(const k of Object.keys(x))o[k]=go(x[k],d+1);return o};return go(v,0)}`;
 
-const PRELUDE = `globalThis.__MANRU_LOADING__=true;globalThis.__MANRU_LOAD_HITS__={};
-globalThis.__MANRU_LOAD_PROBE__=(n,f)=>{if(!globalThis.__MANRU_LOADING__)return f();const h=(globalThis.__MANRU_LOAD_HITS__[n]||={ok:0,tdz:0,okSite:null,tdzSite:null});const site=()=>String(new Error().stack).split('\\n').slice(2,12).map((l)=>l.trim()).join(' < ');try{const v=f();h.ok++;h.okSite||=site();return v}catch(e){if(e instanceof ReferenceError){h.tdz++;h.tdzSite||=site()}throw e}};
+const PRELUDE = (allSites) => `globalThis.__MANRU_LOADING__=true;globalThis.__MANRU_LOAD_HITS__={};
+globalThis.__MANRU_LOAD_PROBE__=(n,f)=>{if(!globalThis.__MANRU_LOADING__)return f();const h=(globalThis.__MANRU_LOAD_HITS__[n]||={ok:0,tdz:0,okSite:null,tdzSite:null,sites:{}});const site=()=>String(new Error().stack).split('\\n').slice(2,12).map((l)=>l.trim()).join(' < ');try{const v=f();h.ok++;h.okSite||=site();${allSites ? "const k=String(new Error().stack).split('\\n')[2].trim();h.sites[k]=(h.sites[k]||0)+1;" : ''}return v}catch(e){if(e instanceof ReferenceError){h.tdz++;h.tdzSite||=site()}throw e}};
 `;
 
 // probe: Set of names (or null); snapshot: Set of names, 'all' (every top-level const/let/class) or null;
 // globals: Set of property names of globalThis whose value is also serialised when the closure has finished loading
 // (recorded as `globalThis.<name>`: what the game published for other files and for the tests)
-export function instrumentRuntime(text, { probe = null, snapshot = null, globals = null } = {}) {
+export function instrumentRuntime(text, { probe = null, snapshot = null, globals = null, allSites = false } = {}) {
   const ast = acorn.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
   const closure = ast.body.find((s) => s.type === 'ExpressionStatement' && s.expression.type === 'CallExpression' && /Function/.test(s.expression.callee.type));
   if (!closure) throw new Error('game closure not found');
@@ -52,5 +53,5 @@ export function instrumentRuntime(text, { probe = null, snapshot = null, globals
   const at = last.type === 'ReturnStatement' ? last.start : last.end;
   const shift = unique.filter((e) => e.start < at).reduce((d, e) => d + e.text.length - (e.end - e.start), 0);
   out = out.slice(0, at + shift) + '\n' + endMark + '\n' + out.slice(at + shift);
-  return { text: PRELUDE + out, found, sites: unique.length, snapNames };
+  return { text: PRELUDE(allSites) + out, found, sites: unique.length, snapNames };
 }
