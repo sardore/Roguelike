@@ -415,6 +415,36 @@ export const scenarios = {
     return out;
   },
 
+  // The registries of the game (action routes, turn stages, attack stage chains, minimap hooks, presentation updates,
+  // generation pipeline): per registry the entries in the order their reader walks them with ids and a hash of each
+  // function's parameters and body (stageBody), unique ids per registry, and the registries through their readers
+  // (src/qa/qa.js __MANRU_QA_REGISTRIES__ / __MANRU_QA_CONSUMERS__.registries) with test entries at both ends that
+  // record the walking direction. A registration dropped, doubled, reordered or edited changes the baseline.
+  async registries(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 21 });
+    await startRun(s, 'wanderer');
+    const rows = await s.page.evaluate(() => globalThis.__MANRU_QA_REGISTRIES__());
+    const regs = {};
+    for (const r of rows) (regs[r.registry] ||= []).push(r);
+    for (const [name, list] of Object.entries(regs)) {
+      const ids = new Set();
+      for (const r of list) {
+        if (ids.has(r.id)) throw new Error(`registries: ${name} registers ${r.id} twice`);
+        ids.add(r.id);
+      }
+      out[`registries.${name}`] = list.map((r) => [r.id, ...r.fns.map((f) => (f == null ? '' : sha(stageBody(f)).slice(0, 12)))].join('\t')).join('\n');
+    }
+    const probe = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.registries());
+    out['registries.paths'] = JSON.stringify(probe);
+    if (JSON.stringify(probe.attackTrace) !== JSON.stringify(['last-in', 'first-in', 'base', 'first-out', 'last-out'])) throw new Error(`registries: attack stage chain direction changed: ${JSON.stringify(probe.attackTrace)}`);
+    if (JSON.stringify(probe.minimapTrace) !== JSON.stringify(['first', 'last'])) throw new Error(`registries: minimap hook direction changed: ${JSON.stringify(probe.minimapTrace)}`);
+    if (probe.unknown !== 'ignored') throw new Error(`registries: an unknown action was not ignored: ${probe.unknown}`);
+    out['registries.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Features a declaration move can break without changing any snapshot the other scenarios take (F-23): the
   // talisman fusion screen must offer every recipe's result for its pair, and every citadel furnishing must be
   // queued for drawing with a tile (src/qa/qa.js __MANRU_QA_FEATURES__ runs the real code paths).

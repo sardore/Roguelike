@@ -623,6 +623,22 @@ globalThis.__MANRU_QA_STAGES__=()=>{
   DESCEND_EFFECTS.forEach(s=>add('descend','',s));
   return rows;
 };
+// Registries of the game (the `registries` scenario): the action routes, turn stages, attack stage chains, minimap hooks,
+// presentation updates and generation pipeline, each entry with the source of its functions, in the order the readers walk them.
+globalThis.__MANRU_QA_REGISTRIES__=()=>{
+  const src=f=>typeof f==='function'?Function.prototype.toString.call(f):null;
+  const rows=[],add=(registry,id,...fns)=>rows.push({registry,id,fns:fns.map(src)});
+  for(const [type,fn] of ACTION_ROUTES5)add('routes',type,fn);
+  TurnEngine.stages.forEach(x=>add('turn',x.id,x.pre,x.post));
+  const A=MANRU_ATTACK_PIPELINE_R;
+  add('attack','player-base:'+A.playerBase?.id,A.playerBase?.fn);A.playerStages.forEach(x=>add('attack','player:'+x.id,x.fn));
+  add('attack','monster-base:'+A.monsterBase?.id,A.monsterBase?.fn);A.monsterStages.forEach(x=>add('attack','monster:'+x.id,x.fn));
+  add('minimap','before',MINIMAP_PIPELINE.before);MINIMAP_PIPELINE.hooks.forEach(x=>add('minimap',x.id,x.draw));
+  for(const [id,fn] of PRESENTATION_UPDATES)add('presentation',id,fn);
+  const G=MANRU_GENERATION_PIPELINE;
+  add('generation','base:'+G.base?.id,G.base?.fn);G.pre.forEach(x=>add('generation','pre:'+x.id,x.fn));G.post.forEach(x=>add('generation','post:'+x.id,x.fn));
+  return rows;
+};
 // Consumer paths of the stage tables the `stages` scenario cannot reach through getStats/costs (the `consumers` scenario),
 // each run through the real entry point: movePlayer (move hooks: a blocked move, a normal move), pickup (pickup stages on
 // real floor items) and bossReward (the boss reward stages on the floor-5 boss). Test stages added at both ends of a table
@@ -660,6 +676,28 @@ globalThis.__MANRU_QA_CONSUMERS__={
     if(proto){const pot={...clone(proto),x:p.x,y:p.y};state.items.push(pot);const before=p.inventory.length;trace.length=0;const r=pickup();out.picked.push({type:'potion',name:pot.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice(),decorated:Object.keys(pot).sort().join(',')})}
     PICKUP_PIPELINE.stages.shift();PICKUP_PIPELINE.stages.pop();
     out.stages=PICKUP_PIPELINE.stages.length;
+    return out;
+  },
+  // The registries through their real readers, with test entries at both ends that record the direction each reader walks:
+  // an unknown and a known action through ActionDispatcher, a REST through the turn engine (the stage order it reports), a
+  // player attack through the attack chain (stub base), a minimap draw through the minimap hooks (and a digest of the canvas),
+  // the presentation updates.
+  registries(){
+    const out={};
+    out.unknown=ActionDispatcher.dispatch({type:'QA_NO_SUCH_ACTION'}).status;
+    if(state.tutorialEntry60)state.tutorialEntry60.completed=true; // out of the tutorial, so REST runs the real turn stages
+    const rest=ActionDispatcher.dispatch({type:'REST',args:[]});
+    out.rest={status:rest.status,committed:rest.committed,turns:rest.turns?.map(t=>t.stageOrder)||null};
+    const A=MANRU_ATTACK_PIPELINE_R,trace=[],base=A.playerBase;
+    const mk=(n)=>({id:'qa-'+n,fn:(next,...a)=>{trace.push(n+'-in');const r=next(...a);trace.push(n+'-out');return r}});
+    A.playerBase={id:'qa-base',fn:()=>{trace.push('base');return 'qa-result'}};A.playerStages.unshift(mk('first'));A.playerStages.push(mk('last'));
+    const mon=state.monsters[0];out.attackResult=runAttackStagesR('player',[mon,0]);
+    A.playerStages.shift();A.playerStages.pop();A.playerBase=base;out.attackTrace=trace.slice();
+    const mtrace=[];MINIMAP_PIPELINE.hooks.unshift({id:'qa-first',draw:()=>{mtrace.push('first')}});MINIMAP_PIPELINE.hooks.push({id:'qa-last',draw:()=>{mtrace.push('last')}});
+    drawMinimap(true);MINIMAP_PIPELINE.hooks.shift();MINIMAP_PIPELINE.hooks.pop();out.minimapTrace=mtrace;
+    let h=2166136261;const d=MC.toDataURL();for(let i=0;i<d.length;i++){h^=d.charCodeAt(i);h=Math.imul(h,16777619)}out.minimapDigest=(h>>>0).toString(16);
+    const ptrace=[];PRESENTATION_UPDATES.set('qa-a',()=>ptrace.push('a'));PresentationState.advance(0);PRESENTATION_UPDATES.delete('qa-a');out.presentationRan=ptrace.length;
+    out.counts={routes:ACTION_ROUTES5.size,turn:TurnEngine.stages.length,attackPlayer:A.playerStages.length,attackMonster:A.monsterStages.length,minimap:MINIMAP_PIPELINE.hooks.length,presentation:PRESENTATION_UPDATES.size,generation:MANRU_GENERATION_PIPELINE.pre.length+MANRU_GENERATION_PIPELINE.post.length};
     return out;
   },
   boss(){
