@@ -378,7 +378,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     document.documentElement.toggleAttribute('data-ui-text-large',scale>1);
     if(persist)lsSet('manruUiTextScale70',String(scale));
   }
-  const AUTO_KEY='manruRC70_autosave';
   function restoreState(st){
     st=GameState.migrate(st);validateSaveState(st);
     // Current saves already own their finalized visual-decor state. Rebuilding vfBuildDecor here
@@ -629,8 +628,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     /* ---------- visible real quit button ---------- */
     function ensureQuit(){
       // Permadeath has one rolling autosave only: remove legacy rollback/import surfaces entirely.
-      const legacyBtn1003=['rcLoadAuto70','rcExport70','rcImport70'].map(id=>document.getElementById(id)).filter(Boolean);
-      for(const b of legacyBtn1003){b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')}
       document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')});
       const head=document.querySelector('#releasePanel70 .rc70Head'),close=document.getElementById('rcClose70');if(head&&close&&!document.getElementById('quitHead1003')){const b=document.createElement('button');b.id='quitHead1003';b.type='button';b.textContent='게임 종료';head.insertBefore(b,close)}
       const body=document.querySelector('#releasePanel70 .rc70Body');if(body&&!document.getElementById('quitSection1003')){const sec=document.createElement('section');sec.id='quitSection1003';sec.className='rc70Section';sec.innerHTML='<h3>게임 종료</h3><div class="quitRow1003"><div class="quitCopy1003"><b>현재 탐사를 자동 저장한 뒤 게임을 종료한다.</b><small>자동 저장한 뒤 탐사를 마친다.</small></div><button id="quitGame1003" type="button">게임 종료</button></div>';body.appendChild(sec)}

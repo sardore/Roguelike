@@ -581,7 +581,7 @@ window.__MANRU_V1003__={
       sanitize:()=>sanitizeTransient1003(),
       transient:()=>state?{playerHitUntil:state.playerHitUntil||0,playerAttackUntil:state.playerAttackUntil||0,monsterTransient:(state.monsters||[]).filter(m=>m.hitUntil||m.attackUntil||m.evadeUntil).length}:null,
       forceBadTransient:()=>{if(!state)return false;state.playerHitUntil=99_999_999;state.playerAttackUntil=88_888_888;return window.__MANRU_RELEASE__?.save?.()??false},
-      permadeathAudit:()=>{const keys=Object.keys(localStorage).filter(k=>/manru.*(?:save|slot|backup|active_run)/i.test(k));return{active:!!localStorage.getItem(ACTIVE1003),foreignSaveKeys:keys.filter(k=>k!==ACTIVE1003),death:deathMeta1003(),importDisabled:!!document.getElementById('rcImport70')?.disabled,exportDisabled:!!document.getElementById('rcExport70')?.disabled,slotControls:[...document.querySelectorAll('[data-rcsave],[data-rcload]')].every(b=>b.disabled),quitVisible:!!document.getElementById('quitHead1003')}}
+      permadeathAudit:()=>{const keys=Object.keys(localStorage).filter(k=>/manru.*(?:save|slot|backup|active_run)/i.test(k));return{active:!!localStorage.getItem(ACTIVE1003),foreignSaveKeys:keys.filter(k=>k!==ACTIVE1003),death:deathMeta1003(),slotControls:[...document.querySelectorAll('[data-rcsave],[data-rcload]')].every(b=>b.disabled),quitVisible:!!document.getElementById('quitHead1003')}}
     };
 globalThis.__MANRU_DRAW_R19__={draw:drawMap,active:()=>true,hooks:()=>({world:(globalThis.__MANRU_DRAW_HOOKS_R19__?.world||[]).map(h=>h.id),post:(globalThis.__MANRU_DRAW_HOOKS_R19__?.post||[]).map(h=>h.id)})};
 window.__MANRU_V1005_TEST__={

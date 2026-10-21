@@ -2301,7 +2301,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
       <div class="rc70Head"><div><b>만루 · 출시 후보 관리</b><small>${RC.build} · 세이브 / 조작 / 진단 <span id="rcStorage70"></span></small></div><button class="uxClose" id="rcClose70" aria-label="닫기">×</button></div>
       <div class="rc70Body">
         <section class="rc70Section"><h3>세이브 슬롯</h3><div id="rcSlots70" class="rc70Grid"></div></section>
-        <section class="rc70Section"><h3>백업 / 이동</h3><div class="rc70Row"><button id="rcExport70">세이브 내보내기</button><button id="rcImport70">세이브 가져오기</button><input id="rcImportFile70" type="file" accept=".json,application/json" hidden><button id="rcLoadAuto70">자동저장 불러오기</button></div></section>
+        <section class="rc70Section" id="rcString70"><h3>세이브 문자열</h3><div class="rc70Row"><button id="rcStrMake70">현재 진행 문자열 만들기</button><button id="rcStrCopy70" disabled>복사</button><button id="rcStrApply70">이 문자열로 이어하기</button></div><textarea id="rcStrText70" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="다른 기기에서 만든 문자열을 여기에 붙여 넣고 ‘이 문자열로 이어하기’를 누른다."></textarea><div id="rcStrStat70" class="rc70Diag">현재 진행과 계정 진행(튜토리얼·설정·사망 기록)이 모두 들어간다. 가져오면 지금 진행은 문자열의 진행으로 바뀐다.</div></section>
         <section class="rc70Section"><h3>조작 · 사운드</h3><div class="rc70Row"><button id="rcSfx70">게임 효과음</button><button id="rcHaptic70" aria-pressed="true">진동 ON</button><label>UI 효과음 <input id="rcUiVol70" type="range" min="0" max="1" step=".05"></label><button id="rcTutorial70">튜토리얼 다시 보기</button><label for="rcTextScale70">글씨 크기</label><select id="rcTextScale70" aria-label="글씨 크기"><option value="1">기본 — 100%</option><option value="1.15">크게 — 115%</option><option value="1.3">더 크게 — 130%</option><option value="1.45">매우 크게 — 145%</option></select></div></section>
         <section class="rc70Section"><h3>출시 진단</h3><div class="rc70Row"><button id="rcQuickAudit70">현재 층 검사</button><button id="rcPerf70">렌더 20회 측정</button></div><div id="rcDiag70" class="rc70Diag">대기 중</div></section>
       </div>
@@ -2438,10 +2438,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
   const textScaleControl=document.getElementById('rcTextScale70');textScaleControl.value=String(RC.textScale);
   document.getElementById('rcTutorial70').onclick=resetTips70;
-  document.getElementById('rcExport70').onclick=exportSaveFile;
-  document.getElementById('rcImport70').onclick=()=>document.getElementById('rcImportFile70').click();
-  document.getElementById('rcImportFile70').onchange=e=>importFile(e.target.files?.[0]);
-  document.getElementById('rcLoadAuto70').onclick=()=>loadRaw(lsGet(AUTO_KEY),'자동저장');
+  bindSaveStringPanel();
 
 
     
@@ -3565,7 +3562,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
-  for(const id of ['rcLoadAuto70','rcExport70','rcImport70']){const b=document.getElementById(id);if(b){b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('퍼마데스 런에서는 과거 세이브를 불러올 수 없다.')}}}
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});
 
 

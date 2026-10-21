@@ -10,10 +10,10 @@
  "important": 2180,
  "suffixFunction": 743,
  "emptyCatch": 0,
- "timer": 41,
+ "timer": 40,
  "sameBody": 0,
  "qaLeak": 0,
- "spineLines": 5096,
+ "spineLines": 5092,
  "spineDeclarations": 81,
- "spineLooseStatements": 316
+ "spineLooseStatements": 312
 }

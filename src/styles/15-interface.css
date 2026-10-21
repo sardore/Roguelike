@@ -664,6 +664,7 @@
     .rc70Save .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.rc70Save button,.rc70Row button{height:38px!important;padding:0 9px!important;font-size:calc(10px * var(--ui-font-scale, 1))!important}
     .rc70Row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rc70Row label{font-size:calc(10px * var(--ui-font-scale, 1));color:#b59a74}.rc70Row input[type=range]{width:140px}
     .rc70Diag{font:700 calc(10px * var(--ui-font-scale, 1)) ui-monospace,monospace;line-height:1.6;color:#ad9574;white-space:pre-wrap}
+    #rcStrText70{display:block;width:100%;box-sizing:border-box;min-height:84px;margin:6px 0;padding:7px;border:1px solid #6b4a2f;border-radius:6px;background:#140d08;color:#d9c3a0;font:600 calc(10px * var(--ui-font-scale, 1)) ui-monospace,monospace;line-height:1.4;word-break:break-all;resize:vertical}
     .rc70Danger{color:#c98778!important;border-color:#704032!important}
     #coach70{position:fixed;inset:0;z-index:240;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,5,7,.78);backdrop-filter:blur(5px);color:#eadbbf;font-family:var(--rc-font);box-sizing:border-box;touch-action:none}
     #coach70.show{display:flex}

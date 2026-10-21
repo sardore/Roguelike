@@ -265,12 +265,86 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     host.querySelectorAll('[data-rcsave]').forEach(b=>b.onclick=()=>saveSlot(+b.dataset.rcsave));
     host.querySelectorAll('[data-rcload]').forEach(b=>b.onclick=()=>loadSlot(+b.dataset.rcload));
   }
-  function exportSaveFile(){
-    if(!state){toast('내보낼 진행이 없다.');return}
-    const raw=rawEnvelope('export'),blob=new Blob([raw],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`manru-save-F${state.floor}-T${state.turn}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800);toast('세이브 파일 생성.');
+  /* ---------- save string: the active run and the account's progress as one text another device can take over ---------- */
+  // MANRU1.<deflate-raw, base64url>.<crc32 of the text> ; MANRU0 is the same without compression (browsers lacking CompressionStream).
+  // The text holds {run: the persisted active-run save, account: every account key of localStorage}. Importing replaces the running
+  // game with the run, writes the account keys with a read-back and an undo on failure (dead-run ids are merged, the newer last death wins)
+  // and reloads the page so every setting is read again from storage.
+  const SAVE_STRING_LIMIT=32*1024*1024;
+  const isAccountKey=k=>/^manru/.test(k)&&!/^manru(?:1004_(?:active_run|active_run_shadow|transaction)$|984_|RC70_|V\d+Save$)/i.test(k);
+  const jsonOr=(raw,fallback)=>{try{return raw==null?fallback:JSON.parse(raw)}catch(_){return fallback}};
+  const bytesToB64u=bytes=>{let t='';for(let i=0;i<bytes.length;i+=0x8000)t+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+  const b64uToBytes=t=>{const bin=atob(t.replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out};
+  function crc32Hex(bytes){let c=~0;for(let i=0;i<bytes.length;i++){c^=bytes[i];for(let k=0;k<8;k++)c=c&1?(c>>>1)^0xEDB88320:c>>>1}return((~c)>>>0).toString(16).padStart(8,'0')}
+  async function pipeBytes(bytes,transform){
+    const reader=new Blob([bytes]).stream().pipeThrough(transform).getReader(),parts=[];let size=0;
+    for(;;){const{done,value}=await reader.read();if(done)break;size+=value.length;if(size>SAVE_STRING_LIMIT){await reader.cancel();throw new Error('세이브 문자열이 비정상적으로 크다.')}parts.push(value)}
+    const out=new Uint8Array(size);let at=0;for(const q of parts){out.set(q,at);at+=q.length}return out;
   }
-  async function importFile(file){
-    if(!file)return;try{const raw=await file.text();parseEnvelope(raw);if(!loadRaw(raw,'가져온 세이브'))throw new Error('가져온 세이브를 적용하지 못했다.');refreshSlots()}catch(e){document.getElementById('rcDiag70').textContent=`가져오기 실패: ${e.message}`;toast('올바른 세이브 파일이 아니다.')}
+  async function makeSaveString(){
+    if(!state||state.dead||state.victory||state.debugBattle57)throw new Error('내보낼 진행 중인 탐사가 없다.');
+    const committed=globalThis.__MANRU_SAVE_SERVICE__.commit('string-export');
+    const run=committed.ok?currentRaw():null;if(!run)throw new Error('현재 진행을 저장하지 못했다.');
+    const account={};for(const key of lsKeys70())if(isAccountKey(key)){const v=lsGet(key);if(v!=null)account[key]=v}
+    const json=new TextEncoder().encode(JSON.stringify({format:'MANRU_SAVE_STRING',version:1,build:SAVE_RELEASE_TAG,at:new Date().toISOString(),run,account}));
+    const packed=typeof CompressionStream==='function';
+    return`${packed?'MANRU1':'MANRU0'}.${bytesToB64u(packed?await pipeBytes(json,new CompressionStream('deflate-raw')):json)}.${crc32Hex(json)}`;
+  }
+  async function readSaveString(text){
+    const m=/^(MANRU[01])\.([A-Za-z0-9_-]+)\.([0-9a-f]{8})$/.exec(String(text||'').replace(/\s+/g,''));
+    if(!m)throw new Error('세이브 문자열 형식이 아니다.');
+    let json;
+    try{const bytes=b64uToBytes(m[2]);if(m[1]==='MANRU1'){if(typeof DecompressionStream!=='function')throw new Error('이 브라우저는 압축된 세이브 문자열을 풀 수 없다.');json=await pipeBytes(bytes,new DecompressionStream('deflate-raw'))}else json=bytes}
+    catch(e){throw new Error(/브라우저|비정상/.test(e.message)?e.message:'세이브 문자열이 손상되었다.')}
+    if(crc32Hex(json)!==m[3])throw new Error('세이브 문자열이 손상되었다(검사값 불일치).');
+    let p;try{p=JSON.parse(new TextDecoder().decode(json))}catch(_){throw new Error('세이브 문자열이 손상되었다.')}
+    if(p?.format!=='MANRU_SAVE_STRING'||typeof p.run!=='string'||!p.account||typeof p.account!=='object'||Array.isArray(p.account))throw new Error('만루 세이브 문자열이 아니다.');
+    if(!Number.isFinite(p.version)||p.version>1)throw new Error('더 새로운 형식의 세이브 문자열이다.');
+    const keys=Object.keys(p.account);
+    if(keys.length>64||keys.some(k=>!isAccountKey(k)||typeof p.account[k]!=='string'||p.account[k].length>1024*1024))throw new Error('세이브 문자열의 계정 정보가 올바르지 않다.');
+    const env=parseEnvelope(p.run);
+    if(env.state?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(env.state.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
+    return p;
+  }
+  // account keys are settings and ledgers, not run data: they need no journal (whose recovery only knows the run keys), only a read-back
+  function writeAccountKeys(entries){
+    try{for(const[key,value]of entries){if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);if(localStorage.getItem(key)!==value)return false}return true}catch(_){return false}
+  }
+  function bindSaveStringPanel(){
+    const strText=document.getElementById('rcStrText70'),strStat=document.getElementById('rcStrStat70'),strCopy=document.getElementById('rcStrCopy70');
+    const strSay=msg=>{strStat.textContent=msg};
+    document.getElementById('rcStrMake70').onclick=async()=>{
+      try{strText.value=await makeSaveString();strCopy.disabled=false;strText.focus();strText.select();strSay(`문자열 ${strText.value.length.toLocaleString()}자를 만들었다. 복사해서 다른 기기에 붙여 넣는다.`)}
+      catch(e){strSay(`만들기 실패: ${e.message}`)}
+    };
+    strCopy.onclick=async()=>{
+      try{await navigator.clipboard.writeText(strText.value);strSay('복사했다.')}
+      catch(_){strText.focus();strText.select();strSay(document.execCommand&&document.execCommand('copy')?'복사했다.':'자동 복사가 막혀 있다. 선택된 문자열을 직접 복사한다.')}
+    };
+    document.getElementById('rcStrApply70').onclick=async()=>{
+      try{
+        await readSaveString(strText.value);
+        if(!confirm('지금 진행을 이 문자열의 진행으로 바꾸고, 계정 진행(튜토리얼·설정·사망 기록)도 가져온다. 계속할까?'))return;
+        await applySaveString(strText.value);
+        strSay('가져왔다. 설정을 다시 읽도록 화면을 새로 고친다.');location.reload();
+      }catch(e){strSay(`가져오기 실패: ${e.message}`)}
+    };
+  }
+  async function applySaveString(text){
+    const p=await readSaveString(text);
+    const entries=Object.entries(p.account);
+    const at=k=>entries.findIndex(e=>e[0]===k);
+    const i=at(DEADRUNS);
+    if(i>=0){const mine=jsonOr(lsGet(DEADRUNS),[]),theirs=jsonOr(entries[i][1],[]);
+      entries[i][1]=JSON.stringify([...new Set([...(Array.isArray(mine)?mine:[]),...(Array.isArray(theirs)?theirs:[])].filter(Boolean))].slice(-64))}
+    const j=at(DEATH1004);
+    if(j>=0){const mine=jsonOr(lsGet(DEATH1004),null),theirs=jsonOr(entries[j][1],null);
+      if(mine?.at>(theirs?.at||0))entries[j][1]=lsGet(DEATH1004)}
+    const before=entries.map(([key])=>[key,lsGet(key)]);
+    if(!writeAccountKeys(entries)){writeAccountKeys(before);throw new Error('계정 정보를 저장하지 못했다.')}
+    if(!loadGame({raw:p.run,label:'세이브 문자열'})){writeAccountKeys(before);throw new Error('세이브 문자열의 진행을 적용하지 못했다.')}
+    if(!globalThis.__MANRU_SAVE_SERVICE__.commit('string-import').ok)throw new Error('가져온 진행을 저장하지 못했다.');
+    return true;
   }
 // v10.0.4 canonical loader owns continue/load; legacy snapshot fallback removed.
   function loadGameCore(request=null){
