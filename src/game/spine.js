@@ -3657,7 +3657,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
-  const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
+  createSkillQuickPanel();
 
 
 

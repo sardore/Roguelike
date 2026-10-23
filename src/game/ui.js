@@ -1080,3 +1080,9 @@ function createChoiceModal(){
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
 }
+let skillQuick;
+function createSkillQuickPanel(){
+  skillQuick=document.createElement('div');
+  skillQuick.id='skillQuick991';
+  document.body.appendChild(skillQuick);
+}
