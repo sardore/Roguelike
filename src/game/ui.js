@@ -1071,3 +1071,12 @@ function createCoachDialog(){
   document.body.appendChild(coach);
   coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
 }
+let modal;
+function createChoiceModal(){
+  modal=document.createElement('div');
+  modal.id='choice991';
+  modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div></div>';
+  document.body.appendChild(modal);
+  modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
+  modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
+}
