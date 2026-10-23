@@ -344,6 +344,24 @@ export const scenarios = {
     return out;
   },
 
+  // The DOM elements the game keeps in closure variables (feelEl, panel, coach, modal, skillQuick, classDetail1001, classStart1001,
+  // hud): after loading, in every boot situation, each holds its element, attached where the game attaches it. A variable that is
+  // read before its initialisation would be undefined here.
+  async domvars(browser, root) {
+    const out = {};
+    const branch = JSON.parse(fs.readFileSync(path.join(savesDir, 'branch.json'), 'utf8'));
+    for (const [name, opts] of [['empty', {}], ['debug', { query: 'debug=1' }], ['mobile', { viewport: { width: 390, height: 844 }, mobile: true }], ['branch', { storage: branch.storage }]]) {
+      const s = await openSession(browser, root, { seed: 1, ...opts });
+      const vars = await s.page.evaluate(() => globalThis.__MANRU_QA_DOMVARS__());
+      const bad = Object.entries(vars).filter(([, v]) => !/ connected=true /.test(v + ' '));
+      if (bad.length) throw new Error(`domvars (${name}): ${bad.map(([k, v]) => `${k}=${v}`).join(', ')}`);
+      out[`domvars.${name}`] = JSON.stringify(vars);
+      out[`domvars.${name}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   // The save string (settings panel): the running game and the account's progress travel as one text. A run is played on one
   // "device", the string is made through the panel, a second device (fresh storage, another run already going and a dead-run id of
   // its own) pastes it through the panel; after the page reloaded and the run was continued, the saved state is the same and the
