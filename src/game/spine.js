@@ -3754,7 +3754,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
+  bindClassPickerElements();
 
 
 
@@ -3772,7 +3772,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     e.preventDefault();const index=CLASSES.findIndex(c=>c.id===selectedClass1001),next=e.key==='Home'?0:e.key==='End'?CLASSES.length-1:(index+(e.key==='ArrowRight'?1:-1)+CLASSES.length)%CLASSES.length;
     selectClass(CLASSES[next].id);classGrid.children[next].focus();
   });
-  classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
   renderClassGrid();
 
   // Replace only the actual player actor. NPCs/monsters keep the existing renderer.

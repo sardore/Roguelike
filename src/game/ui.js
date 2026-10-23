@@ -1086,3 +1086,8 @@ function createSkillQuickPanel(){
   skillQuick.id='skillQuick991';
   document.body.appendChild(skillQuick);
 }
+let classDetail1001,classStart1001;
+function bindClassPickerElements(){
+  classDetail1001=document.getElementById('classDetail1001');classStart1001=document.getElementById('classStartBtn1001');
+  classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
+}
