@@ -1091,3 +1091,10 @@ function bindClassPickerElements(){
   classDetail1001=document.getElementById('classDetail1001');classStart1001=document.getElementById('classStartBtn1001');
   classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
 }
+let hud;
+function createWardHud(){
+  hud=document.createElement('div');
+  hud.id='hazardWard1005';
+  hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';
+  document.body.appendChild(hud);
+}

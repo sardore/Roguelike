@@ -3945,7 +3945,7 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 /* HUD: the remaining ward time must be impossible to miss. */
-const hud=document.createElement('div');hud.id='hazardWard1005';hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';document.body.appendChild(hud);
+createWardHud();
 
 
 
