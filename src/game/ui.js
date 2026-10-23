@@ -1038,3 +1038,9 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
     ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
   ]);
+let feelEl;
+function createFeelingElement(){
+  feelEl=document.createElement('div');
+  feelEl.id='floorFeeling62';
+  document.getElementById('canvasWrap')?.appendChild(feelEl);
+}

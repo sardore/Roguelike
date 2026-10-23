@@ -2245,7 +2245,7 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
 
 
-  const feelEl=document.createElement('div');feelEl.id='floorFeeling62';document.getElementById('canvasWrap')?.appendChild(feelEl);
+  createFeelingElement();
 belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt);
 
 
