@@ -265,12 +265,86 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     host.querySelectorAll('[data-rcsave]').forEach(b=>b.onclick=()=>saveSlot(+b.dataset.rcsave));
     host.querySelectorAll('[data-rcload]').forEach(b=>b.onclick=()=>loadSlot(+b.dataset.rcload));
   }
-  function exportSaveFile(){
-    if(!state){toast('내보낼 진행이 없다.');return}
-    const raw=rawEnvelope('export'),blob=new Blob([raw],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`manru-save-F${state.floor}-T${state.turn}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800);toast('세이브 파일 생성.');
+  /* ---------- save string: the active run and the account's progress as one text another device can take over ---------- */
+  // MANRU1.<deflate-raw, base64url>.<crc32 of the text> ; MANRU0 is the same without compression (browsers lacking CompressionStream).
+  // The text holds {run: the persisted active-run save, account: every account key of localStorage}. Importing replaces the running
+  // game with the run, writes the account keys with a read-back and an undo on failure (dead-run ids are merged, the newer last death wins)
+  // and reloads the page so every setting is read again from storage.
+  const SAVE_STRING_LIMIT=32*1024*1024;
+  const isAccountKey=k=>/^manru/.test(k)&&!/^manru(?:1004_(?:active_run|active_run_shadow|transaction)$|984_|RC70_|V\d+Save$)/i.test(k);
+  const jsonOr=(raw,fallback)=>{try{return raw==null?fallback:JSON.parse(raw)}catch(_){return fallback}};
+  const bytesToB64u=bytes=>{let t='';for(let i=0;i<bytes.length;i+=0x8000)t+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+  const b64uToBytes=t=>{const bin=atob(t.replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out};
+  function crc32Hex(bytes){let c=~0;for(let i=0;i<bytes.length;i++){c^=bytes[i];for(let k=0;k<8;k++)c=c&1?(c>>>1)^0xEDB88320:c>>>1}return((~c)>>>0).toString(16).padStart(8,'0')}
+  async function pipeBytes(bytes,transform){
+    const reader=new Blob([bytes]).stream().pipeThrough(transform).getReader(),parts=[];let size=0;
+    for(;;){const{done,value}=await reader.read();if(done)break;size+=value.length;if(size>SAVE_STRING_LIMIT){await reader.cancel();throw new Error('세이브 문자열이 비정상적으로 크다.')}parts.push(value)}
+    const out=new Uint8Array(size);let at=0;for(const q of parts){out.set(q,at);at+=q.length}return out;
   }
-  async function importFile(file){
-    if(!file)return;try{const raw=await file.text();parseEnvelope(raw);if(!loadRaw(raw,'가져온 세이브'))throw new Error('가져온 세이브를 적용하지 못했다.');refreshSlots()}catch(e){document.getElementById('rcDiag70').textContent=`가져오기 실패: ${e.message}`;toast('올바른 세이브 파일이 아니다.')}
+  async function makeSaveString(){
+    if(!state||state.dead||state.victory||state.debugBattle57)throw new Error('내보낼 진행 중인 탐사가 없다.');
+    const committed=globalThis.__MANRU_SAVE_SERVICE__.commit('string-export');
+    const run=committed.ok?currentRaw():null;if(!run)throw new Error('현재 진행을 저장하지 못했다.');
+    const account={};for(const key of lsKeys70())if(isAccountKey(key)){const v=lsGet(key);if(v!=null)account[key]=v}
+    const json=new TextEncoder().encode(JSON.stringify({format:'MANRU_SAVE_STRING',version:1,build:SAVE_RELEASE_TAG,at:new Date().toISOString(),run,account}));
+    const packed=typeof CompressionStream==='function';
+    return`${packed?'MANRU1':'MANRU0'}.${bytesToB64u(packed?await pipeBytes(json,new CompressionStream('deflate-raw')):json)}.${crc32Hex(json)}`;
+  }
+  async function readSaveString(text){
+    const m=/^(MANRU[01])\.([A-Za-z0-9_-]+)\.([0-9a-f]{8})$/.exec(String(text||'').replace(/\s+/g,''));
+    if(!m)throw new Error('세이브 문자열 형식이 아니다.');
+    let json;
+    try{const bytes=b64uToBytes(m[2]);if(m[1]==='MANRU1'){if(typeof DecompressionStream!=='function')throw new Error('이 브라우저는 압축된 세이브 문자열을 풀 수 없다.');json=await pipeBytes(bytes,new DecompressionStream('deflate-raw'))}else json=bytes}
+    catch(e){throw new Error(/브라우저|비정상/.test(e.message)?e.message:'세이브 문자열이 손상되었다.')}
+    if(crc32Hex(json)!==m[3])throw new Error('세이브 문자열이 손상되었다(검사값 불일치).');
+    let p;try{p=JSON.parse(new TextDecoder().decode(json))}catch(_){throw new Error('세이브 문자열이 손상되었다.')}
+    if(p?.format!=='MANRU_SAVE_STRING'||typeof p.run!=='string'||!p.account||typeof p.account!=='object'||Array.isArray(p.account))throw new Error('만루 세이브 문자열이 아니다.');
+    if(!Number.isFinite(p.version)||p.version>1)throw new Error('더 새로운 형식의 세이브 문자열이다.');
+    const keys=Object.keys(p.account);
+    if(keys.length>64||keys.some(k=>!isAccountKey(k)||typeof p.account[k]!=='string'||p.account[k].length>1024*1024))throw new Error('세이브 문자열의 계정 정보가 올바르지 않다.');
+    const env=parseEnvelope(p.run);
+    if(env.state?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(env.state.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
+    return p;
+  }
+  // account keys are settings and ledgers, not run data: they need no journal (whose recovery only knows the run keys), only a read-back
+  function writeAccountKeys(entries){
+    try{for(const[key,value]of entries){if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);if(localStorage.getItem(key)!==value)return false}return true}catch(_){return false}
+  }
+  function bindSaveStringPanel(){
+    const strText=document.getElementById('rcStrText70'),strStat=document.getElementById('rcStrStat70'),strCopy=document.getElementById('rcStrCopy70');
+    const strSay=msg=>{strStat.textContent=msg};
+    document.getElementById('rcStrMake70').onclick=async()=>{
+      try{strText.value=await makeSaveString();strCopy.disabled=false;strText.focus();strText.select();strSay(`문자열 ${strText.value.length.toLocaleString()}자를 만들었다. 복사해서 다른 기기에 붙여 넣는다.`)}
+      catch(e){strSay(`만들기 실패: ${e.message}`)}
+    };
+    strCopy.onclick=async()=>{
+      try{await navigator.clipboard.writeText(strText.value);strSay('복사했다.')}
+      catch(_){strText.focus();strText.select();strSay(document.execCommand&&document.execCommand('copy')?'복사했다.':'자동 복사가 막혀 있다. 선택된 문자열을 직접 복사한다.')}
+    };
+    document.getElementById('rcStrApply70').onclick=async()=>{
+      try{
+        await readSaveString(strText.value);
+        if(!confirm('지금 진행을 이 문자열의 진행으로 바꾸고, 계정 진행(튜토리얼·설정·사망 기록)도 가져온다. 계속할까?'))return;
+        await applySaveString(strText.value);
+        strSay('가져왔다. 설정을 다시 읽도록 화면을 새로 고친다.');location.reload();
+      }catch(e){strSay(`가져오기 실패: ${e.message}`)}
+    };
+  }
+  async function applySaveString(text){
+    const p=await readSaveString(text);
+    const entries=Object.entries(p.account);
+    const at=k=>entries.findIndex(e=>e[0]===k);
+    const i=at(DEADRUNS);
+    if(i>=0){const mine=jsonOr(lsGet(DEADRUNS),[]),theirs=jsonOr(entries[i][1],[]);
+      entries[i][1]=JSON.stringify([...new Set([...(Array.isArray(mine)?mine:[]),...(Array.isArray(theirs)?theirs:[])].filter(Boolean))].slice(-64))}
+    const j=at(DEATH1004);
+    if(j>=0){const mine=jsonOr(lsGet(DEATH1004),null),theirs=jsonOr(entries[j][1],null);
+      if(mine?.at>(theirs?.at||0))entries[j][1]=lsGet(DEATH1004)}
+    const before=entries.map(([key])=>[key,lsGet(key)]);
+    if(!writeAccountKeys(entries)){writeAccountKeys(before);throw new Error('계정 정보를 저장하지 못했다.')}
+    if(!loadGame({raw:p.run,label:'세이브 문자열'})){writeAccountKeys(before);throw new Error('세이브 문자열의 진행을 적용하지 못했다.')}
+    if(!globalThis.__MANRU_SAVE_SERVICE__.commit('string-import').ok)throw new Error('가져온 진행을 저장하지 못했다.');
+    return true;
   }
 // v10.0.4 canonical loader owns continue/load; legacy snapshot fallback removed.
   function loadGameCore(request=null){
@@ -461,7 +535,7 @@ function normalizeSavedItem(it){
 }
 function worldTargetActive57(){return !!WORLD_TARGET}
 // Phase 5: one invocation registry; entries reference their existing implementation.
-const ACTION_ROUTES5=new Map(),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
+const ACTION_ROUTES=new Map([['CONTEXT_ACTION',contextAction],['CIPHER_SUBMIT',submitCipher],['STRUCTURE_INTERACT',bumpBlockedTile],['MOVE',movePlayer],['BLINK',useBlink],['ATTACK',basicAttack],['PICKUP',pickup],['SHOP_BUY',purchaseShop58],['SHOP_SELL',sellShop58],['DESCEND',descend],['REST',rest],['UPGRADE_MARTIAL',upgradeMartial],['MARTIAL_MANUAL_CHOICE',chooseMartialManual],['MARTIAL',activateMartial],['ITEM_USE',useInventoryItem],['ITEM_DROP',dropInventoryItem],['UNEQUIP',unequipAction5],['DROP_EQUIPPED',dropEquippedAction5],['UPGRADE_GEAR',upgradeGearAction5],['COOK',cookSelected],['FUSE',fuse74],['GEAR_APPLY',applyGear],['CLOSE_DOOR',closeAdjacentDoor964],['IDENTIFY_CHOICE',identifyChoiceAction5],['PURIFY_CHOICE',purifyChoiceAction5],['ANVIL_FUSE105',anvilFuse],['SUMMON_CAST105',summonCast],['SUMMON_PICTURE105',summonInstallPicture],['SUMMON_TALISMAN105',summonBindTalisman]]),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
 function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
 function requestGameFullscreen65(){
  fullscreenWanted66=true;
@@ -534,12 +608,12 @@ function debugBattleMap57(fresh=false){
 }
 function resetTurnState(){if(!state)return;/* fractional enemy-energy debt is intentionally preserved; zeroing it would let stair/reset actions erase scheduler cost */state.enemyEnergy=state.enemyEnergy||0}
 const ActionDispatcher=Object.freeze({
-  register(type,implementation){if(ACTION_ROUTES5.has(type))throw new Error('duplicate action route: '+type);ACTION_ROUTES5.set(type,implementation)},
+  
   denied(reason){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.denial=reason},
   commitNoTime(){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.committed=true},
   observeTurn(result){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.turns.push(result)},
   dispatch(command){
-    const type=command?.type,route=ACTION_ROUTES5.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
+    const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
     const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id)};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
@@ -586,7 +660,7 @@ const ActionDispatcher=Object.freeze({
     }
   },
   handleEvent(e){const type=e.currentTarget?.id==='cookDo57'?'COOK':e.currentTarget?.id==='cipherSubmit'?'CIPHER_SUBMIT':null;if(type)return ActionDispatcher.dispatch({type,source:'modal-control'}).value},
-  snapshot(){return{roots:ACTION_AUDIT5.roots,invocations:ACTION_AUDIT5.serial,activeDepth:ACTION_AUDIT5.stack.length,routes:[...ACTION_ROUTES5.keys()],history:structuredClone(ACTION_AUDIT5.history)}},
+  snapshot(){return{roots:ACTION_AUDIT5.roots,invocations:ACTION_AUDIT5.serial,activeDepth:ACTION_AUDIT5.stack.length,routes:[...ACTION_ROUTES.keys()],history:structuredClone(ACTION_AUDIT5.history)}},
   resetAudit(){if(ACTION_AUDIT5.stack.length)throw new Error('Cannot reset an active action');ACTION_AUDIT5.serial=0;ACTION_AUDIT5.roots=0;ACTION_AUDIT5.history=[];return this.snapshot()}
 });
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
@@ -753,3 +827,26 @@ function gameplayInputAllowed57(opts={}){
   return owner.panels.every(p=>allowed.has(p.id))
 }
 const RUN_END_EFFECTS=[markDeathSeal,showEndingScreen];
+function startFloorTransition(){
+  const side=!!state?.artifactDungeon46;
+  FX.transition={
+    start:performance.now(),
+    life:1450,
+    floor:state.floor,
+    side,
+    region:side?(state.artifactDungeon46?.name||state.layoutName||''):regionFor(state.floor)[2],
+    layout:''
+  };
+  const boss=state.monsters?.find(m=>m.boss&&m.hp>0);if(boss)setTimeout(()=>showBossIntro(boss),850);
+}
+/* ---------- item audit: definitions that previously had no mechanical reader ---------- */
+function defBy(name){return WEAPONS.find(x=>x.name===name)||ARMORS.find(x=>x.name===name)||CLOAKS.find(x=>x.name===name)||RELICS.find(x=>x.name===name)||TRINKETS.find(x=>x.name===name)||null}
+function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapon,...(state?.player?.inventory||[])])if(it?.artifactId46)ids.add(it.artifactId46);if(state&&ids.has('water_crossbow')){state.artifactHistory46||=[];if(!state.artifactHistory46.some(h=>h.id==='water_crossbow'&&h.status==='claimed'))state.artifactHistory46.push({id:'water_crossbow',status:'claimed',floor:9,source:[state.player.weapon,...state.player.inventory].some(i=>i?.artifactId46==='water_crossbow'&&i.palaceReward105)?'palace':'legacy',turn:state.turn});}if(state)state.artifactClaimed46=[...new Set([...(state.artifactClaimed46||[]),...ids])];const plan=state?.branchWorld105?.citadel105?.relicPlan105;if(plan&&ids.has(plan.realId))plan.claimed=true;}
+globalThis.__MANRU_LIFECYCLE__=RunLifecycle;
+globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
+globalThis.__MANRU_SAVE_SERVICE__=SaveService;
+globalThis.__MANRU_SAVE1004__=Object.freeze({raw:currentRaw,meta:()=>{const c=SaveService.recover().candidate;return c?{floor:c.meta.floor,turn:c.meta.turn,runId:c.meta.runId984,written:c.written,seq:c.seq,source:c.source}:null},write:writeRun,valid:()=>!!SaveService.recover().candidate});
+function elementsPreTurn(){return ensure74()}
+function autosavePostTurn(){if(state&&!state.dead&&!state.victory)SaveService.request('turn')}
+function potionsPostGeneration(){pstate();state.tempFields=[];rewardRooms()}
+function talismanPostGeneration(){ensure74();state.tempTerrain74=[];state.elementFields74=[]}

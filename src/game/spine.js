@@ -118,8 +118,8 @@
 
 
 
-let autoWalkTimer = null;
-let autoWalkToken = 0;
+
+
 
 
 
@@ -152,17 +152,10 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldIn
 
 
 
-PresentationState.register('effects',now=>{
-  FX.rings=FX.rings.filter(r=>now-r.start<r.life);FX.doors=FX.doors.filter(d=>now-d.start<d.life);FX.slashes=FX.slashes.filter(s=>now-s.start<s.life);FX.projectiles=FX.projectiles.filter(p=>now-p.start<p.life);FX.particles=FX.particles.filter(p=>now-p.start<p.life);FX.floats=FX.floats.filter(f=>now-f.start<f.life);
-  for(const p of FX.particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.vy+=.015}
-  if(FX.transition&&now-FX.transition.start>=FX.transition.life)FX.transition=null;
-  if(FX.particles.length>40)FX.particles.splice(0,FX.particles.length-40);if(FX.floats.length>12){const labels=FX.floats.filter(f=>!f.damage57).slice(-12);FX.floats=FX.floats.filter(f=>f.damage57||labels.includes(f))}
-});
 
 
 
 
-PresentationState.register('monster-motion',now=>{if(!state)return;for(const m of state.monsters||[]){let v=MON_VIS.get(m);if(!v){v={x:m.x,y:m.y,last:now};MON_VIS.set(m,v);continue}if(v.forced105){const f=forcedMotionSample(v.forced105,now);if(f){v.x=f.x;v.y=f.y;v.last=now;if(!f.done)continue}v.forced105=null}const dt=Math.min(.05,Math.max(.001,(now-v.last)/1000)),a=1-Math.exp(-dt*18*automationPresentationRate70());v.last=now;v.x+=(m.x-v.x)*a;v.y+=(m.y-v.y)*a}});
 
 
 
@@ -201,18 +194,6 @@ PresentationState.register('monster-motion',now=>{if(!state)return;for(const m o
 
 
 
-function startFloorTransition(){
-  const side=!!state?.artifactDungeon46;
-  FX.transition={
-    start:performance.now(),
-    life:1450,
-    floor:state.floor,
-    side,
-    region:side?(state.artifactDungeon46?.name||state.layoutName||''):regionFor(state.floor)[2],
-    layout:''
-  };
-  const boss=state.monsters?.find(m=>m.boss&&m.hp>0);if(boss)setTimeout(()=>showBossIntro(boss),850);
-}
 
 
 
@@ -220,8 +201,6 @@ function startFloorTransition(){
 
 
 
-globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
-globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
@@ -246,7 +225,8 @@ globalThis.__MANRU_RANDOM57__=()=>RngService.random();
 
 
 
-const AUTO_MOVE_RATE70=1.5;
+
+
 
 
 
@@ -519,7 +499,7 @@ document.addEventListener('keyup',InputRouter);InputRouter.noteListener('documen
 
 
 
-const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
+
 
 
 
@@ -554,15 +534,12 @@ const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HED
 
 
 
-ActionDispatcher.register('CONTEXT_ACTION',contextAction);
 
 
 
-function setGenerationBase(id,fn){if(typeof fn!=='function')throw new TypeError('generation base must be a function');MANRU_GENERATION_PIPELINE.base={id,fn};return fn}
 
 
 
-setGenerationBase('base-original',generateFloorOriginal);
 
 
 
@@ -586,7 +563,6 @@ setGenerationBase('base-original',generateFloorOriginal);
 
 
 
-function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_blade:.85})[state?.artifactDungeon46?.id]||1}
 
 
 
@@ -602,14 +578,12 @@ function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_
 
 
 
-ActionDispatcher.register('CIPHER_SUBMIT',submitCipher);
 
 
 
 
 
 
-ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
 
 
 
@@ -651,14 +625,11 @@ ActionDispatcher.register('STRUCTURE_INTERACT',bumpBlockedTile);
 
 
 
-function resetFloorScopedState57(){if(!state)return;state.terrainReactions105=newTerrainReactions105();state.martialEcho=null;state.player.smokeInside1005=false;state.recentPlayerCells57=[];state.naturalPopulation57=null;state.noiseSequence57=null;noiseBudget=null;state.silkTraps57={};delete state.tutorialEntry60;delete state.floor23;delete state.floor24;for(const key of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendTerrain47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])if(Array.isArray(state[key]))state[key]=[];state._manualRangedTargetR8=null;state._manualTerrainTargetR8=null;state._lastPlayerPos60=null;state.crumbleBase60={};if(state.hazard1005){const drown=state.hazard1005?.drownUntil||0,voidWard=state.hazard1005?.voidUntil||0;state.hazard1005={armed:{},collapsed:{},lastWarn:{},drownUntil:drown,voidUntil:voidWard}}}
 
-ActionDispatcher.register('MOVE',movePlayer);
 
 
 
 
-ActionDispatcher.register('BLINK',useBlink);
 
 
 
@@ -681,7 +652,8 @@ ActionDispatcher.register('BLINK',useBlink);
 
 
 
-ActionDispatcher.register('ATTACK',basicAttack);
+
+
 
 
 
@@ -708,7 +680,6 @@ try{HAPTIC57.enabled=localStorage.getItem('manruHaptics57')!=='0'}catch(error){i
 
 
 
-setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 
 
@@ -718,7 +689,6 @@ setPlayerAttackBaseR('initial',attackPlayerInitialCoreR);
 
 
 
-setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
 
 
@@ -892,7 +862,6 @@ setMonsterAttackBaseR('initial',attackMonsterInitialCoreR);
 
 
 
-ActionDispatcher.register('PICKUP',pickup);
 
 
 
@@ -900,8 +869,6 @@ ActionDispatcher.register('PICKUP',pickup);
 
 
 
-const DESCEND_EFFECTS=[stairsSound,markActionTime];
-function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS)effect({fromFloor,toFloor:state.floor})}
 
 
 
@@ -914,7 +881,6 @@ function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;
 
 
 
-ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('SHOP_SELL',sellShop58);
 
 
 
@@ -924,66 +890,10 @@ ActionDispatcher.register('SHOP_BUY',purchaseShop58);ActionDispatcher.register('
 
 
 
-function descend(){
-  cancelAutoWalk();
-  if(state?.branchContext105){toast('분기에서는 문 옆에서 상호작용 버튼(F)으로 출입한다.');return false}
-  const act=playerAction57('descend',{stunMessage:'몸이 굳어 층을 내려가지 못했다.'});
-  if(!act.ok)return !!act.consumed;
-  if(state.player.x!==state.stairs.x||state.player.y!==state.stairs.y){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
-  if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor)&&!state.bossDefeated){toast('구역 보스를 쓰러뜨려야 길이 열린다.');return false}
-  if(state.floor===23&&!state.floor23?.keyAcquired){toast('수은 심부 열쇠가 있어야 다음 층으로 내려갈 수 있다.');return false}
-  if(state.floor>=25){toast('더 안쪽은 만루보주의 방뿐이다.');return false}
-  if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor))return ShopMapBuilder.enter();
-  const lifecycleGeneration6=RunLifecycle.generation(),fromFloor=state.floor,leavingShop57=!!state.shopIntermission?.active,descentSnapshot57=captureGenerationSnapshot();
-  const generateNext57=()=>{
-    if(!RunLifecycle.isCurrent(lifecycleGeneration6))return false;
-    try{
-      const followers=summonFollowers();if(state.shopIntermission?.active)ShopMapBuilder.restore();resetFloorScopedState57();state.floor++;state.player.hp=Math.min(state.player.maxHp,state.player.hp+Math.ceil(state.player.maxHp*.12));state.player.focus=Math.min(getStats().maxFocus,state.player.focus+2);NormalFloorGenerator.generate();summonPlaceFollowers105(followers);branchPruneWorld(state);
-    }catch(e){
-      restoreGenerationSnapshot(descentSnapshot57);resetVisualState();resetTurnState();VisibilityService.compute();setGenerationPresentation8(false);updateAll();console.error('descend generation rejected',e);toast('다음 층의 구조가 불안정해 이동하지 못했다.');return false
-    }
-    try{
-      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects(fromFloor);
-      if(leavingShop57){
-        // Present the new map before releasing the shop-exit input lock.
-        syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__?.resume?.(true);updateAll(true);
-      }else updateAll();
-      globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
-    }finally{setGenerationPresentation8(false)}
-  };
-  if(leavingShop57||fromFloor===21){
-    cancelAutoWalk();clearHeldInput53();setGenerationPresentation8(true);
-    requestAnimationFrame(()=>requestAnimationFrame(generateNext57));
-    return true
-  }
-  return generateNext57()
-}
-ActionDispatcher.register('DESCEND',descend);
+
+
+
 function rest(){const act=playerAction57('rest',{stunMessage:'몸이 굳어 쉬지 못했다.'});if(!act.ok)return !!act.consumed;cancelAutoWalk();commitPlayerAction57(act,1);return true}
-ActionDispatcher.register('REST',rest);
-
-
-ActionDispatcher.register('UPGRADE_MARTIAL',upgradeMartial);
-ActionDispatcher.register('MARTIAL_MANUAL_CHOICE',chooseMartialManual);
-
-
-ActionDispatcher.register('MARTIAL',activateMartial);
-
-
-
-
-
-
-
-
-
-
-
-
-ActionDispatcher.register('ITEM_USE',useInventoryItem);
-
-ActionDispatcher.register('ITEM_DROP',dropInventoryItem);
-let inventoryFiltered;
 
 
 
@@ -1013,25 +923,27 @@ let inventoryFiltered;
 
 
 
-const RuntimeState={
-  ui:{sessions:new Set(),generationPending:false,release:null,food:null,inventory:null,screen:null,storyChoice:null,storyNote:null,storyScene:null,deathCause:null},
-  interactionActive:interactionActive8,projectUI(){projectInteractionUI();globalThis.__MANRU_STORY992__?.project?.();if(inventoryOpen)renderInventory();if(interactionActive8('shop58'))renderShop();if(runState57()==='death')presentDeath(RuntimeState.ui.deathCause)},
-  input:{qHold61:null,classic:INPUT,router:INPUT_ROUTER57_AUDIT,device:null},action:ACTION_AUDIT5,turn:null,
-  client:{initialized:false,type:null,orientation:null,orientationGate:false,selection:null,environment:null,refreshes:0,transitions:0,lastReason:'boot',desktop:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0},mobile:{emissions:0,inactiveAttempts:0,inactivePhysical:0,physical:0,gated:0}},
-  lifecycle:{phase:'no-run',generation:0,depth:0,last:null,validate:validateSaveState,parse:parseEnvelope},
-  persistence:{pending:false,last:null,history:[]},
-  prepareRun(){
-    RuntimeState.persistence.retiredItemMigration57=null;RuntimeState.persistence.terrainRecovery58=null;
-    RuntimeState.ui.sessions.clear();RuntimeState.ui.generationPending=false;RuntimeState.ui.storyChoice=null;RuntimeState.ui.storyNote=null;RuntimeState.ui.storyScene=null;RuntimeState.ui.deathCause=null;projectInteractionUI();
-    clearHeldInput53();const device=RuntimeState.input.device;
-    if(device){for(const pointer of device.pointers?.values?.()||[]){clearTimeout(pointer.holdShow);clearTimeout(pointer.holdFire)}device.pointers?.clear?.();device.gesture=null;device.mousePan=null;device.suppressClickUntil=0;device.cameraInspecting=false;}
-    globalThis.__MANRU_RUNTIME81__?.stopHeld?.();globalThis.__MANRU_RUNTIME81__?.Camera81?.resume?.(false);document.body.classList.remove('camera-inspect81');return true;
-  },
-  snapshot(){const d=RuntimeState.input.device;return structuredClone({owner:'RuntimeState',schema:1,input:{held:[...INPUT.held],nextMoveAt:INPUT.nextMoveAt,device:d?{repeatDelay:d.repeatDelay,repeatTick:d.repeatTick,pointers:d.pointers?.size||0,gesture:d.gesture,mousePan:d.mousePan,cameraInspecting:d.cameraInspecting}:null},client:ClientEnvironment.snapshot(),lifecycle:{phase:RuntimeState.lifecycle.phase,generation:RuntimeState.lifecycle.generation,depth:RuntimeState.lifecycle.depth,last:RuntimeState.lifecycle.last},persistence:RuntimeState.persistence,action:{serial:ACTION_AUDIT5.serial,roots:ACTION_AUDIT5.roots,activeDepth:ACTION_AUDIT5.stack.length},turn:RuntimeState.turn?{serial:RuntimeState.turn.serial,history:RuntimeState.turn.history}:null})}
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ClientEnvironment.initialize();
 
-globalThis.__MANRU_LIFECYCLE__=RunLifecycle;
 
 
 
@@ -1308,9 +1220,6 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  window.__MANRU_CLEAR_HI_CACHE__=()=>{
-    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FIRE_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
-  };
 
 
 
@@ -1365,7 +1274,6 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  setGenerationBase('base-vaults38',generateFloorBaseVaults);
 
   /* ----------------------- more decor kinds / context placement ----------------------- */
   
@@ -1386,7 +1294,7 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
 
 
 
-  const inspectOpen=()=>!!interactionActive8('mobileInspect');
+
 
 
 
@@ -1464,26 +1372,23 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
 
-  registerGenerationStage('feature-rooms41','post',()=>{applyFeatureRooms();VisibilityService.compute();vfBuildDecor()});
 
 
-  for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);window.MANRU_POTIONS=POTIONS;
+  for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
 
-  function pcolor(i){return i?.color||'#b65b4c'}
+
 ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
 ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
 
 
-  function throwAt(tx,ty){const act=playerAction57('target',{uiOwner:'potionTargetHud'});if(!act.ok)return false;if(!potionTarget||!state)return false;const item=potionTarget.item,r=potionTarget.range||4,p=state.player;if(!state.player.inventory.includes(item)){cancelTarget(true);return false}if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>r){toast(`사거리 ${r}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('보지 못한 곳이다.');return false}if(!lineClear(p.x,p.y,tx,ty)){toast('던질 경로가 막혔다.');return false}if(state.floor>=11)alertNearby(tx,ty,item.throwElement105?4:item.potionKind==='smoke'?6:8,item.throwElement105||item.potionKind==='smoke'?'projectile':'explosion');projectileFX(p.x,p.y,tx,ty,pcolor(item));burst(tx,ty,pcolor(item),18,1);if(item.throwElement105==='water'||item.throwElement105==='ice'){emitElementContact105(item.throwElement105,elementCells105(tx,ty,1),effectSource57(p));addLog(`${item.name}: 주변 3×3에 ${item.throwElement105==='water'?'물기운':'냉기'}가 퍼졌다.`)}else if(item.potionKind==='smoke'){addField('smoke',tx,ty,6);addLog(`${item.name}: 3×3 연막 5턴.`)}else{const m=findMonsterAt(tx,ty),observed=isEntityObservableToPlayer57(m),direct=isThreatVisibleToPlayer(m)?m:null;if(observed&&m&&!isHostileTarget57(m)){toast('아군에게 공격용 약병을 던질 수 없다.');return false}if(direct){markCombatActivity57('potion-throw');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(direct,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${direct.name}의 아수라장이 투척 직격을 지웠다.`)}else{const dealt=damageEntity(direct,6,state.player,'fire');if(dealt>0){dojoRememberHit(direct,'area');floatText(tx,ty,'-'+dealt,'#ff9d5c',14,'fire');}if(direct.hp<=0)killMonster(direct)}}addField('fire',tx,ty,5);addLog(`${item.name}: 3×3 화염 4턴.`)}consumeRef(item);cancelTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||1,reason:"throwAt"}).value;return true}
+
   // r30: potion dispatch is integrated in canonical useInventoryItem.
    // r34: obsolete potion-tab render wrapper removed.
   /* R7 refactor: obsolete early potion visual wrapper removed. */
   
 
-  registerGenerationStage('potions41','post',()=>{pstate();state.tempFields=[];rewardRooms()});  
-  globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
   
   pstate();
 
@@ -1534,7 +1439,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
   function fixEntities(){for(const it of state.items||[])if(tileBlocks(state.map[it.y]?.[it.x])){const p=PlacementService.randomFloor(0);it.x=p.x;it.y=p.y}for(const m of state.monsters||[])if(m.hp>0&&!PlacementService.monsterCanStand(m,m.x,m.y)){const p=PlacementService.randomMonsterCell(m)||PlacementService.randomFloor(0);m.x=p.x;m.y=p.y}}
 
-  registerGenerationStage('room-sculpt42','post',()=>{reshapeRooms();for(const fr of state.featureRooms||[])sculptFeature(fr);fixEntities();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()});
 
 
 
@@ -1550,7 +1454,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
 
-  registerGenerationStage('organic-nooks43','post',()=>{organicNooks43();for(const fr of state.featureRooms||[])sculptSmallFeature43(fr);repair43()});
 
 
   // test helper exists only with #debug and lets us inspect special-room art without changing normal play.
@@ -1568,7 +1471,6 @@ ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPro
 
 
 
-  registerGenerationStage('room-structure44','post',()=>{structuralOrdinaryRooms44();repair44()});
 
 RuntimeState.ui.inventory=UX;
 
@@ -1585,7 +1487,7 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  function beginViewer45(){UX.modalOpening=true;pauseAutoForUI();UX.invEquipSlot=null}
+
 
 
 
@@ -1601,25 +1503,16 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  function tabCount(kind){
-    const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
-  }
 
 
 
-  function restoreInventoryScroll45(grid,tab=inventoryTab){
-    if(!grid)return;
-    const top=Math.max(0,UX.invScrollByTab[tab]||0);
-    grid.scrollTop=top;
-    grid.addEventListener('scroll',()=>{UX.invScrollByTab[tab]=Math.max(0,grid.scrollTop||0)},{passive:true});
-  }
+
+
 
   // replace the accumulated inventory implementations with one thumb-friendly renderer.
 
 
-  ActionDispatcher.register('UNEQUIP',unequipAction5);
 
-  ActionDispatcher.register('DROP_EQUIPPED',dropEquippedAction5);
   // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
 
   // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
@@ -1647,14 +1540,8 @@ RuntimeState.ui.inventory=UX;
 
 
   RuntimeState.turn=TURN_AUDIT5;
-  globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
-  globalThis.__MANRU_TURN_PIPELINE__={register:TurnEngine.register,abort:MANRU_TURN_ABORT};
-  TurnEngine.register('monster-durations57',{post:()=>tickMonsterDurations()});
-  TurnEngine.register('temporary-terrain57',{post:()=>RuntimeTerrainOwner.tick()});
-  TurnEngine.register('jar-gas57',{post:()=>{tickJarGasFields();tickTerrainReactions105()}});
 
   document.body.classList.toggle('ux-modal-open',uiBlocking());
-  globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishModalOpening,finishClose:finishViewerClose,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
 
 
 
@@ -1664,8 +1551,6 @@ RuntimeState.ui.inventory=UX;
   
   
 
-  globalThis.__MANRU_TRANSIENT47__=Object.freeze({trim:trimTransient});
-  globalThis.__MANRU_RENDER47__=Object.freeze({invalidate:()=>{P47.force=true;P47.cullKey='';return true}});
   
   
   // r54: superseded minimap throttle removed.
@@ -1680,7 +1565,6 @@ RuntimeState.ui.inventory=UX;
 
 
 
-  ActionDispatcher.register('UPGRADE_GEAR',upgradeGearAction5);
 
   // r30: upgrade-mark dispatch is integrated in canonical useInventoryItem.
 
@@ -1691,13 +1575,11 @@ RuntimeState.ui.inventory=UX;
 
   
 
-  registerGenerationStage('strategy47','post',()=>applyStrategy());
   // r54: dead pre-v49 floor trait wrapper removed.
 
 
 
 
-  registerGenerationStage('resource48','post',()=>{guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true});
 
 
 
@@ -1825,7 +1707,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   
   
 
-  registerGenerationStage('aim-reset52','pre',()=>{AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null});
 
 
 
@@ -1839,7 +1720,6 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
 
 
   // 요약은 수치만. 설명/능력을 섞지 않는다.
-  window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
 
   const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
   for(const type of ['selectstart','dragstart','copy','cut']){
@@ -1851,8 +1731,7 @@ if(typeof window.modalBlocking49!=='function')window.modalBlocking49=()=>!gamepl
   // 마지막 행낭 정보 버튼도 같은 formatter 사용.
 
 
-/* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
-const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
+
   try{const s=localStorage.getItem('manruSfx54');if(s==='0')V54.sfx=false}catch(error){console.warn('[manru] sound setting not read',error)}
 
   const hold=document.createElement('div');hold.id='hold54';document.body.appendChild(hold);
@@ -1863,11 +1742,8 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
 
 
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
-  globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
-  globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54});
 
 
-  setPlayerAttackBaseR('combat54',attackPlayerCore54R);
   /* r15: boss knockback cap is handled by canonical knockMonster. */
 
   /* ---------- boss telegraph / phase system ---------- */
@@ -1899,36 +1775,24 @@ const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0}
   
 
   /* ---------- save/load/init compatibility ---------- */
-  registerGenerationStage('boss-zones54-pre','pre',()=>{V54.marks=[];rule.classList.remove('show')});registerGenerationStage('boss-zones54-post','post',()=>{state.bossZones54=[];for(const m of state.monsters||[])normalizeBoss(m)});
 
   // InputRouter owns the physical shortcut; this API remains the existing sound-setting owner.
-  globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54,toggle(){V54.sfx=!V54.sfx;try{localStorage.setItem('manruSfx54',V54.sfx?'1':'0')}catch(error){console.warn('[manru] sound setting not stored',error)}toast(`효과음 ${V54.sfx?'켜짐':'꺼짐'}`);return V54.sfx},enabled(){return V54.sfx}});
-
-
-  globalThis.__MANRU_BOSS54__={draw:drawBossIntent};
-
-/* ===== MANRU v5.6 TALISMANS + CONTEXTUAL UNKNOWN POTIONS ===== */
-const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
-  const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
-  const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
-
-
-
-
-  const ROOM_CONTEXT={
-    '연금술방':{text:'조제대에 금창약·해독재·청심초가 함께 놓여 있다.',kinds:['heal_small','heal_medium','makgeolli','cleanse','focus']},
-    '주방':{text:'식재료 옆에 소독재와 보양 약재가 놓여 있다.',kinds:['heal_small','makgeolli','cleanse','focus']},
-    '사당':{text:'향로 재와 정화수 흔적이 남아 있다.',kinds:['cleanse','focus','fortify']},
-    '무기고':{text:'수지·화약·근육을 굳히는 약재가 함께 보관돼 있다.',kinds:['fortify','smoke','fire']},
-    '서고':{text:'약성 기록에는 정신·기동 계열의 표식이 반복된다.',kinds:['focus','swift','cleanse']},
-    '감방':{text:'탈옥 도구 곁에 연막·경신·응급 약재가 숨겨져 있다.',kinds:['smoke','swift','heal_medium','makgeolli']}
-  };
 
 
 
 
 
-  window.MANRU_TALISMANS=TALISMANS;
+
+
+
+
+
+
+
+
+
+
+
   for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 
 
@@ -1947,7 +1811,6 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
   
-  window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
 
 
 
@@ -1962,14 +1825,13 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
 
 
 
-  function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
+
   if(window.__MANRU_CLEAN_INSPECT53)window.__MANRU_CLEAN_INSPECT53.item=inspectHTML56;
 
 targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';document.body.appendChild(targetHud);
 
 
 
-  globalThis.__MANRU_POTION_ART_56__={iconHtml:potionIconHtml56R,worldDraw:drawPotionWorld56R};
 
 
   inventoryFiltered=function inventoryFilteredCanonical(){
@@ -1989,7 +1851,7 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
 
 
 
-  function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
+
 
 
 
@@ -2021,7 +1883,6 @@ targetHud.id='talismanTarget56';targetHud.innerHTML='<div><b id="talismanTargetT
   
 
 
-  registerGenerationStage('knowledge56','post',()=>onFloorGenerated56());
   
   globalThis.__MANRU_CONSUMABLE56_ACTIONS__=Object.freeze({initializeKnowledge:ensureKnowledge56,knownPotion:isPotionKnownByPlayer,knownTalisman:knownTalisman56,publicName:publicName56,target:()=>!!V56.target,castTarget:(x,y)=>castTalisman56(x,y),cancelTarget:()=>{cancelTalismanTarget(true);return true},useTalisman:item=>{if(!item||item.type!=='talisman')return false;if(item.targeted){beginTalismanTarget(item);return true}return !!useInstantTalisman56(item)}});
 
@@ -2033,7 +1894,6 @@ RuntimeState.ui.food=V57;
 
 
 
-window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 
 
@@ -2048,7 +1908,6 @@ window.MANRU_FOOD57={recipes:FOOD_RECIPES};
 
 
 
-globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}},post:ctx=>{const b=ctx.food57||{};if(state&&!state.dead&&state.turn!==b.turn&&state.turn%10===0&&state.player.hunger<=0){const raw=(playerCloak().focusRegen||1)>=2?2:1,gained=Math.max(0,state.player.focus-(b.focus??state.player.focus));state.player.focus=Math.max(0,state.player.focus-Math.min(gained,raw*.5));if(typeof updatePanels==='function')updatePanels()}}});
 
 
 
@@ -2057,8 +1916,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('food57',{pre:ctx=>{ctx.food57={turn
 // Movement behavior is canonical in moveMonsterToward.
 
 
-registerMonsterAttackStageR25('food-ai57',(next,mon,bonus=0,context={},...rest)=>{const ctx=monsterAttackContextR(context);ensureFoodState();if(mon?.drunk57||mon?.drunk>0){const drunk=drunkAttackOutcome();if(drunk==='whiff'){floatText(mon.x,mon.y,'비틀','#c4a87c',10);addLog(`${mon.name}이 비틀거리며 공격을 허공에 휘둘렀다.`);return monsterAttackResultR(mon,ctx,{hit:false,reason:'drunk-whiff'})}if(drunk==='heavy')bonus+=DRUNK_RULES.attackHeavyBonus}const r=next(mon,bonus,ctx,...rest);if(r?.hit&&mon?.thiefRetreat57&&!state.dead)retreatMonster(mon,ctx.target||state.player);return r});
-registerPlayerAttackStageR('guard-fire57',(next,mon,...args)=>{const hp0=mon?.hp??0,r=next(mon,...args);ensureFoodState();if(mon&&mon.hp>0&&mon.hp<hp0&&state.status.fireCoat57>0&&globalThis.__MANRU_RANDOM57__()<.12){emitElementContact105('fire',entityFootprintCells57(mon),effectSource57(state.player));const dealt=damageEntity(mon,2,state.player,'fire');if(dealt>0)floatText(mon.x,mon.y,'화염 -'+dealt,'#ff9c55',11,'fire');if(mon.hp<=0)killMonster(mon)}return r});
 /* v9.8.6 inspect cleanup: removed legacy concept57 prose-append wrapper. */
 
 // 새 명칭이 기존 고해상도 아틀라스를 재사용하도록 시각 별칭을 지정한다.
@@ -2083,7 +1940,6 @@ cookingPanel.id='cook57';cookingPanel.innerHTML=`<div class="cookSheet57"><span 
 
 
 
-ActionDispatcher.register('COOK',cookSelected);
 cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking()};cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
 
 // 조리 중 월드 입력 차단 및 솥/화로 상호작용
@@ -2098,7 +1954,6 @@ window.MANRU_FOOD57.rumorHint=()=>{ensureFoodState();const unknown=FOOD_RECIPES.
 
 
 
-registerGenerationStage('food57','post',()=>{ensureFoodState();foodFloorRewards57()});
 
 
 
@@ -2122,7 +1977,6 @@ if(state)ensureFoodState();
 
 
 
-  registerGenerationStage('canon58','post',()=>{normalizeKitchens58();ensureCanonExtras58();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()});
 
 
 
@@ -2133,7 +1987,6 @@ if(state)ensureFoodState();
 
 
 
-  globalThis.__MANRU_DRAW_BASE58__=drawFast;
   globalThis.__MANRU_DRAW_HOOKS_R19__={world:[],post:[]};
   if(globalThis.__MANRU_BOSS54__?.draw)globalThis.__MANRU_DRAW_HOOKS_R19__.post.push({id:'boss-intent54',draw:globalThis.__MANRU_BOSS54__.draw});
 
@@ -2178,13 +2031,8 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
     state.doorCount59=doors;V59.doorLog.push({floor:state.floor,mode:state.layoutMode59,doors});
     if(V59.doorLog.length>30)V59.doorLog.shift();
   }
-  registerGenerationStage('guard59-pre','pre',()=>{state.guardRooms59=[];state.layoutMode59=null});
-  registerGenerationStage('guard59-post','post',()=>{guardedRooms59();inferCorridors59();doorAudit59();VisibilityService.compute();vfBuildDecor()});
 
 
-  registerMinimapHook('doors59',({sx,sy})=>{
-    if(!state)return;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.seen.has(k(x,y))&&[TT.DOOR,TT.OPEN_DOOR].includes(state.map[y][x])){MX.fillStyle=state.map[y][x]===TT.DOOR?'#d09a58':'#7d6040';MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}
-  });
 
 
   /* ---------- wall-embedded door art: front vs sideways like SPD raised/sideways doors ---------- */
@@ -2306,7 +2154,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  function onMonsterHpThreshold60(mon,threshold){if(state.floor!==23||threshold?.event!=='f23-progress-key'||!state.floor23)return false;const q=state.floor23;if(q.thresholdTriggered)return false;q.thresholdTriggered=true;const p=safeProgressDrop23(mon);if(!p)throw new Error('F23 progress key has no reachable safe drop');const item={name:'수은 심부 열쇠',type:'progress_key23',rarity:'rare',identified:true,count:1,stackable:false,x:p.x,y:p.y,color:'#d8f2ef'};PlacementService.placeItem(item,p);addLog('여의 수룡의 힘이 절반 아래로 꺾이자 수은 심부 열쇠가 튕겨 나왔다.');burst(p.x,p.y,'#d8f2ef',22,1);return true}
 
 
 
@@ -2333,12 +2180,10 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
 
 
 
-  globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 
 
 
-  registerGenerationStage('special60-pre','pre',()=>{state.featureRooms=[];state.landmarks=[];state.guardRooms59=[];state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={}});
-  registerGenerationStage('special60-post','post',()=>{const f=state.floor;if(SPECIAL60.has(f)||BOSS_FLOORS.has(f))rebuildSpecial60(f)});
+
   // r53: removed generation-on-load stage special60; saved geometry is authoritative.
 
 
@@ -2371,31 +2216,24 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
 
 
-  function asuraDomainDist61(a,b){return Math.hypot((a?.x??0)-(b?.x??0),(a?.y??0)-(b?.y??0))}
+
   
 
 
 
   // Shell / formation defense is owned by combatDefenseBonus57 in both native attack bases.
-  registerPlayerAttackStageR('asura-domain61',(next,m,b=0,...rest)=>{configureMonsterTraits(m);if(m?.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(state.player,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28){setPlayerAttackOutcome('blocked',m,{reason:'asura-domain'});m.alerted=true;floatText(m.x,m.y,'영역 밖 공격 무효','#d7b16e',9);addLog(`${m.name}의 아수라장이 영역 밖에서 시작된 직접 공격을 지웠다.`);return false}return next(m,b,...rest)});
-  globalThis.__MANRU_AI61__={configure:configureMonsterTraits,special:specialTurn,artillery:artilleryTurn,intent:executeMonsterIntent};
 
 
   /* ---------- structure interaction: click/tap paths next to a blocked target, then opens or destroys it ---------- */
   const BREAK61=new Set([TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
-  // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
-  function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
+
 
 
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'role61',draw:drawRoleOverlay});
-  window.__MANRU_ASURA61__={
-    blocksDirect:(m,origin=state?.player)=>!!(m&&origin&&m.role61==='asura'&&(m.asuraZone61||0)>0&&asuraDomainDist61(origin,m)>(m.asuraRadius61||m.asuraRadius47||3)+.28)
-  };
   /* v9.8.6 inspect cleanup: removed legacy tactical-role prose-append wrapper. */
 
 
-  registerGenerationStage('population61','post',()=>{if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}});
 
 
 
@@ -2429,7 +2267,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('feeling62','post',()=>{if(state&&!state.monsters.some(m=>m.boss)){applyFeeling();applyMiniVault62();VisibilityService.compute();vfBuildDecor()}});
 
 
 
@@ -2440,7 +2277,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
 
 
 
@@ -2465,7 +2301,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
       <div class="rc70Head"><div><b>만루 · 출시 후보 관리</b><small>${RC.build} · 세이브 / 조작 / 진단 <span id="rcStorage70"></span></small></div><button class="uxClose" id="rcClose70" aria-label="닫기">×</button></div>
       <div class="rc70Body">
         <section class="rc70Section"><h3>세이브 슬롯</h3><div id="rcSlots70" class="rc70Grid"></div></section>
-        <section class="rc70Section"><h3>백업 / 이동</h3><div class="rc70Row"><button id="rcExport70">세이브 내보내기</button><button id="rcImport70">세이브 가져오기</button><input id="rcImportFile70" type="file" accept=".json,application/json" hidden><button id="rcLoadAuto70">자동저장 불러오기</button></div></section>
+        <section class="rc70Section" id="rcString70"><h3>세이브 문자열</h3><div class="rc70Row"><button id="rcStrMake70">현재 진행 문자열 만들기</button><button id="rcStrCopy70" disabled>복사</button><button id="rcStrApply70">이 문자열로 이어하기</button></div><textarea id="rcStrText70" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="다른 기기에서 만든 문자열을 여기에 붙여 넣고 ‘이 문자열로 이어하기’를 누른다."></textarea><div id="rcStrStat70" class="rc70Diag">현재 진행과 계정 진행(튜토리얼·설정·사망 기록)이 모두 들어간다. 가져오면 지금 진행은 문자열의 진행으로 바뀐다.</div></section>
         <section class="rc70Section"><h3>조작 · 사운드</h3><div class="rc70Row"><button id="rcSfx70">게임 효과음</button><button id="rcHaptic70" aria-pressed="true">진동 ON</button><label>UI 효과음 <input id="rcUiVol70" type="range" min="0" max="1" step=".05"></label><button id="rcTutorial70">튜토리얼 다시 보기</button><label for="rcTextScale70">글씨 크기</label><select id="rcTextScale70" aria-label="글씨 크기"><option value="1">기본 — 100%</option><option value="1.15">크게 — 115%</option><option value="1.3">더 크게 — 130%</option><option value="1.45">매우 크게 — 145%</option></select></div></section>
         <section class="rc70Section"><h3>출시 진단</h3><div class="rc70Row"><button id="rcQuickAudit70">현재 층 검사</button><button id="rcPerf70">렌더 20회 측정</button></div><div id="rcDiag70" class="rc70Diag">대기 중</div></section>
       </div>
@@ -2546,10 +2382,8 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('pacing70','post',()=>{pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()});
 
   /* ---------- autosave hooks (idle, not every turn) ---------- */
-  globalThis.__MANRU_TURN_PIPELINE__.register('runtime70',{pre:()=>{RC.lastActionAt=performance.now()},post:()=>{if(state){coachContext();if(state.log?.length>48)state.log=state.log.slice(0,48);if(state.decals?.length>24)state.decals.splice(0,state.decals.length-24);if(state.tempFields?.length>24)state.tempFields.splice(0,state.tempFields.length-24)}}});
 
   /* ---------- boss visual signature: one cheap pass only ---------- */
   
@@ -2604,10 +2438,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
   document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
   const textScaleControl=document.getElementById('rcTextScale70');textScaleControl.value=String(RC.textScale);
   document.getElementById('rcTutorial70').onclick=resetTips70;
-  document.getElementById('rcExport70').onclick=exportSaveFile;
-  document.getElementById('rcImport70').onclick=()=>document.getElementById('rcImportFile70').click();
-  document.getElementById('rcImportFile70').onchange=e=>importFile(e.target.files?.[0]);
-  document.getElementById('rcLoadAuto70').onclick=()=>loadRaw(lsGet(AUTO_KEY),'자동저장');
+  bindSaveStringPanel();
 
 
     
@@ -2635,7 +2466,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
     canvas?.addEventListener?.('contextlost',e=>{e.preventDefault();clearHeldInput53();cancelAutoWalk()});
     canvas?.addEventListener?.('contextrestored',()=>scheduleResume71('canvas-contextrestored',0),{passive:true});
   }
-  window.__MANRU_RESUME_R6__={schedule:scheduleResume71};
 
 
   
@@ -2675,8 +2505,6 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  registerGenerationStage('region71-pre','pre',()=>{state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null});
-  registerGenerationStage('region71-post','post',()=>{enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;});
 
 /* ===== MANRU v7.3: WALL APPROACH / 8-WAY AUTOPATH / DELAYED HOLD RING ===== */
 
@@ -2684,7 +2512,7 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
 
-  const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
+
 
 
 
@@ -2728,14 +2556,12 @@ fusion.id='fusion74';fusion.innerHTML='<div class="f74sheet"><span class="uiCorn
 
 
 
-ActionDispatcher.register('FUSE',fuse74);
 
 
 
 
 
 
-ActionDispatcher.register('GEAR_APPLY',applyGear);
 
 
 
@@ -2749,9 +2575,7 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   /* equipment effects */
   /* r15: earth stagger guard is handled by canonical applyKnockback. */
-  registerPlayerAttackStageR('element-brand74',(next,mon,b=0,...rest)=>{const before=mon?.hp??0,contact=mon?entityFootprintCells57(mon):[],r=next(mon,b,...rest);if(mon&&mon.hp<before)applyWeaponBrandHit(state.player,mon,before-mon.hp,contact);return r});
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('elements74',{pre:()=>ensure74(),post:()=>{if(!state||state.dead||state.victory)return;if(state.player.armor?.elementGuard74==='grass')state.status.poison=0;if(state.player.armor?.elementGuard74==='water'&&state.turn%2===0){state.status.poison=Math.max(0,(state.status.poison||0)-1);state.status.bleed=Math.max(0,(state.status.bleed||0)-1)}tickElementFields57();if(state.elementWard74){state.elementWard74.ttl--;if(state.elementWard74.ttl<=0)state.elementWard74=null}VisibilityService.compute();updateAll()}});
   // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
 
   /* inventory dispatch + visible marks */
@@ -2760,7 +2584,6 @@ ActionDispatcher.register('GEAR_APPLY',applyGear);
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'element74',draw:drawElementOverlay});
 
-  registerGenerationStage('talisman74','post',()=>{ensure74();state.tempTerrain74=[];state.elementFields74=[]});
     
   globalThis.__MANRU_TALISMAN74_ACTIONS__=Object.freeze({woodEffect:woodEffect105,shopCandidates:(baseKind=null)=>FUSION_RECIPES.filter(r=>r.a!=='upgrade'&&r.b!=='upgrade'&&(!baseKind||r.a===baseKind||r.b===baseKind)).map(recipeItem),known:known74,publicName:public74,target:()=>!!V74.target,castTarget:(x,y)=>castFusion(x,y),cancelTarget:()=>{cancelTalismanTargeting(true);return true},closePanels:()=>{closeFusion();closeGear();return true},dispatch:item=>{if(!item||item.type!=='talisman')return{handled:false,result:false};ensure74();if(item.talismanKind==='reinforce105'){openGear(item);return{handled:true,result:true}}if(item.fusion74){if(item.fusionMode74==='gear'){openGear(item);return{handled:true,result:true}}if(item.fusionMode74==='target'){startTarget74(item);return{handled:true,result:true}}return{handled:true,result:!!useFusionInstant(item)}}if(ELEMENT_KIND74[item.talismanKind])return{handled:true,result:!!rawElement74(item)};if(item.talismanKind==='upgrade'){if(playerClassRules58().upgradeTalismanMode==='bodyBoost'&&!state.player.inventory.some(i=>i.summonItem105==='book'))return{handled:true,result:useBodyPower74(item)};identifyKind('upgrade','강화 효과 관찰');openGear(item);return{handled:true,result:true}}return{handled:false,result:false}},ensure:ensure74});
 
@@ -2787,7 +2610,6 @@ document.body.classList.add('mf75-clean');
 
 
 
-  registerGenerationStage('polish78','post',()=>{polish78();VisibilityService.compute()});
 
 
 
@@ -2797,7 +2619,7 @@ document.body.classList.add('mf75-clean');
 
   
   
-  const targeting81=()=>actionTargetOpen56();
+
 
 
   
@@ -2806,219 +2628,7 @@ document.body.classList.add('mf75-clean');
 
 
 
-  /* ---------------- always-on automation: independent path runner ---------------- */
-  const Auto81={
-    serial:0,
-    timer:0,
-    active:false,
-    exploreMode:false,
-    target:null,
-    path:[],
-    lastStop:'idle',
-    intervalMs:82/AUTO_MOVE_RATE70,
 
-    valid(q){return !!q&&Number.isFinite(q.x)&&Number.isFinite(q.y)&&q.x>=0&&q.y>=0&&q.x<COLS&&q.y<ROWS},
-    visibleEnemies(){return new Set((state?.monsters||[]).filter(isThreatVisibleToPlayer))},
-    alertedEnemies(){return new Set((state?.monsters||[]).filter(m=>m.alerted&&isThreatVisibleToPlayer(m)))},
-    setChip(text){try{v10AutoChip(text||null)}catch(error){ignoreError('auto-walk chip update',error)}},
-    syncPreview(path=this.path){VIS.autoPath=(path||[]).map(p=>({x:p.x,y:p.y}))},
-    clearTimer(){if(this.timer){clearTimeout(this.timer);this.timer=0}if(autoWalkTimer){clearTimeout(autoWalkTimer);autoWalkTimer=null}},
-    stop(reason='manual',clearExplore=true){
-      this.serial++;this.clearTimer();this.active=false;this.path=[];this.target=null;this.lastStop=reason;
-      if(clearExplore)this.exploreMode=false;
-      autoWalkToken++
-      VIS.autoPath=null;VIS.exploring=!!this.exploreMode;this.setChip(null);
-      const legacyChip=document.getElementById('vfAutoState');if(legacyChip){legacyChip.classList.remove('show');legacyChip.textContent=''}
-      return true;
-    },
-    schedule(fn,ms=this.intervalMs){
-      this.clearTimer();
-      const id=setTimeout(()=>{if(this.timer===id)this.timer=0;if(autoWalkTimer===id)autoWalkTimer=null;fn()},ms);
-      this.timer=id;autoWalkTimer=id;return id;
-    },
-    targetAt(tx,ty){
-      if(neutralInteractableAt58(tx,ty))return{type:'merchant',x:tx,y:ty};
-      if(ShopMapBuilder.groundAt(tx,ty))return{type:'shop-stock',x:tx,y:ty};
-      const mon=findMonsterAt(tx,ty);
-      if(mon&&!isHostileTarget57(mon)&&occupancySwapAllowed57(state.player,mon))return{type:'tile',x:tx,y:ty};
-      if(isThreatVisibleToPlayer(mon)||summonActive(mon)&&state.visible.has(k(tx,ty)))return{type:'monster',x:tx,y:ty,mon};
-      if(state.map[ty]?.[tx]===TT.JAR)return{type:'blocked',x:tx,y:ty,tile:TT.JAR};
-      const item=(state.items||[]).find(it=>it.x===tx&&it.y===ty);
-      if(item)return{type:'item',x:tx,y:ty,item};
-      if(state.branchPortals105?.some(p=>p.x===tx&&p.y===ty))return{type:'branch',x:tx,y:ty};
-      if(state.stairs&&state.stairs.x===tx&&state.stairs.y===ty)return{type:'stairs',x:tx,y:ty};
-      if(ReachabilityService.playerPassable(tx,ty)&&!OccupancyService.isOccupied(tx,ty))return{type:'tile',x:tx,y:ty};
-      return{type:'blocked',x:tx,y:ty,tile:state.map[ty]?.[tx]};
-    },
-    targetPos(t){
-      if(!t)return null;
-      if(t.type==='monster'){
-        const m=t.mon;
-        if(!m||m.hp<=0||!(state.monsters||[]).includes(m))return null;
-        if(Number.isFinite(t.x)&&Number.isFinite(t.y)&&monCovers(m,t.x,t.y))return{x:t.x,y:t.y};const c=entityClosestCellTo57(m,state.player);return c?{x:c.x,y:c.y}:{x:m.x,y:m.y};
-      }
-      if(t.type==='stairs')return state.stairs?{x:state.stairs.x,y:state.stairs.y}:null;
-      if(t.type==='item'){
-        const it=(state.items||[]).includes(t.item)?t.item:(state.items||[]).find(i=>i.x===t.x&&i.y===t.y);
-        return it?{x:it.x,y:it.y}:{x:t.x,y:t.y};
-      }
-      return{x:t.x,y:t.y};
-    },
-    adjacentPath(pos){
-      const search=ReachabilityService.playerSearch(state.player,{seenOnly:true,ignoreOccupants:false});let best=null;
-      for(const[dx,dy]of DIRS8){
-        const x=pos.x+dx,y=pos.y+dy;
-        if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||!state.seen.has(k(x,y))||!ReachabilityService.playerPassable(x,y)||OccupancyService.isOccupied(x,y))continue;
-        const path=ReachabilityService.playerPath(search,{x,y});
-        if(path&&(!best||path.length<best.length))best=path;
-      }
-      return best;
-    },
-    computePath(t){
-      const pos=this.targetPos(t);if(!pos)return null;
-      const p=state.player;
-      if(t.type==='monster'){if(entityDistance57(t.mon,p)<=1)return[];return this.adjacentPath(pos)}
-      if(t.type==='merchant'){if(entityDistance57(pos,p)<=1)return[];return this.adjacentPath(pos)}
-      if(t.type==='blocked'){if(entityDistance57(pos,p)<=1)return[];return this.adjacentPath(pos)}
-      if(p.x===pos.x&&p.y===pos.y)return[];
-      return ReachabilityService.pathTo(pos.x,pos.y);
-    },
-    pickupAll(){
-      if(!state||isGameplayInputBlocked())return 0;
-      let count=0,guard=0;
-      while(guard++<12){
-        const before=state.items.length;
-        if(!state.items.some(it=>it.x===state.player.x&&it.y===state.player.y))break;
-        ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;
-        if(state.items.length>=before)break;
-        count+=before-state.items.length;
-      }
-      if(count){Runtime81.qa.autoPickups+=count;return count}
-      return 0;
-    },
-    act(t){
-      if(!t||!state)return false;
-      const pos=this.targetPos(t),p=state.player;if(!pos)return false;
-      if(t.type==='merchant'){if(entityDistance57(pos,p)>1)return false;this.stop('merchant',true);return interactNeutral58(neutralInteractableAt58(pos.x,pos.y))}
-      if(t.type==='shop-stock'){
-        if(p.x!==pos.x||p.y!==pos.y)return false;
-        this.stop('shop-stock',true);const stock=ShopMapBuilder.groundAt(pos.x,pos.y);if(stock)openShop(stock);return true;
-      }
-      if(t.type==='monster'){
-        if(entityDistance57(t.mon,p)>1)return false;
-        const dx=Math.sign(pos.x-p.x),dy=Math.sign(pos.y-p.y);
-        this.stop('target-monster',true);ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}).value;return true;
-      }
-      if(t.type==='item'){
-        if(p.x!==pos.x||p.y!==pos.y)return false;
-        this.stop('target-item',true);this.pickupAll();return true;
-      }
-      if(t.type==='stairs'){
-        if(p.x!==pos.x||p.y!==pos.y)return false;
-        this.stop('target-stairs',true);ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return true;
-      }
-      if(t.type==='branch'){
-        if(p.x!==pos.x||p.y!==pos.y)return false;
-        this.stop('target-branch',true);this.pickupAll();return true;
-      }
-      if(t.type==='blocked'){
-        if(entityDistance57(pos,p)>1)return false;
-        this.stop('target-structure',true);
-        const now=state.map[pos.y]?.[pos.x];
-        if(ReachabilityService.playerPassable(pos.x,pos.y)&&!OccupancyService.isOccupied(pos.x,pos.y))ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(pos.x-p.x),Math.sign(pos.y-p.y)]}).value;
-        else if(!ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[pos.x,pos.y]}).value)toast(`${terrainName(now)} 바로 앞이다.`);
-        return true;
-      }
-      if(t.type==='tile'&&p.x===pos.x&&p.y===pos.y){
-        this.stop('destination',true);this.pickupAll();return true;
-      }
-      return false;
-    },
-    threatBefore(){return{hp:state.player.hp,visible:this.visibleEnemies(),alerted:this.alertedEnemies()}},
-    shouldStopForThreat(before,target){
-      if(state.player.hp<before.hp)return'hit';
-      const after=this.visibleEnemies(),afterAlert=this.alertedEnemies(),targetMon=target?.type==='monster'?target.mon:null;
-      for(const m of after)if(!before.visible.has(m)&&m!==targetMon)return'new-enemy';
-      for(const m of afterAlert)if(!before.alerted.has(m)&&m!==targetMon)return'alerted-enemy';
-      if([...after].some(m=>m!==targetMon&&entityDistance57(m,state.player)<=1))return'adjacent-enemy';
-      return'';
-    },
-    startPath(path,meta={}){
-      if(!state||state.dead||state.victory||isGameplayInputBlocked()||targeting81())return false;
-      this.stop('replace',false);
-      this.active=true;this.exploreMode=!!meta.explore;VIS.exploring=this.exploreMode;
-      this.target=meta.target||null;this.path=(path||[]).map(p=>({x:p.x,y:p.y}));
-      const token=++this.serial;
-      let plannedTarget=this.targetPos(this.target);
-      this.syncPreview();
-      const label=this.exploreMode?'자동 탐사':this.target?.type==='stairs'?'계단으로 이동':this.target?.type==='item'?'아이템으로 이동':this.target?.type==='monster'?'적에게 접근':'자동 이동';
-      this.setChip(label);
-      const tick=()=>{
-        if(token!==this.serial||!this.active)return;
-        if(!state||state.dead||state.victory||isGameplayInputBlocked()||targeting81()){this.stop('blocked-ui',true);return}
-        const presentationWait=ACTION_PRESENTATION58.run===state?ACTION_PRESENTATION58.inputUntil-performance.now():0;
-        if(presentationWait>0){this.schedule(tick,Math.ceil(presentationWait));return}
-        if(this.target&&this.act(this.target))return;
-        const pos=this.targetPos(this.target),head=this.path[0],player=state.player;
-        const targetMoved=!!this.target&&(!pos||!plannedTarget||pos.x!==plannedTarget.x||pos.y!==plannedTarget.y);
-        const blockedNext=!!head&&!ReachabilityService.playerStepAllowed(player,head.x,head.y,{seenOnly:true,ignoreOccupants:false,allowAllySwap:true});
-        if(targetMoved||blockedNext||this.target&&!this.path.length){
-          if(!this.target){this.active=false;this.path=[];this.syncPreview();this.schedule(()=>this.explore(true),76/AUTO_MOVE_RATE70);return}
-          const fresh=this.computePath(this.target);
-          if(!fresh){this.stop('unreachable',true);toast('본 길 안에서 닿을 수 없는 곳이다.');return}
-          this.path=fresh;plannedTarget=pos;this.syncPreview();
-        }
-        if(!this.path.length){
-          if(this.target&&this.act(this.target))return;
-          if(this.exploreMode){this.active=false;this.path=[];this.syncPreview();this.schedule(()=>this.explore(true),76/AUTO_MOVE_RATE70);return}
-          this.stop('arrived',true);return;
-        }
-        const next=this.path[0],p0={x:state.player.x,y:state.player.y,turn:state.turn},before=this.threatBefore();
-        const dx=Math.sign(next.x-p0.x),dy=Math.sign(next.y-p0.y);
-        if(!dx&&!dy){this.path.shift();this.schedule(tick,30);return}
-        ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}).value;
-        if(token!==this.serial||!this.active)return;
-        const moved=state.player.x!==p0.x||state.player.y!==p0.y,turnChanged=state.turn!==p0.turn;
-        const danger=this.shouldStopForThreat(before,this.target);
-        if(danger){this.stop(danger,true);return}
-        this.pickupAll();
-        if(this.target&&this.act(this.target))return;
-        if(!moved&&!turnChanged){this.stop('stalled',true);return}
-        // Consume only a reached cell: opening a door or a consumed failed move
-        // must retain the next step. Replan after displacement on the next tick.
-        if(state.player.x===next.x&&state.player.y===next.y)this.path.shift();
-        this.syncPreview();this.schedule(tick,this.intervalMs);
-      };
-      this.schedule(tick,0);return true;
-    },
-    go(tx,ty){
-      const q=typeof tx==='object'?tx:{x:tx,y:ty};
-      if(!this.valid(q)||!canAct81())return false;
-      if(!state.seen.has(k(q.x,q.y))){toast('아직 본 적 없는 칸이다.');return false}
-      Runtime81.qa.mapTaps++;CameraController.resume(false);if((q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
-      const t=this.targetAt(q.x,q.y);
-      if(q.x===state.player.x&&q.y===state.player.y){
-        this.stop('same-tile',true);
-        if(t.type==='branch')toast('상호작용 버튼(F)으로 출입할 수 있다.');else if(t.type==='item')this.pickupAll();else if(t.type==='stairs')ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;else if(adjacentBranchPortal105())toast('상호작용 버튼(F)으로 출입할 수 있다.');else ActionDispatcher.dispatch({type:'CONTEXT_ACTION',args:[]}).value;
-        return true;
-      }
-      const path=this.computePath(t);
-      if(!path){toast('본 길 안에서 닿을 수 없는 곳이다.');return false}
-      Runtime81.qa.autoMoves++;return this.startPath(path,{explore:false,target:t});
-    },
-    chooseFrontier(){return ReachabilityService.frontierPath(.35,DIRS8)},
-    explore(resume=false){
-      if(!canAct81())return false;
-      if(!resume){this.stop('explore-start',false);this.exploreMode=true;VIS.exploring=true;addLog('자동 탐사: 미탐사 구역을 찾아간다. 적이나 피격에서 멈춘다.')}
-      else{this.exploreMode=true;VIS.exploring=true}
-      const visible=this.visibleEnemies();
-      if([...visible].some(m=>m.alerted||entityDistance57(m,state.player)<=1)){this.stop('explore-danger',true);return false}
-      const path=this.chooseFrontier();
-      if(!path){this.stop('explore-complete',true);toast('탐사할 새 길이 없다.');return false}
-      return this.startPath(path,{explore:true,target:null});
-    },
-    state(){return{active:this.active,exploring:this.exploreMode,target:this.target?{type:this.target.type,...this.targetPos(this.target)}:null,path:this.path.length,lastStop:this.lastStop}}
-  };
 
 
 
@@ -3054,7 +2664,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* Reapply after start/load without adding switches or changing user policy. */
-  registerGenerationStage('runtime81','post',()=>{Integrity81.repair();ConnectedDecor81.build();queuePlace81()});
     
   addEventListener('pointerup',stopHeldInput,{passive:true});addEventListener('pointercancel',stopHeldInput,{passive:true});addEventListener('blur',stopHeldInput,{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 
@@ -3072,11 +2681,11 @@ document.body.classList.add('mf75-clean');
 
 
 
-  const V85={version:'v8.7-nethack-dense-modules',recent:[],samples:[]};
+  const V85={version:'v9.6.5-martial-stealth-fx',recent:[],samples:[]};
 
 
 
-  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
+
 
 
   // Perfume River walls are stone mountain / gorge walls, not purple room walls.
@@ -3167,8 +2776,6 @@ document.body.classList.add('mf75-clean');
 
 
   
-  registerMinimapHook('architecture85',({sx,sy})=>{if(state)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.seen.has(k(x,y))){if(state.map[y][x]===TT.WINDOW){MX.fillStyle='#83a2a7';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}else if(state.map[y][x]===TT.GARDEN_TREE){MX.fillStyle='#456b45';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}}});
-  registerGenerationStage('architecture85','post',finishArchitecture90);
   // r53: removed generation-on-load stage architecture85; saved geometry is authoritative.
 
 
@@ -3177,7 +2784,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v8.8: v8.0 STRUCTURE REBASE + DISCIPLINED THEME DECOR ===== */
-  V85.version='v8.8-v80-structure-theme-decor';
   
 
 
@@ -3231,7 +2837,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v8.9: CLEAN ARCHITECTURE + SPARSE FOCAL DECOR ===== */
-  V85.version='v8.9-clean-architecture-sparse-focal-decor';
   
 
   
@@ -3281,7 +2886,6 @@ document.body.classList.add('mf75-clean');
 
 
   /* ===== MANRU v9.0: DENSE PURPOSEFUL ROOMS / NO WASTED WINGS ===== */
-  V85.version='v9.0-dense-purposeful-rooms';
   
 
   
@@ -3314,7 +2918,6 @@ document.body.classList.add('mf75-clean');
   
 
   /* ===== MANRU v9.1: V7-STYLE ORGANIC ROOMS / DENSE F2 / READABLE FLOOR / FAST PAN ===== */
-  V85.version='v9.1-v7rooms-readable-fastpan';
   
 
   
@@ -3338,7 +2941,6 @@ document.body.classList.add('mf75-clean');
   
 
   /* ===== MANRU v9.3: ASYMMETRIC CLUSTERS / VARIABLE-WIDTH HALLS / SHORT PURPOSEFUL BRANCHES ===== */
-  V85.version='v9.3-asymmetric-clusters-variable-halls';
 
 
 
@@ -3361,7 +2963,6 @@ document.body.classList.add('mf75-clean');
 
 
 
-globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
 
@@ -3385,7 +2986,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   
 
   /* ===== MANRU v9.4: KEY TRIALS / PURPOSEFUL LOOT / NATURAL RECOVERY / VISUAL STABILITY ===== */
-  V85.version='v9.5-expanded-complex-architecture';
   
 
 
@@ -3399,14 +2999,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   // Natural recovery replaces explicit Rest. Hunger controls the very slow recovery interval; combat/status suppresses it.
   function naturalInterval94(){const h=state?.player?.hunger??0;return h>=90?16:h>=65?22:h>=40?30:h>=20?42:Infinity}
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('natural-heal94',{post:ctx=>{
-    if(!ctx.playerAgency||!state||state.dead||state.victory)return;const p=state.player;
-    if(p.hp>=p.maxHp){state.earlyRecoveryProgress58=0;return}
-    const elapsed=(state.playerAgencyTurns57||0)-(state.lastDamageAgencyTurn57||0);let heal=0;
-    if(state.passiveRecoveryUnlocked57){if(p.hunger>0&&elapsed>=6){const ratio=p.hp/p.maxHp,spacing=ratio<.5?1:ratio<.75?2:ratio<.9?3:4,start=elapsed>=24?24:elapsed>=16?16:elapsed>=11?11:6,interval=(elapsed>=16?1:elapsed>=11?2:3)*spacing;if((elapsed-start)%interval===0)heal=elapsed>=24?2:1}}
-    else if(safeForNatural94()){const iv=naturalInterval94();if(Number.isFinite(iv)){state.earlyRecoveryProgress58=(Number(state.earlyRecoveryProgress58)||0)+(state.floor<=10?1.5:1)/iv;if(state.earlyRecoveryProgress58>=1-1e-9){heal=Math.floor(state.earlyRecoveryProgress58+1e-9);state.earlyRecoveryProgress58=Math.max(0,state.earlyRecoveryProgress58-heal)}}}
-    if(heal){p.hp=Math.min(p.maxHp,p.hp+heal);updateAll()}
-  }});
 
   // Center-pad wait behavior is implemented directly by the canonical rest() declaration.
 
@@ -3426,8 +3018,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   // Higher quality death/victory cards.
 
 
-  registerGenerationStage('quality94-pre','pre',()=>{state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null});
-  registerGenerationStage('quality94-post','post',()=>{state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
   
 
   // Progression is owned by the canonical checkLevel() above; no late reassignment.
@@ -3441,7 +3031,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
 
 
   /* ===== MANRU v9.6: REAL LOCKED DOORS / STRUCTURAL SPECIAL FLOORS / PAN SNAPSHOT PERFORMANCE ===== */
-  V85.version='v9.6.3-follow-camera-toolbar-fix';
 
 
 
@@ -3533,7 +3122,6 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   
   
 
-  registerGenerationStage('locks96','post',()=>{clearLegacyTrial();refineF2Floor96();densifySpecial96();installLockPlan();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()});
   
 
 
@@ -3555,13 +3143,10 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
   
 
 
-  /* ===== MANRU v9.6.4: DOOR CLOSING + 1.30x ENEMY POPULATION ===== */
-  V85.version='v9.6.4-close-door-enemy-130';
-  const V964={version:V85.version,density:1.30};
+
 
 
   // Bridge the last pre-ammo generator into the newer release closure without another wrapper.
-  MANRU_GENERATION_PIPELINE.density=addDensityMonsters964;
 
 
 
@@ -3570,16 +3155,12 @@ globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
     const d=cands[0],why=doorCloseBlock964(d.x,d.y);if(why){if(!quiet)toast(why);return false}
     cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
   }
-ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
-  window.closeAdjacentDoor=closeAdjacentDoor964;
 
-  globalThis.__MANRU_CONTEXT_DOOR_HANDLER_R25__=()=>ActionDispatcher.dispatch({type:'CLOSE_DOOR',args:[true]}).value;
 
 
   
 
   /* ===== MANRU v9.6.5: MARTIAL STEALTH + PRESENTATION FX ===== */
-  V85.version='v9.6.5-martial-stealth-fx';
   MARTIAL_INFO.ghost.desc='형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.';
   MARTIAL_INFO.strong.desc='기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.';
   MARTIAL_INFO.roar.desc='충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.';
@@ -3587,16 +3168,7 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
 
-  globalThis.__MANRU_MARTIAL_FX965__=Object.freeze({pulse:martialPulse,used:martialUsedFx});
 
-  registerPlayerAttackStageR('martial-impact965',(next,mon,...args)=>{
-    const ready=state?.player?.strongReady||0,beforeHp=mon?.hp;
-    const r=next(mon,...args);
-    if(ready>0&&mon&&Number.isFinite(beforeHp)&&mon.hp<beforeHp&&(state?.player?.strongReady||0)===0){
-      ACTION_PRESENTATION58.strong=true;floatText(mon.x,mon.y,martialPresentation('strong',MARTIAL_INFO.strong,state.player).name,'#ffe3a0',15);globalThis.__MANRU_SFX54__?.play?.('crit')
-    }
-    return r;
-  });
 
   /* r8: stealth break is part of the central attack commit path. */
 
@@ -3605,14 +3177,12 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
 
   // Cheap vector FX rendered after the world: no new textures or heavy sprite rebuilds.
-  PresentationState.register('martial965',now=>{if(FX965.pulse&&now>=FX965.pulse.until)FX965.pulse=null});
 
   globalThis.__MANRU_DRAW_HOOKS_R19__?.post.push({id:'martial965',draw:drawMartialOverlay});
 
   
 
 
-  window.MANRU_AMMO=AMMO_TYPES;
   for(const w of WEAPONS)if(w.kind==='bow')w.ammoFamily='arrow';
 
 
@@ -3669,8 +3239,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
   
   // r30: ammunition selection is integrated in canonical useInventoryItem.
   /* R7 refactor: ammo inventory/world visuals now use the canonical exact-item renderer. */
-  registerPlayerAttackStageR('ammo967',(next,mon,bonus=0,...args)=>{const a=state?._activeAmmo967,d=ammoDef(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}});
-  globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
 
   
 
@@ -3799,9 +3367,8 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
   /* ===== MANRU v9.8.1: FIXED MAP DENSITY / RAFT SAFETY / PORTAL LABYRINTH / REACHABILITY ===== */
-  V980.version='v9.8.1-fixed-map-portal-reachability';
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
-  const V981={version:V980.version,errors:[],repairs:[],portalBuilds:0};
+
 
 
 
@@ -3869,7 +3436,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
   // v9.8.1 generation/load orchestration is executed by the single current pipeline below.
 
-  registerMinimapHook('portals981',({sx,sy})=>{if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}});
 
 
 
@@ -3879,7 +3445,6 @@ ActionDispatcher.register('CLOSE_DOOR',closeAdjacentDoor964);
 
 
   /* v9.8.3 direct monster stats / core loot / clean current-generation pipeline */
-if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU pipeline density stage missing');
 
 
 
@@ -3908,7 +3473,6 @@ if(typeof MANRU_GENERATION_PIPELINE.density!=='function')throw new Error('MANRU 
 
   
   
-  globalThis.__MANRU_GENERATE_CORE983__=NormalGenerationStages.riverAndCore;
 
   
 
@@ -3936,9 +3500,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  globalThis.__MANRU_CAMERA_STATE12__=CameraState;globalThis.__MANRU_CAMERA_PROJECTION12__=CameraProjection;globalThis.__MANRU_WORLD_HITTEST12__=WorldHitTest12;
-  window.__MANRU_V984_SET_ZOOM__=(v,anchor=null)=>CameraState.setZoom(v,false,anchor);
-  globalThis.__MANRU_CAMERA984__=Object.freeze({zoomByScale(scale,anchor=null){return CameraState.setZoom(cameraData.zoom*scale,false,anchor)}});
+  globalThis.__MANRU_CAMERA_STATE12__=CameraState;
   
 
 
@@ -3950,19 +3512,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  const DECAL986=new Map([
-    ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
-    ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
-  ]);
-
-
-
-
-
-
-
-  function decorInfo986(d){const info=DECOR986.get(String(d?.kind||''))||{name:'이름 없는 장식',desc:'만루의 방을 채우는 작은 장식물. 기능보다 그 공간을 사용했던 사람들의 취향과 습관을 남긴다.'};return{name:info.name,desc:info.desc,hint:info.hint||''}}
-  function decalInfo986(x,y){const d=[...(state?.decals||[])].reverse().find(v=>v.x===x&&v.y===y);if(!d)return null;const info=DECAL986.get(d.type)||null;return info?{name:info.name,desc:info.desc,hint:''}:null}
 
 
 
@@ -3977,29 +3526,19 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  window.__MANRU_INSPECT984__=function(q){
-    if(!q||!state)return;const x=q.x,y=q.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
-    const target={x,y};
-    if(!state.seen.has(k(x,y))){directOpenInspect('미탐사 구역',simpleHtml986({desc:'등불과 시야가 닿지 않은 공간. 직접 확인하기 전에는 안쪽의 구조나 존재를 알 수 없다.',hint:''}),target);return}
-    const tile=state.map[y][x];if(TERRAIN986.get(tile)?.inspectPriority57==='terrain'){const info=terrainInfo986(tile,x,y);directOpenInspect(info.name,simpleHtml986(info),target);return}
-    const palaceWarning=palaceWarningInfo(x,y);if(palaceWarning){directOpenInspect(palaceWarning.name,simpleHtml986(palaceWarning),target);return}
-    const martialInfo=state.visible.has(k(x,y))?martialWorldInfo(x,y):null;if(martialInfo){directOpenInspect(martialInfo.name,simpleHtml986(martialInfo),target);return}
-    const mon=findMonsterAt(x,y),it=(state.items||[]).find(v=>v.x===x&&v.y===y),t=state.map[y][x];
-    if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo();directOpenInspect(info.name,simpleHtml986(info),target);return}
-    if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),target);return}
-    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect(info.name,simpleHtml986(info),target,stock.item);return}
-    const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
-    if(it){openItemInspect986(it,target);return}
-    const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect(info.name,simpleHtml986(info),target);return}
-    const decal=decalInfo986(x,y);if(decal){directOpenInspect(decal.name,simpleHtml986(decal),target);return}
-    const info=terrainInfo986(t,x,y);directOpenInspect(info.name,simpleHtml986(info),target);
-  };
+
+
+
+
+
+
+
+
+
+
 
 
   /* Final inspect owner. It bypasses the historical append-wrappers that duplicated monster/item prose. */
-  window.__MANRU_TERRAIN_CODEX986__={
-    openItem:openItemInspect986
-  };
 
   /* ---------- ammunition: half bundle size, no equipped-bow bias, clearer arrow silhouettes ---------- */
   if(Array.isArray(window.MANRU_AMMO)){
@@ -4018,13 +3557,11 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   
   
   
-    globalThis.__MANRU_TURN_PIPELINE__.register('camera-save984',{post:()=>{if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}});
   // r53: obsolete v984 descent save wrapper retired; v1004 owns persistence.
     // r53: overwritten save implementation retired.
 
 
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
-  for(const id of ['rcLoadAuto70','rcExport70','rcImport70']){const b=document.getElementById(id);if(b){b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('퍼마데스 런에서는 과거 세이브를 불러올 수 없다.')}}}
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});
 
 
@@ -4071,9 +3608,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  ActionDispatcher.register('IDENTIFY_CHOICE',identifyChoiceAction5);
 
-  ActionDispatcher.register('PURIFY_CHOICE',purifyChoiceAction5);
 
 
 
@@ -4115,20 +3650,16 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
 
   // Existing generated floor may have been built before the new wrapper was installed.
   if(state){applyCursesToAllGear();ensureHolyDrop();syncCurseClocks991()}
   
   // Curse effects preserve the base item stats. Equal active curse ids across equipped slots
   // share one geometric strength: 1 stack=1x, 2=2x, 3=4x, 4=8x, 5=16x.
-  registerPlayerAttackStageR('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r});
-  registerMonsterAttackStageR25('curse991',(next,mon,...rest)=>{const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r});
 
 
 
 
-  globalThis.__MANRU_TURN_PIPELINE__.register('curse-story991',{pre:ctx=>{ctx.curse991={turn:state?.turn||0}},post:ctx=>{if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}});
 
   // Equip reveals the item and activates its curse. A manifested curse binds that slot until purified.
   // r30: v9.9.1 identity/holy/curse equipment dispatch is integrated in canonical useInventoryItem.
@@ -4152,7 +3683,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
   // r57: canonical activateMartial closes the quick-skill panel through __MANRU_ITEM_IDENTITY991__.
 
-  globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuickPanel();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
 
   bindSkillButton();queueMicrotask(bindSkillButton);
 
@@ -4237,7 +3767,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  let selectedClass1001=CLASSES[0].id;
+
   const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
 
 
@@ -4309,7 +3839,6 @@ RuntimeState.ui.screen=SCREEN1002;
 
     /* ---------- permadeath hardening: reject a resurrected snapshot while its death tombstone remains ---------- */
     
-        globalThis.__MANRU_TURN_PIPELINE__.register('permadeath-clean1003',{post:()=>{/* Persistence cleanup belongs to SaveService commit. */}});
 
     // Any stale renderer timestamp loaded during the earlier v10.0.2 boot is neutralized now.
     sanitizeTransient1003();
@@ -4332,7 +3861,6 @@ RuntimeState.ui.screen=SCREEN1002;
     
 
 
-    globalThis.__MANRU_SAVE_SERVICE__=SaveService;
 
 
 
@@ -4341,7 +3869,6 @@ RuntimeState.ui.screen=SCREEN1002;
     
 
     
-    globalThis.__MANRU_SAVE1004__=Object.freeze({raw:currentRaw,meta:()=>{const c=SaveService.recover().candidate;return c?{floor:c.meta.floor,turn:c.meta.turn,runId:c.meta.runId984,written:c.written,seq:c.seq,source:c.source}:null},write:writeRun,valid:()=>!!SaveService.recover().candidate});
 
     // The earlier v10.0.2 boot code may already have restored manru984_active_run before this patch runs.
     // At document boot there has been no user input yet, so discard that transient in-memory restore and show title.
@@ -4358,7 +3885,6 @@ RuntimeState.ui.screen=SCREEN1002;
       const ok=writeRun().ok,c=ok?SaveService.recover().candidate:null;
       toast(ok&&c?`기록 저장 완료 · ${c.meta.floor}층 T${c.meta.turn}`:'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return !!(ok&&c);
     };
-    globalThis.__MANRU_TURN_PIPELINE__.register('autosave1004',{post:()=>{if(state&&!state.dead&&!state.victory)SaveService.request('turn')}});
     // Descent requests persistence after every existing descent effect completes.
 
 
@@ -4398,14 +3924,12 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 
-  /* v10.0.4 strict typed-key final pass: later architecture layers are not allowed to reopen a bypass. */
-  const strictKeyFloors1004=new Set(strictLockFloors()||[]);
+
   // r18: strict typed-key retries run inside the canonical generation pipeline so failed attempts
   // do not also consume holy/story/item side effects through nested generation wrappers.
   
-/* ===== MANRU v10.0.4 ROUTE/Hazard REWORK (rolled back from v10.0.5 map branch) ===== */
-const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
-const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
+
+
 
 
 
@@ -4425,9 +3949,6 @@ const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:
 
 
 /* r15: voluntary movement, forced movement and knockback call this shared hazard core directly from their canonical base functions. */
-window.__MANRU_HAZARD_CORE__={
-  armFragile,collapseAt:collapseFragileAt105,kind:hazardTile,adapted:entityAdapted,resolve:resolveEntityHazard1005,standing:resolveStandingHazard1005,revalidateAt:revalidateHazardAt1005,revalidateAll:resolveAllStandingHazards1005
-};
 
 
 
@@ -4437,7 +3958,6 @@ window.__MANRU_HAZARD_CORE__={
 
 
 
-globalThis.__MANRU_TURN_PIPELINE__.register('hazard1005',{pre:ctx=>{if(!state)return;resolveAllStandingHazards1005('turn-start');if(state.dead)return globalThis.__MANRU_TURN_PIPELINE__.abort;ctx.hazard1005={beforeD:remain('drown'),beforeV:remain('void')};collapseCrumbleLeft1005()},post:ctx=>{if(!state)return;const h=ctx.hazard1005||{};collapsePaperAfterAction1005();restoreFragiles();wardCountdownLog(h.beforeD??0,h.beforeV??0);wardExpiry1005(h.beforeD??0,h.beforeV??0);updateWardHud()}});
 
 /* HUD: the remaining ward time must be impossible to miss. */
 const hud=document.createElement('div');hud.id='hazardWard1005';hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';document.body.appendChild(hud);
@@ -4494,20 +4014,7 @@ const TERRAIN_R41_1006=globalThis.__MANRU_TERRAIN_R41__=globalThis.__MANRU_TERRA
 globalThis.__MANRU_TYPED_KEYS__?.setMetaProvider?.(keyMeta1006);
 /* r45: key panel reads __MANRU_TYPED_KEYS__.meta() directly; removed the v10.0.6 naming wrapper. */
 
-/* ---------- item audit: definitions that previously had no mechanical reader ---------- */
-function defBy(name){return WEAPONS.find(x=>x.name===name)||ARMORS.find(x=>x.name===name)||CLOAKS.find(x=>x.name===name)||RELICS.find(x=>x.name===name)||TRINKETS.find(x=>x.name===name)||null}
-function patchDef(name,props){const d=defBy(name);if(d)Object.assign(d,props);return d}
-patchDef('수련용 환도',{focusChain:true,ability:'집중 연계',desc:'연속으로 공격을 2회 적중시키면 기력 1을 되찾습니다. 빗나가면 연계가 끊깁니다.'});
-patchDef('태도',{edgeBonus:true,knockback:1,ability:'밀치기 · 일섬',desc:'긴 날로 거리를 지배합니다. 체력이 75% 이상 남은 적에게 첫 일격 보너스 피해를 주고 한 칸 밀어냅니다.'});
-patchDef('당파',{parry:.12,ability:'방어 · 얽기',desc:'근접 공격을 12% 확률로 흘려내고 공격자를 잠깐 경직시킵니다.'});
-patchDef('단단한 철궁',{tracking:true,ability:'추적',desc:'조준 보정으로 원거리 공격 시 대상 EVA를 크게 무시합니다.'});
-patchDef('낡은 장도리',{ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'});
-patchDef('손도끼',{ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'});
-patchDef('질긴 가죽망토',{staggerResist:.30,desc:'피격 시 30% 확률로 밀치기·속박·둔화를 버텨 자세가 흐트러지지 않습니다.'});
-patchDef('바람막이망토',{focusRegen:1.35,desc:'기본 기력 자연회복에 약 35%의 추가 회복을 누적합니다.'});
-patchDef('여행자망토',{eatSpeed:1.35,desc:'음식 사용 행동비용을 약 26% 줄여 전투 중 보급이 훨씬 안전해집니다.'});
-patchDef('두꺼운 면망토',{trapGuard:.35,desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.'});
-delete defBy('두꺼운 면망토').hazardResist
+
 
 
 
@@ -4516,33 +4023,13 @@ delete defBy('두꺼운 면망토').hazardResist
 /* r8: breakPower is handled by the central basicAttack facing branch. */
 
 /* weapon effects: focus chain, opening edge, tracking, construct-breaking bonus */
-registerPlayerAttackStageR('weapon1006',(next,mon,bonusAtk=0,...rest)=>{
-  const p=state?.player,w=p?.weapon||{},hp0=mon?.hp??0,eva0=mon?.eva,followup=rest.some(v=>v&&v.chainFollowup1006===true);
-  let opening=false;
-  if(mon&&w.edgeBonus&&mon.maxHp>0&&mon.hp/mon.maxHp>=.75)opening=true;bonusAtk+=equipmentOpeningBonus105(p,mon);
-  if(mon&&w.tracking&&w.ranged&&Number.isFinite(eva0))mon.eva=Math.max(0,eva0-6);
-  let r;try{r=next(mon,bonusAtk,...rest)}finally{if(mon&&w.tracking&&w.ranged&&Number.isFinite(eva0))mon.eva=eva0}
-  const hit=r===true&&!!mon&&mon.hp<hp0;
-  if(opening&&hit)addLog('태도 · 일섬: 빈틈을 선점해 추가 피해를 냈다.');
-  equipmentFocusChain105(p,hit);
-  if(hit&&mon.hp>0&&!followup&&Number(w.chain)>0&&globalThis.__MANRU_RANDOM57__()<w.chain){floatText(mon.x,mon.y,'연격','#e8c58d',11);addLog(`${w.name} · 연격!`);attackPlayer(mon,0,{chainFollowup1006:true})}
-  return r;
-});
 
 /* parry + actual stagger resistance */
-registerMonsterAttackStageR25('parry-stagger1006',(next,mon,bonus=0,context={},...rest)=>{
-  const ctx=monsterAttackContextR(context),p=ctx.target||state?.player,w=p?.weapon||{};
-  if(mon&&w.parry&&ctx.delivery==='melee'&&entityDistance57(mon,p)<=2&&globalThis.__MANRU_RANDOM57__()<w.parry){
-    applyCombatStatus(mon,'stun',1,1,{stagger:true,source:p});floatText(p.x,p.y,'패리','#e9d59b',11);addLog(`${w.name}: ${mon.name}의 근접 공격을 흘려냈다.`);return monsterAttackResultR(mon,ctx,{hit:false,parried:true,interrupted:true,reason:'parried'});
-  }
-  return next(mon,bonus,ctx,...rest);
-});
 
 /* common cloak trap effect; fatal terrain deliberately untouched */
 /* travel cloak eat speed */
 
 /* fractional focus regen so 1.35 is no longer rounded to the same result as 1.00 */
-globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.turn1006=state?.turn??0},post:ctx=>{if(state&&!state.dead&&state.turn!==ctx.turn1006){const p=state.player,c=playerCloak?.()||{},fr=+c.focusRegen||1;if(fr>1&&fr<2){p.cloakFocusCarry1006=(p.cloakFocusCarry1006||0)+(fr-1)/10;while(p.cloakFocusCarry1006>=1){p.cloakFocusCarry1006-=1;const b=p.focus;p.focus=Math.min(getStats().maxFocus,p.focus+1);if(p.focus>b){floatText(p.x,p.y,'기 +1','#9fcdbf',9);addLog(`${c.name}: 바람을 타고 기력 +1.`)}}}}}});
 
 
 
@@ -4734,7 +4221,6 @@ globalThis.__MANRU_TURN_PIPELINE__.register('cloak-focus1006',{pre:ctx=>{ctx.tur
 
 
 // r30: library scroll dispatch is integrated in canonical useInventoryItem.
-globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
 
 
 
@@ -4745,7 +4231,6 @@ globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibrarySc
 
 
 /* r36: v10.1.1 portrait mutation observer retired. R10 canonical actor service owns both start-card and world pixels. */
-window.__MANRU_ACTOR_CACHE1011__={clear:()=>{HERO_SPRITE_CACHE.clear();return true}};
 
 
 
@@ -4991,8 +4476,8 @@ renderClassGrid();
 
 /* ===== R7 CANONICAL ITEM ART (outer game scope) ===== */
 
-const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
-const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
+
+
 
 
 
@@ -5036,7 +4521,6 @@ const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
 
 
 globalThis.__MANRU_ICON_HTML_IMPL_R7__=iconHtml;
-globalThis.__MANRU_DRAW_ITEM_IMPL_R7__=worldDraw;
 window.__MANRU_ITEM_ART_R7__={dataItem:data,weaponAsset,pictureAsset:summonPictureAsset,iconHtml,clear:()=>{CACHE.clear();DATA.clear();WEAPON_ASSETS.clear();PICTURE_ASSETS.clear();return true}};
 
 /* r29: lexical-scope QA bridge. This exposes tests only; gameplay paths remain canonical. */
@@ -5140,22 +4624,10 @@ GenerationValidator.legendary=function legendaryCandidate10(){const progression=
 
 
 
-globalThis.__MANRU_LEGEND_TERRAIN47__={drawCell:drawLegendCell,miniColor:legendMiniColor,theme:id=>LEGEND_THEMES47[id]||null,clear:()=>ART_CACHE.clear()};
 
-const DUNGEON_MOBS47={
- ember_axe:[['용철 화로지기',34,9,5,2,'#a65d42','guard','construct',{concept57:"식지 않는 화로를 지키는 철갑 문지기다.",role61:'shell',legendSkill47:'forgeBurst'}],['불씨 식귀',24,10,2,5,'#b9694e','human','undead',{concept57:"재 속에서 타다 남은 굶주림이 일어섰다.",fast:true,fireTrail:true}],['제련 도깨비',38,11,4,2,'#8d654b','brute','spirit',{concept57:"광석 대신 침입자를 두드리려는 제련장의 도깨비다.",wallBreak:true,knockback:true}]],
- water_crossbow:[['침수 쇠뇌수',25,9,2,5,'#5e8ca1','human','spirit',{concept57:"물이 찬 사격장을 떠나지 않는 쇠뇌수의 영이다.",ranged:true,range:8,role61:'skirmisher',legendSkill47:'waterBurst'}],['수압 악어',39,11,5,1,'#52756c','beast','beast',{concept57:"수압에 짓눌린 수조에서 단단하게 자란 악어다.",aquatic:true,reach:2,heavyHit57:true,knockback:true}],['물살 시종',23,9,1,7,'#72a7b0','human','spirit',{concept57:"물길 사이를 분주하게 오가는 시종의 영이다.",fast:true,legendSkill47:'waterBurst'}]],
- thunder_spear:[['뇌우 사수',28,10,2,5,'#668fa6','human','spirit',{concept57:"천둥이 머무는 사격장의 영체다.",ranged:true,range:8,legendSkill47:'thunderPulse'}],['피뢰 갑병',38,10,7,1,'#75818a','guard','construct',{concept57:"벼락 자국이 남은 철갑 병사다.",role61:'formation'}],['전도 정령',24,9,2,7,'#76bfd1','void','spirit',{concept57:"공기 속 전하가 한데 엉긴 정령이다.",fast:true,legendSkill47:'thunderPulse'}]],
- curse_blade:[['주박 검객',38,12,4,5,'#86566e','human','undead',{concept57:"저주에 묶인 칼을 끝내 놓지 못한 검객이다.",fast:true,legendSkill47:'curseMark'}],['사당 주술시종',34,10,4,3,'#9a5d78','mage','spirit',{concept57:"사당의 금기를 돌보는 시종이다.",ranged:true,range:7,role61:'controller'}],['혈인 원혼',30,12,2,7,'#74465f','void','spirit',{concept57:"핏빛 인장에 들러붙은 원혼이다.",ambush:true,multiAttack:true}]],
- earth_gauntlet:[['석분 권사',42,12,5,4,'#9b875d','human','construct',{concept57:"돌가루로 빚은 주먹이 멈추지 않는 권사다.",multiAttack:true,legendSkill47:'earthQuake'}],['붕락 갑병',51,13,8,1,'#817b68','brute','construct',{concept57:"무너진 성벽 같은 갑주를 걸친 병사다.",wallBreak:true,knockback:true,role61:'shell'}],['토맥 괴수',56,14,7,1,'#786c55','brute','beast',{concept57:"땅속의 맥을 따라 웅크리고 있던 거수다.",heavyHit57:true,legendSkill47:'earthQuake'}]],
- mirror_blade:[['반영 검객',38,13,4,7,'#879aa8','human','spirit',{concept57:"칼날보다 반사된 모습이 먼저 움직이는 검객이다.",fast:true,legendSkill47:'mirrorStep'}],['거울 시녀',33,11,3,5,'#b29aaf','mage','spirit',{concept57:"거울궁에 비친 손님을 오래 바라보는 시녀다.",ranged:true,range:7,gaze:true}],['파편 망령',31,12,3,6,'#91a6b0','angel','undead',{concept57:"깨진 거울의 날카로운 조각들이 망자의 윤곽을 이룬다.",ranged:true,range:7,multiAttack:true}]],
- curse_spear:[['부패 창병',49,14,6,3,'#725c69','guard','undead',{concept57:"썩은 갑옷 아래 창을 놓지 않은 병사다.",reach:3,role61:'formation'}],['묘문 사제',43,13,4,5,'#84687e','mage','undead',{concept57:"묘문에서 혼백을 거두는 사제다.",ranged:true,range:8,summoner:true,summonName57:'금령',legendSkill47:'graveDrain'}],['혼백 사냥꾼',39,15,3,7,'#5e526b','human','spirit',{concept57:"희미한 발소리로 사냥감을 따라붙는 영체다.",fast:true,ambush:true,focusDrain:2}]],
- lava_bow:[['월화 궁수',44,15,4,4,'#b54222','human','construct',{concept57:"붉은 두건과 주황빛 월화를 두른 수목 궁수의 이형이다.",ranged:true,range:9,lava:true,projectileImpact57:{element:'fire',radius:2,turns:3}}],['재의 감시자',37,13,2,8,'#8c756b','angel','spirit',{concept57:"재가 흩날리는 상공을 떠도는 감시령이다.",flying:true,ranged:true,range:8,role61:'alarm'}],['용암 살라맨더',54,16,5,4,'#c05d39','beast','beast',{concept57:"불길을 뒤집어쓴 날랜 살라맨더다.",lava:true,fast:true,fireTrail:true}]],
- chain_sickle:[['쇠사슬 간수',55,15,7,2,'#81705e','guard','human',{concept57:"쇠사슬 감옥의 길목을 지키는 간수다.",hook:true,role61:'formation'}],['족쇄 인형',58,14,9,1,'#706b64','armor','construct',{concept57:"족쇄와 철판을 겹겹이 두른 감옥의 인형이다.",role61:'shell'}],['갈고리 죄수',42,16,3,6,'#75564e','human','undead',{concept57:"죽어서도 갈고리를 놓지 못한 죄수다.",fast:true,hook:true,legendSkill47:'chainRush'}]],
- ward_hammer:[['파성 갑병',62,16,9,2,'#9a835d','guard','construct',{concept57:"성문을 허물 만큼 무거운 무장을 갖춘 병사다.",role61:'formation'}],['성벽 포수',49,16,6,2,'#7c7263','armor','construct',{concept57:"성벽과 한몸처럼 버티는 포격 인형이다.",ranged:true,range:9,role61:'artillery'}],['금단 수호상',74,17,11,0,'#b19a64','brute','construct',{concept57:"금지된 성소의 입구를 지키는 거대한 상이다.",heavyHit57:true,role61:'shell',legendSkill47:'wardPulse'}]]
-};
 
-function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}))}
+
+
 
 
 
@@ -5165,7 +4637,6 @@ function handlePortalAt46(x,y){if(!WorldTransition57.allowed())return false;if(s
 
 function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}
 
-registerGenerationStage('artifact-reset46','pre',resetPortal46);registerGenerationStage('artifact-portal46','post',maybePortal46);
 
 
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*3:0}
@@ -5181,17 +4652,14 @@ function healFire47(n=1){n=Math.max(0,Math.round(Number(n)||0));if(!state||!fire
 
 function tempLava47(cx,cy){emitElementContact105('fire',elementCells105(cx,cy,1),effectSource57(state.player));for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=cx+dx,y=cy+dy;if(!insideMapInterior(x,y))continue;const old=state.map[y]?.[x];if(!(old>=500&&old<660&&(old-500)%16<4)&&![TT.FLOOR,TT.GRASS,TT.OPEN_DOOR,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].includes(old))continue;if(state.artifactExit46?.x===x&&state.artifactExit46?.y===y)continue;RuntimeTerrainOwner.temporary(x,y,TT.LAVA,5,'legend-lava',{allowedOld:[old],source:'lava-bow47'})}burst(cx,cy,'#f06f33',30,1.2)}
 function resurrect47(mon,pos){if(!mon||mon.kind==='undead'||mon.boss||mon.miniBoss||globalThis.__MANRU_RANDOM57__()>=.62)return false;const ally={name:`타락한 ${mon.name}`,x:pos.x,y:pos.y,hp:Math.max(5,Math.round((mon.maxHp||20)*.65)),maxHp:Math.max(5,Math.round((mon.maxHp||20)*.65)),atk:Math.max(2,Math.round((mon.atk||6)*.25)),def:Math.max(0,Math.round((mon.def||0)*.80)),eva:Math.max(0,Math.round((mon.eva||0)*.55)),xp:0,color:'#76517c',shape:mon.shape||'undead',kind:'undead',faction57:'player',friendly47:true,spawnProvenance57:'resurrection',legendAlly47:true,allyId53:`ally-${state.turn}-${state.nextAllyId53=(state.nextAllyId53||0)+1}`,allyBornTurn47:state.turn,allyExpireTurn47:state.turn+24,ttl47:24,alerted:true,weakened:0};if(!OccupancyService.isOccupied(pos.x,pos.y)&&!tileBlocks(state.map[pos.y]?.[pos.x]))OccupancyService.addMonster(ally);else{const q=DIRS8.map(([dx,dy])=>({x:pos.x+dx,y:pos.y+dy})).find(q=>PlacementService.monsterCanStand(ally,q.x,q.y));if(q){ally.x=q.x;ally.y=q.y;OccupancyService.addMonster(ally)}else return false}burst(ally.x,ally.y,'#8f62a0',18,.8);addLog(`${mon.name}의 잔해가 타락한 언데드로 일어났다. 공격력은 원본의 일부뿐이다.`);return true}
-registerPlayerAttackStageR('legendary47',(next,mon,bonus=0,...rest)=>{const w=state?.player?.weapon,id=w?.artifactId46;if(!w?.legendaryWeapon47)return next(mon,bonus,...rest);const hp0=mon?.hp??0,pos=mon?{x:mon.x,y:mon.y}:null,dist=mon?entityDistance57(mon,state.player):0,r=next(mon,bonus,...rest),hit=!!mon&&mon.hp<hp0;if(!hit)return r;const contact=weaponElement105(w);if(contact&&pos)emitElementContact105(contact,[pos],effectSource57(state.player),{baseDamage:Math.max(1,hp0-mon.hp),directTarget:mon});const dealt=Math.max(0,hp0-Math.max(0,mon.hp));if(id==='ember_axe'){state.player.legendEmberStacks47=Math.min(10,(state.player.legendEmberStacks47||0)+1);floatText(state.player.x,state.player.y,`낙화 ${state.player.legendEmberStacks47}/10`,'#e99a5e',8);if(state.player.legendEmberStacks47>=10){state.player.legendEmberStacks47=0;skyAxe47()}}else if(id==='thunder_spear')chain47(mon,2,2);else if(id==='earth_gauntlet'){state.player.legendEarthStacks47=Math.min(8,(state.player.legendEarthStacks47||0)+1);state.player.legendEarthHitTurn47=state.turn+1;floatText(state.player.x,state.player.y,`지맥 ${state.player.legendEarthStacks47}/8`,'#d5b773',8)}else if(id==='mirror_blade'){const o=(state.monsters||[]).filter(m=>m!==mon&&isHostileTarget57(m)&&entityDistance57(m,mon)<=3).sort((a,b)=>entityDistance57(a,mon)-entityDistance57(b,mon))[0];if(o){const d=damageEntity(o,Math.max(2,Math.floor(dealt*.35)),state.player);projectileFX(mon.x,mon.y,o.x,o.y,'#d3c4ef');if(d>0)floatText(o.x,o.y,`반영 -${d}`,'#dccbf5',10);if(o.hp<=0)killMonster(o)}}else if(id==='chain_sickle'&&mon.hp>0&&dist>=2)pull47(mon);else if(id==='ward_hammer'){state.player.legendWardHits47=(state.player.legendWardHits47||0)+1;if(state.player.legendWardHits47>=3){state.player.legendWardHits47=0;state.status.ward=Math.max(state.status.ward||0,4);floatText(state.player.x,state.player.y,'진문 수호 3턴','#e9d79a',10)}}if(mon.hp<=0&&pos){if(id==='curse_spear')resurrect47(mon,pos);else if(id==='lava_bow')tempLava47(pos.x,pos.y)}return r});
 
-globalThis.__MANRU_TURN_PIPELINE__.register('legendary47',{pre:()=>{syncEquip47()},post:()=>{if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);tickLegendFields();state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}});
 
 
 
 
 globalThis.__MANRU_DRAW_HOOKS_R19__?.world.push({id:'legendary47',draw:drawLegendWorld});
 
-function claimAudit46(){const ids=new Set();for(const it of[state?.player?.weapon,...(state?.player?.inventory||[])])if(it?.artifactId46)ids.add(it.artifactId46);if(state&&ids.has('water_crossbow')){state.artifactHistory46||=[];if(!state.artifactHistory46.some(h=>h.id==='water_crossbow'&&h.status==='claimed'))state.artifactHistory46.push({id:'water_crossbow',status:'claimed',floor:9,source:[state.player.weapon,...state.player.inventory].some(i=>i?.artifactId46==='water_crossbow'&&i.palaceReward105)?'palace':'legacy',turn:state.turn});}if(state)state.artifactClaimed46=[...new Set([...(state.artifactClaimed46||[]),...ids])];const plan=state?.branchWorld105?.citadel105?.relicPlan105;if(plan&&ids.has(plan.realId))plan.claimed=true;}
-globalThis.__MANRU_TURN_PIPELINE__.register('artifact-claim46',{post:claimAudit46});
+
 function mapSignature46(){if(!state?.map)return null;let h=2166136261>>>0,counts={};for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const v=state.map[y]?.[x]??-1;counts[v]=(counts[v]||0)+1;h^=((v+257)*131+x*17+y*31)>>>0;h=Math.imul(h,16777619)>>>0}return{hash:h>>>0,counts}}
 
 
@@ -5303,7 +4771,6 @@ PALACE_GARDENER_IMAGE105.onload=()=>{globalThis.__MANRU_ACTOR_ART__?.clear?.();i
 
 
 
-const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.SWITCH,TT.KEY_TILE,TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT]);
 
 
 
@@ -5560,7 +5027,6 @@ const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GAT
 
 
 
-ActionDispatcher.register('ANVIL_FUSE105',anvilFuse);
 
 
 
@@ -5606,9 +5072,7 @@ ActionDispatcher.register('ANVIL_FUSE105',anvilFuse);
 
 
 
-ActionDispatcher.register('SUMMON_CAST105',summonCast);
-ActionDispatcher.register('SUMMON_PICTURE105',summonInstallPicture);
-ActionDispatcher.register('SUMMON_TALISMAN105',summonBindTalisman);
+
 
 
 
@@ -5624,6 +5088,5 @@ function initSummon105(){summonUpdateButtons();}
 
 initSummon105();
 initDebugBattle57();
-globalThis.__MANRU_DEBUG_BATTLE57__=Object.freeze({snapshot:()=>DEBUG_BATTLE57.open?{round:DEBUG_BATTLE57.round,watching:!!DEBUG_BATTLE57.watching,subject:DEBUG_BATTLE57.subjectId,playing:DEBUG_BATTLE57.playing,winner:DEBUG_BATTLE57.winner,catalog:DEBUG_BATTLE57.catalog.map(e=>({name:e.def.name,group:e.group})),units:state.monsters.map(m=>({id:m.debugId57,name:m.name,side:m.debugSide57,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp,atk:m.atk,def:m.def,faction:entityFaction(m),cells:entityFootprintCells57(m),revive:m.revivePhase57})),debug:state.debugBattle57,map:{width:COLS,height:ROWS,rooms:state.rooms.length,tiles:[...new Set(state.map.flat())]},patterns:state.monsters.filter(m=>m.boss).map(m=>({id:combatantId(m),name:m.name,faction:entityFaction(m),intent:m.intent54?.type,core:m.coreStage54,links:m.silk54?.links.length})),owners:state.monsters.filter(m=>m.bossOwnerId57).map(m=>({name:m.name,owner:m.bossOwnerId57,faction:entityFaction(m),fixture:m.combatFixture54}))}:null});
 
 

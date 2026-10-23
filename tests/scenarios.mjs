@@ -235,6 +235,52 @@ export const scenarios = {
     return out;
   },
 
+  // Fingerprint of the floor generator across seeds, classes and all 25 floors, for the generation pipeline tables to
+  // be moved against. The generator draws from its own seeded stream (RngService, started per floor from the run
+  // seed), whose seed, number of draws and final state it records in state.generationRngAuditR59; that record is
+  // the random consumption. Per floor 1-25 of three runs (three session seeds and classes) the floor is
+  // generated and recorded with that audit, the tile histogram, the structure (rooms, stairs, feature rooms, route
+  // tags), items and monsters, and the size of the whole saved state; per run also the whole final state and the
+  // stage ids of the pipeline in run order. A stage dropped, added, reordered, or one that draws a different
+  // number of random values changes the audit of the floors it touches.
+  async genprint(browser, root) {
+    const out = {};
+    for (const [name, seed, cls] of [['a', 31, 'wanderer'], ['b', 4242, 'strongman'], ['c', 90210, 'summoner']]) {
+      const s = await openSession(browser, root, { seed });
+      await startRun(s, cls);
+      const rows = [];
+      for (let f = 1; f <= 25; f++) {
+        rows.push(await s.page.evaluate(({ floor, base }) => {
+          window.__reseed(base * 100003 + floor * 7919);
+          window.__MANRU_RELEASE__.regen(floor);
+          const env = window.__MANRU_RELEASE__.snapshot();
+          const st = env.state;
+          const hist = {};
+          for (const row of st.map) for (const t of row) hist[t] = (hist[t] || 0) + 1;
+          delete env.savedAt;
+          const next = [Math.random(), Math.random(), Math.random()];
+          return JSON.stringify({
+            floor, rng: st.generationRngAuditR59, next, hist,
+            rooms: st.rooms, stairs: st.stairs, featureRooms: st.featureRooms, routeTags: st.routeTags, fixed: [st.fixedStart, st.fixedExit],
+            items: st.items.map((i) => [i.type, i.name, i.x, i.y]),
+            monsters: st.monsters.map((m) => [m.name, m.x, m.y, m.hp]),
+            state: JSON.stringify(env).length,
+          });
+        }, { floor: f, base: seed }));
+      }
+      out[`genprint.${name}`] = rows.join('\n');
+      out[`genprint.${name}.full`] = await s.page.evaluate(() => {
+        const env = window.__MANRU_RELEASE__.snapshot();
+        delete env.savedAt;
+        return JSON.stringify(env);
+      });
+      out[`genprint.${name}.stages`] = JSON.stringify(await s.page.evaluate(() => globalThis.__MANRU_GENERATION_R18__.stages()));
+      out[`genprint.${name}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   // Debug arena with the AGENTS.md regression species: real placement, then combat rounds.
   async battle(browser, root) {
     const out = {};
@@ -295,6 +341,83 @@ export const scenarios = {
     out['saveload.after'] = await snapshot(r);
     out['saveload.errors'] = JSON.stringify(r.errors);
     await r.close();
+    return out;
+  },
+
+  // The save string (settings panel): the running game and the account's progress travel as one text. A run is played on one
+  // "device", the string is made through the panel, a second device (fresh storage, another run already going and a dead-run id of
+  // its own) pastes it through the panel; after the page reloaded and the run was continued, the saved state is the same and the
+  // account keys came with it (dead-run ids merged). Corrupt, cut, foreign and empty strings are refused with the run untouched.
+  async savestring(browser, root) {
+    const out = {};
+    const a = await openSession(browser, root, { seed: 41 });
+    await startRun(a, 'escort');
+    const rnd = pick(41);
+    for (let i = 0; i < 40; i++) {
+      await a.page.keyboard.press(KEYS[rnd(8)]);
+      await a.tick(220);
+    }
+    await a.page.evaluate(() => {
+      localStorage.setItem('manruUiVolume70', '0.6');
+      localStorage.setItem('manru1004_dead_runs', JSON.stringify(['dead-from-a']));
+    });
+    await a.page.evaluate(() => window.__MANRU_RELEASE__.openPanel());
+    await a.tick(300);
+    await a.page.click('#rcStrMake70');
+    for (let i = 0; i < 20 && !(await a.page.inputValue('#rcStrText70')); i++) await a.tick(200);
+    const text = await a.page.inputValue('#rcStrText70');
+    if (!/^MANRU[01]\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/.test(text)) throw new Error(`savestring: no string was made: ${await a.page.textContent('#rcStrStat70')}`);
+    const accountOf = async (s) => s.page.evaluate(() => Object.keys(localStorage).filter((k) => /^manru/.test(k) && !/active_run|transaction/.test(k)).sort().map((k) => [k, localStorage.getItem(k)]));
+    const accountA = await accountOf(a);
+    const dumpA = await storageDump(a);
+    await a.close();
+    // control: the same persisted bytes continued the normal way
+    const c = await openSession(browser, root, { seed: 43, storage: dumpA });
+    await c.page.click('#continueBtn');
+    await c.tick(2500);
+    await dismissModals(c);
+    const control = await snapshot(c);
+    await c.close();
+    // the write counters of the save are bookkeeping of each commit, not part of the run
+    const plain = (text) => { const e = JSON.parse(text); delete e.state.saveSeq1004; delete e.state.saveWrittenAt1004; return JSON.stringify(e); };
+
+    const b = await openSession(browser, root, { seed: 42, storage: [['manru1004_dead_runs', JSON.stringify(['dead-from-b'])], ['manruUiVolume70', '0.1']] });
+    await startRun(b, 'wanderer');
+    await b.page.evaluate(() => window.__MANRU_RELEASE__.openPanel());
+    await b.tick(300);
+    const refused = {};
+    const status = async () => b.page.textContent('#rcStrStat70');
+    const tryString = async (label, value) => {
+      await b.page.fill('#rcStrText70', value);
+      await b.page.click('#rcStrApply70');
+      await b.tick(300);
+      refused[label] = await status();
+    };
+    const [head, body, crc] = text.split('.');
+    await tryString('empty', '');
+    await tryString('foreign', 'hello world');
+    await tryString('cut', `${head}.${body.slice(0, body.length >> 1)}.${crc}`);
+    await tryString('flipped', `${head}.${body.slice(0, 20)}${body[20] === 'A' ? 'B' : 'A'}${body.slice(21)}.${crc}`);
+    await tryString('crc', `${head}.${body}.${crc === '00000000' ? '00000001' : '00000000'}`);
+    out['savestring.refused'] = JSON.stringify(refused);
+    for (const [k, v] of Object.entries(refused)) if (!/실패/.test(v)) throw new Error(`savestring: "${k}" was not refused: ${v}`);
+    b.page.on('dialog', (d) => d.accept());
+    await b.page.fill('#rcStrText70', text.replace(/(.{60})/g, '$1\n'));
+    await b.page.click('#rcStrApply70');
+    await b.tick(3000);
+    await b.page.click('#continueBtn');
+    await b.tick(2500);
+    await dismissModals(b);
+    out['savestring.after'] = plain(await snapshot(b));
+    out['savestring.control'] = plain(control);
+    if (out['savestring.after'] !== out['savestring.control']) throw new Error('savestring: the run continued from the string differs from the run continued from the same save the normal way');
+    const accountB = await accountOf(b);
+    out['savestring.account'] = JSON.stringify({ a: accountA, b: accountB });
+    const deadRuns = JSON.parse(accountB.find(([k]) => k === 'manru1004_dead_runs')[1]);
+    if (!(deadRuns.includes('dead-from-a') && deadRuns.includes('dead-from-b'))) throw new Error(`savestring: dead runs were not merged: ${JSON.stringify(deadRuns)}`);
+    if (accountB.find(([k]) => k === 'manruUiVolume70')?.[1] !== '0.6') throw new Error('savestring: the volume setting did not come along');
+    out['savestring.errors'] = JSON.stringify([...a.errors, ...b.errors]);
+    await b.close();
     return out;
   },
 
@@ -365,6 +488,36 @@ export const scenarios = {
     out['consumers.boss'] = JSON.stringify(boss);
     if (boss.error || !(boss.xpGain > 0) || !boss.defeated) throw new Error(`consumers: boss reward did not run: ${JSON.stringify(boss)}`);
     out['consumers.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
+  // The registries of the game (action routes, turn stages, attack stage chains, minimap hooks, presentation updates,
+  // generation pipeline): per registry the entries in the order their reader walks them with ids and a hash of each
+  // function's parameters and body (stageBody), unique ids per registry, and the registries through their readers
+  // (src/qa/qa.js __MANRU_QA_REGISTRIES__ / __MANRU_QA_CONSUMERS__.registries) with test entries at both ends that
+  // record the walking direction. A registration dropped, doubled, reordered or edited changes the baseline.
+  async registries(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 21 });
+    await startRun(s, 'wanderer');
+    const rows = await s.page.evaluate(() => globalThis.__MANRU_QA_REGISTRIES__());
+    const regs = {};
+    for (const r of rows) (regs[r.registry] ||= []).push(r);
+    for (const [name, list] of Object.entries(regs)) {
+      const ids = new Set();
+      for (const r of list) {
+        if (ids.has(r.id)) throw new Error(`registries: ${name} registers ${r.id} twice`);
+        ids.add(r.id);
+      }
+      out[`registries.${name}`] = list.map((r) => [r.id, ...r.fns.map((f) => (f == null ? '' : sha(stageBody(f)).slice(0, 12)))].join('\t')).join('\n');
+    }
+    const probe = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.registries());
+    out['registries.paths'] = JSON.stringify(probe);
+    if (JSON.stringify(probe.attackTrace) !== JSON.stringify(['last-in', 'first-in', 'base', 'first-out', 'last-out'])) throw new Error(`registries: attack stage chain direction changed: ${JSON.stringify(probe.attackTrace)}`);
+    if (JSON.stringify(probe.minimapTrace) !== JSON.stringify(['first', 'last'])) throw new Error(`registries: minimap hook direction changed: ${JSON.stringify(probe.minimapTrace)}`);
+    if (probe.unknown !== 'ignored') throw new Error(`registries: an unknown action was not ignored: ${probe.unknown}`);
+    out['registries.errors'] = JSON.stringify(s.errors);
     await s.close();
     return out;
   },

@@ -298,17 +298,14 @@ function basicAttack(){
     commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
-const MANRU_ATTACK_PIPELINE_R={playerBase:null,monsterBase:null,playerStages:[],monsterStages:[]};
-function setPlayerAttackBaseR(id,fn){if(typeof fn!=='function')throw new TypeError('player attack base must be a function');MANRU_ATTACK_PIPELINE_R.playerBase={id,fn};return fn}
-function registerPlayerAttackStageR(id,fn){if(typeof fn!=='function')throw new TypeError('player attack stage must be a function');if(MANRU_ATTACK_PIPELINE_R.playerStages.some(x=>x.id===id))throw new Error('duplicate player attack stage: '+id);MANRU_ATTACK_PIPELINE_R.playerStages.push({id,fn});return fn}
-function runAttackStagesR(kind,args){
-  const base=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerBase:MANRU_ATTACK_PIPELINE_R.monsterBase,stages=kind==='player'?MANRU_ATTACK_PIPELINE_R.playerStages:MANRU_ATTACK_PIPELINE_R.monsterStages;
+const ATTACK_PIPELINE={playerBase:{id:'combat54',fn:attackPlayerCore54R},monsterBase:{id:'initial',fn:attackMonsterInitialCoreR},playerStages:[{id:'guard-fire57',fn:guardFirePlayerAttack},{id:'asura-domain61',fn:asuraDomainPlayerAttack},{id:'element-brand74',fn:elementBrandPlayerAttack},{id:'martial-impact965',fn:martialImpactPlayerAttack},{id:'ammo967',fn:ammoPlayerAttack},{id:'curse991',fn:cursePlayerAttack},{id:'weapon1006',fn:weaponPlayerAttack},{id:'legendary47',fn:legendaryPlayerAttack}],monsterStages:[{id:'food-ai57',fn:foodAiMonsterAttack},{id:'curse991',fn:curseMonsterAttack},{id:'parry-stagger1006',fn:parryStaggerMonsterAttack}]};
+function runAttackStages(kind,args){
+  const base=kind==='player'?ATTACK_PIPELINE.playerBase:ATTACK_PIPELINE.monsterBase,stages=kind==='player'?ATTACK_PIPELINE.playerStages:ATTACK_PIPELINE.monsterStages;
   if(typeof base?.fn!=='function')throw new Error(kind+' attack base missing');
   const call=(idx,a)=>idx<0?base.fn(...a):stages[idx].fn((...nextArgs)=>call(idx-1,nextArgs),...a);
   return call(stages.length-1,args);
 }
-function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStagesR('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
-function attackPlayerInitialCoreR(mon,bonusAtk=0){state.playerAttackUntil=performance.now()+145;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;if(state.floor<11)alertNearby(mon.x,mon.y,4);const st=getStats(),w=state.player.weapon||{},ranged=!!(w.ranged||w.kind==='bow');let bonus=bonusAtk;if((state.status?.drunk||0)>0){const drunk=drunkAttackOutcome();if(drunk==='whiff'){setPlayerAttackOutcome('miss',mon,{reason:'drunk-whiff'});floatText(state.player.x,state.player.y,'비틀','#d7c39e',10);addLog('취기가 손끝을 틀어 공격이 허공을 갈랐다.');return false}if(drunk==='heavy'){bonus+=DRUNK_RULES.attackHeavyBonus;floatText(state.player.x,state.player.y,'취중 강타','#e5c987',9)}}if(globalThis.__MANRU_RANDOM57__()<entityAttackMissChance(state.player,mon,{base:.05,max:.45})){setPlayerAttackOutcome('miss',mon,{reason:'evasion'});addLog(mon.name+'이 공격을 피했다.');floatText(mon.x,mon.y,'빗나감','#a9bed2',10);return false}if(!ranged&&state.player.strongReady>0){bonus+=2+state.player.strongReady*2;addLog(`강타 ${state.player.strongReady}단계 발동.`);state.player.strongReady=0}const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity(mon,damageFormula(st.atk+bonus,mon.def-(mon.weakened>0?2:0),crit));setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});if(mon.hp>0)setMonsterAttackInvestigation(mon,state.player);mon.hitUntil=performance.now()+115;if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?15:13);addLog(`${state.player.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}`);if(w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0)damageEntity(mon,3,state.player);if(w.stun&&globalThis.__MANRU_RANDOM57__()<w.stun)mon.stunned=Math.max(mon.stunned||0,1);if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true}
+function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
 function combatEntityStats(actor){if(actor===state.player)return getStats();return applyCombatDebuffStats57({...actor,vision:actor.vision||monsterSenseRadius(actor)},actor)}
 function combatDefenseBonus(target){
  if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
@@ -557,7 +554,6 @@ const HAPTIC_PATTERN57=Object.freeze({
   ambush:Object.freeze([24,20,62]),summon:Object.freeze([26,18,26,18,70]),
   boss:Object.freeze([36,25,82]),death:Object.freeze([75,45,125])
 });
-function registerMonsterAttackStageR25(id,fn){if(typeof fn!=='function')throw new TypeError('monster attack stage must be a function');if(MANRU_ATTACK_PIPELINE_R.monsterStages.some(x=>x.id===id))throw new Error('duplicate monster attack stage: '+id);MANRU_ATTACK_PIPELINE_R.monsterStages.push({id,fn});return fn}
 // WILL is the player's universal resistance against chance-based hostile status effects.
 // Curve: effective proc chance = base chance * 6/(6+WILL). It never grants immunity;
 // explicit statusImmune gear remains the only full immunity source.
@@ -664,3 +660,27 @@ function stairsSound(){return sfx54('stairs')}
 function classBodyPowerStats(s){if(bodyPowerActive()){s.atk+=2;s.def+=7}return s}
 const PLAYER_STAT_STAGES=[{id:'class-body-power58',run:classBodyPowerStats},{id:'potions41',run:potionStats},{id:'food57',run:hungerStats},{id:'elements74',run:elementGuardStats},{id:'curse991',run:curseStats}];
 const ATTACK_COST_STAGES=[{id:'potions41',run:potionAttackCost},{id:'food57',run:foodAttackCost},{id:'elements74',run:elementBrandAttackCost},{id:'curse991',run:curseAttackCost}];
+function dungeonVisionScale50(){return ({curse_blade:.65,curse_spear:.75,mirror_blade:.85})[state?.artifactDungeon46?.id]||1}
+/* ===== MANRU v5.4 COMBAT / BOSS / DISCOVERY / UX CONSOLIDATION ===== */
+const V54={marks:[],death:[],hold:null,holdRAF:0,audio:null,sfx:true,lastFoot:0};
+globalThis.__MANRU_DEATH_FX54__=Object.freeze({record:mon=>{if(!mon)return false;V54.death.push({x:mon.x,y:mon.y,color:mon.color||'#aaa',shape:mon.shape,start:performance.now(),life:520,boss:!!mon.boss});if(V54.death.length>16)V54.death.splice(0,V54.death.length-16);sfx54('death');return true}});
+globalThis.__MANRU_MARTIAL_FX965__=Object.freeze({pulse:martialPulse,used:martialUsedFx});
+function martialImpactPlayerAttack(next,mon,...args){
+    const ready=state?.player?.strongReady||0,beforeHp=mon?.hp;
+    const r=next(mon,...args);
+    if(ready>0&&mon&&Number.isFinite(beforeHp)&&mon.hp<beforeHp&&(state?.player?.strongReady||0)===0){
+      ACTION_PRESENTATION58.strong=true;floatText(mon.x,mon.y,martialPresentation('strong',MARTIAL_INFO.strong,state.player).name,'#ffe3a0',15);globalThis.__MANRU_SFX54__?.play?.('crit')
+    }
+    return r;
+  }
+function naturalHealPostTurn(ctx){
+    if(!ctx.playerAgency||!state||state.dead||state.victory)return;const p=state.player;
+    if(p.hp>=p.maxHp){state.earlyRecoveryProgress58=0;return}
+    const elapsed=(state.playerAgencyTurns57||0)-(state.lastDamageAgencyTurn57||0);let heal=0;
+    if(state.passiveRecoveryUnlocked57){if(p.hunger>0&&elapsed>=6){const ratio=p.hp/p.maxHp,spacing=ratio<.5?1:ratio<.75?2:ratio<.9?3:4,start=elapsed>=24?24:elapsed>=16?16:elapsed>=11?11:6,interval=(elapsed>=16?1:elapsed>=11?2:3)*spacing;if((elapsed-start)%interval===0)heal=elapsed>=24?2:1}}
+    else if(safeForNatural94()){const iv=naturalInterval94();if(Number.isFinite(iv)){state.earlyRecoveryProgress58=(Number(state.earlyRecoveryProgress58)||0)+(state.floor<=10?1.5:1)/iv;if(state.earlyRecoveryProgress58>=1-1e-9){heal=Math.floor(state.earlyRecoveryProgress58+1e-9);state.earlyRecoveryProgress58=Math.max(0,state.earlyRecoveryProgress58-heal)}}}
+    if(heal){p.hp=Math.min(p.maxHp,p.hp+heal);updateAll()}
+  }
+function legendaryPreTurn(){syncEquip47()}
+function legendaryPostTurn(){if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);tickLegendFields();state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}
+function bossZonesPrePreGeneration(){V54.marks=[];rule.classList.remove('show')}

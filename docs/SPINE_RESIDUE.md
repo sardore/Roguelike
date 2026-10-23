@@ -62,9 +62,9 @@
 | P3 | 등록 API와 단계 표: `register*` 9개와 그 표 | 30 → 처리됨 | 완료(2026-10-12, 브랜치 `claude/p3-stage-tables`, 표별 커밋). `RECIPE`도 함께 해소 | 설계·측정·결과는 `docs/P3_DESIGN.md`. 등록 문장을 표 선언의 배열 리터럴로, 단계 본문은 소유 도메인의 이름 있는 함수 선언으로. 순서·id·본문 해시는 `stages`가, 소비 경로는 `consumers`·`features.stages`가 지킨다 |
 | P4 | 부팅 문장만 쓰는 나머지(패널·버튼 연결용 지역 변수, 루프 시작 상태, 전설 던전 `*46`/`*47` 묶음 등) | 95 | 사용처가 spine의 느슨한 문장(패널·버튼 연결, 루프 시작) | 느슨한 문장 573개를 실행 순서 그대로 부팅 구획으로 묶을 때 같이 간다. 구획 경계는 `docs/F10_DESIGN.md` 방식(문장 순서 = 동작)으로 정하고 `input.listeners` 지문과 `screens`가 지킨다 |
 | P5 | 로드 시 DOM을 만드는 요소 7개 | 7 | `move-to`가 거부(`document`를 읽고 앞 문장이 DOM을 바꿈) | `feelEl`·`panel`·`coach`·`modal`·`skillQuick`·`classDetail1001`/`classStart1001`·`hud`: 요소 생성과 `appendChild` 문장이 한 묶음이다. 그 묶음(생성+부착)을 ui.js의 한 초기화 함수 `buildPanels`로 만들어 부팅 구획에서 같은 순서로 부른다. DOM 순서(745개)·`uiactions`·`screens`로 검증 |
-| P6 | 로드 시 `window.*`/`globalThis.*`를 읽는 초기화식 5개 | 5 | 거부 | `V56`·`POTION_LIST`(`window.MANRU_POTIONS`를 만드는 문장 뒤여야 한다)·`BASE_KIND74`·`legacyPotionIcon`/`legacyPotionDraw`. 값을 만드는 문장을 소유 도메인으로 옮기고 그 뒤에 선언한다 |
-| P7 | 로드 순서가 서로 걸린 5개 | 5(231줄) | 거부 | `RuntimeState`(231줄; `INPUT`을 로드 시 읽음 — input.js가 앞이므로 `INPUT` 이동 뒤 가능), `Auto81`, `selectedClass1001`(`CLASSES` 뒤), `POTION_BY_KIND`(`POTION_LIST` 뒤), `strictKeyFloors1004`(special.js의 `LOCK_SPECIAL`을 `strictLockFloors()`로 읽음 — save.js가 아니라 special.js 뒤여야 한다) |
-| P8 | 채워지는 객체를 담는 3개 | 3 | 거부 | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
+| P6 | 로드 시 `window.*`/`globalThis.*`를 읽는 초기화식 5개 | 5 | 완료(2026-10-19, 아래 "P6~P8 결과") | `V56`·`POTION_LIST`(`window.MANRU_POTIONS`를 만드는 문장 뒤여야 한다)·`BASE_KIND74`·`legacyPotionIcon`/`legacyPotionDraw`. 값을 만드는 문장을 소유 도메인으로 옮기고 그 뒤에 선언한다 |
+| P7 | 로드 순서가 서로 걸린 5개 | 5(231줄) | 완료(2026-10-19, 아래 "P6~P8 결과") | `RuntimeState`(231줄; `INPUT`을 로드 시 읽음 — input.js가 앞이므로 `INPUT` 이동 뒤 가능), `Auto81`, `selectedClass1001`(`CLASSES` 뒤), `POTION_BY_KIND`(`POTION_LIST` 뒤), `strictKeyFloors1004`(special.js의 `LOCK_SPECIAL`을 `strictLockFloors()`로 읽음 — save.js가 아니라 special.js 뒤여야 한다) |
+| P8 | 채워지는 객체를 담는 3개 | 3 | 완료(2026-10-19, 아래 "P6~P8 결과") | `V964`, `V981`(`V980.*`), `BRANCH_INTERACTIVE_OVERLAYS105`(`TT['LEGEND_…']`가 branches 표에서 계산됨): 채우기 문장을 소유 도메인으로 옮기거나 값을 읽는 쪽을 함수 안으로 |
 | P9 | 전역으로 공개되어 쓰이는 1개 | 1 | `TYPED_KEYS96`는 미사용처럼 보이지만 `globalThis.__MANRU_TYPED_KEYS__`로 공개되어 ui·special·spine이 읽는다 | 유지. 공개 전역을 직접 호출로 바꾸는 별도 정리 때 |
 
 합계 51+23+30+95+7+5+5+3+1 = 219. 실행 순서 제안: P1 → P2 → P5~P8(각각 작음) → P3·P4(부팅 구획과 함께, 사용자 결정 후). 각 단계는 한 커밋이고, 커밋 전 `values`·`features`·`npm test` 전체를 통과시킨다.
@@ -88,6 +88,42 @@
 | 나머지 14개 | 3~8 도메인 | 최다 사용 도메인, 동률은 계열 | 커밋마다 근거 수치 기록 |
 
 결합 후보(지금은 고치지 않는다): `addLog`가 items의 포션 이름 가림 처리를 직접 참조한다. 나중에 로그 출력과 이름 가림을 분리하는 것을 검토한다.
+
+## P3 이후 (2026-10-19)
+P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선언이 22개 생겼다. 도메인별 8커밋으로 옮겼다(save 3, branches 2, combat 2, mapgen 3, ui 5, input 1, items 4, monsters 2). 근거는 각 커밋 메시지(사용 도메인 수). 남은 선언은 109개, 느슨한 문장은 485개다. 나머지(P4~P8)의 측정과 방식 제안은 `docs/P4_DESIGN.md`(승인 대기).
+
+## P6~P8 결과 (2026-10-19)
+브랜치 `claude/boot-p5-p8`. 도구가 거부하던 이유를 하나씩 풀고(`tests/tools/move-to.test.mjs`에 시험 추가) 같은 게이트(`npm run check`·`npm test` 전체·옛 빌드와 새 빌드의 로드 직후 값 비교, differ 0)로 `tools/chain.mjs`가 커밋·푸시했다.
+
+| 거부 이유 | 풀이 | 옮긴 선언 |
+|---|---|---|
+| 초기화식이 `window.X`/`globalThis.X`를 로드 중 읽음 | 공개하는 문장이 새 위치보다 앞에 있고, 함수 안에서 공개하지 않고, 새 위치와 옛 위치 사이에서 X의 멤버를 바꾸지 않으면 허용(`defineProperty`·`Object.assign` 호출은 이름을 읽을 수 있을 때만 비교, 못 읽으면 거부) | `POTION_LIST`·`BASE_KIND74`(items), `V56`(ui), `legacyPotionIcon`·`legacyPotionDraw`(render) |
+| 함수를 값으로 저장만 하는데 호출로 셈 | 배열 원소·속성 값·초기화식 전체로 저장하는 함수는 호출이 아니다 | `DESCEND_EFFECTS`(mapgen) |
+| 채워지는 객체의 다른 멤버를 쓰는 문장 때문에 거부 | 읽는 멤버와 쓰는 멤버가 다르면(`TT['LEGEND_'+…]` 대 `TT.DOOR` 등) 허용. 같은 멤버·접두어가 겹치는 계산 키·접두어 없는 계산 키는 거부 | `BRANCH_INTERACTIVE_OVERLAYS105`(render) |
+| 읽는 값이 새 위치보다 뒤 | 읽는 값의 선언이 있는 파일로 목적지를 바꿈(`move-to`가 거부한 save.js 대신) | `strictKeyFloors1004`(special), `AUTO_MOVE_RATE70`·`Auto81`·`RuntimeState`(input), `POTION_BY_KIND`(items) |
+| 정의 뒤에 버전 이름을 덮어쓰는 문장 | V85(9번)·V980(1번)에 spine.js가 나중에 쓰던 버전 이름을 정의 안에 최종값으로 넣고 `V964`·`V981`에는 복사하던 시점의 값을 문자열로 넣었다. 문장 10개 삭제. `V85.version`(qa.js)과 `V980.version`(mapgen.js 함수)을 읽는 쪽은 같은 값을 본다. | `V964`(monsters), `V981`(mapgen) |
+| 그 밖에 신규로 옮겨진 것 | P3로 사용처가 정리된 뒤 `move-to`가 받아 준 것 | `resetFloorScopedState57`·`runDescendEffects`(mapgen), `throwAt`·`beginViewer45`·`decorInfo986`·`decalInfo986`·`DECAL986`(ui), `onMonsterHpThreshold60`(branches), `uiInputBlocked`(items), `DUNGEON_MOBS47`(monsters), `autoWalkTimer`·`autoWalkToken`(input) |
+
+남은 spine.js 선언 83개: P5의 DOM 요소 7개(사용자 승인 대기), 나머지는 부팅 루프·패널 연결·`TYPED_KEYS96` 등 spine에서만 쓰이는 것이다. `TYPED_KEYS96`: 상수 이름은 읽는 곳이 없지만 `const X=globalThis.Y={…}`에서 이름만 떼면 선언이 느슨한 문장이 되어 `spineLooseStatements`가 늘어 게이트가 막는다(시도해서 확인). 이 문장을 special.js로 옮기려면 `typedKeyMeta96`(let)을 함께 옮겨야 하므로 P9에서 같이 본다.
+
+## P3b 도메인 안 등록 API → 표 (2026-10-19)
+브랜치 `claude/boot-p5-p8`. 사용자 결정: 도메인 안 등록 API도 표로 합친다, 생성 단계는 맨 마지막, 그 전에 같은 시드로 여러 층의 지문(`genprint`)과 등록 표 지문(`registries`)을 먼저 둔다. P3와 같은 게이트(`npm run check`, `npm test` 전체 4벌, 옛/새 빌드 로드 직후 값 비교)로 표 하나씩 커밋했다. 도구: `tools/refactor/registry-table.mjs`(등록 호출 → 선언 안의 항목, 인라인 함수는 이름 붙은 선언으로, 시험 7개), `fold-patches.mjs`(시험 2개), `accept-values.mjs`(`values` 기준선을 바꿔야 할 때 옛/새 전체 스냅샷을 비교해 허용한 차이 외에는 거부).
+
+| 표 | 호출 수 | 결과 | 비고 |
+|---|---:|---|---|
+| `PRESENTATION_UPDATES` | 3 | `new Map([...])` | `PresentationState.register` 삭제. 이름 `martialPresentation`이 이미 있어 `martialPulseUpdate`로 명명 |
+| `MINIMAP_PIPELINE.hooks` | 3 | 배열 | `registerMinimapHook` 삭제 |
+| 플레이어 공격 단계 | 8 | `playerStages:[...]` | `registerPlayerAttackStageR` 삭제 |
+| 몬스터 공격 단계 | 3 | `monsterStages:[...]` | `registerMonsterAttackStageR25` 삭제 |
+| 공격 기본 | 2+1 | `playerBase`·`monsterBase` | 플레이어 기본은 두 번 설정되어(`initial`→`combat54`) 앞의 것이 읽히기 전에 덮였다. 마지막 것만 남기고 `attackPlayerInitialCoreR` 삭제 |
+| `TurnEngine.stages` | 15 | 배열 | `TurnEngine.register`와 `__MANRU_TURN_PIPELINE__.register` 삭제(공개 객체는 `{abort}`만 남음). 단계 함수 20개 명명, `runtime70`의 pre는 본문이 같은 기존 `markActionTime`을 가리킴(`sameBody` 방지) |
+| `ACTION_ROUTES` | 29 | `new Map([...])` | `ActionDispatcher.register` 삭제. 처리기는 모두 이미 이름이 있었다 |
+| `patchDef` | 10+1 delete | 정의 안에 합침 | `수련용 환도`·`태도`·`당파`·`단단한 철궁`·`낡은 장도리`·`손도끼`·`질긴 가죽망토`·`바람막이망토`·`여행자망토`·`두꺼운 면망토`. 기존 속성은 제자리, 새 속성은 호출 순서로 끝에 붙여 JSON 키 순서 유지. `delete defBy('두꺼운 면망토').hazardResist`는 속성 삭제. `patchDef` 삭제 |
+| 생성 파이프라인 | 31+2 | `pre`·`post`·`base`·`density` | 단계 함수 28개 명명. 기본(`base`)은 두 번 설정되어(`base-original`→`base-vaults38`) 마지막 것만 남기고 `generateFloorOriginal` 삭제. `GENERATION_PIPELINE.density=…` 대입은 리터럴의 `density`로 합치고, 그것이 함수인지 확인하던 `throw`는 지움 |
+
+공통 근거: 각 컨테이너를 로드 중에 읽는 곳을 `load-reads.mjs --sites`로 7개 부팅 상황에서 쟀다. 등록 함수(와 qa.js의 공개 문장)만 읽고, 마지막 등록 전에 소비하는 곳은 없다. 그러므로 컨테이너 선언 자리에서 표를 만들어도 달라지는 읽기가 없다. 등록 함수가 하던 중복 id 검사(`throw`)는 없어졌고, id가 겹치지 않음은 `registries` 시나리오가 확인한다(런타임 동작은 같다). 개명(`ACTION_ROUTES5`→`ACTION_ROUTES`, `MANRU_ATTACK_PIPELINE_R`→`ATTACK_PIPELINE`, `MANRU_GENERATION_PIPELINE`→`GENERATION_PIPELINE`, `runAttackStagesR`→`runAttackStages`)은 별도 커밋이다. 기준선 변화: `values.empty`·`values.branch`가 `register` 멤버 삭제(3커밋)와 개명(1커밋)으로 바뀌었고, 전체 1224개 값 스냅샷 비교에서 다른 차이는 없었다.
+
+남은 것: `replaceViewerQuickButton('inv'|'skill')`는 등록 API가 아니라 DOM 버튼을 복제해 옛 리스너를 떼는 부팅 코드라 표가 아니다(F-25). 부팅 함수화(P4 B 단계)·P5(DOM 변수)는 아직 승인 전이다.
 
 ## 느슨한 문장 (이유 P)
 현재 spine.js에 느슨한 문장(등록·호출·대입) 584개가 남아 있다(선언 1289개). 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.

@@ -1044,3 +1044,48 @@ function gearIdentityInventory(){if(!state||!inventoryOpen)return;const box=docu
 function potionObserveBefore(ctx){const item=ctx.ground;if(item?.type==='potion')decoratePotion56(item,item.x,item.y);ctx.potionBefore56=item?.type==='potion'?qtyKind56(item.potionKind):0}
 function potionObserveAfter(ctx){const item=ctx.ground,after=item?.type==='potion'?qtyKind56(item.potionKind):0;if(item?.type==='potion'&&after>(ctx.potionBefore56||0))observePotion(item)}
 function blockWhileCooking(){return !V57.cookOpen}
+  function pcolor(i){return i?.color||'#b65b4c'}
+  const ROOM_CONTEXT={
+    '연금술방':{text:'조제대에 금창약·해독재·청심초가 함께 놓여 있다.',kinds:['heal_small','heal_medium','makgeolli','cleanse','focus']},
+    '주방':{text:'식재료 옆에 소독재와 보양 약재가 놓여 있다.',kinds:['heal_small','makgeolli','cleanse','focus']},
+    '사당':{text:'향로 재와 정화수 흔적이 남아 있다.',kinds:['cleanse','focus','fortify']},
+    '무기고':{text:'수지·화약·근육을 굳히는 약재가 함께 보관돼 있다.',kinds:['fortify','smoke','fire']},
+    '서고':{text:'약성 기록에는 정신·기동 계열의 표식이 반복된다.',kinds:['focus','swift','cleanse']},
+    '감방':{text:'탈옥 도구 곁에 연막·경신·응급 약재가 숨겨져 있다.',kinds:['smoke','swift','heal_medium','makgeolli']}
+  };
+  function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
+  function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
+window.MANRU_POTIONS=POTIONS;
+window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
+window.MANRU_TALISMANS=TALISMANS;
+window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
+window.MANRU_FOOD57={recipes:FOOD_RECIPES};
+globalThis.__MANRU_BELT62__=Object.freeze({use(slot){if(uiInputBlocked())return false;const a=beltItems(),v=a[Number(slot)-1];return v?!!ActionDispatcher.dispatch({type:'ITEM_USE',args:[v.idx]}).value:false},items(){return beltItems().map(v=>({key:v.key,idx:v.idx}))}});
+window.MANRU_AMMO=AMMO_TYPES;
+window.__MANRU_TERRAIN_CODEX986__={
+    openItem:openItemInspect986
+  };
+globalThis.__MANRU_GEN991__={applyCurses:applyCursesToAllGear,ensureHoly:ensureHolyDrop};
+  const POTION_LIST=Array.isArray(window.MANRU_POTIONS)?window.MANRU_POTIONS:[];
+  // r57: structure noise / hedge / bamboo behavior is integrated into canonical bumpBlockedTile.
+  function uiInputBlocked(){return !gameplayInputAllowed57()||!!window.__manruZoomActive}
+  const BASE_KIND74=new Map((window.MANRU_TALISMANS||[]).map(t=>[t.talismanKind,t]));
+  const POTION_BY_KIND=new Map(POTION_LIST.map(p=>[p.potionKind,p]));
+function ammoPlayerAttack(next,mon,bonus=0,...args){const a=state?._activeAmmo967,d=ammoDef(a?.ammoKind);if(!d)return next(mon,bonus,...args);const oldDef=mon.def;if(d.pierce)mon.def=Math.max(0,(mon.def||0)-d.pierce);try{return next(mon,bonus+(d.atkBonus||0),...args)}finally{mon.def=oldDef}}
+function cursePlayerAttack(next,mon,...rest){const r=next(mon,...rest),power=curseMultiplier('thirst'),outcome=state?.playerAttackOutcome57;if(power>0&&outcome?.kind==='miss'){const loss=Math.min(state.player.focus,Math.max(1,Math.round(power)));state.player.focus=Math.max(0,state.player.focus-loss);floatText(state.player.x,state.player.y,`기 -${loss}`,'#b98b79',10);addLog(`갈증의 저주가 빗나간 기운을 빨아들였다. 기력 -${loss}.`)}return r}
+function weaponPlayerAttack(next,mon,bonusAtk=0,...rest){
+  const p=state?.player,w=p?.weapon||{},hp0=mon?.hp??0,eva0=mon?.eva,followup=rest.some(v=>v&&v.chainFollowup1006===true);
+  let opening=false;
+  if(mon&&w.edgeBonus&&mon.maxHp>0&&mon.hp/mon.maxHp>=.75)opening=true;bonusAtk+=equipmentOpeningBonus105(p,mon);
+  if(mon&&w.tracking&&w.ranged&&Number.isFinite(eva0))mon.eva=Math.max(0,eva0-6);
+  let r;try{r=next(mon,bonusAtk,...rest)}finally{if(mon&&w.tracking&&w.ranged&&Number.isFinite(eva0))mon.eva=eva0}
+  const hit=r===true&&!!mon&&mon.hp<hp0;
+  if(opening&&hit)addLog('태도 · 일섬: 빈틈을 선점해 추가 피해를 냈다.');
+  equipmentFocusChain105(p,hit);
+  if(hit&&mon.hp>0&&!followup&&Number(w.chain)>0&&globalThis.__MANRU_RANDOM57__()<w.chain){floatText(mon.x,mon.y,'연격','#e8c58d',11);addLog(`${w.name} · 연격!`);attackPlayer(mon,0,{chainFollowup1006:true})}
+  return r;
+}
+function curseMonsterAttack(next,mon,...rest){const r=next(mon,...rest),power=curseMultiplier('thirst',mon);if(power>0&&r?.evaded&&Number.isFinite(mon.focus)){const loss=Math.min(mon.focus,Math.max(1,Math.round(power)));mon.focus-=loss;floatText(mon.x,mon.y,`기 -${loss}`,'#b98b79',10)}return r}
+function curseStoryPostTurn(ctx){if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}
+function foodPostGeneration(){ensureFoodState();foodFloorRewards57()}
+function pacingPostGeneration(){pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()}

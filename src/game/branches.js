@@ -2402,3 +2402,15 @@ function safeLootGround42(x,y){
   if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
   const t=state.map[y]?.[x];return !dangerousLootTerrain42(t)&&!tileBlocks(t)&&t!==TT.STAIR&&t!==TT.KEY_TILE&&t!==TT.PORTAL&&t!==TT.DOOR;
 }
+const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
+  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
+globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
+window.__MANRU_HAZARD_CORE__={
+  armFragile,collapseAt:collapseFragileAt105,kind:hazardTile,adapted:entityAdapted,resolve:resolveEntityHazard1005,standing:resolveStandingHazard1005,revalidateAt:revalidateHazardAt1005,revalidateAll:resolveAllStandingHazards1005
+};
+globalThis.__MANRU_LEGEND_TERRAIN47__={drawCell:drawLegendCell,miniColor:legendMiniColor,theme:id=>LEGEND_THEMES47[id]||null,clear:()=>ART_CACHE.clear()};
+  function onMonsterHpThreshold60(mon,threshold){if(state.floor!==23||threshold?.event!=='f23-progress-key'||!state.floor23)return false;const q=state.floor23;if(q.thresholdTriggered)return false;q.thresholdTriggered=true;const p=safeProgressDrop23(mon);if(!p)throw new Error('F23 progress key has no reachable safe drop');const item={name:'수은 심부 열쇠',type:'progress_key23',rarity:'rare',identified:true,count:1,stackable:false,x:p.x,y:p.y,color:'#d8f2ef'};PlacementService.placeItem(item,p);addLog('여의 수룡의 힘이 절반 아래로 꺾이자 수은 심부 열쇠가 튕겨 나왔다.');burst(p.x,p.y,'#d8f2ef',22,1);return true}
+function doorsDrawMinimap({sx,sy}){
+    if(!state)return;for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.seen.has(k(x,y))&&[TT.DOOR,TT.OPEN_DOOR].includes(state.map[y][x])){MX.fillStyle=state.map[y][x]===TT.DOOR?'#d09a58':'#7d6040';MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}
+  }
+function architectureDrawMinimap({sx,sy}){if(state)for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.seen.has(k(x,y))){if(state.map[y][x]===TT.WINDOW){MX.fillStyle='#83a2a7';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}else if(state.map[y][x]===TT.GARDEN_TREE){MX.fillStyle='#456b45';MX.fillRect(x*sx,y*sy,Math.max(1,Math.ceil(sx)),Math.max(1,Math.ceil(sy)))}}}

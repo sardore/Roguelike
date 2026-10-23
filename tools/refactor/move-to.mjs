@@ -72,7 +72,12 @@ function initPairs(t) {
     walk.ancestor(s, { Identifier(id, _st, anc) {
       if (deferred(anc)) return;
       const p = pos.get(id.name); if (!p) return;
-      if (p.kind === 'fn') { for (const v of readsOf(id.name)) add(v, id.name); return; }
+      if (p.kind === 'fn') {
+        // a function stored as a value (array element, property value, the whole initialiser) is not called while the initialiser runs
+        const parent = anc[anc.length - 2];
+        if (parent && (parent.type === 'ArrayExpression' || (parent.type === 'Property' && parent.value === id) || (parent.type === 'VariableDeclarator' && parent.init === id))) return;
+        for (const v of readsOf(id.name)) add(v, id.name); return;
+      }
       add(id.name, null);
     } });
   });
@@ -119,14 +124,69 @@ const insertAt = (() => {
     } });
   }
 }
+// An initialiser that reads window.X / globalThis.X at load time depends on the loose statements that publish X. It may move only
+// when every publisher of X (a statement outside any function that assigns window.X) stays before the new place, no publisher
+// hides inside a function (its time is unknown), no statement between the new and the old place changes X's members, and the
+// global is only addressed by name (window[key] or a bare window cannot be followed).
+function checkGlobalReads(s) {
+  const who = declNames(s)[0], members = new Set();
+  const isGlobal = (n) => n && n.type === 'Identifier' && (n.name === 'window' || n.name === 'globalThis');
+  const bare = [];
+  walk.ancestor(s, { Identifier(id, _st, anc) {
+    if (!isGlobal(id) || deferred(anc)) return;
+    const parent = anc[anc.length - 2];
+    if (parent?.type === 'MemberExpression' && parent.object === id && !parent.computed) members.add(parent.property.name);
+    else bare.push(id.name);
+  } });
+  if (bare.length) throw new Error(`${who}: the initialiser uses ${bare[0]} other than as ${bare[0]}.NAME at load time; the statements that publish it fix its place`);
+  if (insertAt === undefined) throw new Error(`${who}: the initialiser reads window.${[...members][0]} at load time and the new place is not known`);
+  const rootMember = (n) => { // window.X.a.b -> X, or null when n is not rooted at window.X
+    let cur = n, last = null;
+    while (cur.type === 'MemberExpression') { last = cur; cur = cur.object; }
+    return isGlobal(cur) && last && !last.computed ? last.property.name : null;
+  };
+  for (const o of top) {
+    if (picked.has(o) || o === s) continue;
+    const topLevel = o.type !== 'FunctionDeclaration';
+    walk.ancestor(o, {
+      AssignmentExpression(a, _st, anc) {
+        if (a.left.type !== 'MemberExpression') return;
+        const x = rootMember(a.left);
+        if (!x || !members.has(x)) return;
+        const direct = isGlobal(a.left.object);
+        if (!topLevel || deferred(anc)) throw new Error(`${who}: window.${x} is assigned inside a function (line ${a.loc.start.line}), at a time the tool cannot follow`);
+        if (direct && o.start >= insertAt) throw new Error(`${who}: window.${x} is published after the new place (line ${a.loc.start.line}): its place is fixed by that statement`);
+        if (!direct && o.start >= insertAt && o.start < s.start) throw new Error(`${who}: window.${x}.* is assigned between the new and the old place (line ${a.loc.start.line}): its place is fixed by that statement`);
+      },
+      CallExpression(c, _st, anc) {
+        if (!topLevel || deferred(anc) || o.start < insertAt || o.start >= s.start) return;
+        const f = c.callee; if (f.type !== 'MemberExpression') return;
+        const name = f.property.name || '';
+        const viaArg = /^(assign|defineProperty|defineProperties|freeze)$/.test(name);
+        if (viaArg && isGlobal(c.arguments[0])) {
+          // the names it publishes must be readable from the call: a string literal, or the keys of an object literal
+          const a1 = c.arguments[1];
+          const keys = name === 'defineProperty' && a1?.type === 'Literal' ? [a1.value]
+            : name !== 'defineProperty' && a1?.type === 'ObjectExpression' && a1.properties.every((q) => q.type === 'Property' && !q.computed) ? a1.properties.map((q) => q.key.name ?? q.key.value)
+            : null;
+          if (!keys) throw new Error(`${who}: ${name} on ${c.arguments[0].name} between the new and the old place publishes names the tool cannot read (line ${c.loc.start.line})`);
+          const hit = keys.find((k) => members.has(k));
+          if (hit) throw new Error(`${who}: window.${hit} is published between the new and the old place (line ${c.loc.start.line}): its place is fixed by that statement`);
+          return;
+        }
+        if (viaArg || /^(push|add|set|splice|unshift|delete)$/.test(name)) {
+          const x = rootMember(viaArg ? (c.arguments[0] || f) : f.object);
+          if (x && members.has(x)) throw new Error(`${who}: ${name} on window.${x} between the new and the old place (line ${c.loc.start.line}): its place is fixed by that statement`);
+        }
+      },
+    });
+  }
+}
 for (const s of stmts) {
   const seg = segOf(s.start);
   if (!seg) throw new Error('statement outside any file segment');
   if (s.type === 'VariableDeclaration') {
-    // an initialiser that reads window/globalThis at load time depends on the loose statements that publish those members first
-    let reads = null;
-    walk.ancestor(s, { Identifier(id, _st, anc) { if ((id.name === 'window' || id.name === 'globalThis') && !deferred(anc)) reads = id.name; } });
-    if (reads) throw new Error(`${declNames(s)[0]}: the initialiser reads ${reads}.* at load time; the statements that publish it fix its place`);
+    checkGlobalReads(s);
   }
   if (seg.file === 'qa/qa.js') throw new Error(`${declNames(s)[0]} is declared in qa/qa.js (test-only code): it must not move into the game`);
 }
@@ -137,20 +197,33 @@ for (const s of stmts) {
   const MUTATORS = /^(push|add|set|splice|unshift|delete|assign|defineProperty|defineProperties|freeze)$/;
   for (const s of stmts) {
     if (s.type !== 'VariableDeclaration') continue;
-    const read = new Set();
+    const read = new Map(); // object name -> the first-level members the initialiser reads ('*' when the member is computed)
+    const firstMember = (m) => { let cur = m, last = null; while (cur.type === 'MemberExpression') { last = cur; cur = cur.object; } return { root: cur, first: last }; };
     walk.ancestor(s, { MemberExpression(m, _st, anc) {
       if (deferred(anc)) return;
-      let root = m; while (root.type === 'MemberExpression') root = root.object;
-      if (root.type === 'Identifier') read.add(root.name);
+      const { root, first } = firstMember(m);
+      if (root.type !== 'Identifier' || root.name === 'window' || root.name === 'globalThis') return; // window.X is followed by checkGlobalReads
+      if (!read.has(root.name)) read.set(root.name, new Set());
+      read.get(root.name).add(first.computed ? '*' : first.property.name);
     } });
     if (!read.size || insertAt === undefined) continue;
+    // an assignment X.k = v only matters when the initialiser reads X.k; X['P_'+id] = v only when it reads a member that starts with P_
+    const touches = (name, first) => {
+      const props = read.get(name);
+      if (props.has('*')) return true;
+      if (!first.computed) return props.has(first.property.name);
+      let lead = first.property; while (lead.type === 'BinaryExpression' && lead.operator === '+') lead = lead.left; // the leftmost piece of a concatenation
+      const prefix = lead.type === 'Literal' && typeof lead.value === 'string' ? lead.value : lead.type === 'TemplateLiteral' ? lead.quasis[0].value.cooked : null;
+      return prefix === null || prefix === '' ? true : [...props].some((x) => x.startsWith(prefix));
+    };
     for (const o of top) {
       if (picked.has(o) || o.type === 'FunctionDeclaration' || o.start >= s.start || o.start < insertAt) continue;
       walk.ancestor(o, {
         AssignmentExpression(a, _st, anc) {
           if (deferred(anc)) return;
-          let root = a.left; while (root.type === 'MemberExpression') root = root.object;
-          if (root.type === 'Identifier' && read.has(root.name) && a.left.type === 'MemberExpression') throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place assigns ${root.name}.* (line ${a.loc.start.line}): its place is fixed by that statement`);
+          if (a.left.type !== 'MemberExpression') return;
+          const { root, first } = firstMember(a.left);
+          if (root.type === 'Identifier' && read.has(root.name) && touches(root.name, first)) throw new Error(`${declNames(s)[0]}: reads ${root.name}.* when it runs, and a statement before its old place assigns ${root.name}.* (line ${a.loc.start.line}): its place is fixed by that statement`);
         },
         CallExpression(c, _st, anc) {
           if (deferred(anc)) return;

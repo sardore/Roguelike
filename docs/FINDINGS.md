@@ -94,3 +94,9 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 - 사용처에서 누락을 보완하던 직접 비교 4곳을 지웠다: `palaceRootFloor`의 `top!==TT.PORTAL`, 용궁 뿌리 패턴 검사의 `!==TT.PORTAL`(branches.js), 지형 변경 뒤 진입 반응의 `||tile===TT.PORTAL||tile===TT.CRUMBLE`, 임시 지형 변경 거부의 `||old===TT.PORTAL`(monsters.js). 이 네 곳은 원래 직접 비교가 빠진 ID를 채우고 있었으므로, 사용처에서의 판정 결과는 수정 전과 같다.
 - 확인: `values` 시나리오에서 바뀐 값은 이 두 집합뿐이다(기준선 `values.empty`/`values.branch` 갱신). `npm test` 나머지 항목은 그대로다.
 - 부수 효과: 이 할당을 기다리느라 spine.js에 묶여 있던 `ASURA_HAZ`, `CITADEL_PROP_TILES`(F-23) 등은 이제 순서 제약이 없다.
+
+## F-25 (미수정) `replaceViewerQuickButton`: 버튼을 복제해 옛 리스너를 떼고 다시 붙인다
+`replaceViewerQuickButton('inv', …)`·`('skill', …)`(input.js)는 모바일 빠른 버튼을 `cloneNode(true)`로 바꿔 끼워 처음 붙은 `pointerup`/`click`/`touchend` 처리기를 없애고 새 처리기를 붙인다. 주석은 "옛 퀵바 클로저가 UI를 열기 전에 자동 이동을 강제로 취소했다"고 한다. 옛 리스너가 붙는 원본 자리를 찾아 거기서 최종 처리기를 붙이는 것이 구조 규칙(덧씌우기 금지)에 맞는 해결이다. 등록 API 표가 아니라 부팅 DOM 연결이라 P3b에서 건드리지 않았고, 부팅 함수화(P4 B)와 함께 본다.
+
+## F-26 (미수정) `TYPED_KEYS96` 상수 이름은 읽히지 않지만 문장을 못 지운다
+`const TYPED_KEYS96=globalThis.__MANRU_TYPED_KEYS__={…}`의 상수 이름은 아무도 읽지 않는다(읽는 곳은 모두 전역 `__MANRU_TYPED_KEYS__`). 이름만 떼어 보았더니 선언이 느슨한 문장이 되어 `spineLooseStatements`가 늘어 게이트가 막았다(되돌림). 이 문장을 special.js로 옮기려면 `let typedKeyMeta96`(문장 안의 함수가 다시 할당)도 같이 옮겨야 한다. 공개 전역을 직접 호출로 바꾸는 별도 정리(P9)에서 함께 본다.

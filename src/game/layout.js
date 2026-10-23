@@ -744,3 +744,8 @@ const inside43=(r,x,y)=>x>=r.x+1&&y>=r.y+1&&x<=r.x+r.w-2&&y<=r.y+r.h-2;
   const safePut44=(r,x,y,t)=>{if(!inRoom44(r,x,y))return false;if((x===state.player.x&&y===state.player.y)||(x===state.stairs.x&&y===state.stairs.y))return false;setTerrainTile58(state.map,x,y,t);return true};
   function segment93(out,x,y,tx,ty){while(x!==tx||y!==ty){const px=x,py=y;if(x!==tx)x+=Math.sign(tx-x);else y+=Math.sign(ty-y);out.push({x,y,dir:x!==px?'h':'v'})}return{x,y}}
 let rng49=RngService.nativeRuntime();
+function roomSculptPostGeneration(){reshapeRooms();for(const fr of state.featureRooms||[])sculptFeature(fr);fixEntities();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()}
+function organicNooksPostGeneration(){organicNooks43();for(const fr of state.featureRooms||[])sculptSmallFeature43(fr);repair43()}
+function roomStructurePostGeneration(){structuralOrdinaryRooms44();repair44()}
+function canonPostGeneration(){normalizeKitchens58();ensureCanonExtras58();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()}
+function guardPostPostGeneration(){guardedRooms59();inferCorridors59();doorAudit59();VisibilityService.compute();vfBuildDecor()}

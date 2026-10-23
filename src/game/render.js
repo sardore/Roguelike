@@ -163,9 +163,9 @@ function drawMartialVisual(now){
   else{polygon(x,y,r,4,Math.PI/4);X.stroke();polygon(x,y,r*.7,4,0);X.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;X.fillRect(x+Math.cos(a)*r-1*z,y+Math.sin(a)*r-1*z,2*z,2*z)}}
  }X.restore();
 }
-const PRESENTATION_UPDATES=new Map();
+const PRESENTATION_UPDATES=new Map([['effects',effectsUpdate],['monster-motion',monsterMotionUpdate],['martial965',martialPulseUpdate]]);
 const PresentationState=Object.freeze({
-  register(id,update){if(PRESENTATION_UPDATES.has(id))throw new Error('duplicate presentation owner: '+id);PRESENTATION_UPDATES.set(id,update);return update},
+  
   advance(now){for(const update of PRESENTATION_UPDATES.values())update(now)},
   cache(){return Object.freeze({monsterMotion:MON_VIS,effects:FX})}
 });
@@ -1266,8 +1266,7 @@ function drawTransition(now){
   const sealX=Math.min(VIEW.w-26,VIEW.w/2+Math.min(220,VIEW.w*.29)),sealY=cy-34;X.strokeStyle='#8c4034';X.lineWidth=1.5;X.strokeRect(sealX-11,sealY-11,22,22);X.fillStyle='#ad5141';X.font='900 10px Georgia,serif';X.fillText('입',sealX,sealY+1);
   X.restore();
 }
-const MINIMAP_PIPELINE={before:null,hooks:[]};
-function registerMinimapHook(id,draw){if(MINIMAP_PIPELINE.hooks.some(h=>h.id===id))throw new Error('duplicate minimap hook '+id);MINIMAP_PIPELINE.hooks.push({id,draw})}
+const MINIMAP_PIPELINE={before:null,hooks:[{id:'doors59',draw:doorsDrawMinimap},{id:'architecture85',draw:architectureDrawMinimap},{id:'portals981',draw:portalsDrawMinimap}]};
 function drawMinimap(force=false){if(MINIMAP_PIPELINE.before&&!MINIMAP_PIPELINE.before(force))return false;MX.clearRect(0,0,MC.width,MC.height);const sx=MC.width/COLS,sy=MC.height/ROWS;MX.fillStyle='#070a0e';MX.fillRect(0,0,MC.width,MC.height);const cols=new Map([[TT.WALL,'#3d342d'],[TT.STAIR,'#e0d0a0'],[TT.WATER,'#426c73'],[TT.PAPER_BRIDGE,'#c8b990'],[TT.MIRROR,'#a3789e'],[TT.JAR,'#7b543d'],[TT.LAVA,'#a4412c'],[TT.DRAWBRIDGE_DOWN,'#9e7547'],[TT.DRAWBRIDGE_UP,'#55402f'],[TT.VOID,'#08050d'],[TT.GOLD,'#c8a543'],[TT.MERCURY,'#9eaaaa'],[TT.SWITCH,'#d09855'],[TT.BAMBOO,'#476346'],[TT.TABLE,'#735039'],[TT.SCREEN,'#7d3533'],[TT.GRASS,'#243b27'],[TT.HEDGE,'#315136'],[TT.RAFT,'#9b754a'],[TT.FAKE_DOOR,'#704b63'],[TT.LOCKED_GATE,'#7b756c'],[TT.KEY_TILE,'#e3bf6e'],[TT.STAMINA_PAD,'#6daac0'],[TT.PEACH_TREE,'#b06f78'],[TT.SECRET_DOOR,'#8d7444'],[TT.PAVILION,'#a47452']]);for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){if(!state.seen.has(k(x,y))&&!mineScenerySeen(x,y))continue;const t=mineHidden(x,y)?TT.VOID:state.map[y][x];MX.fillStyle=state.branchContext105?.id==='palace'?palaceMiniColor(t,x,y):state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.miniColor?globalThis.__MANRU_LEGEND_TERRAIN47__.miniColor(t,x,y):(cols.get(t)||'#15130f');MX.fillRect(x*sx,y*sy,Math.ceil(sx),Math.ceil(sy))}for(const m of state.monsters)if(isThreatVisibleToPlayer(m)){MX.fillStyle=m.boss?'#f1c35f':'#c45d62';MX.fillRect(m.x*sx,m.y*sy,3,3)}for(const it of state.items)if(state.seen.has(k(it.x,it.y))){MX.fillStyle=rarityColor(it.rarity);MX.fillRect(it.x*sx,it.y*sy,2,2)}MX.fillStyle='#91d39a';MX.fillRect(state.player.x*sx,state.player.y*sy,3,3);MX.strokeStyle='#506174';MX.strokeRect(.5,.5,MC.width-1,MC.height-1);for(const h of MINIMAP_PIPELINE.hooks)h.draw({sx,sy,force});return true}
 let renderUpdatePending=false, cameraRenderPending=false;
 function syncLargeMinimap(){
@@ -4950,3 +4949,36 @@ function burst(x,y,color="#ffffff",count=9,power=1){
 }
 function markMoveDirty(ctx){if(ctx.moved)RENDER_PERF_STATE.dirty=true}
 function footstepFeedback(ctx){if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}}
+window.__MANRU_CLEAR_HI_CACHE__=()=>{
+    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FIRE_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
+  };
+globalThis.__MANRU_TRANSIENT47__=Object.freeze({trim:trimTransient});
+globalThis.__MANRU_RENDER47__=Object.freeze({invalidate:()=>{P47.force=true;P47.cullKey='';return true}});
+globalThis.__MANRU_BOSS54__={draw:drawBossIntent};
+globalThis.__MANRU_POTION_ART_56__={iconHtml:potionIconHtml56R,worldDraw:drawPotionWorld56R};
+globalThis.__MANRU_DRAW_BASE58__=drawFast;
+window.__MANRU_RESUME_R6__={schedule:scheduleResume71};
+globalThis.__MANRU_CAMERA_PROJECTION12__=CameraProjection;
+globalThis.__MANRU_WORLD_HITTEST12__=WorldHitTest12;
+window.__MANRU_V984_SET_ZOOM__=(v,anchor=null)=>CameraState.setZoom(v,false,anchor);
+globalThis.__MANRU_CAMERA984__=Object.freeze({zoomByScale(scale,anchor=null){return CameraState.setZoom(cameraData.zoom*scale,false,anchor)}});
+window.__MANRU_ACTOR_CACHE1011__={clear:()=>{HERO_SPRITE_CACHE.clear();return true}};
+globalThis.__MANRU_DRAW_ITEM_IMPL_R7__=worldDraw;
+globalThis.__MANRU_DEBUG_BATTLE57__=Object.freeze({snapshot:()=>DEBUG_BATTLE57.open?{round:DEBUG_BATTLE57.round,watching:!!DEBUG_BATTLE57.watching,subject:DEBUG_BATTLE57.subjectId,playing:DEBUG_BATTLE57.playing,winner:DEBUG_BATTLE57.winner,catalog:DEBUG_BATTLE57.catalog.map(e=>({name:e.def.name,group:e.group})),units:state.monsters.map(m=>({id:m.debugId57,name:m.name,side:m.debugSide57,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp,atk:m.atk,def:m.def,faction:entityFaction(m),cells:entityFootprintCells57(m),revive:m.revivePhase57})),debug:state.debugBattle57,map:{width:COLS,height:ROWS,rooms:state.rooms.length,tiles:[...new Set(state.map.flat())]},patterns:state.monsters.filter(m=>m.boss).map(m=>({id:combatantId(m),name:m.name,faction:entityFaction(m),intent:m.intent54?.type,core:m.coreStage54,links:m.silk54?.links.length})),owners:state.monsters.filter(m=>m.bossOwnerId57).map(m=>({name:m.name,owner:m.bossOwnerId57,faction:entityFaction(m),fixture:m.combatFixture54}))}:null});
+const legacyPotionIcon=globalThis.__MANRU_POTION_ART_56__?.iconHtml||null;
+const legacyPotionDraw=globalThis.__MANRU_POTION_ART_56__?.worldDraw||null;
+const BRANCH_INTERACTIVE_OVERLAYS105=new Set([TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.SWITCH,TT.KEY_TILE,TT.RUMOR,TT.BRAZIER,TT.TRAP,TT.ARMORY,TT.FOUNTAIN,TT.MIRROR,TT.ALTAR,TT.VAULT,TT.SNARE,TT.CACHE,TT.COOKPOT]);
+function effectsUpdate(now){
+  FX.rings=FX.rings.filter(r=>now-r.start<r.life);FX.doors=FX.doors.filter(d=>now-d.start<d.life);FX.slashes=FX.slashes.filter(s=>now-s.start<s.life);FX.projectiles=FX.projectiles.filter(p=>now-p.start<p.life);FX.particles=FX.particles.filter(p=>now-p.start<p.life);FX.floats=FX.floats.filter(f=>now-f.start<f.life);
+  for(const p of FX.particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.vy+=.015}
+  if(FX.transition&&now-FX.transition.start>=FX.transition.life)FX.transition=null;
+  if(FX.particles.length>40)FX.particles.splice(0,FX.particles.length-40);if(FX.floats.length>12){const labels=FX.floats.filter(f=>!f.damage57).slice(-12);FX.floats=FX.floats.filter(f=>f.damage57||labels.includes(f))}
+}
+function monsterMotionUpdate(now){if(!state)return;for(const m of state.monsters||[]){let v=MON_VIS.get(m);if(!v){v={x:m.x,y:m.y,last:now};MON_VIS.set(m,v);continue}if(v.forced105){const f=forcedMotionSample(v.forced105,now);if(f){v.x=f.x;v.y=f.y;v.last=now;if(!f.done)continue}v.forced105=null}const dt=Math.min(.05,Math.max(.001,(now-v.last)/1000)),a=1-Math.exp(-dt*18*automationPresentationRate70());v.last=now;v.x+=(m.x-v.x)*a;v.y+=(m.y-v.y)*a}}
+function martialPulseUpdate(now){if(FX965.pulse&&now>=FX965.pulse.until)FX965.pulse=null}
+function foodPostTurn(ctx){const b=ctx.food57||{};if(state&&!state.dead&&state.turn!==b.turn&&state.turn%10===0&&state.player.hunger<=0){const raw=(playerCloak().focusRegen||1)>=2?2:1,gained=Math.max(0,state.player.focus-(b.focus??state.player.focus));state.player.focus=Math.max(0,state.player.focus-Math.min(gained,raw*.5));if(typeof updatePanels==='function')updatePanels()}}
+function cameraSavePostTurn(){if(state&&!state.dead&&!state.victory){const px=state.player?.x,py=state.player?.y;if(cameraData.lastPlayerX!=null&&cameraData.lastPlayerY!=null&&(px!==cameraData.lastPlayerX||py!==cameraData.lastPlayerY)){cameraData.lastPlayerX=px;cameraData.lastPlayerY=py;CameraState.setMode('follow',false);const p=(()=>{const p=visualPlayerPosition();return{x:p.worldX,y:p.worldY}})();cameraData.tx=p.x;cameraData.ty=p.y}}}
+function resourcePostGeneration(){guaranteedResource48();P47.cullKey='';P47.decorKey='';P47.force=true}
+function knowledgePostGeneration(){return onFloorGenerated56()}
+function polishPostGeneration(){polish78();VisibilityService.compute()}
+function qualityPostPostGeneration(){state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()}

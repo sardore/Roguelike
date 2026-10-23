@@ -378,7 +378,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     document.documentElement.toggleAttribute('data-ui-text-large',scale>1);
     if(persist)lsSet('manruUiTextScale70',String(scale));
   }
-  const AUTO_KEY='manruRC70_autosave';
   function restoreState(st){
     st=GameState.migrate(st);validateSaveState(st);
     // Current saves already own their finalized visual-decor state. Rebuilding vfBuildDecor here
@@ -629,8 +628,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     /* ---------- visible real quit button ---------- */
     function ensureQuit(){
       // Permadeath has one rolling autosave only: remove legacy rollback/import surfaces entirely.
-      const legacyBtn1003=['rcLoadAuto70','rcExport70','rcImport70'].map(id=>document.getElementById(id)).filter(Boolean);
-      for(const b of legacyBtn1003){b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')}
       document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;const sec=b.closest('.rc70Section');if(sec)sec.style.setProperty('display','none','important')});
       const head=document.querySelector('#releasePanel70 .rc70Head'),close=document.getElementById('rcClose70');if(head&&close&&!document.getElementById('quitHead1003')){const b=document.createElement('button');b.id='quitHead1003';b.type='button';b.textContent='게임 종료';head.insertBefore(b,close)}
       const body=document.querySelector('#releasePanel70 .rc70Body');if(body&&!document.getElementById('quitSection1003')){const sec=document.createElement('section');sec.id='quitSection1003';sec.className='rc70Section';sec.innerHTML='<h3>게임 종료</h3><div class="quitRow1003"><div class="quitCopy1003"><b>현재 탐사를 자동 저장한 뒤 게임을 종료한다.</b><small>자동 저장한 뒤 탐사를 마친다.</small></div><button id="quitGame1003" type="button">게임 종료</button></div>';body.appendChild(sec)}
@@ -996,3 +993,48 @@ function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.len
 function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
 function blockWhileZooming(){return !window.__manruZoomActive}
 function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}
+let inventoryFiltered;
+  function tabCount(kind){
+    const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
+  }
+  function restoreInventoryScroll45(grid,tab=inventoryTab){
+    if(!grid)return;
+    const top=Math.max(0,UX.invScrollByTab[tab]||0);
+    grid.scrollTop=top;
+    grid.addEventListener('scroll',()=>{UX.invScrollByTab[tab]=Math.max(0,grid.scrollTop||0)},{passive:true});
+  }
+  const targeting81=()=>actionTargetOpen56();
+  let selectedClass1001=CLASSES[0].id;
+globalThis.__MANRU_POTION41_ACTIONS__=Object.freeze({drink,beginTarget,cancelTarget,throwAt,target:()=>potionTarget?{item:potionTarget.item,range:potionTarget.range}:null});
+globalThis.__MANRU_UX45_ACTIONS__=Object.freeze({beginViewer:beginViewer45,finishViewer:finishModalOpening,finishClose:finishViewerClose,markDirty:()=>{UX.modalDirty=true;UX.paused=null;return true},openInventory:()=>{openInventory();return true},closeInventory:()=>{closeInventory();return true}});
+globalThis.__MANRU_SFX54__=Object.freeze({play:sfx54,toggle(){V54.sfx=!V54.sfx;try{localStorage.setItem('manruSfx54',V54.sfx?'1':'0')}catch(error){console.warn('[manru] sound setting not stored',error)}toast(`효과음 ${V54.sfx?'켜짐':'꺼짐'}`);return V54.sfx},enabled(){return V54.sfx}});
+globalThis.__MANRU_AMMO_ATTACK__={consume:consumeAmmo,prepare(){if(!isBow967())return{ok:true,active:false};const a=selectedAmmo();if(!a){toast('화살이 없다. 탄약을 찾아야 한다.');addLog('활시위를 당겼지만 장전할 화살이 없다.');return{ok:false,active:true}}return{ok:true,active:true,ammo:a,before:state.turn,stunned:(state.status.stun||0)>0}},finish(ctx){if(ctx?.active&&!ctx.consumed&&ctx.ammo&&state.turn>ctx.before&&!ctx.stunned)consumeAmmo(ctx.ammo)}};
+window.__MANRU_INSPECT984__=function(q){
+    if(!q||!state)return;const x=q.x,y=q.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
+    const target={x,y};
+    if(!state.seen.has(k(x,y))){directOpenInspect('미탐사 구역',simpleHtml986({desc:'등불과 시야가 닿지 않은 공간. 직접 확인하기 전에는 안쪽의 구조나 존재를 알 수 없다.',hint:''}),target);return}
+    const tile=state.map[y][x];if(TERRAIN986.get(tile)?.inspectPriority57==='terrain'){const info=terrainInfo986(tile,x,y);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const palaceWarning=palaceWarningInfo(x,y);if(palaceWarning){directOpenInspect(palaceWarning.name,simpleHtml986(palaceWarning),target);return}
+    const martialInfo=state.visible.has(k(x,y))?martialWorldInfo(x,y):null;if(martialInfo){directOpenInspect(martialInfo.name,simpleHtml986(martialInfo),target);return}
+    const mon=findMonsterAt(x,y),it=(state.items||[]).find(v=>v.x===x&&v.y===y),t=state.map[y][x];
+    if(mon?.treeMimic105&&mon.mimicDormant105!==false){const info=mountainDeadTreeInfo();directOpenInspect(info.name,simpleHtml986(info),target);return}
+    if(isEntityObservableToPlayer57(mon)){const info=monsterInfo986(mon);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const stock=ShopMapBuilder.groundAt(x,y);if(stock){const info=itemInfo(stock.item);info.meta=[...(info.meta||[]),`진열품 · 엽전 엿 ${stock.price}개`];info.hint=[info.hint,'이 칸으로 이동하면 구매창이 열린다. 창을 닫았다면 이 칸에서 상호작용을 누른다. 구매 확정 전에는 차감되지 않는다.'].filter(Boolean).join(' ');directOpenInspect(info.name,simpleHtml986(info),target,stock.item);return}
+    const merchant=neutralInteractableAt58(x,y);if(merchant){directOpenInspect(merchant.name,simpleHtml986({desc:'엽전 엿으로 물품을 교환하는 상인.',hint:'인접해서 상호작용하면 행낭의 물건을 팔 수 있다. 구매는 바닥의 진열품 칸으로 이동한다.'}),target);return}
+    if(it){openItemInspect986(it,target);return}
+    const decor=decorAt986(x,y);if(decor){const info=decorInfo986(decor);directOpenInspect(info.name,simpleHtml986(info),target);return}
+    const decal=decalInfo986(x,y);if(decal){directOpenInspect(decal.name,simpleHtml986(decal),target);return}
+    const info=terrainInfo986(t,x,y);directOpenInspect(info.name,simpleHtml986(info),target);
+  };
+globalThis.__MANRU_SKILL991_INPUT__=Object.freeze({toggle:toggleSkillQuick,isOpen:()=>quickOpen991,activateIndex(i){if(!quickOpen991)return false;const row=availableSkills991()[i];if(!row)return false;closeSkillQuickPanel();return ActionDispatcher.dispatch({type:'MARTIAL',args:[row[0]]}).value}});
+globalThis.__MANRU_LIBRARY1022_ACTIONS__=Object.freeze({consume:consumeLibraryScroll1022});
+  function throwAt(tx,ty){const act=playerAction57('target',{uiOwner:'potionTargetHud'});if(!act.ok)return false;if(!potionTarget||!state)return false;const item=potionTarget.item,r=potionTarget.range||4,p=state.player;if(!state.player.inventory.includes(item)){cancelTarget(true);return false}if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>r){toast(`사거리 ${r}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('보지 못한 곳이다.');return false}if(!lineClear(p.x,p.y,tx,ty)){toast('던질 경로가 막혔다.');return false}if(state.floor>=11)alertNearby(tx,ty,item.throwElement105?4:item.potionKind==='smoke'?6:8,item.throwElement105||item.potionKind==='smoke'?'projectile':'explosion');projectileFX(p.x,p.y,tx,ty,pcolor(item));burst(tx,ty,pcolor(item),18,1);if(item.throwElement105==='water'||item.throwElement105==='ice'){emitElementContact105(item.throwElement105,elementCells105(tx,ty,1),effectSource57(p));addLog(`${item.name}: 주변 3×3에 ${item.throwElement105==='water'?'물기운':'냉기'}가 퍼졌다.`)}else if(item.potionKind==='smoke'){addField('smoke',tx,ty,6);addLog(`${item.name}: 3×3 연막 5턴.`)}else{const m=findMonsterAt(tx,ty),observed=isEntityObservableToPlayer57(m),direct=isThreatVisibleToPlayer(m)?m:null;if(observed&&m&&!isHostileTarget57(m)){toast('아군에게 공격용 약병을 던질 수 없다.');return false}if(direct){markCombatActivity57('potion-throw');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(direct,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${direct.name}의 아수라장이 투척 직격을 지웠다.`)}else{const dealt=damageEntity(direct,6,state.player,'fire');if(dealt>0){dojoRememberHit(direct,'area');floatText(tx,ty,'-'+dealt,'#ff9d5c',14,'fire');}if(direct.hp<=0)killMonster(direct)}}addField('fire',tx,ty,5);addLog(`${item.name}: 3×3 화염 4턴.`)}consumeRef(item);cancelTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.useCost||1,reason:"throwAt"}).value;return true}
+  function beginViewer45(){UX.modalOpening=true;pauseAutoForUI();UX.invEquipSlot=null}
+/* ===== MANRU v5.6 TALISMANS + CONTEXTUAL UNKNOWN POTIONS ===== */
+const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT53?.item||null};
+  function decorInfo986(d){const info=DECOR986.get(String(d?.kind||''))||{name:'이름 없는 장식',desc:'만루의 방을 채우는 작은 장식물. 기능보다 그 공간을 사용했던 사람들의 취향과 습관을 남긴다.'};return{name:info.name,desc:info.desc,hint:info.hint||''}}
+  function decalInfo986(x,y){const d=[...(state?.decals||[])].reverse().find(v=>v.x===x&&v.y===y);if(!d)return null;const info=DECAL986.get(d.type)||null;return info?{name:info.name,desc:info.desc,hint:''}:null}
+  const DECAL986=new Map([
+    ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
+    ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
+  ]);

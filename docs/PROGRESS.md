@@ -94,7 +94,18 @@
 | P3→boss | P3: BOSS_REWARD_STAGES registrations become an array literal (1 stages, named functions) | 5653 | 134 / 499 | 749 | 78.5% | - |
 | P3→pickup | P3: MANRU_PICKUP_PIPELINE_R25 registrations become an array literal (6 stages, named functions) | 5640 | 133 / 495 | 748 | 78.5% | - |
 | P3→movehooks | P3: MOVE_HOOKS_R8 registrations become an array literal (10 stages, named functions) | 5629 | 131 / 485 | 746 | 78.6% | - |
+| P6~P8 | 전역 공개 47개 이동·2개 삭제, 선언 24개 이동(P6 5 + 신규 9 + P7 4 + P8 6), 버전 문자열 10문장 정의에 합침 | 5243 | 83 / 426 | 744 | 80.1% | - |
+| P3b | 등록 API 표 10개(프레젠테이션·미니맵·공격 단계 3·턴·라우트·patchDef·생성) + 개명 | 5096 | 81 / 316 | 743 | 80.6% | - |
 | P3 정리 | P3: 접미사 개명, 도구 삭제, 문서 | 5629 | 131 / 485 | 744 | 78.6% | - |
+| P5→save | spine 선언 → save.js (P3로 풀린 것) | 5617 | 128 / 485 | 744 | 78.6% | - |
+| P5→branches | spine 선언 → branches.js (P3로 풀린 것) | 5617 | 126 / 485 | 744 | 78.6% | - |
+| P5→combat | spine 선언 → combat.js (P3로 풀린 것) | 5616 | 124 / 485 | 744 | 78.6% | - |
+| P5→mapgen | spine 선언 → mapgen.js (P3로 풀린 것) | 5582 | 121 / 485 | 744 | 78.8% | - |
+| P5→ui | spine 선언 → ui.js (P3로 풀린 것) | 5575 | 116 / 485 | 744 | 78.8% | - |
+| P5→input | spine 선언 → input.js (P3로 풀린 것) | 5575 | 115 / 485 | 744 | 78.8% | - |
+| P5→items | spine 선언 → items.js (P3로 풀린 것) | 5568 | 111 / 485 | 744 | 78.8% | - |
+| P5→monsters | spine 선언 → monsters.js (P3로 풀린 것) | 5568 | 109 / 485 | 744 | 78.8% | - |
+| P4 설계 | P3 이후 이동 22개 완료, P4~P8 설계안(docs/P4_DESIGN.md) | 5568 | 109 / 485 | 744 | 78.8% | - |
 
 ## 현재 파일별 줄 수
 
@@ -102,20 +113,20 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 755 |
-| items.js | 1046 |
-| combat.js | 666 |
-| monsters.js | 2282 |
+| save.js | 770 |
+| items.js | 1057 |
+| combat.js | 669 |
+| monsters.js | 2284 |
 | render.js | 4952 |
-| mapgen.js | 3332 |
+| mapgen.js | 3369 |
 | special.js | 2038 |
-| branches.js | 2404 |
+| branches.js | 2406 |
 | elements.js | 251 |
-| world.js | 498 |
+| world.js | 497 |
 | layout.js | 746 |
-| input.js | 258 |
+| input.js | 259 |
 | story.js | 223 |
-| ui.js | 998 |
-| spine.js | 5629 |
+| ui.js | 1010 |
+| spine.js | 5568 |
 | start.js | 6 |
-| (total) | 26282 |
+| (total) | 26303 |

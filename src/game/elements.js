@@ -249,3 +249,4 @@ function fieldProvenance57(field){if(field.sourceFaction)return field;return{...
 function elementGuardStats(s){const a=state?.player?.armor;if(a?.elementGuard74==='ice')s.eva+=1;if(a?.elementGuard74==='earth')s.def+=1;return s}
 function elementBrandAttackCost(c,item){if(item?.elementBrand74==='shock')c*=.90;return clamp(c,.25,2.2)}
 function elementGuardMoveCost(c){if(state?.player?.armor?.elementGuard74==='shock')c*=.92;return clamp(c,.50,1.15)}
+function elementsPostTurn(){if(!state||state.dead||state.victory)return;if(state.player.armor?.elementGuard74==='grass')state.status.poison=0;if(state.player.armor?.elementGuard74==='water'&&state.turn%2===0){state.status.poison=Math.max(0,(state.status.poison||0)-1);state.status.bleed=Math.max(0,(state.status.bleed||0)-1)}tickElementFields57();if(state.elementWard74){state.elementWard74.ttl--;if(state.elementWard74.ttl<=0)state.elementWard74=null}VisibilityService.compute();updateAll()}

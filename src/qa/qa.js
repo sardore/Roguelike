@@ -22,7 +22,7 @@ globalThis.__MANRU_MOVE_HOOKS__=MOVE_HOOKS;
 globalThis.__MANRU_PLAYER_MATH55__={stats:()=>PLAYER_STAT_STAGES.map(v=>v.id),attack:()=>ATTACK_COST_STAGES.map(v=>v.id),move:()=>MOVE_COST_STAGES.map(v=>v.id)};
 globalThis.__MANRU_ACTION_DISPATCHER__=ActionDispatcher;
 globalThis.__MANRU_INPUT_ROUTER__=InputRouter;
-globalThis.__MANRU_ATTACK_PIPELINE_R25__=MANRU_ATTACK_PIPELINE_R;
+globalThis.__MANRU_ATTACK_PIPELINE_R25__=ATTACK_PIPELINE;
 globalThis.__MANRU_COMBATANTS57__=Object.freeze({faction:entityFaction,hostile:entitiesHostile57,allied:entitiesAllied57,targetValid:combatTargetValid57,setFaction:setEntityFaction57,inheritFaction:inheritCombatFaction57,attack:executeMonsterAttackBundle57});
 globalThis.__MANRU_BOSS_REWARD55__={
   stages:()=>({pre:BOSS_REWARD_STAGES.pre.map(v=>v.id),post:BOSS_REWARD_STAGES.post.map(v=>v.id)}),
@@ -581,7 +581,7 @@ window.__MANRU_V1003__={
       sanitize:()=>sanitizeTransient1003(),
       transient:()=>state?{playerHitUntil:state.playerHitUntil||0,playerAttackUntil:state.playerAttackUntil||0,monsterTransient:(state.monsters||[]).filter(m=>m.hitUntil||m.attackUntil||m.evadeUntil).length}:null,
       forceBadTransient:()=>{if(!state)return false;state.playerHitUntil=99_999_999;state.playerAttackUntil=88_888_888;return window.__MANRU_RELEASE__?.save?.()??false},
-      permadeathAudit:()=>{const keys=Object.keys(localStorage).filter(k=>/manru.*(?:save|slot|backup|active_run)/i.test(k));return{active:!!localStorage.getItem(ACTIVE1003),foreignSaveKeys:keys.filter(k=>k!==ACTIVE1003),death:deathMeta1003(),importDisabled:!!document.getElementById('rcImport70')?.disabled,exportDisabled:!!document.getElementById('rcExport70')?.disabled,slotControls:[...document.querySelectorAll('[data-rcsave],[data-rcload]')].every(b=>b.disabled),quitVisible:!!document.getElementById('quitHead1003')}}
+      permadeathAudit:()=>{const keys=Object.keys(localStorage).filter(k=>/manru.*(?:save|slot|backup|active_run)/i.test(k));return{active:!!localStorage.getItem(ACTIVE1003),foreignSaveKeys:keys.filter(k=>k!==ACTIVE1003),death:deathMeta1003(),slotControls:[...document.querySelectorAll('[data-rcsave],[data-rcload]')].every(b=>b.disabled),quitVisible:!!document.getElementById('quitHead1003')}}
     };
 globalThis.__MANRU_DRAW_R19__={draw:drawMap,active:()=>true,hooks:()=>({world:(globalThis.__MANRU_DRAW_HOOKS_R19__?.world||[]).map(h=>h.id),post:(globalThis.__MANRU_DRAW_HOOKS_R19__?.post||[]).map(h=>h.id)})};
 window.__MANRU_V1005_TEST__={
@@ -592,7 +592,7 @@ window.__MANRU_V1005_TEST__={
   pathTo:(x,y)=>ReachabilityService.hazardPathLength({x:+x,y:+y}),strictDoors:()=>{const a=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(state.map[y][x]===TT.DOOR){const L=!tileBlocks(state.map[y][x-1]),R=!tileBlocks(state.map[y][x+1]),U=!tileBlocks(state.map[y-1][x]),D=!tileBlocks(state.map[y+1][x]);a.push({x,y,meaningful:(L&&R&&!U&&!D)||(U&&D&&!L&&!R)})}return a}
 };
 globalThis.__MANRU_TURN_PIPELINE_FINAL__={active:()=>globalThis.__MANRU_TURN_PIPELINE__?.active?.()===true,stages:()=>globalThis.__MANRU_TURN_PIPELINE__?.stages?.()||[],core:()=>globalThis.__MANRU_TURN_PIPELINE__?.core?.()||'missing'};
-globalThis.__MANRU_GENERATION_R18__={generate:NormalFloorGenerator.generate,core:globalThis.__MANRU_GENERATE_CORE983__,active:()=>globalThis.__MANRU_GENERATION_R18__.generate===NormalFloorGenerator.generate,pipeline:()=>state?.generationPipelineR18||null,stages:()=>({base:MANRU_GENERATION_PIPELINE.base?.id||null,pre:MANRU_GENERATION_PIPELINE.pre.map(x=>x.id),post:MANRU_GENERATION_PIPELINE.post.map(x=>x.id)}),seed:()=>state?.generationSeedR59||null,signature:()=>{if(!state)return null;const mons=(state.monsters||[]).map(m=>[m.name,m.x,m.y,m.hp]).sort(),items=(state.items||[]).map(i=>[i.name,i.x,i.y,i.count||1]).sort(),map=state.map.map(r=>r.join(',')).join(';');let h=2166136261>>>0;const text=JSON.stringify([state.floor,state.layoutName,map,mons,items,state.decor||[]]);for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return{floor:state.floor,runId:state.runId984||window.__MANRU_RUN_SEED984||null,hash:(h>>>0).toString(16).padStart(8,'0'),monsters:mons.length,items:items.length,decor:(state.decor||[]).length,attempts:state.generationFinalKeyAttemptsR48,seed:state.generationSeedR59}}};
+globalThis.__MANRU_GENERATION_R18__={generate:NormalFloorGenerator.generate,core:globalThis.__MANRU_GENERATE_CORE983__,active:()=>globalThis.__MANRU_GENERATION_R18__.generate===NormalFloorGenerator.generate,pipeline:()=>state?.generationPipelineR18||null,stages:()=>({base:GENERATION_PIPELINE.base?.id||null,pre:GENERATION_PIPELINE.pre.map(x=>x.id),post:GENERATION_PIPELINE.post.map(x=>x.id)}),seed:()=>state?.generationSeedR59||null,signature:()=>{if(!state)return null;const mons=(state.monsters||[]).map(m=>[m.name,m.x,m.y,m.hp]).sort(),items=(state.items||[]).map(i=>[i.name,i.x,i.y,i.count||1]).sort(),map=state.map.map(r=>r.join(',')).join(';');let h=2166136261>>>0;const text=JSON.stringify([state.floor,state.layoutName,map,mons,items,state.decor||[]]);for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return{floor:state.floor,runId:state.runId984||window.__MANRU_RUN_SEED984||null,hash:(h>>>0).toString(16).padStart(8,'0'),monsters:mons.length,items:items.length,decor:(state.decor||[]).length,attempts:state.generationFinalKeyAttemptsR48,seed:state.generationSeedR59}}};
 window.__MANRU_RELEASE__.save=writeRun;window.__MANRU_RELEASE__.autosave=writeRun;window.__MANRU_RELEASE__.load=()=>loadGame();
 window.__MANRU_RELEASE__.build=RELEASE_INFO.build;
 // the identification entry points, so a test can run them while the inventory is open
@@ -621,6 +621,22 @@ globalThis.__MANRU_QA_STAGES__=()=>{
   PANEL_HOOKS.forEach(s=>add('panelHooks','',s));
   RUN_END_EFFECTS.forEach(s=>add('runEnd','',s));
   DESCEND_EFFECTS.forEach(s=>add('descend','',s));
+  return rows;
+};
+// Registries of the game (the `registries` scenario): the action routes, turn stages, attack stage chains, minimap hooks,
+// presentation updates and generation pipeline, each entry with the source of its functions, in the order the readers walk them.
+globalThis.__MANRU_QA_REGISTRIES__=()=>{
+  const src=f=>typeof f==='function'?Function.prototype.toString.call(f):null;
+  const rows=[],add=(registry,id,...fns)=>rows.push({registry,id,fns:fns.map(src)});
+  for(const [type,fn] of ACTION_ROUTES)add('routes',type,fn);
+  TurnEngine.stages.forEach(x=>add('turn',x.id,x.pre,x.post));
+  const A=ATTACK_PIPELINE;
+  add('attack','player-base:'+A.playerBase?.id,A.playerBase?.fn);A.playerStages.forEach(x=>add('attack','player:'+x.id,x.fn));
+  add('attack','monster-base:'+A.monsterBase?.id,A.monsterBase?.fn);A.monsterStages.forEach(x=>add('attack','monster:'+x.id,x.fn));
+  add('minimap','before',MINIMAP_PIPELINE.before);MINIMAP_PIPELINE.hooks.forEach(x=>add('minimap',x.id,x.draw));
+  for(const [id,fn] of PRESENTATION_UPDATES)add('presentation',id,fn);
+  const G=GENERATION_PIPELINE;
+  add('generation','base:'+G.base?.id,G.base?.fn);G.pre.forEach(x=>add('generation','pre:'+x.id,x.fn));G.post.forEach(x=>add('generation','post:'+x.id,x.fn));
   return rows;
 };
 // Consumer paths of the stage tables the `stages` scenario cannot reach through getStats/costs (the `consumers` scenario),
@@ -660,6 +676,28 @@ globalThis.__MANRU_QA_CONSUMERS__={
     if(proto){const pot={...clone(proto),x:p.x,y:p.y};state.items.push(pot);const before=p.inventory.length;trace.length=0;const r=pickup();out.picked.push({type:'potion',name:pot.name,result:r,gained:p.inventory.length-before,log:meta.slice(0,2).map(m=>m.msg),trace:trace.slice(),decorated:Object.keys(pot).sort().join(',')})}
     PICKUP_PIPELINE.stages.shift();PICKUP_PIPELINE.stages.pop();
     out.stages=PICKUP_PIPELINE.stages.length;
+    return out;
+  },
+  // The registries through their real readers, with test entries at both ends that record the direction each reader walks:
+  // an unknown and a known action through ActionDispatcher, a REST through the turn engine (the stage order it reports), a
+  // player attack through the attack chain (stub base), a minimap draw through the minimap hooks (and a digest of the canvas),
+  // the presentation updates.
+  registries(){
+    const out={};
+    out.unknown=ActionDispatcher.dispatch({type:'QA_NO_SUCH_ACTION'}).status;
+    if(state.tutorialEntry60)state.tutorialEntry60.completed=true; // out of the tutorial, so REST runs the real turn stages
+    const rest=ActionDispatcher.dispatch({type:'REST',args:[]});
+    out.rest={status:rest.status,committed:rest.committed,turns:rest.turns?.map(t=>t.stageOrder)||null};
+    const A=ATTACK_PIPELINE,trace=[],base=A.playerBase;
+    const mk=(n)=>({id:'qa-'+n,fn:(next,...a)=>{trace.push(n+'-in');const r=next(...a);trace.push(n+'-out');return r}});
+    A.playerBase={id:'qa-base',fn:()=>{trace.push('base');return 'qa-result'}};A.playerStages.unshift(mk('first'));A.playerStages.push(mk('last'));
+    const mon=state.monsters[0];out.attackResult=runAttackStages('player',[mon,0]);
+    A.playerStages.shift();A.playerStages.pop();A.playerBase=base;out.attackTrace=trace.slice();
+    const mtrace=[];MINIMAP_PIPELINE.hooks.unshift({id:'qa-first',draw:()=>{mtrace.push('first')}});MINIMAP_PIPELINE.hooks.push({id:'qa-last',draw:()=>{mtrace.push('last')}});
+    drawMinimap(true);MINIMAP_PIPELINE.hooks.shift();MINIMAP_PIPELINE.hooks.pop();out.minimapTrace=mtrace;
+    let h=2166136261;const d=MC.toDataURL();for(let i=0;i<d.length;i++){h^=d.charCodeAt(i);h=Math.imul(h,16777619)}out.minimapDigest=(h>>>0).toString(16);
+    const ptrace=[];PRESENTATION_UPDATES.set('qa-a',()=>ptrace.push('a'));PresentationState.advance(0);PRESENTATION_UPDATES.delete('qa-a');out.presentationRan=ptrace.length;
+    out.counts={routes:ACTION_ROUTES.size,turn:TurnEngine.stages.length,attackPlayer:A.playerStages.length,attackMonster:A.monsterStages.length,minimap:MINIMAP_PIPELINE.hooks.length,presentation:PRESENTATION_UPDATES.size,generation:GENERATION_PIPELINE.pre.length+GENERATION_PIPELINE.post.length};
     return out;
   },
   boss(){

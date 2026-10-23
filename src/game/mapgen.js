@@ -494,28 +494,14 @@ function peachTerrain(){
  if(budget.reserved>=budget.limit)return TT.GARDEN_TREE;
  budget.reserved++;return TT.PEACH_TREE;
 }
-function registerGenerationStage(id,phase,fn){if(typeof fn!=='function')throw new TypeError('generation stage must be a function');const list=phase==='pre'?MANRU_GENERATION_PIPELINE.pre:MANRU_GENERATION_PIPELINE.post;if(list.some(x=>x.id===id))throw new Error('duplicate generation stage: '+id);list.push({id,fn});return fn}
 function runRegisteredGenerationPipeline(...args){
-  const base=MANRU_GENERATION_PIPELINE.base?.fn;if(typeof base!=='function')throw new Error('canonical generation base missing');
+  const base=GENERATION_PIPELINE.base?.fn;if(typeof base!=='function')throw new Error('canonical generation base missing');
   // Wrapper nesting used to execute the most recently-added pre hook first, then
   // unwind post hooks oldest-to-newest. Preserve that order explicitly.
-  for(let i=MANRU_GENERATION_PIPELINE.pre.length-1;i>=0;i--){MANRU_GENERATION_PIPELINE.pre[i].fn(...args);}
+  for(let i=GENERATION_PIPELINE.pre.length-1;i>=0;i--){GENERATION_PIPELINE.pre[i].fn(...args);}
   const r=base(...args);
-  for(const st of MANRU_GENERATION_PIPELINE.post){st.fn(...args);}
+  for(const st of GENERATION_PIPELINE.post){st.fn(...args);}
   return r;
-}
-function generateFloorOriginal(){
-  state.terrainUnderlay58={};state.terrainAttachment58={};state.rooms=[];state.items=[];state.monsters=[];state.decals=[];state.switches=[];state.rafts=[];state.routeTags=[];state.floorTurn=0;state.alert=0;state.bossDefeated=false;state.bossDrop55=null;
-  state.fixedStart=null;state.fixedExit=null;state.visionPenalty=0;state.specialFloor=false;state.floorKeys=0;state.floorKeysRequired=0;state.cipher=null;state.generationRepair=0;
-  state.seen=new Set();state.visible=new Set();
-  if([5,10,15,20,25].includes(state.floor)){generateBossFloor();return}
-  const m=makeEmptyMap();state.map=m;buildRegionLayout(m);chooseEnds();placeSpecials();ensureNormalConnectivity();
-  VisibilityService.compute();spawnFloorPopulation();spawnLayoutExtras();
-  for(let i=0;i<(state.floor===24?4:rand(6,9));i++){const p=PlacementService.randomFloor(0);dropRandomItem(p,false)}
-  if(state.secretTreasure){dropRandomItem(state.secretTreasure,true);dropRandomItem(state.secretTreasure,true)}
-  VisibilityService.compute();
-  addLog(`F${state.floor} · ${regionFor(state.floor)[2]}`);
-  if(globalThis.__MANRU_RANDOM57__()<.72)addLog(choice(REGION_AMBIENCE[regionIndex()]));
 }
   /* ----------------------- dynamic map dimensions and DCSS-style vaults ----------------------- */
   function sizeForFloor(f){
@@ -2192,7 +2178,7 @@ function reachableCells(opt={}){return (state.floor===21?ReachabilityService.mec
 base(...args){
     const bowBefore=isBow967();
     const r=runRegisteredGenerationPipeline(...args);
-    MANRU_GENERATION_PIPELINE.density();
+    GENERATION_PIPELINE.density();
     applyRegionArchitecture(bowBefore);
     return r;
   },
@@ -2508,7 +2494,7 @@ function tileBlocks(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WA
 /* ===== Canonical floor-generation stage registry =====
    Legacy releases used nested `old=generateFloor; generateFloor=...` wrappers.  The
    current runtime keeps one base generator plus explicit pre/post stages instead. */
-const MANRU_GENERATION_PIPELINE={base:null,pre:[],post:[]};
+const GENERATION_PIPELINE={base:{id:'base-vaults38',fn:generateFloorBaseVaults},pre:[{id:'aim-reset52',fn:aimResetPreGeneration},{id:'boss-zones54-pre',fn:bossZonesPrePreGeneration},{id:'guard59-pre',fn:guardPrePreGeneration},{id:'special60-pre',fn:specialPrePreGeneration},{id:'region71-pre',fn:regionPrePreGeneration},{id:'quality94-pre',fn:qualityPrePreGeneration},{id:'artifact-reset46',fn:resetPortal46}],post:[{id:'feature-rooms41',fn:featureRoomsPostGeneration},{id:'potions41',fn:potionsPostGeneration},{id:'room-sculpt42',fn:roomSculptPostGeneration},{id:'organic-nooks43',fn:organicNooksPostGeneration},{id:'room-structure44',fn:roomStructurePostGeneration},{id:'strategy47',fn:strategyPostGeneration},{id:'resource48',fn:resourcePostGeneration},{id:'boss-zones54-post',fn:bossZonesPostPostGeneration},{id:'knowledge56',fn:knowledgePostGeneration},{id:'food57',fn:foodPostGeneration},{id:'canon58',fn:canonPostGeneration},{id:'guard59-post',fn:guardPostPostGeneration},{id:'special60-post',fn:specialPostPostGeneration},{id:'population61',fn:populationPostGeneration},{id:'feeling62',fn:feelingPostGeneration},{id:'pacing70',fn:pacingPostGeneration},{id:'region71-post',fn:regionPostPostGeneration},{id:'talisman74',fn:talismanPostGeneration},{id:'polish78',fn:polishPostGeneration},{id:'runtime81',fn:runtimePostGeneration},{id:'architecture85',fn:finishArchitecture90},{id:'quality94-post',fn:qualityPostPostGeneration},{id:'locks96',fn:locksPostGeneration},{id:'artifact-portal46',fn:maybePortal46}],density:addDensityMonsters964};
 function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityService.playerTerrainPassable(x,y)}
 function validatePlayerTransfer57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
@@ -2838,7 +2824,7 @@ function selectCoreDestination54(owner=null,target=state.player){
   }
 /* ===== MANRU v9.8.0: RESEARCHED REGION ARCHITECTURE / VAULT MODULES / FULL-MAP QA ===== */
 const V980={
-    version:'v9.8.0-researched-region-architecture',
+    version:'v9.8.1-fixed-map-portal-reachability',
     normalFloors:new Set([7,9,12,14,17,19]),
     specialFloors:new Set([6,8,10,11,13,15,16,18,20,21,22,23,24,25]),
     modules:[],
@@ -3330,3 +3316,57 @@ function resolveOccupancyInteraction57(actor,target){
   const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
 function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
+function descend(){
+  cancelAutoWalk();
+  if(state?.branchContext105){toast('분기에서는 문 옆에서 상호작용 버튼(F)으로 출입한다.');return false}
+  const act=playerAction57('descend',{stunMessage:'몸이 굳어 층을 내려가지 못했다.'});
+  if(!act.ok)return !!act.consumed;
+  if(state.player.x!==state.stairs.x||state.player.y!==state.stairs.y){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
+  if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor)&&!state.bossDefeated){toast('구역 보스를 쓰러뜨려야 길이 열린다.');return false}
+  if(state.floor===23&&!state.floor23?.keyAcquired){toast('수은 심부 열쇠가 있어야 다음 층으로 내려갈 수 있다.');return false}
+  if(state.floor>=25){toast('더 안쪽은 만루보주의 방뿐이다.');return false}
+  if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor))return ShopMapBuilder.enter();
+  const lifecycleGeneration6=RunLifecycle.generation(),fromFloor=state.floor,leavingShop57=!!state.shopIntermission?.active,descentSnapshot57=captureGenerationSnapshot();
+  const generateNext57=()=>{
+    if(!RunLifecycle.isCurrent(lifecycleGeneration6))return false;
+    try{
+      const followers=summonFollowers();if(state.shopIntermission?.active)ShopMapBuilder.restore();resetFloorScopedState57();state.floor++;state.player.hp=Math.min(state.player.maxHp,state.player.hp+Math.ceil(state.player.maxHp*.12));state.player.focus=Math.min(getStats().maxFocus,state.player.focus+2);NormalFloorGenerator.generate();summonPlaceFollowers105(followers);branchPruneWorld(state);
+    }catch(e){
+      restoreGenerationSnapshot(descentSnapshot57);resetVisualState();resetTurnState();VisibilityService.compute();setGenerationPresentation8(false);updateAll();console.error('descend generation rejected',e);toast('다음 층의 구조가 불안정해 이동하지 못했다.');return false
+    }
+    try{
+      resetVisualState();resetTurnState();startFloorTransition();addLog(`제 ${state.floor}층으로 들어섰다.`);runDescendEffects(fromFloor);
+      if(leavingShop57){
+        // Present the new map before releasing the shop-exit input lock.
+        syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__?.resume?.(true);updateAll(true);
+      }else updateAll();
+      globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
+    }finally{setGenerationPresentation8(false)}
+  };
+  if(leavingShop57||fromFloor===21){
+    cancelAutoWalk();clearHeldInput53();setGenerationPresentation8(true);
+    requestAnimationFrame(()=>requestAnimationFrame(generateNext57));
+    return true
+  }
+  return generateNext57()
+}
+/* ===== MANRU v10.0.4 ROUTE/Hazard REWORK (rolled back from v10.0.5 map branch) ===== */
+const WARD_DROWN={name:'용왕의 숨비늘',type:'relic',rarity:'relic',def:2,will:2,focus:2,drownWard1005:true,identified:true,ability:'익사 대체 · 10턴 수중 생존',desc:'DEF +2 · WILL +2 · FOCUS +2. 익사할 상황에서 자동으로 부서져 죽음을 막고 10턴 동안 익사를 막는다. 단, 바로 붙잡을 뭍이 있으면 유물보다 뭍을 먼저 붙잡는다.'};
+const WARD_VOID={name:'공허닻 파편',type:'relic',rarity:'sealed',def:2,eva:2,will:2,voidWard1005:true,identified:true,ability:'공허 추락 대체 · 10턴 공허 생존',desc:'DEF +2 · EVA +2 · WILL +2. 공허로 추락할 때 자동으로 소모되어 죽음을 막고 10턴 동안 공허에 발을 디딜 수 있게 한다.'};
+globalThis.__MANRU_GEN_RNG57__=Object.freeze({begin:RngService.begin,end:RngService.end,random:RngService.random,state:RngService.state});
+globalThis.__MANRU_RANDOM57__=()=>RngService.random();
+globalThis.__MANRU_ROOM_GEOMETRY105__=Object.freeze({generate:graphOrganic93});
+globalThis.__MANRU_GENERATE_CORE983__=NormalGenerationStages.riverAndCore;
+function resetFloorScopedState57(){if(!state)return;state.terrainReactions105=newTerrainReactions105();state.martialEcho=null;state.player.smokeInside1005=false;state.recentPlayerCells57=[];state.naturalPopulation57=null;state.noiseSequence57=null;noiseBudget=null;state.silkTraps57={};delete state.tutorialEntry60;delete state.floor23;delete state.floor24;for(const key of ['tempFields','tempTerrain74','elementFields74','legendFireFields47','legendTerrain47','legendSkyAxes47','artifactFields46','gazeBursts57','jarGasFields57'])if(Array.isArray(state[key]))state[key]=[];state._manualRangedTargetR8=null;state._manualTerrainTargetR8=null;state._lastPlayerPos60=null;state.crumbleBase60={};if(state.hazard1005){const drown=state.hazard1005?.drownUntil||0,voidWard=state.hazard1005?.voidUntil||0;state.hazard1005={armed:{},collapsed:{},lastWarn:{},drownUntil:drown,voidUntil:voidWard}}}
+function runDescendEffects(fromFloor){if(!state||state.floor===fromFloor)return;for(const effect of DESCEND_EFFECTS)effect({fromFloor,toFloor:state.floor})}
+const DESCEND_EFFECTS=[stairsSound,markActionTime];
+  const V981={version:'v9.8.1-fixed-map-portal-reachability',errors:[],repairs:[],portalBuilds:0};
+function portalsDrawMinimap({sx,sy}){if(state?.portalLinks981){MX.fillStyle='#c58be9';for(const id of Object.keys(state.portalLinks981)){const[x,y]=id.split(',').map(Number);if(state.seen.has(key980(x,y)))MX.fillRect(x*sx,y*sy,Math.max(2,sx),Math.max(2,sy))}}}
+function featureRoomsPostGeneration(){applyFeatureRooms();VisibilityService.compute();vfBuildDecor()}
+function strategyPostGeneration(){return applyStrategy()}
+function guardPrePreGeneration(){state.guardRooms59=[];state.layoutMode59=null}
+function specialPrePreGeneration(){state.featureRooms=[];state.landmarks=[];state.guardRooms59=[];state.hiddenGroups60={};state.hiddenLookup60={};state.hiddenBase60={};state.hiddenReplacement60={};state.crumbleBase60={}}
+function regionPrePreGeneration(){state.landmarks71=[];state.landmarkCells71={};state.regionComplex71=null}
+function regionPostPostGeneration(){enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;}
+function runtimePostGeneration(){Integrity81.repair();ConnectedDecor81.build();queuePlace81()}
+function qualityPrePreGeneration(){state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null}

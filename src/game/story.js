@@ -221,3 +221,4 @@ function coachAfterPickup(ctx){
     }
   }
 function moveCoachTip(ctx){RC.lastActionAt=performance.now();if(ctx.targetTile===TT.DOOR&&!trainingActive())tip70('door','닫힌 문은 시야를 끊는다. 열기 전에 회복·연막·퇴로를 준비하면 문 뒤 교전을 유리하게 시작할 수 있다.','문 여는 소리는 가까운 적을 경계시킨다.');return true}
+function runtimePostTurn(){if(state){coachContext();if(state.log?.length>48)state.log=state.log.slice(0,48);if(state.decals?.length>24)state.decals.splice(0,state.decals.length-24);if(state.tempFields?.length>24)state.tempFields.splice(0,state.tempFields.length-24)}}
