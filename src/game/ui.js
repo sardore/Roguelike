@@ -1060,3 +1060,14 @@ function createReleasePanel(){
     </div>`;
   document.body.appendChild(panel);
 }
+let coach;
+function createCoachDialog(){
+  coach=document.createElement('div');
+  coach.id='coach70';
+  coach.setAttribute('role','dialog');
+  coach.setAttribute('aria-modal','true');
+  coach.setAttribute('aria-labelledby','coachTitle58');
+  coach.setAttribute('aria-describedby','coachText58');
+  document.body.appendChild(coach);
+  coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
+}
