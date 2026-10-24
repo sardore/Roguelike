@@ -107,6 +107,8 @@
 | P5→items | spine 선언 → items.js (P3로 풀린 것) | 5568 | 111 / 485 | 744 | 78.8% | - |
 | P5→monsters | spine 선언 → monsters.js (P3로 풀린 것) | 5568 | 109 / 485 | 744 | 78.8% | - |
 | P4 설계 | P3 이후 이동 22개 완료, P4~P8 설계안(docs/P4_DESIGN.md) | 5568 | 109 / 485 | 744 | 78.8% | - |
+| P4 B 부팅 함수화 | 부팅 문장 묶음 → 도메인 함수(`boot-fn`), let→함수 6, 그리기 훅·터레인 훅·`MINIMAP_PIPELINE.before`·`MARTIAL_INFO.desc`·`GenerationValidator.legendary`를 리터럴에 합침, 빈 문장 7 삭제 (단계별 수치는 각 커밋 메시지) | 5568 → 4187 | 109 → 53 / 485 → 155 | 744 → 743 | - | 줄 수는 이동이 남긴 빈 줄 포함 |
+| P4 B 정리 | 이동이 남긴 빈 줄 3,400개와 없는 코드를 설명하던 최상위 주석 187개 삭제(코드 변경 없음) | 536 | 53 / 155 | 743 | 97.6% | spine.js의 줄 수가 실제 내용(약 540줄)과 맞춰졌다. |
 
 ## 현재 파일별 줄 수
 
@@ -114,20 +116,20 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 770 |
-| items.js | 1057 |
-| combat.js | 669 |
-| monsters.js | 2284 |
-| render.js | 4952 |
-| mapgen.js | 3369 |
-| special.js | 2038 |
-| branches.js | 2406 |
-| elements.js | 251 |
+| save.js | 887 |
+| items.js | 1154 |
+| combat.js | 686 |
+| monsters.js | 2329 |
+| render.js | 5154 |
+| mapgen.js | 3378 |
+| special.js | 2042 |
+| branches.js | 2422 |
+| elements.js | 252 |
 | world.js | 497 |
-| layout.js | 746 |
-| input.js | 259 |
-| story.js | 223 |
-| ui.js | 1010 |
-| spine.js | 5568 |
+| layout.js | 751 |
+| input.js | 670 |
+| story.js | 224 |
+| ui.js | 1274 |
+| spine.js | 536 |
 | start.js | 6 |
-| (total) | 26303 |
+| (total) | 22460 |
