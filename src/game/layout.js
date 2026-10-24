@@ -749,3 +749,18 @@ function organicNooksPostGeneration(){organicNooks43();for(const fr of state.fea
 function roomStructurePostGeneration(){structuralOrdinaryRooms44();repair44()}
 function canonPostGeneration(){normalizeKitchens58();ensureCanonExtras58();ensureNormalConnectivity();VisibilityService.compute();vfBuildDecor()}
 function guardPostPostGeneration(){guardedRooms59();inferCorridors59();doorAudit59();VisibilityService.compute();vfBuildDecor()}
+  function fixEntities(){for(const it of state.items||[])if(tileBlocks(state.map[it.y]?.[it.x])){const p=PlacementService.randomFloor(0);it.x=p.x;it.y=p.y}for(const m of state.monsters||[])if(m.hp>0&&!PlacementService.monsterCanStand(m,m.x,m.y)){const p=PlacementService.randomMonsterCell(m)||PlacementService.randomFloor(0);m.x=p.x;m.y=p.y}}
+  function inferCorridors59(){
+    state.corridorCells59={};if(state.specialFloor)return;
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
+      const t=state.map[y][x];if(![TT.FLOOR,TT.OPEN_DOOR,TT.DOOR,TT.FLOOR].includes(t))continue;
+      const inRoom=(state.rooms||[]).some(r=>x>r.x&&x<r.x+r.w-1&&y>r.y&&y<r.y+r.h-1);
+      if(!inRoom)state.corridorCells59[k(x,y)]=1;
+    }
+  }
+  function doorAudit59(){
+    let doors=0,open=0;
+    for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){if(state.map[y][x]===TT.DOOR)doors++;else if(state.map[y][x]===TT.OPEN_DOOR)open++}
+    state.doorCount59=doors;V59.doorLog.push({floor:state.floor,mode:state.layoutMode59,doors});
+    if(V59.doorLog.length>30)V59.doorLog.shift();
+  }

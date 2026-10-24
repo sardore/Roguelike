@@ -885,3 +885,15 @@ function saveGame(){
       const ok=writeRun().ok,c=ok?SaveService.recover().candidate:null;
       toast(ok&&c?`기록 저장 완료 · ${c.meta.floor}층 T${c.meta.turn}`:'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return !!(ok&&c);
     }
+function rest(){const act=playerAction57('rest',{stunMessage:'몸이 굳어 쉬지 못했다.'});if(!act.ok)return !!act.consumed;cancelAutoWalk();commitPlayerAction57(act,1);return true}
+  function closeAdjacentDoor964(quiet=false){
+    const act=playerAction57('closeDoor',{stunMessage:'몸이 굳어 문을 닫지 못했다.'});if(!act.ok)return !!act.consumed;const cands=openDoorCandidates964();if(!cands.length){if(!quiet)toast('닫을 열린 문이 없다.');return false}
+    const d=cands[0],why=doorCloseBlock964(d.x,d.y);if(why){if(!quiet)toast(why);return false}
+    cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
+  }
+  function bootScreen1002(){
+    if(SCREEN1002.booted)return;SCREEN1002.booted=true;
+    if(state&&!state.dead&&!state.victory){setScreen('game');return}
+    // r57: legacy active-run restore is intentionally absent; only save1004 may resume a run after full initialization.
+    setScreen(state&&(state.dead||state.victory)?'ending':'title');
+  }

@@ -3376,3 +3376,4 @@ function regionPostPostGeneration(){enhanceNormal71();enhanceSpecial71();ensureN
 function runtimePostGeneration(){Integrity81.repair();ConnectedDecor81.build();queuePlace81()}
 function qualityPrePreGeneration(){state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null}
 function buildNormal(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;}
+function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}

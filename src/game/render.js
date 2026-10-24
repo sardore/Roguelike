@@ -5155,3 +5155,4 @@ function updatePanels(){
 window.__manruZoomActive=false;
 window.__manruZoomSuppressUntil=0;
 globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay}]};
+const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};
