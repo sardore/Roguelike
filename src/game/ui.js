@@ -1281,3 +1281,9 @@ function inventoryFiltered(){
     return result;
   }
   function bench70(n=20){const t=performance.now();for(let i=0;i<n;i++)drawMap(true);return+(performance.now()-t).toFixed(2)}
+// Canonical runtime entrypoints populated once by their owning implementation blocks.
+/* updateAll is declared by the render coordinator below. */
+let runtimeLoopStarted57=0;
+function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof visualLoop==='function'}
+function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeReady57())throw new ReferenceError('canonical runtime entrypoints are not initialized');runtimeLoopStarted57=1;requestAnimationFrame(visualLoop);return true}
+  const hk={attack:'SPC',pickup:'G',open:'E',skill:'Q',inv:'I',rest:'R',summon0:'V',summon1:'T'},rn={attack:'칼',pickup:'줍',open:'점멸',skill:'무',inv:'행',rest:'숨',summon0:'',summon1:''};

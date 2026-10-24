@@ -668,3 +668,11 @@ function bindHeldInputStop(){
   addEventListener('blur',stopHeldInput,{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
 }
+  const Automation81={
+    valid:q=>Auto81.valid(q),
+    go:q=>Auto81.go(q),
+    explore:()=>Auto81.explore(false),
+    pickup:()=>Auto81.pickupAll(),
+    state:()=>Auto81.state(),
+    presentationRate:()=>Auto81.active?AUTO_MOVE_RATE70:1
+  };
