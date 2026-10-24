@@ -4179,9 +4179,19 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
     return !!(performance.now()<structureMotionUntil||performance.now()<forcedMotionUntil||MINE_FX.some(f=>f.map===state?.map&&f.path?.length&&performance.now()-f.start<640)||globalThis.__MANRU_CAMERA_STATE12__?.isCoasting?.()||FX.transition||FX.floats?.length||FX.particles?.length||FX.slashes?.length||FX.rings?.length||FX.projectiles?.length||FX.doors?.length||VIS.autoPath?.length||
       actionPresentationBusy58()||(FX.terrainReactions105||[]).some(f=>f.map===state?.map&&performance.now()-f.start<f.life)||performance.now()-RC.lastActionAt<850||Math.abs((VIS.playerX??0)-(state?.player?.x??0))>.01||Math.abs((VIS.playerY??0)-(state?.player?.y??0))>.01);
   }
+  // The title art is drawn once into canvases (drawTitleCanvas) and the class screen keeps cached actor art: a phone browser can drop
+  // those pixels while the page is hidden, so the first resume after that redraws them, wherever the player is now (the title is
+  // under the game and comes back after a run ends). Clearing the actor art also rebuilds the class roster.
+  let pageWasHidden=false; // set while the page is hidden (or restored from the back-forward cache): its canvases may have lost their pixels
+  function restoreTitleScreen(){
+    try{globalThis.__MANRU_ACTOR_ART__?.clear?.()}catch(error){ignoreError('actor art clear',error)}
+    drawTitleCanvas();
+  }
   function resume71(reason='resume',attempt=0){
     try{
-      if(!state||!C||!X||document.hidden)return false;
+      if(!C||!X||document.hidden)return false;
+      if(pageWasHidden){pageWasHidden=false;restoreTitleScreen()}
+      if(!state)return true;
       recovery71.attempts++;recovery71.last={reason,attempt,ok:false,at:Date.now()};
       if(X.isContextLost?.())throw Error('main canvas context lost');
       // Android can keep JS Canvas objects while discarding their backing pixels. Invalidate all
