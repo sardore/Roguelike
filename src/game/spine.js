@@ -50,7 +50,6 @@ function adorn(){document.querySelectorAll('#mobileControls .quickbar button').f
 
 createHitFeed();
 
-  for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
 createPotionTargetHud();
   
   pstate();
@@ -113,7 +112,6 @@ createBossRuleBanner();
 
   document.addEventListener('pointerdown',()=>ac54(),{once:true,capture:true,passive:true});
 
-  for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 
   if(window.__MANRU_CLEAN_INSPECT53)window.__MANRU_CLEAN_INSPECT53.item=inspectHTML56;
 createTalismanTargetHud();
