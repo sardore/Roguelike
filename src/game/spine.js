@@ -328,7 +328,6 @@ startDesktopSide();
   }
 
 
-  floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
 
   // Remove the old parallel upgrade economy from future loot tables.
 
