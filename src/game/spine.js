@@ -407,7 +407,6 @@ for(const [id,t] of Object.entries(LEGEND_TILES49))for(const [n,v] of Object.ent
 
 
 
-globalThis.__MANRU_LEGEND47__=API47;globalThis.__MANRU_ARTIFACT46__=API47;
 
 MONSTERS.push(PALACE_LOTUS105,PALACE_GARDENER105);
 loadPalaceActorImages();
