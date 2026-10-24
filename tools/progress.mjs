@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Prints the split progress figures that docs/PROGRESS.md records at every push:
-// line count per src/game file, what is left in spine.js (lines, top-level declarations, loose statements)
+// line count per src/game file, what is left in boot.js (lines, top-level declarations, loose statements)
 // and the suffixFunction count from tools/check-structure.mjs.
 //   node tools/progress.mjs            markdown rows
 //   node tools/progress.mjs --json
@@ -29,5 +29,5 @@ else {
   console.log('| file | lines |\n|---|---:|');
   for (const f of files) console.log(`| ${f.file} | ${f.lines} |`);
   console.log(`| (total) | ${total} |\n`);
-  console.log(`spine.js ${spineLines} lines · residue ${result.spineDeclarations} declarations / ${result.spineLooseStatements} loose statements · suffixFunction ${result.suffixFunction} · outside spine ${result.splitPercent}%`);
+  console.log(`boot.js ${spineLines} lines · residue ${result.spineDeclarations} declarations / ${result.spineLooseStatements} loose statements · suffixFunction ${result.suffixFunction} · outside spine ${result.splitPercent}%`);
 }

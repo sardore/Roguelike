@@ -12,7 +12,7 @@ const tool = path.resolve('tools/refactor/let-to-function.mjs');
 
 function work(a, spine, items) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'let-fn-'));
-  const text = '(()=>{\n"use strict";\n/*@@FILE a.js@@*/\n' + a + '\n/*@@FILE spine.js@@*/\n' + spine + '\n})();\n';
+  const text = '(()=>{\n"use strict";\n/*@@FILE a.js@@*/\n' + a + '\n/*@@FILE boot.js@@*/\n' + spine + '\n})();\n';
   const w = path.join(dir, 'work.js'), s = path.join(dir, 'spec.json');
   fs.writeFileSync(w, text); fs.writeFileSync(s, JSON.stringify({ items }));
   return { text, run: () => { const p = spawnSync(node, [tool, w, s], { encoding: 'utf8' }); return { code: p.status, out: p.stdout + p.stderr, after: fs.readFileSync(w, 'utf8') }; } };
@@ -24,7 +24,7 @@ test('a let assigned a function once becomes a function declaration; the let and
   assert.equal(r.code, 0, r.out);
   assert.match(r.after, /function draw\(n,m=1\)\{return n\*m\}/);
   assert.doesNotMatch(r.after, /let draw|draw=function/);
-  assert.ok(r.after.indexOf('function draw(') < r.after.indexOf('/*@@FILE spine.js@@*/'), 'the function lives in the domain file');
+  assert.ok(r.after.indexOf('function draw(') < r.after.indexOf('/*@@FILE boot.js@@*/'), 'the function lives in the domain file');
 });
 
 test('refuses a second write, an initialiser, a non-function value, its own name, and a load-time read before the assignment', () => {

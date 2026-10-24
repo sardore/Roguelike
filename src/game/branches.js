@@ -2188,7 +2188,7 @@ function migrateMineAppearance105(){
  m.artRevision=4;
 }
 
-/* Branch definitions (count, parent floor, titles). Declared here, before spine.js, so the continue check that
+/* Branch definitions (count, parent floor, titles). Declared here, before boot.js, so the continue check that
    runs while the game loads can validate a branch save (F-21). */
 const BRANCH_DEFS105=Object.freeze({
  palace:{name:'창해 용궁',count:2,parent:9,titles:['창해 외궁','잠긴 조정'],color:'#8dbda9'},

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only analysis for the remaining split (what is still in spine.js): puts every top-level
+// Read-only analysis for the remaining split (what is still in boot.js): puts every top-level
 // declaration of the spine segment into ui / input / story / boot / world by name, then reports per
 // cluster the size, the references between clusters, the load-time (eager) dependencies a cluster
 // has on another, and the loose statements (registrations, calls) whose order is behaviour.
@@ -28,7 +28,7 @@ const top = body.body;
 const A = analyze(ast);
 const nameOf = (s) => (s.type === 'FunctionDeclaration' ? s.id.name : s.type === 'VariableDeclaration' && s.declarations[0].id.type === 'Identifier' ? s.declarations[0].id.name : null);
 const lines = (s) => s.loc.end.line - s.loc.start.line + 1;
-const spine = top.filter((s) => segOf(s.start) === 'spine.js');
+const spine = top.filter((s) => segOf(s.start) === 'boot.js');
 const cl = new Map(); // statement -> cluster
 const INPUT_BODY = /addEventListener\(\s*['"`](key(down|up|press)|pointer\w*|touch\w*|mouse\w*|wheel|contextmenu|click|dblclick|dragstart|drop)['"`]|\.(clientX|clientY|pointerId|touches|changedTouches|ctrlKey|shiftKey|altKey|metaKey)\b|\be\.key\b|ev(ent)?\.key\b|\.code===/;
 const UI_BODY = /document\.(getElementById|querySelector\w*|createElement|body)|\.innerHTML|\.classList|\.textContent|\.appendChild|\.setAttribute|\.style\./;
@@ -102,7 +102,7 @@ for (const [name, b] of bindingByName) {
 const report = { spineStatements: spine.length, count, lines: nlines, looseStatements: loose, refs: edges, eagerReads: eager, publicBindings: Object.fromEntries(Object.entries(surface).map(([k, v]) => [k, v.size])) };
 if (args.includes('--json')) console.log(JSON.stringify(report, null, 1));
 else {
-  console.log(`spine.js: ${spine.length} top-level statements`);
+  console.log(`boot.js: ${spine.length} top-level statements`);
   console.log('cluster   decls+loose   lines   loose-stmts   public-bindings');
   for (const c of clusters) console.log(c.padEnd(9), String(count[c] || 0).padStart(10), String(nlines[c] || 0).padStart(8), String(loose[c] || 0).padStart(12), String(surface[c]?.size || 0).padStart(14));
   const row = (o, title) => { console.log(`\n${title} (row reads column)`); console.log(' '.repeat(9) + clusters.map((c) => c.padStart(8)).join('')); for (const a of clusters) console.log(a.padEnd(9) + clusters.map((b) => String(a === b ? '-' : o[a]?.[b] || 0).padStart(8)).join('')); };

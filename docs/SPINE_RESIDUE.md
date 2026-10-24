@@ -1,4 +1,5 @@
 # spine.js에 남긴 선언 목록 (초기화 순서 때문에 옮기지 못한 것)
+> 개명: `src/game/spine.js`는 `src/game/boot.js`가 되었다. 아래 기록과 `npm run check`의 지표 이름(`spineLines` 등)은 그대로 둔다.
 
 모듈 분할의 목표는 `src/game/spine.js`를 없애거나 부팅 코드만 남기는 것이다. 한 선언을 다른 파일로 옮길 수 없는 이유는 세 가지뿐이며, 이 문서가 그 목록이다. 도메인을 옮길 때마다 이 목록을 갱신한다(`tools/refactor/move-to.mjs`가 거부한 이유를 그대로 적는다).
 

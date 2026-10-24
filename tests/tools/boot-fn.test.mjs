@@ -13,7 +13,7 @@ const tool = path.resolve('tools/refactor/boot-fn.mjs');
 
 function work(spine, groups, dest = 'a.js') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'boot-fn-'));
-  const text = '(()=>{\n"use strict";\n/*@@FILE a.js@@*/\nconst LOG=[];\n/*@@FILE spine.js@@*/\n' + spine + '\n})();\n';
+  const text = '(()=>{\n"use strict";\n/*@@FILE a.js@@*/\nconst LOG=[];\n/*@@FILE boot.js@@*/\n' + spine + '\n})();\n';
   const w = path.join(dir, 'work.js'), s = path.join(dir, 'spec.json');
   fs.writeFileSync(w, text); fs.writeFileSync(s, JSON.stringify({ groups }));
   const run = () => { const p = spawnSync(node, [tool, w, s], { encoding: 'utf8' }); return { code: p.status, out: p.stdout + p.stderr, after: fs.readFileSync(w, 'utf8') }; };
@@ -29,7 +29,7 @@ test('a run becomes a function of the domain file, called in place; the order of
   assert.match(r.after, /function pushTwoAndThree\(\)\{\n  LOG\.push\(2\);\n  LOG\.push\(3\);\n\}/);
   assert.match(r.after, /pushTwoAndThree\(\);\s*function later\(\)\{LOG\.push\('never'\)\}/);
   assert.deepEqual(logOf(r.after), logOf(k.text));
-  assert.ok(r.after.indexOf('function pushTwoAndThree') < r.after.indexOf('/*@@FILE spine.js@@*/'), 'the function lives in the domain file');
+  assert.ok(r.after.indexOf('function pushTwoAndThree') < r.after.indexOf('/*@@FILE boot.js@@*/'), 'the function lives in the domain file');
 });
 
 test('a declaration next to the run is absorbed as a local when nothing else reads it, and refused otherwise', () => {

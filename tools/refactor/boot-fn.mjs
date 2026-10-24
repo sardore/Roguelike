@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Refactor tool: turns a run of loose top-level statements of spine.js (boot code) into a named function of a domain file and puts
+// Refactor tool: turns a run of loose top-level statements of boot.js (boot code) into a named function of a domain file and puts
 // the call where the statements stood, so everything runs in the same order. Works on the work file (node tools/game.mjs assemble ... split).
 //   node tools/refactor/boot-fn.mjs <work.js> <spec.json> [--dry]
 // spec: { "groups": [ { "name": "buildCookingPanel", "dest": "items.js",
@@ -8,7 +8,7 @@
 //                       "count": 6,                              how many loose statements the function takes (function declarations in between do not count)
 //                       "absorb": ["m"] } ] }                    const/let declarations (directly before the first statement or between the statements)
 //                                                                that nothing outside the group reads: they become locals of the function
-// Function declarations that stand inside the run stay in spine.js, after the call (they are hoisted, they execute nothing).
+// Function declarations that stand inside the run stay in boot.js, after the call (they are hoisted, they execute nothing).
 // Refused, nothing written (exit 1): an anchor that is missing or ambiguous, a declaration inside the run that is not absorbed,
 // an absorbed name used outside the group, return/await/yield/this/arguments/var at the top level of a statement, a name already used.
 import fs from 'node:fs';
@@ -38,9 +38,9 @@ for (const g of spec.groups) {
   if (!g.name || !g.dest || !g.anchor || !(g.count >= 1)) fail(`bad group ${JSON.stringify(g)}`);
   if (taken.has(g.name)) fail(`${g.name}: the name is already used`);
   taken.add(g.name);
-  const loose = top.map((s, i) => ({ s, i })).filter(({ s }) => seg(s.start) === 'spine.js' && s.type !== 'FunctionDeclaration' && !isDecl(s));
+  const loose = top.map((s, i) => ({ s, i })).filter(({ s }) => seg(s.start) === 'boot.js' && s.type !== 'FunctionDeclaration' && !isDecl(s));
   const hits = loose.filter(({ s }) => norm(text.slice(s.start, s.end)).startsWith(norm(g.anchor)));
-  if (!hits.length) fail(`${g.name}: no loose statement of spine.js starts with ${JSON.stringify(g.anchor)}`);
+  if (!hits.length) fail(`${g.name}: no loose statement of boot.js starts with ${JSON.stringify(g.anchor)}`);
   if (hits.length > 1 && g.occurrence == null) fail(`${g.name}: ${hits.length} statements start with ${JSON.stringify(g.anchor)}; give "occurrence"`);
   const startIdx = hits[g.occurrence ?? 0].i;
   const absorb = new Set(g.absorb || []);
@@ -51,7 +51,7 @@ for (const g of spec.groups) {
   let count = 0, i = from;
   for (; i < top.length && count < g.count; i++) {
     const s = top[i];
-    if (seg(s.start) !== 'spine.js') fail(`${g.name}: the run leaves spine.js`);
+    if (seg(s.start) !== 'boot.js') fail(`${g.name}: the run leaves boot.js`);
     if (s.type === 'FunctionDeclaration') { lifted.push(s); continue; }
     if (isDecl(s)) { if (!declNames(s).every((n) => absorb.has(n))) fail(`${g.name}: a declaration (${declNames(s).join(',')}) stands inside the run and is not absorbed`); absorbedDecls.push(s); inGroup.push(s); continue; }
     inGroup.push(s); count++;
@@ -77,11 +77,11 @@ for (const g of spec.groups) {
     const b = A.bindings.find((x) => x.name === name && x.scope === closure);
     for (const r of b.refs) { const owner = top.find((t) => t.start <= r.node.start && r.node.end <= t.end); if (!members.has(owner) && owner !== d) fail(`${g.name}: ${name} is used outside the group (line ${r.node.loc.start.line})`); }
   }
-  // text: each member with the comments/blank lines in front of it; lifted function declarations stay in spine.js after the call
+  // text: each member with the comments/blank lines in front of it; lifted function declarations stay in boot.js after the call
   const pieces = [];
   let prevEnd = null;
   const span = top.slice(from, top.indexOf(last) + 1);
-  const spineBody = marks.find((m) => m.file === 'spine.js').bodyAt;
+  const spineBody = marks.find((m) => m.file === 'boot.js').bodyAt;
   const spanStart = Math.max(spineBody - 1, from > 0 ? top[from - 1].end : closure.start); // never reaches back over the file sentinel
   let cursor = spanStart;
   let liftedText = '';

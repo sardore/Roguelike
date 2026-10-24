@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Refactor tool: move statements that publish a global (`globalThis.NAME = …` / `window.NAME = …`) from spine.js to the
+// Refactor tool: move statements that publish a global (`globalThis.NAME = …` / `window.NAME = …`) from boot.js to the
 // end of another game file of the work file (node tools/game.mjs assemble … split).
 //   node tools/refactor/move-stmt.mjs <work.js> <target.js> <names.txt> --reads <pub-reads.json> [--dry]
 // names.txt: one published name per line (`NAME#2` for the second statement that publishes NAME). The statement must:
-//   - be a top-level expression statement of that form in spine.js;
+//   - be a top-level expression statement of that form in boot.js;
 //   - not be read while the closure loads before it is published (pub-reads.mjs; a read before it would start to see the value);
 //   - make no calls when it runs except Object.freeze, and use no `let`/`var` that is assigned elsewhere;
-//   - use, when it runs (not inside a nested function), no non-function binding declared in spine.js or in a file after the target
+//   - use, when it runs (not inside a nested function), no non-function binding declared in boot.js or in a file after the target
 //     (function declarations are hoisted, so naming them is fine anywhere).
 // Anything else is refused with the reason, and nothing is written (exit 1).
 import fs from 'node:fs';
@@ -29,7 +29,7 @@ const manifest = JSON.parse(fs.readFileSync(path.resolve(opt('--manifest') || pa
 const order = [...manifest.closure];
 const marks = [...text.matchAll(/^\/\*@@FILE ([^@]+)@@\*\/\n/gm)].map((m) => ({ file: m[1], at: m.index }));
 const segOf = (p) => { let c = null; for (const m of marks) if (m.at <= p) c = m.file; return c; };
-if (!order.includes(target) || target === 'spine.js') { console.error(`${target} is not a game file before spine.js`); process.exit(1); }
+if (!order.includes(target) || target === 'boot.js') { console.error(`${target} is not a game file before boot.js`); process.exit(1); }
 if (!marks.some((m) => m.file === target)) { console.error(`${target} is not in the work file`); process.exit(1); }
 
 const ast = acorn.parse(text, { ecmaVersion: 'latest', locations: true });
@@ -38,10 +38,10 @@ const A = analyze(ast);
 const closureFn = ast.body[0].expression.callee;
 const wanted = fs.readFileSync(namesFile, 'utf8').split('\n').map((l) => l.replace(/#(?!\d).*/, '').trim()).filter(Boolean);
 
-// every publish statement in spine.js, with its ordinal among those of the same name
+// every publish statement in boot.js, with its ordinal among those of the same name
 const stmts = [], seen = {};
 for (const s of body.body) {
-  if (segOf(s.start) !== 'spine.js' || s.type !== 'ExpressionStatement' || s.expression.type !== 'AssignmentExpression') continue;
+  if (segOf(s.start) !== 'boot.js' || s.type !== 'ExpressionStatement' || s.expression.type !== 'AssignmentExpression') continue;
   const m = /^(?:window|globalThis)\.([\w$]+)$/.exec(text.slice(s.expression.left.start, s.expression.left.end));
   if (!m) continue;
   seen[m[1]] = (seen[m[1]] || 0) + 1;
@@ -51,7 +51,7 @@ const problems = [], chosen = [];
 for (const w of wanted) {
   const [name, nth] = w.split('#');
   const hits = stmts.filter((x) => x.name === name && (nth ? x.nth === +nth : true));
-  if (hits.length !== 1) { problems.push(`${w}: ${hits.length} publish statements in spine.js${hits.length > 1 ? ' (use NAME#n)' : ''}`); continue; }
+  if (hits.length !== 1) { problems.push(`${w}: ${hits.length} publish statements in boot.js${hits.length > 1 ? ' (use NAME#n)' : ''}`); continue; }
   const { s } = hits[0], rhs = s.expression.right;
   const rd = reads[name];
   if (!rd) { problems.push(`${w}: no measurement in the reads file`); continue; }
@@ -71,7 +71,7 @@ for (const w of wanted) {
     if (r.node.start < rhs.start || r.node.end > rhs.end || !r.binding || r.binding.scope !== body || nestedFn(r)) continue;
     const b = r.binding, f = segOf(b.idNode.start);
     if (b.kind === 'function') continue;
-    if (f === 'spine.js') { problems.push(`${w}: ${b.name} (${b.kind}) is declared in spine.js`); ok = false; break; }
+    if (f === 'boot.js') { problems.push(`${w}: ${b.name} (${b.kind}) is declared in boot.js`); ok = false; break; }
     if (order.indexOf(f) > order.indexOf(target)) { problems.push(`${w}: ${b.name} is declared in ${f}, after ${target}`); ok = false; break; }
     if ((b.kind === 'let' || b.kind === 'var') && b.refs.some((x) => x.parent && x.parent.type === 'AssignmentExpression' && x.parent.left === x.node)) { problems.push(`${w}: ${b.name} is a ${b.kind} that is assigned elsewhere`); ok = false; break; }
   }

@@ -16,7 +16,7 @@
   "input.js",
   "story.js",
   "ui.js",
-  "spine.js"
+  "boot.js"
  ],
  "afterClosure": [
   "start.js"
