@@ -126,7 +126,7 @@ P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선
 남은 것: `replaceViewerQuickButton('inv'|'skill')`는 등록 API가 아니라 DOM 버튼을 복제해 옛 리스너를 떼는 부팅 코드라 표가 아니다(F-25). 부팅 함수화(P4 B 단계)·P5(DOM 변수)는 아직 승인 전이다.
 
 ## 느슨한 문장 (이유 P)
-(기록 시점 584개, 선언 1289개 → 2026-10 현재 155개, 선언 53개, 536줄.) 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
+(기록 시점 584개, 선언 1289개 → 2026-10 현재 143개, 선언 50개, 497줄.) 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
 
 ## 부팅 함수화 (P4 B) 결과
 브랜치 `claude/boot-functions`. 연속된 느슨한 문장 묶음은 `tools/refactor/boot-fn.mjs`로 소유 도메인의 이름 있는 함수가 되고 호출만 제자리에 남았다. 한 번만 대입되는 `let` 6개는 함수 선언이 되었고(`let-to-function`), 그리기 훅 7개 등록은 훅 목록을 만드는 리터럴 항목이 되었다. `MINIMAP_PIPELINE.before`·`MARTIAL_INFO.*.desc`·`GenerationValidator.legendary`(과 `Object.freeze`)는 `tools/refactor/fold-assign.mjs`로 정의 리터럴에 합쳤고, `__MANRU_TERRAIN_R41__`는 두 const 대신 render.js의 리터럴 하나가 되었다. 이동이 남긴 빈 줄과, 없는 코드를 설명하던 최상위 주석 187개는 삭제했다.
@@ -134,8 +134,8 @@ P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선
 spine.js에 남은 것(155개 느슨한 문장, 선언 53개)은 아래 종류다. 이번 단계에서는 옮기지 않았다(측정한 것은 공개 17개의 먼저 읽기뿐이고, 나머지는 하나씩 따져 보지 않았다).
 - 인자 없는 함수 호출 76개: 부팅 호출 목록 그 자체.
 - 공개(`window/globalThis.X=`) 17개: 먼저 읽는 곳이 있어 자리를 바꿀 수 없는 것이 대부분(`pub-reads`로 확인).
-- 데이터 패치: `SPAWN_RULES` 반복과 `SPECIAL_BASE_COUNTS`, `WEAPONS` 활 `ammoFamily`, `MANRU_AMMO` 크기, `wanderer1001` 시작 장비, `upMeta`, `CONSUMABLES.push` 두 반복, `MONSTERS.push`, `floorSet980/plannedSet980.add`, `RuntimeState.*` 대입(값이 spine의 const라 정의 쪽에서 먼저 만들 수 없다).
-- `if(typeof window.X!=='function')window.X=function…` 4개(spawnMonster, rumorEvent, mirrorEvent, modalBlocking49): 유일한 정의지만 전역으로 호출된다.
+- 데이터 패치(남은 것): `CONSUMABLES.push` 두 반복(`POTIONS`·`TALISMANS`가 `CONSUMABLES`보다 뒤에 정의됨), `MONSTERS.push(PALACE_*)`, `RuntimeState.*` 대입(값이 spine의 const라 정의 쪽에서 먼저 만들 수 없다). 합친 것은 `SPAWN_RULES`·`SPECIAL_BASE_COUNTS`·활 `ammoFamily`·화살 크기/설명·감찰관 시작 장비·강화부적·`floorSet980/plannedSet980`.
+- `if(typeof window.X!=='function')window.X=function…` 4개는 처리했다: 가드가 항상 참이었고 다른 정의가 없어 `spawnMonster`(monsters.js)·`rumorEvent`·`mirrorEvent`(branches.js)는 함수 선언이 되었고, 읽는 곳이 없던 `modalBlocking49`는 삭제했다.
 - try/if 문(저장소 읽기 `HAPTIC57`·`manruSfx54`, 옛 키 `removeItem`), `new MutationObserver(killIdentifyBar88)`.
 - 선언: 부팅 루프 상태, 패널·버튼 연결 지역 변수, 전설 던전 `*46`/`*47` 묶음(`API47` 등) 등.
 `spine.js` → `boot.js` 개명은 남은 것이 호출 목록이 된 뒤에 한다(관련 도구·테스트·문서의 경로가 많아 별도 커밋).
