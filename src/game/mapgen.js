@@ -2374,7 +2374,7 @@ function populateFloor2Branches(){
  }
  layout.encounterAudit68=audit;
 }
-const GenerationValidator={
+const GenerationValidator=Object.freeze({
  normal(strictFloor){
   const authored=[23,24].includes(state.floor);if(authored){const check=globalThis.__MANRU_SPECIAL_FLOORS60__?.validate?.();state.specialProgressionValidation57=check;if(!check?.ok)return{accepted:false,failure:{specialProgression:check},rejection:{specialProgression:true}}};
   if(state.floor===1){const tutorial=tutorialEntryAudit();state.tutorialEntryAudit60=tutorial;if(!tutorial.ok)return{accepted:false,failure:{tutorial},rejection:{tutorial:true}};const reach=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}).cells,encounters=state.monsters.filter(m=>m.hp>0&&monsterRewardPolicy(m).xp&&reach.has(k(m.x,m.y))),xp=encounters.reduce((n,m)=>n+(m.xp||0),0);state.earlyProgression58={xp,required:xpRequirementForLevel57(2),encounters:encounters.length,ok:xp>=xpRequirementForLevel57(2)};if(!state.earlyProgression58.ok)return{accepted:false,failure:{earlyProgression:state.earlyProgression58},rejection:{earlyProgression:true}}}
@@ -2390,8 +2390,14 @@ const GenerationValidator={
   try{finalSurface=lockSurfaceAudit96()||null}catch(e){finalSurface={ok:false,error:String(e)}}
   const accepted=!!finalLock?.ok&&(finalProgress?.ok!==false)&&(finalSurface?.ok!==false);
   return{accepted,finalLock,finalProgress,finalSurface,failure:{lock:finalLock,progress:finalProgress,surface:finalSurface},rejection:{keys:true}};
- }
-};
+ },
+legendary:function legendaryCandidate10(){const progression=keyProgressAudit48(false),all=ReachabilityService.keyWalk(new Set(['iron','jade'])),islands=[],badItems=[],badRooms=[];let walkable=0,ordinaryDoors=0;const forbidden=new Set([TT.FLOOR,TT.DARK_WOOD,TT.MOON_STONE,TT.GILDED_FLOOR,TT.BRAZIER,TT.CRATE,TT.JAR,TT.CACHE,TT.STONE_PILLAR,TT.PAPER_BRIDGE]);let reused=0;
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(forbidden.has(t))reused++;if(t===TT.DOOR)ordinaryDoors++;if(!tileBlocks(t)||t===TT.LOCKED_GATE){walkable++;if(!all.seen.has(key46(x,y)))islands.push({x,y,t})}}
+ for(const it of state.items)if(!all.seen.has(key46(it.x,it.y)))badItems.push({name:it.name,x:it.x,y:it.y});
+ for(const r of state.rooms){let n=0;for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(all.seen.has(key46(x,y)))n++;if(!n)badRooms.push(r.index)}
+ return{ok:progression.ok&&!islands.length&&!badItems.length&&!badRooms.length&&!reused,seed:state.legendSeed49,progression,walkable,islands:islands.slice(0,20),islandCells:islands.length,badItems,badRooms,ordinaryDoors,reused,rooms:state.rooms.length,buildings:state.legendBuildings49.length,landmarks:state.legendObjects49.filter(x=>x.kind.startsWith('monument')).length,water:state.map.flat().filter(t=>t===TT.WATER).length,bridges:state.map.flat().filter(t=>t===LEGEND_TILES49[state.legendTheme47].bridge).length};
+}
+});
 const NormalFloorGenerator=Object.freeze({
 orderArchitectureCandidates(items){
   // The architecture pool has at most 20 rooms (or four module functions).
