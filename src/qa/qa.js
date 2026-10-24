@@ -641,6 +641,8 @@ globalThis.__MANRU_QA_REGISTRIES__=()=>{
   add('attack','monster-base:'+A.monsterBase?.id,A.monsterBase?.fn);A.monsterStages.forEach(x=>add('attack','monster:'+x.id,x.fn));
   add('minimap','before',MINIMAP_PIPELINE.before);MINIMAP_PIPELINE.hooks.forEach(x=>add('minimap',x.id,x.draw));
   for(const [id,fn] of PRESENTATION_UPDATES)add('presentation',id,fn);
+  const D=globalThis.__MANRU_DRAW_HOOKS_R19__;
+  D.world.forEach(x=>add('drawHooks','world:'+x.id,x.draw));D.post.forEach(x=>add('drawHooks','post:'+x.id,x.draw));
   const G=GENERATION_PIPELINE;
   add('generation','base:'+G.base?.id,G.base?.fn);G.pre.forEach(x=>add('generation','pre:'+x.id,x.fn));G.post.forEach(x=>add('generation','post:'+x.id,x.fn));
   return rows;
