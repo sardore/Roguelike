@@ -2327,3 +2327,8 @@ function aimResetPreGeneration(){AIM_STATE.target=null;AIM_STATE.jar=null;state.
 function bossZonesPostPostGeneration(){state.bossZones54=[];for(const m of state.monsters||[])normalizeBoss(m)}
 function specialPostPostGeneration(){const f=state.floor;if(SPECIAL60.has(f)||BOSS_FLOORS.has(f))rebuildSpecial60(f)}
 function populationPostGeneration(){if(!state)return;const hasBoss=state.monsters.some(m=>m.boss);if(!hasBoss)populate61();if(!hasBoss||state.floor===20){for(const m of state.monsters)configureMonsterTraits(m);VisibilityService.compute();vfBuildDecor();trimDecor61()}}
+function spawnMonster(pos=null,elite=false,opts={}){
+    if(!state)return null;const defs=(typeof floorEnemyDefinitions==='function'?floorEnemyDefinitions():MONSTERS.filter(d=>state.floor>=d.min&&state.floor<=d.max&&!d.miniBoss));if(!defs.length)return null;
+    const mon=scaledMonster(choice(defs));if(elite){mon.hp=mon.maxHp=Math.round(mon.maxHp*1.35);mon.atk+=2;mon.def+=1;mon.name='강화 '+mon.name}
+    const p=PlacementService.findMonster(mon,{placementMode:pos?'local':'floor',origin:pos||state.player,reachable:!!pos,...opts});if(!p)return null;mon.x=p.x;mon.y=p.y;mon.spawnProvenance57=opts.provenance||'random';OccupancyService.addMonster(mon);return mon;
+  }
