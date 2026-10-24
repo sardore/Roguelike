@@ -127,7 +127,7 @@ P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선
 남은 것: `replaceViewerQuickButton('inv'|'skill')`는 등록 API가 아니라 DOM 버튼을 복제해 옛 리스너를 떼는 부팅 코드라 표가 아니다(F-25). 부팅 함수화(P4 B 단계)·P5(DOM 변수)는 아직 승인 전이다.
 
 ## 느슨한 문장 (이유 P)
-(기록 시점 584개, 선언 1289개 → 2026-10 현재 143개, 선언 50개, 497줄.) 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
+(기록 시점 584개, 선언 1289개 → 2026-10 현재 135개, 선언 13개, 397줄. 파일 이름은 `boot.js`.) 두 수와 spine.js 줄 수는 `npm run check`의 `spineLooseStatements`·`spineDeclarations`·`spineLines`로 세며 늘면 실패한다. 매 푸시의 값은 `docs/PROGRESS.md`에 적는다. 이 문장들은 도메인 이동에서 옮기지 않는다. 마지막 단계에서 매니페스트의 `afterClosure`(부팅)와 `boot.js`로 같은 순서를 유지한 채 묶는다.
 
 ## 부팅 함수화 (P4 B) 결과
 브랜치 `claude/boot-functions`. 연속된 느슨한 문장 묶음은 `tools/refactor/boot-fn.mjs`로 소유 도메인의 이름 있는 함수가 되고 호출만 제자리에 남았다. 한 번만 대입되는 `let` 6개는 함수 선언이 되었고(`let-to-function`), 그리기 훅 7개 등록은 훅 목록을 만드는 리터럴 항목이 되었다. `MINIMAP_PIPELINE.before`·`MARTIAL_INFO.*.desc`·`GenerationValidator.legendary`(과 `Object.freeze`)는 `tools/refactor/fold-assign.mjs`로 정의 리터럴에 합쳤고, `__MANRU_TERRAIN_R41__`는 두 const 대신 render.js의 리터럴 하나가 되었다. 이동이 남긴 빈 줄과, 없는 코드를 설명하던 최상위 주석 187개는 삭제했다.
@@ -140,3 +140,8 @@ spine.js에 남은 것(155개 느슨한 문장, 선언 53개)은 아래 종류�
 - try/if 문(저장소 읽기 `HAPTIC57`·`manruSfx54`, 옛 키 `removeItem`), `new MutationObserver(killIdentifyBar88)`.
 - 선언: 부팅 루프 상태, 패널·버튼 연결 지역 변수, 전설 던전 `*46`/`*47` 묶음(`API47` 등) 등.
 `spine.js` → `boot.js` 개명은 남은 것이 호출 목록이 된 뒤에 한다(관련 도구·테스트·문서의 경로가 많아 별도 커밋).
+
+### 이어서 줄인 것 (같은 브랜치)
+- 전역 공개 4개(`__manruZoomActive`·`__manruZoomSuppressUntil`·`__MANRU_DRAW_HOOKS_R19__` → render.js, `__MANRU_HIDDEN60_ACTIONS__` → branches.js): `pub-reads`로 먼저 읽는 곳이 0임을 재고 `move-stmt`로 옮겼다. 나머지 공개 중 `__MANRU_RUNTIME81__`는 `Runtime81`/`Automation81` 선언 위치에, `__MANRU_RUMOR_SPACES1030__`는 호출(`.map`)에, 나머지는 로드 중 먼저 읽는 곳(1~168회)에 걸려 남겼다.
+- 선언 33개: 한 도메인 파일(과 qa.js)만 쓰던 함수·상수를 `move-to`로 그 파일로(save 3, layout 3, mapgen 1, monsters 2, render 1, branches 1, combat 1, ui 2+5, input 1, items 2, special 1), 전설 던전 API 묶음 15개를 branches.js로(그 공개 두 개도 같이). `CONSUMABLES`에 포션·부적을 합치는 반복 2개는 읽는 곳이 `itemPrototype`뿐이고 그 호출이 두 위치보다 뒤라 items.js(`MANRU_POTIONS` 공개 바로 뒤)로 옮겼다.
+- 남긴 것과 이유(측정한 것만): `RuntimeState.input.device`는 로드 중 `active()`가 읽어(14회) 리터럴에 합치면 그 읽기의 값이 달라져 남겼다. `RuntimeState.ui/turn` 대입 4개는 읽는 줄을 하나씩 확인하지 않아 남겼다. `mapOpen49`는 `move-to`가 호출 경로(`updateMobileHud`)로 자리가 고정된다고 거절했고, `V59`도 같은 이유, `BREAK61`·`V85`는 남은 문장이 로드 시 읽는다고 거절했다. `MONSTERS.push(PALACE_*)`는 로드 중 읽는 곳(`MONSTERS`, 7회) 앞뒤를 확인하지 못해 남겼다.

@@ -111,6 +111,7 @@
 | P4 B 부팅 함수화 | 부팅 문장 묶음 → 도메인 함수(`boot-fn`), let→함수 6, 그리기 훅·터레인 훅·`MINIMAP_PIPELINE.before`·`MARTIAL_INFO.desc`·`GenerationValidator.legendary`를 리터럴에 합침, 빈 문장 7 삭제 (단계별 수치는 각 커밋 메시지) | 5568 → 4187 | 109 → 53 / 485 → 155 | 744 → 743 | - | 줄 수는 이동이 남긴 빈 줄 포함 |
 | P4 B 정리 | 이동이 남긴 빈 줄 3,400개와 없는 코드를 설명하던 최상위 주석 187개 삭제(코드 변경 없음) | 536 | 53 / 155 | 743 | 97.6% | spine.js의 줄 수가 실제 내용(약 540줄)과 맞춰졌다. |
 | P4 B 데이터 패치 | `SPAWN_RULES`·`SPECIAL_BASE_COUNTS`·활 `ammoFamily`·화살 크기/설명·감찰관 시작 장비·강화부적·`floorSet980`/`plannedSet980`을 정의 리터럴에 합침, `spawnMonster`·`rumorEvent`·`mirrorEvent`를 함수 선언으로, 안 쓰는 `modalBlocking49` 삭제 | 497 | 50 / 143 | 743 | 97.8% | 동작 기준선은 그대로(`values`에서 사라진 const 3개만 뺌). |
+| P4 B 도메인 이동 | 전역 공개 4개(zoom 2, 그리기 훅, `__MANRU_HIDDEN60_ACTIONS__`), 선언 33개(`rest`·`fixEntities`·`VF_IMG`·`Automation81`·전설 던전 `*46`/`*47` 묶음·`castTalisman56` 등)를 쓰는 도메인 파일로, `CONSUMABLES` 합치기 반복 2개를 items.js로, `spine.js` → `boot.js` 개명 | 397 | 13 / 135 | 743 | 98% | 줄 수 497 → 397. 동작 기준선은 그대로. |
 
 ## 현재 파일별 줄 수
 
@@ -118,20 +119,20 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 887 |
-| items.js | 1154 |
-| combat.js | 686 |
-| monsters.js | 2329 |
-| render.js | 5154 |
-| mapgen.js | 3378 |
-| special.js | 2042 |
-| branches.js | 2422 |
+| save.js | 899 |
+| items.js | 1168 |
+| combat.js | 688 |
+| monsters.js | 2336 |
+| render.js | 5158 |
+| mapgen.js | 3379 |
+| special.js | 2043 |
+| branches.js | 2498 |
 | elements.js | 252 |
 | world.js | 497 |
-| layout.js | 751 |
-| input.js | 670 |
+| layout.js | 766 |
+| input.js | 678 |
 | story.js | 224 |
-| ui.js | 1274 |
-| spine.js | 497 |
+| ui.js | 1289 |
+| boot.js | 397 |
 | start.js | 6 |
-| (total) | 22460 |
+| (total) | 22476 |
