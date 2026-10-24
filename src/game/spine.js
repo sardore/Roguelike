@@ -342,14 +342,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   bindZoom();
 bindWheelRouter();
 
-  if(Array.isArray(window.MANRU_AMMO)){
-    const sizes={wood_arrow:[5,9],iron_arrow:[4,7],piercing_arrow:[3,5]},descs={
-      wood_arrow:'가볍고 값싼 표준 화살. 바닥에서는 작은 화살 묶음으로 발견된다.',
-      iron_arrow:'철제 화살촉을 단 보급용 화살. 목제 화살보다 묵직한 충격을 준다.',
-      piercing_arrow:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 단단한 방어를 꿰뚫는 데 알맞다.'
-    };
-    for(const a of window.MANRU_AMMO){const q=sizes[a.ammoKind];if(q){a.spawnMin=q[0];a.spawnMax=q[1]}if(descs[a.ammoKind])a.desc=descs[a.ammoKind]}
-  }
 
   const panelHead=document.querySelector('#releasePanel70 .rc70Head b');if(panelHead)panelHead.textContent='만루 · 설정';
   document.querySelectorAll('[data-rcsave],[data-rcload]').forEach(b=>{b.disabled=true;b.onclick=e=>{e?.preventDefault?.();toast('슬롯 저장/불러오기는 퍼마데스에서 사용하지 않는다.')}});

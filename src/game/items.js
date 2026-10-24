@@ -327,9 +327,9 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
   }
 /* ===== MANRU v9.6.7: COMMON AMMUNITION / BOW-BIASED FLOOR LOOT ===== */
 const AMMO_TYPES=[
-    {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:10,spawnMax:18,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 한 묶음에 많이 들어 있어 가장 흔하게 발견된다.'},
-    {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:8,spawnMax:14,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 약간 더 강한 타격을 준다.'},
-    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:5,spawnMax:10,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 명중 시 적 방어를 2만큼 무시한다.'}
+    {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:5,spawnMax:9,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 바닥에서는 작은 화살 묶음으로 발견된다.'},
+    {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:4,spawnMax:7,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 묵직한 충격을 준다.'},
+    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:3,spawnMax:5,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 단단한 방어를 꿰뚫는 데 알맞다.'}
   ];
   const ammoStacks=()=>state?.player?.inventory?.filter(i=>i?.type==='ammo'&&(i.count||0)>0)||[];
   const totalAmmo=()=>ammoStacks().reduce((n,i)=>n+(i.count||1),0);
