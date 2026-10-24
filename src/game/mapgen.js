@@ -1090,7 +1090,6 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     if(canEdit(pos.cx,pos.cy,[TT.FLOOR]))setTerrainTile58(state.map,pos.cx,pos.cy,core);
     addLandmark('가지 감실',pos,'annex');return pos;
   }
-  let buildNormal;
   function carveInterior(m,x,y,t=TT.FLOOR){if(insideMapInterior(x,y))setTerrainTile58(m,x,y,t)}
   function borderRoom(x,y){for(const r of state.rooms||[]){if(x<r.x||x>=r.x+r.w||y<r.y||y>=r.y+r.h)continue;if(x===r.x||x===r.x+r.w-1||y===r.y||y===r.y+r.h-1)return r}return null}
   function corridorCell(m,x,y,open=false){if(!insideMapInterior(x,y))return;const br=borderRoom(x,y);if(br){if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,open?TT.FLOOR:TT.DOOR)}else if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.FLOOR)}
@@ -3370,3 +3369,4 @@ function regionPrePreGeneration(){state.landmarks71=[];state.landmarkCells71={};
 function regionPostPostGeneration(){enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;}
 function runtimePostGeneration(){Integrity81.repair();ConnectedDecor81.build();queuePlace81()}
 function qualityPrePreGeneration(){state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null}
+function buildNormal(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;}

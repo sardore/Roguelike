@@ -993,7 +993,6 @@ function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.len
 function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
 function blockWhileZooming(){return !window.__manruZoomActive}
 function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}
-let inventoryFiltered;
   function tabCount(kind){
     const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
   }
@@ -1250,3 +1249,26 @@ function resetToTitleScreen(){
       // Both historical death keys and the dead-run ledger are inspected by the canonical eligibility rule.
       RunLifecycle.refreshContinue();
 }
+function updateMobileHud(){
+    if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText('mFloor',location58.floor);setText('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText('mHunger',Math.round(p.hunger));
+    const hpBlock=document.querySelector('#mobileHud .hp');if(hpBlock)hpBlock.style.setProperty('--hp',(clamp(100*p.hp/p.maxHp,0,100)*.72)+'%');
+    const tag=document.getElementById('terrainTag');if(tag){tag.textContent=location58.challenge||location58.tag;tag.style.opacity=location58.challenge||['artifact','shop'].includes(location58.kind)?'.92':'0';tag.classList.toggle('withBoss58',!!boss)}
+    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
+    document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
+    const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
+    if(mapOpen49())syncLargeMinimap();
+    if(isMobileViewport()){const enemy=state.monsters.some(isThreatVisibleToPlayer),show=(act,on)=>document.querySelector(`#mobileControls [data-act="${act}"]`)?.classList.toggle('ux54-hidden',!on);show('attack',true);show('pickup',true);show('inv',true);show('rest',true);show('open',(p.blinkLevel||0)>0);show('skill',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));document.querySelector('#mobileHud .mobileFocusBlock')?.classList.toggle('ux54-show',enemy||p.focus<st.maxFocus)}
+    document.querySelectorAll('#mobileControls .actions.quickbar [data-act]').forEach(b=>b.setAttribute('aria-hidden','false'));if(hpBlock){const pct=Math.max(0,Math.min(100,(p.hp/Math.max(1,p.maxHp))*100));hpBlock.style.setProperty('--hp75',pct+'%')}
+  }
+function inventoryFiltered(){
+    const all=state.player.inventory.map((item,idx)=>({item,idx}));
+    const tab=inventoryTab,role=tab==='gear'?'gear':['recovery','food'].includes(tab)?'recovery':['strategy','potion'].includes(tab)?'strategy':['relic','treasure'].includes(tab)?'relic':null;
+    const rows=role?all.filter(v=>role56(v.item)===role):all;
+    const order={weapon:0,armor:1,cloak:2,upgrade:3,talisman:4,potion:5,food:6,relic:7,trinket:8};
+    rows.sort((a,b)=>(order[a.item.type]??9)-(order[b.item.type]??9)||((b.item.tier||0)-(a.item.tier||0))||publicName56(a.item).localeCompare(publicName56(b.item),'ko'));
+    // Keep the established order: ingredients follow recovery items; ammo follows strategy items.
+    const extra=role==='recovery'?'ingredient':tab==='strategy'?'ammo':null;
+    if(extra){const present=new Set(rows.map(v=>v.idx));for(const v of all)if(v.item.type===extra&&v.item.mineItem105!=='stone'&&!present.has(v.idx))rows.push(v)}
+    if(tab==='strategy')rows.sort((a,b)=>(a.item.type==='ammo'?1:0)-(b.item.type==='ammo'?1:0)||a.item.name.localeCompare(b.item.name,'ko'));
+    return rows;
+  }

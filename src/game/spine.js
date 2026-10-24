@@ -743,8 +743,6 @@ bindFullscreenAndResizeListeners();
 
 // Canonical runtime entrypoints populated once by their owning implementation blocks.
 /* updateAll is declared by the render coordinator below. */
-let updateMobileHud;
-let visualLoop;
 let runtimeLoopStarted57=0;
 
 function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof visualLoop==='function'}
@@ -1154,28 +1152,6 @@ bindTitleButtons();
 
 
 
-  updateMobileHud=function updateMobileHudCanonical55(){
-    if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText('mFloor',location58.floor);setText('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText('mHunger',Math.round(p.hunger));
-    const hpBlock=document.querySelector('#mobileHud .hp');if(hpBlock)hpBlock.style.setProperty('--hp',(clamp(100*p.hp/p.maxHp,0,100)*.72)+'%');
-    const tag=document.getElementById('terrainTag');if(tag){tag.textContent=location58.challenge||location58.tag;tag.style.opacity=location58.challenge||['artifact','shop'].includes(location58.kind)?'.92':'0';tag.classList.toggle('withBoss58',!!boss)}
-    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
-    document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
-    const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
-    if(mapOpen49())syncLargeMinimap();
-    if(isMobileViewport()){const enemy=state.monsters.some(isThreatVisibleToPlayer),show=(act,on)=>document.querySelector(`#mobileControls [data-act="${act}"]`)?.classList.toggle('ux54-hidden',!on);show('attack',true);show('pickup',true);show('inv',true);show('rest',true);show('open',(p.blinkLevel||0)>0);show('skill',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));document.querySelector('#mobileHud .mobileFocusBlock')?.classList.toggle('ux54-show',enemy||p.focus<st.maxFocus)}
-    document.querySelectorAll('#mobileControls .actions.quickbar [data-act]').forEach(b=>b.setAttribute('aria-hidden','false'));if(hpBlock){const pct=Math.max(0,Math.min(100,(p.hp/Math.max(1,p.maxHp))*100));hpBlock.style.setProperty('--hp75',pct+'%')}
-  };
-  updatePanels=function(){
-    if(!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),side=!!state.artifactDungeon46,location58=hudLocation58();
-    setText('floorTxt',location58.desktop);setText('regionTxt',location58.kind==='branch'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText('depthLore',location58.kind==='branch'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth('hpFill',(100*p.hp/p.maxHp)+'%');setText('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth('manaFill',(100*p.focus/st.maxFocus)+'%');setText('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
-    setText('atkTxt',st.atk);setText('defTxt',displayDef42(st.def));setText('evaTxt',st.eva);setText('wilTxt',st.will);setText('visTxt',st.vision);setText('weaponTxt',p.weapon?p.weapon.name:'맨손');setText('armorTxt',p.armor?p.armor.name:'경량복');setText('cloakTxt',p.cloak?p.cloak.name:'없음');setText('relicTxt',p.relic?p.relic.name:'없음');setText('trinketTxt',p.trinket?p.trinket.name:'없음');
-    setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
-    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`TURN ${state.turn} · ${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()} · 허기 ${Math.round(p.hunger)}${p.hunger<=0?' (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
-    const logs=state.log.slice(0,10),sig=logs.join('\u0001');if(sig!==RENDER_PERF_STATE.lastLog){RENDER_PERF_STATE.lastLog=sig;const log=document.getElementById('messageLog');if(log)log.innerHTML=logs.map(x=>'<div>'+x+'</div>').join('')}
-    setText('miniMonsters','적 '+visibleMonsters.length);setText('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText('miniThreat','허기 '+Math.round(p.hunger)+'%');
-    const eqSig=[p.weapon?.name,p.armor?.name,p.cloak?.name,p.relic?.name,p.trinket?.name].join('|');if(eqSig!==RENDER_PERF_STATE.lastEquip){RENDER_PERF_STATE.lastEquip=eqSig;bindEquipInspect()}
-    updateMobileHud();updateAttackButton();if(drawerOpen())renderMobileDrawer();RENDER_PERF_STATE.panelDirty=false;RENDER_PERF_STATE.lastPanel=performance.now();runPanelHooks();
-  };
   /* removed overwritten updateAll */
   /* removed overwritten visualLoop */
 
@@ -1297,18 +1273,6 @@ createTalismanTargetHud();
 
 
 
-  inventoryFiltered=function inventoryFilteredCanonical(){
-    const all=state.player.inventory.map((item,idx)=>({item,idx}));
-    const tab=inventoryTab,role=tab==='gear'?'gear':['recovery','food'].includes(tab)?'recovery':['strategy','potion'].includes(tab)?'strategy':['relic','treasure'].includes(tab)?'relic':null;
-    const rows=role?all.filter(v=>role56(v.item)===role):all;
-    const order={weapon:0,armor:1,cloak:2,upgrade:3,talisman:4,potion:5,food:6,relic:7,trinket:8};
-    rows.sort((a,b)=>(order[a.item.type]??9)-(order[b.item.type]??9)||((b.item.tier||0)-(a.item.tier||0))||publicName56(a.item).localeCompare(publicName56(b.item),'ko'));
-    // Keep the established order: ingredients follow recovery items; ammo follows strategy items.
-    const extra=role==='recovery'?'ingredient':tab==='strategy'?'ammo':null;
-    if(extra){const present=new Set(rows.map(v=>v.idx));for(const v of all)if(v.item.type===extra&&v.item.mineItem105!=='stone'&&!present.has(v.idx))rows.push(v)}
-    if(tab==='strategy')rows.sort((a,b)=>(a.item.type==='ammo'?1:0)-(b.item.type==='ammo'?1:0)||a.item.name.localeCompare(b.item.name,'ko'));
-    return rows;
-  };
 
 
 
@@ -1778,34 +1742,6 @@ decorateGhostPadButtons();
   
 
 
-  visualLoop=function(now=performance.now()){
-    try{
-    if(!state?.debugBattle57)advanceHeldInput(now);
-    if(!document.hidden&&!window.__MANRU_PAUSE_RENDER61){
-      const w=innerWidth,h=innerHeight;
-      if(document.body.dataset.manruScreen==='title'){
-        if(document.body.classList.contains('title-class-mode'))paintClassLighting(now);
-        else paintTitleLights(now);
-      }
-      if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
-      if(state?.debugBattle57)debugBattleFrame57(now);
-      if(state&&!state.debugBattle57){
-        dojoSleepFrame(now);updateVisualMotion(now);
-        const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;
-        if(pending||cameraRenderPending||now-RC.lastDraw>=budget){
-          const t=performance.now();if(pending)updateAll(true);else drawMap(false);const cost=performance.now()-t;RC.perf.lastCost=cost;RC.perf.frames++;RC.perf.ema+= (cost-RC.perf.ema)/Math.min(120,RC.perf.frames);RC.lastDraw=now;
-        }
-        if(mapModalOpen()&&now-RC.lastMini>180){drawMinimap(true);RC.lastMini=now}
-        if(now-RC.lastHud>120){updateAttackButton();RC.lastHud=now}
-      }
-    }
-    }catch(error){
-      if(!RC.renderRecoveryAt||now-RC.renderRecoveryAt>1000){
-        RC.renderRecoveryAt=now;console.error('[MANRU frame recovery]',error);
-        globalThis.__MANRU_RESUME_R6__?.schedule?.('frame-error',0);
-      }
-    }finally{requestAnimationFrame(visualLoop)}
-  };
 
 
   function audit70(){
@@ -2259,7 +2195,6 @@ bindHeldInputStop();
 
 
 
-  buildNormal=function(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;};
 
 
 
@@ -3087,10 +3022,6 @@ RuntimeState.ui.screen=SCREEN1002;
     sanitizeTransient1003();
 resetToTitleScreen();
 
-    saveGame=function(){
-      const ok=writeRun().ok,c=ok?SaveService.recover().candidate:null;
-      toast(ok&&c?`기록 저장 완료 · ${c.meta.floor}층 T${c.meta.turn}`:'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return !!(ok&&c);
-    };
     // Descent requests persistence after every existing descent effect completes.
 
 
