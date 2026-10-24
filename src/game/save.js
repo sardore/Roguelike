@@ -866,3 +866,19 @@ function bindKeydownRouter(){
   document.addEventListener('keydown',InputRouter,true);
   InputRouter.noteListener('document:keydown');
 }
+function bindWheelRouter(){
+    /* Desktop zoom owns wheel/trackpad input at window capture, before legacy handlers can quantize it. */
+    window.addEventListener('wheel',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('window:wheel');
+}
+function bindContextMenuRouter(){
+    // Replace only the actual player actor. NPCs/monsters keep the existing renderer.
+      
+    
+  
+    // Desktop right click and mobile long press share WORLD_INSPECT through InputRouter.
+    C.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas:contextmenu');
+    document.getElementById('runtimeInput81')?.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('world:contextmenu-inspect');
+}

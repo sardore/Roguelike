@@ -1089,3 +1089,66 @@ function curseMonsterAttack(next,mon,...rest){const r=next(mon,...rest),power=cu
 function curseStoryPostTurn(ctx){if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}
 function foodPostGeneration(){ensureFoodState();foodFloorRewards57()}
 function pacingPostGeneration(){pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()}
+function createTalismanTargetHud(){
+  targetHud.id='talismanTarget56';
+  targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';
+  document.body.appendChild(targetHud);
+}
+function createFoodTargetPanel(){
+  foodTargetPanel.id='foodTarget57';
+  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
+  document.body.appendChild(foodTargetPanel);
+  foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+}
+function createCookingPanel(){
+  cookingPanel.id='cook57';
+  cookingPanel.innerHTML=`<div class="cookSheet57"><span class="uiCorners63" aria-hidden="true"></span><div class="cookHead57"><div><h2>비방 조리</h2><small id="cookStation57">솥에서 재료를 실험한다.</small></div><button class="uxClose" id="cookClose57" aria-label="닫기">×</button></div><div class="cookPreview57" id="cookPreview57">재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.</div><div class="cookBody57"><div class="cookInv57" id="cookInv57"></div><section class="cookBook57"><h3>조리 도감</h3><div id="cookBookList57"></div></section></div><div class="cookFoot57"><button id="cookClear57">선택 해제</button><button class="primary" id="cookDo57">조리</button></div></div>`;
+  document.body.appendChild(cookingPanel);
+  cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};
+  cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking()};
+  cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
+}
+function createTacticalBelt(){
+  belt.id='tacticalBelt62';
+  document.getElementById('canvasWrap')?.appendChild(belt);
+}
+function createFusionPanel(){
+    
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  fusion.id='fusion74';
+  fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';
+  document.body.appendChild(fusion);
+}
+function setupInfusionPanels(){
+    const gearInfusionPanel=document.createElement('div');
+  gearInfusionPanel.id='gear74';
+  gearInfusionPanel.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';
+  document.body.appendChild(gearInfusionPanel);
+    fusion.querySelector('[data-f74close]').onclick=()=>closeFusion();
+  gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear();
+    /* equipment effects */
+    /* r15: earth stagger guard is handled by canonical applyKnockback. */
+  
+    // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
+  
+    /* inventory dispatch + visible marks */
+    // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
+    targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
+}

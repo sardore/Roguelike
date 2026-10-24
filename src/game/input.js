@@ -594,3 +594,77 @@ function bindModalSwipeClose(){
     swipeClose(document.getElementById('mobileInspect'),swipeModalCancel45);
     swipeClose(document.getElementById('mobileMapModal'),swipeModalCancel45);
 }
+function bindTextSelectionGuards(){
+    
+  
+    
+  
+  
+    
+    
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  /* ===== MANRU v5.1 MOBILE PERFORMANCE HOTFIX ===== */
+  
+  
+  
+  
+  
+  
+  
+  
+    // 요약은 수치만. 설명/능력을 섞지 않는다.
+  
+    const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
+    for(const type of ['selectstart','dragstart','copy','cut']){
+      document.addEventListener(type,e=>{if(editable53(e.target))return;if(e.target?.closest?.('#app,#overlay,#game,canvas')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
+    }
+    document.addEventListener('contextmenu',e=>{if(editable53(e.target)||e.target?.closest?.('#game,#runtimeInput81'))return;if(e.target?.closest?.('#app,#overlay')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
+    document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(error){ignoreError('getSelection unavailable',error)}}},{capture:true,passive:true});
+}
+function bindHeldInputStop(){
+    /* Auto-pickup is permanent. A movement also exits temporary camera inspection. */
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /* Reapply after start/load without adding switches or changing user policy. */
+      
+    addEventListener('pointerup',stopHeldInput,{passive:true});
+  addEventListener('pointercancel',stopHeldInput,{passive:true});
+  addEventListener('blur',stopHeldInput,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
+}

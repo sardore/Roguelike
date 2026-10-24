@@ -5070,3 +5070,41 @@ function initInspectOverlay(){
   document.body.classList.remove('manru-inspect-open');
   if(wrap&&!wrap.classList.contains('open'))wrap.setAttribute('aria-hidden','true');
 }
+function startTitleCanvas(){
+    /* ---------- title / hero select: full-screen art, real mobile scrolling ---------- */
+  
+  
+  
+  
+  
+  
+  
+  
+    drawTitleCanvas();
+    addEventListener('resize',()=>{const c=document.getElementById('titleCanvas49');if(c&&c.dataset.mobile!==(innerWidth<700?'1':'0'))drawTitleCanvas()},{passive:true});
+}
+function createPadToggle(){
+  /* ===== MANRU v5.8: PERFORMANCE / DENSITY / KOREAN UI HOTFIX ===== */
+  
+    // ---- mobile pad toggle
+    let pad58=document.getElementById('padToggle58');
+    if(!pad58){pad58=document.createElement('button');pad58.id='padToggle58';pad58.type='button';pad58.textContent='십';document.body.appendChild(pad58)}
+    try{if(localStorage.getItem('manruPad58')==='0')document.body.classList.add('pad58-hidden')}catch(error){ignoreError('pad visibility unreadable',error)}
+    pad58.onclick=e=>{e.preventDefault();e.stopPropagation();document.body.classList.toggle('pad58-hidden');try{localStorage.setItem('manruPad58',document.body.classList.contains('pad58-hidden')?'0':'1')}catch(error){ignoreError('pad visibility could not be saved',error)}};
+}
+function bindResumeListeners(){
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){clearTimeout(resumeTimer71);pageWasHidden=true;if(fullscreenWanted66)fullscreenResume66=true;return}
+      scheduleResume71('visible',35);
+    },true);
+    window.addEventListener('pageshow',e=>{
+      if(e.persisted)pageWasHidden=true;scheduleResume71('pageshow',0);
+    },{passive:true});
+    window.addEventListener('focus',()=>scheduleResume71('focus',65),{passive:true});
+    window.addEventListener('orientationchange',()=>scheduleResume71('orientation',100),{passive:true});
+    document.addEventListener('fullscreenchange',()=>scheduleResume71('fullscreen',80),{passive:true});
+    for(const canvas of [C,MC]){
+      canvas?.addEventListener?.('contextlost',e=>{e.preventDefault();clearHeldInput53();cancelAutoWalk()});
+      canvas?.addEventListener?.('contextrestored',()=>scheduleResume71('canvas-contextrestored',0),{passive:true});
+    }
+}

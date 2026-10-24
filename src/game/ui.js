@@ -1119,3 +1119,134 @@ function createPotionTargetHud(){
   document.body.appendChild(ph);
   ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
 }
+function bindTitleButtons(){
+    enterBtn.onclick=showClassPick;
+  classBackBtn.onclick=showStartGate;
+}
+function createHoldHint(){
+    const hold=document.createElement('div');
+  hold.id='hold54';
+  document.body.appendChild(hold);
+}
+function createBossRuleBanner(){
+  rule.id='bossRule54';
+  document.getElementById('canvasWrap')?.appendChild(rule);
+}
+function createReleaseControls(){
+    const releaseStamp=document.createElement('div');
+  releaseStamp.id='releaseStamp70';
+  releaseStamp.textContent=RELEASE_INFO.stamp;
+  document.getElementById('canvasWrap')?.appendChild(releaseStamp);
+    const mb=document.querySelector('#mobileHud .mButtons');
+    const releaseGearButton=document.createElement('button');
+  releaseGearButton.id='releaseGear70';
+  releaseGearButton.type='button';
+  releaseGearButton.textContent='설정';
+  releaseGearButton.setAttribute('aria-label','설정');
+  mb?.appendChild(releaseGearButton);
+    const dg=document.createElement('button');
+  dg.id='releaseGearDesktop70';
+  dg.type='button';
+  dg.textContent='設';
+  dg.setAttribute('aria-label','설정');
+  document.body.appendChild(dg);
+    panel.addEventListener('pointerup',e=>{if(e.target.closest('button'))uiTone70(410,.025)},{passive:true});
+    
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /* ---------- release panel owner (physical routing is canonical in InputRouter) ---------- */
+    RuntimeState.ui.release=RC;
+    releaseGearButton.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});
+  dg.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});
+  document.getElementById('rcClose70').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-panel'});
+    panel.addEventListener('pointerdown',e=>{if(e.target===panel)InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-backdrop'})},{passive:true});
+}
+function decorateGhostPadButtons(){
+    /* ---------- 8-way movement parity (mobile & PC) ---------- */
+    const corners=[[-1,-1,'↖'],[1,-1,'↗'],[-1,1,'↙'],[1,1,'↘']];
+    const ghost=[...document.querySelectorAll('#mobileControls .pad .ghost')];
+    ghost.slice(0,4).forEach((b,i)=>{
+      const [dx,dy,g]=corners[i];const n=b.cloneNode(false);n.className='';n.textContent=g;n.dataset.diag70=`${dx},${dy}`;b.replaceWith(n);
+    });
+}
+function bindReleaseDiagnosticButtons(){
+    document.getElementById('rcQuickAudit70').onclick=()=>{document.getElementById('rcDiag70').textContent=JSON.stringify(audit70(),null,2)};
+    document.getElementById('rcPerf70').onclick=()=>{const total=bench70(20);document.getElementById('rcDiag70').textContent=`20회 강제 렌더 ${total}ms\n평균 ${(total/20).toFixed(2)}ms\nEMA ${RC.perf.ema.toFixed(2)}ms\nDPR ${VIEW.dpr}`};
+    document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));refreshSfx()};
+    document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled(!vibrationEnabled());refreshSfx();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
+    document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
+}
+function bindReleaseSettingsControls(){
+    const textScaleControl=document.getElementById('rcTextScale70');
+  textScaleControl.value=String(RC.textScale);
+    document.getElementById('rcTutorial70').onclick=resetTips70;
+}
+function startDesktopSide(){
+    // Cleaner, continuous carpet: a floor material, never a red wall-like rectangle.
+  
+  
+  
+  
+  
+    // Camera81 delegates to CameraState12; the visual loop consumes its dirty flag once per frame.
+  
+    // v9.1 used a cheaper alternate wall/light renderer while inspecting. That caused the texture
+    // to visibly change during a pan. Restore the same render pipeline for follow and inspect modes.
+    
+    
+    
+    
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    buildDesktopSide();
+    addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
+}
+function resetToTitleScreen(){
+      
+  
+  
+  
+  
+  
+  
+      
+      
+  
+      
+  
+      // The earlier v10.0.2 boot code may already have restored manru984_active_run before this patch runs.
+      // At document boot there has been no user input yet, so discard that transient in-memory restore and show title.
+      state=null;
+      try{cancelAutoWalk()}catch(error){ignoreError('cancel auto-walk before the first run',error)}
+      try{MON_VIS?.clear?.()}catch(error){ignoreError('monster visual cache clear',error)}
+      try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
+      document.body.classList.remove('run-active','end-screen95','title-class-mode');
+      setScreen('title');
+      // Both historical death keys and the dead-run ledger are inspected by the canonical eligibility rule.
+      RunLifecycle.refreshContinue();
+}
