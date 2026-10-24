@@ -327,7 +327,6 @@ startDesktopSide();
     cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
   }
 
-  for(const w of WEAPONS)if(w.kind==='bow')w.ammoFamily='arrow';
 
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
 
