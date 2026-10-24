@@ -331,7 +331,6 @@ startDesktopSide();
   floorSet980.add(TT.PORTAL);plannedSet980.add(TT.PORTAL);
 
   // Remove the old parallel upgrade economy from future loot tables.
-  const upMeta=upgradeProto();if(upMeta){upMeta.minFloor=1;upMeta.stackMax=15;upMeta.desc='장비 하나의 기본 성능을 한 단계 개량한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 다른 장비로 되돌릴 수 없다.'}
 
   try{localStorage.removeItem('manruZoomActual48')}catch(error){ignoreError('old zoom setting could not be removed',error)}
 
@@ -385,13 +384,6 @@ bindWheelRouter();
   window.__MANRU_STORY992__={resume:()=>{const st=storyEnsureState();if(st?.dispatchPending60)return storyOpenNote('dispatch');return false},close:storyCloseModal,closeScene:storyCloseScene,selectEnding:storySelectEnding,continueScene:storyContinueScene,project:projectStoryUI,open:storyOpenNote,ending:storyResolveEnding};
 
   // Final requested starting loadout. Inspector deliberately has no starting weapon.
-  const wanderer1001=CLASSES.find(c=>c.id==='wanderer');
-  if(wanderer1001){
-    wanderer1001.startWeapon='';
-    wanderer1001.startItems=[['감정부적',2],['주먹밥',1]];
-    wanderer1001.startLabel='경량복 · 감정부적×2 · 주먹밥';
-    wanderer1001.desc='정부 특임 감찰관. 시작 무기는 없지만 감정부적이 하나 더 있어 미감정 장비 대응이 빠르다.';
-  }
 
   bindClassPickerElements();
 
