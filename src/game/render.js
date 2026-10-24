@@ -2026,6 +2026,12 @@ function drawLibraryDesk(tile,px,py,x,y){
  X.save();X.fillStyle='#30271e';X.fillRect(px,py,32,32);X.fillStyle='#725c40';X.fillRect(px+1,py+1,30,30);X.fillStyle='#947550';for(const yy of [3,11,19,27])X.fillRect(px+2,py+yy,28,1);X.fillStyle='#b49666';if(d.u===0)X.fillRect(px+2,py,2,32);else X.fillRect(px+28,py,2,32);if(d.v===0)X.fillRect(px,py+2,32,2);if(d.v===2)X.fillRect(px,py+28,32,2);
  if(d.v!==1){X.fillStyle='#273d39';X.fillRect(px+7,py+8,18,13);X.fillStyle='#c1b897';X.fillRect(px+9,py+7,14,12);X.fillStyle='#5b5a48';for(let i=0;i<4;i++)X.fillRect(px+11,py+9+i*2,10-(i%2)*3,1);X.fillStyle='#293b3d';X.fillRect(px+24,py+22,4,4)}else{X.fillStyle='#443426';X.fillRect(px+11,py+9,10,14);X.fillStyle='#dfc993';X.fillRect(px+14,py+7,4,8);X.fillStyle='#ffebbd';X.fillRect(px+15,py+5,2,5)}X.restore();return true
 }
+globalThis.__MANRU_TERRAIN_R41__={specialBefore:drawKeyTile,specialKeyAfter:drawKeyGateOverlay,
+floor:(px,py,x,y,colors,vis)=>{floorOverlay1020(px,py,x,y,colors,vis);floorThemeOverlay1022(px,py,x,y,colors,vis);drawSpecialMaterial(px,py,x,y,false)},
+surfaceBlend:floorSurfaceBlend1025,
+libraryDesk52:drawLibraryDesk,
+wall:(px,py,x,y,colors)=>wallLibraryOverlay1022(px,py,x,y,colors),
+specialAfter:(tile,px,py,x,y,now,r)=>{specialBlendOverlay1020(tile,px,py,x,y,now,r)}};
 function drawPlaceLandmark(d){
  const f=state.floor;X.fillStyle='#242c2b';X.fillRect(3,3,90,90);X.strokeStyle=d[2];X.lineWidth=2;X.strokeRect(5,5,86,86);X.strokeStyle=d[3];X.fillStyle=d[3];
  const line=(a,b,c,e)=>{X.beginPath();X.moveTo(a,b);X.lineTo(c,e);X.stroke()},circle=(x,y,r)=>{X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.stroke()},box=(x,y,w,h)=>X.strokeRect(x,y,w,h);

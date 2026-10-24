@@ -3129,7 +3129,7 @@ createWardHud();
 
 
 
-const TERRAIN_R41_1006=globalThis.__MANRU_TERRAIN_R41__=globalThis.__MANRU_TERRAIN_R41__||{};TERRAIN_R41_1006.specialBefore=drawKeyTile;TERRAIN_R41_1006.specialKeyAfter=drawKeyGateOverlay;
+
 
 
 /* matching pickup/open messages + ledger colors/names */
@@ -3377,12 +3377,6 @@ globalThis.__MANRU_TYPED_KEYS__?.setMetaProvider?.(keyMeta1006);
 
 
 
-const TERRAIN_R41_ARCH=globalThis.__MANRU_TERRAIN_R41__=globalThis.__MANRU_TERRAIN_R41__||{};
-TERRAIN_R41_ARCH.floor=(px,py,x,y,colors,vis)=>{floorOverlay1020(px,py,x,y,colors,vis);floorThemeOverlay1022(px,py,x,y,colors,vis);drawSpecialMaterial(px,py,x,y,false)};
-TERRAIN_R41_ARCH.surfaceBlend=floorSurfaceBlend1025;
-TERRAIN_R41_ARCH.libraryDesk52=drawLibraryDesk;
-TERRAIN_R41_ARCH.wall=(px,py,x,y,colors)=>wallLibraryOverlay1022(px,py,x,y,colors);
-TERRAIN_R41_ARCH.specialAfter=(tile,px,py,x,y,now,r)=>{specialBlendOverlay1020(tile,px,py,x,y,now,r)};
 
 
 
