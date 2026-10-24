@@ -5152,3 +5152,6 @@ function updatePanels(){
     const eqSig=[p.weapon?.name,p.armor?.name,p.cloak?.name,p.relic?.name,p.trinket?.name].join('|');if(eqSig!==RENDER_PERF_STATE.lastEquip){RENDER_PERF_STATE.lastEquip=eqSig;bindEquipInspect()}
     updateMobileHud();updateAttackButton();if(drawerOpen())renderMobileDrawer();RENDER_PERF_STATE.panelDirty=false;RENDER_PERF_STATE.lastPanel=performance.now();runPanelHooks();
   }
+window.__manruZoomActive=false;
+window.__manruZoomSuppressUntil=0;
+globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay}]};

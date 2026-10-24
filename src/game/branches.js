@@ -2432,3 +2432,4 @@ function mirrorEvent(x,y){
     else{spawnMonster(null,true);addLog('거울 속 형상이 현실로 빠져나왔다.');}
     burst(x,y,'#c58fbd',12,.75);
   }
+globalThis.__MANRU_HIDDEN60_ACTIONS__=Object.freeze({revealAt:revealHidden60});
