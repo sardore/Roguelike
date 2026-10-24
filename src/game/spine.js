@@ -906,7 +906,6 @@ createCombatHud();
   
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
-;;
 createHitFeed();/* r25: obsolete pre-v5.4 attack forwarding wrapper removed; v5.4 is the registered combat core. */
 
   /* ---------- material separation ---------- */
@@ -2039,7 +2038,6 @@ bindHeldInputStop();
 
   // No random sprite confetti on normal floors. Theme identity is expressed by deliberate map tiles above.
 
-;
 
   // Decorative blockers behave like walls: no unsolicited "X 바로 앞이다" messages.
   // r57: silent physical decor blocking is integrated into canonical bumpBlockedTile.
@@ -2097,7 +2095,6 @@ bindHeldInputStop();
   
 
   
-  ;
 
   
   
@@ -2130,7 +2127,6 @@ bindHeldInputStop();
 
   
 
-;
 
   
   
@@ -2156,7 +2152,6 @@ bindHeldInputStop();
   
   
 
-  ;
   
 
   /* ===== MANRU v9.3: ASYMMETRIC CLUSTERS / VARIABLE-WIDTH HALLS / SHORT PURPOSEFUL BRANCHES ===== */
@@ -2678,7 +2673,7 @@ startDesktopSide();
 
 
 
-try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[manru] camera setting not cleared',error)};
+try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[manru] camera setting not cleared',error)}
 
 
 
