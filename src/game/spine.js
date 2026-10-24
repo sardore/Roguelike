@@ -1,273 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-window.addEventListener('blur',clearHeldInput53);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:pointerdown');
-C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:pointerup');
-C.addEventListener('click',InputRouter,{capture:true,passive:false});InputRouter.noteListener('canvas-target:click');
-document.addEventListener('keyup',InputRouter);InputRouter.noteListener('document:keyup');
+bindCanvasAndKeyListeners();
 
 
 
@@ -943,34 +674,7 @@ function rest(){const act=playerAction57('rest',{stunMessage:'몸이 굳어 쉬�
 
 
 ClientEnvironment.initialize();
-
-
-
-
-document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)fullscreenResume66=false;else if(fullscreenWanted66)fullscreenResume66=true;window.dispatchEvent(new window.Event('resize'))});
-// Re-enter from a genuine user gesture when the browser revokes fullscreen on app switching.
-for(const type of ['pointerdown','touchend','keydown'])document.addEventListener(type,e=>{if(e.isTrusted&&fullscreenResume66&&document.body.dataset.manruScreen==='game')requestGameFullscreen65()},{capture:true,passive:true});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Phase 12: CameraProjection12 and WorldHitTest12 are installed before runtime input can fire. */
-window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});
+bindFullscreenAndResizeListeners();
 
 
 
@@ -1046,29 +750,7 @@ let runtimeLoopStarted57=0;
 function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof visualLoop==='function'}
 function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeReady57())throw new ReferenceError('canonical runtime entrypoints are not initialized');runtimeLoopStarted57=1;requestAnimationFrame(visualLoop);return true}
 Object.defineProperty(globalThis,'__MANRU_RUNTIME_START57__',{value:Object.freeze({ready:runtimeReady57,start:startRuntimeLoop57,started:()=>runtimeLoopStarted57===1}),writable:false,configurable:false});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-document.addEventListener('keydown',InputRouter,true);InputRouter.noteListener('document:keydown');
+bindKeydownRouter();
 
 
 /* ===== MANRU v0.8 WORLD ART OVERRIDES ===== */
@@ -1090,43 +772,9 @@ document.addEventListener('keydown',InputRouter,true);InputRouter.noteListener('
 
 bindMobileTopButtons();
 renderMobileDrawer();
-
-
-/* ===== MANRU v1.0 VERIFIED VISUAL + AUTOWALK PASS ===== */
-VIS.hoverPath=null;VIS.autoPath=null;VIS.tapTrack=null;
-
-
-
-/* r53: removed overwritten camera implementation. */
-
-
-
-// Continuous auto-tiled wall masses: fewer "boxed tiles", stronger architecture.
-
-
-
-
-// Local light islands inspired by high-contrast pixel dungeons: readable near the player, deep elsewhere.
-
-
-
-// Architectural front faces, wall scrolls, and subdued non-interactive room dressing.
-
-
-
-
-
-
-
-
-
-
-
-
-C.addEventListener('mousemove',e=>{if(!state||isMobileViewport())return;const t=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY);VIS.hoverPath=t?ReachabilityService.visiblePath(t.x,t.y):null}, {passive:true});
-C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
-
-const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','이동 / 자동 탐사');b.textContent='行';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
+clearPathPreview();
+bindCanvasHover();
+createMobileAutoButton();
 
 
 // r53: mobile help text is canonical in renderMobileDrawer.
@@ -1135,7 +783,7 @@ const m=document.querySelector('#mobileHud .mButtons');if(m&&!document.getElemen
 
 
 const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};
-VF_IMG.creature.src=VF_ASSETS.creature_uri;VF_IMG.tile.src=VF_ASSETS.tile_uri;VF_IMG.decor.src=VF_ASSETS.decor_uri;VF_IMG.item.src=VF_ASSETS.item_uri;
+startVisualAssetLoads();
 
 
 
@@ -1189,8 +837,7 @@ document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{const cid=CLAS
 // generation décor is emitted by the canonical base/stages; no lifecycle wrapper.
 // The later v3 robust loader owns legacy-load decor rebuild directly; this superseded wrapper is retired.
 if(state){vfBuildDecor();updateAll()}
-
-vfAuto.id='vfAutoState';document.getElementById('canvasWrap').appendChild(vfAuto);
+createAutoStateBadge();
 
 
 if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
@@ -1205,18 +852,7 @@ if(location.hash.includes('debug')){window.__MANRU_DEBUG__={
 
   window.__manruZoomActive=false;
   window.__manruZoomSuppressUntil=0;
-
-
-
-
-
-zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">－</button><span class="zoomVal" id="zoomVal">100%</span><button type="button" id="zoomInBtn">＋</button>';document.getElementById('canvasWrap').appendChild(zoomHud);zoomHud.querySelector('#zoomOutBtn').onclick=()=>adjustZoom(-1);zoomHud.querySelector('#zoomInBtn').onclick=()=>adjustZoom(1);
-
-  C.addEventListener('click',e=>{if(performance.now()<window.__manruZoomSuppressUntil){e.preventDefault();e.stopImmediatePropagation()}}, {capture:true});
-  
-  /* r53: removed overwritten camera implementation. */
-  
-  updateZoomHud();
+createZoomHud();
 
 
 
@@ -1256,85 +892,9 @@ zoomHud.id='zoomHud';zoomHud.innerHTML='<button type="button" id="zoomOutBtn">�
   document.querySelectorAll('#classGrid .classBtn').forEach((b,i)=>{
     const cls=CLASSES[i];if(!cls)return;const fake={shape:'player'},old=b.querySelector('.vfClassPortrait');if(old)old.remove();const img=document.createElement('img');img.className='vfClassPortrait';const backup=state;try{if(!state)state={player:{classId:cls.id,weapon:null,armor:ARMORS[0],cloak:null}};else{state.player.classId=cls.id}img.src=hiCreature(fake,0,'down',true).toDataURL('image/png')}catch(error){ignoreError('class portrait preview is optional decoration',error)}finally{state=backup}b.appendChild(img);
   });
-
-
-
-  // adaptive versions of layouts that need to fill the larger maps
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /* ----------------------- more decor kinds / context placement ----------------------- */
-  
-  
-
-
-  
-
-
-  
-  // r34: superseded inventory renderer removed; canonical renderer is registered below.
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // One long-press implementation only. Calling again on the same node replaces the previous binding.
-
-  // Use native click activation for touch, mouse and keyboard. Keep the sheet
-  // present through pointerup so a touch's click cannot hit the control behind it.
-  // IMPORTANT: internal modal controls are NEVER blocked by the ghost-click firewall.
-  const oldClose=document.getElementById('inspectClose');
-  if(oldClose){
-    const c=oldClose.cloneNode(true);oldClose.replaceWith(c);
-    const doClose=(e)=>{if(!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();e.stopImmediatePropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-close'})};
-    c.addEventListener('click',doClose);
-  }
-  const wrap=inspectWrap();
-  if(wrap){
-    wrap.setAttribute('aria-hidden',wrap.classList.contains('open')?'false':'true');
-    wrap.addEventListener('pointerdown',()=>{if(DEBUG_BATTLE57.open)DEBUG_BATTLE57.inspectRelease57=null;},{capture:true});
-    const closeBackdrop=(e)=>{
-      const release=DEBUG_BATTLE57.open&&DEBUG_BATTLE57.inspectRelease57;
-      if(release&&inputNow()<release.until&&(e.pointerId===release.id||!e.pointerId&&Math.hypot(e.clientX-release.x,e.clientY-release.y)<12)){DEBUG_BATTLE57.inspectRelease57=null;e.preventDefault();e.stopImmediatePropagation();return;}
-      if(e.target!==wrap||!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-backdrop'})
-    };
-    wrap.addEventListener('click',closeBackdrop,{capture:true});
-  }
-  // Inventory inspect actions use the clean, non-duplicated item formatter.
-  // r34: obsolete inventory-inspect wrapper removed; r53 post-stage owns inspect rebinding.
-
-  // If a stale timer/old sheet survived load, start from a clean state.
-  cancelLongPresses();document.body.classList.remove('manru-inspect-open');if(wrap&&!wrap.classList.contains('open'))wrap.setAttribute('aria-hidden','true');
-
-
-/* ===== MANRU v3.6 INTERNAL POLISH: zoom fix / combat HUD / inventory / log / materials ===== */
-const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';document.getElementById('canvasWrap')?.appendChild(combatHud);
+rebindInspectClose();
+initInspectOverlay();
+createCombatHud();
 
 
 
@@ -1348,10 +908,8 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
   
   // r34: superseded inventory renderer removed; canonical renderer is registered below.
 
-;;// r54: dead pre-v49 panel wrapper removed.
-
-  /* ---------- combat FX ---------- */
-  const feed=document.createElement('div');feed.id='mfHitFeed';document.getElementById('canvasWrap')?.appendChild(feed);/* r25: obsolete pre-v5.4 attack forwarding wrapper removed; v5.4 is the registered combat core. */
+;;
+createHitFeed();/* r25: obsolete pre-v5.4 attack forwarding wrapper removed; v5.4 is the registered combat core. */
 
   /* ---------- material separation ---------- */
 
@@ -1375,10 +933,7 @@ const combatHud=document.createElement('div');combatHud.id='mfCombatHud';combatH
 
 
   for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
-
-
-ph.id='potionTargetHud';ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';document.body.appendChild(ph);
-ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+createPotionTargetHud();
   /* r58 debuff overhaul: potion buffs are read by the canonical statusSummary; no status wrapper here. */
   
 
@@ -1494,41 +1049,7 @@ RuntimeState.ui.inventory=UX;
 
   replaceViewerQuickButton('inv',()=>toggleInventory());
   replaceViewerQuickButton('skill',()=>useClassSkill());
-
-  // mark real inventory / martial actions so closing the UI does not unexpectedly resume movement.
-  // r30: modal-dirty item-use bookkeeping is integrated in canonical useInventoryItem.
-  // r57: inventory/martial dirty state is set by the canonical action bodies.
-
-
-
-
-
-
-
-
-
-
-
-  // replace the accumulated inventory implementations with one thumb-friendly renderer.
-
-
-
-  // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
-
-  // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
-  
-
-
-  // mobile drawer/map/inspect should block world controls but not eat their own buttons.
-  /* r8: attack input blocking is handled in attackInputBlockedR8; no basicAttack wrapper. */
-
-
-
-  const swipeModalCancel45=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'modal-swipe'});
-  swipeClose(document.getElementById('inventory'),swipeModalCancel45);
-  swipeClose(document.getElementById('mobileDrawer'),swipeModalCancel45);
-  swipeClose(document.getElementById('mobileInspect'),swipeModalCancel45);
-  swipeClose(document.getElementById('mobileMapModal'),swipeModalCancel45);
+bindModalSwipeClose();
 
   // performance: stop rebuilding closed drawer, throttle minimap, and avoid rendering the hidden world behind full-screen panels.
   // r53: drawer visibility guard is canonical in renderMobileDrawer.

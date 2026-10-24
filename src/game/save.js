@@ -850,3 +850,19 @@ function elementsPreTurn(){return ensure74()}
 function autosavePostTurn(){if(state&&!state.dead&&!state.victory)SaveService.request('turn')}
 function potionsPostGeneration(){pstate();state.tempFields=[];rewardRooms()}
 function talismanPostGeneration(){ensure74();state.tempTerrain74=[];state.elementFields74=[]}
+function bindCanvasAndKeyListeners(){
+  window.addEventListener('blur',clearHeldInput53);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
+  C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:pointerdown');
+  C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:pointerup');
+  C.addEventListener('click',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:click');
+  document.addEventListener('keyup',InputRouter);
+  InputRouter.noteListener('document:keyup');
+}
+function bindKeydownRouter(){
+  document.addEventListener('keydown',InputRouter,true);
+  InputRouter.noteListener('document:keydown');
+}

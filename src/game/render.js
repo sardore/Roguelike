@@ -4992,3 +4992,81 @@ function resourcePostGeneration(){guaranteedResource48();P47.cullKey='';P47.deco
 function knowledgePostGeneration(){return onFloorGenerated56()}
 function polishPostGeneration(){polish78();VisibilityService.compute()}
 function qualityPostPostGeneration(){state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()}
+function clearPathPreview(){
+  /* ===== MANRU v1.0 VERIFIED VISUAL + AUTOWALK PASS ===== */
+  VIS.hoverPath=null;
+  VIS.autoPath=null;
+  VIS.tapTrack=null;
+}
+function bindCanvasHover(){
+  /* r53: removed overwritten camera implementation. */
+  
+  
+  
+  // Continuous auto-tiled wall masses: fewer "boxed tiles", stronger architecture.
+  
+  
+  
+  
+  // Local light islands inspired by high-contrast pixel dungeons: readable near the player, deep elsewhere.
+  
+  
+  
+  // Architectural front faces, wall scrolls, and subdued non-interactive room dressing.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  C.addEventListener('mousemove',e=>{if(!state||isMobileViewport())return;const t=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY);VIS.hoverPath=t?ReachabilityService.visiblePath(t.x,t.y):null}, {passive:true});
+  C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
+}
+function startVisualAssetLoads(){
+  VF_IMG.creature.src=VF_ASSETS.creature_uri;
+  VF_IMG.tile.src=VF_ASSETS.tile_uri;
+  VF_IMG.decor.src=VF_ASSETS.decor_uri;
+  VF_IMG.item.src=VF_ASSETS.item_uri;
+}
+function createAutoStateBadge(){
+  vfAuto.id='vfAutoState';
+  document.getElementById('canvasWrap').appendChild(vfAuto);
+}
+function createZoomHud(){
+  zoomHud.id='zoomHud';
+  zoomHud.innerHTML='<button type="button" id="zoomOutBtn">－</button><span class="zoomVal" id="zoomVal">100%</span><button type="button" id="zoomInBtn">＋</button>';
+  document.getElementById('canvasWrap').appendChild(zoomHud);
+  zoomHud.querySelector('#zoomOutBtn').onclick=()=>adjustZoom(-1);
+  zoomHud.querySelector('#zoomInBtn').onclick=()=>adjustZoom(1);
+    C.addEventListener('click',e=>{if(performance.now()<window.__manruZoomSuppressUntil){e.preventDefault();e.stopImmediatePropagation()}}, {capture:true});
+    
+    /* r53: removed overwritten camera implementation. */
+    
+    updateZoomHud();
+}
+function initInspectOverlay(){
+    const wrap=inspectWrap();
+    if(wrap){
+      wrap.setAttribute('aria-hidden',wrap.classList.contains('open')?'false':'true');
+      wrap.addEventListener('pointerdown',()=>{if(DEBUG_BATTLE57.open)DEBUG_BATTLE57.inspectRelease57=null;},{capture:true});
+      const closeBackdrop=(e)=>{
+        const release=DEBUG_BATTLE57.open&&DEBUG_BATTLE57.inspectRelease57;
+        if(release&&inputNow()<release.until&&(e.pointerId===release.id||!e.pointerId&&Math.hypot(e.clientX-release.x,e.clientY-release.y)<12)){DEBUG_BATTLE57.inspectRelease57=null;e.preventDefault();e.stopImmediatePropagation();return;}
+        if(e.target!==wrap||!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-backdrop'})
+      };
+      wrap.addEventListener('click',closeBackdrop,{capture:true});
+    }
+    // Inventory inspect actions use the clean, non-duplicated item formatter.
+    // r34: obsolete inventory-inspect wrapper removed; r53 post-stage owns inspect rebinding.
+  
+    // If a stale timer/old sheet survived load, start from a clean state.
+    cancelLongPresses();
+  document.body.classList.remove('manru-inspect-open');
+  if(wrap&&!wrap.classList.contains('open'))wrap.setAttribute('aria-hidden','true');
+}

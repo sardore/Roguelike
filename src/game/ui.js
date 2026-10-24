@@ -1098,3 +1098,24 @@ function createWardHud(){
   hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';
   document.body.appendChild(hud);
 }
+function createCombatHud(){
+  /* ===== MANRU v3.6 INTERNAL POLISH: zoom fix / combat HUD / inventory / log / materials ===== */
+  const combatHud=document.createElement('div');
+  combatHud.id='mfCombatHud';
+  combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';
+  document.getElementById('canvasWrap')?.appendChild(combatHud);
+}
+function createHitFeed(){
+  // r54: dead pre-v49 panel wrapper removed.
+  
+    /* ---------- combat FX ---------- */
+    const feed=document.createElement('div');
+  feed.id='mfHitFeed';
+  document.getElementById('canvasWrap')?.appendChild(feed);
+}
+function createPotionTargetHud(){
+  ph.id='potionTargetHud';
+  ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';
+  document.body.appendChild(ph);
+  ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+}
