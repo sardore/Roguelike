@@ -1947,12 +1947,12 @@ function summonMigrateSpecies105(q){
 }
 
 const SPAWN_RULES=[
-  {from:1,to:1,count:[5,5],safe:10},
-  {from:2,to:5,count:[6,8],safe:10},
-  {from:6,to:10,count:[7,9],safe:10},
-  {from:11,to:15,count:[8,10],safe:9},
-  {from:16,to:20,count:[9,11],safe:9},
-  {from:21,to:24,count:[9,12],safe:8}
+  {from:1,to:1,count:[9,9],safe:10},
+  {from:2,to:5,count:[8,11],safe:10},
+  {from:6,to:10,count:[10,13],safe:10},
+  {from:11,to:15,count:[11,14],safe:9},
+  {from:16,to:20,count:[13,16],safe:9},
+  {from:21,to:24,count:[14,18],safe:8}
 ];
 function effectSource57(source,opts={}){if(source?.sourceFaction&&source!==state?.player&&!(state?.monsters||[]).includes(source))return{sourceFaction:opts.sourceFaction||source.sourceFaction,owner:opts.owner??source.owner??null,credit:opts.credit??source.credit??null,friendlyFire:opts.friendlyFire??!!source.friendlyFire};const owner=opts.owner??source??null;return{sourceFaction:opts.sourceFaction||entityFaction(owner),owner:owner===state?.player?'player':(state?.monsters||[]).includes(owner)?combatantId(owner):owner?.id57??owner?.name??owner,credit:opts.credit??(entityFaction(owner)==='player'?'player':null),friendlyFire:!!opts.friendlyFire}}
 const JAR_GAS_VISUAL_START57=new WeakMap();
@@ -2165,7 +2165,7 @@ function nearestLandFor1005(e,x,y,prefer=null){
   return a[0]||null
 }
 function consumeWard(kind){const p=state.player,r=p.relic;if(!r)return false;const ok=kind==='drown'?r.drownWard1005:r.voidWard1005;if(!ok)return false;const nm=r.name;p.relic=null;addLog(`${nm}이 치명적인 ${kind==='drown'?'익사':'공허 추락'}를 대신 받아냈다.`);wardPulse(kind,10);return true}
-const SPECIAL_BASE_COUNTS={2:6,4:5,6:6,8:8,11:7,13:8,16:0,18:8,21:7,22:8,23:7,24:4};
+const SPECIAL_BASE_COUNTS={2:10,4:11,6:12,8:12,11:13,13:14,16:13,18:14,21:13,22:15,23:14,24:12,20:9};
 function moveGroundItemStep57(it,toward){
   if(!state||!it||!toward)return false;
   const before=Math.abs(toward.x-it.x)+Math.abs(toward.y-it.y),candidates=[];

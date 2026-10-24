@@ -199,9 +199,6 @@ const V59={lastMode:null, doorLog:[], modeLog:[]};
   }
   globalThis.__MANRU_HIDDEN60_ACTIONS__=Object.freeze({revealAt:revealHidden60});
 
-const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,16],[21,24,14,18]];
-  for(const r of SPAWN_RULES){const q=spawnRanges61.find(v=>r.from===v[0]&&r.to===v[1]);if(q)r.count=[q[2],q[3]]}
-  Object.assign(SPECIAL_BASE_COUNTS,{2:10,4:11,6:12,8:12,11:13,13:14,16:13,18:14,20:9,21:13,22:15,23:14,24:12});
 
   const BREAK61=new Set([TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR,TT.LOCKED_GATE,TT.PEACH_TREE,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL]);
 
