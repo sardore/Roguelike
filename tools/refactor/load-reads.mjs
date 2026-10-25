@@ -57,9 +57,9 @@ for (const [label, o] of situations) {
   if (r.loading !== false) { console.log(`${label}: the closure did not finish loading (errors: ${JSON.stringify(s.errors)})`); process.exitCode = 1; }
   if (s.errors.length) { console.log(`${label}: page errors ${JSON.stringify(s.errors)}`); process.exitCode = 1; }
   for (const [n, h] of Object.entries(r.hits || {})) {
-    const t = (total[n] ||= { ok: 0, tdz: 0, okSite: null, tdzSite: null, situations: [], sites: {} });
+    const t = (total[n] ||= { ok: 0, tdz: 0, undef: 0, okSite: null, tdzSite: null, situations: [], sites: {} });
     for (const [k, c] of Object.entries(h.sites || {})) { const key = k.replace(/http:\/\/127\.0\.0\.1:\d+\/scripts\/10-runtime\.js:/g, 'L'); t.sites[key] = (t.sites[key] || 0) + c; }
-    t.ok += h.ok; t.tdz += h.tdz; t.okSite ||= h.okSite; t.tdzSite ||= h.tdzSite; t.situations.push(label);
+    t.ok += h.ok; t.tdz += h.tdz; t.undef += h.undef || 0; t.okSite ||= h.okSite; t.tdzSite ||= h.tdzSite; t.situations.push(label);
   }
   await s.close();
 }
@@ -69,5 +69,5 @@ console.log(`probed ${found.size} names, ${sites} read sites, ${situations.lengt
 for (const n of [...found].sort()) {
   const t = total[n];
   if (!t) console.log(`${n}\tnot read at load`);
-  else console.log(`${n}\tok ${t.ok} tdz ${t.tdz}\t[${[...new Set(t.situations)].join(', ')}]${t.tdzSite ? `\n  tdz at ${t.tdzSite}` : ''}${t.okSite ? `\n  ok at ${t.okSite}` : ''}${Object.entries(t.sites).map(([k, c]) => `\n  site ${k} x${c}`).join('')}`);
+  else console.log(`${n}\tok ${t.ok} tdz ${t.tdz}${t.undef ? ` undef ${t.undef}` : ''}\t[${[...new Set(t.situations)].join(', ')}]${t.tdzSite ? `\n  tdz at ${t.tdzSite}` : ''}${t.okSite ? `\n  ok at ${t.okSite}` : ''}${Object.entries(t.sites).map(([k, c]) => `\n  site ${k} x${c}`).join('')}`);
 }

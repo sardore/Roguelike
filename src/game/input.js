@@ -489,3 +489,190 @@ const RuntimeState={
   };
 let autoWalkTimer = null;
 let autoWalkToken = 0;
+function bindFullscreenAndResizeListeners(){
+  document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)fullscreenResume66=false;else if(fullscreenWanted66)fullscreenResume66=true;window.dispatchEvent(new window.Event('resize'))});
+  // Re-enter from a genuine user gesture when the browser revokes fullscreen on app switching.
+  for(const type of ['pointerdown','touchend','keydown'])document.addEventListener(type,e=>{if(e.isTrusted&&fullscreenResume66&&document.body.dataset.manruScreen==='game')requestGameFullscreen65()},{capture:true,passive:true});
+  /* Phase 12: CameraProjection12 and WorldHitTest12 are installed before runtime input can fire. */
+  window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});
+}
+function createMobileAutoButton(){
+  const m=document.querySelector('#mobileHud .mButtons');
+  if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','이동 / 자동 탐사');b.textContent='行';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
+}
+function rebindInspectClose(){
+    // adaptive versions of layouts that need to fill the larger maps
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /* ----------------------- more decor kinds / context placement ----------------------- */
+    
+    
+  
+  
+    
+  
+  
+    
+    // r34: superseded inventory renderer removed; canonical renderer is registered below.
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    // One long-press implementation only. Calling again on the same node replaces the previous binding.
+  
+    // Use native click activation for touch, mouse and keyboard. Keep the sheet
+    // present through pointerup so a touch's click cannot hit the control behind it.
+    // IMPORTANT: internal modal controls are NEVER blocked by the ghost-click firewall.
+    const oldClose=document.getElementById('inspectClose');
+    if(oldClose){
+      const c=oldClose.cloneNode(true);oldClose.replaceWith(c);
+      const doClose=(e)=>{if(!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();e.stopImmediatePropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-close'})};
+      c.addEventListener('click',doClose);
+    }
+}
+function bindModalSwipeClose(){
+    // mark real inventory / martial actions so closing the UI does not unexpectedly resume movement.
+    // r30: modal-dirty item-use bookkeeping is integrated in canonical useInventoryItem.
+    // r57: inventory/martial dirty state is set by the canonical action bodies.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    // replace the accumulated inventory implementations with one thumb-friendly renderer.
+  
+  
+  
+    // don't rebuild a full-screen bag DOM when the bag is closed (pickup used to do this every time).
+  
+    // relaxed auto-move: explicit destination doesn't abort just because an already-known enemy or incidental item exists.
+    
+  
+  
+    // mobile drawer/map/inspect should block world controls but not eat their own buttons.
+    /* r8: attack input blocking is handled in attackInputBlockedR8; no basicAttack wrapper. */
+  
+  
+  
+    const swipeModalCancel45=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'modal-swipe'});
+    swipeClose(document.getElementById('inventory'),swipeModalCancel45);
+    swipeClose(document.getElementById('mobileDrawer'),swipeModalCancel45);
+    swipeClose(document.getElementById('mobileInspect'),swipeModalCancel45);
+    swipeClose(document.getElementById('mobileMapModal'),swipeModalCancel45);
+}
+function bindTextSelectionGuards(){
+    
+  
+    
+  
+  
+    
+    
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  /* ===== MANRU v5.1 MOBILE PERFORMANCE HOTFIX ===== */
+  
+  
+  
+  
+  
+  
+  
+  
+    // 요약은 수치만. 설명/능력을 섞지 않는다.
+  
+    const editable53=t=>!!t?.closest?.('input,textarea,[contenteditable="true"]');
+    for(const type of ['selectstart','dragstart','copy','cut']){
+      document.addEventListener(type,e=>{if(editable53(e.target))return;if(e.target?.closest?.('#app,#overlay,#game,canvas')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
+    }
+    document.addEventListener('contextmenu',e=>{if(editable53(e.target)||e.target?.closest?.('#game,#runtimeInput81'))return;if(e.target?.closest?.('#app,#overlay')){e.preventDefault();e.stopImmediatePropagation?.()}},{capture:true,passive:false});
+    document.addEventListener('pointerdown',e=>{if(editable53(e.target))return;if(e.target?.closest?.('#game,canvas,img')){try{window.getSelection?.()?.removeAllRanges?.()}catch(error){ignoreError('getSelection unavailable',error)}}},{capture:true,passive:true});
+}
+function bindHeldInputStop(){
+    /* Auto-pickup is permanent. A movement also exits temporary camera inspection. */
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /* Reapply after start/load without adding switches or changing user policy. */
+      
+    addEventListener('pointerup',stopHeldInput,{passive:true});
+  addEventListener('pointercancel',stopHeldInput,{passive:true});
+  addEventListener('blur',stopHeldInput,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopHeldInput()},{passive:true});
+}
+  const Automation81={
+    valid:q=>Auto81.valid(q),
+    go:q=>Auto81.go(q),
+    explore:()=>Auto81.explore(false),
+    pickup:()=>Auto81.pickupAll(),
+    state:()=>Auto81.state(),
+    presentationRate:()=>Auto81.active?AUTO_MOVE_RATE70:1
+  };

@@ -73,7 +73,7 @@ const WEAPONS=[
   {type:'weapon',name:'나무 몽둥이',tier:1,rarity:'common',atk:1,speed:1.0,range:2,kind:'blunt',armorPierce:true,ability:'방어무시',desc:'거칠게 깎은 단단한 참나무 몽둥이입니다.'},
   {type:'weapon',name:'무딘 소검',tier:1,rarity:'common',atk:1,speed:1.4,range:2,kind:'blade',ability:'없음',desc:'가장 평범한 형태의 호신용 칼입니다.'},
   {type:'weapon',name:'대나무창',balance52:true,tier:1,rarity:'common',atk:0,speed:0.62,range:3,kind:'spear',knockback:1,ability:'밀치기',desc:'끝을 뾰족하게 깎은 긴 대나무입니다.'},
-  {type:'weapon',name:'사냥용 목궁',balance52:true,tier:1,rarity:'common',atk:0,speed:0.48,range:6,kind:'bow',ranged:true,ability:'원거리',desc:'산짐승을 잡을 때 쓰던 낡은 활입니다.'},
+  {type:'weapon',name:'사냥용 목궁',balance52:true,tier:1,rarity:'common',atk:0,speed:0.48,range:6,kind:'bow',ranged:true,ability:'원거리',desc:'산짐승을 잡을 때 쓰던 낡은 활입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'낡은 장도리',tier:1,rarity:'common',atk:2,speed:.5,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'},
   // 2티어 · 수묵원
   {type:'weapon',name:'수련용 환도',tier:2,rarity:'rare',atk:2,speed:1.8,range:2,kind:'blade',focusChain:true,ability:'집중 연계',desc:'연속으로 공격을 2회 적중시키면 기력 1을 되찾습니다. 빗나가면 연계가 끊깁니다.'},
@@ -81,13 +81,13 @@ const WEAPONS=[
   {type:'weapon',name:'철두창',balance52:true,tier:2,rarity:'rare',atk:2,speed:0.55,range:4,kind:'spear',knockback:1,ability:'밀치기',desc:'창날이 무거워 찌르는 힘이 강력한 창입니다.'},
   {type:'weapon',name:'낫',tier:2,rarity:'rare',atk:3,speed:1.3,range:2,kind:'blade',wide:true,ability:'광역타격',desc:'수풀을 베기 위해 고안된 날카로운 곡선형 칼입니다.'},
   {type:'weapon',name:'손도끼',tier:2,rarity:'rare',atk:5,speed:.6,range:1,kind:'blunt',armorPierce:true,breakPower:2,ability:'방어무시 · 파괴',desc:'가구·항아리 같은 장애물을 부수고 구조체 적에게 추가 피해를 줍니다. 문·벽·대나무·생울타리는 파괴할 수 없습니다.'},
-  {type:'weapon',name:'병사용 반궁',balance52:true,tier:2,rarity:'rare',atk:2,speed:0.54,range:7,kind:'bow',ranged:true,ability:'원거리',desc:'군에서 정식으로 보급하는 표준형 활입니다.'},
+  {type:'weapon',name:'병사용 반궁',balance52:true,tier:2,rarity:'rare',atk:2,speed:0.54,range:7,kind:'bow',ranged:true,ability:'원거리',desc:'군에서 정식으로 보급하는 표준형 활입니다.',ammoFamily:'arrow'},
   // 3티어 · 유혹의 내실
   {type:'weapon',name:'쌍날 단도',tier:3,rarity:'relic',atk:4,speed:2.5,range:1,kind:'blade',chain:.12,ability:'연격',desc:'양손에 쥐고 춤추듯 휘두를 수 있는 짧은 칼쌍입니다.'},
   {type:'weapon',name:'암살용 비수',tier:3,rarity:'relic',atk:5,speed:1.4,range:2,kind:'blade',crit:.10,ability:'치명 +10%',desc:'그림자 속에서 급소를 노리기 위해 제작된 비수입니다.'},
   {type:'weapon',name:'편곤',tier:3,rarity:'relic',atk:6,speed:.8,range:2,kind:'blunt',armorPierce:true,cornerHit:true,ability:'방어무시 · 곡격',desc:'장애물 뒤에 숨은 적의 머리를 타격할 수 있는 기묘한 무기입니다.'},
   {type:'weapon',name:'삼각창',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.61,range:4,kind:'spear',bleed:.25,ability:'파고들기',desc:'세 갈래 날이 살점을 파고들어 떼어내기 힘들게 만듭니다.'},
-  {type:'weapon',name:'강화 각궁',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.4,range:8,kind:'bow',ranged:true,knockback:1,ability:'밀치기',desc:'짐승의 힘줄을 겹겹이 발라 탄성이 극대화된 각궁입니다.'},
+  {type:'weapon',name:'강화 각궁',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.4,range:8,kind:'bow',ranged:true,knockback:1,ability:'밀치기',desc:'짐승의 힘줄을 겹겹이 발라 탄성이 극대화된 각궁입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'무쇠 메',tier:3,rarity:'relic',heavyStrikeBalance105:3,atk:15,speed:.3,range:2,kind:'blunt',armorPierce:true,stun:.16,ability:'방어무시 · 균열',desc:'무거운 쇳덩이를 자루 끝에 매단 투박한 파괴 병기입니다.'},
   // 4티어 · 지하 장고
   {type:'weapon',name:'연철 권갑',tier:4,rarity:'sealed',atk:3,speed:1.6,range:1,kind:'brawl',brawlWeapon:true,lowUpgrade42:true,ability:'연타 · 격투 연계',desc:'손등과 팔뚝을 연철 판으로 감싼 권갑이다. 맨손 격투의 이점을 그대로 얻지만, 강화부적 세 장을 써야 공격력이 1 오른다.'},
@@ -95,14 +95,14 @@ const WEAPONS=[
   {type:'weapon',name:'장갑 도끼',tier:4,rarity:'sealed',atk:8,speed:.9,range:2,kind:'blunt',armorPierce:true,shred:true,ability:'방어무시 · 파갑',desc:'방패나 두꺼운 갑옷을 찢어버리기 위해 설계된 전투 도끼입니다.'},
   {type:'weapon',name:'협도',tier:4,rarity:'sealed',atk:7,speed:.8,range:3,kind:'blade',wide:true,ability:'휩쓸기',desc:'긴 자루와 넓은 칼날로 다수의 적을 한 번에 베어 넘깁니다.'},
   {type:'weapon',name:'철참도',tier:4,rarity:'sealed',atk:10,speed:.9,range:2,kind:'blade',ability:'없음',desc:'말에 탄 적도 단칼에 베어버릴 만큼 무겁고 예리한 대도입니다.'},
-  {type:'weapon',name:'정량궁',balance52:true,tier:4,rarity:'sealed',atk:6,speed:0.32,range:9,kind:'bow',ranged:true,knockback:1,ability:'밀치기 · 충격',desc:'시위를 당기는 것조차 고역인 공성용에 가까운 대형 활입니다.'},
+  {type:'weapon',name:'정량궁',balance52:true,tier:4,rarity:'sealed',atk:6,speed:0.32,range:9,kind:'bow',ranged:true,knockback:1,ability:'밀치기 · 충격',desc:'시위를 당기는 것조차 고역인 공성용에 가까운 대형 활입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'대형 오해머',tier:4,rarity:'sealed',heavyStrikeBalance105:3,atk:19,speed:.2,range:2,kind:'blunt',armorPierce:true,knockback:2,stun:.2,ability:'방어무시 · 압쇄',desc:'성문을 부술 때 사용하는 거대한 쇳덩이 망치입니다.'},
   // 5티어 · 만루의 심장
   {type:'weapon',name:'별운검',tier:5,rarity:'sealed',atk:9,speed:1.8,range:2,kind:'blade',crit:.14,ability:'치명 +14%',desc:'구름 문양이 새겨진 왕실의 검으로, 바람보다 빠르게 적을 벱니다.'},
   {type:'weapon',name:'태도',tier:5,rarity:'sealed',atk:12,speed:.9,range:3,kind:'blade',edgeBonus:true,ability:'밀치기 · 일섬',desc:'긴 날로 거리를 지배합니다. 체력이 75% 이상 남은 적에게 첫 일격 보너스 피해를 주고 한 칸 밀어냅니다.',knockback:1},
   {type:'weapon',name:'당파',balance52:true,tier:5,rarity:'sealed',atk:8,speed:0.53,range:5,kind:'spear',knockback:1,parry:.12,ability:'방어 · 얽기',desc:'근접 공격을 12% 확률로 흘려내고 공격자를 잠깐 경직시킵니다.'},
   {type:'weapon',name:'금강령 퇴',tier:5,rarity:'sealed',atk:11,speed:.8,range:2,kind:'blunt',armorPierce:true,stun:.22,holy:2,ability:'방어무시 · 정화',desc:'법구의 형상을 한 둔기로, 타격 시 사악한 기운을 쫓아냅니다.'},
-  {type:'weapon',name:'단단한 철궁',balance52:true,tier:5,rarity:'sealed',atk:7,speed:0.4,range:10,kind:'bow',ranged:true,tracking:true,ability:'추적',desc:'조준 보정으로 원거리 공격 시 대상 EVA를 크게 무시합니다.'},
+  {type:'weapon',name:'단단한 철궁',balance52:true,tier:5,rarity:'sealed',atk:7,speed:0.4,range:10,kind:'bow',ranged:true,tracking:true,ability:'추적',desc:'조준 보정으로 원거리 공격 시 대상 EVA를 크게 무시합니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'대장간 망치',tier:5,rarity:'sealed',heavyStrikeBalance105:2,atk:21,speed:.2,range:2,kind:'blunt',armorPierce:true,knockback:2,execute:.20,ability:'방어무시 · 종결',desc:'만루를 지은 장인의 혼이 깃든, 세상의 모든 것을 부술 수 있는 망치입니다.'}
 ];
 const ARMORS=[

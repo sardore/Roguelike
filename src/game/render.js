@@ -1266,7 +1266,7 @@ function drawTransition(now){
   const sealX=Math.min(VIEW.w-26,VIEW.w/2+Math.min(220,VIEW.w*.29)),sealY=cy-34;X.strokeStyle='#8c4034';X.lineWidth=1.5;X.strokeRect(sealX-11,sealY-11,22,22);X.fillStyle='#ad5141';X.font='900 10px Georgia,serif';X.fillText('입',sealX,sealY+1);
   X.restore();
 }
-const MINIMAP_PIPELINE={before:null,hooks:[{id:'doors59',draw:doorsDrawMinimap},{id:'architecture85',draw:architectureDrawMinimap},{id:'portals981',draw:portalsDrawMinimap}]};
+const MINIMAP_PIPELINE={before:force=>{const now=performance.now();if(!state)return false;if(!force&&!RENDER_PERF_STATE.miniDirty&&!mapOpen49()&&now-RENDER_PERF_STATE.lastMini<320)return false;RENDER_PERF_STATE.lastMini=now;RENDER_PERF_STATE.miniDirty=false;return true},hooks:[{id:'doors59',draw:doorsDrawMinimap},{id:'architecture85',draw:architectureDrawMinimap},{id:'portals981',draw:portalsDrawMinimap}]};
 function drawMinimap(force=false){if(MINIMAP_PIPELINE.before&&!MINIMAP_PIPELINE.before(force))return false;MX.clearRect(0,0,MC.width,MC.height);const sx=MC.width/COLS,sy=MC.height/ROWS;MX.fillStyle='#070a0e';MX.fillRect(0,0,MC.width,MC.height);const cols=new Map([[TT.WALL,'#3d342d'],[TT.STAIR,'#e0d0a0'],[TT.WATER,'#426c73'],[TT.PAPER_BRIDGE,'#c8b990'],[TT.MIRROR,'#a3789e'],[TT.JAR,'#7b543d'],[TT.LAVA,'#a4412c'],[TT.DRAWBRIDGE_DOWN,'#9e7547'],[TT.DRAWBRIDGE_UP,'#55402f'],[TT.VOID,'#08050d'],[TT.GOLD,'#c8a543'],[TT.MERCURY,'#9eaaaa'],[TT.SWITCH,'#d09855'],[TT.BAMBOO,'#476346'],[TT.TABLE,'#735039'],[TT.SCREEN,'#7d3533'],[TT.GRASS,'#243b27'],[TT.HEDGE,'#315136'],[TT.RAFT,'#9b754a'],[TT.FAKE_DOOR,'#704b63'],[TT.LOCKED_GATE,'#7b756c'],[TT.KEY_TILE,'#e3bf6e'],[TT.STAMINA_PAD,'#6daac0'],[TT.PEACH_TREE,'#b06f78'],[TT.SECRET_DOOR,'#8d7444'],[TT.PAVILION,'#a47452']]);for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){if(!state.seen.has(k(x,y))&&!mineScenerySeen(x,y))continue;const t=mineHidden(x,y)?TT.VOID:state.map[y][x];MX.fillStyle=state.branchContext105?.id==='palace'?palaceMiniColor(t,x,y):state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.miniColor?globalThis.__MANRU_LEGEND_TERRAIN47__.miniColor(t,x,y):(cols.get(t)||'#15130f');MX.fillRect(x*sx,y*sy,Math.ceil(sx),Math.ceil(sy))}for(const m of state.monsters)if(isThreatVisibleToPlayer(m)){MX.fillStyle=m.boss?'#f1c35f':'#c45d62';MX.fillRect(m.x*sx,m.y*sy,3,3)}for(const it of state.items)if(state.seen.has(k(it.x,it.y))){MX.fillStyle=rarityColor(it.rarity);MX.fillRect(it.x*sx,it.y*sy,2,2)}MX.fillStyle='#91d39a';MX.fillRect(state.player.x*sx,state.player.y*sy,3,3);MX.strokeStyle='#506174';MX.strokeRect(.5,.5,MC.width-1,MC.height-1);for(const h of MINIMAP_PIPELINE.hooks)h.draw({sx,sy,force});return true}
 let renderUpdatePending=false, cameraRenderPending=false;
 function syncLargeMinimap(){
@@ -2026,6 +2026,12 @@ function drawLibraryDesk(tile,px,py,x,y){
  X.save();X.fillStyle='#30271e';X.fillRect(px,py,32,32);X.fillStyle='#725c40';X.fillRect(px+1,py+1,30,30);X.fillStyle='#947550';for(const yy of [3,11,19,27])X.fillRect(px+2,py+yy,28,1);X.fillStyle='#b49666';if(d.u===0)X.fillRect(px+2,py,2,32);else X.fillRect(px+28,py,2,32);if(d.v===0)X.fillRect(px,py+2,32,2);if(d.v===2)X.fillRect(px,py+28,32,2);
  if(d.v!==1){X.fillStyle='#273d39';X.fillRect(px+7,py+8,18,13);X.fillStyle='#c1b897';X.fillRect(px+9,py+7,14,12);X.fillStyle='#5b5a48';for(let i=0;i<4;i++)X.fillRect(px+11,py+9+i*2,10-(i%2)*3,1);X.fillStyle='#293b3d';X.fillRect(px+24,py+22,4,4)}else{X.fillStyle='#443426';X.fillRect(px+11,py+9,10,14);X.fillStyle='#dfc993';X.fillRect(px+14,py+7,4,8);X.fillStyle='#ffebbd';X.fillRect(px+15,py+5,2,5)}X.restore();return true
 }
+globalThis.__MANRU_TERRAIN_R41__={specialBefore:drawKeyTile,specialKeyAfter:drawKeyGateOverlay,
+floor:(px,py,x,y,colors,vis)=>{floorOverlay1020(px,py,x,y,colors,vis);floorThemeOverlay1022(px,py,x,y,colors,vis);drawSpecialMaterial(px,py,x,y,false)},
+surfaceBlend:floorSurfaceBlend1025,
+libraryDesk52:drawLibraryDesk,
+wall:(px,py,x,y,colors)=>wallLibraryOverlay1022(px,py,x,y,colors),
+specialAfter:(tile,px,py,x,y,now,r)=>{specialBlendOverlay1020(tile,px,py,x,y,now,r)}};
 function drawPlaceLandmark(d){
  const f=state.floor;X.fillStyle='#242c2b';X.fillRect(3,3,90,90);X.strokeStyle=d[2];X.lineWidth=2;X.strokeRect(5,5,86,86);X.strokeStyle=d[3];X.fillStyle=d[3];
  const line=(a,b,c,e)=>{X.beginPath();X.moveTo(a,b);X.lineTo(c,e);X.stroke()},circle=(x,y,r)=>{X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.stroke()},box=(x,y,w,h)=>X.strokeRect(x,y,w,h);
@@ -4388,7 +4394,6 @@ function rollbackFloorColors971(){
     }
     state.floorColorRollback971=n;return n;
   }
-let updatePanels;
 function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.lineJoin='round';X.lineCap='round';X.strokeStyle=strong?'rgba(236,190,94,.78)':'rgba(216,224,229,.34)';X.lineWidth=strong?2.4:1.6;X.beginPath();X.moveTo(VIS.playerX*TILE+16,VIS.playerY*TILE+16);for(const q of path)X.lineTo(q.x*TILE+16,q.y*TILE+16);X.stroke();for(let i=0;i<path.length;i++){const q=path[i];X.fillStyle=strong?'rgba(237,190,91,.72)':'rgba(220,229,234,.48)';X.fillRect(q.x*TILE+14,q.y*TILE+14,4,4)}X.restore()}
   const HI_CACHE={floor:new Map(),wall:new Map(),terrain:new Map(),decor:new Map(),creature:new Map()};
   const ctx2=c=>{const q=c.getContext('2d');q.imageSmoothingEnabled=false;return q};
@@ -4992,3 +4997,162 @@ function resourcePostGeneration(){guaranteedResource48();P47.cullKey='';P47.deco
 function knowledgePostGeneration(){return onFloorGenerated56()}
 function polishPostGeneration(){polish78();VisibilityService.compute()}
 function qualityPostPostGeneration(){state.itemBiasZones94=state.itemBiasZones94||[];if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(state.specialFloor)installKeyTrial();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();biasItems();coherentDecor94();if(!state.specialFloor){normalizeDoors86();sanitizeWindows88()}if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()}
+function clearPathPreview(){
+  /* ===== MANRU v1.0 VERIFIED VISUAL + AUTOWALK PASS ===== */
+  VIS.hoverPath=null;
+  VIS.autoPath=null;
+  VIS.tapTrack=null;
+}
+function bindCanvasHover(){
+  /* r53: removed overwritten camera implementation. */
+  
+  
+  
+  // Continuous auto-tiled wall masses: fewer "boxed tiles", stronger architecture.
+  
+  
+  
+  
+  // Local light islands inspired by high-contrast pixel dungeons: readable near the player, deep elsewhere.
+  
+  
+  
+  // Architectural front faces, wall scrolls, and subdued non-interactive room dressing.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  C.addEventListener('mousemove',e=>{if(!state||isMobileViewport())return;const t=globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY);VIS.hoverPath=t?ReachabilityService.visiblePath(t.x,t.y):null}, {passive:true});
+  C.addEventListener('mouseleave',()=>VIS.hoverPath=null,{passive:true});
+}
+function startVisualAssetLoads(){
+  VF_IMG.creature.src=VF_ASSETS.creature_uri;
+  VF_IMG.tile.src=VF_ASSETS.tile_uri;
+  VF_IMG.decor.src=VF_ASSETS.decor_uri;
+  VF_IMG.item.src=VF_ASSETS.item_uri;
+}
+function createAutoStateBadge(){
+  vfAuto.id='vfAutoState';
+  document.getElementById('canvasWrap').appendChild(vfAuto);
+}
+function createZoomHud(){
+  zoomHud.id='zoomHud';
+  zoomHud.innerHTML='<button type="button" id="zoomOutBtn">－</button><span class="zoomVal" id="zoomVal">100%</span><button type="button" id="zoomInBtn">＋</button>';
+  document.getElementById('canvasWrap').appendChild(zoomHud);
+  zoomHud.querySelector('#zoomOutBtn').onclick=()=>adjustZoom(-1);
+  zoomHud.querySelector('#zoomInBtn').onclick=()=>adjustZoom(1);
+    C.addEventListener('click',e=>{if(performance.now()<window.__manruZoomSuppressUntil){e.preventDefault();e.stopImmediatePropagation()}}, {capture:true});
+    
+    /* r53: removed overwritten camera implementation. */
+    
+    updateZoomHud();
+}
+function initInspectOverlay(){
+    const wrap=inspectWrap();
+    if(wrap){
+      wrap.setAttribute('aria-hidden',wrap.classList.contains('open')?'false':'true');
+      wrap.addEventListener('pointerdown',()=>{if(DEBUG_BATTLE57.open)DEBUG_BATTLE57.inspectRelease57=null;},{capture:true});
+      const closeBackdrop=(e)=>{
+        const release=DEBUG_BATTLE57.open&&DEBUG_BATTLE57.inspectRelease57;
+        if(release&&inputNow()<release.until&&(e.pointerId===release.id||!e.pointerId&&Math.hypot(e.clientX-release.x,e.clientY-release.y)<12)){DEBUG_BATTLE57.inspectRelease57=null;e.preventDefault();e.stopImmediatePropagation();return;}
+        if(e.target!==wrap||!inspectOpen())return;e.preventDefault?.();e.stopPropagation?.();InputRouter.dispatch({type:'MODAL_CANCEL',source:'inspect-backdrop'})
+      };
+      wrap.addEventListener('click',closeBackdrop,{capture:true});
+    }
+    // Inventory inspect actions use the clean, non-duplicated item formatter.
+    // r34: obsolete inventory-inspect wrapper removed; r53 post-stage owns inspect rebinding.
+  
+    // If a stale timer/old sheet survived load, start from a clean state.
+    cancelLongPresses();
+  document.body.classList.remove('manru-inspect-open');
+  if(wrap&&!wrap.classList.contains('open'))wrap.setAttribute('aria-hidden','true');
+}
+function startTitleCanvas(){
+    /* ---------- title / hero select: full-screen art, real mobile scrolling ---------- */
+  
+  
+  
+  
+  
+  
+  
+  
+    drawTitleCanvas();
+    addEventListener('resize',()=>{const c=document.getElementById('titleCanvas49');if(c&&c.dataset.mobile!==(innerWidth<700?'1':'0'))drawTitleCanvas()},{passive:true});
+}
+function createPadToggle(){
+  /* ===== MANRU v5.8: PERFORMANCE / DENSITY / KOREAN UI HOTFIX ===== */
+  
+    // ---- mobile pad toggle
+    let pad58=document.getElementById('padToggle58');
+    if(!pad58){pad58=document.createElement('button');pad58.id='padToggle58';pad58.type='button';pad58.textContent='십';document.body.appendChild(pad58)}
+    try{if(localStorage.getItem('manruPad58')==='0')document.body.classList.add('pad58-hidden')}catch(error){ignoreError('pad visibility unreadable',error)}
+    pad58.onclick=e=>{e.preventDefault();e.stopPropagation();document.body.classList.toggle('pad58-hidden');try{localStorage.setItem('manruPad58',document.body.classList.contains('pad58-hidden')?'0':'1')}catch(error){ignoreError('pad visibility could not be saved',error)}};
+}
+function bindResumeListeners(){
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){clearTimeout(resumeTimer71);pageWasHidden=true;if(fullscreenWanted66)fullscreenResume66=true;return}
+      scheduleResume71('visible',35);
+    },true);
+    window.addEventListener('pageshow',e=>{
+      if(e.persisted)pageWasHidden=true;scheduleResume71('pageshow',0);
+    },{passive:true});
+    window.addEventListener('focus',()=>scheduleResume71('focus',65),{passive:true});
+    window.addEventListener('orientationchange',()=>scheduleResume71('orientation',100),{passive:true});
+    document.addEventListener('fullscreenchange',()=>scheduleResume71('fullscreen',80),{passive:true});
+    for(const canvas of [C,MC]){
+      canvas?.addEventListener?.('contextlost',e=>{e.preventDefault();clearHeldInput53();cancelAutoWalk()});
+      canvas?.addEventListener?.('contextrestored',()=>scheduleResume71('canvas-contextrestored',0),{passive:true});
+    }
+}
+function visualLoop(now=performance.now()){
+    try{
+    if(!state?.debugBattle57)advanceHeldInput(now);
+    if(!document.hidden&&!window.__MANRU_PAUSE_RENDER61){
+      const w=innerWidth,h=innerHeight;
+      if(document.body.dataset.manruScreen==='title'){
+        if(document.body.classList.contains('title-class-mode'))paintClassLighting(now);
+        else paintTitleLights(now);
+      }
+      if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
+      if(state?.debugBattle57)debugBattleFrame57(now);
+      if(state&&!state.debugBattle57){
+        dojoSleepFrame(now);updateVisualMotion(now);
+        const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;
+        if(pending||cameraRenderPending||now-RC.lastDraw>=budget){
+          const t=performance.now();if(pending)updateAll(true);else drawMap(false);const cost=performance.now()-t;RC.perf.lastCost=cost;RC.perf.frames++;RC.perf.ema+= (cost-RC.perf.ema)/Math.min(120,RC.perf.frames);RC.lastDraw=now;
+        }
+        if(mapModalOpen()&&now-RC.lastMini>180){drawMinimap(true);RC.lastMini=now}
+        if(now-RC.lastHud>120){updateAttackButton();RC.lastHud=now}
+      }
+    }
+    }catch(error){
+      if(!RC.renderRecoveryAt||now-RC.renderRecoveryAt>1000){
+        RC.renderRecoveryAt=now;console.error('[MANRU frame recovery]',error);
+        globalThis.__MANRU_RESUME_R6__?.schedule?.('frame-error',0);
+      }
+    }finally{requestAnimationFrame(visualLoop)}
+  }
+function updatePanels(){
+    if(!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),side=!!state.artifactDungeon46,location58=hudLocation58();
+    setText('floorTxt',location58.desktop);setText('regionTxt',location58.kind==='branch'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText('depthLore',location58.kind==='branch'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth('hpFill',(100*p.hp/p.maxHp)+'%');setText('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth('manaFill',(100*p.focus/st.maxFocus)+'%');setText('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
+    setText('atkTxt',st.atk);setText('defTxt',displayDef42(st.def));setText('evaTxt',st.eva);setText('wilTxt',st.will);setText('visTxt',st.vision);setText('weaponTxt',p.weapon?p.weapon.name:'맨손');setText('armorTxt',p.armor?p.armor.name:'경량복');setText('cloakTxt',p.cloak?p.cloak.name:'없음');setText('relicTxt',p.relic?p.relic.name:'없음');setText('trinketTxt',p.trinket?p.trinket.name:'없음');
+    setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
+    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`TURN ${state.turn} · ${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()} · 허기 ${Math.round(p.hunger)}${p.hunger<=0?' (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
+    const logs=state.log.slice(0,10),sig=logs.join('\u0001');if(sig!==RENDER_PERF_STATE.lastLog){RENDER_PERF_STATE.lastLog=sig;const log=document.getElementById('messageLog');if(log)log.innerHTML=logs.map(x=>'<div>'+x+'</div>').join('')}
+    setText('miniMonsters','적 '+visibleMonsters.length);setText('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText('miniThreat','허기 '+Math.round(p.hunger)+'%');
+    const eqSig=[p.weapon?.name,p.armor?.name,p.cloak?.name,p.relic?.name,p.trinket?.name].join('|');if(eqSig!==RENDER_PERF_STATE.lastEquip){RENDER_PERF_STATE.lastEquip=eqSig;bindEquipInspect()}
+    updateMobileHud();updateAttackButton();if(drawerOpen())renderMobileDrawer();RENDER_PERF_STATE.panelDirty=false;RENDER_PERF_STATE.lastPanel=performance.now();runPanelHooks();
+  }
+window.__manruZoomActive=false;
+window.__manruZoomSuppressUntil=0;
+globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay}]};
+const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};

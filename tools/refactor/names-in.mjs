@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Refactor tool: prints the top-level declaration names that live in one file segment of the work file.
-//   node tools/refactor/names-in.mjs <work.js> <file e.g. spine.js>
+//   node tools/refactor/names-in.mjs <work.js> <file e.g. boot.js>
 import fs from 'node:fs';
 import * as acorn from 'acorn';
 const [work, file] = process.argv.slice(2);

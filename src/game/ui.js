@@ -927,7 +927,7 @@ function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':se
     vision:'M2 12c5-9 15-9 20 0-5 9-15 9-20 0ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
   });
 const CLASSES=[
-  {id:'wanderer',name:'감찰관',color:'#d4c2a2',desc:'정부 특임 감찰관. 장비와 무술 선택에 따라 어느 길로든 성장할 수 있다.',hp:34,focus:9,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'장비와 무술을 조합해 자유롭게 성장한다.',skillCost:0,startWeapon:'조잡한 단검',startItems:[['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 조잡한 단검 · 감정부적 · 주먹밥'},
+  {id:'wanderer',name:'감찰관',color:'#d4c2a2',desc:'정부 특임 감찰관. 시작 무기는 없지만 감정부적이 하나 더 있어 미감정 장비 대응이 빠르다.',hp:34,focus:9,atk:5,def:1,eva:4,will:4,vision:7,skillName:'무술',skillDesc:'장비와 무술을 조합해 자유롭게 성장한다.',skillCost:0,startWeapon:'',startItems:[['감정부적',2],['주먹밥',1]],startLabel:'경량복 · 감정부적×2 · 주먹밥'},
   {id:'escort',name:'금위 표사',color:'#b78c65',desc:'정부 호위 임무 출신. 체급이 높고 초반 장비가 나빠도 버틴다.',hp:40,focus:7,atk:5,def:2,eva:2,will:4,vision:7,skillName:'무술',skillDesc:'튼튼한 체격으로 버티며 적의 빈틈을 노린다.',skillCost:0,startWeapon:'나무 몽둥이',startItems:[['말린 육포',2]],startLabel:'경량복 · 나무 몽둥이 · 말린 육포×2'},
   {id:'swordsman',name:'척후 검객',color:'#96a9b0',desc:'정부 척후대 출신. 공격·회피가 높고 무기 효율이 좋다.',hp:31,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'무술',skillDesc:'빠른 발과 날카로운 검으로 전장을 누빈다.',skillCost:0,startWeapon:'무딘 소검',startItems:[['엽전 엿',1],['주먹밥',1]],startLabel:'경량복 · 무딘 소검 · 엽전 엿 · 주먹밥'},
   {id:'archer',name:'척후 궁사',color:'#a6b18b',rules:{roar:'aim'},desc:'정부 척후대의 궁사. 사격을 준비해 갑옷과 회피의 빈틈을 꿰뚫는다.',hp:30,focus:10,atk:6,def:1,eva:5,will:3,vision:8,skillName:'명중',skillDesc:'제자리에 서 있으면 조준이 쌓인다. 이동하거나 공격하면 한 단계 줄고, 피해를 받거나 해로운 상태에 걸리면 풀린다.',skillCost:3,startWeapon:'사냥용 목궁',startItems:[['목제 화살',36],['감정부적',1],['주먹밥',1]],startLabel:'경량복 · 사냥용 목궁 · 목제 화살×36 · 감정부적 · 주먹밥'},
@@ -993,7 +993,6 @@ function pickupFeedbackBefore(ctx){ctx.invBefore54=state?.player?.inventory?.len
 function pickupFeedbackAfter(ctx){const after=state?.player?.inventory?.length||0;if(after>(ctx.invBefore54||0)){sfx54('pickup');try{if(!localStorage.getItem('manruHoldHint54')){localStorage.setItem('manruHoldHint54','1');toast('팁 · 맵의 칸을 길게 누르면 적·아이템·지형을 조사한다.')}}catch(error){ignoreError('hold-hint flag unreadable',error)}}}
 function blockWhileZooming(){return !window.__manruZoomActive}
 function blockWhileModalOpen(){return !(uiBlocking()&&!UX.modalOpening)}
-let inventoryFiltered;
   function tabCount(kind){
     const inv=state.player.inventory;if(kind==='all')return inv.length;if(kind==='gear')return inv.filter(i=>['weapon','armor','cloak'].includes(i.type)).length;if(kind==='food')return inv.filter(i=>i.type==='food').length;if(kind==='treasure')return inv.filter(i=>['relic','trinket'].includes(i.type)).length;if(kind==='potion')return inv.filter(i=>i.type==='potion').length;return 0;
   }
@@ -1098,3 +1097,193 @@ function createWardHud(){
   hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';
   document.body.appendChild(hud);
 }
+function createCombatHud(){
+  /* ===== MANRU v3.6 INTERNAL POLISH: zoom fix / combat HUD / inventory / log / materials ===== */
+  const combatHud=document.createElement('div');
+  combatHud.id='mfCombatHud';
+  combatHud.innerHTML='<div class="mfCH good" id="mfState"><span class="k">STATE</span><span class="v">탐색</span><span class="s">주변이 잠잠하다</span></div><div class="mfCH" id="mfThreat"><span class="k">THREAT</span><span class="v">적 0</span><span class="s">인접 0</span></div><div class="mfCH" id="mfGround"><span class="k">GROUND</span><span class="v">빈 바닥</span><span class="s">상호작용 없음</span></div><div class="mfCH" id="mfAction"><span class="k">ACTION</span><span class="v">이동</span><span class="s">공격 1.0턴</span></div>';
+  document.getElementById('canvasWrap')?.appendChild(combatHud);
+}
+function createHitFeed(){
+  // r54: dead pre-v49 panel wrapper removed.
+  
+    /* ---------- combat FX ---------- */
+    const feed=document.createElement('div');
+  feed.id='mfHitFeed';
+  document.getElementById('canvasWrap')?.appendChild(feed);
+}
+function createPotionTargetHud(){
+  ph.id='potionTargetHud';
+  ph.innerHTML='<div><b id="potionTargetName">약병 투척</b><span id="potionTargetDesc">사거리 4칸 · 목표 칸을 터치/클릭</span></div><button id="potionTargetCancel">취소</button>';
+  document.body.appendChild(ph);
+  ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+}
+function bindTitleButtons(){
+    enterBtn.onclick=showClassPick;
+  classBackBtn.onclick=showStartGate;
+}
+function createHoldHint(){
+    const hold=document.createElement('div');
+  hold.id='hold54';
+  document.body.appendChild(hold);
+}
+function createBossRuleBanner(){
+  rule.id='bossRule54';
+  document.getElementById('canvasWrap')?.appendChild(rule);
+}
+function createReleaseControls(){
+    const releaseStamp=document.createElement('div');
+  releaseStamp.id='releaseStamp70';
+  releaseStamp.textContent=RELEASE_INFO.stamp;
+  document.getElementById('canvasWrap')?.appendChild(releaseStamp);
+    const mb=document.querySelector('#mobileHud .mButtons');
+    const releaseGearButton=document.createElement('button');
+  releaseGearButton.id='releaseGear70';
+  releaseGearButton.type='button';
+  releaseGearButton.textContent='설정';
+  releaseGearButton.setAttribute('aria-label','설정');
+  mb?.appendChild(releaseGearButton);
+    const dg=document.createElement('button');
+  dg.id='releaseGearDesktop70';
+  dg.type='button';
+  dg.textContent='設';
+  dg.setAttribute('aria-label','설정');
+  document.body.appendChild(dg);
+    panel.addEventListener('pointerup',e=>{if(e.target.closest('button'))uiTone70(410,.025)},{passive:true});
+    
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /* ---------- release panel owner (physical routing is canonical in InputRouter) ---------- */
+    RuntimeState.ui.release=RC;
+    releaseGearButton.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});
+  dg.onclick=()=>InputRouter.dispatch({type:'TOGGLE_RELEASE',source:'release-hud'});
+  document.getElementById('rcClose70').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-panel'});
+    panel.addEventListener('pointerdown',e=>{if(e.target===panel)InputRouter.dispatch({type:'MODAL_CANCEL',source:'release-backdrop'})},{passive:true});
+}
+function decorateGhostPadButtons(){
+    /* ---------- 8-way movement parity (mobile & PC) ---------- */
+    const corners=[[-1,-1,'↖'],[1,-1,'↗'],[-1,1,'↙'],[1,1,'↘']];
+    const ghost=[...document.querySelectorAll('#mobileControls .pad .ghost')];
+    ghost.slice(0,4).forEach((b,i)=>{
+      const [dx,dy,g]=corners[i];const n=b.cloneNode(false);n.className='';n.textContent=g;n.dataset.diag70=`${dx},${dy}`;b.replaceWith(n);
+    });
+}
+function bindReleaseDiagnosticButtons(){
+    document.getElementById('rcQuickAudit70').onclick=()=>{document.getElementById('rcDiag70').textContent=JSON.stringify(audit70(),null,2)};
+    document.getElementById('rcPerf70').onclick=()=>{const total=bench70(20);document.getElementById('rcDiag70').textContent=`20회 강제 렌더 ${total}ms\n평균 ${(total/20).toFixed(2)}ms\nEMA ${RC.perf.ema.toFixed(2)}ms\nDPR ${VIEW.dpr}`};
+    document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));refreshSfx()};
+    document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled(!vibrationEnabled());refreshSfx();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
+    document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
+}
+function bindReleaseSettingsControls(){
+    const textScaleControl=document.getElementById('rcTextScale70');
+  textScaleControl.value=String(RC.textScale);
+    document.getElementById('rcTutorial70').onclick=resetTips70;
+}
+function startDesktopSide(){
+    // Cleaner, continuous carpet: a floor material, never a red wall-like rectangle.
+  
+  
+  
+  
+  
+    // Camera81 delegates to CameraState12; the visual loop consumes its dirty flag once per frame.
+  
+    // v9.1 used a cheaper alternate wall/light renderer while inspecting. That caused the texture
+    // to visibly change during a pan. Restore the same render pipeline for follow and inspect modes.
+    
+    
+    
+    
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    buildDesktopSide();
+    addEventListener('resize',()=>{if(innerWidth>1080){buildDesktopSide();updateDesktopSide962()}},{passive:true});
+}
+function resetToTitleScreen(){
+      
+  
+  
+  
+  
+  
+  
+      
+      
+  
+      
+  
+      // The earlier v10.0.2 boot code may already have restored manru984_active_run before this patch runs.
+      // At document boot there has been no user input yet, so discard that transient in-memory restore and show title.
+      state=null;
+      try{cancelAutoWalk()}catch(error){ignoreError('cancel auto-walk before the first run',error)}
+      try{MON_VIS?.clear?.()}catch(error){ignoreError('monster visual cache clear',error)}
+      try{FX.shakeUntil=0;FX.shakePower=0}catch(error){ignoreError('effects reset',error)}
+      document.body.classList.remove('run-active','end-screen95','title-class-mode');
+      setScreen('title');
+      // Both historical death keys and the dead-run ledger are inspected by the canonical eligibility rule.
+      RunLifecycle.refreshContinue();
+}
+function updateMobileHud(){
+    if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText('mFloor',location58.floor);setText('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText('mHunger',Math.round(p.hunger));
+    const hpBlock=document.querySelector('#mobileHud .hp');if(hpBlock)hpBlock.style.setProperty('--hp',(clamp(100*p.hp/p.maxHp,0,100)*.72)+'%');
+    const tag=document.getElementById('terrainTag');if(tag){tag.textContent=location58.challenge||location58.tag;tag.style.opacity=location58.challenge||['artifact','shop'].includes(location58.kind)?'.92':'0';tag.classList.toggle('withBoss58',!!boss)}
+    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs.x&&p.y===state.stairs.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
+    document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
+    const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
+    if(mapOpen49())syncLargeMinimap();
+    if(isMobileViewport()){const enemy=state.monsters.some(isThreatVisibleToPlayer),show=(act,on)=>document.querySelector(`#mobileControls [data-act="${act}"]`)?.classList.toggle('ux54-hidden',!on);show('attack',true);show('pickup',true);show('inv',true);show('rest',true);show('open',(p.blinkLevel||0)>0);show('skill',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));document.querySelector('#mobileHud .mobileFocusBlock')?.classList.toggle('ux54-show',enemy||p.focus<st.maxFocus)}
+    document.querySelectorAll('#mobileControls .actions.quickbar [data-act]').forEach(b=>b.setAttribute('aria-hidden','false'));if(hpBlock){const pct=Math.max(0,Math.min(100,(p.hp/Math.max(1,p.maxHp))*100));hpBlock.style.setProperty('--hp75',pct+'%')}
+  }
+function inventoryFiltered(){
+    const all=state.player.inventory.map((item,idx)=>({item,idx}));
+    const tab=inventoryTab,role=tab==='gear'?'gear':['recovery','food'].includes(tab)?'recovery':['strategy','potion'].includes(tab)?'strategy':['relic','treasure'].includes(tab)?'relic':null;
+    const rows=role?all.filter(v=>role56(v.item)===role):all;
+    const order={weapon:0,armor:1,cloak:2,upgrade:3,talisman:4,potion:5,food:6,relic:7,trinket:8};
+    rows.sort((a,b)=>(order[a.item.type]??9)-(order[b.item.type]??9)||((b.item.tier||0)-(a.item.tier||0))||publicName56(a.item).localeCompare(publicName56(b.item),'ko'));
+    // Keep the established order: ingredients follow recovery items; ammo follows strategy items.
+    const extra=role==='recovery'?'ingredient':tab==='strategy'?'ammo':null;
+    if(extra){const present=new Set(rows.map(v=>v.idx));for(const v of all)if(v.item.type===extra&&v.item.mineItem105!=='stone'&&!present.has(v.idx))rows.push(v)}
+    if(tab==='strategy')rows.sort((a,b)=>(a.item.type==='ammo'?1:0)-(b.item.type==='ammo'?1:0)||a.item.name.localeCompare(b.item.name,'ko'));
+    return rows;
+  }
+  function audit70(){
+    if(!state)return{ok:false,error:'게임 미시작'};
+    const invalidMon=(state.monsters||[]).filter(m=>m.x<0||m.y<0||m.x>=COLS||m.y>=ROWS||!PlacementService.monsterCanStand(m,m.x,m.y));
+    const invalidItems=(state.items||[]).filter(i=>i.x<0||i.y<0||i.x>=COLS||i.y>=ROWS);
+    const doors=state.map.flat().filter(t=>t===TT.DOOR).length;
+    const result={ok:!invalidMon.length&&!invalidItems.length,floor:state.floor,turn:state.turn,size:[COLS,ROWS],layout:state.layoutName,monsters:state.monsters.length,items:state.items.length,doors,reachable:state.specialFloor?'기믹층':reachable70(),invalidMonsters:invalidMon.length,invalidItems:invalidItems.length,renderEma:+RC.perf.ema.toFixed(2),repairedMonsters:state.repairedMonsters70||0};
+    return result;
+  }
+  function bench70(n=20){const t=performance.now();for(let i=0;i<n;i++)drawMap(true);return+(performance.now()-t).toFixed(2)}
+// Canonical runtime entrypoints populated once by their owning implementation blocks.
+/* updateAll is declared by the render coordinator below. */
+let runtimeLoopStarted57=0;
+function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof visualLoop==='function'}
+function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeReady57())throw new ReferenceError('canonical runtime entrypoints are not initialized');runtimeLoopStarted57=1;requestAnimationFrame(visualLoop);return true}
+  const hk={attack:'SPC',pickup:'G',open:'E',skill:'Q',inv:'I',rest:'R',summon0:'V',summon1:'T'},rn={attack:'칼',pickup:'줍',open:'점멸',skill:'무',inv:'행',rest:'숨',summon0:'',summon1:''};

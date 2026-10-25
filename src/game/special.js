@@ -2040,3 +2040,4 @@ function monCovers(mon,x,y){return footprintOffsets(mon).some(([ox,oy])=>mon.x+o
   const strictKeyFloors1004=new Set(strictLockFloors()||[]);
 function feelingPostGeneration(){if(state&&!state.monsters.some(m=>m.boss)){applyFeeling();applyMiniVault62();VisibilityService.compute();vfBuildDecor()}}
 function locksPostGeneration(){clearLegacyTrial();refineF2Floor96();densifySpecial96();installLockPlan();if(window.__MANRU_RUNTIME81__?.Integrity81)window.__MANRU_RUNTIME81__.Integrity81.repair();VisibilityService.compute()}
+const RUMOR_SPACE_VERSION1030='r58.1-rumor-spaces';

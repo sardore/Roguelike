@@ -5,7 +5,6 @@ function worldTargetSnapshot(){if(!WORLD_TARGET)return null;return{kind:WORLD_TA
 function migrateRetiredItems(run){if(!run?.player)return{inventory:0,ground:0,pending:0};const qty=i=>Math.max(1,Number.isSafeInteger(i?.count)?i.count:1),inv=run.player.inventory||[],ground=run.items||[],pending=run.pendingGroundItems57||[];let inventory=0,world=0,queued=0;run.player.inventory=inv.filter(i=>{if(!retiredPainterItem57(i))return true;inventory+=qty(i);return false});run.items=ground.filter(i=>{if(!retiredPainterItem57(i))return true;world+=qty(i);return false});run.pendingGroundItems57=pending.filter(q=>{if(!retiredPainterItem57(q?.item))return true;queued+=qty(q.item);return false});for(const slot of ['weapon','armor','cloak','relic','trinket'])if(retiredPainterItem57(run.player[slot])){inventory+=qty(run.player[slot]);run.player[slot]=null}RuntimeState.persistence.retiredItemMigration57={version:1,inventory,ground:world,pending:queued,total:inventory+world+queued};return RuntimeState.persistence.retiredItemMigration57}
 function captureGenerationSnapshot(){return{state:structuredClone(state),cols:COLS,rows:ROWS}}
 function restoreGenerationSnapshot(snap){if(!snap?.state)return false;state=structuredClone(snap.state);COLS=snap.cols;ROWS=snap.rows;return true}
-let saveGame;
 /* ===== NEW/LOAD LIFECYCLE =====
    One public entrypoint per kind (RunLifecycle.runNew / runLoad). Each runs its before-step, the core once, then its
    after-step: beforeNewRun/afterNewRun and beforeLoad/afterLoad below list the steps in the order they run.
@@ -850,3 +849,51 @@ function elementsPreTurn(){return ensure74()}
 function autosavePostTurn(){if(state&&!state.dead&&!state.victory)SaveService.request('turn')}
 function potionsPostGeneration(){pstate();state.tempFields=[];rewardRooms()}
 function talismanPostGeneration(){ensure74();state.tempTerrain74=[];state.elementFields74=[]}
+function bindCanvasAndKeyListeners(){
+  window.addEventListener('blur',clearHeldInput53);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
+  C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:pointerdown');
+  C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:pointerup');
+  C.addEventListener('click',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas-target:click');
+  document.addEventListener('keyup',InputRouter);
+  InputRouter.noteListener('document:keyup');
+}
+function bindKeydownRouter(){
+  document.addEventListener('keydown',InputRouter,true);
+  InputRouter.noteListener('document:keydown');
+}
+function bindWheelRouter(){
+    /* Desktop zoom owns wheel/trackpad input at window capture, before legacy handlers can quantize it. */
+    window.addEventListener('wheel',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('window:wheel');
+}
+function bindContextMenuRouter(){
+    // Replace only the actual player actor. NPCs/monsters keep the existing renderer.
+      
+    
+  
+    // Desktop right click and mobile long press share WORLD_INSPECT through InputRouter.
+    C.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('canvas:contextmenu');
+    document.getElementById('runtimeInput81')?.addEventListener('contextmenu',InputRouter,{capture:true,passive:false});
+  InputRouter.noteListener('world:contextmenu-inspect');
+}
+function saveGame(){
+      const ok=writeRun().ok,c=ok?SaveService.recover().candidate:null;
+      toast(ok&&c?`기록 저장 완료 · ${c.meta.floor}층 T${c.meta.turn}`:'기록 저장에 실패했다.');RunLifecycle.refreshContinue();return !!(ok&&c);
+    }
+function rest(){const act=playerAction57('rest',{stunMessage:'몸이 굳어 쉬지 못했다.'});if(!act.ok)return !!act.consumed;cancelAutoWalk();commitPlayerAction57(act,1);return true}
+  function closeAdjacentDoor964(quiet=false){
+    const act=playerAction57('closeDoor',{stunMessage:'몸이 굳어 문을 닫지 못했다.'});if(!act.ok)return !!act.consumed;const cands=openDoorCandidates964();if(!cands.length){if(!quiet)toast('닫을 열린 문이 없다.');return false}
+    const d=cands[0],why=doorCloseBlock964(d.x,d.y);if(why){if(!quiet)toast(why);return false}
+    cancelAutoWalk();setTerrainTile58(state.map,d.x,d.y,TT.DOOR);doorFX(d.x,d.y);addLog('문을 닫았다.');VisibilityService.compute();commitPlayerAction57(act,1);return true;
+  }
+  function bootScreen1002(){
+    if(SCREEN1002.booted)return;SCREEN1002.booted=true;
+    if(state&&!state.dead&&!state.victory){setScreen('game');return}
+    // r57: legacy active-run restore is intentionally absent; only save1004 may resume a run after full initialization.
+    setScreen(state&&(state.dead||state.victory)?'ending':'title');
+  }

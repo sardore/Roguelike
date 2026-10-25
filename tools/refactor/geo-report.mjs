@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only analysis for the last domains of spine.js (map generation, special floors, branch dungeons).
+// Read-only analysis for the last domains of boot.js (map generation, special floors, branch dungeons).
 // Seeds by name, then every unlabeled declaration joins the cluster that is its only caller; a declaration
 // called from several clusters is shared and joins the base (mapgen), which must load first.
 //   node tools/refactor/geo-report.mjs <work.js> [--list <cluster>]
@@ -22,7 +22,7 @@ const ast = acorn.parse(text, { ecmaVersion: 'latest', locations: true });
 const body = ast.body[0].expression.callee.body, top = body.body, A = analyze(ast);
 const namesOf = (s) => (s.type === 'FunctionDeclaration' ? [s.id.name] : s.type === 'VariableDeclaration' ? s.declarations.filter((d) => d.id.type === 'Identifier').map((d) => d.id.name) : []);
 const lines = (s) => s.loc.end.line - s.loc.start.line + 1;
-const spine = top.filter((s) => segOf(s.start) === 'spine.js');
+const spine = top.filter((s) => segOf(s.start) === 'boot.js');
 const cl = new Map();
 for (const s of spine) { const n = namesOf(s)[0]; let c = 'unlabeled'; if (n) for (const [k, re] of Object.entries(SEEDS)) if (re.test(n)) { c = k; break; } cl.set(s, c); }
 const enclosing = (pos) => top.find((s) => pos >= s.start && pos < s.end);

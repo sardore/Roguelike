@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only analysis of what is left in spine.js: every remaining top-level declaration is assigned to the already split
+// Read-only analysis of what is left in boot.js: every remaining top-level declaration is assigned to the already split
 // domain file it is most connected to (references it makes into that file + references that file makes to it).
 // A declaration with no clear winner (winner under 40% of its links, or fewer than 2 links) is "shared".
 //   node tools/refactor/affinity-report.mjs <work.js> [--list <domain>]
@@ -39,5 +39,5 @@ for (const s of spine) if (dom.get(s) === 'loose') { const l = links.get(s) || {
 const li = args.indexOf('--list');
 if (li >= 0) { for (const s of spine) if (dom.get(s) === args[li + 1]) console.log(namesOf(s)[0] || '(loose)', lines(s)); process.exit(0); }
 for (const s of spine) { const d = dom.get(s); counts[d] = (counts[d] || 0) + 1; sizes[d] = (sizes[d] || 0) + lines(s); }
-console.log('spine.js remaining:', spine.length, 'statements,', spine.reduce((a, s) => a + lines(s), 0), 'lines');
+console.log('boot.js remaining:', spine.length, 'statements,', spine.reduce((a, s) => a + lines(s), 0), 'lines');
 for (const d of Object.keys(sizes).sort((a, b) => sizes[b] - sizes[a])) console.log(d.padEnd(18), String(counts[d]).padStart(6), String(sizes[d]).padStart(8));

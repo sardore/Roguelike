@@ -327,9 +327,9 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
   }
 /* ===== MANRU v9.6.7: COMMON AMMUNITION / BOW-BIASED FLOOR LOOT ===== */
 const AMMO_TYPES=[
-    {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:10,spawnMax:18,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 한 묶음에 많이 들어 있어 가장 흔하게 발견된다.'},
-    {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:8,spawnMax:14,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 약간 더 강한 타격을 준다.'},
-    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:5,spawnMax:10,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 명중 시 적 방어를 2만큼 무시한다.'}
+    {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:36,minFloor:1,weight:55,spawnMin:5,spawnMax:9,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 바닥에서는 작은 화살 묶음으로 발견된다.'},
+    {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:30,minFloor:2,weight:32,spawnMin:4,spawnMax:7,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 묵직한 충격을 준다.'},
+    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:24,minFloor:7,weight:13,spawnMin:3,spawnMax:5,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 단단한 방어를 꿰뚫는 데 알맞다.'}
   ];
   const ammoStacks=()=>state?.player?.inventory?.filter(i=>i?.type==='ammo'&&(i.count||0)>0)||[];
   const totalAmmo=()=>ammoStacks().reduce((n,i)=>n+(i.count||1),0);
@@ -764,7 +764,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
     {name:'빙결부적',type:'talisman',talismanKind:'elem_ice',element74:'ice',seal:'冰',tier:2,rarity:'rare',stackMax:3,minFloor:3,weight74:1.10,ability:'주변 급랭·빙결 · 역류 위험',desc:'주변 열을 빼앗아 적을 굳힌다. 냉기 저항이 없으면 독자의 관절도 함께 얼어붙는다.'},
     {name:'뇌전부적',type:'talisman',talismanKind:'elem_shock',element74:'shock',seal:'雷',tier:2,rarity:'rare',stackMax:3,minFloor:4,weight74:1.05,ability:'주변 연쇄 뇌격 · 역류 위험',desc:'전류가 가까운 생체와 금속을 따라 튄다. 뇌전 저항이 없으면 독자도 감전된다.'},
     {name:'목령부적',type:'talisman',talismanKind:'elem_grass',element74:'grass',seal:'木',tier:2,rarity:'rare',stackMax:3,minFloor:5,weight74:1.05,ability:'뿌리·독분 폭주 · 역류 위험',desc:'식물의 생기가 폭주해 뿌리와 독분을 뿜는다. 목령 저항이 없으면 독자도 포자에 잠식된다.'},
-    {name:'강화부적',type:'talisman',talismanKind:'upgrade',seal:'強',tier:1,rarity:'rare',stackMax:15,minFloor:1,weight74:.58,ability:'무기 강화 +1 · 방어구 점감 강화',desc:'장비 하나를 한 단계 개량한다. 방어구는 첫 강화가 원본 DEF에 따라 약 1.8~2.0 오르고, 강화 횟수가 늘수록 매회 상승량이 완만하게 감소한다. 실제 계산은 소수 DEF를 유지하지만 화면에는 반올림한 정수 DEF만 표시한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 되돌릴 수 없다.'},
+    {name:'강화부적',type:'talisman',talismanKind:'upgrade',seal:'強',tier:1,rarity:'rare',stackMax:15,minFloor:1,weight74:.58,ability:'무기 강화 +1 · 방어구 점감 강화',desc:'장비 하나의 기본 성능을 한 단계 개량한다. 강화 횟수 제한은 없지만 이미 소비한 강화는 다른 장비로 되돌릴 수 없다.'},
     {name:'폭발부적',type:'talisman',talismanKind:'blast',seal:'爆',tier:2,rarity:'rare',stackMax:2,minFloor:3,weight74:1.70,targeted:true,targetRange:5,ability:'목표 3×3 고위력 폭발·밀치기',desc:'선택한 지점의 진형을 터뜨려 층이 깊어질수록 강해지는 피해를 주고 바깥으로 밀어낸다.'},
     {name:'등명부',type:'talisman',talismanKind:'mapping',seal:'明',tier:2,rarity:'rare',stackMax:2,minFloor:3,weight74:.62,ability:'층 지도와 숨은 문 탐지',desc:'불빛이 벽의 틈을 훑어 현재 층의 구조와 숨은 문을 드러낸다.'},
     {name:'호신부',type:'talisman',talismanKind:'ward',seal:'護',tier:2,rarity:'rare',stackMax:3,minFloor:4,weight74:.68,ability:'보호막 10턴',desc:'몸 둘레에 얇은 금빛 장막을 두른다. 보호막 동안 DEF가 오른다.'},
@@ -1056,6 +1056,8 @@ function blockWhileCooking(){return !V57.cookOpen}
   function effectLog56(text){return/(HP \+|기 \+|WILL 강화|신속|DEF 강화|연막|화염|독·출혈|약화 해제)/.test(String(text))}
   function qtyKind56(kind){return(state?.player?.inventory||[]).filter(i=>i.type==='potion'&&i.potionKind===kind).reduce((s,i)=>s+(i.count||1),0)}
 window.MANRU_POTIONS=POTIONS;
+for(const p of POTIONS)if(!CONSUMABLES.some(x=>x.name===p.name))CONSUMABLES.push(p);
+for(const t of TALISMANS)if(!CONSUMABLES.some(i=>i.name===t.name))CONSUMABLES.push(t);
 window.__MANRU_CLEAN_INSPECT53={item:itemHtml};
 window.MANRU_TALISMANS=TALISMANS;
 window.__MANRU_TALISMAN_PUBLIC__={known:knownTalisman56,name:publicTalismanName56,seal:publicTalismanSeal56,app:talismanApp56};
@@ -1089,3 +1091,78 @@ function curseMonsterAttack(next,mon,...rest){const r=next(mon,...rest),power=cu
 function curseStoryPostTurn(ctx){if(!state||state.dead||state.victory)return;if(tickActorCurses(state.player))updateAll();globalThis.storyTick992?.()}
 function foodPostGeneration(){ensureFoodState();foodFloorRewards57()}
 function pacingPostGeneration(){pacing70();state.repairedMonsters70=repairMonsters70();VisibilityService.compute()}
+function createTalismanTargetHud(){
+  targetHud.id='talismanTarget56';
+  targetHud.innerHTML='<div><b id="talismanTargetTitle">부적 목표</b><span id="talismanTargetText">목표 칸을 터치/클릭</span></div><button id="talismanCancel56">취소</button>';
+  document.body.appendChild(targetHud);
+}
+function createFoodTargetPanel(){
+  foodTargetPanel.id='foodTarget57';
+  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
+  document.body.appendChild(foodTargetPanel);
+  foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
+}
+function createCookingPanel(){
+  cookingPanel.id='cook57';
+  cookingPanel.innerHTML=`<div class="cookSheet57"><span class="uiCorners63" aria-hidden="true"></span><div class="cookHead57"><div><h2>비방 조리</h2><small id="cookStation57">솥에서 재료를 실험한다.</small></div><button class="uxClose" id="cookClose57" aria-label="닫기">×</button></div><div class="cookPreview57" id="cookPreview57">재료를 최대 ${COOKING_INGREDIENT_LIMIT57}종 고르시오.</div><div class="cookBody57"><div class="cookInv57" id="cookInv57"></div><section class="cookBook57"><h3>조리 도감</h3><div id="cookBookList57"></div></section></div><div class="cookFoot57"><button id="cookClear57">선택 해제</button><button class="primary" id="cookDo57">조리</button></div></div>`;
+  document.body.appendChild(cookingPanel);
+  cookingPanel.querySelector('#cookClose57').onclick=e=>{e.preventDefault();e.stopPropagation();closeCooking()};
+  cookingPanel.querySelector('#cookClear57').onclick=()=>{V57.selected.clear();renderCooking()};
+  cookingPanel.querySelector('#cookDo57').onclick=ActionDispatcher.handleEvent;
+}
+function createTacticalBelt(){
+  belt.id='tacticalBelt62';
+  document.getElementById('canvasWrap')?.appendChild(belt);
+}
+function createFusionPanel(){
+    
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  fusion.id='fusion74';
+  fusion.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b>부적 합성</b><small>감정된 기본 부적 2장을 태워 제어된 고급 부적으로 만든다.</small></div><button class="uxClose" data-f74close aria-label="닫기">×</button></div><div id="fusion74body"></div></div>';
+  document.body.appendChild(fusion);
+}
+function setupInfusionPanels(){
+    const gearInfusionPanel=document.createElement('div');
+  gearInfusionPanel.id='gear74';
+  gearInfusionPanel.innerHTML='<div class="f74sheet"><span class="uiCorners63" aria-hidden="true"></span><div class="f74head"><div><b id="gear74title">장비 선택</b><small id="gear74sub">적용할 장비를 고른다.</small></div><button class="uxClose" data-g74close aria-label="닫기">×</button></div><div id="gear74body"></div></div>';
+  document.body.appendChild(gearInfusionPanel);
+    fusion.querySelector('[data-f74close]').onclick=()=>closeFusion();
+  gearInfusionPanel.querySelector('[data-g74close]').onclick=()=>closeGear();
+    /* equipment effects */
+    /* r15: earth stagger guard is handled by canonical applyKnockback. */
+  
+    // Blindness duration belongs to tickMonsterCombatStatuses57 for both game and arena.
+  
+    /* inventory dispatch + visible marks */
+    // r30: v7.4 talisman-family dispatch is integrated in canonical useInventoryItem.
+    targetHud74()?.querySelector('#talismanCancel56')?.addEventListener('click',e=>{if(!V74.target)return;e.preventDefault();e.stopImmediatePropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})},{capture:true});
+}
+  function safeBlink56(x,y){return validatePlayerTransfer57(x,y,{cause:'talisman-blink'}).ok}
+  function castTalisman56(tx,ty){const action=playerAction57('modal-action',{uiOwner:'talismanTarget56'});if(!action.ok)return false;
+    const a=V56.target;if(!a||!state)return false;const p=state.player,ox=p.x,oy=p.y;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(a.wasUnknown?'부적의 기운이 그곳까지 닿지 않는다.':`사거리 ${a.range}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('아직 확인하지 못한 칸이다.');return false}
+    if(a.kind==='blink'){if(!safeBlink56(tx,ty)){toast('현재 열린 진행 구역 안의 안전한 칸만 접을 수 있다.');return false}const landing=resolvePlayerLanding57(tx,ty,{cause:'talisman-blink',resetVisual:true});if(!landing.ok){toast('축지할 수 없는 칸이다.');return false}identifyTalisman56(a.kind,'사용 효과 관찰');projectileFX(ox,oy,tx,ty,'#d9be7b');burst(p.x,p.y,'#e2cb87',18,.72);addLog('축지부: 본 공간을 접어 이동했다.')}else{
+      if(typeof lineClear==='function'&&!lineClear(p.x,p.y,tx,ty)){toast('부적의 기운이 벽에 막힌다.');return false}
+      identifyTalisman56(a.kind,'사용 효과 관찰');
+      const targets=[...state.monsters].filter(m=>isHostileTarget57(m)&&!m.hidden&&entityDistance57(m,{x:tx,y:ty})<=1);if(targets.length)markCombatActivity57(`talisman-${a.kind}`);
+      if(a.kind==='blast'){const dmg=28+Math.floor((state.floor-1)/5)*6;for(const m of targets){const d=damageEntity(m,m.boss?Math.max(6,Math.floor(dmg*.80)):dmg);m.hitUntil=performance.now()+160;if(d>0)floatText(m.x,m.y,'-'+d,'#f0c37c',14);impact(m.x,m.y,'#e1b26d',5);if(m.hp<=0)killMonster(m);else{const dx=Math.sign(m.x-tx)||Math.sign(m.x-p.x),dy=Math.sign(m.y-ty)||Math.sign(m.y-p.y);if(dx||dy)resolveForcedMovement57(m,{x:m.x-dx,y:m.y-dy},1,{mode:'push',hostile:true,creditPlayer:true})}}addLog(`폭발부적: ${targets.length}체 파쇄.`);burst(tx,ty,'#e3ad5d',26,1.1)}
+      else if(a.kind==='bind'){for(const m of targets){if(m.boss){m.controlCd54=Math.max(0,m.controlCd54||0);if(m.controlCd54<=0){m.stunned=Math.max(m.stunned||0,1);m.controlCd54=4;m.controlCdTurn54=state.turn}}else m.stunned=Math.max(m.stunned||0,4);floatText(m.x,m.y,m.boss?'봉박 1':'봉박 4','#d8c58a',10)}addLog(`봉박부: ${targets.length}체 봉인 · 일반 적 4턴.`);burst(tx,ty,'#c9b77a',20,.65)}
+    }
+    consumeRef(a.item);cancelTalismanTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"castTalisman56"}).value;return true
+  }

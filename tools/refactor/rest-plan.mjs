@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only plan for what is left in spine.js after the domain moves: each remaining declaration gets a candidate domain
+// Read-only plan for what is left in boot.js after the domain moves: each remaining declaration gets a candidate domain
 // (the split domain it is most connected to, or for the cross-cutting rest a keyword category), then the references between
 // the candidate domains and the load-time reads that fix the order are counted.
 //   node tools/refactor/rest-plan.mjs <work.js> [--list <cat>]
@@ -45,7 +45,7 @@ const li = args.indexOf('--list');
 if (li >= 0) { for (const s of spine) if (cat.get(s) === args[li + 1]) console.log((namesOf(s).join(',') || '(loose)'), lines(s)); process.exit(0); }
 const count = {}, sizes = {};
 for (const s of spine) { const c = cat.get(s); count[c] = (count[c] || 0) + 1; sizes[c] = (sizes[c] || 0) + lines(s); }
-console.log('remaining in spine.js:', spine.length, 'statements,', spine.reduce((a, s) => a + lines(s), 0), 'statement lines');
+console.log('remaining in boot.js:', spine.length, 'statements,', spine.reduce((a, s) => a + lines(s), 0), 'statement lines');
 for (const c of Object.keys(sizes).sort((a, b) => sizes[b] - sizes[a])) console.log(c.padEnd(18), String(count[c]).padStart(6), String(sizes[c]).padStart(8));
 const C = ['world', 'layout', 'turn', 'classes', 'debug', 'rest', 'loose'];
 const refs = {}, eager = {}; const bmp = (o, a, b) => { (o[a] ||= {})[b] = (o[a][b] || 0) + 1; };

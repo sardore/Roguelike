@@ -20,7 +20,7 @@
 //   "names": { "<id>": "functionName" }, "dest": { "functionName": "combat.js" },   inline function -> declaration in that file
 //   "autoName": { "suffix": "Route", "defaultDest": "save.js" }   instead of "names"/"dest": the name is the id without digits, in camelCase, plus
 //                                                                 the suffix (a trailing "-pre"/"-post" stays; "names" may give one entry another name); the file is the one whose declarations
-//                                                                 the function uses most (outside spine.js), else defaultDest
+//                                                                 the function uses most (outside boot.js), else defaultDest
 //   "removeFunctions": ["registerMinimapHook"],                   deleted when nothing but the handled calls used them
 //   "removeMembers": [{ "decl": "TurnEngine", "member": "register" }]   a method/property deleted from the declaration's object literal
 //                    [{ "global": "NAME", "member": "register" }]          ... or from the object literal assigned to globalThis.NAME at the top level
@@ -65,7 +65,7 @@ function plurality(node) {
   for (const r of A.refs) {
     if (r.node.start < node.start || r.node.end > node.end || !r.binding || r.binding.scope !== closure) continue;
     const f = segOf(r.binding.idNode.start);
-    if (f === 'spine.js' || f === 'qa/qa.js' || f === 'kernel.js') continue; // kernel is used by everything: it says nothing about where a function belongs
+    if (f === 'boot.js' || f === 'qa/qa.js' || f === 'kernel.js') continue; // kernel is used by everything: it says nothing about where a function belongs
     cnt[f] = (cnt[f] || 0) + 1;
   }
   return Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]?.[0] || null;

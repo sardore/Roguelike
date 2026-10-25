@@ -1090,7 +1090,6 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     if(canEdit(pos.cx,pos.cy,[TT.FLOOR]))setTerrainTile58(state.map,pos.cx,pos.cy,core);
     addLandmark('가지 감실',pos,'annex');return pos;
   }
-  let buildNormal;
   function carveInterior(m,x,y,t=TT.FLOOR){if(insideMapInterior(x,y))setTerrainTile58(m,x,y,t)}
   function borderRoom(x,y){for(const r of state.rooms||[]){if(x<r.x||x>=r.x+r.w||y<r.y||y>=r.y+r.h)continue;if(x===r.x||x===r.x+r.w-1||y===r.y||y===r.y+r.h-1)return r}return null}
   function corridorCell(m,x,y,open=false){if(!insideMapInterior(x,y))return;const br=borderRoom(x,y);if(br){if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,open?TT.FLOOR:TT.DOOR)}else if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.FLOOR)}
@@ -2375,7 +2374,7 @@ function populateFloor2Branches(){
  }
  layout.encounterAudit68=audit;
 }
-const GenerationValidator={
+const GenerationValidator=Object.freeze({
  normal(strictFloor){
   const authored=[23,24].includes(state.floor);if(authored){const check=globalThis.__MANRU_SPECIAL_FLOORS60__?.validate?.();state.specialProgressionValidation57=check;if(!check?.ok)return{accepted:false,failure:{specialProgression:check},rejection:{specialProgression:true}}};
   if(state.floor===1){const tutorial=tutorialEntryAudit();state.tutorialEntryAudit60=tutorial;if(!tutorial.ok)return{accepted:false,failure:{tutorial},rejection:{tutorial:true}};const reach=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}).cells,encounters=state.monsters.filter(m=>m.hp>0&&monsterRewardPolicy(m).xp&&reach.has(k(m.x,m.y))),xp=encounters.reduce((n,m)=>n+(m.xp||0),0);state.earlyProgression58={xp,required:xpRequirementForLevel57(2),encounters:encounters.length,ok:xp>=xpRequirementForLevel57(2)};if(!state.earlyProgression58.ok)return{accepted:false,failure:{earlyProgression:state.earlyProgression58},rejection:{earlyProgression:true}}}
@@ -2391,8 +2390,14 @@ const GenerationValidator={
   try{finalSurface=lockSurfaceAudit96()||null}catch(e){finalSurface={ok:false,error:String(e)}}
   const accepted=!!finalLock?.ok&&(finalProgress?.ok!==false)&&(finalSurface?.ok!==false);
   return{accepted,finalLock,finalProgress,finalSurface,failure:{lock:finalLock,progress:finalProgress,surface:finalSurface},rejection:{keys:true}};
- }
-};
+ },
+legendary:function legendaryCandidate10(){const progression=keyProgressAudit48(false),all=ReachabilityService.keyWalk(new Set(['iron','jade'])),islands=[],badItems=[],badRooms=[];let walkable=0,ordinaryDoors=0;const forbidden=new Set([TT.FLOOR,TT.DARK_WOOD,TT.MOON_STONE,TT.GILDED_FLOOR,TT.BRAZIER,TT.CRATE,TT.JAR,TT.CACHE,TT.STONE_PILLAR,TT.PAPER_BRIDGE]);let reused=0;
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(forbidden.has(t))reused++;if(t===TT.DOOR)ordinaryDoors++;if(!tileBlocks(t)||t===TT.LOCKED_GATE){walkable++;if(!all.seen.has(key46(x,y)))islands.push({x,y,t})}}
+ for(const it of state.items)if(!all.seen.has(key46(it.x,it.y)))badItems.push({name:it.name,x:it.x,y:it.y});
+ for(const r of state.rooms){let n=0;for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(all.seen.has(key46(x,y)))n++;if(!n)badRooms.push(r.index)}
+ return{ok:progression.ok&&!islands.length&&!badItems.length&&!badRooms.length&&!reused,seed:state.legendSeed49,progression,walkable,islands:islands.slice(0,20),islandCells:islands.length,badItems,badRooms,ordinaryDoors,reused,rooms:state.rooms.length,buildings:state.legendBuildings49.length,landmarks:state.legendObjects49.filter(x=>x.kind.startsWith('monument')).length,water:state.map.flat().filter(t=>t===TT.WATER).length,bridges:state.map.flat().filter(t=>t===LEGEND_TILES49[state.legendTheme47].bridge).length};
+}
+});
 const NormalFloorGenerator=Object.freeze({
 orderArchitectureCandidates(items){
   // The architecture pool has at most 20 rooms (or four module functions).
@@ -3271,7 +3276,7 @@ function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermissi
     })
   }
   function strictLockFloors(){return [...new Set([...LOCK_SPECIAL.keys(),...LOCK_NORMAL.keys()])]}
-  const floorSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.GOLD]);
+  const floorSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.GOLD,TT.PORTAL]);
   function floor21Stand981(x,y,opt={}){
     if(!in980(x,y))return false;const t=tileReveal981(x,y,opt);
     // 21F generation must never pass merely because the current run happens to carry a temporary hazard ward.
@@ -3312,7 +3317,7 @@ function resolveOccupancyInteraction57(actor,target){
   }
   function shortestNodes93(adj,s,t){const q=[s],prev=Array(adj.length).fill(-2);prev[s]=-1;for(let i=0;i<q.length;i++){const u=q[i];if(u===t)break;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}if(prev[t]===-2)return[];const out=[];for(let u=t;u!==-1;u=prev[u])out.push(u);return out.reverse()}
   function farNode93(adj,s){const q=[s],d=Array(adj.length).fill(-1);d[s]=0;for(let i=0;i<q.length;i++){const u=q[i];for(const v of adj[u])if(d[v]<0){d[v]=d[u]+1;q.push(v)}}let b=s;for(let i=0;i<d.length;i++)if(d[i]>d[b])b=i;return{node:b,dist:d[b],d}}
-  const plannedSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.KEY_TILE,TT.PAVILION,TT.FLOOR,TT.GOLD]);
+  const plannedSet980=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.CARPET,TT.STONE_PATH,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.LOCKED_GATE,TT.KEY_TILE,TT.PAVILION,TT.FLOOR,TT.GOLD,TT.PORTAL]);
   const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
 function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
@@ -3370,3 +3375,5 @@ function regionPrePreGeneration(){state.landmarks71=[];state.landmarkCells71={};
 function regionPostPostGeneration(){enhanceNormal71();enhanceSpecial71();ensureNormalConnectivity();repairEntities71();VisibilityService.compute();vfBuildDecor();;}
 function runtimePostGeneration(){Integrity81.repair();ConnectedDecor81.build();queuePlace81()}
 function qualityPrePreGeneration(){state.keyTrial94=null;state.outerWall94={};state.itemBiasZones94=[];state.itemBiasMoved94=0;state.coherentDecorCount94=0;state.choiceSideRooms95=0;state.roomGraph93=null;state.roomGraph92=null;state.roomTemplate93=null;state.roomTemplate92=null}
+function buildNormal(m,z){state.fixedStart=null;state.fixedExit=null;state.routeTags=[];state.featureRooms=[];state.layoutMode85=null;state.themedRooms87=[];state.__arch93=++V93.serial;graphOrganic93(m,z);state.layoutName=['청풍루','수묵원','유혹의 내실','지하 장고','만루의 심장'][z]+' · '+state.layoutName;}
+function resetPortal46(){if(state&&!state.artifactDungeon46)state.artifactPortal46=null}

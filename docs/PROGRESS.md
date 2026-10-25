@@ -1,4 +1,5 @@
 # 분할 진행 기록
+> `spine.js`는 `boot.js`로 개명되었다(아래 기록은 당시 이름으로 적는다).
 
 푸시할 때마다 `node tools/progress.mjs` 출력으로 갱신한다. 줄 수는 `src/game/*.js` 파일의 줄 수, 잔여는 `spine.js`의 최상위 선언 수와 느슨한 최상위 문장(호출·등록·대입) 수다. `spineLines`·`spineDeclarations`·`spineLooseStatements`·`suffixFunction`은 `npm run check`가 기준선(`tools/structure-baseline.json`)과 비교해 늘면 실패한다.
 
@@ -107,6 +108,14 @@
 | P5→items | spine 선언 → items.js (P3로 풀린 것) | 5568 | 111 / 485 | 744 | 78.8% | - |
 | P5→monsters | spine 선언 → monsters.js (P3로 풀린 것) | 5568 | 109 / 485 | 744 | 78.8% | - |
 | P4 설계 | P3 이후 이동 22개 완료, P4~P8 설계안(docs/P4_DESIGN.md) | 5568 | 109 / 485 | 744 | 78.8% | - |
+| P4 B 부팅 함수화 | 부팅 문장 묶음 → 도메인 함수(`boot-fn`), let→함수 6, 그리기 훅·터레인 훅·`MINIMAP_PIPELINE.before`·`MARTIAL_INFO.desc`·`GenerationValidator.legendary`를 리터럴에 합침, 빈 문장 7 삭제 (단계별 수치는 각 커밋 메시지) | 5568 → 4187 | 109 → 53 / 485 → 155 | 744 → 743 | - | 줄 수는 이동이 남긴 빈 줄 포함 |
+| P4 B 정리 | 이동이 남긴 빈 줄 3,400개와 없는 코드를 설명하던 최상위 주석 187개 삭제(코드 변경 없음) | 536 | 53 / 155 | 743 | 97.6% | spine.js의 줄 수가 실제 내용(약 540줄)과 맞춰졌다. |
+| P4 B 데이터 패치 | `SPAWN_RULES`·`SPECIAL_BASE_COUNTS`·활 `ammoFamily`·화살 크기/설명·감찰관 시작 장비·강화부적·`floorSet980`/`plannedSet980`을 정의 리터럴에 합침, `spawnMonster`·`rumorEvent`·`mirrorEvent`를 함수 선언으로, 안 쓰는 `modalBlocking49` 삭제 | 497 | 50 / 143 | 743 | 97.8% | 동작 기준선은 그대로(`values`에서 사라진 const 3개만 뺌). |
+| P4 B 도메인 이동 | 전역 공개 4개(zoom 2, 그리기 훅, `__MANRU_HIDDEN60_ACTIONS__`), 선언 33개(`rest`·`fixEntities`·`VF_IMG`·`Automation81`·전설 던전 `*46`/`*47` 묶음·`castTalisman56` 등)를 쓰는 도메인 파일로, `CONSUMABLES` 합치기 반복 2개를 items.js로, `spine.js` → `boot.js` 개명 | 397 | 13 / 135 | 743 | 98% | 줄 수 497 → 397. 동작 기준선은 그대로. |
+
+## 나중 과제 (병합 후 계획에서 정한다)
+- CI: `ci.yml`의 `runs-on: ubuntu-24.04` 고정(PR #31)은 임시다. Playwright(현재 1.56.1, `package.json`과 `ci.yml` 두 곳)를 `ubuntu-latest`에서 설치되는 버전으로 올리고 고정을 푼다. 올릴 때 `tests/fonts` 고정 글꼴 덕에 스크린샷 기준이 그대로인지 확인한다.
+- 남은 구조 항목(접미사 이름 743, CSS `!important` 2,180과 중복 선택자 276, 타이머 40, boot.js 135개 문장)과 단계별 위험: `docs/SPINE_RESIDUE.md` 맨 위 "남은 일 한 장 요약".
 
 ## 현재 파일별 줄 수
 
@@ -114,20 +123,20 @@
 |---|---:|
 | kernel.js | 25 |
 | catalog.js | 173 |
-| save.js | 770 |
-| items.js | 1057 |
-| combat.js | 669 |
-| monsters.js | 2284 |
-| render.js | 4952 |
-| mapgen.js | 3369 |
-| special.js | 2038 |
-| branches.js | 2406 |
-| elements.js | 251 |
+| save.js | 899 |
+| items.js | 1168 |
+| combat.js | 688 |
+| monsters.js | 2336 |
+| render.js | 5158 |
+| mapgen.js | 3379 |
+| special.js | 2043 |
+| branches.js | 2498 |
+| elements.js | 252 |
 | world.js | 497 |
-| layout.js | 746 |
-| input.js | 259 |
-| story.js | 223 |
-| ui.js | 1010 |
-| spine.js | 5568 |
+| layout.js | 766 |
+| input.js | 678 |
+| story.js | 224 |
+| ui.js | 1289 |
+| boot.js | 397 |
 | start.js | 6 |
-| (total) | 26303 |
+| (total) | 22476 |
