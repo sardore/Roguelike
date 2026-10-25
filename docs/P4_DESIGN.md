@@ -76,7 +76,7 @@ P3로 풀린 선언 22개는 별도 이동 체인(브랜치 `claude/boot-p5-p8`,
 ## 8. 확인한 의문 (문제 아님, 기록)
 느슨한 문장 중 "변수 재대입" 7문장(`updateMobileHud=function …`, `updatePanels=…`, `inventoryFiltered=…`, `visualLoop=…`, `buildNormal=…` 등)은 덮어쓰기가 아니라 **앞서 값 없이 선언한 `let`의 단 한 번의 초기화**다. 5개 변수를 확인했다: 선언 1개, 대입 1개씩(`let updateMobileHud;` → 줄 1769에서 한 번 대입). 정의된 값을 감싸거나 바꾸는 것이 아니므로 `rebind` 지표 대상도 AGENTS.md의 덧씌우기 금지 대상도 아니다. 다만 이 5개는 "선언 위치와 값을 주는 위치가 떨어져 있다"는 점에서 단계 B의 초기화 함수 후보다. 나머지 2문장은 같은 모양이다(전부 확인하지는 않았다).
 
-## 9. P5 DOM 변수: 두 방식 비교 (2026-10-19, 승인 전)
+## 9. P5 DOM 변수: 두 방식 비교 (2026-10-19) — 방식 A로 구현함(2026-10-23, 사용자 승인), 결과는 맨 아래
 대상: `feelEl`, `panel`, `coach`, `modal`, `skillQuick`, `classDetail1001`+`classStart1001`(한 선언), `hud`. 모두 `const x=document.createElement(...)`로 만들어진 직후 같은 자리에서 `.id=`, `.innerHTML=`, `setAttribute`, `appendChild`, `.onclick=` 문장이 설정·부착한다.
 
 | 변수 | 함수 안에서 읽는 곳 | 로드 시 읽는 문장 | 사용 파일 |
@@ -101,3 +101,22 @@ P3로 풀린 선언 22개는 별도 이동 체인(브랜치 `claude/boot-p5-p8`,
 | 재대입 | 가능(`let`) | 불가 |
 | 부팅 함수화와의 관계 | spine에서 선언이 빠져 `boot.js`로 바꿀 수 있음 | spine에 `const` 7개가 남음 |
 제안: spine을 비우는 것이 목표면 A. 단 TDZ 보호가 사라지므로 초기화 직후 각 변수가 `undefined`가 아님을 확인하는 테스트를 같이 넣는다. 승인 전에는 구현하지 않는다.
+
+### P5 결과 (2026-10-23, 방식 A, 브랜치 `claude/p5-dom-vars`)
+요소별 한 커밋(7개), 게이트(`npm run check`, `npm test` 전체 4벌, 옛/새 빌드의 로드 직후 값 비교 differ 0)를 통과한 뒤 푸시했다.
+
+| 변수 | 초기화 함수(ui.js 끝, `let`과 함께) | spine에 남은 것 |
+|---|---|---|
+| feelEl | `createFeelingElement` (문장 3개) | 호출 1 |
+| panel | `createReleasePanel` (문장 4개) | 호출 1 + `addEventListener` 2개(자리 유지) |
+| coach | `createCoachDialog` (문장 8개) | 호출 1 |
+| modal | `createChoiceModal` (문장 6개) | 호출 1 |
+| skillQuick | `createSkillQuickPanel` (문장 3개) | 호출 1 |
+| classDetail1001, classStart1001 | `bindClassPickerElements` (조회 2개 + `classStart1001.onclick`) | 호출 1 |
+| hud | `createWardHud` (문장 4개) | 호출 1 |
+
+- 지표: spine 선언 81 → 74, 느슨한 문장 312 → 296, spine 5,092 → 5,077줄. 비교표의 −18보다 2 적다: `panel`의 `addEventListener` 2개는 입력 시나리오의 리스너 등록 순서 지문 때문에 원래 자리에 두었다.
+- `classDetail1001`/`classStart1001`은 만드는 것이 아니라 index.html의 요소를 id로 찾는 것이라 조회만 호출로 바꾸면 선언이 느슨한 문장으로 바뀌어 `spineLooseStatements`가 늘어(게이트가 막음) `classStart1001.onclick`(두 문장 아래, 사이에는 상관없는 `classGrid` 리스너뿐)을 함수로 가져갔다. onclick은 속성 대입이라 리스너 지문에 들어가지 않고, 핸들러는 클릭될 때만 평가된다.
+- 상실한 TDZ 보호의 대체: `domvars` 시나리오(`tests/scenarios.mjs`, `__MANRU_QA_DOMVARS__`)가 4개 부팅 상황(빈 저장소, `?debug=1`, 모바일, 분기 세이브)에서 8개 변수가 각자의 요소를 담고 연결되어 있으며 부모가 같음을 본다. 기준선은 변환 전 코드에서 만들었고 변환 뒤에도 그대로다.
+- `values` 기준선은 바뀌지 않았다(`const`→`let`이어도 로드 직후 값이 같다).
+

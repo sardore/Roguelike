@@ -1038,3 +1038,63 @@ const V56={target:null,lastRoomKey:'',baseCleanItem:window.__MANRU_CLEAN_INSPECT
     ['bones',{name:'남은 뼈',desc:'전투가 끝난 뒤 남은 뼈와 파편. 오래 머물면 다른 먼지와 뒤섞여 만루의 일부처럼 보이기 시작한다.'}],
     ['corpse',{name:'쓰러진 흔적',desc:'조금 전까지 움직이던 존재가 남긴 흔적. 만루에서는 이런 흔적조차 오래 보존되지 않는다.'}]
   ]);
+let feelEl;
+function createFeelingElement(){
+  feelEl=document.createElement('div');
+  feelEl.id='floorFeeling62';
+  document.getElementById('canvasWrap')?.appendChild(feelEl);
+}
+let panel;
+function createReleasePanel(){
+  panel=document.createElement('div');
+  panel.id='releasePanel70';
+  panel.innerHTML=`
+    <div class="rc70Sheet">
+      <div class="rc70Head"><div><b>만루 · 출시 후보 관리</b><small>${RC.build} · 세이브 / 조작 / 진단 <span id="rcStorage70"></span></small></div><button class="uxClose" id="rcClose70" aria-label="닫기">×</button></div>
+      <div class="rc70Body">
+        <section class="rc70Section"><h3>세이브 슬롯</h3><div id="rcSlots70" class="rc70Grid"></div></section>
+        <section class="rc70Section" id="rcString70"><h3>세이브 문자열</h3><div class="rc70Row"><button id="rcStrMake70">현재 진행 문자열 만들기</button><button id="rcStrCopy70" disabled>복사</button><button id="rcStrApply70">이 문자열로 이어하기</button></div><textarea id="rcStrText70" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="다른 기기에서 만든 문자열을 여기에 붙여 넣고 ‘이 문자열로 이어하기’를 누른다."></textarea><div id="rcStrStat70" class="rc70Diag">현재 진행과 계정 진행(튜토리얼·설정·사망 기록)이 모두 들어간다. 가져오면 지금 진행은 문자열의 진행으로 바뀐다.</div></section>
+        <section class="rc70Section"><h3>조작 · 사운드</h3><div class="rc70Row"><button id="rcSfx70">게임 효과음</button><button id="rcHaptic70" aria-pressed="true">진동 ON</button><label>UI 효과음 <input id="rcUiVol70" type="range" min="0" max="1" step=".05"></label><button id="rcTutorial70">튜토리얼 다시 보기</button><label for="rcTextScale70">글씨 크기</label><select id="rcTextScale70" aria-label="글씨 크기"><option value="1">기본 — 100%</option><option value="1.15">크게 — 115%</option><option value="1.3">더 크게 — 130%</option><option value="1.45">매우 크게 — 145%</option></select></div></section>
+        <section class="rc70Section"><h3>출시 진단</h3><div class="rc70Row"><button id="rcQuickAudit70">현재 층 검사</button><button id="rcPerf70">렌더 20회 측정</button></div><div id="rcDiag70" class="rc70Diag">대기 중</div></section>
+      </div>
+    </div>`;
+  document.body.appendChild(panel);
+}
+let coach;
+function createCoachDialog(){
+  coach=document.createElement('div');
+  coach.id='coach70';
+  coach.setAttribute('role','dialog');
+  coach.setAttribute('aria-modal','true');
+  coach.setAttribute('aria-labelledby','coachTitle58');
+  coach.setAttribute('aria-describedby','coachText58');
+  document.body.appendChild(coach);
+  coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
+}
+let modal;
+function createChoiceModal(){
+  modal=document.createElement('div');
+  modal.id='choice991';
+  modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div></div>';
+  document.body.appendChild(modal);
+  modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
+  modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
+}
+let skillQuick;
+function createSkillQuickPanel(){
+  skillQuick=document.createElement('div');
+  skillQuick.id='skillQuick991';
+  document.body.appendChild(skillQuick);
+}
+let classDetail1001,classStart1001;
+function bindClassPickerElements(){
+  classDetail1001=document.getElementById('classDetail1001');classStart1001=document.getElementById('classStartBtn1001');
+  classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
+}
+let hud;
+function createWardHud(){
+  hud=document.createElement('div');
+  hud.id='hazardWard1005';
+  hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';
+  document.body.appendChild(hud);
+}

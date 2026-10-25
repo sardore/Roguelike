@@ -623,6 +623,12 @@ globalThis.__MANRU_QA_STAGES__=()=>{
   DESCEND_EFFECTS.forEach(s=>add('descend','',s));
   return rows;
 };
+// DOM elements the game creates or looks up while loading and keeps in closure variables (the `domvars` scenario): after loading each
+// must hold its element, attached to the page where the game attaches it.
+globalThis.__MANRU_QA_DOMVARS__=()=>{
+  const d=(name,el)=>[name,el&&el.nodeType===1?`${el.tagName}#${el.id} connected=${el.isConnected} parent=${el.parentElement?.id||el.parentElement?.tagName||''}`:String(el)];
+  return Object.fromEntries([d('feelEl',feelEl),d('panel',panel),d('coach',coach),d('modal',modal),d('skillQuick',skillQuick),d('classDetail1001',classDetail1001),d('classStart1001',classStart1001),d('hud',hud)]);
+};
 // Registries of the game (the `registries` scenario): the action routes, turn stages, attack stage chains, minimap hooks,
 // presentation updates and generation pipeline, each entry with the source of its functions, in the order the readers walk them.
 globalThis.__MANRU_QA_REGISTRIES__=()=>{

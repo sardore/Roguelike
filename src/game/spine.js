@@ -2245,7 +2245,7 @@ const spawnRanges61=[[1,1,9,9],[2,5,8,11],[6,10,10,13],[11,15,11,14],[16,20,13,1
 
 
 
-  const feelEl=document.createElement('div');feelEl.id='floorFeeling62';document.getElementById('canvasWrap')?.appendChild(feelEl);
+  createFeelingElement();
 belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt);
 
 
@@ -2296,18 +2296,8 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
   /* ---------- final release UI ---------- */
 
-  const panel=document.createElement('div');panel.id='releasePanel70';panel.innerHTML=`
-    <div class="rc70Sheet">
-      <div class="rc70Head"><div><b>만루 · 출시 후보 관리</b><small>${RC.build} · 세이브 / 조작 / 진단 <span id="rcStorage70"></span></small></div><button class="uxClose" id="rcClose70" aria-label="닫기">×</button></div>
-      <div class="rc70Body">
-        <section class="rc70Section"><h3>세이브 슬롯</h3><div id="rcSlots70" class="rc70Grid"></div></section>
-        <section class="rc70Section" id="rcString70"><h3>세이브 문자열</h3><div class="rc70Row"><button id="rcStrMake70">현재 진행 문자열 만들기</button><button id="rcStrCopy70" disabled>복사</button><button id="rcStrApply70">이 문자열로 이어하기</button></div><textarea id="rcStrText70" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="다른 기기에서 만든 문자열을 여기에 붙여 넣고 ‘이 문자열로 이어하기’를 누른다."></textarea><div id="rcStrStat70" class="rc70Diag">현재 진행과 계정 진행(튜토리얼·설정·사망 기록)이 모두 들어간다. 가져오면 지금 진행은 문자열의 진행으로 바뀐다.</div></section>
-        <section class="rc70Section"><h3>조작 · 사운드</h3><div class="rc70Row"><button id="rcSfx70">게임 효과음</button><button id="rcHaptic70" aria-pressed="true">진동 ON</button><label>UI 효과음 <input id="rcUiVol70" type="range" min="0" max="1" step=".05"></label><button id="rcTutorial70">튜토리얼 다시 보기</button><label for="rcTextScale70">글씨 크기</label><select id="rcTextScale70" aria-label="글씨 크기"><option value="1">기본 — 100%</option><option value="1.15">크게 — 115%</option><option value="1.3">더 크게 — 130%</option><option value="1.45">매우 크게 — 145%</option></select></div></section>
-        <section class="rc70Section"><h3>출시 진단</h3><div class="rc70Row"><button id="rcQuickAudit70">현재 층 검사</button><button id="rcPerf70">렌더 20회 측정</button></div><div id="rcDiag70" class="rc70Diag">대기 중</div></section>
-      </div>
-    </div>`;
-  document.body.appendChild(panel);
-  const coach=document.createElement('div');coach.id='coach70';coach.setAttribute('role','dialog');coach.setAttribute('aria-modal','true');coach.setAttribute('aria-labelledby','coachTitle58');coach.setAttribute('aria-describedby','coachText58');document.body.appendChild(coach);coach.addEventListener('keydown',e=>{if(e.key==='Tab'){const buttons=[...coach.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus()}if(e.key==='Escape'){e.preventDefault();closeCurrentTip()}});
+  createReleasePanel();
+  createCoachDialog();
   const releaseStamp=document.createElement('div');releaseStamp.id='releaseStamp70';releaseStamp.textContent=RELEASE_INFO.stamp;document.getElementById('canvasWrap')?.appendChild(releaseStamp);
   const mb=document.querySelector('#mobileHud .mButtons');
   const releaseGearButton=document.createElement('button');releaseGearButton.id='releaseGear70';releaseGearButton.type='button';releaseGearButton.textContent='설정';releaseGearButton.setAttribute('aria-label','설정');mb?.appendChild(releaseGearButton);
@@ -3599,11 +3589,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
   
 
   // Item choice modal shared by identify, holy purification and holy-upgrade.
-  const modal=document.createElement('div');modal.id='choice991';modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div></div>';document.body.appendChild(modal);
-
-
-  modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
-  modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
+  createChoiceModal();
 
 
 
@@ -3671,7 +3657,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
   // ----- Skill UX: tap = usable actives, hold = upgrade panel -----
-  const skillQuick=document.createElement('div');skillQuick.id='skillQuick991';document.body.appendChild(skillQuick);
+  createSkillQuickPanel();
 
 
 
@@ -3768,7 +3754,7 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
 
 
 
-  const classDetail1001=document.getElementById('classDetail1001'),classStart1001=document.getElementById('classStartBtn1001');
+  bindClassPickerElements();
 
 
 
@@ -3786,7 +3772,6 @@ try{localStorage.removeItem('manruCameraMode984')}catch(error){console.warn('[ma
     e.preventDefault();const index=CLASSES.findIndex(c=>c.id===selectedClass1001),next=e.key==='Home'?0:e.key==='End'?CLASSES.length-1:(index+(e.key==='ArrowRight'?1:-1)+CLASSES.length)%CLASSES.length;
     selectClass(CLASSES[next].id);classGrid.children[next].focus();
   });
-  classStart1001.onclick=()=>{if(pickWrap.classList.contains('show')&&document.body.classList.contains('title-class-mode'))newGame(CLASSES.find(c=>c.id===selectedClass1001));};
   renderClassGrid();
 
   // Replace only the actual player actor. NPCs/monsters keep the existing renderer.
@@ -3960,7 +3945,7 @@ RuntimeState.ui.screen=SCREEN1002;
 
 
 /* HUD: the remaining ward time must be impossible to miss. */
-const hud=document.createElement('div');hud.id='hazardWard1005';hud.innerHTML='<span data-w="drown"></span><span data-w="void"></span>';document.body.appendChild(hud);
+createWardHud();
 
 
 
