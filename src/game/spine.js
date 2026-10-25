@@ -2453,11 +2453,11 @@ belt.id='tacticalBelt62';document.getElementById('canvasWrap')?.appendChild(belt
 
 
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){clearTimeout(resumeTimer71);if(fullscreenWanted66)fullscreenResume66=true;return}
+    if(document.hidden){clearTimeout(resumeTimer71);pageWasHidden=true;if(fullscreenWanted66)fullscreenResume66=true;return}
     scheduleResume71('visible',35);
   },true);
-  window.addEventListener('pageshow',()=>{
-    scheduleResume71('pageshow',0);
+  window.addEventListener('pageshow',e=>{
+    if(e.persisted)pageWasHidden=true;scheduleResume71('pageshow',0);
   },{passive:true});
   window.addEventListener('focus',()=>scheduleResume71('focus',65),{passive:true});
   window.addEventListener('orientationchange',()=>scheduleResume71('orientation',100),{passive:true});

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openSession, startRun, snapshot, dismissModals, storageDump, sha } from './harness.mjs';
 import { instrumentRuntime } from '../tools/lib/load-probe.mjs';
+import { compareImages } from './lib-images.mjs';
 
 const savesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'baseline', 'saves');
 
@@ -341,6 +342,62 @@ export const scenarios = {
     out['saveload.after'] = await snapshot(r);
     out['saveload.errors'] = JSON.stringify(r.errors);
     await r.close();
+    return out;
+  },
+
+  // Coming back from the background: phone browsers can drop the pixels of canvases while a page is hidden. Every canvas the game
+  // created is blanked, the page is hidden and shown again, and the screen must look like one that never lost them (title, class
+  // selection, a floor with furniture and monsters). A drawing that is made once and never again after a resume stays blank here.
+  async resume(browser, root) {
+    const out = {};
+    const track = () => {
+      const made = (window.__canvases = []);
+      const create = document.createElement.bind(document);
+      document.createElement = (tag, ...rest) => { const el = create(tag, ...rest); if (String(tag).toLowerCase() === 'canvas') made.push(el); return el; };
+    };
+    const comeBack = async (s) => {
+      await s.page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await s.tick(400);
+      await s.page.evaluate(() => {
+        for (const c of window.__canvases) c.width = c.width;
+        for (const c of document.querySelectorAll('canvas')) c.width = c.width;
+      });
+      await s.page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+        document.dispatchEvent(new Event('visibilitychange'));
+        window.dispatchEvent(new Event('pageshow'));
+      });
+      await s.tick(800);
+    };
+    const looks = async (drive, discard, opts = {}) => {
+      const s = await openSession(browser, root, { seed: 7, init: track, ...opts });
+      await drive(s);
+      if (discard) await comeBack(s); else await s.tick(1200);
+      const shot = await s.page.screenshot();
+      const errors = s.errors;
+      await s.close();
+      return { shot, errors };
+    };
+    const cases = {
+      title: async () => {},
+      classPick: async (s) => { await s.page.click('#enterBtn'); await s.tick(800); },
+      floor: async (s) => { await startRun(s, 'wanderer'); const rnd = pick(7); for (let i = 0; i < 12; i++) { await s.page.keyboard.press(KEYS[rnd(8)]); await s.tick(220); } },
+      inventory: async (s) => { await startRun(s, 'wanderer'); await s.page.keyboard.press('i'); await s.tick(600); },
+      settings: async (s) => { await startRun(s, 'wanderer'); await s.page.evaluate(() => window.__MANRU_RELEASE__.openPanel()); await s.tick(600); },
+      mobileTitle: async () => {},
+      mobileFloor: async (s) => { await startRun(s, 'wanderer'); const rnd = pick(9); for (let i = 0; i < 12; i++) { await s.page.keyboard.press(KEYS[rnd(8)]); await s.tick(220); } },
+    };
+    const mobile = { viewport: { width: 390, height: 844 }, mobile: true };
+    for (const [name, drive] of Object.entries(cases)) {
+      const opts = name.startsWith('mobile') ? mobile : {};
+      const kept = await looks(drive, false, opts), lost = await looks(drive, true, opts);
+      const r = compareImages(`resume.${name}.png`, kept.shot, lost.shot, path.join(path.dirname(fileURLToPath(import.meta.url)), 'artifacts', 'resume-diff'));
+      out[`resume.${name}`] = r.ok ? 'same' : `differs ${(r.share * 100).toFixed(2)}%`;
+      out[`resume.${name}.errors`] = JSON.stringify([...kept.errors, ...lost.errors]);
+    }
     return out;
   },
 
