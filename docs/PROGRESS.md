@@ -113,6 +113,10 @@
 | P4 B 데이터 패치 | `SPAWN_RULES`·`SPECIAL_BASE_COUNTS`·활 `ammoFamily`·화살 크기/설명·감찰관 시작 장비·강화부적·`floorSet980`/`plannedSet980`을 정의 리터럴에 합침, `spawnMonster`·`rumorEvent`·`mirrorEvent`를 함수 선언으로, 안 쓰는 `modalBlocking49` 삭제 | 497 | 50 / 143 | 743 | 97.8% | 동작 기준선은 그대로(`values`에서 사라진 const 3개만 뺌). |
 | P4 B 도메인 이동 | 전역 공개 4개(zoom 2, 그리기 훅, `__MANRU_HIDDEN60_ACTIONS__`), 선언 33개(`rest`·`fixEntities`·`VF_IMG`·`Automation81`·전설 던전 `*46`/`*47` 묶음·`castTalisman56` 등)를 쓰는 도메인 파일로, `CONSUMABLES` 합치기 반복 2개를 items.js로, `spine.js` → `boot.js` 개명 | 397 | 13 / 135 | 743 | 98% | 줄 수 497 → 397. 동작 기준선은 그대로. |
 
+## 나중 과제 (병합 후 계획에서 정한다)
+- CI: `ci.yml`의 `runs-on: ubuntu-24.04` 고정(PR #31)은 임시다. Playwright(현재 1.56.1, `package.json`과 `ci.yml` 두 곳)를 `ubuntu-latest`에서 설치되는 버전으로 올리고 고정을 푼다. 올릴 때 `tests/fonts` 고정 글꼴 덕에 스크린샷 기준이 그대로인지 확인한다.
+- 남은 구조 항목(접미사 이름 743, CSS `!important` 2,180과 중복 선택자 276, 타이머 40, boot.js 135개 문장)과 단계별 위험: `docs/SPINE_RESIDUE.md` 맨 위 "남은 일 한 장 요약".
+
 ## 현재 파일별 줄 수
 
 | file | lines |

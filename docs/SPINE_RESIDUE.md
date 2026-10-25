@@ -1,6 +1,23 @@
 # spine.js에 남긴 선언 목록 (초기화 순서 때문에 옮기지 못한 것)
 > 개명: `src/game/spine.js`는 `src/game/boot.js`가 되었다. 아래 기록과 `npm run check`의 지표 이름(`spineLines` 등)은 그대로 둔다.
 
+## 남은 일 한 장 요약 (2026-10-25, 병합 후 계획을 정하기 위한 표)
+
+수치는 `npm run check`(구조 기준선)와 `--report <지표>`의 값이다. "위험"은 이 세션의 판단이며 측정값이 아니다. 어느 항목도 이번 PR 묶음에 들어 있지 않다.
+
+| 항목 | 지금 | 하는 일 | 위험 | 막아 주는 것 / 못 막는 것 |
+|---|---|---|---|---|
+| boot.js의 남은 문장·선언 | 397줄, 선언 13, 느슨한 문장 135 (인자 없는 호출 76, 인자 있는 호출 4, 공개 11, `try` 7, `if` 11, 멤버 대입 8, 메서드 호출 13, 리스너 3, `for…of` 1, 그 밖 1) | 하나씩 `load-reads --sites`·`pub-reads`로 로드 중 읽는 곳을 재고, 읽는 곳이 없거나 정의 뒤라면 옮기거나 리터럴에 합친다. 읽는 곳이 있으면 이유를 적고 남긴다 | 중간. 로드 순서가 어긋나면 `undefined`/TDZ가 로드 중 조용히 생길 수 있다 | `values`(로드 직후 전체 값)·`registries`·`domvars`·화면 비교가 잡는다. 로드 중 한 번 쓰이고 사라지는 값은 못 잡는다 |
+| 접미사 이름(숫자로 끝나는 함수 이름) | 743 (mapgen 119, render 107, monsters 103, items 80, branches 61, layout 52, special 51, combat 46, elements 39, save 31, ui 29, world 19, 나머지 7) | 파일 단위로 이름만 바꾼다(`rename-batch`·`NAMING.tsv` 기록). 세이브 키·전역 공개 이름·문자열로 찾는 이름은 건드리지 않는다 | 낮음~중간. 이름이 문자열로 쓰이는 곳(`window[…]`, QA, 세이브 키)을 놓치면 로드나 이어하기가 깨진다 | `values` 개명 매핑(`accept-values --renamed`)·`savestring`·`saves`·전체 시나리오. 지표는 숫자로 끝나는 함수 이름을 모두 세므로, 버전 표기가 아닌 이름이 섞여 있는지는 개명 전에 목록(`--report suffixFunction`)에서 확인해야 한다 |
+| CSS `!important` | 2,180 (15-interface.css 1,745, 00-base.css 218, 20-runtime-ui.css 117, 40-story.css 59, 30-v991-patches.css 21, 50-text-scale.css 18) + 스크립트 문자열 2(items.js, layout.js) | 선택자 특이도와 겹침을 풀어 `!important` 없이 같은 결과가 나오게 한다 | 높음. 캐스케이드 순서·특이도가 바뀌면 모양이 바뀐다 | 화면 비교 11개 화면 × PC·모바일과 계산된 스타일 해시. 모달·전투·분기 지도 같은 상태는 일부만 덮는다 → 폰 확인 필요 |
+| CSS 중복 선택자 | 276 묶음 (00-base.css와 15-interface.css에 대부분) | 같은 선택자를 한 곳에 합친다(앞의 것을 덮는 규칙은 순서를 유지해 병합) | 높음. 위와 같은 이유 | 위와 같음 |
+| 타이머 | 40 (`TIMER_AUDIT.md`: 점검에서 연출 후 정리·입력 시간·프레임 루프 등은 정당하다고 분류) | 정당한 것은 유지, 나머지는 소유자의 이벤트로 | 중간. 시점이 바뀌면 입력·연출이 달라진다 | 입력 시나리오·화면 비교. 실제 기기 타이밍은 못 잡는다 |
+| `Object.defineProperty` 6, 별칭 1(`typedKeyMeta96`), `MutationObserver` 1(`killIdentifyBar88`) | 8곳 | 각각 소유자에서 정의 | 낮음~중간 | 해당 시나리오와 화면 비교 |
+| 열린 점검 사항 | F-25(`replaceViewerQuickButton`), F-26(`TYPED_KEYS96`) | `docs/FINDINGS.md` 참고 | 낮음 | |
+| CI 러너 | `ci.yml`이 `ubuntu-24.04`에 고정됨(PR #31) | Playwright를 올려 `ubuntu-latest`에서도 설치되게 하고 고정을 푼다 | 낮음. 테스트 도구 변경이라 스크린샷 기준(글꼴 고정 파일 `tests/fonts`)이 달라지지 않는지 확인해야 한다 | CI 자체 |
+
+순서 제안(병합 후 정한다): ① 접미사 이름 — 동작 변경이 없고 파일 단위로 나뉘어 한 번에 검증 가능 ② boot.js 남은 항목 측정 ③ 타이머·`defineProperty` 등 작은 것 ④ CSS는 마지막, 폰 확인을 단계마다 끼워서.
+
 모듈 분할의 목표는 `src/game/spine.js`를 없애거나 부팅 코드만 남기는 것이다. 한 선언을 다른 파일로 옮길 수 없는 이유는 세 가지뿐이며, 이 문서가 그 목록이다. 도메인을 옮길 때마다 이 목록을 갱신한다(`tools/refactor/move-to.mjs`가 거부한 이유를 그대로 적는다).
 
 | 이유 | 설명 |
@@ -132,7 +149,7 @@ P3로 등록 문장과 단계 표가 사라지자 `move-to`가 받아 주는 선
 ## 부팅 함수화 (P4 B) 결과
 브랜치 `claude/boot-functions`. 연속된 느슨한 문장 묶음은 `tools/refactor/boot-fn.mjs`로 소유 도메인의 이름 있는 함수가 되고 호출만 제자리에 남았다. 한 번만 대입되는 `let` 6개는 함수 선언이 되었고(`let-to-function`), 그리기 훅 7개 등록은 훅 목록을 만드는 리터럴 항목이 되었다. `MINIMAP_PIPELINE.before`·`MARTIAL_INFO.*.desc`·`GenerationValidator.legendary`(과 `Object.freeze`)는 `tools/refactor/fold-assign.mjs`로 정의 리터럴에 합쳤고, `__MANRU_TERRAIN_R41__`는 두 const 대신 render.js의 리터럴 하나가 되었다. 이동이 남긴 빈 줄과, 없는 코드를 설명하던 최상위 주석 187개는 삭제했다.
 
-spine.js에 남은 것(155개 느슨한 문장, 선언 53개)은 아래 종류다. 이번 단계에서는 옮기지 않았다(측정한 것은 공개 17개의 먼저 읽기뿐이고, 나머지는 하나씩 따져 보지 않았다).
+이 단계 직후의 남은 것(155개 느슨한 문장, 선언 53개)은 아래 종류였다(현재 수치와 이후 이동은 아래 "이어서 줄인 것"과 위의 한 장 요약). 이번 단계에서는 옮기지 않았다(측정한 것은 공개 17개의 먼저 읽기뿐이고, 나머지는 하나씩 따져 보지 않았다).
 - 인자 없는 함수 호출 76개: 부팅 호출 목록 그 자체.
 - 공개(`window/globalThis.X=`) 17개: 먼저 읽는 곳이 있어 자리를 바꿀 수 없는 것이 대부분(`pub-reads`로 확인).
 - 데이터 패치(남은 것): `CONSUMABLES.push` 두 반복(`POTIONS`·`TALISMANS`가 `CONSUMABLES`보다 뒤에 정의됨), `MONSTERS.push(PALACE_*)`, `RuntimeState.*` 대입(값이 spine의 const라 정의 쪽에서 먼저 만들 수 없다). 합친 것은 `SPAWN_RULES`·`SPECIAL_BASE_COUNTS`·활 `ammoFamily`·화살 크기/설명·감찰관 시작 장비·강화부적·`floorSet980/plannedSet980`.
