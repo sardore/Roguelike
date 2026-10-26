@@ -9,8 +9,19 @@ const SHEET_NAME = 'deaths';
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns'];
 const MAX_ROWS = 200000;
 
+// Works bound to a spreadsheet or as a stand-alone script: a stand-alone script creates its own spreadsheet once and remembers it.
+function book_() {
+  const bound = SpreadsheetApp.getActiveSpreadsheet();
+  if (bound) return bound;
+  const props = PropertiesService.getScriptProperties(), id = props.getProperty('BOOK_ID');
+  if (id) return SpreadsheetApp.openById(id);
+  const created = SpreadsheetApp.create('만루 플레이 통계');
+  props.setProperty('BOOK_ID', created.getId());
+  return created;
+}
+
 function sheet_() {
-  const book = SpreadsheetApp.getActiveSpreadsheet();
+  const book = book_();
   let sheet = book.getSheetByName(SHEET_NAME);
   if (!sheet) { sheet = book.insertSheet(SHEET_NAME); sheet.appendRow(HEADER); }
   return sheet;
