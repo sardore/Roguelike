@@ -1,10 +1,6 @@
-/**
- * 만루 플레이 통계 수집 서버 (Google Apps Script 웹 앱).
- * 설치: docs/PLAY_STATS.md. 이 파일은 게임 빌드에 들어가지 않는다.
- *
- * POST  본문 JSON {v,id,floor,cause,level,kills,turns} -> 시트에 한 줄 (같은 id는 한 번만)
- * GET   ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
- */
+// 만루 플레이 통계 수집 서버 (Google Apps Script 웹 앱). 설치: docs/PLAY_STATS.md
+// POST 본문 JSON {v,id,floor,cause,level,kills,turns} -> 시트에 한 줄 (같은 id는 한 번만)
+// GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
 const SHEET_NAME = 'deaths';
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns'];
 const MAX_ROWS = 200000;
