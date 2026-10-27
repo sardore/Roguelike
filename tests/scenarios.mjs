@@ -338,6 +338,7 @@ export const scenarios = {
     };
     const serve = async (ctx, mode) => {
       const posts = [];
+      const keys = [];
       await ctx.route(URL_ + '**', async (route) => {
         const req = route.request();
         const cors = { 'access-control-allow-origin': '*' };
@@ -346,44 +347,110 @@ export const scenarios = {
           if (mode.fail) return route.abort();
           return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":true}' });
         }
-        return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(SUMMARY) });
+        const key = new URL(req.url()).searchParams.get('key');
+        keys.push(key);
+        const body = key === 'sesame' ? SUMMARY : { ok: false, error: 'key' };
+        return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(body) });
       });
+      posts.keys = keys;
       return posts;
     };
     const waitFor = async (fn) => { for (let i = 0; i < 40 && !(await fn()); i++) await new Promise((r) => setTimeout(r, 100)); };
-    const brandTaps = async (s, n) => { for (let i = 0; i < n; i++) await s.page.click('#card .brand'); };
-    const sceneOpen = (s) => s.page.evaluate(() => !!document.getElementById('statsScene'));
+    // Strokes are drawn in node and played into the page: a mouse on PC, synthetic touch events on the phone.
+    const ring = (cx, cy, r, n, order) => {
+      const v = order.map((i) => [cx + r * Math.sin((2 * Math.PI * i) / n), cy - r * Math.cos((2 * Math.PI * i) / n)]);
+      const pts = [];
+      for (let i = 0; i < v.length - 1; i++) for (let t = 0; t < 12; t++) pts.push([v[i][0] + ((v[i + 1][0] - v[i][0]) * t) / 12, v[i][1] + ((v[i + 1][1] - v[i][1]) * t) / 12]);
+      pts.push(v[v.length - 1]);
+      return pts;
+    };
+    const shapes = (cx, cy, r) => ({
+      star: ring(cx, cy, r, 5, [0, 2, 4, 1, 3, 0]),
+      pentagon: ring(cx, cy, r, 5, [0, 1, 2, 3, 4, 0]),
+      smallStar: ring(cx, cy, 40, 5, [0, 2, 4, 1, 3, 0]),
+      circle: Array.from({ length: 41 }, (_, i) => [cx + r * Math.sin((2 * Math.PI * i) / 40), cy - r * Math.cos((2 * Math.PI * i) / 40)]),
+      zigzag: [[cx - r, cy - r], [cx + r, cy - r], [cx - r, cy], [cx + r, cy], [cx - r, cy + r], [cx + r, cy + r]].flatMap((p, i, a) => (i ? Array.from({ length: 12 }, (_, t) => [a[i - 1][0] + ((p[0] - a[i - 1][0]) * (t + 1)) / 12, a[i - 1][1] + ((p[1] - a[i - 1][1]) * (t + 1)) / 12]) : [p])),
+    });
+    const draw = async (s, points, touch) => {
+      if (touch) {
+        await s.page.evaluate((pts) => {
+          const target = document.getElementById('overlay');
+          const fire = (type, [x, y], end) => {
+            const t = new Touch({ identifier: 1, target, clientX: x, clientY: y });
+            target.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: end ? [] : [t], changedTouches: [t] }));
+          };
+          fire('touchstart', pts[0]);
+          for (const p of pts.slice(1)) fire('touchmove', p);
+          fire('touchend', pts[pts.length - 1], true);
+        }, points);
+      } else {
+        await s.page.mouse.move(...points[0]);
+        await s.page.mouse.down();
+        for (const p of points.slice(1)) await s.page.mouse.move(...p);
+        await s.page.mouse.up();
+      }
+    };
+    const shown = (s) => s.page.evaluate(() => JSON.stringify({ gate: !!document.getElementById('statsGate'), scene: !!document.getElementById('statsScene'), note: document.querySelector('.statsGateNote')?.textContent || '' }));
 
-    // No endpoint configured: the gesture still opens the scene and says so; nothing is sent.
+    // No server configured: a star opens the scene at once and says so; nothing is asked or sent.
     {
       const s = await openSession(browser, root, { seed: 90 });
-      await brandTaps(s, 7);
-      out['stats.unset'] = await s.page.evaluate(() => JSON.stringify({ open: !!document.getElementById('statsScene'), text: document.getElementById('statsBody').textContent }));
+      await draw(s, shapes(640, 400, 250).star, false);
+      out['stats.unset'] = await s.page.evaluate(() => JSON.stringify({ open: !!document.getElementById('statsScene'), gate: !!document.getElementById('statsGate'), text: document.getElementById('statsBody').textContent }));
       await s.close();
     }
 
-    // Gesture: six taps do nothing, the seventh opens; the view renders the server numbers as text.
+    // Strokes that are not a big star do nothing. The star asks for the password once; a wrong one is refused by the server,
+    // the right one opens the view (numbers as text) and is remembered, so the next star opens it directly.
     {
-      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-      await serve(ctx, {});
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, {});
       const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
-      await brandTaps(s, 6);
-      out['stats.six-taps'] = String(await sceneOpen(s));
-      await brandTaps(s, 1);
+      const sh = shapes(640, 400, 250);
+      const none = {};
+      for (const name of ['pentagon', 'smallStar', 'circle', 'zigzag']) { await draw(s, sh[name], false); none[name] = await shown(s); }
+      out['stats.not-a-star'] = JSON.stringify(none);
+      await draw(s, sh.star, false);
+      out['stats.gate'] = await shown(s);
+      await s.page.fill('#statsGateInput', 'wrong');
+      await s.page.press('#statsGateInput', 'Enter');
+      await waitFor(() => s.page.evaluate(() => /다르다/.test(document.querySelector('.statsGateNote')?.textContent || '')));
+      out['stats.wrong'] = await shown(s);
+      await s.page.fill('#statsGateInput', 'sesame');
+      await s.page.click('#statsGate button[type=submit]');
       await waitFor(() => s.page.evaluate(() => document.querySelectorAll('.statsCol').length === 25));
       out['stats.view'] = await s.page.evaluate(() => JSON.stringify({
-        open: !!document.getElementById('statsScene'),
+        gate: !!document.getElementById('statsGate'),
         tiles: [...document.querySelectorAll('.statsTile')].map((t) => t.textContent),
         cols: document.querySelectorAll('.statsCol').length,
         causes: [...document.querySelectorAll('.statsCauseName')].map((n) => n.textContent),
         injected: document.querySelectorAll('#statsBody img').length + (window.__xss ? 1 : 0),
-        overflowX: document.documentElement.scrollWidth > innerWidth,
+        stored: !!localStorage.getItem('manruStatsKey'),
       }));
       await s.page.click('[data-stats-tab=rows]');
       out['stats.rows'] = await s.page.evaluate(() => [...document.querySelectorAll('.statsRows tbody tr')].map((r) => r.textContent).join('|'));
       await s.page.click('#statsClose');
-      out['stats.closed'] = String(await sceneOpen(s));
+      out['stats.closed'] = await shown(s);
+      await draw(s, sh.star, false);
+      await waitFor(() => s.page.evaluate(() => document.querySelectorAll('.statsCol').length === 25));
+      out['stats.remembered'] = JSON.stringify({ state: await shown(s), keysSent: posts.keys });
       out['stats.errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // The same star with a finger on the phone, and a pinch (two fingers) never starts one.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
+      const sh = shapes(195, 420, 150);
+      await draw(s, sh.pentagon, true);
+      out['stats.touch-pentagon'] = await shown(s);
+      await draw(s, sh.star, true);
+      out['stats.touch-star'] = await shown(s);
+      out['stats.touch-overflowX'] = String(await s.page.evaluate(() => document.documentElement.scrollWidth > innerWidth));
+      out['stats.touch-errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
     }
