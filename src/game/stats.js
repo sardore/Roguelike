@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the aggregate view behind a hidden title gesture. */
 const PlayStats={
- QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:300,logList:null,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  taps:0,lastTapAt:0,sending:false,tab:'stats',data:null,
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
@@ -25,6 +25,28 @@ const PlayStats={
   finally{this.sending=false}
   return sent;
  },
+ // Temporary: a ring of the last LOG_MAX action refusals/results (kept in localStorage across reloads) for "the button does nothing" reports.
+ logAdd(entry){
+  try{
+   if(!this.logList)this.logList=JSON.parse(lsGet(this.LOG_KEY)||'[]');
+   this.logList.push({t:new Date().toISOString().slice(11,23),...entry});
+   if(this.logList.length>this.LOG_MAX)this.logList.splice(0,this.logList.length-this.LOG_MAX);
+   lsSet(this.LOG_KEY,JSON.stringify(this.logList));
+  }catch(error){ignoreError('debug log write failed',error)}
+ },
+ logAction(type,command,result,denial,before){
+  if(['MOVE','ATTACK'].includes(type)&&result.status==='committed'&&!denial)return;
+  const owner=gameplayInputOwner57();
+  this.logAdd({a:type,src:command?.source,args:command?.args??command?.index,item:before?.item,status:result.status,why:denial||result.reason,value:typeof result.value==='object'?'obj':result.value,floor:state?.floor,turn:state?.turn,hp:state?.player?.hp,stun:state?.status?.stun||0,owner:owner.kind,panels:owner.panels.map(p=>p.id),before:before?.panels,gen:RuntimeState.ui.generationPending,orient:OrientationGate.active(),presenting:ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.inputUntil,run:runState57(),ui:navigator.userAgent.slice(0,60)});
+ },
+ logText(){try{return JSON.parse(lsGet(this.LOG_KEY)||'[]').map(e=>JSON.stringify(e)).join('\n')}catch(error){ignoreError('debug log unreadable',error);return''}},
+ logView(){
+  const box=this.el('div','statsLog'),text=this.logText(),pre=this.el('pre',null,text||'기록된 로그가 없다.'),row=this.el('div','statsLogRow'),copy=this.el('button',null,'복사'),clear=this.el('button',null,'지우기');
+  copy.type='button';clear.type='button';
+  copy.onclick=async()=>{try{await navigator.clipboard.writeText(text);copy.textContent='복사됨'}catch(error){ignoreError('debug log copy failed',error);const range=document.createRange();range.selectNodeContents(pre);getSelection().removeAllRanges();getSelection().addRange(range);copy.textContent='선택됨: 길게 눌러 복사'}};
+  clear.onclick=()=>{this.logList=[];lsRemove(this.LOG_KEY);this.render()};
+  row.append(copy,clear);box.append(row,pre);return box;
+ },
  // Seven quick taps anywhere on the title block (crown, small brand line, the big logo, rule) open the view.
  tapTitle(event){
   this.taps=event.timeStamp-this.lastTapAt<=this.TAP_GAP_MS?this.taps+1:1;this.lastTapAt=event.timeStamp;
@@ -35,7 +57,7 @@ const PlayStats={
   const scene=this.el('div'),panel=this.el('div','statsPanel'),head=this.el('header'),tabs=this.el('nav'),close=this.el('button',null,'×');
   scene.id='statsScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','탐사 기록 통계');
   close.type='button';close.id='statsClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.close();
-  for(const [tab,name] of [['stats','통계'],['rows','기록']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render()};tabs.append(button)}
+  for(const [tab,name] of [['stats','통계'],['rows','기록'],['log','로그']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render()};tabs.append(button)}
   head.append(this.el('h2',null,'탐사 기록 통계'),tabs,close);
   const body=this.el('div');body.id='statsBody';panel.append(head,body);scene.append(panel);document.body.append(scene);
   this.data=null;this.render('loading');this.load();return true;
@@ -53,6 +75,7 @@ const PlayStats={
  render(status){
   const body=document.getElementById('statsBody');body.replaceChildren();
   for(const button of document.querySelectorAll('[data-stats-tab]'))button.classList.toggle('on',button.dataset.statsTab===this.tab);
+  if(this.tab==='log'){body.append(this.logView());return}
   const notice={loading:'기록을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.',error:'기록을 불러오지 못했다.'}[status];
   if(notice||!this.data){body.append(this.el('p','statsNote',notice||'기록이 없다.'));return}
   body.append(this.tab==='rows'?this.rowsView(this.data):this.summaryView(this.data));
