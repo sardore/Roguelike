@@ -629,6 +629,18 @@ globalThis.__MANRU_QA_DOMVARS__=()=>{
   const d=(name,el)=>[name,el&&el.nodeType===1?`${el.tagName}#${el.id} connected=${el.isConnected} parent=${el.parentElement?.id||el.parentElement?.tagName||''}`:String(el)];
   return Object.fromEntries([d('feelEl',feelEl),d('panel',panel),d('coach',coach),d('modal',modal),d('skillQuick',skillQuick),d('classDetail1001',classDetail1001),d('classStart1001',classStart1001),d('hud',hud)]);
 };
+// The hound boss charge (the `bosscharge` scenario): a straight corridor, the boss at its west end with a charge armed toward its east end,
+// the player at the given offset from the third cell. Returns where the boss ended, what the player lost, and whether the player's
+// cell was part of the telegraph.
+globalThis.__MANRU_QA_BOSSCHARGE__=(at)=>{
+  const def={...BOSSES[5],boss:true},p=state.player,y0=Math.floor(ROWS/2),x0=Math.floor(COLS/2)-4;
+  for(const m of [...state.monsters])OccupancyService.removeMonster(m);
+  for(let y=y0-1;y<=y0+1;y++)for(let x=x0-1;x<=x0+9;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);
+  const boss=scaledMonster(def);boss.x=x0;boss.y=y0;OccupancyService.addMonster(boss);
+  p.x=x0+3+at.x;p.y=y0+at.y;const hp0=p.hp,target={x:x0+8,y:y0},lane=bossChargeLane(boss,target);
+  setBossIntent(boss,'charge',lane.cells,'test',{target});executeBossIntent(boss);
+  return{path:lane.path.length,telegraphed:lane.cells.some(c=>c.x===p.x&&c.y===p.y),boss:[boss.x-x0,boss.y-y0],hpLost:hp0-p.hp,intentCleared:!boss.intent54};
+};
 // Registries of the game (the `registries` scenario): the action routes, turn stages, attack stage chains, minimap hooks,
 // presentation updates and generation pipeline, each entry with the source of its functions, in the order the readers walk them.
 globalThis.__MANRU_QA_REGISTRIES__=()=>{

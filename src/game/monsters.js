@@ -467,12 +467,33 @@ function coreSealSector(mon,target,range){
  return{cells,origin57:{x:origin.x,y:origin.y},direction57,range,halfAngle,shape57:'sector'};
 }
 function lineToward(mon,target,steps=4){const out=[];let x=mon.x,y=mon.y;for(let i=0;i<steps;i++){const dx=Math.sign(target.x-x),dy=Math.sign(target.y-y);if(Math.abs(target.x-x)>=Math.abs(target.y-y))x+=dx;else y+=dy;if(!cell54(x,y))break;out.push({x,y})}return out}
-function bossCharge(mon,target){if(!target)return;const aimed={...target};for(let i=0;i<4;i++){const dx=Math.sign(aimed.x-mon.x),dy=Math.sign(aimed.y-mon.y);let nx=mon.x,ny=mon.y;if(Math.abs(aimed.x-mon.x)>=Math.abs(aimed.y-mon.y))nx+=dx;else ny+=dy;const t=state.map[ny]?.[nx];if([TT.TABLE,TT.SCREEN,TT.JAR,TT.DOOR].includes(t)){setTerrainTile58(state.map,nx,ny,TT.FLOOR);burst(nx,ny,'#a66543',9,.65);globalThis.__MANRU_SFX54__?.play?.('door')}if(!PlacementService.monsterCanStand(mon,nx,ny))break;OccupancyService.move(mon,nx,ny)}for(const victim of [state.player,...state.monsters])if(combatTargetValid57(mon,victim)&&entityDistance57(mon,victim)<=1){attackMonster(mon,5,{target:victim,delivery:'melee',range:1,fixedArea58:true});break}}
+function bossChargeLane(mon,target){
+ // Where the hound boss's charge goes and what it strikes: up to four steps toward the aimed cell (terrain only; units are met while
+ // running), then every cell around the last one. The telegraph is exactly this, so nothing outside it is ever hit.
+ const path=[];let x=mon.x,y=mon.y;
+ for(let i=0;i<4;i++){
+  const dx=Math.sign(target.x-x),dy=Math.sign(target.y-y);let nx=x,ny=y;if(Math.abs(target.x-x)>=Math.abs(target.y-y))nx+=dx;else ny+=dy;
+  const t=state.map[ny]?.[nx];if(nx<1||ny<1||nx>=COLS-1||ny>=ROWS-1||!([TT.TABLE,TT.SCREEN,TT.JAR,TT.DOOR].includes(t)||PlacementService.terrainStandable(mon,t)))break;
+  if(nx!==x||ny!==y)path.push({x:nx,y:ny});x=nx;y=ny;
+ }
+ const seen=new Set(),cells=[];
+ for(const c of [...path,...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy}))]){const key=k(c.x,c.y);if(!seen.has(key)){seen.add(key);cells.push(c)}}
+ return{path,end:{x,y},cells};
+}
+function bossCharge(mon,target,telegraphed){
+ const allowed=new Set(telegraphed.map(c=>k(c.x,c.y)));
+ for(const c of bossChargeLane(mon,target).path){
+  const t=state.map[c.y]?.[c.x];if([TT.TABLE,TT.SCREEN,TT.JAR,TT.DOOR].includes(t)){setTerrainTile58(state.map,c.x,c.y,TT.FLOOR);burst(c.x,c.y,'#a66543',9,.65);globalThis.__MANRU_SFX54__?.play?.('door')}
+  if(!PlacementService.monsterCanStand(mon,c.x,c.y))break;
+  OccupancyService.move(mon,c.x,c.y);
+ }
+ for(const victim of [state.player,...state.monsters])if(combatTargetValid57(mon,victim)&&entityDistance57(mon,victim)<=1&&entityFootprintCells57(victim).some(q=>allowed.has(k(q.x,q.y)))){attackMonster(mon,5,{target:victim,delivery:'melee',range:1,fixedArea58:true});break}
+}
 function executeBossIntent(mon){
  const I=mon.intent54;if(!I)return false;
  if(I.type.startsWith('palace'))return palaceResolveIntent(mon,I);
  if(I.type==='blackFrost105'){mountainFrostResolve(mon,I);clearIntent(mon);return true}
- if(I.type==='charge'){bossCharge(mon,I.data.target||selectCombatOpponent(mon));clearIntent(mon);return true}
+ if(I.type==='charge'){bossCharge(mon,I.data.target||selectCombatOpponent(mon),I.cells);clearIntent(mon);return true}
  if(I.type==='weave'){
   const live=new Set(state.monsters.filter(m=>m.hp>0&&m.combatFixture54==='silk'&&bossChildOf(m,mon)).map(m=>m.mirrorIndex54));mon.silk54.links=I.data.links.filter(l=>live.has(l.a)&&live.has(l.b));
   for(const l of mon.silk54.links)for(const c of l.cells)if((c.x+c.y)%3===0)burst(c.x,c.y,'#e6aaca',2,.3);
@@ -641,7 +662,7 @@ function handleBossPattern(mon,d,target=state.player){
     if(mon.bossPattern==='houndboss'){
       if(turn%10===0&&state.monsters.filter(m=>!m.boss&&m.name==='객잔 쥐'&&m.hp>0&&bossChildOf(m,mon)).length<2&&summonNear(mon,'객잔 쥐')){addLog('광견 대장이 바닥을 긁자 쥐가 튀어나왔다.');return true}
       if(turn%7===0&&d<=6){const cells=[{x:p.x,y:p.y},...DIRS4.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy}))];return setBossIntent(mon,'maul',cells,'광견 짓밟기 · 십자 범위에서 벗어나라')}
-      if(turn%3===0&&d>=3&&d<=8&&lineClear(mon.x,mon.y,p.x,p.y)){const target={x:p.x,y:p.y};return setBossIntent(mon,'charge',lineToward(mon,target,5),'광폭 돌진 · 붉은 선을 비켜라',{target})}
+      if(turn%3===0&&d>=3&&d<=8&&lineClear(mon.x,mon.y,p.x,p.y)){const target={x:p.x,y:p.y};return setBossIntent(mon,'charge',bossChargeLane(mon,target).cells,'광폭 돌진 · 붉은 칸을 비켜라',{target})}
     }
     if(mon.bossPattern==='painter'){
       if(turn%8===0&&state.monsters.filter(m=>m.name==='종이 호랑이'&&m.hp>0&&bossChildOf(m,mon)).length<2&&spawnPaperTiger(mon)){addLog('화공 노인이 종이 호랑이 하나를 그렸다.');return true}
@@ -993,7 +1014,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       add('frost','서리 폭쇄 · 빙창','霜','사거리 8칸 · 예고 1턴',`3×3 폭쇄와 직선 빙창을 번갈아 사용. 냉기 피해 ${mountainFrostDamage(mon)}. 기본 공격은 하지 않는다.`);
       add('frost-add','동토의 부름','召','HP 75%·50%·25%','각 문턱에서 벌집나무와 독꽃 소환. 살아 있는 증원 최대 4마리.','constitution','조건');
     }else if(mon.bossPattern==='houndboss'){
-      add('charge','광폭 돌진','衝','3~8칸 · 예고 1턴 · 주기 3턴','목표를 향해 최대 4칸 전진하고 인접 대상을 공격력 +5로 공격.');
+      add('charge','광폭 돌진','衝','3~8칸 · 예고 1턴 · 주기 3턴','목표를 향해 최대 4칸 전진하고 인접 대상을 공격력 +5로 공격. 지나는 칸과 도착 칸 둘레를 예고선으로 표시하며, 표시된 칸 밖은 맞지 않는다.');
       add('maul','광견 짓밟기','踏','6칸 안 · 예고 1턴 · 주기 7턴','표시한 십자에 고정 피해 9, 쇠약 2턴.');
       add('rats','객잔 쥐 소환','召','주기 10턴 · 최대 2마리','주변 빈칸에 객잔 쥐를 부른다.');
     }else if(mon.bossPattern==='painter'){

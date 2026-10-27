@@ -126,7 +126,8 @@ for (const [flag, dir, qa, note] of [['--qa', 'dist-qa', true, 'QA build, for te
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
   for (const d of GAME_DIRS) if (fs.existsSync(path.join(src, d))) fs.cpSync(path.join(src, d), path.join(out, d), { recursive: true });
-  fs.copyFileSync(path.join(src, 'index.html'), path.join(out, 'index.html'));
+  // Test and local builds never report to the live statistics server.
+  fs.writeFileSync(path.join(out, 'index.html'), fs.readFileSync(path.join(src, 'index.html'), 'utf8').replace(/(<meta name="manru-stats" content=")[^"]*/, '$1'));
   fs.writeFileSync(path.join(out, RUNTIME), assembleGame(src, { qa }).text);
   console.log(`${dir}/ written (${note})`);
   process.exit(0);

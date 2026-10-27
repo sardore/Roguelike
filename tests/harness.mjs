@@ -59,6 +59,8 @@ export async function openSession(browser, root, { seed = 1, viewport = { width:
   const { dir, entry } = typeof root === 'string' ? { dir: root, entry: '' } : root;
   const server = await serve(dir);
   const ctx = context || (await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1 }));
+  // A release build under test carries the live statistics address; nothing a test does may reach it.
+  await ctx.route('https://script.google.com/**', (route) => route.abort());
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e.message)));
