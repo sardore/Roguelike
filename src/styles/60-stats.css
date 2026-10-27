@@ -1,0 +1,26 @@
+#statsScene{display:flex;position:fixed;inset:0;z-index:2147483200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:calc(14px + var(--safe-top)) calc(12px + var(--safe-right)) calc(14px + var(--safe-bottom)) calc(12px + var(--safe-left));background:#040201;color:#d8c7a3}
+#statsScene .statsPanel{width:min(720px,100%);background:#120c08;border:1px solid #634329;box-shadow:0 0 0 1px #000,0 18px 60px #000}
+#statsScene header{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #634329}
+#statsScene h2{margin:0;flex:1;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em;color:#d9b879}
+#statsScene h3{margin:16px 0 6px;font-size:calc(11px * var(--ui-font-scale, 1));letter-spacing:.2em;color:#a17749}
+#statsScene nav{display:flex;gap:6px}
+#statsScene button{font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;padding:5px 10px;cursor:pointer}
+#statsScene button.on{background:#3a2616;color:#efd49b;border-color:#a66f34}
+#statsScene #statsClose{font-size:calc(18px * var(--ui-font-scale, 1));line-height:1;padding:3px 9px}
+#statsBody{padding:12px}
+.statsNote{margin:24px 0;text-align:center;color:#8e7a5d}
+.statsTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.statsTile{background:#1b120c;border:1px solid #3a2616;padding:8px 6px;text-align:center}
+.statsTile b{display:block;font-size:calc(18px * var(--ui-font-scale, 1));color:#efd49b}
+.statsTile small{color:#8e7a5d;font-size:calc(10px * var(--ui-font-scale, 1))}
+.statsHist{display:flex;align-items:flex-end;gap:2px;height:150px;padding-top:14px}
+.statsCol{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.statsCol i{display:block;width:100%;min-height:1px;background:#a34435}
+.statsCol small,.statsCount{font-size:calc(8px * var(--ui-font-scale, 1));color:#8e7a5d;height:11px;line-height:11px}
+.statsCause{display:grid;grid-template-columns:minmax(80px,1fr) 2fr auto;align-items:center;gap:8px;margin:3px 0;font-size:calc(12px * var(--ui-font-scale, 1))}
+.statsCause i{display:block;height:10px;background:#a66f34}
+.statsCauseName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.statsRows{width:100%;border-collapse:collapse;font-size:calc(11px * var(--ui-font-scale, 1))}
+.statsRows th{text-align:left;color:#a17749;border-bottom:1px solid #634329;padding:4px}
+.statsRows td{padding:4px;border-bottom:1px solid #2a1c10}
+@media (max-width:480px){.statsTiles{grid-template-columns:repeat(2,1fr)}}

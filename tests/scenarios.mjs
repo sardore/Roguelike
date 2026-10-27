@@ -321,6 +321,118 @@ export const scenarios = {
     return out;
   },
 
+  // Play statistics: one anonymous record per death out, the hidden title gesture and the aggregate view in.
+  async stats(browser, root) {
+    const out = {};
+    const URL_ = 'https://stats.test/exec';
+    const SUMMARY = {
+      ok: true, total: 12, floors: [3, 2, 0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      causes: [['광견 대장', 5], ['<img src=x onerror=window.__xss=1>', 4], ['굶주림', 3]],
+      avg: { level: 4.5, kills: 21, turns: 880 },
+      recent: [{ t: '2026-10-26T10:11:12.000Z', floor: 25, cause: '굶주림', level: 9, kills: 40, turns: 1500 }],
+    };
+    // The test points the endpoint at a fake host; the game reads it from the page's meta tag.
+    const endpoint = () => {
+      const d = Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype, 'content');
+      Object.defineProperty(HTMLMetaElement.prototype, 'content', { ...d, get() { return this.name === 'manru-stats' ? 'https://stats.test/exec' : d.get.call(this); } });
+    };
+    const serve = async (ctx, mode) => {
+      const posts = [];
+      await ctx.route(URL_ + '**', async (route) => {
+        const req = route.request();
+        const cors = { 'access-control-allow-origin': '*' };
+        if (req.method() === 'POST') {
+          posts.push(JSON.parse(req.postData()));
+          if (mode.fail) return route.abort();
+          return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":true}' });
+        }
+        return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(SUMMARY) });
+      });
+      return posts;
+    };
+    const waitFor = async (fn) => { for (let i = 0; i < 40 && !(await fn()); i++) await new Promise((r) => setTimeout(r, 100)); };
+    const brandTaps = async (s, n) => { for (let i = 0; i < n; i++) await s.page.click('#card .brand'); };
+    const sceneOpen = (s) => s.page.evaluate(() => !!document.getElementById('statsScene'));
+
+    // No endpoint configured: the gesture still opens the scene and says so; nothing is sent.
+    {
+      const s = await openSession(browser, root, { seed: 90 });
+      await brandTaps(s, 7);
+      out['stats.unset'] = await s.page.evaluate(() => JSON.stringify({ open: !!document.getElementById('statsScene'), text: document.getElementById('statsBody').textContent }));
+      await s.close();
+    }
+
+    // Gesture: six taps do nothing, the seventh opens; the view renders the server numbers as text.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
+      await brandTaps(s, 6);
+      out['stats.six-taps'] = String(await sceneOpen(s));
+      await brandTaps(s, 1);
+      await waitFor(() => s.page.evaluate(() => document.querySelectorAll('.statsCol').length === 25));
+      out['stats.view'] = await s.page.evaluate(() => JSON.stringify({
+        open: !!document.getElementById('statsScene'),
+        tiles: [...document.querySelectorAll('.statsTile')].map((t) => t.textContent),
+        cols: document.querySelectorAll('.statsCol').length,
+        causes: [...document.querySelectorAll('.statsCauseName')].map((n) => n.textContent),
+        injected: document.querySelectorAll('#statsBody img').length + (window.__xss ? 1 : 0),
+        overflowX: document.documentElement.scrollWidth > innerWidth,
+      }));
+      await s.page.click('[data-stats-tab=rows]');
+      out['stats.rows'] = await s.page.evaluate(() => [...document.querySelectorAll('.statsRows tbody tr')].map((r) => r.textContent).join('|'));
+      await s.page.click('#statsClose');
+      out['stats.closed'] = String(await sceneOpen(s));
+      out['stats.errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // Death: the record carries exactly the death-screen numbers; a failed send stays queued.
+    for (const fail of [false, true]) {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, { fail });
+      const s = await openSession(browser, root, { seed: 91, context: ctx, init: endpoint });
+      await startRun(s, 'wanderer');
+      await s.page.evaluate(() => window.__MANRU_V95_TEST__.deathPreview('광견 대장'));
+      await waitFor(() => posts.length > 0);
+      await s.tick(300);
+      const key = fail ? 'stats.death-failed' : 'stats.death';
+      out[key] = JSON.stringify({ posts: posts.map(({ id, ...rest }) => ({ hasId: id.length > 8, ...rest })), queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
+      out[key + '.errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // A record left in the queue is sent at the next start, once.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, {});
+      const queued = JSON.stringify([{ v: 1, id: 'left-over-run', floor: 7, cause: '굶주림', level: 3, kills: 5, turns: 99 }]);
+      const s = await openSession(browser, root, { seed: 92, context: ctx, init: endpoint, storage: [['manruStatsQueue', queued]] });
+      await waitFor(() => posts.length > 0);
+      await s.tick(300);
+      out['stats.resend'] = JSON.stringify({ posts, queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
+      await s.close();
+      await ctx.close();
+    }
+
+    // The debug battlefield never reports.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 93, context: ctx, init: endpoint, query: 'debug=1' });
+      await s.page.click('#debugBattleBtn57');
+      await s.tick(800);
+      const recorded = await s.page.evaluate(() => { try { window.__MANRU_V95_TEST__.deathPreview('시험'); } catch (e) { return String(e.message); } return 'died'; });
+      await s.tick(300);
+      out['stats.debug-battle'] = JSON.stringify({ recorded, posts: posts.length });
+      await s.close();
+      await ctx.close();
+    }
+    return out;
+  },
+
   // Save written by this build, reloaded through Continue.
   async saveload(browser, root) {
     const out = {};

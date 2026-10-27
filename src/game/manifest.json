@@ -16,6 +16,7 @@
   "input.js",
   "story.js",
   "ui.js",
+  "stats.js",
   "boot.js"
  ],
  "afterClosure": [
