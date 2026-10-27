@@ -292,7 +292,7 @@ export const scenarios = {
     };
     for (const [name, roster] of Object.entries(rosters)) {
       const s = await openSession(browser, root, { seed: 77, query: 'debug=1' });
-      await s.page.click('#debugBattleBtn57');
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DEBUGBATTLE__.open());
       await s.tick(800);
       for (const [monster, side, count] of roster) {
         await s.page.evaluate(({ monster, count }) => {
@@ -440,7 +440,7 @@ export const scenarios = {
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
       const posts = await serve(ctx, {});
       const s = await openSession(browser, root, { seed: 93, context: ctx, init: endpoint, query: 'debug=1' });
-      await s.page.click('#debugBattleBtn57');
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DEBUGBATTLE__.open());
       await s.tick(800);
       const recorded = await s.page.evaluate(() => { try { window.__MANRU_V95_TEST__.deathPreview('시험'); } catch (e) { return String(e.message); } return 'died'; });
       await s.tick(300);
@@ -1140,7 +1140,7 @@ export const scenarios = {
       out[`screens.${form}.branch.errors`] = JSON.stringify(b.errors);
       await b.close();
       const d = await openSession(browser, root, { seed: 6, query: 'debug=1', ...opts });
-      await d.page.click('#debugBattleBtn57');
+      await d.page.evaluate(() => globalThis.__MANRU_QA_DEBUGBATTLE__.open());
       await d.tick(800);
       await capture(out, `screens.${form}.battle`, d);
       await d.page.evaluate(() => {
