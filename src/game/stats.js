@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the aggregate view behind a hidden title gesture. */
 const PlayStats={
- QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:700,TOP_CAUSES:12,
+ QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  taps:0,lastTapAt:0,sending:false,tab:'stats',data:null,
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
@@ -25,7 +25,8 @@ const PlayStats={
   finally{this.sending=false}
   return sent;
  },
- tapBrand(event){
+ // Seven quick taps anywhere on the title block (crown, small brand line, the big logo, rule) open the view.
+ tapTitle(event){
   this.taps=event.timeStamp-this.lastTapAt<=this.TAP_GAP_MS?this.taps+1:1;this.lastTapAt=event.timeStamp;
   if(this.taps>=this.TAPS){this.taps=0;this.open()}
  },

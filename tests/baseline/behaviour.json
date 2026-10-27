@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "8154efae12ebe2a847dffb6543ac5de0a7764786",
- "values.branch": "9e171a1a96f52d0f7051ac3712727fba143a289c",
+ "values.empty": "9abf9982be43f716a752cb06a27885e172028a90",
+ "values.branch": "8bc052100879ef43368fb17b0f5990655f5a3abe",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -342,5 +342,8 @@
  "stats.death-failed": "101e0f4df4ae9f2be4d684a36246b48ee2e2a258",
  "stats.death-failed.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "stats.resend": "f3fb0afa207af915c58e85ad33f76a174ef4dbed",
- "stats.debug-battle": "c55936a996629eb21bd37c557d89459386f03b2a"
+ "stats.debug-battle": "c55936a996629eb21bd37c557d89459386f03b2a",
+ "stats.slow-taps": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
+ "stats.outside-taps": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
+ "stats.tap-errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

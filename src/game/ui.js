@@ -1121,7 +1121,7 @@ function createPotionTargetHud(){
 function bindTitleButtons(){
     enterBtn.onclick=showClassPick;
   classBackBtn.onclick=showStartGate;
-  document.querySelector('#card .brand').onclick=event=>PlayStats.tapBrand(event);
+  document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
   PlayStats.flush();
 }
 function createHoldHint(){
