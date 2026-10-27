@@ -596,6 +596,8 @@ globalThis.__MANRU_GENERATION_R18__={generate:NormalFloorGenerator.generate,core
 window.__MANRU_RELEASE__.save=writeRun;window.__MANRU_RELEASE__.autosave=writeRun;window.__MANRU_RELEASE__.load=()=>loadGame();
 window.__MANRU_RELEASE__.build=RELEASE_INFO.build;
 // the identification entry points, so a test can run them while the inventory is open
+// The save string has no button any more (SAVE_STRING_PANEL off); the savestring scenario drives the same functions directly.
+globalThis.__MANRU_QA_SAVESTRING__={make:makeSaveString,read:readSaveString,apply:applySaveString};
 globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56};
 // load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
 globalThis.__MANRU_QA_LOAD__={
