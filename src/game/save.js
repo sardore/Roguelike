@@ -309,7 +309,10 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
   function writeAccountKeys(entries){
     try{for(const[key,value]of entries){if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);if(localStorage.getItem(key)!==value)return false}return true}catch(_){return false}
   }
+  // The settings-panel section for the save string is off (set true to show it again); make/read/applySaveString stay.
+  const SAVE_STRING_PANEL=false;
   function bindSaveStringPanel(){
+    if(!SAVE_STRING_PANEL)return;
     const strText=document.getElementById('rcStrText70'),strStat=document.getElementById('rcStrStat70'),strCopy=document.getElementById('rcStrCopy70');
     const strSay=msg=>{strStat.textContent=msg};
     document.getElementById('rcStrMake70').onclick=async()=>{

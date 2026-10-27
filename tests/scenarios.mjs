@@ -582,12 +582,8 @@ export const scenarios = {
       localStorage.setItem('manruUiVolume70', '0.6');
       localStorage.setItem('manru1004_dead_runs', JSON.stringify(['dead-from-a']));
     });
-    await a.page.evaluate(() => window.__MANRU_RELEASE__.openPanel());
-    await a.tick(300);
-    await a.page.click('#rcStrMake70');
-    for (let i = 0; i < 20 && !(await a.page.inputValue('#rcStrText70')); i++) await a.tick(200);
-    const text = await a.page.inputValue('#rcStrText70');
-    if (!/^MANRU[01]\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/.test(text)) throw new Error(`savestring: no string was made: ${await a.page.textContent('#rcStrStat70')}`);
+    const text = await a.page.evaluate(() => globalThis.__MANRU_QA_SAVESTRING__.make());
+    if (!/^MANRU[01]\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/.test(text)) throw new Error(`savestring: no string was made: ${text}`);
     const accountOf = async (s) => s.page.evaluate(() => Object.keys(localStorage).filter((k) => /^manru/.test(k) && !/active_run|transaction/.test(k)).sort().map((k) => [k, localStorage.getItem(k)]));
     const accountA = await accountOf(a);
     const dumpA = await storageDump(a);
@@ -604,15 +600,10 @@ export const scenarios = {
 
     const b = await openSession(browser, root, { seed: 42, storage: [['manru1004_dead_runs', JSON.stringify(['dead-from-b'])], ['manruUiVolume70', '0.1']] });
     await startRun(b, 'wanderer');
-    await b.page.evaluate(() => window.__MANRU_RELEASE__.openPanel());
-    await b.tick(300);
     const refused = {};
-    const status = async () => b.page.textContent('#rcStrStat70');
+    // the message the panel used to show for a refused string
     const tryString = async (label, value) => {
-      await b.page.fill('#rcStrText70', value);
-      await b.page.click('#rcStrApply70');
-      await b.tick(300);
-      refused[label] = await status();
+      refused[label] = await b.page.evaluate(async (v) => { try { await globalThis.__MANRU_QA_SAVESTRING__.read(v); return 'accepted'; } catch (e) { return `가져오기 실패: ${e.message}`; } }, value);
     };
     const [head, body, crc] = text.split('.');
     await tryString('empty', '');
@@ -622,9 +613,8 @@ export const scenarios = {
     await tryString('crc', `${head}.${body}.${crc === '00000000' ? '00000001' : '00000000'}`);
     out['savestring.refused'] = JSON.stringify(refused);
     for (const [k, v] of Object.entries(refused)) if (!/실패/.test(v)) throw new Error(`savestring: "${k}" was not refused: ${v}`);
-    b.page.on('dialog', (d) => d.accept());
-    await b.page.fill('#rcStrText70', text.replace(/(.{60})/g, '$1\n'));
-    await b.page.click('#rcStrApply70');
+    // the string as it is pasted: wrapped in lines; applying it reloads the page like the panel did
+    await b.page.evaluate((t) => globalThis.__MANRU_QA_SAVESTRING__.apply(t).then(() => location.reload()), text.replace(/(.{60})/g, '$1\n'));
     await b.tick(3000);
     await b.page.click('#continueBtn');
     await b.tick(2500);
