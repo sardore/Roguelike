@@ -1121,7 +1121,14 @@ function createPotionTargetHud(){
 function bindTitleButtons(){
     enterBtn.onclick=showClassPick;
   classBackBtn.onclick=showStartGate;
-  document.querySelector('#card .brand').onclick=event=>PlayStats.tapBrand(event);
+  const overlay=document.getElementById('overlay');
+  overlay.ontouchstart=event=>event.touches.length===1?PlayStats.strokeStart(event.touches[0].clientX,event.touches[0].clientY):PlayStats.strokeAbort();
+  overlay.ontouchmove=event=>event.touches.length===1&&PlayStats.strokeMove(event.touches[0].clientX,event.touches[0].clientY);
+  overlay.ontouchend=()=>PlayStats.strokeEnd();
+  overlay.ontouchcancel=()=>PlayStats.strokeAbort();
+  overlay.onmousedown=event=>PlayStats.strokeStart(event.clientX,event.clientY);
+  overlay.onmousemove=event=>event.buttons&1&&PlayStats.strokeMove(event.clientX,event.clientY);
+  overlay.onmouseup=()=>PlayStats.strokeEnd();
   PlayStats.flush();
 }
 function createHoldHint(){

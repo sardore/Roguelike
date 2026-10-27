@@ -4,6 +4,9 @@
 const SHEET_NAME = 'deaths';
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns'];
 const MAX_ROWS = 200000;
+// 통계 화면 비밀번호. 이 저장소의 파일은 비워 두고, Apps Script 편집기의 이 줄에만 직접 적는다. 비어 있으면 아무도 읽지 못한다.
+const READ_KEY = '';
+const MAX_FAILS = 30;
 
 // Works bound to a spreadsheet or as a stand-alone script: a stand-alone script creates its own spreadsheet once and remembers it.
 function book_() {
@@ -55,7 +58,12 @@ function doPost(e) {
 
 function doGet(e) {
   if (!e || !e.parameter || e.parameter.view !== 'summary') return reply_({ ok: false, error: 'view' });
-  const cache = CacheService.getScriptCache(), hit = cache.get('summary');
+  const cache = CacheService.getScriptCache();
+  // Wrong passwords are counted for ten minutes; past MAX_FAILS nothing is answered, even the right one.
+  const fails = Number(cache.get('fails') || 0);
+  if (fails >= MAX_FAILS) return reply_({ ok: false, error: 'locked' });
+  if (!READ_KEY || e.parameter.key !== READ_KEY) { cache.put('fails', String(fails + 1), 600); return reply_({ ok: false, error: 'key' }); }
+  const hit = cache.get('summary');
   if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
   const sheet = sheet_(), rows = sheet.getLastRow();
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, HEADER.length).getValues() : [];
