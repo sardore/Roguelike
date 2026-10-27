@@ -351,13 +351,15 @@ export const scenarios = {
       return posts;
     };
     const waitFor = async (fn) => { for (let i = 0; i < 40 && !(await fn()); i++) await new Promise((r) => setTimeout(r, 100)); };
-    const brandTaps = async (s, n) => { for (let i = 0; i < n; i++) await s.page.click('#card .brand'); };
+    // Taps cycle over the title block (crown, small brand line, big logo, rule); a finger on the phone, a click on PC.
+    const TITLE_PARTS = ['.titleCrown', '.brand', '#card h1', '.titleRule', '#card h1', '.brand', '#card h1'];
+    const titleTaps = async (s, n, touch, parts = TITLE_PARTS) => { for (let i = 0; i < n; i++) await (touch ? s.page.tap(parts[i % parts.length]) : s.page.click(parts[i % parts.length])); };
     const sceneOpen = (s) => s.page.evaluate(() => !!document.getElementById('statsScene'));
 
     // No endpoint configured: the gesture still opens the scene and says so; nothing is sent.
     {
       const s = await openSession(browser, root, { seed: 90 });
-      await brandTaps(s, 7);
+      await titleTaps(s, 7, false);
       out['stats.unset'] = await s.page.evaluate(() => JSON.stringify({ open: !!document.getElementById('statsScene'), text: document.getElementById('statsBody').textContent }));
       await s.close();
     }
@@ -367,9 +369,9 @@ export const scenarios = {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
       await serve(ctx, {});
       const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
-      await brandTaps(s, 6);
+      await titleTaps(s, 6, true);
       out['stats.six-taps'] = String(await sceneOpen(s));
-      await brandTaps(s, 1);
+      await titleTaps(s, 1, true, ['#card h1']);
       await waitFor(() => s.page.evaluate(() => document.querySelectorAll('.statsCol').length === 25));
       out['stats.view'] = await s.page.evaluate(() => JSON.stringify({
         open: !!document.getElementById('statsScene'),
@@ -384,6 +386,22 @@ export const scenarios = {
       await s.page.click('#statsClose');
       out['stats.closed'] = String(await sceneOpen(s));
       out['stats.errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // Taps that are too slow, or outside the title block, never add up.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
+      await titleTaps(s, 4, true);
+      await s.tick(1300);
+      await titleTaps(s, 3, true);
+      out['stats.slow-taps'] = String(await sceneOpen(s));
+      await titleTaps(s, 7, true, ['.startIntro']);
+      out['stats.outside-taps'] = String(await sceneOpen(s));
+      out['stats.tap-errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
     }

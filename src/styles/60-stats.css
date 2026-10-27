@@ -24,3 +24,4 @@
 .statsRows th{text-align:left;color:#a17749;border-bottom:1px solid #634329;padding:4px}
 .statsRows td{padding:4px;border-bottom:1px solid #2a1c10}
 @media (max-width:480px){.statsTiles{grid-template-columns:repeat(2,1fr)}}
+#card .titleCrown,#card .brand,#card h1,#card .titleRule{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
