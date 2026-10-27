@@ -345,6 +345,22 @@ export const scenarios = {
     return out;
   },
 
+  // The hound boss's charge: it runs up to four cells and strikes the cells around where it stops; the telegraph is exactly the cells it
+  // ran through plus that ring. A player on a telegraphed cell is struck, a player anywhere else never is.
+  async bosscharge(browser, root) {
+    const out = {};
+    for (const [name, at] of [['onPath', { x: 0, y: 0 }], ['ringFront', { x: 2, y: 0 }], ['besideEarlyPath', { x: -2, y: 1 }], ['outsideRing', { x: 4, y: 1 }]]) {
+      const s = await openSession(browser, root, { seed: 5 });
+      await startRun(s, 'escort');
+      const r = await s.page.evaluate((o) => globalThis.__MANRU_QA_BOSSCHARGE__(o), at);
+      if (r.hpLost > 0 && !r.telegraphed) throw new Error(`bosscharge (${name}): the player was struck on a cell the telegraph did not show: ${JSON.stringify(r)}`);
+      out[`bosscharge.${name}`] = JSON.stringify(r);
+      out[`bosscharge.${name}.errors`] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    return out;
+  },
+
   // The DOM elements the game keeps in closure variables (feelEl, panel, coach, modal, skillQuick, classDetail1001, classStart1001,
   // hud): after loading, in every boot situation, each holds its element, attached where the game attaches it. A variable that is
   // read before its initialisation would be undefined here.
