@@ -25,3 +25,5 @@
 .statsRows td{padding:4px;border-bottom:1px solid #2a1c10}
 @media (max-width:480px){.statsTiles{grid-template-columns:repeat(2,1fr)}}
 #card .titleCrown,#card .brand,#card h1,#card .titleRule{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#statsScene .statsLog pre{margin:8px 0 0;max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-all;font-size:10px;line-height:1.4;color:#c9b894;background:#050201;border:1px solid #3a2616;padding:6px}
+#statsScene .statsLogRow{display:flex;gap:8px}

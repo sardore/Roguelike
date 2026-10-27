@@ -617,7 +617,7 @@ const ActionDispatcher=Object.freeze({
   dispatch(command){
     const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
-    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id)};
+    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
     const frame={result,turns:result.turns,denial:null};if(!parent)ACTION_AUDIT5.roots++;ACTION_AUDIT5.stack.push(frame);
     let completed=false;
@@ -645,6 +645,8 @@ const ActionDispatcher=Object.freeze({
         else{result.attempted=false;result.reason='no-target'}
       }
       completed=true;return result;
+    }catch(error){
+      PlayStats.logAction(type,command,result,'exception: '+(error?.message||error),before);throw error;
     }finally{
       result.logicalTurns=(state?.turn||0)-before.turn;result.floorTurnDelta=(state?.floorTurn||0)-before.floorTurn;result.enemyRounds=result.turns.reduce((sum,turn)=>sum+turn.enemyRounds,0);result.agencyTurns=(state?.playerAgencyTurns57||0)-before.agency;
       result.timeCost=result.turns.reduce((sum,turn)=>sum+turn.timeCost,0);
@@ -656,6 +658,7 @@ const ActionDispatcher=Object.freeze({
       result.successful=result.committed&&!frame.denial&&!result.playerDied&&!result.lifecycleAborted;
       result.status=result.lifecycleAborted?'aborted':result.playerDied?'dead':frame.denial==='stun'?'denied':frame.denial?'blocked':result.pending?'pending':type==='TARGET_CANCEL'?'cancelled':result.committed?'committed':!result.attempted?'no-action':result.handled?'failed':'ignored';
       if(frame.denial)result.reason=frame.denial;
+      if(!parent)PlayStats.logAction(type,command,result,frame.denial,before);
       if(completed&&!parent&&ACTION_PRESENTATION58.pending&&ACTION_PRESENTATION58.run===state){const a=ACTION_PRESENTATION58,now=performance.now();a.pending=false;a.start=now;a.until=now+(a.kind==='attack'?260:240)/(a.rate||1);a.inputUntil=now+85/(a.rate||1);}
       ACTION_AUDIT5.stack.pop();if(parent){parent.result.children.push(result);parent.turns.push(...result.turns);if(frame.denial)parent.denial=frame.denial}
       else{if(completed)result.persistence=globalThis.__MANRU_SAVE_SERVICE__?.flush?.(type,result,!activeGameplayPanels57().some(panel=>!before.panels.includes(panel.id)));else globalThis.__MANRU_SAVE_SERVICE__?.clearPending?.();ACTION_AUDIT5.history.push(result);if(ACTION_AUDIT5.history.length>100)ACTION_AUDIT5.history.shift()}
