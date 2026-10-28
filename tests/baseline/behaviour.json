@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "86935db570b78a56e19e49275bc48ba93cb0f7ca",
- "values.branch": "3edfac716f6be0744a9a2af20959f9d4ed0c6cb6",
+ "values.empty": "cf3b8cc6fce022c1b455314e324ef72736f45fa8",
+ "values.branch": "9e3c9c71eb5069f163bc5945cf713501678ba3c6",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -270,7 +270,7 @@
  "stages.descend": "1215ba8cb24db75ce90c2ea376582f6c4881d458",
  "stages.counts": "d91e082504ac1b25fbbb461a3770b2889c06beef",
  "stages.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "features.stages": "6026e4696e2a7c30a9bf86ed589bb1687ecca8b7",
+ "features.stages": "bdf57e6627ba95343f9e0d9a4a903ac071664658",
  "consumers.moves": "3c513b0835d20ebab189ba43a45121da13fa3bc9",
  "consumers.pickups": "6ce87973df38938818c07d7978f46f0a56a05160",
  "consumers.boss": "6ead12b4eb36b1dd5f9ee3682cb59824d52e5578",
@@ -378,5 +378,8 @@
  "drawer.inventoryFromDrawer": "01d9ce0ec4cd7824dbac805921c5751bba485927",
  "drawer.closed": "94c7e1e4fb8b204f9698369a46b9a08af685c4be",
  "drawer.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "drawer.wearUnderStaleDrawer": "8977c9d027e0590a6e5fbbbac17553f41ef981da"
+ "drawer.wearUnderStaleDrawer": "8977c9d027e0590a6e5fbbbac17553f41ef981da",
+ "spectate.hostListed": "5ffe533b830f08a0326348a9160afafc8ada44db",
+ "spectate.listNote": "babd7c5c521e74f09052f2f547ad6957ec2b6276",
+ "spectate.serverDown": "4d13e6044000967d3c2bc6fbafa823c4d857667e"
 }

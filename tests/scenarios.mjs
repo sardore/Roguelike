@@ -346,10 +346,13 @@ export const scenarios = {
       await H(() => document.getElementById('rcSpectate70').click());
       out['spectate.toggleText'] = await H(() => document.getElementById('rcSpectate70').textContent + '|' + document.getElementById('rcSpectate70').getAttribute('aria-pressed'));
       out['spectate.hostReady'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.ready)));
+      // The host sees its own listing confirmed, in the settings line.
+      out['spectate.hostListed'] = String(await until(() => H(() => document.getElementById('rcSpectateInfo70').textContent.includes('목록에 올랐다'))));
 
       // 2. The viewer finds the room from the title screen and joins.
       await view.page.tap('#spectateBtn');
       out['spectate.listed'] = String(await until(() => V(() => document.querySelectorAll('#spectateRooms .spectateRoom').length === 1)));
+      out['spectate.listNote'] = await V(() => document.getElementById('spectateListNote').textContent);
       out['spectate.roomText'] = await V(() => document.querySelector('#spectateRooms .spectateRoom').textContent.replace(/\d+턴.*$/, ''));
       await view.page.tap('#spectateRooms .spectateRoom');
       out['spectate.joined'] = String(await until(() => V(() => !!__MANRU_QA_SPECTATE__.state()?.spectator)));
@@ -432,6 +435,13 @@ export const scenarios = {
       out['spectate.replayDead'] = String(await H(() => __MANRU_QA_SPECTATE__.state().dead === true));
       await host.page.click('.spectateExit'); await host.tick(300);
       out['spectate.replayClosed'] = JSON.stringify(await H(() => ({ replaying: !!__MANRU_QA_SPECTATE__.api.replaying, overlay: getComputedStyle(document.getElementById('overlay')).display, dead: __MANRU_QA_SPECTATE__.state().dead })));
+      // A server that is not there: the list says so, keeps the "try again" promise and does not hang on "searching".
+      const deadInit = init.replace(`127.0.0.1:${port}`, '127.0.0.1:9');
+      const lost = await openSession(browser, root, { seed: 8083, init: deadInit });
+      await lost.page.click('#spectateBtn');
+      for (let i = 0; i < 80 && !(await lost.page.evaluate(() => /다시 시도/.test(document.getElementById('spectateListNote').textContent))); i++) { await lost.tick(300); await new Promise((r) => setTimeout(r, 40)); }
+      out['spectate.serverDown'] = await lost.page.evaluate(() => document.getElementById('spectateListNote').textContent.replace(/\(.*?\)/g, '').replace(/코드 \d+/, '코드 N'));
+      await lost.close();
       out['spectate.errors'] = JSON.stringify({ host: host.errors, view: view.errors });
       await host.close(); await view.close();
     } finally { relay.kill(); }
