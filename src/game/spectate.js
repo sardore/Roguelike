@@ -72,7 +72,10 @@ const Spectate={
   if(!force&&now-this.lastWatch<this.VIEWER_PING_MS)return;
   this.lastWatch=now;this.act('watch',{matchId:this.watching.matchId,payload:{tag:this.TAG}});
  },
+ // Broadcasting is on by default; turning it off in settings is remembered on this device.
+ AUTO_KEY:'manruSpectateHost',autoChecked:false,
  tick(now){
+  if(!this.autoChecked&&state&&!state.spectator&&!state.debugBattle57&&this.endpoint()){this.autoChecked=true;if(lsGet(this.AUTO_KEY)!=='off')this.allow(true)}
   if(this.ws&&this.ready&&now-this.lastBeat>this.HEARTBEAT_MS){this.lastBeat=now;this.send({type:'heartbeat',at:Date.now()})}
   if(this.watching&&this.ready&&!this.replaying)this.watchPing(now);
   if(this.listOpen&&!this.watching&&!this.ws&&!this.connecting&&!this.waking&&now>=this.retryAt)this.startList();
@@ -88,6 +91,7 @@ const Spectate={
  // ---- host ------------------------------------------------------------------------------------------------------------
  allow(on){
   if(on===this.hosting)return this.hosting;
+  lsSet(this.AUTO_KEY,on?'on':'off');
   if(on){if(!this.endpoint())return false;this.hosting=true;this.viewers.clear();this.mirror=null;this.lastChat.clear();this.reconnectAt=0;this.wake().then(()=>{if(this.hosting&&!this.ws)this.open('host')});}
   else{this.announce(false,true);this.hosting=false;this.viewers.clear();this.close()}
   this.updateHostPanel();return this.hosting;
