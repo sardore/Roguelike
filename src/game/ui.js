@@ -1123,7 +1123,7 @@ function bindTitleButtons(){
   classBackBtn.onclick=showStartGate;
   document.getElementById('rankBtn').onclick=()=>PlayStats.open('rank');
   document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
-  PlayStats.flush();
+  PlayStats.flush();PlayStats.bindLifecycle();
   document.getElementById('spectateBtn').onclick=()=>Spectate.openList();
 }
 function createHoldHint(){

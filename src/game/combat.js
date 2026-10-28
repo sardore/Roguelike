@@ -338,7 +338,7 @@ function damageEntity(entity,amount,source=null,element=null,context={}){
    prepareBossArena(entity);if(!entity.arena54.mistActive57){entity.arena54.mistActive57=true;addLog(entity.name+'의 결계가 닫혔다. 본거지 중심 31×31 밖은 짙은 독안개다! 안쪽에서 싸워라.');floatText(entity.x,entity.y,'외곽 독안개','#b9d46a',14)}
   }
  }
- if(entity===state?.player&&entity.hp<before){state.lastDamageAgencyTurn57=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);if(entity.classState?.aimPower>0&&martialFormOf('roar',entity)!=='focus')setAimPower(0);}return before-entity.hp;
+ if(entity===state?.player&&entity.hp<before){PlayStats.logHit(source,before-entity.hp,element,before,context);state.lastDamageAgencyTurn57=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);if(entity.classState?.aimPower>0&&martialFormOf('roar',entity)!=='focus')setAimPower(0);}return before-entity.hp;
 }
 // World target callbacks receive (cell, inputSource); action context is a separate argument.
 function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
