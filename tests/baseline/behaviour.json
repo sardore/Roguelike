@@ -382,5 +382,7 @@
  "spectate.hostListed": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.listNote": "babd7c5c521e74f09052f2f547ad6957ec2b6276",
  "spectate.serverDown": "4d13e6044000967d3c2bc6fbafa823c4d857667e",
- "spectate.turnedOff": "02a0a5c5dd304f8559dfa19f2719913ff5158623"
+ "spectate.turnedOff": "02a0a5c5dd304f8559dfa19f2719913ff5158623",
+ "spectate.tileMismatch": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
+ "spectate.inspectClose": "1b37c14eefa9da9aef4e734a903fd4475d80575f"
 }

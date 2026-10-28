@@ -371,6 +371,15 @@ export const scenarios = {
       const held = await V(() => { const s = __MANRU_QA_SPECTATE__.state(), out = []; for (const key of ['outerWall94', 'subthemeFloors972', 'subthemeWalls970', 'archDecor1020', 'floorPattern1022', 'rugPattern1022', 'terrainUnderlay58', 'terrainAttachment58']) for (const c in s[key]) out.push(c); for (const list of [s.monsters, s.items, s.decor]) for (const e of list) out.push(e.x + ',' + e.y); return { cells: out, seen: s.seen.size, turn: s.turn, floor: s.floor }; });
       out['spectate.outsideSeen'] = String(held.cells.filter((c) => !hostSeen.has(c)).length);
       out['spectate.seenEqual'] = String(held.seen === hostSeen.size);
+      // Every cell the viewer holds as seen has the same tile as on the host's map (a seen cell never shows as void), and a cell inspected
+      // by the viewer can be closed again.
+      const hostTiles = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [...s.seen].map((c) => { const [x, y] = c.split(',').map(Number); return [c, s.map[y][x]]; }); });
+      out['spectate.tileMismatch'] = String(await V((tiles) => { const s = __MANRU_QA_SPECTATE__.state(); return tiles.filter(([c, t]) => { const [x, y] = c.split(',').map(Number); return !s.seen.has(c) || s.map[y][x] !== t; }).length; }, hostTiles));
+      await V(() => { const s = __MANRU_QA_SPECTATE__.state(), [x, y] = [...s.seen][0].split(',').map(Number); window.__MANRU_INSPECT984__({ x, y }); });
+      await both(700);
+      const opened = await V(() => document.body.classList.contains('manru-inspect-open'));
+      await view.page.tap('#inspectClose'); await both(700);
+      out['spectate.inspectClose'] = JSON.stringify({ opened, closed: await V(() => !document.body.classList.contains('manru-inspect-open')) });
       const crop = (p) => p.page.evaluate(() => {
         const P = window.__MANRU_CAMERA_PROJECTION12__, s = __MANRU_QA_SPECTATE__.state(), c = document.getElementById('game'), pl = s.player;
         const t = P.tileTopLeft(pl.x - 3, pl.y - 3), r = c.getBoundingClientRect(), dpr = c.width / r.width, w = Math.round(t.s * 7 * dpr), x = Math.round(t.x * dpr), y = Math.round(t.y * dpr);
