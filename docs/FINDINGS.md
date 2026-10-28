@@ -100,3 +100,6 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 
 ## F-26 (미수정) `TYPED_KEYS96` 상수 이름은 읽히지 않지만 문장을 못 지운다
 `const TYPED_KEYS96=globalThis.__MANRU_TYPED_KEYS__={…}`의 상수 이름은 아무도 읽지 않는다(읽는 곳은 모두 전역 `__MANRU_TYPED_KEYS__`). 이름만 떼어 보았더니 선언이 느슨한 문장이 되어 `spineLooseStatements`가 늘어 게이트가 막았다(되돌림). 이 문장을 special.js로 옮기려면 `let typedKeyMeta96`(문장 안의 함수가 다시 할당)도 같이 옮겨야 한다. 공개 전역을 직접 호출로 바꾸는 별도 정리(P9)에서 함께 본다.
+
+## F-27 (미수정) 분기 지형 소품 그림 `sack`·`well`·`wheel`·`jar`·`brazier`·`banner`가 그려지지만 배치하는 곳이 없다
+`drawBranchCell`(render.js)의 `prop` 분기에 항아리·자루·우물·물레·화로·깃발 그림이 있으나, `branchTerrain105.props`에 이 이름을 넣는 코드는 branches.js에 없다(배치는 `rack`·`pillar`·`tree`·`deadTree`·citadel 소품 이름·`handle`뿐). 도장의 `rack`/`pillar`도 이 분기가 아니라 도장 전용 그림을 거친다. 가구 입체감 조사(2026-10-28) 중 모든 분기를 들어가 확인했다. 지우기 전에 저장된 옛 분기 페이지에 이 이름이 남아 있는지 확인이 필요하다.
