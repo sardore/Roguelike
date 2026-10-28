@@ -839,7 +839,7 @@
       body.mf75-clean #mobileHud .hp{width:auto!important;flex:1 1 105px!important}
       body.mf75-clean #mobileHud .focus{width:58px!important;flex-basis:58px!important}
       body.mf75-clean #mobileHud .mButtons button,body.mf75-clean #releaseGear70{width:44px!important;min-width:44px!important}
-      body.mf75-clean #canvasWrap{padding-top:calc(52px + var(--safe-top))!important;padding-bottom:calc(112px + var(--safe-bottom))!important}
+      body.mf75-clean #canvasWrap{padding:calc(var(--hud-top,0px) + var(--safe-top)) var(--hud-right,0px) calc(var(--hud-bottom,112px) + var(--safe-bottom)) var(--hud-left,0px)!important}
       body.mf75-clean #mobileControls{display:flex!important;position:fixed!important;left:calc(5px + var(--safe-left))!important;right:calc(5px + var(--safe-right))!important;bottom:calc(5px + var(--safe-bottom))!important;height:106px!important;align-items:end!important;justify-content:space-between!important;transform:none!important}
       body.mf75-clean #mobileControls .pad{grid-template-columns:32px 32px 32px!important;grid-template-rows:32px 32px 32px!important;gap:2px!important;padding:3px!important;border:1px solid #493623!important;border-radius:3px!important;background:rgba(9,6,4,.82)!important;box-shadow:0 5px 16px #0007!important}
       body.mf75-clean #mobileControls .pad button{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;border-radius:2px!important;border-color:#3f3124!important;background:#15100c!important;box-shadow:none!important;font-size:calc(12px * var(--ui-font-scale, 1))!important}
@@ -851,8 +851,8 @@
       body.mf75-clean #terrainTag{top:calc(55px + var(--safe-top))!important;max-width:54vw!important}
       body.mf75-clean #terrainTag.withBoss58{top:calc(90px + var(--safe-top))!important;max-width:54vw!important}
       body.mf75-clean #bossHud{top:calc(58px + var(--safe-top))!important}
-      body.mf75-clean #autoMoveChip{bottom:calc(116px + var(--safe-bottom))!important}
-      body.mf75-clean #toast{top:auto!important;left:50%!important;bottom:calc(116px + var(--safe-bottom))!important;transform:translateX(-50%)!important;max-width:88vw!important}
+      body.mf75-clean #autoMoveChip{bottom:calc(var(--hud-toast,116px) + var(--safe-bottom))!important}
+      body.mf75-clean #toast{top:auto!important;left:50%!important;bottom:calc(var(--hud-toast,116px) + var(--safe-bottom))!important;transform:translateX(-50%)!important;max-width:88vw!important}
       body.mf75-clean #inventory{inset:0!important;padding:0!important}
       body.mf75-clean #inventory .uxInv{height:100%!important;min-height:100%!important;border:0!important;border-radius:0!important}
       body.mf75-clean .uxGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:68px!important;padding:4px 4px calc(78px + var(--safe-bottom))!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;touch-action:pan-y!important;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-gutter:stable}
@@ -861,6 +861,11 @@
       body.mf75-clean .f74sheet{width:100%!important;max-height:94dvh!important}.mf75-clean .f74grid,.mf75-clean .f74gear{grid-template-columns:1fr!important}
       body.mf75-clean #fusion74,body.mf75-clean #gear74{align-items:flex-end!important;padding:4px!important}
       body.mf75-clean #mobileDrawer{left:4px!important;right:4px!important;bottom:calc(4px + var(--safe-bottom))!important;max-height:70dvh!important;border-radius:4px!important}
+    }
+    /* Landscape phones: the playfield sits between the two control columns instead of under them. */
+    @media(max-width:1080px) and (max-height:500px) and (orientation:landscape){
+      body.mf75-clean{--hud-top:48px;--hud-bottom:0px;--hud-left:calc(122px + var(--safe-left));--hud-right:calc(172px + var(--safe-right));--hud-toast:12px}
+      body.mf75-clean.pad58-hidden{--hud-left:var(--safe-left)}
     }
 
     @media(max-width:390px){

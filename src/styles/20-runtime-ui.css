@@ -8,7 +8,7 @@
   body.mf75-clean #zoomHud .zoomVal{display:grid!important;place-items:center!important;min-width:44px!important;width:44px!important;height:30px!important;padding:0!important;font-size:calc(8px * var(--ui-font-scale, 1))!important}
   body.mf75-clean #zoomHud #cameraCenterBtn{display:grid!important;font-size:calc(14px * var(--ui-font-scale, 1))!important}
   body.camera-inspect81 #cameraCenterBtn{border-color:#b67842!important;box-shadow:0 0 9px rgba(184,111,55,.22)!important}
-  @media(max-width:1080px){body.mf75-clean #zoomHud{position:fixed!important;right:4px!important;top:calc(49px + var(--safe-top))!important;bottom:auto!important}body.mf75-clean #canvasWrap{padding-top:var(--safe-top)!important}}
+  @media(max-width:1080px){body.mf75-clean #zoomHud{position:fixed!important;right:4px!important;top:calc(49px + var(--safe-top))!important;bottom:auto!important}}
   @media(min-width:1081px){body.mf75-clean #zoomHud{position:fixed!important;right:calc(318px + 18px)!important;top:12px!important;bottom:auto!important}body.mf75-clean #mobileClosePanel{display:none!important}}
 
   /* v9.3 mobile ergonomics */

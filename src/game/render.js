@@ -734,8 +734,30 @@ function drawWallTexture(px,py,x,y,colors){
   // Only the plain 청풍루 wall takes the dojo texture; other faces keep their own art and carry the exposed vertical edge down.
   if((state.map[y+1]?.[x]??TT.WALL)===TT.WALL||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
   drawWallFace(px,py,x,y,colors);
-  const open=xx=>state.map[y]?.[xx]!=null&&state.map[y][xx]!==TT.WALL;X.fillStyle=wallLineColors(x,y).cap;
-  if(open(x-1))X.fillRect(px,py,2,30);if(open(x+1))X.fillRect(px+30,py,2,30);
+  carryWallEdges(px,py,x,y);
+}
+// The exposed vertical edge of a wall, in the colour that wall is drawn with: a line down each side that opens onto a seen cell.
+function carryWallEdges(px,py,x,y){
+  const open=xx=>state.map[y]?.[xx]!=null&&state.map[y][xx]!==TT.WALL&&state.seen.has(k(xx,y)),h=state.map[y+1]?.[x]===TT.WALL?32:30;X.fillStyle=wallLineColors(x,y).cap;
+  if(open(x-1))X.fillRect(px,py,2,h);if(open(x+1))X.fillRect(px+30,py,2,h);
+}
+// Walls that keep art of their own in a branch: the dojo draws its walls with its own edge lines, the stockades have no edge lines at all,
+// palace facades and windows, and the citadel gates (iron grates).
+function wallKeepsOwnArt(x,y){
+  const b=state.branchContext105,ter=state.branchTerrain105,key=k(x,y);
+  if(['dojo','stockade','black'].includes(b?.id))return true;
+  if(b?.id==='palace'){const d=ter.palace105;return !!(d.facades?.[key]||d.windows?.[key])||DIRS8.some(([dx,dy])=>d.outdoors?.[k(x+dx,y+dy)])}
+  if(b?.id==='citadel')return !!ter.mine105?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));
+  return false;
+}
+// Edge colours of a branch wall: the colours that world draws its walls with.
+function branchWallColors(x,y){
+  const b=state.branchContext105,ter=state.branchTerrain105;
+  if(state.artifactDungeon46){const T=LEGEND_THEMES47[state.artifactDungeon46.id];return{cap:T.wall2,wall:T.wall}}
+  if(b.id==='mine'){const pal=MINE_WALL_PALETTES[ter.mine105.cellStyle?.[k(x,y)]??((x>>4)+(y>>4))%3];return{cap:pal[2],wall:pal[1]}}
+  if(b.id==='citadel'){const P=citadelCellOwners(ter.citadel105,x,y,true).palette;return{cap:P.light,wall:P.stone}}
+  if(b.id==='palace')return{cap:'#738575',wall:'#334d49'};
+  if(b.id==='canal'||b.id==='granary'){const P=branchDistrictAt(x,y);return{cap:P.cap,wall:P.wall}}
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
     drawWallWithSubthemeOverlay(px,py,x,y,colors);const r41=globalThis.__MANRU_TERRAIN_R41__,style=state?.wallStyle980?.[key980(x,y)]||state?.subthemeWalls970?.[key980(x,y)];if(!style){r41?.wall?.(px,py,x,y,colors);return}const h=hash980(x,y,79);X.save();
@@ -805,6 +827,7 @@ const MAIN_WALL_PALETTES=new Map();
 function specialWall(x,y){return !!(state.specialPlaces52?.floor===state.floor&&state.specialPlaces52.walls?.[K1020(x,y)])||!!state.bookWalls1022?.includes(K1020(x,y))||!!state.outerWall94?.[key85(x,y)]}
 // Colours of the edge lines of a wall that keeps its own texture: the colours that wall is drawn with.
 function wallLineColors(x,y){
+ if(state.branchContext105)return branchWallColors(x,y);
  const z=regionIndex(),place=state.specialPlaces52?.floor===state.floor&&state.specialPlaces52.walls?.[K1020(x,y)]&&SPECIAL_PLACES52[state.floor];
  if(place)return{cap:place[2],wall:place[1]};
  if(state.outerWall94?.[key85(x,y)]){const c=OUTER_WALL_COLORS[z]?.[0]||OUTER_WALL_COLORS[4][0];return{cap:colorShift(c,70),wall:c}}
@@ -1611,8 +1634,9 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const kk=k(x,y);if(!state.seen.has(kk)&&!mineScenerySeen(x,y))continue;const vis=state.visible.has(kk)||mineSceneryVisible(x,y),px=x*TILE,py=y*TILE,t=mineHidden(x,y)?TT.VOID:state.map[y][x];
       X.save();
-      if(drawBranchCell(t,px,py,x,y,terrainProps63)){X.restore();continue}
-      if(state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(t,px,py,x,y,now,true)){X.restore();continue}
+      const edged=t===TT.WALL&&(state.branchContext105||state.artifactDungeon46)&&!wallKeepsOwnArt(x,y);
+      if(drawBranchCell(t,px,py,x,y,terrainProps63)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
+      if(state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(t,px,py,x,y,now,true)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
       X.globalAlpha=1;const base=terrainBaseTile58(x,y,t);
       if(base===TT.WALL)drawWallTexture(px,py,x,y,colors);else{drawFloorTexture(px,py,x,y,colors,true);if(base!==TT.FLOOR&&base!==TT.GRASS){if(!drawSpecialTerrain(base,px,py,x,y,now))drawInteractiveTerrain(base,px,py,x,y,now)}}
       if(t!==base&&t!==TT.FLOOR&&t!==TT.GRASS&&t!==TT.WALL)terrainProps63.push({t,px,py,x,y});
@@ -3781,6 +3805,11 @@ function drawCitadelSearch(q,strength,x,y,wall=false){
  if(wall&&strength>.35&&h<strength*.55){q.translate(16,21);q.fillStyle='#0d101a';q.strokeStyle='#6a4e50';q.lineWidth=.7;q.beginPath();q.moveTo(-7,7);q.lineTo(-7,-3);q.lineTo(-4,-3);q.lineTo(-4,-8);q.lineTo(0,-4);q.lineTo(4,-8);q.lineTo(4,-3);q.lineTo(7,-3);q.lineTo(7,7);q.closePath();q.fill();q.stroke();q.fillStyle='#a85548';q.fillRect(-1,-2,2,5);}
  q.restore();
 }
+// The tower, room and palette a citadel cell belongs to; a wall cell belongs to the room it borders.
+function citadelCellOwners(data,x,y,wall){
+ const owner=data.cellOwner105[k(x,y)],tower=data.towers.find(t=>t.id===owner),edge=Number(wall),room=data.rooms.find(a=>x>=a.x-edge&&x<a.x+a.w+edge&&y>=a.y-edge&&y<a.y+a.h+edge);
+ return{tower,room,palette:room?.palette105||data.zones105?.[data.zoneCells105?.[k(x,y)]]?.palette||tower?.palette105||(tower?CITADEL_DISTRICTS[CITADEL_TOWERS[tower.id].district105]:CITADEL_DISTRICTS.arsenal)};
+}
 function drawCitadelCell(t,px,py,x,y,foreground=null){
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}
  const ter=state.branchTerrain105,data=ter.citadel105,m=ter.mine105,s=ter.surfaces[k(x,y)]||'',at=(dx,dy)=>state.map[y+dy]?.[x+dx],key=y*COLS+x;
@@ -3788,7 +3817,7 @@ function drawCitadelCell(t,px,py,x,y,foreground=null){
  if(t===TT.VOID&&DIRS8.every(([dx,dy])=>at(dx,dy)==null||at(dx,dy)===TT.VOID)){X.fillStyle='#080d14';X.fillRect(px,py,32,32);return true;}
  const grate=m.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y)),motifs=data?.motifCells?.[k(x,y)]||[],relic=data?.relicCells105?.[k(x,y)],search=data?.searchCells105?.[k(x,y)]||0,stamp=[t,s,grate,relic?.id,relic?.strength,search,data?.zoneCells105?.[k(x,y)],...DIRS4.map(([dx,dy])=>at(dx,dy)),...DIRS4.map(([dx,dy])=>ter.surfaces[k(x+dx,y+dy)]),motifs.join(',')].join(':');let e=BRANCH_TILE_CACHE.get(key),c=e?.stamp===stamp?e.canvas:null;
  if(!c){c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d');q.scale(1.5,1.5);const {r}=drawKit(q),line=(color,a,b,xx,yy,w=1)=>{q.strokeStyle=color;q.lineWidth=w;q.beginPath();q.moveTo(a,b);q.lineTo(xx,yy);q.stroke();},h=hash2(x,y,716),wall=z=>z===TT.WALL||z===TT.WINDOW;
- const owner=data.cellOwner105[k(x,y)],tower=data.towers.find(t=>t.id===owner),room=data.rooms.find(a=>x>=a.x-Number(t===TT.WALL||t===TT.WINDOW)&&x<a.x+a.w+Number(t===TT.WALL||t===TT.WINDOW)&&y>=a.y-Number(t===TT.WALL||t===TT.WINDOW)&&y<a.y+a.h+Number(t===TT.WALL||t===TT.WINDOW)),basePalette=room?.palette105||data.zones105?.[data.zoneCells105?.[k(x,y)]]?.palette||tower?.palette105||(tower?CITADEL_DISTRICTS[CITADEL_TOWERS[tower.id].district105]:CITADEL_DISTRICTS.arsenal),P=relic?citadelRelicPalette(basePalette,CITADEL_RELIC_SITES.find(s=>s.id===relic.id),relic.strength):basePalette;
+ const wallCell=t===TT.WALL||t===TT.WINDOW,{tower,room,palette:basePalette}=citadelCellOwners(data,x,y,wallCell),P=relic?citadelRelicPalette(basePalette,CITADEL_RELIC_SITES.find(s=>s.id===relic.id),relic.strength):basePalette;
  const floor=()=>{
   const sy=y*32,sx=x*32,theme=room?.theme105,ritual=['chapel','ritual'].includes(theme)||s==='citadel-ritual',pale=s==='citadel-pale',warm=['mess','kitchen','store','barracks'].includes(theme),forge=['foundry','smithy','coalstore'].includes(theme),archive=['archive','study'].includes(theme),tomb=['tomb','ossuary'].includes(theme),formal=ritual||pale||s==='citadel-marble';
   const pal=[P.joint,P.stone,P.light];r(pal[0],0,0,32,32);
@@ -3855,6 +3884,8 @@ function drawCitadelCell(t,px,py,x,y,foreground=null){
  if(t===TT.PORTAL){const p=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(p)drawBranchDoor(px,py,p);}else if(t===TT.SWITCH&&foreground){foreground.push({t,px,py,x,y});}else if(![TT.VOID,TT.WALL,TT.DRAWBRIDGE_DOWN,TT.STONE_PATH,TT.FLOOR,TT.DOOR,TT.OPEN_DOOR].includes(t)){X.save();if(!drawSpecialTerrain(t,px,py,x,y,performance.now()))drawInteractiveTerrain(t,px,py,x,y,performance.now());X.restore();}return true;
 }
 function drawCitadelActor(q,m,frame){const b=frame?1:0,{r}=drawKit(q),type=m.citadelActor105,pR9=(_,color,points)=>{q.fillStyle=color;q.beginPath();points.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();};q.fillStyle='#0c122480';q.beginPath();q.ellipse(16,33,12,2,0,0,Math.PI*2);q.fill();if(type==='wing'){pR9(q,'#51465f',[[14,15],[1,6+b],[3,23],[11,26],[16,20],[22,26],[31,23],[30,6-b],[18,15]]);r('#aaa0bb',5,13,2,9);r('#aaa0bb',26,13,2,9);}if(type==='bell'){pR9(q,'#9a845e',[[12,3+b],[20,3+b],[23,19+b],[27,23+b],[5,23+b],[9,19+b]]);r('#d2bd89',9,20+b,15,3);r('#152335',13,11+b,7,6);r('#9ed3df',14,13+b,2,2);r('#9ed3df',18,13+b,2,2);r('#728ba3',14,24,4,7);return;}pR9(q,type==='tomb'?'#535f68':'#38465d',[[9,14+b],[23,14+b],[27,28],[22,32],[8,32],[5,27]]);r('#879ab0',10,16+b,12,3);r('#667b94',12,19+b,9,8);r('#b59b70',15,18+b,2,11);r('#222d42',11,4+b,11,10);r('#9aabc0',10,5+b,13,3);r('#879aaf',9,8+b,15,2);r('#c5a278',13,10+b,7,1);r('#633b56',21,11+b,3,17);r('#131c2b',8,31,6,3);r('#131c2b',20,31,6,3);if(type==='lancer'||type==='tomb'){r('#ab9170',27,7,2,25);pR9(q,'#d2dce4',[[28,1],[24,9],[31,9]]);}else if(type==='crossbow'){r('#ab9170',2,19,13,3);r('#d6dce1',7,14,2,16);r('#2d384c',1,21,2,6);}else if(type==='chain'){q.strokeStyle='#b7c5d1';q.beginPath();q.moveTo(7,20);q.lineTo(2,25);q.lineTo(3,32);q.lineTo(7,30);q.stroke();r('#b3bdc8',2,30,6,2);}}
+// Wall colours of the three mine zones: base, block and edge.
+const MINE_WALL_PALETTES=Object.freeze([['#343c39','#555e52','#818475'],['#3d3d33','#615f4c','#8d866d'],['#303a3a','#4e5f59','#768a7f']]);
 function drawMineCell(t,px,py,x,y,foreground=null){
  const m=mineState();if(!m)return false;if(MINE_RENDER_STATE!==state.map){MINE_RENDER_STATE=state.map;MINE_CANVAS.clear();MINE_FX=[];}
  const hidden=mineHidden(x,y),tile=hidden?TT.VOID:t,at=(dx,dy)=>mineHidden(x+dx,y+dy)?TT.VOID:state.map[y+dy]?.[x+dx],stamp=k(x,y)+':'+tile+':'+DIRS8.map(([dx,dy])=>at(dx,dy)+'.'+Number(mineHidden(x+dx,y+dy))).join('|');let canvas=MINE_CANVAS.get(stamp);
@@ -3867,7 +3898,7 @@ function drawMineCell(t,px,py,x,y,foreground=null){
     else{poly('#262d2d',[[0,0],[32,0],[32,9],[23,14],[9,12],[0,16]]);poly('#424842',[[0,0],[14,0],[10,10],[1,13]]);poly('#353d39',[[16,0],[30,0],[26,8],[15,12]]);line('#626455',0,1,32,1);line('#1d2627',12,4,9,14);}
    }
   }else if(tile===TT.WALL){
-   const pal=[['#343c39','#555e52','#818475'],['#3d3d33','#615f4c','#8d866d'],['#303a3a','#4e5f59','#768a7f']][zone];rect(pal[0],0,0,32,32);
+   const pal=MINE_WALL_PALETTES[zone];rect(pal[0],0,0,32,32);
    // Restore staggered masonry as the material base; vary each block independently of optional damage.
    for(let row=Math.floor(y*32/11);row<=Math.floor((y*32+31)/11);row++){
     const yy=row*11-y*32,offset=(row%2)*11;
