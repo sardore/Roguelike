@@ -726,9 +726,9 @@ function drawWallTexture(px,py,x,y,colors){
   if(!wallsAreNegativeSpace()||state.branchContext105){drawWallFace(px,py,x,y,colors);return}
   // Every wall gets the dojo edge treatment: wall volume behind a face is unlit negative space outlined at its exposed edges.
   // Only the plain 청풍루 wall takes the dojo texture; other faces keep their own art and carry the exposed vertical edge down.
-  if((state.map[y+1]?.[x]??TT.WALL)===TT.WALL||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
+  if(wallLike(state.map[y+1]?.[x]??TT.WALL)||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
   drawWallFace(px,py,x,y,colors);
-  const open=xx=>state.map[y]?.[xx]!=null&&state.map[y][xx]!==TT.WALL;X.fillStyle=wallLineColors(x,y).cap;
+  const open=xx=>state.map[y]?.[xx]!=null&&!wallLike(state.map[y][xx]);X.fillStyle=wallLineColors(x,y).cap;
   if(open(x-1))X.fillRect(px,py,2,30);if(open(x+1))X.fillRect(px+30,py,2,30);
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
@@ -812,7 +812,12 @@ function mainWallPalette(){
  P=Object.fromEntries(Object.entries(base).map(([key,value])=>[key,['wall','cap','beam','dark','grain'].includes(key)?mix(value,tint[{wall:'face',cap:'edge',beam:'top',dark:'dark',grain:'side'}[key]]):value]));
  MAIN_WALL_PALETTES.set(id,P);return P;
 }
-function drawMainWall(px,py,x,y){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y),x,y);X.restore()}
+function drawMainWall(px,py,x,y){
+ // A plain wall volume beside a wall with art of its own draws its edge in that wall's colours, so the line runs on unbroken.
+ let P=dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y);
+ if(dojoFaceWall(x,y))for(const[dx,dy]of[[-1,0],[1,0],[0,1]])if(specialWall(x+dx,y+dy)){P=wallLineColors(x+dx,y+dy);break}
+ X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,P,x,y);X.restore();
+}
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
@@ -3933,7 +3938,7 @@ function dojoPalette(x,y){const d=state.branchTerrain105?.dojo,owned=d?.cellZone
 // The dojo wall (also the wall of the main-tower floors, tinted per region): a front face is plaster under a timber beam;
 // wall volume behind a face is unlit negative space, outlined only at its exposed edges.
 function drawDojoWall(q,r,P,x,y){
- const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,south=wall(x,y+1),west=wall(x-1,y),east=wall(x+1,y);
+ const wall=(xx,yy)=>state.map[yy]?.[xx]==null||wallLike(state.map[yy][xx]),south=wall(x,y+1),west=wall(x-1,y),east=wall(x+1,y);
  const texture=(seed,count,c)=>{for(let i=0;i<count;i++){const a=hash2(x*31+i,y*17,seed),b=hash2(x*19,y*29+i,seed+1);r(c,2+Math.floor(a*27),2+Math.floor(b*27),a>.7?2:1,1);}};
  if(south){
   const e=wallEdges(x,y);
