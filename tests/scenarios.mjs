@@ -394,6 +394,18 @@ export const scenarios = {
       out['spectate.picture'] = a && b && a.length === b.length ? String(a.reduce((n, v, i) => n + (Math.abs(v - b[i]) > 40 ? 1 : 0), 0) / a.length < 0.02) : 'size-differs';
       await wide.page.click('.spectateExit'); await wide.close();
 
+      // The viewer's picture follows the host's character: the drawn position catches up after every step (it used to stay where it was
+      // when the viewer joined), and a camera the viewer has moved stays where the viewer put it while the host walks on.
+      const stepHost = () => H(() => { for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) if (__MANRU_QA_SPECTATE__.move(dx, dy).status === 'committed') break; });
+      const apart = () => V(() => { const q = __MANRU_QA_SPECTATE__, s = q.state(), v = q.vis(); return Math.round(Math.hypot(v.x - s.player.x, v.y - s.player.y) * 100) / 100; });
+      for (let i = 0; i < 3; i++) { await stepHost(); await both(400); }
+      await both(1500);
+      out['spectate.walkFollow'] = JSON.stringify({ apart: await apart(), mode: (await V(() => __MANRU_QA_SPECTATE__.vis().cam.mode)) });
+      const camBefore = await V(() => { const C = globalThis.__MANRU_CAMERA_STATE12__; C.beginInspect(); C.panScreen(60, 0); return C.snapshot().cx; });
+      for (let i = 0; i < 3; i++) { await stepHost(); await both(400); }
+      await both(1500);
+      out['spectate.walkFree'] = JSON.stringify({ apart: await apart(), mode: await V(() => __MANRU_QA_SPECTATE__.vis().cam.mode), camHeld: Math.abs((await V(() => globalThis.__MANRU_CAMERA_STATE12__.snapshot().cx)) - camBefore) < 1 });
+      await V(() => globalThis.__MANRU_CAMERA_STATE12__.center());
       // 4. Floors follow, including a branch floor.
       await H(() => __MANRU_QA_SPECTATE__.regen(2));
       out['spectate.floor2'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.state().floor === 2)));

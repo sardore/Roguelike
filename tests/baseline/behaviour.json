@@ -385,5 +385,7 @@
  "spectate.turnedOff": "02a0a5c5dd304f8559dfa19f2719913ff5158623",
  "spectate.noSwitch": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.tileMismatch": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
- "spectate.inspectClose": "1b37c14eefa9da9aef4e734a903fd4475d80575f"
+ "spectate.inspectClose": "1b37c14eefa9da9aef4e734a903fd4475d80575f",
+ "spectate.walkFollow": "efacd654c469acedd5f48405f6a485f0b6525f7c",
+ "spectate.walkFree": "af45487f2be126c8757848cf0e8a83514663db8b"
 }
