@@ -136,7 +136,7 @@ function openInventory(){
 globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
 }
 function closeInventory(){
-  inventoryOpen = false;
+  inventoryOpen = false;if(interactionActive8('mobileDrawer'))closeMobileDrawer();
   const box=document.getElementById("inventory");box.style.display="none";box.classList.remove('open');
 globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 function renderHelp(){const box=document.getElementById('helpPanel');box.innerHTML=`<div class="invHeader helpHead57"><div><h2>만루 · 도움말</h2><small>ESC 또는 ?로도 닫을 수 있다.</small></div><button class="uxClose" id="helpClose57" aria-label="닫기">×</button></div><div class="helpCols"><div><h3>조작</h3><div>WASD 이동 · SPACE/J 기본 공격 · G 줍기 · F 주변 분기문 출입 · C 인접 문닫기 · E 점멸</div><div>Q 무술 메뉴 · I 인벤토리 · R 휴식</div><div>&gt; 다음 층 · K 저장 · L 불러오기</div><br><h3>성장</h3><div>Lv.1~12: 기존 성장 유지(레벨에 따라 최대 HP +1~2, 무술 포인트 +1). Lv.13~18: 최대 HP +3, 레벨업 무술 포인트 없음.</div><div>완전 턴제다. 당신이 행동할 때만 적·허기·상태가 진행된다. 무기 속도는 공격 행동의 턴 비용을 바꾼다.</div><div>ATK/DEF/EVA는 자동으로 폭증하지 않는다. 장비와 무술 선택이 핵심.</div></div><div><h3>점멸</h3><div>5층 보스: 2칸 습득</div><div>15층 보스: 3칸</div><div>20층 보스: 4칸</div><div>21층부터 공허 간격을 넘는 핵심 이동기가 된다.</div><br><h3>허기</h3><div>1 이상: 전투 능력치 패널티 없음</div><div>0: ATK -20% + 주기적 굶주림 피해</div></div></div>`;box.querySelector('#helpClose57').onclick=closeHelp}

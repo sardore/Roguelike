@@ -829,7 +829,7 @@ function gameplayInputAllowed57(opts={}){
   if(RuntimeState.ui.generationPending)return false;
   if(OrientationGate.active()&&runState57()==='playing')return false;
   const owner=gameplayInputOwner57();if(owner.kind==='terminal')return false;if(owner.kind==='none')return true;
-  const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory)allowed.add('inventory');if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
+  const allowed=new Set(opts.uiOwner?[opts.uiOwner]:[]);if(opts.allowInventory){allowed.add('inventory');allowed.add('mobileDrawer')}if(opts.allowMartial)allowed.add('martialPanel');if(opts.allowCipher)allowed.add('cipherPanel');
   return owner.panels.every(p=>allowed.has(p.id))
 }
 const RUN_END_EFFECTS=[markDeathSeal,showEndingScreen];

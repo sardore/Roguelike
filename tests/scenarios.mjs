@@ -454,6 +454,16 @@ export const scenarios = {
     // and the other way: the drawer opened while the inventory is open yields to nothing it should not
     await s.page.keyboard.press('Escape'); await s.tick(300);
     out['drawer.closed'] = JSON.stringify(await panels());
+    // The state in the report: the inventory is open, a menu-drawer session is still active underneath, and wearing a cloak was refused
+    // ("blocked") every time. The cloak is worn now, and both the inventory and the stale drawer are closed afterwards.
+    await s.page.evaluate(() => { const st = __MANRU_QA_UI__.state(); st.player.inventory.push({ name: '시험망토', type: 'cloak', tier: 1, rarity: 'common', count: 1 }); });
+    await s.page.keyboard.press('KeyI'); await s.tick(400);
+    await s.page.evaluate(() => __MANRU_QA_UI__.sessions.add('mobileDrawer'));
+    out['drawer.wearUnderStaleDrawer'] = JSON.stringify(await s.page.evaluate(() => {
+      const U = __MANRU_QA_UI__, st = U.state(), idx = st.player.inventory.findIndex((i) => i.name === '시험망토');
+      const res = U.dispatch({ type: 'ITEM_USE', args: [idx] });
+      return { blocked: res.status === 'blocked', worn: st.player.cloak?.name || null, drawerActive: U.sessions.has('mobileDrawer'), inventoryOpen: document.getElementById('inventory').classList.contains('open') };
+    }));
     out['drawer.errors'] = JSON.stringify(s.errors);
     await s.close();
     return out;
