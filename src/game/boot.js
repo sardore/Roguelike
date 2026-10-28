@@ -184,14 +184,6 @@ setupInfusionPanels();
 
 document.body.classList.add('mf75-clean');
 
-  // First launch on touch screens follows Shattered-style tap movement: D-pad stays available behind a tiny toggle.
-  try{
-    if(matchMedia('(max-width:1080px)').matches && localStorage.getItem('manruPad58')===null){
-      document.body.classList.add('pad58-hidden');
-      localStorage.setItem('manruPad58','0');
-    }
-  }catch(error){ignoreError('pad default could not be saved',error)}
-
   try{updateMobileHud()}catch(error){ignoreError('mobile hud refresh before a run exists',error)}
 
   RuntimeState.input.device=Runtime81;
