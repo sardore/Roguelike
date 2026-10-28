@@ -29,9 +29,14 @@
 #statsScene .statsLogRow{display:flex;gap:8px}
 
 /* Ranking board: the title button and the "기록판" view (also the first tab of the hidden statistics view). */
-#startGate .rankBtn{grid-column:1/-1;text-align:left}
-#startGate .rankBtn b{display:block;font:800 calc(14px * var(--ui-font-scale, 1)) Georgia,serif;color:#d9b879;letter-spacing:.3em}
-#startGate .rankBtn span{display:block;margin-top:2px;font-size:calc(10px * var(--ui-font-scale, 1));color:#9e8a70;letter-spacing:.05em}
+#rankBtn{position:absolute;top:20px;right:20px;z-index:6;display:flex;align-items:center;gap:7px;min-height:0;padding:6px 13px 6px 10px;font:700 calc(11px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.2em;cursor:pointer;--button-color:#ecd49b;--button-radius:999px;--button-surface:linear-gradient(180deg,rgba(82,51,26,.94),rgba(24,14,8,.94));--button-edge:1px solid #b88a4e;--button-hover-edge:#f0cd86;--button-shadow:inset 0 0 0 1px #120906,inset 0 1px 0 rgba(255,226,160,.24),0 4px 14px #000a,0 0 18px rgba(214,160,80,.14)}
+#rankBtn:hover{--button-surface:linear-gradient(180deg,rgba(104,66,34,.96),rgba(34,20,11,.96))}
+#rankBtn:focus-visible{outline:2px solid #efddac;outline-offset:3px}
+#rankBtn .rankIcon{position:relative;display:block;width:16px;height:14px;flex:none;filter:drop-shadow(0 1px 2px #000b)}
+#rankBtn .rankIcon:before{content:'';position:absolute;inset:0 0 4px;background:linear-gradient(180deg,#fff0b8,#c58c34);clip-path:polygon(0 100%,0 20%,25% 55%,50% 0,75% 55%,100% 20%,100% 100%)}
+#rankBtn .rankIcon:after{content:'';position:absolute;left:1px;right:1px;bottom:0;height:3px;background:linear-gradient(180deg,#e2b65f,#8a5d1b)}
+body.title-class-mode #rankBtn{display:none}
+@media (max-width:480px){#rankBtn{top:16px;right:14px;padding:5px 11px 5px 9px;letter-spacing:.14em}}
 #statsScene[data-mode=rank] .statsPanel{background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
 #statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
 .rankView{display:flex;flex-direction:column;gap:16px}
