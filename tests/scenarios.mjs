@@ -340,14 +340,10 @@ export const scenarios = {
       const V = (fn, arg) => view.page.evaluate(fn, arg);
       await startRun(host, 'wanderer');
       for (let i = 0; i < 3; i++) { await host.page.keyboard.press('Escape'); await host.tick(150); }
-
-      // 1. On by default (the person can turn it off, and that is remembered); the run is announced.
+      // 1. Always on while playing: no switch in the settings; the run is announced.
       await until(() => H(() => __MANRU_QA_SPECTATE__.api.hosting), 20);
       out['spectate.default'] = JSON.stringify(await H(() => ({ hosting: __MANRU_QA_SPECTATE__.api.hosting, ws: !!__MANRU_QA_SPECTATE__.api.ws })));
-      await H(() => document.getElementById('rcSpectate70').click());
-      out['spectate.turnedOff'] = JSON.stringify(await H(() => ({ hosting: __MANRU_QA_SPECTATE__.api.hosting, saved: localStorage.getItem('manruSpectateHost') })));
-      await H(() => document.getElementById('rcSpectate70').click());
-      out['spectate.toggleText'] = await H(() => document.getElementById('rcSpectate70').textContent + '|' + document.getElementById('rcSpectate70').getAttribute('aria-pressed'));
+      out['spectate.noSwitch'] = String(await H(() => !document.getElementById('rcSpectate70')));
       out['spectate.hostReady'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.ready)));
       // The host sees its own listing confirmed, in the settings line.
       out['spectate.hostListed'] = String(await until(() => H(() => document.getElementById('rcSpectateInfo70').textContent.includes('목록에 올랐다'))));

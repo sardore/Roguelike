@@ -72,10 +72,8 @@ const Spectate={
   if(!force&&now-this.lastWatch<this.VIEWER_PING_MS)return;
   this.lastWatch=now;this.act('watch',{matchId:this.watching.matchId,payload:{tag:this.TAG}});
  },
- // Broadcasting is on by default; turning it off in settings is remembered on this device.
- AUTO_KEY:'manruSpectateHost',autoChecked:false,
  tick(now){
-  if(!this.autoChecked&&state&&!state.spectator&&!state.debugBattle57&&this.endpoint()){this.autoChecked=true;if(lsGet(this.AUTO_KEY)!=='off')this.allow(true)}
+  if(!this.hosting&&state&&!state.spectator&&!state.debugBattle57&&!this.listOpen&&!this.watching)this.startHosting();
   if(this.ws&&this.ready&&now-this.lastBeat>this.HEARTBEAT_MS){this.lastBeat=now;this.send({type:'heartbeat',at:Date.now()})}
   if(this.watching&&this.ready&&!this.replaying)this.watchPing(now);
   if(this.listOpen&&!this.watching&&!this.ws&&!this.connecting&&!this.waking&&now>=this.retryAt)this.startList();
@@ -89,12 +87,12 @@ const Spectate={
   if(this.hosting&&this.liveRun&&this.ready&&state?.runId984!==this.liveRun)this.endBroadcast();
  },
  // ---- host ------------------------------------------------------------------------------------------------------------
- allow(on){
-  if(on===this.hosting)return this.hosting;
-  lsSet(this.AUTO_KEY,on?'on':'off');
-  if(on){if(!this.endpoint())return false;this.hosting=true;this.viewers.clear();this.mirror=null;this.lastChat.clear();this.reconnectAt=0;this.wake().then(()=>{if(this.hosting&&!this.ws)this.open('host')});}
-  else{this.announce(false,true);this.hosting=false;this.viewers.clear();this.close()}
-  this.updateHostPanel();return this.hosting;
+ // Broadcasting is always on while a run is played (there is no off switch); the viewer list and watching pause it.
+ startHosting(){
+  if(this.hosting||!this.endpoint())return;
+  this.hosting=true;this.viewers.clear();this.mirror=null;this.lastChat.clear();this.reconnectAt=0;
+  this.wake().then(()=>{if(this.hosting&&!this.ws)this.open('host')});
+  this.updateHostPanel();
  },
  announce(force,ended=false){
   this.lastAnnounce=performance.now();
@@ -458,9 +456,7 @@ const Spectate={
  },
  // ---- host panel (settings) -------------------------------------------------------------------------------------------
  updateHostPanel(){
-  const b=document.getElementById('rcSpectate70'),s=document.getElementById('rcSpectateInfo70');if(!b)return;
-  b.textContent=this.hosting?'관전 허용 중 (끄기)':'관전 허용';b.setAttribute('aria-pressed',String(this.hosting));
-  if(!s)return;
-  s.textContent=!this.hosting?'꺼짐. 켜면 내 시야 범위만 다른 사람에게 보인다.':this.listedAt?`방송 중 · 목록에 올랐다 · 관전자 ${this.viewers.size}명`:this.ready?`서버에 연결됨 · 목록에 오르는 중… (관전자 ${this.viewers.size}명)`:(this.netDetail||'서버에 연결하는 중…');
+  const s=document.getElementById('rcSpectateInfo70');if(!s)return;
+  s.textContent=!this.hosting?'서버 주소가 없어 방송하지 않는다.':this.listedAt?`방송 중 · 목록에 올랐다 · 관전자 ${this.viewers.size}명`:this.ready?`서버에 연결됨 · 목록에 오르는 중… (관전자 ${this.viewers.size}명)`:(this.netDetail||'서버에 연결하는 중…');
  }
 };
