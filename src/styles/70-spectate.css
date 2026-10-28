@@ -1,5 +1,5 @@
 /* Spectating: the viewer's screen is the game screen without the player's controls. */
-body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobileHud,body.spectating #tacticalBelt62,body.spectating #padToggle58,body.spectating #terrainTag,body.spectating #floorFeeling62,body.spectating #autoMoveChip,body.spectating #toast,body.spectating #side{visibility:hidden}
+body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobileHud,body.spectating #tacticalBelt62,body.spectating #padToggle58,body.spectating #terrainTag,body.spectating #floorFeeling62,body.spectating #autoMoveChip,body.spectating #toast,body.spectating #side{clip-path:inset(100%);pointer-events:none}
 #spectateBar{position:fixed;left:calc(8px + var(--safe-left));right:calc(8px + var(--safe-right));top:calc(8px + var(--safe-top));z-index:90;display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(18,12,8,.92);border:1px solid #634329;color:#e3cfa6;font-size:calc(12px * var(--ui-font-scale, 1))}
 #spectateBar .spectateInfo{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #spectateBar button,#spectateScene button,#spectateChat button{font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;padding:6px 12px;cursor:pointer}
