@@ -402,11 +402,13 @@ const Spectate={
  bindViewerInput(){
   if(this.bound)return;this.bound=true;
   const wrap=document.getElementById('canvasWrap'),pts=new Map();let pinch=0;
-  const block=event=>{if(!state?.spectator)return;const t=event.target;if(t.closest?.('#spectateBar,#spectateChat,#spectateScene'))return;event.stopImmediatePropagation();event.preventDefault()};
-  addEventListener('keydown',event=>{if(!state?.spectator)return;if(event.target.closest?.('#spectateChat'))return;event.stopImmediatePropagation();event.preventDefault()},true);
+  // Only the map itself is a spectator gesture surface; the windows and buttons that sit inside the wrap (inspect card, zoom, close buttons) keep working.
+  const onMap=event=>event.target===wrap||event.target.tagName==='CANVAS';
+  const block=event=>{if(!state?.spectator||!onMap(event))return;event.stopImmediatePropagation();event.preventDefault()};
+  addEventListener('keydown',event=>{if(!state?.spectator)return;if(event.target.closest?.('#spectateChat')||event.key==='Escape')return;event.stopImmediatePropagation();event.preventDefault()},true);
   addEventListener('keyup',event=>{if(!state?.spectator)return;if(event.target.closest?.('#spectateChat'))return;event.stopImmediatePropagation()},true);
   addEventListener('contextmenu',block,true);
-  wrap.addEventListener('pointerdown',event=>{if(!state?.spectator)return;event.stopImmediatePropagation();pts.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pts.size===2){const[a,b]=[...pts.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}try{wrap.setPointerCapture(event.pointerId)}catch(error){ignoreError('pointer capture refused',error)}},true);
+  wrap.addEventListener('pointerdown',event=>{if(!state?.spectator||!onMap(event))return;event.stopImmediatePropagation();pts.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pts.size===2){const[a,b]=[...pts.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y)}try{wrap.setPointerCapture(event.pointerId)}catch(error){ignoreError('pointer capture refused',error)}},true);
   wrap.addEventListener('pointermove',event=>{
    if(!state?.spectator||!pts.has(event.pointerId))return;event.stopImmediatePropagation();
    const prev=pts.get(event.pointerId),dx=event.clientX-prev.x,dy=event.clientY-prev.y;pts.set(event.pointerId,{x:event.clientX,y:event.clientY});
@@ -415,7 +417,7 @@ const Spectate={
   },true);
   const up=event=>{if(!state?.spectator)return;event.stopImmediatePropagation();pts.delete(event.pointerId);pinch=0};
   wrap.addEventListener('pointerup',up,true);wrap.addEventListener('pointercancel',up,true);
-  wrap.addEventListener('wheel',event=>{if(!state?.spectator)return;event.stopImmediatePropagation();event.preventDefault();CameraState.setZoom(CameraState.scale()/(isMobileViewport()?1.24:1.44)*(event.deltaY<0?1.12:1/1.12),false,{clientX:event.clientX,clientY:event.clientY})},{capture:true,passive:false});
+  wrap.addEventListener('wheel',event=>{if(!state?.spectator||!onMap(event))return;event.stopImmediatePropagation();event.preventDefault();CameraState.setZoom(CameraState.scale()/(isMobileViewport()?1.24:1.44)*(event.deltaY<0?1.12:1/1.12),false,{clientX:event.clientX,clientY:event.clientY})},{capture:true,passive:false});
   wrap.addEventListener('click',block,true);wrap.addEventListener('dblclick',block,true);
  },
  // ---- chat window (a messenger: the box stays open and focused after sending, and rides above the keyboard) -------------
