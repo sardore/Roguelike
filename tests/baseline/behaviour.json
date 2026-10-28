@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "cf3b8cc6fce022c1b455314e324ef72736f45fa8",
- "values.branch": "9e3c9c71eb5069f163bc5945cf713501678ba3c6",
+ "values.empty": "964deddf4b5967a460208496023230e843d5c4db",
+ "values.branch": "44992bff7d71759db2a0d6f235493c1e106023d1",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -346,7 +346,7 @@
  "stats.slow-taps": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "stats.outside-taps": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "stats.tap-errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "spectate.default": "dbf38e147262b3a4a3237f560e7b2a7b30197e72",
+ "spectate.default": "f9f5679bfab2d680309dba905277ff4c8289e004",
  "spectate.toggleText": "14fde8343733e4f6fd395bd4a475d2eec29d43ef",
  "spectate.hostReady": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.listed": "5ffe533b830f08a0326348a9160afafc8ada44db",
@@ -381,5 +381,6 @@
  "drawer.wearUnderStaleDrawer": "8977c9d027e0590a6e5fbbbac17553f41ef981da",
  "spectate.hostListed": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.listNote": "babd7c5c521e74f09052f2f547ad6957ec2b6276",
- "spectate.serverDown": "4d13e6044000967d3c2bc6fbafa823c4d857667e"
+ "spectate.serverDown": "4d13e6044000967d3c2bc6fbafa823c4d857667e",
+ "spectate.turnedOff": "02a0a5c5dd304f8559dfa19f2719913ff5158623"
 }
