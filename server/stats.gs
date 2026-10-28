@@ -1,11 +1,9 @@
 // 만루 플레이 통계 수집 서버 (Google Apps Script 웹 앱). 설치: docs/PLAY_STATS.md
 // POST 본문 JSON {v,id,floor,cause,level,kills,turns} -> 시트에 한 줄 (같은 id는 한 번만)
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
-// GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,floor,level,kills,turns,cause}; tag = first 6 characters of the run id
 const SHEET_NAME = 'deaths';
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns'];
 const MAX_ROWS = 200000;
-const RANK_ROWS = 30;
 
 // Works bound to a spreadsheet or as a stand-alone script: a stand-alone script creates its own spreadsheet once and remembers it.
 function book_() {
@@ -50,35 +48,12 @@ function doPost(e) {
     if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
     if (rows > 1 && sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext()) return reply_({ ok: true, duplicate: true });
     sheet.appendRow([new Date().toISOString(), id, floor, cause, level, kills, turns]);
-    CacheService.getScriptCache().removeAll(['summary', 'ranking']);
+    CacheService.getScriptCache().remove('summary');
   } finally { lock.releaseLock(); }
   return reply_({ ok: true });
 }
 
-// Each board orders by its own number first, then by how far the run got.
-const BOARDS = {
-  depth: (a, b) => b.floor - a.floor || b.level - a.level || b.kills - a.kills || a.turns - b.turns,
-  level: (a, b) => b.level - a.level || b.floor - a.floor || b.kills - a.kills || a.turns - b.turns,
-  kills: (a, b) => b.kills - a.kills || b.floor - a.floor || b.level - a.level || a.turns - b.turns,
-};
-
-function ranking_() {
-  const cache = CacheService.getScriptCache(), hit = cache.get('ranking');
-  if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
-  const sheet = sheet_(), rows = sheet.getLastRow();
-  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, HEADER.length).getValues() : [];
-  const runs = values.map(([, id, floor, cause, level, kills, turns]) => ({
-    tag: String(id).replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase(), floor, cause, level, kills, turns,
-  }));
-  const boards = {};
-  for (const name of Object.keys(BOARDS)) boards[name] = runs.slice().sort(BOARDS[name]).slice(0, RANK_ROWS);
-  const ranking = JSON.stringify({ ok: true, total: runs.length, boards });
-  cache.put('ranking', ranking, 60);
-  return ContentService.createTextOutput(ranking).setMimeType(ContentService.MimeType.JSON);
-}
-
 function doGet(e) {
-  if (e && e.parameter && e.parameter.view === 'ranking') return ranking_();
   if (!e || !e.parameter || e.parameter.view !== 'summary') return reply_({ ok: false, error: 'view' });
   const cache = CacheService.getScriptCache(), hit = cache.get('summary');
   if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
