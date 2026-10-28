@@ -584,7 +584,7 @@ export const scenarios = {
     });
     const text = await a.page.evaluate(() => globalThis.__MANRU_QA_SAVESTRING__.make());
     if (!/^MANRU[01]\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/.test(text)) throw new Error(`savestring: no string was made: ${text}`);
-    const accountOf = async (s) => s.page.evaluate(() => Object.keys(localStorage).filter((k) => /^manru/.test(k) && !/active_run|transaction/.test(k)).sort().map((k) => [k, localStorage.getItem(k)]));
+    const accountOf = async (s) => s.page.evaluate(() => Object.keys(localStorage).filter((k) => /^manru/.test(k) && !/active_run|transaction|DebugLog|StatsQueue/.test(k)).sort().map((k) => [k, localStorage.getItem(k)]));
     const accountA = await accountOf(a);
     const dumpA = await storageDump(a);
     await a.close();

@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:300,logList:null,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  taps:0,lastTapAt:0,sending:false,tab:'stats',data:null,
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
@@ -25,26 +25,109 @@ const PlayStats={
   finally{this.sending=false}
   return sent;
  },
- // Temporary: a ring of the last LOG_MAX action refusals/results (kept in localStorage across reloads) for "the button does nothing" reports.
- logAdd(entry){
+ // Temporary: a ring of the last LOG_MAX events, kept in localStorage across reloads, for "the button does nothing" and
+ // "I died for no reason" reports. Every dispatched action is one line; the lines that matter for reconstructing a situation
+ // (refusals, zero-time commits, big hits, deaths, every SNAP_EVERY turns, floor changes) also carry the 9x9 surroundings,
+ // the monsters nearby and the pack. Written to localStorage in batches (and when the page is hidden), never per move.
+ logAdd(entry,flushNow=false){
   try{
    if(!this.logList)this.logList=JSON.parse(lsGet(this.LOG_KEY)||'[]');
-   this.logList.push({t:new Date().toISOString().slice(11,23),...entry});
+   this.logList.push({t:new Date().toISOString().slice(5,23),...entry});
    if(this.logList.length>this.LOG_MAX)this.logList.splice(0,this.logList.length-this.LOG_MAX);
-   lsSet(this.LOG_KEY,JSON.stringify(this.logList));
+   if(flushNow||++this.logPending>=this.FLUSH_EVERY)this.logSave();
   }catch(error){ignoreError('debug log write failed',error)}
  },
- logAction(type,command,result,denial,before){
-  if(['MOVE','ATTACK'].includes(type)&&result.status==='committed'&&!denial)return;
-  const owner=gameplayInputOwner57();
-  this.logAdd({a:type,src:command?.source,args:command?.args??command?.index,item:before?.item,status:result.status,why:denial||result.reason,value:typeof result.value==='object'?'obj':result.value,floor:state?.floor,turn:state?.turn,hp:state?.player?.hp,stun:state?.status?.stun||0,owner:owner.kind,panels:owner.panels.map(p=>p.id),before:before?.panels,gen:RuntimeState.ui.generationPending,orient:OrientationGate.active(),presenting:ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.inputUntil,run:runState57(),ui:navigator.userAgent.slice(0,60)});
+ logSave(){
+  try{if(this.logList){lsSet(this.LOG_KEY,JSON.stringify(this.logList));this.logPending=0}}catch(error){ignoreError('debug log save failed',error)}
  },
- logText(){try{return JSON.parse(lsGet(this.LOG_KEY)||'[]').map(e=>JSON.stringify(e)).join('\n')}catch(error){ignoreError('debug log unreadable',error);return''}},
+ // Called once from the title binding: the in-memory tail reaches storage when the tab is hidden or closed.
+ bindLifecycle(){
+  if(this.lifecycleBound)return;this.lifecycleBound=true;
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')this.logSave()});
+  addEventListener('pagehide',()=>this.logSave());
+ },
+ tileName(t){
+  if(!this.tileNames)this.tileNames=Object.fromEntries(Object.entries(TT).map(([name,value])=>[value,name]));
+  return this.tileNames[t]??(t==null?'OUT':String(t));
+ },
+ // 9x9 around the player: # wall, . floor, + door, ~ water, L lava, > stairs, o other terrain, space unseen/void, @ you, M hostile, a other creature.
+ view(radius=4){
+  const p=state.player,rows=[],mons=new Map((state.monsters||[]).filter(m=>m.hp>0).map(m=>[m.x+','+m.y,m]));
+  for(let y=p.y-radius;y<=p.y+radius;y++){
+   let row='';
+   for(let x=p.x-radius;x<=p.x+radius;x++){
+    const t=state.map[y]?.[x],key=x+','+y;
+    if(x===p.x&&y===p.y){row+='@';continue}
+    if(t==null||!state.seen.has(key)){row+=' ';continue}
+    const mon=mons.get(key);if(mon&&state.visible.has(key)){row+=isHostileTarget57(mon)?'M':'a';continue}
+    const name=this.tileName(t);
+    row+=name==='WALL'||name==='HIDDEN_WALL'?'#':/^(FLOOR|WOOD_FLOOR|DARK_WOOD|GILDED_FLOOR|MOON_STONE|STONE_PATH|CARPET|GRASS|LIGHT_GRASS|PETAL_MAT)$/.test(name)?'.':/DOOR|GATE/.test(name)?'+':/WATER|ICE/.test(name)?'~':name==='LAVA'?'L':name==='VOID'?' ':name==='STAIR'?'>':'o';
+   }
+   rows.push(row);
+  }
+  return rows.join('/');
+ },
+ nearby(radius=6){
+  const p=state.player;
+  return(state.monsters||[]).filter(m=>m.hp>0&&Math.max(Math.abs(m.x-p.x),Math.abs(m.y-p.y))<=radius).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y)).slice(0,6)
+   .map(m=>[m.name,m.x-p.x,m.y-p.y,m.hp,m.maxHp,isHostileTarget57(m)?1:0,m.alerted?1:0]);
+ },
+ vitals(){
+  const p=state.player,status=Object.fromEntries(Object.entries(state.status||{}).filter(([,v])=>v>0));
+  return{hp:p.hp,max:p.maxHp,hun:p.hunger,lv:p.level,st:Object.keys(status).length?status:undefined,wpn:p.weapon?.name,arm:p.armor?.name};
+ },
+ // Why a step or tap did nothing: what stands on the target, and whether a diagonal was cut by a corner.
+ blocker(type,args,before){
+  if(!state||!before||!args)return undefined;
+  let x,y;
+  if(type==='MOVE'){x=before.x+(+args[0]||0);y=before.y+(+args[1]||0)}
+  else if(type==='STRUCTURE_INTERACT'||type==='ATTACK'&&args.length>1){x=+args[0];y=+args[1]}
+  else return undefined;
+  if(!Number.isFinite(x)||!Number.isFinite(y))return undefined;
+  const mon=(state.monsters||[]).find(m=>m.hp>0&&m.x===x&&m.y===y),out={at:[x,y],tile:this.tileName(state.map[y]?.[x]),mon:mon?mon.name:undefined,seen:state.seen.has(x+','+y)?1:0};
+  if(type==='MOVE'&&args[0]&&args[1]){
+   const solid=(xx,yy)=>[TT.WALL,TT.HIDDEN_WALL,TT.WINDOW].includes(state.map[yy]?.[xx]);
+   out.corner=solid(before.x+args[0],before.y)||solid(before.x,before.y+args[1])?1:0;
+  }
+  return out;
+ },
+ snapshot(){return{view:this.view(),near:this.nearby(),inv:state.player.inventory.map(i=>i?.name),...this.vitals()}},
+ // The header of a run: enough to tell which run the following lines belong to.
+ logRun(){
+  this.lastRun=state.runId984;
+  this.logAdd({a:'RUN',run:state.runId984,floor:state.floor,cls:state.player.classId,turn:state.turn,ua:navigator.userAgent.slice(0,90),vw:innerWidth+'x'+innerHeight,...this.snapshot()},true);
+ },
+ logAction(type,command,result,denial,before){
+  if(!state||!state.player)return;
+  if(state.runId984!==this.lastRun)this.logRun();
+  const p=state.player,hpDrop=before.hp-p.hp,failed=!['committed','pending','cancelled'].includes(result.status),zero=result.status==='committed'&&!result.advancesWorld&&(type==='MOVE'?before.x===p.x&&before.y===p.y:type!=='ATTACK'),
+   big=hpDrop>=Math.max(5,p.maxHp*.2),turnSnap=Math.floor(state.turn/this.SNAP_EVERY)!==Math.floor(before.turn/this.SNAP_EVERY),floorChanged=state.floor!==before.floor,
+   incident=failed||zero&&!['ITEM_USE','ITEM_DROP','QUICK_SLOT','TOGGLE_SKILL_QUICK'].includes(type)||big||turnSnap||floorChanged||state.dead;
+  const entry={a:type,args:command?.args??(type==='MOVE'?[command?.dx,command?.dy]:command?.index),src:command?.source,item:before.item,st:result.status,why:denial||(result.reason!==type?result.reason:undefined),
+   fl:state.floor,tn:state.turn,dtn:state.turn-before.turn,dt:result.timeCost?+result.timeCost.toFixed(2):0,from:[before.x,before.y],at:[p.x,p.y],hp:p.hp,dhp:p.hp-before.hp||undefined};
+  if(failed||zero)entry.blk=this.blocker(type,entry.args,before);
+  if(typeof result.value==='object'&&result.value)entry.value='obj';else if(result.value!==undefined)entry.value=result.value;
+  if(incident){
+   const owner=gameplayInputOwner57();
+   Object.assign(entry,this.snapshot(),{owner:owner.kind,panels:owner.panels.map(q=>q.id),before:before.panels,gen:RuntimeState.ui.generationPending||undefined,orient:OrientationGate.active()||undefined,
+    presenting:ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.inputUntil||undefined,run:runState57(),stun:state.status?.stun||undefined});
+  }
+  this.logAdd(entry,incident);
+ },
+ // One line per hit the player takes: who, how much, with what.
+ logHit(source,amount,element,hpBefore,context){
+  if(!state||!state.player)return;
+  if(state.runId984!==this.lastRun)this.logRun();
+  const p=state.player,mon=source&&typeof source==='object'&&source!==p?source:null;
+  this.logAdd({a:'HIT',by:mon?.name||context?.cause||context?.kind||(typeof source==='string'?source:'env'),dmg:amount,el:element||undefined,fl:state.floor,tn:state.turn,at:[p.x,p.y],hp:p.hp,from:hpBefore,
+   src:mon?[mon.x-p.x,mon.y-p.y,mon.hp,mon.maxHp]:undefined,...(amount>=Math.max(5,p.maxHp*.2)||p.hp<=0?{view:this.view(),near:this.nearby()}:{})},p.hp<=0);
+ },
+ logText(){try{this.logSave();return JSON.parse(lsGet(this.LOG_KEY)||'[]').map(e=>JSON.stringify(e)).join('\n')}catch(error){ignoreError('debug log unreadable',error);return''}},
  logView(){
-  const box=this.el('div','statsLog'),text=this.logText(),pre=this.el('pre',null,text||'기록된 로그가 없다.'),row=this.el('div','statsLogRow'),copy=this.el('button',null,'복사'),clear=this.el('button',null,'지우기');
+  const box=this.el('div','statsLog'),text=this.logText(),lines=text.split('\n'),pre=this.el('pre',null,text?(lines.length>this.LOG_SHOWN?`… 앞의 ${lines.length-this.LOG_SHOWN}줄은 복사로만 받는다.\n`:'')+lines.slice(-this.LOG_SHOWN).join('\n'):'기록된 로그가 없다.'),row=this.el('div','statsLogRow'),copy=this.el('button',null,'복사'),clear=this.el('button',null,'지우기');
   copy.type='button';clear.type='button';
   copy.onclick=async()=>{try{await navigator.clipboard.writeText(text);copy.textContent='복사됨'}catch(error){ignoreError('debug log copy failed',error);const range=document.createRange();range.selectNodeContents(pre);getSelection().removeAllRanges();getSelection().addRange(range);copy.textContent='선택됨: 길게 눌러 복사'}};
-  clear.onclick=()=>{this.logList=[];lsRemove(this.LOG_KEY);this.render()};
+  clear.onclick=()=>{this.logList=[];this.logPending=0;lsRemove(this.LOG_KEY);this.render()};
   row.append(copy,clear);box.append(row,pre);return box;
  },
  // Seven quick taps anywhere on the title block (crown, small brand line, the big logo, rule) open the view.

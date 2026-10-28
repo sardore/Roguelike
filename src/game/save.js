@@ -270,7 +270,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
   // game with the run, writes the account keys with a read-back and an undo on failure (dead-run ids are merged, the newer last death wins)
   // and reloads the page so every setting is read again from storage.
   const SAVE_STRING_LIMIT=32*1024*1024;
-  const isAccountKey=k=>/^manru/.test(k)&&!/^manru(?:1004_(?:active_run|active_run_shadow|transaction)$|984_|RC70_|V\d+Save$)/i.test(k);
+  const isAccountKey=k=>/^manru/.test(k)&&!/^manru(?:1004_(?:active_run|active_run_shadow|transaction)$|984_|RC70_|V\d+Save$|DebugLog$|StatsQueue$)/i.test(k);
   const jsonOr=(raw,fallback)=>{try{return raw==null?fallback:JSON.parse(raw)}catch(_){return fallback}};
   const bytesToB64u=bytes=>{let t='';for(let i=0;i<bytes.length;i+=0x8000)t+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
   const b64uToBytes=t=>{const bin=atob(t.replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out};
@@ -617,7 +617,7 @@ const ActionDispatcher=Object.freeze({
   dispatch(command){
     const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
-    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
+    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
     const frame={result,turns:result.turns,denial:null};if(!parent)ACTION_AUDIT5.roots++;ACTION_AUDIT5.stack.push(frame);
     let completed=false;
