@@ -1600,9 +1600,12 @@ function validateDojo(){
  const bareCorridor=d.unified?dojoBareCorridor(d):0;if(d.version>=10&&bareCorridor>18)errors.push('unbroken straight corridor '+bareCorridor);
  return {ok:!errors.length,errors,metrics,keyAudit,routeCoverage,bareCorridor,sectorCount:d.sectors.length,spaceTypes:[...new Set(d.spaces.map(s=>s.kind))],maxTransfer,gap:d.gap};
 }
-function dojoWallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL;return{north:!wall(x,y-1),south:!wall(x,y+1),west:!wall(x-1,y),east:!wall(x+1,y),nw:wall(x-1,y)&&wall(x,y-1)&&!wall(x-1,y-1),ne:wall(x+1,y)&&wall(x,y-1)&&!wall(x+1,y-1),sw:wall(x-1,y)&&wall(x,y+1)&&!wall(x-1,y+1),se:wall(x+1,y)&&wall(x,y+1)&&!wall(x+1,y+1)}}
-function dojoWallFootprint(x,y){
- const e=dojoWallEdges(x,y);if(e.south)return[[0,0,32,32]];const out=[];
+// Wall volume that is not a front face (a wall below it) is unlit negative space, outlined only at its exposed edges.
+// Floors of the main tower and the dojo draw walls this way; other branches and the legendary dungeons keep their own wall art.
+function wallsAreNegativeSpace(){return state?.branchContext105?state.branchContext105.id==='dojo':!state?.artifactDungeon46}
+function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1);return{north:!wall(x,y-1),south:!wall(x,y+1),west:!mass(x-1,y),east:!mass(x+1,y),nw:wall(x-1,y)&&wall(x,y-1)&&!wall(x-1,y-1),ne:wall(x+1,y)&&wall(x,y-1)&&!wall(x+1,y-1),sw:wall(x-1,y)&&wall(x,y+1)&&!wall(x-1,y+1),se:wall(x+1,y)&&wall(x,y+1)&&!wall(x+1,y+1)}}
+function wallFootprint(x,y){
+ const e=wallEdges(x,y);if(e.south)return[[0,0,32,32]];const out=[];
  if(e.west)out.push([0,0,4,32]);if(e.east)out.push([28,0,4,32]);if(e.north)out.push([0,0,32,4]);
  if(e.nw)out.push([0,0,4,2],[0,0,2,4]);if(e.ne)out.push([28,0,4,2],[30,0,2,4]);if(e.sw)out.push([0,30,4,2],[0,28,2,4]);if(e.se)out.push([28,30,4,2],[30,28,2,4]);return out;
 }

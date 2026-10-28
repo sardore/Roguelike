@@ -333,6 +333,7 @@ function imp78(x,y){if(!state)return true;if(x<=1||y<=1||x>=COLS-2||y>=ROWS-2)re
       X.save();X.globalAlpha*=a;X.lineCap='round';X.lineJoin='round';
       const ext={l:(m&8)?0:5,r:(m&2)?32:27,t:(m&1)?0:5,b:(m&4)?32:27};
       if(kind==='runner'||kind==='silk'){
+        X.lineCap='butt';
         X.fillStyle=kind==='runner'?p.a:p.b;X.fillRect(px+ext.l,py+ext.t,ext.r-ext.l,ext.b-ext.t);
         X.strokeStyle=p.line;X.lineWidth=1;
         if(!(m&1)){X.beginPath();X.moveTo(px+ext.l,py+ext.t+.5);X.lineTo(px+ext.r,py+ext.t+.5);X.stroke()}

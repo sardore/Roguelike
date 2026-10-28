@@ -722,7 +722,12 @@ function drawRegionFloor(px,py,x,y,colors,vis){
     X.fillStyle='rgba(255,255,255,.018)';if((x+y)%5===0)X.fillRect(px+2,py+2,28,1);
     X.fillStyle='rgba(0,0,0,.035)';X.fillRect(px,py+30,32,2);
   }
-function drawWallTexture(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
+function drawWallTexture(px,py,x,y,colors){
+  if(!wallsAreNegativeSpace()||state.branchContext105){drawWallFace(px,py,x,y,colors);return}
+  if((state.map[y+1]?.[x]??TT.WALL)!==TT.WALL&&drawAuthoredWall(px,py,x,y))return;
+  drawMainWall(px,py,x,y);
+}
+function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
     drawWallWithSubthemeOverlay(px,py,x,y,colors);const r41=globalThis.__MANRU_TERRAIN_R41__,style=state?.wallStyle980?.[key980(x,y)]||state?.subthemeWalls970?.[key980(x,y)];if(!style){r41?.wall?.(px,py,x,y,colors);return}const h=hash980(x,y,79);X.save();
     if(/f6_|r2_indoor/.test(style)){X.fillStyle='rgba(205,164,91,.11)';X.fillRect(px+3,py+5,26,2);X.fillStyle='rgba(58,35,18,.24)';X.fillRect(px+15,py+6,2,20);X.fillStyle='rgba(235,207,151,.07)';X.fillRect(px+4,py+22,24,1)}
     else if(/f8_|r2_outdoor|f24_/.test(style)){X.fillStyle='rgba(80,121,78,.14)';X.fillRect(px+3,py+22,11,3);X.fillRect(px+18,py+8,8,2);if(h>.55){X.fillStyle='rgba(159,189,139,.09)';X.fillRect(px+7,py+5,2,12)}}
@@ -782,7 +787,18 @@ function drawRegionWallWithEdges(px,py,x,y,colors){
     if(!D){X.fillStyle='rgba(0,0,0,.22)';X.fillRect(px+2,py+27,28,5)}
     if((!L&&!U)||(!R&&!U)){X.fillStyle='rgba(220,170,108,.10)';X.fillRect(px+(!L?3:25),py+4,4,5)}
   }
-function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(233,164,102,.08)';X.fillRect(px,py+9,32,2);X.fillRect(px,py+22,32,1)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
+// Main-tower walls reuse the dojo wall: the first dojo palette for the orange 청풍루, the matching dojo palette nudged toward the
+// region's own wall tone for the others.
+const MAIN_WALL_PALETTES=new Map();
+function mainWallPalette(){
+ const z=regionIndex();let P=MAIN_WALL_PALETTES.get(z);if(P)return P;
+ const base=DOJO_PALETTES[[0,1,2,3,5][z]||0],tint=wallPalette[z],amount=z===0?0:.28,rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),mix=(a,b)=>'#'+rgb(a).map((v,i)=>Math.round(v+(rgb(b)[i]-v)*amount).toString(16).padStart(2,'0')).join('');
+ P=Object.fromEntries(Object.entries(base).map(([key,value])=>[key,['wall','cap','beam','dark','grain'].includes(key)?mix(value,tint[{wall:'face',cap:'edge',beam:'top',dark:'dark',grain:'side'}[key]]):value]));
+ MAIN_WALL_PALETTES.set(z,P);return P;
+}
+function drawMainWall(px,py,x,y){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,mainWallPalette(),x,y);X.restore()}
+function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
+X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
     if(state?.branchContext105?.id==='mine')return;
     if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.68);g.addColorStop(0,'rgba(199,74,35,.055)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
@@ -1167,7 +1183,7 @@ function drawWorldLights(now=performance.now(),bounds=null){if(!state?.map||!sta
   // A small, slow radius pulse; source offsets keep nearby lamps from moving in sync.
   const radius=l.r*(1+.035*Math.sin(now/460+l.x*1.73+l.y*2.19));
   const pulse=state.legendTheme47==='thunder_spear'?.76+(.5+.5*Math.sin(now/1800+l.x))**18*.6:.94+.06*Math.sin(now/310+l.x*1.7+l.y);
-  X.save();X.beginPath();for(const c of cells)if(c.x>=b.x0&&c.x<=b.x1&&c.y>=b.y0&&c.y<=b.y1&&(state.visible.has(k(c.x,c.y))||mineSceneryVisible(c.x,c.y))){if(state.branchContext105?.id==='dojo'&&state.map[c.y]?.[c.x]===TT.WALL){for(const[xx,yy,w,h]of dojoWallFootprint(c.x,c.y))X.rect(c.x*TILE+xx,c.y*TILE+yy,w,h)}else X.rect(c.x*TILE,c.y*TILE,TILE,TILE)}X.clip();
+  X.save();X.beginPath();for(const c of cells)if(c.x>=b.x0&&c.x<=b.x1&&c.y>=b.y0&&c.y<=b.y1&&(state.visible.has(k(c.x,c.y))||mineSceneryVisible(c.x,c.y))){if(wallsAreNegativeSpace()&&state.map[c.y]?.[c.x]===TT.WALL){for(const[xx,yy,w,h]of wallFootprint(c.x,c.y))X.rect(c.x*TILE+xx,c.y*TILE+yy,w,h)}else X.rect(c.x*TILE,c.y*TILE,TILE,TILE)}X.clip();
   const gx=(l.x+.5)*TILE,gy=(l.y+.5)*TILE,r=radius*TILE,g=X.createRadialGradient(gx,gy,2,gx,gy,r),rgb=[1,3,5].map(i=>parseInt(l.color.slice(i,i+2),16)).join(',');g.addColorStop(0,`rgba(${rgb},${l.power*pulse})`);g.addColorStop(.32,`rgba(${rgb},${l.power*.55*pulse})`);g.addColorStop(1,`rgba(${rgb},0)`);X.fillStyle=g;X.fillRect(gx-r,gy-r,r*2,r*2);
   // Narrow highlights show wet stone and metal orientation, rather than washing out the material.
   for(const c of cells){if(!state.visible.has(k(c.x,c.y)))continue;const t=state.map[c.y][c.x],falloff=Math.max(0,1-Math.hypot(c.x-l.x,c.y-l.y)/radius);if(t===TT.WATER||t===TT.MERCURY){X.fillStyle=`rgba(${rgb},${falloff*.20})`;X.fillRect(c.x*TILE+5,c.y*TILE+19+Math.sin(now/600+c.x)*2,19,1)}else if(tileBlocksSight(t)&&falloff>.2){X.fillStyle=`rgba(${rgb},${falloff*.17})`;X.fillRect(c.x*TILE+2,c.y*TILE+(c.y<l.y?27:3),28,1)}}
@@ -1591,7 +1607,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     const props=[];
     for(const d of state.decor||[])if(d.layer==='object'&&inB58(d,b,1)&&state.seen.has(k(d.x,d.y)))props.push({y:d.y+.78,o:d});
     props.sort((a,b)=>a.y-b.y);
-    if(!state.artifactDungeon46&&(!state.branchContext105||['canal','granary'].includes(state.branchContext105.id)))drawWallMass(b);
+    if(!state.artifactDungeon46&&['canal','granary'].includes(state.branchContext105?.id))drawWallMass(b);
     drawDepthOcclusion(now,b);
     for(const l of state.branchTerrain105?.mine105?.lanterns||[])if(l.x>=b.x0&&l.x<=b.x1&&l.y>=b.y0&&l.y<=b.y1&&state.seen.has(k(l.x,l.y)))terrainProps63.push({t:TT.LANTERN_POST,px:l.x*TILE,py:l.y*TILE,x:l.x,y:l.y});
     // All physical props share one foreground pass above projected architecture, below FOV and actors.
@@ -3898,29 +3914,32 @@ const DOJO_PALETTES=Object.freeze([
 const DOJO_DEEP_PALETTES=Object.freeze(DOJO_PALETTES.map(p=>Object.freeze(Object.fromEntries(Object.entries(p).map(([key,value])=>{if(key==='name')return[key,value+' · 심부'];const rgb=[1,3,5].map(i=>parseInt(value.slice(i,i+2),16)),mean=rgb.reduce((a,b)=>a+b,0)/3,factor=key==='cap'||key==='metal'?.86:key==='dark'?.9:.76;return[key,'#'+rgb.map(v=>Math.max(0,Math.min(255,Math.round((mean+(v-mean)*1.22)*factor))).toString(16).padStart(2,'0')).join('')];})))));
 function dojoPaletteIndexForZone(level,zone){return level===2?[3,4,2,1,5][zone||0]:(zone||0)%3}
 function dojoPalette(x,y){const d=state.branchTerrain105?.dojo,owned=d?.cellZones105?.[k(x,y)],sec=(d?.zones||d?.sectors)?.find(s=>x>=s.x-1&&x<=s.x+s.w&&y>=s.y-1&&y<=s.y+s.h);return (state.branchContext105?.level===2?DOJO_DEEP_PALETTES:DOJO_PALETTES)[dojoPaletteIndexForZone(state.branchContext105?.level,owned??sec?.id??0)]}
+// The dojo wall (also the wall of the main-tower floors, tinted per region): a front face is plaster under a timber beam;
+// wall volume behind a face is unlit negative space, outlined only at its exposed edges.
+function drawDojoWall(q,r,P,x,y){
+ const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,south=wall(x,y+1),west=wall(x-1,y),east=wall(x+1,y);
+ const texture=(seed,count,c)=>{for(let i=0;i<count;i++){const a=hash2(x*31+i,y*17,seed),b=hash2(x*19,y*29+i,seed+1);r(c,2+Math.floor(a*27),2+Math.floor(b*27),a>.7?2:1,1);}};
+ if(south){
+  const e=wallEdges(x,y);
+  if(e.west){r(P.cap,0,0,2,32);r(P.wall,2,0,2,32);}
+  if(e.east){r(P.wall,28,0,2,32);r(P.cap,30,0,2,32);}
+  if(e.north){r(P.cap,0,0,32,2);r(P.wall,0,2,32,2);}
+  if(e.nw){r(P.cap,0,0,4,2);r(P.cap,0,0,2,4);}if(e.ne){r(P.cap,28,0,4,2);r(P.cap,30,0,2,4);}
+  if(e.sw){r(P.cap,0,30,4,2);r(P.cap,0,28,2,4);}if(e.se){r(P.cap,28,30,4,2);r(P.cap,30,28,2,4);}
+  return;
+ }
+ r(P.dark,0,0,32,32);r(P.beam,0,0,32,7);
+r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addColorStop(0,'rgba(255,238,198,.13)');plaster.addColorStop(1,'rgba(37,29,22,.18)');q.fillStyle=plaster;q.fillRect(0,7,32,21);texture(819,7,'rgba(77,58,37,.12)');for(let j=0;j<2;j++){const yy=20+j*4;r(P.beam,0,yy,32,1);r(P.grain,0,yy+1,32,1);}if(x%3===0){r(P.dark,0,6,4,23);r(P.beam,1,6,3,22);r(P.grain,1,7,1,20);r(P.metal,0,8,4,2);}r(P.cap,0,0,32,3);r(P.metal,0,4,32,1);r(P.dark,0,5,32,2);r(P.grain,0,6,32,1);if(x%3===0){r(P.beam,2,3,5,6);r(P.metal,3,3,3,1);r(P.dark,3,8,5,2);}r(P.dark,0,28,32,4);r(P.beam,0,24,32,2);if(!west){r(P.beam,0,7,3,21);r(P.metal,3,7,1,20);}if(!east){r(P.beam,29,7,3,21);r(P.dark,28,7,1,21);}
+ // Return the exposed vertical edge through the front-face corner too.
+ if(!west)r(P.cap,0,0,2,30);if(!east)r(P.cap,30,0,2,30);
+}
 function drawDojoCell(t,px,py,x,y){
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}const surface=state.branchTerrain105.surfaces[k(x,y)]||'wood',art=state.branchTerrain105.dojo,ornament=art.ornaments?.[k(x,y)],P=dojoPalette(x,y),stamp=t+':'+surface+':'+ornament+':'+P.name+':'+terrainUnlit105(x,y),key=y*COLS+x;let entry=BRANCH_TILE_CACHE.get(key);
  if(!entry||entry.stamp!==stamp){const c=document.createElement('canvas');c.width=c.height=32;const q=c.getContext('2d'),{r}=drawKit(q),h=hash2(x,y,125),shade=h>.5;
  r('#161719',0,0,32,32);
  const texture=(seed,count,c)=>{for(let i=0;i<count;i++){const a=hash2(x*31+i,y*17,seed),b=hash2(x*19,y*29+i,seed+1);r(c,2+Math.floor(a*27),2+Math.floor(b*27),a>.7?2:1,1);}};
  if(t===TT.VOID){r('#080c13',0,0,32,32);if(state.map[y-1]?.[x]!=null&&![TT.VOID,TT.WALL].includes(state.map[y-1][x])){r(P.cap,0,0,32,2);r(P.stone,0,2,32,5);r(P.dark,0,7,32,9);r('#22292d',0,16,32,4);for(let j=0;j<4;j++){const xx=j*8+Math.floor(h*3);r('#303939',xx,6,1,9+j%3);r('#101820',xx+2,16,5,3+j%2);}q.fillStyle='rgba(0,0,0,.28)';q.fillRect(0,12,32,12);}else if(h>.87)r('#222629',5,22,11,1);}
- else if(t===TT.WALL){
- const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,south=wall(x,y+1),north=wall(x,y-1),west=wall(x-1,y),east=wall(x+1,y);
- r(P.dark,0,0,32,32);r(P.beam,0,0,32,south?32:7);
- if(!south){r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addColorStop(0,'rgba(255,238,198,.13)');plaster.addColorStop(1,'rgba(37,29,22,.18)');q.fillStyle=plaster;q.fillRect(0,7,32,21);texture(819,7,'rgba(77,58,37,.12)');for(let j=0;j<2;j++){const yy=20+j*4;r(P.beam,0,yy,32,1);r(P.grain,0,yy+1,32,1);}if(x%3===0){r(P.dark,0,6,4,23);r(P.beam,1,6,3,22);r(P.grain,1,7,1,20);r(P.metal,0,8,4,2);}r(P.cap,0,0,32,3);r(P.metal,0,4,32,1);r(P.dark,0,5,32,2);r(P.grain,0,6,32,1);if(x%3===0){r(P.beam,2,3,5,6);r(P.metal,3,3,3,1);r(P.dark,3,8,5,2);}r(P.dark,0,28,32,4);r(P.beam,0,24,32,2);if(!west){r(P.beam,0,7,3,21);r(P.metal,3,7,1,20);}if(!east){r(P.beam,29,7,3,21);r(P.dark,28,7,1,21);}}
- else{
-  // Side/back wall volume is unlit negative space, outlined only at exposed edges.
-  q.clearRect(0,0,32,32);const e=dojoWallEdges(x,y);
-  if(e.west){r(P.cap,0,0,2,32);r(P.wall,2,0,2,32);}
-  if(e.east){r(P.wall,28,0,2,32);r(P.cap,30,0,2,32);}
-  if(e.north){r(P.cap,0,0,32,2);r(P.wall,0,2,32,2);}
-  if(e.nw){r(P.cap,0,0,4,2);r(P.cap,0,0,2,4);}if(e.ne){r(P.cap,28,0,4,2);r(P.cap,30,0,2,4);}
-  if(e.sw){r(P.cap,0,30,4,2);r(P.cap,0,28,2,4);}if(e.se){r(P.cap,28,30,4,2);r(P.cap,30,28,2,4);}
- }
- // Return the exposed vertical edge through the front-face corner too.
- if(!south){if(!west)r(P.cap,0,0,2,30);if(!east)r(P.cap,30,0,2,30);}
-
- }
+ else if(t===TT.WALL)drawDojoWall(q,r,P,x,y);
  else {const stone=surface==='stone'||surface==='ceremony'||surface==='throne';r(stone?(shade?P.stone:P.stone2):shade?P.floor:P.floor2,0,0,32,32);if(stone){r(P.beam,0,0,32,1);r(P.stone2,1,1,30,1);r(P.beam,0,0,1,32);}else{for(let i=0;i<32;i+=16){r(P.dark,0,i,32,1);r(P.grain,0,i+1,32,1);if(hash2(x,y+i,31)>.5)r(P.grain,5+((y+i)%7),i+4,13,1);}r(P.beam,(y%2)*15,1,1,15);}
  // Fine material detail has stable, irregular world seeds; it never changes with zoom.
  if(stone){const offset=(y%2)*16;r('rgba(35,38,35,.3)',offset,1,1,30);r('rgba(241,231,200,.13)',offset+1,2,1,28);r('rgba(22,27,28,.20)',1,30,31,2);texture(442,7,'rgba(232,232,202,.12)');if(h>.87){const a=5+Math.floor(hash2(x,y,513)*15),b=7+Math.floor(hash2(x,y,514)*13);r('rgba(34,39,37,.3)',a,b,5,1);r('rgba(34,39,37,.23)',a+4,b+1,2,2);}}
@@ -5151,7 +5170,7 @@ function updatePanels(){
     setText('floorTxt',location58.desktop);setText('regionTxt',location58.kind==='branch'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText('depthLore',location58.kind==='branch'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth('hpFill',(100*p.hp/p.maxHp)+'%');setText('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth('manaFill',(100*p.focus/st.maxFocus)+'%');setText('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
     setText('atkTxt',st.atk);setText('defTxt',displayDef42(st.def));setText('evaTxt',st.eva);setText('wilTxt',st.will);setText('visTxt',st.vision);setText('weaponTxt',p.weapon?p.weapon.name:'맨손');setText('armorTxt',p.armor?p.armor.name:'경량복');setText('cloakTxt',p.cloak?p.cloak.name:'없음');setText('relicTxt',p.relic?p.relic.name:'없음');setText('trinketTxt',p.trinket?p.trinket.name:'없음');
     setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
-    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`TURN ${state.turn} · ${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()} · 허기 ${Math.round(p.hunger)}${p.hunger<=0?' (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
+    const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()}${p.hunger<=0?' · 허기 0 (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
     const logs=state.log.slice(0,10),sig=logs.join('\u0001');if(sig!==RENDER_PERF_STATE.lastLog){RENDER_PERF_STATE.lastLog=sig;const log=document.getElementById('messageLog');if(log)log.innerHTML=logs.map(x=>'<div>'+x+'</div>').join('')}
     setText('miniMonsters','적 '+visibleMonsters.length);setText('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText('miniThreat','허기 '+Math.round(p.hunger)+'%');
     const eqSig=[p.weapon?.name,p.armor?.name,p.cloak?.name,p.relic?.name,p.trinket?.name].join('|');if(eqSig!==RENDER_PERF_STATE.lastEquip){RENDER_PERF_STATE.lastEquip=eqSig;bindEquipInspect()}
