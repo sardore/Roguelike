@@ -85,7 +85,7 @@ function drawSharedProp(ctx,t,px,py,region=0,variant=0,now=0,lit=true,appearance
       q.restore();
  }
  else if([TT.ARMORY,TT.CACHE,TT.VAULT].includes(t)){const vault=t===TT.VAULT,cache=t===TT.CACHE,rim=vault?'#edc568':cache?'#b7c578':'#c29c62',body=vault?['#d0a44c','#977032','#514022']:cache?['#92ad71','#5d794d','#304a35']:['#bea078',wood,dark];
-  if(!vault&&!cache)panel(5,14,23,14);else rect(grad(5,14,23,14,...body),5,14,23,14);poly(grad(5,8,23,8,...body),[[5,14],[8,8],[25,8],[28,14]]);line(body[0],9,8.7,24,8.7,.7);
+  if(!vault&&!cache)panel(5,14,23,14);else rect(grad(5,14,23,14,...body),5,14,23,14);poly(grad(5,8,23,8,...body),[[5,14],[8,8],[25,8],[28,14]]);line(body[0],9,8.7,24,8.7,.7);poly(colorShift(body[0],22),[[8,8],[25,8],[26.4,10.2],[6.6,10.2]]);poly(body[2],[[28,14],[30.5,11.5],[30.5,26],[28,28]]);poly(body[1],[[25,8],[27.6,8],[30.5,11.5],[28,14]]);rect('rgba(8,5,4,.3)',5,26,23,2);
   for(const xx of[8,23]){rect(rim,xx,9,2,18);rivet(xx+1,17);rivet(xx+1,25)}rect(vault?'#59431f':cache?'#293f2c':'#251e18',6,16,21,1);rect(rim,14,14,5,6);rect('#332e22',16,16,1,3);
   if(vault){rect('#694923',11,21,11,5);line('#dfb957',11,21,21,21,.6);poly('#e6bf65',[[16,21],[19,23],[16,25],[13,23]]);line('rgba(255,224,143,.45)',11,11,20,11,.6)}else if(cache){rect('#bad086',11,22,10,1);rect('#bad086',15.5,19,1,7)}
  }
