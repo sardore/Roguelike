@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"/>
+<meta name="manru-relay" content="wss://cp32-online-relay.onrender.com/online"/>
 <meta name="manru-stats" content="https://script.google.com/macros/s/AKfycbxbaX63OcxIeU3HHfW69MFrzFIe44vw5swHh4dk3SDbgUP12IXk9vpwoPTT5eR2jpsJow/exec"/>
 <title>만루</title>
 <script id="boot-save-isolation-1004" src="scripts/00-boot-isolation.js"></script>
@@ -15,6 +16,7 @@
 <link rel="stylesheet" href="styles/40-story.css">
 <link rel="stylesheet" href="styles/50-text-scale.css">
 <link rel="stylesheet" href="styles/60-stats.css">
+<link rel="stylesheet" href="styles/70-spectate.css">
 </head>
 <body>
 <div id="shop58"></div>
@@ -83,6 +85,7 @@
           <div class="titleWorld" aria-hidden="true">
           </div>
           <div id="card">
+            <button id="rankBtn" class="rankBtn" type="button" aria-label="기록판"><i class="rankIcon" aria-hidden="true"></i><span>기록판</span></button>
             <div class="titleCrown"><span></span><em>밤길 출입 금지</em><span></span></div>
             <div class="brand">만루 · 잠들지 않는 천 개의 방</div>
             <h1><span>만</span><span>루</span></h1>
@@ -95,6 +98,7 @@
             <div id="startGate">
               <button id="enterBtn" class="enterBtn"><b>객주 입장</b><span>객주에 들어간다</span></button>
               <button id="continueBtn" class="continueBtn"><b>계속</b><span>기록 이어가기</span></button>
+              <button id="spectateBtn" class="continueBtn"><b>관전</b><span>다른 탐사자 보기</span></button>
 <div class="startHint">문이 열리면 되돌아오는 길부터 사라진다.</div>
             </div>
             <div id="classPickWrap" aria-label="신분 선택">

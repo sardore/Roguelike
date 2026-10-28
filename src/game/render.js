@@ -4269,7 +4269,7 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
     try{
       if(!C||!X||document.hidden)return false;
       if(pageWasHidden){pageWasHidden=false;restoreTitleScreen()}
-      if(!state)return true;
+      if(!state||state.spectator)return true;
       recovery71.attempts++;recovery71.last={reason,attempt,ok:false,at:Date.now()};
       if(X.isContextLost?.())throw Error('main canvas context lost');
       // Android can keep JS Canvas objects while discarding their backing pixels. Invalidate all
@@ -5201,7 +5201,8 @@ function visualLoop(now=performance.now()){
       }
       if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
       if(state?.debugBattle57)debugBattleFrame57(now);
-      if(state&&!state.debugBattle57){
+      if(state?.spectator)Spectate.frame(now);else Spectate.tick(now);
+      if(state&&!state.debugBattle57&&!state.spectator){
         dojoSleepFrame(now);updateVisualMotion(now);
         const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;
         if(pending||cameraRenderPending||now-RC.lastDraw>=budget){

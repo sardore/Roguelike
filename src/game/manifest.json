@@ -17,6 +17,7 @@
   "story.js",
   "ui.js",
   "stats.js",
+  "spectate.js",
   "boot.js"
  ],
  "afterClosure": [
