@@ -438,6 +438,27 @@ export const scenarios = {
     return out;
   },
 
+  // One modal at a time: opening the inventory from the menu drawer closes the drawer. Both open at once made every item use
+  // refuse ("blocked": the input owner only allows the inventory itself).
+  async drawer(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 8080, viewport: { width: 390, height: 844 }, mobile: true });
+    await startRun(s, 'wanderer');
+    for (let i = 0; i < 3; i++) { await s.page.keyboard.press('Escape'); await s.tick(150); }
+    const panels = () => s.page.evaluate(() => ({ drawer: /mobile-drawer-open/.test(document.body.className), inventory: document.getElementById('inventory').classList.contains('open') }));
+    await s.page.tap('#mobilePanelBtn'); await s.tick(400);
+    out['drawer.open'] = JSON.stringify(await panels());
+    await s.page.evaluate(() => [...document.querySelectorAll('#mobileDrawer .mTab')].find((b) => b.textContent === '장비')?.click()); await s.tick(300);
+    await s.page.evaluate(() => document.getElementById('openInvFromDrawer')?.click()); await s.tick(500);
+    out['drawer.inventoryFromDrawer'] = JSON.stringify(await panels());
+    // and the other way: the drawer opened while the inventory is open yields to nothing it should not
+    await s.page.keyboard.press('Escape'); await s.tick(300);
+    out['drawer.closed'] = JSON.stringify(await panels());
+    out['drawer.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // Play statistics: one anonymous record per death out, the hidden title gesture and the aggregate view in.
   async stats(browser, root) {
     const out = {};

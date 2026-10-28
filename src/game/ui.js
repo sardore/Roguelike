@@ -129,6 +129,7 @@ function openInventory(){
   if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
   if(cipherOpen){globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();return}
   if(martialOpen) closeMartial();
+  if(interactionActive8('mobileDrawer'))closeMobileDrawer();
   inventoryOpen = true;if(inventorySelection<0&&state.player.inventory.length)inventorySelection=0;
   renderInventory();
   const box=document.getElementById("inventory");box.style.display="block";box.classList.add('open');
@@ -836,6 +837,7 @@ function toggleHelp(){
 function openMobileDrawer(tab=null){
   if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
   if(tab) mobileTab = tab;
+  if(inventoryOpen)closeInventory();if(martialOpen)closeMartial();
   setInteraction8('mobileDrawer',true);
   setMobileTab(mobileTab);
 globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
