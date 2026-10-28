@@ -600,6 +600,7 @@ window.__MANRU_RELEASE__.build=RELEASE_INFO.build;
 globalThis.__MANRU_QA_SAVESTRING__={make:makeSaveString,read:readSaveString,apply:applySaveString};
 // The debug battlefield has no title button any more (DEBUG_BATTLE_BUTTON off); scenarios open it through this.
 globalThis.__MANRU_QA_DEBUGBATTLE__={open:openDebugBattle57};
+globalThis.__MANRU_QA_SPECTATE__={api:Spectate,state:()=>state,die:by=>die(by),go:to=>branchTransition({id:'qa',to,arrival:'up'}),regen:f=>globalThis.__MANRU_RELEASE__?.regen?.(f)};
 globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56};
 // load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
 globalThis.__MANRU_QA_LOAD__={

@@ -3,6 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
+import net from 'node:net';
 import { openSession, startRun, snapshot, dismissModals, storageDump, sha } from './harness.mjs';
 import { instrumentRuntime } from '../tools/lib/load-probe.mjs';
 import { compareImages } from './lib-images.mjs';
@@ -318,6 +320,121 @@ export const scenarios = {
       out[`battle.${name}.errors`] = JSON.stringify(s.errors);
       await s.close();
     }
+    return out;
+  },
+
+  // Live spectating through a local copy of the cp32 relay: a host and a viewer, each a real page with a real WebSocket.
+  async spectate(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      // The game reads the relay address from the page's meta tag; the test points it at the local copy.
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const host = await openSession(browser, root, { seed: 8080, init });
+      const view = await openSession(browser, root, { seed: 8081, init, viewport: { width: 390, height: 844 }, mobile: true });
+      const both = async (ms = 200) => { await Promise.all([host.tick(ms), view.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 60) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const H = (fn, arg) => host.page.evaluate(fn, arg);
+      const V = (fn, arg) => view.page.evaluate(fn, arg);
+      await startRun(host, 'wanderer');
+      for (let i = 0; i < 3; i++) { await host.page.keyboard.press('Escape'); await host.tick(150); }
+
+      // 1. Off by default; allowing it announces the run.
+      out['spectate.default'] = JSON.stringify(await H(() => ({ hosting: __MANRU_QA_SPECTATE__.api.hosting, ws: !!__MANRU_QA_SPECTATE__.api.ws })));
+      await H(() => document.getElementById('rcSpectate70').click());
+      out['spectate.toggleText'] = await H(() => document.getElementById('rcSpectate70').textContent + '|' + document.getElementById('rcSpectate70').getAttribute('aria-pressed'));
+      out['spectate.hostReady'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.ready)));
+
+      // 2. The viewer finds the room from the title screen and joins.
+      await view.page.tap('#spectateBtn');
+      out['spectate.listed'] = String(await until(() => V(() => document.querySelectorAll('#spectateRooms .spectateRoom').length === 1)));
+      out['spectate.roomText'] = await V(() => document.querySelector('#spectateRooms .spectateRoom').textContent.replace(/\d+턴.*$/, ''));
+      await view.page.tap('#spectateRooms .spectateRoom');
+      out['spectate.joined'] = String(await until(() => V(() => !!__MANRU_QA_SPECTATE__.state()?.spectator)));
+      out['spectate.hostSeesViewer'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.viewers.size === 1)));
+      await until(() => V(() => document.getElementById('spectateNote').hidden));
+
+      // 3. What the viewer holds is the host's field of view and nothing outside it; the picture matches the host's.
+      const seenOf = () => H(() => [...__MANRU_QA_SPECTATE__.state().seen]);
+      const walk = async (keys) => { for (const k of keys) { await host.page.keyboard.press(k); await both(300); } await until(() => V(() => true), 6); await both(600); };
+      await walk(['ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown']);
+      await until(() => Promise.all([H(() => __MANRU_QA_SPECTATE__.state().seen.size), V(() => __MANRU_QA_SPECTATE__.state().seen.size)]).then(([a, b]) => a === b));
+      const hostSeen = new Set(await seenOf());
+      const held = await V(() => { const s = __MANRU_QA_SPECTATE__.state(), out = []; for (const key of ['outerWall94', 'subthemeFloors972', 'subthemeWalls970', 'archDecor1020', 'floorPattern1022', 'rugPattern1022', 'terrainUnderlay58', 'terrainAttachment58']) for (const c in s[key]) out.push(c); for (const list of [s.monsters, s.items, s.decor]) for (const e of list) out.push(e.x + ',' + e.y); return { cells: out, seen: s.seen.size, turn: s.turn, floor: s.floor }; });
+      out['spectate.outsideSeen'] = String(held.cells.filter((c) => !hostSeen.has(c)).length);
+      out['spectate.seenEqual'] = String(held.seen === hostSeen.size);
+      const crop = (p) => p.page.evaluate(() => {
+        const P = window.__MANRU_CAMERA_PROJECTION12__, s = __MANRU_QA_SPECTATE__.state(), c = document.getElementById('game'), pl = s.player;
+        const t = P.tileTopLeft(pl.x - 3, pl.y - 3), r = c.getBoundingClientRect(), dpr = c.width / r.width, w = Math.round(t.s * 7 * dpr), x = Math.round(t.x * dpr), y = Math.round(t.y * dpr);
+        if (x < 0 || y < 0 || x + w > c.width || y + w > c.height) return null;
+        return Array.from(c.getContext('2d').getImageData(x, y, w, w).data);
+      });
+      // A second viewer on a desktop-sized page shows the same picture as the host (same zoom; light flicker allowed).
+      const wide = await openSession(browser, root, { seed: 8082, init });
+      const bothW = async (ms = 200) => { await Promise.all([host.tick(ms), view.tick(ms), wide.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      await wide.page.click('#spectateBtn');
+      for (let i = 0; i < 60 && !(await wide.page.evaluate(() => !!document.querySelector('#spectateRooms .spectateRoom'))); i++) await bothW();
+      await wide.page.click('#spectateRooms .spectateRoom');
+      for (let i = 0; i < 60 && !(await wide.page.evaluate(() => __MANRU_QA_SPECTATE__.state()?.seen?.size > 0)); i++) await bothW();
+      for (let i = 0; i < 10; i++) await bothW();
+      const [a, b] = await Promise.all([crop(host), crop(wide)]);
+      out['spectate.picture'] = a && b && a.length === b.length ? String(a.reduce((n, v, i) => n + (Math.abs(v - b[i]) > 40 ? 1 : 0), 0) / a.length < 0.02) : 'size-differs';
+      await wide.page.click('.spectateExit'); await wide.close();
+
+      // 4. Floors follow, including a branch floor.
+      await H(() => __MANRU_QA_SPECTATE__.regen(2));
+      out['spectate.floor2'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.state().floor === 2)));
+      await H(() => __MANRU_QA_SPECTATE__.go('dojo:1'));
+      out['spectate.branch'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.state().branchContext105?.id === 'dojo')));
+
+      // 5. Chat both ways; the box keeps its focus after sending (the keyboard stays up).
+      await view.page.tap('.spectateChatBtn');
+      await view.page.fill('#spectateInput', '안녕하세요');
+      await view.page.tap('#spectateChat .spectateForm button');
+      out['spectate.chatFocus'] = await V(() => document.activeElement?.id || '');
+      out['spectate.chatCleared'] = String((await view.page.inputValue('#spectateInput')) === '');
+      out['spectate.hostGotChat'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.chat.some((c) => c.text === '안녕하세요'))));
+      await H(() => __MANRU_QA_SPECTATE__.api.submitChat('환영합니다'));
+      out['spectate.viewerGotChat'] = String(await until(() => V(() => [...document.querySelectorAll('#spectateLog .spectateMsg')].some((e) => e.textContent.includes('환영합니다')))));
+      await view.page.fill('#spectateInput', '<img src=x onerror=window.__xss=1>');
+      await view.page.tap('#spectateChat .spectateForm button');
+      await until(() => V(() => document.querySelectorAll('#spectateLog img').length >= 0), 4);
+      out['spectate.chatTextOnly'] = String(await V(() => document.querySelectorAll('#spectateLog img').length === 0 && window.__xss === undefined));
+      await view.page.fill('#spectateInput', '첫째'); await view.page.tap('#spectateChat .spectateForm button');
+      await view.page.fill('#spectateInput', '둘째'); await view.page.tap('#spectateChat .spectateForm button'); await both(600);
+      out['spectate.chatRateLimit'] = String((await H(() => __MANRU_QA_SPECTATE__.api.chat.filter((c) => ['첫째', '둘째'].includes(c.text)).length)) <= 1);
+
+      // 6. Nothing the viewer does reaches the host or its own game; scroll and zoom stay free.
+      await view.page.evaluate(() => document.getElementById('spectateChat')?.remove());
+      const before = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; });
+      for (const k of ['ArrowUp', 'ArrowLeft', 'Space', 'KeyF']) await view.page.keyboard.press(k);
+      await view.page.touchscreen.tap(195, 400);
+      await both(400);
+      out['spectate.hostUnchanged'] = String(JSON.stringify(before) === JSON.stringify(await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; })));
+      const z0 = await V(() => globalThis.__MANRU_CAMERA_PROJECTION12__.current().zoom);
+      await view.page.mouse.move(195, 400); await view.page.mouse.wheel(0, -300); await both(300);
+      out['spectate.zoom'] = String((await V(() => globalThis.__MANRU_CAMERA_PROJECTION12__.current().zoom)) > z0);
+      out['spectate.viewerSaves'] = String(await V(() => Object.keys(localStorage).filter((k) => /active_run/.test(k)).length === 0));
+
+      // 7. Leaving returns to the title and the host forgets the viewer.
+      await view.page.tap('.spectateExit');
+      out['spectate.left'] = JSON.stringify(await V(() => ({ screen: document.body.dataset.manruScreen, state: __MANRU_QA_SPECTATE__.state() === null, bar: !!document.getElementById('spectateBar') })));
+      out['spectate.hostForgets'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.viewers.size === 0)));
+
+      // 8. The death screen offers the last scenes; the replay ends on the death and closes back to the death screen.
+      await H(() => __MANRU_QA_SPECTATE__.die('시험'));
+      await host.tick(500);
+      out['spectate.replayOffered'] = String(await H(() => !!document.querySelector('.deathReplay94')));
+      await host.page.click('.deathReplay94');
+      out['spectate.replayEnds'] = String(await until(() => H(() => { const r = __MANRU_QA_SPECTATE__.api.replaying; return !!r && r.index === r.frames.length; }), 160));
+      out['spectate.replayDead'] = String(await H(() => __MANRU_QA_SPECTATE__.state().dead === true));
+      await host.page.click('.spectateExit'); await host.tick(300);
+      out['spectate.replayClosed'] = JSON.stringify(await H(() => ({ replaying: !!__MANRU_QA_SPECTATE__.api.replaying, overlay: getComputedStyle(document.getElementById('overlay')).display, dead: __MANRU_QA_SPECTATE__.state().dead })));
+      out['spectate.errors'] = JSON.stringify({ host: host.errors, view: view.errors });
+      await host.close(); await view.close();
+    } finally { relay.kill(); }
     return out;
   },
 
