@@ -474,13 +474,13 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         }catch(e){result.failure=phase;result.message=String(e);if(prepared){if(record.complete)result.recoveryPending=true;else result.rollback=SaveService.settle(record);}return SaveService.record(result)}
       },
       request(reason='action'){
-        if(state?.debugBattle57||state?.spectator)return{ok:true,committed:false,source:state.spectator?'spectator':'debug-battle'};
+        if(state?.debugBattle57)return{ok:true,committed:false,source:'debug-battle'};
         RuntimeState.persistence.pending=true;
         if(ACTION_AUDIT5.stack.length||state?._turnPipelineActive57||globalThis.__MANRU_LIFECYCLE__?.busy?.())return{ok:true,committed:false,deferred:true};
         return SaveService.flush(reason);
       },
       flush(reason='action',action=null,noTimeCommit=true){
-        if(state?.debugBattle57||state?.spectator)return{ok:true,committed:false,source:state.spectator?'spectator':'debug-battle'};
+        if(state?.debugBattle57)return{ok:true,committed:false,source:'debug-battle'};
         if(ACTION_AUDIT5.stack.length||globalThis.__MANRU_LIFECYCLE__?.busy?.())return{ok:true,committed:false,deferred:true};
         const requested=RuntimeState.persistence.pending||(action?.committed&&(action.advancesWorld||noTimeCommit));RuntimeState.persistence.pending=false;
         if(action?.persistence)return action.persistence;
@@ -489,7 +489,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       },
       clearPending(){RuntimeState.persistence.pending=false},
       terminal(kind){
-        if(state?.debugBattle57||state?.spectator)return{ok:true,committed:false,source:state.spectator?'spectator':'debug-battle'};
+        if(state?.debugBattle57)return{ok:true,committed:false,source:'debug-battle'};
         RuntimeState.persistence.pending=false;const entries=[];
         if(kind==='death'){
           const rid=state?.runId984||null,ids=[...deadRuns1004()].filter(x=>x!==rid);if(rid)ids.push(rid);
@@ -501,7 +501,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       snapshot(){return structuredClone(RuntimeState.persistence)}
     });
     function writeRun(reason='explicit'){
-      if(state?.debugBattle57||state?.spectator)return{ok:true,committed:false,source:state.spectator?'spectator':'debug-battle'};
+      if(state?.debugBattle57)return{ok:true,committed:false,source:'debug-battle'};
       if(!state||state.dead||state.victory)return SaveService.record({ok:false,committed:false,failure:'inactive',source:'active-run',reason});
       let plain,raw,result;
       try{plain=GameState.project(state);plain.saveWrittenAt1004=Date.now();plain.saveSeq1004=(Number(state.saveSeq1004)||0)+1;raw=JSON.stringify(plain)}
@@ -616,7 +616,6 @@ const ActionDispatcher=Object.freeze({
   observeTurn(result){const frame=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1];if(frame)frame.turns.push(result)},
   dispatch(command){
     const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
-    if(state?.spectator)return{handled:true,attempted:false,committed:false,successful:false,status:'denied',reason:'spectator',timeCost:0,advancesWorld:false,value:false};
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
     const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
