@@ -5,6 +5,7 @@ function drawKit(q){return{r:(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)},po
 function drawCrateX(ctx,px,py){
  ctx.save();ctx.translate(px,py);ctx.lineWidth=.7;
  ctx.fillStyle='rgba(9,7,5,.32)';ctx.fillRect(4,27,25,3);
+ ctx.save();ctx.translate(4,10);ctx.scale(.875,.82);ctx.translate(-4,-7);
  ctx.fillStyle='#38291c';ctx.fillRect(4,7,24,22);
  const g=ctx.createLinearGradient(5,7,27,28);g.addColorStop(0,'#94734b');g.addColorStop(.45,'#795332');g.addColorStop(1,'#533b28');ctx.fillStyle=g;ctx.fillRect(5,8,22,20);
  for(let x=10;x<27;x+=5){ctx.fillStyle='rgba(30,19,10,.46)';ctx.fillRect(x,10,.7,16);ctx.fillStyle='rgba(207,166,103,.17)';ctx.fillRect(x+1,11,.5,12)}
@@ -13,6 +14,11 @@ function drawCrateX(ctx,px,py){
  ctx.fillStyle='#aa8453';ctx.fillRect(5,8,22,1);ctx.fillRect(5,8,1,20);ctx.fillStyle='#473421';ctx.fillRect(26,9,1,19);ctx.fillRect(5,27,22,1);
  for(const[x,y]of[[6,9],[24,9],[6,25],[24,25]]){ctx.fillStyle='#343932';ctx.fillRect(x,y,2,2);ctx.fillStyle='#b7ad8a';ctx.fillRect(x,y,1,.6)}
  ctx.restore();
+ ctx.fillStyle='#b98f58';ctx.beginPath();ctx.moveTo(4,10);ctx.lineTo(7.5,5.5);ctx.lineTo(29,5.5);ctx.lineTo(25,10);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(54,37,21,.55)';ctx.lineWidth=.6;for(const x of[11,17,23]){ctx.beginPath();ctx.moveTo(x-2.5,10);ctx.lineTo(x+1.5,5.5);ctx.stroke()}
+ ctx.fillStyle='rgba(240,206,140,.4)';ctx.fillRect(7.5,5.5,21.5,.8);
+ ctx.fillStyle='#4a3420';ctx.beginPath();ctx.moveTo(25,10);ctx.lineTo(29,5.5);ctx.lineTo(29,23.5);ctx.lineTo(25,28.5);ctx.closePath();ctx.fill();
+ ctx.fillStyle='rgba(20,12,6,.35)';ctx.fillRect(26.5,9,.6,15);ctx.fillStyle='#343932';ctx.fillRect(26,11,2,2);
 }
 // Shared deterministic material producer. World-aligned joints continue across tile boundaries.
 const WORLD_LIGHT_ART=Object.freeze({lantern:'#f29a38',gold:'#efb846',fire:'#ee852e',water:'#60b6bd',lava:'#e76a26',portal:'#ac73d1'});
