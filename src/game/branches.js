@@ -1605,7 +1605,7 @@ function validateDojo(){
 function wallsAreNegativeSpace(){return state?.branchContext105?state.branchContext105.id==='dojo':!state?.artifactDungeon46}
 // Tiles that read as wall in the picture: plain wall, a hidden wall and a window set into a wall.
 function wallLike(t){return t===TT.WALL||t===TT.WINDOW||t===TT.HIDDEN_WALL}
-function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||wallLike(state.map[yy][xx]),mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1);return{north:!wall(x,y-1),south:!wall(x,y+1),west:!mass(x-1,y)&&(!wall(x-1,y)||state.seen.has(k(x-1,y))),east:!mass(x+1,y)&&(!wall(x+1,y)||state.seen.has(k(x+1,y))),nw:wall(x-1,y)&&wall(x,y-1)&&!wall(x-1,y-1),ne:wall(x+1,y)&&wall(x,y-1)&&!wall(x+1,y-1),sw:wall(x-1,y)&&wall(x,y+1)&&!wall(x-1,y+1),se:wall(x+1,y)&&wall(x,y+1)&&!wall(x+1,y+1)}}
+function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||wallLike(state.map[yy][xx]),mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1);return{north:!wall(x,y-1)&&state.seen.has(k(x,y-1)),south:!wall(x,y+1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:wall(x-1,y)&&wall(x,y-1)&&!wall(x-1,y-1),ne:wall(x+1,y)&&wall(x,y-1)&&!wall(x+1,y-1),sw:wall(x-1,y)&&wall(x,y+1)&&!wall(x-1,y+1),se:wall(x+1,y)&&wall(x,y+1)&&!wall(x+1,y+1)}}
 function wallFootprint(x,y){
  const e=wallEdges(x,y);if(e.south)return[[0,0,32,32]];const out=[];
  if(e.west)out.push([0,0,4,32]);if(e.east)out.push([28,0,4,32]);if(e.north)out.push([0,0,32,4]);
