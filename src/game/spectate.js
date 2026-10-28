@@ -316,6 +316,7 @@ const Spectate={
   this.tick(now);
   if(!state?.spectator)return;
   if(this.replaying)this.replayStep(now);
+  updateVisualMotion(now);
   if(cameraRenderPending||now-RC.lastDraw>=33){drawMap(false);RC.lastDraw=now}
  },
  // ---- death replay ----------------------------------------------------------------------------------------------------
