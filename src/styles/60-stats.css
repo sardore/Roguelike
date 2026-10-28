@@ -4,8 +4,8 @@
 #statsScene h2{margin:0;flex:1;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em;color:#d9b879}
 #statsScene h3{margin:16px 0 6px;font-size:calc(11px * var(--ui-font-scale, 1));letter-spacing:.2em;color:#a17749}
 #statsScene nav{display:flex;gap:6px}
-#statsScene button{font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;padding:5px 10px;cursor:pointer}
-#statsScene button.on{background:#3a2616;color:#efd49b;border-color:#a66f34}
+#statsScene button{font:inherit;padding:5px 10px;cursor:pointer;--button-color:#d8c7a3;--button-surface:#1b120c;--button-edge:1px solid #634329}
+#statsScene button.on{--button-surface:#3a2616;--button-color:#efd49b;--button-edge:1px solid #a66f34}
 #statsScene #statsClose{font-size:calc(18px * var(--ui-font-scale, 1));line-height:1;padding:3px 9px}
 #statsBody{padding:12px}
 .statsNote{margin:24px 0;text-align:center;color:#8e7a5d}
@@ -27,3 +27,65 @@
 #card .titleCrown,#card .brand,#card h1,#card .titleRule{-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #statsScene .statsLog pre{margin:8px 0 0;max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-all;font-size:10px;line-height:1.4;color:#c9b894;background:#050201;border:1px solid #3a2616;padding:6px}
 #statsScene .statsLogRow{display:flex;gap:8px}
+
+/* Ranking board: the title button and the "기록판" view (also the first tab of the hidden statistics view). */
+#rankBtn{position:absolute;top:20px;right:20px;z-index:6;display:flex;align-items:center;gap:7px;min-height:0;padding:6px 13px 6px 10px;font:700 calc(11px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.2em;cursor:pointer;--button-color:#ecd49b;--button-radius:999px;--button-surface:linear-gradient(180deg,rgba(82,51,26,.94),rgba(24,14,8,.94));--button-edge:1px solid #b88a4e;--button-hover-edge:#f0cd86;--button-shadow:inset 0 0 0 1px #120906,inset 0 1px 0 rgba(255,226,160,.24),0 4px 14px #000a,0 0 18px rgba(214,160,80,.14)}
+#rankBtn:hover{--button-surface:linear-gradient(180deg,rgba(104,66,34,.96),rgba(34,20,11,.96))}
+#rankBtn:focus-visible{outline:2px solid #efddac;outline-offset:3px}
+#rankBtn .rankIcon{position:relative;display:block;width:16px;height:14px;flex:none;filter:drop-shadow(0 1px 2px #000b)}
+#rankBtn .rankIcon:before{content:'';position:absolute;inset:0 0 4px;background:linear-gradient(180deg,#fff0b8,#c58c34);clip-path:polygon(0 100%,0 20%,25% 55%,50% 0,75% 55%,100% 20%,100% 100%)}
+#rankBtn .rankIcon:after{content:'';position:absolute;left:1px;right:1px;bottom:0;height:3px;background:linear-gradient(180deg,#e2b65f,#8a5d1b)}
+body.title-class-mode #rankBtn{display:none}
+@media (max-width:480px){#rankBtn{top:16px;right:14px;padding:5px 11px 5px 9px;letter-spacing:.14em}}
+#statsScene[data-mode=rank] .statsPanel{background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
+#statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
+.rankView{display:flex;flex-direction:column;gap:16px}
+.rankMine{position:relative;display:flex;align-items:center;gap:14px;margin-top:6px;padding:14px 16px;background:linear-gradient(100deg,rgba(166,111,52,.26),rgba(27,18,12,.92) 58%),#1b120c;border:1px solid #a66f34;box-shadow:inset 0 0 0 1px #000,inset 0 1px 0 rgba(255,226,160,.14),0 8px 22px #0009}
+.rankMineLabel{position:absolute;top:-8px;left:14px;padding:0 8px;background:#150e09;color:#c79a58;font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.24em}
+.rankMineFigure b{display:block;font:900 calc(28px * var(--ui-font-scale, 1)) Georgia,serif;color:#efd49b;line-height:1.1;text-shadow:0 0 18px rgba(239,212,155,.25)}
+.rankMineFigure small{color:#a8957a;font-size:calc(11px * var(--ui-font-scale, 1))}
+.rankMineEmpty{margin:0;color:#8e7a5d;font-size:calc(12px * var(--ui-font-scale, 1))}
+.rankMinePlace{margin-left:auto;font-style:normal;padding:6px 12px;border:1px solid #a66f34;background:linear-gradient(180deg,#4b2b18,#1a0e08);color:#efd49b;letter-spacing:.12em;font-size:calc(12px * var(--ui-font-scale, 1));box-shadow:inset 0 1px 0 rgba(255,226,160,.14)}
+.rankMinePlace.out{color:#8e7a5d;border-color:#3a2616;background:#1b120c}
+.rankBoards{display:flex;justify-content:center}
+#statsScene .rankBoards button{min-width:88px;padding:7px 14px;letter-spacing:.24em;margin-left:-1px;--button-surface:linear-gradient(180deg,#24170e,#150e09)}
+#statsScene .rankBoards button.on{--button-surface:linear-gradient(180deg,#7a4d24,#3a2212);--button-color:#fff0c4;--button-edge:1px solid #d9a35e;--button-shadow:inset 0 1px 0 rgba(255,226,160,.25),0 0 16px rgba(193,139,80,.3);z-index:1}
+.rankPodium{display:grid;grid-template-columns:1fr 1.18fr 1fr;gap:10px;align-items:end;padding-top:40px}
+.rankPlate{--pl:#9a8460;--pl-top:rgba(154,132,96,.2);--md1:#fff;--md2:#bbb;--md3:#555;--glow:transparent;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0;padding:30px 8px 14px;border:1px solid var(--pl);background:linear-gradient(180deg,var(--pl-top),#160e09 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 0 0 1px #000,0 12px 26px #000a;animation:rankRise .6s cubic-bezier(.2,.8,.2,1) var(--delay,0ms) both}
+.rankPlate.empty{opacity:.35;animation:none;justify-content:center}
+.rankPlate.p1{--pl:#d9b254;--pl-top:rgba(217,178,84,.32);--md1:#fff3c0;--md2:#e2b94f;--md3:#8a5d1b;--glow:rgba(230,185,80,.5);min-height:176px;padding-top:40px}
+.rankPlate.p2{--pl:#9fb0c2;--pl-top:rgba(159,176,194,.24);--md1:#fff;--md2:#c3cdd8;--md3:#5f6d7d;--glow:rgba(190,205,222,.3);min-height:146px}
+.rankPlate.p3{--pl:#b9784a;--pl-top:rgba(185,120,74,.26);--md1:#ffd9bb;--md2:#cd8b58;--md3:#6d3d1f;--glow:rgba(205,139,88,.3);min-height:126px}
+.rankPlate.p1:before{content:'';position:absolute;top:-42px;left:50%;width:34px;height:18px;transform:translateX(-50%);background:linear-gradient(180deg,#ffeaa6,#c28a2e);clip-path:polygon(0 100%,0 25%,25% 55%,50% 0,75% 55%,100% 25%,100% 100%);filter:drop-shadow(0 2px 3px #000b)}
+.rankMedal{position:absolute;top:-17px;left:50%;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:900 calc(16px * var(--ui-font-scale, 1)) Georgia,serif;font-style:normal;color:#2a1a0a;background:radial-gradient(circle at 35% 28%,var(--md1),var(--md2) 58%,var(--md3));border:2px solid var(--md3);box-shadow:0 0 0 2px #120c08,0 4px 10px #000a,0 0 20px var(--glow)}
+.rankTag{font-size:calc(12px * var(--ui-font-scale, 1));letter-spacing:.06em;color:#e7d5b0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rankValue{font:900 calc(24px * var(--ui-font-scale, 1)) Georgia,serif;color:var(--pl);text-shadow:0 0 16px var(--glow)}
+.rankPlate.p1 .rankValue{font-size:calc(32px * var(--ui-font-scale, 1))}
+.rankDetail{font-size:calc(10px * var(--ui-font-scale, 1));color:#a8957a}
+.rankCause{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(10px * var(--ui-font-scale, 1));color:#6f5c44}
+.rankPlate.mine{outline:1px solid #efd49b;outline-offset:2px}
+.rankPlate.mine:after{content:'나';position:absolute;top:6px;right:6px;padding:0 6px;font-size:calc(10px * var(--ui-font-scale, 1));background:#efd49b;color:#2a1a0a;letter-spacing:.1em}
+.rankList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.rankRow{position:relative;display:grid;grid-template-columns:34px minmax(0,1.3fr) minmax(70px,1fr) auto;align-items:center;gap:10px;padding:9px 12px;background:linear-gradient(90deg,#1e140d,#150e09);border:1px solid #2a1c10;animation:rankSlide .4s ease var(--delay,0ms) both}
+.rankNo{font:800 calc(13px * var(--ui-font-scale, 1)) Georgia,serif;color:#8e7a5d;text-align:center}
+.rankWho{min-width:0}
+.rankWho b{display:block;font-size:calc(12px * var(--ui-font-scale, 1));color:#e0cfa8;letter-spacing:.04em;font-weight:600}
+.rankWho small{display:block;color:#8e7a5d;font-size:calc(10px * var(--ui-font-scale, 1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rankTrack{height:8px;background:#0b0705;border:1px solid #2a1c10;box-shadow:inset 0 1px 2px #000;overflow:hidden}
+.rankTrack i{display:block;height:100%;background:linear-gradient(90deg,#7a4a1f,#c98d3f 60%,#efd49b);box-shadow:0 0 8px rgba(239,212,155,.35);width:var(--fill);animation:rankFill .8s cubic-bezier(.2,.8,.2,1) calc(var(--delay,0ms) + 120ms) both}
+@keyframes rankRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes rankSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes rankFill{from{width:0}to{width:var(--fill)}}
+.rankRow .rankValue{font-size:calc(15px * var(--ui-font-scale, 1));font-weight:800;color:#efd49b;min-width:48px;text-align:right;text-shadow:none}
+.rankRow.mine{border-color:#a66f34;background:linear-gradient(90deg,rgba(166,111,52,.3),#1e140d 72%);box-shadow:inset 3px 0 0 #efd49b}
+.rankMineBadge{position:absolute;top:-7px;right:10px;padding:0 6px;font-size:calc(10px * var(--ui-font-scale, 1));background:#efd49b;color:#2a1a0a;letter-spacing:.1em}
+@media (max-width:480px){
+ .rankPodium{gap:6px}
+ .rankPlate{padding:28px 4px 12px}
+ .rankPlate.p1{min-height:160px}.rankPlate.p2{min-height:132px}.rankPlate.p3{min-height:114px}
+ .rankValue{font-size:calc(19px * var(--ui-font-scale, 1))}.rankPlate.p1 .rankValue{font-size:calc(25px * var(--ui-font-scale, 1))}
+ .rankRow{grid-template-columns:26px minmax(0,1fr) auto;gap:4px 8px}
+ .rankTrack{grid-column:2/-1;grid-row:2}
+ .rankMine{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){.rankPlate,.rankRow,.rankTrack i{animation:none}}
