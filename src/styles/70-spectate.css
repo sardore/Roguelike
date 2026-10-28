@@ -1,0 +1,30 @@
+/* Spectating: the viewer's screen is the game screen without the player's controls. */
+body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobileHud,body.spectating #tacticalBelt62,body.spectating #padToggle58,body.spectating #terrainTag,body.spectating #floorFeeling62,body.spectating #autoMoveChip,body.spectating #toast,body.spectating #side{visibility:hidden}
+#spectateBar{position:fixed;left:calc(8px + var(--safe-left));right:calc(8px + var(--safe-right));top:calc(8px + var(--safe-top));z-index:90;display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(18,12,8,.92);border:1px solid #634329;color:#e3cfa6;font-size:calc(12px * var(--ui-font-scale, 1))}
+#spectateBar .spectateInfo{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#spectateBar button,#spectateScene button,#spectateChat button{font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;padding:6px 12px;cursor:pointer}
+#spectateNote{position:fixed;left:50%;top:calc(56px + var(--safe-top));transform:translateX(-50%);z-index:91;max-width:90vw;padding:8px 14px;background:rgba(18,12,8,.95);border:1px solid #a66f34;color:#efd49b;font-size:calc(12px * var(--ui-font-scale, 1))}
+#spectateScene{display:flex;position:fixed;inset:0;z-index:2147483200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:calc(14px + var(--safe-top)) calc(12px + var(--safe-right)) calc(14px + var(--safe-bottom)) calc(12px + var(--safe-left));background:rgba(5,3,2,.94)}
+#spectateScene .spectatePanel{width:min(520px,100%);background:#120c08;border:1px solid #634329;box-shadow:0 0 0 1px #000,0 18px 60px #000}
+#spectateScene header{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #634329}
+#spectateScene h2{margin:0;flex:1;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em;color:#d9b879}
+#spectateScene .spectateHint{margin:14px 12px;color:#a89476;font-size:calc(12px * var(--ui-font-scale, 1))}
+#spectateRooms{display:grid;gap:8px;padding:0 12px 14px}
+#spectateRooms .spectateRoom{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
+#spectateRooms .spectateRoom span{color:#a89476;font-size:calc(11px * var(--ui-font-scale, 1))}
+/* Chat: bubbles above a fixed input row; --kb (set from the visual viewport) lifts it over the on-screen keyboard. */
+#spectateChat{--kb:0px;position:fixed;left:0;right:0;bottom:var(--kb);z-index:2147483100;display:flex;flex-direction:column;max-height:46vh;background:rgba(14,9,6,.96);border-top:1px solid #634329;padding-bottom:calc(6px + var(--safe-bottom))}
+#spectateChat .spectateChatClose{align-self:flex-end;border:0;background:none;font-size:calc(18px * var(--ui-font-scale, 1));padding:2px 10px}
+#spectateChat .spectateLog{flex:1;min-height:80px;overflow-y:auto;padding:4px 10px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#spectateChat .spectateMsg{display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
+#spectateChat .spectateMsg small{color:#8e7a5d;font-size:calc(10px * var(--ui-font-scale, 1));margin:0 4px 2px}
+#spectateChat .spectateMsg .bubble{max-width:82%;padding:6px 10px;border-radius:12px;background:#2a1c10;color:#e8d9b9;font-size:calc(13px * var(--ui-font-scale, 1));line-height:1.35;overflow-wrap:anywhere;white-space:pre-wrap}
+#spectateChat .spectateMsg.mine{align-items:flex-end}
+#spectateChat .spectateMsg.mine .bubble{background:#7a5424;color:#fff4d8}
+#spectateChat .spectateMsg.sys{align-items:center}
+#spectateChat .spectateMsg.sys .bubble{background:none;color:#8e7a5d;font-size:calc(11px * var(--ui-font-scale, 1))}
+#spectateChat .spectateForm{display:flex;gap:8px;padding:6px 10px 0}
+#spectateChat textarea{flex:1;min-width:0;resize:none;max-height:96px;font:inherit;font-size:16px;color:#f0e2c0;background:#1b120c;border:1px solid #634329;border-radius:16px;padding:8px 12px;outline:none}
+#spectateChat .spectateForm button{border-radius:16px;background:#7a5424;color:#fff4d8;flex:none}
+.deathReplay94{display:block;margin:14px auto 0;width:min(260px,80%);height:44px;font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;cursor:pointer}
+@media (min-width:1081px){#spectateChat{left:auto;width:316px;top:calc(56px + var(--safe-top));bottom:var(--kb);max-height:none;border-left:1px solid #634329;border-top:0}#spectateChat .spectateLog{max-height:none}}

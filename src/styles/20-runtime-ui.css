@@ -32,7 +32,7 @@
   @media(min-width:1081px){
     body.mf75-clean #app{padding:8px!important}
     body.mf75-clean #shell{width:min(1720px,100%)!important;height:min(960px,100%)!important;grid-template-columns:minmax(760px,1fr) 318px!important}
-    body.mf75-clean #side{display:flex!important;position:relative!important;min-width:0!important;padding:12px!important;gap:9px!important;overflow:auto!important;border-left:1px solid #5e432c!important;background:linear-gradient(180deg,#120c08,#090604 62%,#070403)!important;color:#cbb897!important;box-shadow:inset 1px 0 #1e120b!important}
+    body.mf75-clean:not(.spectating) #side{display:flex!important;position:relative!important;min-width:0!important;padding:12px!important;gap:9px!important;overflow:auto!important;border-left:1px solid #5e432c!important;background:linear-gradient(180deg,#120c08,#090604 62%,#070403)!important;color:#cbb897!important;box-shadow:inset 1px 0 #1e120b!important}
     body.mf75-clean #stage{min-width:0!important}
     .d962Head{display:flex;justify-content:space-between;align-items:end;padding:8px 8px 10px;border:1px solid #574029;background:linear-gradient(180deg,#1c120c,#0d0805)}
     .d962Head div{display:grid;gap:4px}.d962Head span{font:800 calc(8px * var(--ui-font-scale, 1)) ui-monospace,monospace;letter-spacing:.2em;color:#8f704f}.d962Head b{font-size:calc(14px * var(--ui-font-scale, 1));color:#e0c08b}.d962Head strong{font:900 calc(24px * var(--ui-font-scale, 1)) Georgia,serif;color:#f0cf93;letter-spacing:.04em}

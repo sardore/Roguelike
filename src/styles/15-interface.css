@@ -748,8 +748,8 @@
       padding:3px!important;border:1px solid var(--m75-line)!important;border-radius:3px!important;background:rgba(9,6,4,.88)!important;
       box-shadow:0 6px 18px #0008!important;
     }
-    body.mf75-clean #mobileControls .actions.quickbar button,
-    body.mf75-clean #mobileControls .actions.quickbar button.ux54-hidden{
+    body.mf75-clean:not(.spectating) #mobileControls .actions.quickbar button,
+    body.mf75-clean:not(.spectating) #mobileControls .actions.quickbar button.ux54-hidden{
       display:flex!important;width:50px!important;min-width:50px!important;height:50px!important;min-height:50px!important;padding:0!important;
       flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:1px!important;
       border:1px solid #594029!important;border-radius:2px!important;background:linear-gradient(180deg,#1b120c,#0f0a07)!important;
