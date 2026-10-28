@@ -354,65 +354,57 @@ export const scenarios = {
       out['spectate.listNote'] = await V(() => document.getElementById('spectateListNote').textContent);
       out['spectate.roomText'] = await V(() => document.querySelector('#spectateRooms .spectateRoom').textContent.replace(/\d+턴.*$/, ''));
       await view.page.tap('#spectateRooms .spectateRoom');
-      out['spectate.joined'] = String(await until(() => V(() => !!__MANRU_QA_SPECTATE__.state()?.spectator)));
+      const gotPicture = () => V(() => /^data:image\/jpeg;base64,/.test(document.getElementById('spectatePic')?.src || '') && !document.getElementById('spectateNote').hidden === false);
+      out['spectate.joined'] = String(await until(gotPicture));
       out['spectate.hostSeesViewer'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.viewers.size === 1)));
-      await until(() => V(() => document.getElementById('spectateNote').hidden));
 
-      // 3. What the viewer holds is the host's field of view and nothing outside it; the picture matches the host's.
-      const seenOf = () => H(() => [...__MANRU_QA_SPECTATE__.state().seen]);
-      const walk = async (keys) => { for (const k of keys) { await host.page.keyboard.press(k); await both(300); } await until(() => V(() => true), 6); await both(600); };
-      await walk(['ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown']);
-      await until(() => Promise.all([H(() => __MANRU_QA_SPECTATE__.state().seen.size), V(() => __MANRU_QA_SPECTATE__.state().seen.size)]).then(([a, b]) => a === b));
-      const hostSeen = new Set(await seenOf());
-      const held = await V(() => { const s = __MANRU_QA_SPECTATE__.state(), out = []; for (const key of ['outerWall94', 'subthemeFloors972', 'subthemeWalls970', 'archDecor1020', 'floorPattern1022', 'rugPattern1022', 'terrainUnderlay58', 'terrainAttachment58']) for (const c in s[key]) out.push(c); for (const list of [s.monsters, s.items, s.decor]) for (const e of list) out.push(e.x + ',' + e.y); return { cells: out, seen: s.seen.size, turn: s.turn, floor: s.floor }; });
-      out['spectate.outsideSeen'] = String(held.cells.filter((c) => !hostSeen.has(c)).length);
-      out['spectate.seenEqual'] = String(held.seen === hostSeen.size);
-      // Every cell the viewer holds as seen has the same tile as on the host's map (a seen cell never shows as void), and a cell inspected
-      // by the viewer can be closed again.
-      const hostTiles = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [...s.seen].map((c) => { const [x, y] = c.split(',').map(Number); return [c, s.map[y][x]]; }); });
-      out['spectate.tileMismatch'] = String(await V((tiles) => { const s = __MANRU_QA_SPECTATE__.state(); return tiles.filter(([c, t]) => { const [x, y] = c.split(',').map(Number); return !s.seen.has(c) || s.map[y][x] !== t; }).length; }, hostTiles));
-      await V(() => { const s = __MANRU_QA_SPECTATE__.state(), [x, y] = [...s.seen][0].split(',').map(Number); window.__MANRU_INSPECT984__({ x, y }); });
-      await both(700);
-      const opened = await V(() => document.body.classList.contains('manru-inspect-open'));
-      await view.page.tap('#inspectClose'); await both(700);
-      out['spectate.inspectClose'] = JSON.stringify({ opened, closed: await V(() => !document.body.classList.contains('manru-inspect-open')) });
-      const crop = (p) => p.page.evaluate(() => {
-        const P = window.__MANRU_CAMERA_PROJECTION12__, s = __MANRU_QA_SPECTATE__.state(), c = document.getElementById('game'), pl = s.player;
-        const t = P.tileTopLeft(pl.x - 3, pl.y - 3), r = c.getBoundingClientRect(), dpr = c.width / r.width, w = Math.round(t.s * 7 * dpr), x = Math.round(t.x * dpr), y = Math.round(t.y * dpr);
-        if (x < 0 || y < 0 || x + w > c.width || y + w > c.height) return null;
-        return Array.from(c.getContext('2d').getImageData(x, y, w, w).data);
-      });
-      // A second viewer on a desktop-sized page shows the same picture as the host (same zoom; light flicker allowed).
-      const wide = await openSession(browser, root, { seed: 8082, init });
-      const bothW = async (ms = 200) => { await Promise.all([host.tick(ms), view.tick(ms), wide.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
-      await wide.page.click('#spectateBtn');
-      for (let i = 0; i < 60 && !(await wide.page.evaluate(() => !!document.querySelector('#spectateRooms .spectateRoom'))); i++) await bothW();
-      await wide.page.click('#spectateRooms .spectateRoom');
-      for (let i = 0; i < 60 && !(await wide.page.evaluate(() => __MANRU_QA_SPECTATE__.state()?.seen?.size > 0)); i++) await bothW();
-      for (let i = 0; i < 10; i++) await bothW();
-      const [a, b] = await Promise.all([crop(host), crop(wide)]);
-      out['spectate.picture'] = a && b && a.length === b.length ? String(a.reduce((n, v, i) => n + (Math.abs(v - b[i]) > 40 ? 1 : 0), 0) / a.length < 0.02) : 'size-differs';
-      await wide.page.click('.spectateExit'); await wide.close();
-
-      // The viewer's picture follows the host's character: the drawn position catches up after every step (it used to stay where it was
-      // when the viewer joined), and a camera the viewer has moved stays where the viewer put it while the host walks on.
+      // 3. The viewer receives pictures and nothing else: the frame holds the image and a few numbers, and the viewer page runs no game.
+      out['spectate.frameKeys'] = JSON.stringify(await V(() => Object.keys(__MANRU_QA_SPECTATE__.api.last).sort()));
+      out['spectate.viewerHasNoGame'] = String(await V(() => __MANRU_QA_SPECTATE__.state() === null));
+      // What the viewer shows is the host's screen (a small thumbnail of each, compared pixel by pixel).
+      const thumb = (page, which) => page.evaluate((w) => {
+        const o = document.createElement('canvas'); o.width = 64; o.height = 40; const g = o.getContext('2d');
+        g.drawImage(w === 'pic' ? document.getElementById('spectatePic') : document.getElementById('game'), 0, 0, 64, 40);
+        return Array.from(g.getImageData(0, 0, 64, 40).data);
+      }, which);
+      const distance = (x, y) => x.reduce((n, v, i) => n + Math.abs(v - y[i]), 0) / x.length;
+      const matches = async () => { const [h, v] = await Promise.all([thumb(host.page, 'game'), thumb(view.page, 'pic')]); return distance(h, v); };
+      for (let i = 0; i < 8; i++) await both(300);
+      out['spectate.picture'] = String((await matches()) < 14);
+      // It follows the host: after the host walks, the viewer's picture changed and again matches the host's screen.
+      const still = await thumb(view.page, 'pic');
       const stepHost = () => H(() => { for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) if (__MANRU_QA_SPECTATE__.move(dx, dy).status === 'committed') break; });
-      const apart = () => V(() => { const q = __MANRU_QA_SPECTATE__, s = q.state(), v = q.vis(); return Math.round(Math.hypot(v.x - s.player.x, v.y - s.player.y) * 100) / 100; });
-      for (let i = 0; i < 3; i++) { await stepHost(); await both(400); }
-      await both(1500);
-      out['spectate.walkFollow'] = JSON.stringify({ apart: await apart(), mode: (await V(() => __MANRU_QA_SPECTATE__.vis().cam.mode)) });
-      const camBefore = await V(() => { const C = globalThis.__MANRU_CAMERA_STATE12__; C.beginInspect(); C.panScreen(60, 0); return C.snapshot().cx; });
-      for (let i = 0; i < 3; i++) { await stepHost(); await both(400); }
-      await both(1500);
-      out['spectate.walkFree'] = JSON.stringify({ apart: await apart(), mode: await V(() => __MANRU_QA_SPECTATE__.vis().cam.mode), camHeld: Math.abs((await V(() => globalThis.__MANRU_CAMERA_STATE12__.snapshot().cx)) - camBefore) < 1 });
-      await V(() => globalThis.__MANRU_CAMERA_STATE12__.center());
-      // 4. Floors follow, including a branch floor.
-      await H(() => __MANRU_QA_SPECTATE__.regen(2));
-      out['spectate.floor2'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.state().floor === 2)));
-      await H(() => __MANRU_QA_SPECTATE__.go('dojo:1'));
-      out['spectate.branch'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.state().branchContext105?.id === 'dojo')));
+      for (let i = 0; i < 4; i++) { await stepHost(); await both(500); }
+      for (let i = 0; i < 6; i++) await both(400);
+      out['spectate.followsHost'] = JSON.stringify({ changed: distance(still, await thumb(view.page, 'pic')) > 1, matches: (await matches()) < 14 });
 
-      // 5. Chat both ways; the box keeps its focus after sending (the keyboard stays up).
+      // 4. Moving and zooming the picture is the viewer's: wheel zooms, a drag moves, a double tap fits again; the host does not notice.
+      const hostBefore = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; });
+      const pan = () => V(() => ({ z: __MANRU_QA_SPECTATE__.api.pan.z, x: Math.round(__MANRU_QA_SPECTATE__.api.pan.x), y: Math.round(__MANRU_QA_SPECTATE__.api.pan.y) }));
+      const fitPan = await pan();
+      await view.page.mouse.move(195, 400); await view.page.mouse.wheel(0, -400); await both(300);
+      const zoomed = await pan();
+      await view.page.mouse.move(195, 400); await view.page.mouse.down(); await view.page.mouse.move(150, 360, { steps: 4 }); await view.page.mouse.up(); await both(300);
+      const dragged = await pan();
+      out['spectate.zoom'] = String(zoomed.z > fitPan.z);
+      out['spectate.drag'] = String(dragged.x !== zoomed.x || dragged.y !== zoomed.y);
+      await view.page.click('.spectateFit'); await both(200);
+      out['spectate.fit'] = String((await pan()).z === 1);
+      for (const k of ['ArrowUp', 'ArrowLeft', 'Space', 'KeyF']) await view.page.keyboard.press(k);
+      await both(400);
+      out['spectate.hostUnchanged'] = String(JSON.stringify(hostBefore) === JSON.stringify(await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; })));
+      out['spectate.viewerSaves'] = String(await V(() => Object.keys(localStorage).filter((k) => /active_run/.test(k)).length === 0));
+
+      // 5. Floors follow, including a branch floor (the header reads the host's numbers).
+      await H(() => __MANRU_QA_SPECTATE__.regen(2));
+      out['spectate.floor2'] = String(await until(() => V(() => __MANRU_QA_SPECTATE__.api.last?.floor === 2)));
+      await H(() => __MANRU_QA_SPECTATE__.go('dojo:1'));
+      const seqBranch = await V(() => __MANRU_QA_SPECTATE__.api.seq);
+      out['spectate.branch'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.state().branchContext105?.id === 'dojo')));
+      await both(1200);
+      out['spectate.keepsFlowing'] = String((await H(() => __MANRU_QA_SPECTATE__.api.seq)) > seqBranch);
+
+      // 6. Chat both ways; the box keeps its focus after sending (the keyboard stays up).
       await view.page.tap('.spectateChatBtn');
       await view.page.fill('#spectateInput', '안녕하세요');
       await view.page.tap('#spectateChat .spectateForm button');
@@ -428,33 +420,29 @@ export const scenarios = {
       await view.page.fill('#spectateInput', '첫째'); await view.page.tap('#spectateChat .spectateForm button');
       await view.page.fill('#spectateInput', '둘째'); await view.page.tap('#spectateChat .spectateForm button'); await both(600);
       out['spectate.chatRateLimit'] = String((await H(() => __MANRU_QA_SPECTATE__.api.chat.filter((c) => ['첫째', '둘째'].includes(c.text)).length)) <= 1);
-
-      // 6. Nothing the viewer does reaches the host or its own game; scroll and zoom stay free.
       await view.page.evaluate(() => document.getElementById('spectateChat')?.remove());
-      const before = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; });
-      for (const k of ['ArrowUp', 'ArrowLeft', 'Space', 'KeyF']) await view.page.keyboard.press(k);
-      await view.page.touchscreen.tap(195, 400);
-      await both(400);
-      out['spectate.hostUnchanged'] = String(JSON.stringify(before) === JSON.stringify(await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [s.player.x, s.player.y, s.turn]; })));
-      const z0 = await V(() => globalThis.__MANRU_CAMERA_PROJECTION12__.current().zoom);
-      await view.page.mouse.move(195, 400); await view.page.mouse.wheel(0, -300); await both(300);
-      out['spectate.zoom'] = String((await V(() => globalThis.__MANRU_CAMERA_PROJECTION12__.current().zoom)) > z0);
-      out['spectate.viewerSaves'] = String(await V(() => Object.keys(localStorage).filter((k) => /active_run/.test(k)).length === 0));
 
-      // 7. Leaving returns to the title and the host forgets the viewer.
+      // 7. A frame that is not a small JPEG is never put on the screen.
+      out['spectate.rejectsOtherImages'] = String(await V(() => {
+        const S = __MANRU_QA_SPECTATE__.api, before = document.getElementById('spectatePic').src;
+        for (const img of ['javascript:alert(1)', 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=', 'https://example.com/x.jpg', 'data:image/jpeg;base64,' + 'A'.repeat(S.MAX_FRAME_CHARS)]) S.applyFrame({ kind: 'frame', frame: { img, w: 10, h: 10 } });
+        return document.getElementById('spectatePic').src === before;
+      }));
+
+      // 8. Leaving returns to the title and the host forgets the viewer.
       await view.page.tap('.spectateExit');
-      out['spectate.left'] = JSON.stringify(await V(() => ({ screen: document.body.dataset.manruScreen, state: __MANRU_QA_SPECTATE__.state() === null, bar: !!document.getElementById('spectateBar') })));
+      out['spectate.left'] = JSON.stringify(await V(() => ({ screen: document.body.dataset.manruScreen, view: !!document.getElementById('spectateView'), bar: !!document.getElementById('spectateBar') })));
       out['spectate.hostForgets'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.viewers.size === 0)));
 
-      // 8. The death screen offers the last scenes; the replay ends on the death and closes back to the death screen.
+      // 9. The death screen offers the last scenes; the replay ends on the death and closes back to the death screen.
       await H(() => __MANRU_QA_SPECTATE__.die('시험'));
       await host.tick(500);
       out['spectate.replayOffered'] = String(await H(() => !!document.querySelector('.deathReplay94')));
       await host.page.click('.deathReplay94');
-      out['spectate.replayEnds'] = String(await until(() => H(() => { const r = __MANRU_QA_SPECTATE__.api.replaying; return !!r && r.index === r.frames.length; }), 160));
-      out['spectate.replayDead'] = String(await H(() => __MANRU_QA_SPECTATE__.state().dead === true));
+      out['spectate.replayEnds'] = String(await until(() => H(() => { const r = __MANRU_QA_SPECTATE__.api.replaying; return !!r && r.index === r.frames.length; }), 200));
+      out['spectate.replayShows'] = JSON.stringify(await H(() => ({ picture: /^data:image\/jpeg/.test(document.getElementById('spectatePic').src), dead: __MANRU_QA_SPECTATE__.api.last.dead, overlay: getComputedStyle(document.getElementById('overlay')).display })));
       await host.page.click('.spectateExit'); await host.tick(300);
-      out['spectate.replayClosed'] = JSON.stringify(await H(() => ({ replaying: !!__MANRU_QA_SPECTATE__.api.replaying, overlay: getComputedStyle(document.getElementById('overlay')).display, dead: __MANRU_QA_SPECTATE__.state().dead })));
+      out['spectate.replayClosed'] = JSON.stringify(await H(() => ({ replaying: !!__MANRU_QA_SPECTATE__.api.replaying, view: !!document.getElementById('spectateView'), overlay: getComputedStyle(document.getElementById('overlay')).display, dead: __MANRU_QA_SPECTATE__.state().dead })));
       // A server that is not there: the list says so, keeps the "try again" promise and does not hang on "searching".
       const deadInit = init.replace(`127.0.0.1:${port}`, '127.0.0.1:9');
       const lost = await openSession(browser, root, { seed: 8083, init: deadInit });
