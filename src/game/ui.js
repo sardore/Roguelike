@@ -1055,7 +1055,7 @@ function createReleasePanel(){
         <section class="rc70Section"><h3>세이브 슬롯</h3><div id="rcSlots70" class="rc70Grid"></div></section>
         ${SAVE_STRING_PANEL?`<section class="rc70Section" id="rcString70"><h3>세이브 문자열</h3><div class="rc70Row"><button id="rcStrMake70">현재 진행 문자열 만들기</button><button id="rcStrCopy70" disabled>복사</button><button id="rcStrApply70">이 문자열로 이어하기</button></div><textarea id="rcStrText70" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="다른 기기에서 만든 문자열을 여기에 붙여 넣고 ‘이 문자열로 이어하기’를 누른다."></textarea><div id="rcStrStat70" class="rc70Diag">현재 진행과 계정 진행(튜토리얼·설정·사망 기록)이 모두 들어간다. 가져오면 지금 진행은 문자열의 진행으로 바뀐다.</div></section>`:''}
         <section class="rc70Section"><h3>조작 · 사운드</h3><div class="rc70Row"><button id="rcSfx70">게임 효과음</button><button id="rcHaptic70" aria-pressed="true">진동 ON</button><label>UI 효과음 <input id="rcUiVol70" type="range" min="0" max="1" step=".05"></label><button id="rcTutorial70">튜토리얼 다시 보기</button><label for="rcTextScale70">글씨 크기</label><select id="rcTextScale70" aria-label="글씨 크기"><option value="1">기본 — 100%</option><option value="1.15">크게 — 115%</option><option value="1.3">더 크게 — 130%</option><option value="1.45">매우 크게 — 145%</option></select></div></section>
-        <section class="rc70Section"><h3>관전</h3><div class="rc70Row"><button id="rcSpectate70" aria-pressed="false">관전 허용</button><button id="rcSpectateChat70">관전 채팅</button></div><div id="rcSpectateInfo70" class="rc70Diag"></div></section>
+        <section class="rc70Section"><h3>관전</h3><div class="rc70Row"><button id="rcSpectateChat70">관전 채팅</button></div><div id="rcSpectateInfo70" class="rc70Diag"></div></section>
         <section class="rc70Section"><h3>출시 진단</h3><div class="rc70Row"><button id="rcQuickAudit70">현재 층 검사</button><button id="rcPerf70">렌더 20회 측정</button></div><div id="rcDiag70" class="rc70Diag">대기 중</div></section>
       </div>
     </div>`;
@@ -1191,7 +1191,7 @@ function bindReleaseDiagnosticButtons(){
     document.getElementById('rcQuickAudit70').onclick=()=>{document.getElementById('rcDiag70').textContent=JSON.stringify(audit70(),null,2)};
     document.getElementById('rcPerf70').onclick=()=>{const total=bench70(20);document.getElementById('rcDiag70').textContent=`20회 강제 렌더 ${total}ms\n평균 ${(total/20).toFixed(2)}ms\nEMA ${RC.perf.ema.toFixed(2)}ms\nDPR ${VIEW.dpr}`};
     document.getElementById('rcSfx70').onclick=()=>{document.dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));refreshSfx()};
-    document.getElementById('rcSpectate70').onclick=()=>{if(!Spectate.allow(!Spectate.hosting))toast('관전 서버가 연결되어 있지 않다.')};document.getElementById('rcSpectateChat70').onclick=()=>{closeReleasePanel();Spectate.toggleChat()};Spectate.updateHostPanel();
+    document.getElementById('rcSpectateChat70').onclick=()=>{closeReleasePanel();Spectate.toggleChat()};Spectate.updateHostPanel();
     document.getElementById('rcHaptic70').onclick=()=>{const on=setVibrationEnabled(!vibrationEnabled());refreshSfx();if(on)vfVibrate(HAPTIC_PATTERN57.toggle);toast(`진동 ${on?'켜짐':'꺼짐'}.`)};
     document.getElementById('rcUiVol70').closest('.rc70Row').oninput=e=>{if(e.target.id==='rcTextScale70'){e.stopPropagation();applyTextScale(e.target.value,true);return}if(e.target.id==='rcUiVol70'){RC.uiVolume=+e.target.value;try{lsSet('manruUiVolume70',String(RC.uiVolume))}catch(error){ignoreError('ui volume could not be saved',error)}}};
 }
