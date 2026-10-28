@@ -725,7 +725,7 @@ function drawRegionFloor(px,py,x,y,colors,vis){
 function drawWallTexture(px,py,x,y,colors){
   if(!wallsAreNegativeSpace()||state.branchContext105){drawWallFace(px,py,x,y,colors);return}
   if((state.map[y+1]?.[x]??TT.WALL)!==TT.WALL&&drawAuthoredWall(px,py,x,y))return;
-  drawMainWall(px,py,x,y);
+  drawMainWall(px,py,x,y,stoneWallKind(x,y));
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
     drawWallWithSubthemeOverlay(px,py,x,y,colors);const r41=globalThis.__MANRU_TERRAIN_R41__,style=state?.wallStyle980?.[key980(x,y)]||state?.subthemeWalls970?.[key980(x,y)];if(!style){r41?.wall?.(px,py,x,y,colors);return}const h=hash980(x,y,79);X.save();
@@ -790,13 +790,20 @@ function drawRegionWallWithEdges(px,py,x,y,colors){
 // Main-tower walls reuse the dojo wall: the first dojo palette for the orange 청풍루, the matching dojo palette nudged toward the
 // region's own wall tone for the others.
 const MAIN_WALL_PALETTES=new Map();
-function mainWallPalette(){
- const z=regionIndex();let P=MAIN_WALL_PALETTES.get(z);if(P)return P;
- const base=DOJO_PALETTES[[0,1,2,3,5][z]||0],tint=wallPalette[z],amount=z===0?0:.28,rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),mix=(a,b)=>'#'+rgb(a).map((v,i)=>Math.round(v+(rgb(b)[i]-v)*amount).toString(16).padStart(2,'0')).join('');
+// The green garden stone and the blue moon stone of the main-tower rooms keep a stone wall of their own.
+const STONE_WALL_PALETTES=Object.freeze({
+ green:{name:'녹석',stone:true,wall:'#62806d',cap:'#b3ccb6',beam:'#2f4a3d',dark:'#16231c',grain:'#86a48b',metal:'#c6d6bd',floor:'#4d6556',floor2:'#566f60',stone:true},
+ blue:{name:'청석',stone:true,wall:'#60778d',cap:'#b0c6dc',beam:'#2d3d50',dark:'#151d29',grain:'#85a0b8',metal:'#c9d6e4',floor:'#4b5d70',floor2:'#546779',stone:true}
+});
+function stoneWallKind(x,y){const style=state.subthemeWalls970?.[`${x},${y}`]||state.wallStyle980?.[key980(x,y)]||'';return /r2_outdoor|f8_|f24_/.test(style)?'green':/r3_moon|f11_canyon/.test(style)?'blue':null}
+function mainWallPalette(stone){
+ if(stone)return STONE_WALL_PALETTES[stone];
+ const z=regionIndex(),floorArt=ART60[state.floor],id=floorArt?'f'+state.floor:z;let P=MAIN_WALL_PALETTES.get(id);if(P)return P;
+ const base=DOJO_PALETTES[[0,1,2,3,5][z]||0],tint=floorArt?{face:floorArt.wall,edge:floorArt.accent,top:floorArt.wall,dark:floorArt.wallDark,side:floorArt.wall}:wallPalette[z],amount=floorArt?.28:z===0?0:.28,rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),mix=(a,b)=>'#'+rgb(a).map((v,i)=>Math.round(v+(rgb(b)[i]-v)*amount).toString(16).padStart(2,'0')).join('');
  P=Object.fromEntries(Object.entries(base).map(([key,value])=>[key,['wall','cap','beam','dark','grain'].includes(key)?mix(value,tint[{wall:'face',cap:'edge',beam:'top',dark:'dark',grain:'side'}[key]]):value]));
- MAIN_WALL_PALETTES.set(z,P);return P;
+ MAIN_WALL_PALETTES.set(id,P);return P;
 }
-function drawMainWall(px,py,x,y){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,mainWallPalette(),x,y);X.restore()}
+function drawMainWall(px,py,x,y,stone){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,mainWallPalette(stone),x,y);X.restore()}
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
@@ -3926,6 +3933,23 @@ function drawDojoWall(q,r,P,x,y){
   if(e.north){r(P.cap,0,0,32,2);r(P.wall,0,2,32,2);}
   if(e.nw){r(P.cap,0,0,4,2);r(P.cap,0,0,2,4);}if(e.ne){r(P.cap,28,0,4,2);r(P.cap,30,0,2,4);}
   if(e.sw){r(P.cap,0,30,4,2);r(P.cap,0,28,2,4);}if(e.se){r(P.cap,28,30,4,2);r(P.cap,30,28,2,4);}
+  return;
+ }
+ if(P.stone){
+  // Stone face: coped top, three courses of dressed blocks with lit tops and shaded joints, a plinth.
+  r(P.dark,0,0,32,32);r(P.beam,0,0,32,7);r(P.cap,0,0,32,2);r(P.metal,0,2,32,1);r(P.dark,0,3,32,1);r(P.wall,0,4,32,3);r(P.grain,0,4,32,1);
+  for(let c=0;c<3;c++){
+   const yy=8+c*6,off=((x+c)%2)*8+Math.floor(hash2(x,y+c,351)*3);
+   for(let a=-off;a<32;a+=16){
+    const bx=Math.max(0,a+1),bw=Math.min(32,a+15)-bx;if(bw<=1)continue;
+    r(P.wall,bx,yy,bw,5);r(P.grain,bx,yy,bw,1);r('rgba(0,0,0,.22)',bx,yy+4,bw,1);
+    if(hash2(x*3+c,y+a,353)>.55)r('rgba(255,255,255,.10)',bx+1+Math.floor(hash2(x,a+c,355)*6),yy+2,3,1);
+    if(hash2(x+c,y*3+a,357)>.8)r('rgba(0,0,0,.16)',bx+2,yy+1,2,3);
+   }
+  }
+  r(P.dark,0,26,32,6);r(P.beam,0,26,32,1);r(P.grain,0,27,32,1);
+  if(hash2(x,y,359)>.6)r(P.metal,4+Math.floor(hash2(x,y,361)*20),9+Math.floor(hash2(x,y,363)*14),2,1);
+  if(!west)r(P.cap,0,0,2,30);if(!east)r(P.cap,30,0,2,30);
   return;
  }
  r(P.dark,0,0,32,32);r(P.beam,0,0,32,7);
