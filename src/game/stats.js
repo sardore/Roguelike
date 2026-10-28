@@ -116,7 +116,7 @@ const PlayStats={
  // The header of a run: enough to tell which run the following lines belong to.
  logRun(){
   this.lastRun=state.runId984;
-  this.logAdd({a:'RUN',run:state.runId984,floor:state.floor,cls:state.player.classId,turn:state.turn,ua:navigator.userAgent.slice(0,90),vw:innerWidth+'x'+innerHeight,...this.snapshot()},true);
+  this.logAdd({a:'RUN',run:state.runId984,floor:state.floor,cls:state.player.classId,turn:state.turn,build:document.querySelector('meta[name="manru-build"]')?.content||'dev',ua:navigator.userAgent.slice(0,90),vw:innerWidth+'x'+innerHeight,...this.snapshot()},true);
  },
  logAction(type,command,result,denial,before){
   if(!state||!state.player)return;

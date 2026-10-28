@@ -34,7 +34,7 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const RUNTIME = 'scripts/10-runtime.js';
 const releaseRuntime = assembleGame(src).text;
 const readScript = (file) => (file === RUNTIME ? releaseRuntime : read(path.join(src, file)));
-const html = read(path.join(src, 'index.html'));
+const html = read(path.join(src, 'index.html')).replace(/(<meta name="manru-build" content=")[^"]*/, '$1' + (process.env.GITHUB_SHA || '').slice(0, 7));
 {
   // One place names the release: RELEASE_INFO in the boot script. The static <title> must match it.
   const info = read(path.join(src, 'scripts', '00-boot-isolation.js')).match(/RELEASE_INFO=Object\.freeze\(\{[^}]*title:'([^']*)'/);

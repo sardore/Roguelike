@@ -464,6 +464,19 @@ export const scenarios = {
       const res = U.dispatch({ type: 'ITEM_USE', args: [idx] });
       return { blocked: res.status === 'blocked', worn: st.player.cloak?.name || null, drawerActive: U.sessions.has('mobileDrawer'), inventoryOpen: document.getElementById('inventory').classList.contains('open') };
     }));
+    // the other items from the same report: the talismans are not refused as "blocked" either
+    await s.page.evaluate(() => { const st = __MANRU_QA_UI__.state(); st.player.inventory.push({ name: '수류부적', type: 'talisman', talismanKind: 'elem_water', element74: 'water', tier: 1, rarity: 'common', count: 1 }, { name: '감정부적', type: 'talisman', talismanKind: 'identify', tier: 1, rarity: 'common', count: 1 }); });
+    const talis = {};
+    for (const n of ['수류부적', '감정부적']) {
+      await s.page.keyboard.press('KeyI'); await s.tick(400);
+      talis[n] = await s.page.evaluate((name) => {
+        const U = __MANRU_QA_UI__, st = U.state(); U.sessions.add('mobileDrawer');
+        const open = document.getElementById('inventory').classList.contains('open');
+        return { open, status: U.dispatch({ type: 'ITEM_USE', args: [st.player.inventory.findIndex((i) => i.name === name)] }).status };
+      }, n);
+      await s.tick(300);
+    }
+    out['drawer.talismansUnderStaleDrawer'] = JSON.stringify(talis);
     out['drawer.errors'] = JSON.stringify(s.errors);
     await s.close();
     return out;
