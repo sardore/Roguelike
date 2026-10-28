@@ -41,8 +41,8 @@ body.title-class-mode #titleCorner{display:none}
 #spectateBtn .watchIcon:before{content:'';position:absolute;left:0;right:0;top:2px;bottom:2px;border:2px solid #e2b65f;border-radius:50%}
 #spectateBtn .watchIcon:after{content:'';position:absolute;left:5px;top:4px;width:6px;height:6px;border-radius:50%;background:#fff0b8}
 #titleCorner #spectateBtn{animation:spectateGlow 2.4s ease-in-out infinite}
-@keyframes spectateGlow{0%,100%{box-shadow:0 0 5px 0 rgba(255,224,140,.35)}50%{box-shadow:0 0 16px 4px rgba(255,224,140,.85)}}
-@media (prefers-reduced-motion:reduce){#titleCorner #spectateBtn{animation:none;box-shadow:0 0 12px 3px rgba(255,224,140,.7)}}
+@keyframes spectateGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(255,224,140,.35))}50%{filter:drop-shadow(0 0 11px rgba(255,224,140,.95)) brightness(1.12)}}
+@media (prefers-reduced-motion:reduce){#titleCorner #spectateBtn{animation:none;filter:drop-shadow(0 0 8px rgba(255,224,140,.8))}}
 @media (max-width:480px){#titleCorner{top:16px;right:14px;gap:6px;flex-direction:column;align-items:flex-end}#rankBtn,#spectateBtn{padding:5px 11px 5px 9px;letter-spacing:.14em}}
 #statsScene[data-mode=rank] .statsPanel{background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
 #statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
