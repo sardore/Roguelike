@@ -735,11 +735,11 @@ function carryWallEdges(px,py,x,y){
   const open=xx=>state.map[y]?.[xx]!=null&&state.map[y][xx]!==TT.WALL&&state.seen.has(k(xx,y)),h=state.map[y+1]?.[x]===TT.WALL?32:30;X.fillStyle=wallLineColors(x,y).cap;
   if(open(x-1))X.fillRect(px,py,2,h);if(open(x+1))X.fillRect(px+30,py,2,h);
 }
-// Walls that keep art of their own in a branch: the dojo draws its walls with its own edge lines, palace facades and windows, and the
-// citadel gates (iron grates).
+// Walls that keep art of their own in a branch: the dojo draws its walls with its own edge lines, the stockades have no edge lines at all,
+// palace facades and windows, and the citadel gates (iron grates).
 function wallKeepsOwnArt(x,y){
   const b=state.branchContext105,ter=state.branchTerrain105,key=k(x,y);
-  if(b?.id==='dojo')return true;
+  if(['dojo','stockade','black'].includes(b?.id))return true;
   if(b?.id==='palace'){const d=ter.palace105;return !!(d.facades?.[key]||d.windows?.[key])||DIRS8.some(([dx,dy])=>d.outdoors?.[k(x+dx,y+dy)])}
   if(b?.id==='citadel')return !!ter.mine105?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));
   return false;
@@ -752,10 +752,6 @@ function branchWallColors(x,y){
   if(b.id==='citadel'){const P=citadelCellOwners(ter.citadel105,x,y,true).palette;return{cap:P.light,wall:P.stone}}
   if(b.id==='palace')return{cap:'#738575',wall:'#334d49'};
   if(b.id==='canal'||b.id==='granary'){const P=branchDistrictAt(x,y);return{cap:P.cap,wall:P.wall}}
-  const s=ter.surfaces[k(x,y)];
-  if(s==='ironstone')return{cap:'#9797a7',wall:'#393d48'};
-  if(s==='wood')return b.id==='black'?{cap:'#8a8a98',wall:'#302b30'}:{cap:'#c1ae85',wall:'#493a2d'};
-  return{cap:'#a4a394',wall:'#535e5d'};
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
     drawWallWithSubthemeOverlay(px,py,x,y,colors);const r41=globalThis.__MANRU_TERRAIN_R41__,style=state?.wallStyle980?.[key980(x,y)]||state?.subthemeWalls970?.[key980(x,y)];if(!style){r41?.wall?.(px,py,x,y,colors);return}const h=hash980(x,y,79);X.save();
