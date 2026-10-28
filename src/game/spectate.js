@@ -10,22 +10,30 @@ const Spectate={
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
  ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','gazeBursts57','legendFireFields47','legendSkyAxes47'],
  PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','combustion105','martialActor105','guardReady1005','strongReady','classState'],
- VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
+ net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
  hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastSig:'',lastChat:new Map(),
  watching:null,rooms:new Map(),view:null,chat:[],bound:false,
  endpoint(){return document.querySelector('meta[name="manru-relay"]')?.content.trim()||''},
  httpBase(){return this.endpoint().replace(/^ws/,'http').replace(/\/[^/]*$/,'')},
  // ---- transport -------------------------------------------------------------------------------------------------------
+ // What the connection is doing: shown to the person (list note, settings line) and kept in the debug log for reports.
+ setNet(stage,detail){
+  if(this.net===stage&&this.netDetail===detail)return;
+  this.net=stage;this.netDetail=detail;
+  PlayStats.logAdd({a:'SPECTATE',role:this.role,stage,detail,hosting:this.hosting,ready:this.ready,viewers:this.viewers.size,rooms:this.rooms.size});
+  this.updateHostPanel();this.renderRooms();
+ },
  open(role){
   const url=this.endpoint();if(!url||this.ws)return false;
   this.role=role;this.connecting=true;this.playerId=this.playerId||'manru-'+Math.random().toString(36).slice(2,12);
-  try{this.ws=new WebSocket(url)}catch(error){ignoreError('spectate socket refused',error);this.connecting=false;return false}
+  this.setNet('connecting',role==='host'?'방송 서버에 연결하는 중…':'서버에 연결하는 중…');
+  try{this.ws=new WebSocket(url)}catch(error){ignoreError('spectate socket refused',error);this.connecting=false;this.setNet('failed','연결을 열 수 없다: '+(error?.message||error));return false}
   const ws=this.ws;
-  ws.onopen=()=>this.send({type:'relay.hello',sessionGeneration:0});
+  ws.onopen=()=>{this.setNet('hello','서버에 인사하는 중…');this.send({type:'relay.hello',sessionGeneration:0})};
   ws.onmessage=event=>{try{this.receive(JSON.parse(event.data))}catch(error){ignoreError('spectate packet unreadable',error)}};
-  ws.onclose=()=>{if(this.ws===ws){this.ws=null;this.ready=false;this.connecting=false;this.onClosed()}};
-  ws.onerror=()=>{};
+  ws.onclose=event=>{if(this.ws===ws){const was=this.ready;this.ws=null;this.ready=false;this.connecting=false;this.listedAt=0;this.setNet('failed',(was?'연결이 끊겼다':'서버에 연결하지 못했다')+' (코드 '+(event?.code??'?')+(event?.reason?' · '+event.reason:'')+')');this.onClosed()}};
+  ws.onerror=()=>{this.netError=true};
   return true;
  },
  send(packet){
@@ -35,16 +43,19 @@ const Spectate={
  act(action,fields={}){return this.send({type:'spectator.action',action,...fields})},
  close(){const ws=this.ws;this.ws=null;this.ready=false;this.connecting=false;try{ws?.close()}catch(error){ignoreError('spectate close failed',error)}},
  onClosed(){
+  this.retryAt=performance.now()+5000;
   if(this.hosting)this.reconnectAt=performance.now()+4000;
   else if(this.watching)this.viewerNotice('연결이 끊겼다. 방송이 끝났거나 네트워크가 불안정하다.');
  },
  // Wake the free relay instance before the first connection (it sleeps after 15 quiet minutes).
  async wake(){
   const base=this.httpBase();if(!base)return false;
-  try{const reply=await fetch(base+'/health',{cache:'no-store'});return reply.ok}catch(error){ignoreError('relay wake failed',error);return false}
+  try{const reply=await fetch(base+'/health',{cache:'no-store',signal:typeof AbortSignal.timeout==='function'?AbortSignal.timeout(70000):undefined});this.setNet('woke','서버가 응답했다 (HTTP '+reply.status+')');return reply.ok}
+  catch(error){ignoreError('relay wake failed',error);this.setNet('wakeFailed','서버가 응답하지 않는다: '+(/Abort|Timeout/.test(error?.name)?'시간 초과':(error?.message||error)));return false}
  },
  receive(packet){
-  if(packet.type==='relay.ready'){this.selfId=packet.connectionId||'';this.ready=true;this.connecting=false;this.lastBeat=performance.now();this.onReady();return}
+  if(packet.type==='relay.ready'){this.selfId=packet.connectionId||'';this.ready=true;this.connecting=false;this.lastBeat=performance.now();this.setNet('ready',this.hosting?'서버에 연결됨':'서버에 연결됨');this.onReady();return}
+  if(packet.type==='session.failed'){this.setNet('refused','서버가 거절했다: '+(packet.code||'')+' '+(packet.detail||''));return}
   if(packet.type!=='spectator.event')return;
   const data=packet.payload||{};
   if(data.tag&&data.tag!==this.TAG)return;
@@ -52,7 +63,7 @@ const Spectate={
   else this.viewerEvent(packet.action,packet.fromId,packet.matchId,data);
  },
  onReady(){
-  if(this.hosting){for(const v of this.viewers.values())v.needFull=true;this.announce(true);this.updateHostPanel()}
+  if(this.hosting){for(const v of this.viewers.values())v.needFull=true;this.listedAt=0;this.readyAt=performance.now();this.act('browse');this.announce(true);this.updateHostPanel()}
   else if(this.role==='viewer'){this.act('browse');if(this.watching)this.watchPing(performance.now(),true)}
  },
  // Called from the frame loop: heartbeat, announce, reconnect and the per-turn frame all hang on this one clock.
@@ -64,6 +75,8 @@ const Spectate={
  tick(now){
   if(this.ws&&this.ready&&now-this.lastBeat>this.HEARTBEAT_MS){this.lastBeat=now;this.send({type:'heartbeat',at:Date.now()})}
   if(this.watching&&this.ready&&!this.replaying)this.watchPing(now);
+  if(this.listOpen&&!this.watching&&!this.ws&&!this.connecting&&!this.waking&&now>=this.retryAt)this.startList();
+  if(this.hosting&&this.ready&&!this.listedAt&&now-this.readyAt>8000&&this.net!=='unlisted')this.setNet('unlisted','서버에 연결되었지만 방송 목록에 오르지 않았다');
   if(this.hosting){
    for(const [id,v] of this.viewers)if(now-v.seenAt>this.VIEWER_TTL_MS){this.viewers.delete(id);this.lastChat.delete(id);this.updateHostPanel()}
    if(!this.ws&&!this.connecting&&now>=this.reconnectAt)this.open('host');
@@ -85,6 +98,7 @@ const Spectate={
   this.act('announce',{matchId:String(state.runId984),payload:{protocol:this.TAG,tag:this.TAG,matchId:String(state.runId984),cls:state.player.classId,floor:state.floor,turn:state.turn,hp:state.player.hp,maxHp:state.player.maxHp,spectators:this.viewers.size,updatedAt:Date.now(),ended}});
  },
  hostEvent(action,fromId,data){
+  if(action==='announce'){if(fromId===this.selfId||data.matchId===String(state?.runId984)){const first=!this.listedAt;this.listedAt=performance.now();if(first)this.setNet('listed','방송 목록에 올랐다')}return}
   if(!fromId)return;
   if(action==='watch'){
    if(this.viewers.size>=this.MAX_VIEWERS&&!this.viewers.has(fromId)){this.toViewer(fromId,'snapshot',{tag:this.TAG,kind:'full',refused:'가득 찼다'});return}
@@ -334,20 +348,27 @@ const Spectate={
   scene.id='spectateScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','관전');list.id='spectateRooms';note.id='spectateListNote';
   close.type='button';close.id='spectateClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.closeList();
   head.append(this.el('h2',null,'관전'),close);panel.append(head,note,list);scene.append(panel);document.body.append(scene);
-  this.rooms.clear();this.renderRooms();
-  if(!this.endpoint()){note.textContent='관전 서버가 연결되어 있지 않다.';return true}
-  note.textContent='서버를 깨우는 중… (처음에는 30~60초 걸릴 수 있다)';
-  this.wake().then(()=>{if(!document.getElementById('spectateScene'))return;note.textContent='진행 중인 탐사를 찾는 중…';this.role='viewer';this.hosting=false;if(!this.ws)this.open('viewer');else this.act('browse')});
-  return true;
+  this.rooms.clear();this.listOpen=true;this.retryAt=0;
+  if(!this.endpoint()){this.renderRooms();return true}
+  this.startList();return true;
  },
- closeList(){document.getElementById('spectateScene')?.remove();if(!this.watching)this.close()},
+ // List mode: wake the server, connect as a viewer, ask for the live rooms; try again on its own when it fails.
+ startList(){
+  if(this.waking)return;
+  this.role='viewer';this.hosting=false;this.waking=true;this.setNet('waking','서버를 깨우는 중… (처음에는 30~60초 걸릴 수 있다)');
+  this.wake().then(()=>{this.waking=false;if(!this.listOpen)return;if(!this.ws)this.open('viewer');else this.act('browse')});
+ },
+ closeList(){this.listOpen=false;document.getElementById('spectateScene')?.remove();if(!this.watching)this.close()},
  renderRooms(){
   const list=document.getElementById('spectateRooms');if(!list)return;
   const now=performance.now();for(const [id,r] of this.rooms)if(now-r.seenAt>6500)this.rooms.delete(id);
   list.replaceChildren();
   const note=document.getElementById('spectateListNote');
-  if(!this.rooms.size){if(note&&this.ready)note.textContent='지금 방송 중인 탐사가 없다. 이 창을 열어 두면 새 방송이 나타난다.';return}
-  if(note)note.textContent='들어갈 탐사를 고른다.';
+  if(!this.rooms.size){
+   if(note)note.textContent=!this.endpoint()?'관전 서버가 연결되어 있지 않다.':this.ready?'서버에 연결됨 · 지금 방송 중인 탐사가 없다. 다른 기기에서 설정의 "관전 허용"을 켜고 게임 화면을 띄워 두면 여기에 나타난다.':this.netDetail+(this.net==='failed'||this.net==='wakeFailed'||this.net==='refused'?' · 5초 뒤 다시 시도한다':'');
+   return;
+  }
+  if(note)note.textContent='서버에 연결됨 · 들어갈 탐사를 고른다.';
   for(const r of [...this.rooms.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))){
    const b=this.el('button','spectateRoom');b.type='button';
    const cls=(typeof CLASSES!=='undefined'&&CLASSES.find(c=>c.id===r.cls)?.name)||r.cls||'탐사자';
@@ -435,6 +456,7 @@ const Spectate={
  updateHostPanel(){
   const b=document.getElementById('rcSpectate70'),s=document.getElementById('rcSpectateInfo70');if(!b)return;
   b.textContent=this.hosting?'관전 허용 중 (끄기)':'관전 허용';b.setAttribute('aria-pressed',String(this.hosting));
-  if(s)s.textContent=this.hosting?(this.ready?`방송 중 · 관전자 ${this.viewers.size}명`:'서버에 연결하는 중…'):'꺼짐. 켜면 내 시야 범위만 다른 사람에게 보인다.';
+  if(!s)return;
+  s.textContent=!this.hosting?'꺼짐. 켜면 내 시야 범위만 다른 사람에게 보인다.':this.listedAt?`방송 중 · 목록에 올랐다 · 관전자 ${this.viewers.size}명`:this.ready?`서버에 연결됨 · 목록에 오르는 중… (관전자 ${this.viewers.size}명)`:(this.netDetail||'서버에 연결하는 중…');
  }
 };
