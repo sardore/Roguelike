@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  taps:0,lastTapAt:0,sending:false,tab:'stats',board:'depth',mode:'hidden',data:null,ranking:null,failed:null,
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
@@ -38,14 +38,28 @@ const PlayStats={
  // the monsters nearby and the pack. Written to localStorage in batches (and when the page is hidden), never per move.
  logAdd(entry,flushNow=false){
   try{
-   if(!this.logList)this.logList=JSON.parse(lsGet(this.LOG_KEY)||'[]');
+   if(!this.logList)this.loadLog();
    this.logList.push({t:new Date().toISOString().slice(5,23),...entry});
    if(this.logList.length>this.LOG_MAX)this.logList.splice(0,this.logList.length-this.LOG_MAX);
    if(flushNow||++this.logPending>=this.FLUSH_EVERY)this.logSave();
   }catch(error){ignoreError('debug log write failed',error)}
  },
+ // The lines of an earlier session; unreadable storage starts a fresh list instead of losing every later line.
+ loadLog(){
+  try{const list=JSON.parse(lsGet(this.LOG_KEY)||'[]');this.logList=Array.isArray(list)?list:[]}
+  catch(error){ignoreError('debug log unreadable',error);this.logList=[]}
+ },
+ // The origin's localStorage is shared with the owner's other pages and can be nearly full: keep the log under a byte budget and shed the
+ // oldest lines until the write fits; if it never fits the lines stay in memory (logStored=false) and the view still shows them.
  logSave(){
-  try{if(this.logList){lsSet(this.LOG_KEY,JSON.stringify(this.logList));this.logPending=0}}catch(error){ignoreError('debug log save failed',error)}
+  if(!this.logList)return;
+  try{
+   let text=JSON.stringify(this.logList);
+   while(text.length>this.LOG_BYTES&&this.logList.length>20){this.logList.splice(0,Math.ceil(this.logList.length*.15));text=JSON.stringify(this.logList)}
+   let stored=lsSet(this.LOG_KEY,text);
+   for(let tries=0;!stored&&tries<5&&this.logList.length>10;tries++){this.logList.splice(0,Math.ceil(this.logList.length/2));stored=lsSet(this.LOG_KEY,JSON.stringify(this.logList))}
+   this.logStored=stored;this.logPending=0;
+  }catch(error){ignoreError('debug log save failed',error);this.logStored=false}
  },
  // Called once from the title binding: the in-memory tail reaches storage when the tab is hidden or closed.
  bindLifecycle(){
@@ -129,13 +143,20 @@ const PlayStats={
   this.logAdd({a:'HIT',by:mon?.name||context?.cause||context?.kind||(typeof source==='string'?source:'env'),dmg:amount,el:element||undefined,fl:state.floor,tn:state.turn,at:[p.x,p.y],hp:p.hp,from:hpBefore,
    src:mon?[mon.x-p.x,mon.y-p.y,mon.hp,mon.maxHp]:undefined,...(amount>=Math.max(5,p.maxHp*.2)||p.hp<=0?{view:this.view(),near:this.nearby()}:{})},p.hp<=0);
  },
- logText(){try{this.logSave();return JSON.parse(lsGet(this.LOG_KEY)||'[]').map(e=>JSON.stringify(e)).join('\n')}catch(error){ignoreError('debug log unreadable',error);return''}},
+ // Which keys of this origin use the space: the origin is shared with every other page of the same host.
+ storageUsage(){
+  try{
+   const rows=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);rows.push([key,key.length+(localStorage.getItem(key)||'').length])}
+   rows.sort((a,b)=>b[1]-a[1]);return{total:rows.reduce((n,r)=>n+r[1],0),top:rows.slice(0,4).map(r=>r[0].slice(0,24)+' '+Math.round(r[1]/1024)+'KB').join(' · ')};
+  }catch(error){ignoreError('storage usage unreadable',error);return{total:0,top:''}}
+ },
+ logText(){try{if(!this.logList)this.loadLog();this.logSave();return this.logList.map(e=>JSON.stringify(e)).join('\n')}catch(error){ignoreError('debug log unreadable',error);return''}},
  logView(){
   const box=this.el('div','statsLog'),text=this.logText(),lines=text.split('\n'),pre=this.el('pre',null,text?(lines.length>this.LOG_SHOWN?`… 앞의 ${lines.length-this.LOG_SHOWN}줄은 복사로만 받는다.\n`:'')+lines.slice(-this.LOG_SHOWN).join('\n'):'기록된 로그가 없다.'),row=this.el('div','statsLogRow'),copy=this.el('button',null,'복사'),clear=this.el('button',null,'지우기');
   copy.type='button';clear.type='button';
   copy.onclick=async()=>{try{await navigator.clipboard.writeText(text);copy.textContent='복사됨'}catch(error){ignoreError('debug log copy failed',error);const range=document.createRange();range.selectNodeContents(pre);getSelection().removeAllRanges();getSelection().addRange(range);copy.textContent='선택됨: 길게 눌러 복사'}};
   clear.onclick=()=>{this.logList=[];this.logPending=0;lsRemove(this.LOG_KEY);this.render()};
-  row.append(copy,clear);box.append(row,pre);return box;
+  row.append(copy,clear);box.append(row,this.el('p','statsNote',`${lines.length&&text?lines.length:0}줄 · ${text.length}자 · 저장소 ${this.logStored?'정상':'가득 참(이 화면을 닫으면 사라진다. 복사해 두자)'}`),this.el('p','statsNote',(u=>`이 사이트 저장소 ${Math.round(u.total/1024)}KB 사용 · ${u.top}`)(this.storageUsage())),pre);return box;
  },
  // Seven quick taps anywhere on the title block (crown, small brand line, the big logo, rule) open the view.
  tapTitle(event){
