@@ -404,13 +404,19 @@ export const scenarios = {
       await both(1200);
       out['spectate.keepsFlowing'] = String((await H(() => __MANRU_QA_SPECTATE__.api.seq)) > seqBranch);
 
+      // 5b. A message that arrives while the chat box is closed floats in on the screen and counts as unread; opening the box clears both.
+      await H(() => __MANRU_QA_SPECTATE__.api.submitChat('먼저 인사'));
+      out['spectate.popupShows'] = String(await until(() => V(() => !!document.querySelector('#spectatePopups .spectatePopup')?.textContent.includes('먼저 인사'))));
+      out['spectate.unreadBadge'] = await V(() => document.querySelector('#spectateBar .spectateUnread')?.textContent || '');
       // 6. Chat both ways; the box keeps its focus after sending (the keyboard stays up).
       await view.page.tap('.spectateChatBtn');
+      out['spectate.openClears'] = JSON.stringify(await V(() => ({ popups: !!document.getElementById('spectatePopups'), badge: !!document.querySelector('#spectateBar .spectateUnread') })));
       await view.page.fill('#spectateInput', '안녕하세요');
       await view.page.tap('#spectateChat .spectateForm button');
       out['spectate.chatFocus'] = await V(() => document.activeElement?.id || '');
       out['spectate.chatCleared'] = String((await view.page.inputValue('#spectateInput')) === '');
       out['spectate.hostGotChat'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.chat.some((c) => c.text === '안녕하세요'))));
+      out['spectate.hostPopup'] = String(await H(() => !!document.querySelector('#spectatePopups .spectatePopup')?.textContent.includes('안녕하세요')));
       await H(() => __MANRU_QA_SPECTATE__.api.submitChat('환영합니다'));
       out['spectate.viewerGotChat'] = String(await until(() => V(() => [...document.querySelectorAll('#spectateLog .spectateMsg')].some((e) => e.textContent.includes('환영합니다')))));
       await view.page.fill('#spectateInput', '<img src=x onerror=window.__xss=1>');
