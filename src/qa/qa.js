@@ -789,3 +789,37 @@ globalThis.__MANRU_QA_FEATURES__={
     return{entered:ok!==false&&state.branchContext105?.id==='citadel',cells:props.length,kinds:Object.keys(kinds).sort().map(p=>({prop:p,...kinds[p]}))};
   },
 };
+// Balance bench (tests/tools/balance.mjs): one duel between the player and a freshly placed monster, played by a simple bot.
+// Health is topped up before every action so the duel never ends in a death; the damage taken is summed per action (`realMax` is what the class really has).
+globalThis.__MANRU_QA_BAL__={
+ duel(name,combatFloor,cap=160){
+  const p=state.player;
+  for(const m of [...state.monsters])OccupancyService.removeMonster(m);
+  // the start of floor 1 is protected from spawns: fight in the largest other room
+  if(!this.room){const rooms=(state.rooms||[]).slice(2).filter(r=>r&&r.w>=5&&r.h>=5).sort((a,b)=>b.w*b.h-a.w*a.h);this.room=rooms[0]||null;if(this.room){p.x=Math.floor(this.room.x+this.room.w/2);p.y=Math.floor(this.room.y+this.room.h/2);VisibilityService.compute()}}
+  // a duel must not level the class up or use up its arrows: progress and bag are put back afterwards
+  const keepInventory=structuredClone(p.inventory),keep={level:p.level,xp:p.xp,nextXp:p.nextXp,baseMaxHpPermanent:p.baseMaxHpPermanent,maxFocus:p.maxFocus,skillPoints:p.skillPoints};
+  const restore=()=>{Object.assign(p,keep);p.inventory=keepInventory;recomputeMaxHp(p);p.hp=p.maxHp};
+  recomputeMaxHp(p);const realMax=p.maxHp;
+  p.hp=p.maxHp;p.focus=getStats().maxFocus;state.status={};
+  let mon=null;
+  const spots=[];for(let oy=-7;oy<=7;oy++)for(let ox=-7;ox<=7;ox++){const d=Math.max(Math.abs(ox),Math.abs(oy));if(d>=2)spots.push([d+Math.abs(ox)*.01,ox,oy])}
+  spots.sort((a,b)=>a[0]-b[0]);
+  for(const [,ox,oy] of spots){mon=placeNamedMonster(name,{x:p.x+ox,y:p.y+oy},{combatFloor,provenance:'qa-bench'});if(mon)break}
+  if(!mon){restore();return null}
+  const w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow'),turn0=state.turn,startX=entityDistance57(mon,p);
+  let attacks=0,taken=0;
+  for(let i=0;i<cap&&mon.hp>0&&!state.dead;i++){
+   ACTION_PRESENTATION58.inputUntil=0;ACTION_PRESENTATION58.run=null;
+   if(i>0)taken+=Math.max(0,p.maxHp-p.hp);p.hp=p.maxHp;
+   const d=entityDistance57(mon,p),dx=Math.sign(mon.x-p.x),dy=Math.sign(mon.y-p.y);
+   if(ranged&&d>1){p.facing={x:dx,y:dy};const r=ActionDispatcher.dispatch({type:'ATTACK',args:[]});attacks++;if(r.status!=='committed')ActionDispatcher.dispatch({type:'REST',args:[]});continue}
+   if(d<=1){const r=ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]});attacks++;if(r.status!=='committed')ActionDispatcher.dispatch({type:'REST',args:[]});continue}
+   ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]});
+  }
+  taken+=Math.max(0,p.maxHp-p.hp);
+  const out={won:mon.hp<=0,turns:state.turn-turn0,taken,realMax,startDistance:startX,attacks,monsterHp:mon.maxHp,dead:!!state.dead};
+  OccupancyService.removeMonster(mon);restore();
+  return out;
+ }
+};
