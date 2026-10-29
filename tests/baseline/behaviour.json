@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "33a60ec049fbbb998de02d81fdd640a31dfb0f03",
- "values.branch": "04e82ae2eceb17085cc753df5cfb1742af9cacc2",
+ "values.empty": "eda7319cc8cf039a7ccd0f2189c8d895581bd5aa",
+ "values.branch": "ea38662bd19540c180fd0a102f2530c85dc73458",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -361,7 +361,7 @@
  "spectate.chatFocus": "c19096bddb75a0289ab566bca501c33d87d36356",
  "spectate.chatCleared": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.hostGotChat": "5ffe533b830f08a0326348a9160afafc8ada44db",
- "spectate.viewerGotChat": "5ffe533b830f08a0326348a9160afafc8ada44db",
+ "spectate.viewerGotChat": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "spectate.chatTextOnly": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.chatRateLimit": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.hostUnchanged": "5ffe533b830f08a0326348a9160afafc8ada44db",
@@ -395,5 +395,9 @@
  "spectate.fit": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.keepsFlowing": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "spectate.rejectsOtherImages": "5ffe533b830f08a0326348a9160afafc8ada44db",
- "spectate.replayShows": "b57644c178091c109eeafe434bb3de38f059ad19"
+ "spectate.replayShows": "b57644c178091c109eeafe434bb3de38f059ad19",
+ "spectate.popupShows": "5ffe533b830f08a0326348a9160afafc8ada44db",
+ "spectate.unreadBadge": "356a192b7913b04c54574d18c28d46e6395428ab",
+ "spectate.openClears": "79dbb9bb770a000bd22ac00451374c0e84fca83e",
+ "spectate.hostPopup": "5ffe533b830f08a0326348a9160afafc8ada44db"
 }

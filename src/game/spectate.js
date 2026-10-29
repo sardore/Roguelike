@@ -10,7 +10,7 @@ const Spectate={
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:60,REPLAY_STEP_MS:400,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
  hosting:false,viewers:new Map(),seq:0,lastChat:new Map(),shot:null,
- watching:null,rooms:new Map(),last:null,pan:null,chat:[],bound:false,
+ watching:null,rooms:new Map(),last:null,pan:null,chat:[],unread:0,bound:false,
  endpoint(){return document.querySelector('meta[name="manru-relay"]')?.content.trim()||''},
  httpBase(){return this.endpoint().replace(/^ws/,'http').replace(/\/[^/]*$/,'')},
  // ---- transport -------------------------------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ const Spectate={
  },
  leaveView(){
   if(this.watching)this.act('leave',{matchId:this.watching.matchId,payload:{tag:this.TAG}});
-  this.watching=null;this.last=null;this.pan=null;this.chat.length=0;
+  this.watching=null;this.last=null;this.pan=null;this.chat.length=0;this.unread=0;document.getElementById('spectatePopups')?.remove();
   document.getElementById('spectateView')?.remove();document.getElementById('spectateBar')?.remove();document.getElementById('spectateNote')?.remove();document.getElementById('spectateChat')?.remove();
   this.close();
  },
@@ -324,7 +324,7 @@ const Spectate={
  toggleChat(){
   let box=document.getElementById('spectateChat');
   if(box){box.remove();return}
-  box=this.el('div');box.id='spectateChat';
+  box=this.el('div');box.id='spectateChat';this.unread=0;this.showUnread();document.getElementById('spectatePopups')?.remove();
   const log=this.el('div','spectateLog'),form=this.el('div','spectateForm'),input=this.el('textarea'),send=this.el('button',null,'보내기'),closeBtn=this.el('button','spectateChatClose','×');
   log.id='spectateLog';input.id='spectateInput';input.rows=1;input.maxLength=this.CHAT_MAX;input.placeholder='메시지';input.setAttribute('enterkeyhint','send');input.autocomplete='off';send.type='button';closeBtn.type='button';
   const go=()=>{if(this.submitChat(input.value)){input.value='';input.style.height=''}input.focus()};
@@ -347,9 +347,29 @@ const Spectate={
   if(vv&&!this.vvBound){this.vvBound=true;vv.addEventListener('resize',set);vv.addEventListener('scroll',set)}
   set();
  },
+ // A message that arrives while the chat box is closed floats in at the top right for a moment (the way the online battle chat does) and counts as unread.
+ chatPopup(entry){
+  let stack=document.getElementById('spectatePopups');
+  if(!stack){stack=this.el('div','spectatePopupStack');stack.id='spectatePopups';document.body.append(stack)}
+  const node=this.el('div','spectatePopup');node.append(this.el('b',null,entry.from||''),this.el('span',null,entry.text));
+  while(stack.children.length>=4)stack.firstChild.remove();
+  node.addEventListener('animationend',()=>{node.remove();if(!stack.children.length)stack.remove()});
+  stack.append(node);
+ },
+ showUnread(){
+  const btn=document.querySelector('#spectateBar .spectateChatBtn');if(!btn)return;
+  let badge=btn.querySelector('.spectateUnread');
+  if(!this.unread){badge?.remove();return}
+  if(!badge){badge=this.el('i','spectateUnread');btn.append(badge)}
+  badge.textContent=this.unread>9?'9+':String(this.unread);
+ },
  renderChat(entry,quiet){
   const log=document.getElementById('spectateLog');
-  if(!log){if(!entry.sys&&!entry.mine&&this.hosting)addLog('[관전] '+entry.from+': '+entry.text);return}
+  if(!log){
+   if(entry.sys||entry.mine)return;
+   if(this.hosting)addLog('[관전] '+entry.from+': '+entry.text);
+   this.chatPopup(entry);this.unread++;this.showUnread();return;
+  }
   const row=this.el('div','spectateMsg'+(entry.sys?' sys':entry.mine?' mine':'')),bubble=this.el('span','bubble',entry.text);
   if(!entry.sys&&!entry.mine)row.append(this.el('small',null,entry.from));
   row.append(bubble);log.append(row);

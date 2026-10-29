@@ -29,3 +29,11 @@
 #spectateChat .spectateForm button{border-radius:16px;background:#7a5424;color:#fff4d8;flex:none}
 .deathReplay94{display:block;margin:14px auto 0;width:min(260px,80%);height:44px;font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;cursor:pointer}
 @media (min-width:1081px){#spectateChat{left:auto;width:316px;top:calc(56px + var(--safe-top));bottom:var(--kb);max-height:none;border-left:1px solid #634329;border-top:0}#spectateChat .spectateLog{max-height:none}}
+/* Messages that arrive while the chat box is closed float in at the top right and fade away. */
+.spectatePopupStack{position:fixed;z-index:2147482300;right:calc(10px + var(--safe-right));top:calc(60px + var(--safe-top));width:min(76vw,340px);display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+.spectatePopup{max-width:100%;display:grid;gap:2px;padding:6px 10px;border-radius:12px;background:rgba(26,17,10,.95);border:1px solid #a66f34;box-shadow:0 9px 24px rgba(0,0,0,.45);color:#f3e4c2;font-size:calc(12px * var(--ui-font-scale, 1));line-height:1.3;overflow-wrap:anywhere;animation:spectatePopupFloat 3.4s ease-out forwards}
+.spectatePopup b{font-size:calc(9px * var(--ui-font-scale, 1));color:#d9b879;letter-spacing:.05em}
+.spectatePopup span{white-space:pre-wrap}
+@keyframes spectatePopupFloat{0%{opacity:0;transform:translateY(11px) scale(.94)}12%,80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-16px)}}
+#spectateBar .spectateChatBtn{position:relative}
+#spectateBar .spectateUnread{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#c8442c;color:#fff;font:700 11px/18px sans-serif;font-style:normal;text-align:center}
