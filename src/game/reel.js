@@ -62,6 +62,7 @@ const Reel={
     const [id]=scene.branch.split(':');
     const def=BRANCH_DEFS105[id];if(def)state.floor=def.parent;
     if(!branchTransition({id:'reel',to:scene.branch,arrival:'up'}))throw Error('branch refused: '+scene.branch);
+    FX.transition=null;/* the new run's own "제 01층" banner belongs to the main floor, not to the branch */
    }else{
     if(scene.floor>1){
      this.dress(scene.floor);resetFloorScopedState57();state.floor=scene.floor;NormalFloorGenerator.generate();branchPruneWorld(state);
