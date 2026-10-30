@@ -408,5 +408,7 @@
  "restHold.stopsWithEnemy": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "restHold.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "restHold.padHolds": "5ffe533b830f08a0326348a9160afafc8ada44db",
- "restHold.padReleaseStops": "5ffe533b830f08a0326348a9160afafc8ada44db"
+ "restHold.padReleaseStops": "5ffe533b830f08a0326348a9160afafc8ada44db",
+ "vision.closet": "63ea5a4aa228f95f0ed93f5a4783de18a91bdaeb",
+ "vision.unseenEdges": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c"
 }

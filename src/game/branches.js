@@ -1603,7 +1603,9 @@ function validateDojo(){
 // Wall volume that is not a front face (a wall below it) is unlit negative space, outlined only at its exposed edges.
 // Floors of the main tower and the dojo draw walls this way; other branches and the legendary dungeons keep their own wall art.
 function wallsAreNegativeSpace(){return state?.branchContext105?state.branchContext105.id==='dojo':!state?.artifactDungeon46}
-function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1);return{north:!wall(x,y-1)&&state.seen.has(k(x,y-1)),south:!wall(x,y+1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:wall(x-1,y)&&wall(x,y-1)&&!wall(x-1,y-1),ne:wall(x+1,y)&&wall(x,y-1)&&!wall(x+1,y-1),sw:wall(x-1,y)&&wall(x,y+1)&&!wall(x-1,y+1),se:wall(x+1,y)&&wall(x,y+1)&&!wall(x+1,y+1)}}
+// A face of a wall cell is drawn only when the cell it looks onto is open and has been seen: what is behind an unseen cell stays hidden.
+function wallFaceOpen(x,y,dx,dy){const nx=x+dx,ny=y+dy,t=state.map[ny]?.[nx];return t!=null&&t!==TT.WALL&&state.seen.has(k(nx,ny))}
+function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1),corner=(dx,dy)=>wall(x+dx,y)&&wall(x,y+dy)&&!wall(x+dx,y+dy)&&state.seen.has(k(x+dx,y+dy));return{north:wallFaceOpen(x,y,0,-1),south:wallFaceOpen(x,y,0,1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:corner(-1,-1),ne:corner(1,-1),sw:corner(-1,1),se:corner(1,1)}}
 function wallFootprint(x,y){
  const e=wallEdges(x,y);if(e.south)return[[0,0,32,32]];const out=[];
  if(e.west)out.push([0,0,4,32]);if(e.east)out.push([28,0,4,32]);if(e.north)out.push([0,0,32,4]);

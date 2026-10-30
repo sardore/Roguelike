@@ -462,6 +462,40 @@ export const scenarios = {
     return out;
   },
 
+  // A wall shows the face that looks onto a cell only once that cell has been seen: a small closet's south wall stays a thin edge while the
+  // cell below it is unseen, and the face appears when it is seen.
+  async vision(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4243 });
+    await startRun(s, 'strongman');
+    out['vision.closet'] = JSON.stringify(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), V = __MANRU_QA_VIS__;
+      st.player.x = 55; st.player.y = 30; st.seen = new Set(); V.compute();
+      const before = { south: V.edges(57, 31).south, face: V.open(57, 31, 0, 1) };
+      st.seen.add('57,32');
+      const after = { south: V.edges(57, 31).south, face: V.open(57, 31, 0, 1) };
+      return { before, after };
+    }));
+    // over many positions of floor 1: no seen wall carries an edge or a corner for a cell that has not been seen
+    out['vision.unseenEdges'] = String(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), V = __MANRU_QA_VIS__, T = V.TT;
+      const floors = []; for (let y = 1; y < st.map.length - 1; y++) for (let x = 1; x < st.map[0].length - 1; x++) if (!V.opaque(st.map[y][x])) floors.push([x, y]);
+      const around = { north: [0, -1], south: [0, 1], west: [-1, 0], east: [1, 0], nw: [-1, -1], ne: [1, -1], sw: [-1, 1], se: [1, 1] };
+      let bad = 0;
+      for (const [x, y] of floors.filter((_, i) => i % 9 === 0)) {
+        st.player.x = x; st.player.y = y; st.seen = new Set(); V.compute();
+        for (const key of st.seen) {
+          const [cx, cy] = key.split(',').map(Number); if (st.map[cy][cx] !== T.WALL) continue;
+          const e = V.edges(cx, cy);
+          for (const [name, [dx, dy]] of Object.entries(around)) if (e[name] && !st.seen.has(`${cx + dx},${cy + dy}`)) bad++;
+        }
+      }
+      return bad;
+    }));
+    await s.close();
+    return out;
+  },
+
   // Holding the wait key rests on its own, and stops when it is let go, when health is full, when hunger is out and when an enemy is in sight.
   async restHold(browser, root) {
     const out = {};
