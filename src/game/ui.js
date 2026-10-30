@@ -1127,6 +1127,8 @@ function bindTitleButtons(){
   document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
   PlayStats.flush();PlayStats.bindLifecycle();
   document.getElementById('spectateBtn').onclick=()=>Spectate.openList();
+  /* The reel button is for making videos: it only shows when the address carries #reel. */
+  const reelBtn=document.getElementById('reelBtn');reelBtn.hidden=!/reel/.test(location.hash);reelBtn.onclick=()=>Reel.start();document.getElementById('reelStop').onclick=()=>Reel.stop();
 }
 function createHoldHint(){
     const hold=document.createElement('div');

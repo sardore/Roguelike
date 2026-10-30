@@ -5201,7 +5201,7 @@ function visualLoop(now=performance.now()){
       }
       if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
       if(state?.debugBattle57)debugBattleFrame57(now);
-      Spectate.tick(now);
+      Spectate.tick(now);Reel.tick(now);
       if(state&&!state.debugBattle57){
         dojoSleepFrame(now);updateVisualMotion(now);
         const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;

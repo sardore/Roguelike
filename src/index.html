@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="styles/50-text-scale.css">
 <link rel="stylesheet" href="styles/60-stats.css">
 <link rel="stylesheet" href="styles/70-spectate.css">
+<link rel="stylesheet" href="styles/80-reel.css">
 </head>
 <body>
 <div id="shop58"></div>
@@ -85,7 +86,7 @@
           <div class="titleWorld" aria-hidden="true">
           </div>
           <div id="card">
-            <div id="titleCorner"><button id="spectateBtn" class="rankBtn" type="button" aria-label="관전"><i class="watchIcon" aria-hidden="true"></i><span>관전</span></button><button id="rankBtn" class="rankBtn" type="button" aria-label="기록판"><i class="rankIcon" aria-hidden="true"></i><span>기록판</span></button></div>
+            <div id="titleCorner"><button id="reelBtn" class="rankBtn" type="button" aria-label="영상 모드" hidden><span>영상 모드</span></button><button id="spectateBtn" class="rankBtn" type="button" aria-label="관전"><i class="watchIcon" aria-hidden="true"></i><span>관전</span></button><button id="rankBtn" class="rankBtn" type="button" aria-label="기록판"><i class="rankIcon" aria-hidden="true"></i><span>기록판</span></button></div>
             <div class="titleCrown"><span></span><em>밤길 출입 금지</em><span></span></div>
             <div class="brand">만루 · 잠들지 않는 천 개의 방</div>
             <h1><span>만</span><span>루</span></h1>
@@ -229,7 +230,7 @@
   </div>
 </div>
 
-
+<div id="reelUi" hidden><div id="reelFade"></div><div id="reelBanner"><b id="reelTitle"></b><span id="reelSub"></span></div><div id="reelCue" aria-hidden="true"></div><button id="reelStop" type="button">멈추기 (Esc)</button></div>
 
 <script src="scripts/10-runtime.js"></script>
 

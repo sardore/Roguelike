@@ -7,7 +7,7 @@ const PlayStats={
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
  saveQueue(list){lsSet(this.QUEUE_KEY,JSON.stringify(list.slice(-this.QUEUE_MAX)))},
  recordDeath(cause){
-  if(!state||state.debugBattle57||state.debugMapGeneration57||!this.endpoint())return false;
+  if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record={v:1,id:String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
   this.rememberRun(record);
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);

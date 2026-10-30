@@ -1,0 +1,19 @@
+/* Video reel (reel.js): the interface is hidden by the clean-capture rule in 15-interface.css, a black fade between scenes, a scene title and a skill cue. */
+#reelBtn[hidden]{display:none}
+#reelUi{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:Georgia,'Noto Serif KR',serif}
+#reelUi[hidden]{display:none}
+#reelFade{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .65s ease}
+#reelFade.black{opacity:1}
+#reelBanner{position:absolute;left:0;right:0;bottom:15%;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;text-shadow:0 2px 14px #000,0 0 3px #000}
+#reelBanner b{order:0;font-size:clamp(30px,5.4vw,64px);letter-spacing:.32em;padding-left:.32em;color:#f4e6bf;font-weight:700}
+#reelBanner span{order:2;font-size:clamp(13px,1.9vw,22px);letter-spacing:.42em;padding-left:.42em;color:#c9b27a}
+#reelBanner:before{content:'';width:min(280px,40vw);height:1px;background:linear-gradient(90deg,transparent,#d8b86a,transparent);order:1;margin:2px 0}
+#reelBanner.show{animation:reelBanner 3.2s ease both}
+@keyframes reelBanner{0%{opacity:0;transform:translateY(12px);letter-spacing:.5em}18%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+#reelCue{position:absolute;left:50%;top:21%;transform:translateX(-50%);font-size:clamp(26px,4.4vw,54px);font-weight:700;letter-spacing:.22em;padding-left:.22em;color:#ffe2a0;opacity:0;white-space:nowrap;text-shadow:0 0 22px #e8923a,0 0 6px #000,0 3px 12px #000}
+#reelCue.show{animation:reelCue 1.5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes reelCue{0%{opacity:0;transform:translateX(-50%) scale(1.35)}14%{opacity:1;transform:translateX(-50%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-14px) scale(.98)}}
+#reelStop{position:absolute;right:14px;top:14px;pointer-events:auto;padding:5px 12px;font:600 12px Georgia,serif;color:#e9d9ae;background:#140d08cc;border:1px solid #6b4a2a;border-radius:4px;cursor:pointer;opacity:.0;transition:opacity .25s}
+#reelStop:hover,#reelStop:focus-visible{opacity:1}
+/* The interface column collapses with the interface. */
+html body.reel-mode{--side-width:0px}
