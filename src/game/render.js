@@ -732,14 +732,14 @@ function drawWallTexture(px,py,x,y,colors){
   if(!wallsAreNegativeSpace()||state.branchContext105){drawWallFace(px,py,x,y,colors);return}
   // Every wall gets the dojo edge treatment: wall volume behind a face is unlit negative space outlined at its exposed edges.
   // Only the plain 청풍루 wall takes the dojo texture; other faces keep their own art and carry the exposed vertical edge down.
-  if((state.map[y+1]?.[x]??TT.WALL)===TT.WALL||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
+  if(!wallFaceOpen(x,y,0,1)||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
   drawWallFace(px,py,x,y,colors);
   carryWallEdges(px,py,x,y);
 }
 // The exposed vertical edge of a wall, in the colour that wall is drawn with: a line down each side that opens onto a seen cell.
 function carryWallEdges(px,py,x,y){
-  const open=xx=>state.map[y]?.[xx]!=null&&state.map[y][xx]!==TT.WALL&&state.seen.has(k(xx,y)),h=state.map[y+1]?.[x]===TT.WALL?32:30;X.fillStyle=wallLineColors(x,y).cap;
-  if(open(x-1))X.fillRect(px,py,2,h);if(open(x+1))X.fillRect(px+30,py,2,h);
+  const h=wallFaceOpen(x,y,0,1)?30:32;X.fillStyle=wallLineColors(x,y).cap;
+  if(wallFaceOpen(x,y,-1,0))X.fillRect(px,py,2,h);if(wallFaceOpen(x,y,1,0))X.fillRect(px+30,py,2,h);
 }
 // Walls that keep art of their own in a branch: the dojo draws its walls with its own edge lines, the stockades have no edge lines at all,
 // palace facades and windows, and the citadel gates (iron grates).
@@ -1590,7 +1590,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     // Full-material wall projection. The completed scenery fog pass owns memory darkness.
     const p=[['#4d241b','#7a3b2a'],['#304139','#657467'],['#40253e','#79516f'],['#403228','#78604d'],['#4e401e','#9d8236']][regionIndex()]||['#4d241b','#7a3b2a'];
     const indoor=['canal','granary'].includes(state.branchContext105?.id);
-    const front=(x,y)=>terrainBaseTile58(x,y)===TT.WALL&&terrainBaseTile58(x,y+1)!==TT.WALL&&state.seen.has(k(x,y))&&!dojoFaceWall(x,y);
+    const front=(x,y)=>terrainBaseTile58(x,y)===TT.WALL&&terrainBaseTile58(x,y+1)!==TT.WALL&&state.seen.has(k(x,y))&&state.seen.has(k(x,y+1))&&!dojoFaceWall(x,y);
     for(let y=b.y0;y<=Math.min(b.y1,ROWS-2);y++){
       let x=b.x0;
       while(x<=b.x1){
@@ -3970,7 +3970,7 @@ function dojoPalette(x,y){const d=state.branchTerrain105?.dojo,owned=d?.cellZone
 // The dojo wall (also the wall of the main-tower floors, tinted per region): a front face is plaster under a timber beam;
 // wall volume behind a face is unlit negative space, outlined only at its exposed edges.
 function drawDojoWall(q,r,P,x,y){
- const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,south=wall(x,y+1),west=wall(x-1,y),east=wall(x+1,y);
+ const solid=xx=>state.map[y]?.[xx]==null||state.map[y][xx]===TT.WALL,south=!wallFaceOpen(x,y,0,1),west=solid(x-1),east=solid(x+1);
  const texture=(seed,count,c)=>{for(let i=0;i<count;i++){const a=hash2(x*31+i,y*17,seed),b=hash2(x*19,y*29+i,seed+1);r(c,2+Math.floor(a*27),2+Math.floor(b*27),a>.7?2:1,1);}};
  if(south){
   const e=wallEdges(x,y);
@@ -3984,7 +3984,7 @@ function drawDojoWall(q,r,P,x,y){
  r(P.dark,0,0,32,32);r(P.beam,0,0,32,7);
 r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addColorStop(0,'rgba(255,238,198,.13)');plaster.addColorStop(1,'rgba(37,29,22,.18)');q.fillStyle=plaster;q.fillRect(0,7,32,21);texture(819,7,'rgba(77,58,37,.12)');for(let j=0;j<2;j++){const yy=20+j*4;r(P.beam,0,yy,32,1);r(P.grain,0,yy+1,32,1);}if(x%3===0){r(P.dark,0,6,4,23);r(P.beam,1,6,3,22);r(P.grain,1,7,1,20);r(P.metal,0,8,4,2);}r(P.cap,0,0,32,3);r(P.metal,0,4,32,1);r(P.dark,0,5,32,2);r(P.grain,0,6,32,1);if(x%3===0){r(P.beam,2,3,5,6);r(P.metal,3,3,3,1);r(P.dark,3,8,5,2);}r(P.dark,0,28,32,4);r(P.beam,0,24,32,2);if(!west){r(P.beam,0,7,3,21);r(P.metal,3,7,1,20);}if(!east){r(P.beam,29,7,3,21);r(P.dark,28,7,1,21);}
  // Return the exposed vertical edge through the front-face corner too.
- if(!west)r(P.cap,0,0,2,30);if(!east)r(P.cap,30,0,2,30);
+ if(wallFaceOpen(x,y,-1,0))r(P.cap,0,0,2,30);if(wallFaceOpen(x,y,1,0))r(P.cap,30,0,2,30);
 }
 function drawDojoCell(t,px,py,x,y){
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}const surface=state.branchTerrain105.surfaces[k(x,y)]||'wood',art=state.branchTerrain105.dojo,ornament=art.ornaments?.[k(x,y)],P=dojoPalette(x,y),stamp=t+':'+surface+':'+ornament+':'+P.name+':'+terrainUnlit105(x,y),key=y*COLS+x;let entry=BRANCH_TILE_CACHE.get(key);
