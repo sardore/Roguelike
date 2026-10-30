@@ -4,25 +4,28 @@
    The run is ephemeral (see runIsEphemeral): it never touches the player's save, death record or server stats. Leaving reloads the page.
    Everything is driven from the frame loop (Reel.tick); there are no timers of its own. */
 const Reel={
- on:false,phase:'off',phaseAt:0,sceneIndex:0,scene:null,sceneStart:0,lastStep:0,lastCue:0,panelUntil:0,shown:0,cueUntil:0,bannerUntil:0,stuck:0,lastCell:'',
- PANELS:[{at:.35,open:()=>toggleInventory(),ms:2600},{at:.65,open:()=>openMartial(),ms:2600}],
+ on:false,phase:'off',phaseAt:0,sceneIndex:0,scene:null,sceneStart:0,lastStep:0,lastCue:0,panelUntil:0,panelActAt:0,panelAct:null,shown:0,cueUntil:0,bannerUntil:0,stuck:0,lastCell:'',
+ PANELS:[
+  {at:.2,ms:2600,open:()=>toggleInventory(),actAt:1300,act:()=>{const i=state.player.inventory.findIndex(it=>it.type==='food'||it.type==='potion');if(i>=0)ActionDispatcher.dispatch({type:'ITEM_USE',args:[i]})}},
+  {at:.55,ms:2600,open:()=>useClassSkill(),actAt:1500,act:()=>globalThis.__MANRU_SKILL991_INPUT__.activateIndex(0)}
+ ],
  STEP_MS:230,FADE_MS:650,BANNER_MS:3200,CUE_GAP_MS:2600,CUE_MS:1500,NEAR_FIGHT:5,
  SCENES:[
-  {title:'감찰관',sub:'제 1층 · 청풍루',cls:'wanderer',floor:1,secs:22},
-  {title:'척후 검객',sub:'제 7층',cls:'swordsman',floor:7,secs:24},
-  {title:'척후 궁사',sub:'제 12층',cls:'archer',floor:12,secs:24},
-  {title:'천하장사',sub:'제 5층 · 구역 수문장',cls:'strongman',floor:5,secs:26,boss:true},
-  {title:'잠행객',sub:'제 17층',cls:'infiltrator',floor:17,secs:24},
-  {title:'금위 표사',sub:'제 10층 · 구역 수문장',cls:'escort',floor:10,secs:26,boss:true},
-  {title:'무당',sub:'제 22층',cls:'summoner',floor:22,secs:24},
-  {title:'광산',sub:'분기 · 갱도',cls:'swordsman',floor:8,branch:'mine:1',secs:22},
-  {title:'궁궐',sub:'분기 · 궁궐',cls:'wanderer',floor:9,branch:'palace:1',secs:22},
-  {title:'도장',sub:'분기 · 도장',cls:'strongman',floor:12,branch:'dojo:1',secs:22},
-  {title:'수로',sub:'분기 · 수로',cls:'archer',floor:2,branch:'canal:1',secs:20},
-  {title:'곡창',sub:'분기 · 곡창',cls:'escort',floor:3,branch:'granary:1',secs:20},
-  {title:'목책',sub:'분기 · 목책',cls:'infiltrator',floor:7,branch:'stockade:1',secs:22},
-  {title:'흑산채',sub:'분기 · 흑산채',cls:'swordsman',floor:7,branch:'black:1',secs:22},
-  {title:'성채',sub:'분기 · 성채',cls:'strongman',floor:16,branch:'citadel:1',secs:24}
+  {title:'감찰관',sub:'제 1층 · 청풍루',cls:'wanderer',floor:1,secs:11},
+  {title:'척후 검객',sub:'제 7층',cls:'swordsman',floor:7,secs:12},
+  {title:'척후 궁사',sub:'제 12층',cls:'archer',floor:12,secs:12},
+  {title:'천하장사',sub:'제 5층 · 구역 수문장',cls:'strongman',floor:5,secs:13,boss:true},
+  {title:'잠행객',sub:'제 17층',cls:'infiltrator',floor:17,secs:12},
+  {title:'금위 표사',sub:'제 10층 · 구역 수문장',cls:'escort',floor:10,secs:13,boss:true},
+  {title:'무당',sub:'제 22층',cls:'summoner',floor:22,secs:12},
+  {title:'광산',sub:'분기 · 갱도',cls:'swordsman',floor:8,branch:'mine:1',secs:11},
+  {title:'궁궐',sub:'분기 · 궁궐',cls:'wanderer',floor:9,branch:'palace:1',secs:11},
+  {title:'도장',sub:'분기 · 도장',cls:'strongman',floor:12,branch:'dojo:1',secs:11},
+  {title:'수로',sub:'분기 · 수로',cls:'archer',floor:2,branch:'canal:1',secs:10},
+  {title:'곡창',sub:'분기 · 곡창',cls:'escort',floor:3,branch:'granary:1',secs:10},
+  {title:'목책',sub:'분기 · 목책',cls:'infiltrator',floor:7,branch:'stockade:1',secs:11},
+  {title:'흑산채',sub:'분기 · 흑산채',cls:'swordsman',floor:7,branch:'black:1',secs:11},
+  {title:'성채',sub:'분기 · 성채',cls:'strongman',floor:16,branch:'citadel:1',secs:12}
  ],
  el(id){return document.getElementById(id)},
  start(){
@@ -47,7 +50,8 @@ const Reel={
   else if(this.phase==='play'){
    if(now-this.sceneStart>=this.scene.secs*1000||runState57()!=='playing'){this.next();return}
    if(now>=this.cueUntil)this.el('reelCue').classList.remove('show');
-   if(this.panelUntil&&now>=this.panelUntil){this.panelUntil=0;dismissGameplayInput57(true)}
+   if(this.panelAct&&now>=this.panelActAt){const act=this.panelAct;this.panelAct=null;act()}
+   if(this.panelUntil&&now>=this.panelUntil){this.panelUntil=0;this.panelAct=null;dismissGameplayInput57(true)}
    this.showPanel(now);
    if(now-this.lastStep>=this.STEP_MS){this.lastStep=now;this.step(now)}
   }
@@ -109,19 +113,19 @@ const Reel={
   p.x=best.x;p.y=best.y;
  },
  // ---- bot -----------------------------------------------------------------------------------------------------------
- // Now and then the picture shows the inventory and the martial arts panel, as a player would look at them.
+ // Now and then the picture shows the inventory (eating something) and the skill window (using a martial art), as a player would.
  showPanel(now){
   if(this.panelUntil)return;const frac=(now-this.sceneStart)/(this.scene.secs*1000);
   const i=this.PANELS.findIndex((panel,n)=>!(this.shown&1<<n)&&frac>=panel.at);if(i<0||dismissGameplayInput57(true))return;
-  this.shown|=1<<i;this.PANELS[i].open();this.panelUntil=now+this.PANELS[i].ms;
+  const panel=this.PANELS[i];this.shown|=1<<i;panel.open();this.panelUntil=now+panel.ms;this.panelAct=panel.act;this.panelActAt=now+panel.actAt;
  },
  step(now){
   if(this.panelUntil)return;
   if(dismissGameplayInput57(true))return;
   if(actionPresentationBusy58()||RunLifecycle.busy()||RuntimeState.ui.generationPending)return;
   const p=state.player,stats=getStats();
-  // The director keeps the hero in the picture: it quietly mends a hero who is about to fall.
-  if(p.hp<p.maxHp*.9)p.hp=p.maxHp;
+  // The health bar moves like a real run; the director only mends a hero who is about to fall.
+  if(p.hp<p.maxHp*.3)p.hp=Math.round(p.maxHp*.6);
   if(p.focus<stats.maxFocus*.5)p.focus=Math.min(stats.maxFocus,p.focus+Math.ceil(stats.maxFocus*.5));
   const foes=this.hostiles().filter(m=>entityDistance57(p,m)<=22).sort((a,b)=>entityDistance57(p,a)-entityDistance57(p,b));
   const foe=foes[0],here=p.x+','+p.y;
