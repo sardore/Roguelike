@@ -792,6 +792,7 @@ globalThis.__MANRU_QA_FEATURES__={
 // Balance bench (tests/tools/balance.mjs): one duel between the player and a freshly placed monster, played by a simple bot.
 // Health is topped up before every action so the duel never ends in a death; the damage taken is summed per action (`realMax` is what the class really has).
 globalThis.__MANRU_QA_BAL__={
+ spawnNear(name){const p=state.player;for(let d=2;d<=5;d++)for(const [ox,oy] of [[d,0],[-d,0],[0,d],[0,-d]])if(placeNamedMonster(name,{x:p.x+ox,y:p.y+oy},{provenance:'qa-bench'}))return true;return false},
  duel(name,combatFloor,cap=160){
   const p=state.player;
   for(const m of [...state.monsters])OccupancyService.removeMonster(m);

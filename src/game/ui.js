@@ -21,9 +21,13 @@ function finishWorldTarget(cell,source='pointer'){
   WORLD_TARGET=null;ensureWorldTarget().classList.remove('show');syncWorldTargetInput();endTargetInput57(300);drawMap(true);return true;
 }
 function heldInputBlocked(){return !gameplayInputAllowed57()||document.hidden||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)}
+// Holding the wait key goes on while health is missing, there is hunger left and no enemy is in sight.
+function restHoldContinues(){const p=state?.player;return !!p&&!state.dead&&p.hp<p.maxHp&&p.hunger>0&&!state.monsters.some(m=>m.hp>0&&isThreatVisibleToPlayer(m))}
 function advanceHeldInput(now=performance.now()){
  if(heldInputBlocked()){clearHeldInput53();return false}
- const key=[...INPUT.held].pop(),d=MOVE_KEYS[key];if(!d||now<INPUT.nextMoveAt)return false;
+ const key=[...INPUT.held].pop(),d=MOVE_KEYS[key];
+ if(key==='r'){if(now<INPUT.nextMoveAt)return false;if(!restHoldContinues()){INPUT.held.delete('r');return false}INPUT.nextMoveAt=now+CONFIG81.restEveryMs;ClientEnvironment.emit({type:'REST',source:'keyboard-hold'});return true}
+ if(!d||now<INPUT.nextMoveAt)return false;
  INPUT.nextMoveAt=now+Math.max(125,movementInterval());ClientEnvironment.emit({type:'MOVE',dx:d[0],dy:d[1],source:'keyboard-hold'});return true;
 }
 function floatText(x,y,text,color="#ffffff",size=13,element=null){

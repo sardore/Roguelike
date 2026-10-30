@@ -46,6 +46,7 @@ function clientKeyboardEvent(client,e){
     if(e.repeat)return;const result=client.emit(command);if(result.status==='handled'){INPUT.held.add(moveKey);INPUT.nextMoveAt=performance.now()+360}else clearHeldInput53();return;
   }
   if(e.repeat&&['TARGET_MOVE','ATTACK','PICKUP','CONTEXT_ACTION','BLINK','CLASS_SKILL','REST','DESCEND','QUICK_SLOT','QUICK_MARTIAL','OPEN_SUMMON105'].includes(command.type))return;
+  if(command.type==='REST'){if(client.emit(command).status==='handled'){INPUT.held.add('r');INPUT.nextMoveAt=performance.now()+CONFIG81.repeatDelayMs}return}
   client.emit(command);
 }
 function attachLongPress(el,fn){
@@ -83,7 +84,9 @@ function attachLongPress(el,fn){
         if(worldTargetActive57()&&dir){e.preventDefault();e.stopPropagation();stopHeldInput();ClientEnvironment.emit({type:'TARGET_MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});return}
         if(!canAct81())return;e.preventDefault();e.stopPropagation();stopHeldInput();try{btn.setPointerCapture(e.pointerId)}catch(error){ignoreError('pointer capture refused (pointer already released)',error)}
         Runtime81.held={btn,id:e.pointerId,dir,center};btn.classList.add('rt81-pressed');
-        if(dir){ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad'});Runtime81.repeatDelay=setTimeout(()=>{if(Runtime81.held?.btn!==btn)return;Runtime81.repeatTick=setInterval(()=>{if(Runtime81.held?.btn===btn&&canAct81())ClientEnvironment.emit({type:'MOVE',dx:dir[0],dy:dir[1],source:'mobile-pad-hold'})},CONFIG81.repeatEveryMs)},CONFIG81.repeatDelayMs)}else ClientEnvironment.emit({type:'REST',source:'mobile-pad'});
+        // A held direction keeps walking; the held wait button keeps resting until it is let go, an enemy shows up, hunger runs out or health is full.
+        const press=dir?{type:'MOVE',dx:dir[0],dy:dir[1]}:{type:'REST'};
+        ClientEnvironment.emit({...press,source:'mobile-pad'});Runtime81.repeatDelay=setTimeout(()=>{if(Runtime81.held?.btn!==btn)return;Runtime81.repeatTick=setInterval(()=>{if(Runtime81.held?.btn!==btn||!canAct81())return;if(!dir&&!restHoldContinues()){stopHeldInput();return}ClientEnvironment.emit({...press,source:'mobile-pad-hold'})},dir?CONFIG81.repeatEveryMs:CONFIG81.restEveryMs)},CONFIG81.repeatDelayMs);
       },{passive:false});
       const end=e=>{if(Runtime81.held?.btn!==btn)return;e?.preventDefault?.();e?.stopPropagation?.();stopHeldInput()};
       btn.addEventListener('pointerup',end,{passive:false});btn.addEventListener('pointercancel',end,{passive:false});btn.addEventListener('lostpointercapture',end,{passive:false});btn.onclick=e=>{e.preventDefault();e.stopPropagation()};
@@ -230,7 +233,8 @@ const CONFIG81=Object.freeze({
     holdPreviewMs:330,
     holdInspectMs:660,
     repeatDelayMs:360,
-    repeatEveryMs:125
+    repeatEveryMs:125,
+    restEveryMs:40
   });
   const Runtime81={
     input:null,

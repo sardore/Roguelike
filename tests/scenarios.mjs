@@ -462,6 +462,81 @@ export const scenarios = {
     return out;
   },
 
+  // Holding the wait key rests on its own, and stops when it is let go, when health is full, when hunger is out and when an enemy is in sight.
+  async restHold(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 8181 });
+    await startRun(s, 'escort');
+    await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), p = st.player, r = (st.rooms || []).slice(2).filter((x) => x.w >= 5 && x.h >= 5)[0];
+      st.monsters.length = 0; p.x = Math.floor(r.x + r.w / 2); p.y = Math.floor(r.y + r.h / 2); p.hunger = 99; p.hp = 5;
+    });
+    const read = () => s.page.evaluate(() => { const st = __MANRU_QA_UI__.state(); return { turn: st.turn, hp: st.player.hp, max: st.player.maxHp, hunger: st.player.hunger }; });
+    const t0 = (await read()).turn;
+    await s.page.keyboard.press('KeyR'); await s.tick(400);
+    out['restHold.tapIsOneTurn'] = String((await read()).turn - t0 === 1);
+    // the one-time tips that come with the first turns are read first
+    for (let i = 0; i < 5; i++) { await s.page.keyboard.press('KeyR'); await s.tick(400); await s.page.keyboard.press('Escape'); await s.tick(300); await s.page.keyboard.press('Escape'); await s.tick(300); }
+    await s.page.evaluate(() => { __MANRU_QA_UI__.state().player.hp = 5; });
+    const h0 = (await read()).turn;
+    await s.page.keyboard.down('KeyR');
+    for (let i = 0; i < 12; i++) await s.tick(250);
+    const held = await read();
+    out['restHold.heldRests'] = String(held.turn - h0 > 8);
+    await s.page.keyboard.up('KeyR');
+    const afterUp = (await read()).turn;
+    for (let i = 0; i < 6; i++) await s.tick(250);
+    out['restHold.releaseStops'] = String((await read()).turn === afterUp);
+    // health full: the hold stops by itself
+    await s.page.evaluate(() => { const p = __MANRU_QA_UI__.state().player; p.hp = p.maxHp - 1; });
+    await s.page.keyboard.down('KeyR');
+    for (let i = 0; i < 40; i++) await s.tick(250);
+    const full = await read();
+    out['restHold.stopsWhenFull'] = String(full.hp === full.max);
+    await s.page.keyboard.up('KeyR');
+    // an enemy in sight: no continued rest
+    // hunger out: no continued rest
+    await s.page.evaluate(() => { const p = __MANRU_QA_UI__.state().player; p.hp = 5; p.hunger = 0; });
+    const g0 = (await read()).turn;
+    await s.page.keyboard.down('KeyR');
+    for (let i = 0; i < 10; i++) await s.tick(250);
+    await s.page.keyboard.up('KeyR');
+    out['restHold.stopsWhenStarving'] = String((await read()).turn - g0 <= 1);
+    // an enemy in sight: no continued rest
+    await s.page.evaluate(() => { const p = __MANRU_QA_UI__.state().player; p.hp = 5; p.hunger = 99; });
+    const spawned = await s.page.evaluate(() => __MANRU_QA_BAL__.spawnNear('취객'));
+    await s.page.keyboard.press('Escape'); await s.tick(200);
+    const e0 = (await read()).turn;
+    await s.page.keyboard.down('KeyR');
+    for (let i = 0; i < 10; i++) await s.tick(250);
+    await s.page.keyboard.up('KeyR');
+    out['restHold.stopsWithEnemy'] = String(spawned && (await read()).turn - e0 <= 1);
+    out['restHold.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    // the wait button of the phone pad does the same while it is held
+    const m = await openSession(browser, root, { seed: 8182, viewport: { width: 390, height: 844 }, mobile: true });
+    await startRun(m, 'escort');
+    await m.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), p = st.player, r = (st.rooms || []).slice(2).filter((x) => x.w >= 5 && x.h >= 5)[0];
+      st.monsters.length = 0; p.x = Math.floor(r.x + r.w / 2); p.y = Math.floor(r.y + r.h / 2); p.hunger = 99; p.hp = 5;
+    });
+    const mread = () => m.page.evaluate(() => __MANRU_QA_UI__.state().turn);
+    const box = await m.page.locator('#mobileControls .pad [data-act="rest"]').boundingBox();
+    for (let i = 0; i < 4; i++) { await m.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await m.tick(400); await m.page.keyboard.press('Escape'); await m.tick(300); await m.page.keyboard.press('Escape'); await m.tick(300); }
+    await m.page.evaluate(() => { __MANRU_QA_UI__.state().player.hp = 5; });
+    const p0 = await mread();
+    await m.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await m.page.mouse.down();
+    for (let i = 0; i < 14; i++) await m.tick(250);
+    const during = (await mread()) - p0;
+    await m.page.mouse.up(); await m.tick(300);
+    const after = await mread();
+    for (let i = 0; i < 6; i++) await m.tick(250);
+    out['restHold.padHolds'] = String(during > 8);
+    out['restHold.padReleaseStops'] = String((await mread()) === after);
+    await m.close();
+    return out;
+  },
+
   // One modal at a time: opening the inventory from the menu drawer closes the drawer. Both open at once made every item use
   // refuse ("blocked": the input owner only allows the inventory itself).
   async drawer(browser, root) {
