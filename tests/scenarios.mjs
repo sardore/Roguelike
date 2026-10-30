@@ -474,7 +474,10 @@ export const scenarios = {
       const before = { south: V.edges(57, 31).south, face: V.open(57, 31, 0, 1) };
       st.seen.add('57,32');
       const after = { south: V.edges(57, 31).south, face: V.open(57, 31, 0, 1) };
-      return { before, after };
+      // the wall beside a wall that is still drawn as an edge has no line along that side (no stub next to the closet's south wall)
+      st.seen = new Set(); V.compute();
+      const stub = V.edges(54, 31).east;
+      return { before, after, stub };
     }));
     // over many positions of floor 1: no seen wall carries an edge or a corner for a cell that has not been seen
     out['vision.unseenEdges'] = String(await s.page.evaluate(() => {

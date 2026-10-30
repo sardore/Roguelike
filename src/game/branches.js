@@ -1605,7 +1605,7 @@ function validateDojo(){
 function wallsAreNegativeSpace(){return state?.branchContext105?state.branchContext105.id==='dojo':!state?.artifactDungeon46}
 // A face of a wall cell is drawn only when the cell it looks onto is open and has been seen: what is behind an unseen cell stays hidden.
 function wallFaceOpen(x,y,dx,dy){const nx=x+dx,ny=y+dy,t=state.map[ny]?.[nx];return t!=null&&t!==TT.WALL&&state.seen.has(k(nx,ny))}
-function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&wall(xx,yy+1),corner=(dx,dy)=>wall(x+dx,y)&&wall(x,y+dy)&&!wall(x+dx,y+dy)&&state.seen.has(k(x+dx,y+dy));return{north:wallFaceOpen(x,y,0,-1),south:wallFaceOpen(x,y,0,1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:corner(-1,-1),ne:corner(1,-1),sw:corner(-1,1),se:corner(1,1)}}
+function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&!wallFaceOpen(xx,yy,0,1),corner=(dx,dy)=>wall(x+dx,y)&&wall(x,y+dy)&&!wall(x+dx,y+dy)&&state.seen.has(k(x+dx,y+dy));return{north:wallFaceOpen(x,y,0,-1),south:wallFaceOpen(x,y,0,1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:corner(-1,-1),ne:corner(1,-1),sw:corner(-1,1),se:corner(1,1)}}
 function wallFootprint(x,y){
  const e=wallEdges(x,y);if(e.south)return[[0,0,32,32]];const out=[];
  if(e.west)out.push([0,0,4,32]);if(e.east)out.push([28,0,4,32]);if(e.north)out.push([0,0,32,4]);
