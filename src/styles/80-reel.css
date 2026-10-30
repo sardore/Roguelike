@@ -1,4 +1,4 @@
-/* Video reel (reel.js): the interface is hidden by the clean-capture rule in 15-interface.css, a black fade between scenes, a scene title and a skill cue. */
+/* Video reel (reel.js): the normal interface stays, a black fade between scenes, a scene title and a skill cue. */
 #reelBtn[hidden]{display:none}
 #reelUi{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:Georgia,'Noto Serif KR',serif}
 #reelUi[hidden]{display:none}
@@ -15,5 +15,3 @@
 @keyframes reelCue{0%{opacity:0;transform:translateX(-50%) scale(1.35)}14%{opacity:1;transform:translateX(-50%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-14px) scale(.98)}}
 #reelStop{position:absolute;right:14px;top:14px;pointer-events:auto;padding:5px 12px;font:600 12px Georgia,serif;color:#e9d9ae;background:#140d08cc;border:1px solid #6b4a2a;border-radius:4px;cursor:pointer;opacity:.0;transition:opacity .25s}
 #reelStop:hover,#reelStop:focus-visible{opacity:1}
-/* The interface column collapses with the interface. */
-html body.reel-mode{--side-width:0px}

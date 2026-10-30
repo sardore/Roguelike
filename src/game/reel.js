@@ -4,7 +4,8 @@
    The run is ephemeral (see runIsEphemeral): it never touches the player's save, death record or server stats. Leaving reloads the page.
    Everything is driven from the frame loop (Reel.tick); there are no timers of its own. */
 const Reel={
- on:false,phase:'off',phaseAt:0,sceneIndex:0,scene:null,sceneStart:0,lastStep:0,lastCue:0,cueUntil:0,bannerUntil:0,stuck:0,lastCell:'',
+ on:false,phase:'off',phaseAt:0,sceneIndex:0,scene:null,sceneStart:0,lastStep:0,lastCue:0,panelUntil:0,shown:0,cueUntil:0,bannerUntil:0,stuck:0,lastCell:'',
+ PANELS:[{at:.35,open:()=>toggleInventory(),ms:2600},{at:.65,open:()=>openMartial(),ms:2600}],
  STEP_MS:230,FADE_MS:650,BANNER_MS:3200,CUE_GAP_MS:2600,CUE_MS:1500,NEAR_FIGHT:5,
  SCENES:[
   {title:'감찰관',sub:'제 1층 · 청풍루',cls:'wanderer',floor:1,secs:22},
@@ -46,6 +47,8 @@ const Reel={
   else if(this.phase==='play'){
    if(now-this.sceneStart>=this.scene.secs*1000||runState57()!=='playing'){this.next();return}
    if(now>=this.cueUntil)this.el('reelCue').classList.remove('show');
+   if(this.panelUntil&&now>=this.panelUntil){this.panelUntil=0;dismissGameplayInput57(true)}
+   this.showPanel(now);
    if(now-this.lastStep>=this.STEP_MS){this.lastStep=now;this.step(now)}
   }
   if(now>this.bannerUntil)this.el('reelBanner').classList.remove('show');
@@ -71,7 +74,7 @@ const Reel={
   }catch(error){
    ignoreError('reel scene skipped',error);this.next();return;
   }
-  this.stuck=0;this.lastCell='';this.sceneStart=now;this.lastStep=now;
+  this.stuck=0;this.lastCell='';this.shown=0;this.panelUntil=0;this.sceneStart=now;this.lastStep=now;
   const banner=this.el('reelBanner');this.el('reelTitle').textContent=scene.title;this.el('reelSub').textContent=scene.sub;
   banner.classList.remove('show');void banner.offsetWidth;banner.classList.add('show');this.bannerUntil=now+this.BANNER_MS;
   this.el('reelCue').classList.remove('show');
@@ -105,7 +108,14 @@ const Reel={
   p.x=best.x;p.y=best.y;
  },
  // ---- bot -----------------------------------------------------------------------------------------------------------
+ // Now and then the picture shows the inventory and the martial arts panel, as a player would look at them.
+ showPanel(now){
+  if(this.panelUntil)return;const frac=(now-this.sceneStart)/(this.scene.secs*1000);
+  const i=this.PANELS.findIndex((panel,n)=>!(this.shown&1<<n)&&frac>=panel.at);if(i<0||dismissGameplayInput57(true))return;
+  this.shown|=1<<i;this.PANELS[i].open();this.panelUntil=now+this.PANELS[i].ms;
+ },
  step(now){
+  if(this.panelUntil)return;
   if(dismissGameplayInput57(true))return;
   if(actionPresentationBusy58()||RunLifecycle.busy()||RuntimeState.ui.generationPending)return;
   const p=state.player,stats=getStats();
