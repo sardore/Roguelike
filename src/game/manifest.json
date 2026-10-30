@@ -18,6 +18,7 @@
   "ui.js",
   "stats.js",
   "spectate.js",
+  "reel.js",
   "boot.js"
  ],
  "afterClosure": [
