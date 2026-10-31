@@ -681,6 +681,11 @@ export const scenarios = {
       out['stats.rows'] = await s.page.evaluate(() => [...document.querySelectorAll('.statsRows tbody tr')].map((r) => r.textContent).join('|'));
       await s.page.click('#statsClose');
       out['stats.closed'] = String(await sceneOpen(s));
+      // The same browser keeps one player ID (four capital letters and two digits) and every record id starts with it, so the ranking tag is that ID.
+      out['stats.deviceId'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api, a = A.deviceTag(), b = A.deviceTag(); A.device = ''; const c = A.deviceTag();
+        return JSON.stringify({ format: /^[A-Z]{4}\d{2}$/.test(a), same: a === b, keptAfterReload: a === c, stored: localStorage.getItem(A.DEVICE_KEY) === a, tag: A.tag(a + '-run-1') === a });
+      });
       out['stats.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();

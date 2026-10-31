@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -11,7 +11,7 @@ const PlayStats={
  saveQueue(list){lsSet(this.QUEUE_KEY,JSON.stringify(list.slice(-this.QUEUE_MAX)))},
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
-  const record={v:1,id:String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
+  const record={v:1,id:this.deviceTag()+'-'+String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
   this.rememberRun(record);
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -20,6 +20,14 @@ const PlayStats={
  mine(){try{const list=JSON.parse(lsGet(this.MINE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('own runs unreadable',error);return[]}},
  rememberRun(record){lsSet(this.MINE_KEY,JSON.stringify([...this.mine().filter(r=>r.id!==record.id),record].slice(-this.MINE_MAX)))},
  // The board shows a run by the first six characters of its random id.
+ // The same browser keeps the same player ID: four capital letters and two digits, made once and kept. The ranking shows its first six characters of a record id as the tag, so every run of this device carries it.
+ deviceTag(){
+  if(/^[A-Z]{4}\d{2}$/.test(this.device))return this.device;
+  const saved=lsGet(this.DEVICE_KEY);if(/^[A-Z]{4}\d{2}$/.test(saved||'')){this.device=saved;return saved}
+  const rand=Math.random;
+  this.device=Array.from({length:4},()=>String.fromCharCode(65+Math.floor(rand()*26))).join('')+String(Math.floor(rand()*100)).padStart(2,'0');
+  lsSet(this.DEVICE_KEY,this.device);return this.device;
+ },
  tag(id){return String(id||'').replace(/[^0-9a-z]/gi,'').slice(0,6).toUpperCase()},
  // The server drops a repeated id, so a record whose reply never arrived is simply sent again.
  async flush(){
@@ -239,7 +247,7 @@ const PlayStats={
  detail(row){return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  mineCard(list){
   const card=this.el('div','rankMine'),runs=this.mine().slice().sort((a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns),best=runs[0];
-  card.append(this.el('span','rankMineLabel','나의 최고 기록'));
+  card.append(this.el('span','rankMineLabel','나의 최고 기록 · '+this.deviceTag()));
   if(!best){card.append(this.el('p','rankMineEmpty','아직 남긴 기록이 없다. 첫 탐사를 마치면 여기에 올라온다.'));return card}
   const place=list.findIndex(r=>r.tag===this.tag(best.id)),figure=this.el('div','rankMineFigure');
   figure.append(this.el('b',null,best.floor+'층'),this.el('small',null,`Lv ${best.level} · 처치 ${best.kills} · ${best.turns}턴`));
