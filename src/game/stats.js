@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -12,6 +12,7 @@ const PlayStats={
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record={v:1,id:this.deviceTag()+'-'+String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
+  const nick=this.nick();if(nick)record.nick=nick;
   this.rememberRun(record);
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -27,6 +28,17 @@ const PlayStats={
   const rand=Math.random;
   this.device=Array.from({length:4},()=>String.fromCharCode(65+Math.floor(rand()*26))).join('')+String(Math.floor(rand()*100)).padStart(2,'0');
   lsSet(this.DEVICE_KEY,this.device);return this.device;
+ },
+ // The nickname the player chose (once, on the ranking board): Hangul, letters and digits, two to eight characters. The board then shows it instead of the player ID.
+ cleanNick(text){return String(text||'').replace(/[^0-9A-Za-z가-힣]/g,'').slice(0,this.NICK_MAX)},
+ nick(){const saved=lsGet(this.NICK_KEY)||'';return saved&&this.cleanNick(saved)===saved&&saved.length>=this.NICK_MIN?saved:''},
+ // A nickname can be registered only while there is none. It goes on the runs recorded from then on; the runs already sent keep their player ID.
+ registerNick(text){
+  if(this.nick())return{ok:false,reason:'이미 닉네임을 정했다. 바꿀 수 없다.'};
+  const typed=String(text||'').trim(),nick=this.cleanNick(typed);
+  if(nick!==typed||nick.length<this.NICK_MIN)return{ok:false,reason:`한글·영문·숫자만, ${this.NICK_MIN}~${this.NICK_MAX}글자로 적는다.`};
+  lsSet(this.NICK_KEY,nick);
+  return{ok:true,nick};
  },
  tag(id){return String(id||'').replace(/[^0-9a-z]/gi,'').slice(0,6).toUpperCase()},
  // The server drops a repeated id, so a record whose reply never arrived is simply sent again.
@@ -230,7 +242,7 @@ const PlayStats={
  rankView(status){
   const view=this.el('div','rankView'),notice={loading:'기록판을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.'}[status]||(this.failed?.ranking?'서버가 아직 기록판을 내주지 않는다.':'');
   const list=this.ranking?.boards?.[this.board]||[];
-  view.append(this.mineCard(list));
+  view.append(this.mineCard(list));if(!this.nick())view.append(this.nickForm());
   const tabs=this.el('nav','rankBoards');
   for(const [id,name] of this.BOARDS){const button=this.el('button',null,name);button.type='button';button.dataset.rankBoard=id;button.classList.toggle('on',id===this.board);button.onclick=()=>{this.board=id;this.render()};tabs.append(button)}
   view.append(tabs);
@@ -245,9 +257,19 @@ const PlayStats={
   return{value:row.floor+'층',fill:row.floor/this.TOTAL_FLOORS};
  },
  detail(row){return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
+ // The one-time nickname form on the board.
+ nickForm(){
+  const wrap=this.el('div','rankNick'),input=this.el('input'),button=this.el('button',null,'등록'),note=this.el('small','rankNickNote','한 번 정하면 바꿀 수 없다. 한글·영문·숫자 '+this.NICK_MIN+'~'+this.NICK_MAX+'글자.');
+  input.type='text';input.maxLength=this.NICK_MAX;input.placeholder='닉네임';input.autocomplete='off';input.setAttribute('enterkeyhint','done');button.type='button';
+  const go=()=>{const result=this.registerNick(input.value);if(result.ok)this.render();else note.textContent=result.reason};
+  button.onclick=go;input.onkeydown=event=>{event.stopPropagation();if(event.key==='Enter'){event.preventDefault();go()}};
+  wrap.append(input,button,note);return wrap;
+ },
+ // How the board names a run: the nickname the server knows, else the player ID.
+ who(row){return row.nick||'탐사자 '+row.tag},
  mineCard(list){
   const card=this.el('div','rankMine'),runs=this.mine().slice().sort((a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns),best=runs[0];
-  card.append(this.el('span','rankMineLabel','나의 최고 기록 · '+this.deviceTag()));
+  card.append(this.el('span','rankMineLabel','나의 최고 기록 · '+(this.nick()||this.deviceTag())));
   if(!best){card.append(this.el('p','rankMineEmpty','아직 남긴 기록이 없다. 첫 탐사를 마치면 여기에 올라온다.'));return card}
   const place=list.findIndex(r=>r.tag===this.tag(best.id)),figure=this.el('div','rankMineFigure');
   figure.append(this.el('b',null,best.floor+'층'),this.el('small',null,`Lv ${best.level} · 처치 ${best.kills} · ${best.turns}턴`));
@@ -262,7 +284,7 @@ const PlayStats={
    const metric=this.metric(row,top);
    if(mine.has(row.tag))plate.classList.add('mine');
    plate.style.setProperty('--delay',(place===1?0:place===2?120:240)+'ms');
-   plate.append(this.el('i','rankMedal',place),this.el('b','rankTag','탐사자 '+row.tag),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
+   plate.append(this.el('i','rankMedal',place),this.el('b','rankTag',this.who(row)),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
    wrap.append(plate);
   }
   return wrap;
@@ -273,7 +295,7 @@ const PlayStats={
    const item=this.el('li','rankRow'),metric=this.metric(row,list),bar=this.el('i');
    item.classList.toggle('mine',mine.has(row.tag));item.style.setProperty('--delay',(300+i*28)+'ms');bar.style.setProperty('--fill',Math.round(Math.max(0,Math.min(1,metric.fill))*100)+'%');
    const who=this.el('div','rankWho'),track=this.el('div','rankTrack');
-   who.append(this.el('b',null,'탐사자 '+row.tag),this.el('small',null,this.detail(row)));track.append(bar);
+   who.append(this.el('b',null,this.who(row)),this.el('small',null,this.detail(row)));track.append(bar);
    item.append(this.el('span','rankNo',i+4),who,track,this.el('strong','rankValue',metric.value));
    if(mine.has(row.tag))item.append(this.el('span','rankMineBadge','나'));
    box.append(item);
