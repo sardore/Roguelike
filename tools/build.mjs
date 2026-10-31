@@ -69,7 +69,8 @@ const HEAD_TAGS = `<link rel="manifest" href="manifest.webmanifest">
 const SW_TEMPLATE = `// 만루 오프라인 캐시 (자동 생성 — tools/build.mjs)
 const CACHE='manru-__HASH__';
 const FILES=__FILES__;
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
+// The files are fetched past the browser's HTTP cache (Pages lets it keep them for ten minutes): an install right after a deploy must not store the old files under the new cache name.
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('manru-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
   const req=e.request;if(req.method!=='GET')return;
