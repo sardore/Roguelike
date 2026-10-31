@@ -2,6 +2,9 @@
 const PlayStats={
  LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
+ RANK_ROWS:30,
+ // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
+ LEGACY:[["2026-10-31T06:47:00.000Z",1,"취객",1,2,89],["2026-10-30T15:05:00.000Z",3,"떠돌이 도둑",4,30,1072],["2026-10-30T14:48:00.000Z",4,"객잔 경비병",4,30,1155],["2026-10-30T13:44:00.000Z",2,"함정",2,16,609],["2026-10-30T13:39:00.000Z",2,"객잔 경비병",2,14,477],["2026-10-30T09:34:00.000Z",1,"객잔 쥐",1,5,113],["2026-10-30T09:31:00.000Z",2,"굶주림",3,24,1160],["2026-10-30T07:24:00.000Z",3,"객잔 경비병",3,23,646],["2026-10-30T07:20:00.000Z",2,"취객",3,21,466],["2026-10-30T04:42:00.000Z",1,"시종",1,7,84],["2026-10-29T07:39:00.000Z",2,"시종",2,11,199],["2026-10-28T16:31:00.000Z",2,"객잔 경비병",2,16,588],["2026-10-28T16:27:00.000Z",2,"객잔 경비병",2,11,242],["2026-10-28T16:23:00.000Z",2,"객잔 경비병",3,18,795],["2026-10-28T16:16:00.000Z",1,"불바닥",1,2,42],["2026-10-28T16:13:00.000Z",2,"객잔 경비병",2,12,275],["2026-10-28T15:39:00.000Z",1,"취객",1,2,25],["2026-10-28T15:24:00.000Z",1,"취객",1,4,80],["2026-10-28T11:52:00.000Z",1,"취객",1,4,123],["2026-10-28T11:49:00.000Z",1,"경비 인형 - 포병",1,7,256],["2026-10-28T11:46:00.000Z",2,"객잔 경비병",2,15,530],["2026-10-28T11:30:00.000Z",2,"떠돌이 도둑",2,15,568],["2026-10-28T06:08:00.000Z",3,"시종",3,22,796],["2026-10-28T02:59:00.000Z",2,"떠돌이 도둑",2,9,423],["2026-10-27T16:56:00.000Z",2,"객잔 경비병",2,14,270],["2026-10-27T16:38:00.000Z",1,"취객",1,4,97],["2026-10-27T16:29:00.000Z",2,"객잔 경비병",2,8,212],["2026-10-27T14:34:00.000Z",1,"시종",1,1,32]],
  taps:0,lastTapAt:0,sending:false,tab:'stats',board:'depth',mode:'hidden',data:null,ranking:null,failed:null,
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
@@ -186,8 +189,24 @@ const PlayStats={
   const url=this.endpoint();if(!url){this.render('unset');return}
   const views=this.mode==='rank'?['ranking']:['summary','ranking'];
   const results=await Promise.all(views.map(async view=>{try{return await this.fetchView(url,view)}catch(error){ignoreError('play stats load failed',error);return null}}));
-  views.forEach((view,i)=>{const data=results[i];if(view==='summary')this.data=data;else this.ranking=data?.boards?data:null;this.failed[view]=!data});
+  views.forEach((view,i)=>{const data=results[i];if(view==='summary')this.data=this.withLegacySummary(data);else this.ranking=data?.boards?this.withLegacyRanking(data):null;this.failed[view]=!data});
   this.render();
+ },
+ legacyRows(){return this.LEGACY.map(([t,floor,cause,level,kills,turns])=>({t,floor,cause,level,kills,turns}))},
+ withLegacySummary(data){
+  if(!data)return data;
+  const rows=this.legacyRows(),n0=+data.total||0,n=n0+rows.length,causes=new Map((data.causes||[]).map(([name,count])=>[name,+count||0]));
+  for(const row of rows)causes.set(row.cause,(causes.get(row.cause)||0)+1);
+  const mean=key=>((+data.avg?.[key]||0)*n0+rows.reduce((sum,row)=>sum+row[key],0))/n;
+  return{...data,total:n,floors:Array.from({length:this.TOTAL_FLOORS},(_,i)=>(+data.floors?.[i]||0)+rows.filter(row=>row.floor===i+1).length),causes:[...causes].sort((a,b)=>b[1]-a[1]),avg:{level:Math.round(mean('level')*10)/10,kills:Math.round(mean('kills')),turns:Math.round(mean('turns'))},recent:[...(data.recent||[]),...rows].sort((a,b)=>String(b.t)<String(a.t)?-1:1)};
+ },
+ withLegacyRanking(data){
+  const rows=this.legacyRows().map(row=>({tag:'Legacy',floor:row.floor,cause:row.cause,level:row.level,kills:row.kills,turns:row.turns})),order={
+   depth:(a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns,
+   level:(a,b)=>b.level-a.level||b.floor-a.floor||b.kills-a.kills||a.turns-b.turns,
+   kills:(a,b)=>b.kills-a.kills||b.floor-a.floor||b.level-a.level||a.turns-b.turns},boards={};
+  for(const [id] of this.BOARDS)boards[id]=[...(data.boards[id]||[]),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
+  return{...data,total:(+data.total||0)+rows.length,boards};
  },
  el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node},
  render(status){
