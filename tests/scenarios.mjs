@@ -491,6 +491,20 @@ export const scenarios = {
       const stub = V.edges(54, 31).east;
       return { before, after, stub };
     }));
+    // a monster the player cannot see (hidden) does not block the route the player plans by tapping the cell it stands on; a visible one does
+    out['vision.hiddenOnPath'] = JSON.stringify(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), V = __MANRU_QA_VIS__, T = V.TT;
+      let spot = null;
+      for (let y = 2; y < st.map.length - 2 && !spot; y++) for (let x = 2; x < st.map[0].length - 6 && !spot; x++) if ([0, 1, 2, 3].every((i) => st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+      st.player.x = spot.x; st.player.y = spot.y; st.seen = new Set(); V.compute();
+      const goal = { x: spot.x + 3, y: spot.y }, mon = V.place('취객', goal.x, goal.y);
+      if (!mon) return { placed: false };
+      V.compute(); mon.hidden = true;
+      const hidden = V.pathTo(goal.x, goal.y)?.length ?? null;
+      mon.hidden = false;
+      const shown = V.pathTo(goal.x, goal.y)?.length ?? null;
+      return { placed: true, hidden, shown };
+    }));
     // over many positions of floor 1: no seen wall carries an edge or a corner for a cell that has not been seen
     out['vision.unseenEdges'] = String(await s.page.evaluate(() => {
       const st = __MANRU_QA_UI__.state(), V = __MANRU_QA_VIS__, T = V.TT;

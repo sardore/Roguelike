@@ -825,4 +825,4 @@ globalThis.__MANRU_QA_BAL__={
  }
 };
 // Wall-face vision test (scenario `vision`).
-globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t=>tileBlocksSight(t),open:(x,y,dx,dy)=>wallFaceOpen(x,y,dx,dy),edges:(x,y)=>wallEdges(x,y)};
+globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t=>tileBlocksSight(t),open:(x,y,dx,dy)=>wallFaceOpen(x,y,dx,dy),edges:(x,y)=>wallEdges(x,y),pathTo:(x,y)=>ReachabilityService.pathTo(x,y),place:(name,x,y)=>placeNamedMonster(name,{x,y},{provenance:'qa-vis'})};

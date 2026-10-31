@@ -298,13 +298,15 @@ playerStepAllowed(from,x,y,opts={}){
   if(!from||Math.max(Math.abs(x-from.x),Math.abs(y-from.y))!==1)return false;
   if(opts.seenOnly&&!state.seen.has(k(x,y)))return false;
   const occupant=opts.ignoreOccupants===false?findMonsterAt(x,y):null,swap=opts.allowAllySwap&&occupant&&occupant.x===x&&occupant.y===y&&entityFootprintCells57(occupant).length===1&&occupancySwapAllowed57(state.player,occupant,from);
-  return ReachabilityService.playerTerrainPassable(x,y,opts)&&(opts.ignoreOccupants!==false||!OccupancyService.isOccupied(x,y)||swap);
+  // The plan only knows what the player can see: a hidden or unseen monster does not block a route (stepping into it is the discovery).
+  const hiddenOccupant=!!occupant&&!isEntityObservableToPlayer57(occupant)&&!neutralInteractableAt58(x,y);
+  return ReachabilityService.playerTerrainPassable(x,y,opts)&&(opts.ignoreOccupants!==false||hiddenOccupant||!OccupancyService.isOccupied(x,y)||swap);
 },
 playerSearch(start,opts={}){
   const cells=new Set(),prev=new Map(),dist=new Map(),q=[];
   if(!start||!ReachabilityService.playerTerrainPassable(start.x,start.y,opts))return{cells,prev,dist};
   const occupiedCells=new Set();
-  if(opts.ignoreOccupants===false)for(const mon of state.monsters||[])if(mon.hp>0&&!(opts.allowAllySwap&&!factionsHostile57(entityFaction(state.player),entityFaction(mon))&&!(mon.fixed&&mon.kind==='plant')&&entityFootprintCells57(mon).length===1))for(const [ox,oy]of footprintOffsets(mon))occupiedCells.add(k(mon.x+ox,mon.y+oy));
+  if(opts.ignoreOccupants===false)for(const mon of state.monsters||[])if(mon.hp>0&&isEntityObservableToPlayer57(mon)&&!(opts.allowAllySwap&&!factionsHostile57(entityFaction(state.player),entityFaction(mon))&&!(mon.fixed&&mon.kind==='plant')&&entityFootprintCells57(mon).length===1))for(const [ox,oy]of footprintOffsets(mon))occupiedCells.add(k(mon.x+ox,mon.y+oy));
   const stepOpts=opts.ignoreOccupants===false&&!opts.allowAllySwap?{...opts,ignoreOccupants:true}:opts;
   const first=k(start.x,start.y);cells.add(first);prev.set(first,null);dist.set(first,0);q.push({x:start.x,y:start.y});
   for(let i=0;i<q.length;i++){
