@@ -4253,6 +4253,14 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
   }
   function feeling62(){return state?.floorFeeling62||null}
   /* ---------- performance coordinator: no viewport sync every RAF ---------- */
+  // A drawing that costs more than it is given leaves the page no time for taps and turns: the wait between two drawings is at least
+  // 1.5 times what a drawing costs (at most 120 ms), so a slow phone keeps a third of its time free. A fast machine keeps `base`.
+  function frameBudget(base){return Math.max(base,Math.min(120,RC.perf.ema*1.5))}
+  // One drawing of the map (the whole update when something changed) and its cost, which is what frameBudget reads.
+  function drawFrame(now,full){
+    const t=performance.now();if(full)updateAll(true);else drawMap(false);
+    const cost=performance.now()-t;RC.perf.lastCost=cost;RC.perf.frames++;RC.perf.ema+=(cost-RC.perf.ema)/Math.min(120,RC.perf.frames);RC.lastDraw=now;
+  }
   function active70(){
     return !!(performance.now()<structureMotionUntil||performance.now()<forcedMotionUntil||MINE_FX.some(f=>f.map===state?.map&&f.path?.length&&performance.now()-f.start<640)||globalThis.__MANRU_CAMERA_STATE12__?.isCoasting?.()||FX.transition||FX.floats?.length||FX.particles?.length||FX.slashes?.length||FX.rings?.length||FX.projectiles?.length||FX.doors?.length||VIS.autoPath?.length||
       actionPresentationBusy58()||(FX.terrainReactions105||[]).some(f=>f.map===state?.map&&performance.now()-f.start<f.life)||performance.now()-RC.lastActionAt<850||Math.abs((VIS.playerX??0)-(state?.player?.x??0))>.01||Math.abs((VIS.playerY??0)-(state?.player?.y??0))>.01);
@@ -5205,9 +5213,9 @@ function visualLoop(now=performance.now()){
       Reel.tick(now);
       if(state&&!state.debugBattle57&&!state.spectator){
         dojoSleepFrame(now);updateVisualMotion(now);
-        const active=active70(),budget=active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130)),pending=renderUpdatePending;
+        const active=active70(),budget=frameBudget(active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130))),pending=renderUpdatePending;
         if(pending||cameraRenderPending||now-RC.lastDraw>=budget){
-          const t=performance.now();if(pending)updateAll(true);else drawMap(false);const cost=performance.now()-t;RC.perf.lastCost=cost;RC.perf.frames++;RC.perf.ema+= (cost-RC.perf.ema)/Math.min(120,RC.perf.frames);RC.lastDraw=now;
+          drawFrame(now,pending);
         }
         if(mapModalOpen()&&now-RC.lastMini>180){drawMinimap(true);RC.lastMini=now}
         if(now-RC.lastHud>120){updateAttackButton();RC.lastHud=now}

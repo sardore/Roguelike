@@ -827,4 +827,5 @@ globalThis.__MANRU_QA_BAL__={
  }
 };
 // Wall-face vision test (scenario `vision`).
+globalThis.__MANRU_QA_PERF__={draw:()=>drawMap(false),update:()=>updateAll(true),ema:()=>RC.perf.ema,frames:()=>RC.perf.frames};
 globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t=>tileBlocksSight(t),open:(x,y,dx,dy)=>wallFaceOpen(x,y,dx,dy),edges:(x,y)=>wallEdges(x,y)};
