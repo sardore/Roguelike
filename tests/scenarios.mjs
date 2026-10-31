@@ -476,6 +476,30 @@ export const scenarios = {
 
   // One modal at a time: opening the inventory from the menu drawer closes the drawer. Both open at once made every item use
   // refuse ("blocked": the input owner only allows the inventory itself).
+  // The strike turns the player toward the foe it hits, so the next strike reaches along that line (a long weapon after a bump behind).
+  async attackFacing(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4244 });
+    await startRun(s, 'strongman');
+    out['attackFacing.turns'] = JSON.stringify(await s.page.evaluate(async () => {
+      const st = __MANRU_QA_UI__.state(), B = __MANRU_QA_BAL__, T = __MANRU_QA_VIS__.TT;
+      let spot = null;
+      for (let y = 2; y < st.map.length - 2 && !spot; y++) for (let x = 6; x < st.map[0].length - 8 && !spot; x++) if ([-3, -2, -1, 0, 1, 2, 3, 4].every((i) => st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+      const p = st.player; p.x = spot.x; p.y = spot.y; p.facing = { x: 1, y: 0 };
+      for (const m of [...st.monsters]) m.hp = 0;
+      B.equip('대나무창'); __MANRU_QA_VIS__.compute();
+      const behind = B.placeAt('취객', -1, 0);
+      if (!behind) return { placed: false };
+      __MANRU_QA_VIS__.compute();
+      const before = { ...p.facing };
+      __MANRU_QA_UI__.dispatch({ type: 'ATTACK', args: [] });
+      return { placed: true, before, after: { ...p.facing } };
+    }));
+    out['attackFacing.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });

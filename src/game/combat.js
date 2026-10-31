@@ -283,7 +283,8 @@ function basicAttack(){
   const manual=state._manualTerrainTargetR8;if(manual){const check=combatTerrainTargetCheckR8(manual,range);if(!check.ok){state._manualTerrainTargetR8=null;toast(check.reason);return false;}}
   let ammoCtx=null;if(ranged&&globalThis.__MANRU_AMMO_ATTACK__){ammoCtx=globalThis.__MANRU_AMMO_ATTACK__.prepare?.();if(ammoCtx&&!ammoCtx.ok)return false;if(ammoCtx?.ammo)state._activeAmmo967=ammoCtx.ammo}
   let target=manual?{...manual,hp:1,maxHp:1}:adjacentAttackTargetR(),last={x:p.x+f.x,y:p.y+f.y};
-  if(target){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};if(ranged)p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
+  // Whatever the strike is aimed at (a ranged shot or the foe that stands next to the player), the player turns to it: the next strike reaches along the new facing.
+  if(target){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};const fx=Math.sign(last.x-p.x),fy=Math.sign(last.y-p.y);if(fx||fy)p.facing={x:fx,y:fy}}
   else if(ranged){target=bestRangedTargetR();if(!target){state._activeAmmo967=null;toast(`사거리 ${range}칸 안에 사격 가능한 적이 없다.`);return false}last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
   else for(let i=1;i<=range;i++){const x=p.x+f.x*i,y=p.y+f.y*i;if(x<0||y<0||x>=COLS||y>=ROWS)break;last={x,y};const mon=findMonsterAt(x,y);if(isEntityObservableToPlayer57(mon)){if(isHostileTarget57(mon))target=mon;break}if(state.map[y][x]===TT.JAR){const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(weaponElement105(w)&&elementalWorldTarget105(x,y))break;if(tileBlocksSight(state.map[y][x])&&!w.cornerHit)break}
   const wasStealthed=state.status.stealth>0;
