@@ -695,6 +695,11 @@ export const scenarios = {
       out['stats.rows'] = await s.page.evaluate(() => [...document.querySelectorAll('.statsRows tbody tr')].map((r) => r.textContent).join('|'));
       await s.page.click('#statsClose');
       out['stats.closed'] = String(await sceneOpen(s));
+      // The same browser keeps one player ID (four capital letters and two digits) and every record id starts with it, so the ranking tag is that ID.
+      out['stats.deviceId'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api, a = A.deviceTag(), b = A.deviceTag(); A.device = ''; const c = A.deviceTag();
+        return JSON.stringify({ format: /^[A-Z]{4}\d{2}$/.test(a), same: a === b, keptAfterReload: a === c, stored: localStorage.getItem(A.DEVICE_KEY) === a, tag: A.tag(a + '-run-1') === a });
+      });
       out['stats.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
@@ -1146,6 +1151,15 @@ export const scenarios = {
       // The release build has no snapshot hook: the run shows up as a screen change and a stored save.
       return JSON.stringify({ screen: document.body.dataset.manruScreen, saved: Object.keys(localStorage).filter((k) => k.startsWith('manru1004_')).sort() });
     });
+    // A new worker taking control while a run is on the screen does not reload the page; with the title on the screen it does.
+    out['pwa.updateDuringRun'] = await page.evaluate(async () => {
+      window.__stay = 1; navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
+      await new Promise((r) => setTimeout(r, 800));
+      return JSON.stringify({ screen: document.body.dataset.manruScreen, stayed: window.__stay === 1 });
+    });
+    page.evaluate(() => { document.body.dataset.manruScreen = 'title'; document.dispatchEvent(new Event('visibilitychange')); }).catch(() => {});
+    await page.waitForTimeout(2500);
+    out['pwa.updateAtTitle'] = await page.evaluate(() => JSON.stringify({ reloaded: window.__stay === undefined }));
     out['pwa.errors'] = JSON.stringify(s.errors);
     await s.close();
     await ctx.close();
