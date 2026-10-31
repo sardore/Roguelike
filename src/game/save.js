@@ -208,6 +208,7 @@ const RunLifecycle={
     if(next==='victory'&&state.player.hp<=0){die('동시 효과');return false}
     state.runState57=next;state.dead=next==='death';state.victory=next==='victory';RuntimeState.lifecycle.phase=next==='death'?'dead':'terminal';RuntimeState.lifecycle.generation++;
     runEndEffects(next);
+    if(next==='victory')PlayStats.recordDeath(PlayStats.END_CAUSE);
     if(!RunLifecycle.busy()){const persistence=globalThis.__MANRU_SAVE_SERVICE__.terminal(next);RuntimeState.lifecycle.last={ok:persistence.ok,kind:next,persistence};if(persistence.ok&&next==='death')RuntimeState.lifecycle.phase='tombstoned';if(!persistence.ok)toast('종료 기록 저장에 실패했다.');RunLifecycle.refreshContinue()}
     return true;
   },

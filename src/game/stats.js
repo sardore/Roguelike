@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -13,6 +13,7 @@ const PlayStats={
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record={v:1,id:this.deviceTag()+'-'+String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
   const nick=this.nick();if(nick)record.nick=nick;
+  const cls=state.player.classId;if(cls)record.cls=String(cls).slice(0,24);
   this.rememberRun(record);
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -225,12 +226,14 @@ const PlayStats={
    depth:(a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns,
    level:(a,b)=>b.level-a.level||b.floor-a.floor||b.kills-a.kills||a.turns-b.turns,
    kills:(a,b)=>b.kills-a.kills||b.floor-a.floor||b.level-a.level||a.turns-b.turns},boards={};
-  for(const [id] of this.BOARDS)boards[id]=[...(data.boards[id]||[]),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
+  const counted=row=>row.cause===this.END_CAUSE?{...row,floor:this.END_FLOOR}:row;
+  for(const [id] of this.BOARDS)boards[id]=[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
   return{...data,total:(+data.total||0)+rows.length,boards};
  },
  el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node},
  render(status){
-  const body=document.getElementById('statsBody');body.replaceChildren();
+  const body=document.getElementById('statsBody');if(!body)return; // the board was closed while its numbers were still coming
+  body.replaceChildren();
   for(const button of document.querySelectorAll('[data-stats-tab]'))button.classList.toggle('on',button.dataset.statsTab===this.tab);
   if(this.tab==='log'){body.append(this.logView());return}
   if(this.tab==='rank'){body.append(this.rankView(status));return}
@@ -254,7 +257,7 @@ const PlayStats={
  metric(row,list){
   if(this.board==='level')return{value:'Lv '+row.level,fill:row.level/Math.max(1,...list.map(r=>+r.level||0))};
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
-  return{value:row.floor+'층',fill:row.floor/this.TOTAL_FLOORS};
+  return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
  },
  detail(row){return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  // The one-time nickname form on the board.
@@ -265,14 +268,26 @@ const PlayStats={
   button.onclick=go;input.onkeydown=event=>{event.stopPropagation();if(event.key==='Enter'){event.preventDefault();go()}};
   wrap.append(input,button,note);return wrap;
  },
- // How the board names a run: the nickname the server knows, else the player ID.
- who(row){return row.nick||'탐사자 '+row.tag},
+ // How the board names a run: the nickname the server sends, the player's own nickname on the runs of this device (so it shows even
+ // before the server has taken it), else the player ID.
+ who(row){return row.nick||(this.nick()&&row.tag&&row.tag===this.deviceTag()?this.nick():'')||'탐사자 '+row.tag},
+ // A cleared run is recorded as floor 25 with the cause "End" and counts as floor 30 on the boards.
+ floorOf(row){return row.cause===this.END_CAUSE?this.END_FLOOR:row.floor},
+ floorText(row){return row.cause===this.END_CAUSE?'End':row.floor+'층'},
+ // The class's plain look, small. A run without class data (older records) is shown as the default class.
+ classIcon(id){
+  const icon=this.el('canvas','rankClass'),g=icon.getContext('2d');icon.width=icon.height=32;
+  try{const art=playerCanvasForClass(CLASSES.some(c=>c.id===id)?id:this.DEFAULT_CLASS,null,'down',false);g.imageSmoothingEnabled=false;g.drawImage(art,0,0,32,32)}catch(error){ignoreError('class icon not drawn',error)}
+  return icon;
+ },
+ // The name line of a run: the class look, then the name.
+ nameLine(tag,className,row){const line=this.el(tag,className);line.append(this.classIcon(row.cls),document.createTextNode(this.who(row)));return line},
  mineCard(list){
-  const card=this.el('div','rankMine'),runs=this.mine().slice().sort((a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns),best=runs[0];
+  const card=this.el('div','rankMine'),runs=this.mine().slice().sort((a,b)=>this.floorOf(b)-this.floorOf(a)||b.level-a.level||b.kills-a.kills||a.turns-b.turns),best=runs[0];
   card.append(this.el('span','rankMineLabel','나의 최고 기록 · '+(this.nick()||this.deviceTag())));
   if(!best){card.append(this.el('p','rankMineEmpty','아직 남긴 기록이 없다. 첫 탐사를 마치면 여기에 올라온다.'));return card}
   const place=list.findIndex(r=>r.tag===this.tag(best.id)),figure=this.el('div','rankMineFigure');
-  figure.append(this.el('b',null,best.floor+'층'),this.el('small',null,`Lv ${best.level} · 처치 ${best.kills} · ${best.turns}턴`));
+  figure.append(this.el('b',null,this.floorText(best)),this.el('small',null,`Lv ${best.level} · 처치 ${best.kills} · ${best.turns}턴`));
   card.append(figure,this.el('em',place>=0?'rankMinePlace':'rankMinePlace out',place>=0?`${this.BOARDS.find(b=>b[0]===this.board)[1]} ${place+1}위`:'순위권 밖'));
   return card;
  },
@@ -284,7 +299,7 @@ const PlayStats={
    const metric=this.metric(row,top);
    if(mine.has(row.tag))plate.classList.add('mine');
    plate.style.setProperty('--delay',(place===1?0:place===2?120:240)+'ms');
-   plate.append(this.el('i','rankMedal',place),this.el('b','rankTag',this.who(row)),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
+   plate.append(this.el('i','rankMedal',place),this.nameLine('b','rankTag',row),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
    wrap.append(plate);
   }
   return wrap;
@@ -295,7 +310,7 @@ const PlayStats={
    const item=this.el('li','rankRow'),metric=this.metric(row,list),bar=this.el('i');
    item.classList.toggle('mine',mine.has(row.tag));item.style.setProperty('--delay',(300+i*28)+'ms');bar.style.setProperty('--fill',Math.round(Math.max(0,Math.min(1,metric.fill))*100)+'%');
    const who=this.el('div','rankWho'),track=this.el('div','rankTrack');
-   who.append(this.el('b',null,this.who(row)),this.el('small',null,this.detail(row)));track.append(bar);
+   who.append(this.nameLine('b',null,row),this.el('small',null,this.detail(row)));track.append(bar);
    item.append(this.el('span','rankNo',i+4),who,track,this.el('strong','rankValue',metric.value));
    if(mine.has(row.tag))item.append(this.el('span','rankMineBadge','나'));
    box.append(item);

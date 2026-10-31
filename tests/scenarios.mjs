@@ -727,6 +727,12 @@ export const scenarios = {
         A.close();
         return result;
       });
+      // Cleared runs ("End", floor 25) count as floor 30 and lead the depth board; the class look falls back to the default class; this device's own nickname shows on its own runs.
+      out['stats.rankRows'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api;
+        const rows = A.withLegacyRanking({ total: 2, boards: { depth: [{ tag: 'BBBB22', nick: '', cls: '', floor: 25, cause: '객잔 경비병', level: 12, kills: 99, turns: 100 }, { tag: 'AAAA11', nick: '', cls: 'archer', floor: 25, cause: 'End', level: 9, kills: 90, turns: 3000 }], level: [], kills: [] } }).boards.depth;
+        return JSON.stringify({ first: rows[0].tag, firstFloor: rows[0].floor, firstText: A.floorText(rows[0]), second: A.floorText(rows[1]), icons: [A.classIcon('archer').width, A.classIcon('').width, A.classIcon('nope').width], own: A.who({ tag: A.deviceTag() }) });
+      });
       // The board names a run by its nickname when the server sends one.
       out['stats.nickWho'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return JSON.stringify([A.who({ tag: 'ABCD12', nick: '만루왕' }), A.who({ tag: 'ABCD12', nick: '' }), A.who({ tag: 'Legacy' })]); });
       out['stats.errors'] = JSON.stringify(s.errors);
@@ -746,6 +752,20 @@ export const scenarios = {
       await titleTaps(s, 7, true, ['.startIntro']);
       out['stats.outside-taps'] = String(await sceneOpen(s));
       out['stats.tap-errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // Clearing the game is recorded like a death, as floor 25 with the cause "End", and carries the class.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 92, context: ctx, init: endpoint });
+      await startRun(s, 'archer');
+      await s.page.evaluate(() => window.__MANRU_V95_TEST__.endingPreview());
+      await waitFor(() => posts.length > 0);
+      out['stats.clear'] = JSON.stringify(posts.map(({ id, ...rest }) => ({ hasId: id.length > 8, ...rest })));
+      out['stats.clear.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
     }

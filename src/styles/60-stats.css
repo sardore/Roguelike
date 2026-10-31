@@ -48,6 +48,7 @@ body.title-class-mode #titleCorner{display:none}
 #statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
 .rankView{display:flex;flex-direction:column;gap:16px}
 .rankMine{position:relative;display:flex;align-items:center;gap:14px;margin-top:6px;padding:14px 16px;background:linear-gradient(100deg,rgba(166,111,52,.26),rgba(27,18,12,.92) 58%),#1b120c;border:1px solid #a66f34;box-shadow:inset 0 0 0 1px #000,inset 0 1px 0 rgba(255,226,160,.14),0 8px 22px #0009}
+.rankClass{display:inline-block;width:18px;height:18px;margin-right:6px;vertical-align:-4px;image-rendering:pixelated;opacity:.9}
 .rankNick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:#150e09;border:1px dashed #6a4a2a}
 .rankNick input{flex:1 1 140px;min-width:0;padding:8px 10px;background:#0e0805;color:#efd49b;border:1px solid #a66f34;font:700 calc(14px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.08em}
 .rankNick input:focus{outline:2px solid #efddac;outline-offset:1px}
