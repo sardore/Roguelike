@@ -3,7 +3,7 @@
    Viewer: draws a read-only copy with the game's own renderer; scroll and zoom are the viewer's, nothing else is accepted.
    The relay never fans out, so the host sends every packet once per viewer and relays chat itself. */
 const Spectate={
- RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,RESYNC_TURNS:120,MAX_VIEWERS:8,
+ RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
  CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
  PLAIN:['floor','specialFloor','turn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
@@ -83,7 +83,7 @@ const Spectate={
    if(!this.ws&&!this.connecting&&now>=this.reconnectAt)this.open('host');
    if(this.ready&&now-this.lastAnnounce>this.ANNOUNCE_MS)this.announce(false);
   }
-  if(!state?.spectator&&(this.hosting||this.REPLAY)&&now-this.lastSend>=this.SEND_GAP_MS)this.observe(now);
+  if(!state?.spectator&&(this.hosting||this.REPLAY)&&now-this.lastSend>=(this.hosting&&this.ready&&this.viewers.size?this.SEND_GAP_MS:this.IDLE_GAP_MS))this.observe(now);
   if(this.hosting&&this.liveRun&&this.ready&&state?.runId984!==this.liveRun)this.endBroadcast();
  },
  // ---- host ------------------------------------------------------------------------------------------------------------
@@ -317,7 +317,7 @@ const Spectate={
   if(!state?.spectator)return;
   if(this.replaying)this.replayStep(now);
   updateVisualMotion(now);
-  if(cameraRenderPending||now-RC.lastDraw>=33){drawMap(false);RC.lastDraw=now}
+  if(cameraRenderPending||now-RC.lastDraw>=frameBudget(33))drawFrame(now,false);
  },
  // ---- death replay ----------------------------------------------------------------------------------------------------
  replayable(){return this.recs.length>0&&this.recs[0].frames.length>0},
