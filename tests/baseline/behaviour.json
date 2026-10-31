@@ -403,5 +403,7 @@
  "vision.unseenEdges": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
  "stats.deviceId": "391761fb5e5580e4b7408e8f3d30c9b8fd616e43",
  "pwa.updateDuringRun": "4dbd7ffb3a8765397d80bc8d00b1e7dbd9961867",
- "pwa.updateAtTitle": "c417de953f5e4eb208673a43a148930fd6a730b6"
+ "pwa.updateAtTitle": "c417de953f5e4eb208673a43a148930fd6a730b6",
+ "attackFacing.turns": "af1052bbddeab811610fe9b607b3f1e5f9570fd5",
+ "attackFacing.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
