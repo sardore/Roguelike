@@ -268,7 +268,7 @@ const PlayStats={
   const table=this.el('table','statsRows'),head=table.createTHead().insertRow();
   for(const name of ['시각','층','원인','Lv','처치','턴'])head.append(this.el('th',null,name));
   const bodyRows=table.createTBody();
-  for(const row of data.recent||[]){const tr=bodyRows.insertRow();for(const value of [String(row.t||'').slice(5,16).replace('T',' '),row.floor,row.cause,row.level,row.kills,row.turns])tr.insertCell().textContent=value}
+  for(const row of data.recent||[]){const tr=bodyRows.insertRow(),when=new Date(row.t);for(const value of [Number.isNaN(+when)?String(row.t||'').slice(5,16).replace('T',' '):new Date(+when+9*36e5).toISOString().slice(5,16).replace('T',' '),row.floor,row.cause,row.level,row.kills,row.turns])tr.insertCell().textContent=value}
   return table;
  }
 };
