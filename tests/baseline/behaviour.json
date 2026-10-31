@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "2adbc6d488ff2871c0adcf05328b11e8a3703f6f",
- "values.branch": "e6e559579e75c8a15d3e7a40108f2959d907e3ba",
+ "values.empty": "249a8e96694bc51cd1e6814606be245ef017fe6b",
+ "values.branch": "e5bbd2d9cc5e61d1c991c0986eacb4ac7987fc42",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -337,9 +337,9 @@
  "stats.rows": "f6ba0aa3a9059cba284402b6ec9222f20ba6a2e4",
  "stats.closed": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "stats.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "stats.death": "b82114c5fb9e6d01a24fc7f2a02194dcb3025675",
+ "stats.death": "5748af49287f51902a570c98c2a1ee5274683009",
  "stats.death.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "stats.death-failed": "101e0f4df4ae9f2be4d684a36246b48ee2e2a258",
+ "stats.death-failed": "6108e46e026191a8152ffd532623f348a2056030",
  "stats.death-failed.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "stats.resend": "f3fb0afa207af915c58e85ad33f76a174ef4dbed",
  "stats.debug-battle": "c55936a996629eb21bd37c557d89459386f03b2a",
@@ -408,5 +408,8 @@
  "attackFacing.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "stats.nickname": "bf53d33b5118efea25161505b521c3e390aa46a6",
  "stats.nickForm": "fe21ab4eb61455abf2b063dc6ffdcf980c8b8693",
- "stats.nickWho": "20136ae0a8a34bb72e7e158a3bb69371f19696bd"
+ "stats.nickWho": "20136ae0a8a34bb72e7e158a3bb69371f19696bd",
+ "stats.rankRows": "ce36041e0310022b8e112c78692aa6ee0eff714a",
+ "stats.clear": "313f43706b0e2428e463fce691be22b64367e863",
+ "stats.clear.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
