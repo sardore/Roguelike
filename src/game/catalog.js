@@ -86,7 +86,7 @@ const WEAPONS=[
   {type:'weapon',name:'쌍날 단도',tier:3,rarity:'relic',atk:4,speed:2.5,range:1,kind:'blade',chain:.12,ability:'연격',desc:'양손에 쥐고 춤추듯 휘두를 수 있는 짧은 칼쌍입니다.'},
   {type:'weapon',name:'암살용 비수',tier:3,rarity:'relic',atk:5,speed:1.4,range:2,kind:'blade',crit:.10,ability:'치명 +10%',desc:'그림자 속에서 급소를 노리기 위해 제작된 비수입니다.'},
   {type:'weapon',name:'편곤',tier:3,rarity:'relic',atk:6,speed:.8,range:2,kind:'blunt',armorPierce:true,cornerHit:true,ability:'방어무시 · 곡격',desc:'장애물 뒤에 숨은 적의 머리를 타격할 수 있는 기묘한 무기입니다.'},
-  {type:'weapon',name:'삼각창',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.61,range:4,kind:'spear',bleed:.25,ability:'파고들기',desc:'세 갈래 날이 살점을 파고들어 떼어내기 힘들게 만듭니다.'},
+  {type:'weapon',name:'삼각창',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.61,range:4,kind:'spear',bleed:.25,ability:'파고들기',desc:'세 갈래 날이 살점을 파고들어 떼어내기 힘들게 만듭니다. 맞은 적이 일정 확률로 출혈에 빠져 몇 턴 동안 피를 흘립니다.'},
   {type:'weapon',name:'강화 각궁',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.4,range:8,kind:'bow',ranged:true,knockback:1,ability:'밀치기',desc:'짐승의 힘줄을 겹겹이 발라 탄성이 극대화된 각궁입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'무쇠 메',tier:3,rarity:'relic',heavyStrikeBalance105:3,atk:15,speed:.3,range:2,kind:'blunt',armorPierce:true,stun:.16,ability:'방어무시 · 균열',desc:'무거운 쇳덩이를 자루 끝에 매단 투박한 파괴 병기입니다.'},
   // 4티어 · 지하 장고

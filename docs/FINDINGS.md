@@ -103,3 +103,4 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 
 ## F-27 (미수정) 분기 지형 소품 그림 `sack`·`well`·`wheel`·`jar`·`brazier`·`banner`가 그려지지만 배치하는 곳이 없다
 `drawBranchCell`(render.js)의 `prop` 분기에 항아리·자루·우물·물레·화로·깃발 그림이 있으나, `branchTerrain105.props`에 이 이름을 넣는 코드는 branches.js에 없다(배치는 `rack`·`pillar`·`tree`·`deadTree`·citadel 소품 이름·`handle`뿐). 도장의 `rack`/`pillar`도 이 분기가 아니라 도장 전용 그림을 거친다. 가구 입체감 조사(2026-10-28) 중 모든 분기를 들어가 확인했다. 지우기 전에 저장된 옛 분기 페이지에 이 이름이 남아 있는지 확인이 필요하다.
+
