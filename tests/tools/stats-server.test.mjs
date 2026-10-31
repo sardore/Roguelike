@@ -11,24 +11,28 @@ const source = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.
 
 function server() {
   const clock = { t: Date.UTC(2026, 9, 31, 12, 0, 0) };
-  const rows = [];
   const cache = new Map();
-  const sheet = {
-    appendRow: (row) => { rows.push([...row]); },
-    getLastRow: () => rows.length,
-    getRange: (r, c, nr = 1, nc = 1) => ({
-      getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => rows[r - 1 + i]?.[c - 1 + j] ?? '')),
-      setValues: (values) => values.forEach((vals, i) => vals.forEach((v, j) => { rows[r - 1 + i][c - 1 + j] = v; })),
-      getValue: () => rows[r - 1]?.[c - 1] ?? '',
-      setValue: (v) => { rows[r - 1][c - 1] = v; },
-      createTextFinder: (text) => ({
-        matchEntireCell() { return this; },
-        findNext() { for (let i = 0; i < nr; i++) if (String(rows[r - 1 + i]?.[c - 1]) === text) return { getRow: () => r + i }; return null; },
+  const sheets = new Map();
+  const makeSheet = (header) => {
+    const rows = header.length ? [header] : [];
+    return {
+      rows,
+      appendRow: (row) => { rows.push([...row]); },
+      getLastRow: () => rows.length,
+      getRange: (r, c, nr = 1, nc = 1) => ({
+        getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => rows[r - 1 + i]?.[c - 1 + j] ?? '')),
+        setValues: (values) => values.forEach((vals, i) => vals.forEach((v, j) => { rows[r - 1 + i][c - 1 + j] = v; })),
+        getValue: () => rows[r - 1]?.[c - 1] ?? '',
+        setValue: (v) => { rows[r - 1][c - 1] = v; },
+        createTextFinder: (text) => ({
+          matchEntireCell() { return this; },
+          findNext() { for (let i = 0; i < nr; i++) if (String(rows[r - 1 + i]?.[c - 1]).toLowerCase() === String(text).toLowerCase()) return { getRow: () => r + i }; return null; },
+        }),
       }),
-    }),
+    };
   };
-  rows.push(['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live']);
-  const book = { getSheetByName: () => sheet, insertSheet: () => sheet };
+  sheets.set('deaths', makeSheet(['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live']));
+  const book = { getSheetByName: (name) => sheets.get(name) ?? null, insertSheet: (name) => { const sheet = makeSheet([]); sheets.set(name, sheet); return sheet; } };
   class FakeDate extends Date { static now() { return clock.t; } }
   const out = (text) => ({ text, setMimeType() { return this; } });
   const context = {
@@ -43,13 +47,15 @@ function server() {
   vm.runInContext(source, context);
   const post = (record) => JSON.parse(context.doPost({ postData: { contents: JSON.stringify(record) } }).text);
   const get = (view) => JSON.parse(context.doGet({ parameter: { view } }).text);
-  return { rows, clock, post, get };
+  return { rows: sheets.get('deaths').rows, nicks: () => sheets.get('nicks')?.rows, clock, post, get };
 }
 
-const base = { v: 1, id: 'ABCD12-run1', floor: 3, level: 4, kills: 10, turns: 300, cls: 'archer', nick: '만루왕' };
+const base = { v: 1, id: 'ABCD12-run1', floor: 3, level: 4, kills: 10, turns: 300, cls: 'archer' };
+const claimed = (s) => s.post({ claim: '만루왕', owner: 'ABCD12' });
 
 test('a run in progress is one row that is updated in place', () => {
   const s = server();
+  claimed(s);
   assert.deepEqual(s.post({ ...base, live: 1 }), { ok: true });
   assert.deepEqual(s.post({ ...base, floor: 4, level: 5, kills: 22, turns: 700, live: 1 }), { ok: true });
   assert.equal(s.rows.length, 2, 'the same id is not added twice');
@@ -60,6 +66,7 @@ test('a run in progress is one row that is updated in place', () => {
 
 test('the ranking marks a run in progress and a run nobody updates reads as given up', () => {
   const s = server();
+  claimed(s);
   s.post({ ...base, live: 1 });
   let row = s.get('ranking').boards.depth[0];
   assert.deepEqual([row.live, row.cause, row.cls, row.nick, row.tag], [true, '진행 중', 'archer', '만루왕', 'ABCD12']);
@@ -91,4 +98,29 @@ test('the summary counts finished runs only', () => {
   assert.deepEqual(summary.causes, [['취객', 1]]);
   s.post({ ...base, floor: 3, cause: '굶주림' });
   assert.equal(s.get('summary').total, 2);
+});
+
+test('a nickname is claimed once: another device is refused (letter case does not count), the same device may ask again, a device keeps one', () => {
+  const s = server();
+  assert.deepEqual(s.post({ claim: '만루왕', owner: 'ABCD12' }), { ok: true, nick: '만루왕' });
+  assert.deepEqual(s.post({ claim: '만루왕', owner: 'ABCD12' }), { ok: true, nick: '만루왕' });
+  assert.deepEqual(s.post({ claim: '만루왕', owner: 'ZZZZ99' }), { ok: false, error: 'taken' });
+  assert.deepEqual(s.post({ claim: 'Hero', owner: 'QQQQ11' }), { ok: true, nick: 'Hero' });
+  assert.deepEqual(s.post({ claim: 'hERO', owner: 'WWWW22' }), { ok: false, error: 'taken' });
+  assert.deepEqual(s.post({ claim: '다른이름', owner: 'ABCD12' }), { ok: false, error: 'owned', nick: '만루왕' });
+  assert.deepEqual(s.post({ claim: 'a', owner: 'ABCD12' }), { ok: false, error: 'fields' });
+  assert.deepEqual(s.post({ claim: '이름', owner: 'abcd12' }), { ok: false, error: 'fields' });
+  assert.equal(s.nicks().length, 3, 'header and two claims');
+});
+
+test('a record carries the nickname its device has claimed, not the one it says', () => {
+  const s = server();
+  s.post({ ...base, nick: '훔친이름', cause: '함정' }); // no claim yet
+  claimed(s);
+  s.post({ ...base, id: 'ABCD12-run2', nick: '훔친이름', cause: '함정' });
+  s.post({ ...base, id: 'ZZZZ99-run1', nick: '만루왕', cause: '함정' }); // another device cannot borrow it
+  const byTag = Object.fromEntries(s.get('ranking').boards.depth.map((r) => [r.tag + r.nick, r]));
+  assert.ok(byTag['ABCD12만루왕'], 'the claimed nickname is on the later record of its device');
+  assert.ok(byTag['ABCD12'], 'a record from before the claim has none');
+  assert.ok(byTag['ZZZZ99'], 'a device that did not claim it shows its player ID');
 });

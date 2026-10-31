@@ -97,6 +97,7 @@ export async function dismissModals(s, times = 4) {
 }
 
 export async function startRun(s, classId) {
+  await s.page.evaluate(() => document.getElementById('nickAsk')?.remove()); // the name asked for at launch (a build with a statistics server)
   await s.page.click('#enterBtn');
   await s.tick(500);
   await s.page.click('#class-choice-' + classId);
