@@ -1014,6 +1014,9 @@ function build22_(){
   const matForY=y=>y>mid+14?S:(y<mid-14?G:(y<mid?WOOD:S));
   const carveSeg=(a,b)=>{const t=matForY(Math.floor((a.y+b.y)/2));if(a.y===b.y)archRect(Math.min(a.x,b.x),a.y-1,Math.abs(a.x-b.x)+1,3,t,true);else if(a.x===b.x)archRect(a.x-1,Math.min(a.y,b.y),3,Math.abs(a.y-b.y)+1,t,true);else{archRect(Math.min(a.x,b.x),a.y-1,Math.abs(a.x-b.x)+1,3,t,true);archRect(b.x-1,Math.min(a.y,b.y),3,Math.abs(a.y-b.y)+1,t,true)}};
 
+  // Furnishing: mirrored pairs about the room's centre column (dx = distance from it, dy = row below the room's top edge), only on dry floor.
+  // The spine is carved last, so anything it crosses is simply cleared.
+  const adorn=(r,list)=>{for(const [dx,dy,t] of list)for(const sx of dx?[-1,1]:[1]){const x=r.cx+sx*dx,y=r.y+dy;if(inside1020(x,y)&&[G,S,WOOD,TT.CARPET].includes(state.map[y][x]))setTerrainTile58(state.map,x,y,t)}};
   // South gate / lower water cloisters.  Each arena lies on a different leg of the switchback.
   archBox(cx-7,bot-3,15,7,S,TT.WALL,true);archRouteTag(cx,bot,'수로원 남문');
   const lowerRooms=[
@@ -1022,7 +1025,7 @@ function build22_(){
   ];
   lowerRooms.forEach((r,i)=>{
     archRect(r.x+4,r.y+2,r.w-8,r.h-4,W,true);archRect(r.cx-2,r.y+2,5,r.h-4,S,true);
-    for(const ox of [-5,5])if(inside1020(r.cx+ox,r.cy));
+    adorn(r,[[5,2,TT.LANTERN_POST],[5,6,TT.LANTERN_POST],[6,4,TT.STONE_PILLAR],[7,1,TT.WALL_BANNER],[3,7,TT.INCENSE_STAND]]);
     archRouteTag(r.cx,r.cy,['침수 수문청','월광 수로회랑','은빛 배수정','수로원 회귀청'][i]);
   });
   // Optional holy side cells are dead-end rewards, not route shortcuts.
@@ -1030,7 +1033,7 @@ function build22_(){
   state.f22HolyCells1023.push({x:holyA.cx,y:holyA.cy},{x:holyB.cx,y:holyB.cy});
   archLine(holyA.x+holyA.w-1,holyA.cy,22,holyA.cy,S,2,true);archDoor(holyA.x+holyA.w-1,holyA.cy);
   archLine(holyB.x,holyB.cy,72,holyB.cy,S,2,true);archDoor(holyB.x,holyB.cy);
-  for(const r of [holyA,holyB]){archDecor(r.cx,r.y+1,'holyIcon1023');;;archRouteTag(r.cx,r.cy,'은빛 종교실 · 성부 봉안')}
+  for(const r of [holyA,holyB]){archDecor(r.cx,r.y+1,'holyIcon1023');adorn(r,[[4,1,TT.GOLD_LAMP],[2,5,TT.INCENSE_STAND],[4,5,TT.LOTUS_FLOWER]]);archRouteTag(r.cx,r.cy,'은빛 종교실 · 성부 봉안')}
 
   // Central three-stage ceremonial sequence.  The route changes flank between every hall.
   const central=[
@@ -1041,18 +1044,19 @@ function build22_(){
   central.forEach((r,i)=>{
     archRect(r.x+3,r.cy-1,r.w-6,3,W,true);archRect(r.cx-2,r.cy-1,5,3,i===1?WOOD:S,true);
     for(const ox of [-7,7])if(inside1020(r.cx+ox,r.cy-3))setTerrainTile58(state.map,r.cx+ox,r.cy-3,TT.STATUE);
+    adorn(r,[[3,1,TT.WALL_BANNER],[10,1,TT.WALL_BANNER],[5,7,TT.GOLD_LAMP],[9,7,TT.GOLD_LAMP],[3,7,TT.INCENSE_STAND],[10,7,TT.LOTUS_FLOWER]]);
     archRouteTag(r.cx,r.cy,['하부 은빛 접견전','중앙 수문 의장실','상부 회귀 제전'][i]);
   });
-  const holyC=archBox(COLS-15,mid-20,12,7,S,TT.WALL,true);archDoor(holyC.x,holyC.cy);archLine(holyC.x,holyC.cy,cx,holyC.cy,S,2,true);state.f22HolyCells1023.push({x:holyC.cx,y:holyC.cy});archDecor(holyC.cx,holyC.y+1,'holyIcon1023');archRouteTag(holyC.cx,holyC.cy,'은빛 종교실 · 성부 봉안');
+  const holyC=archBox(COLS-15,mid-20,12,7,S,TT.WALL,true);archDoor(holyC.x,holyC.cy);archLine(holyC.x,holyC.cy,cx,holyC.cy,S,2,true);state.f22HolyCells1023.push({x:holyC.cx,y:holyC.cy});archDecor(holyC.cx,holyC.y+1,'holyIcon1023');adorn(holyC,[[4,1,TT.GOLD_LAMP],[2,5,TT.INCENSE_STAND],[4,5,TT.LOTUS_FLOWER]]);archRouteTag(holyC.cx,holyC.cy,'은빛 종교실 · 성부 봉안');
 
   // Upper golden pilgrimage.  Four broad halls alternate sides; small treasury alcoves branch outward only.
   const upperRooms=[
     archBox(13,37,20,9,G,TT.WALL,true),archBox(62,29,20,9,TT.CARPET,TT.WALL,true),
     archBox(17,21,20,9,G,TT.WALL,true),archBox(58,13,20,9,TT.CARPET,TT.WALL,true)
   ];
-  upperRooms.forEach((r,i)=>{;for(const ox of [-6,6])if(inside1020(r.cx+ox,r.cy-2));archRouteTag(r.cx,r.cy,`금빛 순례궁 ${i+1}`)});
+  upperRooms.forEach((r,i)=>{adorn(r,[[3,1,TT.WALL_BANNER],[8,1,TT.WALL_BANNER],[5,1,TT.GOLD_LAMP],[8,4,TT.STATUE],[5,4,TT.GOLD_LAMP],[3,7,TT.INCENSE_STAND],[6,7,TT.GOLD_LAMP],[9,7,TT.LOTUS_FLOWER]]);archRouteTag(r.cx,r.cy,`금빛 순례궁 ${i+1}`)});
   for(const p of [{x:22,y:34},{x:72,y:26},{x:26,y:18}]){;archRouteTag(p.x,p.y,'금빛 공양벽감')}
-  archBox(cx-8,1,17,9,G,TT.WALL,true);archRouteTag(cx,4,'만루의 심장 · 최종 신궁');
+  const shrine=archBox(cx-8,1,17,9,G,TT.WALL,true);adorn(shrine,[[3,1,TT.WALL_BANNER],[7,1,TT.WALL_BANNER],[5,1,TT.GOLD_LAMP],[6,4,TT.STATUE],[4,6,TT.INCENSE_STAND],[7,6,TT.LOTUS_FLOWER],[5,7,TT.GOLD_LAMP]]);archRouteTag(cx,4,'만루의 심장 · 최종 신궁');
 
   // Mandatory spine LAST.  This owns connectivity and also cuts walkable bridges through lower water rooms.
   for(let i=0;i<route.length-1;i++)carveSeg(route[i],route[i+1]);
