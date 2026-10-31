@@ -710,6 +710,25 @@ export const scenarios = {
         const A = __MANRU_QA_STATS__.api, a = A.deviceTag(), b = A.deviceTag(); A.device = ''; const c = A.deviceTag();
         return JSON.stringify({ format: /^[A-Z]{4}\d{2}$/.test(a), same: a === b, keptAfterReload: a === c, stored: localStorage.getItem(A.DEVICE_KEY) === a, tag: A.tag(a + '-run-1') === a });
       });
+      // The nickname is chosen once, on the ranking board: bad input is refused, the first good one is kept, a second one is refused.
+      out['stats.nickname'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api, bad = [A.registerNick(''), A.registerNick('a'), A.registerNick('가나다라마바사아자'), A.registerNick('a b!')].map((r) => r.ok);
+        const none = A.nick(), first = A.registerNick('만루왕'), second = A.registerNick('다른이름');
+        return JSON.stringify({ bad, none, first, second: second.ok, stored: localStorage.getItem(A.NICK_KEY) });
+      });
+      // On the board: the form is there until a nickname is chosen, typing and pressing the button registers it and the form goes.
+      out['stats.nickForm'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api; localStorage.removeItem(A.NICK_KEY);
+        A.open('rank');
+        const before = !!document.querySelector('.rankNick input'), input = document.querySelector('.rankNick input');
+        input.value = '만루왕'; document.querySelector('.rankNick button').click();
+        const label = document.querySelector('.rankMineLabel')?.textContent || '';
+        const result = JSON.stringify({ before, after: !!document.querySelector('.rankNick'), label, nick: A.nick() });
+        A.close();
+        return result;
+      });
+      // The board names a run by its nickname when the server sends one.
+      out['stats.nickWho'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return JSON.stringify([A.who({ tag: 'ABCD12', nick: '만루왕' }), A.who({ tag: 'ABCD12', nick: '' }), A.who({ tag: 'Legacy' })]); });
       out['stats.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
