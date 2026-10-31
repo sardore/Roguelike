@@ -48,7 +48,7 @@ body.title-class-mode #titleCorner{display:none}
 #statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
 .rankView{display:flex;flex-direction:column;gap:16px}
 .rankMine{position:relative;display:flex;align-items:center;gap:14px;margin-top:6px;padding:14px 16px;background:linear-gradient(100deg,rgba(166,111,52,.26),rgba(27,18,12,.92) 58%),#1b120c;border:1px solid #a66f34;box-shadow:inset 0 0 0 1px #000,inset 0 1px 0 rgba(255,226,160,.14),0 8px 22px #0009}
-.rankClass{display:inline-block;width:18px;height:18px;margin-right:6px;vertical-align:-4px;image-rendering:pixelated;opacity:.9}
+.rankClass{display:inline-block;width:24px;height:24px;margin-right:6px;vertical-align:-7px;background:transparent;image-rendering:pixelated}
 .rankNick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:#150e09;border:1px dashed #6a4a2a}
 .rankNick input{flex:1 1 140px;min-width:0;padding:8px 10px;background:#0e0805;color:#efd49b;border:1px solid #a66f34;font:700 calc(14px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.08em}
 .rankNick input:focus{outline:2px solid #efddac;outline-offset:1px}
@@ -86,6 +86,14 @@ body.title-class-mode #titleCorner{display:none}
 .rankWho small{display:block;color:#8e7a5d;font-size:calc(10px * var(--ui-font-scale, 1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rankTrack{height:8px;background:#0b0705;border:1px solid #2a1c10;box-shadow:inset 0 1px 2px #000;overflow:hidden}
 .rankTrack i{display:block;height:100%;background:linear-gradient(90deg,#7a4a1f,#c98d3f 60%,#efd49b);box-shadow:0 0 8px rgba(239,212,155,.35);width:var(--fill);animation:rankFill .8s cubic-bezier(.2,.8,.2,1) calc(var(--delay,0ms) + 120ms) both}
+/* a run still being played: its own colour (teal against the gold of the finished ones), a pulsing glow, a blinking tag and a moving shine on its bar */
+.rankRow.live{border-color:#3fb6a6;background:linear-gradient(90deg,rgba(63,182,166,.26),#10201e 72%);animation:rankSlide .4s ease var(--delay,0ms) both,rankLive 2.2s ease-in-out .6s infinite}
+.rankPlate.live{--pl:#4fd0bd;--pl-top:rgba(79,208,189,.3);--glow:rgba(79,208,189,.5);animation:rankRise .6s cubic-bezier(.2,.8,.2,1) var(--delay,0ms) both,rankLive 2.2s ease-in-out .8s infinite}
+.rankLiveTag{display:inline-block;margin-left:6px;padding:0 6px;vertical-align:2px;font-style:normal;font-weight:800;font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.1em;color:#07201c;background:#5fe0cd;animation:rankBlink 1.3s ease-in-out infinite}
+.rankRow.live .rankTrack i{background:linear-gradient(90deg,#1c6f64,#3fb6a6 55%,#a8f3e6);box-shadow:0 0 8px rgba(95,224,205,.5)}
+.rankRow.live .rankValue,.rankPlate.live .rankValue{color:#8cf0df}
+@keyframes rankLive{0%,100%{box-shadow:0 0 0 rgba(95,224,205,0)}50%{box-shadow:0 0 16px rgba(95,224,205,.55)}}
+@keyframes rankBlink{0%,100%{opacity:1}50%{opacity:.45}}
 @keyframes rankRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes rankSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
 @keyframes rankFill{from{width:0}to{width:var(--fill)}}
@@ -101,4 +109,4 @@ body.title-class-mode #titleCorner{display:none}
  .rankTrack{grid-column:2/-1;grid-row:2}
  .rankMine{flex-wrap:wrap}
 }
-@media (prefers-reduced-motion:reduce){.rankPlate,.rankRow,.rankTrack i{animation:none}}
+@media (prefers-reduced-motion:reduce){.rankPlate,.rankRow,.rankTrack i,.rankLiveTag{animation:none}}
