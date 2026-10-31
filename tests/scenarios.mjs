@@ -476,6 +476,47 @@ export const scenarios = {
 
   // One modal at a time: opening the inventory from the menu drawer closes the drawer. Both open at once made every item use
   // refuse ("blocked": the input owner only allows the inventory itself).
+  // A bleeding weapon (the triangle spear) opens a real wound: the foe bleeds for 4 turns, a share of its health each turn, and the bleeding then ends.
+  async bleedSpear(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4245 });
+    await startRun(s, 'strongman');
+    const placed = await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), B = __MANRU_QA_BAL__, T = __MANRU_QA_VIS__.TT;
+      let spot = null;
+      for (let y = 2; y < st.map.length - 2 && !spot; y++) for (let x = 6; x < st.map[0].length - 8 && !spot; x++) if ([-1, 0, 1, 2].every((i) => st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+      const p = st.player; p.x = spot.x; p.y = spot.y; p.facing = { x: 1, y: 0 };
+      for (const m of [...st.monsters]) m.hp = 0;
+      B.equip('삼각창'); p.weapon.bleed = 1; __MANRU_QA_VIS__.compute();
+      const mon = B.placeAt('취객', 1, 0);
+      if (!mon) return false;
+      mon.hp = mon.maxHp = 300; mon.atk = 0; window.__bleedMon = mon; __MANRU_QA_VIS__.compute();
+      return true;
+    });
+    const read = () => s.page.evaluate(() => ({ hp: window.__bleedMon.hp, bleeding: window.__bleedMon.bleeding55 || 0, source: window.__bleedMon.bleedSource57 ?? null }));
+    // strike until the blow lands (it can miss); the weapon bleeds every time it hurts
+    let hit = null;
+    for (let i = 0; i < 10 && !hit; i++) {
+      await s.page.evaluate(() => __MANRU_QA_UI__.dispatch({ type: 'ATTACK', args: [] }));
+      await s.tick(900); await dismissModals(s, 1);
+      const now = await read();
+      if (now.hp < 300) hit = now;
+    }
+    const hp = [hit?.hp], bleeding = [hit?.bleeding];
+    await s.page.evaluate(() => { __MANRU_QA_UI__.state().player.weapon.bleed = 0; });
+    for (let i = 0; i < 4; i++) {
+      await s.page.evaluate(() => __MANRU_QA_UI__.dispatch({ type: 'REST', args: [] }));
+      await s.tick(900); await dismissModals(s, 1);
+      const now = await read(); hp.push(now.hp); bleeding.push(now.bleeding);
+    }
+    const lost = hp.map((v, i) => (i ? hp[i - 1] - v : 0));
+    const last = await read();
+    out['bleedSpear.wound'] = JSON.stringify({ placed, hp, bleeding, losesWhileBleeding: lost.slice(1).filter((_, i) => bleeding[i] > 0).every((v) => v > 0), endsWithoutLoss: lost[lost.length - 1] === 0, source: last.source });
+    out['bleedSpear.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   // The strike turns the player toward the foe it hits, so the next strike reaches along that line (a long weapon after a bump behind).
   async attackFacing(browser, root) {
     const out = {};
