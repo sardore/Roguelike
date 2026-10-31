@@ -1129,7 +1129,7 @@ function bindTitleButtons(){
   classBackBtn.onclick=showStartGate;
   document.getElementById('rankBtn').onclick=()=>PlayStats.open('rank');
   document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
-  PlayStats.flush();PlayStats.bindLifecycle();
+  PlayStats.flush();PlayStats.bindLifecycle();PlayStats.launch();
   document.getElementById('spectateBtn').onclick=()=>Spectate.openList();
   /* The reel button is for making videos: it only shows when the address carries #reel. */
   const reelBtn=document.getElementById('reelBtn');reelBtn.hidden=!/reel/.test(location.hash);reelBtn.onclick=()=>Reel.start();document.getElementById('reelStop').onclick=()=>Reel.stop();

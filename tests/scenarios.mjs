@@ -662,7 +662,14 @@ export const scenarios = {
         const req = route.request();
         const cors = { 'access-control-allow-origin': '*' };
         if (req.method() === 'POST') {
-          posts.push(JSON.parse(req.postData()));
+          const body = JSON.parse(req.postData());
+          if (body.claim !== undefined) {
+            (posts.claims ||= []).push(body);
+            if (mode.claim === 'taken') return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":false,"error":"taken"}' });
+            if (mode.claim === 'old') return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":false,"error":"fields"}' });
+            return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ ok: true, nick: body.claim }) });
+          }
+          posts.push(body);
           if (mode.fail) return route.abort();
           return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":true}' });
         }
@@ -689,6 +696,7 @@ export const scenarios = {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
       await serve(ctx, {});
       const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
       await titleTaps(s, 6, true);
       out['stats.six-taps'] = String(await sceneOpen(s));
       await titleTaps(s, 1, true, ['#card h1']);
@@ -711,22 +719,18 @@ export const scenarios = {
         return JSON.stringify({ format: /^[A-Z]{4}\d{2}$/.test(a), same: a === b, keptAfterReload: a === c, stored: localStorage.getItem(A.DEVICE_KEY) === a, tag: A.tag(a + '-run-1') === a });
       });
       // The nickname is chosen once, on the ranking board: bad input is refused, the first good one is kept, a second one is refused.
-      out['stats.nickname'] = await s.page.evaluate(() => {
-        const A = __MANRU_QA_STATS__.api, bad = [A.registerNick(''), A.registerNick('a'), A.registerNick('가나다라마바사아자'), A.registerNick('a b!')].map((r) => r.ok);
-        const none = A.nick(), first = A.registerNick('만루왕'), second = A.registerNick('다른이름');
+      out['stats.nickname'] = await s.page.evaluate(async () => {
+        const A = __MANRU_QA_STATS__.api, bad = [];
+        for (const text of ['', 'a', '가나다라마바사아자', 'a b!']) bad.push((await A.registerNick(text)).ok);
+        const none = A.nick(), first = await A.registerNick('만루왕'), second = await A.registerNick('다른이름');
         return JSON.stringify({ bad, none, first, second: second.ok, stored: localStorage.getItem(A.NICK_KEY) });
       });
       // On the board: the form is there until a nickname is chosen, typing and pressing the button registers it and the form goes.
-      out['stats.nickForm'] = await s.page.evaluate(() => {
-        const A = __MANRU_QA_STATS__.api; localStorage.removeItem(A.NICK_KEY);
-        A.open('rank');
-        const before = !!document.querySelector('.rankNick input'), input = document.querySelector('.rankNick input');
-        input.value = '만루왕'; document.querySelector('.rankNick button').click();
-        const label = document.querySelector('.rankMineLabel')?.textContent || '';
-        const result = JSON.stringify({ before, after: !!document.querySelector('.rankNick'), label, nick: A.nick() });
-        A.close();
-        return result;
-      });
+      await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; localStorage.removeItem(A.NICK_KEY); A.open('rank'); document.querySelector('.rankNick input').value = '만루왕'; });
+      const nickFormBefore = await s.page.evaluate(() => !!document.querySelector('.rankNick input'));
+      await s.page.evaluate(() => document.querySelector('.rankNick button').click());
+      await waitFor(() => s.page.evaluate(() => !document.querySelector('.rankNick')));
+      out['stats.nickForm'] = await s.page.evaluate((b) => { const A = __MANRU_QA_STATS__.api, r = JSON.stringify({ before: b, after: !!document.querySelector('.rankNick'), label: document.querySelector('.rankMineLabel')?.textContent || '', nick: A.nick() }); A.close(); return r; }, nickFormBefore);
       // Cleared runs ("End", floor 25) count as floor 30 and lead the depth board; the class look falls back to the default class; this device's own nickname shows on its own runs.
       out['stats.rankRows'] = await s.page.evaluate(() => {
         const A = __MANRU_QA_STATS__.api;
@@ -754,6 +758,7 @@ export const scenarios = {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
       await serve(ctx, {});
       const s = await openSession(browser, root, { seed: 90, context: ctx, init: endpoint });
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
       await titleTaps(s, 4, true);
       await s.tick(1300);
       await titleTaps(s, 3, true);
@@ -761,6 +766,25 @@ export const scenarios = {
       await titleTaps(s, 7, true, ['.startIntro']);
       out['stats.outside-taps'] = String(await sceneOpen(s));
       out['stats.tap-errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // The name is asked for as soon as the game is opened (when there is a statistics server and no name yet): the server's list refuses a
+    // name that another device has; a server that does not know claims yet lets it stay on this device; a name kept from before is claimed now.
+    for (const [key, mode, storage, typed] of [['ask', {}, [], '만루왕'], ['taken', { claim: 'taken' }, [], '만루왕'], ['oldServer', { claim: 'old' }, [], '만루왕'], ['keptBefore', { claim: 'taken' }, [['manruNick', '옛이름']], '']]) {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      const posts = await serve(ctx, mode);
+      const s = await openSession(browser, root, { seed: 95, context: ctx, init: endpoint, storage });
+      await waitFor(() => s.page.evaluate(() => !!document.getElementById('nickAsk')));
+      const asked = await s.page.evaluate(() => ({ modal: !!document.getElementById('nickAsk'), note: document.querySelector('#nickAsk p')?.textContent || '' }));
+      if (typed) {
+        await s.page.evaluate((t) => { document.querySelector('#nickAsk .rankNick input').value = t; document.querySelector('#nickAsk .rankNick button').click(); }, typed);
+        await waitFor(() => s.page.evaluate(() => !document.getElementById('nickAsk') || /다른 사람/.test(document.querySelector('#nickAsk .rankNickNote')?.textContent || '')));
+      }
+      const after = await s.page.evaluate(() => ({ modalAfter: !!document.getElementById('nickAsk'), message: document.querySelector('#nickAsk .rankNickNote')?.textContent || '', nick: localStorage.getItem('manruNick') || '', claimed: localStorage.getItem('manruNickClaimed') || '' }));
+      out['stats.ask.' + key] = JSON.stringify({ ...asked, ...after, claims: (posts.claims || []).map((c) => c.claim + '/' + /^[A-Z]{4}\d{2}$/.test(c.owner)) });
+      out['stats.ask.' + key + '.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
     }

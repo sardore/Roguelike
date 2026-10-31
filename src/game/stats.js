@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -50,13 +50,48 @@ const PlayStats={
  // The nickname the player chose (once, on the ranking board): Hangul, letters and digits, two to eight characters. The board then shows it instead of the player ID.
  cleanNick(text){return String(text||'').replace(/[^0-9A-Za-z가-힣]/g,'').slice(0,this.NICK_MAX)},
  nick(){const saved=lsGet(this.NICK_KEY)||'';return saved&&this.cleanNick(saved)===saved&&saved.length>=this.NICK_MIN?saved:''},
- // A nickname can be registered only while there is none. It goes on the runs recorded from then on; the runs already sent keep their player ID.
- registerNick(text){
+ // A nickname can be registered only while there is none, and only if no other device has it: the server keeps the list of names (one device,
+ // one name; letter case does not count). It goes on the runs recorded from then on; the runs already sent keep their player ID.
+ async claimNick(nick){
+  const url=this.endpoint();if(!url)return{ok:true,nick}; // no server (test and local builds): the name stays on this device
+  try{
+   const reply=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({claim:nick,owner:this.deviceTag()})});
+   if(!reply.ok)throw new Error('HTTP '+reply.status);
+   const data=await reply.json();
+   if(data.ok)return{ok:true,nick:data.nick||nick,claimed:true};
+   if(data.error==='taken')return{ok:false,reason:'이미 다른 사람이 쓰는 닉네임이다.'};
+   if(data.error==='owned'&&data.nick)return{ok:true,nick:data.nick,claimed:true}; // this device already has a name on the server: that is its name
+   if(data.error==='fields')return{ok:true,nick}; // a server that does not know claims yet
+   return{ok:false,reason:'닉네임을 등록하지 못했다.'};
+  }catch(error){ignoreError('nickname claim failed',error);return{ok:false,reason:'서버에 연결하지 못했다. 잠시 뒤 다시 해 달라.'}}
+ },
+ async registerNick(text){
   if(this.nick())return{ok:false,reason:'이미 닉네임을 정했다. 바꿀 수 없다.'};
   const typed=String(text||'').trim(),nick=this.cleanNick(typed);
   if(nick!==typed||nick.length<this.NICK_MIN)return{ok:false,reason:`한글·영문·숫자만, ${this.NICK_MIN}~${this.NICK_MAX}글자로 적는다.`};
-  lsSet(this.NICK_KEY,nick);
-  return{ok:true,nick};
+  const claim=await this.claimNick(nick);if(!claim.ok)return claim;
+  if(this.nick())return{ok:false,reason:'이미 닉네임을 정했다. 바꿀 수 없다.'};
+  lsSet(this.NICK_KEY,claim.nick);if(claim.claimed)lsSet(this.CLAIMED_KEY,'1');
+  return{ok:true,nick:claim.nick};
+ },
+ // At launch: a name chosen before the server kept the list is claimed now (and given up if somebody else has it by now), then a device
+ // without a name is asked for one.
+ async launch(){
+  const nick=this.nick();
+  if(nick&&this.endpoint()&&lsGet(this.CLAIMED_KEY)!=='1'){
+   const claim=await this.claimNick(nick);
+   if(claim.ok&&claim.claimed)lsSet(this.CLAIMED_KEY,'1');
+   else if(!claim.ok&&/다른 사람/.test(claim.reason||'')){lsSet(this.NICK_KEY,'');this.askNick('고른 닉네임을 이미 다른 사람이 써서 다시 정해야 한다.')}
+  }
+  this.askNick();
+ },
+ // The name is asked for as soon as the game is opened, by the same form as on the board; "later" leaves it for the next launch.
+ askNick(note=''){
+  if(this.nick()||!this.endpoint()||document.getElementById('nickAsk'))return false;
+  const box=this.el('div','nickAsk'),card=this.el('div','nickAskCard'),later=this.el('button','nickAskLater','나중에');
+  box.id='nickAsk';later.type='button';later.onclick=()=>box.remove();
+  card.append(this.el('h2',null,'이름을 정해 주세요'),this.el('p',null,note||'기록판에 올라갈 이름이다.'),this.nickForm(()=>box.remove()),later);
+  box.append(card);document.body.append(box);return true;
  },
  tag(id){return String(id||'').replace(/[^0-9a-z]/gi,'').slice(0,6).toUpperCase()},
  // The server drops a repeated id, so a record whose reply never arrived is simply sent again.
@@ -262,7 +297,7 @@ const PlayStats={
  rankView(status){
   const view=this.el('div','rankView'),notice={loading:'기록판을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.'}[status]||(this.failed?.ranking?'서버가 아직 기록판을 내주지 않는다.':'');
   const list=this.ranking?.boards?.[this.board]||[];
-  view.append(this.mineCard(list));if(!this.nick())view.append(this.nickForm());
+  view.append(this.mineCard(list));if(!this.nick())view.append(this.boardNick||(this.boardNick=this.nickForm())); // the same form on every redraw: what is being typed stays
   const tabs=this.el('nav','rankBoards');
   for(const [id,name] of this.BOARDS){const button=this.el('button',null,name);button.type='button';button.dataset.rankBoard=id;button.classList.toggle('on',id===this.board);button.onclick=()=>{this.board=id;this.render()};tabs.append(button)}
   view.append(tabs);
@@ -278,10 +313,10 @@ const PlayStats={
  },
  detail(row){return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  // The one-time nickname form on the board.
- nickForm(){
+ nickForm(done){
   const wrap=this.el('div','rankNick'),input=this.el('input'),button=this.el('button',null,'등록'),note=this.el('small','rankNickNote','한 번 정하면 바꿀 수 없다. 한글·영문·숫자 '+this.NICK_MIN+'~'+this.NICK_MAX+'글자.');
   input.type='text';input.maxLength=this.NICK_MAX;input.placeholder='닉네임';input.autocomplete='off';input.setAttribute('enterkeyhint','done');button.type='button';
-  const go=()=>{const result=this.registerNick(input.value);if(result.ok)this.render();else note.textContent=result.reason};
+  const go=async()=>{if(button.disabled)return;button.disabled=true;const result=await this.registerNick(input.value);button.disabled=false;if(result.ok){this.boardNick=null;if(document.getElementById('statsBody'))this.render();done?.()}else note.textContent=result.reason};
   button.onclick=go;input.onkeydown=event=>{event.stopPropagation();if(event.key==='Enter'){event.preventDefault();go()}};
   wrap.append(input,button,note);return wrap;
  },
