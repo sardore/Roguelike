@@ -1137,6 +1137,15 @@ export const scenarios = {
       // The release build has no snapshot hook: the run shows up as a screen change and a stored save.
       return JSON.stringify({ screen: document.body.dataset.manruScreen, saved: Object.keys(localStorage).filter((k) => k.startsWith('manru1004_')).sort() });
     });
+    // A new worker taking control while a run is on the screen does not reload the page; with the title on the screen it does.
+    out['pwa.updateDuringRun'] = await page.evaluate(async () => {
+      window.__stay = 1; navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
+      await new Promise((r) => setTimeout(r, 800));
+      return JSON.stringify({ screen: document.body.dataset.manruScreen, stayed: window.__stay === 1 });
+    });
+    page.evaluate(() => { document.body.dataset.manruScreen = 'title'; document.dispatchEvent(new Event('visibilitychange')); }).catch(() => {});
+    await page.waitForTimeout(2500);
+    out['pwa.updateAtTitle'] = await page.evaluate(() => JSON.stringify({ reloaded: window.__stay === undefined }));
     out['pwa.errors'] = JSON.stringify(s.errors);
     await s.close();
     await ctx.close();

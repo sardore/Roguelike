@@ -105,7 +105,7 @@
  "saves.branch.continue": "f3a391949455c46ef898d97f0f015d7a6af30338",
  "saves.branch.after-move": "d4339100e2f6d14b1bbc10435c175b3de23060d6",
  "pwa.manifest": "eaeabb4b8c16ea4be937aeae809e11c2e5fd8a53",
- "pwa.worker": "914f4ff65c23e2f55f18a4a2028d59eabb3a4baa",
+ "pwa.worker": "8649a88ae6c8c160939128cd1ca90dd7206ef4ca",
  "pwa.offline-title": "cca298d8a4a94ab54986c772c6e17ff6f1b7dbeb",
  "pwa.offline-newgame": "15e95c3ec779c1898f69da0c53abe8c5e85db42a",
  "pwa.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -401,5 +401,7 @@
  "restHold.padReleaseStops": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "vision.closet": "25d2843ecfd4d94395f4b2201b590e0653b876b8",
  "vision.unseenEdges": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
- "stats.deviceId": "391761fb5e5580e4b7408e8f3d30c9b8fd616e43"
+ "stats.deviceId": "391761fb5e5580e4b7408e8f3d30c9b8fd616e43",
+ "pwa.updateDuringRun": "4dbd7ffb3a8765397d80bc8d00b1e7dbd9961867",
+ "pwa.updateAtTitle": "c417de953f5e4eb208673a43a148930fd6a730b6"
 }
