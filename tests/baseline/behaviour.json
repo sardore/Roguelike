@@ -400,5 +400,6 @@
  "restHold.padHolds": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "restHold.padReleaseStops": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "vision.closet": "25d2843ecfd4d94395f4b2201b590e0653b876b8",
- "vision.unseenEdges": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c"
+ "vision.unseenEdges": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
+ "stats.deviceId": "391761fb5e5580e4b7408e8f3d30c9b8fd616e43"
 }
