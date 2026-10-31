@@ -104,5 +104,3 @@ F-21 테스트를 만들다 확인했다. 로드 중 `refreshContinue`는 네 �
 ## F-27 (미수정) 분기 지형 소품 그림 `sack`·`well`·`wheel`·`jar`·`brazier`·`banner`가 그려지지만 배치하는 곳이 없다
 `drawBranchCell`(render.js)의 `prop` 분기에 항아리·자루·우물·물레·화로·깃발 그림이 있으나, `branchTerrain105.props`에 이 이름을 넣는 코드는 branches.js에 없다(배치는 `rack`·`pillar`·`tree`·`deadTree`·citadel 소품 이름·`handle`뿐). 도장의 `rack`/`pillar`도 이 분기가 아니라 도장 전용 그림을 거친다. 가구 입체감 조사(2026-10-28) 중 모든 분기를 들어가 확인했다. 지우기 전에 저장된 옛 분기 페이지에 이 이름이 남아 있는지 확인이 필요하다.
 
-## F-28 (미수정) 몬스터의 독이 한 턴에 두 번 닿는다
-`tickMonsterCombatStatuses`(monsters.js)가 한 턴에 두 번 불린다: 플레이어 행동 뒤(`combat.js`의 턴 마무리)와 몬스터 차례(`monsters.js`의 `monsterTurn` 끝). 몬스터의 독(`poisoned57`)은 이 함수 안에서 피해를 주고 지속 시간을 줄이므로, 독 4턴은 실제로 2턴 만에 끝나고 턴당 피해는 두 배다. 삼각창 출혈을 진짜 상태로 바꿀 때 발견했다(시험에서 출혈이 4가 아니라 2턴에 끝났다). 출혈은 몬스터 차례에서만 닿게(`tickMonsterCombatStatuses(true)`) 했고 독은 그대로 두었다: 독을 한 번만 닿게 하면 독 무기의 밸런스가 바뀐다. 기획 확인이 필요하다.
