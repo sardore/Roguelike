@@ -1,12 +1,20 @@
 // 만루 플레이 통계 수집 서버 (Google Apps Script 웹 앱). 설치: docs/PLAY_STATS.md
-// POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?} -> 시트에 한 줄 (같은 id는 한 번만). nick은 선택(한글·영문·숫자 2~8자), cls는 직업 id(선택)
+// POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?,live?} -> 시트에 한 줄 (같은 id는 한 번만; 진행 중(live:1)인 판은 같은 줄을 갱신하고, 끝난 기록이 오면 그 줄을 최종값으로 닫는다). nick은 선택(한글·영문·숫자 2~8자), cls는 직업 id(선택)
 // 클리어는 floor 25, cause 'End'로 오고, 랭킹에서는 30층으로 센다
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
-// GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
+// GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
 const SHEET_NAME = 'deaths';
-const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls'];
+const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live'];
+// A run still being played is one row that its player keeps updating (same id); its last update time sits in the `live` column and is cleared
+// when the final record (death or clear) arrives. A run not updated for LIVE_TTL_MS is treated as given up.
+const LIVE_CAUSE = '진행 중', GAVE_UP_CAUSE = '탐사 중단', LIVE_TTL_MS = 15 * 60 * 1000;
 const MAX_ROWS = 200000;
 const RANK_ROWS = 30;
+const LIVE_COL = HEADER.indexOf('live') + 1;
+// Whether a row's `live` stamp marks a run that is still being played.
+function isLive_(stamp) { return Number(stamp) > 0 && Date.now() - Number(stamp) <= LIVE_TTL_MS; }
+// A progress row nobody updates any more reads as given up.
+function causeOf_(cause, stamp) { return String(cause) === LIVE_CAUSE && !isLive_(stamp) ? GAVE_UP_CAUSE : cause; }
 
 // Works bound to a spreadsheet or as a stand-alone script: a stand-alone script creates its own spreadsheet once and remembers it.
 function book_() {
@@ -48,13 +56,22 @@ function doPost(e) {
   let nick = String(record.nick || '').replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 8);
   if (nick.length < 2) nick = '';
   const cls = /^[a-z][a-z0-9_]{0,23}$/.test(String(record.cls || '')) ? String(record.cls) : '';
+  const live = record.live === 1;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const sheet = sheet_(), rows = sheet.getLastRow();
-    if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
-    if (rows > 1 && sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext()) return reply_({ ok: true, duplicate: true });
-    sheet.appendRow([new Date().toISOString(), id, floor, cause, level, kills, turns, nick, cls]);
+    const found = rows > 1 ? sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
+    if (found) {
+      // A finished run never changes again (a late progress update or a resent record is dropped); a run in progress is updated in place.
+      const row = found.getRow();
+      if (!sheet.getRange(row, LIVE_COL).getValue()) return reply_({ ok: true, duplicate: true });
+      sheet.getRange(row, 3, 1, 7).setValues([[floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
+      sheet.getRange(row, LIVE_COL).setValue(live ? Date.now() : '');
+    } else {
+      if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
+      sheet.appendRow([new Date().toISOString(), id, floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, live ? Date.now() : '']);
+    }
     CacheService.getScriptCache().removeAll(['summary', 'ranking']);
   } finally { lock.releaseLock(); }
   return reply_({ ok: true });
@@ -72,9 +89,9 @@ function ranking_() {
   if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
   const sheet = sheet_(), rows = sheet.getLastRow();
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, HEADER.length).getValues() : [];
-  const runs = values.map(([, id, floor, cause, level, kills, turns, nick, cls]) => ({
-    tag: String(id).replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase(), nick: String(nick || ''), cls: String(cls || ''),
-    floor: String(cause) === 'End' ? 30 : floor, cause, level, kills, turns,
+  const runs = values.map(([, id, floor, cause, level, kills, turns, nick, cls, stamp]) => ({
+    tag: String(id).replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase(), nick: String(nick || ''), cls: String(cls || ''), live: isLive_(stamp),
+    floor: String(cause) === 'End' ? 30 : floor, cause: causeOf_(cause, stamp), level, kills, turns,
   }));
   const boards = {};
   for (const name of Object.keys(BOARDS)) boards[name] = runs.slice().sort(BOARDS[name]).slice(0, RANK_ROWS);
@@ -92,15 +109,17 @@ function doGet(e) {
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, HEADER.length).getValues() : [];
   const floors = new Array(25).fill(0), causes = {};
   let level = 0, kills = 0, turns = 0;
-  for (const [, , floor, cause, lv, kl, tn] of values) {
+  // Runs still being played are not counted yet.
+  const ended = values.filter(row => !isLive_(row[9])).map(row => [row[0], row[1], row[2], causeOf_(row[3], row[9]), row[4], row[5], row[6]]);
+  for (const [, , floor, cause, lv, kl, tn] of ended) {
     floors[floor - 1]++; causes[cause] = (causes[cause] || 0) + 1; level += lv; kills += kl; turns += tn;
   }
-  const n = values.length || 1;
+  const n = ended.length || 1;
   const summary = JSON.stringify({
-    ok: true, total: values.length, floors,
+    ok: true, total: ended.length, floors,
     causes: Object.entries(causes).sort((a, b) => b[1] - a[1]).slice(0, 40),
     avg: { level: Math.round(level / n * 10) / 10, kills: Math.round(kills / n), turns: Math.round(turns / n) },
-    recent: values.slice(-50).reverse().map(([t, , floor, cause, lv, kl, tn]) => ({ t, floor, cause, level: lv, kills: kl, turns: tn })),
+    recent: ended.slice(-50).reverse().map(([t, , floor, cause, lv, kl, tn]) => ({ t, floor, cause, level: lv, kills: kl, turns: tn })),
   });
   cache.put('summary', summary, 60);
   return ContentService.createTextOutput(summary).setMimeType(ContentService.MimeType.JSON);

@@ -733,6 +733,15 @@ export const scenarios = {
         const rows = A.withLegacyRanking({ total: 2, boards: { depth: [{ tag: 'BBBB22', nick: '', cls: '', floor: 25, cause: '객잔 경비병', level: 12, kills: 99, turns: 100 }, { tag: 'AAAA11', nick: '', cls: 'archer', floor: 25, cause: 'End', level: 9, kills: 90, turns: 3000 }], level: [], kills: [] } }).boards.depth;
         return JSON.stringify({ first: rows[0].tag, firstFloor: rows[0].floor, firstText: A.floorText(rows[0]), second: A.floorText(rows[1]), icons: [A.classIcon('archer').width, A.classIcon('').width, A.classIcon('nope').width], own: A.who({ tag: A.deviceTag() }) });
       });
+      // A run still being played is listed in its own look; the class look is a clean sprite (transparent, not in a black box) a little larger.
+      out['stats.liveRows'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api, mk = (tag, floor, live) => ({ tag, nick: '', cls: 'swordsman', floor, cause: live ? '진행 중' : '함정', level: 5, kills: 20, turns: 800, live });
+        const rows = [mk('LIVE00', 9, true), mk('DEAD22', 8, false), mk('DEAD33', 7, false), mk('LIVE11', 6, true), mk('DEAD44', 5, false), mk('LIVE55', 4, true)];
+        A.open('rank'); A.ranking = A.withLegacyRanking({ total: 5, boards: { depth: rows, level: rows, kills: rows } }); A.failed = {}; A.render();
+        const icon = document.querySelector('.rankClass'), cs = getComputedStyle(icon), live = document.querySelector('.rankRow.live'), plate = document.querySelector('.rankPlate.live');
+        const result = JSON.stringify({ livePlates: document.querySelectorAll('.rankPlate.live').length, liveRows: document.querySelectorAll('.rankRow.live').length, tags: document.querySelectorAll('.rankLiveTag').length, iconBg: cs.backgroundColor, iconSize: cs.width + ' ' + cs.height, rowAnimation: live ? getComputedStyle(live).animationName : '', plateAnimation: plate ? getComputedStyle(plate).animationName : '' });
+        A.close(); return result;
+      });
       // The board names a run by its nickname when the server sends one.
       out['stats.nickWho'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return JSON.stringify([A.who({ tag: 'ABCD12', nick: '만루왕' }), A.who({ tag: 'ABCD12', nick: '' }), A.who({ tag: 'Legacy' })]); });
       out['stats.errors'] = JSON.stringify(s.errors);
@@ -752,6 +761,22 @@ export const scenarios = {
       await titleTaps(s, 7, true, ['.startIntro']);
       out['stats.outside-taps'] = String(await sceneOpen(s));
       out['stats.tap-errors'] = JSON.stringify(s.errors);
+      await s.close();
+      await ctx.close();
+    }
+
+    // A run in progress is sent as it goes (live), once per change and not again at once; the final record then carries the same id.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const posts = await serve(ctx, {});
+      const s = await openSession(browser, root, { seed: 93, context: ctx, init: endpoint });
+      await startRun(s, 'swordsman');
+      const sent = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return [A.progress(), A.progress()]; });
+      await waitFor(() => posts.length > 0);
+      await s.page.evaluate(() => window.__MANRU_V95_TEST__.deathPreview('광견 대장'));
+      await waitFor(() => posts.length > 1);
+      out['stats.live'] = JSON.stringify({ sent, count: posts.length, live: posts[0].live, cause: [posts[0].cause, posts[1].cause], finalLive: posts[1].live ?? null, sameId: posts[0].id === posts[1].id, cls: posts[0].cls });
+      out['stats.live.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
     }

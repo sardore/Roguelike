@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -9,11 +9,28 @@ const PlayStats={
  endpoint(){return document.querySelector('meta[name="manru-stats"]')?.content.trim()||''},
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
  saveQueue(list){lsSet(this.QUEUE_KEY,JSON.stringify(list.slice(-this.QUEUE_MAX)))},
- recordDeath(cause){
-  if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
+ // What the board knows about the run on the screen: the same fields for the progress records and the final one.
+ runRecord(cause){
   const record={v:1,id:this.deviceTag()+'-'+String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
   const nick=this.nick();if(nick)record.nick=nick;
   const cls=state.player.classId;if(cls)record.cls=String(cls).slice(0,24);
+  return record;
+ },
+ // The run being played is listed on the board while it goes on, one row the server keeps updating (same id). Sent when the floor or the
+ // level changed or every LIVE_TURNS turns, and never closer than LIVE_GAP_MS; not queued and not kept: only the latest state matters.
+ progress(){
+  if(!state||state.dead||state.victory||runIsEphemeral()||state.debugMapGeneration57||!state.runId984||!this.endpoint()||this.liveBusy)return false;
+  const key=state.floor+':'+state.player.level,now=Date.now();
+  if(key===this.liveKey&&state.turn-this.liveTurn<this.LIVE_TURNS)return false;
+  if(this.liveKey&&now-this.liveAt<this.LIVE_GAP_MS)return false;
+  this.liveKey=key;this.liveTurn=state.turn;this.liveAt=now;this.liveBusy=true;
+  const body=JSON.stringify({...this.runRecord(''),live:1});
+  fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body}).catch(error=>ignoreError('play stats progress not sent',error)).finally(()=>{this.liveBusy=false});
+  return true;
+ },
+ recordDeath(cause){
+  if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
+  const record=this.runRecord(cause);
   this.rememberRun(record);
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -281,7 +298,7 @@ const PlayStats={
   return icon;
  },
  // The name line of a run: the class look, then the name.
- nameLine(tag,className,row){const line=this.el(tag,className);line.append(this.classIcon(row.cls),document.createTextNode(this.who(row)));return line},
+ nameLine(tag,className,row){const line=this.el(tag,className);line.append(this.classIcon(row.cls),document.createTextNode(this.who(row)));if(row.live)line.append(this.el('em','rankLiveTag','탐사 중'));return line},
  mineCard(list){
   const card=this.el('div','rankMine'),runs=this.mine().slice().sort((a,b)=>this.floorOf(b)-this.floorOf(a)||b.level-a.level||b.kills-a.kills||a.turns-b.turns),best=runs[0];
   card.append(this.el('span','rankMineLabel','나의 최고 기록 · '+(this.nick()||this.deviceTag())));
@@ -298,6 +315,7 @@ const PlayStats={
    if(!row){plate.classList.add('empty');plate.append(this.el('i','rankMedal',place),this.el('b',null,'—'));wrap.append(plate);continue}
    const metric=this.metric(row,top);
    if(mine.has(row.tag))plate.classList.add('mine');
+   if(row.live)plate.classList.add('live');
    plate.style.setProperty('--delay',(place===1?0:place===2?120:240)+'ms');
    plate.append(this.el('i','rankMedal',place),this.nameLine('b','rankTag',row),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
    wrap.append(plate);
@@ -308,7 +326,7 @@ const PlayStats={
   const box=this.el('ol','rankList'),mine=new Set(this.mine().map(r=>this.tag(r.id)));
   list.slice(3).forEach((row,i)=>{
    const item=this.el('li','rankRow'),metric=this.metric(row,list),bar=this.el('i');
-   item.classList.toggle('mine',mine.has(row.tag));item.style.setProperty('--delay',(300+i*28)+'ms');bar.style.setProperty('--fill',Math.round(Math.max(0,Math.min(1,metric.fill))*100)+'%');
+   item.classList.toggle('mine',mine.has(row.tag));item.classList.toggle('live',!!row.live);item.style.setProperty('--delay',(300+i*28)+'ms');bar.style.setProperty('--fill',Math.round(Math.max(0,Math.min(1,metric.fill))*100)+'%');
    const who=this.el('div','rankWho'),track=this.el('div','rankTrack');
    who.append(this.nameLine('b',null,row),this.el('small',null,this.detail(row)));track.append(bar);
    item.append(this.el('span','rankNo',i+4),who,track,this.el('strong','rankValue',metric.value));
