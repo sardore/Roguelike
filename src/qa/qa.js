@@ -602,6 +602,21 @@ globalThis.__MANRU_QA_SAVESTRING__={make:makeSaveString,read:readSaveString,appl
 globalThis.__MANRU_QA_DEBUGBATTLE__={open:openDebugBattle57};
 globalThis.__MANRU_QA_UI__={sessions:RuntimeState.ui.sessions,dispatch:command=>ActionDispatcher.dispatch(command),state:()=>state};
 globalThis.__MANRU_QA_STATS__={api:PlayStats};
+globalThis.__MANRU_QA_FLOOR6_REPAIR__=()=>{
+  const g=state?.floor6GrandLibraryR8;
+  if(state?.floor!==6||!g)return{ok:false,reason:'not-full-six'};
+  const gate={...state.f6LibraryGateR8},beforePrize=(state.items||[]).find(i=>i.r8LibraryPrize);
+  // A concrete regression: a later geometry edit opens the sealed archive to
+  // the gallery, bypassing the locked gate and invalidating the reward design.
+  setTerrainTile58(state.map,gate.x,gate.y,TT.STONE_PATH);
+  const invalid=GenerationValidator.normal(false);
+  const repair=repairFloorSixRejectedTopology();
+  const valid=GenerationValidator.normal(false);
+  return{invalid:invalid.accepted,invalidLibrary:invalid.failure?.connectivity?.library,
+    repaired:repair,accepted:valid.accepted,library:valid.accepted?state.finalConnectivity51.library:valid.failure?.connectivity?.library,
+    sameStructure:state.floor6GrandLibraryR8===g,hasPrize:!!beforePrize&&(state.items||[]).includes(beforePrize),
+    gateRestored:state.map[gate.y]?.[gate.x]===TT.LOCKED_GATE};
+};
 globalThis.__MANRU_QA_SPECTATE__={vis:()=>({x:VIS.playerX,y:VIS.playerY,cam:CameraState.snapshot()}),move:(dx,dy)=>ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}),api:Spectate,state:()=>state,die:by=>die(by),go:to=>branchTransition({id:'qa',to,arrival:'up'}),regen:f=>globalThis.__MANRU_RELEASE__?.regen?.(f)};
 globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56};
 // load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
