@@ -1,5 +1,5 @@
 // 만루 플레이 통계 수집 서버 (Google Apps Script 웹 앱). 설치: docs/PLAY_STATS.md
-// POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?,live?} -> 시트에 한 줄 (같은 id는 한 번만; 진행 중(live:1)인 판은 같은 줄을 갱신하고, 끝난 기록이 오면 그 줄을 최종값으로 닫는다). nick은 선택(한글·영문·숫자 2~8자), cls는 직업 id(선택)
+// POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?,live?,abandon?} -> 시트에 한 줄 (같은 id는 한 번만; 진행 중(live:1)은 갱신, abandon:1은 랭킹에서 즉시 제외, 사망/승리는 최종 기록). nick/cls는 선택
 // 클리어는 floor 25, cause 'End'로 오고, 랭킹에서는 30층으로 센다
 // POST {claim,owner} -> 닉네임 등록(이미 다른 기기가 쓰면 error 'taken', 이 기기가 이미 다른 닉네임이 있으면 error 'owned'+nick). 기록의 닉네임은 보낸 값이 아니라 등록부에서 그 기기의 닉네임을 찾아 붙인다.
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
@@ -9,15 +9,15 @@ const SHEET_NAME = 'deaths';
 const NICK_SHEET = 'nicks';
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live'];
 // A run still being played is one row that its player keeps updating (same id); its last update time sits in the `live` column and is cleared
-// when the final record (death or clear) arrives. A run not updated for LIVE_TTL_MS is treated as given up.
+// when the final record (death or clear) arrives. A run not updated for LIVE_TTL_MS is treated as abandoned and excluded from rankings and death statistics.
 const LIVE_CAUSE = '진행 중', GAVE_UP_CAUSE = '탐사 중단', LIVE_TTL_MS = 15 * 60 * 1000;
 const MAX_ROWS = 200000;
 const RANK_ROWS = 30;
 const LIVE_COL = HEADER.indexOf('live') + 1;
 // Whether a row's `live` stamp marks a run that is still being played.
 function isLive_(stamp) { return Number(stamp) > 0 && Date.now() - Number(stamp) <= LIVE_TTL_MS; }
-// A progress row nobody updates any more reads as given up.
-function causeOf_(cause, stamp) { return String(cause) === LIVE_CAUSE && !isLive_(stamp) ? GAVE_UP_CAUSE : cause; }
+// An abandoned or expired progress row is not a death and must not appear on any board.
+function abandoned_(cause, stamp) { return String(cause) === GAVE_UP_CAUSE || (String(cause) === LIVE_CAUSE && !isLive_(stamp)); }
 
 // Works bound to a spreadsheet or as a stand-alone script: a stand-alone script creates its own spreadsheet once and remembers it.
 function book_() {
@@ -97,7 +97,7 @@ function doPost(e) {
   const cause = String(record.cause || '').slice(0, 40).replace(/^[=+\-@]/, "'$&");
   const owner = id.replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase();
   const cls = /^[a-z][a-z0-9_]{0,23}$/.test(String(record.cls || '')) ? String(record.cls) : '';
-  const live = record.live === 1;
+  const live = record.live === 1, abandon = record.abandon === 1;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -108,11 +108,12 @@ function doPost(e) {
       // A finished run never changes again (a late progress update or a resent record is dropped); a run in progress is updated in place.
       const row = found.getRow();
       if (!sheet.getRange(row, LIVE_COL).getValue()) return reply_({ ok: true, duplicate: true });
-      sheet.getRange(row, 3, 1, 7).setValues([[floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
-      sheet.getRange(row, LIVE_COL).setValue(live ? Date.now() : '');
+      sheet.getRange(row, 3, 1, 7).setValues([[floor, abandon ? GAVE_UP_CAUSE : live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
+      sheet.getRange(row, LIVE_COL).setValue(abandon ? '' : live ? Date.now() : '');
     } else {
       if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
-      sheet.appendRow([new Date().toISOString(), id, floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, live ? Date.now() : '']);
+      // Keep a hidden tombstone even if cancellation beats an in-flight progress POST.
+      sheet.appendRow([new Date().toISOString(), id, floor, abandon ? GAVE_UP_CAUSE : live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, abandon ? '' : live ? Date.now() : '']);
     }
     CacheService.getScriptCache().removeAll(['summary', 'ranking']);
   } finally { lock.releaseLock(); }
@@ -131,9 +132,9 @@ function ranking_() {
   if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
   const sheet = sheet_(), rows = sheet.getLastRow();
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, HEADER.length).getValues() : [];
-  const runs = values.map(([, id, floor, cause, level, kills, turns, nick, cls, stamp]) => ({
+  const runs = values.filter(([, , , cause, , , , , , stamp]) => !abandoned_(cause, stamp)).map(([, id, floor, cause, level, kills, turns, nick, cls, stamp]) => ({
     tag: String(id).replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase(), nick: String(nick || ''), cls: String(cls || ''), live: isLive_(stamp),
-    floor: String(cause) === 'End' ? 30 : floor, cause: causeOf_(cause, stamp), level, kills, turns,
+    floor: String(cause) === 'End' ? 30 : floor, cause, level, kills, turns,
   }));
   const boards = {};
   for (const name of Object.keys(BOARDS)) boards[name] = runs.slice().sort(BOARDS[name]).slice(0, RANK_ROWS);
@@ -152,7 +153,7 @@ function doGet(e) {
   const floors = new Array(25).fill(0), causes = {};
   let level = 0, kills = 0, turns = 0;
   // Runs still being played are not counted yet.
-  const ended = values.filter(row => !isLive_(row[9])).map(row => [row[0], row[1], row[2], causeOf_(row[3], row[9]), row[4], row[5], row[6]]);
+  const ended = values.filter(row => !isLive_(row[9]) && !abandoned_(row[3], row[9])).map(row => [row[0], row[1], row[2], row[3], row[4], row[5], row[6]]);
   for (const [, , floor, cause, lv, kl, tn] of ended) {
     floors[floor - 1]++; causes[cause] = (causes[cause] || 0) + 1; level += lv; kills += kl; turns += tn;
   }
