@@ -2461,7 +2461,7 @@ generate(...args){
     // The full authored 6F library is mandatory. Repair a rejected topology in place
     // and require the unchanged final validator to approve it; never skip content.
     if(!validation.accepted&&state.floor===6&&state.floor6GrandLibraryR8){
-      const repair=repairFloor6RejectedTopologyR8();
+      const repair=repairFloorSixRejectedTopology();
       state.floor6RepairAuditR8=repair;
       validation=GenerationValidator.normal(strictFloor);
     }
