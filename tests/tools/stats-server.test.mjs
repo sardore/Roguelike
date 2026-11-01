@@ -53,6 +53,11 @@ function server() {
 const base = { v: 1, id: 'ABCD12-run1', floor: 3, level: 4, kills: 10, turns: 300, cls: 'archer' };
 const claimed = (s) => s.post({ claim: '만루왕', owner: 'ABCD12' });
 
+test('clients can detect cancellation support before sending abandon POST', () => {
+  const s = server();
+  assert.deepEqual(s.get('capabilities'), { ok: true, abandon: true });
+});
+
 test('a run in progress is one row that is updated in place', () => {
   const s = server();
   claimed(s);
