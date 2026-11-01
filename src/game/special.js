@@ -1989,7 +1989,7 @@ function placeFloor6LibraryRewardR8(){
 }
 // Only invoked after a real 6F validation failure. Rebuild connectivity without dropping
 // the authored grand library, its sealed archive, key, or guaranteed upgrade reward.
-function repairFloor6RejectedTopologyR8() {
+function repairFloorSixRejectedTopology() {
   if(state?.floor!==6||!state.floor6GrandLibraryR8||!state.f6LibraryGateR8||!state.f6LibraryKeyR8)return{attempted:false};
   const g=state.floor6GrandLibraryR8,key=state.f6LibraryKeyR8,gate=state.f6LibraryGateR8;
   const before=ReachabilityService.finalComponents({finalReachSet1029,inside1020,HAZ1020,K1020,stairMarkerState1029,finalExitReach1029},true);
