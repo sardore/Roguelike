@@ -255,6 +255,25 @@ export const scenarios = {
     } finally { await s.close(); }
   },
 
+  // A deliberately unsealed 6F archive must be rejected, then restored in place.
+  async floor6Repair(browser, root) {
+    const s = await openSession(browser, root, { seed: 4242 });
+    try {
+      await startRun(s, 'wanderer');
+      const result = await s.page.evaluate(() => {
+        window.__MANRU_RELEASE__.regen(6);
+        return window.__MANRU_QA_FLOOR6_REPAIR__();
+      });
+      if (result.invalid !== false || result.accepted !== true ||
+          !result.sameStructure || !result.hasPrize || !result.gateRestored ||
+          result.library?.ok !== true) {
+        console.log('::error title=6F archive bypass recovery::' + JSON.stringify(result).slice(0,5000));
+        throw Error('6F archive bypass repair failed: ' + JSON.stringify(result));
+      }
+      return {};
+    } finally { await s.close(); }
+  },
+
   // Floors 1-25 generated one at a time with the random stream reset before each floor, so a
   // change to the generator shows up only on the floor it affects (no shifted-seed cascade).
   async floorsind(browser, root) {
