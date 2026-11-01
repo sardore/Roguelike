@@ -250,7 +250,7 @@ export const scenarios = {
       });
       if (outcome.floor !== 6 || outcome.runId !== first.runId || !outcome.library ||
           !outcome.key || !outcome.gate || !outcome.prize || outcome.connectivity?.ok !== true)
-        throw Error('6F grand library descent failed: ' + JSON.stringify({ first, second, outcome }));
+        { console.log('::error title=6F shop-exit generation::' + JSON.stringify({ first, second, outcome }).slice(0,5000)); throw Error('6F grand library descent failed: ' + JSON.stringify({ first, second, outcome })); }
       return {};
     } finally { await s.close(); }
   },
