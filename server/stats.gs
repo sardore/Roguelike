@@ -144,6 +144,7 @@ function ranking_() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.view === 'capabilities') return reply_({ ok: true, abandon: true });
   if (e && e.parameter && e.parameter.view === 'ranking') return ranking_();
   if (!e || !e.parameter || e.parameter.view !== 'summary') return reply_({ ok: false, error: 'view' });
   const cache = CacheService.getScriptCache(), hit = cache.get('summary');
