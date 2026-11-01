@@ -2457,13 +2457,21 @@ generate(...args){
     const exitMarker=ensureFinalExitMarker()||{ok:false,reason:'missing-exit-marker-audit'};
     if(!exitMarker.ok){lastFailure={attempt:finalAttempt,exitMarker};rejected.push({attempt:finalAttempt,exitMarker:true});continue}
     PlacementService.flushPendingItems();
-    const validation=GenerationValidator.normal(strictFloor);accepted=validation.accepted;
+    let validation=GenerationValidator.normal(strictFloor);
+    // The full authored 6F library is mandatory. Repair a rejected topology in place
+    // and require the unchanged final validator to approve it; never skip content.
+    if(!validation.accepted&&state.floor===6&&state.floor6GrandLibraryR8){
+      const repair=repairFloor6RejectedTopologyR8();
+      state.floor6RepairAuditR8=repair;
+      validation=GenerationValidator.normal(strictFloor);
+    }
+    accepted=validation.accepted;
     if('finalLock' in validation){finalLock=validation.finalLock;finalProgress=validation.finalProgress;finalSurface=validation.finalSurface}
     if(!accepted){lastFailure={attempt:finalAttempt,...validation.failure};rejected.push({attempt:finalAttempt,...validation.rejection});continue}
     if(!strictFloor)break;
     }catch(e){accepted=false;lastFailure={attempt:finalAttempt,error:String(e)};rejected.push(lastFailure);}
   }
-  if(!accepted){globalThis.__MANRU_GEN_RNG57__?.end?.();restoreGenerationSnapshot(transaction57);state.generationFinalKeyFailureR48=lastFailure;throw new Error(`final connectivity/key progression rejected ${maxFinalAttempts} generated maps on floor ${state.floor}`)}
+  if(!accepted){const floor=state.floor;globalThis.__MANRU_GEN_RNG57__?.end?.();console.error('floor generation exhausted', {floor,attempts:maxFinalAttempts,lastFailure,rejections:rejected.slice(-5)});restoreGenerationSnapshot(transaction57);state.generationFinalKeyFailureR48=lastFailure;throw new Error(`final connectivity/key progression rejected ${maxFinalAttempts} generated maps on floor ${floor}: ${JSON.stringify(lastFailure)?.slice(0,700)}`)}
 
   // No topology, key, reward or entity mutation is allowed beyond this point.
   if(strictFloor){
