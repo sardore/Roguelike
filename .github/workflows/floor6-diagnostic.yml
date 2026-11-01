@@ -1,0 +1,19 @@
+name: Floor 6 diagnostic (temporary)
+on:
+  push:
+    branches: [fix/floor6-grand-library-access-preserved]
+jobs:
+  floor6:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build:qa
+      - run: npx --yes playwright@1.56.1 install --with-deps chromium
+      - name: Real 5F merchant to 6F full-library regression
+        run: node tests/run.mjs --only floor6Entry
