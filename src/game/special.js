@@ -1987,6 +1987,51 @@ function placeFloor6LibraryRewardR8(){
   if(!q||occupiedFinal(q.x,q.y))q=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},state.f6LibraryPrizeR8.x,state.f6LibraryPrizeR8.y);if(!q)return false;
   PlacementService.placeItem({...clone(up),x:q.x,y:q.y,count:1,r8LibraryPrize:true});state.f6LibraryPrizeR8={...q};return true
 }
+// Only invoked after a real 6F validation failure. Rebuild connectivity without dropping
+// the authored grand library, its sealed archive, key, or guaranteed upgrade reward.
+function repairFloor6RejectedTopologyR8() {
+  if(state?.floor!==6||!state.floor6GrandLibraryR8||!state.f6LibraryGateR8||!state.f6LibraryKeyR8)return{attempted:false};
+  const g=state.floor6GrandLibraryR8,key=state.f6LibraryKeyR8,gate=state.f6LibraryGateR8;
+  const before=ReachabilityService.finalComponents({finalReachSet1029,inside1020,HAZ1020,K1020,stairMarkerState1029,finalExitReach1029},true);
+  const put=(x,y,t)=>{if(state.map[y]?.[x]!==t)setTerrainTile58(state.map,x,y,t)};
+  // An archive must have one real entry: the locked gate. Later architecture passes
+  // are allowed to repair ordinary walls, but must not accidentally bypass this seal.
+  const sealArchive=()=>{
+    for(let y=g.y+1;y<=g.y+7;y++){put(g.x+15,y,TT.WALL);put(g.x+27,y,TT.WALL)}
+    for(let x=g.x+16;x<=g.x+26;x++)if(x!==gate.x)put(x,g.y+8,TT.WALL);
+    put(gate.x,gate.y,TT.LOCKED_GATE);
+    put(key.x,key.y,TT.KEY_TILE);
+  };
+  sealArchive();
+  // Restore the authored side-office passage to its gallery and the archive's
+  // outside approach, leaving the single locked entry intact.
+  if(before.library?.keyBefore===false){
+    for(let x=g.x+6;x<=g.x+14;x++)if(x!==key.x)put(x,key.y,TT.STONE_PATH);
+    put(key.x,key.y,TT.KEY_TILE)
+  }
+  if(before.library?.rewardAfter===false){
+    for(let y=g.y+9;y<=g.y+13;y++)put(g.x+21,y,TT.STONE_PATH)
+  }
+  // Reconnect late decorative islands and restore the exit using the same geometry
+  // repair routines already used for ordinary floors, then reseal the archive.
+  connectArchitectureRooms51();
+  repairBlockingPhysicalDecor1029();
+  rescueOrdinaryExit1029();
+  sealArchive();
+  postEntitySanity1020();
+  finalEntitySweep1020();
+  const archive=(state.libraryZones1022||[]).find(z=>z.name==='봉인 고문서고');
+  let prize=(state.items||[]).find(it=>it.r8LibraryPrize);
+  if(!prize)placeFloor6LibraryRewardR8();
+  prize=(state.items||[]).find(it=>it.r8LibraryPrize);
+  if(prize&&archive&&!(prize.x>=archive.x&&prize.x<archive.x+archive.w&&prize.y>=archive.y&&prize.y<archive.y+archive.h)){
+    const q=ReachabilityService.finalPlacementCell({clamp1020,K1020,candidateFinal1020,inside1020},g.cx,g.y+4,null,p=>p.x>=archive.x&&p.x<archive.x+archive.w&&p.y>=archive.y&&p.y<archive.y+archive.h);
+    if(q){prize.x=q.x;prize.y=q.y}
+  }
+  VisibilityService.compute();
+  const after=ReachabilityService.finalComponents({finalReachSet1029,inside1020,HAZ1020,K1020,stairMarkerState1029,finalExitReach1029},true);
+  return{attempted:true,ok:after.ok,before:{components:before.totalUnreachable,library:before.library,exit:before.exitReach},after:{components:after.totalUnreachable,library:after.library,exit:after.exitReach}};
+}
 function repairFloor23MercuryConnectivity1029(){
   if(!state||state.floor!==23)return{ok:true,bridges:0,components:0};
   const safe=(x,y)=>inside1020(x,y)&&!tileBlocks(state.map[y][x])&&!HAZ1020().has(state.map[y][x])&&!globalThis.__MANRU_RUMOR_SPACES1030__?.isSealedInterior?.(x,y),protectedCell=(x,y)=>state.stairs&&(x===state.stairs.x&&y===state.stairs.y)||(state.player&&x===state.player.x&&y===state.player.y)||[TT.CACHE,TT.ARMORY,TT.VAULT,TT.ALTAR,TT.FOUNTAIN,TT.RUMOR,TT.PAVILION].includes(state.map[y]?.[x]);
