@@ -159,6 +159,13 @@ const RunLifecycle={
     if(RuntimeState.lifecycle.depth)throw Error('Nested run replacement is not permitted');
     const save=globalThis.__MANRU_SAVE_SERVICE__,isNew=kind==='new';
     const prior={state,cols:COLS,rows:ROWS,seed:window.__MANRU_RUN_SEED984,phase:RuntimeState.lifecycle.phase,screen:currentScreen()};
+    // Replacing an unsaved-in-memory or persisted run must retire its server-side live row.
+    // Capture before the new run overwrites the active save; do not touch finished runs.
+    let displacedRun=null;
+    if(isNew){
+      if(prior.state?.runId984&&!prior.state.dead&&!prior.state.victory&&!runIsEphemeral(prior.state))displacedRun=prior.state;
+      else try{displacedRun=save.recover()?.candidate?.meta||null}catch(error){ignoreError('prior run lookup for stats cancellation failed',error)}
+    }
     const ctx={kind,args:[...args],data:Object.create(null),result:undefined,aborted:false,abortStage:null};
     RuntimeState.lifecycle.depth++;RuntimeState.lifecycle.generation++;RuntimeState.lifecycle.phase=isNew?'creating':'loading';save.clearPending();
     setGenerationPresentation8(false);closeGameplayInteractionState57();RuntimeState.prepareRun();
@@ -175,7 +182,9 @@ const RunLifecycle={
       steps.after(ctx);
       if(ctx.result===false||!state||state.dead||state.victory)throw Error('Candidate is not a playable run');RuntimeState.lifecycle.validate(state);
       const persistence=save.commit(kind);if(!persistence.ok)throw Error('Run persistence failed: '+persistence.failure);
-      RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
+      RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};
+      if(isNew){if(displacedRun?.runId984!==state.runId984)PlayStats.abandon(displacedRun);PlayStats.resetProgress()}
+      globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
     }catch(e){
       ctx.aborted=true;state=prior.state;COLS=prior.cols;ROWS=prior.rows;window.__MANRU_RUN_SEED984=prior.seed;RuntimeState.lifecycle.phase=prior.phase;RuntimeState.lifecycle.generation++;
       resetVisualState();resetTurnState();if(state){VisibilityService.compute();updateAll()}setScreen(prior.screen||'title');

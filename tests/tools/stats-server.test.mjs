@@ -53,6 +53,11 @@ function server() {
 const base = { v: 1, id: 'ABCD12-run1', floor: 3, level: 4, kills: 10, turns: 300, cls: 'archer' };
 const claimed = (s) => s.post({ claim: '만루왕', owner: 'ABCD12' });
 
+test('clients can detect cancellation support before sending abandon POST', () => {
+  const s = server();
+  assert.deepEqual(s.get('capabilities'), { ok: true, abandon: true });
+});
+
 test('a run in progress is one row that is updated in place', () => {
   const s = server();
   claimed(s);
@@ -64,16 +69,44 @@ test('a run in progress is one row that is updated in place', () => {
   assert.ok(Number(stamp) > 0);
 });
 
-test('the ranking marks a run in progress and a run nobody updates reads as given up', () => {
+test('live progress appears in rankings but expired progress disappears from both rankings and deaths', () => {
   const s = server();
   claimed(s);
   s.post({ ...base, live: 1 });
   let row = s.get('ranking').boards.depth[0];
   assert.deepEqual([row.live, row.cause, row.cls, row.nick, row.tag], [true, '진행 중', 'archer', '만루왕', 'ABCD12']);
   s.clock.t += 16 * 60 * 1000;
-  s.post({ v: 1, id: 'ZZZZ99-x', floor: 1, level: 1, kills: 0, turns: 5, cause: '취객' }); // drops the cached ranking
-  row = s.get('ranking').boards.depth.find((r) => r.tag === 'ABCD12');
-  assert.deepEqual([row.live, row.cause], [false, '탐사 중단']);
+  s.post({ v: 1, id: 'ZZZZ99-x', floor: 1, level: 1, kills: 0, turns: 5, cause: '취객' }); // invalidate cached views
+  assert.ok(!s.get('ranking').boards.depth.some(r => r.tag === 'ABCD12'));
+  assert.equal(s.get('summary').total, 1, 'only the real death is counted');
+  assert.deepEqual(s.get('summary').causes, [['취객', 1]]);
+});
+
+test('a new run cancels only the abandoned live record; a previously finished death is preserved', () => {
+  const s = server();
+  const death = { ...base, id: 'ABCD12-dead', cause: '취객', floor: 2 };
+  assert.deepEqual(s.post(death), { ok: true });
+  s.post({ ...base, live: 1 });
+  assert.equal(s.get('ranking').total, 2);
+  assert.deepEqual(s.post({ ...base, abandon: 1 }), { ok: true });
+  assert.equal(s.rows.find(r => r[1] === base.id)[3], '탐사 중단');
+  assert.equal(s.get('ranking').total, 1);
+  assert.equal(s.get('summary').total, 1);
+  assert.deepEqual(s.get('summary').causes, [['취객', 1]]);
+  assert.equal(s.rows.find(r => r[1] === death.id)[3], '취객');
+  assert.deepEqual(s.post({ ...base, live: 1, turns: 999 }), { ok: true, duplicate: true });
+  assert.equal(s.get('ranking').total, 1, 'late progress cannot resurrect a cancelled run');
+  assert.deepEqual(s.post({ ...death, abandon: 1 }), { ok: true, duplicate: true });
+  assert.equal(s.get('summary').total, 1, 'cancelling an already dead run changes nothing');
+});
+
+test('abandon arriving before progress creates an invisible tombstone', () => {
+  const s = server();
+  assert.deepEqual(s.post({ ...base, abandon: 1 }), { ok: true });
+  assert.equal(s.get('ranking').total, 0);
+  assert.equal(s.get('summary').total, 0);
+  assert.deepEqual(s.post({ ...base, live: 1 }), { ok: true, duplicate: true });
+  assert.equal(s.get('ranking').total, 0);
 });
 
 test('the final record closes the row, and a later progress update changes nothing', () => {
