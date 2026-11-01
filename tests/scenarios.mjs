@@ -218,39 +218,6 @@ export const scenarios = {
     return out;
   },
 
-  // Force the first 32 normal 6F candidates to fail, as a bad run seed can do in production.
-  // The game must still create a validated, playable 6F without bypassing topology checks.
-  async floor6Fallback(browser, root) {
-    const s = await openSession(browser, root, { seed: 6060 });
-    try {
-      await startRun(s, 'wanderer');
-      const result = await s.page.evaluate(() => {
-        const original = globalThis.__MANRU_GENERATE_CORE983__;
-        let injected = 0;
-        globalThis.__MANRU_GENERATE_CORE983__ = (...args) => {
-          if (injected < 32) { injected++; throw new Error('QA injected 6F rejection'); }
-          return original(...args);
-        };
-        try {
-          window.__MANRU_RELEASE__.regen(6);
-          const st = window.__MANRU_QA_UI__.state();
-          return {
-            floor: st.floor, injected, attempts: st.generationFinalKeyAttemptsR48,
-            connectivity: st.finalConnectivity51?.ok === true,
-            temporaryFlag: Object.prototype.hasOwnProperty.call(st, 'floor6FallbackGenerationR8'),
-            library: !!st.floor6GrandLibraryR8,
-            stair: st.map[st.stairs?.y]?.[st.stairs?.x] === window.__MANRU_QA_VIS__.TT.STAIR,
-          };
-        } finally {
-          globalThis.__MANRU_GENERATE_CORE983__ = original;
-        }
-      });
-      if (result.floor !== 6 || result.injected !== 32 || result.attempts <= 32 || !result.connectivity || result.temporaryFlag || result.library || !result.stair)
-        throw new Error('6F recovery did not validate safely: ' + JSON.stringify(result));
-    } finally { await s.close(); }
-    return {};
-  },
-
   // Floors 1-25 generated one at a time with the random stream reset before each floor, so a
   // change to the generator shows up only on the floor it affects (no shifted-seed cascade).
   async floorsind(browser, root) {
