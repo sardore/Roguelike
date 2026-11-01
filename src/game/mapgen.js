@@ -2428,12 +2428,16 @@ generate(...args){
   const strictFloor=!!(state&&strictLockFloors().includes(state.floor));
   const transaction57=captureGenerationSnapshot();
   state.branchContext105=null;state.branchTerrain105=null;state.branchPortals105=[];state.terrainReactions105=newTerrainReactions105();
-  const maxFinalAttempts=32;let r=null,accepted=false,finalAttempt=0,finalLock=null,finalProgress=null,finalSurface=null,lastFailure=null;const rejected=[];
+  // 6F can have a seed whose optional grand library prevents every normal candidate from passing the final connectivity audit.
+  // Preserve all 32 regular attempts, then allow up to 16 validated candidates without that optional extension.
+  const regularFinalAttempts=32,maxFinalAttempts=state.floor===6?48:regularFinalAttempts;let r=null,accepted=false,finalAttempt=0,finalLock=null,finalProgress=null,finalSurface=null,lastFailure=null;const rejected=[];
   while(finalAttempt<maxFinalAttempts&&!accepted){
     finalAttempt++;
     try{
     if(finalAttempt>1){const profile=state.generationProfile93;restoreGenerationSnapshot(transaction57);state.generationProfile93=profile}
     state.branchContext105=null;state.branchTerrain105=null;state.branchPortals105=[];state.terrainReactions105=newTerrainReactions105();
+    // This flag is local to candidate generation; never part of a saved or accepted run.
+    state.floor6FallbackGenerationR8=state.floor===6&&finalAttempt>regularFinalAttempts;
     state.generationInProgress57=true;state.terrainUnderlay58={};state.terrainAttachment58={};state.bossDrop55=null;globalThis.__MANRU_GEN_RNG57__?.begin?.(NormalFloorGenerator.seed(finalAttempt,0));delete state.ammoGeneration972;state.peachGeneration53={limit:1+(globalThis.__MANRU_RANDOM57__()<.35?1:0),reserved:0};
     r=NormalFloorGenerator.acceptedBase(args,finalAttempt);
     if(!state)throw new Error("generation state missing");
@@ -2463,7 +2467,7 @@ generate(...args){
     if(!strictFloor)break;
     }catch(e){accepted=false;lastFailure={attempt:finalAttempt,error:String(e)};rejected.push(lastFailure);}
   }
-  if(!accepted){globalThis.__MANRU_GEN_RNG57__?.end?.();restoreGenerationSnapshot(transaction57);state.generationFinalKeyFailureR48=lastFailure;throw new Error(`final connectivity/key progression rejected ${maxFinalAttempts} generated maps on floor ${state.floor}`)}
+  if(!accepted){const failedFloor=state.floor;globalThis.__MANRU_GEN_RNG57__?.end?.();restoreGenerationSnapshot(transaction57);state.generationFinalKeyFailureR48=lastFailure;console.error('final floor generation rejected', {floor:failedFloor,attempts:maxFinalAttempts,lastFailure,recentRejections:rejected.slice(-5)});throw new Error(`final connectivity/key progression rejected ${maxFinalAttempts} generated maps on floor ${failedFloor}: ${JSON.stringify(lastFailure)?.slice(0,500)}`)}
 
   // No topology, key, reward or entity mutation is allowed beyond this point.
   if(strictFloor){
@@ -2471,7 +2475,7 @@ generate(...args){
     state.keyIntegrity48={...(finalProgress||{}),finalGeometry:true,regeneratedMaps:Math.max(0,finalAttempt-1),surfaceOk:finalSurface?.ok!==false};
   }
   // Only the accepted geometry and final spawn may enter exploration memory.
-  produceWallMaterials105(state,true);state.seen=new Set();state.generationInProgress57=false;state.generationRngAuditR59=globalThis.__MANRU_GEN_RNG57__?.end?.()||null;VisibilityService.compute();state.generatedBuild='r57';state.generationFinalKeyFailureR48=null;state.generationRejected51=rejected;
+  produceWallMaterials105(state,true);state.seen=new Set();state.generationInProgress57=false;delete state.floor6FallbackGenerationR8;state.generationRngAuditR59=globalThis.__MANRU_GEN_RNG57__?.end?.()||null;VisibilityService.compute();state.generatedBuild='r57';state.generationFinalKeyFailureR48=null;state.generationRejected51=rejected;
   state.generationFinalKeyAttemptsR48=finalAttempt;state.naturalPopulation57={initial:state.monsters.filter(isNaturalMonster).length,generation:0,nextAgency:null};
   globalThis.__MANRU_RELEASE__?.floorTutorial?.();
   state.generationPipelineR18={version:'r57-transactional-state-audit',baseAttempts:state.generationBaseAttemptsR18||1,finalAttempts:finalAttempt,finalKeyOk:strictFloor?true:null,floor:state.floor};
