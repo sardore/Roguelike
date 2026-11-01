@@ -10,10 +10,10 @@ const PlayStats={
  queue(){try{const list=JSON.parse(lsGet(this.QUEUE_KEY)||'[]');return Array.isArray(list)?list:[]}catch(error){ignoreError('play stats queue unreadable',error);return[]}},
  saveQueue(list){lsSet(this.QUEUE_KEY,JSON.stringify(list.slice(-this.QUEUE_MAX)))},
  // What the board knows about the run on the screen: the same fields for the progress records and the final one.
- runRecord(cause,source=state){
-  const record={v:1,id:this.deviceTag()+'-'+String(source.runId984||''),floor:source.floor,cause:String(cause||'').slice(0,40),level:source.player.level,kills:source.player.kills,turns:source.turn};
+ runRecord(cause){
+  const record={v:1,id:this.deviceTag()+'-'+String(state.runId984||''),floor:state.floor,cause:String(cause||'').slice(0,40),level:state.player.level,kills:state.player.kills,turns:state.turn};
   const nick=this.nick();if(nick)record.nick=nick;
-  const cls=source.player.classId;if(cls)record.cls=String(cls).slice(0,24);
+  const cls=state.player.classId;if(cls)record.cls=String(cls).slice(0,24);
   return record;
  },
  // The run being played is listed on the board while it goes on, one row the server keeps updating (same id). Sent when the floor or the
@@ -28,21 +28,6 @@ const PlayStats={
   fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body}).catch(error=>ignoreError('play stats progress not sent',error)).finally(()=>{this.liveBusy=false});
   return true;
  },
- // The old run is cancelled only after a replacement run is safely saved. Actual deaths and wins stay immutable.
- async abandon(run){
-  if(!run?.runId984||!run.player||run.dead||run.victory||runIsEphemeral(run)||run.debugMapGeneration57||!this.endpoint())return false;
-  const url=this.endpoint();
-  // Deployed Apps Script may still be the old version: it would store an unknown abandon request as a death.
-  // Never POST until that server explicitly advertises support for this operation.
-  try{
-   const supported=await fetch(url+(url.includes('?')?'&':'?')+'view=capabilities');
-   if(!supported.ok||(await supported.json())?.abandon!==true)return false;
-   const body=JSON.stringify({...this.runRecord('',run),abandon:1});
-   await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-   return true;
-  }catch(error){ignoreError('abandoned run not sent',error);return false}
- },
- resetProgress(){this.liveKey='';this.liveTurn=0;this.liveAt=0;},
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record=this.runRecord(cause);
