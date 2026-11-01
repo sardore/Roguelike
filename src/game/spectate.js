@@ -13,7 +13,7 @@ const Spectate={
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
  hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastSig:'',lastChat:new Map(),
- watching:null,rooms:new Map(),view:null,chat:[],unread:0,bound:false,
+ watching:null,lastSeq:-1,rooms:new Map(),view:null,chat:[],unread:0,bound:false,
  endpoint(){return document.querySelector('meta[name="manru-relay"]')?.content.trim()||''},
  httpBase(){return this.endpoint().replace(/^ws/,'http').replace(/\/[^/]*$/,'')},
  // ---- transport -------------------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ const Spectate={
   if(action==='watch'){
    if(this.viewers.size>=this.MAX_VIEWERS&&!this.viewers.has(fromId)){this.toViewer(fromId,'snapshot',{tag:this.TAG,kind:'full',refused:'가득 찼다'});return}
    const known=this.viewers.get(fromId);
-   if(known){known.seenAt=performance.now();return}
+   if(known){known.seenAt=performance.now();if(data.resync)known.needFull=true;return}
    this.viewers.set(fromId,{joinedAt:performance.now(),seenAt:performance.now(),needFull:true});this.sysChat('관전자가 들어왔다 ('+this.viewers.size+')');this.updateHostPanel();
   }else if(action==='leave'){this.viewers.delete(fromId);this.lastChat.delete(fromId);this.updateHostPanel()}
   else if(action==='chat'&&this.viewers.has(fromId)){this.viewers.get(fromId).seenAt=performance.now();this.hostChatIn(fromId,data)}
@@ -279,6 +279,10 @@ const Spectate={
  applyFrame(data){
   if(data.kind==='end'){this.viewerNotice('방송이 끝났다.');return}
   const f=data.frame;if(!f)return;
+  // A delta only fits the frame right before it. If the page was in the background or the socket dropped, frames were
+  // missed: keep the screen as it is and ask the host for a full frame instead of painting deltas onto a stale map.
+  if(!f.full&&(!this.view||data.seq!==this.lastSeq+1)){this.act('watch',{matchId:this.watching?.matchId,payload:{tag:this.TAG,resync:true}});return}
+  this.lastSeq=data.seq;
   this.view=this.merge(f.full?null:this.view,f);
   this.present(this.view,f.full);
  },
@@ -380,7 +384,7 @@ const Spectate={
   }
  },
  join(room){
-  this.watching={matchId:room.matchId,hostId:room.hostId};this.chat.length=0;this.view=null;
+  this.watching={matchId:room.matchId,hostId:room.hostId};this.chat.length=0;this.view=null;this.lastSeq=-1;
   this.closeList();this.buildScreen();this.viewerNotice('방송에 들어가는 중…');
   if(innerWidth>1080)this.toggleChat();
   this.act('watch',{matchId:room.matchId,payload:{tag:this.TAG}});
