@@ -239,7 +239,7 @@ export const scenarios = {
             connectivity: st.finalConnectivity51?.ok === true,
             temporaryFlag: Object.prototype.hasOwnProperty.call(st, 'floor6FallbackGenerationR8'),
             library: !!st.floor6GrandLibraryR8,
-            stair: st.map[st.stairs?.y]?.[st.stairs?.x] === TT.STAIR,
+            stair: st.map[st.stairs?.y]?.[st.stairs?.x] === window.__MANRU_QA_VIS__.TT.STAIR,
           };
         } finally {
           globalThis.__MANRU_GENERATE_CORE983__ = original;
