@@ -29,11 +29,18 @@ const PlayStats={
   return true;
  },
  // The old run is cancelled only after a replacement run is safely saved. Actual deaths and wins stay immutable.
- abandon(run){
+ async abandon(run){
   if(!run?.runId984||!run.player||run.dead||run.victory||runIsEphemeral(run)||run.debugMapGeneration57||!this.endpoint())return false;
-  const body=JSON.stringify({...this.runRecord('',run),abandon:1});
-  fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body}).catch(error=>ignoreError('abandoned run not sent',error));
-  return true;
+  const url=this.endpoint();
+  // Deployed Apps Script may still be the old version: it would store an unknown abandon request as a death.
+  // Never POST until that server explicitly advertises support for this operation.
+  try{
+   const supported=await fetch(url+(url.includes('?')?'&':'?')+'view=capabilities');
+   if(!supported.ok||(await supported.json())?.abandon!==true)return false;
+   const body=JSON.stringify({...this.runRecord('',run),abandon:1});
+   await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+   return true;
+  }catch(error){ignoreError('abandoned run not sent',error);return false}
  },
  resetProgress(){this.liveKey='';this.liveTurn=0;this.liveAt=0;},
  recordDeath(cause){
