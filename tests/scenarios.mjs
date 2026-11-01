@@ -218,6 +218,43 @@ export const scenarios = {
     return out;
   },
 
+  // A real boss-floor -> merchant intermission -> 6F descent must retain the full grand library.
+  async floor6Entry(browser, root) {
+    const s = await openSession(browser, root, { seed: 6060 });
+    try {
+      await startRun(s, 'wanderer');
+      const first = await s.page.evaluate(() => {
+        window.__MANRU_RELEASE__.regen(5);
+        const st = window.__MANRU_QA_UI__.state();
+        st.bossDefeated = true;
+        st.player.blinkLevel = 3;
+        const runId = st.runId984, hp = st.player.hp;
+        const intoShop = window.__MANRU_SPECIAL_FLOORS60__.qa.descend();
+        return { intoShop, shop: !!window.__MANRU_QA_UI__.state().shopIntermission?.active, runId, hp };
+      });
+      if (!first.shop) throw Error('5F -> merchant intermission did not open: ' + JSON.stringify(first));
+      const second = await s.page.evaluate(() => {
+        const st = window.__MANRU_QA_UI__.state();
+        st.player.blinkLevel = 3;
+        return window.__MANRU_SPECIAL_FLOORS60__.qa.descend();
+      });
+      await s.tick(1250);
+      const outcome = await s.page.evaluate(() => {
+        const st = window.__MANRU_QA_UI__.state();
+        return {
+          floor: st.floor, runId: st.runId984, shop: !!st.shopIntermission?.active,
+          library: !!st.floor6GrandLibraryR8, key: !!st.f6LibraryKeyR8, gate: !!st.f6LibraryGateR8,
+          prize: (st.items||[]).some(i=>i.r8LibraryPrize), connectivity: st.finalConnectivity51,
+          attempts: st.generationFinalKeyAttemptsR48, failure: st.generationFinalKeyFailureR48
+        };
+      });
+      if (outcome.floor !== 6 || outcome.runId !== first.runId || !outcome.library ||
+          !outcome.key || !outcome.gate || !outcome.prize || outcome.connectivity?.ok !== true)
+        throw Error('6F grand library descent failed: ' + JSON.stringify({ first, second, outcome }));
+      return {};
+    } finally { await s.close(); }
+  },
+
   // Floors 1-25 generated one at a time with the random stream reset before each floor, so a
   // change to the generator shows up only on the floor it affects (no shifted-seed cascade).
   async floorsind(browser, root) {
