@@ -659,7 +659,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
       stampGrandGlyphs(view,px,ya,floor,chamberFloor);return{x:px,y:ya,w,h};
     };
     const drawnHall=(ya,rows)=>{
-      const marks={},g=rows.map((r,y)=>[...r].map((ch,x)=>{if(ch>='1'&&ch<='5'){marks[ch]={x:1+x,y:ya+y};return '.'}return ch}).join(''));
+      const marks={},g=rows.map((r,y)=>[...r].map((ch,x)=>{if((ch>='1'&&ch<='5')||ch==='8'){marks[ch]={x:1+x,y:ya+y};return '.'}return ch}).join(''));
       const at0=stampRows(1,ya,g,ground);grandVaultRooms(at0.x,at0.y,at0.w,at0.h);return marks;
     };
     // a region: one drawing (mirrored for the one on the east side, so that its way in is on the side of the middle); the way in is the '6' in
@@ -702,7 +702,8 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     const halls=FLOOR2_HALLS[style],hallMarks=[drawnHall(yStart,halls.start),drawnHall(yMid,halls.middle),drawnHall(yEnd,halls.end)];
     const start=zoneRect(1,yStart,hallW,ROWS-2,'출발 홀'),middle=zoneRect(1,yMid,hallW,yMid+6,'중간 홀'),end=zoneRect(1,yEnd,hallW,yEnd+5,'출구 홀');
     // the doors of a choice are on the bottom walls of its two regions, side by side; each hall's key, the bell, the canal entrance and the stairs are marked in its drawing
-    const K1=hallMarks[0]['5'],K2=hallMarks[1]['5'];
+    // the key of a hall lies on the left or on the right, by chance
+    const keyOf=marks=>marks[rnd()<.5?'5':'8'],K1=keyOf(hallMarks[0]),K2=keyOf(hallMarks[1]);
     const doors1=[{...regions[0].door,label:'위험한 복도',branch:0},{...regions[1].door,label:'안전한 복도',branch:1}],doors2=[{...regions[2].door,label:'안전한 복도',branch:2},{...regions[3].door,label:'미지의 복도',branch:3}];
     for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(at(x,y)===TT.WATER)waterCells.push(pt(x,y));
     if(hallMarks[1]['3'])canalSpots.push(pt(hallMarks[1]['3'].x,hallMarks[1]['3'].y));
