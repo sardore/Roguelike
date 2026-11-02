@@ -1107,7 +1107,7 @@ export const scenarios = {
   },
 
   // The first floor's entry is a terraced garden in the bottom-left corner with a chest at its end: it is generated cleanly again and again, nothing
-  // lies in it, the chest holds no gear of the third tier or above, and walking into it opens it.
+  // lies in it, and walking into the chest opens it (it is the ordinary supply chest).
   async chest(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 3 });
@@ -1129,12 +1129,9 @@ export const scenarios = {
         return res;
       });
       if (garden.problems.length || garden.made !== 40) throw Error('chest: garden ' + JSON.stringify(garden));
-      const contents = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.contents(300));
-      if (contents.gearMax > 2 || contents.gearMax < 1 || contents.sizes.some((v) => v < 2 || v > 3)) throw Error('chest: contents ' + JSON.stringify(contents));
       const opened = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.open());
-      if (!opened || !opened.before || !opened.bumped || !opened.opened || !opened.tileIsFloor || opened.items < 1 || opened.again) throw Error('chest: opening ' + JSON.stringify(opened));
+      if (!opened || !opened.before || !opened.bumped || !opened.opened || !opened.tileIsFloor || opened.items < 1 || opened.items > 2 || opened.again) throw Error('chest: opening ' + JSON.stringify(opened));
       out['chest.garden'] = JSON.stringify({ made: garden.made });
-      out['chest.contents'] = JSON.stringify(contents);
       out['chest.opened'] = JSON.stringify({ opened: opened.opened, items: opened.items });
       out['chest.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }

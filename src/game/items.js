@@ -844,20 +844,10 @@ function cacheEvent(x,y){
   burst(x,y,"#b9d3a2",14,.8);
   addLog("숨겨진 보급함 발견.");
 }
-// ---- the chest at the end of the first floor's entry (see buildTutorialEntry): an ordinary chest, opened by walking into it ----
-// What it holds: something to eat or drink, something for a pinch, and a piece of gear that is never above the second tier of gear.
-function tutorialChestItems(){
-  const recovery=()=>deckPick47([...CONSUMABLES.filter(x=>x.type==='food'&&!x.craftedOnly57&&!x.naturalOnly57&&x.rarity!=='relic'&&x.rarity!=='sealed'&&(x.minFloor||1)<=state.floor),...ordinaryPotionPool(false)],'recovery');
-  const strategy=()=>globalThis.__MANRU_RANDOM57__()<.5?deckPick47(ordinaryPotionPool(true),'strategy'):talismanPick56();
-  const gear=()=>deckPick47(gear47(2).filter(x=>(x.tier||1)<=2),'gear');
-  return [recovery,strategy,gear].map(f=>f()).filter(Boolean);
-}
+// ---- the chest at the end of the first floor's entry (see buildTutorialEntry): the ordinary chest (the supply cache), opened by walking into it ----
 function openTutorialChestLoot(){
   const c=state.tutorialChest;if(!c||c.opened)return false;
-  c.opened=true;setTerrainTile58(state.map,c.x,c.y,TT.FLOOR);
-  for(const item of tutorialChestItems())PlacementService.placeItem({...item,count:item.count||1,x:c.x,y:c.y},{x:c.x,y:c.y});
-  burst(c.x,c.y,'#e0be6b',18,1);addLog('상자를 열었다.');
-  return true;
+  c.opened=true;cacheEvent(c.x,c.y);return true;
 }
 function vaultEvent(x,y){
   setTerrainTile58(state.map,x,y,TT.FLOOR);
