@@ -646,7 +646,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     const routeCells=plan.paths.map(()=>new Set()),lane=new Set(),safeCells=[],mark=(i,x,y)=>{routeCells[i].add(k(x,y))};
     plan.paths.forEach((ps,i)=>{const width=plan.widths[i];for(let j=1;j<ps.length;j++){
       const a=ps[j-1],b=ps[j];carveLine(m,...a,...b,plan.floors[i],width);
-      for(let y=Math.min(a[1],b[1])-Math.floor(width/2);y<=Math.max(a[1],b[1])+Math.floor(width/2);y++)for(let x=Math.min(a[0],b[0])-Math.floor(width/2);x<=Math.max(a[0],b[0])+Math.floor(width/2);x++){mark(i,x,y);lane.add(k(x,y))}
+      for(let y=Math.min(a[1],b[1])-Math.floor(width/2);y<=Math.max(a[1],b[1])+Math.floor(width/2);y++)for(let x=Math.min(a[0],b[0])-Math.floor(width/2);x<=Math.max(a[0],b[0])+Math.floor(width/2);x++){lane.add(k(x,y));if(y>=(i<2?23:8)&&y<=(i<2?33:18))mark(i,x,y)}
     }});
     // water first (it fills the wall), then the rooms and islands, then the ponds (they never cover a path), then stepping stones across the water
     const waterCells=[],wet=(x,y)=>{if(in60(x,y)&&!lane.has(k(x,y)))setTerrainTile58(m,x,y,TT.WATER)};
