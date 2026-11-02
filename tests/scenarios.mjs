@@ -1039,6 +1039,40 @@ export const scenarios = {
     return out;
   },
 
+  // Floors 2 and 4 choose among three candidate structures. Run ids are varied until every candidate has been made; each must pass the
+  // generator's own checks (for floor 2 the key plan, the encounters and the rewards), and floor 2 must carry its canal entrance.
+  async fixedFloors(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'wanderer');
+      const seen = { 2: {}, 4: {} }, shortest = {}, problems = [];
+      for (let n = 1; n < 80 && (Object.keys(seen[2]).length < 3 || Object.keys(seen[4]).length < 3); n++) {
+        for (const floor of [2, 4]) {
+          const r = await s.page.evaluate(([floor, n]) => {
+            window.__MANRU_QA_UI__.state().runId984 = 'fixed-' + floor + '-' + n;
+            try { window.__MANRU_RELEASE__.regen(floor); } catch (e) { return { err: String(e).slice(0, 200) }; }
+            const st = window.__MANRU_QA_UI__.state(), a = st.floor2Choice63?.encounterAudit68;
+            return { steps: floor === 2 ? globalThis.__MANRU_QA_FLOOR2__.wingSteps() : null, tpl: floor === 2 ? st.floor2Template : st.floor4Template, canal: (st.branchPortals105 || []).some((p) => p.id === 'canal'),
+              audit: floor === 2 ? !!a && !a.failures.length && a.packs.every((p) => p.actual >= p.expected) && a.rewards.every((q) => q.actual === q.expected) : true,
+              locks: floor === 2 ? st.keyPlan96?.kind : null };
+          }, [floor, n]);
+          if (r.err) { problems.push(`floor ${floor} run ${n}: ${r.err}`); continue; }
+          if (floor === 2 && (!r.canal || !r.audit || r.locks !== 'f2-choice')) problems.push(`floor 2 candidate ${r.tpl}: ${JSON.stringify(r)}`);
+          // the great well must be walked round: no wing of it may be crossed in less than 30 steps (a straight way is about 10)
+          if (floor === 2 && r.tpl === 1 && r.steps.some((v) => v < 30)) problems.push(`floor 2 well: a wing can be crossed straight: ${JSON.stringify(r.steps)}`);
+          if (floor === 2) shortest[r.tpl] = Math.min(shortest[r.tpl] ?? 999, ...r.steps);
+          seen[floor][r.tpl] = (seen[floor][r.tpl] || 0) + 1;
+        }
+      }
+      for (const floor of [2, 4]) if (Object.keys(seen[floor]).length < 3) problems.push(`floor ${floor}: only candidates ${Object.keys(seen[floor])} were made`);
+      if (problems.length) throw Error('fixedFloors: ' + problems.slice(0, 6).join('; '));
+      out['fixedFloors.candidates'] = JSON.stringify({ floor2: Object.keys(seen[2]).sort(), floor4: Object.keys(seen[4]).sort(), shortestWing: shortest });
+      out['fixedFloors.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {

@@ -251,7 +251,8 @@ function branchEntrance({required=true}={}){
  if(!DIRS4.some(([dx,dy])=>ReachabilityService.playerTerrainPassable(x+dx,y+dy)&&!OccupancyService.isOccupied(x+dx,y+dy)))continue;
  const rr=(state.rooms||[]).find(r=>x>r.x&&y>r.y&&x<r.x+r.w-1&&y<r.y+r.h-1);
  if(id==='canal'&&waterDist>3)continue;if(id==='granary'&&!rr)continue;
- candidates.push({x,y,room:rr,score:-waterDist*100+walls*8+Math.min(24,Math.abs(x-state.player.x)+Math.abs(y-state.player.y))});}
+ // a floor may name the spots its canal entrance belongs on (the great well's islet)
+ candidates.push({x,y,room:rr,score:-waterDist*100+walls*8+Math.min(24,Math.abs(x-state.player.x)+Math.abs(y-state.player.y))+(id==='canal'&&state.floor2Choice63?.canalSpots?.some(q=>q.x===x&&q.y===y)?10000:0)});}
  candidates.sort((a,b)=>b.score-a.score||a.y-b.y||a.x-b.x);const p=id==='citadel'?citadelEntranceRoom(required):id==='palace'?palaceEntranceRoom(candidates):candidates[0];if(!p){if(required)throw Error(`branch entrance unavailable: ${id}`);branchEntrancePending(id,true);return false;}branchEntrancePending(id,false);
  setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.branchPortals105=[{id,kind:'entry',x:p.x,y:p.y,to:`${id}:1`,arrival:'up',label:`${BRANCH_DEFS105[id].name} 입구`}];
  if(p.room){p.room.branchEntrance105=id;state.featureRooms=state.featureRooms||[];state.featureRooms.push({...p.room,name:`${BRANCH_DEFS105[id].name} 출입실`,branchEntrance105:true});}

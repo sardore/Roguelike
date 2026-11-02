@@ -629,39 +629,135 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
   function setEnds(start,exit){state.fixedStart={...start};state.fixedExit={...exit};state.player.x=start.x;state.player.y=start.y;state.stairs={...exit};setTerrainTile58(state.map,exit.x,exit.y,TT.STAIR)}
   function addTag(x,y,label){return state.map[y]?.[x]===TT.FLOOR}
   /* ---------- 2F: grand hall with stage, side service corridors, secret cellar ---------- */
+  /* ---------- 2F candidates ----------
+     The key plan reads a skeleton: the door rows 34 and 19, the seals 22 and 7, the key halls between them, and four wings
+     (west and east, below and above the middle) that each run from a hub door past a key and a gate. Everything else is a
+     candidate's own: candidate 0 a village (a street round a block of houses, a square with a well), candidate 1 a great well
+     (a huge round pit whose rim is the only way round and whose deep centre is reached along a causeway through the water), and
+     candidate 2 a garrison (barracks along a drill street, soldiers waiting in the dangerous wing). Each wing gives the progression
+     what it needs: a way in and out, reward spots and fighting places on the dangerous and unknown routes, no fights on the safe ones. */
+  function floor2Wings(m,cx,candidate){
+    const style=['village','well','garrison'][candidate],routeCells=[0,1,2,3].map(()=>new Set()),waterCells=[],paths=[],rewardSpots={},encounters={},safeCells=[],canalSpots=[];
+    const put=(x,y,t)=>{if(in60(x,y))setTerrainTile58(m,x,y,t)};
+    const shuffle=list=>{for(let n=list.length-1;n>0;n--){const j=Math.floor(globalThis.__MANRU_RANDOM57__()*(n+1));[list[n],list[j]]=[list[j],list[n]]}return list};
+    for(let i=0;i<4;i++){
+      const side=i%2?1:-1,xi=cx+side*5,yb=i<2?33:18,yt=i<2?23:8,xo=side<0?3:COLS-4,U=Math.min(33,Math.abs(xo-xi)-2),X=u=>xi+side*u;
+      const top=yt+3,bottom=yb-3,mid=(top+bottom)>>1,street=TT.STONE_PATH,kind=['danger','safe','safe','unknown'][i];
+      const rect=(u0,y0,u1,y1,t)=>{const a=X(u0),b=X(u1);openRect(m,Math.min(a,b),Math.min(y0,y1),Math.abs(b-a)+1,Math.abs(y1-y0)+1,t)};
+      // a building: walls round it, a floor inside, a door on the street side, furniture along the walls but not before the door
+      const building=(u0,w,doorUp,floor,props)=>{
+        const a=X(u0),b=X(u0+w-1),x0=Math.min(a,b),x1=Math.max(a,b),dx=X(u0+(w>>1)),dy=doorUp?top:bottom;
+        for(let y=top;y<=bottom;y++)for(let x=x0;x<=x1;x++)put(x,y,(x===x0||x===x1||y===top||y===bottom)?TT.WALL:floor);
+        put(dx,dy,TT.DOOR);
+        const spots=[];for(let y=top+1;y<=bottom-1;y++)for(let x=x0+1;x<=x1-1;x++)if((x===x0+1||x===x1-1||y===top+1||y===bottom-1)&&Math.abs(x-dx)+Math.abs(y-(doorUp?top+1:bottom-1))>1)spots.push([x,y]);
+        shuffle(spots);for(const t of props){const c=spots.pop();if(c)put(c[0],c[1],t)}
+        return{x:(x0+x1)>>1,y:mid};
+      };
+      const homes=[],pack=(u,y,names)=>({x:X(u),y,names});
+      if(style==='well'){
+        // the great well: a round pit filling the wing, a rim of paving round it, shallows, deep water, an islet in the middle
+        const R0=yt+1,R1=yb-1,yc=(R0+R1)/2,uc=1+(U-1)/2,rx=(U-1)/2,ry=(R1-R0)/2+.4,ring=[];
+        const d=(u,y)=>Math.hypot((u-uc)/rx,(y-yc)/ry);
+        for(let u=1;u<=U;u++)for(let y=R0;y<=R1;y++){
+          const v=d(u,y);
+          if(v>1.02)continue;
+          if(v>.8){put(X(u),y,street);ring.push([u,y,Math.atan2(y-yc,(u-uc)/rx*ry)])}
+          else if(v>.63)put(X(u),y,TT.SHALLOW_WATER);
+          else{put(X(u),y,TT.WATER);waterCells.push({x:X(u),y})}
+        }
+        // the way in and out run up the wall side; the rim is cut at its west end so the only way from one to the other is round the pit
+        rect(0,yb-2,0,yb,street);rect(0,mid+1,0,yb,street);rect(0,yt,0,mid-1,street);
+        for(let y=mid-1;y<=mid+1;y++)for(let u=1;u<=7;u++)put(X(u),y,TT.WALL);
+        for(let y=mid+2;y<=yb-1;y++)put(X(1),y,street);for(let y=yt+1;y<=mid-2;y++)put(X(1),y,street);
+        rect(0,mid+2,5,mid+3,street);rect(0,mid-3,5,mid-2,street);
+        // the deep centre: an islet with a waterway passage (a causeway of stepping stones) running through the water to it from the east rim
+        const cu=Math.round(uc),cy2=Math.round(yc);
+        for(let dy=-1;dy<=1;dy++)for(let dx=-2;dx<=2;dx++)put(X(cu+dx),cy2+dy,street);
+        put(X(cu-2),cy2-1,TT.LANTERN_POST);put(X(cu+2),cy2+1,TT.LANTERN_POST);put(X(cu),cy2-1,TT.STATUE);
+        for(let u=cu+3;u<=Math.round(uc+rx*.85);u++){put(X(u),cy2,TT.SHALLOW_WATER);setTerrainTile58(m,X(u),cy2,TT.STEPPING_STONE)}
+        // lanterns on the inner edge of the rim only where the paving is wide enough to pass them, never on the way in or out
+        for(const [u,y] of ring){
+          if(((u*5+y*3)%11)!==0||u<=7||y===cy2||m[y][X(u)]!==street)continue;
+          const wide=DIRS4.filter(([dx,dy])=>m[y+dy]?.[X(u)+dx]===street).length>=3,inner=DIRS4.some(([dx,dy])=>m[y+dy]?.[X(u)+dx]===TT.SHALLOW_WATER);
+          if(wide&&inner)put(X(u),y,TT.LANTERN_POST);
+        }
+        for(let u=3;u<U;u+=2)for(const y of [R0+1,R1-1])if(m[y][X(u)]===TT.SHALLOW_WATER)put(X(u),y,((u+y)&1)?TT.REED:TT.LOTUS_FLOWER);
+        homes.push({x:X(cu),y:cy2},{x:X(cu-1),y:cy2},{x:X(cu+1),y:cy2});canalSpots.push({x:X(cu-1),y:cy2});
+        const rimCells=ring.filter(([u,y])=>m[y][X(u)]===street).sort((a,b)=>a[2]-b[2]);
+        const at=n=>{const c=rimCells[Math.floor(rimCells.length*n)];return{x:X(c[0]),y:c[1]}};
+        encounters[i]=i===0?[{...at(.2),names:['취객','시종']},{...at(.4),names:['떠돌이 도둑']},{...at(.65),names:['객잔 경비병']},{...at(.85),names:['취객','시종']}]
+          :[{...at(.15),names:['떠돌이 도둑','객잔 쥐']},{...at(.4),names:['시종']},{...at(.62),names:['떠돌이 도둑']},{...at(.85),names:['시종']}];
+      }else{
+        // streets: in at the hub door, out along the lower street, up the far side, back along the upper street to the key and gate
+        rect(0,yb-2,0,yb,street);rect(0,yb-2,U,yb-1,street);rect(U-1,yt+1,U,yb-1,street);rect(0,yt+1,U,yt+2,street);rect(0,yt,0,yt+2,street);
+        // the square at the end of the street: a well in the village, a drill ground with weapon racks in the garrison
+        rect(U-5,top,U-2,bottom,street);
+        for(const [du,y] of [[U-5,top],[U-5,bottom],[U-2,top],[U-2,bottom]])put(X(du),y,TT.LANTERN_POST);
+        if(style==='village'){
+          for(const [du,y] of [[U-4,mid],[U-3,mid],[U-4,mid+1],[U-3,mid+1]]){put(X(du),y,TT.WATER);waterCells.push({x:X(du),y})}
+          put(X(U-3),mid-1,TT.BASIN);put(X(U-4),top+1,TT.TABLE);put(X(U-4),bottom-1,TT.JAR);put(X(U-3),top+1,TT.CRATE);put(X(U-2),mid,TT.BENCH);
+          const houseProps=[[TT.BED,TT.TABLE,TT.JAR],[TT.BED,TT.BED,TT.RACK],[TT.TABLE,TT.BENCH,TT.JAR,TT.CRATE],[TT.BED,TT.SCREEN,TT.TABLE]];
+          for(let n=0,u0=2;u0+6<=U-6;n++,u0+=6)homes.push(building(u0,7,n%2===0,TT.WOOD_FLOOR,houseProps[n%4]));
+        }else{
+          for(const u of [U-4,U-3])for(const y of [top+1,bottom-1])put(X(u),y,TT.RACK);
+          for(const [du,y] of [[U-4,mid],[U-3,mid],[U-4,mid+1],[U-3,mid+1]]){put(X(du),y,TT.WATER);waterCells.push({x:X(du),y})}
+          put(X(U-3),mid-1,TT.STATUE);
+          const bunks=kind==='danger'?[TT.BED,TT.BED,TT.RACK,TT.BED]:[TT.BED,TT.RACK,TT.TABLE];
+          for(let n=0,u0=2;u0+6<=U-6;n++,u0+=6)homes.push(building(u0,7,n%2===0,TT.DARK_WOOD,bunks));
+        }
+        encounters[i]=style==='garrison'
+          ?(i===0
+            ?[{x:X(6),y:yb-1,names:['객잔 경비병','객잔 경비병']},{x:X(13),y:yt+1,names:['객잔 경비병','시종']},{x:X(19),y:yb-1,names:['객잔 경비병','객잔 경비병']},{x:X(U-3),y:mid,names:['객잔 경비병','객잔 경비병','시종']},{x:X(26),y:yt+1,names:['객잔 경비병','시종']}]
+            :[{x:X(8),y:yt+1,names:['떠돌이 도둑','객잔 경비병']},{x:X(17),y:yb-1,names:['객잔 경비병']},{x:X(U-3),y:mid+1,names:['객잔 경비병','시종']},{x:X(25),y:yt+1,names:['떠돌이 도둑']}])
+          :(i===0
+            ?[{x:X(8),y:yb-1,names:['취객','시종']},{x:X(16),y:yt+1,names:['떠돌이 도둑']},{x:X(U-3),y:mid+1,names:['객잔 경비병']},{x:X(24),y:yb-1,names:['취객','시종']}]
+            :[{x:X(9),y:yt+1,names:['떠돌이 도둑','객잔 쥐']},{x:X(17),y:yb-1,names:['시종']},{x:X(U-3),y:mid-1,names:['떠돌이 도둑']},{x:X(25),y:yt+1,names:['시종']}]);
+      }
+      // roadside: stalls and benches on the safe routes, traps in the dangerous and unknown ones
+      if(style!=='well'){
+        const edge=[yb-1,yt+1];
+        for(let u=6;u<=U-8;u+=7)for(const y of edge){
+          if(kind==='safe'&&u%2===0)put(X(u),y,[TT.TABLE,TT.JAR,TT.BENCH,TT.CRATE][(u+y)%4]);
+          else if(kind==='danger'&&u%2===1)put(X(u),y===yb-1?yb-2:yt+2,TT.TRAP);
+          else if(kind==='unknown'&&u%3===0)put(X(u),y===yb-1?yb-2:yt+2,TT.SNARE);
+        }
+        for(let u=4;u<=U-8;u+=9)put(X(u),yb-2,TT.LANTERN_POST);
+      }
+      // everything open inside the wing belongs to the route
+      for(let y=yt;y<=yb;y++)for(let x=Math.min(xi,xo);x<=Math.max(xi,xo);x++)if(m[y][x]!==TT.WALL)routeCells[i].add(k(x,y));
+      paths.push(style==='well'?[[X(0),yb],[X(0),mid+2],[X(U),mid],[X(0),mid-2],[X(0),yt]]:[[X(0),yb],[X(0),yb-1],[X(U),yb-1],[X(U),yt+1],[X(0),yt+1],[X(0),yt]]);
+      if(i===0||i===3){rewardSpots[i]=homes.slice(0,3).map(q=>({x:q.x,y:q.y}));if(style==='well'&&homes.length<3)rewardSpots[i]=[{x:X(Math.round(1+(U-1)/2)),y:mid}]}
+      else encounters[i]=undefined;
+    }
+    for(const i of [1,2]){safeCells.push(...routeCells[i]);delete encounters[i]}
+    return{paths,routeCells,safeCells,waterCells,rewardSpots,encounters,canalSpots};
+  }
+  // The shared halls get a face of their own.
+  function floor2Halls(m,cx,candidate){
+    const style=['village','well','garrison'][candidate],put=(x,y,t)=>{if(in60(x,y)&&m[y][x]!==TT.WALL&&m[y][x]!==TT.DOOR)setTerrainTile58(m,x,y,t)};
+    const ground=style==='well'?TT.LIGHT_GRASS:style==='garrison'?TT.DARK_WOOD:TT.STONE_PATH;
+    for(let y=39;y<ROWS-2;y++)for(let x=cx-15;x<=cx+15;x++)if(m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,ground);
+    if(style==='village'){
+      put(cx,45,TT.BASIN);for(const [dx,dy] of [[-3,0],[3,0],[0,-3],[0,3]])put(cx+dx,45+dy,TT.LANTERN_POST);
+      for(const x of [cx-10,cx-6,cx+6,cx+10]){put(x,41,TT.TABLE);put(x,50,TT.JAR);put(x+1,41,TT.CRATE)}
+    }else if(style==='well'){
+      for(const x of [cx-11,cx-7,cx+7,cx+11])for(const y of [41,48])put(x,y,y===41?TT.GARDEN_TREE:TT.FLOWERBED);
+      put(cx-4,45,TT.MOON_GATE);put(cx+4,45,TT.MOON_GATE);for(const x of [cx-6,cx+6])put(x,45,TT.BENCH);
+    }else{
+      for(const x of [cx-11,cx-7,cx+7,cx+11])for(const y of [41,49])put(x,y,y===41?TT.RACK:TT.STATUE);
+      for(const [dx,dy] of [[-4,45],[4,45]])put(cx+dx,dy,TT.RACK);
+    }
+  }
   function buildFloor2GreatHall(m){
     fillMap(m,TT.WALL);state.rooms=[];state.routeTags=[];
     const cx=Math.floor(COLS/2),v=state.floorSeed60%3;state.earlyHallVariant58=v;
     const room=(x,y,w,h,name)=>{openRect(m,x,y,w,h);const r=roomRect(x,y,w,h);state.rooms.push(r);return{...r,name}};
     const foyer=room(cx-16,38,33,ROWS-39,'대연회 진입 회랑'),hub1=room(cx-14,35,29,3,'첫 선택 전실'),hub2=room(cx-14,20,29,3,'합류 휴게 회랑'),end=room(cx-10,3,21,5,'공통 보상 회랑');
     carveLine(m,cx,37,cx,39,TT.FLOOR,3);
-    const paths=[
-      [[cx-5,33],[5,33],[5,29],[17,29],[17,31],[29,31],[29,27],[5,27],[5,23],[cx-5,23],[cx-5,22]],
-      [[cx+5,33],[53+v,33],[53+v,29],[66,29],[66,24],[cx+5,24],[cx+5,22]],
-      [[cx-5,18],[24-v,18],[24-v,14],[10,14],[10,9],[cx-5,9],[cx-5,7]],
-      [[cx+5,18],[78,18],[78,14],[65,14],[65,16],[53,16],[53,12],[78,12],[78,8],[cx+5,8],[cx+5,7]]
-    ];
-    const routeCells=paths.map(()=>new Set()),safeCells=[];
-    paths.forEach((ps,i)=>{const width=i===1||i===2?3:1;for(let j=1;j<ps.length;j++){
-      const a=ps[j-1],b=ps[j];carveLine(m,...a,...b,i===0?TT.CARPET:i===1||i===2?TT.STONE_PATH:TT.FLOOR,width);
-      for(let y=Math.min(a[1],b[1])-Math.floor(width/2);y<=Math.max(a[1],b[1])+Math.floor(width/2);y++)for(let x=Math.min(a[0],b[0])-Math.floor(width/2);x<=Math.max(a[0],b[0])+Math.floor(width/2);x++)routeCells[i].add(k(x,y));
-    }});
-    // Walled switchbacks feed separate guard pockets and reward rooms through narrow mouths.
-    const chambers=[{x:1,y:24,w:3,h:3,route:0},{x:39,y:29,w:5,h:3,route:0},{x:80,y:14,w:4,h:3,route:3},{x:44,y:10,w:5,h:2,route:3}];
-    for(const r of chambers){openRect(m,r.x,r.y,r.w,r.h);for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++)routeCells[r.route].add(k(x,y))}
-    const spurs=[{route:0,points:[[5,25],[2,25]]},{route:0,points:[[29,27],[41,27],[41,30]]},{route:3,points:[[78,15],[82,15]]},{route:3,points:[[53,12],[48,12],[48,10]]}];
-    for(const spur of spurs)for(let j=1;j<spur.points.length;j++){const a=spur.points[j-1],b=spur.points[j];carveLine(m,...a,...b,spur.route===0?TT.CARPET:TT.DARK_WOOD,1);for(let y=Math.min(a[1],b[1]);y<=Math.max(a[1],b[1]);y++)for(let x=Math.min(a[0],b[0]);x<=Math.max(a[0],b[0]);x++)routeCells[spur.route].add(k(x,y))}
-    for(const [x,y]of [[4,25],[41,28],[79,15],[49,12]])setTerrainTile58(m,x,y,TT.DOOR);
-    // Water remains alongside the walkways, with stone crossings at the intersections.
-    const waterCells=[];
-    for(const [x0,x1,y]of[[9,22,32],[45,65,26],[11,23,16],[49,66,7]])for(let x=x0;x<=x1;x++){
-      if(m[y][x]===TT.WALL){setTerrainTile58(m,x,y,TT.WATER);waterCells.push({x,y})}
-      else if(m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,TT.DRAWBRIDGE_DOWN);
-    }
-    for(const [x,y,t]of[[1,24,TT.ARMORY],[39,29,TT.CRATE],[43,29,TT.TABLE],[80,14,TT.INCENSE_STAND],[83,16,TT.RACK],[55,25,TT.LANTERN_POST],[62,28,TT.BENCH],[16,10,TT.LANTERN_POST],[22,17,TT.PAPER_CRANE],[10,33,TT.TRAP],[23,31,TT.TRAP],[71,18,TT.SNARE],[53,14,TT.TRAP]])if(m[y]?.[x]!==TT.WALL)setTerrainTile58(m,x,y,t);
-    for(const i of [1,2])safeCells.push(...routeCells[i]);
-    const rewardSpots={0:[{x:2,y:25},{x:41,y:31},{x:20,y:31}],3:[{x:82,y:15},{x:46,y:10},{x:57,y:16}]};
-    const encounters={0:[{x:31,y:33,names:['취객','시종']},{x:9,y:29,names:['떠돌이 도둑']},{x:26,y:27,names:['취객','시종']},{x:41,y:30,names:['객잔 경비병']}],3:[{x:71,y:18,names:['떠돌이 도둑','객잔 쥐']},{x:58,y:16,names:['시종']},{x:46,y:10,names:['떠돌이 도둑']},{x:82,y:15,names:['시종']}]};
+    let paths,routeCells,safeCells=[],waterCells=[],rewardSpots,encounters;
+    // Three candidates share the skeleton the key plan reads (door rows, seals, hubs) and nothing else: a village, a great well, a garrison.
+    const candidate=Math.floor(state.floorSeed60/3)%3;state.floor2Template=candidate;
+    let canalSpots;({paths,routeCells,safeCells,waterCells,rewardSpots,encounters,canalSpots}=floor2Wings(m,cx,candidate));
     const branches=routeCells.map((cells,i)=>({id:i,kind:['danger','safe','safe','unknown'][i],cells:[...cells],spine:paths[i].map(([x,y])=>({x,y})),reward:rewardSpots[i]?.[0]||null,rewardSpots:rewardSpots[i]||[],encounters:encounters[i]||[],bonusCount:i===0?6:i===3?5:0}));
     // Exit seals separate each route from its merge hall. Their keys exist only inside that route.
     for(const y of [22,7])for(let x=1;x<COLS-1;x++)setTerrainTile58(m,x,y,TT.WALL);
@@ -674,14 +770,14 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     for(const y of[40,44,47])for(const x of[cx-12,cx+12])setTerrainTile58(m,x,y,TT.STONE_PILLAR);
     for(const y of[39,43,47])for(const x of[cx-9,cx+9])setTerrainTile58(m,x,y,TT.LANTERN_POST);
     for(const y0 of[40,48])for(const side of[-1,1]){const x0=side<0?cx-14:cx+7;for(let y=y0;y<y0+6;y++)for(let x=x0;x<x0+8;x++)if(x===x0||x===x0+7||y===y0||y===y0+5)setTerrainTile58(m,x,y,TT.WALL);setTerrainTile58(m,side<0?x0+7:x0,y0+3,TT.DOOR);setTerrainTile58(m,x0+3,y0+2,TT.TABLE);setTerrainTile58(m,x0+3,y0+4,TT.BENCH);}
-    setTerrainTile58(m,cx+9,32,TT.LANTERN_POST);
     for(const [x,y]of[[cx-9,2],[cx+9,2],[cx-14,37],[cx+14,37]])if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.WALL_BANNER);
     const west=room(9,40,11,8,'공용 준비실'),east=room(57,40,11,8,'공용 식당');carveLine(m,19,43,28,43,TT.FLOOR,1);carveLine(m,54,43,57,43,TT.FLOOR,1);
     for(const [x,y,t]of[[12,42,TT.RACK],[16,45,TT.BENCH],[60,42,TT.COOKPOT],[64,45,TT.TABLE],[26,36,TT.LANTERN_POST],[50,21,TT.LANTERN_POST],[30,5,TT.LANTERN_POST],[46,5,TT.LANTERN_POST]])setTerrainTile58(m,x,y,t);
-    state.floor2Choice63={version:5,branches,waterCells,safeCells,commonZones:[foyer,hub1,hub2,end,west,east],stages:[{keyId:'choice-copper',key:{x:cx,y:36},doors:[{x:cx-5,y:34,label:'위험한 복도',branch:0},{x:cx+5,y:34,label:'안전한 복도',branch:1}]},{keyId:'choice-silver',key:{x:cx,y:21},doors:[{x:cx-5,y:19,label:'안전한 복도',branch:2},{x:cx+5,y:19,label:'미지의 복도',branch:3}]}]};
+    floor2Halls(m,cx,candidate);
+    state.floor2Choice63={version:5,branches,waterCells,safeCells,canalSpots,commonZones:[foyer,hub1,hub2,end,west,east],stages:[{keyId:'choice-copper',key:{x:cx,y:36},doors:[{x:cx-5,y:34,label:'위험한 복도',branch:0},{x:cx+5,y:34,label:'안전한 복도',branch:1}]},{keyId:'choice-silver',key:{x:cx,y:21},doors:[{x:cx-5,y:19,label:'안전한 복도',branch:2},{x:cx+5,y:19,label:'미지의 복도',branch:3}]}]};
     state.featureRooms=[foyer,hub1,hub2,end,west,east];
     state.routeTags=[{x:cx,y:36,label:'동제 갈림열쇠 · 두 문 중 한 문만'},{x:cx-5,y:35,label:'피 묻은 창호 · 위험한 복도'},{x:cx+5,y:35,label:'등불 켜진 창호 · 안전한 복도'},{x:cx,y:21,label:'은제 갈림열쇠 · 두 문 중 한 문만'},{x:cx+5,y:20,label:'창 없는 회랑 · 미지의 복도'}];
-    state.layoutName='백석연 · 삼중 굽이와 매복 측실 / 두 번의 선택 · 공통 보급실';setEnds({x:cx,y:ROWS-4},{x:cx,y:5});
+    state.layoutName=['저잣골목 마을 · 네 갈래 골목과 안채','거대 우물 · 깊은 곳의 수로 통로','경비 병영 · 연무장과 병사 숙소'][candidate]+' / 두 번의 선택 · 공통 보급실';setEnds({x:cx,y:ROWS-4},{x:cx,y:5});
   }
   /* ---------- 4F: + / X / Y double-junction choice floor ---------- */
   function buildChoice(m){
@@ -709,7 +805,30 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     ys.forEach((routeY,ri)=>sideXs.forEach((sx,si)=>{const below=ri===0||(ri===1&&si===0),w=9,h=7,rx=clamp(sx-Math.floor(w/2),2,COLS-w-2),ry=below?routeY+4:routeY-h-3;if(!wallRect(rx,ry,w,h))return;const r=walledBox(m,rx,ry,w,h,TT.FLOOR,true),dx=r.cx,dy=below?r.y:r.y+r.h-1,oy=below?dy-1:dy+1;setTerrainTile58(m,dx,dy,TT.DOOR);carveLine(m,dx,oy,dx,routeY,TT.FLOOR,1);const ft=(ri+si)%3===0?TT.CACHE:(ri+si)%3===1?TT.FOUNTAIN:TT.RUMOR;setTerrainTile58(m,r.cx,r.cy,ft);if(m[r.cy][r.x+2]===TT.FLOOR)setTerrainTile58(m,r.x+2,r.cy,TT.STONE_PILLAR);if(m[r.cy][r.x+r.w-3]===TT.FLOOR)setTerrainTile58(m,r.x+r.w-3,r.cy,TT.STONE_PILLAR);const fr={name:['보급 측실','휴식 감실','기록 측실'][(ri+si)%3],x:r.x,y:r.y,w:r.w,h:r.h};state.featureRooms.push(fr);state.itemBiasZones94.push(fr);sideMade++}));
     state.choiceSideRooms95=sideMade;state.layoutName+=' / 부속 측실군';
     const hidden=[];for(let y=ys[0]+3;y<=ys[2]-3;y++)hidden.push({x:cx,y});registerHidden(hidden,TT.HIDDEN_WALL,TT.FLOOR,'세 갈래를 잇는 종업원 비밀 통로',TT.WALL);
+    floor4Theme(m,cx,cy,ys,j1,j2);
     setEnds({x:start.cx,y:start.cy},{x:exit.cx,y:exit.cy});
+  }
+  // 4F: the route topology (+, X or Y) is one die, this is the other: an inn as it was, a market with stalls and squares, or a
+  // canal with a waterway down the middle of each long hall and stepping stones across it. Nothing is built across a hall.
+  function floor4Theme(m,cx,cy,ys,j1,j2){
+    const theme=Math.floor(state.floorSeed60/3)%3;state.floor4Template=theme;
+    if(theme===0)return;
+    const put=(x,y,t)=>{if(in60(x,y)&&m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,t)};
+    const open=(x,y)=>m[y]?.[x]===TT.FLOOR;
+    state.layoutName+=theme===1?' / 시장 거리':' / 수로 복도';
+    for(const y of ys){
+      // a straight three-wide stretch of hall: the cell and the cells above and below it are floor
+      const straight=[];for(let x=j1.x+3;x<=j2.x-3;x++)if(open(x,y-1)&&open(x,y)&&open(x,y+1)&&Math.abs(x-cx)>6)straight.push(x);
+      if(theme===1){
+        // market: stalls on the edge rows, a lantern post every few cells, a well in the middle of the long runs
+        for(const x of straight){const n=x%6;if(n===0){put(x,y-1,[TT.TABLE,TT.JAR,TT.CRATE][(x/6|0)%3]);put(x,y+1,[TT.CRATE,TT.TABLE,TT.JAR][(x/6|0)%3])}else if(n===3&&(x/3|0)%2===0){put(x,y-1,TT.LANTERN_POST);put(x,y+1,TT.LANTERN_POST)}}
+        const mid=straight[straight.length>>1];if(mid!==undefined)put(mid,y,TT.BASIN);
+      }else{
+        // canal: water down the middle row, a crossing of stepping stones every five cells, reeds on the banks
+        for(const x of straight){if(x%5===0){put(x,y,TT.SHALLOW_WATER);setTerrainTile58(m,x,y,TT.STEPPING_STONE)}else{put(x,y,TT.WATER)}}
+        for(const x of straight)if(x%7===0&&m[y-1][x]===TT.FLOOR){setTerrainTile58(m,x,y-1,TT.SHALLOW_WATER);setTerrainTile58(m,x,y-1,TT.REED)}
+      }
+    }
   }
   /* ---------- 6F: organic pavilion archipelago with loops and hidden reed bridge ---------- */
   function buildPavilion(m){
