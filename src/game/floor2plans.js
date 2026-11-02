@@ -33,7 +33,7 @@ const FLOOR2_PLANS=Object.freeze([
       bonus:[6,2,2,5],
       windows:[[cx-8,34],[cx-14,34],[cx+8,34],[cx+14,34],[cx-8,19],[cx-14,19]],
       tags:[[cx-5,35,'창으로 골목이 보인다 · 위험한 복도'],[cx+5,35,'등불 켜진 큰길 · 안전한 복도'],[cx+5,20,'창 없는 뒷길 · 미지의 복도']],
-      bell:{x:cx+3,y:21,commander:[cx+10,21],route:[[30,36],[56,36],[34,21],[52,21]]}
+      bell:{x:cx+3,y:20,commander:[cx+10,21],route:[[30,36],[56,36],[34,21],[52,21]]}
     };
   },
   // 1 great well: pools with islands; the dangerous region is a reservoir whose islands are reached by stepping stones
