@@ -646,53 +646,49 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     const rect=(xa,ya,xb,yb,t)=>{for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++)put(x,y,t)};
     const keyAt=(x,y)=>k(X(x),Y(y)),zoneRect=(xa,ya,xb,yb,name)=>{const x0=Math.min(X(xa),X(xb)),y0=Math.min(Y(ya),Y(yb)),r=roomRect(x0,y0,Math.abs(X(xb)-X(xa))+1,Math.abs(Y(yb)-Y(ya))+1);state.rooms.push(r);return{...r,name}};
     // the zones, west to east: start, region, middle hall, region, stairs; two regions (north and south) in each region column
-    const sw=11,hw=11,ew=8,span=COLS-2-sw-hw-ew-4,colA=Math.round(span*.6),colB=span-colA;
+    const sw=11,hw=11,ew=9,span=COLS-2-sw-hw-ew-4,colA=Math.round(span*.6),colB=span-colA;
     const x1S=sw,wallS=x1S+1,x0A=wallS+1,x1A=x0A+colA-1,wallA=x1A+1,x0H=wallA+1,x1H=x0H+hw-1,wallH=x1H+1,x0B=wallH+1,x1B=x0B+colB-1,wallB=x1B+1,x0E=wallB+1,x1E=COLS-2;
     const zt=Math.floor((ROWS-6)/2),yT1=zt,yB0=zt+5,yB1=ROWS-2,road0=zt+2,road1=zt+3,mid=Math.floor((ROWS-1)/2);
     const xc=Math.floor((x0H+x1H)/2);
-    const wall=style==='well'?TT.WATER:TT.WALL,lane=style==='garrison'?TT.DARK_WOOD:TT.STONE_PATH,chamberFloor=style==='well'?TT.STONE_PATH:TT.WOOD_FLOOR;
+    const ground=style==='garrison'?TT.DARK_WOOD:style==='well'?TT.LIGHT_GRASS:TT.STONE_PATH,lane=style==='garrison'?TT.DARK_WOOD:TT.STONE_PATH,chamberFloor=style==='well'?TT.STONE_PATH:TT.WOOD_FLOOR;
     const waterCells=[],canalSpots=[],props=(list,n)=>{for(let i=list.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[list[i],list[j]]=[list[j],list[i]]}return list.slice(0,n)};
-    // a region: a grid of hand-drawn tiles (floor2tiles.js) joined one to the next along a snake route; every other seam is walled up, so the way
-    // through is the whole snake. The way in is the west port of the first tile, the way out the east port of the last.
-    const TW=10,TH=12,chamberOf=(rows,x,y)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>rows[y+dy]?.[x+dx]==='R')?'R':'.';
-    const tileRegion=(xa,ya,cols,r0,tileList)=>{
-      const rowsN=2,order=cols===3?[[0,r0],[0,1-r0],[1,1-r0],[1,r0],[2,r0],[2,1-r0]]:[[0,r0],[0,1-r0],[1,1-r0],[1,r0]],step=new Map(order.map((c,n)=>[c[1]*cols+c[0],n]));
-      const grid=Array.from({length:rowsN*TH},()=>Array(cols*TW).fill('#')),pool=props([...tileList],tileList.length);
-      order.forEach(([cx,cy],n)=>{
-        const tile=pool[n%pool.length],fx=rnd()<.5,fy=rnd()<.5;
-        let rows=tile.rows.map(r=>[...r]);if(fy)rows.reverse();if(fx)rows=rows.map(r=>r.reverse());
-        // seams: a port stays open only toward the next or the previous tile of the route (and to the outside at the way in and the way out)
-        const nbr=(dx,dy)=>{const q=step.get((cy+dy)*cols+cx+dx);return q!==undefined&&(q===n+1||q===n-1)&&cx+dx>=0&&cx+dx<cols&&cy+dy>=0&&cy+dy<rowsN};
-        const open={N:nbr(0,-1),S:nbr(0,1),W:nbr(-1,0)||(n===0),E:nbr(1,0)||(n===order.length-1)};
-        const ports={N:[[4,0],[5,0]],S:[[4,TH-1],[5,TH-1]],W:[[0,5],[0,6]],E:[[TW-1,5],[TW-1,6]]};
-        for(const k of 'NSWE')if(!open[k])for(const [x,y] of ports[k])rows[y][x]='#';
-        rows.forEach((row,j)=>row.forEach((ch,i)=>{grid[cy*TH+j][cx*TW+i]=ch}));
-      });
-      const g=grid.map(r=>r.join('')),rewards=[],packs=[];
-      // markers become plain floor; the drawing keeps the places where loot and soldiers belong
-      for(let y=0;y<g.length;y++)for(let x=0;x<g[y].length;x++){const ch=g[y][x];if(ch==='$'||ch==='!'){(ch==='$'?rewards:packs).push({x,y});const f=chamberOf(g,x,y);g[y]=g[y].slice(0,x)+f+g[y].slice(x+1)}}
-      const w=cols*TW,h=rowsN*TH,x0=flipX?X(xa+w-1):xa,y0=flipY?Y(ya+h-1):ya;
-      const view=g.map(r=>flipX?[...r].reverse().join(''):r);if(flipY)view.reverse();
-      stampGrandGlyphs(view,x0,y0,lane,chamberFloor);
+    // Everything on this floor is drawn by hand (floor2regions.js). stampRows lays a drawing whose top-left cell is (xa,ya) in the floor's own
+    // coordinates; the digits of a drawing mark places and are returned in `marks`, '$' and '!' mark loot and soldier spots.
+    const chamberOf=(rows,x,y)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>rows[y+dy]?.[x+dx]==='R')?'R':'.';
+    const stampRows=(xa,ya,rows,floor)=>{
+      const w=rows[0].length,h=rows.length,view=rows.map(r=>flipX?[...r].reverse().join(''):r);if(flipY)view.reverse();
+      stampGrandGlyphs(view,flipX?X(xa+w-1):xa,flipY?Y(ya+h-1):ya,floor,chamberFloor);
+    };
+    const drawnHall=(xa,rows)=>{
+      const marks={},g=rows.map((r,y)=>[...r].map((ch,x)=>{if(ch>='1'&&ch<='5'){marks[ch]={x:xa+x,y:1+y};return '.'}return ch}).join(''));
+      stampRows(xa,1,g,ground);return marks;
+    };
+    // a region: one drawing, flipped north to south by chance; the way in is the gap in its west edge, the way out the gap in its east edge
+    const drawnRegion=(xa,ya,drawing)=>{
+      const flip=rnd()<.5,rows=drawing.rows.map(r=>[...r]),w=rows[0].length,h=rows.length;if(flip)rows.reverse();
+      const g=rows.map(r=>r.join('')),rewards=[],packs=[];
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){const ch=g[y][x];if(ch==='$'||ch==='!'){(ch==='$'?rewards:packs).push({x,y});g[y]=g[y].slice(0,x)+chamberOf(g,x,y)+g[y].slice(x+1)}}
+      stampRows(xa,ya,g,lane);
       const walk=ch=>!'#TrPLSBtkbiCFWjanohm~vl'.includes(ch),open=(x,y)=>g[y]?.[x]!==undefined&&walk(g[y][x]);
-      const ye=ya+r0*TH+5,exitRow=(1-r0)*TH+5,exitY=ya+exitRow;
-      const start={x:0,y:r0*TH+5},dist=new Map([[start.y*w+start.x,0]]),queue=[start];
+      let ry=0,ey=0;while(!open(0,ry))ry++;while(!open(w-1,ey))ey++;
+      const dist=new Map([[ry*w,0]]),queue=[{x:0,y:ry}];
       for(const q of queue)for(const [dx,dy] of DIRS4){const nx=q.x+dx,ny=q.y+dy;if(!open(nx,ny)||dist.has(ny*w+nx))continue;dist.set(ny*w+nx,dist.get(q.y*w+q.x)+1);queue.push({x:nx,y:ny})}
-      const cells=new Set();for(let y=0;y<g.length;y++)for(let x=0;x<w;x++)if(open(x,y))cells.add(keyAt(xa+x,ya+y));
-      const far=list=>list.filter(c=>dist.has(c.y*w+c.x)).sort((p,q)=>dist.get(q.y*w+q.x)-dist.get(p.y*w+p.x)),abs=c=>({x:xa+c.x,y:ya+c.y});
-      const along=list=>{const l=list.filter(c=>dist.has(c.y*w+c.x)).sort((p,q)=>dist.get(p.y*w+p.x)-dist.get(q.y*w+q.x));return n=>abs(l[Math.min(l.length-1,Math.floor(n*l.length))])};
-      return{cells,ye,yx:exitY,steps:dist.get(exitRow*w+w-1),chambers:far(rewards).map(abs),at2:along(packs)};
+      const cells=new Set();for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(open(x,y))cells.add(keyAt(xa+x,ya+y));
+      const reach=list=>list.filter(c=>dist.has(c.y*w+c.x)),abs=c=>({x:xa+c.x,y:ya+c.y});
+      const far=reach(rewards).sort((p,q)=>dist.get(q.y*w+q.x)-dist.get(p.y*w+p.x)).map(abs);
+      const along=(()=>{const l=reach(packs).sort((p,q)=>dist.get(p.y*w+p.x)-dist.get(q.y*w+q.x));return n=>abs(l[Math.min(l.length-1,Math.floor(n*l.length))])})();
+      return{cells,ye:ya+ry,yx:ya+ey,steps:dist.get(ey*w+w-1),chambers:far,at2:along};
     };
     const dangerPacks={village:[['취객','시종'],['떠돌이 도둑'],['객잔 경비병'],['취객','시종']],well:[['취객','시종'],['떠돌이 도둑'],['객잔 경비병'],['취객','시종']],
       garrison:[['객잔 경비병','객잔 경비병'],['객잔 경비병','시종'],['객잔 경비병','객잔 경비병'],['객잔 경비병','객잔 경비병','시종'],['객잔 경비병','시종']]};
     const unknownPacks={village:[['떠돌이 도둑','객잔 쥐'],['시종'],['떠돌이 도둑'],['시종']],well:[['떠돌이 도둑','객잔 쥐'],['시종'],['떠돌이 도둑'],['시종']],
       garrison:[['떠돌이 도둑','객잔 경비병'],['객잔 경비병'],['객잔 경비병','시종'],['떠돌이 도둑']]};
-    const tilesOf=style==='village'?FLOOR2_TILES.village:style==='well'?FLOOR2_TILES.well:FLOOR2_TILES.garrison;
-    const regions=[{id:0,kind:'danger',xa:x0A,xb:x1A,ya:1,cols:3,gate:wallA,from:wallS},{id:1,kind:'safe',xa:x0A,xb:x1A,ya:yB0,cols:3,gate:wallA,from:wallS},
-      {id:2,kind:'safe',xa:x0B,xb:x1B,ya:1,cols:2,gate:wallB,from:wallH},{id:3,kind:'unknown',xa:x0B,xb:x1B,ya:yB0,cols:2,gate:wallB,from:wallH}];
+    const drawings=FLOOR2_REGIONS[style],wideOrder=props([...drawings.wide],2),narrowOrder=props([...drawings.narrow],2);
+    const regions=[{id:0,kind:'danger',xa:x0A,xb:x1A,ya:1,draw:wideOrder[0],gate:wallA,from:wallS},{id:1,kind:'safe',xa:x0A,xb:x1A,ya:yB0,draw:wideOrder[1],gate:wallA,from:wallS},
+      {id:2,kind:'safe',xa:x0B,xb:x1B,ya:1,draw:narrowOrder[0],gate:wallB,from:wallH},{id:3,kind:'unknown',xa:x0B,xb:x1B,ya:yB0,draw:narrowOrder[1],gate:wallB,from:wallH}];
     const exitIds=['f2-danger-exit','f2-east-safe-exit','f2-west-safe-exit','f2-unknown-exit'],branches=[],steps=[];
     for(const r of regions){
-      const z=tileRegion(r.xa,r.ya,r.cols,rnd()<.5?0:1,tilesOf),packs=r.kind==='danger'?dangerPacks[style]:r.kind==='unknown'?unknownPacks[style]:[];
+      const z=drawnRegion(r.xa,r.ya,r.draw),packs=r.kind==='danger'?dangerPacks[style]:r.kind==='unknown'?unknownPacks[style]:[];
       r.ye=z.ye;r.yx=z.yx;
       const sealWall={x:r.gate,y:r.yx},sealKey={x:r.xb,y:r.yx};
       put(sealWall.x,sealWall.y,TT.LOCKED_GATE);put(sealKey.x,sealKey.y,TT.KEY_TILE);put(r.from,r.ye,TT.DOOR);
@@ -703,45 +699,24 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
       steps.push(z.steps);
     }
     // the three common zones
-    const ground=style==='garrison'?TT.DARK_WOOD:style==='well'?TT.LIGHT_GRASS:TT.STONE_PATH,hall=(xa,xb)=>rect(xa,1,xb,ROWS-2,ground);
-    hall(1,x1S);hall(x0H,x1H);hall(x0E,x1E);
+    const halls=FLOOR2_HALLS[style],hallMarks=[drawnHall(1,halls.start),drawnHall(x0H,halls.middle),drawnHall(x0E,halls.end)];
     const start=zoneRect(1,1,x1S,ROWS-2,'출발 홀'),middle=zoneRect(x0H,1,x1H,ROWS-2,'중간 홀'),end=zoneRect(x0E,1,x1E,ROWS-2,'출구 홀');
-    // the way out of the middle hall and the way into the end: gates and doors are on the walls between the zones
-    const K1={x:x1S-2,y:mid},K2={x:xc,y:mid};
+    // the gates and doors are on the walls between the zones; each hall's key, the bell, the canal entrance and the stairs are marked in its drawing
+    const K1=hallMarks[0]['5'],K2=hallMarks[1]['5'];
     const doors1=[{x:wallS,y:regions[0].ye,label:'위험한 복도',branch:0},{x:wallS,y:regions[1].ye,label:'안전한 복도',branch:1}],doors2=[{x:wallH,y:regions[2].ye,label:'안전한 복도',branch:2},{x:wallH,y:regions[3].ye,label:'미지의 복도',branch:3}];
     for(const d of [...doors1,...doors2])put(d.x,d.y,TT.DOOR);
-    // each theme's face and mechanism
-    const lanterns=(list)=>list.forEach(([x,y])=>{if(at(x,y)===ground)put(x,y,TT.LANTERN_POST)});
+    for(let y=1;y<ROWS-1;y++)for(const x of [...Array(x1S).keys()].map(i=>i+1).concat([...Array(hw).keys()].map(i=>x0H+i),[...Array(x1E-x0E+1).keys()].map(i=>x0E+i)))if(at(x,y)===TT.WATER)waterCells.push(pt(x,y));
+    if(hallMarks[1]['3'])canalSpots.push(pt(hallMarks[1]['3'].x,hallMarks[1]['3'].y));
     if(style==='village'){
-      lanterns([[3,5],[3,ROWS-6],[x1S-1,5],[x1S-1,ROWS-6],[x0H+1,5],[x1H-1,5],[x0H+1,ROWS-6],[x1H-1,ROWS-6]]);
-      for(const y of [mid-6,mid+6])for(const x of [3,6,9]){put(x,y,[TT.TABLE,TT.JAR,TT.CRATE][(x+y)%3])}
-      // the middle hall: the bell in its centre, a pond with a well to one side, and the road to the stairs along the middle band
-      put(xc,mid+4,TT.SWITCH);
-      for(const [dx,dy] of [[-1,0],[0,0],[-1,1],[0,1]]){put(xc+4+dx,mid-9+dy,TT.WATER);const c=pt(xc+4+dx,mid-9+dy);waterCells.push(c)}
-      put(xc+4,mid-11,TT.BASIN);
-      K2.y=mid-4;
+      // the bell in the middle hall lowers the bridges of the road to the stairs along the middle band and wakes the legion commander
+      const bell=hallMarks[1]['4'];
+      put(bell.x,bell.y,TT.SWITCH);
       rect(wallH,road0,wallB,road1,TT.STONE_PATH);put(wallH,road0,TT.DRAWBRIDGE_UP);put(wallH,road1,TT.DRAWBRIDGE_UP);
-      state.switches.push({id:'village-bell',kind:'bell',...pt(xc,mid+4),used:false,targets:[pt(wallH,road0),pt(wallH,road1)],commanderAt:pt(xc,ROWS-5),
-        route:[pt(xc,5),pt(xc,ROWS-5),pt(xc+3,mid),pt(xc-3,mid)]});
-      state.routeTags.push({...pt(xc,mid+5),label:'마을의 종 · 치면 큰길의 다리가 내려오지만 군단장이 깨어난다'});
-    }else if(style==='well'){
-      // the great well: a deep round pool in the middle hall with a ring of shallows; on an islet in its centre the key of the hall
-      const ry=10,rx=3.8;
-      for(let y=mid-ry-1;y<=mid+ry+1;y++)for(let x=x0H;x<=x1H;x++){const d=Math.hypot((x-xc)/rx,(y-mid)/ry);if(d<=.82){put(x,y,TT.WATER);waterCells.push(pt(x,y))}else if(d<=1.05)put(x,y,TT.SHALLOW_WATER)}
-      rect(xc-1,mid-1,xc+1,mid+1,TT.STONE_PATH);put(xc-1,mid-1,TT.LANTERN_POST);put(xc+1,mid+1,TT.LANTERN_POST);
-      for(let x=x0H;x<xc-1;x++){if(at(x,mid)===TT.WATER||at(x,mid)===TT.SHALLOW_WATER){put(x,mid,TT.SHALLOW_WATER);setTerrainTile58(m,X(x),Y(mid),TT.STEPPING_STONE)}}
-      canalSpots.push(pt(xc-1,mid));
-      lanterns([[3,5],[3,ROWS-6],[x1S-1,5],[x1S-1,ROWS-6]]);
-      for(const y of [mid-5,mid+5])for(const x of [3,7])put(x,y,y<mid?TT.GARDEN_TREE:TT.FLOWERBED);
-    }else{
-      lanterns([[3,5],[3,ROWS-6],[x1S-1,5],[x1S-1,ROWS-6],[x0H+1,5],[x1H-1,5],[x0H+1,ROWS-6],[x1H-1,ROWS-6]]);
-      for(const y of [mid-7,mid+7])for(const x of [3,5,7,9])put(x,y,y<mid?TT.RACK:TT.STATUE);
-      for(const [dx,dy] of [[-2,-3],[2,-3],[-2,3],[2,3]])put(xc+dx,mid+dy,TT.RACK);
-      for(const [dx,dy] of [[-1,6],[0,6],[-1,7],[0,7]]){put(xc+dx,mid+dy,TT.WATER);waterCells.push(pt(xc+dx,mid+dy))}
+      const route=[[xc,5],[xc,ROWS-5],[xc+3,bell.y+3],[xc-3,bell.y+3]].filter(([x,y])=>!tileBlocks(at(x,y)));
+      state.switches.push({id:'village-bell',kind:'bell',...pt(bell.x,bell.y),used:false,targets:[pt(wallH,road0),pt(wallH,road1)],commanderAt:pt(xc,ROWS-5),route:route.map(([x,y])=>pt(x,y))});
+      state.routeTags.push({...pt(bell.x,bell.y+1),label:'마을의 종 · 치면 큰길의 다리가 내려오지만 군단장이 깨어난다'});
     }
-    // the end hall: the stairs and a few lanterns
-    lanterns([[x0E+1,5],[x1E-1,5],[x0E+1,ROWS-6],[x1E-1,ROWS-6]]);
-    const stairs=pt(x0E+4,mid);
+    const stairs=pt(hallMarks[2]['2'].x,hallMarks[2]['2'].y);
     const safeCells=[...branches[1].cells,...branches[2].cells];
     state.floor2Choice63={version:5,branches,waterCells,safeCells,canalSpots,commonZones:[start,middle,end],
       stages:[{keyId:'choice-copper',key:pt(K1.x,K1.y),doors:doors1.map(d=>({...d,...pt(d.x,d.y)}))},{keyId:'choice-silver',key:pt(K2.x,K2.y),doors:doors2.map(d=>({...d,...pt(d.x,d.y)}))}]};
@@ -749,7 +724,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     state.featureRooms=[start,middle,end];
     state.routeTags.push({...pt(K1.x,K1.y),label:'동제 갈림열쇠 · 두 문 중 한 문만'},{...pt(K2.x,K2.y),label:'은제 갈림열쇠 · 두 문 중 한 문만'});
     state.layoutName=['저잣골목 마을 · 골목 미로','거대 우물 · 수로 미로','경비 병영 · 병사 미로'][theme]+' / 두 번의 선택 · 공통 홀';
-    setEnds(pt(3,mid),stairs);
+    setEnds(pt(hallMarks[0]['1'].x,hallMarks[0]['1'].y),stairs);
   }
   /* ---------- 4F: + / X / Y double-junction choice floor ---------- */
   function buildChoice(m){

@@ -1059,8 +1059,8 @@ export const scenarios = {
           }, [floor, n]);
           if (r.err) { problems.push(`floor ${floor} run ${n}: ${r.err}`); continue; }
           if (floor === 2 && (!r.canal || !r.audit || r.locks !== 'f2-choice')) problems.push(`floor 2 candidate ${r.tpl}: ${JSON.stringify(r)}`);
-          // the regions are mazes: a way through is never shorter than a straight run (30 steps) and on average well beyond it (45)
-          if (floor === 2 && (r.steps.some((v) => v < 30) || r.steps.reduce((n, v) => n + v, 0) / r.steps.length < 45)) problems.push(`floor 2 candidate ${r.tpl}: a region can be crossed too directly: ${JSON.stringify(r.steps)}`);
+          // the regions are hand-drawn: a way through is never a straight run (28 steps) and on average well beyond it (38)
+          if (floor === 2 && (r.steps.some((v) => v < 28) || r.steps.reduce((n, v) => n + v, 0) / r.steps.length < 38)) problems.push(`floor 2 candidate ${r.tpl}: a region can be crossed too directly: ${JSON.stringify(r.steps)}`);
           if (floor === 2) shortest[r.tpl] = Math.min(shortest[r.tpl] ?? 999, ...r.steps);
           seen[floor][r.tpl] = (seen[floor][r.tpl] || 0) + 1;
         }

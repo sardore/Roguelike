@@ -14,7 +14,7 @@
   "world.js",
   "layout.js",
   "vaults.js",
-  "floor2tiles.js",
+  "floor2regions.js",
   "terrain.js",
   "input.js",
   "story.js",
