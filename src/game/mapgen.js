@@ -3237,10 +3237,12 @@ function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermissi
     }
     state.monsters=live;
     state.items=[];
+    // floor 2: loose items lie in the halls, never inside a region of a choice (a region the player did not choose must hold nothing he is owed)
+    const f2Halls=state.floor===2&&state.floor2Choice63?.commonZones,inHalls=(x,y)=>!f2Halls||f2Halls.some(r=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h);
     for(let ii=0;ii<items.length;ii++){
       const it=items[ii];if(!pool.count){it.x=state.player.x;it.y=state.player.y;PlacementService.placeItem(it);continue}
       const start=Math.floor(globalThis.__MANRU_RANDOM57__()*pool.count)%pool.count;let found=-1;
-      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0,t=state.map[y][x];if(itemUsed60[idx]||occupied60[idx]||t===TT.STAIR||(x===state.player.x&&y===state.player.y)||(reachable60&&!reachable60.has(k(x,y)))||!ReachabilityService.playerTerrainPassable(x,y)||globalThis.__MANRU_HAZARD_CORE__?.kind?.(t))continue;found=idx;break}
+      for(let step=0;step<pool.count;step++){const idx=pool.cells[(start+step)%pool.count],x=idx%COLS,y=(idx/COLS)|0,t=state.map[y][x];if(itemUsed60[idx]||occupied60[idx]||t===TT.STAIR||!inHalls(x,y)||(x===state.player.x&&y===state.player.y)||(reachable60&&!reachable60.has(k(x,y)))||!ReachabilityService.playerTerrainPassable(x,y)||globalThis.__MANRU_HAZARD_CORE__?.kind?.(t))continue;found=idx;break}
       if(found<0)found=state.player.y*COLS+state.player.x;it.x=found%COLS;it.y=(found/COLS)|0;itemUsed60[found]=1;PlacementService.placeItem(it)
     }
   }
