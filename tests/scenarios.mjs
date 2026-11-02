@@ -1039,7 +1039,7 @@ export const scenarios = {
     return out;
   },
 
-  // Floor 2 chooses among three candidate structures (floor 4 has one: the inn, with a + / X / Y of routes). Run ids are varied until every candidate has been made; each must pass the
+  // Floor 2 chooses among four candidate structures (village, great well, garrison, the old floor) (floor 4 has one: the inn, with a + / X / Y of routes). Run ids are varied until every candidate has been made; each must pass the
   // generator's own checks (for floor 2 the key plan, the encounters and the rewards), and floor 2 must carry its canal entrance.
   async fixedFloors(browser, root) {
     const out = {};
@@ -1047,7 +1047,7 @@ export const scenarios = {
     try {
       await startRun(s, 'wanderer');
       const seen = { 2: {}, 4: {} }, shortest = {}, problems = [];
-      for (let n = 1; n < 80 && (Object.keys(seen[2]).length < 3 || Object.keys(seen[4]).length < 1); n++) {
+      for (let n = 1; n < 80 && (Object.keys(seen[2]).length < 4 || Object.keys(seen[4]).length < 1); n++) {
         for (const floor of [2, 4]) {
           const r = await s.page.evaluate(([floor, n]) => {
             window.__MANRU_QA_UI__.state().runId984 = 'fixed-' + floor + '-' + n;
@@ -1065,7 +1065,7 @@ export const scenarios = {
           seen[floor][r.tpl] = (seen[floor][r.tpl] || 0) + 1;
         }
       }
-      for (const floor of [2, 4]) if (Object.keys(seen[floor]).length < (floor === 2 ? 3 : 1)) problems.push(`floor ${floor}: only candidates ${Object.keys(seen[floor])} were made`);
+      for (const floor of [2, 4]) if (Object.keys(seen[floor]).length < (floor === 2 ? 4 : 1)) problems.push(`floor ${floor}: only candidates ${Object.keys(seen[floor])} were made`);
       if (problems.length) throw Error('fixedFloors: ' + problems.slice(0, 6).join('; '));
       out['fixedFloors.candidates'] = JSON.stringify({ floor2: Object.keys(seen[2]).sort(), floor4: Object.keys(seen[4]).sort(), shortestWing: shortest });
       out['fixedFloors.errors'] = JSON.stringify(s.errors);

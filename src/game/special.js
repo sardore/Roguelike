@@ -563,6 +563,8 @@ restore(){
   }
   function installF2Locks(){
     const authored=state.floor2Choice63;if(!authored)return false;
+    // a region the player did not choose must hold nothing he is owed: loose items that landed inside a region go to the halls
+    {const inRegion=new Set(authored.branches.flatMap(b=>b.cells)),hub=authored.commonZones[2];for(const it of [...state.items])if(inRegion.has(key85(it.x,it.y))&&!Number.isInteger(it.floor2Bonus66))PlacementService.placeItem(it,{x:hub.cx,y:hub.cy})}
     const plan=state.keyPlan96={doors:[],keys:[],ring:{},groups:[],kind:'f2-choice',exitSeals68:authored.version>=5};
     for(const [group,stage]of authored.stages.entries()){
       const doors=stage.doors.map(d=>({...d,keyId:stage.keyId,group,open:false}));
