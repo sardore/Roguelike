@@ -49,7 +49,7 @@ const FLOOR2_PLANS=Object.freeze([
       stones:[[14,30,0],[14,31,0],[14,32,0],[29,30,0],[29,31,0],[29,32,0],[22,25,0],[66,16,3],[66,17,3],[70,10,3],[70,11,3]],spurs:[],
       water:[],props:[
         [14,28,TT.LANTERN_POST],[30,28,TT.STATUE],[21,27,TT.ROCK],[59,27,TT.LANTERN_POST],[60,28,TT.FLOWERBED],[22,13,TT.LANTERN_POST],[30,13,TT.FLOWERBED],
-        [34,24,TT.LANTERN_POST],[10,33,TT.TRAP],[60,18,TT.SNARE],[70,15,TT.TRAP],[56,12,TT.TRAP]],
+        [10,33,TT.TRAP],[60,18,TT.SNARE],[70,15,TT.TRAP],[56,12,TT.TRAP]],
       encounters:{0:[{x:30,y:33,names:['취객','시종']},{x:15,y:28,names:['객잔 경비병']},{x:29,y:28,names:['떠돌이 도둑']},{x:12,y:24,names:['취객','시종']}],
         3:[{x:70,y:18,names:['떠돌이 도둑','객잔 쥐']},{x:60,y:15,names:['시종']},{x:76,y:12,names:['떠돌이 도둑']},{x:64,y:9,names:['시종']}]},
       rewardSpots:{0:[{x:15,y:29},{x:30,y:29},{x:22,y:27}],1:[{x:59,y:28},{x:60,y:27}],2:[{x:21,y:12},{x:28,y:13}],3:[{x:84,y:16},{x:84,y:10},{x:76,y:15}]},
