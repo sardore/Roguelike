@@ -915,7 +915,7 @@ globalThis.__MANRU_QA_CHEST__={
   }
 };
 // The summoner's art 괴변 (the `oddity` scenario): a bare room with the player, an enemy and one piece of a chosen material.
-let ODDITY_PROBE=null;
+let ODDITY_PROBE=null,ODDITY_PIECES=[];
 globalThis.__MANRU_QA_ODDITY__={
   family:()=>({family:martialFamily('brawl'),name:martialPresentation('brawl',MARTIAL_INFO.brawl,state.player).name,type:martialPresentation('brawl',MARTIAL_INFO.brawl,state.player).type,forms:Object.keys(MARTIAL_FORMS[martialFamily('brawl')]||{}),bonus:martialBrawlBonus(state.player,state.player.weapon||{})}),
   options:()=>martialOptions('brawl',state.player).map(o=>o.form),
@@ -928,21 +928,22 @@ globalThis.__MANRU_QA_ODDITY__={
     p.martial.brawl=lv;p.martialForm=p.martialForm||{};p.martialForm.brawl=form;p.focus=Math.max(p.focus,20);p.maxFocus=Math.max(p.maxFocus||0,20);
     tiles.forEach((name,i)=>setTerrainTile58(state.map,x0-2-i,y0-1+(i%3),TT[name]));
     const mon=spawnNamed('객잔 쥐',{x:x0+gap,y:y0},{placementMode:'exact',provenance:'qa'});mon.hp=mon.maxHp=hp;mon.alerted=true;
-    if(neighbor){const n2=spawnNamed('객잔 쥐',{x:x0+gap,y:y0+1},{placementMode:'exact',provenance:'qa'});if(n2){n2.hp=n2.maxHp=hp;n2.alerted=true}}
+    if(neighbor){const nd=neighbor===true?{dx:gap,dy:1}:neighbor,n2=spawnNamed('객잔 쥐',{x:x0+nd.dx,y:y0+nd.dy},{placementMode:'exact',provenance:'qa'});if(n2){n2.hp=n2.maxHp=hp;n2.alerted=true}}
     VisibilityService.compute();updateAll(true);
+    ODDITY_PIECES=tiles.map((name,i)=>({x:x0-2-i,y:y0-1+(i%3)}));
     return{target:{x:mon.x,y:mon.y},player:{x:p.x,y:p.y},pieces:tiles.map((name,i)=>({x:x0-2-i,y:y0-1+(i%3),name}))};
   },
   cast:()=>{
     const p=state.player,mon=state.monsters.find(m=>m.hp>0&&m.x===p.x+3&&m.y===p.y)||state.monsters.find(m=>m.hp>0),others=state.monsters.filter(m=>m!==mon);
-    ODDITY_PROBE={mon,others,oh:others.map(m=>m.hp),hp:mon.hp,focus:p.focus,turn:state.turn,pos:{x:mon.x,y:mon.y}};
+    ODDITY_PROBE={pieces:ODDITY_PIECES,mon,others,oh:others.map(m=>m.hp),hp:mon.hp,focus:p.focus,turn:state.turn,pos:{x:mon.x,y:mon.y}};
     const ok=castOddity({x:mon.x,y:mon.y});
-    return{ok,events:ODDITY_FX.length,turnAtCast:state.turn-ODDITY_PROBE.turn,moved:mon.x!==ODDITY_PROBE.pos.x||mon.y!==ODDITY_PROBE.pos.y,dealtAtCast:ODDITY_PROBE.hp-mon.hp,
+    return{ok,events:ODDITY_FX.length,starts:ODDITY_FX.map(e=>Math.round(e.start)),turnAtCast:state.turn-ODDITY_PROBE.turn,moved:mon.x!==ODDITY_PROBE.pos.x||mon.y!==ODDITY_PROBE.pos.y,dealtAtCast:ODDITY_PROBE.hp-mon.hp,
       lock:Math.round(ACTION_PRESENTATION58.inputUntil-performance.now()),flight:ODDITY_FX.map(e=>Math.round(e.hitAt-e.start))};
   },
   probe:()=>{const q=ODDITY_PROBE,mon=q.mon;return{turnDelta:state.turn-q.turn,moved:mon.x!==q.pos.x||mon.y!==q.pos.y,dealt:q.hp-mon.hp,pending:ODDITY_QUEUE.length}},
   result:()=>{
     const p=state.player,q=ODDITY_PROBE,mon=q.mon;
-    return{spent:q.focus-p.focus,dealt:q.hp-mon.hp,neighborDealt:q.others.reduce((n,m,i)=>n+q.oh[i]-m.hp,0),stunned:mon.stunned||0,pos:{x:mon.x,y:mon.y},turnDelta:state.turn-q.turn,fire:(state.elementFields74||[]).some(f=>f.kind==='fire')};
+    return{spent:q.focus-p.focus,dealt:q.hp-mon.hp,neighborDealt:q.others.reduce((n,m,i)=>n+q.oh[i]-m.hp,0),stunned:mon.stunned||0,pos:{x:mon.x,y:mon.y},turnDelta:state.turn-q.turn,curse:{seal:mon.skillSeal105||0,bleed:mon.bleeding55||0,blind:mon.blinded55||0,upset:mon.upset||0,drunk:mon.drunk||0,poison:mon.poisoned57||0,weaken:mon.weakened||0},piece:ODDITY_PROBE.pieces?.[0],pieceTiles:ODDITY_PROBE.pieces?.map(c=>state.map[c.y][c.x]),fire:(state.elementFields74||[]).some(f=>f.kind==='fire')};
   },
   pending:()=>ODDITY_FX.length
 };
