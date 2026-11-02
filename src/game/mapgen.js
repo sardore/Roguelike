@@ -644,7 +644,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     const flipX=rnd()<.5,flipY=rnd()<.5,X=x=>flipX?COLS-1-x:x,Y=y=>flipY?ROWS-1-y:y,pt=(x,y)=>({x:X(x),y:Y(y)});
     const put=(x,y,t)=>{if(x>0&&y>0&&x<COLS-1&&y<ROWS-1)setTerrainTile58(m,X(x),Y(y),t)},at=(x,y)=>m[Y(y)]?.[X(x)];
     const rect=(xa,ya,xb,yb,t)=>{for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++)put(x,y,t)};
-    const keyAt=(x,y)=>k(X(x),Y(y)),zoneRect=(xa,ya,xb,yb,name)=>{const x0=Math.min(X(xa),X(xb)),y0=Math.min(Y(ya),Y(yb)),r=roomRect(x0,y0,Math.abs(X(xb)-X(xa))+1,Math.abs(Y(yb)-Y(ya))+1);state.rooms.push(r);return{...r,name}};
+    const keyAt=(x,y)=>k(X(x),Y(y)),zoneRect=(xa,ya,xb,yb,name)=>{const x0=Math.min(X(xa),X(xb)),y0=Math.min(Y(ya),Y(yb)),r=roomRect(x0,y0,Math.abs(X(xb)-X(xa))+1,Math.abs(Y(yb)-Y(ya))+1);return{...r,name}};
     // the zones, west to east: start, region, middle hall, region, stairs; two regions (north and south) in each region column
     const sw=11,hw=11,ew=9,span=COLS-2-sw-hw-ew-4,colA=Math.round(span*.6),colB=span-colA;
     const x1S=sw,wallS=x1S+1,x0A=wallS+1,x1A=x0A+colA-1,wallA=x1A+1,x0H=wallA+1,x1H=x0H+hw-1,wallH=x1H+1,x0B=wallH+1,x1B=x0B+colB-1,wallB=x1B+1,x0E=wallB+1,x1E=COLS-2;
@@ -657,11 +657,12 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     const chamberOf=(rows,x,y)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>rows[y+dy]?.[x+dx]==='R')?'R':'.';
     const stampRows=(xa,ya,rows,floor)=>{
       const w=rows[0].length,h=rows.length,view=rows.map(r=>flipX?[...r].reverse().join(''):r);if(flipY)view.reverse();
-      stampGrandGlyphs(view,flipX?X(xa+w-1):xa,flipY?Y(ya+h-1):ya,floor,chamberFloor);
+      const px=flipX?X(xa+w-1):xa,py=flipY?Y(ya+h-1):ya;
+      stampGrandGlyphs(view,px,py,floor,chamberFloor);return{x:px,y:py,w,h};
     };
     const drawnHall=(xa,rows)=>{
       const marks={},g=rows.map((r,y)=>[...r].map((ch,x)=>{if(ch>='1'&&ch<='5'){marks[ch]={x:xa+x,y:1+y};return '.'}return ch}).join(''));
-      stampRows(xa,1,g,ground);return marks;
+      const at0=stampRows(xa,1,g,ground);grandVaultRooms(at0.x,at0.y,at0.w,at0.h);return marks;
     };
     // a region: one drawing, flipped north to south by chance; the way in is the gap in its west edge, the way out the gap in its east edge
     const drawnRegion=(xa,ya,drawing)=>{
@@ -669,15 +670,18 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
       const g=rows.map(r=>r.join('')),rewards=[],packs=[];
       for(let y=0;y<h;y++)for(let x=0;x<w;x++){const ch=g[y][x];if(ch==='$'||ch==='!'){(ch==='$'?rewards:packs).push({x,y});g[y]=g[y].slice(0,x)+chamberOf(g,x,y)+g[y].slice(x+1)}}
       stampRows(xa,ya,g,lane);
-      const walk=ch=>!'#TrPLSBtkbiCFWjanohm~vl'.includes(ch),open=(x,y)=>g[y]?.[x]!==undefined&&walk(g[y][x]);
+      const walk=ch=>!'#TrPLSBtkbiCFWjanohm~vlwf'.includes(ch),open=(x,y)=>g[y]?.[x]!==undefined&&walk(g[y][x]);
       let ry=0,ey=0;while(!open(0,ry))ry++;while(!open(w-1,ey))ey++;
       const dist=new Map([[ry*w,0]]),queue=[{x:0,y:ry}];
       for(const q of queue)for(const [dx,dy] of DIRS4){const nx=q.x+dx,ny=q.y+dy;if(!open(nx,ny)||dist.has(ny*w+nx))continue;dist.set(ny*w+nx,dist.get(q.y*w+q.x)+1);queue.push({x:nx,y:ny})}
       const cells=new Set();for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(open(x,y))cells.add(keyAt(xa+x,ya+y));
-      const reach=list=>list.filter(c=>dist.has(c.y*w+c.x)),abs=c=>({x:xa+c.x,y:ya+c.y});
+      const reach=list=>list.filter(c=>dist.has(c.y*w+c.x)),abs=c=>({x:xa+c.x,y:ya+c.y}),roomCells=[];
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y][x]==='R'&&dist.has(y*w+x))roomCells.push(keyAt(xa+x,ya+y));
+      // a treasure on an islet or in an alcove has its own few cells round it
+      for(const c of reach(rewards))for(const [dx,dy] of DIRS8)if(open(c.x+dx,c.y+dy)&&dist.has((c.y+dy)*w+c.x+dx)&&!roomCells.includes(keyAt(xa+c.x+dx,ya+c.y+dy)))roomCells.push(keyAt(xa+c.x+dx,ya+c.y+dy));
       const far=reach(rewards).sort((p,q)=>dist.get(q.y*w+q.x)-dist.get(p.y*w+p.x)).map(abs);
       const along=(()=>{const l=reach(packs).sort((p,q)=>dist.get(p.y*w+p.x)-dist.get(q.y*w+q.x));return n=>abs(l[Math.min(l.length-1,Math.floor(n*l.length))])})();
-      return{cells,ye:ya+ry,yx:ya+ey,steps:dist.get(ey*w+w-1),chambers:far,at2:along};
+      return{cells,ye:ya+ry,yx:ya+ey,steps:dist.get(ey*w+w-1),chambers:far,at2:along,roomCells};
     };
     const dangerPacks={village:[['취객','시종'],['떠돌이 도둑'],['객잔 경비병'],['취객','시종']],well:[['취객','시종'],['떠돌이 도둑'],['객잔 경비병'],['취객','시종']],
       garrison:[['객잔 경비병','객잔 경비병'],['객잔 경비병','시종'],['객잔 경비병','객잔 경비병'],['객잔 경비병','객잔 경비병','시종'],['객잔 경비병','시종']]};
@@ -693,7 +697,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
       const sealWall={x:r.gate,y:r.yx},sealKey={x:r.xb,y:r.yx};
       put(sealWall.x,sealWall.y,TT.LOCKED_GATE);put(sealKey.x,sealKey.y,TT.KEY_TILE);put(r.from,r.ye,TT.DOOR);
       const spots=z.chambers.slice(0,3).map(c=>pt(c.x,c.y));
-      branches.push({id:r.id,kind:r.kind,cells:[...z.cells],spine:[[X(r.xa),Y(r.ye)],[X(r.xb),Y(r.yx)]],reward:spots[0]||null,rewardSpots:spots,
+      branches.push({id:r.id,kind:r.kind,cells:[...z.cells],rewardCells:z.roomCells,spine:[[X(r.xa),Y(r.ye)],[X(r.xb),Y(r.yx)]],reward:spots[0]||null,rewardSpots:spots,
         encounters:packs.map((names,n)=>{const q=z.at2(.25+.15*n);return{...pt(q.x,q.y),names}}),bonusCount:r.kind==='danger'?6:r.kind==='unknown'?5:0,
         exitSeal:{keyId:exitIds[r.id],key:pt(sealKey.x,sealKey.y),wall:pt(sealWall.x,sealWall.y)},entry:pt(r.xa,r.ye)});
       steps.push(z.steps);
@@ -2418,11 +2422,11 @@ function populateFloor2Branches(){
  const audit={packs:[],rewards:[],failures:[]},claimed=new Set();
  for(const branch of layout.branches){
    if(!branch.reward)continue;
-   const prototypes=branch.kind==='danger'?[heal,food,ammo,identify,heal,focus]:[heal,food,ammo,identify,smoke],spots=branch.rewardSpots||[branch.reward],cells=new Set(branch.cells);
+   const prototypes=branch.kind==='danger'?[heal,food,ammo,identify,heal,focus]:[heal,food,ammo,identify,smoke],spots=branch.rewardSpots||[branch.reward],cells=new Set(branch.cells),rooms=new Set(branch.rewardCells?.length?branch.rewardCells:branch.cells);
    for(let n=0;n<branch.bonusCount;n++){
      if(state.items.some(it=>it.floor2Bonus66===branch.id&&it.floor2BonusIndex66===n))continue;
      const proto=prototypes[n];if(!proto){audit.failures.push(`reward-prototype:${branch.id}:${n}`);continue}
-     const origin=spots[n%spots.length],placed=PlacementService.placeItem({...clone(proto),count:proto===ammo?8:1,floor2Bonus66:branch.id,floor2BonusIndex66:n},origin,{preferEmpty:true,restrict:q=>cells.has(k(q.x,q.y))&&Math.abs(q.x-origin.x)+Math.abs(q.y-origin.y)<=4});
+     const origin=spots[n%spots.length],placed=PlacementService.placeItem({...clone(proto),count:proto===ammo?8:1,floor2Bonus66:branch.id,floor2BonusIndex66:n},origin,{preferEmpty:true,restrict:q=>rooms.has(k(q.x,q.y))&&Math.abs(q.x-origin.x)+Math.abs(q.y-origin.y)<=8});
      if(!placed)audit.failures.push(`reward-placement:${branch.id}:${n}`);
    }
    for(const [index,pack]of (branch.encounters||[]).entries()){
