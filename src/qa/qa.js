@@ -901,11 +901,6 @@ globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t
 
 // The chest at the end of the first floor's entry (the `chest` scenario): what it holds, and walking into it.
 globalThis.__MANRU_QA_CHEST__={
-  contents:n=>{
-    const gearMax=[0],kinds={},sizes=new Set();
-    for(let i=0;i<n;i++){const items=tutorialChestItems();sizes.add(items.length);for(const it of items){kinds[it.type]=(kinds[it.type]||0)+1;if(isGearItem(it))gearMax[0]=Math.max(gearMax[0],it.tier||1)}}
-    return{gearMax:gearMax[0],kinds,sizes:[...sizes].sort()};
-  },
   open:()=>{
     const c=state.tutorialChest;if(!c)return null;const out={before:state.map[c.y][c.x]===TT.CACHE};
     out.bumped=!!bumpTileAction(c.x,c.y);out.opened=c.opened;out.tileIsFloor=state.map[c.y][c.x]===TT.FLOOR;
