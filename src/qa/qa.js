@@ -898,3 +898,48 @@ globalThis.__MANRU_QA_BAL__={
 // Wall-face vision test (scenario `vision`).
 globalThis.__MANRU_QA_PERF__={draw:()=>drawMap(false),update:()=>updateAll(true),ema:()=>RC.perf.ema,frames:()=>RC.perf.frames};
 globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t=>tileBlocksSight(t),open:(x,y,dx,dy)=>wallFaceOpen(x,y,dx,dy),edges:(x,y)=>wallEdges(x,y)};
+
+// The chest at the end of the first floor's entry (the `chest` scenario): the distribution of its final tier, what each tier holds, and a click-through of the dialogue.
+globalThis.__MANRU_QA_CHEST__={
+  simulate:n=>{
+    let seed=12345;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296},count=[0,0,0,0];
+    for(let i=0;i<n;i++){let tier=0;for(const chance of TUTORIAL_CHEST.chance)if(rnd()<chance)tier++;count[tier]++}
+    const gearMax=[0,0,0,0],kinds={},sizes=[0,0,0,0];
+    for(let tier=0;tier<4;tier++)for(let i=0;i<200;i++){const items=tutorialChestItems(tier);sizes[tier]=Math.max(sizes[tier],items.length);for(const it of items){kinds[it.type]=(kinds[it.type]||0)+1;if(isGearItem(it))gearMax[tier]=Math.max(gearMax[tier],it.tier||1)}}
+    return{dist:count.map(v=>Math.round(v/n*1000)/1000),gearMax,kinds,sizes};
+  },
+  flow:()=>{
+    const c=state.tutorialChest;if(!c)return null;const out={};
+    out.shown=openTutorialChest();const rows=()=>[...document.querySelectorAll('#choice991List button')];
+    out.rows=rows().length;out.title=document.querySelector('#choice991Title').textContent;
+    rows()[0].click();out.after={tries:c.tries,tier:c.tier,history:c.upgraded.length};
+    rows()[rows().length-1].click();
+    out.opened=c.opened;out.tileIsFloor=state.map[c.y][c.x]===TT.FLOOR;out.items=state.items.filter(i=>Math.abs(i.x-c.x)<=3&&Math.abs(i.y-c.y)<=3).length;
+    out.again=openTutorialChest();
+    return out;
+  }
+};
+// The summoner's art 괴변 (the `oddity` scenario): a bare room with the player, an enemy and one piece of a chosen material.
+globalThis.__MANRU_QA_ODDITY__={
+  family:()=>({family:martialFamily('brawl'),name:martialPresentation('brawl',MARTIAL_INFO.brawl,state.player).name,type:martialPresentation('brawl',MARTIAL_INFO.brawl,state.player).type,forms:Object.keys(MARTIAL_FORMS[martialFamily('brawl')]||{}),bonus:martialBrawlBonus(state.player,state.player.weapon||{})}),
+  options:()=>martialOptions('brawl',state.player).map(o=>o.form),
+  setup:({lv,form=null,tiles=['TABLE'],gap=3,hp=300,neighbor=false})=>{
+    const p=state.player;for(const m of [...state.monsters])OccupancyService.removeMonster(m);state.items=[];
+    {const ledger=tipLedger66();for(const id of ['combat','recovery','level','martial','stairs','hunger','start','bag','chest','entry_exit','potion','talisman','food','bow','door','throw'])ledger.seen[id]=true;lsSet('manruTutorialAccount66',JSON.stringify(ledger))}
+    const room=(state.rooms||[]).find(r=>!r.tutorial60&&r.cx>14&&r.cy>8&&r.cx<COLS-14&&r.cy<ROWS-8)||{cx:Math.floor(COLS/2),cy:Math.floor(ROWS/2)};p.x=room.cx;p.y=room.cy;
+    const x0=p.x,y0=p.y;
+    for(let y=y0-5;y<=y0+5;y++)for(let x=x0-9;x<=x0+9;x++)if(x>1&&y>1&&x<COLS-2&&y<ROWS-2){setTerrainTile58(state.map,x,y,TT.FLOOR);state.seen.add(k(x,y))}
+    p.martial.brawl=lv;p.martialForm=p.martialForm||{};p.martialForm.brawl=form;p.focus=Math.max(p.focus,20);p.maxFocus=Math.max(p.maxFocus||0,20);
+    tiles.forEach((name,i)=>setTerrainTile58(state.map,x0-2-i,y0-1+(i%3),TT[name]));
+    const mon=spawnNamed('객잔 쥐',{x:x0+gap,y:y0},{placementMode:'exact',provenance:'qa'});mon.hp=mon.maxHp=hp;mon.alerted=true;
+    if(neighbor){const n2=spawnNamed('객잔 쥐',{x:x0+gap,y:y0+1},{placementMode:'exact',provenance:'qa'});if(n2){n2.hp=n2.maxHp=hp;n2.alerted=true}}
+    VisibilityService.compute();updateAll(true);
+    return{target:{x:mon.x,y:mon.y},player:{x:p.x,y:p.y},pieces:tiles.map((name,i)=>({x:x0-2-i,y:y0-1+(i%3),name}))};
+  },
+  cast:()=>{
+    const p=state.player,mon=state.monsters.find(m=>m.hp>0&&m.x===p.x+3&&m.y===p.y)||state.monsters.find(m=>m.hp>0),others=state.monsters.filter(m=>m!==mon),oh=others.map(m=>m.hp),hp=mon.hp,focus=p.focus,ok=castOddity({x:mon.x,y:mon.y});
+    return{ok,spent:focus-p.focus,dealt:hp-mon.hp,neighborDealt:others.reduce((n,m,i)=>n+oh[i]-m.hp,0),stunned:mon.stunned||0,pos:{x:mon.x,y:mon.y},events:ODDITY_FX.length,fire:(state.elementFields74||[]).some(f=>f.kind==='fire'),
+      lock:Math.round(ACTION_PRESENTATION58.inputUntil-performance.now()),flight:ODDITY_FX.map(e=>Math.round(e.hitAt-e.start))};
+  },
+  pending:()=>ODDITY_FX.length
+};

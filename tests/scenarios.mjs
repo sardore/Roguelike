@@ -1106,6 +1106,97 @@ export const scenarios = {
     return out;
   },
 
+  // The first floor's entry is a terraced garden in the bottom-left corner with a chest at its end: it is generated cleanly again and again, nothing
+  // lies in it, the chest's final tier follows the chances, nothing it holds is gear of the third tier or above, and its dialogue works.
+  async chest(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'wanderer');
+      const garden = await s.page.evaluate(() => {
+        const res = { made: 0, problems: [] };
+        for (let n = 1; n <= 40; n++) {
+          window.__MANRU_QA_UI__.state().runId984 = 'garden-' + n;
+          try { window.__MANRU_RELEASE__.regen(1); } catch (e) { res.problems.push(n + ':' + String(e).slice(0, 120)); continue; }
+          const st = window.__MANRU_QA_UI__.state(), a = st.tutorialEntry60, c = st.tutorialChest;
+          res.made++;
+          if (!a || !c) { res.problems.push(n + ':missing'); continue; }
+          if (!(a.bottom >= st.map.length - 2 && a.x <= 2)) res.problems.push(n + ':not in the corner');
+          const inside = st.items.filter((i) => i.x >= a.x && i.x <= a.right && i.y >= a.y && i.y <= a.bottom).length;
+          if (inside) res.problems.push(n + ':items inside ' + inside);
+          if (st.player.x > a.right || st.player.y < a.y) res.problems.push(n + ':start outside');
+        }
+        return res;
+      });
+      if (garden.problems.length || garden.made !== 40) throw Error('chest: garden ' + JSON.stringify(garden));
+      const sim = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.simulate(20000));
+      const want = [0.12, 0.38, 0.38, 0.12];
+      if (sim.dist.some((v, i) => Math.abs(v - want[i]) > 0.02)) throw Error('chest: tier distribution ' + JSON.stringify(sim));
+      if (sim.gearMax.some((v) => v > 2)) throw Error('chest: gear above the second tier ' + JSON.stringify(sim));
+      await dismissModals(s);
+      const flow = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.flow());
+      if (!flow || !flow.shown || flow.rows !== 2 || !flow.opened || !flow.tileIsFloor || flow.items < 1 || flow.again) throw Error('chest: dialogue ' + JSON.stringify(flow));
+      out['chest.garden'] = JSON.stringify({ made: garden.made });
+      out['chest.sim'] = JSON.stringify(sim);
+      out['chest.flow'] = JSON.stringify({ rows: flow.rows, title: flow.title, after: flow.after, opened: flow.opened });
+      out['chest.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
+  // The summoner's martial art 괴변 takes the place of 격투: furniture and structures round her are pulled out of the floor and flung at an enemy.
+  // The materials it can pull open with the rank, the material decides the blow, two pieces fly at the fifth rank, and the picture lasts till the hit.
+  async oddity(browser, root) {
+    const out = {};
+    const wanderer = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(wanderer, 'wanderer');
+      out['oddity.others'] = JSON.stringify(await wanderer.page.evaluate(() => globalThis.__MANRU_QA_ODDITY__.family()));
+    } finally { await wanderer.close(); }
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'summoner');
+      const ev = (fn, arg) => s.page.evaluate(fn, arg);
+      const info = await ev(() => globalThis.__MANRU_QA_ODDITY__.family());
+      if (info.family !== 'oddity' || info.name !== '괴변' || info.type !== 'active' || info.bonus !== 0) throw Error('oddity: family ' + JSON.stringify(info));
+      const cast = async (opts) => { await ev((o) => globalThis.__MANRU_QA_ODDITY__.setup(o), opts); const r = await ev(() => globalThis.__MANRU_QA_ODDITY__.cast()); await s.tick(1500); return r; };
+      const res = {};
+      res.wood = await cast({ lv: 1, tiles: ['TABLE'] });
+      res.stoneLocked = await cast({ lv: 1, tiles: ['STATUE'] });
+      res.stone = await cast({ lv: 2, tiles: ['STATUE'] });
+      res.lanternLocked = await cast({ lv: 2, tiles: ['LANTERN_POST'] });
+      res.lantern = await cast({ lv: 3, tiles: ['LANTERN_POST'] });
+      res.treeLocked = await cast({ lv: 3, tiles: ['GARDEN_TREE'] });
+      res.tree = await cast({ lv: 4, tiles: ['GARDEN_TREE'] });
+      res.double = await cast({ lv: 5, tiles: ['STATUE', 'TABLE'] });
+      res.whirl = await cast({ lv: 3, form: 'whirl', tiles: ['TABLE'], neighbor: true });
+      res.far = await cast({ lv: 1, tiles: ['TABLE'], gap: 6 });
+      const problems = [];
+      if (!res.wood.ok || res.wood.dealt <= 0 || res.wood.spent !== 4) problems.push('wood');
+      if (res.stoneLocked.ok || res.stoneLocked.spent !== 0) problems.push('stone before its rank');
+      if (!res.stone.ok || res.stone.dealt <= res.wood.dealt) problems.push('stone');
+      if (res.double.stunned < 1) problems.push('stone does not stun');
+      if (res.lanternLocked.ok) problems.push('lantern before its rank');
+      if (!res.lantern.ok || res.lantern.dealt <= 0 || !res.lantern.fire) problems.push('lantern');
+      if (res.treeLocked.ok) problems.push('tree before its rank');
+      if (!res.tree.ok || res.tree.dealt <= res.stone.dealt) problems.push('tree');
+      if (!res.double.ok || res.double.events !== 2) problems.push('two pieces at the fifth rank');
+      if (!res.whirl.ok || res.whirl.neighborDealt <= 0) problems.push('whirl does not sweep the neighbour');
+      if (res.far.ok) problems.push('an enemy out of the pull was struck');
+      for (const k of ['wood', 'stone', 'lantern', 'tree', 'double']) if (!(res[k].flight.every((v) => v >= 780) && res[k].lock >= 700)) problems.push('too quick ' + k);
+      if (problems.length) throw Error('oddity: ' + problems.join(', ') + ' ' + JSON.stringify(res));
+      await s.tick(2000);
+      const pending = await ev(() => globalThis.__MANRU_QA_ODDITY__.pending());
+      if (pending !== 0) throw Error('oddity: the picture does not end ' + pending);
+      const forms = await ev(() => globalThis.__MANRU_QA_ODDITY__.options());
+      if (!['pull', 'whirl', 'breakthrough'].every((f) => forms.includes(f))) throw Error('oddity: a manual offers ' + JSON.stringify(forms));
+      out['oddity.casts'] = JSON.stringify(Object.fromEntries(Object.entries(res).map(([k, v]) => [k, { ok: v.ok, spent: v.spent, dealt: v.dealt, stunned: v.stunned, events: v.events, fire: v.fire }])));
+      out['oddity.forms'] = JSON.stringify(forms);
+      out['oddity.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {
