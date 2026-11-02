@@ -19,6 +19,8 @@ const ODDITY_RULES=Object.freeze({
   ]),
   curses:Object.freeze({INCENSE_STAND:['skillSeal','기봉인'],RUMOR_INVESTIGATION_BOARD:['skillSeal','기봉인'],RUMOR_RITUAL_OBELISK:['skillSeal','기봉인'],IRON_HOOK:['bleed','출혈'],PAPER_CRANE:['upset','동요'],RUMOR_SILK_DIVAN:['drunk','취기'],RUMOR_SMUGGLER_BUNDLE:['drunk','취기'],RUMOR_CHARRED_COUNTER:['blind','실명'],RUMOR_GREENHOUSE_FRAME:['poison','중독'],RUMOR_GAS_PIPE:['poison','중독'],RUMOR_ARCHIVE_PILE:['weaken','쇠약'],RUMOR_FLOOD_GRATE:['weaken','쇠약']}),
   anomalyPieces:Object.freeze({1:2,2:2,3:3,4:3,5:4}),anomalyShare:.55,bounceShare:.7,bounceReach:3,
+  // each way of the art has its own seal on the card (see styles: form-psychic, form-anomaly) and its own light in the picture
+  seals:Object.freeze({psychic:'念',anomaly:'異'}),auras:Object.freeze({base:'#c9a7ff',psychic:'#6fe3d6',anomaly:'#ff8fc4'}),
   cost:4,costBreakthrough:6
 });
 const ODDITY_FX=[],ODDITY_QUEUE=[];
@@ -95,7 +97,7 @@ function oddityFlightMs(from,to){return Math.max(110,Math.max(Math.abs(to.x-from
 function oddityBegin(actor,lv,form,cell){
   const plan=oddityChoose(actor,cell,lv,form);if(!plan)return false;
   const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target,entries=[];let last=now;
-  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
+  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,aura:ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
   if(form==='psychic'){
     // the enemy is lifted, and thrown to where the piece stands; the piece is broken by it when it lands
     const obj=plan.objects[0],fly=oddityFlightMs(mon,obj),launchAt=now+t.lift+t.charge,hitAt=launchAt+fly;
@@ -112,7 +114,7 @@ function oddityBegin(actor,lv,form,cell){
   ODDITY_FLIGHT={run:state,target:mon,objects:plan.objects,bounce:plan.bounce};
   Object.assign(ACTION_PRESENTATION58,{run:state,start:now,until:last+200,inputUntil:last,rate:1,kind:'oddity',source:{x:actor.x,y:actor.y},target:{x:mon.x,y:mon.y},entity:mon,pending:true,weapon:'brawl',hit:false,crit:false,strong:false});
   addLog(form==='psychic'?`${actor.name}: ${mon.name}이(가) 허공으로 떠올라 ${plan.objects[0].mat.name}을(를) 향해 내던져진다.`:`${actor.name}: ${plan.objects.map(o=>o.mat.name).join('·')}이(가) 허공으로 떠올라 ${mon.name}에게 날아든다.`);
-  floatText(actor.x,actor.y,martialPresentation('brawl',MARTIAL_INFO.brawl,actor).name,'#c9a7ff',14);
+  floatText(actor.x,actor.y,martialPresentation('brawl',MARTIAL_INFO.brawl,actor).name,ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,14);
   return true;
 }
 // called every frame: each step that has come due is written to the state; the last one ends the turn of the player, and the enemies answer
@@ -189,12 +191,12 @@ function drawOddityFx(){
       // the enemy is held (strands from the hands, a ring about it), the piece that will break it trembles, then the streak of the throw
       const k2=Math.min(1,el/liftEnd);
       if(now<ev.launchAt){
-        X.save();X.globalAlpha=.55*k2;X.strokeStyle='#cdb0ff';X.lineWidth=2*sc;for(let s=0;s<3;s++){X.beginPath();X.moveTo(c.x,c.y-.2*z);X.quadraticCurveTo((c.x+a.x)/2+Math.sin(el*.012+s*2.1)*.35*z,(c.y+a.y)/2-.4*z+Math.cos(el*.01+s)*.2*z,a.x,a.y-.35*z*k2)}X.stroke();
-        X.globalAlpha=.8*k2;X.strokeStyle='#c9a7ff';X.lineWidth=2.6*sc;X.beginPath();X.ellipse(a.x,a.y-.1*z*k2,z*(.7-.25*k2),z*(.28-.08*k2),0,0,Math.PI*2);X.stroke();
+        X.save();X.globalAlpha=.55*k2;X.strokeStyle=ev.aura;X.lineWidth=2*sc;for(let s=0;s<3;s++){X.beginPath();X.moveTo(c.x,c.y-.2*z);X.quadraticCurveTo((c.x+a.x)/2+Math.sin(el*.012+s*2.1)*.35*z,(c.y+a.y)/2-.4*z+Math.cos(el*.01+s)*.2*z,a.x,a.y-.35*z*k2)}X.stroke();
+        X.globalAlpha=.8*k2;X.strokeStyle=ev.aura;X.lineWidth=2.6*sc;X.beginPath();X.ellipse(a.x,a.y-.1*z*k2,z*(.7-.25*k2),z*(.28-.08*k2),0,0,Math.PI*2);X.stroke();
         X.globalAlpha=.7*k2;X.strokeStyle=ev.color;X.lineWidth=2.4*sc;X.beginPath();X.arc(b.x,b.y,z*(1.1-.5*k2)+Math.sin(el*.05)*2*sc,0,Math.PI*2);X.stroke();X.restore();
       }else if(now<ev.hitAt){
         const u=oddityEase((now-ev.launchAt)/(ev.hitAt-ev.launchAt));X.save();X.lineCap='round';
-        for(let s=0;s<3;s++){X.globalAlpha=.5*(1-u)*(1-s*.25);X.strokeStyle=s?'#cdb0ff':'#fff';X.lineWidth=(5-s*1.5)*sc;X.beginPath();X.moveTo(a.x,a.y-.2*z);X.lineTo(a.x+(b.x-a.x)*u,a.y+(b.y-a.y)*u-.2*z)}X.stroke();
+        for(let s=0;s<3;s++){X.globalAlpha=.5*(1-u)*(1-s*.25);X.strokeStyle=s?ev.aura:'#fff';X.lineWidth=(5-s*1.5)*sc;X.beginPath();X.moveTo(a.x,a.y-.2*z);X.lineTo(a.x+(b.x-a.x)*u,a.y+(b.y-a.y)*u-.2*z)}X.stroke();
         X.globalAlpha=.9;X.strokeStyle=ev.color;X.lineWidth=2.4*sc;X.beginPath();X.arc(b.x,b.y,z*(.9*(1-u)+.25),0,Math.PI*2);X.stroke();X.restore();
       }
     }else if(el<flyEnd){
@@ -204,7 +206,7 @@ function drawOddityFx(){
       else if(el<chargeEnd){const t=(el-liftEnd)/T.charge;lift=.55*z+Math.sin(t*Math.PI*2)*.05*z;glow=.6+t*.4;rot=.1+t*.9;px+=Math.sin(el*.12)*2.2*sc}
       else{u=oddityEase((el-chargeEnd)/T.flight);const arc=Math.sin(Math.PI*u)*(.9+.14*Math.hypot(b.x-a.x,b.y-a.y)/z)*z;px=a.x+(b.x-a.x)*u;py=a.y+(b.y-a.y)*u;lift=.55*z*(1-u)+arc;rot=1+u*(ev.mat==='tree'?7:11);glow=1}
       // the pull: wavering strands of light from the hands of the caster to the piece, and a ring that closes on it
-      if(el<chargeEnd){const k2=Math.min(1,el/liftEnd);X.save();X.globalAlpha=.55*k2;X.strokeStyle='#cdb0ff';X.lineWidth=2*sc;for(let s=0;s<3;s++){X.beginPath();X.moveTo(c.x,c.y-.2*z);const mx=(c.x+a.x)/2+Math.sin(el*.012+s*2.1)*.35*z,my=(c.y+a.y)/2-.4*z+Math.cos(el*.01+s)*.2*z;X.quadraticCurveTo(mx,my,a.x,a.y-lift)}X.stroke();
+      if(el<chargeEnd){const k2=Math.min(1,el/liftEnd);X.save();X.globalAlpha=.55*k2;X.strokeStyle=ev.aura;X.lineWidth=2*sc;for(let s=0;s<3;s++){X.beginPath();X.moveTo(c.x,c.y-.2*z);const mx=(c.x+a.x)/2+Math.sin(el*.012+s*2.1)*.35*z,my=(c.y+a.y)/2-.4*z+Math.cos(el*.01+s)*.2*z;X.quadraticCurveTo(mx,my,a.x,a.y-lift)}X.stroke();
         X.globalAlpha=.7*k2;X.strokeStyle=ev.color;X.lineWidth=2.4*sc;X.beginPath();X.arc(a.x,a.y,z*(1.2-.7*k2),0,Math.PI*2);X.stroke();X.restore();
         // floor chips and dust rising from the empty place
         X.save();for(let s=0;s<9;s++){const r=oddityRand(ev.seed,s),age=(el*.0011+r)%1;X.globalAlpha=(1-age)*.7*k2;X.fillStyle=s%3?ev.color:'#d9d2c0';X.fillRect(a.x+(r-.5)*z*.9,a.y+z*.25-age*z*.9,(1.5+r*2.5)*sc,(1.5+r*2.5)*sc)}X.restore()}
