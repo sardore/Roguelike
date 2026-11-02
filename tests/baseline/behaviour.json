@@ -425,5 +425,7 @@
  "stats.ask.keptBefore.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "bleedSpear.wound": "c01b0a37c4dc1a4e2a52a46e7100c9c51ff5513d",
  "bleedSpear.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "spectate.panels": "b11436332e515592b4d1fc7a404821e8293669a0"
+ "spectate.panels": "b11436332e515592b4d1fc7a404821e8293669a0",
+ "houndwalk.stop": "9f53de674fe46bdd78578b6743cbbcb404fa6445",
+ "houndwalk.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

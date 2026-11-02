@@ -406,10 +406,13 @@ const RuntimeState={
       }
       return false;
     },
-    threatBefore(){return{hp:state.player.hp,visible:this.visibleEnemies(),alerted:this.alertedEnemies()}},
+    // A skill a monster has just started (its warning cells are on the map) that the player can see.
+    readyingEnemies(){return new Set((state?.monsters||[]).filter(m=>{const I=m.intent54||m.intent61;return I&&m.hp>0&&(isThreatVisibleToPlayer(m)||(I.cells||[]).some(c=>state.visible.has(k(c.x,c.y))))}))},
+    threatBefore(){return{hp:state.player.hp,visible:this.visibleEnemies(),alerted:this.alertedEnemies(),readying:this.readyingEnemies()}},
     shouldStopForThreat(before,target){
       if(state.player.hp<before.hp)return'hit';
       const after=this.visibleEnemies(),afterAlert=this.alertedEnemies(),targetMon=target?.type==='monster'?target.mon:null;
+      for(const m of this.readyingEnemies())if(!before.readying.has(m))return'enemy-skill';
       for(const m of after)if(!before.visible.has(m)&&m!==targetMon)return'new-enemy';
       for(const m of afterAlert)if(!before.alerted.has(m)&&m!==targetMon)return'alerted-enemy';
       if([...after].some(m=>m!==targetMon&&entityDistance57(m,state.player)<=1))return'adjacent-enemy';
