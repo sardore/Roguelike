@@ -507,8 +507,8 @@ function paintGrandMoat(b){
 /* ---------- vaults: drawings that are stamped, flipped and furnished by substitution ---------- */
 
 // What each character of a template stands for. Surfaces are laid first; props (blocking or not) stand on the surface round them.
-const GRAND_VAULT_SURFACE={'#':TT.WALL,'+':TT.DOOR,'~':TT.WATER,':':TT.SHALLOW_WATER,'v':TT.VOID,'l':TT.LAVA,',':TT.GRASS,'s':TT.STONE_PATH,'c':TT.CARPET,'g':TT.GILDED_FLOOR,'I':TT.ICE,'h':TT.HEDGE,'m':TT.BAMBOO};
-const GRAND_VAULT_PROP={T:TT.GARDEN_TREE,r:TT.ROCK,P:TT.STONE_PILLAR,L:TT.LANTERN_POST,S:TT.STATUE,B:TT.BED,t:TT.TABLE,k:TT.BOOK_STACK,b:TT.BENCH,i:TT.INCENSE_STAND,C:TT.CRYSTAL,F:TT.FLOWERBED,W:TT.BASIN,M:TT.MOON_GATE,j:TT.JAR,a:TT.RACK,n:TT.CRATE,o:TT.SCREEN,e:TT.REED,'*':TT.LOTUS_FLOWER,'=':TT.STEPPING_STONE};
+const GRAND_VAULT_SURFACE={'#':TT.WALL,'+':TT.DOOR,'~':TT.WATER,':':TT.SHALLOW_WATER,'v':TT.VOID,'l':TT.LAVA,',':TT.GRASS,'s':TT.STONE_PATH,'c':TT.CARPET,'g':TT.GILDED_FLOOR,'I':TT.ICE,'h':TT.HEDGE,'m':TT.BAMBOO,w:TT.WINDOW};
+const GRAND_VAULT_PROP={T:TT.GARDEN_TREE,r:TT.ROCK,P:TT.STONE_PILLAR,L:TT.LANTERN_POST,S:TT.STATUE,B:TT.BED,t:TT.TABLE,k:TT.BOOK_STACK,b:TT.BENCH,i:TT.INCENSE_STAND,C:TT.CRYSTAL,F:TT.FLOWERBED,W:TT.BASIN,M:TT.MOON_GATE,j:TT.JAR,a:TT.RACK,n:TT.CRATE,o:TT.SCREEN,f:TT.LOW_FENCE,e:TT.REED,'*':TT.LOTUS_FLOWER,'=':TT.STEPPING_STONE};
 const GRAND_VAULT_WATER_PROPS=new Set(['e','*','=']);
 
 function grandVaultRows(vault,tf){
@@ -525,13 +525,11 @@ function grandVaultRows(vault,tf){
   }));
 }
 
-function paintGrandVault(b){
-  const vault=GRAND_VAULTS.find(v=>v.id===b.source.terrain93),rows=grandVaultRows(vault,b.source.vaultTf93),h=rows.length,w=rows[0].length,x0=b.x0+1,y0=b.y0+1;
-  const ground=GRAND_TERRAIN_GROUND[b.region],roomFloor=GRAND_TERRAIN_ROOM_FLOOR[b.region],m=state.map;
-  b.filler=vault.id==='foundry'?TT.LAVA:TT.ROCK;
-  b.carve(b.x0,b.y0,b.iw,b.ih,ground);
-  const props=[];
-  rows.forEach((row,j)=>row.forEach((ch,i)=>{
+// Lays a drawing (rows of glyphs) on the map with its top-left cell at (x0,y0): surfaces first, then props standing on the floor round them.
+// '.' is the ground of the place and 'R' the floor of its rooms. Used by the vaults of the grand terrain and by the tiles of the second floor.
+function stampGrandGlyphs(rows,x0,y0,ground,roomFloor){
+  const m=state.map,props=[];
+  rows.forEach((row,j)=>[...row].forEach((ch,i)=>{
     const x=x0+i,y=y0+j;
     if(ch==='.')setTerrainTile58(m,x,y,ground);
     else if(ch==='R')setTerrainTile58(m,x,y,roomFloor);
@@ -547,6 +545,13 @@ function paintGrandVault(b){
     let base=ground,best=0;for(const [t,n] of count)if(n>best){best=n;base=t}
     setTerrainTile58(m,x,y,base);setTerrainTile58(m,x,y,GRAND_VAULT_PROP[ch]);
   }
+}
+
+function paintGrandVault(b){
+  const vault=GRAND_VAULTS.find(v=>v.id===b.source.terrain93),rows=grandVaultRows(vault,b.source.vaultTf93),h=rows.length,w=rows[0].length,x0=b.x0+1,y0=b.y0+1;
+  b.filler=vault.id==='foundry'?TT.LAVA:TT.ROCK;
+  b.carve(b.x0,b.y0,b.iw,b.ih,GRAND_TERRAIN_GROUND[b.region]);
+  stampGrandGlyphs(rows.map(r=>r.join('')),x0,y0,GRAND_TERRAIN_GROUND[b.region],GRAND_TERRAIN_ROOM_FLOOR[b.region]);
   grandVaultRooms(x0,y0,w,h);
 }
 

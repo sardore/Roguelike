@@ -674,18 +674,19 @@ globalThis.__MANRU_QA_BELL__={
   ring:()=>{const sw=state.switches.find(v=>v.kind==='bell');state.player.x=sw.x;state.player.y=sw.y+1;triggerSwitch(sw.x,sw.y);return true},
   wait:n=>{let most=0;for(let i=0;i<n;i++){state.player.hp=state.player.maxHp;ActionDispatcher.dispatch({type:'REST',args:[]});const c=state.monsters.find(m=>m.legion57&&m.hp>0);if(c)most=Math.max(most,state.monsters.filter(m=>m.hp>0&&bossChildOf(m,c)).length)}return most}
 };
-// Floor 2 (the `fixedFloors` scenario): how many steps the shortest way through each wing takes, from the cell behind its hub door to its key.
+// Floor 2 (the `fixedFloors` scenario): how many steps the shortest way through each of its four regions takes, from the cell behind the region's
+// door to its key (the regions are mazes).
 globalThis.__MANRU_QA_FLOOR2__={
   wingSteps:()=>{
-    const cx=Math.floor(COLS/2),out=[];
-    for(let i=0;i<4;i++){
-      const side=i%2?1:-1,xi=cx+side*5,from={x:xi,y:i<2?33:18},to={x:xi,y:i<2?23:8},dist=new Map([[from.y*COLS+from.x,0]]),queue=[from];
-      for(let h=0;h<queue.length;h++){
-        const q=queue[h],d=dist.get(q.y*COLS+q.x);
-        if(q.x===to.x&&q.y===to.y){out.push(d);break}
-        for(const [dx,dy] of DIRS4){const x=q.x+dx,y=q.y+dy,kk=y*COLS+x;if(x<1||y<1||x>=COLS-1||y>=ROWS-1||dist.has(kk))continue;if(y>from.y||y<to.y)continue;if(!ReachabilityService.playerTerrainPassable(x,y,{unlock:true}))continue;dist.set(kk,d+1);queue.push({x,y})}
+    const out=[];
+    for(const branch of state.floor2Choice63.branches){
+      const cells=new Set(branch.cells),from=branch.entry,to=branch.exitSeal.key,dist=new Map([[k(from.x,from.y),0]]),queue=[from];let found=-1;
+      for(let h=0;h<queue.length&&found<0;h++){
+        const q=queue[h],d=dist.get(k(q.x,q.y));
+        if(q.x===to.x&&q.y===to.y){found=d;break}
+        for(const [dx,dy] of DIRS4){const x=q.x+dx,y=q.y+dy,kk=k(x,y);if(dist.has(kk)||!cells.has(kk)||!ReachabilityService.playerTerrainPassable(x,y,{unlock:true}))continue;dist.set(kk,d+1);queue.push({x,y})}
       }
-      if(out.length<=i)out.push(-1);
+      out.push(found);
     }
     return out;
   }

@@ -586,7 +586,7 @@ restore(){
         if(!firstSeal||!secondSeal){runs.push({ok:false,reason:'missing-exit-seal'});continue}
         exitKeys=has(beforeFirstExit,firstKey)&&!has(beforeFirstExit,stageKeys[1]);opened.add(key85(firstSeal.x,firstSeal.y));first=walk(opened);opened.add(key85(b.x,b.y));second=walk(opened);
         exitKeys=exitKeys&&has(second,secondKey)&&!has(second,state.stairs);opened.add(key85(secondSeal.x,secondSeal.y));last=walk(opened);
-        for(const branch of state.floor2Choice63.branches.filter(q=>q.id!==a.branch&&q.id!==b.branch))for(const kk of branch.cells){const[x,y]=kk.split(',').map(Number);if(y>=(branch.id<2?23:8)&&y<=(branch.id<2?33:18)&&last.has(kk))unselectedReachable++}
+        for(const branch of state.floor2Choice63.branches.filter(q=>q.id!==a.branch&&q.id!==b.branch))for(const kk of branch.cells)if(last.has(kk))unselectedReachable++
         reverseBlocked=unselectedReachable===0;
       }else{opened.add(key85(b.x,b.y));last=walk(opened)}
       const requiredLoot=(state.items||[]).filter(it=>!plan.exitSeals68||!Number.isInteger(it.floor2Bonus66)||it.floor2Bonus66===a.branch||it.floor2Bonus66===b.branch);
