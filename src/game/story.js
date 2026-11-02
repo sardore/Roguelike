@@ -25,7 +25,7 @@ let coachFocus=null,coachCurrent=null,coachTimer=null;
       start:['등불이 켜진 전실은 안전하다. 바닥을 탭하거나 클릭해 이동해 보자. 오른쪽 회랑을 따라 다음 방으로 가면 된다.','PC: WASD / 방향키 · 모바일: 원하는 바닥을 탭'],
       bag:['여기는 조사관 준비실이다. 행낭을 열어 가져온 장비와 물건을 확인하자. 물건을 선택하면 설명과 사용 방법을 볼 수 있다.','행낭: I / 화면의 행 버튼 · 확인한 뒤 오른쪽 수련실로 이동'],
       martial:['무술은 짧게 눌러 사용하고, 길게 눌러 강화한다. 수련점으로 배울 무술을 골라 보자.','PC: Q 짧게 / Q 꾹 · 모바일: 무술 버튼 탭 / 길게 누르기'],
-      chest:['봉인된 상자다. 몇 번의 기회 동안 상자를 단단히 다져 나무에서 동·은·금으로 올릴 수 있다. 성공하면 속이 더 알차지고, 실패해도 기회만 줄어들 뿐이다.','상자에 다가가 부딪히면 열린다. 마음에 들면 언제든 열 수 있다.'],
+      chest:['끝에 상자가 놓여 있다. 다가가 부딪히면 열린다. 속에는 먹을 것과 쓸 것, 그리고 장비 한 점이 들어 있다.','열기 전에 방을 둘러보며 숨을 골라도 좋다.'],
       entry_exit:['문 너머부터는 적이 있는 객잔이다. 적을 향해 이동하거나 공격 버튼을 눌러 싸운다. 네가 행동하면 적도 움직인다.','준비가 됐다면 위쪽 문으로 나가자. 상처를 입으면 적과 거리를 벌리고 쉬어라.']
     };
     const next=a.stations.find(v=>!seenTip70(v.id));if(!next)return;
@@ -46,15 +46,13 @@ let coachFocus=null,coachCurrent=null,coachTimer=null;
 // The entry of the first floor is a terraced garden climbing from the bottom-left corner of the map: four houses, each one step up and to the east of
 // the one before (the lantern reading room, the investigators' preparation room, the training hall, the room of the sealed chest), joined by
 // moon gates and short stairways. The garden round them is a rock garden with trees and bamboo that is seen through the windows in the walls.
-// The chest at the end of the entry: three chances to improve it (wood, bronze, silver, gold); each chance succeeds with the probability listed.
-const TUTORIAL_CHEST=Object.freeze({tries:3,chance:Object.freeze([.6,.5,.4]),names:Object.freeze(['나무 상자','동 상자','은 상자','금 상자'])});
 // the zone is the bottom-left corner of the map (the first floor is 63 x 43)
 function tutorialZone(){return{x:1,y:ROWS-18,right:41,bottom:ROWS-2}}
 const TUTORIAL_HOUSES=Object.freeze([
   {name:'등불 열람실',x:2,dy:-8,floor:'WOOD_FLOOR',props:[[1,0,'LANTERN_POST'],[7,0,'LANTERN_POST'],[3,0,'TABLE'],[4,0,'TABLE'],[1,3,'BOOK_STACK'],[7,3,'BOOK_STACK'],[4,3,'BENCH']],pond:null},
   {name:'조사관 준비실',x:12,dy:-11,floor:'WOOD_FLOOR',props:[[1,0,'RACK'],[2,0,'RACK'],[6,0,'CRATE'],[7,0,'JAR'],[1,3,'BENCH'],[7,3,'LANTERN_POST']],pond:null},
   {name:'정심 수련실',x:22,dy:-14,floor:'STONE_PATH',props:[[1,0,'STONE_PILLAR'],[7,0,'STONE_PILLAR'],[1,3,'STONE_PILLAR'],[7,3,'STONE_PILLAR'],[4,0,'INCENSE_STAND']],pond:[3,2,3,1]},
-  {name:'봉인 상자방',x:32,dy:-17,floor:'CARPET',props:[[1,0,'STATUE'],[7,0,'STATUE'],[1,3,'LANTERN_POST'],[7,3,'LANTERN_POST'],[3,0,'INCENSE_STAND'],[5,0,'INCENSE_STAND']],pond:null}
+  {name:'상자방',x:32,dy:-17,floor:'CARPET',props:[[1,0,'STATUE'],[7,0,'STATUE'],[1,3,'LANTERN_POST'],[7,3,'LANTERN_POST'],[3,0,'INCENSE_STAND'],[5,0,'INCENSE_STAND']],pond:null}
 ]);
 function buildTutorialEntry(m,rooms){
     const Z=tutorialZone(),W=9,H=6,seed=state.floorSeed60||1,suite=[],houses=TUTORIAL_HOUSES.map(h=>({...h,y:ROWS+h.dy}));
@@ -95,9 +93,9 @@ function buildTutorialEntry(m,rooms){
     const destinations=rooms.filter(r=>r!==near&&dist.has(k(r.cx,r.cy))).sort((a,b)=>dist.get(k(b.cx,b.cy))-dist.get(k(a.cx,a.cy)));
     if(!destinations.length)throw new Error('F1 has no exploration exit');
     state.fixedExit={x:destinations[0].cx,y:destinations[0].cy};
-    // the chest: in the middle of the last house, sealed; it is opened (and improved) at the table of the run, see openTutorialChest
+    // the chest: in the middle of the last house; walking into it opens it (see openTutorialChestLoot)
     const chest={x:last.x+4,y:last.y+3};setTerrainTile58(m,chest.x,chest.y,TT.CACHE);
-    state.tutorialChest={x:chest.x,y:chest.y,tier:0,tries:TUTORIAL_CHEST.tries,opened:false,upgraded:[],rolls:TUTORIAL_CHEST.chance.map((_,n)=>hash2(chest.x,chest.y,seed+31+n))};
+    state.tutorialChest={x:chest.x,y:chest.y,opened:false};
     const at=(i,dx,dy)=>({x:houses[i].x+dx,y:houses[i].y+dy});
     state.tutorialEntry60={x:Z.x,y:Z.y,right:Z.right,bottom:Z.bottom,start,exit:{x:gx,y:exitY},completed:false,
       stations:[{id:'start',...at(0,4,3)},{id:'bag',...at(1,4,3)},{id:'martial',...at(2,4,3)},{id:'chest',...at(3,2,3)},{id:'entry_exit',x:gx,y:doorY+1}],rooms:suite};

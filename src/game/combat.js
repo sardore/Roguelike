@@ -359,7 +359,7 @@ function setPlayerStatus(key,turns){
 const CLASS_MARTIAL={
  aim:{name:'명중',cost:3,seal:'準',visual:'aim',desc:'방어·회피를 꿰뚫는 사격. 공격·이동 시 약화, 제자리에서 회복. 피해·해로운 상태이상 시 해제.'},
  smoke:{name:'연막',cost:4,seal:'霧',visual:'smoke',desc:'4칸 내 3/6/9/12 피해. 단계별 1×1~4×4 연막으로 5턴간 사선을 가린다.'},
- oddity:{name:'괴변',type:'active',cost:4,seal:'怪',visual:'oddity',desc:'주변의 가구와 구조물을 끌어당겨 적에게 던진다. 단계가 오르면 더 멀리서, 더 단단한 것을 끌어온다.'}
+ oddity:{name:'괴변',type:'active',cost:4,seal:'怪',visual:'oddity',desc:'가구와 구조물을 끌어당겨 적에게 던진다. 단계가 오를수록 멀리서 단단한 것을 끌어온다.'}
 };
 function combatStatus(source,target,kind,turns){return combatTargetValid57(source,target)&&applyCombatStatus(target,kind,turns,1,{source,stagger:kind==='weaken'})}
 function damageCombatTarget(source,target,amount,why,color='#e78372'){
@@ -424,7 +424,7 @@ function executeMartialActor(actor,id,cell=null){
  actor.focus-=info.cost;
  if(id==='strong'){actor.strongReady=form==='guard'?0:lv;actor.guardReady1005=form==='guard'?strongBonus(lv):0;actor.guardCharges1005=form==='guard'?MARTIAL_RULES.guardActions:0;martialFx(form==='guard'?'guard':'drive',actor)}
  else if(id==='ghost'){const duration=ghostDuration(lv)+(player?1:0);status.stealth=Math.max(status.stealth||0,duration);status.evade=Math.max(status.evade||0,duration);if(player)for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('assassin',actor)}
- else if(family==='oddity'){if(!resolveOddity(actor,lv,form,cell))return false}
+ else if(family==='oddity'){if(!oddityBegin(actor,lv,form,cell))return false}
  else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower(5+lv)}
  else if(family==='smoke'){
   const center=form==='cloud'?actor:cell,cells=form==='cloud'?smokeCells(center,lv):martialSmokeCells(center,lv);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');

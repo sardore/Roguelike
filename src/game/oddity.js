@@ -1,13 +1,12 @@
 /* ===== 괴변 (怪變): the martial art of the summoner that takes the place of 격투 =====
    The summoner's eyes wake the furniture and structures round her: she names an enemy, and a piece of the place is pulled out of its floor,
-   hangs in the air, shakes with the pull and is flung at the enemy. What it is made of decides what it does: wood is a plain blow that
+   hangs in the air, shakes with the pull and is flung at the enemy; nothing is done to the enemy, and no enemy moves, until the piece lands. What it is made of decides what it does: wood is a plain blow that
    knocks back; stone strikes hard and stuns; a lantern bursts into a fire-damage explosion that leaves a burning floor; a tree is the heaviest
    blow and throws the enemy back. The rank (1-5, the fifth reached by the breakthrough) widens the reach of the pull and opens the next
-   material: wood, stone, lantern, tree. At the fifth rank two pieces fly. The forms are two different ways of fighting, neither is the upper
+   material: wood, stone, lantern, tree. At the fifth rank two pieces fly. The turn of the player is not committed until the last piece has landed. The forms are two different ways of fighting, neither is the upper
    hand of the other: 인력 (one heavy blow, far) and 선풍 (a sweeping blow that also hits the neighbours of the target, short). */
 const ODDITY_RULES=Object.freeze({
-  // before the hit: the piece rises (lift), shakes and glows (charge), flies (flight). The effect on the enemy is written to the state at once;
-  // the picture is held back till the hit, and the player may not act before it.
+  // before the hit: the piece rises (lift), shakes and glows (charge), flies (flight). The blow, and the turn of the enemies, follow when it lands.
   timing:Object.freeze({lift:260,charge:180,flight:380,second:170,after:520}),
   materials:Object.freeze([
     {id:'wood',need:1,name:'목재',rank:1,power:1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED']},
@@ -17,11 +16,11 @@ const ODDITY_RULES=Object.freeze({
   ]),
   cost:4
 });
-const ODDITY_FX=[];
+const ODDITY_FX=[],ODDITY_QUEUE=[];
 function oddityDescription(lv,n,form){
   const reach=oddityPullRange(Math.max(1,lv),form),mats=ODDITY_RULES.materials.filter(m=>m.need<=Math.max(1,n)).map(m=>m.name).join('·');
-  const how=form==='whirl'?'휘돌려 쓸어 친다. 맞은 적 곁의 적도 절반의 피해를 입는다. 끌어당기는 거리는 한 칸 짧고, 한 방의 힘은 7할이다.':form==='pull'?'한 점에 몰아 크게 내리친다. 먼 곳의 것도 끌어올 수 있다.':'끌어온 것을 적에게 내던진다.';
-  return `주변의 가구와 구조물을 끌어당겨 지정한 적에게 부딪힌다. ${how} 끌어당기는 거리 ${reach}칸, 끌어올 수 있는 것: ${mats}. 목재는 부딪혀 밀어내고, 석재는 단단히 때려 경직시키며, 등불은 불 속성으로 폭발해 불바닥을 남기고, 나무는 가장 무겁게 내리쳐 멀리 날린다. ${n>=5?'5단에는 두 개가 잇달아 날아든다. ':''}부딪힌 것은 부서진다.`;
+  const how=form==='whirl'?'휘돌려 곁의 적까지 친다.':form==='pull'?'한 점에 몰아 크게 내리친다.':'끌어온 것을 내던진다.';
+  return `주변의 가구와 구조물을 끌어당겨 지정한 적에게 부딪힌다. ${how} ${reach}칸 안의 ${mats}.${n>=5?' 5단: 두 개.':''}`;
 }
 function oddityPullRange(lv,form){return 2+Math.max(1,lv)-(form==='whirl'?1:0)}
 function oddityMaterialOf(tile,lv){
@@ -41,7 +40,7 @@ function oddityObjects(actor,lv,form,target){
   }
   return out.sort((a,b)=>b.mat.rank-a.mat.rank||a.near-b.near||a.y-b.y||a.x-b.x);
 }
-function oddityPlan(actor,cell,lv,form){
+function oddityChoose(actor,cell,lv,form){
   if(!cell)return null;const target=oddityTargets(actor,lv,form).find(m=>m.x===cell.x&&m.y===cell.y);if(!target)return null;
   const objects=oddityObjects(actor,lv,form,target);if(!objects.length)return null;
   return{target,objects:objects.slice(0,lv>=5?2:1)};
@@ -71,25 +70,42 @@ function oddityHit(actor,mon,obj,lv,form,index){
   if(form==='whirl')for(const o of state.monsters)if(o!==mon&&o.hp>0&&isHostileTarget57(o)&&Math.max(Math.abs(o.x-mon.x),Math.abs(o.y-mon.y))<=1){damageEntity(o,Math.max(1,Math.round(dmg*.5)),actor);martialCheckDeath(o,actor)}
   martialCheckDeath(mon,actor);
 }
-// the whole art: validation happens before the focus is spent (see executeMartialActor); this does the hitting and starts the picture
-function resolveOddity(actor,lv,form,cell){
-  const plan=oddityPlan(actor,cell,lv,form);if(!plan)return false;
-  const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target,ghost={...mon},floatsBefore=FX.floats.length;let last=now;
-  plan.objects.forEach((obj,i)=>{
-    const start=now+i*t.second,hitAt=start+t.lift+t.charge+t.flight,sprite=oddityPieceSprite(obj.tile,obj.x,obj.y);
-    ODDITY_FX.push({run:state,map:state.map,start,hitAt,from:{x:obj.x,y:obj.y},caster:{x:actor.x,y:actor.y},to:{x:mon.x,y:mon.y},mat:obj.mat.id,color:obj.mat.color,tile:obj.tile,sprite,ghost:i===0?ghost:null,mon,seed:(obj.x*31+obj.y*17+i*7)>>>0,hit:false,second:i>0});
-    const fields=(state.elementFields74||[]).length,burning=new Set(Object.values(terrainReactions105().burning));oddityDetach(obj.x,obj.y);oddityHit(actor,mon,obj,lv,form,i);last=hitAt;
-    // fire is shown from the moment the lantern bursts: the burning floor, the burning enemy
-    for(const f of (state.elementFields74||[]).slice(fields))f.hiddenUntil=hitAt;
-    for(const f of Object.values(terrainReactions105().burning))if(!burning.has(f))f.hiddenUntil=hitAt;
-    if(mon.combustion105&&!mon.combustion105.hiddenUntil)mon.combustion105.hiddenUntil=hitAt;
+// the pieces in the air, by the chosen enemy: oddityPlan answers with them while the art is under way (their tiles are already gone from the floor)
+let ODDITY_FLIGHT=null;
+function oddityPlan(actor,cell,lv,form){
+  if(ODDITY_FLIGHT&&ODDITY_FLIGHT.run===state&&cell&&ODDITY_FLIGHT.target.x===cell.x&&ODDITY_FLIGHT.target.y===cell.y)return ODDITY_FLIGHT;
+  return oddityChoose(actor,cell,lv,form);
+}
+// the whole art: validation happens before the focus is spent (see executeMartialActor); this lifts the pieces out of the floor and starts the
+// picture; the blows are written to the state when each piece lands (oddityDue), and the turn is committed when the last has landed
+function oddityBegin(actor,lv,form,cell){
+  const plan=oddityChoose(actor,cell,lv,form);if(!plan)return false;
+  const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target;let last=now;
+  const pieces=plan.objects.map((obj,i)=>{
+    const start=now+i*t.second,hitAt=start+t.lift+t.charge+t.flight;
+    ODDITY_FX.push({run:state,map:state.map,start,hitAt,from:{x:obj.x,y:obj.y},caster:{x:actor.x,y:actor.y},to:{x:mon.x,y:mon.y},mat:obj.mat.id,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+i*7)>>>0,hit:false});
+    oddityDetach(obj.x,obj.y);last=hitAt;return{obj,hitAt,index:i};
   });
-  // the numbers of the blow appear with the hit, not before it
-  for(let i=floatsBefore;i<FX.floats.length;i++)FX.floats[i].start+=last-now;
-  Object.assign(ACTION_PRESENTATION58,{run:state,start:now,until:last+120,inputUntil:last+60,rate:1,kind:'oddity',source:{x:actor.x,y:actor.y},target:{x:mon.x,y:mon.y},entity:mon,pending:true,weapon:'brawl',hit:false,crit:false,strong:false});
+  ODDITY_FLIGHT={run:state,target:mon,objects:plan.objects};
+  pieces.forEach((pc,i)=>ODDITY_QUEUE.push({run:state,hitAt:pc.hitAt,actor,mon,obj:pc.obj,lv,form,index:pc.index,last:i===pieces.length-1,cell:{x:mon.x,y:mon.y}}));
+  Object.assign(ACTION_PRESENTATION58,{run:state,start:now,until:last+200,inputUntil:last,rate:1,kind:'oddity',source:{x:actor.x,y:actor.y},target:{x:mon.x,y:mon.y},entity:mon,pending:true,weapon:'brawl',hit:false,crit:false,strong:false});
   addLog(`${actor.name}: ${plan.objects.map(o=>o.mat.name).join('·')}이(가) 허공으로 떠올라 ${mon.name}에게 날아든다.`);
   floatText(actor.x,actor.y,martialPresentation('brawl',MARTIAL_INFO.brawl,actor).name,'#c9a7ff',14);
   return true;
+}
+// called every frame: a piece that has landed does its blow; the last one ends the turn of the player, and the enemies answer
+function oddityDue(){
+  if(!ODDITY_QUEUE.length)return;const now=performance.now();
+  while(ODDITY_QUEUE.length&&(ODDITY_QUEUE[0].run!==state||now>=ODDITY_QUEUE[0].hitAt)){
+    const q=ODDITY_QUEUE.shift();if(q.run!==state){ODDITY_FLIGHT=null;continue}
+    try{
+      if(q.mon.hp>0)oddityHit(q.actor,q.mon,q.obj,q.lv,q.form,q.index);
+      if(q.last){
+        ODDITY_FLIGHT=null;const act=playerAction57('martial',{skill:true,allowMartial:true,uiOwner:'worldTarget57'});
+        if(act.ok){commitPlayerAction57(act,1);if(q.lv>=5)martialFx('transcend')}
+      }
+    }catch(error){ignoreError('oddity blow',error);if(q.last)ODDITY_FLIGHT=null}
+  }
 }
 // the casting of the art: choose an enemy in sight, then the piece is chosen for it (the heaviest material the rank opens, nearest the enemy)
 function castOddity(cell,inputSource='pointer',existingAction=null){
@@ -97,7 +113,7 @@ function castOddity(cell,inputSource='pointer',existingAction=null){
   const p=state.player,lv=p.martial.brawl,info=martialPresentation('brawl',MARTIAL_INFO.brawl,p);
   if(martialFamily('brawl',p)!=='oddity'||lv<1||p.focus<info.cost){toast('괴변을 펼칠 기력이 부족하거나 기술을 배우지 않았다.');return false}
   if(!oddityPlan(p,cell,lv,martialFormOf('brawl',p))){toast('끌어당길 가구나 구조물이 닿지 않는다.');return false}
-  if(!executeMartialActor(p,'brawl',cell))return false;commitPlayerAction57(act,1);return true;
+  return executeMartialActor(p,'brawl',cell);
 }
 function oddityBeginTarget(info){
   const p=state.player,lv=p.martial.brawl,form=martialFormOf('brawl',p),cells=oddityTargets(p,lv,form).filter(m=>oddityPlan(p,m,lv,form)).map(m=>({x:m.x,y:m.y,dx:m.x-p.x,dy:m.y-p.y,dist:Math.max(Math.abs(m.x-p.x),Math.abs(m.y-p.y))}));
@@ -124,12 +140,8 @@ function oddityHitFx(ev){
   FX.rings.push({x:cx*TILE+TILE/2,y:cy*TILE+TILE/2,color:ev.color,start:performance.now(),life:340,power:ev.mat==='stone'||ev.mat==='tree'?7:5});
   globalThis.__MANRU_SFX54__?.play?.(ev.mat==='lantern'?'crit':'hit');
 }
-// an enemy that dies of the blow is still drawn where it stood until the piece arrives
-function drawOddityWorld(){
-  if(!state)return;const now=performance.now();
-  for(const ev of ODDITY_FX)if(ev.run===state&&ev.ghost&&now<ev.hitAt+40&&(ev.mon.hp<=0||!(state.monsters||[]).includes(ev.mon))){try{drawCreature({...ev.ghost,hp:Math.max(1,ev.ghost.hp)})}catch(error){ignoreError('oddity ghost',error)}}
-}
 function drawOddityFx(){
+  oddityDue();
   if(!state||!ODDITY_FX.length)return;const now=performance.now(),T=ODDITY_RULES.timing;
   for(let i=ODDITY_FX.length-1;i>=0;i--){const ev=ODDITY_FX[i];if(ev.run!==state||now>ev.hitAt+T.after)ODDITY_FX.splice(i,1)}
   const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=TILE*cam.zoom,sc=z/TILE;
