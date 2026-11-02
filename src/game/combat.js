@@ -8,7 +8,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='aim')v.desc=`${form==='focus'?'상처와 고통에도 흔들리지 않고 시위를 겨눈다.':form==='divine'?'하나의 시선으로 두 적의 빈틈을 꿰뚫는다.':'호흡을 멈추고 적의 빈틈에 시선을 모은다.'} 사격 피해 ×${(Math.min(5+n,6+n-(form==='divine'?1:0))/4).toFixed(2)}에서 최대 ×${((6+n-(form==='divine'?1:0))/4).toFixed(2)}까지. 방어와 회피를 꿰뚫는다. 이동하거나 쏘면 집중이 한 단계 줄고, 제자리에서 다시 쌓인다. ${form==='focus'?'피해나 해로운 상태에 시달려도 집중을 이어갈 수 있다.':form==='divine'?'쏠 수 있는 다른 적이 있으면 집중 한 단계와 탄약 한 발을 더 써 함께 쏜다. 피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.':'피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.'}`;
  if(family==='smoke')v.desc=`${form==='cloud'?'흐르는 구름처럼 연막을 두르고 움직인다.':form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} ${form==='cloud'?'몸을 중심으로': '4칸 안에 던져'} ${n}×${n}칸에 피해 ${n*3}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 사선을 가린다. ${form==='cloud'?'연막은 발걸음을 따라 움직인다.':form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${n*3}을 준다.`:''}`;
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
- if(family==='oddity')v.desc=oddityDescription(lv,n,form);
+ if(family==='oddity'){v.cost=oddityCost(lv);v.desc=oddityDescription(lv,n,form)}
  if(family==='brawl')v.desc=form==='reach'?`주먹의 위력 대신 뻗어 나가는 거리를 단련한다. 맨손과 권갑의 공격 사거리 ${n}칸. 가로막힌 적 너머로는 닿지 않는다.`:form==='close'?`짧은 병기를 손발처럼 다룬다. 사거리 1칸인 근접무기의 공격력 +${n}. 맨손과 권갑에는 이 힘이 실리지 않는다.`:`주먹과 몸놀림을 갈고닦아 맞붙는 싸움에 능해진다. 맨손과 권갑의 공격력 +${n}.`;
  if(id==='constitution'){v.desc=form==='vigor'?`몸집을 키우는 대신 호흡을 다스려 더 많은 기를 품는다. 최대 기력 +${2*n}.`:form==='revive'?`죽음의 문턱에서 남은 생기를 불사른다. 치명상을 막고 체력을 최대치의 80%까지 회복한다. 대가로 이 무술이 1단 낮아진다.`:`뼈와 살을 단련해 거친 싸움을 견딘다. 최대 체력 +${8*n}%.`;if(playerClassRules58(p).upgradeTalismanMode==='bodyBoost')v.desc+=` 장사 체질로 얻는 괴력은 ${bodyPowerDuration58(p)}턴 지속되며, 매턴 체력을 2% 회복한다. 힘이 다하면 같은 시간 동안 눈이 멀고 배탈을 앓는다.`}
  if(lv===0)v.desc='미습득 · 1단 효과: '+v.desc;
@@ -16,7 +16,7 @@ function martialPresentation(id,info,p=state.player){
 }
 /* 10.0.5 acquired martial rules: producer -> persisted state -> existing consumers. */
 const MARTIAL_RULES=Object.freeze({ids:['strong','roar','ghost','brawl','constitution'],keys:['b','n','m'],assassinTurns:3,smokeTurns:5,guardActions:2,latePoints:[13,15,17,18]});
-const MARTIAL_FORMS={oddity:{pull:'인력',whirl:'선풍',scatter:'난무'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
+const MARTIAL_FORMS={oddity:{psychic:'염력',anomaly:'이변'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
 function martialFamily(id,p=state.player){return id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
 function martialFormOf(id,p=state?.player){return p?.martialForm?.[id]||null}
 function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
