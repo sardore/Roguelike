@@ -1106,6 +1106,44 @@ export const scenarios = {
     return out;
   },
 
+  // The first floor's entry is a terraced garden in the bottom-left corner with a chest at its end: it is generated cleanly again and again, nothing
+  // lies in it, the chest's final tier follows the chances, nothing it holds is gear of the third tier or above, and its dialogue works.
+  async chest(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'wanderer');
+      const garden = await s.page.evaluate(() => {
+        const res = { made: 0, problems: [] };
+        for (let n = 1; n <= 40; n++) {
+          window.__MANRU_QA_UI__.state().runId984 = 'garden-' + n;
+          try { window.__MANRU_RELEASE__.regen(1); } catch (e) { res.problems.push(n + ':' + String(e).slice(0, 120)); continue; }
+          const st = window.__MANRU_QA_UI__.state(), a = st.tutorialEntry60, c = st.tutorialChest;
+          res.made++;
+          if (!a || !c) { res.problems.push(n + ':missing'); continue; }
+          if (!(a.bottom >= st.map.length - 2 && a.x <= 2)) res.problems.push(n + ':not in the corner');
+          const inside = st.items.filter((i) => i.x >= a.x && i.x <= a.right && i.y >= a.y && i.y <= a.bottom).length;
+          if (inside) res.problems.push(n + ':items inside ' + inside);
+          if (st.player.x > a.right || st.player.y < a.y) res.problems.push(n + ':start outside');
+        }
+        return res;
+      });
+      if (garden.problems.length || garden.made !== 40) throw Error('chest: garden ' + JSON.stringify(garden));
+      const sim = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.simulate(20000));
+      const want = [0.12, 0.38, 0.38, 0.12];
+      if (sim.dist.some((v, i) => Math.abs(v - want[i]) > 0.02)) throw Error('chest: tier distribution ' + JSON.stringify(sim));
+      if (sim.gearMax.some((v) => v > 2)) throw Error('chest: gear above the second tier ' + JSON.stringify(sim));
+      await dismissModals(s);
+      const flow = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.flow());
+      if (!flow || !flow.shown || flow.rows !== 2 || !flow.opened || !flow.tileIsFloor || flow.items < 1 || flow.again) throw Error('chest: dialogue ' + JSON.stringify(flow));
+      out['chest.garden'] = JSON.stringify({ made: garden.made });
+      out['chest.sim'] = JSON.stringify(sim);
+      out['chest.flow'] = JSON.stringify({ rows: flow.rows, title: flow.title, after: flow.after, opened: flow.opened });
+      out['chest.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {
