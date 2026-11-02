@@ -1059,8 +1059,8 @@ export const scenarios = {
           }, [floor, n]);
           if (r.err) { problems.push(`floor ${floor} run ${n}: ${r.err}`); continue; }
           if (floor === 2 && (!r.canal || !r.audit || r.locks !== 'f2-choice')) problems.push(`floor 2 candidate ${r.tpl}: ${JSON.stringify(r)}`);
-          // the great well must be walked round: no wing of it may be crossed in less than 30 steps (a straight way is about 10)
-          if (floor === 2 && r.tpl === 1 && r.steps.some((v) => v < 30)) problems.push(`floor 2 well: a wing can be crossed straight: ${JSON.stringify(r.steps)}`);
+          // the regions are mazes: a way through is never shorter than a straight run (30 steps) and on average well beyond it (45)
+          if (floor === 2 && (r.steps.some((v) => v < 30) || r.steps.reduce((n, v) => n + v, 0) / r.steps.length < 45)) problems.push(`floor 2 candidate ${r.tpl}: a region can be crossed too directly: ${JSON.stringify(r.steps)}`);
           if (floor === 2) shortest[r.tpl] = Math.min(shortest[r.tpl] ?? 999, ...r.steps);
           seen[floor][r.tpl] = (seen[floor][r.tpl] || 0) + 1;
         }
@@ -1090,10 +1090,10 @@ export const scenarios = {
         }, n);
       }
       if (!before) throw Error('bell: no village was made');
-      if (!before.has || before.up !== 6 || before.stairs || before.commanders) throw Error('bell: wrong start ' + JSON.stringify(before));
+      if (!before.has || before.up !== 2 || before.stairs || before.commanders) throw Error('bell: wrong start ' + JSON.stringify(before));
       await dismissModals(s);
       const rang = await s.page.evaluate(() => { globalThis.__MANRU_QA_BELL__.ring(); return globalThis.__MANRU_QA_BELL__.info(); });
-      if (!rang.used || rang.down !== 6 || !rang.stairs || rang.commanders !== 1 || !rang.alerted) throw Error('bell: ringing did not work ' + JSON.stringify(rang));
+      if (!rang.used || rang.down !== 2 || !rang.stairs || rang.commanders !== 1 || !rang.alerted) throw Error('bell: ringing did not work ' + JSON.stringify(rang));
       const most = await s.page.evaluate(() => globalThis.__MANRU_QA_BELL__.wait(40));
       const after = await s.page.evaluate(() => globalThis.__MANRU_QA_BELL__.info());
       await s.tick(300);

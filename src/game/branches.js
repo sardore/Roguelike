@@ -2376,7 +2376,7 @@ function triggerSwitch(x,y){
 }
 // The village bell wakes the legion commander, who comes to where the sound was and then walks the patrol route.
 function awakenLegion(sw){
-  const at=sw.commanderAt,mon=at&&spawnNamed('마을 군단장',at,{placementMode:'exact',provenance:'floor2-bell'});
+  const at=sw.commanderAt,mon=at&&spawnNamed('마을 군단장',at,{placementMode:'local',origin:at,radius:5,provenance:'floor2-bell'});
   if(!mon){addLog('군단장은 나타나지 않았다.');return null}
   mon.legion57={...mon.legion57,route:(sw.route||[]).map(p=>({x:p.x,y:p.y})),age:0,wp:0};mon.alerted=true;mon.lastSeenPosition={x:state.player.x,y:state.player.y};
   addLog('군단장이 깨어나 병사를 부른다.');return mon
