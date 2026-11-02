@@ -18,7 +18,7 @@ const FLOOR2_PLANS=Object.freeze([
     const a=FLOOR2_ROOMS(0,30,2,32,[[7,7],[18,8],[30,6]]),b=FLOOR2_ROOMS(0,26,3,25,[[9,8],[24,9]]),c=FLOOR2_ROOMS(3,14,3,17,[[52,8],[64,7],[74,6]]),d=FLOOR2_ROOMS(3,11,2,10,[[56,8],[70,9]]);
     return{
       name:'저잣골목 마을 · 골목집과 노점, 가운데 길의 종',tag:'마을',
-      floors:[TT.DARK_WOOD,TT.STONE_PATH,TT.STONE_PATH,TT.FLOOR],widths:[1,3,3,1],chamberFloor:TT.WOOD_FLOOR,
+      floors:[TT.DARK_WOOD,TT.STONE_PATH,TT.STONE_PATH,TT.FLOOR],widths:[1,3,3,1],chamberFloor:TT.WOOD_FLOOR,laneDecor:[TT.LANTERN_POST,TT.FLOWERBED,TT.BENCH],
       paths:[FLOOR2_LOOP(cx-5,4,33,24,22),[[cx+5,33],[cx+5,32],[70,32],[70,25],[cx+5,25],[cx+5,22]],[[cx-5,18],[cx-5,17],[16,17],[16,10],[cx-5,10],[cx-5,7]],FLOOR2_LOOP(cx+5,82,18,9,7)],
       chambers:[...a.chambers,...b.chambers,{x:55,y:27,w:11,h:3,route:1},{x:22,y:12,w:11,h:3,route:2},...c.chambers,...d.chambers],
       doors:[...a.doors,...b.doors,...c.doors,...d.doors],pools:[],ponds:[{x:57,y:27,w:5,h:2}],stones:[],spurs:[],
@@ -41,7 +41,7 @@ const FLOOR2_PLANS=Object.freeze([
     const c=FLOOR2_ROOMS(2,12,2,11,[[20,4],[26,6]]);
     return{
       name:'거대 우물 · 수조 저장고와 징검돌 섬',tag:'우물',
-      floors:[TT.STONE_PATH,TT.STONE_PATH,TT.STONE_PATH,TT.FLOOR],widths:[1,3,3,1],chamberFloor:TT.STONE_PATH,
+      floors:[TT.STONE_PATH,TT.STONE_PATH,TT.STONE_PATH,TT.FLOOR],widths:[1,3,3,1],chamberFloor:TT.STONE_PATH,laneDecor:[TT.LANTERN_POST,TT.FLOWERBED],
       paths:[FLOOR2_LOOP(cx-5,4,33,24,22),[[cx+5,33],[cx+5,32],[70,32],[70,25],[cx+5,25],[cx+5,22]],[[cx-5,18],[cx-5,17],[14,17],[14,10],[cx-5,10],[cx-5,7]],
         [[cx+5,18],[82,18],[82,15],[50,15],[50,12],[82,12],[82,9],[cx+5,9],[cx+5,7]]],
       chambers:[{x:12,y:27,w:6,h:3,route:0},{x:26,y:27,w:7,h:3,route:0},{x:20,y:26,w:5,h:2,route:0},{x:58,y:27,w:4,h:2,route:1},...c.chambers,{x:83,y:16,w:2,h:2,route:3},{x:83,y:10,w:2,h:2,route:3}],
@@ -64,7 +64,7 @@ const FLOOR2_PLANS=Object.freeze([
     const a=FLOOR2_ROOMS(0,30,2,32,[[8,7],[19,6],[28,7]]),b=FLOOR2_ROOMS(0,26,3,25,[[10,8],[23,9]]),c=FLOOR2_ROOMS(3,14,3,17,[[52,8],[63,8],[74,7]]),d=FLOOR2_ROOMS(3,11,2,10,[[56,7],[68,8],[78,5]]);
     return{
       name:'경비 병영 · 초소 문이 가로막는 병사 길',tag:'병영',
-      floors:[TT.DARK_WOOD,TT.STONE_PATH,TT.STONE_PATH,TT.DARK_WOOD],widths:[1,3,3,1],chamberFloor:TT.WOOD_FLOOR,
+      floors:[TT.DARK_WOOD,TT.STONE_PATH,TT.STONE_PATH,TT.DARK_WOOD],widths:[1,3,3,1],chamberFloor:TT.WOOD_FLOOR,laneDecor:[TT.RACK,TT.LANTERN_POST],
       paths:[FLOOR2_LOOP(cx-5,4,33,24,22),[[cx+5,33],[cx+5,32],[66,32],[66,25],[cx+5,25],[cx+5,22]],[[cx-5,18],[cx-5,17],[20,17],[20,10],[cx-5,10],[cx-5,7]],FLOOR2_LOOP(cx+5,82,18,9,7)],
       chambers:[...a.chambers,...b.chambers,{x:54,y:27,w:10,h:3,route:1},{x:26,y:12,w:8,h:3,route:2},...c.chambers,...d.chambers],
       doors:[...a.doors,...b.doors,...c.doors,...d.doors,[26,33],[14,33],[18,24],[66,18],[72,9]],pools:[],ponds:[{x:57,y:28,w:5,h:1}],stones:[],spurs:[],

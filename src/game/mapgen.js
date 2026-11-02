@@ -666,6 +666,11 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
       else if(m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,TT.DRAWBRIDGE_DOWN);
     }
     for(const [x,y,t] of plan.props)if(m[y]?.[x]!==TT.WALL&&m[y]?.[x]!==TT.WATER)setTerrainTile58(m,x,y,t);
+    // the wide paths of the safe regions are lined with furniture along their straight runs (never across the middle row)
+    if(plan.laneDecor)plan.paths.forEach((ps,i)=>{if(plan.widths[i]<3)return;for(let j=1;j<ps.length;j++){
+      const a=ps[j-1],b=ps[j];if(a[1]!==b[1])continue;
+      for(let x=Math.min(a[0],b[0])+3;x<=Math.max(a[0],b[0])-3;x+=2){const y=a[1]+((x>>1)%2?1:-1);if(m[y][x]===plan.floors[i])setTerrainTile58(m,x,y,plan.laneDecor[(x>>1)%plan.laneDecor.length])}
+    }});
     for(const i of [1,2])safeCells.push(...routeCells[i]);
     const kinds=['danger','safe','safe','unknown'],branches=routeCells.map((cells,i)=>({id:i,kind:kinds[i],cells:[...cells],spine:plan.paths[i].map(([x,y])=>({x,y})),reward:plan.rewardSpots[i]?.[0]||null,rewardSpots:plan.rewardSpots[i]||[],encounters:plan.encounters[i]||[],bonusCount:plan.bonus[i],
       entry:{x:plan.paths[i][0][0],y:plan.paths[i][0][1]}}));
