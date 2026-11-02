@@ -2371,7 +2371,15 @@ function triggerSwitch(x,y){
   const sw=state.switches?.find(v=>v.x===x&&v.y===y);if(!sw)return false;
   if(sw.kind==='cipher'){openCipher();return true}
   if(sw.kind==='f23-center'||sw.kind==='f23-reveal'||sw.kind==='branch-reveal'){const r=globalThis.__MANRU_SPECIAL_FLOORS60__?.activateSwitch?.(sw);if(r?.handled)return true}
-  if(sw.used)return false;sw.used=true;for(const t of sw.targets||[])if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN);addLog('도개교가 거친 소리를 내며 내려왔다.');impact(x,y,'#d6a85f',3);return true
+  if(sw.kind==='bell'&&sw.used){addLog('종은 이미 울렸다. 군단장이 깨어 있다.');return true}
+  if(sw.used)return false;sw.used=true;for(const t of sw.targets||[])if(state.map[t.y][t.x]===TT.DRAWBRIDGE_UP)setTerrainTile58(state.map,t.x,t.y,TT.DRAWBRIDGE_DOWN);addLog(sw.kind==='bell'?'종소리가 마을에 울려 퍼졌다. 대문의 도개교가 내려온다.':'도개교가 거친 소리를 내며 내려왔다.');impact(x,y,'#d6a85f',3);if(sw.kind==='bell')awakenLegion(sw);return true
+}
+// The village bell wakes the legion commander, who comes to where the sound was and then walks the patrol route.
+function awakenLegion(sw){
+  const at=sw.commanderAt,mon=at&&spawnNamed('마을 군단장',at,{placementMode:'exact',provenance:'floor2-bell'});
+  if(!mon){addLog('군단장은 나타나지 않았다.');return null}
+  mon.legion57={...mon.legion57,route:(sw.route||[]).map(p=>({x:p.x,y:p.y})),age:0,wp:0};mon.alerted=true;mon.lastSeenPosition={x:state.player.x,y:state.player.y};
+  addLog('군단장이 깨어나 병사를 부른다.');return mon
 }
 function resolvePortalLanding57(link){
   if(!state||!link)return null;const preferred=link.destLand;

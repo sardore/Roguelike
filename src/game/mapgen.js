@@ -732,6 +732,22 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     for(const i of [1,2]){safeCells.push(...routeCells[i]);delete encounters[i]}
     return{paths,routeCells,safeCells,waterCells,rewardSpots,encounters,canalSpots};
   }
+  // The village's bell: a walled yard in the middle of the map, entered from the first hall. Ringing its bell lowers the bridge on the
+  // straight road that runs up the middle of the village past both choices to the last hall (no key is needed, but the bell wakes the
+  // legion commander, who comes for the sound and then walks the halls).
+  function floor2Bell(m,cx){
+    const put=(x,y,t)=>{if(in60(x,y))setTerrainTile58(m,x,y,t)};
+    openRect(m,cx-3,27,7,7,TT.STONE_PATH);put(cx,34,TT.DOOR);
+    for(const [dx,dy] of [[-3,27],[3,27],[-3,33],[3,33],[-3,30],[3,30]])put(cx+dx,dy,TT.LANTERN_POST);
+    put(cx-2,32,TT.BENCH);put(cx+2,32,TT.BENCH);
+    openRect(m,cx-1,7,3,19,TT.STONE_PATH);
+    // two bridges: the first keeps the yard from the road, the second keeps the first choice's hall from the last hall
+    for(const y of [26,13])for(let dx=-1;dx<=1;dx++)put(cx+dx,y,TT.DRAWBRIDGE_UP);
+    put(cx,30,TT.SWITCH);
+    state.switches.push({id:'village-bell',kind:'bell',x:cx,y:30,used:false,targets:[26,13].flatMap(y=>[-1,0,1].map(dx=>({x:cx+dx,y}))),commanderAt:{x:cx,y:44},
+      route:[{x:cx-10,y:44},{x:cx-10,y:36},{x:cx+10,y:36},{x:cx+10,y:44}]});
+    state.routeTags.push({x:cx,y:31,label:'마을의 종 · 치면 대문이 열리지만 군단장이 깨어난다'});
+  }
   // The shared halls get a face of their own.
   function floor2Halls(m,cx,candidate){
     const style=['village','well','garrison'][candidate],put=(x,y,t)=>{if(in60(x,y)&&m[y][x]!==TT.WALL&&m[y][x]!==TT.DOOR)setTerrainTile58(m,x,y,t)};
@@ -773,6 +789,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     for(const [x,y]of[[cx-9,2],[cx+9,2],[cx-14,37],[cx+14,37]])if(m[y][x]===TT.WALL)setTerrainTile58(m,x,y,TT.WALL_BANNER);
     const west=room(9,40,11,8,'공용 준비실'),east=room(57,40,11,8,'공용 식당');carveLine(m,19,43,28,43,TT.FLOOR,1);carveLine(m,54,43,57,43,TT.FLOOR,1);
     for(const [x,y,t]of[[12,42,TT.RACK],[16,45,TT.BENCH],[60,42,TT.COOKPOT],[64,45,TT.TABLE],[26,36,TT.LANTERN_POST],[50,21,TT.LANTERN_POST],[30,5,TT.LANTERN_POST],[46,5,TT.LANTERN_POST]])setTerrainTile58(m,x,y,t);
+    if(candidate===0)floor2Bell(m,cx);
     floor2Halls(m,cx,candidate);
     state.floor2Choice63={version:5,branches,waterCells,safeCells,canalSpots,commonZones:[foyer,hub1,hub2,end,west,east],stages:[{keyId:'choice-copper',key:{x:cx,y:36},doors:[{x:cx-5,y:34,label:'위험한 복도',branch:0},{x:cx+5,y:34,label:'안전한 복도',branch:1}]},{keyId:'choice-silver',key:{x:cx,y:21},doors:[{x:cx-5,y:19,label:'안전한 복도',branch:2},{x:cx+5,y:19,label:'미지의 복도',branch:3}]}]};
     state.featureRooms=[foyer,hub1,hub2,end,west,east];
