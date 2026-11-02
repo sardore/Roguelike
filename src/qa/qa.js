@@ -678,6 +678,17 @@ globalThis.__MANRU_QA_TERRAIN__={
     for(let y=g.y-1;y<=g.y+g.h;y++)for(let x=g.x-1;x<=g.x+g.w;x++)state.seen.add(k(x,y));VisibilityService.compute();updateAll(true);return true;
   }
 };
+// The hound boss in a flat room and the player at the left end of a long corridor-like walk away from it; the scenario starts the automatic walk
+// to `goal`, ticks the clock and reads what stopped it (the `houndwalk` scenario).
+globalThis.__MANRU_QA_HOUNDWALK__=()=>{
+  const def={...BOSSES[5],boss:true},p=state.player,y0=Math.floor(ROWS/2),x0=Math.floor(COLS/2)-8;
+  for(const m of [...state.monsters])OccupancyService.removeMonster(m);
+  for(let y=y0-2;y<=y0+2;y++)for(let x=x0-3;x<=x0+17;x++){setTerrainTile58(state.map,x,y,TT.FLOOR);state.seen.add(k(x,y))}
+  const boss=scaledMonster(def);boss.x=x0;boss.y=y0;boss.alerted=true;OccupancyService.addMonster(boss);
+  p.x=x0+4;p.y=y0;p.hp=p.maxHp;VisibilityService.compute();
+  globalThis.__MANRU_QA_HOUNDBOSS__=boss;
+  return{hp:p.hp,goal:{x:x0+14,y:y0}};
+};
 // Registries of the game (the `registries` scenario): the action routes, turn stages, attack stage chains, minimap hooks,
 // presentation updates and generation pipeline, each entry with the source of its functions, in the order the readers walk them.
 globalThis.__MANRU_QA_REGISTRIES__=()=>{

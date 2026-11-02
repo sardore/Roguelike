@@ -428,5 +428,7 @@
  "spectate.panels": "b11436332e515592b4d1fc7a404821e8293669a0",
  "terrain.kinds": "356e848e8e44abfe3a4c1cfca49ddc55cf4e5fcb",
  "terrain.made": "a2741c95ed8747204e11883c12e051577a3fb5ea",
- "terrain.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "terrain.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "houndwalk.stop": "9f53de674fe46bdd78578b6743cbbcb404fa6445",
+ "houndwalk.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
