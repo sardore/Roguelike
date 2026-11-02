@@ -5,6 +5,7 @@
   "save.js",
   "items.js",
   "combat.js",
+  "oddity.js",
   "monsters.js",
   "render.js",
   "mapgen.js",

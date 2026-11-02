@@ -1144,6 +1144,59 @@ export const scenarios = {
     return out;
   },
 
+  // The summoner's martial art 괴변 takes the place of 격투: furniture and structures round her are pulled out of the floor and flung at an enemy.
+  // The materials it can pull open with the rank, the material decides the blow, two pieces fly at the fifth rank, and the picture lasts till the hit.
+  async oddity(browser, root) {
+    const out = {};
+    const wanderer = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(wanderer, 'wanderer');
+      out['oddity.others'] = JSON.stringify(await wanderer.page.evaluate(() => globalThis.__MANRU_QA_ODDITY__.family()));
+    } finally { await wanderer.close(); }
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'summoner');
+      const ev = (fn, arg) => s.page.evaluate(fn, arg);
+      const info = await ev(() => globalThis.__MANRU_QA_ODDITY__.family());
+      if (info.family !== 'oddity' || info.name !== '괴변' || info.type !== 'active' || info.bonus !== 0) throw Error('oddity: family ' + JSON.stringify(info));
+      const cast = async (opts) => { await ev((o) => globalThis.__MANRU_QA_ODDITY__.setup(o), opts); const r = await ev(() => globalThis.__MANRU_QA_ODDITY__.cast()); await s.tick(1500); return r; };
+      const res = {};
+      res.wood = await cast({ lv: 1, tiles: ['TABLE'] });
+      res.stoneLocked = await cast({ lv: 1, tiles: ['STATUE'] });
+      res.stone = await cast({ lv: 2, tiles: ['STATUE'] });
+      res.lanternLocked = await cast({ lv: 2, tiles: ['LANTERN_POST'] });
+      res.lantern = await cast({ lv: 3, tiles: ['LANTERN_POST'] });
+      res.treeLocked = await cast({ lv: 3, tiles: ['GARDEN_TREE'] });
+      res.tree = await cast({ lv: 4, tiles: ['GARDEN_TREE'] });
+      res.double = await cast({ lv: 5, tiles: ['STATUE', 'TABLE'] });
+      res.whirl = await cast({ lv: 3, form: 'whirl', tiles: ['TABLE'], neighbor: true });
+      res.far = await cast({ lv: 1, tiles: ['TABLE'], gap: 6 });
+      const problems = [];
+      if (!res.wood.ok || res.wood.dealt <= 0 || res.wood.spent !== 4) problems.push('wood');
+      if (res.stoneLocked.ok || res.stoneLocked.spent !== 0) problems.push('stone before its rank');
+      if (!res.stone.ok || res.stone.dealt <= res.wood.dealt) problems.push('stone');
+      if (res.double.stunned < 1) problems.push('stone does not stun');
+      if (res.lanternLocked.ok) problems.push('lantern before its rank');
+      if (!res.lantern.ok || res.lantern.dealt <= 0 || !res.lantern.fire) problems.push('lantern');
+      if (res.treeLocked.ok) problems.push('tree before its rank');
+      if (!res.tree.ok || res.tree.dealt <= res.stone.dealt) problems.push('tree');
+      if (!res.double.ok || res.double.events !== 2) problems.push('two pieces at the fifth rank');
+      if (!res.whirl.ok || res.whirl.neighborDealt <= 0) problems.push('whirl does not sweep the neighbour');
+      if (res.far.ok) problems.push('an enemy out of the pull was struck');
+      for (const k of ['wood', 'stone', 'lantern', 'tree', 'double']) if (!(res[k].flight.every((v) => v >= 780) && res[k].lock >= 700)) problems.push('too quick ' + k);
+      if (problems.length) throw Error('oddity: ' + problems.join(', ') + ' ' + JSON.stringify(res));
+      await s.tick(2000);
+      const pending = await ev(() => globalThis.__MANRU_QA_ODDITY__.pending());
+      if (pending !== 0) throw Error('oddity: the picture does not end ' + pending);
+      const forms = await ev(() => globalThis.__MANRU_QA_ODDITY__.options());
+      if (!['pull', 'whirl', 'breakthrough'].every((f) => forms.includes(f))) throw Error('oddity: a manual offers ' + JSON.stringify(forms));
+      out['oddity.casts'] = JSON.stringify(Object.fromEntries(Object.entries(res).map(([k, v]) => [k, { ok: v.ok, spent: v.spent, dealt: v.dealt, stunned: v.stunned, events: v.events, fire: v.fire }])));
+      out['oddity.forms'] = JSON.stringify(forms);
+      out['oddity.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {
