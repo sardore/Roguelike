@@ -3,15 +3,15 @@
    hangs in the air, shakes with the pull and is flung at the enemy; nothing is done to the enemy, and no enemy moves, until the piece lands. What it is made of decides what it does: wood is a plain blow that
    knocks back; stone strikes hard and stuns; a lantern bursts into a fire-damage explosion that leaves a burning floor; a tree is the heaviest
    blow and throws the enemy back. The rank (1-5, the fifth reached by the breakthrough) widens the reach of the pull and opens the next
-   material: wood, stone, lantern, tree. At the fifth rank two pieces fly. The turn of the player is not committed until the last piece has landed. The forms are two different ways of fighting, neither is the upper
-   hand of the other: 인력 (one heavy blow, far) and 선풍 (a sweeping blow that also hits the neighbours of the target, short). */
+   material: wood, stone, lantern, tree. At the fifth rank two pieces fly. The turn of the player is not committed until the last piece has landed. The forms are three different ways of fighting, none is the upper
+   hand of the others: 인력 (one heavy blow, far), 선풍 (a sweeping blow that also hits the neighbours of the target, short) and 난무 (two pieces, each at its own enemy, weaker blows). */
 const ODDITY_RULES=Object.freeze({
   // before the hit: the piece rises (lift), shakes and glows (charge), flies (flight). The blow, and the turn of the enemies, follow when it lands.
   timing:Object.freeze({lift:260,charge:180,flight:380,second:170,after:520}),
   materials:Object.freeze([
-    {id:'wood',need:1,name:'목재',rank:1,power:1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED']},
-    {id:'stone',need:2,name:'석재',rank:3,power:1.5,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL']},
-    {id:'lantern',need:3,name:'등불',rank:2,power:1.1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER']},
+    {id:'wood',need:1,name:'목재',rank:1,power:1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_WEAPON_RACK']},
+    {id:'stone',need:2,name:'석재',rank:3,power:1.5,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL','JAR','INCENSE_STAND']},
+    {id:'lantern',need:3,name:'등불',rank:2,power:1.1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER','GOLD_LAMP']},
     {id:'tree',need:4,name:'나무',rank:4,power:1.8,color:'#79b863',tiles:['GARDEN_TREE','PEACH_TREE']}
   ]),
   cost:4
@@ -19,7 +19,7 @@ const ODDITY_RULES=Object.freeze({
 const ODDITY_FX=[],ODDITY_QUEUE=[];
 function oddityDescription(lv,n,form){
   const reach=oddityPullRange(Math.max(1,lv),form),mats=ODDITY_RULES.materials.filter(m=>m.need<=Math.max(1,n)).map(m=>m.name).join('·');
-  const how=form==='whirl'?'휘돌려 곁의 적까지 친다.':form==='pull'?'한 점에 몰아 크게 내리친다.':'끌어온 것을 내던진다.';
+  const how=form==='scatter'?'둘로 나누어 두 적에게 던진다.':form==='whirl'?'휘돌려 곁의 적까지 친다.':form==='pull'?'한 점에 몰아 크게 내리친다.':'끌어온 것을 내던진다.';
   return `주변의 가구와 구조물을 끌어당겨 지정한 적에게 부딪힌다. ${how} ${reach}칸 안의 ${mats}.${n>=5?' 5단: 두 개.':''}`;
 }
 function oddityPullRange(lv,form){return 2+Math.max(1,lv)-(form==='whirl'?1:0)}
@@ -43,11 +43,15 @@ function oddityObjects(actor,lv,form,target){
 function oddityChoose(actor,cell,lv,form){
   if(!cell)return null;const target=oddityTargets(actor,lv,form).find(m=>m.x===cell.x&&m.y===cell.y);if(!target)return null;
   const objects=oddityObjects(actor,lv,form,target);if(!objects.length)return null;
-  return{target,objects:objects.slice(0,lv>=5?2:1)};
+  if(form==='scatter'){
+    const second=oddityTargets(actor,lv,form).filter(m=>m!==target&&Math.max(Math.abs(m.x-target.x),Math.abs(m.y-target.y))<=3).sort((a,b)=>Math.max(Math.abs(a.x-target.x),Math.abs(a.y-target.y))-Math.max(Math.abs(b.x-target.x),Math.abs(b.y-target.y)))[0];
+    return{target,targets:second&&objects.length>1?[target,second]:[target],objects:objects.slice(0,second&&objects.length>1?2:1)};
+  }
+  return{target,targets:[target],objects:objects.slice(0,lv>=5?2:1)};
 }
 function oddityDamage(actor,lv,form,mat,index){
   const stats=combatEntityStats(actor);
-  return Math.max(1,Math.round((3+3*lv+(stats.atk||0)*.5)*mat.power*(form==='whirl'?.7:1)*(index?.7:1)));
+  return Math.max(1,Math.round((3+3*lv+(stats.atk||0)*.5)*mat.power*(form==='whirl'?.7:1)*(form==='scatter'?.75:index?.7:1)));
 }
 // takes the piece out of the floor without a sound: what it leaves behind is the floor under it
 function oddityDetach(x,y){
@@ -82,14 +86,14 @@ function oddityBegin(actor,lv,form,cell){
   const plan=oddityChoose(actor,cell,lv,form);if(!plan)return false;
   const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target;let last=now;
   const pieces=plan.objects.map((obj,i)=>{
-    const start=now+i*t.second,hitAt=start+t.lift+t.charge+t.flight;
-    ODDITY_FX.push({run:state,map:state.map,start,hitAt,from:{x:obj.x,y:obj.y},caster:{x:actor.x,y:actor.y},to:{x:mon.x,y:mon.y},mat:obj.mat.id,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+i*7)>>>0,hit:false});
-    oddityDetach(obj.x,obj.y);last=hitAt;return{obj,hitAt,index:i};
+    const aim=plan.targets[i]||mon,start=now+i*t.second,hitAt=start+t.lift+t.charge+t.flight;
+    ODDITY_FX.push({run:state,map:state.map,start,hitAt,from:{x:obj.x,y:obj.y},caster:{x:actor.x,y:actor.y},to:{x:aim.x,y:aim.y},mat:obj.mat.id,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+i*7)>>>0,hit:false});
+    oddityDetach(obj.x,obj.y);last=hitAt;return{obj,hitAt,index:i,aim};
   });
-  ODDITY_FLIGHT={run:state,target:mon,objects:plan.objects};
-  pieces.forEach((pc,i)=>ODDITY_QUEUE.push({run:state,hitAt:pc.hitAt,actor,mon,obj:pc.obj,lv,form,index:pc.index,last:i===pieces.length-1,cell:{x:mon.x,y:mon.y}}));
+  ODDITY_FLIGHT={run:state,target:mon,targets:plan.targets,objects:plan.objects};
+  pieces.forEach((pc,i)=>ODDITY_QUEUE.push({run:state,hitAt:pc.hitAt,actor,mon:pc.aim,obj:pc.obj,lv,form,index:pc.index,last:i===pieces.length-1,cell:{x:pc.aim.x,y:pc.aim.y}}));
   Object.assign(ACTION_PRESENTATION58,{run:state,start:now,until:last+200,inputUntil:last,rate:1,kind:'oddity',source:{x:actor.x,y:actor.y},target:{x:mon.x,y:mon.y},entity:mon,pending:true,weapon:'brawl',hit:false,crit:false,strong:false});
-  addLog(`${actor.name}: ${plan.objects.map(o=>o.mat.name).join('·')}이(가) 허공으로 떠올라 ${mon.name}에게 날아든다.`);
+  addLog(`${actor.name}: ${plan.objects.map(o=>o.mat.name).join('·')}이(가) 허공으로 떠올라 ${plan.targets.map(m=>m.name).join('·')}에게 날아든다.`);
   floatText(actor.x,actor.y,martialPresentation('brawl',MARTIAL_INFO.brawl,actor).name,'#c9a7ff',14);
   return true;
 }

@@ -1167,6 +1167,11 @@ export const scenarios = {
       res.tree = await cast({ lv: 4, tiles: ['GARDEN_TREE'] });
       res.double = await cast({ lv: 5, tiles: ['STATUE', 'TABLE'] });
       res.whirl = await cast({ lv: 3, form: 'whirl', tiles: ['TABLE'], neighbor: true });
+      res.scatter = await cast({ lv: 2, form: 'scatter', tiles: ['TABLE', 'BENCH'], neighbor: true });
+      res.scatterOne = await cast({ lv: 2, form: 'scatter', tiles: ['TABLE', 'BENCH'] });
+      res.jar = await cast({ lv: 2, tiles: ['JAR'] });
+      res.goldLamp = await cast({ lv: 3, tiles: ['GOLD_LAMP'] });
+      res.cabinet = await cast({ lv: 1, tiles: ['RUMOR_MED_CABINET'] });
       res.far = await cast({ lv: 1, tiles: ['TABLE'], gap: 6 });
       const problems = [];
       if (!res.wood.ok || res.wood.dealt <= 0 || res.wood.spent !== 4) problems.push('wood');
@@ -1179,6 +1184,11 @@ export const scenarios = {
       if (!res.tree.ok || res.tree.dealt <= res.stone.dealt) problems.push('tree');
       if (!res.double.ok || res.double.events !== 2) problems.push('two pieces at the fifth rank');
       if (!res.whirl.ok || res.whirl.neighborDealt <= 0) problems.push('whirl does not sweep the neighbour');
+      if (!res.scatter.ok || res.scatter.events !== 2 || res.scatter.dealt <= 0 || res.scatter.neighborDealt <= 0) problems.push('scatter does not strike two enemies');
+      if (!res.scatterOne.ok || res.scatterOne.events !== 1) problems.push('scatter with one enemy');
+      if (!res.jar.ok || res.jar.dealt <= 0) problems.push('jar');
+      if (!res.goldLamp.ok || !res.goldLamp.fire) problems.push('gold lamp');
+      if (!res.cabinet.ok || res.cabinet.dealt <= 0) problems.push('cabinet');
       if (res.far.ok) problems.push('an enemy out of the pull was struck');
       for (const k of ['wood', 'stone', 'lantern', 'tree', 'double']) {
         const r = res[k];
@@ -1191,7 +1201,7 @@ export const scenarios = {
       const pending = await ev(() => globalThis.__MANRU_QA_ODDITY__.pending());
       if (pending !== 0) throw Error('oddity: the picture does not end ' + pending);
       const forms = await ev(() => globalThis.__MANRU_QA_ODDITY__.options());
-      if (!['pull', 'whirl', 'breakthrough'].every((f) => forms.includes(f))) throw Error('oddity: a manual offers ' + JSON.stringify(forms));
+      if (!['pull', 'whirl', 'scatter', 'breakthrough'].every((f) => forms.includes(f))) throw Error('oddity: a manual offers ' + JSON.stringify(forms));
       out['oddity.casts'] = JSON.stringify(Object.fromEntries(Object.entries(res).map(([k, v]) => [k, { ok: v.ok, spent: v.spent, dealt: v.dealt, stunned: v.stunned, events: v.events, fire: v.fire }])));
       out['oddity.forms'] = JSON.stringify(forms);
       out['oddity.errors'] = JSON.stringify(s.errors);

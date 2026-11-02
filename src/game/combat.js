@@ -16,7 +16,7 @@ function martialPresentation(id,info,p=state.player){
 }
 /* 10.0.5 acquired martial rules: producer -> persisted state -> existing consumers. */
 const MARTIAL_RULES=Object.freeze({ids:['strong','roar','ghost','brawl','constitution'],keys:['b','n','m'],assassinTurns:3,smokeTurns:5,guardActions:2,latePoints:[13,15,17,18]});
-const MARTIAL_FORMS={oddity:{pull:'인력',whirl:'선풍'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
+const MARTIAL_FORMS={oddity:{pull:'인력',whirl:'선풍',scatter:'난무'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
 function martialFamily(id,p=state.player){return id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
 function martialFormOf(id,p=state?.player){return p?.martialForm?.[id]||null}
 function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
