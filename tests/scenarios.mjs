@@ -1073,6 +1073,39 @@ export const scenarios = {
     return out;
   },
 
+  // The village of floor 2 has a bell in a yard in the middle of the map. Before it is rung the road through the middle is cut by a raised
+  // bridge and the stairs cannot be reached from the start; ringing lowers the bridge, wakes the legion commander, who calls escorts (never more
+  // than its limit) and walks its patrol.
+  async bell(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await startRun(s, 'wanderer');
+      let before = null;
+      for (let n = 1; n < 80 && !before; n++) {
+        before = await s.page.evaluate((n) => {
+          window.__MANRU_QA_UI__.state().runId984 = 'bell-' + n;
+          window.__MANRU_RELEASE__.regen(2);
+          return window.__MANRU_QA_UI__.state().floor2Template === 0 ? globalThis.__MANRU_QA_BELL__.info() : null;
+        }, n);
+      }
+      if (!before) throw Error('bell: no village was made');
+      if (!before.has || before.up !== 6 || before.stairs || before.commanders) throw Error('bell: wrong start ' + JSON.stringify(before));
+      await dismissModals(s);
+      const rang = await s.page.evaluate(() => { globalThis.__MANRU_QA_BELL__.ring(); return globalThis.__MANRU_QA_BELL__.info(); });
+      if (!rang.used || rang.down !== 6 || !rang.stairs || rang.commanders !== 1 || !rang.alerted) throw Error('bell: ringing did not work ' + JSON.stringify(rang));
+      const most = await s.page.evaluate(() => globalThis.__MANRU_QA_BELL__.wait(40));
+      const after = await s.page.evaluate(() => globalThis.__MANRU_QA_BELL__.info());
+      await s.tick(300);
+      if (most < 1 || most > 4 || after.commanders !== 1) throw Error('bell: the escort was ' + most + ' ' + JSON.stringify(after));
+      const again = await s.page.evaluate(() => { globalThis.__MANRU_QA_BELL__.ring(); return globalThis.__MANRU_QA_BELL__.info(); });
+      if (again.commanders !== 1) throw Error('bell: a second ring made another commander ' + JSON.stringify(again));
+      out['bell.result'] = JSON.stringify({ before, rang, mostEscorts: most, after: { commanders: after.commanders } });
+      out['bell.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {

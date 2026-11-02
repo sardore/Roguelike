@@ -663,6 +663,17 @@ globalThis.__MANRU_QA_BOSSCHARGE__=(at)=>{
   setBossIntent(boss,'charge',lane.cells,'test',{target});executeBossIntent(boss);
   return{path:lane.path.length,telegraphed:lane.cells.some(c=>c.x===p.x&&c.y===p.y),boss:[boss.x-x0,boss.y-y0],hpLost:hp0-p.hp,intentCleared:!boss.intent54};
 };
+// The village bell of floor 2 and its legion commander (the `bell` scenario).
+globalThis.__MANRU_QA_BELL__={
+  info:()=>{
+    const sw=state.switches?.find(v=>v.kind==='bell'),reach=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}).cells,cmd=state.monsters.filter(m=>m.legion57&&m.hp>0);
+    return{has:!!sw,used:!!sw?.used,up:(sw?.targets||[]).filter(t=>state.map[t.y][t.x]===TT.DRAWBRIDGE_UP).length,down:(sw?.targets||[]).filter(t=>state.map[t.y][t.x]===TT.DRAWBRIDGE_DOWN).length,
+      stairs:reach.has(k(state.stairs.x,state.stairs.y)),commanders:cmd.length,escorts:cmd.length?state.monsters.filter(m=>m.hp>0&&bossChildOf(m,cmd[0])).length:0,
+      alerted:cmd.length?!!cmd[0].alerted:null,route:cmd.length?(cmd[0].legion57.route||[]).length:0};
+  },
+  ring:()=>{const sw=state.switches.find(v=>v.kind==='bell');state.player.x=sw.x;state.player.y=sw.y+1;triggerSwitch(sw.x,sw.y);return true},
+  wait:n=>{let most=0;for(let i=0;i<n;i++){state.player.hp=state.player.maxHp;ActionDispatcher.dispatch({type:'REST',args:[]});const c=state.monsters.find(m=>m.legion57&&m.hp>0);if(c)most=Math.max(most,state.monsters.filter(m=>m.hp>0&&bossChildOf(m,c)).length)}return most}
+};
 // Floor 2 (the `fixedFloors` scenario): how many steps the shortest way through each wing takes, from the cell behind its hub door to its key.
 globalThis.__MANRU_QA_FLOOR2__={
   wingSteps:()=>{

@@ -1,4 +1,5 @@
 const MONSTERS=[
+ {name:'마을 군단장',min:99,max:99,hp:58,atk:8,def:4,eva:2,xp:36,color:'#c9a24a',shape:'guard',kind:'human',reach:2,legion57:{escort:['객잔 경비병','취객','시종'],escortMax:4,callEvery:5},concept57:'종소리에 깨어난 마을의 군단장이다. 병사를 불러 모으며 골목을 돌고, 어디에 있든 이따금 위치가 드러난다.'},
  {name:'갱도 투석꾼',min:99,max:99,nativeBranch105:{id:'mine',level:1},hp:17,atk:6,def:1,eva:3,xp:9,color:'#89908b',shape:'human',kind:'human',ranged:true,range:5,concept57:'무너진 갱도에 남아 돌을 움켜쥔 광부.'},
  {name:'흑산 설귀',min:99,max:99,nativeBranch105:{id:'black',level:2},hp:140,atk:14,def:4,eva:2,xp:150,color:'#b9dce5',shape:'ghost',kind:'spirit',boss:true,bossPattern:'blackFrost105',branchBoss105:true,fixedStats57:true,balanceRevision105:4,concept57:'흑산채 정상성을 지키는 얼어붙은 영물이다.'},
  {name:'고목 목매',min:99,max:99,nativeBranch105:{id:'stockade',level:1},hp:34,atk:6,def:3,eva:0,xp:10,color:'#95886f',shape:'tree',kind:'plant',fixed:true,treeMimic105:true,concept57:'메마른 고목인 척 숨어 있는 정괴다.'},
