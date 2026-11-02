@@ -729,30 +729,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     ys.forEach((routeY,ri)=>sideXs.forEach((sx,si)=>{const below=ri===0||(ri===1&&si===0),w=9,h=7,rx=clamp(sx-Math.floor(w/2),2,COLS-w-2),ry=below?routeY+4:routeY-h-3;if(!wallRect(rx,ry,w,h))return;const r=walledBox(m,rx,ry,w,h,TT.FLOOR,true),dx=r.cx,dy=below?r.y:r.y+r.h-1,oy=below?dy-1:dy+1;setTerrainTile58(m,dx,dy,TT.DOOR);carveLine(m,dx,oy,dx,routeY,TT.FLOOR,1);const ft=(ri+si)%3===0?TT.CACHE:(ri+si)%3===1?TT.FOUNTAIN:TT.RUMOR;setTerrainTile58(m,r.cx,r.cy,ft);if(m[r.cy][r.x+2]===TT.FLOOR)setTerrainTile58(m,r.x+2,r.cy,TT.STONE_PILLAR);if(m[r.cy][r.x+r.w-3]===TT.FLOOR)setTerrainTile58(m,r.x+r.w-3,r.cy,TT.STONE_PILLAR);const fr={name:['보급 측실','휴식 감실','기록 측실'][(ri+si)%3],x:r.x,y:r.y,w:r.w,h:r.h};state.featureRooms.push(fr);state.itemBiasZones94.push(fr);sideMade++}));
     state.choiceSideRooms95=sideMade;state.layoutName+=' / 부속 측실군';
     const hidden=[];for(let y=ys[0]+3;y<=ys[2]-3;y++)hidden.push({x:cx,y});registerHidden(hidden,TT.HIDDEN_WALL,TT.FLOOR,'세 갈래를 잇는 종업원 비밀 통로',TT.WALL);
-    floor4Theme(m,cx,cy,ys,j1,j2);
     setEnds({x:start.cx,y:start.cy},{x:exit.cx,y:exit.cy});
-  }
-  // 4F: the route topology (+, X or Y) is one die, this is the other: an inn as it was, a market with stalls and squares, or a
-  // canal with a waterway down the middle of each long hall and stepping stones across it. Nothing is built across a hall.
-  function floor4Theme(m,cx,cy,ys,j1,j2){
-    const theme=Math.floor(state.floorSeed60/3)%3;state.floor4Template=theme;
-    if(theme===0)return;
-    const put=(x,y,t)=>{if(in60(x,y)&&m[y][x]===TT.FLOOR)setTerrainTile58(m,x,y,t)};
-    const open=(x,y)=>m[y]?.[x]===TT.FLOOR;
-    state.layoutName+=theme===1?' / 시장 거리':' / 수로 복도';
-    for(const y of ys){
-      // a straight three-wide stretch of hall: the cell and the cells above and below it are floor
-      const straight=[];for(let x=j1.x+3;x<=j2.x-3;x++)if(open(x,y-1)&&open(x,y)&&open(x,y+1)&&Math.abs(x-cx)>6)straight.push(x);
-      if(theme===1){
-        // market: stalls on the edge rows, a lantern post every few cells, a well in the middle of the long runs
-        for(const x of straight){const n=x%6;if(n===0){put(x,y-1,[TT.TABLE,TT.JAR,TT.CRATE][(x/6|0)%3]);put(x,y+1,[TT.CRATE,TT.TABLE,TT.JAR][(x/6|0)%3])}else if(n===3&&(x/3|0)%2===0){put(x,y-1,TT.LANTERN_POST);put(x,y+1,TT.LANTERN_POST)}}
-        const mid=straight[straight.length>>1];if(mid!==undefined)put(mid,y,TT.BASIN);
-      }else{
-        // canal: water down the middle row, a crossing of stepping stones every five cells, reeds on the banks
-        for(const x of straight){if(x%5===0){put(x,y,TT.SHALLOW_WATER);setTerrainTile58(m,x,y,TT.STEPPING_STONE)}else{put(x,y,TT.WATER)}}
-        for(const x of straight)if(x%7===0&&m[y-1][x]===TT.FLOOR){setTerrainTile58(m,x,y-1,TT.SHALLOW_WATER);setTerrainTile58(m,x,y-1,TT.REED)}
-      }
-    }
   }
   /* ---------- 6F: organic pavilion archipelago with loops and hidden reed bridge ---------- */
   function buildPavilion(m){
