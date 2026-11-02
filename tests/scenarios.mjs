@@ -1001,6 +1001,36 @@ export const scenarios = {
     return out;
   },
 
+  // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
+  // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
+  async houndwalk(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 5 });
+    try {
+      await startRun(s, 'escort');
+      const start = await s.page.evaluate(() => globalThis.__MANRU_QA_HOUNDWALK__());
+      // The first-fight tip opens as soon as the boss is seen and cancels any walk on its own: dismiss it and walk on.
+      for (let round = 0; round < 4; round++) {
+        await s.tick(300); await dismissModals(s);
+        start.went = await s.page.evaluate((goal) => globalThis.__MANRU_RUNTIME81__.Automation81.go(goal), start.goal);
+        for (let i = 0; i < 40; i++) {
+          await s.tick(120);
+          if (!(await s.page.evaluate(() => globalThis.__MANRU_RUNTIME81__.Automation81.state().active))) break;
+        }
+        if ((await s.page.evaluate(() => globalThis.__MANRU_RUNTIME81__.Automation81.state().lastStop)) !== 'manual') break;
+      }
+      const end = await s.page.evaluate(() => {
+        const st = window.__MANRU_QA_UI__.state(), b = globalThis.__MANRU_QA_HOUNDBOSS__;
+        return { auto: globalThis.__MANRU_RUNTIME81__.Automation81.state(), hp: st.player.hp, px: st.player.x, intent: b.intent54 ? b.intent54.type : null };
+      });
+      if (end.auto.lastStop !== 'enemy-skill' || end.hp < start.hp)
+        throw Error('houndwalk: the walk did not stop for the charge warning: ' + JSON.stringify({ start, end }));
+      out['houndwalk.stop'] = JSON.stringify({ px: end.px, left: end.auto.path, started: start.went, lastStop: end.auto.lastStop, armed: end.intent, hurt: end.hp < start.hp });
+      out['houndwalk.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // The DOM elements the game keeps in closure variables (feelEl, panel, coach, modal, skillQuick, classDetail1001, classStart1001,
   // hud): after loading, in every boot situation, each holds its element, attached where the game attaches it. A variable that is
   // read before its initialisation would be undefined here.
