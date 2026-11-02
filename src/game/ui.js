@@ -422,7 +422,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     if(!state||state.dead||state.victory)return;
     if(state.story992?.dispatchPending60||RC.panelOpen||activeGameplayPanels57().length||actionPresentationBusy58()||state._turnPipelineActive57||document.body.dataset.manruScreen!=='game'){coachTimer=setTimeout(pumpTip,180);return}
     const t=RC.tutorialQueue.shift();if(!t.repeatable&&seenTip70(t.id)&&!t.resume66){coachTimer=setTimeout(pumpTip,0);return}coachCurrent=t;RC.tutorialShowing=true;coachFocus=document.activeElement;cancelAutoWalk();clearHeldInput53();
-    const titles={floor5:'첫 수문장 앞에서',floor6:'달라진 만루, 수묵원',floor11:'영악한 괴물, 강해진 회복력',start:'한 걸음이 한 수다',bag:'준비한 물건이 살린다',potion:'색만으로 믿지 마라',talisman:'위기를 뒤집는 한 장',food:'허기를 먼저 살펴라',bow:'사선을 읽고 쏴라',door:'문 너머를 준비하라',throw:'전장을 바꾸는 약병',resume:'다시, 만루 안으로',martial:'무술을 다듬는 법',combat:'첫 교전, 거리를 읽어라',recovery:'상처를 돌보는 시간',level:'한 단계 강해졌다',stairs:'내려가기 전에',hunger:'허기를 놓치지 마라',chest:'상자를 다져라',entry_exit:'전실을 나서기 전에'};
+    const titles={floor5:'첫 수문장 앞에서',floor6:'달라진 만루, 수묵원',floor11:'영악한 괴물, 강해진 회복력',start:'한 걸음이 한 수다',bag:'준비한 물건이 살린다',potion:'색만으로 믿지 마라',talisman:'위기를 뒤집는 한 장',food:'허기를 먼저 살펴라',bow:'사선을 읽고 쏴라',door:'문 너머를 준비하라',throw:'전장을 바꾸는 약병',resume:'다시, 만루 안으로',martial:'무술을 다듬는 법',combat:'첫 교전, 거리를 읽어라',recovery:'상처를 돌보는 시간',level:'한 단계 강해졌다',stairs:'내려가기 전에',hunger:'허기를 놓치지 마라',chest:'끝의 상자',entry_exit:'전실을 나서기 전에'};
     coach.innerHTML='<section class="coachSheet58"><span class="uiCorners63" aria-hidden="true"></span><button id="coachClose58" aria-label="안내 닫기">×</button><div class="coachEyebrow58">만루 · 조사관의 수첩</div><h2 id="coachTitle58"></h2><p id="coachText58"></p><small id="coachSub58"></small><footer class="coachFoot58"><small>닫기 × / Esc</small><button id="coachContinue58">확인 · 계속</button></footer></section>';
     coach.querySelector('#coachTitle58').textContent=t.title||titles[t.id]||'알아두면 살아남는다';coach.querySelector('#coachText58').textContent=t.text;coach.querySelector('#coachSub58').textContent=t.sub;
     coach.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();closeCurrentTip()});setInteraction8('coach70',true);coach.style.removeProperty('display');coach.classList.add('show');if(!t.repeatable)markTip(t.id);coach.querySelector('#coachContinue58').focus({preventScroll:true});uiTone70(620,.05);
@@ -545,18 +545,6 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
       b.innerHTML=martialCardContent(c.id,p,v.name+(c.form==='breakthrough'?' · 5단 돌파':''),note)+'<span class="upgrade991 manualSelect1005">선택</span>';
       b.onclick=()=>ActionDispatcher.dispatch({type:'MARTIAL_MANUAL_CHOICE',args:[index],source:'martial-manual'}).value;list.appendChild(b);
     });setInteraction8('choice991',true);return true;
-  }
-  // the chest of the first floor's entry: improve it while there are chances, open it when it is enough
-  function openTutorialChest(){
-    const c=state.tutorialChest;if(!c||c.opened||!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();
-    modal.classList.remove('martialManual1005');const chance=tutorialChestChance(c),canUpgrade=c.tries>0&&c.tier<3,history=c.upgraded.map(h=>h?'○':'✕').join(' ');
-    modal.querySelector('#choice991Title').textContent=TUTORIAL_CHEST.names[c.tier];
-    modal.querySelector('#choice991Sub').textContent=(canUpgrade?`다질 기회 ${c.tries}번. 이번에 성공하면 ${TUTORIAL_CHEST.names[c.tier+1]}가 된다(${Math.round(chance*100)}%).`:'더 다질 수 없다. 이제 열어 보자.')+(history?`  지금까지: ${history}`:'');
-    const list=modal.querySelector('#choice991List');list.innerHTML='';
-    const row=(title,note,tag,act)=>{const b=document.createElement('button');b.className='choice991Row';b.innerHTML=`<span class="choice991Icon"><span class="choice991Fallback">${tag}</span></span><span><b>${title}</b><small>${note}</small></span><i>선택</i>`;b.onclick=act;list.appendChild(b)};
-    if(canUpgrade)row('상자 다지기',`성공할 확률 ${Math.round(chance*100)}% · 실패해도 기회만 줄어든다`,'強',()=>{upgradeTutorialChest();openTutorialChest()});
-    row('열어 본다',`${TUTORIAL_CHEST.names[c.tier]} · 속에 든 것을 꺼낸다`,'開',()=>{closeChoice991();openTutorialChestLoot()});
-    setInteraction8('choice991',true);return true;
   }
   function closeSkillQuickPanel(){quickOpen991=false;skillQuick.classList.remove('open');skillQuick.innerHTML=''}
   function renderSkillQuick(){const a=availableSkills991(),p=state.player;skillQuick.innerHTML=`<div class="skillQuickHead991"><b>사용 가능한 기술</b><small>짧게 다시 누르면 닫기 · <strong>길게 누르면 강화</strong></small></div><div class="skillQuickGrid991">${a.length?a.map(([id,v],index)=>`<button class="quickSkill991 skill-${v.visual||id} ${p.martial[id]===5?'martialTranscend1005':''} form-${martialFormOf(id,p)||'base'}" title="${v.desc}" data-skill991="${id}"><kbd>[${MARTIAL_RULES.keys[index].toUpperCase()}]</kbd><b>${v.name}</b><small>${p.martial[id]}단계 · 기 ${v.cost}</small></button>`).join(''):'<div class="skillQuickEmpty991">지금 바로 사용할 수 있는 기술이 없다.</div>'}</div>`;skillQuick.querySelectorAll('[data-skill991]').forEach(b=>b.oncontextmenu=e=>{e.preventDefault();const id=b.dataset.skill991,v=martialPresentation(id,MARTIAL_INFO[id],p);showInspect(v.name,v.desc)});skillQuick.querySelectorAll('[data-skill991]').forEach(b=>b.onclick=()=>{const id=b.dataset.skill991;closeSkillQuickPanel();ActionDispatcher.dispatch({type:'MARTIAL',args:[id]}).value})}

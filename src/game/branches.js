@@ -2269,7 +2269,7 @@ function bumpTileAction(x,y,opts={}){
   if(active&&tile===TT.ALTAR){if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1){const d=state.branchTerrain105?.citadel105;if(x===d?.reward?.x&&y===d?.reward?.y)return citadelReward();if(x===d?.trial105?.start.x&&y===d?.trial105?.start.y){if(cause==='interact')return citadelTrialBegin();if(cause==='walk')toast('미궁 입구. 보급을 챙긴 뒤 상호작용으로 시험을 시작한다.');return false;}}altarEvent(x,y);return true;}
   if(active&&tile===TT.VAULT){vaultEvent(x,y);return true;}
   if(tile===TT.SNARE){snareEvent(x,y);return true;}
-  if(active&&tile===TT.CACHE){const c=state.tutorialChest;if(c&&!c.opened&&c.x===x&&c.y===y){openTutorialChest();return true}cacheEvent(x,y);return true;}
+  if(active&&tile===TT.CACHE){const c=state.tutorialChest;if(c&&!c.opened&&c.x===x&&c.y===y){openTutorialChestLoot();return true}cacheEvent(x,y);return true;}
   if(tile===TT.GOLD){applyHostileStatus('stun',1,1,{stagger:true,log:'황금 잔광이 발을 묶었다.'});return true;}
   if(active&&tile===TT.SWITCH){triggerSwitch(x,y);return true;}
   if(tile===TT.KEY_TILE){state.floorKeys=(state.floorKeys||0)+1;setTerrainTile58(state.map,x,y,TT.FLOOR);burst(x,y,'#d8bd79',10,.7);addLog(`${legacyKeyLabel()} ${state.floorKeys}/${state.floorKeysRequired}.`);return true;}

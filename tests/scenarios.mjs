@@ -1107,7 +1107,7 @@ export const scenarios = {
   },
 
   // The first floor's entry is a terraced garden in the bottom-left corner with a chest at its end: it is generated cleanly again and again, nothing
-  // lies in it, the chest's final tier follows the chances, nothing it holds is gear of the third tier or above, and its dialogue works.
+  // lies in it, the chest holds no gear of the third tier or above, and walking into it opens it.
   async chest(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 3 });
@@ -1129,16 +1129,13 @@ export const scenarios = {
         return res;
       });
       if (garden.problems.length || garden.made !== 40) throw Error('chest: garden ' + JSON.stringify(garden));
-      const sim = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.simulate(20000));
-      const want = [0.12, 0.38, 0.38, 0.12];
-      if (sim.dist.some((v, i) => Math.abs(v - want[i]) > 0.02)) throw Error('chest: tier distribution ' + JSON.stringify(sim));
-      if (sim.gearMax.some((v) => v > 2)) throw Error('chest: gear above the second tier ' + JSON.stringify(sim));
-      await dismissModals(s);
-      const flow = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.flow());
-      if (!flow || !flow.shown || flow.rows !== 2 || !flow.opened || !flow.tileIsFloor || flow.items < 1 || flow.again) throw Error('chest: dialogue ' + JSON.stringify(flow));
+      const contents = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.contents(300));
+      if (contents.gearMax > 2 || contents.gearMax < 1 || contents.sizes.some((v) => v < 2 || v > 3)) throw Error('chest: contents ' + JSON.stringify(contents));
+      const opened = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.open());
+      if (!opened || !opened.before || !opened.bumped || !opened.opened || !opened.tileIsFloor || opened.items < 1 || opened.again) throw Error('chest: opening ' + JSON.stringify(opened));
       out['chest.garden'] = JSON.stringify({ made: garden.made });
-      out['chest.sim'] = JSON.stringify(sim);
-      out['chest.flow'] = JSON.stringify({ rows: flow.rows, title: flow.title, after: flow.after, opened: flow.opened });
+      out['chest.contents'] = JSON.stringify(contents);
+      out['chest.opened'] = JSON.stringify({ opened: opened.opened, items: opened.items });
       out['chest.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
@@ -1159,7 +1156,7 @@ export const scenarios = {
       const ev = (fn, arg) => s.page.evaluate(fn, arg);
       const info = await ev(() => globalThis.__MANRU_QA_ODDITY__.family());
       if (info.family !== 'oddity' || info.name !== '괴변' || info.type !== 'active' || info.bonus !== 0) throw Error('oddity: family ' + JSON.stringify(info));
-      const cast = async (opts) => { await ev((o) => globalThis.__MANRU_QA_ODDITY__.setup(o), opts); const r = await ev(() => globalThis.__MANRU_QA_ODDITY__.cast()); await s.tick(1500); return r; };
+      const cast = async (opts) => { await ev((o) => globalThis.__MANRU_QA_ODDITY__.setup(o), opts); const r = await ev(() => globalThis.__MANRU_QA_ODDITY__.cast()); await s.tick(300); r.mid = await ev(() => globalThis.__MANRU_QA_ODDITY__.probe()); await s.tick(1500); return Object.assign(r, await ev(() => globalThis.__MANRU_QA_ODDITY__.result())); };
       const res = {};
       res.wood = await cast({ lv: 1, tiles: ['TABLE'] });
       res.stoneLocked = await cast({ lv: 1, tiles: ['STATUE'] });
@@ -1183,6 +1180,11 @@ export const scenarios = {
       if (!res.double.ok || res.double.events !== 2) problems.push('two pieces at the fifth rank');
       if (!res.whirl.ok || res.whirl.neighborDealt <= 0) problems.push('whirl does not sweep the neighbour');
       if (res.far.ok) problems.push('an enemy out of the pull was struck');
+      for (const k of ['wood', 'stone', 'lantern', 'tree', 'double']) {
+        const r = res[k];
+        if (r.turnAtCast !== 0 || r.moved || r.dealtAtCast !== 0 || r.mid.turnDelta !== 0 || r.mid.moved || r.mid.dealt !== 0) problems.push('the world moved before the pieces landed ' + k);
+        if (r.turnDelta < 1) problems.push('the turn never ended after the impact ' + k);
+      }
       for (const k of ['wood', 'stone', 'lantern', 'tree', 'double']) if (!(res[k].flight.every((v) => v >= 780) && res[k].lock >= 700)) problems.push('too quick ' + k);
       if (problems.length) throw Error('oddity: ' + problems.join(', ') + ' ' + JSON.stringify(res));
       await s.tick(2000);

@@ -432,7 +432,7 @@ function drawTerrainReactions(now,b){
  if(!state)return;const r=terrainReactions105(),visible=q=>state.visible.has(k(q.x,q.y))&&(!b||q.x>=b.x0-1&&q.x<=b.x1+1&&q.y>=b.y0-1&&q.y<=b.y1+1);
  X.save();X.globalCompositeOperation='source-over';X.globalAlpha=1;
  const {poly}=drawKit(X);
- for(const f of Object.values(r.burning)){if(visible(f)&&now>=(f.hiddenUntil||0))drawCombustion(f,now)}
+ for(const f of Object.values(r.burning)){if(visible(f))drawCombustion(f,now)}
  for(const structure of mineState()?.carts||[])if(structure.alive&&structure.burning105&&visible(structure))drawCombustion({...structure,...structure.burning105},now);
  if(state.player.combustion105)drawCombustion({...state.player,age:0},now);
  for(const spill of Object.values(r.spills||{}))if(visible(spill)){
@@ -1292,7 +1292,7 @@ function drawItem(item){
 function drawCreature(m){
   const renderer=globalThis.__MANRU_ACTOR_ART__?.drawWorld;
   if(typeof renderer!=='function')return false;
-  const result=renderer(m);if(m.hp>0&&m.combustion105&&performance.now()>=(m.combustion105.hiddenUntil||0)&&isEntityObservableToPlayer57(m))drawCombustion({...m,age:Math.min(2,Math.max(0,state.turn-m.combustion105.born))},performance.now());return result;
+  const result=renderer(m);if(m.hp>0&&m.combustion105&&isEntityObservableToPlayer57(m))drawCombustion({...m,age:Math.min(2,Math.max(0,state.turn-m.combustion105.born))},performance.now());return result;
 }
 function drawCombatParticles(q,now){q.save();for(const p of FX.particles){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
 function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
@@ -1331,7 +1331,7 @@ function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
   drawCombatParticles(X,now);
   X.textAlign="center";X.textBaseline="middle";X.font="700 13px Inter,system-ui,sans-serif";
   for(const f of FX.floats){
-    const t=(now-f.start)/f.life,y=f.y-t*20;if(t<0)continue;
+    const t=(now-f.start)/f.life,y=f.y-t*20;
     X.globalAlpha=1-Math.max(0,(t-.45)/.55);
     X.font=`800 ${f.size}px Inter,system-ui,sans-serif`;
     X.strokeStyle="rgba(0,0,0,.75)";X.lineWidth=3;X.strokeText(f.text,f.x,y);
@@ -1776,7 +1776,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     }
     X.restore();
   }
-  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire'||now<(f.hiddenUntil||0))continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
+  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
   /* ---------------- camera: follow by default, drag to inspect, next movement resumes follow ---------------- */
   const CameraController={
     state(){return globalThis.__MANRU_CAMERA_STATE12__?.snapshot()||{mode:'follow',zoom:1,cx:0,cy:0,tx:0,ty:0}},
@@ -5273,5 +5273,5 @@ function updatePanels(){
   }
 window.__manruZoomActive=false;
 window.__manruZoomSuppressUntil=0;
-globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'oddity-ghost',draw:drawOddityWorld},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
+globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
 const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};

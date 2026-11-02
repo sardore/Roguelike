@@ -844,29 +844,19 @@ function cacheEvent(x,y){
   burst(x,y,"#b9d3a2",14,.8);
   addLog("숨겨진 보급함 발견.");
 }
-// ---- the chest at the end of the first floor's entry (see buildTutorialEntry): three chances to improve it, then it is opened ----
-function tutorialChestChance(c=state.tutorialChest){return c&&c.tries>0&&c.tier<3?TUTORIAL_CHEST.chance[TUTORIAL_CHEST.tries-c.tries]:0}
-function upgradeTutorialChest(){
-  const c=state.tutorialChest;if(!c||c.opened||c.tries<=0||c.tier>=3)return null;
-  const index=TUTORIAL_CHEST.tries-c.tries,chance=TUTORIAL_CHEST.chance[index],hit=c.rolls[index]<chance;
-  c.tries--;if(hit)c.tier++;c.upgraded.push(hit);
-  burst(c.x,c.y,hit?'#e0be6b':'#8c8272',hit?16:8,hit?1:.5);
-  addLog(hit?`상자가 ${TUTORIAL_CHEST.names[c.tier]}로 다져졌다.`:'기운이 어긋났다. 상자는 그대로다.');
-  return{hit,chance,tier:c.tier,tries:c.tries};
-}
-// What a chest of a tier holds. Gear is never above the second tier of gear.
-function tutorialChestItems(tier){
+// ---- the chest at the end of the first floor's entry (see buildTutorialEntry): an ordinary chest, opened by walking into it ----
+// What it holds: something to eat or drink, something for a pinch, and a piece of gear that is never above the second tier of gear.
+function tutorialChestItems(){
   const recovery=()=>deckPick47([...CONSUMABLES.filter(x=>x.type==='food'&&!x.craftedOnly57&&!x.naturalOnly57&&x.rarity!=='relic'&&x.rarity!=='sealed'&&(x.minFloor||1)<=state.floor),...ordinaryPotionPool(false)],'recovery');
   const strategy=()=>globalThis.__MANRU_RANDOM57__()<.5?deckPick47(ordinaryPotionPool(true),'strategy'):talismanPick56();
   const gear=()=>deckPick47(gear47(2).filter(x=>(x.tier||1)<=2),'gear');
-  const plan=[[recovery],[recovery,strategy],[recovery,strategy,gear],[recovery,recovery,strategy,gear]][tier];
-  return plan.map(f=>f()).filter(Boolean);
+  return [recovery,strategy,gear].map(f=>f()).filter(Boolean);
 }
 function openTutorialChestLoot(){
   const c=state.tutorialChest;if(!c||c.opened)return false;
   c.opened=true;setTerrainTile58(state.map,c.x,c.y,TT.FLOOR);
-  for(const item of tutorialChestItems(c.tier))PlacementService.placeItem({...item,count:item.count||1,x:c.x,y:c.y},{x:c.x,y:c.y});
-  burst(c.x,c.y,'#e0be6b',20,1.1);addLog(`${TUTORIAL_CHEST.names[c.tier]}를 열었다.`);
+  for(const item of tutorialChestItems())PlacementService.placeItem({...item,count:item.count||1,x:c.x,y:c.y},{x:c.x,y:c.y});
+  burst(c.x,c.y,'#e0be6b',18,1);addLog('상자를 열었다.');
   return true;
 }
 function vaultEvent(x,y){
