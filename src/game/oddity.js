@@ -11,11 +11,11 @@ const ODDITY_RULES=Object.freeze({
   timing:Object.freeze({lift:260,charge:180,flight:380,bounce:300,after:520}),
   materials:Object.freeze([
     {id:'wood',need:1,name:'목재',rank:1,power:1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_WEAPON_RACK']},
-    {id:'stone',need:2,name:'석재',rank:3,power:1.5,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL','JAR']},
-    {id:'lantern',need:3,name:'등불',rank:2,power:1.1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER','GOLD_LAMP']},
-    {id:'tree',need:4,name:'나무',rank:4,power:1.8,color:'#79b863',tiles:['GARDEN_TREE','PEACH_TREE']},
+    {id:'stone',need:2,name:'석재',rank:3,power:1.3,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL','JAR']},
+    {id:'lantern',need:3,name:'등불',rank:2,power:1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER','GOLD_LAMP']},
+    {id:'tree',need:4,name:'나무',rank:4,power:1.5,color:'#79b863',tiles:['GARDEN_TREE','PEACH_TREE']},
     // the furniture that is none of these: a light blow, and what it carries is a curse (a status the other arts never use)
-    {id:'misc',need:4,name:'기타',rank:0,power:.8,color:'#c9a7ff',tiles:['INCENSE_STAND','IRON_HOOK','PAPER_CRANE','RUMOR_SILK_DIVAN','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','RUMOR_ARCHIVE_PILE','RUMOR_RITUAL_OBELISK','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE']}
+    {id:'misc',need:4,name:'기타',rank:0,power:.7,color:'#c9a7ff',tiles:['INCENSE_STAND','IRON_HOOK','PAPER_CRANE','RUMOR_SILK_DIVAN','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','RUMOR_ARCHIVE_PILE','RUMOR_RITUAL_OBELISK','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE']}
   ]),
   curses:Object.freeze({INCENSE_STAND:['skillSeal','기봉인'],RUMOR_INVESTIGATION_BOARD:['skillSeal','기봉인'],RUMOR_RITUAL_OBELISK:['skillSeal','기봉인'],IRON_HOOK:['bleed','출혈'],PAPER_CRANE:['upset','동요'],RUMOR_SILK_DIVAN:['drunk','취기'],RUMOR_SMUGGLER_BUNDLE:['drunk','취기'],RUMOR_CHARRED_COUNTER:['blind','실명'],RUMOR_GREENHOUSE_FRAME:['poison','중독'],RUMOR_GAS_PIPE:['poison','중독'],RUMOR_ARCHIVE_PILE:['weaken','쇠약'],RUMOR_FLOOD_GRATE:['weaken','쇠약']}),
   anomalyPieces:Object.freeze({1:2,2:2,3:3,4:3,5:4}),anomalyShare:.55,bounceShare:.7,bounceReach:3,
@@ -61,7 +61,7 @@ function oddityChoose(actor,cell,lv,form){
 }
 function oddityDamage(actor,lv,mat,form,leg){
   const stats=combatEntityStats(actor);
-  return Math.max(1,Math.round((3+3*lv+(stats.atk||0)*.5)*mat.power*(form==='anomaly'?ODDITY_RULES.anomalyShare:1)*(leg?ODDITY_RULES.bounceShare:1)));
+  return Math.max(1,Math.round((2+2*lv+(stats.atk||0)*.25)*mat.power*(form==='anomaly'?ODDITY_RULES.anomalyShare:1)*(leg?ODDITY_RULES.bounceShare:1)));
 }
 // takes the piece out of the floor without a sound: what it leaves behind is the floor under it
 function oddityDetach(x,y){
