@@ -3392,7 +3392,7 @@ function resolveOccupancyInteraction57(actor,target){
       if(mon.boss)continue;const pos=PlacementService.randomMonsterCell(mon);if(pos){mon.x=pos.x;mon.y=pos.y;mon.alerted=false;OccupancyService.addMonster(mon)}
     }
     const used=new Set();state.items=[];
-    const candidates=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!(x===state.player.x&&y===state.player.y)&&!OccupancyService.isOccupied(x,y))candidates.push({x,y});
+    const candidates=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(!inTutorialEntry(x,y)&&ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!(x===state.player.x&&y===state.player.y)&&!OccupancyService.isOccupied(x,y))candidates.push({x,y});
     for(const it of savedItems||[]){if(!candidates.length)break;let idx=Math.floor(globalThis.__MANRU_RANDOM57__()*candidates.length),pos=candidates.splice(idx,1)[0];it.x=pos.x;it.y=pos.y;PlacementService.placeItem(it);used.add(pos.x+','+pos.y)}
   }
   function shortestNodes93(adj,s,t){const q=[s],prev=Array(adj.length).fill(-2);prev[s]=-1;for(let i=0;i<q.length;i++){const u=q[i];if(u===t)break;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}if(prev[t]===-2)return[];const out=[];for(let u=t;u!==-1;u=prev[u])out.push(u);return out.reverse()}
