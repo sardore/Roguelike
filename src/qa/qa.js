@@ -663,6 +663,22 @@ globalThis.__MANRU_QA_BOSSCHARGE__=(at)=>{
   setBossIntent(boss,'charge',lane.cells,'test',{target});executeBossIntent(boss);
   return{path:lane.path.length,telegraphed:lane.cells.some(c=>c.x===p.x&&c.y===p.y),boss:[boss.x-x0,boss.y-y0],hpLost:hp0-p.hp,intentCleared:!boss.intent54};
 };
+// Floor 2 (the `fixedFloors` scenario): how many steps the shortest way through each wing takes, from the cell behind its hub door to its key.
+globalThis.__MANRU_QA_FLOOR2__={
+  wingSteps:()=>{
+    const cx=Math.floor(COLS/2),out=[];
+    for(let i=0;i<4;i++){
+      const side=i%2?1:-1,xi=cx+side*5,from={x:xi,y:i<2?33:18},to={x:xi,y:i<2?23:8},dist=new Map([[from.y*COLS+from.x,0]]),queue=[from];
+      for(let h=0;h<queue.length;h++){
+        const q=queue[h],d=dist.get(q.y*COLS+q.x);
+        if(q.x===to.x&&q.y===to.y){out.push(d);break}
+        for(const [dx,dy] of DIRS4){const x=q.x+dx,y=q.y+dy,kk=y*COLS+x;if(x<1||y<1||x>=COLS-1||y>=ROWS-1||dist.has(kk))continue;if(y>from.y||y<to.y)continue;if(!ReachabilityService.playerTerrainPassable(x,y,{unlock:true}))continue;dist.set(kk,d+1);queue.push({x,y})}
+      }
+      if(out.length<=i)out.push(-1);
+    }
+    return out;
+  }
+};
 // The grand terrain of the current floor (the `terrain` scenario): the kinds that exist, a way to ask for one, what was made, and a
 // look at it (the player stands in the middle with the whole landscape known).
 globalThis.__MANRU_QA_TERRAIN__={
