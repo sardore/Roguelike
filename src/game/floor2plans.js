@@ -23,7 +23,7 @@ const FLOOR2_PLANS=Object.freeze([
       chambers:[...a.chambers,...b.chambers,{x:55,y:27,w:11,h:3,route:1},{x:22,y:12,w:11,h:3,route:2},...c.chambers,...d.chambers],
       doors:[...a.doors,...b.doors,...c.doors,...d.doors],pools:[],ponds:[{x:57,y:27,w:5,h:2}],stones:[],spurs:[],
       water:[],props:[
-        [9,31,TT.TABLE],[20,31,TT.JAR],[22,31,TT.CRATE],[32,31,TT.RACK],[11,27,TT.BENCH],[26,27,TT.TABLE],[30,27,TT.JAR],
+        [9,31,TT.TABLE],[19,31,TT.JAR],[24,31,TT.CRATE],[32,31,TT.RACK],[11,27,TT.BENCH],[26,27,TT.TABLE],[30,27,TT.JAR],
         [59,28,TT.FLOWERBED],[56,29,TT.LANTERN_POST],[64,29,TT.LANTERN_POST],[24,13,TT.BENCH],[27,13,TT.FLOWERBED],[30,13,TT.LANTERN_POST],
         [54,15,TT.TABLE],[66,15,TT.CRATE],[76,15,TT.JAR],[58,12,TT.RACK],[73,12,TT.TABLE],[38,31,TT.LANTERN_POST],[48,29,TT.LANTERN_POST],
         [10,33,TT.TRAP],[27,33,TT.TRAP],[60,18,TT.SNARE]],
