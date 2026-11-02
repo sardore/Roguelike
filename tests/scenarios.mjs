@@ -390,6 +390,7 @@ export const scenarios = {
       const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
       const host = await openSession(browser, root, { seed: 8080, init });
       const view = await openSession(browser, root, { seed: 8081, init, viewport: { width: 390, height: 844 }, mobile: true });
+      const ignored = []; view.page.on('console', (m) => { const t = m.text(); if (t.includes('[manru] ignored error:')) ignored.push(t.slice(0, 160)); });
       const both = async (ms = 200) => { await Promise.all([host.tick(ms), view.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
       const until = async (fn, n = 60) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
       const H = (fn, arg) => host.page.evaluate(fn, arg);
@@ -427,6 +428,11 @@ export const scenarios = {
       // by the viewer can be closed again.
       const hostTiles = await H(() => { const s = __MANRU_QA_SPECTATE__.state(); return [...s.seen].map((c) => { const [x, y] = c.split(',').map(Number); return [c, s.map[y][x]]; }); });
       out['spectate.tileMismatch'] = String(await V((tiles) => { const s = __MANRU_QA_SPECTATE__.state(); return tiles.filter(([c, t]) => { const [x, y] = c.split(',').map(Number); return !s.seen.has(c) || s.map[y][x] !== t; }).length; }, hostTiles));
+      // The side panel is filled by the same function as the player's, so its text is the host's.
+      const panelIds = ['floorTxt', 'hpTxt', 'manaTxt', 'xpTxt', 'atkTxt', 'defTxt', 'evaTxt', 'wilTxt', 'visTxt', 'weaponTxt', 'armorTxt', 'alertTxt', 'messageLog'];
+      const panelText = (p) => p.page.evaluate((ids) => Object.fromEntries(ids.map((id) => [id, document.getElementById(id)?.textContent ?? null])), panelIds);
+      const [hp1, vp1] = [await panelText(host), await panelText(view)];
+      out['spectate.panels'] = JSON.stringify({ differ: panelIds.filter((id) => hp1[id] !== vp1[id]), hasLog: (vp1.messageLog || '').length > 0, hp: vp1.hpTxt, swallowed: ignored.filter((t) => t.includes('spectate panels')) });
       await V(() => { const s = __MANRU_QA_SPECTATE__.state(), [x, y] = [...s.seen][0].split(',').map(Number); window.__MANRU_INSPECT984__({ x, y }); });
       await both(700);
       const opened = await V(() => document.body.classList.contains('manru-inspect-open'));

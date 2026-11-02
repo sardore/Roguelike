@@ -9,7 +9,7 @@ const Spectate={
  PLAIN:['floor','specialFloor','turn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
  ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','gazeBursts57','legendFireFields47','legendSkyAxes47'],
- PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','combustion105','martialActor105','guardReady1005','strongReady','classState'],
+ PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','combustion105','martialActor105','guardReady1005','strongReady','classState'],
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
  hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastSig:'',lastChat:new Map(),
@@ -116,6 +116,7 @@ const Spectate={
   const st=state,seen=st.seen,vis=st.visible,out={set:{},cells:{},seen:null,map:null,player:{}};
   const inSeen=key=>seen.has(key);
   for(const key of this.PLAIN)if(st[key]!==undefined)out.set[key]=st[key];
+  out.set.log=(st.log||[]).slice(0,10); // what the message panel shows
   if(st.stairs&&inSeen(st.stairs.x+','+st.stairs.y))out.set.stairs=st.stairs;
   const cellMap=obj=>{const r={};if(obj)for(const key in obj)if(inSeen(key))r[key]=obj[key];return r};
   for(const key of this.CELLS)out.cells[key]=cellMap(st[key]);
@@ -253,7 +254,7 @@ const Spectate={
   else if(action==='chat'&&data.kind==='chat')this.pushChat({id:data.id,from:data.from,text:data.text,mine:data.own&&data.own===this.selfId});
  },
  emptyView(){
-  return{spectator:true,runId984:'spectate',floor:1,turn:0,map:[[0]],seen:new Set(),visible:new Set(),monsters:[],items:[],decor:[],decals:[],status:{},terrainReactions105:{version:1,burning:{},char:{},spills:{},unlit:{},clues:{}},hazard1005:{armed:{},collapsed:{},drownUntil:0,voidUntil:0,lastWarn:{}},
+  return{spectator:true,runId984:'spectate',floor:1,turn:0,map:[[0]],log:[],seen:new Set(),visible:new Set(),monsters:[],items:[],decor:[],decals:[],status:{},terrainReactions105:{version:1,burning:{},char:{},spills:{},unlit:{},clues:{}},hazard1005:{armed:{},collapsed:{},drownUntil:0,voidUntil:0,lastWarn:{}},
    player:{x:0,y:0,hp:1,maxHp:1,inventory:[],facing:{x:0,y:1}},branchPortals105:[],neutralInteractables58:[],tempFields:[],jarGasFields57:[],elementFields74:[],tempTerrain74:[],rumorSpaces1030:[],bookWalls1022:[],stairs:null,dead:false,victory:false,
    outerWall94:{},subthemeFloors972:{},subthemeWalls970:{},archDecor1020:{},floorPattern1022:{},rugPattern1022:{},terrainUnderlay58:{},terrainAttachment58:{},specialPlaces52:null,branchTerrain105:null,branchContext105:null};
  },
@@ -291,6 +292,7 @@ const Spectate={
   state=v;ROWS=v.map.length;COLS=v.map[0].length;
   if(first){this.floorKey=key;this.enter(full)}
   this.viewerNotice('');this.headerRefresh();cameraRenderPending=true;renderUpdatePending=false;
+  try{updatePanels()}catch(error){ignoreError('spectate panels',error)}
  },
  active(){return !!state?.spectator},
  headerRefresh(){
