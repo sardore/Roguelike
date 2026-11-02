@@ -898,3 +898,24 @@ globalThis.__MANRU_QA_BAL__={
 // Wall-face vision test (scenario `vision`).
 globalThis.__MANRU_QA_PERF__={draw:()=>drawMap(false),update:()=>updateAll(true),ema:()=>RC.perf.ema,frames:()=>RC.perf.frames};
 globalThis.__MANRU_QA_VIS__={TT,compute:()=>VisibilityService.compute(),opaque:t=>tileBlocksSight(t),open:(x,y,dx,dy)=>wallFaceOpen(x,y,dx,dy),edges:(x,y)=>wallEdges(x,y)};
+
+// The chest at the end of the first floor's entry (the `chest` scenario): the distribution of its final tier, what each tier holds, and a click-through of the dialogue.
+globalThis.__MANRU_QA_CHEST__={
+  simulate:n=>{
+    let seed=12345;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296},count=[0,0,0,0];
+    for(let i=0;i<n;i++){let tier=0;for(const chance of TUTORIAL_CHEST.chance)if(rnd()<chance)tier++;count[tier]++}
+    const gearMax=[0,0,0,0],kinds={},sizes=[0,0,0,0];
+    for(let tier=0;tier<4;tier++)for(let i=0;i<200;i++){const items=tutorialChestItems(tier);sizes[tier]=Math.max(sizes[tier],items.length);for(const it of items){kinds[it.type]=(kinds[it.type]||0)+1;if(isGearItem(it))gearMax[tier]=Math.max(gearMax[tier],it.tier||1)}}
+    return{dist:count.map(v=>Math.round(v/n*1000)/1000),gearMax,kinds,sizes};
+  },
+  flow:()=>{
+    const c=state.tutorialChest;if(!c)return null;const out={};
+    out.shown=openTutorialChest();const rows=()=>[...document.querySelectorAll('#choice991List button')];
+    out.rows=rows().length;out.title=document.querySelector('#choice991Title').textContent;
+    rows()[0].click();out.after={tries:c.tries,tier:c.tier,history:c.upgraded.length};
+    rows()[rows().length-1].click();
+    out.opened=c.opened;out.tileIsFloor=state.map[c.y][c.x]===TT.FLOOR;out.items=state.items.filter(i=>Math.abs(i.x-c.x)<=3&&Math.abs(i.y-c.y)<=3).length;
+    out.again=openTutorialChest();
+    return out;
+  }
+};
