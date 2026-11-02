@@ -13,6 +13,8 @@
   "elements.js",
   "world.js",
   "layout.js",
+  "vaults.js",
+  "terrain.js",
   "input.js",
   "story.js",
   "ui.js",

@@ -2798,11 +2798,12 @@ function selectCoreDestination54(owner=null,target=state.player){
     state.roomGraph93={profile,edges:edges.map(e=>({...e})),mainPath:[...mainPath],branchDepths:bi.off.map(x=>x.d),loops:edges.filter(e=>e.kind==='loop').length,wideHalls:edges.filter(e=>(e.width||1)>1).length};
     setFixedEnds({x:rooms[diam.a].cx,y:rooms[diam.a].cy},{x:rooms[diam.b].cx,y:rooms[diam.b].cy});
     if(options){state.layoutMode85='v93-'+options.id;return{rooms,edges,diam};}
+    const terrainRoom=rooms.find(r=>r.terrain93);if(terrainRoom)sculptGrandTerrain(m,terrainRoom,rooms);
     rareTemplate93(m,rooms);
     applyModules(m,rooms);outerChain94(m,z);if(state.floor===1)buildTutorialEntry(m,rooms);
     if(!state.grandRoom89){const large=[...rooms].sort((a,b)=>b.w*b.h-a.w*a.h)[0];if(large&&large.w*large.h>=84&&globalThis.__MANRU_RANDOM57__()<.38){large.grand90=true;state.grandRoom89=large}}
     if(state.grandRoom89)feature89('대실',state.grandRoom89,'grand');
-    state.focalRooms89=state.branchLeaves92.slice(0,2);state.layoutMode85=`v93-${profile}`;state.layoutName=`비대칭 객실군 · ${profile==='braid'?'근거리 엮임':profile==='offset-halls'?'편심 회랑축':'군집 순환'} / 가변 회랑폭 · 짧은 곁가지`;
+    state.focalRooms89=state.branchLeaves92.slice(0,2);state.layoutMode85=`v93-${profile}`;state.layoutName=`비대칭 객실군 · ${profile==='braid'?'근거리 엮임':profile==='offset-halls'?'편심 회랑축':'군집 순환'} / 가변 회랑폭 · 짧은 곁가지`+(state.grandTerrain93?` / ${state.grandTerrain93.name}`:'');
   }
   function zoneCells94(r){const out=[];if(!r)return out;for(let y=Math.max(1,r.y+1);y<Math.min(ROWS-1,r.y+r.h-1);y++)for(let x=Math.max(1,r.x+1);x<Math.min(COLS-1,r.x+r.w-1);x++)if(ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!OccupancyService.isOccupied(x,y)&&(x!==state.player.x||y!==state.player.y))out.push({x,y});return out}
   // Complete lock-surface audit: every final KEY_TILE / LOCKED_GATE must be owned by the typed plan or the single legacy 6F archive lock.
@@ -3261,6 +3262,7 @@ function interactNeutral58(n){if(!n||n.kind!=='merchant'||!state?.shopIntermissi
     if(profile)return placeProfileRooms105(m,profile);
     const rooms=[],target=state.floor===1?rand(10,13):rand(15,20),cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);let tries=0;
     if(state.floor===1||globalThis.__MANRU_RANDOM57__()<.34){const gw=rand(11,15),gh=rand(7,10),gx=clamp(cx-Math.floor(gw/2)+rand(-6,6),2,COLS-gw-3),gy=clamp(cy-Math.floor(gh/2)+rand(-5,5),state.floor===1?17:2,ROWS-gh-3);if(canPlace93(gx,gy,gw,gh,2)){const g=addCompact93(m,gx,gy,gw,gh,'grand',globalThis.__MANRU_RANDOM57__()<.35?'chamfer':'pillars','hall');g.grand90=true;state.grandRoom89=g;if(state.floor===1){g.name='등불 대청';for(let yy=g.y+1;yy<g.y+g.h-1;yy++)for(let xx=g.x+1;xx<g.x+g.w-1;xx++)if(m[yy][xx]===TT.FLOOR)setTerrainTile58(m,xx,yy,Math.abs(xx-g.cx)<=1?TT.CARPET:(yy===g.y+1||yy===g.y+g.h-2)?TT.STONE_PATH:TT.WOOD_FLOOR);for(const xx of [g.x+2,g.x+g.w-3])for(const yy of [g.y+2,g.y+g.h-3])if(terrainSurface58(m[yy][xx]))setTerrainTile58(m,xx,yy,TT.LANTERN_POST)}rooms.push(g)}}
+    reserveGrandTerrain(m,rooms);
     if(globalThis.__MANRU_RANDOM57__()<.48){const wide=globalThis.__MANRU_RANDOM57__()<.58,w=wide?rand(11,15):rand(5,7),h=wide?rand(4,6):rand(9,12),x=clamp(cx-Math.floor(w/2)+rand(-9,9),2,COLS-w-3),y=clamp(cy-Math.floor(h/2)+rand(-8,8),2,ROWS-h-3);if(canPlace93(x,y,w,h,1))rooms.push(addCompact93(m,x,y,w,h,'hall',globalThis.__MANRU_RANDOM57__()<.28?'chamfer':'rect','hall'))}
     while(rooms.length<target&&tries++<1600){
       let w,h,shape='rect',role='room';const roll=globalThis.__MANRU_RANDOM57__();
@@ -3312,7 +3314,7 @@ function resolveOccupancyInteraction57(actor,target){
   function qaDescend60(){
     if(!state?.stairs)return{ok:false,reason:'no-stairs'};const from=state.floor,beforeOwner=gameplayInputOwner57().kind;closeGameplayInteractionState57();const pre={run:runState57(),input:gameplayInputAllowed57(),stun:state.status?.stun||0,dead:!!state.dead,victory:!!state.victory,beforeOwner,owner:gameplayInputOwner57().kind};state.player.x=state.stairs.x;state.player.y=state.stairs.y;OccupancyService.move(state.player,state.player.x,state.player.y);const result=descend();return{ok:!!result&&state.floor===from+1,result:!!result,from,to:state.floor,pre};
   }
-  const BLOCK85=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.RUMOR_BED,TT.RUMOR_MED_CABINET,TT.RUMOR_GAS_PIPE,TT.RUMOR_ARCHIVE_PILE,TT.RUMOR_WEAPON_RACK,TT.RUMOR_SILK_DIVAN,TT.RUMOR_RITUAL_OBELISK,TT.RUMOR_CHARRED_COUNTER,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_SMUGGLER_BUNDLE,TT.RUMOR_GREENHOUSE_FRAME,TT.BED,TT.BOOK_STACK]);
+  const BLOCK85=new Set([TT.BASIN,TT.CRYSTAL,TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.RUMOR_BED,TT.RUMOR_MED_CABINET,TT.RUMOR_GAS_PIPE,TT.RUMOR_ARCHIVE_PILE,TT.RUMOR_WEAPON_RACK,TT.RUMOR_SILK_DIVAN,TT.RUMOR_RITUAL_OBELISK,TT.RUMOR_CHARRED_COUNTER,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_SMUGGLER_BUNDLE,TT.RUMOR_GREENHOUSE_FRAME,TT.BED,TT.BOOK_STACK]);
   function clear88(m){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)setTerrainTile58(m,x,y,TT.WALL);state.rooms=[]}
   function relocateEntities89(savedMonsters,savedItems){
     state.monsters=[];

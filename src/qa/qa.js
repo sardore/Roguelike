@@ -663,6 +663,21 @@ globalThis.__MANRU_QA_BOSSCHARGE__=(at)=>{
   setBossIntent(boss,'charge',lane.cells,'test',{target});executeBossIntent(boss);
   return{path:lane.path.length,telegraphed:lane.cells.some(c=>c.x===p.x&&c.y===p.y),boss:[boss.x-x0,boss.y-y0],hpLost:hp0-p.hp,intentCleared:!boss.intent54};
 };
+// The grand terrain of the current floor (the `terrain` scenario): the kinds that exist, a way to ask for one, what was made, and a
+// look at it (the player stands in the middle with the whole landscape known).
+globalThis.__MANRU_QA_TERRAIN__={
+  kinds:()=>GRAND_TERRAINS.map(t=>({id:t.id,name:t.name,minRegion:t.minRegion,maxRegion:t.maxRegion??9,vault:!!t.vault})),
+  force:id=>{state.grandTerrainLog93=GRAND_TERRAINS.filter(t=>t.id!==id).map(t=>({floor:0,kind:t.id}))},
+  info:()=>{
+    const g=state.grandTerrain93;if(!g)return null;let walk=0,block=0;
+    for(let y=g.y+1;y<g.y+g.h-1;y++)for(let x=g.x+1;x<g.x+g.w-1;x++){if(tileBlocks(state.map[y][x]))block++;else walk++}
+    return{...g,walk,block,rooms:state.rooms.length,retired:!state.rooms.some(r=>r.terrain93),centre:!tileBlocks(state.map[Math.floor(g.y+g.h/2)][Math.floor(g.x+g.w/2)])};
+  },
+  look:()=>{
+    const g=state.grandTerrain93;if(!g)return false;const p=state.player;p.x=g.x+Math.floor(g.w/2);p.y=g.y+Math.floor(g.h/2);
+    for(let y=g.y-1;y<=g.y+g.h;y++)for(let x=g.x-1;x<=g.x+g.w;x++)state.seen.add(k(x,y));VisibilityService.compute();updateAll(true);return true;
+  }
+};
 // The hound boss in a flat room and the player at the left end of a long corridor-like walk away from it; the scenario starts the automatic walk
 // to `goal`, ticks the clock and reads what stopped it (the `houndwalk` scenario).
 globalThis.__MANRU_QA_HOUNDWALK__=()=>{

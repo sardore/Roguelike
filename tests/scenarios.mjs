@@ -1007,6 +1007,38 @@ export const scenarios = {
     return out;
   },
 
+  // The grand terrain of ordinary floors: every kind (landscapes, compounds, vault templates) asked for by name on a floor of a region it
+  // may appear in must be made, pass the generator's own connectivity checks, leave its middle walkable and be retired from the room list.
+  async terrain(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 11 });
+    try {
+      await startRun(s, 'wanderer');
+      const kinds = await s.page.evaluate(() => globalThis.__MANRU_QA_TERRAIN__.kinds());
+      const ordinary = [3, 7, 9, 12, 14, 17, 19], regionOf = (f) => Math.floor((f - 1) / 5);
+      const made = {}, problems = [];
+      for (const kind of kinds) {
+        const floors = ordinary.filter((f) => regionOf(f) >= kind.minRegion && regionOf(f) <= kind.maxRegion), floor = floors[0];
+        let info = null;
+        // some floors place keys and locked gates and refuse a map whose plan does not fit, so a kind is asked for on every floor it may
+        // appear on; each try reseeds the generator and the 12% of floors that get no terrain are skipped
+        for (let i = 0; i < 14 && !(info && info.kind === kind.id); i++)
+          info = await s.page.evaluate(([id, f, seed]) => { window.__reseed(seed); globalThis.__MANRU_QA_TERRAIN__.force(id); window.__MANRU_RELEASE__.regen(f); return globalThis.__MANRU_QA_TERRAIN__.info(); }, [kind.id, floors[i % floors.length], 4000 + i * 977]);
+        if (!info || info.kind !== kind.id) problems.push(`${kind.id}: not made on floor ${floor}`);
+        else {
+          if (!info.retired) problems.push(`${kind.id}: still in the room list`);
+          if (!info.centre) problems.push(`${kind.id}: blocked middle`);
+          made[kind.id] = { w: info.w, h: info.h, rooms: info.rooms };
+        }
+      }
+      if (problems.length) throw Error('terrain: ' + problems.join('; '));
+      out['terrain.kinds'] = JSON.stringify(kinds.map((k) => k.id));
+      out['terrain.made'] = JSON.stringify(made);
+      out['terrain.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // An automatic walk stops the moment a monster it can see starts a skill (its warning cells appear): the hound boss's charge
   // is armed one player turn before it lands, and a walk that goes on takes the player into the red cells.
   async houndwalk(browser, root) {
