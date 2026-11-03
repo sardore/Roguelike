@@ -1430,9 +1430,15 @@ function spawnJarGasField57(x,y,opts={}){
   applyJarGasEffects57();return f
 }
 function destroyJar57(x,y,opts={}){
-  if(!state||state.map?.[y]?.[x]!==TT.JAR)return{ok:false,reason:'not-jar'};const region=regionIndex(),base=releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y));setTerrainTile58(state.map,x,y,base);burst(x,y,'#8b6a49',14,.78);
-  const contents=jarContents105(x,y),cells=contents==='poison'?[]:spillJar105(x,y,contents);let gas=contents==='poison'?spawnJarGasField57(x,y,{forced:!!opts.forced}):null,accident=null;if(region===3&&opts.forced)accident=forcedJarAccident(x,y);const reward=jarReward57(x,y);const effects=FX.terrainReactions105||(FX.terrainReactions105=[]);effects.push({kind:'jar',contents,cells,x,y,map:state.map,start:performance.now(),life:1000});if(effects.length>24)effects.splice(0,effects.length-24);
-  if(opts.forced){alertNearby(x,y,9);addLog(contents==='poison'?'장독을 강제로 깨뜨렸다. 큰 파열음과 함께 독가스가 확산되기 시작했다.':'장독을 강제로 깨뜨렸다. 파열음이 주변에 울렸다.')}VisibilityService.compute();return{ok:true,gas:!!gas,accident:!!accident,reward:reward?.name||null,base}
+  if(!state||state.map?.[y]?.[x]!==TT.JAR)return{ok:false,reason:'not-jar'};const base=releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y));setTerrainTile58(state.map,x,y,base);
+  return{...shatterJar(x,y,opts),base};
+}
+// the jar breaks at (x,y), its tile already gone from the floor: what was in it spills (a poisoned jar lets out a gas), a reward may show, the noise carries.
+// opts.from is the place the jar stood when it was thrown: what is in a jar depends on where it stood.
+function shatterJar(x,y,opts={}){
+  const region=regionIndex();burst(x,y,'#8b6a49',14,.78);
+  const contents=jarContents105(opts.from?.x??x,opts.from?.y??y),cells=contents==='poison'?[]:spillJar105(x,y,contents);let gas=contents==='poison'?spawnJarGasField57(x,y,{forced:!!opts.forced}):null,accident=null;if(region===3&&opts.forced)accident=forcedJarAccident(x,y);const reward=jarReward57(x,y);const effects=FX.terrainReactions105||(FX.terrainReactions105=[]);effects.push({kind:'jar',contents,cells,x,y,map:state.map,start:performance.now(),life:1000});if(effects.length>24)effects.splice(0,effects.length-24);
+  if(opts.forced){alertNearby(x,y,9);addLog(contents==='poison'?'장독을 강제로 깨뜨렸다. 큰 파열음과 함께 독가스가 확산되기 시작했다.':'장독을 강제로 깨뜨렸다. 파열음이 주변에 울렸다.')}VisibilityService.compute();return{ok:true,gas:!!gas,accident:!!accident,reward:reward?.name||null}
 }
 function terrainName(t){if(t===TT.WATER)return'깊은 물 · 인접 뭍 없으면 익사';if(t===TT.VOID)return'공허 · 추락 즉사';if(t===TT.LAVA)return'용암 · 즉사';if(t===TT.PAPER_BRIDGE)return'종이 다리 · 밟은 뒤 다음 실제 행동권 사용 후 붕괴 / 기절 턴 제외 / 10턴 복구';if(t===TT.CRUMBLE)return'불안정 발판 · 밟으면 붕괴 예고 / 10턴 복구';if(t===TT.PORTAL)return state?.artifactDungeon46?state.artifactDungeon46.name:'포탈';const decorName={
     [TT.STONE_PILLAR]:'석주',[TT.LANTERN_POST]:'등롱 기둥',[TT.WALL_BANNER]:'벽걸이 깃발',[TT.CRATE]:'목상자',[TT.BENCH]:'긴 의자',[TT.FLOWERBED]:'화단',[TT.ROCK]:'정원석',[TT.STATUE]:'석상',[TT.RACK]:'진열 선반',[TT.LOW_FENCE]:'낮은 목책',[TT.CARPET]:'융단',[TT.STONE_PATH]:'석판길',[TT.WINDOW]:'창호 창문',

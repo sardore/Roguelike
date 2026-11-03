@@ -1193,7 +1193,8 @@ export const scenarios = {
       if (!res.psychicBounce.ok || res.psychicBounce.neighborDealt <= 0) problems.push('psychic bounce');
       if (!res.bounce.ok || res.bounce.neighborDealt <= 0 || res.bounce.events !== 2) problems.push('bounce at the fifth rank');
       if (res.noBounce.neighborDealt !== 0) problems.push('bounce before the fifth rank');
-      if (!res.jar.ok || res.jar.dealt <= 0) problems.push('jar');
+      if (!res.jar.ok || res.jar.dealt <= 0 || res.jar.jarBreaks !== 1) problems.push('a thrown jar breaks where it lands');
+      if (res.wood.jarBreaks !== 0) problems.push('only a jar breaks as a jar');
       if (!res.goldLamp.ok || !res.goldLamp.fire) problems.push('gold lamp');
       if (res.miscLocked.ok) problems.push('other furniture before the fourth rank');
       if (!res.seal.ok || !(res.seal.curse.seal > 0)) problems.push('seal');
