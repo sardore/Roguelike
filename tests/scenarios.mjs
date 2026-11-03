@@ -1106,32 +1106,35 @@ export const scenarios = {
     return out;
   },
 
-  // The first floor's entry is a terraced garden in the bottom-left corner with a chest at its end: it is generated cleanly again and again, nothing
-  // lies in it, and walking into the chest opens it (it is the ordinary supply chest).
+  // The first floor has twenty starting places, one chosen at random for each run (the old three rooms at the top of the map, the terraced rock
+  // garden, and eighteen drawn places). Every one of them is generated cleanly again and again, holds nothing but the player, has the player start inside
+  // it; those with a chest (all but the old one) let the player open it by walking into it (it is the ordinary supply chest).
   async chest(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 3 });
     try {
       await startRun(s, 'wanderer');
-      const garden = await s.page.evaluate(() => {
-        const res = { made: 0, problems: [] };
-        for (let n = 1; n <= 40; n++) {
-          window.__MANRU_QA_UI__.state().runId984 = 'garden-' + n;
+      const starts = await s.page.evaluate(() => {
+        const res = { made: 0, problems: [], seen: {} };
+        for (let n = 1; n <= 400 && Object.keys(res.seen).length < 20; n++) {
+          window.__MANRU_QA_UI__.state().runId984 = 'start-' + n;
           try { window.__MANRU_RELEASE__.regen(1); } catch (e) { res.problems.push(n + ':' + String(e).slice(0, 120)); continue; }
-          const st = window.__MANRU_QA_UI__.state(), a = st.tutorialEntry60, c = st.tutorialChest;
-          res.made++;
-          if (!a || !c) { res.problems.push(n + ':missing'); continue; }
-          if (!(a.bottom >= st.map.length - 2 && a.x <= 2)) res.problems.push(n + ':not in the corner');
+          const st = window.__MANRU_QA_UI__.state(), a = st.tutorialEntry60, c = st.tutorialChest, v = st.tutorialVariant;
+          res.made++; res.seen[v] = (res.seen[v] || 0) + 1;
+          if (!a) { res.problems.push(v + ':missing'); continue; }
+          if (v === 0 ? (a.y !== 1 || c) : (!(a.bottom >= st.map.length - 2 && a.x <= 2) || !c)) res.problems.push(v + ':wrong place or chest');
           const inside = st.items.filter((i) => i.x >= a.x && i.x <= a.right && i.y >= a.y && i.y <= a.bottom).length;
-          if (inside) res.problems.push(n + ':items inside ' + inside);
-          if (st.player.x > a.right || st.player.y < a.y) res.problems.push(n + ':start outside');
+          if (inside) res.problems.push(v + ':items inside ' + inside);
+          if (st.player.x < a.x || st.player.x > a.right || st.player.y < a.y || st.player.y > a.bottom) res.problems.push(v + ':start outside');
         }
         return res;
       });
-      if (garden.problems.length || garden.made !== 40) throw Error('chest: garden ' + JSON.stringify(garden));
+      if (starts.problems.length || Object.keys(starts.seen).length !== 20) throw Error('chest: starting places ' + JSON.stringify(starts));
+      // the state now holds the last place made; open the chest of one that has it
+      await s.page.evaluate(() => { for (let n = 1; n < 60 && !window.__MANRU_QA_UI__.state().tutorialChest; n++) { window.__MANRU_QA_UI__.state().runId984 = 'open-' + n; window.__MANRU_RELEASE__.regen(1); } });
       const opened = await s.page.evaluate(() => globalThis.__MANRU_QA_CHEST__.open());
       if (!opened || !opened.before || !opened.bumped || !opened.opened || !opened.tileIsFloor || opened.items < 1 || opened.items > 2 || opened.again) throw Error('chest: opening ' + JSON.stringify(opened));
-      out['chest.garden'] = JSON.stringify({ made: garden.made });
+      out['chest.starts'] = JSON.stringify({ variants: Object.keys(starts.seen).map(Number).sort((x, y) => x - y) });
       out['chest.opened'] = JSON.stringify({ opened: opened.opened, items: opened.items });
       out['chest.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
