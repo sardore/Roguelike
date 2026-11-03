@@ -83,6 +83,8 @@ function oddityHit(actor,mon,obj,lv,form,leg){
     if(mon.hp>0&&(id==='stone'||id==='tree'))applyMartialControl1005(mon,id==='stone'&&lv>=4?2:1);
     if(mon.hp>0&&id==='misc'){const curse=ODDITY_RULES.curses[Object.keys(TT).find(n=>TT[n]===obj.tile)];if(curse&&applyCombatStatus(mon,curse[0],2+(lv>=5?1:0),1,{source:actor}))floatText(mon.x,mon.y,curse[1],'#c9a7ff',11)}
   }
+  // a jar that is thrown breaks where it lands: its contents spill, or its gas rises
+  if(obj.tile===TT.JAR&&!leg)shatterJar(mon.x,mon.y,{forced:true,from:{x:obj.x,y:obj.y}});
   martialCheckDeath(mon,actor);
 }
 // the pieces in the air, by the chosen enemy: oddityPlan answers with them while the art is under way (their tiles are already gone from the floor)

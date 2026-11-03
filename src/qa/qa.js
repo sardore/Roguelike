@@ -930,7 +930,7 @@ globalThis.__MANRU_QA_ODDITY__={
   },
   cast:()=>{
     const p=state.player,mon=state.monsters.find(m=>m.hp>0&&m.x===p.x+3&&m.y===p.y)||state.monsters.find(m=>m.hp>0),others=state.monsters.filter(m=>m!==mon);
-    ODDITY_PROBE={pieces:ODDITY_PIECES,mon,others,oh:others.map(m=>m.hp),hp:mon.hp,focus:p.focus,turn:state.turn,pos:{x:mon.x,y:mon.y}};
+    ODDITY_PROBE={jarFx:(FX.terrainReactions105||[]).filter(e=>e.kind==='jar').length,pieces:ODDITY_PIECES,mon,others,oh:others.map(m=>m.hp),hp:mon.hp,focus:p.focus,turn:state.turn,pos:{x:mon.x,y:mon.y}};
     const ok=castOddity({x:mon.x,y:mon.y});
     return{ok,events:ODDITY_FX.length,starts:ODDITY_FX.map(e=>Math.round(e.start)),turnAtCast:state.turn-ODDITY_PROBE.turn,moved:mon.x!==ODDITY_PROBE.pos.x||mon.y!==ODDITY_PROBE.pos.y,dealtAtCast:ODDITY_PROBE.hp-mon.hp,
       lock:Math.round(ACTION_PRESENTATION58.inputUntil-performance.now()),flight:ODDITY_FX.map(e=>Math.round(e.hitAt-e.start))};
@@ -938,7 +938,7 @@ globalThis.__MANRU_QA_ODDITY__={
   probe:()=>{const q=ODDITY_PROBE,mon=q.mon;return{turnDelta:state.turn-q.turn,moved:mon.x!==q.pos.x||mon.y!==q.pos.y,dealt:q.hp-mon.hp,pending:ODDITY_QUEUE.length}},
   result:()=>{
     const p=state.player,q=ODDITY_PROBE,mon=q.mon;
-    return{spent:q.focus-p.focus,dealt:q.hp-mon.hp,neighborDealt:q.others.reduce((n,m,i)=>n+q.oh[i]-m.hp,0),stunned:mon.stunned||0,pos:{x:mon.x,y:mon.y},turnDelta:state.turn-q.turn,curse:{seal:mon.skillSeal105||0,bleed:mon.bleeding55||0,blind:mon.blinded55||0,upset:mon.upset||0,drunk:mon.drunk||0,poison:mon.poisoned57||0,weaken:mon.weakened||0},piece:ODDITY_PROBE.pieces?.[0],pieceTiles:ODDITY_PROBE.pieces?.map(c=>state.map[c.y][c.x]),fire:(state.elementFields74||[]).some(f=>f.kind==='fire')};
+    return{spent:q.focus-p.focus,dealt:q.hp-mon.hp,neighborDealt:q.others.reduce((n,m,i)=>n+q.oh[i]-m.hp,0),stunned:mon.stunned||0,pos:{x:mon.x,y:mon.y},turnDelta:state.turn-q.turn,jarBreaks:(FX.terrainReactions105||[]).filter(e=>e.kind==='jar').length-q.jarFx,curse:{seal:mon.skillSeal105||0,bleed:mon.bleeding55||0,blind:mon.blinded55||0,upset:mon.upset||0,drunk:mon.drunk||0,poison:mon.poisoned57||0,weaken:mon.weakened||0},piece:ODDITY_PROBE.pieces?.[0],pieceTiles:ODDITY_PROBE.pieces?.map(c=>state.map[c.y][c.x]),fire:(state.elementFields74||[]).some(f=>f.kind==='fire')};
   },
   pending:()=>ODDITY_FX.length
 };
