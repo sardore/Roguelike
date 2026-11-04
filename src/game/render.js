@@ -5288,7 +5288,7 @@ function visualLoop(now=performance.now()){
       }
       if(!state?.debugBattle57&&(w!==RC.vw||h!==RC.vh||now-RC.lastViewport>900)){RC.vw=w;RC.vh=h;RC.lastViewport=now;syncGameViewport()}
       if(state?.debugBattle57)debugBattleFrame57(now);
-      if(state?.spectator)Spectate.frame(now);else Spectate.tick(now);
+      if(state?.spectator)Spectate.frame(now);else Spectate.tick(now);Duel.pump(now);
       Reel.tick(now);
       if(state&&!state.debugBattle57&&!state.spectator){
         dojoSleepFrame(now);updateVisualMotion(now);
