@@ -2232,6 +2232,7 @@ function isToolBreakableTerrain57(tile){return TOOL_BREAKABLE_KEYS57.some(name=>
 function hudLocation58(){
  if(!state)return{kind:'none',floor:'--',tag:'',desktop:'',full:''};
  const branch=state.branchContext105;if(branch){const portal=state.branchPortals105?.find(p=>p.x===state.player.x&&p.y===state.player.y);const d=BRANCH_DEFS105[branch.id],room=branch.id==='citadel'?state.branchTerrain105?.citadel105?.rooms?.find(r=>state.player.x>=r.x&&state.player.x<r.x+r.w&&state.player.y>=r.y&&state.player.y<r.y+r.h):null;return{kind:'branch',challenge:branch.id==='citadel'&&state.branchWorld105?.citadel105?.trial105?.status==='active'?`미궁 ${Math.max(0,state.branchWorld105.citadel105.trial105.deadline-state.turn)}턴 · 걸쇠 ${state.branchWorld105.citadel105.trial105.seals.length}/3`:'',floor:branch.level+'/'+(branch.legacyCount105||d.count),tag:d.name,desktop:d.name+' '+branch.level+'층 / '+(branch.legacyCount105||d.count),full:(portal?portal.label:room?d.name+' '+branch.level+'층 · '+room.name:state.layoutName)+(branch.id==='citadel'&&state.branchWorld105?.citadel105?.trial105?.status==='active'?` · 미궁 ${Math.max(0,state.branchWorld105.citadel105.trial105.deadline-state.turn)}턴 · 걸쇠 ${state.branchWorld105.citadel105.trial105.seals.length}/3`:'')}}
+ if(state.duel)return{kind:'duel',floor:'망령',tag:'망령전',desktop:`망령전 · ${state.duel.name}`,full:'저승 한가운데의 전장. 죽은 이들의 망령이 서로가 가진 모든 것을 걸고 맞선다.'};
  const shop=state.shopIntermission;if(shop?.active){const tag=SHOP_RULES58[shop.theme].room;return{kind:'shop',floor:'상점',tag,desktop:`상점 · ${tag}`,full:tag}}
  const artifact=state.artifactDungeon46;if(artifact){const full=artifact.name||state.layoutName||'전설 던전',tag=artifact.hudName||compactHudName58(full);return{kind:'artifact',floor:'전설',tag,desktop:`전설 · ${tag}`,full}}
  return{kind:'normal',floor:String(state.floor).padStart(2,'0'),tag:'',desktop:`제 ${String(state.floor).padStart(2,'0')}층 / 25`,full:state.layoutName||regionFor(state.floor)[2]};
@@ -2417,7 +2418,7 @@ function safeLootGround42(x,y){
   const t=state.map[y]?.[x];return !dangerousLootTerrain42(t)&&!tileBlocks(t)&&t!==TT.STAIR&&t!==TT.KEY_TILE&&t!==TT.PORTAL&&t!==TT.DOOR;
 }
 const SIGHT_BLOCKING_TILES57=new Set([TT.WALL,TT.DOOR,TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR]);
-  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
+  const SIGHT85=new Set([TT.STONE_PILLAR,TT.WALL_BANNER,TT.STATUE,TT.UNDERWORLD_STELE,TT.GARDEN_TREE,TT.RUMOR_INVESTIGATION_BOARD,TT.RUMOR_GREENHOUSE_FRAME]);
 globalThis.__MANRU_SPECIAL_FLOORS60__=Object.freeze({activateSwitch:activateFloor23Switch60,sync23:syncFloor23Gate60,onMonsterHpThreshold:onMonsterHpThreshold60,onTypedGateOpened:onTypedGateOpened60,validate:validateSpecial60,flood:floodSpecial60,reach24:reach24State60,validate23:validate23Progress60,validate24:validate24Progress60,qa:qa60});
 window.__MANRU_HAZARD_CORE__={
   armFragile,collapseAt:collapseFragileAt105,kind:hazardTile,adapted:entityAdapted,resolve:resolveEntityHazard1005,standing:resolveStandingHazard1005,revalidateAt:revalidateHazardAt1005,revalidateAll:resolveAllStandingHazards1005

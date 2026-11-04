@@ -559,7 +559,7 @@ function roomProbe1026(r){
 }
 function sameRoom1027(a,b){return a&&b&&a.x===b.x&&a.y===b.y&&a.w===b.w&&a.h===b.h}
 const RETIRED_DECOR64=new Set(["lantern","banner","statue","cabinet","shelf","jars","planter","basin","cushion","screen","crate","rack","weaponrack","altar","brazier","incense","tea","bench","pillar","lampstand"]);
-const PHYSICAL_DECOR_BLOCKERS1029=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.SCREEN,TT.INCENSE_STAND].filter(v=>v!=null));
+const PHYSICAL_DECOR_BLOCKERS1029=new Set([TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW,TT.GARDEN_TREE,TT.SCREEN,TT.INCENSE_STAND,TT.SOUL_LAMP,TT.UNDERWORLD_STELE,TT.SPIDER_LILY,TT.SOUL_CAIRN,TT.UNDERWORLD_BELL].filter(v=>v!=null));
 /* ===== MANRU r43: floor 22 encounter budgeting on the FINAL expanded geometry ===== */
 const F22_BUDGET43={lower:16,central:11,upper:16};
 function floor22Zone43(y){const mid=Math.floor((ROWS-1)/2);if(y<mid-14)return'upper';if(y>mid+14)return'lower';return'central'}

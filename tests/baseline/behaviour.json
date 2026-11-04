@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "1d9529e9399cdfcc95581ca18f2bbd71e3f3a876",
- "values.branch": "5fa3b2bcda760df52a8ad097a74b4d1e77cf26ab",
+ "values.empty": "ed466d28a221ab584a123003b782d62b861a40e7",
+ "values.branch": "cc832ba9dd075b953b989fea0604da04047b1a87",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -443,5 +443,14 @@
  "chest.opened": "53f88aa0a60f3a026a977ae8ee6e5bf4bd85e221",
  "chest.starts": "fa89eaa1c50348fa98fbb807ce470d24e52db278",
  "duel.match": "56bedc51e7357d61756169f2977cc034c611e26e",
- "duel.errors": "164374825086dc65cd5dc548c248f61328b5d668"
+ "duel.errors": "164374825086dc65cd5dc548c248f61328b5d668",
+ "duelfloor.0": "c9084700a59f6333a5b3ae1df78bea2f0625d2c0",
+ "duelfloor.1": "1eef637a206bfe7afb917cb1e454525bc4b1de16",
+ "duelfloor.2": "e706c9bf5a857ca6d5bcf6c05d5df544b9776d92",
+ "duelfloor.3": "7020c5efc966168cbc90716e42d0fbef3d33c7e6",
+ "duelfloor.4": "4d638e7c83111079be71ee968ae45fa8cca19921",
+ "duelfloor.5": "f83b9d49b7afa1ff8b3421d20dc86a59219f8800",
+ "duelfloor.6": "6470375257721acdeb39098e914edc1a2230d553",
+ "duelfloor.7": "73ccc5b19e9d781966d0aa3638606174e8883a1c",
+ "duelfloor.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

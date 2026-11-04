@@ -1110,6 +1110,29 @@ export const scenarios = {
     return out;
   },
 
+  // The floors of the ghost duel are real runs on a small map (duelarenas.js: buildDuelArena): every arena opens on the game's own screen with its name in the
+  // top bar, the player on the start the drawing gives, and every kind of tile on it has a name and a description of its own - never the stock text of an
+  // unnamed structure (the thing a player sees when a tile was added without one).
+  async duelfloor(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const n = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.arenas());
+      for (let i = 0; i < n; i++) {
+        await s.page.evaluate((i) => globalThis.__MANRU_QA_DUEL__.stage(i), i);
+        await s.tick(600);
+        const info = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.info());
+        const tiles = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.describeAll());
+        const bad = Object.entries(tiles).filter(([, v]) => !v.name || v.name === '지형' || !v.desc || v.desc.startsWith('만루를 이루는 이름 없는')).map(([t, v]) => t + ':' + v.name);
+        if (bad.length) throw Error('duelfloor: ' + info.duel.name + ' has tiles without a description: ' + bad.join(' '));
+        out['duelfloor.' + i] = JSON.stringify({ name: info.duel.name, size: [info.cols, info.rows], player: info.player, door: info.duel.door, floorTxt: info.floorTxt, regionTxt: info.regionTxt, kinds: Object.keys(tiles).length });
+      }
+      out['duelfloor.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // The village of floor 2 has a bell in a yard in the middle of the map. Before it is rung the road through the middle is cut by a raised
   // bridge and the stairs cannot be reached from the start; ringing lowers the bridge, wakes the legion commander, who calls escorts (never more
   // than its limit) and walks its patrol.
