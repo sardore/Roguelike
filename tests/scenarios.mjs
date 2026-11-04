@@ -1110,6 +1110,39 @@ export const scenarios = {
     return out;
   },
 
+  // The ghost duel on a real map, between two pages: the host's run is the arena with the other player's ghost standing in it; the guest sees the
+  // host's state from its own cell and walks its ghost with the arrow keys; walking into the other player is an attack that costs the host health.
+  async duelfight(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9101, init });
+      const b = await openSession(browser, root, { seed: 9102, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelfight: no fight ' + JSON.stringify([await fight(a), await fight(b)]));
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      const h0 = await fight(host), g0 = await fight(guest);
+      // the guest walks towards the host player: three steps east-or-west, then keeps walking into it
+      const key = g0.player[0] < h0.player[0] ? 'ArrowRight' : 'ArrowLeft';
+      for (let i = 0; i < 30; i++) { await guest.page.keyboard.press(key); await both(150); }
+      const h1 = await fight(host), g1 = await fight(guest);
+      const opp = h1.others.find((m) => m[0] === '상대 망령');
+      out['duelfight.start'] = JSON.stringify({ host: h0.player, hostSees: h0.others.map((m) => [m[0], m[1], m[2]]), guest: g0.player, guestSees: g0.others.map((m) => [m[0], m[1], m[2]]) });
+      out['duelfight.after'] = JSON.stringify({ hostHurt: h1.player[2] < h0.player[2], opponentMoved: !!opp && (opp[1] !== h0.others[0][1] || opp[2] !== h0.others[0][2]), guestFollows: g1.player[0] === opp?.[1] && g1.player[1] === opp?.[2] });
+      out['duelfight.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // The floors of the ghost duel are real runs on a small map (duelarenas.js: buildDuelArena): every arena opens on the game's own screen with its name in the
   // top bar, the player on the start the drawing gives, and every kind of tile on it has a name and a description of its own - never the stock text of an
   // unnamed structure (the thing a player sees when a tile was added without one).

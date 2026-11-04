@@ -205,5 +205,5 @@ function placeDuelOpponent(at){
     atk:p.baseAtk,def:p.baseDef,eva:p.baseEva,will:p.baseWill,baseAtk:p.baseAtk,baseDef:p.baseDef,baseEva:p.baseEva,baseWill:p.baseWill,maxHp:p.maxHp,hp:p.maxHp,maxFocus:p.maxFocus,focus:p.maxFocus,
     martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:p.color,weakened:0,alerted:true,
     spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
-  state.monsters.push(mon);OccupancyService.addMonster(mon);return mon;
+  OccupancyService.addMonster(mon);return mon;
 }
