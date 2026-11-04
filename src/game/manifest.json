@@ -24,6 +24,7 @@
   "stats.js",
   "spectate.js",
   "duel.js",
+  "duelarenas.js",
   "reel.js",
   "boot.js"
  ],
