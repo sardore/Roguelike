@@ -1126,7 +1126,7 @@ export const scenarios = {
         const tiles = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.describeAll());
         const bad = Object.entries(tiles).filter(([, v]) => !v.name || v.name === '지형' || !v.desc || v.desc.startsWith('만루를 이루는 이름 없는')).map(([t, v]) => t + ':' + v.name);
         if (bad.length) throw Error('duelfloor: ' + info.duel.name + ' has tiles without a description: ' + bad.join(' '));
-        out['duelfloor.' + i] = JSON.stringify({ name: info.duel.name, size: [info.cols, info.rows], player: info.player, door: info.duel.door, floorTxt: info.floorTxt, regionTxt: info.regionTxt, kinds: Object.keys(tiles).length });
+        out['duelfloor.' + i] = JSON.stringify({ name: info.duel.name, size: [info.cols, info.rows], player: info.player, door: info.duel.door, opponent: info.opponent, floorTxt: info.floorTxt, regionTxt: info.regionTxt, kinds: Object.keys(tiles).length });
       }
       out['duelfloor.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }

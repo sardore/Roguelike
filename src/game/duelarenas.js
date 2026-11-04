@@ -192,7 +192,18 @@ function buildDuelArena(duel){
   setTerrainTile58(state.map,door.x,door.y,TT.WALL);
   state.rooms=[{x:1,y:1,w:width-2,h:height-2,cx:Math.floor(width/2),cy:Math.floor(height/2),name:arena.name}];
   Object.assign(state,{specialFloor:true,layoutName:arena.name,duel:{arena:duel.arena,role:duel.role||'host',name:arena.name,door,won:false,opponent:{x:theirs[0],y:theirs[1]}},stairs:{...door},fixedStart:{x:mine[0],y:mine[1]},fixedExit:{...door}});
-  state.player.baseVision=Math.max(width,height);state.player.x=mine[0];state.player.y=mine[1];state.player.facing={x:duel.role==='guest'?-1:1,y:0};
+  state.player.baseVision=Math.max(width,height);state.player.x=mine[0];state.player.y=mine[1];
+  placeDuelOpponent(theirs);state.player.facing={x:duel.role==='guest'?-1:1,y:0};
   VisibilityService.compute();vfBuildDecor();
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)VisibilityService.rememberKey(k(x,y));
+}
+
+// The other player's ghost, standing on the other start. It has the stats of the player's own class (both sides fight on equal terms), takes no turn of its
+// own (`duelOpponent`: monsterTurn skips it; it moves only when the other player's input arrives) and gives no xp, kill or drop.
+function placeDuelOpponent(at){
+  const p=state.player,mon={name:'상대 망령',concept57:'다른 이의 죽은 계정이 망령이 되어 선 모습. 가진 것을 모두 걸고 이곳에 섰다.',shape:'human',kind:'human',duelOpponent:true,
+    atk:p.baseAtk,def:p.baseDef,eva:p.baseEva,will:p.baseWill,baseAtk:p.baseAtk,baseDef:p.baseDef,baseEva:p.baseEva,baseWill:p.baseWill,maxHp:p.maxHp,hp:p.maxHp,maxFocus:p.maxFocus,focus:p.maxFocus,
+    martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:p.color,weakened:0,alerted:true,
+    spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
+  state.monsters.push(mon);OccupancyService.addMonster(mon);return mon;
 }
