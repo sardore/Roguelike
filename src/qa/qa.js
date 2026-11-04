@@ -942,3 +942,6 @@ globalThis.__MANRU_QA_ODDITY__={
   },
   pending:()=>ODDITY_FX.length
 };
+
+// The ghost duel's first part (the `duel` scenario): matching and passing payloads over the relay.
+globalThis.__MANRU_QA_DUEL__={api:Duel};

@@ -1073,6 +1073,43 @@ export const scenarios = {
     return out;
   },
 
+  // The ghost duel, first part: two real pages find each other through a local copy of the relay (mode MANRU_DUEL), get opposite roles and pass
+  // payloads both ways; leaving ends it for the other. The turn limit is twenty seconds.
+  async duel(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9001, init });
+      const b = await openSession(browser, root, { seed: 9002, init });
+      await startRun(a, 'wanderer'); await startRun(b, 'swordsman');
+      const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 80) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const D = (s, fn, arg) => s.page.evaluate(fn, arg);
+      const stage = (s) => D(s, () => globalThis.__MANRU_QA_DUEL__.api.stage);
+      await D(a, () => globalThis.__MANRU_QA_DUEL__.api.find());
+      await D(b, () => globalThis.__MANRU_QA_DUEL__.api.find());
+      if (!(await until(async () => (await stage(a)) === 'matched' && (await stage(b)) === 'matched'))) throw Error('duel: not matched ' + (await stage(a)) + ' ' + (await stage(b)));
+      const info = async (s) => D(s, () => { const d = globalThis.__MANRU_QA_DUEL__.api; return { role: d.role, remote: d.remote, turn: d.TURN_MS, mode: d.MODE }; });
+      const ia = await info(a), ib = await info(b);
+      if (ia.role === ib.role || ![ia.role, ib.role].includes('host') || ia.turn !== 20000 || ia.mode !== 'MANRU_DUEL') throw Error('duel: roles ' + JSON.stringify([ia, ib]));
+      await D(a, () => globalThis.__MANRU_QA_DUEL__.api.send({ type: 'hello', n: 1 }));
+      await D(b, () => globalThis.__MANRU_QA_DUEL__.api.send({ type: 'hello', n: 2 }));
+      const got = async (s) => D(s, () => globalThis.__MANRU_QA_DUEL__.api.inbox.length);
+      if (!(await until(async () => (await got(a)) > 0 && (await got(b)) > 0))) throw Error('duel: payloads did not arrive');
+      const ma = await D(a, () => globalThis.__MANRU_QA_DUEL__.api.take()), mb = await D(b, () => globalThis.__MANRU_QA_DUEL__.api.take());
+      if (ma[0].payload.n !== 2 || mb[0].payload.n !== 1 || ma[0].from === ia.role) throw Error('duel: wrong payloads ' + JSON.stringify([ma, mb]));
+      await D(a, () => globalThis.__MANRU_QA_DUEL__.api.leave('시험'));
+      if (!(await until(async () => (await stage(b)) === 'idle'))) throw Error('duel: the other side was not told ' + (await stage(b)));
+      out['duel.match'] = JSON.stringify({ roles: [ia.role, ib.role].sort(), turnMs: ia.turn, mode: ia.mode, relayed: [ma[0].payload, mb[0].payload], ended: true });
+      out['duel.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // The village of floor 2 has a bell in a yard in the middle of the map. Before it is rung the road through the middle is cut by a raised
   // bridge and the stairs cannot be reached from the start; ringing lowers the bridge, wakes the legion commander, who calls escorts (never more
   // than its limit) and walks its patrol.
