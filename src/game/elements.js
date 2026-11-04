@@ -43,11 +43,11 @@ function destroyElementStructure105(target,elem){
 // Element contacts belong to world geometry, not to the identity of the attacker.
 // Producers supply a frozen footprint; consumers decide by material/state only.
 const ELEMENT_MATERIALS105=Object.freeze({
- wood:'DOOR OPEN_DOOR PAPER_BRIDGE TABLE BENCH CRATE RACK LOW_FENCE SCREEN BED RUMOR_BED BOOK_STACK RUMOR_ARCHIVE_PILE RUMOR_SILK_DIVAN RUMOR_INVESTIGATION_BOARD RUMOR_SMUGGLER_BUNDLE RUMOR_WEAPON_RACK RUMOR_CHARRED_COUNTER RUMOR_MED_CABINET GARDEN_TREE PEACH_TREE BAMBOO HEDGE'.split(' '),
- stone:'STONE_PILLAR STATUE ROCK JAR BASIN CRYSTAL RUMOR_RITUAL_OBELISK'.split(' '),
+ wood:'DOOR OPEN_DOOR PAPER_BRIDGE TABLE BENCH CRATE RACK LOW_FENCE SCREEN BED RUMOR_BED BOOK_STACK SPIDER_LILY RUMOR_ARCHIVE_PILE RUMOR_SILK_DIVAN RUMOR_INVESTIGATION_BOARD RUMOR_SMUGGLER_BUNDLE RUMOR_WEAPON_RACK RUMOR_CHARRED_COUNTER RUMOR_MED_CABINET GARDEN_TREE PEACH_TREE BAMBOO HEDGE'.split(' '),
+ stone:'STONE_PILLAR STATUE ROCK JAR BASIN CRYSTAL RUMOR_RITUAL_OBELISK UNDERWORLD_STELE SOUL_CAIRN SOUL_LAMP'.split(' '),
  'structural-stone':['WALL'],
  metal:['LOCKED_GATE'],
- light:'LANTERN_POST GOLD_LAMP BRAZIER COOKPOT INCENSE_STAND'.split(' ')
+ light:'LANTERN_POST GOLD_LAMP BRAZIER COOKPOT INCENSE_STAND SOUL_LAMP'.split(' ')
 });
 function elementAffectsMaterial105(elem,material){return elem==='earth'&&material==='stone'||elem==='fire'&&material==='wood';}
 function newTerrainReactions105(){return{version:2,burning:{},unlit:{},revision:0,lastTick:null}}

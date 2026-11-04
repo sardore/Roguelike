@@ -11,8 +11,8 @@ const sandbox = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'src/game/duelarenas.js'), 'utf8') + '\nthis.ARENAS = DUEL_ARENAS;', sandbox);
 const ARENAS = sandbox.ARENAS;
 // the glyphs of terrain.js (surfaces, props) plus the three marks
-const GLYPHS = new Set([...'#+~:vl,schgIhmw', ...'TrPLSBtkbiCFWjanofe*=M', ...'ADB']);
-const BLOCKS = new Set([...'#PLSiWFoftTrhmkC*janWe']);
+const GLYPHS = new Set([...'#+~:vl,schgIhmw', ...'TrPLSBtkbiCFWjanofe*=M', ...'UNYOQ', ...'ADB']);
+const BLOCKS = new Set([...'#PLSiWFoftTrhmkC*janWeUNYOQ']);
 
 test('there are at least eight arenas, each 21 x 21 at most', () => {
   assert.ok(ARENAS.length >= 8);
@@ -50,4 +50,21 @@ test('the two starts and the cell below the door are connected, and the starts a
     assert.ok(dist.has((a.door[1] + 1) * w + a.door[0]), a.name + ' door unreachable');
     assert.ok(dist.get(gy * w + gx) >= 12, a.name + ' starts too close');
   }
+});
+
+// Every kind of furniture or ground in an arena has its own name and description in the tables of the game (world.js, monsters.js): a tile added without
+// one shows the stock text of an unnamed structure. (The `duelfloor` scenario checks the same on the running game; this one fails earlier and says which.)
+test('every tile an arena uses has a name and a description of its own', () => {
+  const read = (f) => fs.readFileSync(path.join(root, 'src/game', f), 'utf8');
+  const terrain = read('terrain.js'), world = read('world.js');
+  const table = (name) => Object.fromEntries([...terrain.match(new RegExp('const ' + name + '=\\{(.*?)\\};'))[1].matchAll(/'?([^':,]|:)'?:TT\.([A-Z_]+)/g)].map((m) => [m[1], m[2]]));
+  const glyphs = { ...table('GRAND_VAULT_SURFACE'), ...table('GRAND_VAULT_PROP') };
+  const used = new Set(ARENAS.flatMap((a) => [...a.rows.join('')]).filter((ch) => !'ABD'.includes(ch)));
+  const missing = [];
+  for (const ch of used) {
+    const tile = glyphs[ch];
+    if (!tile) { missing.push(ch + ': unknown glyph'); continue; }
+    if (!new RegExp('\\[TT\\.' + tile + ',').test(world)) missing.push(ch + ' ' + tile + ': no description in world.js');
+  }
+  assert.deepEqual(missing, []);
 });

@@ -175,7 +175,7 @@ function movePlatform57(platform,dx,dy){
   return{ok:true,riders:riders.length,oldCells,newCells}
 }
 const TERRAIN_SURFACE_KEYS58=Object.freeze(['SHALLOW_WATER','PALACE_LOW','PALACE_MID','PALACE_UPPER','PALACE_HIGH','ICE','FLOOR','GRASS','LIGHT_GRASS','WOOD_FLOOR','MOON_STONE','DARK_WOOD','GILDED_FLOOR','STONE_PATH','CARPET']);
-const TERRAIN_OVERLAY_KEYS58=Object.freeze(['STEPPING_STONE','BASIN','CRYSTAL','REED','MOON_GATE','PALACE_WALL_LAMP','TABLE','SCREEN','JAR','CRATE','BENCH','RACK','LOW_FENCE','FLOWERBED','STONE_PILLAR','LANTERN_POST','WALL_BANNER','WINDOW','ROCK','STATUE','PAPER_CRANE','LOTUS_FLOWER','INCENSE_STAND','IRON_HOOK','GOLD_LAMP','PETAL_MAT','GARDEN_TREE','PEACH_TREE','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','RUMOR_ARCHIVE_PILE','RUMOR_WEAPON_RACK','RUMOR_SILK_DIVAN','RUMOR_RITUAL_OBELISK','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','BED','BOOK_STACK']);
+const TERRAIN_OVERLAY_KEYS58=Object.freeze(['STEPPING_STONE','BASIN','CRYSTAL','REED','MOON_GATE','PALACE_WALL_LAMP','TABLE','SCREEN','JAR','CRATE','BENCH','RACK','LOW_FENCE','FLOWERBED','STONE_PILLAR','LANTERN_POST','WALL_BANNER','WINDOW','ROCK','STATUE','PAPER_CRANE','LOTUS_FLOWER','INCENSE_STAND','IRON_HOOK','GOLD_LAMP','PETAL_MAT','GARDEN_TREE','PEACH_TREE','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','RUMOR_ARCHIVE_PILE','RUMOR_WEAPON_RACK','RUMOR_SILK_DIVAN','RUMOR_RITUAL_OBELISK','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','BED','BOOK_STACK','SOUL_LAMP','UNDERWORLD_STELE','SPIDER_LILY','SOUL_CAIRN','UNDERWORLD_BELL']);
 const TERRAIN_WALL_OVERLAY_KEYS58=Object.freeze(['WALL_BANNER','WINDOW','PALACE_WALL_LAMP']);
 let TERRAIN_LAYER_CACHE58=null;
 function terrainLayerCatalog58(){
@@ -411,6 +411,14 @@ function pickup(...args){
     [TT.FLOWERBED,{desc:'정원 안쪽의 작은 화단. 계절도 햇빛도 없는 곳에서 꽃의 종류만 계속 바뀌어 왔다.'}],
     [TT.ROCK,{desc:'수묵원의 흐름을 잡기 위해 놓은 정원석. 자연석처럼 보이지만 바닥 깊숙이 고정되어 있다.'}],
     [TT.STATUE,{desc:'이름이 지워진 인물을 새긴 석상. 얼굴 부분만 유독 많이 닳아 누군가 반복해서 손을 댄 듯하다.'}],
+    [TT.SHALLOW_WATER,{desc:'발목 위까지 차는 얕은 물. 바닥이 훤히 비쳐 걸어서 건널 수 있고, 걸을 때마다 잔물결이 길게 퍼진다.',hint:'걸어서 건널 수 있다. 몸에 붙은 불이 꺼진다.'}],
+    [TT.STEPPING_STONE,{desc:'얕은 물 위에 놓은 납작한 징검돌. 가운데가 움푹 닳을 만큼 많은 이가 밟고 건넜다.',hint:'걸어서 건널 수 있다. 돌 아래는 얕은 물이다.'}],
+    [TT.MOON_GATE,{desc:'담장을 둥근 달 모양으로 도려낸 월문. 문턱이 없어서 지나는 사람의 모습이 원 안에 잠시 그림처럼 걸린다.',hint:'걸어서 지나갈 수 있다. 시야는 막지 않는다.'}],
+    [TT.SOUL_LAMP,{desc:'저승길을 밝히는 푸른 등. 기름 대신 이름을 잃은 넋이 타오르며, 바람이 없어도 불꽃이 길 쪽으로 기운다.',hint:'지나갈 수 없는 장식이다. 불빛을 내지만 시야는 막지 않는다. 땅속성이 닿으면 부서진다.'}],
+    [TT.UNDERWORLD_STELE,{desc:'저승 명부의 이름을 새긴 검은 비석. 새겨진 이름은 읽을 때마다 하나씩 바뀌고, 마지막 줄은 늘 비어 있다.',hint:'지나갈 수 없고 시야를 가린다. 비석 뒤에 서면 맞은편에서 보이지 않는다. 땅속성이 닿으면 부서진다.'}],
+    [TT.SPIDER_LILY,{desc:'저승 문턱에 핀다는 피안화 무리. 꽃과 잎이 서로 만나지 못해, 잎 없는 줄기 끝에서 가느다란 꽃잎만 푸른 빛을 띠고 흔들린다.',hint:'지나갈 수 없는 꽃밭이다. 시야는 막지 않는다. 불속성이 닿으면 탄다.'}],
+    [TT.SOUL_CAIRN,{desc:'길 잃은 넋을 달래려 쌓은 돌탑. 돌마다 이름 모를 사람의 손자국이 있고, 맨 위 돌 곁에 매단 종이 한 장이 푸르게 빛난다.',hint:'지나갈 수 없는 구조물이다. 시야는 막지 않는다. 땅속성이 닿으면 무너진다.'}],
+    [TT.UNDERWORLD_BELL,{desc:'죽은 이를 부를 때 치던 명종. 추에는 혀가 없는데도 가까이 서면 낮은 울림이 가슴뼈에 먼저 닿는다.',hint:'지나갈 수 없는 구조물이다. 시야는 막지 않는다.'}],
     [TT.RACK,{desc:'도구와 병기를 걸어 두는 진열 선반. 빈 칸의 모양으로 무엇이 사라졌는지만 짐작할 수 있다.'}],
     [TT.LOW_FENCE,{desc:'구역을 느슨하게 나누는 낮은 목책. 침입을 막기보다는 사람의 동선을 유도하기 위한 구조다.'}],
     [TT.CARPET,{desc:'회랑을 따라 깔린 두꺼운 융단. 발소리를 죽이고 바닥의 오래된 균열을 감춘다.'}],
