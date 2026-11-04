@@ -441,5 +441,7 @@
  "oddity.forms": "b738818c13f9f77bd692a1eb3b224cf3be0371b5",
  "oddity.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "chest.opened": "53f88aa0a60f3a026a977ae8ee6e5bf4bd85e221",
- "chest.starts": "fa89eaa1c50348fa98fbb807ce470d24e52db278"
+ "chest.starts": "fa89eaa1c50348fa98fbb807ce470d24e52db278",
+ "duel.match": "56bedc51e7357d61756169f2977cc034c611e26e",
+ "duel.errors": "164374825086dc65cd5dc548c248f61328b5d668"
 }

@@ -23,6 +23,7 @@
   "ui.js",
   "stats.js",
   "spectate.js",
+  "duel.js",
   "reel.js",
   "boot.js"
  ],

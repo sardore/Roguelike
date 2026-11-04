@@ -28,7 +28,7 @@ const now = () => Date.now();
 const randomId = prefix => `${prefix}-${crypto.randomBytes(16).toString("hex")}`;
 const roomKey = (mode, roomCode) => `${mode}:${String(roomCode || "").toUpperCase()}`;
 const cleanText = (value, max = 160) => String(value == null ? "" : value).trim().slice(0, max);
-const validMode = value => ["PVP", "BOSS_COOP"].includes(value) ? value : null;
+const validMode = value => ["PVP", "BOSS_COOP", "MANRU_DUEL"].includes(value) ? value : null;
 const isObject = value => value && typeof value === "object" && !Array.isArray(value);
 
 function websocketFrame(opcode, payload = Buffer.alloc(0)) {
