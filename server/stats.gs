@@ -2,11 +2,17 @@
 // POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?,live?} -> 시트에 한 줄 (같은 id는 한 번만; 진행 중(live:1)인 판은 같은 줄을 갱신하고, 끝난 기록이 오면 그 줄을 최종값으로 닫는다). nick은 선택(한글·영문·숫자 2~8자), cls는 직업 id(선택)
 // 클리어는 floor 25, cause 'End'로 오고, 랭킹에서는 30층으로 센다
 // POST {claim,owner} -> 닉네임 등록(이미 다른 기기가 쓰면 error 'taken', 이 기기가 이미 다른 닉네임이 있으면 error 'owned'+nick). 기록의 닉네임은 보낸 값이 아니라 등록부에서 그 기기의 닉네임을 찾아 붙인다.
+// POST body may also carry `ghost` (a JSON string of the dead character, at most GHOST_MAX characters) on a final death record: stored on the `ghosts` sheet, one row per run id.
+// GET ?view=ghosts&owner=AAAA00 -> {ok,list:[{id,t,cls,floor,level,cause,status}]} the ghosts of one player ID, newest first; GET ?view=ghost&owner=AAAA00&id=... -> {ok,body} only for the owner.
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
 // GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
 const SHEET_NAME = 'deaths';
 // Nicknames are claimed once, on their own sheet: nick (lower case, the key), nick as typed, owner (the player ID of the device), time.
 const NICK_SHEET = 'nicks';
+// Ghosts: the dead character of a run (the player object as JSON) kept for the owner (player ID), and later for others to fight. status is 'alive' until a fight takes it.
+const GHOST_SHEET = 'ghosts';
+const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body'];
+const GHOST_MAX = 45000, GHOST_ROWS = 20000, GHOSTS_PER_OWNER = 200, GHOST_LIST = 100;
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live'];
 // A run still being played is one row that its player keeps updating (same id); its last update time sits in the `live` column and is cleared
 // when the final record (death or clear) arrives. A run not updated for LIVE_TTL_MS is treated as given up.
@@ -35,6 +41,41 @@ function sheet_() {
   let sheet = book.getSheetByName(SHEET_NAME);
   if (!sheet) { sheet = book.insertSheet(SHEET_NAME); sheet.appendRow(HEADER); }
   return sheet;
+}
+
+function ghosts_() {
+  const book = book_();
+  let sheet = book.getSheetByName(GHOST_SHEET);
+  if (!sheet) { sheet = book.insertSheet(GHOST_SHEET); sheet.appendRow(GHOST_HEADER); }
+  return sheet;
+}
+
+// Keeps the ghost of a run (once per run id). Call with the lock held. A character is a JSON object; anything else is dropped.
+function ghostPut_(id, owner, nick, cls, floor, level, cause, body) {
+  if (typeof body !== 'string' || body.length > GHOST_MAX) return;
+  try { if (typeof JSON.parse(body) !== 'object') return; } catch (error) { return; }
+  const sheet = ghosts_(), rows = sheet.getLastRow();
+  if (rows > 1 && sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext()) return;
+  if (rows >= GHOST_ROWS) return;
+  if (rows > 1 && sheet.getRange(2, 3, rows - 1, 1).createTextFinder(owner).matchEntireCell(true).findAll().length >= GHOSTS_PER_OWNER) return;
+  // a leading = + - @ in the body would run as a formula
+  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body]);
+}
+
+function ghostList_(owner) {
+  if (!/^[A-Z]{4}\d{2}$/.test(owner)) return reply_({ ok: false, error: 'owner' });
+  const sheet = ghosts_(), rows = sheet.getLastRow();
+  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length - 1).getValues() : [];
+  const list = values.filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
+    .map(([t, id, , , cls, floor, level, cause, status]) => ({ t, id, cls, floor, level, cause, status }));
+  return reply_({ ok: true, list });
+}
+
+function ghostGet_(owner, id) {
+  const sheet = ghosts_(), rows = sheet.getLastRow();
+  const found = rows > 1 ? sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
+  if (!found || String(sheet.getRange(found.getRow(), 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
+  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), GHOST_HEADER.length).getValue()).replace(/^'/, '') });
 }
 
 function nicks_() {
@@ -98,6 +139,7 @@ function doPost(e) {
   const owner = id.replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase();
   const cls = /^[a-z][a-z0-9_]{0,23}$/.test(String(record.cls || '')) ? String(record.cls) : '';
   const live = record.live === 1;
+  const ghost = !live && cause !== 'End' && typeof record.ghost === 'string' ? record.ghost : null;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -110,9 +152,11 @@ function doPost(e) {
       if (!sheet.getRange(row, LIVE_COL).getValue()) return reply_({ ok: true, duplicate: true });
       sheet.getRange(row, 3, 1, 7).setValues([[floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
       sheet.getRange(row, LIVE_COL).setValue(live ? Date.now() : '');
+      if (ghost) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     } else {
       if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
       sheet.appendRow([new Date().toISOString(), id, floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, live ? Date.now() : '']);
+      if (ghost) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     }
     CacheService.getScriptCache().removeAll(['summary', 'ranking']);
   } finally { lock.releaseLock(); }
@@ -143,6 +187,8 @@ function ranking_() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.view === 'ghosts') return ghostList_(String(e.parameter.owner || ''));
+  if (e && e.parameter && e.parameter.view === 'ghost') return ghostGet_(String(e.parameter.owner || ''), String(e.parameter.id || '').slice(0, 64));
   if (e && e.parameter && e.parameter.view === 'ranking') return ranking_();
   if (!e || !e.parameter || e.parameter.view !== 'summary') return reply_({ ok: false, error: 'view' });
   const cache = CacheService.getScriptCache(), hit = cache.get('summary');

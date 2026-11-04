@@ -932,7 +932,7 @@ export const scenarios = {
       await waitFor(() => posts.length > 0);
       await s.tick(300);
       const key = fail ? 'stats.death-failed' : 'stats.death';
-      out[key] = JSON.stringify({ posts: posts.map(({ id, ...rest }) => ({ hasId: id.length > 8, ...rest })), queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
+      out[key] = JSON.stringify({ posts: posts.map(({ id, ghost, ...rest }) => ({ hasId: id.length > 8, ghost: ghost ? (() => { const g = JSON.parse(ghost); return { size: ghost.length < 45000, cls: g.classId, level: g.level, carries: Array.isArray(g.inventory), placeless: g.x === undefined && g.y === undefined }; })() : null, ...rest })), queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
       out[key + '.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
