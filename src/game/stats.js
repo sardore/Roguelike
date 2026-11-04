@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ GHOST_MAX:45000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -28,10 +28,17 @@ const PlayStats={
   fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body}).catch(error=>ignoreError('play stats progress not sent',error)).finally(()=>{this.liveBusy=false});
   return true;
  },
+ // The dead account: the character of the run as it died, with all it carried and wore (the player object; where it stood and its pending timers are dropped).
+ // It goes to the server with the record of the death and stays there as a ghost of its owner (docs/GHOSTS.md). A clear is not a death: no ghost.
+ ghostBody(){
+  const p=JSON.parse(JSON.stringify(state.player));for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete p[key];
+  const body=JSON.stringify(p);return body.length<=this.GHOST_MAX?body:null;
+ },
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record=this.runRecord(cause);
-  this.rememberRun(record);
+  if(record.cause!==this.END_CAUSE){const ghost=this.ghostBody();if(ghost)record.ghost=ghost}
+  this.rememberRun({...record,ghost:undefined});
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
  },
@@ -246,7 +253,7 @@ const PlayStats={
   scene.id='statsScene';scene.dataset.mode=mode;scene.setAttribute('role','dialog');scene.setAttribute('aria-label',board?'기록판':'탐사 기록 통계');
   close.type='button';close.id='statsClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.close();
   this.mode=mode;this.tab=board?'rank':'stats';
-  if(!board)for(const [tab,name] of [['rank','랭킹'],['stats','통계'],['rows','기록'],['log','로그']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render()};tabs.append(button)}
+  if(!board)for(const [tab,name] of [['rank','랭킹'],['stats','통계'],['rows','기록'],['ghost','망령'],['log','로그']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render();if(tab==='ghost')this.loadGhosts()};tabs.append(button)}
   head.append(this.el('h2',null,board?'기록판':'탐사 기록 통계'),tabs,close);
   const body=this.el('div');body.id='statsBody';panel.append(head,body);scene.append(panel);document.body.append(scene);
   this.data=null;this.ranking=null;this.failed={};this.render('loading');this.load();return true;
@@ -264,6 +271,21 @@ const PlayStats={
   const results=await Promise.all(views.map(async view=>{try{return await this.fetchView(url,view)}catch(error){ignoreError('play stats load failed',error);return null}}));
   views.forEach((view,i)=>{const data=results[i];if(view==='summary')this.data=this.withLegacySummary(data);else this.ranking=data?.boards?this.withLegacyRanking(data):null;this.failed[view]=!data});
   this.render();
+ },
+ // The ghosts of this device: one per death, with the character it carried. They are kept on the server (a free relay forgets, the sheet does not).
+ async loadGhosts(){
+  const url=this.endpoint();if(!url){this.ghosts=null;this.ghostState='unset';this.render();return}
+  this.ghostState='loading';this.render();
+  try{const data=await this.fetchView(url,'ghosts&owner='+this.deviceTag());this.ghosts=Array.isArray(data?.list)?data.list:null;this.ghostState=this.ghosts?'ok':'error'}
+  catch(error){ignoreError('ghosts load failed',error);this.ghosts=null;this.ghostState='error'}
+  this.render();
+ },
+ ghostView(){
+  const view=this.el('div','ghostView'),notice={unset:'수집 서버가 연결되어 있지 않다.',loading:'망령을 불러오는 중…',error:'망령을 불러오지 못했다.'}[this.ghostState||'']||'';
+  if(notice||!this.ghosts){view.append(this.el('p','statsNote',notice||'탭을 열면 내 망령이 보인다.'));return view}
+  if(!this.ghosts.length){view.append(this.el('p','statsNote','아직 망령이 없다. 죽은 계정은 이곳에 남는다.'));return view}
+  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다'));view.append(line)}
+  return view;
  },
  legacyRows(){return this.LEGACY.map(([t,floor,cause,level,kills,turns])=>({t,floor,cause,level,kills,turns}))},
  withLegacySummary(data){
@@ -288,6 +310,7 @@ const PlayStats={
   body.replaceChildren();
   for(const button of document.querySelectorAll('[data-stats-tab]'))button.classList.toggle('on',button.dataset.statsTab===this.tab);
   if(this.tab==='log'){body.append(this.logView());return}
+  if(this.tab==='ghost'){body.append(this.ghostView());return}
   if(this.tab==='rank'){body.append(this.rankView(status));return}
   const notice={loading:'기록을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.',error:'기록을 불러오지 못했다.'}[status]||(this.failed?.summary?'기록을 불러오지 못했다.':'');
   if(notice||!this.data){body.append(this.el('p','statsNote',notice||'기록이 없다.'));return}
