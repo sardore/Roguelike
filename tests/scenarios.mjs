@@ -1184,6 +1184,19 @@ export const scenarios = {
       const poisonAfter = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
       out['duelfight.status'] = JSON.stringify({ before: poisonBefore, landed: poisonAfter > poisonBefore });
       if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross');
+      // a field the host puts on the map is put on the guest's map too, with the stand-in as its source; the burning it causes is taken on the guest's own map, once
+            const fireBefore = (await fight(guest)).hp;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.castFireOnOpponent()); await both(600);
+      const guestFields = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fieldsInfo());
+      if (!guestFields.some((f) => f[0] === 'fire')) throw Error('duelfight: the field did not cross');
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(500);
+      if (!(await until(async () => (await fight(guest)).myTurn))) throw Error('duelfight: the turn did not come to the guest after the field');
+      const hpBeforeTurn = (await fight(guest)).hp;
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(600);
+      const fireAfter = (await fight(guest)).hp, hostSees = stand(await fight(host))[3];
+      out['duelfight.field'] = JSON.stringify({ mirrored: true, source: guestFields.find((f) => f[0] === 'fire')[3], burned: fireAfter < hpBeforeTurn || hpBeforeTurn < fireBefore, standSeesIt: hostSees === fireAfter });
+      if (hostSees !== fireAfter) throw Error('duelfight: the stand-in does not show the guest health ' + hostSees + ' ' + fireAfter);
+      if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
       // a side that does nothing loses its turn after twenty seconds: the host's turn (after the guest's potion) passes to the guest
       if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
       // (each page has its own clock: only the host's runs on, or the guest would time out in its turn on the same jump)

@@ -1535,7 +1535,7 @@ temporary(x,y,tile,ttl,kind='temporary',opts={}){
   const prior=state.tempTerrain74.find(t=>t.x===x&&t.y===y);
   if(prior){if(state.map[y][x]!==prior.tile||prior.tile!==tile)return false;prior.ttl=Math.max(prior.ttl,ttl);prior.kind=kind;return true}
   const placement58=terrainCellPlacement58(state.map,x,y),changed=RuntimeTerrainOwner.mutate(x,y,tile,{source:opts.source||kind,overlapSolid:!!opts.overlapSolid});if(!changed.ok)return false;
-  state.tempTerrain74.push({x,y,old,tile,ttl,kind,source57:opts.source||kind,version57:changed.version57,restorePlacement58:placement58,overlapSolid57:!!opts.overlapSolid});return true
+  state.tempTerrain74.push({x,y,old,tile,ttl,kind,source57:opts.source||kind,version57:changed.version57,restorePlacement58:placement58,overlapSolid57:!!opts.overlapSolid});Duel.sendTerrain(x,y,tile,ttl,kind,opts);return true
 },
 tick(){
   if(!state)return;state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];state.terrainMutationVersion57=state.terrainMutationVersion57||{};

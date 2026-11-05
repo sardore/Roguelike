@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,mineFloor:1,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1){
@@ -130,6 +130,8 @@ const Duel={
    case 'sync':this.applySync(payload);return true;
    case 'hit':this.applyHit(payload);return true;
    case 'status':this.applyStatus(payload);return true;
+   case 'field':this.applyField(payload);return true;
+   case 'terrain':this.applyTerrain(payload);return true;
    case 'result':this.applyResult(payload);return true;
    default:return false;
   }
@@ -157,7 +159,33 @@ const Duel={
   updateAll();
  },
  // Sent from damageEntity when the stand-in is hurt by this player.
- sendHit(amount,element){if(!this.applying)this.send({kind:'hit',amount,element:element||null})},
+ sendHit(amount,element){if(!this.applying&&!this.environment&&!state._turnPipelineActive57)this.send({kind:'hit',amount,element:element||null})},
+ // What this player puts on the map in its own action (a field, a stretch of terrain) is put on the other player's map by the same game functions, with the
+ // stand-in as the source; what the map then does to whoever stands there (and what a burning or poisoned stand-in takes at the end of a turn) is the map's own work on each side: damage dealt inside the turn engine or by a field's contact is not sent as a hit. Reactions inside the
+ // turn engine run on both sides by themselves and are not sent.
+ mirrored(){return this.stage==='matched'&&state?.duel&&!this.applying&&!state._turnPipelineActive57},
+ sendField(kind,x,y,ttl,cells,metadata){
+  if(!this.mirrored())return;
+  const {owner,credit,sourceFaction,friendlyFire,...rest}=metadata||{};
+  this.send({kind:'field',field:kind,x,y,ttl,cells:cells||null,metadata:rest});
+ },
+ sendTerrain(x,y,tile,ttl,kind,opts){
+  if(!this.mirrored())return;
+  this.send({kind:'terrain',x,y,tile,ttl,terrain:kind,opts:{allowedOld:opts?.allowedOld,source:opts?.source,overlapSolid:opts?.overlapSolid}});
+ },
+ applyField(field){
+  const stand=this.opponent();
+  if(!stand||state.dead||this.reported||this.turn!==this.other()||!field.field)return;
+  this.applying=true;
+  try{addField(field.field,field.x,field.y,field.ttl,field.cells,{...(field.metadata||{}),...effectSource57(stand)})}finally{this.applying=false}
+  updateAll();
+ },
+ applyTerrain(terrain){
+  if(!this.opponent()||state.dead||this.reported||this.turn!==this.other())return;
+  this.applying=true;
+  try{RuntimeTerrainOwner.temporary(terrain.x,terrain.y,terrain.tile,terrain.ttl,terrain.terrain,terrain.opts||{})}finally{this.applying=false}
+  updateAll();
+ },
  // A status the other player put on its stand-in (poison, stun…): the real player takes it here, with its own resistance.
  sendStatus(effect,turns,chance){if(!this.applying)this.send({kind:'status',effect,turns,chance})},
  applyStatus(status){
