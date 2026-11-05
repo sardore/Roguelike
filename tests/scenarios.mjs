@@ -1193,6 +1193,27 @@ export const scenarios = {
     return out;
   },
 
+  // The rules of the ghost duel on its map: both ghosts take element damage as a boss does, potions/talismans share a five-turn cooldown and martial arts
+  // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
+  // the score; a duel run is never saved or sent to the statistics.
+  async duelrules(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.stage(0));
+      await s.tick(600);
+      const r = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.rules());
+      out['duelrules.result'] = JSON.stringify(r);
+      if (r.mulPlayer !== .62 || r.mulOpponent !== .62) throw Error('duelrules: element resistance ' + JSON.stringify(r));
+      if (r.coolItem0 || !r.coolItem1 || r.coolItem2 || !r.coolMartial || r.martialAction !== 'cooldown') throw Error('duelrules: cooldown ' + JSON.stringify(r));
+      if (r.lava !== 'refused' || r.lavaPlayer !== 'refused' || r.lavaFree !== 'placed') throw Error('duelrules: lava ' + JSON.stringify(r));
+      if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
+      out['duelrules.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // A side that leaves in the middle of a fight loses it: the host that stays wins (the other ghost falls and its door opens), and the guest that stays is told.
   async duelleave(browser, root) {
     const out = {};
