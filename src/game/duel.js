@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,shown:0,turn:'host',turnEnds:0,turnSeen:0,mine:'',theirs:null,mineBody:'',outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,acting:'host',guest:null,guestStatus:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,mine:'',theirs:null,mineBody:'',outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body=''){
@@ -49,6 +49,7 @@ const Duel={
  leave(note=''){
   if(this.stage==='matched')Spectate.send({type:'session.leave',sessionToken:this.token});
   else if(this.stage==='queued'||this.stage==='offered')Spectate.send({type:'match.cancel',matchId:this.matchId});
+  document.getElementById('duelPack')?.remove();
   this.token='';this.matchId='';this.role='';this.remote='';this.fighting=false;this.setStage('idle',note);
  },
 
@@ -109,9 +110,10 @@ const Duel={
  startFight(arena,guestBody=''){
   if(this.role!=='host'||this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;this.fighting=true;
   this.arena=arena;this.seq=0;this.lastSig='';this.reported=false;this.outcome='';
-  this.theirs=guestBody?JSON.parse(guestBody):null;
+  this.theirs=guestBody?JSON.parse(guestBody):null;this.guest=null;
   this.turn='host';
   newGame(CLASSES[0],{arena,role:'host',ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs});
+  this.guest=this.makeGuest(this.theirs);
   this.giveTurn('host');
   this.send({kind:'start',arena});return true;
  },
@@ -120,8 +122,9 @@ const Duel={
   if(!payload||typeof payload!=='object')return false;
   if(payload.kind==='hello'&&this.role==='host'){this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),String(payload.body||''));return true}
   if(payload.kind==='start'&&this.role==='guest'){this.enterGuest(payload.arena);return true}
-  if(payload.kind==='frame'&&this.role==='guest'){Spectate.applyFrame({kind:'snapshot',seq:payload.seq,frame:payload.frame});return true}
+  if(payload.kind==='frame'&&this.role==='guest'){Spectate.applyFrame({kind:'snapshot',seq:payload.seq,frame:payload.frame});this.renderPack();return true}
   if(payload.kind==='input'&&this.role==='host'){this.applyInput(payload);return true}
+  if(payload.kind==='use'&&this.role==='host'){this.useAsGuest(Number(payload.index));return true}
   if(payload.kind==='result'&&this.role==='guest'){this.outcome=payload.winner==='guest'?'win':'lose';Spectate.viewerNotice(this.outcome==='win'?'승리했다.':'패배했다.');return true}
   return false;
  },
@@ -159,10 +162,58 @@ const Duel={
    if(opponent){addLog('상대 망령이 자리를 떠났다.');opponent.hp=0;killMonster(opponent);this.reported=true;this.outcome='win'}
   }else if(this.role==='guest'&&state?.spectator){Spectate.viewerNotice('상대와의 연결이 끊겼다.');this.outcome='win'}
  },
+ // ---- the guest's own actions -------------------------------------------------------------------------------------------------
+ // The game's rules read one player (`state.player`, `state.status`). To let the guest use what it carries, the host puts the guest's ghost in that place for
+ // the length of one action and the host's player among the creatures as a stand-in (`duelProxy`, which takes no turn), runs the game's own code, and puts
+ // everything back; the health either side lost or gained is carried over. `acting` says whose action it is (cooldowns are kept per side).
+ makeGuest(ghost){
+  if(!ghost)return null;
+  const cls=CLASSES.find(c=>c.id===ghost.classId)||CLASSES[0],fresh=createRunState57(cls),saved=state.player;
+  state.player=fresh.player;
+  try{reviveGhost(fresh.player,JSON.parse(JSON.stringify(ghost)))}finally{state.player=saved}
+  this.guestStatus=fresh.status;
+  return fresh.player;
+ },
+ asGuest(action){
+  const host=state.player,hostStatus=state.status,opponent=state.monsters.find(m=>m.duelOpponent),guest=this.guest;
+  if(!opponent||!guest)return false;
+  Object.assign(guest,{x:opponent.x,y:opponent.y,hp:opponent.hp,maxHp:opponent.maxHp,facing:opponent.facing||{x:-1,y:0}});
+  const proxy={name:'상대 망령',shape:'human',kind:'human',duelProxy:true,x:host.x,y:host.y,hp:host.hp,maxHp:host.maxHp,atk:host.baseAtk,def:host.baseDef,eva:host.baseEva,color:host.color,rewardPolicy57:{xp:false,kills:false,drops:false}};
+  state.player=guest;state.status=this.guestStatus;state.monsters=[...state.monsters.filter(m=>m!==opponent),proxy];this.acting='guest';
+  try{return action()}
+  finally{
+   this.acting='host';
+   state.player=host;state.status=hostStatus;state.monsters=[...state.monsters.filter(m=>m!==proxy),opponent];
+   opponent.hp=Math.max(0,guest.hp);opponent.maxHp=guest.maxHp;host.hp=Math.min(host.maxHp,Math.max(0,proxy.hp));
+   if(host.hp<=0&&!state.dead)die('상대 망령');
+  }
+ },
+ // The guest uses a potion from its pack (index into its inventory).
+ useAsGuest(index){
+  const item=this.guest?.inventory?.[index];
+  if(!item||item.type!=='potion'||item.throwable||this.turn!=='guest')return false;
+  const used=this.asGuest(()=>useInventoryItem(index));
+  if(used)this.giveTurn('host');
+  return !!used;
+ },
+ // What the guest's screen lists as its pack: the potions it can drink.
+ pack(){return (this.guest?.inventory||[]).map((item,i)=>({i,name:item.name,n:item.count||1,type:item.type,throwable:!!item.throwable})).filter(e=>e.type==='potion'&&!e.throwable)},
+ // Guest screen: a bar with the potions it can drink (enabled on its own turn).
+ renderPack(){
+  let bar=document.getElementById('duelPack');
+  if(this.role!=='guest'||!state?.spectator){bar?.remove();return}
+  if(!bar){bar=Spectate.el('div');bar.id='duelPack';document.body.append(bar)}
+  bar.replaceChildren();
+  for(const entry of state.duel?.pack||[]){
+   const button=Spectate.el('button',null,`${entry.name} ×${entry.n}`);button.type='button';button.dataset.pack=entry.i;button.disabled=state.duel.turn!=='guest';
+   button.onclick=()=>this.send({kind:'use',index:entry.i});bar.append(button);
+  }
+  bar.hidden=!bar.children.length;
+ },
  // ---- turns: one side acts at a time, twenty seconds each ---------------------------------------------------------------------
  // The host acts first. Its turn ends when its action was taken (the game's turn counter moved) or when TURN_MS has passed (then the turn is spent waiting);
  // the guest's turn ends with its step or when TURN_MS has passed. The turn and its end are kept in `state.duel` so that the guest's screen shows them.
- myTurn(){return !state?.duel||this.stage!=='matched'||this.turn===(this.role==='guest'?'guest':'host')},
+ myTurn(){return !state?.duel||this.stage!=='matched'||this.acting==='guest'||this.turn===(this.role==='guest'?'guest':'host')},
  giveTurn(side){
   this.turn=side;this.turnEnds=Date.now()+this.TURN_MS;this.turnSeen=state.turn;
   if(state?.duel){state.duel.turn=side;state.duel.turnEnds=this.turnEnds}
@@ -196,10 +247,11 @@ const Duel={
  // The host's state as the guest sees it: the guest's ghost is `player`, the host's player is a creature standing where it stands, and what is
  // visible is worked out from the guest's cell. The host's own player, creatures, seen and visible are put back afterwards.
  frameForGuest(){
-  const keep={player:state.player,monsters:state.monsters,seen:state.seen,visible:state.visible},host=state.player,opponent=state.monsters.find(m=>m.duelOpponent);
+  const keep={player:state.player,monsters:state.monsters,seen:state.seen,visible:state.visible,duel:state.duel},host=state.player,opponent=state.monsters.find(m=>m.duelOpponent);
   try{
    state.player={...(this.theirs||host),baseVision:host.baseVision,x:opponent.x,y:opponent.y,hp:Math.max(0,opponent.hp),maxHp:opponent.maxHp,facing:opponent.facing||{x:-1,y:0}};
    state.monsters=[...keep.monsters.filter(m=>m!==opponent),{name:'상대 망령',shape:'human',kind:'human',x:host.x,y:host.y,hp:host.hp,maxHp:host.maxHp,atk:host.baseAtk,def:host.baseDef,eva:host.baseEva,color:host.color,facing:host.facing}];
+   state.duel={...state.duel,pack:this.pack()};
    state.seen=new Set();state.visible=new Set();
    VisibilityService.compute();
    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)state.seen.add(k(x,y));

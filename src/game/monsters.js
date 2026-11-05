@@ -856,7 +856,7 @@ function monsterTurn(){
   for(const mon of [...state.monsters]){
     if(state!==phaseState||state.map!==phaseMap)break;
     if(mon.revivalLives57&&(mon.revivePhase57==='corpse'||mon.revivePhase57==='reviving')){if(advanceMonsterRevival(mon))continue}
-    if(mon.hp<=0||state.dead||!isHostileTarget57(mon)||mon.dormant57||mon.duelOpponent)continue;if(mon.martialActor105)tickMartialActor(mon);if(mon.combatFixture54){tickBossFixture(mon);continue}
+    if(mon.hp<=0||state.dead||!isHostileTarget57(mon)||mon.dormant57||mon.duelOpponent||mon.duelProxy)continue;if(mon.martialActor105)tickMartialActor(mon);if(mon.combatFixture54){tickBossFixture(mon);continue}
     if(prisonContainedTurn(mon))continue;
     if(mountainMimicTurn(mon))continue;
     const observedOpponent=selectEnemyTarget(mon),opponentDetected=observedOpponent&&actorDetectedTarget57(mon,observedOpponent,monsterSenseRadius(mon));let d=entityDistance57(mon,p);

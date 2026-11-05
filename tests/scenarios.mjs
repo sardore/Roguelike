@@ -1199,6 +1199,44 @@ export const scenarios = {
     return out;
   },
 
+  // The guest uses what it carries: a potion from the bar on its screen is drunk by the game's own code with the guest's ghost put in the player's place for that
+  // action; the guest is healed and loses one potion, the host's player and statuses are untouched, the turn passes to the host, and a second try out of turn does nothing.
+  async duelpack(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9301, init });
+      const b = await openSession(browser, root, { seed: 9302, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 2)));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 2)));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelpack: no fight');
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      const probe = () => host.page.evaluate(() => ({ ...globalThis.__MANRU_QA_DUEL__.packInfo(), opp: globalThis.__MANRU_QA_DUEL__.fight().others.find((m) => m[0] === '상대 망령') }));
+      // the host takes its turn; the guest is hurt; the bar shows the potions
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hostWait()); await both(300);
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hurtOpponent(12)); await both(400);
+      const before = await probe();
+      const bar = await guest.page.evaluate(() => [...document.querySelectorAll('#duelPack button')].map((x) => [x.textContent, x.disabled]));
+      await guest.page.click('#duelPack button'); await both(500);
+      const after = await probe();
+      const turn = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
+      // a second try on the host's turn does nothing
+      await guest.page.evaluate(() => { document.querySelector('#duelPack button')?.removeAttribute('disabled'); document.querySelector('#duelPack button')?.click(); }); await both(400);
+      const again = await probe();
+      out['duelpack.result'] = JSON.stringify({ bar, healed: after.opp[3] > before.opp[3], potions: [before.inv[0]?.[1], after.inv[0]?.[1]], hostHpSame: after.hostHp === before.hostHp, hostStatusSame: after.hostStatus === before.hostStatus, turnPassed: turn.turn === 'host', outOfTurnIgnored: again.inv[0]?.[1] === after.inv[0]?.[1] });
+      out['duelpack.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // A side that leaves in the middle of a fight loses it: the host that stays wins (the other ghost falls and its door opens), and the guest that stays is told.
   async duelleave(browser, root) {
     const out = {};

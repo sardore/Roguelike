@@ -230,14 +230,14 @@ const DUEL_ELEMENT_RESIST=.62,DUEL_COOLDOWN_TURNS=5;
 // True (with a message) while `kind` ('item' for potions and talismans, 'martial') is cooling down.
 function duelCooling(kind){
   if(!state?.duel)return false;
-  const until=state.duel.cooldown?.[kind]??0;
+  const until=state.duel.cooldown?.[Duel.acting]?.[kind]??0;
   if(state.turn>=until)return false;
   toast(`${kind==='martial'?'무술':'물약과 부적'}은 ${until-state.turn}턴 뒤에 쓸 수 있다.`);
   return true;
 }
 // Called when an action is committed: the cooldown of what was used starts.
 function duelCooldownStart(kind){
-  if(state?.duel&&kind)(state.duel.cooldown||={})[kind]=state.turn+DUEL_COOLDOWN_TURNS;
+  if(state?.duel&&kind)((state.duel.cooldown||={})[Duel.acting]||={})[kind]=state.turn+DUEL_COOLDOWN_TURNS;
 }
 // The other ghost fell: the door in the top wall opens (it is a stair tile from now on).
 function duelOpponentDown(){
