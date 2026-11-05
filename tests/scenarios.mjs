@@ -1149,7 +1149,19 @@ export const scenarios = {
       const h0 = await fight(host), g0 = await fight(guest);
       // the guest walks towards the host player: three steps east-or-west, then keeps walking into it
       const key = g0.player[0] < h0.player[0] ? 'ArrowRight' : 'ArrowLeft';
-      for (let i = 0; i < 18; i++) { await guest.page.keyboard.press(key); await both(150); }
+      // turns alternate: the host waits, then the guest steps (a step out of turn changes nothing)
+      const early = await fight(host);
+      await guest.page.keyboard.press(key); await both(150);
+      const stillThere = (await fight(guest)).player[0] === g0.player[0];
+      for (let i = 0; i < 18; i++) {
+        await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hostWait()); await both(150);
+        await guest.page.keyboard.press(key); await both(150);
+      }
+      // and a side that does nothing loses its turn after twenty seconds
+      const t0 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
+      await both(21000); await both(500);
+      const t1 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
+      out['duelfight.turns'] = JSON.stringify({ stepOutOfTurnIgnored: stillThere && early.player[2] === h0.player[2], timeoutPassed: t1.turnNo > t0.turnNo || t1.turn !== t0.turn, hud: /차례/.test(t1.hud) });
       const h1 = await fight(host), g1 = await fight(guest);
       const opp = h1.others.find((m) => m[0] === '상대 망령');
       out['duelfight.ghosts'] = JSON.stringify({ hostPlays: h0.cls, guestSees: g0.cls, hostWasAskedFor: host === a ? 'swordsman' : 'archer', guestWas: host === a ? 'archer' : 'swordsman' });

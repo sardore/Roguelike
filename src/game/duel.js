@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,mine:'',theirs:null,mineBody:'',outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,shown:0,turn:'host',turnEnds:0,turnSeen:0,mine:'',theirs:null,mineBody:'',outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body=''){
@@ -110,7 +110,9 @@ const Duel={
   if(this.role!=='host'||this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;this.fighting=true;
   this.arena=arena;this.seq=0;this.lastSig='';this.reported=false;this.outcome='';
   this.theirs=guestBody?JSON.parse(guestBody):null;
+  this.turn='host';
   newGame(CLASSES[0],{arena,role:'host',ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs});
+  this.giveTurn('host');
   this.send({kind:'start',arena});return true;
  },
  // What the fight itself passes over the relay; true when the payload was one of its own.
@@ -139,7 +141,7 @@ const Duel={
  // Host: one step of the other player's ghost. Walking into the host player is an attack, as for any creature.
  applyInput(input){
   const opponent=state?.duel&&state.monsters.find(m=>m.duelOpponent);
-  if(!opponent||opponent.hp<=0||state.dead)return;
+  if(!opponent||opponent.hp<=0||state.dead||this.turn!=='guest')return;
   const dx=Math.sign(Number(input.dx)||0),dy=Math.sign(Number(input.dy)||0);
   if(!dx&&!dy)return;
   opponent.facing={x:dx,y:dy};
@@ -147,15 +149,38 @@ const Duel={
   if(player.x===x&&player.y===y)attackMonster(opponent,0,{target:player});
   else if(PlacementService.canPlaceEntity(opponent,x,y))moveMonsterStep(opponent,x,y);
   VisibilityService.compute();updateAll();
+  this.giveTurn('host');
+ },
+ // ---- turns: one side acts at a time, twenty seconds each ---------------------------------------------------------------------
+ // The host acts first. Its turn ends when its action was taken (the game's turn counter moved) or when TURN_MS has passed (then the turn is spent waiting);
+ // the guest's turn ends with its step or when TURN_MS has passed. The turn and its end are kept in `state.duel` so that the guest's screen shows them.
+ myTurn(){return !state?.duel||this.stage!=='matched'||this.turn===(this.role==='guest'?'guest':'host')},
+ giveTurn(side){
+  this.turn=side;this.turnEnds=Date.now()+this.TURN_MS;this.turnSeen=state.turn;
+  if(state?.duel){state.duel.turn=side;state.duel.turnEnds=this.turnEnds}
+  this.lastSig='';
+ },
+ // Host, every frame.
+ tickTurn(){
+  if(!state?.duel||state.duel.finished||state.dead)return;
+  if(this.turn==='host'&&state.turn!==this.turnSeen){this.giveTurn('guest');return}
+  if(Date.now()<this.turnEnds)return;
+  if(this.turn==='host'){
+   addLog('시간이 다 되어 이번 차례를 넘겼다.');
+   globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'duel-timeout'});
+   this.giveTurn('guest');
+  }else{this.giveTurn('host')}
  },
  // Host, every frame: when the fight changed, send the guest a whole frame (the arenas are small, so there are no deltas to get wrong).
  pump(now){
+  if(this.role==='guest'&&this.stage==='matched'&&state?.spectator&&state.duel?.turnEnds){const second=Math.ceil((state.duel.turnEnds-Date.now())/1000);if(second!==this.shown){this.shown=second;updatePanels()}return}
   if(this.role!=='host'||this.stage!=='matched'||!state?.duel||this.reported)return;
   const opponent=state.monsters.find(m=>m.duelOpponent),p=state.player;
   // The fight is over when one of the two is down: say so once, and stop sending frames.
   if(state.dead||!opponent||opponent.hp<=0){this.reported=true;this.outcome=state.dead?'lose':'win';this.send({kind:'result',winner:state.dead?'guest':'host'});return}
   if(now-this.lastSend<this.SEND_GAP_MS)return;
-  const sig=[state.turn,p.x,p.y,p.hp,opponent.x,opponent.y,opponent.hp,state.log[0]].join(':');
+  this.tickTurn();
+  const sig=[state.turn,p.x,p.y,p.hp,opponent.x,opponent.y,opponent.hp,state.log[0],this.turn,Math.ceil((this.turnEnds-Date.now())/1000)].join(':');
   if(sig===this.lastSig)return;
   this.lastSig=sig;this.lastSend=now;
   this.send({kind:'frame',seq:++this.seq,frame:this.frameForGuest()});
