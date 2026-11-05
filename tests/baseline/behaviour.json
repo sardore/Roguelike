@@ -463,5 +463,7 @@
  "duelpicker.closed": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "duelpicker.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "duelfight.ghosts": "bc5b50697b511601f2326596d85f0572fc0f161d",
- "duelfight.turns": "6470a39e116bbf4dff49daca762a6fb9bebfbcf2"
+ "duelfight.turns": "6470a39e116bbf4dff49daca762a6fb9bebfbcf2",
+ "duelleave.result": "e072613d816d1479208f75f0299568926964e421",
+ "duelleave.errors": "164374825086dc65cd5dc548c248f61328b5d668"
 }

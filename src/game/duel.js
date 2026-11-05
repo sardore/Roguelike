@@ -35,7 +35,7 @@ const Duel={
     if(this.fightMessage(packet.payload))return;
     this.inbox.push({from:packet.fromRole,payload:packet.payload,seq:packet.relaySequence});return;
    case 'session.ended':case 'session.closed':case 'session.expired':
-    if(this.stage==='matched')this.leave('상대와의 연결이 끝났다');return;
+    if(this.stage==='matched'){this.forfeited();this.leave('상대와의 연결이 끝났다')}return;
    default:return;
   }
  },
@@ -150,6 +150,14 @@ const Duel={
   else if(PlacementService.canPlaceEntity(opponent,x,y))moveMonsterStep(opponent,x,y);
   VisibilityService.compute();updateAll();
   this.giveTurn('host');
+ },
+ // The other side is gone in the middle of a fight (the relay ended the session): the one that stays wins. The host brings the other ghost down, which opens
+ // its door as any win does; the guest is told. There is no waiting for a return, since a session the relay has ended cannot be taken up again.
+ forfeited(){
+  if(this.role==='host'&&state?.duel&&!state.duel.won&&!state.dead){
+   const opponent=state.monsters.find(m=>m.duelOpponent);
+   if(opponent){addLog('상대 망령이 자리를 떠났다.');opponent.hp=0;killMonster(opponent);this.reported=true;this.outcome='win'}
+  }else if(this.role==='guest'&&state?.spectator){Spectate.viewerNotice('상대와의 연결이 끊겼다.');this.outcome='win'}
  },
  // ---- turns: one side acts at a time, twenty seconds each ---------------------------------------------------------------------
  // The host acts first. Its turn ends when its action was taken (the game's turn counter moved) or when TURN_MS has passed (then the turn is spent waiting);
