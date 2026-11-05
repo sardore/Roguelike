@@ -255,10 +255,17 @@ test('the ranking has a board of the ghosts that still stand, and a taken ghost 
   const a = dead(s, 'ABCD12', KEY_A, 'r1', [item('물약')]), b = dead(s, 'WXYZ34', KEY_B, 'r1');
   let board = s.get('ranking').boards.ghost;
   assert.deepEqual(board.map((g) => [g.tag, g.floor, g.level]).sort(), [['ABCD12', 25, 99], ['WXYZ34', 25, 99]].sort(), 'both stand');
-  assert.ok(board.every((g) => !('body' in g) && !('id' in g) && !('at' in g)), 'only who they were, never the character');
+  assert.ok(board.every((g) => !('body' in g) && !('id' in g) && g.kills === 9000 && g.turns === 100), 'the same rows as the other boards, never the character');
   lock(s, 'ABCD12', KEY_A, a, 'd'); lock(s, 'WXYZ34', KEY_B, b, 'd');
   assert.equal(s.get('ranking').boards.ghost.length, 2, 'a ghost in a duel still stands');
   settle(s, 'ABCD12', KEY_A, a, 'd', true); settle(s, 'WXYZ34', KEY_B, b, 'd', false);
   board = s.get('ranking').boards.ghost;
   assert.deepEqual(board.map((g) => g.tag), ['ABCD12'], 'the taken ghost is gone at once (the cached board is dropped)');
+});
+
+test('the ghost board is ordered by the score a win gives (the floor they died on plus one)', () => {
+  const s = server();
+  const run = (owner, key, name, floor, level) => { s.post({ v: 1, id: `${owner}-${name}`, floor, level, kills: 5, turns: 50, cause: '함정', ghost: JSON.stringify({ cls: 'archer' }), key }); };
+  run('AAAA11', KEY_A, 'r1', 8, 5); run('BBBB22', KEY_B, 'r1', 20, 3); run('CCCC33', 'c'.repeat(32), 'r1', 20, 9); run('DDDD44', 'd'.repeat(32), 'r1', 3, 30);
+  assert.deepEqual(s.get('ranking').boards.ghost.map((g) => [g.tag, g.floor, g.level]), [['CCCC33', 20, 9], ['BBBB22', 20, 3], ['AAAA11', 8, 5], ['DDDD44', 3, 30]]);
 });
