@@ -3,11 +3,11 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,mineFloor:1,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
- find(play=false,body=''){
-  if(this.stage!=='idle')return false;this.play=play;this.mineBody=body;this.theirs=null;
+ find(play=false,body='',floor=1){
+  if(this.stage!=='idle')return false;this.play=play;this.mineBody=body;this.mineFloor=floor;this.theirs=null;
   this.queueEntryId='q-'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);this.inbox=[];this.sent=0;
   this.setStage('connecting','서버에 연결하는 중…');
   if(!Spectate.ws&&!Spectate.open('duel')){this.setStage('idle','연결을 열 수 없다');return false}
@@ -85,7 +85,7 @@ const Duel={
   try{
    const data=await PlayStats.fetchView(url,'ghost&owner='+PlayStats.deviceTag()+'&id='+encodeURIComponent(row.id));
    if(!data?.body){this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker();return}
-   this.find(true,data.body);
+   this.find(true,data.body,row.floor);
   }catch(error){ignoreError('duel ghost fetch failed',error);this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker()}
  },
  renderPicker(){
@@ -111,7 +111,7 @@ const Duel={
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
   this.fighting=true;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
-  newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs});
+  newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor});
   this.giveTurn('host');
   return true;
  },
@@ -129,6 +129,7 @@ const Duel={
    case 'start':if(this.role==='guest')this.begin(payload.arena,String(payload.body||''));return this.role==='guest';
    case 'sync':this.applySync(payload);return true;
    case 'hit':this.applyHit(payload);return true;
+   case 'status':this.applyStatus(payload);return true;
    case 'result':this.applyResult(payload);return true;
    default:return false;
   }
@@ -156,6 +157,14 @@ const Duel={
  },
  // Sent from damageEntity when the stand-in is hurt by this player.
  sendHit(amount,element){if(!this.applying)this.send({kind:'hit',amount,element:element||null})},
+ // A status the other player put on its stand-in (poison, stun…): the real player takes it here, with its own resistance.
+ sendStatus(effect,turns,chance){if(!this.applying)this.send({kind:'status',effect,turns,chance})},
+ applyStatus(status){
+  if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0))return;
+  this.applying=true;
+  try{applyHostileStatus(status.effect,status.turns,status.chance??1,{})}finally{this.applying=false}
+  updateAll();
+ },
  applyResult(result){
   if(!state?.duel||this.reported)return;
   this.reported=true;

@@ -464,6 +464,7 @@ function resolveCombatIllness(target){
 function applyCombatStatus(target,key,turns,chance=1,opts={}){
  if(!state||!target||target.hp<=0||turns<=0)return false;
  const kind=STATUS_META57[key]?key:Object.keys(STATUS_META57).find(k=>STATUS_META57[k].monsterField57===key)||key,meta=STATUS_META57[kind];
+ if(target.duelOpponent)Duel.sendStatus(kind,turns,chance);
  if(target===state.player)return applyHostileStatus(kind,turns,chance,opts);
  const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune(target)||(opts.element==='ice'||opts.cold)&&entityElementGuard57(target,'ice'))return false;
  if(opts.stagger||kind==='stun'){const resist=clamp(Number(cloak.staggerResist)||0,0,.95);if(resist&&globalThis.__MANRU_RANDOM57__()<resist){floatText(target.x,target.y,'경직 저항','#b9d7cd',9);return false}}

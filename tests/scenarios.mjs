@@ -1178,9 +1178,16 @@ export const scenarios = {
       const hpAfter = (await fight(guest)).hp, potionsAfter = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.potions());
       const seenHealed = stand(await fight(host))[3] === hpAfter;
       out['duelfight.after'] = JSON.stringify({ early, adjacent: near.player[0], guestHurt, standHurt, potion: { healed: hpAfter > hpBefore, count: [potionsBefore[0], potionsAfter[0]], hostSeesIt: seenHealed } });
+      // a status put on the stand-in (poison) lands on the real player on the other page
+      const poisonBefore = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.poisonOpponent()); await both(500);
+      const poisonAfter = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
+      out['duelfight.status'] = JSON.stringify({ before: poisonBefore, landed: poisonAfter > poisonBefore });
+      if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross');
       // a side that does nothing loses its turn after twenty seconds: the host's turn (after the guest's potion) passes to the guest
       if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
-      await both(21000); await both(600);
+      // (each page has its own clock: only the host's runs on, or the guest would time out in its turn on the same jump)
+      await host.tick(21000); await both(800);
       const timedOut = !(await fight(host)).myTurn && (await fight(guest)).myTurn;
       out['duelfight.turns'] = JSON.stringify({ timeoutPassesTheTurn: timedOut, hud: /차례/.test(await host.page.evaluate(() => document.getElementById('floorTxt')?.textContent || '')) });
       // the host brings the stand-in down: the guest is told it lost
@@ -1209,6 +1216,10 @@ export const scenarios = {
       if (r.coolItem0 || !r.coolItem1 || r.coolItem2 || !r.coolMartial || r.martialAction !== 'cooldown') throw Error('duelrules: cooldown ' + JSON.stringify(r));
       if (r.lava !== 'refused' || r.lavaPlayer !== 'refused' || r.lavaFree !== 'placed') throw Error('duelrules: lava ' + JSON.stringify(r));
       if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
+      // the score of a round is the floor the ghost died on plus one for the win
+      const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
+      out['duelrules.score'] = JSON.stringify(score);
+      if (score !== 10) throw Error('duelrules: score ' + score);
       out['duelrules.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
