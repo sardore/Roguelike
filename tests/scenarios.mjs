@@ -1404,6 +1404,10 @@ export const scenarios = {
       const upg = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.coolUpgrade());
       out['duelrules.upgrade'] = JSON.stringify(upg);
       if (!upg.potionRefused || !upg.upgradeAllowed) throw Error('duelrules: upgrade talisman ' + JSON.stringify(upg));
+      // the strongman's exhaustion still bars it
+      const tired = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.exhaustUpgrade());
+      out['duelrules.exhaust'] = JSON.stringify(tired);
+      if (!tired.tiredRefused || !tired.restedNotRefused) throw Error('duelrules: exhaustion ' + JSON.stringify(tired));
       if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
       // the score of a round is the floor the ghost died on plus one for the win
       const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
