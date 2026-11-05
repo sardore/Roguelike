@@ -6,7 +6,7 @@ const Spectate={
  RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
  CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
- PLAIN:['duel','floor','specialFloor','turn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
+ PLAIN:['floor','specialFloor','turn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
  ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','gazeBursts57','legendFireFields47','legendSkyAxes47'],
  PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','combustion105','martialActor105','guardReady1005','strongReady','classState'],
@@ -300,7 +300,7 @@ const Spectate={
  headerRefresh(){
   const el=document.getElementById('spectateBar');if(!el||!this.view)return;
   const v=this.view,p=v.player,r=this.replaying;
-  el.querySelector('.spectateInfo').textContent=(r?`마지막 장면 ${r.index}/${r.frames.length}`:v.duel?'망령전':'관전 중')+(v.duel?` · ${v.duel.name}`:` · ${v.floor}층`)+` · ${v.turn}턴 · 체력 ${p.hp}/${p.maxHp}`+(v.dead?' · 사망':'');
+  el.querySelector('.spectateInfo').textContent=(r?`마지막 장면 ${r.index}/${r.frames.length}`:'관전 중')+` · ${v.floor}층 · ${v.turn}턴 · 체력 ${p.hp}/${p.maxHp}`+(v.dead?' · 사망':'');
  },
  viewerNotice(text){const el=document.getElementById('spectateNote');if(el){el.textContent=text;el.hidden=!text}},
  // The viewer's screen is the game screen with the player's controls hidden (see 70-spectate.css).

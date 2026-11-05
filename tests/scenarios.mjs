@@ -1126,8 +1126,9 @@ export const scenarios = {
     return out;
   },
 
-  // The ghost duel on a real map, between two pages: the host's run is the arena with the other player's ghost standing in it; the guest sees the
-  // host's state from its own cell and walks its ghost with the arrow keys; walking into the other player is an attack that costs the host health.
+  // The ghost duel between two pages, each running its own real game: each page plays its own ghost (its real player) and sees the other as a stand-in on the other
+  // start. Turns alternate (a key out of turn does nothing), a step moves the stand-in on the other page, walking into it is an attack whose damage the other page
+  // takes as its own player, a potion drunk from the real inventory is seen on the other page as health, and the fall of the stand-in tells the other side it lost.
   async duelfight(browser, root) {
     const out = {};
     const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
@@ -1138,37 +1139,58 @@ export const scenarios = {
       const a = await openSession(browser, root, { seed: 9101, init });
       const b = await openSession(browser, root, { seed: 9102, init });
       for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
-      const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
       const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
       const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
-      // each side brings a saved ghost: a swordsman and an archer
-      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman')));
-      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer')));
-      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelfight: no fight ' + JSON.stringify([await fight(a), await fight(b)]));
+      const stand = (f) => f.others.find((m) => m[0] === '상대 망령');
+      // each side brings a saved ghost with two potions: a swordsman and an archer
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 2)));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 2)));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelfight: no fight ' + JSON.stringify([await fight(a), await fight(b)]));
       const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
       const h0 = await fight(host), g0 = await fight(guest);
-      // the guest walks towards the host player: three steps east-or-west, then keeps walking into it
-      const key = g0.player[0] < h0.player[0] ? 'ArrowRight' : 'ArrowLeft';
-      // turns alternate: the host waits, then the guest steps (a step out of turn changes nothing)
-      const early = await fight(host);
-      await guest.page.keyboard.press(key); await both(150);
-      const stillThere = (await fight(guest)).player[0] === g0.player[0];
-      for (let i = 0; i < 18; i++) {
-        await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hostWait()); await both(150);
-        await guest.page.keyboard.press(key); await both(150);
+      out['duelfight.start'] = JSON.stringify({ classes: [(await fight(a)).cls, (await fight(b)).cls], spectators: [h0.spectator, g0.spectator], host: h0.player, hostSees: stand(h0).slice(1, 3), guest: g0.player, guestSees: stand(g0).slice(1, 3) });
+      if ((await fight(a)).cls !== 'swordsman' || (await fight(b)).cls !== 'archer') throw Error('duelfight: the ghosts were not the ones brought');
+      // a key out of turn does nothing: the host is first
+      await guest.page.keyboard.press('ArrowLeft'); await both(300);
+      const early = (await fight(guest)).player[0] === g0.player[0];
+      // turns alternate: each steps towards the other until they stand side by side
+      const step = async (s, key) => { await s.page.keyboard.press(key); await both(350); };
+      for (let i = 0; i < 20; i++) {
+        const [x, y] = [(await fight(host)).player[0], (await fight(guest)).player[0]];
+        if (y - x <= 1) break;
+        await step(host, 'ArrowRight'); await step(guest, 'ArrowLeft');
       }
-      // and a side that does nothing loses its turn after twenty seconds
-      const t0 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
-      await both(21000); await both(500);
-      const t1 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
-      out['duelfight.turns'] = JSON.stringify({ stepOutOfTurnIgnored: stillThere && early.player[2] === h0.player[2], timeoutPassed: t1.turnNo > t0.turnNo || t1.turn !== t0.turn, hud: /차례/.test(t1.hud) });
-      const h1 = await fight(host), g1 = await fight(guest);
-      const opp = h1.others.find((m) => m[0] === '상대 망령');
-      out['duelfight.ghosts'] = JSON.stringify({ hostPlays: h0.cls, guestSees: g0.cls, hostWasAskedFor: host === a ? 'swordsman' : 'archer', guestWas: host === a ? 'archer' : 'swordsman' });
-      if (h0.cls !== (host === a ? 'swordsman' : 'archer') || g0.cls !== (host === a ? 'archer' : 'swordsman')) throw Error('duelfight: the ghosts were not the ones chosen ' + JSON.stringify([h0.cls, g0.cls]));
-      out['duelfight.start'] = JSON.stringify({ host: h0.player, hostSees: h0.others.map((m) => [m[0], m[1], m[2]]), guest: g0.player, guestSees: g0.others.map((m) => [m[0], m[1], m[2]]) });
-      out['duelfight.after'] = JSON.stringify({ hostHurt: h1.player[2] < h0.player[2], opponentMoved: !!opp && (opp[1] !== h0.others[0][1] || opp[2] !== h0.others[0][2]), guestFollows: g1.player[0] === opp?.[1] && g1.player[1] === opp?.[2] });
-      // the host's player brings the other ghost down: the guest is told it lost, and the host's door is open
+      const near = await fight(host);
+      // the host attacks: walking into the stand-in (a blow can miss, so it tries again, the guest passing its turns)
+      const guestBefore = (await fight(guest)).hp, standBefore = stand(near)[3];
+      let guestHurt = false, standHurt = false;
+      for (let i = 0; i < 10 && !guestHurt; i++) {
+        await step(host, 'ArrowRight');
+        guestHurt = (await fight(guest)).hp < guestBefore; standHurt = stand(await fight(host))[3] < standBefore;
+        if (!guestHurt) { await until(async () => (await fight(guest)).myTurn); await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(400); }
+      }
+      // then it is the guest's turn: it drinks a potion from its real inventory, and the host's stand-in is healed
+      if (!(await until(async () => (await fight(guest)).myTurn))) throw Error('duelfight: the turn did not come to the guest');
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hurtSelf(4));
+      const hpBefore = (await fight(guest)).hp, potionsBefore = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.potions());
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.usePotion()); await both(600);
+      const hpAfter = (await fight(guest)).hp, potionsAfter = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.potions());
+      const seenHealed = stand(await fight(host))[3] === hpAfter;
+      out['duelfight.after'] = JSON.stringify({ early, adjacent: near.player[0], guestHurt, standHurt, potion: { healed: hpAfter > hpBefore, count: [potionsBefore[0], potionsAfter[0]], hostSeesIt: seenHealed } });
+      // a status put on the stand-in (poison) lands on the real player on the other page
+      const poisonBefore = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.poisonOpponent()); await both(500);
+      const poisonAfter = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
+      out['duelfight.status'] = JSON.stringify({ before: poisonBefore, landed: poisonAfter > poisonBefore });
+      if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross');
+      // a side that does nothing loses its turn after twenty seconds: the host's turn (after the guest's potion) passes to the guest
+      if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
+      // (each page has its own clock: only the host's runs on, or the guest would time out in its turn on the same jump)
+      await host.tick(21000); await both(800);
+      const timedOut = !(await fight(host)).myTurn && (await fight(guest)).myTurn;
+      out['duelfight.turns'] = JSON.stringify({ timeoutPassesTheTurn: timedOut, hud: /차례/.test(await host.page.evaluate(() => document.getElementById('floorTxt')?.textContent || '')) });
+      // the host brings the stand-in down: the guest is told it lost
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
       if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelfight: the guest was not told ' + JSON.stringify(await fight(guest)));
       out['duelfight.result'] = JSON.stringify({ guest: (await fight(guest)).outcome, host: (await fight(host)).outcome });
@@ -1194,6 +1216,10 @@ export const scenarios = {
       if (r.coolItem0 || !r.coolItem1 || r.coolItem2 || !r.coolMartial || r.martialAction !== 'cooldown') throw Error('duelrules: cooldown ' + JSON.stringify(r));
       if (r.lava !== 'refused' || r.lavaPlayer !== 'refused' || r.lavaFree !== 'placed') throw Error('duelrules: lava ' + JSON.stringify(r));
       if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
+      // the score of a round is the floor the ghost died on plus one for the win
+      const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
+      out['duelrules.score'] = JSON.stringify(score);
+      if (score !== 10) throw Error('duelrules: score ' + score);
       out['duelrules.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
@@ -1215,7 +1241,7 @@ export const scenarios = {
       const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
       await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman')));
       await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer')));
-      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelleave: no fight');
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && x.others.length && y.others.length; }))) throw Error('duelleave: no fight');
       const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
       await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.leave('test'));
       if (!(await until(async () => (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.info())).duel.won))) throw Error('duelleave: the host did not win');
