@@ -150,7 +150,8 @@ const Duel={
  // Damage the other player dealt to its stand-in on its page: here it is taken by the real player.
  applyHit(hit){
   const stand=this.opponent();
-  if(!stand||state.dead||this.reported||!(hit.amount>0))return;
+  // Only what the other side does in its own turn counts: a hit that arrives while it is this side's turn was not dealt by the rules.
+  if(!stand||state.dead||this.reported||!(hit.amount>0)||this.turn!==this.other())return;
   this.applying=true;
   try{damageEntity(state.player,Math.round(hit.amount),stand,hit.element||null)}finally{this.applying=false}
   updateAll();
@@ -160,7 +161,7 @@ const Duel={
  // A status the other player put on its stand-in (poison, stun…): the real player takes it here, with its own resistance.
  sendStatus(effect,turns,chance){if(!this.applying)this.send({kind:'status',effect,turns,chance})},
  applyStatus(status){
-  if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0))return;
+  if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0)||this.turn!==this.other())return;
   this.applying=true;
   try{applyHostileStatus(status.effect,status.turns,status.chance??1,{})}finally{this.applying=false}
   updateAll();
