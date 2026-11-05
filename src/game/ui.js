@@ -797,7 +797,7 @@ function pickupBaseR25(){
   if(item.type==='progress_key23'){state.items.splice(state.items.indexOf(item),1);if(state.floor23)state.floor23.keyAcquired=true;addLog('수은 심부 열쇠를 획득했다. 이제 계단의 봉인이 풀린다.');burst(state.player.x,state.player.y,'#d8f2ef',15,.8);updateAll();return true}
   if(item.type==='story_note'){state.items.splice(state.items.indexOf(item),1);globalThis.storyCollectNote992?.(item.storyId);return true}
   const result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
-  if(result.moved){if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
+  if(result.moved){Duel.sendItem('take',item,state.player.x,state.player.y);if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
 }
 function sellShop58(item){
  const shop=state?.shopIntermission,inv=state?.player?.inventory,index=inv?.indexOf(item),value=ShopMapBuilder.saleValue(item);

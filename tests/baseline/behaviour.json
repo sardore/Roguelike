@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "f4a60af29d3db49d29a166f5355faae7170e04ae",
- "values.branch": "dcc3ec050a88160e191ecb13c8a5296c44424889",
+ "values.empty": "8da246703ef94e7624ff3ef7aa3d66a54a30d3be",
+ "values.branch": "b18bc4f9fa667025eab2ad9ed4cadf0bd3e86a69",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -287,7 +287,7 @@
  "genprint.c.full": "2386bff6b8f94b7b39ab3f194b6df18bd0579479",
  "genprint.c.stages": "e6ae7eed81e0b56e78f974a2abfa2d513b1f33ce",
  "genprint.c.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "registries.routes": "587c0a0ea1d5277cbd0ba0bfa547984d21f69438",
+ "registries.routes": "e36de25a45ad2aa4ea28ffd2dea0f9816508b7ce",
  "registries.turn": "33494245349ebc45f30e2f25f568a5c365396718",
  "registries.attack": "35c5ad1660cf30ecf86ae24ee94d59972de7b8ae",
  "registries.minimap": "963cdd2369a69e514b5b10f68d4d89cff9adc1c6",
@@ -476,5 +476,11 @@
  "duelstakes.settle": "1bc0a142b64f47a19c1e9c56235b66db52b58d63",
  "duelstakes.errors": "164374825086dc65cd5dc548c248f61328b5d668",
  "duelstakes.loot": "8c739f3a80fade6562ae20295ac4949207013bba",
- "duelstakes.once": "0fde6527b5e6c0839e967e39711a9d06c319e73f"
+ "duelstakes.once": "0fde6527b5e6c0839e967e39711a9d06c319e73f",
+ "duelmap.tile": "b26c549ec19ed4777afbc43ed08189782ef7a99c",
+ "duelmap.pre": "3ead13b3d3f4f9ca0e2abde052f907f213e4c44a",
+ "duelmap.jar": "e9c475637998a4c0654808c8bdc20d20139ad7ca",
+ "duelmap.drop": "b56e0bbf21aea974b38cb0a38777418fe79f1fea",
+ "duelmap.take": "164374825086dc65cd5dc548c248f61328b5d668",
+ "duelmap.errors": "164374825086dc65cd5dc548c248f61328b5d668"
 }

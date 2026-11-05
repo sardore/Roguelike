@@ -1218,6 +1218,62 @@ export const scenarios = {
     return out;
   },
 
+  // What a player's action leaves on the map crosses to the other player's map by the same game functions: a tile changed for good, a jar broken (its gas), an item
+  // dropped and taken up again.
+  async duelmap(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9401, init });
+      const b = await openSession(browser, root, { seed: 9402, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      const stand = (f) => f.others.find((m) => m[0] === '상대 망령');
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1)));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1)));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelmap: no fight');
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      const Q = (s, fn, ...args) => s.page.evaluate(([f, ...rest]) => globalThis.__MANRU_QA_DUEL__[f](...rest), [fn, ...args]);
+      // the host acts in its turn; the guest answers with a wait so that the turn comes back
+      const hostActs = async (work) => {
+        if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelmap: no turn for the host');
+        await work(); await both(500);
+      };
+      const [cx, cy] = await Q(host, 'mapCell');
+      // a tile changed for good
+      await hostActs(() => Q(host, 'mapAct', 'tile', cx, cy));
+      const tile = [(await Q(host, 'mapAt', cx, cy)).tile, (await Q(guest, 'mapAt', cx, cy)).tile];
+      out['duelmap.tile'] = JSON.stringify({ same: tile[0] === tile[1], changed: tile[0] !== 1 });
+      if (tile[0] !== tile[1] || tile[0] === 1) throw Error('duelmap: the tile did not cross ' + tile);
+      // a jar broken: the jar goes and its contents act on both maps
+      const [jx, jy] = await Q(host, 'mapCell');
+      for (const s of [host, guest]) await Q(s, 'mapPut', jx, jy, 18);
+      out['duelmap.pre'] = JSON.stringify(await Q(guest, 'mapAt', jx, jy));
+      await hostActs(() => Q(host, 'mapAct', 'jar', jx, jy));
+      const jar = [await Q(host, 'mapAt', jx, jy), await Q(guest, 'mapAt', jx, jy)];
+      out['duelmap.jar'] = JSON.stringify({ hostTile: jar[0].tile, guestTile: jar[1].tile, sameTile: jar[0].tile === jar[1].tile });
+      if (jar[0].tile !== jar[1].tile || jar[1].tile === 18) throw Error('duelmap: the jar did not break on both maps ' + JSON.stringify(jar));
+      // an item dropped by the host lies on the guest's map too, and is gone from it when the host takes it up
+      const [dx, dy] = await Q(host, 'mapCell');
+      await hostActs(() => Q(host, 'mapAct', 'drop', dx, dy));
+      const dropped = [(await Q(host, 'mapAt', dx, dy)).items, (await Q(guest, 'mapAt', dx, dy)).items];
+      out['duelmap.drop'] = JSON.stringify(dropped);
+      if (!dropped[1].includes('시험 약병')) throw Error('duelmap: the item did not cross ' + JSON.stringify(dropped));
+      await hostActs(() => Q(host, 'mapAct', 'take', dx, dy));
+      const taken = [(await Q(host, 'mapAt', dx, dy)).items, (await Q(guest, 'mapAt', dx, dy)).items];
+      out['duelmap.take'] = JSON.stringify(taken);
+      if (taken[1].includes('시험 약병')) throw Error('duelmap: the item was left on the other map ' + JSON.stringify(taken));
+      out['duelmap.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // The stakes of the ghost duel (docs/GHOST_STAKES.md) from the client's side, against a stand-in stats server: ghosts are asked for with the secret, both ghosts are
   // locked into the duel before anything is played, a busy ghost stops the duel, the end of the fight is told to the server by each side, and what a won duel brought
   // is in the start chest of the next new run (once).
