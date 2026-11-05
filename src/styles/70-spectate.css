@@ -4,7 +4,7 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #spectateBar .spectateInfo{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #spectateBar button,#spectateScene button,#duelScene button,#spectateChat button{font:inherit;color:#d8c7a3;background:#1b120c;border:1px solid #634329;padding:6px 12px;cursor:pointer}
 #spectateNote{position:fixed;left:50%;top:calc(56px + var(--safe-top));transform:translateX(-50%);z-index:91;max-width:90vw;padding:8px 14px;background:rgba(18,12,8,.95);border:1px solid #a66f34;color:#efd49b;font-size:calc(12px * var(--ui-font-scale, 1))}
-#spectateScene,#duelScene{display:flex;position:fixed;inset:0;z-index:2147483200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:calc(14px + var(--safe-top)) calc(12px + var(--safe-right)) calc(14px + var(--safe-bottom)) calc(12px + var(--safe-left));background:rgba(5,3,2,.94)}
+#spectateScene,#duelScene{display:flex;position:fixed;inset:0;z-index:2147483200;align-items:flex-start;justify-content:center;overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + var(--safe-top)) calc(12px + var(--safe-right)) calc(14px + var(--safe-bottom)) calc(12px + var(--safe-left));background:rgba(5,3,2,.94)}
 #spectateScene .spectatePanel,#duelScene .spectatePanel{width:min(520px,100%);background:#120c08;border:1px solid #634329;box-shadow:0 0 0 1px #000,0 18px 60px #000}
 #spectateScene header,#duelScene header{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #634329}
 #spectateScene h2,#duelScene h2{margin:0;flex:1;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em;color:#d9b879}
