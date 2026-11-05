@@ -220,6 +220,8 @@ function placeDuelOpponent(at,ghost=null){
     maxHp:source.maxHp,hp:source.maxHp,maxFocus:source.maxFocus,focus:source.maxFocus,weapon:ghost?.weapon||null,
     martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:source.color,weakened:0,alerted:true,
     spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
+  // how it is drawn: as the player of that class, with what that ghost wore (kept apart from the stand-in's own fields, which the combat rules read)
+  if(ghost)mon.duelLook={classId:ghost.classId,weapon:ghost.weapon||null,armor:ghost.armor||null,cloak:ghost.cloak||null,relic:ghost.relic||null,trinket:ghost.trinket||null,classState:ghost.classState||{}};
   OccupancyService.addMonster(mon);return mon;
 }
 

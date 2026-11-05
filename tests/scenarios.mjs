@@ -1418,6 +1418,11 @@ export const scenarios = {
       for (const other of [4, 9, 12, 0]) scores.push(await s.page.evaluate((o) => globalThis.__MANRU_QA_DUEL__.scoreWith(9, o), other));
       out['duelrules.rank'] = JSON.stringify(scores);
       if (scores.join() !== '9,10,10,10') throw Error('duelrules: rank ' + scores);
+      // the other ghost is drawn as the player of its class (not a generic figure)
+      const looks = [];
+      for (const id of ['archer', 'swordsman']) { await s.page.evaluate((i) => globalThis.__MANRU_QA_DUEL__.stageVs(2, i), id); await s.tick(300); looks.push(await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.lookProbe())); }
+      out['duelrules.look'] = JSON.stringify(looks.map((l) => [l.ok, l.cls, l.w, l.h]));
+      if (looks.some((l) => !l.ok) || looks[0].cls !== 'archer' || looks[1].cls !== 'swordsman') throw Error('duelrules: look ' + JSON.stringify(looks));
       out['duelrules.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
