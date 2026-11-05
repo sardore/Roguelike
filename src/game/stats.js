@@ -345,7 +345,6 @@ const PlayStats={
   const tabs=this.el('nav','rankBoards');
   for(const [id,name] of this.BOARDS){const button=this.el('button',null,name);button.type='button';button.dataset.rankBoard=id;button.classList.toggle('on',id===this.board);button.onclick=()=>{this.board=id;this.render()};tabs.append(button)}
   view.append(tabs);
-  if(this.board==='ghost')view.append(this.el('p','statsNote','지금 남아 있는 망령을, 이기면 얻는 점수(죽은 층 + 1) 순으로 보여 준다. 판돈 대전에서 지면 그 망령은 사라진다.'));
   if(notice||!list.length){view.append(this.el('p','statsNote',notice||(this.board==='ghost'?'남아 있는 망령이 없다.':'아직 남은 기록이 없다.')));return view}
   view.append(this.podium(list.slice(0,3)),this.rankRows(list));
   return view;
