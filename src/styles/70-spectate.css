@@ -10,8 +10,53 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #spectateScene h2,#duelScene h2{margin:0;flex:1;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em;color:#d9b879}
 #spectateScene .spectateHint,#duelScene .spectateHint{margin:14px 12px;color:#a89476;font-size:calc(12px * var(--ui-font-scale, 1))}
 #spectateRooms,#duelGhosts{display:grid;gap:8px;padding:0 12px 14px}
-#duelGhosts .duelGhost{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
-#duelGhosts .duelGhost span{color:#a89476;font-size:calc(11px * var(--ui-font-scale, 1))}
+/* the picker of the ghost duel: the underworld (deep blue and violet, spirit-blue light), over the game's own dark frame */
+#duelScene[data-view]{--d-ink:#e4def2;--d-mute:#9b98ba;--d-edge:#2e3a68;--d-glow:#7a5cff;--d-spirit:#8fc6ff;--d-gold:#e0bd7a;--d-danger:#e07a9c;background:radial-gradient(ellipse at 50% 0,rgba(58,44,120,.42),transparent 60%),rgba(4,5,12,.96)}
+#duelScene[data-view] .spectatePanel{background:linear-gradient(180deg,#0e1330 0,#080a16 220px);border-color:var(--d-edge);box-shadow:0 0 0 1px #000,0 0 60px rgba(122,92,255,.22),0 18px 60px #000}
+#duelScene .duelHead{position:relative;overflow:hidden;padding:18px 16px 16px;border-bottom:1px solid var(--d-edge);background:radial-gradient(circle at 12% 120%,rgba(143,198,255,.2),transparent 45%),repeating-radial-gradient(circle at 88% -30%,rgba(122,92,255,.16) 0 1px,transparent 1px 22px)}
+#duelScene .duelTitle{flex:1;display:flex;flex-direction:column;gap:2px}
+#duelScene .duelTitle small{color:var(--d-spirit);font-size:calc(11px * var(--ui-font-scale, 1));letter-spacing:.32em}
+#duelScene .duelTitle h2{font-size:calc(26px * var(--ui-font-scale, 1));letter-spacing:.3em;color:var(--d-ink);text-shadow:0 0 18px rgba(122,92,255,.7)}
+#duelScene .duelHead button{--button-surface:rgba(10,14,36,.8);--button-edge:1px solid var(--d-edge);--button-color:var(--d-ink);--button-gloss:none}
+#duelScene .duelRules{list-style:none;margin:0;padding:12px 12px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#duelScene .duelRules li{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid var(--d-edge);border-top:2px solid var(--d-glow);background:rgba(16,20,48,.7)}
+#duelScene .duelRules b{color:var(--d-gold);font-size:calc(13px * var(--ui-font-scale, 1));letter-spacing:.16em}
+#duelScene .duelRules span{color:var(--d-mute);font-size:calc(11px * var(--ui-font-scale, 1));line-height:1.45}
+#duelScene .duelNote{color:var(--d-mute);line-height:1.6}
+#duelScene .duelGhosts{padding-top:2px}
+#duelGhosts .duelGhost{display:grid;grid-template-columns:76px minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px 14px;text-align:left;--button-color:var(--d-ink);--button-edge:1px solid var(--d-edge);--button-surface:linear-gradient(90deg,rgba(32,26,84,.55),rgba(11,14,34,.9) 70%);--button-gloss:none;--button-shadow:none}
+#duelGhosts .duelGhost:hover,#duelGhosts .duelGhost:focus-visible{--button-edge:1px solid var(--d-spirit);--button-shadow:0 0 22px rgba(122,92,255,.35);outline:none}
+#duelScene .duelPedestal{position:relative;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;border:1px solid var(--d-edge);background:radial-gradient(circle at 50% 62%,rgba(143,198,255,.38),rgba(122,92,255,.16) 55%,transparent 72%),#0a0d22}
+#duelScene .duelPedestal.big{width:104px;height:104px}
+#duelScene .duelPortrait{width:52px;height:52px;background:transparent;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(143,198,255,.55))}
+#duelScene .duelPedestal.big .duelPortrait{width:72px;height:72px}
+#duelScene .duelBody{display:flex;flex-direction:column;gap:5px;min-width:0}
+#duelScene .duelName{font-size:calc(17px * var(--ui-font-scale, 1));color:var(--d-ink);letter-spacing:.06em}
+#duelScene .duelCause{color:var(--d-mute);font-size:calc(12px * var(--ui-font-scale, 1))}
+#duelScene .duelChips,#duelScene .duelStake{display:flex;flex-wrap:wrap;gap:6px}
+#duelScene .duelChip{display:inline-flex;align-items:baseline;gap:6px;padding:3px 9px;border:1px solid var(--d-edge);background:rgba(8,10,26,.8)}
+#duelScene .duelChip small{color:var(--d-mute);font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.1em}
+#duelScene .duelChip b{color:var(--d-gold);font-size:calc(13px * var(--ui-font-scale, 1))}
+#duelScene .duelEnter{color:var(--d-spirit);font-size:calc(13px * var(--ui-font-scale, 1));letter-spacing:.3em;white-space:nowrap}
+#duelScene .duelSkel{display:block;height:100px;border:1px solid var(--d-edge);background:linear-gradient(90deg,rgba(32,26,84,.35),rgba(60,48,140,.28),rgba(32,26,84,.35))}
+#duelScene .duelEmpty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:34px 18px;border:1px dashed var(--d-edge);text-align:center}
+#duelScene .duelEmpty b{color:var(--d-ink);font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.12em}
+#duelScene .duelEmpty span{color:var(--d-mute);font-size:calc(12px * var(--ui-font-scale, 1));line-height:1.6}
+#duelScene .duelConfirmCard,#duelScene .duelSearch{display:flex;flex-direction:column;gap:14px;padding:18px 16px;border:1px solid var(--d-edge);background:linear-gradient(180deg,rgba(32,26,84,.5),rgba(10,12,30,.92))}
+#duelScene .duelConfirmHead{display:flex;align-items:center;gap:16px}
+#duelScene .duelConfirmHead>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+#duelScene .duelWarn{margin:0;padding:10px 12px;border:1px solid rgba(224,122,156,.55);border-left:3px solid var(--d-danger);background:rgba(224,122,156,.08);color:#f0cfdb;font-size:calc(12px * var(--ui-font-scale, 1));line-height:1.65}
+#duelScene .duelButtons{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+#duelScene .duelGo{padding:12px 14px;font-size:calc(15px * var(--ui-font-scale, 1));letter-spacing:.4em;--button-color:#fff;--button-edge:1px solid var(--d-glow);--button-surface:linear-gradient(180deg,#5c42c9,#35238a);--button-gloss:none}
+#duelScene .duelBack{padding:12px 14px;--button-color:var(--d-ink);--button-edge:1px solid var(--d-edge);--button-surface:rgba(10,14,36,.8);--button-gloss:none}
+#duelScene .duelGo:focus-visible,#duelScene .duelBack:focus-visible{outline:2px solid var(--d-spirit);outline-offset:2px}
+#duelScene .duelCenter{align-items:center;text-align:center}
+#duelScene .duelRings{position:relative;display:grid;place-items:center;width:150px;height:150px}
+#duelScene[data-view="confirm"] .duelRules,#duelScene[data-view="confirm"] .duelNote,#duelScene[data-view="search"] .duelRules,#duelScene[data-view="search"] .duelNote{display:none}
+@keyframes duelRing{0%{transform:scale(.62);opacity:.75}100%{transform:scale(1.15);opacity:0}}
+@keyframes duelSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (max-width:480px){#duelScene .duelRules{grid-template-columns:1fr}#duelScene .duelRules li{flex-direction:row;align-items:baseline;gap:10px}#duelGhosts .duelGhost{grid-template-columns:64px minmax(0,1fr);gap:12px}#duelScene .duelPedestal{width:64px;height:64px}#duelScene .duelPortrait{width:44px;height:44px}#duelGhosts .duelEnter{grid-column:1/-1;text-align:right}#duelScene .duelButtons{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){#duelScene .duelRings:before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid var(--d-spirit);animation:duelRing 2.4s ease-out infinite}#duelScene .duelSkel{background-size:200% 100%;animation:duelSkel 1.6s linear infinite}}
 #spectateRooms .spectateRoom{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
 #spectateRooms .spectateRoom span{color:#a89476;font-size:calc(11px * var(--ui-font-scale, 1))}
 /* Chat: bubbles above a fixed input row; --kb (set from the visual viewport) lifts it over the on-screen keyboard. */
