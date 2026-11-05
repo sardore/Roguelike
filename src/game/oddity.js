@@ -10,18 +10,18 @@ const ODDITY_RULES=Object.freeze({
   // before the blow: the piece rises (lift), shakes and glows (charge), flies (flight). The blow, and the turn of the enemies, follow when it lands.
   timing:Object.freeze({lift:260,charge:180,flight:380,bounce:300,after:520}),
   materials:Object.freeze([
-    {id:'wood',need:1,name:'목재',rank:1,power:1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_WEAPON_RACK','SPIDER_LILY']},
-    {id:'stone',need:2,name:'석재',rank:3,power:1.3,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL','JAR','UNDERWORLD_STELE','SOUL_CAIRN']},
-    {id:'lantern',need:3,name:'등불',rank:2,power:1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER','GOLD_LAMP','SOUL_LAMP']},
-    {id:'tree',need:4,name:'나무',rank:4,power:1.5,color:'#79b863',tiles:['GARDEN_TREE','PEACH_TREE']},
+    {id:'wood',need:1,name:'목재',rank:1,power:1.1,color:'#d1a45e',tiles:['TABLE','BENCH','CRATE','RACK','SCREEN','LOW_FENCE','BED','BOOK_STACK','FLOWERBED','RUMOR_BED','RUMOR_MED_CABINET','RUMOR_WEAPON_RACK','SPIDER_LILY']},
+    {id:'stone',need:2,name:'석재',rank:3,power:1.4,color:'#a7b3bb',tiles:['STATUE','STONE_PILLAR','ROCK','BASIN','CRYSTAL','JAR','UNDERWORLD_STELE','SOUL_CAIRN']},
+    {id:'lantern',need:3,name:'등불',rank:2,power:1.1,color:'#ffb347',tiles:['LANTERN_POST','BRAZIER','GOLD_LAMP','SOUL_LAMP']},
+    {id:'tree',need:4,name:'나무',rank:4,power:1.6,color:'#79b863',tiles:['GARDEN_TREE','PEACH_TREE']},
     // the furniture that is none of these: a light blow, and what it carries is a curse (a status the other arts never use)
-    {id:'misc',need:4,name:'기타',rank:0,power:.7,color:'#c9a7ff',tiles:['INCENSE_STAND','IRON_HOOK','PAPER_CRANE','RUMOR_SILK_DIVAN','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','RUMOR_ARCHIVE_PILE','RUMOR_RITUAL_OBELISK','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','UNDERWORLD_BELL']}
+    {id:'misc',need:4,name:'기타',rank:0,power:.8,color:'#c9a7ff',tiles:['INCENSE_STAND','IRON_HOOK','PAPER_CRANE','RUMOR_SILK_DIVAN','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','RUMOR_ARCHIVE_PILE','RUMOR_RITUAL_OBELISK','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','UNDERWORLD_BELL']}
   ]),
   curses:Object.freeze({INCENSE_STAND:['skillSeal','기봉인'],RUMOR_INVESTIGATION_BOARD:['skillSeal','기봉인'],RUMOR_RITUAL_OBELISK:['skillSeal','기봉인'],IRON_HOOK:['bleed','출혈'],PAPER_CRANE:['upset','동요'],RUMOR_SILK_DIVAN:['drunk','취기'],RUMOR_SMUGGLER_BUNDLE:['drunk','취기'],RUMOR_CHARRED_COUNTER:['blind','실명'],RUMOR_GREENHOUSE_FRAME:['poison','중독'],RUMOR_GAS_PIPE:['poison','중독'],RUMOR_ARCHIVE_PILE:['weaken','쇠약'],RUMOR_FLOOD_GRATE:['weaken','쇠약'],UNDERWORLD_BELL:['upset','동요']}),
-  anomalyPieces:Object.freeze({1:2,2:2,3:3,4:3,5:4}),anomalyShare:.55,bounceShare:.7,bounceReach:3,
+  anomalyPieces:Object.freeze({1:2,2:2,3:3,4:3,5:4}),anomalyShare:.48,bounceShare:.75,bounceReach:3,
   // each way of the art has its own seal on the card (see styles: form-psychic, form-anomaly) and its own light in the picture
   seals:Object.freeze({psychic:'念',anomaly:'異'}),auras:Object.freeze({base:'#c9a7ff',psychic:'#6fe3d6',anomaly:'#ff8fc4'}),
-  cost:4,costBreakthrough:6
+  cost:4,costBreakthrough:5
 });
 const ODDITY_FX=[],ODDITY_QUEUE=[];
 function oddityCost(lv){return lv>=5?ODDITY_RULES.costBreakthrough:ODDITY_RULES.cost}
