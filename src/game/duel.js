@@ -9,9 +9,15 @@ const Duel={
  find(play=false,body='',floor=1,ghostId=''){
   if(this.stage!=='idle')return false;this.play=play;this.mineBody=body;this.mineFloor=floor;this.mineGhostId=ghostId;this.locked=!play;this.stakes=false;this.helloBody=null;this.theirs=null;
   this.queueEntryId='q-'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);this.inbox=[];this.sent=0;
-  this.setStage('connecting','서버에 연결하는 중…');
-  if(!Spectate.ws&&!Spectate.open('duel')){this.setStage('idle','연결을 열 수 없다');return false}
-  if(Spectate.ready)this.onReady();
+  // The relay is a free instance that sleeps when it is quiet: wake it first (as the spectator screens do), or the first connection after a pause is refused.
+  const entry=this.queueEntryId;
+  this.setStage('connecting','서버를 깨우는 중… (오래 쉬었다면 1분쯤 걸린다)');
+  Spectate.wake().then(()=>{
+   if(this.stage!=='connecting'||this.queueEntryId!==entry)return;
+   this.setStage('connecting','서버에 연결하는 중…');
+   if(!Spectate.ws&&!Spectate.open('duel')){this.pickNote='서버에 연결할 수 없다. 잠시 뒤 다시 해 본다.';this.leave('서버에 연결할 수 없다');return}
+   if(Spectate.ready)this.onReady();
+  });
   return true;
  },
  onReady(){
@@ -64,7 +70,12 @@ const Duel={
   if(this.role==='guest')this.send({kind:'hello',body:this.mineBody,floor:this.mineFloor});
   else if(this.helloBody!==null)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),this.helloBody,this.helloFloor);
  },
+ // The socket closed: a search still going on (waking, queued, offered) cannot go on. A match already made is the relay's business (the session ends there).
+ socketClosed(){
+  if(['connecting','queued','offered'].includes(this.stage)){this.pickNote='서버 연결이 끊겼다. 다시 해 본다.';this.leave('서버 연결이 끊겼다')}
+ },
  leave(note=''){
+  if(note)toast(note);
   if(this.stakes&&this.locked&&!this.fighting&&this.mineGhostId)PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));
   if(this.stage==='matched')Spectate.send({type:'session.leave',sessionToken:this.token});
   else if(this.stage==='queued'||this.stage==='offered')Spectate.send({type:'match.cancel',matchId:this.matchId});
@@ -420,7 +431,7 @@ const Duel={
   this.pollSettle(now);
   this.hud();
   // A duel that is over (the winner through the door, the loser fallen), or whose run has been replaced by another run, ends its match: the next duel can then be asked for.
-  if(this.stage==='matched'&&this.fighting&&(!state?.duel||(this.reported&&(state.duel.finished||state.dead))))this.leave('한 판이 끝났다');
+  if(this.stage==='matched'&&this.fighting&&(!state?.duel||(this.reported&&(state.duel.finished||state.dead))))this.leave('');
   if(this.stage!=='matched'||!state?.duel)return;
   const p=state.player;
   if(state.dead&&!this.reported){this.conclude('lose');this.send({kind:'result',winner:this.other()});return}
