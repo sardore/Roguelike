@@ -3,7 +3,7 @@ const PlayStats={
  GHOST_MAX:45000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  // The secret of this device (32 letters and digits, made once): it proves the player ID is ours. The server keeps only its hash (docs/GHOST_STAKES.md).
  SECRET_KEY:'manruDeviceSecret',STAKES_KEY:'manruStakes',
- BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
+ BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치'],['ghost','망령']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
  LEGACY:[["2026-10-31T06:47:00.000Z",1,"취객",1,2,89],["2026-10-30T15:05:00.000Z",3,"떠돌이 도둑",4,30,1072],["2026-10-30T14:48:00.000Z",4,"객잔 경비병",4,30,1155],["2026-10-30T13:44:00.000Z",2,"함정",2,16,609],["2026-10-30T13:39:00.000Z",2,"객잔 경비병",2,14,477],["2026-10-30T09:34:00.000Z",1,"객잔 쥐",1,5,113],["2026-10-30T09:31:00.000Z",2,"굶주림",3,24,1160],["2026-10-30T07:24:00.000Z",3,"객잔 경비병",3,23,646],["2026-10-30T07:20:00.000Z",2,"취객",3,21,466],["2026-10-30T04:42:00.000Z",1,"시종",1,7,84],["2026-10-29T07:39:00.000Z",2,"시종",2,11,199],["2026-10-28T16:31:00.000Z",2,"객잔 경비병",2,16,588],["2026-10-28T16:27:00.000Z",2,"객잔 경비병",2,11,242],["2026-10-28T16:23:00.000Z",2,"객잔 경비병",3,18,795],["2026-10-28T16:16:00.000Z",1,"불바닥",1,2,42],["2026-10-28T16:13:00.000Z",2,"객잔 경비병",2,12,275],["2026-10-28T15:39:00.000Z",1,"취객",1,2,25],["2026-10-28T15:24:00.000Z",1,"취객",1,4,80],["2026-10-28T11:52:00.000Z",1,"취객",1,4,123],["2026-10-28T11:49:00.000Z",1,"경비 인형 - 포병",1,7,256],["2026-10-28T11:46:00.000Z",2,"객잔 경비병",2,15,530],["2026-10-28T11:30:00.000Z",2,"떠돌이 도둑",2,15,568],["2026-10-28T06:08:00.000Z",3,"시종",3,22,796],["2026-10-28T02:59:00.000Z",2,"떠돌이 도둑",2,9,423],["2026-10-27T16:56:00.000Z",2,"객잔 경비병",2,14,270],["2026-10-27T16:38:00.000Z",1,"취객",1,4,97],["2026-10-27T16:29:00.000Z",2,"객잔 경비병",2,8,212],["2026-10-27T14:34:00.000Z",1,"시종",1,1,32]],
@@ -320,7 +320,7 @@ const PlayStats={
    level:(a,b)=>b.level-a.level||b.floor-a.floor||b.kills-a.kills||a.turns-b.turns,
    kills:(a,b)=>b.kills-a.kills||b.floor-a.floor||b.level-a.level||a.turns-b.turns},boards={};
   const counted=row=>row.cause===this.END_CAUSE?{...row,floor:this.END_FLOOR}:row;
-  for(const [id] of this.BOARDS)boards[id]=[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
+  for(const [id] of this.BOARDS)boards[id]=id==='ghost'?data.boards.ghost||[]:[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
   return{...data,total:(+data.total||0)+rows.length,boards};
  },
  el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node},
@@ -343,7 +343,8 @@ const PlayStats={
   const tabs=this.el('nav','rankBoards');
   for(const [id,name] of this.BOARDS){const button=this.el('button',null,name);button.type='button';button.dataset.rankBoard=id;button.classList.toggle('on',id===this.board);button.onclick=()=>{this.board=id;this.render()};tabs.append(button)}
   view.append(tabs);
-  if(notice||!list.length){view.append(this.el('p','statsNote',notice||'아직 남은 기록이 없다.'));return view}
+  if(this.board==='ghost')view.append(this.el('p','statsNote','지금 남아 있는 망령만 오른다. 판돈 대전에서 지면 그 망령은 사라진다.'));
+  if(notice||!list.length){view.append(this.el('p','statsNote',notice||(this.board==='ghost'?'남아 있는 망령이 없다.':'아직 남은 기록이 없다.')));return view}
   view.append(this.podium(list.slice(0,3)),this.rankRows(list));
   return view;
  },
@@ -353,7 +354,7 @@ const PlayStats={
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
  },
- detail(row){return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
+ detail(row){if(this.board==='ghost')return `Lv ${row.level}`;return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  // The one-time nickname form on the board.
  nickForm(done){
   const wrap=this.el('div','rankNick'),input=this.el('input'),button=this.el('button',null,'등록'),note=this.el('small','rankNickNote','한 번 정하면 바꿀 수 없다. 한글·영문·숫자 '+this.NICK_MIN+'~'+this.NICK_MAX+'글자.');
