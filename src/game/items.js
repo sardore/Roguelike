@@ -848,7 +848,9 @@ function cacheEvent(x,y){
 // ---- the chest at the end of the first floor's entry (see buildTutorialEntry): the ordinary chest (the supply cache), opened by walking into it ----
 function openTutorialChestLoot(){
   const c=state.tutorialChest;if(!c||c.opened)return false;
-  c.opened=true;cacheEvent(c.x,c.y);return true;
+  c.opened=true;cacheEvent(c.x,c.y);
+  for(const item of c.loot||[])PlacementService.placeItem(item,{x:c.x,y:c.y});
+  delete c.loot;return true;
 }
 function vaultEvent(x,y){
   setTerrainTile58(state.map,x,y,TT.FLOOR);

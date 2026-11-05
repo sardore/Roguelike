@@ -102,6 +102,7 @@ function afterNewRun(ctx){
   centerCameraForNewRun();
   setupCameraForNewRun(ctx);
   initCursesForNewRun();
+  Duel.claimWinnings();
   showGameScreenIfPlaying();
   normalizeAllItems();
 }
