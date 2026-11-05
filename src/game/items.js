@@ -74,6 +74,8 @@ function consumeOne(idx){return consumeItemQuantity(state?.player?.inventory?.[i
 function useInventoryItem(idx,...rest){
   const pending=state?.player?.inventory?.[idx];
   if(pending?.talismanKind==='upgrade'&&bodyPowerActive()){toast('이미 괴력이 폭발하고 있다.');return false}
+  // in a duel the upgrade talisman has no cooldown, but the strongman's exhaustion (blind and upset after the power) still bars it
+  if(state?.duel&&pending?.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'&&state.status.blind>0&&state.status.upset>0){toast('탈진한 동안에는 강화부적을 쓸 수 없다.');return false}
   const act=playerAction57('item',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 물건을 사용하지 못했다.'});if(!act.ok)return !!act.consumed;const item=state?.player?.inventory?.[idx];if(!item)return false;
   // the upgrade talisman (강화부적) is outside the duel's shared cooldown of potions and talismans
   if(['potion','talisman'].includes(item.type)&&item.talismanKind!=='upgrade'){if(duelCooling('item'))return false;act.duelCooldown='item'}
