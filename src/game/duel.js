@@ -76,10 +76,13 @@ const Duel={
  // the fight begins on its own. The panel shows what the search is doing and can cancel it.
  openPicker(){
   if(document.getElementById('duelScene'))return false;
-  const scene=Spectate.el('div'),panel=Spectate.el('div','spectatePanel'),head=Spectate.el('header'),close=Spectate.el('button',null,'×'),note=Spectate.el('p','spectateHint',''),list=Spectate.el('div','duelGhosts');
+  const scene=Spectate.el('div'),panel=Spectate.el('div','spectatePanel'),head=Spectate.el('header','duelHead'),close=Spectate.el('button',null,'×'),note=Spectate.el('p','spectateHint duelNote',''),list=Spectate.el('div','duelGhosts');
+  const title=Spectate.el('div','duelTitle'),rules=Spectate.el('ul','duelRules');
   scene.id='duelScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','망령전');note.id='duelNote';list.id='duelGhosts';
   close.type='button';close.id='duelClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.closePicker();
-  head.append(Spectate.el('h2',null,'망령전'),close);panel.append(head,note,list);scene.append(panel);document.body.append(scene);
+  title.append(Spectate.el('small',null,'저승의 전장'),Spectate.el('h2',null,'망령전'));
+  for(const [mark,text] of [['건다','가진 것을 모두 건다'],['잃는다','지면 망령이 사라진다'],['얻는다','이기면 상대의 것을 모두 얻는다']]){const rule=Spectate.el('li');rule.append(Spectate.el('b',null,mark),Spectate.el('span',null,text));rules.append(rule)}
+  head.append(title,close);panel.append(head,rules,note,list);scene.append(panel);document.body.append(scene);
   this.ghosts=null;this.pickNote='';this.loadMine();return true;
  },
  closePicker(){
@@ -113,24 +116,48 @@ const Duel={
   const worn=['weapon','armor','cloak','relic','trinket'].filter(slot=>ghost[slot]).length,bag=Array.isArray(ghost.inventory)?ghost.inventory.length:0;
   return `소지품 ${bag}개와 장비 ${worn}개를 건다. 지면 이 망령과 가진 것이 모두 사라진다. 이기면 상대 망령이 가진 것을 모두 얻는다.`;
  },
+ // The class look (small, as the board draws it) on a pedestal, the class name, and the numbers of a ghost, for the cards of the picker.
+ className(id){return CLASSES.find(c=>c.id===id)?.name||'망령'},
+ portrait(id,size=''){const wrap=Spectate.el('span','duelPedestal'+(size?' '+size:'')),icon=PlayStats.classIcon(id);icon.className='duelPortrait';wrap.append(icon);return wrap},
+ chip(label,value){const chip=Spectate.el('span','duelChip');chip.append(Spectate.el('small',null,label),Spectate.el('b',null,String(value)));return chip},
+ ghostCard(row){
+  const card=Spectate.el('button','duelGhost'),body=Spectate.el('span','duelBody'),chips=Spectate.el('span','duelChips');
+  card.type='button';card.dataset.ghost=row.id;
+  chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('승리 점수',(Number(row.floor)||1)+1));
+  body.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · ${row.cause}`),chips);
+  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter','출전'));card.onclick=()=>this.choose(row);return card;
+ },
+ confirmCard(){
+  const {row,body}=this.pending,card=Spectate.el('div','duelConfirmCard'),head=Spectate.el('div','duelConfirmHead'),title=Spectate.el('div'),buttons=Spectate.el('div','duelButtons');
+  let ghost;try{ghost=JSON.parse(body)}catch(error){ignoreError('duel ghost body unreadable',error);ghost={}}
+  const worn=['weapon','armor','cloak','relic','trinket'].filter(slot=>ghost[slot]).length,bag=Array.isArray(ghost.inventory)?ghost.inventory.length:0;
+  title.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · Lv ${row.level}`));
+  head.append(this.portrait(row.cls,'big'),title);
+  const stake=Spectate.el('div','duelStake');stake.append(this.chip('소지품',bag+'개'),this.chip('장비',worn+'개'),this.chip('이기면',(Number(row.floor)||1)+1+'점'));
+  const warn=Spectate.el('p','duelWarn','되돌릴 수 없다. 지면 이 망령과 가진 것이 모두 사라진다. 이기면 상대 망령이 가진 것을 모두 얻는다. 자신보다 얕은 층에서 쓰러진 망령을 이기면 점수는 오르지 않는다.');
+  const go=Spectate.el('button','duelGo','건다'),back=Spectate.el('button','duelBack','돌아가기');go.type=back.type='button';go.id='duelConfirm';back.id='duelBack';
+  go.onclick=()=>{this.pending=null;this.find(true,body,row.floor,row.id)};back.onclick=()=>{this.pending=null;this.renderPicker()};
+  buttons.append(go,back);card.append(head,stake,warn,buttons);return card;
+ },
+ searchCard(){
+  let ghost={};try{ghost=JSON.parse(this.mineBody||'{}')}catch(error){ignoreError('duel ghost body unreadable',error)}
+  const card=Spectate.el('div','duelSearch duelCenter'),rings=Spectate.el('span','duelRings'),cancel=Spectate.el('button','duelBack','그만두기');
+  rings.append(this.portrait(ghost.classId||'wanderer','big'));cancel.type='button';cancel.onclick=()=>this.leave('취소했다');
+  card.append(rings,Spectate.el('b','duelName',this.note||'상대를 찾는 중…'),Spectate.el('span','duelCause',`${this.className(ghost.classId)} · ${this.mineFloor}층에서 쓰러진 망령`),cancel);return card;
+ },
  renderPicker(){
   const scene=document.getElementById('duelScene');
   if(!scene)return;
   if(this.stage==='matched'){scene.remove();return}
-  const note=document.getElementById('duelNote'),list=document.getElementById('duelGhosts'),busy=this.stage!=='idle';
-  note.textContent=busy?this.note:this.pickNote;
+  const note=document.getElementById('duelNote'),list=document.getElementById('duelGhosts'),busy=this.stage!=='idle',confirming=!!this.pending&&!busy;
+  scene.dataset.view=busy?'search':confirming?'confirm':'pick';
+  note.textContent=busy?this.note:confirming?this.stakeText(this.pending.body):this.pickNote;
   list.replaceChildren();
-  if(this.pending&&!busy){
-   note.textContent=this.stakeText(this.pending.body);
-   const go=Spectate.el('button','duelGhost','건다'),back=Spectate.el('button',null,'돌아가기');go.type=back.type='button';go.id='duelConfirm';back.id='duelBack';
-   go.onclick=()=>{const {row,body}=this.pending;this.pending=null;this.find(true,body,row.floor,row.id)};back.onclick=()=>{this.pending=null;this.renderPicker()};
-   list.append(go,back);return;
-  }
-  if(busy){const cancel=Spectate.el('button',null,'그만두기');cancel.type='button';cancel.onclick=()=>this.leave('취소했다');list.append(cancel);return}
-  for(const row of this.ghosts||[]){
-   const button=Spectate.el('button','duelGhost');button.type='button';button.dataset.ghost=row.id;
-   button.append(Spectate.el('b',null,`${row.floor}층 · Lv ${row.level}`),Spectate.el('span',null,row.cause));button.onclick=()=>this.choose(row);list.append(button);
-  }
+  if(busy){list.append(this.searchCard());return}
+  if(confirming){list.append(this.confirmCard());return}
+  if(!this.ghosts){if(/중…$/.test(this.pickNote))for(let i=0;i<3;i++)list.append(Spectate.el('span','duelSkel'));return}
+  if(!this.ghosts.length){const empty=Spectate.el('div','duelEmpty');empty.append(Spectate.el('b',null,'출전할 망령이 없다'),Spectate.el('span',null,'깊이 순위권(상위 30)에 든 채 죽으면 그 캐릭터가 망령으로 남는다.'));list.append(empty);return}
+  for(const row of this.ghosts)list.append(this.ghostCard(row));
  },
  // ---- winnings: what a won duel took from the other ghost waits on the server until the next new run, and goes into that run's start chest ----
  async claimWinnings(){

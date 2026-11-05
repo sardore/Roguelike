@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "c11aa8e06f4abe1231cb0453b19ebe3254b76557",
- "values.branch": "006f1dc1c55385f56a8086acab66317904595131",
+ "values.empty": "d08d19eeced775fd1213bd290ce1c5a062978781",
+ "values.branch": "b584b2e032fa00225d05c40adbdb5b258caeb18c",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -490,5 +490,9 @@
  "duelrules.rank": "178fe1af98cb27f9e5d7bffc08f321423a00eeb5",
  "duelrules.upgrade": "90107de8ca1fd016ab76c21764673f641347afe6",
  "duelrules.exhaust": "d64ea23c08e5f3cbdf875065b03345ed0b6e16c2",
- "duelrules.look": "79853ac9401243dd035c2936980b51784693b6f7"
+ "duelrules.look": "79853ac9401243dd035c2936980b51784693b6f7",
+ "duelpicker.cards": "9f552870c8931615b7f39b1fe92d07e6cfec5180",
+ "duelpicker.confirm": "e5348e2316227dcc2079b31a048c1d4ddc78ddf6",
+ "duelpicker.back": "caf7a91e824a22c09e021e21957d76698d3474fa",
+ "duelpicker.errors2": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
