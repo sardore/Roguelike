@@ -75,7 +75,7 @@ const Duel={
   if(['connecting','queued','offered'].includes(this.stage)){this.pickNote='서버 연결이 끊겼다. 다시 해 본다.';this.leave('서버 연결이 끊겼다')}
  },
  leave(note=''){
-  if(note)toast(note);
+  if(note&&!document.getElementById('duelScene'))toast(note); // with the picker open, its own line says it
   if(this.stakes&&this.locked&&!this.fighting&&this.mineGhostId)PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));
   if(this.stage==='matched')Spectate.send({type:'session.leave',sessionToken:this.token});
   else if(this.stage==='queued'||this.stage==='offered')Spectate.send({type:'match.cancel',matchId:this.matchId});
@@ -108,7 +108,7 @@ const Duel={
   try{
    const data=await PlayStats.fetchView(url,'ghosts&'+PlayStats.ownerQuery());
    this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status==='alive'):null;
-   this.pickNote=this.ghosts?(this.ghosts.length?'출전할 망령을 고른다. 지면 가진 것을 모두 잃고, 이기면 상대의 것을 모두 가져간다.':'출전할 망령이 없다. 깊이 순위권에 든 채 죽으면 망령이 남는다.'):'망령을 불러오지 못했다.';
+   this.pickNote=this.ghosts?'':'망령을 불러오지 못했다.'; // the rules strip and the empty-state card already say the rest
   }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
   this.renderPicker();
  },
@@ -121,12 +121,6 @@ const Duel={
    if(!data?.body){this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker();return}
    this.pending={row,body:data.body};this.pickNote='';this.renderPicker();
   }catch(error){ignoreError('duel ghost fetch failed',error);this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker()}
- },
- // What the ghost carries and wears: it is all at stake, so the player sees it and confirms before the search begins.
- stakeText(body){
-  let ghost;try{ghost=JSON.parse(body)}catch(error){ignoreError('duel ghost body unreadable',error);ghost={}}
-  const worn=['weapon','armor','cloak','relic','trinket'].filter(slot=>ghost[slot]).length,bag=Array.isArray(ghost.inventory)?ghost.inventory.length:0;
-  return `소지품 ${bag}개와 장비 ${worn}개를 건다. 지면 이 망령과 가진 것이 모두 사라진다. 이기면 상대 망령이 가진 것을 모두 얻는다.`;
  },
  // The class look (small, as the board draws it) on a pedestal, the class name, and the numbers of a ghost, for the cards of the picker.
  className(id){return CLASSES.find(c=>c.id===id)?.name||'망령'},
@@ -163,7 +157,7 @@ const Duel={
   if(this.stage==='matched'){scene.remove();return}
   const note=document.getElementById('duelNote'),list=document.getElementById('duelGhosts'),busy=this.stage!=='idle',confirming=!!this.pending&&!busy;
   scene.dataset.view=busy?'search':confirming?'confirm':'pick';
-  note.textContent=busy?this.note:confirming?this.stakeText(this.pending.body):this.pickNote;
+  note.textContent=busy||confirming?'':this.pickNote; // while searching or confirming, the card says it
   list.replaceChildren();
   if(busy){list.append(this.searchCard());return}
   if(confirming){list.append(this.confirmCard());return}
@@ -344,7 +338,7 @@ const Duel={
    if(reply?.ok&&reply.state&&reply.state!=='pending'){
     this.settling=null;
     const text={won:'판돈 정산: 상대 망령의 것을 모두 얻었다. 새 판을 시작하면 시작 상자에 들어 있다.',lost:'판돈 정산: 이 망령은 사라졌다. 가진 것도 모두 잃었다.',void:'판돈 정산: 양쪽의 말이 같아 무효가 되었다. 아무도 잃지 않았다.'}[reply.state];
-    if(text){this.settledText=text.replace('판돈 정산: ','');addLog(text);toast(text)}
+    if(text){this.settledText=text.replace('판돈 정산: ','');addLog(text)}
   }
   }catch(error){ignoreError('duel settle not sent',error)}
   job.busy=false;job.next=now+4000;

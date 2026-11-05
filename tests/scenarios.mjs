@@ -1241,7 +1241,7 @@ export const scenarios = {
       // (each page has its own clock: only the host's runs on, or the guest would time out in its turn on the same jump)
       await host.tick(21000); await both(800);
       const timedOut = !(await fight(host)).myTurn && (await fight(guest)).myTurn;
-      out['duelfight.turns'] = JSON.stringify({ timeoutPassesTheTurn: timedOut, hud: /차례/.test(await host.page.evaluate(() => document.getElementById('floorTxt')?.textContent || '')) });
+      out['duelfight.turns'] = JSON.stringify({ timeoutPassesTheTurn: timedOut, hud: /차례/.test(await host.page.evaluate(() => document.getElementById('duelHud')?.textContent || '')) });
       // a hit sent out of turn (the host's turn is over) is not taken by the guest
       const forgedBefore = (await fight(guest)).hp;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.forgeHit(9)); await both(500);

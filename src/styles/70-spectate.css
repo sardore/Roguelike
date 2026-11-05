@@ -52,7 +52,7 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #duelScene .duelGo:focus-visible,#duelScene .duelBack:focus-visible{outline:2px solid var(--d-spirit);outline-offset:2px}
 #duelScene .duelCenter{align-items:center;text-align:center}
 #duelScene .duelRings{position:relative;display:grid;place-items:center;width:150px;height:150px}
-#duelScene[data-view="confirm"] .duelRules,#duelScene[data-view="confirm"] .duelNote,#duelScene[data-view="search"] .duelRules,#duelScene[data-view="search"] .duelNote{display:none}
+#duelScene[data-view="confirm"] .duelRules,#duelScene[data-view="search"] .duelRules{display:none}
 @keyframes duelRing{0%{transform:scale(.62);opacity:.75}100%{transform:scale(1.15);opacity:0}}
 @keyframes duelSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media (max-width:480px){#duelScene .duelRules{grid-template-columns:1fr}#duelScene .duelRules li{flex-direction:row;align-items:baseline;gap:10px}#duelGhosts .duelGhost{grid-template-columns:64px minmax(0,1fr);gap:12px}#duelScene .duelPedestal{width:64px;height:64px}#duelScene .duelPortrait{width:44px;height:44px}#duelGhosts .duelEnter{grid-column:1/-1;text-align:right}#duelScene .duelButtons{grid-template-columns:1fr}}
