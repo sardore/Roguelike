@@ -1400,6 +1400,10 @@ export const scenarios = {
       if (r.mulPlayer !== .62 || r.mulOpponent !== .62) throw Error('duelrules: element resistance ' + JSON.stringify(r));
       if (r.coolItem0 || !r.coolItem1 || r.coolItem2 || !r.coolMartial || r.martialAction !== 'cooldown') throw Error('duelrules: cooldown ' + JSON.stringify(r));
       if (r.lava !== 'refused' || r.lavaPlayer !== 'refused' || r.lavaFree !== 'placed') throw Error('duelrules: lava ' + JSON.stringify(r));
+      // the upgrade talisman is outside the shared cooldown: while a potion is refused it can still be used
+      const upg = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.coolUpgrade());
+      out['duelrules.upgrade'] = JSON.stringify(upg);
+      if (!upg.potionRefused || !upg.upgradeAllowed) throw Error('duelrules: upgrade talisman ' + JSON.stringify(upg));
       if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
       // the score of a round is the floor the ghost died on plus one for the win
       const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
