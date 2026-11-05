@@ -75,7 +75,8 @@ function useInventoryItem(idx,...rest){
   const pending=state?.player?.inventory?.[idx];
   if(pending?.talismanKind==='upgrade'&&bodyPowerActive()){toast('이미 괴력이 폭발하고 있다.');return false}
   const act=playerAction57('item',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 물건을 사용하지 못했다.'});if(!act.ok)return !!act.consumed;const item=state?.player?.inventory?.[idx];if(!item)return false;
-  if(['potion','talisman'].includes(item.type)){if(duelCooling('item'))return false;act.duelCooldown='item'}
+  // the upgrade talisman (강화부적) is outside the duel's shared cooldown of potions and talismans
+  if(['potion','talisman'].includes(item.type)&&item.talismanKind!=='upgrade'){if(duelCooling('item'))return false;act.duelCooldown='item'}
   const identity991=globalThis.__MANRU_ITEM_IDENTITY991__;
   const library1022=globalThis.__MANRU_LIBRARY1022_ACTIONS__;
   const talisman74=globalThis.__MANRU_TALISMAN74_ACTIONS__;
