@@ -482,5 +482,6 @@
  "duelmap.jar": "e9c475637998a4c0654808c8bdc20d20139ad7ca",
  "duelmap.drop": "b56e0bbf21aea974b38cb0a38777418fe79f1fea",
  "duelmap.take": "164374825086dc65cd5dc548c248f61328b5d668",
- "duelmap.errors": "164374825086dc65cd5dc548c248f61328b5d668"
+ "duelmap.errors": "164374825086dc65cd5dc548c248f61328b5d668",
+ "duelmap.ally": "1a6f05806a8a5db1ab519b082d2c502457e84c33"
 }
