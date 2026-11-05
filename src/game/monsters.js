@@ -1436,6 +1436,7 @@ function destroyJar57(x,y,opts={}){
 // the jar breaks at (x,y), its tile already gone from the floor: what was in it spills (a poisoned jar lets out a gas), a reward may show, the noise carries.
 // opts.from is the place the jar stood when it was thrown: what is in a jar depends on where it stood.
 function shatterJar(x,y,opts={}){
+  Duel.sendJar(x,y,opts);
   const region=regionIndex();burst(x,y,'#8b6a49',14,.78);
   const contents=jarContents105(opts.from?.x??x,opts.from?.y??y),cells=contents==='poison'?[]:spillJar105(x,y,contents);let gas=contents==='poison'?spawnJarGasField57(x,y,{forced:!!opts.forced}):null,accident=null;if(region===3&&opts.forced)accident=forcedJarAccident(x,y);const reward=jarReward57(x,y);const effects=FX.terrainReactions105||(FX.terrainReactions105=[]);effects.push({kind:'jar',contents,cells,x,y,map:state.map,start:performance.now(),life:1000});if(effects.length>24)effects.splice(0,effects.length-24);
   if(opts.forced){alertNearby(x,y,9);addLog(contents==='poison'?'장독을 강제로 깨뜨렸다. 큰 파열음과 함께 독가스가 확산되기 시작했다.':'장독을 강제로 깨뜨렸다. 파열음이 주변에 울렸다.')}VisibilityService.compute();return{ok:true,gas:!!gas,accident:!!accident,reward:reward?.name||null}
@@ -1525,6 +1526,7 @@ mutate(x,y,tile,opts={}){
   const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(tile);
   if(occupants.length&&kind&&!opts.deferHazard57)haz?.revalidateAt?.(x,y,opts.source||'runtime-terrain');
   else if(occupants.includes(state.player)&&RUNTIME_ENTRY_REACTIVE57.has(tile))bumpTileAction(x,y,{cause:'terrain-mutation',activeInteraction:false});
+  Duel.sendTile(x,y,tile,opts);
   return{ok:true,changed:true,old,tile,version57,occupants:occupants.length};
 },
 temporary(x,y,tile,ttl,kind='temporary',opts={}){
@@ -1534,7 +1536,7 @@ temporary(x,y,tile,ttl,kind='temporary',opts={}){
   if(TEMP_TERRAIN_IMMUTABLE57.has(old)||(allowed&&!allowed.includes(old)))return false;
   const prior=state.tempTerrain74.find(t=>t.x===x&&t.y===y);
   if(prior){if(state.map[y][x]!==prior.tile||prior.tile!==tile)return false;prior.ttl=Math.max(prior.ttl,ttl);prior.kind=kind;return true}
-  const placement58=terrainCellPlacement58(state.map,x,y),changed=RuntimeTerrainOwner.mutate(x,y,tile,{source:opts.source||kind,overlapSolid:!!opts.overlapSolid});if(!changed.ok)return false;
+  const placement58=terrainCellPlacement58(state.map,x,y);Duel.environment++;let changed;try{changed=RuntimeTerrainOwner.mutate(x,y,tile,{source:opts.source||kind,overlapSolid:!!opts.overlapSolid})}finally{Duel.environment--}if(!changed.ok)return false;
   state.tempTerrain74.push({x,y,old,tile,ttl,kind,source57:opts.source||kind,version57:changed.version57,restorePlacement58:placement58,overlapSolid57:!!opts.overlapSolid});Duel.sendTerrain(x,y,tile,ttl,kind,opts);return true
 },
 tick(){

@@ -177,6 +177,9 @@ const Duel={
    case 'status':this.applyStatus(payload);return true;
    case 'field':this.applyField(payload);return true;
    case 'terrain':this.applyTerrain(payload);return true;
+   case 'tile':this.applyTile(payload);return true;
+   case 'jar':this.applyJar(payload);return true;
+   case 'item':this.applyItem(payload);return true;
    case 'result':this.applyResult(payload);return true;
    default:return false;
   }
@@ -208,7 +211,15 @@ const Duel={
  // What this player puts on the map in its own action (a field, a stretch of terrain) is put on the other player's map by the same game functions, with the
  // stand-in as the source; what the map then does to whoever stands there (and what a burning or poisoned stand-in takes at the end of a turn) is the map's own work on each side: damage dealt inside the turn engine or by a field's contact is not sent as a hit. Reactions inside the
  // turn engine run on both sides by themselves and are not sent.
- mirrored(){return this.stage==='matched'&&state?.duel&&!this.applying&&!state._turnPipelineActive57},
+ mirrored(){return this.stage==='matched'&&state?.duel&&!this.applying&&!this.environment&&!state._turnPipelineActive57},
+ // True while the other player is the one acting: what it sends is replayed here only then, and only through `replay`, which keeps the replay itself from being sent back.
+ theirTurn(){return !!this.opponent()&&!state.dead&&!this.reported&&this.turn===this.other()},
+ replay(work){
+  if(!this.theirTurn())return;
+  this.applying=true;
+  try{work()}finally{this.applying=false}
+  updateAll();
+ },
  sendField(kind,x,y,ttl,cells,metadata){
   if(!this.mirrored())return;
   const {owner,credit,sourceFaction,friendlyFire,...rest}=metadata||{};
@@ -220,16 +231,30 @@ const Duel={
  },
  applyField(field){
   const stand=this.opponent();
-  if(!stand||state.dead||this.reported||this.turn!==this.other()||!field.field)return;
-  this.applying=true;
-  try{addField(field.field,field.x,field.y,field.ttl,field.cells,{...(field.metadata||{}),...effectSource57(stand)})}finally{this.applying=false}
-  updateAll();
+  if(!stand||!field.field)return;
+  this.replay(()=>addField(field.field,field.x,field.y,field.ttl,field.cells,{...(field.metadata||{}),...effectSource57(stand)}));
  },
  applyTerrain(terrain){
-  if(!this.opponent()||state.dead||this.reported||this.turn!==this.other())return;
-  this.applying=true;
-  try{RuntimeTerrainOwner.temporary(terrain.x,terrain.y,terrain.tile,terrain.ttl,terrain.terrain,terrain.opts||{})}finally{this.applying=false}
-  updateAll();
+  this.replay(()=>RuntimeTerrainOwner.temporary(terrain.x,terrain.y,terrain.tile,terrain.ttl,terrain.terrain,terrain.opts||{}));
+ },
+ // A tile the player's action changed for good (a broken piece of furniture, a burnt door…), a jar that broke, an item dropped or picked up: each is done here by the
+ // same function that did it there.
+ sendTile(x,y,tile,opts){
+  if(this.mirrored())this.send({kind:'tile',x,y,tile,opts:{source:opts?.source,overlapSolid:opts?.overlapSolid}});
+ },
+ applyTile(tile){this.replay(()=>RuntimeTerrainOwner.mutate(tile.x,tile.y,tile.tile,tile.opts||{}))},
+ sendJar(x,y,opts){
+  if(this.mirrored())this.send({kind:'jar',x,y,opts:{forced:!!opts?.forced,from:opts?.from||null}});
+ },
+ applyJar(jar){this.replay(()=>state.map[jar.y]?.[jar.x]===TT.JAR?destroyJar57(jar.x,jar.y,jar.opts||{}):shatterJar(jar.x,jar.y,jar.opts||{}))},
+ sendItem(act,item,x,y){
+  if(this.mirrored())this.send({kind:'item',act,item:act==='drop'?item:{name:item.name},x,y});
+ },
+ applyItem(m){
+  this.replay(()=>{
+   if(m.act==='drop'&&m.item&&Number.isFinite(m.x)&&Number.isFinite(m.y))PlacementService.placeItem(clone(m.item),{x:m.x,y:m.y});
+   else if(m.act==='take'){const at=state.items.find(i=>i.x===m.x&&i.y===m.y&&i.name===m.item?.name);if(at)OccupancyService.removeItem(at)}
+  });
  },
  // A status the other player put on its stand-in (poison, stun…): the real player takes it here, with its own resistance.
  sendStatus(effect,turns,chance){if(!this.applying)this.send({kind:'status',effect,turns,chance})},
