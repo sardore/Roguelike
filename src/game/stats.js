@@ -1,6 +1,8 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
  GHOST_MAX:45000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ // The secret of this device (32 letters and digits, made once): it proves the player ID is ours. The server keeps only its hash (docs/GHOST_STAKES.md).
+ SECRET_KEY:'manruDeviceSecret',STAKES_KEY:'manruStakes',
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -37,7 +39,7 @@ const PlayStats={
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
   const record=this.runRecord(cause);
-  if(record.cause!==this.END_CAUSE){const ghost=this.ghostBody();if(ghost)record.ghost=ghost}
+  if(record.cause!==this.END_CAUSE){const ghost=this.ghostBody();if(ghost){record.ghost=ghost;record.key=this.secret()}}
   this.rememberRun({...record,ghost:undefined});
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -54,6 +56,23 @@ const PlayStats={
   this.device=Array.from({length:4},()=>String.fromCharCode(65+Math.floor(rand()*26))).join('')+String(Math.floor(rand()*100)).padStart(2,'0');
   lsSet(this.DEVICE_KEY,this.device);return this.device;
  },
+ secret(){
+  const saved=lsGet(this.SECRET_KEY);if(/^[0-9A-Za-z]{32}$/.test(saved||''))return saved;
+  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',bytes=crypto.getRandomValues(new Uint8Array(32));
+  const made=Array.from(bytes,b=>chars[b%chars.length]).join('');lsSet(this.SECRET_KEY,made);return made;
+ },
+ // The player ID and the secret, as the query of a ghost request.
+ ownerQuery(){return 'owner='+this.deviceTag()+'&key='+this.secret()},
+ async post(body){
+  const reply=await fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  if(!reply.ok)throw new Error('HTTP '+reply.status);
+  return reply.json();
+ },
+ // The stakes calls (server/stats.gs): who we are is always the player ID with the secret.
+ ghostLock(ghost,duel){return this.post({ghostLock:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
+ ghostRelease(ghost,duel){return this.post({ghostRelease:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
+ ghostSettle(ghost,duel,won){return this.post({ghostSettle:{owner:this.deviceTag(),key:this.secret(),ghost,duel,won}})},
+ lootClaim(){return this.post({lootClaim:{owner:this.deviceTag(),key:this.secret()}})},
  // The nickname the player chose (once, on the ranking board): Hangul, letters and digits, two to eight characters. The board then shows it instead of the player ID.
  cleanNick(text){return String(text||'').replace(/[^0-9A-Za-z가-힣]/g,'').slice(0,this.NICK_MAX)},
  nick(){const saved=lsGet(this.NICK_KEY)||'';return saved&&this.cleanNick(saved)===saved&&saved.length>=this.NICK_MIN?saved:''},
@@ -276,7 +295,7 @@ const PlayStats={
  async loadGhosts(){
   const url=this.endpoint();if(!url){this.ghosts=null;this.ghostState='unset';this.render();return}
   this.ghostState='loading';this.render();
-  try{const data=await this.fetchView(url,'ghosts&owner='+this.deviceTag());this.ghosts=Array.isArray(data?.list)?data.list:null;this.ghostState=this.ghosts?'ok':'error'}
+  try{const data=await this.fetchView(url,'ghosts&'+this.ownerQuery());this.ghosts=Array.isArray(data?.list)?data.list:null;this.ghostState=this.ghosts?'ok':'error'}
   catch(error){ignoreError('ghosts load failed',error);this.ghosts=null;this.ghostState='error'}
   this.render();
  },

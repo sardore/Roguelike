@@ -4,6 +4,13 @@
 // POST {claim,owner} -> 닉네임 등록(이미 다른 기기가 쓰면 error 'taken', 이 기기가 이미 다른 닉네임이 있으면 error 'owned'+nick). 기록의 닉네임은 보낸 값이 아니라 등록부에서 그 기기의 닉네임을 찾아 붙인다.
 // POST body may also carry `ghost` (a JSON string of the dead character, at most GHOST_MAX characters) on a final death record: stored on the `ghosts` sheet, one row per run id, and only when the run reached the depth ranking (its place on the depth board is within RANK_ROWS).
 // GET ?view=ghosts&owner=AAAA00 -> {ok,list:[{id,t,cls,floor,level,cause,status}]} the ghosts of one player ID, newest first; GET ?view=ghost&owner=AAAA00&id=... -> {ok,body} only for the owner.
+// Stakes (docs/GHOST_STAKES.md): a device proves it owns a player ID with a secret (`key`, 32 letters/digits made on the device); the server keeps only its SHA-256 on the `ids` sheet, the first device to show an ID owns it.
+// Everything about ghosts needs owner + key: GET ?view=ghosts|ghost take &key=...; a `ghost` on a death record is kept only with a right `key`.
+// POST {ghostLock:{owner,key,ghost,duel}} -> {ok:true} when the ghost was alive (or its lock ran out), else {ok:false,error:'busy'|'none'|'auth'|'duel'}; both ghosts of a duel lock with the same duel id.
+// POST {ghostRelease:{owner,key,ghost,duel}} -> {ok:true}: the duel never began (nobody has spoken in it), so the ghost is free again and the duel is void.
+// POST {ghostSettle:{owner,key,ghost,duel,won}} -> {ok:true,state:'pending'|'won'|'lost'|'void'}: the result stands when the two sides say opposite things (the loser's ghost is taken, its things become a row of the winner on the `loot` sheet),
+//   the same thing from both voids the duel (both ghosts alive again), and when only one side has spoken for SETTLE_MS its word stands. Asking again gives the same answer.
+// POST {lootClaim:{owner,key}} -> {ok:true,items:[...]} at most LOOT_PER_CLAIM things of the pending loot of that player ID, each handed out once.
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
 // GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
 const SHEET_NAME = 'deaths';
@@ -11,7 +18,13 @@ const SHEET_NAME = 'deaths';
 const NICK_SHEET = 'nicks';
 // Ghosts: the dead character of a run (the player object as JSON) kept for the owner (player ID), and later for others to fight. status is 'alive' until a fight takes it.
 const GHOST_SHEET = 'ghosts';
-const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body'];
+const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime'];
+const BODY_COL = GHOST_HEADER.indexOf('body') + 1, LOCK_COL = GHOST_HEADER.indexOf('lock') + 1;
+// Stakes: ids (player ID -> hash of its device secret), duels (one row per duel id), loot (what a winner has coming).
+const ID_SHEET = 'ids', DUEL_SHEET = 'duels', LOOT_SHEET = 'loot';
+const DUEL_HEADER = ['id', 'time', 'ghostA', 'ownerA', 'ghostB', 'ownerB', 'claimA', 'claimB', 'timeA', 'timeB', 'state', 'winner'];
+const LOOT_HEADER = ['time', 'owner', 'duel', 'ghost', 'items', 'status'];
+const LOCK_MS = 30 * 60 * 1000, SETTLE_MS = 10 * 60 * 1000, LOOT_PER_CLAIM = 12;
 const GHOST_MAX = 45000, GHOST_ROWS = 20000, GHOSTS_PER_OWNER = 200, GHOST_LIST = 100;
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live'];
 // A run still being played is one row that its player keeps updating (same id); its last update time sits in the `live` column and is cleared
@@ -47,7 +60,35 @@ function ghosts_() {
   const book = book_();
   let sheet = book.getSheetByName(GHOST_SHEET);
   if (!sheet) { sheet = book.insertSheet(GHOST_SHEET); sheet.appendRow(GHOST_HEADER); }
+  // a sheet made before the lock columns existed gets them
+  if (sheet.getMaxColumns() < GHOST_HEADER.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), GHOST_HEADER.length - sheet.getMaxColumns());
+  if (String(sheet.getRange(1, GHOST_HEADER.length).getValue()) !== GHOST_HEADER[GHOST_HEADER.length - 1]) sheet.getRange(1, 1, 1, GHOST_HEADER.length).setValues([GHOST_HEADER]);
   return sheet;
+}
+
+function sheetOf_(name, header) {
+  const book = book_();
+  let sheet = book.getSheetByName(name);
+  if (!sheet) { sheet = book.insertSheet(name); sheet.appendRow(header); }
+  return sheet;
+}
+
+function hash_(secret) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, secret).map(b => ((b & 255) + 256).toString(16).slice(1)).join('');
+}
+
+// Whether the caller owns the player ID: its secret hashes to the one on the `ids` sheet. An ID nobody has shown yet belongs to the first device that does.
+function authed_(owner, key) {
+  if (!/^[A-Z]{4}\d{2}$/.test(owner) || !/^[0-9A-Za-z]{32}$/.test(key)) return false;
+  const sheet = sheetOf_(ID_SHEET, ['owner', 'hash', 'time']), hash = hash_(key);
+  const find = () => { const rows = sheet.getLastRow(); return rows > 1 ? sheet.getRange(2, 1, rows - 1, 1).createTextFinder(owner).matchEntireCell(true).findNext() : null; };
+  let found = find();
+  if (!found) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try { found = find(); if (!found) { sheet.appendRow([owner, hash, new Date().toISOString()]); return true; } } finally { lock.releaseLock(); }
+  }
+  return String(sheet.getRange(found.getRow(), 2).getValue()) === hash;
 }
 
 // A ghost is made only by a run that reached the depth ranking: its place on the depth board (the one the game shows, RANK_ROWS rows, runs in progress
@@ -70,23 +111,195 @@ function ghostPut_(id, owner, nick, cls, floor, level, cause, body) {
   if (rows >= GHOST_ROWS) return;
   if (rows > 1 && sheet.getRange(2, 3, rows - 1, 1).createTextFinder(owner).matchEntireCell(true).findAll().length >= GHOSTS_PER_OWNER) return;
   // a leading = + - @ in the body would run as a formula
-  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body]);
+  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body, '', '']);
 }
 
-function ghostList_(owner) {
-  if (!/^[A-Z]{4}\d{2}$/.test(owner)) return reply_({ ok: false, error: 'owner' });
+// A ghost whose lock ran out is alive again (unless a duel still has to be settled: ghostFree_ looks).
+function statusOf_(row) {
+  const status = String(row[8]);
+  return status === 'locked' && Date.now() - Number(row[GHOST_HEADER.indexOf('lockTime')]) > LOCK_MS ? 'alive' : status;
+}
+
+function ghostList_(owner, key) {
+  if (!authed_(owner, key)) return reply_({ ok: false, error: 'auth' });
   const sheet = ghosts_(), rows = sheet.getLastRow();
-  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length - 1).getValues() : [];
+  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues() : [];
   const list = values.filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
-    .map(([t, id, , , cls, floor, level, cause, status]) => ({ t, id, cls, floor, level, cause, status }));
+    .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row) }));
   return reply_({ ok: true, list });
 }
 
-function ghostGet_(owner, id) {
+function ghostGet_(owner, id, key) {
+  if (!authed_(owner, key)) return reply_({ ok: false, error: 'auth' });
   const sheet = ghosts_(), rows = sheet.getLastRow();
   const found = rows > 1 ? sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
   if (!found || String(sheet.getRange(found.getRow(), 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
-  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), GHOST_HEADER.length).getValue()).replace(/^'/, '') });
+  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), BODY_COL).getValue()).replace(/^'/, '') });
+}
+
+// ---- stakes ----------------------------------------------------------------------------------------------------------------
+function ghostRow_(sheet, id) {
+  const rows = sheet.getLastRow();
+  const found = rows > 1 ? sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
+  return found ? found.getRow() : 0;
+}
+
+function duelRow_(sheet, id) {
+  const rows = sheet.getLastRow();
+  const found = rows > 1 ? sheet.getRange(2, 1, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
+  return found ? found.getRow() : 0;
+}
+
+function setGhost_(sheet, row, status, duel) {
+  sheet.getRange(row, 9).setValue(status);
+  sheet.getRange(row, LOCK_COL, 1, 2).setValues([[status === 'locked' ? duel : '', status === 'locked' ? Date.now() : '']]);
+}
+
+// What a taken ghost leaves: everything it carried (the bag) and wore (the five slots).
+function lootOf_(body) {
+  let ghost;
+  try { ghost = JSON.parse(String(body).replace(/^'/, '')); } catch (error) { return []; }
+  const items = Array.isArray(ghost.inventory) ? ghost.inventory.slice() : [];
+  for (const slot of ['weapon', 'armor', 'cloak', 'relic', 'trinket']) if (ghost[slot] && typeof ghost[slot] === 'object') items.push(ghost[slot]);
+  return items.filter(item => item && typeof item === 'object');
+}
+
+// Settles a duel row if it can be settled now. Call with the lock held.
+function resolve_(duels, row) {
+  const [id, , ghostA, ownerA, ghostB, ownerB, claimA, claimB, timeA, timeB, state] = duels.getRange(row, 1, 1, DUEL_HEADER.length).getValues()[0];
+  if (String(state) !== 'open') return;
+  const now = Date.now();
+  let winner = null, voided = false;
+  if (claimA && claimB) {
+    if (claimA === claimB) voided = true;
+    else winner = claimA === 'won' ? ghostA : ghostB;
+  } else if (claimA || claimB) {
+    const claim = claimA || claimB, at = Number(claimA ? timeA : timeB), mine = claimA ? ghostA : ghostB, other = claimA ? ghostB : ghostA;
+    if (now - at < SETTLE_MS) return;
+    winner = claim === 'won' ? mine : other;
+  } else return;
+  const ghosts = ghosts_();
+  const rowA = ghostRow_(ghosts, ghostA), rowB = ghostRow_(ghosts, ghostB);
+  if (voided) {
+    if (rowA) setGhost_(ghosts, rowA, 'alive'); if (rowB) setGhost_(ghosts, rowB, 'alive');
+    duels.getRange(row, DUEL_HEADER.indexOf('state') + 1, 1, 2).setValues([['void', '']]);
+    return;
+  }
+  const loser = winner === ghostA ? ghostB : ghostA, winnerOwner = winner === ghostA ? ownerA : ownerB;
+  const loserRow = loser === ghostA ? rowA : rowB, winnerRow = winner === ghostA ? rowA : rowB;
+  if (loserRow) {
+    const items = lootOf_(ghosts.getRange(loserRow, BODY_COL).getValue());
+    setGhost_(ghosts, loserRow, 'taken');
+    if (items.length) sheetOf_(LOOT_SHEET, LOOT_HEADER).appendRow([new Date().toISOString(), winnerOwner, id, loser, "'" + JSON.stringify(items), 'pending']);
+  }
+  if (winnerRow) setGhost_(ghosts, winnerRow, 'alive');
+  duels.getRange(row, DUEL_HEADER.indexOf('state') + 1, 1, 2).setValues([['done', winner]]);
+}
+
+// The caller's ghost goes into a duel: it must be alive (a lock that ran out counts as alive unless its duel has someone's word in it).
+function ghostLock_(req) {
+  const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64), duel = String(req.duel || '').slice(0, 64);
+  if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
+  if (!ghost || !duel) return reply_({ ok: false, error: 'fields' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ghosts = ghosts_(), duels = sheetOf_(DUEL_SHEET, DUEL_HEADER), grow = ghostRow_(ghosts, ghost);
+    if (!grow || String(ghosts.getRange(grow, 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
+    let drow = duelRow_(duels, duel);
+    const held = () => ghosts.getRange(grow, 1, 1, GHOST_HEADER.length).getValues()[0];
+    let current = held();
+    if (String(current[8]) === 'locked' && String(current[LOCK_COL - 1]) !== duel && statusOf_(current) === 'alive') {
+      // its lock ran out: settle the old duel if someone had spoken in it
+      const oldRow = duelRow_(duels, String(current[LOCK_COL - 1]));
+      if (oldRow) resolve_(duels, oldRow);
+      current = held();
+      if (String(current[8]) === 'locked') setGhost_(ghosts, grow, 'alive');
+      current = held();
+    }
+    const status = String(current[8]);
+    if (status === 'taken') return reply_({ ok: false, error: 'none' });
+    if (status === 'locked' && String(current[LOCK_COL - 1]) !== duel) return reply_({ ok: false, error: 'busy' });
+    if (!drow) { duels.appendRow([duel, new Date().toISOString(), ghost, owner, '', '', '', '', '', '', 'open', '']); drow = duels.getLastRow(); }
+    else {
+      const [, , ghostA, , ghostB] = duels.getRange(drow, 1, 1, DUEL_HEADER.length).getValues()[0];
+      if (ghostA !== ghost && ghostB !== ghost) {
+        if (ghostB) return reply_({ ok: false, error: 'duel' });
+        duels.getRange(drow, 5, 1, 2).setValues([[ghost, owner]]);
+      }
+    }
+    setGhost_(ghosts, grow, 'locked', duel);
+  } finally { lock.releaseLock(); }
+  return reply_({ ok: true });
+}
+
+// A duel that never began: the lock is given back.
+function ghostRelease_(req) {
+  const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64), duel = String(req.duel || '').slice(0, 64);
+  if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ghosts = ghosts_(), duels = sheetOf_(DUEL_SHEET, DUEL_HEADER), grow = ghostRow_(ghosts, ghost), drow = duelRow_(duels, duel);
+    if (!grow || !drow || String(ghosts.getRange(grow, 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
+    const values = duels.getRange(drow, 1, 1, DUEL_HEADER.length).getValues()[0];
+    if (String(values[10]) !== 'open' || values[6] || values[7]) return reply_({ ok: false, error: 'begun' });
+    if (String(ghosts.getRange(grow, 9).getValue()) === 'locked' && String(ghosts.getRange(grow, LOCK_COL).getValue()) === duel) setGhost_(ghosts, grow, 'alive');
+    duels.getRange(drow, 11, 1, 2).setValues([['void', '']]);
+  } finally { lock.releaseLock(); }
+  return reply_({ ok: true });
+}
+
+// A side says how the duel ended for it. Asking again returns the standing answer.
+function ghostSettle_(req) {
+  const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64), duel = String(req.duel || '').slice(0, 64);
+  if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
+  if (!ghost || !duel || typeof req.won !== 'boolean') return reply_({ ok: false, error: 'fields' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const duels = sheetOf_(DUEL_SHEET, DUEL_HEADER), row = duelRow_(duels, duel);
+    if (!row) return reply_({ ok: false, error: 'none' });
+    const read = () => duels.getRange(row, 1, 1, DUEL_HEADER.length).getValues()[0];
+    let values = read();
+    const side = values[2] === ghost && values[3] === owner ? 'A' : values[4] === ghost && values[5] === owner ? 'B' : '';
+    if (!side) return reply_({ ok: false, error: 'none' });
+    resolve_(duels, row); // a word given long ago may stand already
+    values = read();
+    const col = DUEL_HEADER.indexOf('claim' + side) + 1;
+    if (String(values[10]) === 'open' && !values[col - 1]) {
+      duels.getRange(row, col, 1, 1).setValue(req.won ? 'won' : 'lost');
+      duels.getRange(row, col + 2, 1, 1).setValue(Date.now());
+      resolve_(duels, row);
+      values = read();
+    }
+    const state = String(values[10]);
+    const answer = state === 'done' ? (values[11] === ghost ? 'won' : 'lost') : state === 'void' ? 'void' : 'pending';
+    return reply_({ ok: true, state: answer });
+  } finally { lock.releaseLock(); }
+}
+
+// Hands out the pending loot of a player ID: at most LOOT_PER_CLAIM things, the rest stays for the next claim.
+function lootClaim_(req) {
+  const owner = String(req.owner || '');
+  if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  const taken = [];
+  try {
+    const sheet = sheetOf_(LOOT_SHEET, LOOT_HEADER), rows = sheet.getLastRow();
+    for (let r = 2; r <= rows && taken.length < LOOT_PER_CLAIM; r++) {
+      const [, who, , , items, status] = sheet.getRange(r, 1, 1, LOOT_HEADER.length).getValues()[0];
+      if (String(who) !== owner || String(status) !== 'pending') continue;
+      let list;
+      try { list = JSON.parse(String(items).replace(/^'/, '')); } catch (error) { list = []; }
+      const give = list.slice(0, LOOT_PER_CLAIM - taken.length), rest = list.slice(give.length);
+      taken.push(...give);
+      if (rest.length) sheet.getRange(r, 5).setValue("'" + JSON.stringify(rest));
+      else sheet.getRange(r, 6).setValue('claimed');
+    }
+  } finally { lock.releaseLock(); }
+  return reply_({ ok: true, items: taken });
 }
 
 function nicks_() {
@@ -141,6 +354,10 @@ function doPost(e) {
   let record;
   try { record = JSON.parse(e.postData.contents); } catch (error) { return reply_({ ok: false, error: 'json' }); }
   if (record.claim !== undefined) return claim_(record);
+  if (record.ghostLock) return ghostLock_(record.ghostLock);
+  if (record.ghostRelease) return ghostRelease_(record.ghostRelease);
+  if (record.ghostSettle) return ghostSettle_(record.ghostSettle);
+  if (record.lootClaim) return lootClaim_(record.lootClaim);
   const id = String(record.id || '').slice(0, 64);
   const floor = int_(record.floor, 1, 25), level = int_(record.level, 1, 99);
   const kills = int_(record.kills, 0, 100000), turns = int_(record.turns, 0, 10000000);
@@ -150,7 +367,7 @@ function doPost(e) {
   const owner = id.replace(/[^0-9a-z]/gi, '').slice(0, 6).toUpperCase();
   const cls = /^[a-z][a-z0-9_]{0,23}$/.test(String(record.cls || '')) ? String(record.cls) : '';
   const live = record.live === 1;
-  const ghost = !live && cause !== 'End' && typeof record.ghost === 'string' ? record.ghost : null;
+  const ghost = !live && cause !== 'End' && typeof record.ghost === 'string' && authed_(owner, String(record.key || '')) ? record.ghost : null;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -198,8 +415,8 @@ function ranking_() {
 }
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.view === 'ghosts') return ghostList_(String(e.parameter.owner || ''));
-  if (e && e.parameter && e.parameter.view === 'ghost') return ghostGet_(String(e.parameter.owner || ''), String(e.parameter.id || '').slice(0, 64));
+  if (e && e.parameter && e.parameter.view === 'ghosts') return ghostList_(String(e.parameter.owner || ''), String(e.parameter.key || ''));
+  if (e && e.parameter && e.parameter.view === 'ghost') return ghostGet_(String(e.parameter.owner || ''), String(e.parameter.id || '').slice(0, 64), String(e.parameter.key || ''));
   if (e && e.parameter && e.parameter.view === 'ranking') return ranking_();
   if (!e || !e.parameter || e.parameter.view !== 'summary') return reply_({ ok: false, error: 'view' });
   const cache = CacheService.getScriptCache(), hit = cache.get('summary');

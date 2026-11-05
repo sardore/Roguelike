@@ -932,7 +932,7 @@ export const scenarios = {
       await waitFor(() => posts.length > 0);
       await s.tick(300);
       const key = fail ? 'stats.death-failed' : 'stats.death';
-      out[key] = JSON.stringify({ posts: posts.map(({ id, ghost, ...rest }) => ({ hasId: id.length > 8, ghost: ghost ? (() => { const g = JSON.parse(ghost); return { size: ghost.length < 45000, cls: g.classId, level: g.level, carries: Array.isArray(g.inventory), placeless: g.x === undefined && g.y === undefined }; })() : null, ...rest })), queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
+      out[key] = JSON.stringify({ posts: posts.map(({ id, ghost, key, ...rest }) => ({ hasId: id.length > 8, secret: key === undefined ? null : /^[0-9A-Za-z]{32}$/.test(key), ghost: ghost ? (() => { const g = JSON.parse(ghost); return { size: ghost.length < 45000, cls: g.classId, level: g.level, carries: Array.isArray(g.inventory), placeless: g.x === undefined && g.y === undefined }; })() : null, ...rest })), queue: await s.page.evaluate(() => JSON.parse(localStorage.getItem('manruStatsQueue') || '[]').length) });
       out[key + '.errors'] = JSON.stringify(s.errors);
       await s.close();
       await ctx.close();
@@ -1213,6 +1213,92 @@ export const scenarios = {
       if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelfight: the guest was not told ' + JSON.stringify(await fight(guest)));
       out['duelfight.result'] = JSON.stringify({ guest: (await fight(guest)).outcome, host: (await fight(host)).outcome });
       out['duelfight.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
+  // The stakes of the ghost duel (docs/GHOST_STAKES.md) from the client's side, against a stand-in stats server: ghosts are asked for with the secret, both ghosts are
+  // locked into the duel before anything is played, a busy ghost stops the duel, the end of the fight is told to the server by each side, and what a won duel brought
+  // is in the start chest of the next new run (once).
+  async duelstakes(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    const calls = [];
+    const server = { lock: 'ok', settle: { 0: 'pending' }, loot: [] };
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':this.name==='manru-stats'?'https://stats.test/exec':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9301, init });
+      const b = await openSession(browser, root, { seed: 9302, init });
+      const cors = { 'access-control-allow-origin': '*' };
+      for (const [name, s] of [['a', a], ['b', b]]) {
+        await s.page.context().route('https://stats.test/**', async (route) => {
+          const req = route.request();
+          if (req.method() !== 'POST') { calls.push({ by: name, get: req.url() }); return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: '{"ok":true,"list":[]}' }); }
+          const body = JSON.parse(req.postData());
+          calls.push({ by: name, post: body });
+          let reply = { ok: true };
+          if (body.ghostLock) reply = server.lock === 'ok' ? { ok: true } : { ok: false, error: server.lock };
+          if (body.ghostSettle) reply = { ok: true, state: server.settle[body.ghostSettle.won ? 1 : 0] || 'pending' };
+          if (body.lootClaim) { reply = { ok: true, items: server.loot }; server.loot = []; }
+          return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(reply) });
+        });
+      }
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      const stage = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.stage);
+      const stand = (f) => f.others.find((m) => m[0] === '상대 망령');
+
+      // a busy ghost: the server refuses the lock and nobody fights
+      server.lock = 'busy';
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1), 5, 'A-ghost'));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1), 6, 'B-ghost'));
+      await until(async () => (await stage(a)) === 'idle' && (await stage(b)) === 'idle', 40);
+      const refused = { fought: !!((await fight(a)).duel || (await fight(b)).duel), stages: [await stage(a), await stage(b)], locks: calls.filter((c) => c.post?.ghostLock).length };
+      out['duelstakes.busy'] = JSON.stringify(refused);
+      if (refused.fought || refused.stages.some((x) => x !== 'idle')) throw Error('duelstakes: a busy ghost fought ' + JSON.stringify(refused));
+
+      // both locked: the fight begins, with one duel id and each side's own ghost and secret
+      server.lock = 'ok'; calls.length = 0;
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1), 5, 'A-ghost'));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1), 6, 'B-ghost'));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelstakes: no fight ' + JSON.stringify(calls));
+      const locks = calls.filter((c) => c.post?.ghostLock).map((c) => c.post.ghostLock);
+      const secrets = new Set(locks.map((l) => l.key));
+      out['duelstakes.lock'] = JSON.stringify({ n: locks.length, sameDuel: new Set(locks.map((l) => l.duel)).size === 1, ghosts: locks.map((l) => l.ghost).sort(), keyShape: locks.every((l) => /^[0-9A-Za-z]{32}$/.test(l.key)), ownShapes: locks.every((l) => /^[A-Z]{4}\d{2}$/.test(l.owner)), distinctSecrets: secrets.size });
+      if (locks.length !== 2 || new Set(locks.map((l) => l.duel)).size !== 1 || secrets.size !== 2) throw Error('duelstakes: locks ' + JSON.stringify(locks));
+
+      // the host brings the stand-in down: each side tells the server how it ended for it, and asks again while the answer is pending
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      server.settle = { 0: 'pending', 1: 'pending' };
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
+      if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelstakes: the guest was not told');
+      await both(5000);
+      server.settle = { 0: 'lost', 1: 'won' };
+      await both(5000); await both(5000);
+      const settles = calls.filter((c) => c.post?.ghostSettle).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostSettle.won]);
+      out['duelstakes.settle'] = JSON.stringify({ hostWon: settles.some((x) => x[0] === 'host' && x[1] === true), guestLost: settles.some((x) => x[0] === 'guest' && x[1] === false), noOtherWord: settles.every((x) => (x[0] === 'host') === x[1]), askedAgain: settles.length > 2 });
+      if (!settles.some((x) => x[0] === 'host' && x[1] === true) || !settles.some((x) => x[0] === 'guest' && x[1] === false) || settles.length <= 2) throw Error('duelstakes: settle ' + JSON.stringify(settles));
+      out['duelstakes.errors'] = JSON.stringify([a.errors, b.errors]);
+
+      // what the win brought is in the start chest of the next new run, once
+      server.loot = [{ name: '전리품 물약', type: 'potion', count: 1 }];
+      calls.length = 0;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
+      const chest = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
+      const claims = calls.filter((c) => c.post?.lootClaim).length;
+      const placed = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.openChest());
+      out['duelstakes.loot'] = JSON.stringify({ inChest: chest?.loot?.map((i) => i.name), claims, onTheFloorWhenOpened: placed });
+      if (!chest?.loot || chest.loot.length !== 1 || claims !== 1 || !placed) throw Error('duelstakes: loot ' + JSON.stringify({ chest, claims, placed }));
+      calls.length = 0;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
+      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
+      out['duelstakes.once'] = JSON.stringify({ loot: again?.loot ?? null });
+      if (again?.loot) throw Error('duelstakes: the winnings came twice');
       await a.close(); await b.close();
     } finally { relay.kill(); }
     return out;
