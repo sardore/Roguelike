@@ -488,5 +488,6 @@
  "duelmap.summonHit": "dcf5b45f8dd510873f9538920101dbec7d7ce3ff",
  "duelmap.summonGone": "2be88ca4242c76e8253ac62474851065032d6833",
  "duelrules.rank": "178fe1af98cb27f9e5d7bffc08f321423a00eeb5",
- "duelrules.upgrade": "90107de8ca1fd016ab76c21764673f641347afe6"
+ "duelrules.upgrade": "90107de8ca1fd016ab76c21764673f641347afe6",
+ "duelrules.exhaust": "d64ea23c08e5f3cbdf875065b03345ed0b6e16c2"
 }
