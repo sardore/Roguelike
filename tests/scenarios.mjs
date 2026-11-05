@@ -851,10 +851,10 @@ export const scenarios = {
       });
       // The ghost board lists the ghosts that stand (no legacy rows mixed in), by who they were, and says so when empty
       out['stats.ghostBoard'] = await s.page.evaluate(() => {
-        const A = __MANRU_QA_STATS__.api, g = (tag, floor, level, cls) => ({ tag, nick: '', cls, floor, level, cause: '함정' });
+        const A = __MANRU_QA_STATS__.api, g = (tag, floor, level, cls) => ({ tag, nick: '', cls, floor, level, kills: 10, turns: 500, cause: '함정' });
         A.open('rank'); A.board = 'ghost';
         A.ranking = A.withLegacyRanking({ total: 3, boards: { depth: [], level: [], kills: [], ghost: [g('GHOS11', 18, 21, 'swordsman'), g('GHOS22', 12, 14, 'archer'), g('GHOS33', 9, 9, 'summoner'), g('GHOS44', 7, 8, 'archer')] } }); A.failed = {}; A.render();
-        const result = { tabs: [...document.querySelectorAll('[data-rank-board]')].map((b) => b.textContent), plates: document.querySelectorAll('.rankPlate:not(.empty)').length, rows: document.querySelectorAll('.rankRow').length, note: document.querySelector('.statsNote')?.textContent || '', detail: document.querySelector('.rankPlate .rankDetail')?.textContent || '', legacyMixed: JSON.stringify(A.ranking.boards.ghost).includes('Legacy') };
+        const result = { tabs: [...document.querySelectorAll('[data-rank-board]')].map((b) => b.textContent), plates: document.querySelectorAll('.rankPlate:not(.empty)').length, rows: document.querySelectorAll('.rankRow').length, note: document.querySelector('.statsNote')?.textContent || '', detail: document.querySelector('.rankPlate .rankDetail')?.textContent || '', value: document.querySelector('.rankPlate.p1 .rankValue')?.textContent || '', legacyMixed: JSON.stringify(A.ranking.boards.ghost).includes('Legacy') };
         A.ranking = A.withLegacyRanking({ total: 0, boards: { depth: [], level: [], kills: [], ghost: [] } }); A.render();
         result.empty = [...document.querySelectorAll('.statsNote')].map((n) => n.textContent);
         A.board = 'depth'; A.close(); return JSON.stringify(result);

@@ -343,18 +343,19 @@ const PlayStats={
   const tabs=this.el('nav','rankBoards');
   for(const [id,name] of this.BOARDS){const button=this.el('button',null,name);button.type='button';button.dataset.rankBoard=id;button.classList.toggle('on',id===this.board);button.onclick=()=>{this.board=id;this.render()};tabs.append(button)}
   view.append(tabs);
-  if(this.board==='ghost')view.append(this.el('p','statsNote','지금 남아 있는 망령만 오른다. 판돈 대전에서 지면 그 망령은 사라진다.'));
+  if(this.board==='ghost')view.append(this.el('p','statsNote','지금 남아 있는 망령을, 이기면 얻는 점수(죽은 층 + 1) 순으로 보여 준다. 판돈 대전에서 지면 그 망령은 사라진다.'));
   if(notice||!list.length){view.append(this.el('p','statsNote',notice||(this.board==='ghost'?'남아 있는 망령이 없다.':'아직 남은 기록이 없다.')));return view}
   view.append(this.podium(list.slice(0,3)),this.rankRows(list));
   return view;
  },
  // What a row is ranked by on the open board, and how full its bar is.
  metric(row,list){
+  if(this.board==='ghost')return{value:(+row.floor||0)+1+'점',fill:((+row.floor||0)+1)/(this.TOTAL_FLOORS+1)};
   if(this.board==='level')return{value:'Lv '+row.level,fill:row.level/Math.max(1,...list.map(r=>+r.level||0))};
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
  },
- detail(row){if(this.board==='ghost')return `Lv ${row.level}`;return this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
+ detail(row){return this.board==='depth'||this.board==='ghost'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  // The one-time nickname form on the board.
  nickForm(done){
   const wrap=this.el('div','rankNick'),input=this.el('input'),button=this.el('button',null,'등록'),note=this.el('small','rankNickNote','한 번 정하면 바꿀 수 없다. 한글·영문·숫자 '+this.NICK_MIN+'~'+this.NICK_MAX+'글자.');
