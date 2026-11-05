@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,helloFloor:0,pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -332,7 +332,7 @@ const Duel={
    if(reply?.ok&&reply.state&&reply.state!=='pending'){
     this.settling=null;
     const text={won:'판돈 정산: 상대 망령의 것을 모두 얻었다. 새 판을 시작하면 시작 상자에 들어 있다.',lost:'판돈 정산: 이 망령은 사라졌다. 가진 것도 모두 잃었다.',void:'판돈 정산: 양쪽의 말이 같아 무효가 되었다. 아무도 잃지 않았다.'}[reply.state];
-    if(text){addLog(text);toast(text)}
+    if(text){this.settledText=text.replace('판돈 정산: ','');addLog(text);toast(text)}
   }
   }catch(error){ignoreError('duel settle not sent',error)}
   job.busy=false;job.next=now+4000;
@@ -376,9 +376,48 @@ const Duel={
   globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'duel-timeout'});
   this.giveTurn(this.other());
  },
+ // The duel's heads-up display (the strip over the top of the arena): both healths with the look of each side, whose turn it is and how long it has left, the
+ // cooldown of potions and talismans and of martial arts (five pips: each turn that passes puts one out), and how it ended. It reads what the game already keeps
+ // (`state.duel`, the two healths, the turn); nothing here decides anything.
+ hud(){
+  let box=document.getElementById('duelHud');
+  if(!state?.duel){box?.remove();this.hudSig='';return}
+  const d=state.duel,p=state.player,stand=this.opponent(),live=this.stage==='matched',now=Date.now();
+  const cool=kind=>Math.max(0,(d.cooldown?.[kind]??0)-state.turn),mine=!live||this.turn===this.role,left=live?Math.max(0,this.turnEnds-now):0;
+  const result=d.finished?`승리 · ${d.score}점`:d.won?'상대 망령이 쓰러졌다 · 위쪽 문으로 나가면 한 판이 끝난다':(this.outcome==='lose'||state.dead)?'패배 · 이 망령은 사라진다':'';
+  if(stand)this.hudFoe={cls:stand.duelLook?.classId,max:stand.maxHp};
+  const foe=this.hudFoe||{cls:undefined,max:0},sig=[p.hp,p.maxHp,stand?.hp,stand?.maxHp,cool('item'),cool('martial'),mine,live,Math.ceil(left/1000),result,this.settledText||''].join('|');
+  if(!box){box=Spectate.el('div');box.id='duelHud';box.setAttribute('role','status');document.body.append(box)}
+  if(sig!==this.hudSig){
+   this.hudSig=sig;box.replaceChildren();
+   const side=(who,tag,cls,hp,max)=>{
+    const part=Spectate.el('div','dhSide '+who),icon=PlayStats.classIcon(cls),info=Spectate.el('div','dhInfo'),name=Spectate.el('b'),bar=Spectate.el('span','dhHp'),fill=Spectate.el('i');
+    icon.className='dhFace';name.append(Spectate.el('small',null,tag),document.createTextNode(this.className(cls)));
+    fill.style.transform=`scaleX(${max>0?Math.max(0,Math.min(1,hp/max)):0})`;bar.append(fill);
+    info.append(name,bar,Spectate.el('small','dhNum',`${Math.max(0,Math.ceil(hp))} / ${max}`));part.append(icon,info);return part;
+   };
+   const mid=Spectate.el('div','dhMid'),turn=Spectate.el('span','dhTurn '+(mine?'on':'off')),timer=Spectate.el('span','dhTimer'),cools=Spectate.el('div','dhCools');
+   turn.append(Spectate.el('b',null,result?'한 판 종료':mine?'내 차례':'상대 차례'),Spectate.el('em',null,live&&!result?`${Math.ceil(left/1000)}초`:''));timer.append(Spectate.el('i'));
+   for(const [kind,label] of [['item','물약·부적'],['martial','무술']]){
+    const turns=cool(kind),chip=Spectate.el('span','dhCool'+(turns?'':' ready')),pips=Spectate.el('span','dhPips');
+    for(let i=0;i<5;i++)pips.append(Spectate.el('i',i<turns?'on':''));
+    chip.append(Spectate.el('small',null,label),pips,Spectate.el('em',null,turns?`${turns}턴`:'준비'));cools.append(chip);
+   }
+   mid.append(turn,timer,cools);
+   box.append(side('me','나',p.classId,p.hp,p.maxHp),mid,side('foe','상대',foe.cls,stand?.hp??0,stand?.maxHp??foe.max));
+   if(result||this.settledText){const line=Spectate.el('p','dhResult '+(d.finished||d.won?'win':'lose'));line.append(Spectate.el('b',null,result));if(this.settledText)line.append(Spectate.el('span',null,this.settledText));box.append(line)}
+  }
+  // over the arena, not over the side panel: centred on the canvas (a phone's strip is the screen's width)
+  const wrap=document.getElementById('canvasWrap'),rect=wrap?.getBoundingClientRect();
+  if(rect&&innerWidth>700){box.style.left=rect.left+rect.width/2+'px';box.style.width=Math.min(660,rect.width-24)+'px'}
+  else{box.style.left='';box.style.width=''}
+  const bar=box.querySelector('.dhTimer i');
+  if(bar)bar.style.transform=`scaleX(${live?Math.min(1,Math.max(0,left/this.TURN_MS)):1})`;
+ },
  // Every frame, on both sides.
  pump(now){
   this.pollSettle(now);
+  this.hud();
   if(this.stage!=='matched'||!state?.duel)return;
   const p=state.player;
   if(state.dead&&!this.reported){this.conclude('lose');this.send({kind:'result',winner:this.other()});return}

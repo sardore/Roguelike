@@ -1433,6 +1433,12 @@ export const scenarios = {
       const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
       out['duelrules.score'] = JSON.stringify(score);
       if (score !== 10) throw Error('duelrules: score ' + score);
+      // the heads-up display: both healths, the turn, and the cooldown pips
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
+      await s.tick(300);
+      const shown = await s.page.evaluate(() => { const h = document.getElementById('duelHud'); return h && { turn: h.querySelector('.dhTurn b')?.textContent, pips: [...h.querySelectorAll('.dhCool')].map((c) => [c.querySelector('small').textContent, c.querySelectorAll('.dhPips i.on').length, c.querySelector('em').textContent]), sides: h.querySelectorAll('.dhSide').length }; });
+      out['duelrules.hud'] = JSON.stringify(shown);
+      if (!shown || shown.sides !== 2 || shown.pips[0][1] !== 5 || shown.pips[1][2] !== '준비') throw Error('duelrules: hud ' + JSON.stringify(shown));
       // a win over a ghost that died on a shallower floor does not raise the score; over an equal or deeper one (or an unknown one) it does
       const scores = [];
       for (const other of [4, 9, 12, 0]) scores.push(await s.page.evaluate((o) => globalThis.__MANRU_QA_DUEL__.scoreWith(9, o), other));
