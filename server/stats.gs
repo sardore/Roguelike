@@ -12,7 +12,7 @@
 //   the same thing from both voids the duel (both ghosts alive again), and when only one side has spoken for SETTLE_MS its word stands. Asking again gives the same answer.
 // POST {lootClaim:{owner,key}} -> {ok:true,items:[...]} at most LOOT_PER_CLAIM things of the pending loot of that player ID, each handed out once.
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
-// GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
+// GET ?view=ranking -> {total,boards:{depth[],level[],kills[],ghost[]}} (ghost: the ghosts that still stand, deepest first: {tag,nick,cls,floor,level,cause}) each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
 const SHEET_NAME = 'deaths';
 // Nicknames are claimed once, on their own sheet: nick (lower case, the key), nick as typed, owner (the player ID of the device), time.
 const NICK_SHEET = 'nicks';
@@ -190,6 +190,7 @@ function resolve_(duels, row) {
   if (loserRow) {
     const items = lootOf_(ghosts.getRange(loserRow, BODY_COL).getValue());
     setGhost_(ghosts, loserRow, 'taken');
+    CacheService.getScriptCache().removeAll(['ranking']);
     if (items.length) sheetOf_(LOOT_SHEET, LOOT_HEADER).appendRow([new Date().toISOString(), winnerOwner, id, loser, "'" + JSON.stringify(items), 'pending']);
   }
   if (winnerRow) setGhost_(ghosts, winnerRow, 'alive');
@@ -398,6 +399,17 @@ const BOARDS = {
   kills: (a, b) => b.kills - a.kills || b.floor - a.floor || b.level - a.level || a.turns - b.turns,
 };
 
+// The ghosts that still stand (not taken), deepest first. Their characters stay on the server; the board shows who they were.
+function standingGhosts_() {
+  const sheet = ghosts_(), rows = sheet.getLastRow();
+  if (rows < 2) return [];
+  return sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues()
+    .filter(row => String(row[8]) !== 'taken')
+    .map(row => ({ tag: String(row[2]), nick: String(row[3] || ''), cls: String(row[4] || ''), floor: Number(row[5]), level: Number(row[6]), cause: String(row[7]), at: String(row[0]) }))
+    .sort((a, b) => b.floor - a.floor || b.level - a.level || (a.at < b.at ? -1 : 1))
+    .slice(0, RANK_ROWS).map(({ at, ...ghost }) => ghost);
+}
+
 function ranking_() {
   const cache = CacheService.getScriptCache(), hit = cache.get('ranking');
   if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
@@ -409,6 +421,7 @@ function ranking_() {
   }));
   const boards = {};
   for (const name of Object.keys(BOARDS)) boards[name] = runs.slice().sort(BOARDS[name]).slice(0, RANK_ROWS);
+  boards.ghost = standingGhosts_();
   const ranking = JSON.stringify({ ok: true, total: runs.length, boards });
   cache.put('ranking', ranking, 60);
   return ContentService.createTextOutput(ranking).setMimeType(ContentService.MimeType.JSON);

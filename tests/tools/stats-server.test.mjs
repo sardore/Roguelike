@@ -249,3 +249,16 @@ test('a duel that never began gives the lock back', () => {
   settle(s, 'ABCD12', KEY_A, a, 'e', true);
   assert.deepEqual(s.post({ ghostRelease: { owner: 'WXYZ34', key: KEY_B, ghost: b, duel: 'e' } }), { ok: false, error: 'begun' }, 'once someone has spoken it cannot be taken back');
 });
+
+test('the ranking has a board of the ghosts that still stand, and a taken ghost leaves it', () => {
+  const s = server();
+  const a = dead(s, 'ABCD12', KEY_A, 'r1', [item('물약')]), b = dead(s, 'WXYZ34', KEY_B, 'r1');
+  let board = s.get('ranking').boards.ghost;
+  assert.deepEqual(board.map((g) => [g.tag, g.floor, g.level]).sort(), [['ABCD12', 25, 99], ['WXYZ34', 25, 99]].sort(), 'both stand');
+  assert.ok(board.every((g) => !('body' in g) && !('id' in g) && !('at' in g)), 'only who they were, never the character');
+  lock(s, 'ABCD12', KEY_A, a, 'd'); lock(s, 'WXYZ34', KEY_B, b, 'd');
+  assert.equal(s.get('ranking').boards.ghost.length, 2, 'a ghost in a duel still stands');
+  settle(s, 'ABCD12', KEY_A, a, 'd', true); settle(s, 'WXYZ34', KEY_B, b, 'd', false);
+  board = s.get('ranking').boards.ghost;
+  assert.deepEqual(board.map((g) => g.tag), ['ABCD12'], 'the taken ghost is gone at once (the cached board is dropped)');
+});
