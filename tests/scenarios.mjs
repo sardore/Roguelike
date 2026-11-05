@@ -1230,6 +1230,40 @@ export const scenarios = {
     return out;
   },
 
+  // A ghost saved from a real run (the character of a game that was played a little, as PlayStats.ghostBody saves it) stands up in a duel on both pages: the other
+  // tests use freshly made characters, this one keeps the assumption that what the server holds is a body the duel can use.
+  async duelreal(browser, root) {
+    const out = {};
+    const r = await openSession(browser, root, { seed: 77 });
+    let body;
+    try {
+      await startRun(r, 'swordsman');
+      for (let i = 0; i < 12; i++) { await r.page.keyboard.press(['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'][i % 4]); await r.tick(300); }
+      body = await r.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.myGhost());
+    } finally { await r.close(); }
+    if (!body || body.length > 45000) throw Error('duelreal: no usable body ' + body?.length);
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((q) => setTimeout(q, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9401, init });
+      const b = await openSession(browser, root, { seed: 9402, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((q) => setTimeout(q, 40)); };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      await a.page.evaluate((x) => globalThis.__MANRU_QA_DUEL__.api.find(true, x), body);
+      await b.page.evaluate((x) => globalThis.__MANRU_QA_DUEL__.api.find(true, x), body);
+      for (let i = 0; i < 80; i++) { const [x, y] = [await fight(a), await fight(b)]; if (x.duel && y.duel && x.others.length && y.others.length) break; await both(); }
+      const [x, y] = [await fight(a), await fight(b)];
+      if (!(x.duel && y.duel)) throw Error('duelreal: no fight');
+      out['duelreal.result'] = JSON.stringify({ classes: [x.cls, y.cls], healthy: [x.hp > 0, y.hp > 0], sees: [x.others.length, y.others.length] });
+      out['duelreal.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // A side that leaves in the middle of a fight loses it: the host that stays wins (the other ghost falls and its door opens), and the guest that stays is told.
   async duelleave(browser, root) {
     const out = {};

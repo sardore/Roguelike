@@ -467,5 +467,7 @@
  "duelfight.turns": "e18eff54a2e8838ab568009a2e1f7a93f110a555",
  "duelfight.status": "59d04331dc528cac5dbf87d54ceaceb69c22af38",
  "duelrules.score": "b1d5781111d84f7b3fe45a0852e59758cd7a87e5",
- "duelfight.forged": "884ee29fffad9ccddefe57d411fc6182d4c87602"
+ "duelfight.forged": "884ee29fffad9ccddefe57d411fc6182d4c87602",
+ "duelreal.result": "e6ef5b2fcd2f17978c3a315e5a97843f1eff07fb",
+ "duelreal.errors": "164374825086dc65cd5dc548c248f61328b5d668"
 }
