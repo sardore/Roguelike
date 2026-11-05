@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "8da246703ef94e7624ff3ef7aa3d66a54a30d3be",
- "values.branch": "b18bc4f9fa667025eab2ad9ed4cadf0bd3e86a69",
+ "values.empty": "c11aa8e06f4abe1231cb0453b19ebe3254b76557",
+ "values.branch": "006f1dc1c55385f56a8086acab66317904595131",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -483,5 +483,9 @@
  "duelmap.drop": "b56e0bbf21aea974b38cb0a38777418fe79f1fea",
  "duelmap.take": "164374825086dc65cd5dc548c248f61328b5d668",
  "duelmap.errors": "164374825086dc65cd5dc548c248f61328b5d668",
- "duelmap.ally": "1a6f05806a8a5db1ab519b082d2c502457e84c33"
+ "duelmap.ally": "1a6f05806a8a5db1ab519b082d2c502457e84c33",
+ "duelmap.summon": "f96842d29e7eab69ff3147fbea77a5192665dfbe",
+ "duelmap.summonHit": "dcf5b45f8dd510873f9538920101dbec7d7ce3ff",
+ "duelmap.summonGone": "2be88ca4242c76e8253ac62474851065032d6833",
+ "duelrules.rank": "178fe1af98cb27f9e5d7bffc08f321423a00eeb5"
 }

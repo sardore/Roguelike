@@ -1276,6 +1276,23 @@ export const scenarios = {
       const hp2 = await Q(guest, 'hpNow');
       out['duelmap.ally'] = JSON.stringify({ engineOwn: hp1 === hp0, allyLanded: hp2 < hp1 });
       if (hp1 !== hp0 || !(hp2 < hp1)) throw Error('duelmap: ally blow ' + [hp0, hp1, hp2]);
+      // a summon of the host is only on the host's page: the guest sees a picture of it with its place and health, and a blow on the picture is taken by the summon
+      const ally = await Q(host, 'allyAdd'); await both(600);
+      await hostActs(() => Q(host, 'wait'));
+      const pic = await Q(guest, 'proxyInfo');
+      out['duelmap.summon'] = JSON.stringify({ ally, picture: pic && pic.slice(0, 4) });
+      if (!pic || pic[0] !== ally[0] || pic[1] !== ally[1]) throw Error('duelmap: no picture of the summon ' + JSON.stringify([ally, pic]));
+      if (!(await until(async () => (await fight(guest)).myTurn))) throw Error('duelmap: no turn for the guest');
+      await Q(guest, 'hitProxy', 2); await both(600);
+      const allyNow = await Q(host, 'allyInfo');
+      out['duelmap.summonHit'] = JSON.stringify({ before: ally[2], after: allyNow && allyNow[2] });
+      if (!allyNow || !(allyNow[2] < ally[2])) throw Error('duelmap: the blow on the picture did not reach the summon ' + JSON.stringify([ally, allyNow]));
+      await Q(guest, 'wait');
+      await hostActs(() => Q(host, 'allyKill'));
+      await both(800);
+      const gone = await Q(guest, 'proxyInfo');
+      out['duelmap.summonGone'] = JSON.stringify(gone);
+      if (gone) throw Error('duelmap: the picture stayed after the summon fell');
       out['duelmap.errors'] = JSON.stringify([a.errors, b.errors]);
       await a.close(); await b.close();
     } finally { relay.kill(); }
@@ -1388,6 +1405,11 @@ export const scenarios = {
       const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
       out['duelrules.score'] = JSON.stringify(score);
       if (score !== 10) throw Error('duelrules: score ' + score);
+      // a win over a ghost that died on a shallower floor does not raise the score; over an equal or deeper one (or an unknown one) it does
+      const scores = [];
+      for (const other of [4, 9, 12, 0]) scores.push(await s.page.evaluate((o) => globalThis.__MANRU_QA_DUEL__.scoreWith(9, o), other));
+      out['duelrules.rank'] = JSON.stringify(scores);
+      if (scores.join() !== '9,10,10,10') throw Error('duelrules: rank ' + scores);
       out['duelrules.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
