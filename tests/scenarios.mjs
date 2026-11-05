@@ -1132,14 +1132,39 @@ export const scenarios = {
       const h0 = await fight(host), g0 = await fight(guest);
       // the guest walks towards the host player: three steps east-or-west, then keeps walking into it
       const key = g0.player[0] < h0.player[0] ? 'ArrowRight' : 'ArrowLeft';
-      for (let i = 0; i < 30; i++) { await guest.page.keyboard.press(key); await both(150); }
+      for (let i = 0; i < 18; i++) { await guest.page.keyboard.press(key); await both(150); }
       const h1 = await fight(host), g1 = await fight(guest);
       const opp = h1.others.find((m) => m[0] === '상대 망령');
       out['duelfight.start'] = JSON.stringify({ host: h0.player, hostSees: h0.others.map((m) => [m[0], m[1], m[2]]), guest: g0.player, guestSees: g0.others.map((m) => [m[0], m[1], m[2]]) });
       out['duelfight.after'] = JSON.stringify({ hostHurt: h1.player[2] < h0.player[2], opponentMoved: !!opp && (opp[1] !== h0.others[0][1] || opp[2] !== h0.others[0][2]), guestFollows: g1.player[0] === opp?.[1] && g1.player[1] === opp?.[2] });
+      // the host's player brings the other ghost down: the guest is told it lost, and the host's door is open
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
+      if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelfight: the guest was not told ' + JSON.stringify(await fight(guest)));
+      out['duelfight.result'] = JSON.stringify({ guest: (await fight(guest)).outcome, host: (await fight(host)).outcome });
       out['duelfight.errors'] = JSON.stringify([a.errors, b.errors]);
       await a.close(); await b.close();
     } finally { relay.kill(); }
+    return out;
+  },
+
+  // The rules of the ghost duel on its map: both ghosts take element damage as a boss does, potions/talismans share a five-turn cooldown and martial arts
+  // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
+  // the score; a duel run is never saved or sent to the statistics.
+  async duelrules(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.stage(0));
+      await s.tick(600);
+      const r = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.rules());
+      out['duelrules.result'] = JSON.stringify(r);
+      if (r.mulPlayer !== .62 || r.mulOpponent !== .62) throw Error('duelrules: element resistance ' + JSON.stringify(r));
+      if (r.coolItem0 || !r.coolItem1 || r.coolItem2 || !r.coolMartial || r.martialAction !== 'cooldown') throw Error('duelrules: cooldown ' + JSON.stringify(r));
+      if (r.lava !== 'refused' || r.lavaPlayer !== 'refused' || r.lavaFree !== 'placed') throw Error('duelrules: lava ' + JSON.stringify(r));
+      if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
+      out['duelrules.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
     return out;
   },
 

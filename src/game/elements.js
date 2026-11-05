@@ -194,7 +194,7 @@ function entityElementGuard57(entity,elem){
   return (elem==='ice'&&(state?.status?.warm57||0)>0)||state?.player?.armor?.elementGuard74===elem||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0)||!!globalThis.__MANRU_LEGEND47__?.guard?.(elem);
 }
 function entityElementMultiplier57(entity,elem){
-  if(!entity||entity===state?.player)return entityElementGuard57(entity,elem)?0:1;
+  if(!entity||entity===state?.player)return entityElementGuard57(entity,elem)?0:state?.duel?DUEL_ELEMENT_RESIST:1;
   const tile=state?.map?.[entity.y]?.[entity.x];let m=1;
   if(elem==='fire'){if(entity.lava||entity.fireTrail||/화염|살라맨더|녹아/.test(entity.name||''))m*=.25;if(entity.kind==='plant')m*=1.35}
   else if(elem==='shock'){if(entity.aquatic||[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(tile))m*=1.50;if(entity.kind==='construct')m*=1.25}
@@ -202,7 +202,7 @@ function entityElementMultiplier57(entity,elem){
   else if(elem==='ice'){if(entity.aquatic)m*=1.35;if(entity.lava||entity.fireTrail)m*=1.25}
   else if(elem==='grass'){if(entity.kind==='plant')m*=.25;if(entity.kind==='undead')m*=1.30}
   else if(elem==='earth'){if(entity.flying)m*=.25;if(entity.kind==='construct')m*=.60}
-  if(entity.boss)m*=.62;return m;
+  if(entity.boss)m*=.62;if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m;
 }
 function resolveElementDamage57(entity,elem,base,opts={}){
   if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity));

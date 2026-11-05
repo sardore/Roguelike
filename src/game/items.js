@@ -75,6 +75,7 @@ function useInventoryItem(idx,...rest){
   const pending=state?.player?.inventory?.[idx];
   if(pending?.talismanKind==='upgrade'&&bodyPowerActive()){toast('이미 괴력이 폭발하고 있다.');return false}
   const act=playerAction57('item',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 물건을 사용하지 못했다.'});if(!act.ok)return !!act.consumed;const item=state?.player?.inventory?.[idx];if(!item)return false;
+  if(['potion','talisman'].includes(item.type)){if(duelCooling('item'))return false;act.duelCooldown='item'}
   const identity991=globalThis.__MANRU_ITEM_IDENTITY991__;
   const library1022=globalThis.__MANRU_LIBRARY1022_ACTIONS__;
   const talisman74=globalThis.__MANRU_TALISMAN74_ACTIONS__;
@@ -1025,6 +1026,7 @@ function playerAction57(kind,opts={}){
   if(dojoSleeping()){ActionDispatcher.denied('asleep');return{ok:false,kind,reason:'asleep'};}
   if(state.shopIntermission?.active)return{ok:true,kind,committed:false};
   if((state.status?.stun||0)>0){ActionDispatcher.denied('stun');state.status.stun--;if(opts.closeMartial)closeMartial();if(opts.closeInventory)closeInventory();addLog(opts.stunMessage||'몸이 굳어 행동하지 못했다.');globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"playerAction57",...{playerAgency:false,reason:'stun-skip'}}).value;return{ok:false,kind,reason:'stun',consumed:true,stunned:true}}
+  if(kind==='martial'&&duelCooling('martial')){ActionDispatcher.denied('cooldown');return{ok:false,kind,reason:'cooldown'}}
   if(opts.skill&&(state.status?.skillSeal||0)>0){ActionDispatcher.denied('skillSeal');toast('기력이 봉인되어 이 행동을 할 수 없다.');return{ok:false,kind,reason:'skillSeal'}}
   return{ok:true,kind,committed:false}
 }

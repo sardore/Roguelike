@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId})},
  find(play=false){
@@ -59,7 +59,7 @@ const Duel={
  // of the relay, so nothing of the rules runs on the server.
  startFight(arena){
   if(this.role!=='host'||this.stage!=='matched'||!DUEL_ARENAS[arena])return false;
-  this.arena=arena;this.seq=0;this.lastSig='';
+  this.arena=arena;this.seq=0;this.lastSig='';this.reported=false;this.outcome='';
   newGame(CLASSES[0],{arena,role:'host'});
   this.send({kind:'start',arena});return true;
  },
@@ -69,6 +69,7 @@ const Duel={
   if(payload.kind==='start'&&this.role==='guest'){this.enterGuest(payload.arena);return true}
   if(payload.kind==='frame'&&this.role==='guest'){Spectate.applyFrame({kind:'snapshot',seq:payload.seq,frame:payload.frame});return true}
   if(payload.kind==='input'&&this.role==='host'){this.applyInput(payload);return true}
+  if(payload.kind==='result'&&this.role==='guest'){this.outcome=payload.winner==='guest'?'win':'lose';Spectate.viewerNotice(this.outcome==='win'?'승리했다.':'패배했다.');return true}
   return false;
  },
  enterGuest(arena){
@@ -98,9 +99,11 @@ const Duel={
  },
  // Host, every frame: when the fight changed, send the guest a whole frame (the arenas are small, so there are no deltas to get wrong).
  pump(now){
-  if(this.role!=='host'||this.stage!=='matched'||!state?.duel||now-this.lastSend<this.SEND_GAP_MS)return;
+  if(this.role!=='host'||this.stage!=='matched'||!state?.duel||this.reported)return;
   const opponent=state.monsters.find(m=>m.duelOpponent),p=state.player;
-  if(!opponent)return;
+  // The fight is over when one of the two is down: say so once, and stop sending frames.
+  if(state.dead||!opponent||opponent.hp<=0){this.reported=true;this.outcome=state.dead?'lose':'win';this.send({kind:'result',winner:state.dead?'guest':'host'});return}
+  if(now-this.lastSend<this.SEND_GAP_MS)return;
   const sig=[state.turn,p.x,p.y,p.hp,opponent.x,opponent.y,opponent.hp,state.log[0]].join(':');
   if(sig===this.lastSig)return;
   this.lastSig=sig;this.lastSend=now;
