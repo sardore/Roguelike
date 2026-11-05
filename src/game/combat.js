@@ -577,9 +577,10 @@ function tempFieldCells57(f){
  const cells=[];for(let y=f.y-1;y<=f.y+1;y++)for(let x=f.x-1;x<=f.x+1;x++)cells.push({x,y});return cells;
 }
 function addField(kind,x,y,ttl,cells=null,metadata={}){
- if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);emitElementContact105(kind,cells,metadata)}
+ if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,metadata)}finally{Duel.environment--}}
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke));
  state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...metadata});syncSmokeEntry();
+ Duel.sendField(kind,x,y,ttl,cells,metadata);
 }
 function applyMonsterAttackStatus57(mon,target,context={}){
  if(!target||target.hp<=0)return;

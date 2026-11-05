@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "d36159697f91b56094686581287e0847cca8ed2b",
- "values.branch": "8e720676aa648f59cd4a5b1688bb1fd43a527cd6",
+ "values.empty": "2caf959f8577d8586bf202c4699a747e2a8ec5df",
+ "values.branch": "f9c1120644a6e585c4d4d9c15ba8a6310e0dab0c",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -469,5 +469,6 @@
  "duelrules.score": "b1d5781111d84f7b3fe45a0852e59758cd7a87e5",
  "duelfight.forged": "884ee29fffad9ccddefe57d411fc6182d4c87602",
  "duelreal.result": "e6ef5b2fcd2f17978c3a315e5a97843f1eff07fb",
- "duelreal.errors": "164374825086dc65cd5dc548c248f61328b5d668"
+ "duelreal.errors": "164374825086dc65cd5dc548c248f61328b5d668",
+ "duelfight.field": "6fcb37248fbddad4be0ca0c7be1dc90fb312d671"
 }
