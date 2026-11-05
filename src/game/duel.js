@@ -207,7 +207,11 @@ const Duel={
   updateAll();
  },
  // Sent from damageEntity when the stand-in is hurt by this player.
- sendHit(amount,element){if(!this.applying&&!this.environment&&!state._turnPipelineActive57)this.send({kind:'hit',amount,element:element||null})},
+ // A blow of the player's ally (a summon) lands in the turn engine, which runs on both sides by itself; it is the one thing of the engine that is sent, because the ally exists on this page only.
+ sendHit(amount,element,source=null){
+  const ally=!!source&&source!==state.player&&state.monsters.includes(source)&&entityFaction(source)==='player';
+  if(!this.applying&&!this.environment&&(!state._turnPipelineActive57||ally))this.send({kind:'hit',amount,element:element||null});
+ },
  // What this player puts on the map in its own action (a field, a stretch of terrain) is put on the other player's map by the same game functions, with the
  // stand-in as the source; what the map then does to whoever stands there (and what a burning or poisoned stand-in takes at the end of a turn) is the map's own work on each side: damage dealt inside the turn engine or by a field's contact is not sent as a hit. Reactions inside the
  // turn engine run on both sides by themselves and are not sent.

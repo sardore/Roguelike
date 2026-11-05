@@ -1268,6 +1268,14 @@ export const scenarios = {
       const taken = [(await Q(host, 'mapAt', dx, dy)).items, (await Q(guest, 'mapAt', dx, dy)).items];
       out['duelmap.take'] = JSON.stringify(taken);
       if (taken[1].includes('시험 약병')) throw Error('duelmap: the item was left on the other map ' + JSON.stringify(taken));
+      // a blow of the host's ally lands inside the turn engine: it is sent (the ally is only on the host's page); a blow with no ally behind it is the engine's own and is not
+      const hp0 = await Q(guest, 'hpNow');
+      await hostActs(() => Q(host, 'allyHit', false));
+      const hp1 = await Q(guest, 'hpNow');
+      await hostActs(() => Q(host, 'allyHit', true));
+      const hp2 = await Q(guest, 'hpNow');
+      out['duelmap.ally'] = JSON.stringify({ engineOwn: hp1 === hp0, allyLanded: hp2 < hp1 });
+      if (hp1 !== hp0 || !(hp2 < hp1)) throw Error('duelmap: ally blow ' + [hp0, hp1, hp2]);
       out['duelmap.errors'] = JSON.stringify([a.errors, b.errors]);
       await a.close(); await b.close();
     } finally { relay.kill(); }
