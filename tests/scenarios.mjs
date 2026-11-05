@@ -1110,6 +1110,22 @@ export const scenarios = {
     return out;
   },
 
+  // The way into the ghost duel: the title button opens a panel that says what is missing (no statistics server in a test build: no ghosts to choose) and closes again.
+  async duelpicker(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 3 });
+    try {
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      await s.page.click('#duelBtn');
+      await s.tick(300);
+      out['duelpicker.open'] = JSON.stringify(await s.page.evaluate(() => ({ note: document.getElementById('duelNote')?.textContent, ghosts: document.querySelectorAll('#duelGhosts .duelGhost').length, panel: !!document.getElementById('duelScene') })));
+      await s.page.click('#duelClose');
+      out['duelpicker.closed'] = JSON.stringify(await s.page.evaluate(() => !!document.getElementById('duelScene')));
+      out['duelpicker.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   // The ghost duel on a real map, between two pages: the host's run is the arena with the other player's ghost standing in it; the guest sees the
   // host's state from its own cell and walks its ghost with the arrow keys; walking into the other player is an attack that costs the host health.
   async duelfight(browser, root) {
@@ -1125,16 +1141,31 @@ export const scenarios = {
       const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
       const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
       const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
-      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true));
-      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true));
+      // each side brings a saved ghost: a swordsman and an archer
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman')));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer')));
       if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelfight: no fight ' + JSON.stringify([await fight(a), await fight(b)]));
       const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
       const h0 = await fight(host), g0 = await fight(guest);
       // the guest walks towards the host player: three steps east-or-west, then keeps walking into it
       const key = g0.player[0] < h0.player[0] ? 'ArrowRight' : 'ArrowLeft';
-      for (let i = 0; i < 18; i++) { await guest.page.keyboard.press(key); await both(150); }
+      // turns alternate: the host waits, then the guest steps (a step out of turn changes nothing)
+      const early = await fight(host);
+      await guest.page.keyboard.press(key); await both(150);
+      const stillThere = (await fight(guest)).player[0] === g0.player[0];
+      for (let i = 0; i < 18; i++) {
+        await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hostWait()); await both(150);
+        await guest.page.keyboard.press(key); await both(150);
+      }
+      // and a side that does nothing loses its turn after twenty seconds
+      const t0 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
+      await both(21000); await both(500);
+      const t1 = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo());
+      out['duelfight.turns'] = JSON.stringify({ stepOutOfTurnIgnored: stillThere && early.player[2] === h0.player[2], timeoutPassed: t1.turnNo > t0.turnNo || t1.turn !== t0.turn, hud: /차례/.test(t1.hud) });
       const h1 = await fight(host), g1 = await fight(guest);
       const opp = h1.others.find((m) => m[0] === '상대 망령');
+      out['duelfight.ghosts'] = JSON.stringify({ hostPlays: h0.cls, guestSees: g0.cls, hostWasAskedFor: host === a ? 'swordsman' : 'archer', guestWas: host === a ? 'archer' : 'swordsman' });
+      if (h0.cls !== (host === a ? 'swordsman' : 'archer') || g0.cls !== (host === a ? 'archer' : 'swordsman')) throw Error('duelfight: the ghosts were not the ones chosen ' + JSON.stringify([h0.cls, g0.cls]));
       out['duelfight.start'] = JSON.stringify({ host: h0.player, hostSees: h0.others.map((m) => [m[0], m[1], m[2]]), guest: g0.player, guestSees: g0.others.map((m) => [m[0], m[1], m[2]]) });
       out['duelfight.after'] = JSON.stringify({ hostHurt: h1.player[2] < h0.player[2], opponentMoved: !!opp && (opp[1] !== h0.others[0][1] || opp[2] !== h0.others[0][2]), guestFollows: g1.player[0] === opp?.[1] && g1.player[1] === opp?.[2] });
       // the host's player brings the other ghost down: the guest is told it lost, and the host's door is open
@@ -1165,6 +1196,33 @@ export const scenarios = {
       if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
       out['duelrules.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
+    return out;
+  },
+
+  // A side that leaves in the middle of a fight loses it: the host that stays wins (the other ghost falls and its door opens), and the guest that stays is told.
+  async duelleave(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9201, init });
+      const b = await openSession(browser, root, { seed: 9202, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 200) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman')));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer')));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return [x, y].some((f) => f.duel) && [x, y].some((f) => f.spectator && f.others.length); }))) throw Error('duelleave: no fight');
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.leave('test'));
+      if (!(await until(async () => (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.info())).duel.won))) throw Error('duelleave: the host did not win');
+      out['duelleave.result'] = JSON.stringify({ hostWon: (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.info())).duel.won, hostOutcome: (await fight(host)).outcome });
+      out['duelleave.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
     return out;
   },
 

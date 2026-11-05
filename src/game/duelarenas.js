@@ -192,18 +192,33 @@ function buildDuelArena(duel){
   setTerrainTile58(state.map,door.x,door.y,TT.WALL);
   state.rooms=[{x:1,y:1,w:width-2,h:height-2,cx:Math.floor(width/2),cy:Math.floor(height/2),name:arena.name}];
   Object.assign(state,{specialFloor:true,layoutName:arena.name,duel:{arena:duel.arena,role:duel.role||'host',name:arena.name,door,won:false,opponent:{x:theirs[0],y:theirs[1]}},stairs:{...door},fixedStart:{x:mine[0],y:mine[1]},fixedExit:{...door}});
+  if(duel.ghost)reviveGhost(state.player,duel.ghost);
   state.player.baseVision=Math.max(width,height);state.player.x=mine[0];state.player.y=mine[1];
-  placeDuelOpponent(theirs);state.player.facing={x:duel.role==='guest'?-1:1,y:0};
+  placeDuelOpponent(theirs,duel.opponent);state.player.facing={x:duel.role==='guest'?-1:1,y:0};
   VisibilityService.compute();vfBuildDecor();
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)VisibilityService.rememberKey(k(x,y));
 }
 
-// The other player's ghost, standing on the other start. It has the stats of the player's own class (both sides fight on equal terms), takes no turn of its
+// A dead account stands up again: the saved character (PlayStats.ghostBody) is laid over the player of the new run, at full health and focus, fed, and with
+// nothing of the place it died in (position, facing, pending actions).
+function reviveGhost(player,ghost){
+  for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete ghost[key];
+  Object.assign(player,ghost,{x:player.x,y:player.y,facing:player.facing,busyUntil:0,nextAttackAt:0,hunger:100});
+  player.hp=player.maxHp;player.focus=player.maxFocus;
+  initializeMartial(state);normalizeClassState58(player,0);
+  for(const slot of GEAR_SLOT_TYPES)if(player[slot]){player[slot].identified=true;player[slot].curseImmune991=true}
+}
+// The other player's ghost, standing on the other start. With its saved character (`ghost`) it has that character's stats (worked out as the game works
+// them out for a player) and weapon; without one, the stats of the player's own class, so that both sides fight on equal terms. It takes no turn of its
 // own (`duelOpponent`: monsterTurn skips it; it moves only when the other player's input arrives) and gives no xp, kill or drop.
-function placeDuelOpponent(at){
-  const p=state.player,mon={name:'상대 망령',concept57:'다른 이의 죽은 계정이 망령이 되어 선 모습. 가진 것을 모두 걸고 이곳에 섰다.',shape:'human',kind:'human',duelOpponent:true,
-    atk:p.baseAtk,def:p.baseDef,eva:p.baseEva,will:p.baseWill,baseAtk:p.baseAtk,baseDef:p.baseDef,baseEva:p.baseEva,baseWill:p.baseWill,maxHp:p.maxHp,hp:p.maxHp,maxFocus:p.maxFocus,focus:p.maxFocus,
-    martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:p.color,weakened:0,alerted:true,
+function placeDuelOpponent(at,ghost=null){
+  const p=state.player,source=ghost||p,saved=state.player;
+  let stats;
+  if(ghost){state.player={...ghost,hp:ghost.maxHp};try{stats=getStats()}finally{state.player=saved}}
+  const mon={name:'상대 망령',concept57:'다른 이의 죽은 계정이 망령이 되어 선 모습. 가진 것을 모두 걸고 이곳에 섰다.',shape:'human',kind:'human',duelOpponent:true,
+    atk:stats?stats.atk:p.baseAtk,def:stats?stats.def:p.baseDef,eva:stats?stats.eva:p.baseEva,will:stats?stats.will:p.baseWill,baseAtk:source.baseAtk,baseDef:source.baseDef,baseEva:source.baseEva,baseWill:source.baseWill,
+    maxHp:source.maxHp,hp:source.maxHp,maxFocus:source.maxFocus,focus:source.maxFocus,weapon:ghost?.weapon||null,
+    martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:source.color,weakened:0,alerted:true,
     spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
   OccupancyService.addMonster(mon);return mon;
 }
