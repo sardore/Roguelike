@@ -859,8 +859,8 @@ export const scenarios = {
         result.empty = [...document.querySelectorAll('.statsNote')].map((n) => n.textContent);
         A.board = 'depth'; A.close(); return JSON.stringify(result);
       });
-      // a server that does not serve the ghost board yet: the runs that ended in death from the records the other boards use
-      out['stats.ghostFallback'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api, r = (tag, cause, floor, live) => ({ tag, nick: '', cls: 'archer', floor, level: 5, kills: 1, turns: 9, cause, live }); const b = A.withLegacyRanking({ total: 4, boards: { depth: [r('AAAA11', '함정', 9), r('BBBB22', 'End', 25), r('CCCC33', '진행 중', 8, true), r('DDDD44', '탐사 중단', 7)], level: [], kills: [] } }).boards.ghost; return JSON.stringify(b.map((x) => x.tag)); });
+      // a server that does not serve the ghost board has no ghost tab (the records alone cannot tell which ghosts still stand)
+      out['stats.ghostFallback'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; A.open('rank'); A.board = 'depth'; A.ranking = A.withLegacyRanking({ total: 1, boards: { depth: [{ tag: 'AAAA11', nick: '', cls: 'archer', floor: 9, level: 5, kills: 1, turns: 9, cause: '함정' }], level: [], kills: [] } }); A.failed = {}; A.render(); const tabs = [...document.querySelectorAll('[data-rank-board]')].map((b) => b.textContent); A.close(); return JSON.stringify({ tabs, ghost: A.ranking.boards.ghost ?? null }); });
       // The board names a run by its nickname when the server sends one.
       out['stats.nickWho'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return JSON.stringify([A.who({ tag: 'ABCD12', nick: '만루왕' }), A.who({ tag: 'ABCD12', nick: '' }), A.who({ tag: 'Legacy' })]); });
       out['stats.errors'] = JSON.stringify(s.errors);
