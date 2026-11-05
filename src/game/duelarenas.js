@@ -247,7 +247,7 @@ function duelOpponentDown(){
   if(!d||d.won)return;
   d.won=true;
   setTerrainTile58(state.map,d.door.x,d.door.y,TT.STAIR);
-  addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.');toast('상대 망령을 쓰러뜨렸다. 위쪽 문으로 나가면 한 판이 끝난다.');
+  addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.'); // the strip over the arena says what to do next
   VisibilityService.compute();Duel.reportWin();
 }
 // Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win; a win over a ghost that died on a shallower floor than this one (when the other floor is known) does not raise it.
@@ -256,6 +256,6 @@ function finishDuelRound(){
   if(!d.won){toast('상대 망령을 쓰러뜨려야 문이 열린다.');return false}
   if(d.finished)return false;
   d.finished=true;d.score=(d.baseFloor||1)+(d.opponentFloor>0&&d.opponentFloor<d.baseFloor?0:1);
-  addLog(`망령전 승리 · ${d.score}점`);toast(`망령전 승리 · ${d.score}점`);
+  addLog(`망령전 승리 · ${d.score}점`);
   return true;
 }
