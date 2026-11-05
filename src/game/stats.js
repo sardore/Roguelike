@@ -314,13 +314,15 @@ const PlayStats={
   const mean=key=>((+data.avg?.[key]||0)*n0+rows.reduce((sum,row)=>sum+row[key],0))/n;
   return{...data,total:n,floors:Array.from({length:this.TOTAL_FLOORS},(_,i)=>(+data.floors?.[i]||0)+rows.filter(row=>row.floor===i+1).length),causes:[...causes].sort((a,b)=>b[1]-a[1]),avg:{level:Math.round(mean('level')*10)/10,kills:Math.round(mean('kills')),turns:Math.round(mean('turns'))},recent:[...(data.recent||[]),...rows].sort((a,b)=>String(b.t)<String(a.t)?-1:1)};
  },
+ // The ghost board from the records the other boards use: a server that does not serve it yet gives the runs that ended in death (a ghost is made only by such a run).
+ ghostsFromDepth(depth){return(depth||[]).filter(row=>!row.live&&row.cause!==this.END_CAUSE&&row.cause!=='탐사 중단')},
  withLegacyRanking(data){
   const rows=this.legacyRows().map(row=>({tag:'Legacy',floor:row.floor,cause:row.cause,level:row.level,kills:row.kills,turns:row.turns})),order={
    depth:(a,b)=>b.floor-a.floor||b.level-a.level||b.kills-a.kills||a.turns-b.turns,
    level:(a,b)=>b.level-a.level||b.floor-a.floor||b.kills-a.kills||a.turns-b.turns,
    kills:(a,b)=>b.kills-a.kills||b.floor-a.floor||b.level-a.level||a.turns-b.turns},boards={};
   const counted=row=>row.cause===this.END_CAUSE?{...row,floor:this.END_FLOOR}:row;
-  for(const [id] of this.BOARDS)boards[id]=id==='ghost'?data.boards.ghost||[]:[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
+  for(const [id] of this.BOARDS)boards[id]=id==='ghost'?data.boards.ghost||this.ghostsFromDepth(data.boards.depth):[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
   return{...data,total:(+data.total||0)+rows.length,boards};
  },
  el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node},

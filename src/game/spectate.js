@@ -43,6 +43,7 @@ const Spectate={
  act(action,fields={}){return this.send({type:'spectator.action',action,...fields})},
  close(){const ws=this.ws;this.ws=null;this.ready=false;this.connecting=false;try{ws?.close()}catch(error){ignoreError('spectate close failed',error)}},
  onClosed(){
+  Duel.socketClosed();
   this.retryAt=performance.now()+5000;
   if(this.hosting)this.reconnectAt=performance.now()+4000;
   else if(this.watching)this.viewerNotice('연결이 끊겼다. 방송이 끝났거나 네트워크가 불안정하다.');

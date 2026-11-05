@@ -859,6 +859,8 @@ export const scenarios = {
         result.empty = [...document.querySelectorAll('.statsNote')].map((n) => n.textContent);
         A.board = 'depth'; A.close(); return JSON.stringify(result);
       });
+      // a server that does not serve the ghost board yet: the runs that ended in death from the records the other boards use
+      out['stats.ghostFallback'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api, r = (tag, cause, floor, live) => ({ tag, nick: '', cls: 'archer', floor, level: 5, kills: 1, turns: 9, cause, live }); const b = A.withLegacyRanking({ total: 4, boards: { depth: [r('AAAA11', '함정', 9), r('BBBB22', 'End', 25), r('CCCC33', '진행 중', 8, true), r('DDDD44', '탐사 중단', 7)], level: [], kills: [] } }).boards.ghost; return JSON.stringify(b.map((x) => x.tag)); });
       // The board names a run by its nickname when the server sends one.
       out['stats.nickWho'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; return JSON.stringify([A.who({ tag: 'ABCD12', nick: '만루왕' }), A.who({ tag: 'ABCD12', nick: '' }), A.who({ tag: 'Legacy' })]); });
       out['stats.errors'] = JSON.stringify(s.errors);
@@ -1131,6 +1133,13 @@ export const scenarios = {
       out['duelpicker.open'] = JSON.stringify(await s.page.evaluate(() => ({ note: document.getElementById('duelNote')?.textContent, ghosts: document.querySelectorAll('#duelGhosts .duelGhost').length, panel: !!document.getElementById('duelScene') })));
       await s.page.click('#duelClose');
       out['duelpicker.closed'] = JSON.stringify(await s.page.evaluate(() => !!document.getElementById('duelScene')));
+      // a search with no relay to reach ends with a message instead of waiting for ever; a socket that closes during a search ends it too
+      const search = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api, first = D.find(true, '{}', 1); return { first, at: D.stage + '|' + D.note }; });
+      await s.tick(800);
+      search.after = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; return D.stage + '|' + D.pickNote; });
+      const closed = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; D.stage = 'queued'; D.socketClosed(); return { stage: D.stage, note: D.pickNote }; });
+      out['duelpicker.search'] = JSON.stringify({ search, closed });
+      if (closed.stage !== 'idle') throw Error('duelpicker: a closed socket left the search ' + JSON.stringify(closed));
       out['duelpicker.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     // with a server that has ghosts: a card for each (class, depth, level, the score a win gives), then the confirmation with what is at stake, and the way back
