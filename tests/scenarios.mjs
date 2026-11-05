@@ -1190,6 +1190,11 @@ export const scenarios = {
       await host.tick(21000); await both(800);
       const timedOut = !(await fight(host)).myTurn && (await fight(guest)).myTurn;
       out['duelfight.turns'] = JSON.stringify({ timeoutPassesTheTurn: timedOut, hud: /차례/.test(await host.page.evaluate(() => document.getElementById('floorTxt')?.textContent || '')) });
+      // a hit sent out of turn (the host's turn is over) is not taken by the guest
+      const forgedBefore = (await fight(guest)).hp;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.forgeHit(9)); await both(500);
+      out['duelfight.forged'] = JSON.stringify({ ignored: (await fight(guest)).hp === forgedBefore });
+      if ((await fight(guest)).hp !== forgedBefore) throw Error('duelfight: a hit out of turn was taken');
       // the host brings the stand-in down: the guest is told it lost
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
       if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelfight: the guest was not told ' + JSON.stringify(await fight(guest)));
