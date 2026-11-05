@@ -76,6 +76,7 @@ const Duel={
  // the fight begins on its own. The panel shows what the search is doing and can cancel it.
  openPicker(){
   if(document.getElementById('duelScene'))return false;
+  if(this.stage!=='idle')this.leave(''); // the title screen is the only way in: a match still open here is a stale one
   const scene=Spectate.el('div'),panel=Spectate.el('div','spectatePanel'),head=Spectate.el('header','duelHead'),close=Spectate.el('button',null,'×'),note=Spectate.el('p','spectateHint duelNote',''),list=Spectate.el('div','duelGhosts');
   const title=Spectate.el('div','duelTitle'),rules=Spectate.el('ul','duelRules');
   scene.id='duelScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','망령전');note.id='duelNote';list.id='duelGhosts';
@@ -181,7 +182,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';
+  this.fighting=true;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor});
   this.giveTurn('host');
@@ -418,6 +419,8 @@ const Duel={
  pump(now){
   this.pollSettle(now);
   this.hud();
+  // A duel that is over (the winner through the door, the loser fallen), or whose run has been replaced by another run, ends its match: the next duel can then be asked for.
+  if(this.stage==='matched'&&this.fighting&&(!state?.duel||(this.reported&&(state.duel.finished||state.dead))))this.leave('한 판이 끝났다');
   if(this.stage!=='matched'||!state?.duel)return;
   const p=state.player;
   if(state.dead&&!this.reported){this.conclude('lose');this.send({kind:'result',winner:this.other()});return}

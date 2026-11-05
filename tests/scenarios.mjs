@@ -1319,6 +1319,43 @@ export const scenarios = {
     return out;
   },
 
+  // After a duel is over (the winner went through the door, the loser fell) the relay match is left on both sides, so that the next duel can be asked for;
+  // and a duel run that is replaced by another run ends its match as well.
+  async duelend(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9501, init });
+      const b = await openSession(browser, root, { seed: 9502, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      const api = (s, f) => s.page.evaluate((f) => globalThis.__MANRU_QA_DUEL__.api[f], f);
+      const stand = (f) => f.others.find((m) => m[0] === '상대 망령');
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1)));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1)));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelend: no fight');
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
+      await until(async () => (await fight(guest)).outcome === 'lose');
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.exitDoor());
+      const left = await until(async () => (await api(host, 'stage')) === 'idle' && (await api(guest, 'stage')) === 'idle', 40);
+      out['duelend.stages'] = JSON.stringify({ host: await api(host, 'stage'), guest: await api(guest, 'stage'), left });
+      if (!left) throw Error('duelend: the match was not left ' + JSON.stringify(out['duelend.stages']));
+      // a new duel can be asked for again
+      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1)));
+      out['duelend.again'] = JSON.stringify(again);
+      if (!again) throw Error('duelend: a new search was refused');
+      out['duelend.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
   // The stakes of the ghost duel (docs/GHOST_STAKES.md) from the client's side, against a stand-in stats server: ghosts are asked for with the secret, both ghosts are
   // locked into the duel before anything is played, a busy ghost stops the duel, the end of the fight is told to the server by each side, and what a won duel brought
   // is in the start chest of the next new run (once).
