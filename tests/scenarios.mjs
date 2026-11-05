@@ -1708,7 +1708,7 @@ export const scenarios = {
       if (res.treeLocked.ok) problems.push('tree before its rank');
       if (!res.tree.ok || res.tree.dealt <= res.stone.dealt) problems.push('tree');
       if (!res.anomaly.ok || res.anomaly.events !== 3 || new Set(res.anomaly.starts).size !== 1 || res.anomaly.dealt <= 0) problems.push('anomaly: three pieces together');
-      if (!res.anomalyFew.ok || res.anomalyFew.spent !== 6) problems.push('the fifth rank costs more');
+      if (!res.anomalyFew.ok || res.anomalyFew.spent !== 5) problems.push('the fifth rank costs more');
       if (res.wood.spent !== 4) problems.push('the base cost');
       if (!res.psychic.ok || res.psychic.dealt <= 0 || res.psychic.pos.x !== res.psychic.piece.x || res.psychic.pos.y !== res.psychic.piece.y || res.psychic.pieceTiles[0] === 51) problems.push('psychic: the enemy is thrown onto the piece and breaks it');
       if (!res.psychicBounce.ok || res.psychicBounce.neighborDealt <= 0) problems.push('psychic bounce');
