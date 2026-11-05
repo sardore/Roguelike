@@ -1128,6 +1128,7 @@ function bindTitleButtons(){
     enterBtn.onclick=showClassPick;
   classBackBtn.onclick=showStartGate;
   document.getElementById('rankBtn').onclick=()=>PlayStats.open('rank');
+  document.getElementById('duelBtn').onclick=()=>Duel.openPicker();
   document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
   PlayStats.flush();PlayStats.bindLifecycle();PlayStats.launch();
   document.getElementById('spectateBtn').onclick=()=>Spectate.openList();

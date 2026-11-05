@@ -3,11 +3,11 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,mine:'',theirs:null,mineBody:'',outcome:'',reported:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
- setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId})},
- find(play=false){
-  if(this.stage!=='idle')return false;this.play=play;
+ setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
+ find(play=false,body=''){
+  if(this.stage!=='idle')return false;this.play=play;this.mineBody=body;this.theirs=null;
   this.queueEntryId='q-'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);this.inbox=[];this.sent=0;
   this.setStage('connecting','서버에 연결하는 중…');
   if(!Spectate.ws&&!Spectate.open('duel')){this.setStage('idle','연결을 열 수 없다');return false}
@@ -29,7 +29,7 @@ const Duel={
    case 'session.commit':
     if(packet.mode!==this.MODE||packet.matchId!==this.matchId)return;
     this.token=packet.sessionToken;this.role=packet.role;this.remote=packet.remotePlayerId;this.setStage('matched','대전이 시작된다');
-    if(this.play&&this.role==='host')this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length));return;
+    if(this.play&&this.role==='guest')this.send({kind:'hello',body:this.mineBody});return;
    case 'relay.message':
     if(packet.sessionToken!==this.token)return;
     if(this.fightMessage(packet.payload))return;
@@ -49,23 +49,74 @@ const Duel={
  leave(note=''){
   if(this.stage==='matched')Spectate.send({type:'session.leave',sessionToken:this.token});
   else if(this.stage==='queued'||this.stage==='offered')Spectate.send({type:'match.cancel',matchId:this.matchId});
-  this.token='';this.matchId='';this.role='';this.remote='';this.setStage('idle',note);
+  this.token='';this.matchId='';this.role='';this.remote='';this.fighting=false;this.setStage('idle',note);
  },
 
+ // ---- the way in: the title button ---------------------------------------------------------------------------------------------
+ // A panel with the player's own ghosts (the ones still standing); choosing one fetches its saved character, looks for an opponent and, when both have one,
+ // the fight begins on its own. The panel shows what the search is doing and can cancel it.
+ openPicker(){
+  if(document.getElementById('duelScene'))return false;
+  const scene=Spectate.el('div'),panel=Spectate.el('div','spectatePanel'),head=Spectate.el('header'),close=Spectate.el('button',null,'×'),note=Spectate.el('p','spectateHint',''),list=Spectate.el('div','duelGhosts');
+  scene.id='duelScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','망령전');note.id='duelNote';list.id='duelGhosts';
+  close.type='button';close.id='duelClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.closePicker();
+  head.append(Spectate.el('h2',null,'망령전'),close);panel.append(head,note,list);scene.append(panel);document.body.append(scene);
+  this.ghosts=null;this.pickNote='';this.loadMine();return true;
+ },
+ closePicker(){
+  if(this.stage==='queued'||this.stage==='offered'||this.stage==='connecting')this.leave('취소했다');
+  document.getElementById('duelScene')?.remove();
+ },
+ async loadMine(){
+  const url=PlayStats.endpoint();
+  if(!url){this.pickNote='수집 서버가 연결되어 있지 않다.';this.renderPicker();return}
+  this.pickNote='내 망령을 불러오는 중…';this.renderPicker();
+  try{
+   const data=await PlayStats.fetchView(url,'ghosts&owner='+PlayStats.deviceTag());
+   this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status!=='taken'):null;
+   this.pickNote=this.ghosts?(this.ghosts.length?'출전할 망령을 고른다. 지면 가진 것을 모두 잃고, 이기면 상대의 것을 모두 가져간다.':'출전할 망령이 없다. 깊이 순위권에 든 채 죽으면 망령이 남는다.'):'망령을 불러오지 못했다.';
+  }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
+  this.renderPicker();
+ },
+ async choose(row){
+  if(this.stage!=='idle')return;
+  const url=PlayStats.endpoint();
+  this.pickNote='망령을 깨우는 중…';this.renderPicker();
+  try{
+   const data=await PlayStats.fetchView(url,'ghost&owner='+PlayStats.deviceTag()+'&id='+encodeURIComponent(row.id));
+   if(!data?.body){this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker();return}
+   this.find(true,data.body);
+  }catch(error){ignoreError('duel ghost fetch failed',error);this.pickNote='이 망령의 본문을 받지 못했다.';this.renderPicker()}
+ },
+ renderPicker(){
+  const scene=document.getElementById('duelScene');
+  if(!scene)return;
+  if(this.stage==='matched'){scene.remove();return}
+  const note=document.getElementById('duelNote'),list=document.getElementById('duelGhosts'),busy=this.stage!=='idle';
+  note.textContent=busy?this.note:this.pickNote;
+  list.replaceChildren();
+  if(busy){const cancel=Spectate.el('button',null,'그만두기');cancel.type='button';cancel.onclick=()=>this.leave('취소했다');list.append(cancel);return}
+  for(const row of this.ghosts||[]){
+   const button=Spectate.el('button','duelGhost');button.type='button';button.dataset.ghost=row.id;
+   button.append(Spectate.el('b',null,`${row.floor}층 · Lv ${row.level}`),Spectate.el('span',null,row.cause));button.onclick=()=>this.choose(row);list.append(button);
+  }
+ },
  // ---- the fight on a real map ------------------------------------------------------------------------------------------
  // The host owns the game: its own run is the arena (newGame with {arena,role}), the other player's ghost stands in it as `duelOpponent`
  // (duelarenas.js) and moves only by what arrives here. The guest owns no game: its screen is the host's state seen from the guest's
  // cell (`frameForGuest`), drawn by the spectator view of Spectate, and what it sends is a step (`input`). Frames and steps are payloads
  // of the relay, so nothing of the rules runs on the server.
- startFight(arena){
-  if(this.role!=='host'||this.stage!=='matched'||!DUEL_ARENAS[arena])return false;
+ startFight(arena,guestBody=''){
+  if(this.role!=='host'||this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;this.fighting=true;
   this.arena=arena;this.seq=0;this.lastSig='';this.reported=false;this.outcome='';
-  newGame(CLASSES[0],{arena,role:'host'});
+  this.theirs=guestBody?JSON.parse(guestBody):null;
+  newGame(CLASSES[0],{arena,role:'host',ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs});
   this.send({kind:'start',arena});return true;
  },
  // What the fight itself passes over the relay; true when the payload was one of its own.
  fightMessage(payload){
   if(!payload||typeof payload!=='object')return false;
+  if(payload.kind==='hello'&&this.role==='host'){this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),String(payload.body||''));return true}
   if(payload.kind==='start'&&this.role==='guest'){this.enterGuest(payload.arena);return true}
   if(payload.kind==='frame'&&this.role==='guest'){Spectate.applyFrame({kind:'snapshot',seq:payload.seq,frame:payload.frame});return true}
   if(payload.kind==='input'&&this.role==='host'){this.applyInput(payload);return true}
@@ -114,7 +165,7 @@ const Duel={
  frameForGuest(){
   const keep={player:state.player,monsters:state.monsters,seen:state.seen,visible:state.visible},host=state.player,opponent=state.monsters.find(m=>m.duelOpponent);
   try{
-   state.player={...host,x:opponent.x,y:opponent.y,hp:Math.max(0,opponent.hp),maxHp:opponent.maxHp,facing:opponent.facing||{x:-1,y:0}};
+   state.player={...(this.theirs||host),baseVision:host.baseVision,x:opponent.x,y:opponent.y,hp:Math.max(0,opponent.hp),maxHp:opponent.maxHp,facing:opponent.facing||{x:-1,y:0}};
    state.monsters=[...keep.monsters.filter(m=>m!==opponent),{name:'상대 망령',shape:'human',kind:'human',x:host.x,y:host.y,hp:host.hp,maxHp:host.maxHp,atk:host.baseAtk,def:host.baseDef,eva:host.baseEva,color:host.color,facing:host.facing}];
    state.seen=new Set();state.visible=new Set();
    VisibilityService.compute();
