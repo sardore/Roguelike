@@ -2,7 +2,7 @@
 // POST 본문 JSON {v,id,floor,cause,level,kills,turns,nick?,cls?,live?} -> 시트에 한 줄 (같은 id는 한 번만; 진행 중(live:1)인 판은 같은 줄을 갱신하고, 끝난 기록이 오면 그 줄을 최종값으로 닫는다). nick은 선택(한글·영문·숫자 2~8자), cls는 직업 id(선택)
 // 클리어는 floor 25, cause 'End'로 오고, 랭킹에서는 30층으로 센다
 // POST {claim,owner} -> 닉네임 등록(이미 다른 기기가 쓰면 error 'taken', 이 기기가 이미 다른 닉네임이 있으면 error 'owned'+nick). 기록의 닉네임은 보낸 값이 아니라 등록부에서 그 기기의 닉네임을 찾아 붙인다.
-// POST body may also carry `ghost` (a JSON string of the dead character, at most GHOST_MAX characters) on a final death record: stored on the `ghosts` sheet, one row per run id.
+// POST body may also carry `ghost` (a JSON string of the dead character, at most GHOST_MAX characters) on a final death record: stored on the `ghosts` sheet, one row per run id, and only when the run reached the depth ranking (its place on the depth board is within RANK_ROWS).
 // GET ?view=ghosts&owner=AAAA00 -> {ok,list:[{id,t,cls,floor,level,cause,status}]} the ghosts of one player ID, newest first; GET ?view=ghost&owner=AAAA00&id=... -> {ok,body} only for the owner.
 // GET ?view=summary -> {total,floors[25],causes[[이름,수]],avg{level,kills,turns},recent[]}
 // GET ?view=ranking -> {total,boards:{depth[],level[],kills[]}} each the top RANK_ROWS rows {tag,nick,cls,live,floor,level,kills,turns,cause}; tag = first 6 characters of the run id; nick = the nickname sent with that run (empty for older runs)
@@ -48,6 +48,17 @@ function ghosts_() {
   let sheet = book.getSheetByName(GHOST_SHEET);
   if (!sheet) { sheet = book.insertSheet(GHOST_SHEET); sheet.appendRow(GHOST_HEADER); }
   return sheet;
+}
+
+// A ghost is made only by a run that reached the depth ranking: its place on the depth board (the one the game shows, RANK_ROWS rows, runs in progress
+// counted as the board counts them) is within RANK_ROWS. Called after the run's own row is written, with the lock held.
+function depthRanked_(id) {
+  const sheet = sheet_(), rows = sheet.getLastRow();
+  if (rows <= 1) return false;
+  const runs = sheet.getRange(2, 1, rows - 1, HEADER.length).getValues().map(([, rid, floor, cause, level, kills, turns]) => ({
+    id: String(rid), floor: String(cause) === 'End' ? 30 : floor, level, kills, turns,
+  }));
+  return runs.sort(BOARDS.depth).slice(0, RANK_ROWS).some((run) => run.id === id);
 }
 
 // Keeps the ghost of a run (once per run id). Call with the lock held. A character is a JSON object; anything else is dropped.
@@ -152,11 +163,11 @@ function doPost(e) {
       if (!sheet.getRange(row, LIVE_COL).getValue()) return reply_({ ok: true, duplicate: true });
       sheet.getRange(row, 3, 1, 7).setValues([[floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
       sheet.getRange(row, LIVE_COL).setValue(live ? Date.now() : '');
-      if (ghost) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
+      if (ghost && depthRanked_(id)) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     } else {
       if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
       sheet.appendRow([new Date().toISOString(), id, floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, live ? Date.now() : '']);
-      if (ghost) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
+      if (ghost && depthRanked_(id)) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     }
     CacheService.getScriptCache().removeAll(['summary', 'ranking']);
   } finally { lock.releaseLock(); }

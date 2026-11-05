@@ -207,3 +207,38 @@ function placeDuelOpponent(at){
     spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
   OccupancyService.addMonster(mon);return mon;
 }
+
+// ---- the rules of the duel (docs/GHOST_BATTLE.md) ----------------------------------------------------------------------------
+// Both ghosts take element damage as a boss does (entityElementMultiplier57 has .62 for a boss; the same number here), potions and talismans share
+// a cooldown of five turns and martial arts have their own, and the lava talisman is not laid under the other player (RuntimeTerrainOwner).
+const DUEL_ELEMENT_RESIST=.62,DUEL_COOLDOWN_TURNS=5;
+// True (with a message) while `kind` ('item' for potions and talismans, 'martial') is cooling down.
+function duelCooling(kind){
+  if(!state?.duel)return false;
+  const until=state.duel.cooldown?.[kind]??0;
+  if(state.turn>=until)return false;
+  toast(`${kind==='martial'?'무술':'물약과 부적'}은 ${until-state.turn}턴 뒤에 쓸 수 있다.`);
+  return true;
+}
+// Called when an action is committed: the cooldown of what was used starts.
+function duelCooldownStart(kind){
+  if(state?.duel&&kind)(state.duel.cooldown||={})[kind]=state.turn+DUEL_COOLDOWN_TURNS;
+}
+// The other ghost fell: the door in the top wall opens (it is a stair tile from now on).
+function duelOpponentDown(){
+  const d=state.duel;
+  if(!d||d.won)return;
+  d.won=true;
+  setTerrainTile58(state.map,d.door.x,d.door.y,TT.STAIR);
+  addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.');toast('상대 망령을 쓰러뜨렸다. 위쪽 문으로 나가면 한 판이 끝난다.');
+  VisibilityService.compute();
+}
+// Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win.
+function finishDuelRound(){
+  const d=state.duel;
+  if(!d.won){toast('상대 망령을 쓰러뜨려야 문이 열린다.');return false}
+  if(d.finished)return false;
+  d.finished=true;d.score=(d.baseFloor||1)+1;
+  addLog(`망령전 승리 · ${d.score}점`);toast(`망령전 승리 · ${d.score}점`);
+  return true;
+}

@@ -2278,7 +2278,7 @@ function bumpTileAction(x,y,opts={}){
   if(tile===TT.PAVILION){state.player.focus=Math.min(getStats().maxFocus,state.player.focus+1);return true;}
   return false;
 }
-function commitPlayerAction57(ctx,cost=1){if(!ctx?.ok||ctx.committed)return false;ctx.committed=true;if(['attack','martial','item'].includes(ctx.kind)&&!actionPresentationBusy58())presentPlayerAction58(ctx.kind,state.playerAttackTarget);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:cost,reason:"commitPlayerAction57"}).value;return true}
+function commitPlayerAction57(ctx,cost=1){if(!ctx?.ok||ctx.committed)return false;ctx.committed=true;duelCooldownStart(ctx.kind==='martial'?'martial':ctx.duelCooldown);if(['attack','martial','item'].includes(ctx.kind)&&!actionPresentationBusy58())presentPlayerAction58(ctx.kind,state.playerAttackTarget);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:cost,reason:"commitPlayerAction57"}).value;return true}
 function queueBossDropTransaction55(plan,origin,floor){
   const queued=plan.map(def=>({item:{...clone(def),count:1,bossDrop55:true},origin:{...origin}}));state.pendingGroundItems57=state.pendingGroundItems57||[];state.pendingGroundItems57.push(...queued);
   state.bossDrop55={granted:false,pending:true,pendingCount:queued.length,floor,requested:plan.length,count:0,healCount:plan.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length,stackedFallbacks:0,names:plan.map(v=>v.name),items:plan.map(v=>({name:v.name,type:v.type,potionKind:v.potionKind||null,talismanKind:v.talismanKind||null,x:null,y:null,stacked:false}))};

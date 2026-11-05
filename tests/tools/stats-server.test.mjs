@@ -47,7 +47,7 @@ function server() {
   vm.runInContext(source, context);
   const post = (record) => JSON.parse(context.doPost({ postData: { contents: JSON.stringify(record) } }).text);
   const get = (view) => JSON.parse(context.doGet({ parameter: { view } }).text);
-  return { rows: sheets.get('deaths').rows, nicks: () => sheets.get('nicks')?.rows, clock, post, get };
+  return { rows: sheets.get('deaths').rows, ghosts: () => sheets.get('ghosts')?.rows, nicks: () => sheets.get('nicks')?.rows, clock, post, get };
 }
 
 const base = { v: 1, id: 'ABCD12-run1', floor: 3, level: 4, kills: 10, turns: 300, cls: 'archer' };
@@ -123,4 +123,17 @@ test('a record carries the nickname its device has claimed, not the one it says'
   assert.ok(byTag['ABCD12만루왕'], 'the claimed nickname is on the later record of its device');
   assert.ok(byTag['ABCD12'], 'a record from before the claim has none');
   assert.ok(byTag['ZZZZ99'], 'a device that did not claim it shows its player ID');
+});
+
+// A ghost (the dead character, docs/GHOSTS.md) is kept only for a run that reached the depth ranking: with the board full, a shallow death makes none and
+// a death that takes a place among them does.
+test('a ghost is made only by a run that reached the depth ranking', () => {
+  const s = server();
+  for (let i = 0; i < 30; i++) s.post({ v: 1, id: `FILL${String(i).padStart(2, '0')}-r`, floor: 25, level: 18, kills: 100 + i, turns: 500, cause: '함정' });
+  const body = JSON.stringify({ cls: 'archer' });
+  s.post({ ...base, id: 'ABCD12-shallow', floor: 3, cause: '함정', ghost: body });
+  assert.equal(s.ghosts()?.length ?? 1, 1, 'a death outside the first thirty places leaves no ghost');
+  s.post({ ...base, id: 'ABCD12-deep', floor: 25, level: 99, cause: '함정', ghost: body });
+  assert.equal(s.ghosts().length, 2, 'a death within them does');
+  assert.equal(s.ghosts()[1][1], 'ABCD12-deep');
 });

@@ -20,7 +20,8 @@
    - **실제 게임 화면에서 연다.** `newGame(cls,{arena,role})` → `newGameCoreLifecycle`이 `NormalFloorGenerator.generate` 대신 `buildDuelArena`로 그림 한 장을 통째로 맵으로 깐다. 디버그 전장(`debugBattle57`)은 쓰지 않고, HUD·렌더러·조작·인벤토리가 평소 판과 같다. 상단에는 "망령전 · 전장 이름"이 뜨고 화면은 전장 전체가 보이게 맞춘다(`CameraState.fitZoom`). 대전 중에는 시야를 넓혀(`baseVision`) 전장 전체가 보이되, 비석·병풍·벽 뒤는 가려진다.
    - **설명을 빼먹지 않는다.** 전장에 나오는 모든 타일은 이름과 설명이 있어야 하고, 기본 문구("만루를 이루는 이름 없는 구조물…")가 뜨면 탈락이다. `tests/tools/duel-arenas.test.mjs`(정적)와 `duelfloor` 시나리오(실행 중인 게임에서 모든 타일의 `terrainInfo986`)가 검사한다. 이 검사로 기존에 설명이 없던 징검돌·월문·얕은 물에 설명을 달았다.
    - **두 사람 조작(구현됨, 첫 판)**: 호스트의 판이 전장이고(`Duel.startFight`), 상대 망령은 호스트 판 안의 `duelOpponent`다. 게스트는 판을 갖지 않는다. 게스트 화면은 호스트 상태를 게스트 칸에서 본 모습(`Duel.frameForGuest`: 게스트 망령이 `player`, 호스트 플레이어는 같은 자리의 상대 망령, 보이는 칸은 게스트 칸에서 계산)이고, 관전 화면(`Spectate`의 `merge`/`present`)이 그린다. 게스트는 방향키·WASD로 한 걸음씩(`input`)을 보내고, 호스트가 받아 움직이거나(상대 칸이 호스트 플레이어면 공격: `attackMonster`) 한다. 화면 정보와 입력은 모두 중계 서버의 메시지라 서버는 규칙을 계산하지 않는다. `duelfight` 시나리오가 두 페이지로 확인한다.
-   - **아직 없는 것**: 게스트의 아이템·무술·부적 사용, 턴 순서와 20초 제한(지금은 입력이 오는 즉시 처리), 원소 저항, 5턴 쿨타임, 용암 부적 규칙, 승패 처리(문과 점수), 망령 본문 불러오기, 시작 화면의 진입 버튼(지금은 QA 훅 `Duel.find(true)`).
+   - **규칙(구현됨, 호스트 쪽)**: 원소 저항은 보스와 같은 .62를 양쪽 망령에게(`DUEL_ELEMENT_RESIST`, `entityElementMultiplier57`). 물약·부적은 공통 5턴, 무술은 따로 5턴(`duelCooling`/`duelCooldownStart`; `playerAction57`과 `useItem`이 막고 `commitPlayerAction57`이 시작한다). 용암 부적은 상대 플레이어 칸 밑에 깔리지 않는다(`RuntimeTerrainOwner.mutate`, 보스와 같은 자리). 상대가 쓰러지면 위쪽 문이 열리고(`duelOpponentDown`), 문을 지나면 한 판이 끝나며 점수는 망령이 죽은 층수(`baseFloor`)+1(`finishDuelRound`). 대전 판은 저장·통계에 남기지 않는다(`runIsEphemeral`). 승패는 게스트에게 `result` 메시지로 간다. `duelrules`·`duelfight` 시나리오가 확인한다.
+   - **아직 없는 것**: 게스트 쪽에서 쓰는 아이템·무술·부적(게스트는 걸음만 보낸다. 그래서 위 쿨타임과 용암 규칙은 호스트 플레이어에게만 걸린다), 턴 순서와 20초 제한(지금은 입력이 오는 즉시 처리), 망령 본문 불러오기와 `baseFloor`(지금은 1), 시작 화면의 진입 버튼(지금은 QA 훅 `Duel.find(true)`), 판돈.
 5. **판돈**(3단계): 대전 시작에 서버가 양쪽 망령을 잠그고, 두 클라이언트 결과가 일치할 때만 승자에게 템을 넘기고 진 망령을 지운다. 도망(끊김)은 패배로 센다.
 
 ## 만드는 순서

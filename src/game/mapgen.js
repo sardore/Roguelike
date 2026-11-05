@@ -3359,6 +3359,7 @@ function descend(){
   const act=playerAction57('descend',{stunMessage:'몸이 굳어 층을 내려가지 못했다.'});
   if(!act.ok)return !!act.consumed;
   if(state.player.x!==state.stairs.x||state.player.y!==state.stairs.y){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
+  if(state.duel)return finishDuelRound();
   if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor)&&!state.bossDefeated){toast('구역 보스를 쓰러뜨려야 길이 열린다.');return false}
   if(state.floor===23&&!state.floor23?.keyAcquired){toast('수은 심부 열쇠가 있어야 다음 층으로 내려갈 수 있다.');return false}
   if(state.floor>=25){toast('더 안쪽은 만루보주의 방뿐이다.');return false}
