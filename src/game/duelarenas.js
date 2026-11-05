@@ -246,7 +246,7 @@ function duelOpponentDown(){
   d.won=true;
   setTerrainTile58(state.map,d.door.x,d.door.y,TT.STAIR);
   addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.');toast('상대 망령을 쓰러뜨렸다. 위쪽 문으로 나가면 한 판이 끝난다.');
-  VisibilityService.compute();
+  VisibilityService.compute();Duel.reportWin();
 }
 // Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win.
 function finishDuelRound(){

@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "f11a57c6abe8bf5aab72032646cfe2d03d67bb66",
- "values.branch": "34d1b3f349415696d18a124bcef6b4c21e605de8",
+ "values.empty": "04f2fb1a14d985df9330650f90c53a715ad3a429",
+ "values.branch": "fa8ef3a2f35dbc03791a54cd67e4dd3d6e290328",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -453,8 +453,8 @@
  "duelfloor.6": "26128fd546c716369ad0c5409605629f84d8036c",
  "duelfloor.7": "279802eebcbf670c641b7dceedb03bac89895930",
  "duelfloor.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "duelfight.start": "5d718d7b1da7e40432549851c2be56d5141c7b3b",
- "duelfight.after": "8a07c5102909fea605b77438cf0bc4677a4d7963",
+ "duelfight.start": "ee7ede855923d8159ed4fee319472c7fdf66e463",
+ "duelfight.after": "16f1b3ff1e2ebd7897392629fa7cf4f670288b2d",
  "duelfight.errors": "164374825086dc65cd5dc548c248f61328b5d668",
  "duelfight.result": "414c5c2a4f13477592715ae7e93744fbc88a024a",
  "duelrules.result": "c865579c4d8560da842523be591eb77a577c65ca",
@@ -462,8 +462,7 @@
  "duelpicker.open": "a748e4db09f9a7c41a541ef8403ded5903fbc02f",
  "duelpicker.closed": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04",
  "duelpicker.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "duelfight.ghosts": "bc5b50697b511601f2326596d85f0572fc0f161d",
- "duelfight.turns": "6470a39e116bbf4dff49daca762a6fb9bebfbcf2",
  "duelleave.result": "e072613d816d1479208f75f0299568926964e421",
- "duelleave.errors": "164374825086dc65cd5dc548c248f61328b5d668"
+ "duelleave.errors": "164374825086dc65cd5dc548c248f61328b5d668",
+ "duelfight.turns": "e18eff54a2e8838ab568009a2e1f7a93f110a555"
 }

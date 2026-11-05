@@ -293,6 +293,7 @@ const BRANCH_LORE=Object.freeze({
  mine:'불빛이 닿지 않는 갱도와 광차가 오가는 심부. 다리 밖은 낭떠러지다.'
 });
   function tip70(id,text,sub='',options={}){
+    if(state?.duel)return; // a duel has no tutorial: a tip would stop the input in the middle of a timed turn
     if((!options.repeatable&&seenTip70(id))||coachCurrent?.id===id||RC.tutorialQueue.some(t=>t.id===id))return;
     const entry={id,text,sub,repeatable:!!options.repeatable,title:options.title,run:state?.runId984};if(entry.repeatable)RC.tutorialQueue.unshift(entry);else RC.tutorialQueue.push(entry);clearTimeout(coachTimer);coachTimer=setTimeout(pumpTip,0);
   }
