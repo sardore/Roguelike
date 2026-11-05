@@ -317,7 +317,7 @@ function combatDefenseBonus(target){
 }
 function damageEntity(entity,amount,source=null,element=null,context={}){
  if(!entity||entity.hp<=0||!Number.isFinite(amount)||amount<=0)return 0;
- if(entity.duelOpponent)Duel.sendHit(amount,element,source);
+ if(entity.duelOpponent||entity.duelProxy)Duel.sendHit(amount,element,source,entity.duelProxy||null);
  const invulnerability=combatInvulnerability(entity);if(invulnerability){floatText(entity.x,entity.y,'무적','#e8d29e',11);addLog(invulnerability);return 0;}
  source=combatEffectActor(source)||source;const before=entity.hp;
  if(entity.bossPattern==='master'&&entity.storyPhase992!==1){

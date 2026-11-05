@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,helloFloor:0,pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -61,8 +61,8 @@ const Duel={
   }
   if(refused){this.leave(refused);return}
   this.locked=true;
-  if(this.role==='guest')this.send({kind:'hello',body:this.mineBody});
-  else if(this.helloBody!==null)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),this.helloBody);
+  if(this.role==='guest')this.send({kind:'hello',body:this.mineBody,floor:this.mineFloor});
+  else if(this.helloBody!==null)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),this.helloBody,this.helloFloor);
  },
  leave(note=''){
   if(this.stakes&&this.locked&&!this.fighting&&this.mineGhostId)PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));
@@ -152,26 +152,26 @@ const Duel={
  // `sync` (where the sender stands, its health, whose turn it is), `hit` (damage the sender dealt to the stand-in: the receiver takes it as its own player),
  // `result` (who won) and the setup (`hello`, `start`). Self-effects (potions, equipment, buffs) need no message; effects that put something on the map (fields,
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
- begin(arena,theirsBody){
+ begin(arena,theirsBody,theirFloor=0){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
   this.fighting=true;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
-  newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor});
+  newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor});
   this.giveTurn('host');
   return true;
  },
  // Host: choose the arena, begin, and tell the guest (with the host's ghost, so that the guest can stand its stand-in up).
- startFight(arena,guestBody=''){
-  if(this.role!=='host'||!this.begin(arena,guestBody))return false;
-  this.send({kind:'start',arena,body:this.mineBody});
+ startFight(arena,guestBody='',guestFloor=0){
+  if(this.role!=='host'||!this.begin(arena,guestBody,guestFloor))return false;
+  this.send({kind:'start',arena,body:this.mineBody,floor:this.mineFloor});
   return true;
  },
  // What the fight itself passes over the relay; true when the payload was one of its own.
  fightMessage(payload){
   if(!payload||typeof payload!=='object')return false;
   switch(payload.kind){
-   case 'hello':if(this.role!=='host')return false;if(this.locked)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),String(payload.body||''));else this.helloBody=String(payload.body||'');return true;
-   case 'start':if(this.role==='guest')this.begin(payload.arena,String(payload.body||''));return this.role==='guest';
+   case 'hello':if(this.role!=='host')return false;if(this.locked)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),String(payload.body||''),Number(payload.floor)||0);else{this.helloBody=String(payload.body||'');this.helloFloor=Number(payload.floor)||0}return true;
+   case 'start':if(this.role==='guest')this.begin(payload.arena,String(payload.body||''),Number(payload.floor)||0);return this.role==='guest';
    case 'sync':this.applySync(payload);return true;
    case 'hit':this.applyHit(payload);return true;
    case 'status':this.applyStatus(payload);return true;
@@ -193,24 +193,46 @@ const Duel={
   if(Number.isFinite(sync.x)&&Number.isFinite(sync.y)&&(stand.x!==sync.x||stand.y!==sync.y)){stand.x=sync.x;stand.y=sync.y;OccupancyService.move(stand,sync.x,sync.y)}
   if(Number.isFinite(sync.hp))stand.hp=Math.max(0,sync.hp);
   if(Number.isFinite(sync.maxHp))stand.maxHp=sync.maxHp;
+  if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
   if(sync.facing)stand.facing=sync.facing;
   if(sync.turn===this.role&&this.turn!==this.role)this.giveTurn(this.role);
   VisibilityService.compute();updateAll();
+ },
+ // The summons of the other player are on its page only. Here each is a picture of it: a hostile monster of the same kind that takes no turn, stands where the
+ // summon stands and has its health (both come in `sync`); what hurts it here is sent back as a `hit` with the summon's id, and the summon takes it.
+ ownAllies(){return state.monsters.filter(m=>summonActive(m)&&m.hp>0).map(m=>({id:combatantId(m),name:m.name,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp}))},
+ syncProxies(list){
+  const shown=state.monsters.filter(m=>m.duelProxy);
+  for(const m of shown)if(!list.some(a=>a.id===m.duelProxy))OccupancyService.removeMonster(m);
+  for(const a of list){
+   let m=shown.find(p=>p.duelProxy===a.id);
+   if(!m&&Number.isFinite(a.x)&&Number.isFinite(a.y)){
+    m=placeNamedMonster(a.name,{x:a.x,y:a.y},{provenance:'duel'});
+    if(m)Object.assign(m,{duelProxy:a.id,faction57:'hostile',alerted:true,rewardPolicy57:{xp:false,kills:false,drops:false}});
+   }
+   if(!m)continue;
+   if(Number.isFinite(a.x)&&Number.isFinite(a.y)&&(m.x!==a.x||m.y!==a.y)){m.x=a.x;m.y=a.y;OccupancyService.move(m,a.x,a.y)}
+   if(Number.isFinite(a.maxHp))m.maxHp=a.maxHp;
+   if(Number.isFinite(a.hp))m.hp=Math.max(1,a.hp);
+  }
  },
  // Damage the other player dealt to its stand-in on its page: here it is taken by the real player.
  applyHit(hit){
   const stand=this.opponent();
   // Only what the other side does in its own turn counts: a hit that arrives while it is this side's turn was not dealt by the rules.
   if(!stand||state.dead||this.reported||!(hit.amount>0)||this.turn!==this.other())return;
+  const target=hit.proxy?state.monsters.find(m=>m.combatantId54===hit.proxy&&summonActive(m)):state.player;
+  if(!target)return;
   this.applying=true;
-  try{damageEntity(state.player,Math.round(hit.amount),stand,hit.element||null)}finally{this.applying=false}
+  try{damageEntity(target,Math.round(hit.amount),stand,hit.element||null)}finally{this.applying=false}
   updateAll();
  },
  // Sent from damageEntity when the stand-in is hurt by this player.
  // A blow of the player's ally (a summon) lands in the turn engine, which runs on both sides by itself; it is the one thing of the engine that is sent, because the ally exists on this page only.
- sendHit(amount,element,source=null){
+ // `proxy` is set when the one hurt is not the other player but a picture of one of its summons (see syncProxies): the blow is then taken by that summon.
+ sendHit(amount,element,source=null,proxy=null){
   const ally=!!source&&source!==state.player&&state.monsters.includes(source)&&entityFaction(source)==='player';
-  if(!this.applying&&!this.environment&&(!state._turnPipelineActive57||ally))this.send({kind:'hit',amount,element:element||null});
+  if(!this.applying&&!this.environment&&(!state._turnPipelineActive57||ally))this.send({kind:'hit',amount,element:element||null,proxy});
  },
  // What this player puts on the map in its own action (a field, a stretch of terrain) is put on the other player's map by the same game functions, with the
  // stand-in as the source; what the map then does to whoever stands there (and what a burning or poisoned stand-in takes at the end of a turn) is the map's own work on each side: damage dealt inside the turn engine or by a field's contact is not sent as a hit. Reactions inside the
@@ -337,9 +359,9 @@ const Duel={
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);
   if(second!==this.shown){this.shown=second;updatePanels()}
-  const sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,state.turn].join(':');
+  const allies=this.ownAllies(),sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,state.turn,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
   if(sig===this.lastSig||now-this.lastSend<this.SEND_GAP_MS)return;
   this.lastSig=sig;this.lastSend=now;
-  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,facing:p.facing,turn:this.turn,ends:this.turnEnds});
+  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,facing:p.facing,turn:this.turn,ends:this.turnEnds,allies});
  },
 };

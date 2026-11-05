@@ -191,7 +191,7 @@ function buildDuelArena(duel){
   const door={x:arena.door[0],y:arena.door[1]},mine=arena.spawns[duel.role==='guest'?'guest':'host'],theirs=arena.spawns[duel.role==='guest'?'host':'guest'];
   setTerrainTile58(state.map,door.x,door.y,TT.WALL);
   state.rooms=[{x:1,y:1,w:width-2,h:height-2,cx:Math.floor(width/2),cy:Math.floor(height/2),name:arena.name}];
-  Object.assign(state,{specialFloor:true,layoutName:arena.name,duel:{arena:duel.arena,role:duel.role||'host',name:arena.name,door,won:false,baseFloor:Math.max(1,Math.floor(Number(duel.baseFloor)||1)),opponent:{x:theirs[0],y:theirs[1]}},stairs:{...door},fixedStart:{x:mine[0],y:mine[1]},fixedExit:{...door}});
+  Object.assign(state,{specialFloor:true,layoutName:arena.name,duel:{arena:duel.arena,role:duel.role||'host',name:arena.name,door,won:false,baseFloor:Math.max(1,Math.floor(Number(duel.baseFloor)||1)),opponentFloor:Math.max(0,Math.floor(Number(duel.opponentFloor)||0)),opponent:{x:theirs[0],y:theirs[1]}},stairs:{...door},fixedStart:{x:mine[0],y:mine[1]},fixedExit:{...door}});
   if(duel.ghost)reviveGhost(state.player,duel.ghost);
   state.player.baseVision=Math.max(width,height);state.player.x=mine[0];state.player.y=mine[1];
   placeDuelOpponent(theirs,duel.opponent);state.player.facing={x:duel.role==='guest'?-1:1,y:0};
@@ -248,12 +248,12 @@ function duelOpponentDown(){
   addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.');toast('상대 망령을 쓰러뜨렸다. 위쪽 문으로 나가면 한 판이 끝난다.');
   VisibilityService.compute();Duel.reportWin();
 }
-// Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win.
+// Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win; a win over a ghost that died on a shallower floor than this one (when the other floor is known) does not raise it.
 function finishDuelRound(){
   const d=state.duel;
   if(!d.won){toast('상대 망령을 쓰러뜨려야 문이 열린다.');return false}
   if(d.finished)return false;
-  d.finished=true;d.score=(d.baseFloor||1)+1;
+  d.finished=true;d.score=(d.baseFloor||1)+(d.opponentFloor>0&&d.opponentFloor<d.baseFloor?0:1);
   addLog(`망령전 승리 · ${d.score}점`);toast(`망령전 승리 · ${d.score}점`);
   return true;
 }
