@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -200,16 +200,19 @@ const Duel={
   if(!PlayStats.endpoint()||!lsGet(PlayStats.STAKES_KEY)||!state||state.duel||runIsEphemeral()||state.debugMapGeneration57)return;
   let reply=null;
   try{reply=await PlayStats.lootClaim()}catch(error){ignoreError('duel winnings not claimed',error)}
-  if(reply?.ok&&Array.isArray(reply.items)&&reply.items.length)this.deliver(reply.items);
+  if(!(reply?.ok&&Array.isArray(reply.items)&&reply.items.length))return; // the server says a win stands
+  // what was picked up from the drop is what comes (a win from another device has no list here: then what the server has)
+  const raw=lsGet(this.CARRY_KEY);let items=reply.items;
+  if(raw!==null){try{const carried=JSON.parse(raw);if(Array.isArray(carried))items=carried}catch(error){ignoreError('duel carry unreadable',error)}lsSet(this.CARRY_KEY,'[]')}
+  this.deliver(items);
  },
- // What the beaten ghost carried drops at the player's feet the way a boss's reward does (placeDropItems: a cell each, all or none); the upgrade talisman (강화부적)
- // is not among it. With no free cell at all it goes into the bag.
+ // Into the start chest if it is still shut; if the player has opened it already (or there is none), straight into the bag. The upgrade talisman (강화부적) is not among it.
  deliver(items){
   const drops=items.filter(item=>item&&item.talismanKind!=='upgrade');if(!drops.length)return;
-  const put=placeDropItems(drops,{x:state.player.x,y:state.player.y},'duelDrop');
-  if(put.ok){addLog(`망령이 가진 것 ${put.worldCount}개가 발치에 떨어져 있다.${put.stackedFallbacks?` 자리가 모자라 ${put.stackedFallbacks}개는 겹쳐 놓였다.`:''}`);return}
+  const chest=state?.tutorialChest;
+  if(chest&&!chest.opened){chest.loot=[...(chest.loot||[]),...drops];addLog('망령전의 전리품이 시작 상자에 들어 있다.');return}
   for(const item of drops)addInventoryItem(item);
-  addLog('망령이 가진 것을 가방에 받았다.');
+  addLog('망령전의 전리품을 받았다.');
  },
  // ---- the fight: each side plays its own real game ---------------------------------------------------------------------------
  // Both players run the real game on their own page (the arena of duelarenas.js as a run, their own ghost as the player: real inventory, skills, screen). The
@@ -219,7 +222,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0,theirScore=null){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
+  this.fighting=true;this.carried=false;this.lastStand=null;this.fellTurn=-1;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   try{newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor})}
   catch(error){ignoreError('duel arena could not be opened',error);this.pickNote='전장을 열지 못했다.';this.leave('전장을 열지 못했다');return false}
@@ -259,6 +262,7 @@ const Duel={
   const stand=this.opponent();
   if(!stand||this.reported)return;
   if(Number.isFinite(sync.x)&&Number.isFinite(sync.y)&&(stand.x!==sync.x||stand.y!==sync.y)){stand.x=sync.x;stand.y=sync.y;OccupancyService.move(stand,sync.x,sync.y)}
+  this.lastStand={x:stand.x,y:stand.y};
   if(Number.isFinite(sync.hp))stand.hp=Math.max(0,sync.hp);
   if(Number.isFinite(sync.maxHp))stand.maxHp=sync.maxHp;
   if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
@@ -376,27 +380,66 @@ const Duel={
  // The fight is over for this side. With the ghost at stake, the server is told how it ended (and asked again until the other side has said its part too).
  // The score moves on both sides by the same numbers. The loser's ghost is gone only when its new current score is at or under its death score: only then
  // does the server hear of it (settle); any other result frees the lock again and nothing is lost or won on the server.
+ // `outcome` is 'win', 'lose' or 'draw' (both went down in the same moment, or the two sides' words contradict: nobody wins, nothing is lost, the score stays).
+ // The server is told nothing for five seconds, so that a contradicting word from the other side can still turn this into a draw first.
  conclude(outcome){
   this.reported=true;this.outcome=outcome;
-  const win=outcome==='win',me=this.mineScore||duelScoreStart(this.mineFloor),foe=this.theirScore||duelScoreStart(1);
-  this.dies=win?duelDiesOnLoss(foe,me):duelDiesOnLoss(me,foe);
-  this.before=me;this.after=duelScoreAfter(me,foe,win);
-  if(this.mineGhostId)this.saveScore(win||!this.dies?this.after:null);
-  if(this.mineGhostId&&(win||!this.dies)&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
+  const win=outcome==='win',draw=outcome==='draw',me=this.mineScore||duelScoreStart(this.mineFloor),foe=this.theirScore||duelScoreStart(1);
+  this.dies=draw?false:win?duelDiesOnLoss(foe,me):duelDiesOnLoss(me,foe);
+  this.before=me;this.after=draw?me:duelScoreAfter(me,foe,win);
+  if(!draw&&this.mineGhostId)this.saveScore(this.mineGhostId,win||!this.dies?this.after:null);
+  if(!draw&&this.mineGhostId&&(win||!this.dies)&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
+  if(win&&this.dies)this.dropLoot();
   if(!(this.stakes&&this.mineGhostId))return;
-  if(this.dies)this.settling={won:win,match:this.matchId,ghost:this.mineGhostId,next:0,until:Date.now()+13*60*1000,busy:false};
-  else PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));
+  const hold=performance.now()+5000;
+  // a draw is told to the server as a win by this side: the other side says the same, and the same word from both voids the duel (both ghosts stand again)
+  if(this.dies||draw)this.settling={won:win||draw,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false};
+  else this.settling={release:true,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false}; // nobody is lost: the lock is freed after the hold
+ },
+ // The other side's word contradicts this side's (both say they won, or both say they lost), or both went down together: nobody won. What this side had concluded is taken back.
+ turnDraw(){
+  if(!state?.duel||this.outcome==='draw')return;
+  if(this.reported){
+   if(this.mineGhostId&&this.before){this.saveScore(this.mineGhostId,this.before);if(PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.before.s,this.before.peak).catch(error=>ignoreError('duel score not sent',error))}
+   this.discardLoot();
+   this.outcome='draw';this.dies=false;this.after=this.before;
+   if(this.stakes&&this.mineGhostId)this.settling={won:true,match:this.matchId,ghost:this.mineGhostId,next:performance.now()+1500,until:Date.now()+13*60*1000,busy:false};
+  }else this.conclude('draw');
+  state.duel.finished=true;
+  this.send({kind:'result',winner:'draw'});
+  this.endCard();
+ },
+ // ---- the beaten ghost's drop: what it carried falls where it fell, the way a boss's reward does, and can be picked up before the way out ----------------------
+ dropLoot(){
+  const body=this.theirs;if(!body||typeof body!=='object')return;
+  const slots=['weapon','armor','cloak','relic','trinket'].map(slot=>body[slot]).filter(item=>item&&typeof item==='object');
+  const items=[...(Array.isArray(body.inventory)?body.inventory:[]),...slots].filter(item=>item&&typeof item==='object'&&item.name&&item.talismanKind!=='upgrade');
+  if(!items.length)return;
+  const at=this.lastStand||{x:state.player.x,y:state.player.y},put=placeDropItems(items,at,'duelDrop');
+  if(put.ok)addLog(`망령이 가진 것 ${put.worldCount}개가 떨어졌다. 문으로 나가기 전에 주워라.${put.stackedFallbacks?` 자리가 모자라 ${put.stackedFallbacks}개는 겹쳐 놓였다.`:''}`);
+  else addLog('망령이 가진 것을 놓을 자리가 없었다.');
+ },
+ discardLoot(){if(!state)return;state.items=(state.items||[]).filter(item=>!item.duelDrop);const bag=state.player?.inventory;if(Array.isArray(bag))state.player.inventory=bag.filter(item=>!item.duelDrop)},
+ // What was picked up from the drop goes on to the next new run (this page's run is not kept). A winner who went down after the win (the arena's own harm) keeps all of
+ // it: the drop on the floor counts as picked up. Written once; an empty list says that this device took part and took nothing.
+ carryDrops(){
+  if(!state?.duel||this.outcome!=='win'||!this.dies||this.carried)return;
+  this.carried=true;
+  const clean=item=>{const copy=clone(item);for(const key of ['x','y','duelDrop'])delete copy[key];return copy};
+  const list=[...(state.player.inventory||[]).filter(item=>item.duelDrop),...(state.dead?(state.items||[]).filter(item=>item.duelDrop):[])].map(clean);
+  let prior=[];try{const raw=JSON.parse(lsGet(this.CARRY_KEY)||'[]');if(Array.isArray(raw))prior=raw}catch(error){ignoreError('duel carry unreadable',error)}
+  lsSet(this.CARRY_KEY,JSON.stringify([...prior,...list].slice(-60)));
  },
  // The card that ends a duel (instead of the death card of a normal run): the two ghosts face to face with their scores, and the new score of this one comes down from
  // above and knocks the old one away; what happened to each ghost is said under it.
  endCard(){
-  const win=this.outcome==='win',gone=!win&&this.dies,a=this.before,b=this.after,foe=this.theirScore;
-  const title=win?'망령전 승리':gone?'망령이 사라졌다':'패배';
-  const note=win?(this.dies?'상대 망령은 사라졌다. 보스처럼 소모품을 떨어뜨렸고, 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
+  const win=this.outcome==='win',draw=this.outcome==='draw',gone=!win&&!draw&&this.dies,a=this.before,b=this.after,foe=this.theirScore;
+  const title=win?'망령전 승리':draw?'무승부':gone?'망령이 사라졌다':'패배';
+  const note=draw?'둘이 같은 순간에 쓰러졌다. 점수도 망령도 그대로다. 아무것도 빼앗기지 않았다.':win?(this.dies?'상대 망령은 사라졌다. 보스처럼 소모품을 떨어뜨렸고, 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
   let mine={},theirs={};try{mine=JSON.parse(this.mineBody||'{}')}catch(error){ignoreError('duel ghost body unreadable',error)}
   theirs=this.theirs||{};
-  const el=Spectate.el.bind(Spectate),card=document.getElementById('card'),root=el('div','death94 duelEnd '+(win?'victory94 win':gone?'gone':'lose'));
-  root.id='duelEnd';root.append(el('span','uiCorners63'),el('div','deathSeal94',win?'勝':'敗'),el('div','brand','만루 · 망령전'),el('h1',null,title));
+  const el=Spectate.el.bind(Spectate),card=document.getElementById('card'),root=el('div','death94 duelEnd '+(win?'victory94 win':draw?'draw':gone?'gone':'lose'));
+  root.id='duelEnd';root.append(el('span','uiCorners63'),el('div','deathSeal94',win?'勝':draw?'和':'敗'),el('div','brand','만루 · 망령전'),el('h1',null,title));
   // one side of the face-off: the portrait, the class, depth and level, and the score (the loser's is struck through when it is gone)
   const side=(who,ghost,floor,score,after,over)=>{
     const part=el('div','deSide '+who+(over?' burn':'')),info=el('span','deInfo');
@@ -404,7 +447,7 @@ const Duel={
     const sc=el('span','deScore'),node=this.scoreNode(after||score);if(over)node.classList.add('over');sc.append(node);
     part.append(el('small','deWho',who==='me'?'내 망령':'상대 망령'),this.portrait(ghost.classId,'big'),info,sc);return part;
   };
-  const foeAfter=a&&b&&foe?duelScoreAfter(foe,a,!win):foe,foeGone=win&&this.dies;
+  const foeAfter=a&&b&&foe?(draw?foe:duelScoreAfter(foe,a,!win)):foe,foeGone=win&&this.dies;
   const versus=el('div','deVs'),slam=el('div','deSlam '+(b&&a&&b.s>=a.s?'up':'down'));
   if(a&&b){
     const old=el('b','deOld',String(a.s)),fresh=el('b','deNew',String(b.s)),delta=b.s-a.s;
@@ -421,6 +464,7 @@ const Duel={
   const job=this.settling;
   if(!job||job.busy||now<job.next)return;
   if(Date.now()>job.until){this.settling=null;return}
+  if(job.release){this.settling=null;PlayStats.ghostRelease(job.ghost,job.match).catch(error=>ignoreError('duel release not sent',error));return}
   job.busy=true;
   try{
    const reply=await PlayStats.ghostSettle(job.ghost,job.match,job.won);
@@ -433,7 +477,10 @@ const Duel={
   job.busy=false;job.next=now+4000;
  },
  applyResult(result){
-  if(!state?.duel||this.reported)return;
+  if(!state?.duel)return;
+  if(result.winner==='draw'){this.turnDraw();return}
+  // the two words must be opposite (one says it won, the other that it lost); the same word from both means nobody won
+  if(this.reported){if(this.outcome!=='draw'&&(this.outcome==='win')!==(result.winner===this.role))this.turnDraw();return}
   if(result.winner===this.role){
    this.conclude('win');
    const stand=this.opponent();
@@ -443,6 +490,9 @@ const Duel={
  // This side won by its own hand (the stand-in fell on this page): tell the other.
  reportWin(){
   if(this.stage!=='matched'||this.reported)return;
+  // this side is down too (the arena's harm took it in the same moment): nobody won
+  if(state.dead){this.turnDraw();return}
+  this.fellTurn=state.turn;
   this.conclude('win');
   this.send({kind:'result',winner:this.role});
  },
@@ -488,7 +538,7 @@ const Duel={
   const d=state.duel,p=state.player,stand=this.opponent(),live=this.stage==='matched',now=Date.now();
   const cool=kind=>Math.max(0,(d.cooldown?.[kind]??0)-state.turn),mine=!live||this.turn===this.role,left=live?Math.max(0,this.turnEnds-now):0;
   const to=this.after?` · ${this.before.s}→${this.after.s}점 (데스 ${this.after.d})`:'';
-  const result=d.finished?'승리'+to:d.won?'상대 망령이 쓰러졌다 · 위쪽 문으로 나가면 한 판이 끝난다':(this.outcome==='lose'||state.dead)?(this.dies?'패배 · 이 망령은 사라진다':'패배 · 망령은 남는다')+to:'';
+  const result=this.outcome==='draw'?'무승부 · 점수와 망령은 그대로':d.finished?'승리'+to:d.won?'상대 망령이 쓰러졌다 · 위쪽 문으로 나가면 한 판이 끝난다':(this.outcome==='lose'||state.dead)?(this.dies?'패배 · 이 망령은 사라진다':'패배 · 망령은 남는다')+to:'';
   if(stand)this.hudFoe={cls:stand.duelLook?.classId,max:stand.maxHp};
   const foe=this.hudFoe||{cls:undefined,max:0},sig=[p.hp,p.maxHp,stand?.hp,stand?.maxHp,cool('item'),cool('martial'),mine,live,Math.ceil(left/1000),result,this.settledText||''].join('|');
   if(!box){box=Spectate.el('div');box.id='duelHud';box.setAttribute('role','status');document.body.append(box)}
@@ -523,10 +573,16 @@ const Duel={
   this.pollSettle(now);
   this.hud();
   // A duel that is over (the winner through the door, the loser fallen), or whose run has been replaced by another run, ends its match: the next duel can then be asked for.
-  if(this.stage==='matched'&&this.fighting&&(!state?.duel||(this.reported&&(state.duel.finished||state.dead))))this.leave('');
+  if(this.stage==='matched'&&this.fighting&&(!state?.duel||(this.reported&&(state.duel.finished||state.dead)))){this.carryDrops();this.leave('')}
   if(this.stage!=='matched'||!state?.duel)return;
   const p=state.player;
-  if(state.dead&&!this.reported){this.conclude('lose');this.send({kind:'result',winner:this.other()});return}
+  if(state.dead&&!this.reported){
+   // down while the other is down too: nobody won
+   const stand=this.opponent();if(stand&&stand.hp<=0){this.turnDraw();return}
+   this.conclude('lose');this.send({kind:'result',winner:this.other()});return
+  }
+  // this side won and went down in the same turn (the same poison, the same fire): nobody won. Later (on the way to the door): the win stands, and so does the drop.
+  if(this.reported&&this.outcome==='win'&&state.dead&&state.turn<=this.fellTurn){this.turnDraw();return}
   if(this.reported)return;
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);

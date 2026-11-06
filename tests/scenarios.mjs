@@ -1544,7 +1544,7 @@ export const scenarios = {
       server.settle = { 0: 'pending', 1: 'pending' };
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
       if (!(await until(async () => (await fight(guest)).outcome === 'lose'))) throw Error('duelstakes: the guest was not told');
-      await both(5000);
+      await both(6000); await both(5000); // the claim waits five seconds (a contradicting word may still come), then asks, and asks again while the answer is pending
       server.settle = { 0: 'lost', 1: 'won' };
       await both(5000); await both(5000);
       const settles = calls.filter((c) => c.post?.ghostSettle).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostSettle.won]);
@@ -1552,20 +1552,27 @@ export const scenarios = {
       if (!settles.some((x) => x[0] === 'host' && x[1] === true) || !settles.some((x) => x[0] === 'guest' && x[1] === false) || settles.length <= 2) throw Error('duelstakes: settle ' + JSON.stringify(settles));
       out['duelstakes.errors'] = JSON.stringify([a.errors, b.errors]);
 
-      // what the win brought drops at the player's feet at the start of the next new run, once, the way a boss's reward does (a cell each); the upgrade talisman is not among it
+      // what the win brought (this device took nothing from a drop, so it is what the server holds) is in the start chest of the next new run, once; the upgrade talisman is not among it
       server.loot = [{ name: '전리품 물약', type: 'potion', count: 1 }, { name: '전리품 투구', type: 'armor', count: 1 }, { name: '강화부적', type: 'talisman', talismanKind: 'upgrade', count: 1 }];
+      await host.page.evaluate(() => localStorage.removeItem('manru.duelCarry'));
       calls.length = 0;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
-      const drops = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropsOnFloor());
-      const at = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.playerAt());
+      const chest = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
       const claims = calls.filter((c) => c.post?.lootClaim).length;
-      out['duelstakes.loot'] = JSON.stringify({ drops, claims, near: drops.every((d) => Math.max(Math.abs(d.x - at[0]), Math.abs(d.y - at[1])) <= 4), cells: new Set(drops.map((d) => d.x + ',' + d.y)).size });
-      if (drops.map((d) => d.name).sort().join() !== '전리품 물약,전리품 투구' || claims !== 1 || new Set(drops.map((d) => d.x + ',' + d.y)).size !== 2) throw Error('duelstakes: loot ' + JSON.stringify({ drops, claims }));
+      out['duelstakes.loot'] = JSON.stringify({ inChest: chest?.loot?.map((i) => i.name), claims });
+      if (chest?.loot?.map((i) => i.name).join() !== '전리품 물약,전리품 투구' || claims !== 1) throw Error('duelstakes: loot ' + JSON.stringify({ chest, claims }));
+      // what was picked up from the drop is what comes, not what the server holds
+      server.loot = [{ name: '서버쪽 물건', type: 'potion', count: 1 }];
+      await host.page.evaluate(() => localStorage.setItem('manru.duelCarry', JSON.stringify([{ name: '주운 물약', type: 'potion', count: 1 }])));
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
+      const picked = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
+      out['duelstakes.picked'] = JSON.stringify({ inChest: picked?.loot?.map((i) => i.name) });
+      if (picked?.loot?.map((i) => i.name).join() !== '주운 물약') throw Error('duelstakes: the picked-up items did not come ' + JSON.stringify(picked));
       calls.length = 0;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
-      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropsOnFloor());
-      out['duelstakes.once'] = JSON.stringify({ drops: again });
-      if (again.length) throw Error('duelstakes: the winnings came twice');
+      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
+      out['duelstakes.once'] = JSON.stringify({ loot: again?.loot ?? null });
+      if (again?.loot) throw Error('duelstakes: the winnings came twice');
 
       // an ordinary match (the loser stays above its death score): nothing is settled, both locks are freed, the loser's ghost lives on with a lower score
       for (const x of [a, b]) await x.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun());
@@ -1577,7 +1584,7 @@ export const scenarios = {
       const host2 = (await fight(a)).role === 'host' ? a : b, guest2 = host2 === a ? b : a;
       await host2.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
       await until(async () => (await fight(guest2)).outcome === 'lose');
-      await both(5000);
+      await both(6000); // the locks are freed after the five-second hold
       const scoresAfter = await Promise.all([host2, guest2].map((x) => x.page.evaluate(() => JSON.parse(localStorage.getItem('manru.duelScores') || '{}'))));
       const freed = calls.filter((c) => c.post?.ghostRelease).length, settled = calls.filter((c) => c.post?.ghostSettle).length;
       out['duelstakes.plain'] = JSON.stringify({ freed, settled, scoresAfter });
@@ -1638,6 +1645,27 @@ export const scenarios = {
       const burn = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; Q.stageVs(2, 'archer'); D.mineBody = Q.ghostOf('swordsman', 1); D.mineFloor = 9; D.theirFloor = 12; D.mineScore = { s: 5, peak: 30, d: 23 }; D.theirScore = { s: 14, peak: 14, d: 6 }; D.conclude('lose'); D.endCard(); return { gone: D.dies, burning: [...document.querySelectorAll('#duelEnd .deSide.burn')].map((e) => e.classList.contains('me') ? 'me' : 'foe') }; });
       out['duelrules.burn'] = JSON.stringify({ win: card.sides, ...burn });
       if (!burn.gone || burn.burning.join() !== 'me') throw Error('duelrules: the gone ghost does not burn ' + JSON.stringify(burn));
+      // the beaten ghost's drop falls where it fell, at once (the upgrade talisman is not in it); what is picked up is carried on, and a winner who goes down after the win keeps the rest
+      const loot = await s.page.evaluate(() => {
+        const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; localStorage.removeItem('manru.duelCarry'); Q.stageVs(2, 'archer');
+        D.theirs = JSON.parse(Q.ghostOf('swordsman', 2)); D.theirs.inventory.push({ name: '강화부적', type: 'talisman', talismanKind: 'upgrade', count: 1 });
+        D.mineScore = { s: 12, peak: 12, d: 3 }; D.theirScore = { s: 3, peak: 30, d: 23 }; D.mineGhostId = 'G-loot'; D.stakes = false; D.lastStand = { x: 20, y: 8 };
+        D.conclude('win'); const drops = Q.dropsOnFloor(), dies = D.dies; Q.takeDrop(); Q.killSelf(); D.carryDrops();
+        return { dies, names: drops.map((d) => d.name), cells: new Set(drops.map((d) => d.x + ',' + d.y)).size, carried: (Q.carryNow() || []).map((i) => i.name), noFlag: (Q.carryNow() || []).every((i) => !i.duelDrop && i.x === undefined) };
+      });
+      out['duelrules.loot'] = JSON.stringify(loot);
+      if (!loot.dies || loot.names.length < 2 || loot.names.includes('강화부적') || loot.cells !== loot.names.length || loot.carried.length !== loot.names.length || !loot.noFlag) throw Error('duelrules: the drop ' + JSON.stringify(loot));
+      // nobody wins when the two sides' words are the same (both won, or both lost), or both went down together; opposite words stand
+      const rule = await s.page.evaluate(() => {
+        const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api, res = {}, fresh = (id) => { Q.stageVs(2, 'archer'); D.theirs = JSON.parse(Q.ghostOf('swordsman', 1)); D.role = 'host'; D.mineScore = { s: 12, peak: 12, d: 3 }; D.theirScore = { s: 3, peak: 30, d: 23 }; D.mineGhostId = id; D.stakes = false; D.lastStand = { x: 20, y: 8 }; D.reported = false; D.outcome = ''; localStorage.setItem('manru.duelScores', '{}'); };
+        fresh('G-a'); D.conclude('win'); D.applyResult({ winner: 'host' }); res.consistentWin = D.outcome; res.savedWin = Q.scoreOfGhost('G-a'); res.keptLoss = (fresh('G-e'), D.mineScore = { s: 12, peak: 12, d: 3 }, D.theirScore = { s: 30, peak: 30, d: 23 }, D.conclude('lose'), Q.scoreOfGhost('G-e'));
+        fresh('G-b'); D.conclude('win'); const lootBefore = Q.dropsOnFloor().length; D.applyResult({ winner: 'guest' }); res.bothWon = { outcome: D.outcome, dies: D.dies, dropsAfter: Q.dropsOnFloor().length, lootBefore, score: Q.scoreOfGhost('G-b'), card: document.querySelector('#duelEnd h1')?.textContent };
+        fresh('G-c'); D.conclude('lose'); D.applyResult({ winner: 'host' }); res.bothLost = { outcome: D.outcome, dies: D.dies, score: Q.scoreOfGhost('G-c') };
+        fresh('G-d'); D.conclude('lose'); D.applyResult({ winner: 'guest' }); res.consistentLoss = D.outcome;
+        return res;
+      });
+      out['duelrules.draw'] = JSON.stringify(rule);
+      if (!(rule.savedWin?.s > 12) || !(rule.keptLoss?.s < 12) || rule.consistentWin !== 'win' || rule.consistentLoss !== 'lose' || rule.bothWon.outcome !== 'draw' || rule.bothWon.dies || rule.bothWon.dropsAfter || !rule.bothWon.lootBefore || rule.bothWon.card !== '무승부' || rule.bothLost.outcome !== 'draw' || rule.bothLost.dies || !rule.bothLost.score) throw Error('duelrules: draw ' + JSON.stringify(rule));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
