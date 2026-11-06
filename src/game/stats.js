@@ -300,11 +300,13 @@ const PlayStats={
   catch(error){ignoreError('ghosts load failed',error);this.ghosts=null;this.ghostState='error'}
   this.render();
  },
+ // The state of one of the player's ghosts, with its score while it stands.
+ ghostStateEl(row){const state=this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다 · ');if(row.status!=='taken')state.append(Duel.scoreNode(Duel.scoreOf(row.id,row.floor)));return state},
  ghostView(){
   const view=this.el('div','ghostView'),notice={unset:'수집 서버가 연결되어 있지 않다.',loading:'망령을 불러오는 중…',error:'망령을 불러오지 못했다.'}[this.ghostState||'']||'';
   if(notice||!this.ghosts){view.append(this.el('p','statsNote',notice||'탭을 열면 내 망령이 보인다.'));return view}
   if(!this.ghosts.length){view.append(this.el('p','statsNote','아직 망령이 없다. 죽은 계정은 이곳에 남는다.'));return view}
-  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다 · '+Duel.scoreText(Duel.scoreOf(row.id,row.floor))));view.append(line)}
+  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.ghostStateEl(row));view.append(line)}
   return view;
  },
  legacyRows(){return this.LEGACY.map(([t,floor,cause,level,kills,turns])=>({t,floor,cause,level,kills,turns}))},
@@ -351,9 +353,11 @@ const PlayStats={
  },
  // The score of a ghost row (death/current), as the server keeps it; a ghost that has not dueled has its starting score.
  rowScore(row){return duelScoreClean(row.score>0?{s:row.score,peak:row.peak}:null,row.floor)},
+ // The value of a row on the board: text, or a node (the ghost board's death/current score).
+ valueEl(metric){const value=this.el('strong','rankValue');value.append(metric.value);return value},
  // What a row is ranked by on the open board, and how full its bar is.
  metric(row,list){
-  if(this.board==='ghost'){const score=this.rowScore(row);return{value:score.d+'/'+score.s+'점',fill:Math.min(1,score.s/(this.TOTAL_FLOORS+1))}}
+  if(this.board==='ghost'){const score=this.rowScore(row);return{value:Duel.scoreNode(score),fill:Math.min(1,score.s/(this.TOTAL_FLOORS+1))}}
   if(this.board==='level')return{value:'Lv '+row.level,fill:row.level/Math.max(1,...list.map(r=>+r.level||0))};
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
@@ -399,7 +403,7 @@ const PlayStats={
    if(mine.has(row.tag))plate.classList.add('mine');
    if(row.live)plate.classList.add('live');
    plate.style.setProperty('--delay',(place===1?0:place===2?120:240)+'ms');
-   plate.append(this.el('i','rankMedal',place),this.nameLine('b','rankTag',row),this.el('strong','rankValue',metric.value),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
+   plate.append(this.el('i','rankMedal',place),this.nameLine('b','rankTag',row),this.valueEl(metric),this.el('small','rankDetail',this.detail(row)),this.el('span','rankCause',row.cause||''));
    wrap.append(plate);
   }
   return wrap;
@@ -411,7 +415,7 @@ const PlayStats={
    item.classList.toggle('mine',mine.has(row.tag));item.classList.toggle('live',!!row.live);item.style.setProperty('--delay',(300+i*28)+'ms');bar.style.setProperty('--fill',Math.round(Math.max(0,Math.min(1,metric.fill))*100)+'%');
    const who=this.el('div','rankWho'),track=this.el('div','rankTrack');
    who.append(this.nameLine('b',null,row),this.el('small',null,this.detail(row)));track.append(bar);
-   item.append(this.el('span','rankNo',i+4),who,track,this.el('strong','rankValue',metric.value));
+   item.append(this.el('span','rankNo',i+4),who,track,this.valueEl(metric));
    if(mine.has(row.tag))item.append(this.el('span','rankMineBadge','나'));
    box.append(item);
   });

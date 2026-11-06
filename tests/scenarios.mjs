@@ -1574,12 +1574,14 @@ export const scenarios = {
       // the score arithmetic: starting numbers, the death score rising faster at high scores, small Elo-like steps, death only at or under the death score
       const math = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreMath());
       out['duelrules.score'] = JSON.stringify(math);
-      if (math.start.map((x) => x.s).join() !== '3,7,14' || math.start.map((x) => x.d).join() !== '1,1,5') throw Error('duelrules: start ' + JSON.stringify(math.start));
+      if (math.start.map((x) => x.s).join() !== '3,7,14' || math.start.map((x) => x.d).join() !== '1,2,6') throw Error('duelrules: start ' + JSON.stringify(math.start));
       const ratio = math.death.map((d, i) => d / [3, 6, 11, 20, 30, 50][i]);
-      if (math.death.join() !== '1,1,3,10,20,49' && math.death.join() !== '1,1,2,10,20,49') throw Error('duelrules: death ' + math.death);
+      if (math.death.join() !== '1,1,4,11,23,49') throw Error('duelrules: death ' + math.death);
       if (!(ratio[4] > ratio[2])) throw Error('duelrules: death ratio ' + ratio);
-      if (math.win.join() !== '2,3,1' || math.loss.join() !== '2,1,3') throw Error('duelrules: steps ' + JSON.stringify([math.win, math.loss]));
-      if (math.dies.join() !== 'true,true,false' || math.after.s !== 13 || math.after.d !== 4) throw Error('duelrules: dies ' + JSON.stringify([math.dies, math.after]));
+      if (math.win.join() !== '1,2,1' || math.loss.join() !== '3,2,6') throw Error('duelrules: steps ' + JSON.stringify([math.win, math.loss]));
+      // both sides' changes together are always below zero (a win pays less than a loss costs), and more so at high scores
+      if (math.sums.some((x) => x >= 0) || math.sums[4] >= math.sums[3] || math.sums[7] > math.sums[0]) throw Error('duelrules: sum ' + math.sums);
+      if (math.dies.join() !== 'true,true,false' || math.after.s !== 12 || math.after.d !== 4) throw Error('duelrules: dies ' + JSON.stringify([math.dies, math.after]));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

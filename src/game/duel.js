@@ -59,7 +59,12 @@ const Duel={
  scoreMap(){try{const map=JSON.parse(lsGet(this.SCORE_KEY)||'{}');return map&&typeof map==='object'&&!Array.isArray(map)?map:{}}catch(error){ignoreError('duel scores unreadable',error);return{}}},
  scoreOf(id,floor){return duelScoreClean(id?this.scoreMap()[id]:null,floor)},
  saveScore(id,score){if(!id)return;const map=this.scoreMap();if(score)map[id]={s:score.s,peak:score.peak};else delete map[id];lsSet(this.SCORE_KEY,JSON.stringify(map))},
- scoreText(score){return score?`${score.d}/${score.s}점`:''},
+ // death score (purple-grey, with a red pulsing glow that grows as the current score nears it) / current score
+ scoreNode(score){
+  const node=Spectate.el('span','dsScore'),danger=duelDanger(score);
+  node.style.setProperty('--danger',String(danger));if(danger>0)node.classList.add('hot');
+  node.append(Spectate.el('i','dsD',String(score.d)),Spectate.el('i','dsSlash','/'),Spectate.el('i','dsS',String(score.s)),document.createTextNode('점'));return node;
+ },
  // Hand a payload to the other player.
  send(payload){
   if(this.stage!=='matched')return false;
@@ -147,11 +152,11 @@ const Duel={
  // The class look (small, as the board draws it) on a pedestal, the class name, and the numbers of a ghost, for the cards of the picker.
  className(id){return CLASSES.find(c=>c.id===id)?.name||'망령'},
  portrait(id,size=''){const wrap=Spectate.el('span','duelPedestal'+(size?' '+size:'')),icon=PlayStats.classIcon(id);icon.className='duelPortrait';wrap.append(icon);return wrap},
- chip(label,value){const chip=Spectate.el('span','duelChip');chip.append(Spectate.el('small',null,label),Spectate.el('b',null,String(value)));return chip},
+ chip(label,value){const chip=Spectate.el('span','duelChip');const text=Spectate.el('b');text.append(value instanceof Node?value:String(value));chip.append(Spectate.el('small',null,label),text);return chip},
  ghostCard(row){
   const card=Spectate.el('button','duelGhost'),body=Spectate.el('span','duelBody'),chips=Spectate.el('span','duelChips');
   card.type='button';card.dataset.ghost=row.id;
-  chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('데스/현재',this.scoreText(this.scoreOf(row.id,row.floor))));
+  chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('데스/현재',this.scoreNode(this.scoreOf(row.id,row.floor))));
   body.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · ${row.cause}`),chips);
   const locked=row.status==='locked'; // in a duel (or one that ended without a word): the server frees it by itself after half an hour
   card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter',locked?'대전 중 · 최대 30분':'출전'));
@@ -164,7 +169,7 @@ const Duel={
   const worn=['weapon','armor','cloak','relic','trinket'].filter(slot=>ghost[slot]).length,bag=Array.isArray(ghost.inventory)?ghost.inventory.length:0;
   title.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · Lv ${row.level}`));
   head.append(this.portrait(row.cls,'big'),title);
-  const stake=Spectate.el('div','duelStake');stake.append(this.chip('소지품',bag+'개'),this.chip('장비',worn+'개'),this.chip('데스/현재',this.scoreText(this.scoreOf(row.id,row.floor))));
+  const stake=Spectate.el('div','duelStake');stake.append(this.chip('소지품',bag+'개'),this.chip('장비',worn+'개'),this.chip('데스/현재',this.scoreNode(this.scoreOf(row.id,row.floor))));
   const warn=Spectate.el('p','duelWarn','이기면 현점수가 오르고, 지면 내려간다. 현점수가 데스점수 이하로 떨어지는 패배만 이 망령과 가진 것을 모두 잃는다. 그때는 이긴 쪽이 모두 얻는다.');
   const go=Spectate.el('button','duelGo','건다'),back=Spectate.el('button','duelBack','돌아가기');go.type=back.type='button';go.id='duelConfirm';back.id='duelBack';
   go.onclick=()=>{this.pending=null;this.find(true,body,row.floor,row.id)};back.onclick=()=>{this.pending=null;this.renderPicker()};
