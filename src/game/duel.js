@@ -129,6 +129,7 @@ const Duel={
   try{
    const data=await PlayStats.fetchView(url,'ghosts&'+PlayStats.ownerQuery());
    this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status==='alive'||g.status==='locked'):null;
+   for(const g of this.ghosts||[])if(g.score>0&&!this.scoreMap()[g.id])this.saveScore(g.id,{s:g.score,peak:g.peak}); // a cleared browser gets its scores back from the server
    this.pickNote=this.ghosts?'':'망령을 불러오지 못했다.'; // the rules strip and the empty-state card already say the rest
   }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
   this.renderPicker();
@@ -358,6 +359,7 @@ const Duel={
   this.dies=win?duelDiesOnLoss(foe,me):duelDiesOnLoss(me,foe);
   this.before=me;this.after=duelScoreAfter(me,foe,win);
   if(this.mineGhostId)this.saveScore(win||!this.dies?this.after:null);
+  if(this.mineGhostId&&(win||!this.dies)&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
   if(!(this.stakes&&this.mineGhostId))return;
   if(this.dies)this.settling={won:win,match:this.matchId,ghost:this.mineGhostId,next:0,until:Date.now()+13*60*1000,busy:false};
   else PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));

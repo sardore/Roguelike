@@ -506,5 +506,7 @@
  "duelcost.alternate": "e458034cd8a3caabbc445f9eef017038928dfa6e",
  "duelcost.errors": "164374825086dc65cd5dc548c248f61328b5d668",
  "duelpicker.states": "91a2b0689ed2d946b48ed197876e11539595a064",
- "duelpicker.waiting": "7aa14e9a93c5773164710b197a58e8771bbcc0a9"
+ "duelpicker.waiting": "7aa14e9a93c5773164710b197a58e8771bbcc0a9",
+ "duelstakes.plain": "b4976be30bdacd2f9640c76996389825f949e815",
+ "duelstakes.reported": "da9100474a3bc89b027744297411d3c68998fc16"
 }
