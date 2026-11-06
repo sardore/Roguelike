@@ -299,6 +299,9 @@ function terrainHasPendingRecovery57(x,y){
 }
 function resolveForcedMovement57(entity,source,steps=1,opts={}){
   if(!state||!entity||!source||steps<=0)return{moved:0,resisted:false};
+  // The other player's stand-in is pushed or pulled: the real player is moved by the same function on its own page (its own walls, its own resistance). Here the stand-in
+  // moves too, but what it bumps into is not sent as a hit: the other page does its own bumping.
+  if(entity.duelOpponent&&!Duel.applying&&!Duel.environment){Duel.sendForce(source,steps,opts);Duel.environment++;try{return resolveForcedMovement57(entity,source,steps,opts)}finally{Duel.environment--}}
   if(forcedMovementResisted57(entity,opts))return{moved:0,resisted:true};
   if(entity!==state.player&&!MON_VIS.has(entity))MON_VIS.set(entity,{x:entity.x,y:entity.y,last:performance.now()});
   let moved=0,interrupted=false,collision=null,broken=0,slid=false;let limit=steps;const player=entity===state.player,haz=globalThis.__MANRU_HAZARD_CORE__,visualSteps=[];

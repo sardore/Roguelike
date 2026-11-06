@@ -472,7 +472,7 @@ function applyCombatStatus(target,key,turns,chance=1,opts={}){
  const field=meta?.monsterField57||kind;
  if(kind==='illness'&&target.illness105>0){if(opts.source)target.illnessSource105=effectSource57(opts.source);target.illness105=Math.max(0,target.illness105-6);if(!target.illness105)resolveCombatIllness(target);return true}
  if(kind==='illness')target.illnessBorn105=state.turn;
- if(kind==='weaken')return setMonsterWeakened(target,turns);
+ if(kind==='weaken')return setMonsterWeakened(target,turns,true);
  return !!setMonsterStatus(target,field,Math.max(combatStatusTurns(target,kind),turns),opts.source||null,{resistanceHandled105:true});
 }
 // Class rules are pure per-player queries; no run or item prototypes are mutated.

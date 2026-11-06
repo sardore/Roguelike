@@ -1277,6 +1277,19 @@ export const scenarios = {
       out['duelfight.stun'] = JSON.stringify({ before: stunBefore, taken: stunTaken, shown: stunShown, left: stunLeft, shownAfter: stunShownAfter });
       if (!(stunTaken > stunBefore)) throw Error('duelfight: the stun did not cross ' + JSON.stringify([stunBefore, stunTaken]));
       if (!(stunLeft < stunTaken) || stunShownAfter !== stunLeft) throw Error('duelfight: the stun count did not go down ' + JSON.stringify([stunTaken, stunLeft, stunShown, stunShownAfter]));
+      // a buff the real player drinks (fortitude: DEF +3) is in the stand-in's defence on the other page, where the blows are worked out
+      const defBefore = (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.standStats())).def;
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.selfStatus('fortify', 5)); await both(700);
+      const defAfter = (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.standStats())).def;
+      out['duelfight.liveStats'] = JSON.stringify({ defBefore, defAfter });
+      if (!(defAfter >= defBefore + 3)) throw Error('duelfight: the stand-in kept its starting defence ' + [defBefore, defAfter]);
+      // a push on the stand-in (a knock-back, a pulled-in blow) moves the real player too, by the same game function on its own page
+      await until(async () => (await fight(host)).myTurn);
+      const gx0 = (await fight(guest)).player[0];
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.standAct('forced', 1)); await both(700);
+      const gx1 = (await fight(guest)).player[0];
+      out['duelfight.push'] = JSON.stringify({ before: gx0, after: gx1 });
+      if (gx1 === gx0) throw Error('duelfight: the push did not move the real player ' + [gx0, gx1]);
       // a field the host puts on the map is put on the guest's map too, with the stand-in as its source; the burning it causes is taken on the guest's own map, once
             const fireBefore = (await fight(guest)).hp;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.castFireOnOpponent()); await both(600);
