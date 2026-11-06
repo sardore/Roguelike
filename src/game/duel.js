@@ -548,16 +548,14 @@ const Duel={
   const mine=state.duel?.clock||0,theirs=this.theirClock;
   return mine<theirs-1e-6||(Math.abs(mine-theirs)<1e-6&&this.role==='host');
  },
- // The cloud hurts whoever stands in it each time the clock moves; it only closes in (it never opens again).
+ // The mist of the boss arena (환각의 침모·장고의 간수), with the stand-in as its owner: it hurts whoever is outside its radius at the end of every turn (tickBossArenaMist,
+ // on each page for its own player). The clock shrinks the radius: it only closes in.
  tickCloud(){
-  const ring=duelCloudRing(),p=state.player;
-  if(ring>this.cloudRing){this.cloudRing=ring;addLog('독구름이 가장자리에서 한 칸 더 밀려온다.');toast('독구름이 좁혀 온다')}
-  const clock=state.duel.clock||0;if(clock<=this.cloudClock)return;
-  this.cloudClock=clock;
-  if(!duelInCloud(p.x,p.y))return;
-  const dmg=1+Math.floor(ring/2);
-  damageEntity(p,dmg,null);floatText(p.x,p.y,'독구름 -'+dmg,'#8fd36a',11);addLog('독구름이 폐를 파고든다. '+dmg);
-  if(p.hp<=0)die('독구름');
+  const stand=this.opponent();if(!stand||stand.hp<=0)return;
+  const full=Math.floor((Math.max(COLS,ROWS)-2)/2),ring=duelCloudRing(); // the playable cells are all inside the first radius
+  if(!stand.arena54)stand.arena54={cx:Math.floor(COLS/2),cy:Math.floor(ROWS/2),radius:full,mistActive57:true};
+  const radius=Math.max(0,full-ring); // in the end only the middle cell is outside of it
+  if(radius<stand.arena54.radius){stand.arena54.radius=radius;this.cloudRing=ring;addLog('독안개가 가장자리에서 한 칸 더 밀려온다.');toast('독안개가 좁혀 온다')}
  },
  tickTurn(){
   if(!state?.duel||state.duel.finished||state.dead)return;

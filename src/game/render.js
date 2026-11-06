@@ -583,8 +583,8 @@ function drawBossArena(){
  if(!state)return;const now=performance.now(),cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);
  for(const mon of state.monsters||[]){
   if(mon.combatFixture54==='core'&&state.visible.has(k(mon.x,mon.y))){const x=mon.x*TILE+16,y=mon.y*TILE+18;X.strokeStyle=mon.color;X.lineWidth=1.5;for(let i=0;i<3;i++){const r=19+(now/45+i*11)%32;X.globalAlpha=1-(r-19)/32;X.beginPath();X.ellipse(x,y+10,r,r*.34,0,0,Math.PI*2);X.stroke()}X.globalAlpha=1;X.fillStyle='rgba(226,204,255,.18)';X.fillRect(x-2,y-72,4,60)}
-  if(!mon.boss)continue;const a=mon.arena54;if(mon.hp>0&&mon.bossPattern==='keeper')drawKeeperLavaWarning(mon,now);
-  if(mon.hp>0&&a?.mistActive57)for(const key of state.visible){const [x,y]=key.split(',').map(Number);if(!bossArenaMist(mon,x,y)||tileBlocks(state.map[y]?.[x]))continue;const px=x*TILE,py=y*TILE,pulse=.30+.05*Math.sin(now/360+x*.6+y*.4);X.fillStyle=`rgba(93,132,37,${pulse})`;X.fillRect(px,py,TILE,TILE);X.fillStyle='rgba(190,218,99,.25)';X.fillRect(px+3,py+9,25,10);if(Math.max(Math.abs(x-a.cx),Math.abs(y-a.cy))===BOSS_ARENA_RULES.containment.radius+1){X.strokeStyle='#cce575';X.lineWidth=2;X.strokeRect(px+1,py+1,TILE-2,TILE-2)}}
+  if(!mon.boss&&!mon.duelOpponent)continue;const a=mon.arena54;if(mon.hp>0&&mon.bossPattern==='keeper')drawKeeperLavaWarning(mon,now);
+  if(mon.hp>0&&a?.mistActive57)for(const key of state.visible){const [x,y]=key.split(',').map(Number);if(!bossArenaMist(mon,x,y)||tileBlocks(state.map[y]?.[x]))continue;const px=x*TILE,py=y*TILE,pulse=.30+.05*Math.sin(now/360+x*.6+y*.4);X.fillStyle=`rgba(93,132,37,${pulse})`;X.fillRect(px,py,TILE,TILE);X.fillStyle='rgba(190,218,99,.25)';X.fillRect(px+3,py+9,25,10);if(Math.max(Math.abs(x-a.cx),Math.abs(y-a.cy))===(a.radius??BOSS_ARENA_RULES.containment.radius)+1){X.strokeStyle='#cce575';X.lineWidth=2;X.strokeRect(px+1,py+1,TILE-2,TILE-2)}}
   if(mon.bossPattern==='master'&&activeCore(mon)&&state.visible.has(k(mon.x,mon.y))){const x=mon.x*TILE+16,y=mon.y*TILE+12;X.strokeStyle='#f5d699';X.lineWidth=2;X.beginPath();X.ellipse(x,y,23,30,Math.sin(now/900)*.12,0,Math.PI*2);X.stroke();X.fillStyle='rgba(219,187,115,.12)';X.fill();}
 
   if(mon.hp>0&&mon.silk54)for(const link of mon.silk54.links){
@@ -1338,14 +1338,7 @@ function drawCreature(m){
   const result=renderer(m);if(m.hp>0&&m.combustion105&&isEntityObservableToPlayer57(m))drawCombustion({...m,age:Math.min(2,Math.max(0,state.turn-m.combustion105.born))},performance.now());return result;
 }
 function drawCombatParticles(q,now){q.save();for(const p of FX.particles){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
-// The poison cloud of a duel, closing in from the walls: a green wash on the cells it covers.
-function drawDuelCloud(now){
-  if(!state?.duel)return;const ring=duelCloudRing();if(ring<=0)return;
-  X.save();X.globalAlpha=.34+.08*Math.sin(now/420);X.fillStyle='#5fae4a';
-  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(duelInCloud(x,y)&&state.seen.has(k(x,y)))X.fillRect(x*TILE,y*TILE,TILE,TILE);
-  X.restore();
-}
-function drawFX(now){drawDuelCloud(now);drawActionPresentation(now);drawPalaceWaves(X,now);
+function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
   for(const r of FX.rings){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*.64;X.strokeStyle=r.color;X.lineWidth=Math.max(1,2.2*(1-t));X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
 
   for(const d of FX.doors){

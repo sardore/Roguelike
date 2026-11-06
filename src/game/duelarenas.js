@@ -345,9 +345,8 @@ function duelScoreAfter(me,foe,won){
 // ---- time presses: the clock (action time spent, both sides' as far as known) brings a poison cloud in from the edge of the arena, and shortens the turns ---------------
 const DUEL_CLOUD={START:24,STEP:8,TURN_MS:20000,MIN_MS:6000};
 function duelClock(){return Math.max(state?.duel?.clock||0,Duel.theirClock||0)}
-// How many cells deep the cloud is from the wall inwards (0: not yet).
+// How many steps the mist has come in (0: not yet). It is the boss arena's mist (tickBossArenaMist, bossArenaMist, drawn with the boss's): the stand-in is its owner, and the radius shrinks.
 function duelCloudRing(){const c=duelClock();return c<DUEL_CLOUD.START?0:1+Math.floor((c-DUEL_CLOUD.START)/DUEL_CLOUD.STEP)}
-function duelInCloud(x,y){const ring=duelCloudRing();return ring>0&&Math.min(x-1,y-1,COLS-2-x,ROWS-2-y)<ring}
 // A turn is twenty seconds at first, a second less for every four of the clock, six at least.
 function duelTurnMs(){return Math.max(DUEL_CLOUD.MIN_MS,DUEL_CLOUD.TURN_MS-1000*Math.floor(duelClock()/4))}
 // Going through the open door ends the round.
