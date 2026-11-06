@@ -435,7 +435,7 @@ const Duel={
  endCard(){
   const win=this.outcome==='win',draw=this.outcome==='draw',gone=!win&&!draw&&this.dies,a=this.before,b=this.after,foe=this.theirScore;
   const title=win?'망령전 승리':draw?'무승부':gone?'망령이 사라졌다':'패배';
-  const note=draw?'둘이 같은 순간에 쓰러졌다. 점수도 망령도 그대로다. 아무것도 빼앗기지 않았다.':win?(this.dies?'상대 망령은 사라졌다. 보스처럼 소모품을 떨어뜨렸고, 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
+  const note=draw?'둘이 같은 순간에 쓰러졌다. 점수도 망령도 그대로다. 아무것도 빼앗기지 않았다.':win?(this.dies?'상대 망령은 사라졌다. 쓰러진 자리에 떨어진 것 중 주운 것은 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
   let mine={},theirs={};try{mine=JSON.parse(this.mineBody||'{}')}catch(error){ignoreError('duel ghost body unreadable',error)}
   theirs=this.theirs||{};
   const el=Spectate.el.bind(Spectate),card=document.getElementById('card'),root=el('div','death94 duelEnd '+(win?'victory94 win':draw?'draw':gone?'gone':'lose'));

@@ -1666,6 +1666,10 @@ export const scenarios = {
       });
       out['duelrules.draw'] = JSON.stringify(rule);
       if (!(rule.savedWin?.s > 12) || !(rule.keptLoss?.s < 12) || rule.consistentWin !== 'win' || rule.consistentLoss !== 'lose' || rule.bothWon.outcome !== 'draw' || rule.bothWon.dies || rule.bothWon.dropsAfter || !rule.bothWon.lootBefore || rule.bothWon.card !== '무승부' || rule.bothLost.outcome !== 'draw' || rule.bothLost.dies || !rule.bothLost.score) throw Error('duelrules: draw ' + JSON.stringify(rule));
+      // the blink is there in a duel from the start, two cells at least (a ghost that never beat the gatekeeper has none in its body), and a ghost that learned more keeps it
+      const blink = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, out = {}; for (const level of [0, 2, 3]) out[level] = Q.blinkOfGhost(level); return out; });
+      out['duelrules.blink'] = JSON.stringify(blink);
+      if (blink[0] !== 2 || blink[2] !== 2 || blink[3] !== 3) throw Error('duelrules: blink ' + JSON.stringify(blink));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

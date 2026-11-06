@@ -518,5 +518,6 @@
  "duelstakes.picked": "9a367cfe34be83de6a0145a699b970f3bd9ef293",
  "duelrules.burn": "6c98e27340395f7fafab017d0ba65dbe319b05f1",
  "duelrules.loot": "ceeb965425c07fdc169354f759a9e5e02cc04f0b",
- "duelrules.draw": "c424cf5e4dacc86df726de83d4d32af88e0a8013"
+ "duelrules.draw": "c424cf5e4dacc86df726de83d4d32af88e0a8013",
+ "duelrules.blink": "4e2844f786225a10b9d7b6b9baef32eab1c22a50"
 }
