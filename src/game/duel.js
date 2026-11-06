@@ -43,7 +43,7 @@ const Duel={
     Spectate.send({type:'match.ready',matchId:packet.matchId,queueEntryId:this.queueEntryId});return;
    case 'session.commit':
     if(packet.mode!==this.MODE||packet.matchId!==this.matchId)return;
-    this.token=packet.sessionToken;this.role=packet.role;this.remote=packet.remotePlayerId;this.setStage('matched','대전이 시작된다');
+    this.token=packet.sessionToken;this.role=packet.role;this.remote=packet.remotePlayerId;this.setStage('matched','상대와 연결됐다. 망령을 거는 중…');
     if(this.play)this.lockMine();return;
    case 'relay.message':
     if(packet.sessionToken!==this.token)return;
@@ -74,7 +74,7 @@ const Duel={
    else if(reply.ok){this.stakes=true;lsSet(PlayStats.STAKES_KEY,'1')}
    else if(['busy','none','duel','auth'].includes(reply.error))refused=reply.error==='busy'?'이 망령은 다른 대전에 묶여 있다.':'이 망령을 걸 수 없다.';
   }
-  if(refused){this.leave(refused);return}
+  if(refused){this.pickNote=refused;this.leave(refused);return}
   this.locked=true;
   if(this.role==='guest')this.send({kind:'hello',body:this.mineBody,floor:this.mineFloor});
   else if(this.helloBody!==null)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),this.helloBody,this.helloFloor);
@@ -172,7 +172,7 @@ const Duel={
  renderPicker(){
   const scene=document.getElementById('duelScene');
   if(!scene)return;
-  if(this.stage==='matched'){scene.remove();return}
+  if(this.stage==='matched'&&(this.fighting||state?.duel)){scene.remove();return} // until the fight is on, the card says what is going on
   const note=document.getElementById('duelNote'),list=document.getElementById('duelGhosts'),busy=this.stage!=='idle',confirming=!!this.pending&&!busy;
   scene.dataset.view=busy?'search':confirming?'confirm':'pick';
   note.textContent=busy||confirming?'':this.pickNote; // while searching or confirming, the card says it
@@ -207,7 +207,9 @@ const Duel={
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
   this.fighting=true;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
-  newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor});
+  try{newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor})}
+  catch(error){ignoreError('duel arena could not be opened',error);this.pickNote='전장을 열지 못했다.';this.leave('전장을 열지 못했다');return false}
+  document.getElementById('duelScene')?.remove();
   this.giveTurn('host');
   return true;
  },
