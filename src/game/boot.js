@@ -18,7 +18,7 @@ bindMobileTopButtons();
 renderMobileDrawer();
 clearPathPreview();
 bindCanvasHover();
-createMobileAutoButton();
+bindMobileAutoButton();
 
 
 startVisualAssetLoads();
@@ -45,8 +45,6 @@ createZoomHud();
 rebindInspectClose();
 initInspectOverlay();
 createCombatHud();
-
-function adorn(){document.querySelectorAll('#mobileControls .quickbar button').forEach(b=>{if(b.dataset.mf36)return;b.dataset.mf36='1';const a=b.dataset.act||'';b.insertAdjacentHTML('beforeend',`<span class="mfKey">${hk[a]||''}</span><span class="mfRune">${rn[a]??'◆'}</span>`)})}adorn();
 
 createHitFeed();
 

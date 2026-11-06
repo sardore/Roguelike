@@ -2469,7 +2469,10 @@ export const scenarios = {
       await capture(out, `screens.${form}.title`, s);
       await s.page.click('#enterBtn');
       await s.tick(600);
+      // Class lanterns use JS frame timing, so pin their artwork for the baseline capture.
+      await s.page.emulateMedia({ reducedMotion: 'reduce' });
       await capture(out, `screens.${form}.class`, s);
+      await s.page.emulateMedia({ reducedMotion: 'no-preference' });
       await s.page.click('#class-choice-archer');
       await s.tick(200);
       await s.page.click('#classStartBtn1001');
