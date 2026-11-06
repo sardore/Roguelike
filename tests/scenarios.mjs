@@ -1552,20 +1552,20 @@ export const scenarios = {
       if (!settles.some((x) => x[0] === 'host' && x[1] === true) || !settles.some((x) => x[0] === 'guest' && x[1] === false) || settles.length <= 2) throw Error('duelstakes: settle ' + JSON.stringify(settles));
       out['duelstakes.errors'] = JSON.stringify([a.errors, b.errors]);
 
-      // what the win brought is in the start chest of the next new run, once
-      server.loot = [{ name: '전리품 물약', type: 'potion', count: 1 }];
+      // what the win brought drops at the player's feet at the start of the next new run, once, the way a boss's reward does (a cell each); the upgrade talisman is not among it
+      server.loot = [{ name: '전리품 물약', type: 'potion', count: 1 }, { name: '전리품 투구', type: 'armor', count: 1 }, { name: '강화부적', type: 'talisman', talismanKind: 'upgrade', count: 1 }];
       calls.length = 0;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
-      const chest = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
+      const drops = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropsOnFloor());
+      const at = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.playerAt());
       const claims = calls.filter((c) => c.post?.lootClaim).length;
-      const placed = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.openChest());
-      out['duelstakes.loot'] = JSON.stringify({ inChest: chest?.loot?.map((i) => i.name), claims, onTheFloorWhenOpened: placed });
-      if (!chest?.loot || chest.loot.length !== 1 || claims !== 1 || !placed) throw Error('duelstakes: loot ' + JSON.stringify({ chest, claims, placed }));
+      out['duelstakes.loot'] = JSON.stringify({ drops, claims, near: drops.every((d) => Math.max(Math.abs(d.x - at[0]), Math.abs(d.y - at[1])) <= 4), cells: new Set(drops.map((d) => d.x + ',' + d.y)).size });
+      if (drops.map((d) => d.name).sort().join() !== '전리품 물약,전리품 투구' || claims !== 1 || new Set(drops.map((d) => d.x + ',' + d.y)).size !== 2) throw Error('duelstakes: loot ' + JSON.stringify({ drops, claims }));
       calls.length = 0;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
-      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
-      out['duelstakes.once'] = JSON.stringify({ loot: again?.loot ?? null });
-      if (again?.loot) throw Error('duelstakes: the winnings came twice');
+      const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropsOnFloor());
+      out['duelstakes.once'] = JSON.stringify({ drops: again });
+      if (again.length) throw Error('duelstakes: the winnings came twice');
 
       // an ordinary match (the loser stays above its death score): nothing is settled, both locks are freed, the loser's ghost lives on with a lower score
       for (const x of [a, b]) await x.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun());
@@ -1630,6 +1630,10 @@ export const scenarios = {
       const taken = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, r = Q.takeHit(3); return { ...r, floats: Q.floatsNow(), feed: Q.hitFeedNow(), log: Q.logLines().filter((l) => /상대 망령 → .*: 3/.test(l)).length }; });
       out['duelrules.blow'] = JSON.stringify(taken);
       if (taken.after !== taken.hp - 3 || !taken.floats.includes('-3') || !taken.feed.some((f) => /피격 -3/.test(f)) || !taken.log || !taken.stand) throw Error('duelrules: a blow taken does not read like a monster blow ' + JSON.stringify(taken));
+      // the card that ends a duel is on the screen (a win ends no run, so nothing else brings the overlay up) with both ghosts and the new score
+      const card = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; Q.stageVs(2, 'archer'); D.mineBody = Q.ghostOf('swordsman', 1); D.mineFloor = 9; D.theirFloor = 12; D.mineScore = { s: 11, peak: 11, d: 4 }; D.theirScore = { s: 14, peak: 14, d: 6 }; D.conclude('win'); D.endCard(); const c = document.getElementById('duelEnd'), r = c?.getBoundingClientRect(); return { shown: !!r && r.width > 0 && r.height > 0, sides: c?.querySelectorAll('.deSide').length, fresh: c?.querySelector('.deNew')?.textContent, old: c?.querySelector('.deOld')?.textContent }; });
+      out['duelrules.endCard'] = JSON.stringify(card);
+      if (!card.shown || card.sides !== 2 || card.old !== '11' || Number(card.fresh) <= 11) throw Error('duelrules: the end card ' + JSON.stringify(card));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

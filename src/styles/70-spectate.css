@@ -28,10 +28,10 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #duelGhosts .duelGhost:hover,#duelGhosts .duelGhost:focus-visible{--button-edge:1px solid var(--d-spirit);--button-shadow:0 0 22px rgba(122,92,255,.35);outline:none}
 #duelGhosts .duelGhost.locked{opacity:.55;cursor:default}
 #duelGhosts .duelGhost.locked .duelEnter{color:var(--d-mute);letter-spacing:.06em}
-#duelScene .duelPedestal{position:relative;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;border:1px solid var(--d-edge);background:radial-gradient(circle at 50% 62%,rgba(143,198,255,.38),rgba(122,92,255,.16) 55%,transparent 72%),#0a0d22}
-#duelScene .duelPedestal.big{width:104px;height:104px}
-#duelScene .duelPortrait{width:52px;height:52px;background:transparent;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(143,198,255,.55))}
-#duelScene .duelPedestal.big .duelPortrait{width:72px;height:72px}
+.duelPedestal{position:relative;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;border:1px solid var(--d-edge);background:radial-gradient(circle at 50% 62%,rgba(143,198,255,.38),rgba(122,92,255,.16) 55%,transparent 72%),#0a0d22}
+.duelPedestal.big{width:104px;height:104px}
+.duelPortrait{width:52px;height:52px;background:transparent;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(143,198,255,.55))}
+.duelPedestal.big .duelPortrait{width:72px;height:72px}
 #duelScene .duelBody{display:flex;flex-direction:column;gap:5px;min-width:0}
 #duelScene .duelName{font-size:calc(17px * var(--ui-font-scale, 1));color:var(--d-ink);letter-spacing:.06em}
 #duelScene .duelCause{color:var(--d-mute);font-size:calc(12px * var(--ui-font-scale, 1))}
@@ -57,7 +57,7 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #duelScene[data-view="confirm"] .duelRules,#duelScene[data-view="search"] .duelRules{display:none}
 @keyframes duelRing{0%{transform:scale(.62);opacity:.75}100%{transform:scale(1.15);opacity:0}}
 @keyframes duelSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
-@media (max-width:480px){#duelScene .duelRules{grid-template-columns:1fr}#duelScene .duelRules li{flex-direction:row;align-items:baseline;gap:10px}#duelGhosts .duelGhost{grid-template-columns:64px minmax(0,1fr);gap:12px}#duelScene .duelPedestal{width:64px;height:64px}#duelScene .duelPortrait{width:44px;height:44px}#duelGhosts .duelEnter{grid-column:1/-1;text-align:right}#duelScene .duelButtons{grid-template-columns:1fr}}
+@media (max-width:480px){#duelScene .duelRules{grid-template-columns:1fr}#duelScene .duelRules li{flex-direction:row;align-items:baseline;gap:10px}#duelGhosts .duelGhost{grid-template-columns:64px minmax(0,1fr);gap:12px}.duelPedestal{width:64px;height:64px}.duelPortrait{width:44px;height:44px}#duelGhosts .duelEnter{grid-column:1/-1;text-align:right}#duelScene .duelButtons{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){#duelScene .duelRings:before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid var(--d-spirit);animation:duelRing 2.4s ease-out infinite}#duelScene .duelSkel{background-size:200% 100%;animation:duelSkel 1.6s linear infinite}}
 #spectateRooms .spectateRoom{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
 #spectateRooms .spectateRoom span{color:#a89476;font-size:calc(11px * var(--ui-font-scale, 1))}
@@ -123,3 +123,34 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #duelHud .dhResult.lose b{color:#e07a9c}
 /* a phone shows the arena small: the bar is kept as thin as it can be (no numbers under the bars, small faces, tight rows) so it hides as little of the map as it can */
 @media (max-width:700px){#duelHud{top:calc(var(--safe-top) + 90px);grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:3px 8px;padding:4px 8px}#duelHud .dhFace{width:26px;height:26px;padding:2px}#duelHud .dhNum{display:none}#duelHud .dhInfo{gap:2px}#duelHud .dhInfo b{font-size:calc(11px * var(--ui-font-scale, 1))}#duelHud .dhMid{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:2px 8px;min-width:0}#duelHud .dhTurn{padding:0 10px}#duelHud .dhTurn b{letter-spacing:.1em;font-size:calc(12px * var(--ui-font-scale, 1))}#duelHud .dhCools{gap:4px}#duelHud .dhCool{padding:0 4px;gap:3px}#duelHud .dhPips i{width:4px;height:7px}#duelHud .dhTimer{order:3;flex:1 0 100%}}
+
+/* the end card of a duel: the two ghosts face to face, and the new score comes down from above onto the old one and knocks it away.
+   --de-motion is 1, and 0 for a reader who asked for less motion: the animations then end where they were going to end. */
+:root{--de-motion:1}
+.duelEnd .deVs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;margin:14px 0 8px}
+.duelEnd .deSide{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:10px 6px;border:1px solid #2e3a68;background:linear-gradient(180deg,rgba(40,34,92,.5),rgba(8,10,26,.6))}
+.duelEnd .deSide.foe{border-color:#6a3b57;background:linear-gradient(180deg,rgba(92,34,60,.45),rgba(8,10,26,.6))}
+.duelEnd .deWho{font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.22em;color:#8fc6ff}
+.duelEnd .deSide.foe .deWho{color:#e88a8a}
+.duelEnd .deInfo{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.duelEnd .deInfo b{font-size:calc(13px * var(--ui-font-scale, 1));color:#e4def2}
+.duelEnd .deInfo small{font-size:calc(10px * var(--ui-font-scale, 1));color:#9b98ba}
+.duelEnd .deScore{font:800 calc(16px * var(--ui-font-scale, 1)) Georgia,serif;color:#efd49b}
+.duelEnd .deScore .over{text-decoration:line-through;opacity:.6}
+.duelEnd .deSlam{position:relative;display:grid;place-items:center;justify-self:center;width:96px;height:96px}
+.duelEnd .deSlamLabel{position:absolute;bottom:-16px;font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.2em;color:#9b98ba}
+.duelEnd .deOld{grid-area:1/1;font:900 calc(54px * var(--ui-font-scale, 1)) Georgia,serif;line-height:1;color:#8d89a8;animation:deKnock calc(1.9s * var(--de-motion)) ease-in both}
+.duelEnd .deNew{grid-area:1/1;font:900 calc(54px * var(--ui-font-scale, 1)) Georgia,serif;line-height:1;color:#efd49b;text-shadow:0 0 24px rgba(239,212,155,.55);opacity:0;animation:deDrop calc(1.9s * var(--de-motion)) cubic-bezier(.3,0,.7,1) both}
+.duelEnd .deSlam.down .deNew{color:#ff7a8e;text-shadow:0 0 24px rgba(255,90,120,.6)}
+.duelEnd .deRing{position:absolute;inset:50% auto auto 50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid #efd49b;opacity:0;animation:deRing calc(1.9s * var(--de-motion)) ease-out both}
+.duelEnd .deSlam.down .deRing{border-color:#ff7a8e}
+.duelEnd .deDelta{position:absolute;right:-18px;top:-6px;font:900 calc(20px * var(--ui-font-scale, 1)) Georgia,serif;font-style:normal;color:#efd49b;opacity:0;animation:deDelta calc(1.9s * var(--de-motion)) ease-out both}
+.duelEnd .deSlam.down .deDelta{color:#ff7a8e}
+.duelEnd.win,.duelEnd.lose,.duelEnd.gone{animation:deShake calc(1.9s * var(--de-motion)) linear both}
+@keyframes deDrop{0%,36%{transform:translateY(-260%) scale(1.8) rotate(-8deg);opacity:0}52%{transform:translateY(0) scale(1.28) rotate(0);opacity:1}58%{transform:scale(.9)}66%,100%{transform:none;opacity:1}}
+@keyframes deKnock{0%,52%{transform:none;opacity:1}62%{transform:translate(-30%,10%) rotate(-12deg);opacity:1}100%{transform:translate(-220%,-120%) rotate(-95deg) scale(.4);opacity:0}}
+@keyframes deRing{0%,50%{transform:scale(.4);opacity:0}52%{opacity:.9}100%{transform:scale(4.2);opacity:0}}
+@keyframes deDelta{0%,62%{transform:translateY(8px) scale(.4);opacity:0}74%{transform:translateY(-4px) scale(1.4);opacity:1}100%{transform:none;opacity:1}}
+@keyframes deShake{0%,50%{transform:none}53%{transform:translate(-5px,3px)}56%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}64%{transform:translate(2px,-1px)}68%,100%{transform:none}}
+@media (max-width:520px){.duelEnd .deVs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.duelEnd .deSlam{grid-column:1/-1;grid-row:1;margin-bottom:14px}}
+@media (prefers-reduced-motion:reduce){:root{--de-motion:0}}

@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -202,12 +202,14 @@ const Duel={
   try{reply=await PlayStats.lootClaim()}catch(error){ignoreError('duel winnings not claimed',error)}
   if(reply?.ok&&Array.isArray(reply.items)&&reply.items.length)this.deliver(reply.items);
  },
- // Into the start chest if it is still shut; if the player has opened it already (or there is none), straight into the bag.
+ // What the beaten ghost carried drops at the player's feet the way a boss's reward does (placeDropItems: a cell each, all or none); the upgrade talisman (강화부적)
+ // is not among it. With no free cell at all it goes into the bag.
  deliver(items){
-  const chest=state?.tutorialChest;
-  if(chest&&!chest.opened){chest.loot=[...(chest.loot||[]),...items];addLog('망령전의 전리품이 시작 상자에 들어 있다.');return}
-  for(const item of items)addInventoryItem(item);
-  addLog('망령전의 전리품을 받았다.');
+  const drops=items.filter(item=>item&&item.talismanKind!=='upgrade');if(!drops.length)return;
+  const put=placeDropItems(drops,{x:state.player.x,y:state.player.y},'duelDrop');
+  if(put.ok){addLog(`망령이 가진 것 ${put.worldCount}개가 발치에 떨어져 있다.${put.stackedFallbacks?` 자리가 모자라 ${put.stackedFallbacks}개는 겹쳐 놓였다.`:''}`);return}
+  for(const item of drops)addInventoryItem(item);
+  addLog('망령이 가진 것을 가방에 받았다.');
  },
  // ---- the fight: each side plays its own real game ---------------------------------------------------------------------------
  // Both players run the real game on their own page (the arena of duelarenas.js as a run, their own ghost as the player: real inventory, skills, screen). The
@@ -217,7 +219,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0,theirScore=null){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
+  this.fighting=true;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   try{newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor})}
   catch(error){ignoreError('duel arena could not be opened',error);this.pickNote='전장을 열지 못했다.';this.leave('전장을 열지 못했다');return false}
@@ -385,15 +387,35 @@ const Duel={
   if(this.dies)this.settling={won:win,match:this.matchId,ghost:this.mineGhostId,next:0,until:Date.now()+13*60*1000,busy:false};
   else PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error));
  },
- // The card that ends a duel (instead of the death card of a normal run): the score before and after, and what happened to the ghost.
+ // The card that ends a duel (instead of the death card of a normal run): the two ghosts face to face with their scores, and the new score of this one comes down from
+ // above and knocks the old one away; what happened to each ghost is said under it.
  endCard(){
-  const win=this.outcome==='win',gone=!win&&this.dies,a=this.before,b=this.after;
-  const title=win?'망령전 승리':gone?'망령이 사라졌다':'패배 · 망령은 남았다';
-  const note=win?(this.dies?'상대 망령은 사라졌다. 그가 가진 것은 새 판의 시작 상자로 들어온다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
-  const nums=a&&b?`<div class="deathStats94"><span><b>${a.s}→${b.s}</b><small>현점수</small></span><span><b>${b.d}</b><small>데스점수</small></span></div>`:'';
-  document.getElementById('overlay').style.display='flex';
-  document.getElementById('card').innerHTML=`<div class="death94${win?' victory94':''}" id="duelEnd"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">${win?'勝':'敗'}</div><div class="brand">만루 · 망령전</div><h1>${title}</h1>${nums}<p>${note}</p><button class="deathRetry94" id="duelEndBack" type="button">돌아가기</button></div>`;
-  document.getElementById('duelEndBack').onclick=()=>location.reload();
+  const win=this.outcome==='win',gone=!win&&this.dies,a=this.before,b=this.after,foe=this.theirScore;
+  const title=win?'망령전 승리':gone?'망령이 사라졌다':'패배';
+  const note=win?(this.dies?'상대 망령은 사라졌다. 보스처럼 소모품을 떨어뜨렸고, 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
+  let mine={},theirs={};try{mine=JSON.parse(this.mineBody||'{}')}catch(error){ignoreError('duel ghost body unreadable',error)}
+  theirs=this.theirs||{};
+  const el=Spectate.el.bind(Spectate),card=document.getElementById('card'),root=el('div','death94 duelEnd '+(win?'victory94 win':gone?'gone':'lose'));
+  root.id='duelEnd';root.append(el('span','uiCorners63'),el('div','deathSeal94',win?'勝':'敗'),el('div','brand','만루 · 망령전'),el('h1',null,title));
+  // one side of the face-off: the portrait, the class, depth and level, and the score (the loser's is struck through when it is gone)
+  const side=(who,ghost,floor,score,after,over)=>{
+    const part=el('div','deSide '+who),info=el('span','deInfo');
+    info.append(el('b',null,this.className(ghost.classId)),el('small',null,`${floor}층에서 쓰러짐${ghost.level?' · Lv '+ghost.level:''}`));
+    const sc=el('span','deScore'),node=this.scoreNode(after||score);if(over)node.classList.add('over');sc.append(node);
+    part.append(el('small','deWho',who==='me'?'내 망령':'상대 망령'),this.portrait(ghost.classId,'big'),info,sc);return part;
+  };
+  const foeAfter=a&&b&&foe?duelScoreAfter(foe,a,!win):foe,foeGone=win&&this.dies;
+  const versus=el('div','deVs'),slam=el('div','deSlam '+(b&&a&&b.s>=a.s?'up':'down'));
+  if(a&&b){
+    const old=el('b','deOld',String(a.s)),fresh=el('b','deNew',String(b.s)),delta=b.s-a.s;
+    slam.append(old,fresh,el('i','deRing'),el('em','deDelta',(delta>0?'+':delta<0?'-':'±')+Math.abs(delta)),el('small','deSlamLabel','현점수'));
+  }
+  versus.append(side('me',mine,this.mineFloor,a,b,gone),slam,side('foe',theirs,this.theirFloor,foe,foeAfter,foeGone));
+  const back=el('button','deathRetry94','돌아가기');back.id='duelEndBack';back.type='button';back.onclick=()=>location.reload();
+  root.append(versus,el('p',null,note),back);
+  // A win ends no run (a death does, and moves the screen to 'ending' itself): without this the overlay stays hidden behind the game screen.
+  showEndingScreen();
+  card.replaceChildren(root);document.getElementById('overlay').style.display='flex';
  },
  async pollSettle(now){
   const job=this.settling;
