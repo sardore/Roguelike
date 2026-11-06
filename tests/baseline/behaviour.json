@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "4d3d2264b498dc76549b7c0239ac45a25e4c8f42",
- "values.branch": "436862402d2e8965a0b347ce1b8408ddb47db173",
+ "values.empty": "5c520920a51df940265f3c31400ec8b4fef8c1b3",
+ "values.branch": "8e97e15cc0edb78a737d235fecf2cc58ecd09601",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -475,8 +475,8 @@
  "duelstakes.lock": "139f2ac5bdb567b1f4f5fdabfe4caa8799e1ac67",
  "duelstakes.settle": "1bc0a142b64f47a19c1e9c56235b66db52b58d63",
  "duelstakes.errors": "164374825086dc65cd5dc548c248f61328b5d668",
- "duelstakes.loot": "8c739f3a80fade6562ae20295ac4949207013bba",
- "duelstakes.once": "0fde6527b5e6c0839e967e39711a9d06c319e73f",
+ "duelstakes.loot": "0eb459079660251561935392a834feccfb180d45",
+ "duelstakes.once": "08e9572f8e0b3a0a87a01b2db2138b410217edcc",
  "duelmap.tile": "b26c549ec19ed4777afbc43ed08189782ef7a99c",
  "duelmap.pre": "3ead13b3d3f4f9ca0e2abde052f907f213e4c44a",
  "duelmap.jar": "e9c475637998a4c0654808c8bdc20d20139ad7ca",
@@ -513,5 +513,6 @@
  "duelfight.stun": "004505520420aa04ecba9711add8aad643e9bd3f",
  "duelrules.blow": "900f42b16bbf8f88b8e70ac76a0f9459ae2d421b",
  "duelfight.liveStats": "d2e76464e3c2787622ba778caf54114b1d4e98b5",
- "duelfight.push": "da62d78c0302a0dba270e39e92b7a9f0594ca253"
+ "duelfight.push": "da62d78c0302a0dba270e39e92b7a9f0594ca253",
+ "duelrules.endCard": "d01a4aaeb91821e8c3ffea91674f9666939707b0"
 }

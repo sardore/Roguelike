@@ -530,6 +530,28 @@ function dropLootWithNaturalFood(pos,special=false){const n=state.items.length,r
 function dropFloorLoot(pos,fromSpecial=false){const tier=Math.min(5,tierForFloor()+(fromSpecial&&globalThis.__MANRU_RANDOM57__()<.42?1:0)),r=globalThis.__MANRU_RANDOM57__();let item;if(r<(fromSpecial?.50:.40))item=deckPick47(gear47(tier),'gear');else if(r<(fromSpecial?.68:.68)){const foods=CONSUMABLES.filter(x=>x.type==='food'&&(x.rarity!=='relic'||state.floor>=16));item=deckPick47([...foods,...ordinaryPotionPool(false)],'recovery')}else if(r<(fromSpecial?.86:.88))item=deckPick47(ordinaryPotionPool(true),'strategy');else{const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),pool=relics47().filter(x=>!owned.has(x.name));item=clone(choice(pool.length?pool:relics47()))}if(!item)return;item.x=pos.x;item.y=pos.y;item.count=item.count||1;globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item)}
 function displayDef42(value){const n=Number(value);return Number.isFinite(n)?String(Math.round(n)):'—'}
 function markCombatActivity57(reason='combat'){if(!state)return false;const turn=Math.max(0,Number(state.turn)||0);state.lastCombat57=turn;state.lastCombat991=turn;state.lastCombatReason57=reason;return true}
+// Puts the items of `plan` on the floor around `origin`, each on a cell of its own (on one that is taken when none is free), all or none: the way a boss drops its
+// reward, and the way a beaten ghost drops what it carried (Duel.deliver). {queued:true} when there is no cell at all, {ok:false,error} when it was rolled back,
+// else {ok:true,dropped,worldCount,stackedFallbacks}. `flag` marks the items on the floor.
+function placeDropItems(plan,origin,flag='bossDrop55'){
+  const reachable=ReachabilityService.lootCells(),reserved=new Set(),spots=[];
+  for(let i=0;i<plan.length;i++){
+    let q=PlacementService.findItemCell(origin,{reachable,allowPlayer:true,allowItems:false,restrict:p=>!reserved.has(k(p.x,p.y))}),stacked=false;
+    if(!q){q=PlacementService.findItemCell(origin,{reachable,allowPlayer:true,allowItems:true});stacked=!!q}
+    if(!q)return{queued:true};
+    reserved.add(k(q.x,q.y));spots.push({...q,stacked})
+  }
+  const before=structuredClone(state.items||[]),beforeQty=(state.items||[]).filter(i=>i[flag]).reduce((n,i)=>n+itemQuantity(i),0),dropped=[];
+  try{
+    for(let i=0;i<plan.length;i++){
+      const def=plan[i],q=spots[i],qty=Math.max(1,Math.floor(Number(def.count))||1),it={...clone(def),count:qty,[flag]:true},moved=transferItemQuantity(it,null,state.items,qty,{position:q});
+      if(moved.moved!==qty)throw new Error(`drop ${i} transfer failed`);
+      dropped.push({name:def.name,type:def.type,potionKind:def.potionKind||null,talismanKind:def.talismanKind||null,x:q.x,y:q.y,stacked:q.stacked});
+    }
+  }catch(e){state.items=before;return{ok:false,error:String(e?.message||e)}}
+  const afterQty=(state.items||[]).filter(i=>i[flag]).reduce((n,i)=>n+itemQuantity(i),0);
+  return{ok:true,dropped,worldCount:afterQty-beforeQty,stackedFallbacks:dropped.filter(v=>v.stacked).length}
+}
 function dropBossConsumables55(mon){
   if(!state||!mon?.boss||state.bossDrop55?.granted)return false;
   const floor=state.floor,potions=(window.MANRU_POTIONS||[]).filter(i=>floor>=(i.minFloor||1)),talismans=(window.MANRU_TALISMANS||[]).filter(i=>floor>=(i.minFloor||1)&&i.talismanKind!=='upgrade');
@@ -547,22 +569,10 @@ function dropBossConsumables55(mon){
     while(utilities.length<4&&fallback.length){const i=Math.floor(globalThis.__MANRU_RANDOM57__()*fallback.length);utilities.push(fallback.splice(i,1)[0])}
   }
   const plan=[...heals,...utilities].slice(0,6);if(plan.length!==6)return false;
-  const origin={x:mon.x,y:mon.y},reachable=ReachabilityService.lootCells(),reserved=new Set(),spots=[];
-  for(let i=0;i<plan.length;i++){
-    let q=PlacementService.findItemCell(origin,{reachable,allowPlayer:true,allowItems:false,restrict:p=>!reserved.has(k(p.x,p.y))}),stacked=false;
-    if(!q){q=PlacementService.findItemCell(origin,{reachable,allowPlayer:true,allowItems:true});stacked=!!q}
-    if(!q)return queueBossDropTransaction55(plan,origin,floor)
-    reserved.add(k(q.x,q.y));spots.push({...q,stacked})
-  }
-  const before=structuredClone(state.items||[]),beforeQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0),dropped=[];
-  try{
-    for(let i=0;i<plan.length;i++){
-      const def=plan[i],q=spots[i],it={...clone(def),count:1,bossDrop55:true},moved=transferItemQuantity(it,null,state.items,1,{position:q});
-      if(moved.moved!==1)throw new Error(`boss drop ${i} transfer failed`);
-      dropped.push({name:def.name,type:def.type,potionKind:def.potionKind||null,talismanKind:def.talismanKind||null,x:q.x,y:q.y,stacked:q.stacked});
-    }
-  }catch(e){state.items=before;state.bossDrop55={granted:false,floor,requested:plan.length,count:0,healCount:0,names:plan.map(v=>v.name),items:[],reason:'transaction-rollback',error:String(e?.message||e)};addLog('보스 전리품 배치 트랜잭션이 롤백됐다. 보상 일부 지급은 발생하지 않았다.');return false}
-  const afterQty=(state.items||[]).filter(i=>i.bossDrop55).reduce((n,i)=>n+itemQuantity(i),0),worldCount=afterQty-beforeQty,healCount=dropped.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length,stackedFallbacks=dropped.filter(v=>v.stacked).length;
+  const origin={x:mon.x,y:mon.y},put=placeDropItems(plan,origin);
+  if(put.queued)return queueBossDropTransaction55(plan,origin,floor);
+  if(!put.ok){state.bossDrop55={granted:false,floor,requested:plan.length,count:0,healCount:0,names:plan.map(v=>v.name),items:[],reason:'transaction-rollback',error:put.error};addLog('보스 전리품 배치 트랜잭션이 롤백됐다. 보상 일부 지급은 발생하지 않았다.');return false}
+  const {dropped,worldCount,stackedFallbacks}=put,healCount=dropped.filter(v=>['heal_small','heal_medium','heal_large'].includes(v.potionKind)).length;
   state.bossDrop55={granted:worldCount===plan.length&&healCount===2,floor,requested:plan.length,count:worldCount,healCount,stackedFallbacks,names:dropped.map(v=>v.name),items:dropped};
   if(state.bossDrop55.granted)addLog(`보스가 전투 소모품 ${worldCount}개를 떨어뜨렸다. 회복 2개 + 전술 소모품 4개${stackedFallbacks?` · 공간 부족으로 ${stackedFallbacks}개 중첩 배치`:''}.`);
   else addLog(`보스 전리품 배치 이상: ${worldCount}/${plan.length} · 회복 ${healCount}/2.`);
