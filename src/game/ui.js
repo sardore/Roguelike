@@ -35,9 +35,15 @@ function floatText(x,y,text,color="#ffffff",size=13,element=null){
   if(elementColor)color=elementColor;
   text=displayCombatText58(text);
   const dmg=/^-\d+/.test(text),n=dmg?Math.max(14,size):size;
-  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now(),life:dmg?820:720});
-  const feed=dmg&&state?document.getElementById('mfHitFeed'):null;
-  if(feed){const hurt=x===state.player.x&&y===state.player.y,d=document.createElement('div');d.className=`mfHit ${hurt?'hurt':''}`;d.textContent=`${hurt?'피격':'타격'} ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
+  const worldX=x*TILE+TILE/2,worldY=y*TILE+8,now=performance.now();
+  const group=dmg?FX.floats.filter(f=>f.damage57&&f.x===worldX&&f.y===worldY&&now-f.start<f.life):[];
+  const occupied=new Set(group.map(f=>f.lane));
+  let lane=0;
+  while(occupied.has(lane))lane++;
+  FX.floats.push({x:worldX,y:worldY,text,color,size:n,damage57:dmg,lane,riseStart:group[0]?.riseStart??now,start:now,life:dmg?820:720});
+  const hurt=dmg&&state&&x===state.player.x&&y===state.player.y;
+  const feed=hurt&&Math.abs(parseInt(text,10))>=Math.max(1,state.player.maxHp*.2)?document.getElementById('mfHitFeed'):null;
+  if(feed){const d=document.createElement('div');d.className='mfHit hurt';d.textContent=`큰 피해 ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
 }
 function projectInteractionUI(){
   for(const panel of gameplayPanels57()){
@@ -89,12 +95,19 @@ function closeCipher(){cipherOpen=false;const p=document.getElementById('cipherP
 function renderCipherPanel(){const box=document.getElementById('cipherPanel');if(!box||!state?.cipher)return;const c=state.cipher;box.innerHTML=`<div class="cipherSheet"><span class="uiCorners63" aria-hidden="true"></span><div class="cipherHead"><div><b>성채 도개교 암호</b><small>숫자 1~5 · O=자리/숫자 일치 · P=숫자만 존재 · X=없음<br>한 번 제출할 때마다 1턴이 흐른다.</small></div><button class="uxClose" id="cipherClose" aria-label="닫기">×</button></div><div class="cipherDisplay">${Array.from({length:5},(_,i)=>`<div class="cipherDigit ${c.guess[i]?'':'empty'}">${c.guess[i]||'·'}</div>`).join('')}</div><div class="cipherKeys">${[1,2,3,4,5].map(n=>`<button data-cnum="${n}">${n}</button>`).join('')}</div><div class="cipherActions"><button id="cipherClear">지우기</button><button id="cipherSubmit">제출</button></div><div class="cipherHistory">${c.history.slice().reverse().map(h=>`<div class="cipherTry"><b>${h.guess.join('')}</b><span>${h.result.map(v=>`<b class="${v}">${v}</b>`).join(' ')}</span></div>`).join('')}</div></div>`;box.querySelector('#cipherClose').onclick=closeCipher;box.querySelectorAll('[data-cnum]').forEach(b=>b.onclick=()=>InputRouter.dispatch({type:'CIPHER_DIGIT',digit:+b.dataset.cnum,source:'cipher-key'}));box.querySelector('#cipherClear').onclick=()=>InputRouter.dispatch({type:'CIPHER_CLEAR',source:'cipher-clear'});box.querySelector('#cipherSubmit').onclick=ActionDispatcher.handleEvent}
 function openCipher(){if(!gameplayUiOpen57())return false;if(!state?.cipher||state.cipher.solved){toast('도개교는 이미 열려 있다.');return}if(inventoryOpen)closeInventory();if(martialOpen)closeMartial();closeMobileDrawer();cipherOpen=true;renderCipherPanel();document.getElementById('cipherPanel').style.display='flex'}
 function lockProgressText(){const q=globalThis.__MANRU_TYPED_KEYS__?.summary?.();if(q?.active&&q.rows?.length)return q.rows.map(r=>`${r.name} ×${r.have} · 잠금 ${r.closed}`).join(' / ');if(state?.floor===6&&state.f6LibraryGateR8&&state.map?.[state.f6LibraryGateR8.y]?.[state.f6LibraryGateR8.x]!==TT.LOCKED_GATE)return '봉인 고문서고 · 해제됨';if((state?.floorKeysRequired||0)>0)return `${legacyKeyLabel()} ${state.floorKeys||0}/${state.floorKeysRequired||0}`;return '잠금 상태 없음'}
-function updateAttackButton(...args){const r=markAttackButtonAim(...args);if(state&&isBow967()){const b=document.getElementById('attackActionBtn'),sm=b?.querySelector('small');if(sm){const a=selectedAmmo();sm.textContent=a?`${a.name.replace(' 화살','')} ${totalAmmo()}발`:'화살 없음';b.classList.toggle('cooling',!a)}}return r}
-function markAttackButtonAim(){
-    paintAttackButton();const b=document.getElementById('attackActionBtn');if(!b)return;
-    const valid=isAimTargetValid()&&(!!AIM_STATE.jar||bow52());b.classList.toggle('aim52',!!valid);const sm=b.querySelector('small');
-    if(valid&&sm)sm.textContent='조준';
-  }
+function updateAttackButton(){
+  const button=document.getElementById('attackActionBtn'),meta=document.getElementById('attackActionMeta');
+  if(!button||!state)return;
+  const bow=isBow967(),ammo=bow?selectedAmmo():null,aim=isAimTargetValid()&&(!!AIM_STATE.jar||bow52());
+  const cost=attackTurnCost().toFixed(1),count=bow?totalAmmo():0;
+  button.classList.add('ready');
+  button.classList.toggle('cooling',bow&&!ammo);
+  button.classList.toggle('aim52',!!aim);
+  const detail=bow?(ammo?`${ammo.name} ${count}발`:'화살 없음'):`${cost}턴`;
+  button.title=`${aim?'조준 공격':'기본 공격'} (Space) · ${detail}`;
+  button.setAttribute('aria-label',button.title);
+  if(meta)meta.textContent=bow?(ammo?count:'0'):aim?'조준':cost;
+}
 function vibrationEnabled(){return HAPTIC57.enabled}
 function setVibrationEnabled(on){HAPTIC57.enabled=!!on;try{localStorage.setItem('manruHaptics57',HAPTIC57.enabled?'1':'0')}catch(error){console.warn('[manru] haptics setting not stored',error)}return HAPTIC57.enabled}
 function normalizeShop(){
@@ -156,7 +169,18 @@ function closeHelp(){
   document.getElementById("helpPanel").style.display = "none";
 globalThis.__MANRU_UX45_ACTIONS__?.finishClose?.();}
 function endScreen(){document.body.classList.add('end-screen95');for(const id of ['coach70','toast','autoMoveChip','vfAutoState']){const n=document.getElementById(id);if(n){n.classList.remove('show');n.style.display='none'}}}
-function presentDeath(by){if(state?.duel){Duel.endCard();return}Spectate.observe(performance.now());document.getElementById('overlay').style.display='flex';const pct=Math.min(100,Math.round(state.floor/25*100));document.getElementById('card').innerHTML=`<div class="death94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">亡</div><div class="brand">만루 · 탐사 기록 종료</div><h1>등불이 꺼졌다</h1><div class="deathCause94">${by}</div><div class="deathStats94"><span><b>${state.floor}</b><small>도달 층</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:${pct}%"></i></div><p>객주의 복도 어딘가에서 감찰 기록이 끊겼다.<br>남은 등불들은 아무 일도 없었다는 듯 다시 흔들린다.</p>${Spectate.replayable()?'<button class="deathReplay94" type="button">마지막 장면 보기</button>':''}<button class="deathRetry94" onclick="location.reload()">다시 침투</button></div>`;const replay=document.querySelector('.deathReplay94');if(replay)replay.onclick=()=>Spectate.replayLast()}
+function presentDeath(by){if(state?.duel){Duel.endCard();return}Spectate.observe(performance.now());document.getElementById('overlay').style.display='flex';const pct=Math.min(100,Math.round(state.floor/25*100));document.getElementById('card').innerHTML=`<div class="death94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">亡</div><div class="brand">만루 · 탐사 기록 종료</div><h1>등불이 꺼졌다</h1><div class="deathCause94"></div><canvas class="deathScene" width="240" height="108" role="img" aria-label="탐사가 끝난 자리"></canvas><div class="deathStats94"><span><b>${state.floor}</b><small>도달 층</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:${pct}%"></i></div><p>객주의 복도 어딘가에서 감찰 기록이 끊겼다.<br>남은 등불들은 아무 일도 없었다는 듯 다시 흔들린다.</p>${Spectate.replayable()?'<button class="deathReplay94" type="button">마지막 장면 보기</button>':''}<button class="deathRetry94" onclick="location.reload()">다시 침투</button></div>`;
+  document.querySelector('.deathCause94').textContent=by;
+  const scene=document.querySelector('.deathScene');
+  if(drawMap(true)){
+    const {x,y}=CameraProjection.tileCenter(state.player.x,state.player.y);
+    const width=Math.min(C.width,scene.width*VIEW.dpr),height=Math.min(C.height,scene.height*VIEW.dpr);
+    const ctx=scene.getContext('2d');
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(C,clamp(x*VIEW.dpr-width/2,0,C.width-width),clamp(y*VIEW.dpr-height/2,0,C.height-height),width,height,0,0,scene.width,scene.height);
+  }else scene.hidden=true;
+  const replay=document.querySelector('.deathReplay94');if(replay)replay.onclick=()=>Spectate.replayLast()
+}
 function presentVictory(){document.getElementById('overlay').style.display='flex';document.getElementById('card').innerHTML=`<div class="death94 victory94"><span class="uiCorners63" aria-hidden="true"></span><div class="deathSeal94">만</div><div class="brand">만루 · 천 개의 방이 잠들다</div><h1>천 개의 방이 멎었다</h1><div class="deathCause94">만루보주 격파</div><div class="deathStats94"><span><b>25</b><small>최심부</small></span><span><b>${state.player.level}</b><small>레벨</small></span><span><b>${state.player.kills}</b><small>처치</small></span><span><b>${state.turn}</b><small>턴</small></span></div><div class="deathDepth94"><i style="width:100%"></i></div><p>좌우와 위아래로 뒤틀리던 객실이 처음으로 제자리에서 멎는다.<br>만루의 마지막 등불이 조용히 꺼졌다.</p><button class="deathRetry94" onclick="location.reload()">새 기록 시작</button></div>`}
 function runPanelHooks(){for(const h of PANEL_HOOKS)h.run()}
 function setMobileTab(tab){
@@ -469,17 +493,17 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   function buildDesktopSide(){
     const side=document.getElementById('side');if(!side||side.dataset.v962==='1')return;side.dataset.v962='1';
     side.innerHTML=`<button class="uxClose" id="mobileClosePanel" type="button" aria-label="닫기" style="display:none">×</button>
-      <div class="d962Head"><div><span>만루 탐사 기록</span><b id="regionTxt">---</b></div><strong id="floorTxt">제 -- 층</strong></div>
+      <div class="d962Head"><div><span>만루 탐사 기록</span><b id="regionTxt">---</b></div><strong id="floorTxt" hidden>제 -- 층</strong></div>
       <div class="d962Sub"><span id="depthLore">---</span><span id="turnTxt">TURN --</span></div>
       <div class="d962Vitals">
-        <div><label>생명 <span id="hpTxt">--/--</span></label><i><em id="hpFill"></em></i></div>
-        <div><label>기력 <span id="manaTxt">--/--</span></label><i><em id="manaFill"></em></i></div>
+        <div hidden><label>생명 <span id="hpTxt">--/--</span></label><i><em id="hpFill"></em></i></div>
+        <div hidden><label>기력 <span id="manaTxt">--/--</span></label><i><em id="manaFill"></em></i></div>
         <div><label>경험 <span id="xpTxt">--</span></label><i><em id="xpFill"></em></i></div>
-        <div><label>허기 <span id="alertTxt">--</span></label><i><em id="alertFill"></em></i></div>
+        <div hidden><label>허기 <span id="alertTxt">--</span></label><i><em id="alertFill"></em></i></div>
       </div>
-      <section class="d962Radar"><header><b>능력치</b><span>현재 장비 포함</span></header><svg id="desktopRadar962" viewBox="0 0 220 190" aria-label="능력치 육각형"></svg></section>
-      <section class="d962Keys"><header><b>열쇠 / 봉쇄</b><span id="desktopKeyCount962">---</span></header><div id="desktopKeyStatus962"></div></section>
-      <section class="d962Equip"><header><b>장비</b></header><div class="d962Eq"><span>무기</span><b id="weaponTxt">---</b><span>갑옷</span><b id="armorTxt">---</b><span>망토</span><b id="cloakTxt">---</b><span>유물</span><b id="relicTxt">---</b><span>장신구</span><b id="trinketTxt">---</b></div></section>
+      <details class="d962Radar"><summary>능력치 <span>현재 장비 포함</span></summary><svg id="desktopRadar962" viewBox="0 0 220 190" aria-label="능력치 육각형"></svg></details>
+      <details class="d962Keys"><summary>열쇠 / 봉쇄 <span id="desktopKeyCount962">---</span></summary><div id="desktopKeyStatus962"></div></details>
+      <details class="d962Equip"><summary>장비</summary><div class="d962Eq"><span>무기</span><b id="weaponTxt">---</b><span>갑옷</span><b id="armorTxt">---</b><span>망토</span><b id="cloakTxt">---</b><span>유물</span><b id="relicTxt">---</b><span>장신구</span><b id="trinketTxt">---</b></div></details>
       <section class="d962Around"><header><b>주변 / 상태</b></header><div id="monsterInfo">주변 생체 반응 없음.</div><div id="statusLine">---</div></section>
       <section class="d962Martial"><header><b>무술</b></header><div id="skillTxt">---</div></section>
       <div class="d962Hint">WASD 이동 · C 문닫기 · 클릭 자동이동 · 드래그 시점 · ◎ 복귀</div>`;
@@ -502,7 +526,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
   function refreshDoorContext(){
     if(!state)return;const p=state.player,onStairs=p.x===state.stairs?.x&&p.y===state.stairs?.y,hasItem=(state.items||[]).some(i=>i.x===p.x&&i.y===p.y),closable=openDoorCandidates964().some(d=>!doorCloseBlock964(d.x,d.y));
     const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),merchant=adjacentMerchant58(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),label=document.getElementById('contextActionLabel'),btn=document.getElementById('contextActionBtn'),actionable=!!stock||!!bed||!!merchant||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||closable;if(label)label.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':merchant?'교환':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':closable?'문닫기':'상호작용';
-    if(btn){btn.classList.toggle('available',actionable);btn.disabled=!actionable;btn.title=stock?'발밑 진열품 구매 확인':bed?'침상에서 잠들어 회복 (최대 50턴)':merchant?'행낭 물품 판매':silk?'인접 비단 함정 해제 (1턴)':gate?`${gate.label} · 이 방 배수 6턴 / 재사용 16턴`:branch?`${branch.label} · F 또는 상호작용 버튼으로 출입` :onStairs?'다음 층':hasItem?'줍기':anvil?'모루에서 같은 장비 두 개 합성':pushable?'밀기':closable?'인접 열린 문 닫기':'현재 상호작용 대상 없음';const b=btn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':merchant?'교환':silk?'解':gate?'閥':branch?'入':onStairs?'降':hasItem?'拾':anvil?'合':pushable?'推':closable?'閉':'·'}
+    if(btn){btn.classList.toggle('available',actionable);btn.disabled=!actionable;btn.title=stock?'발밑 진열품 구매 확인':bed?'침상에서 잠들어 회복 (최대 50턴)':merchant?'행낭 물품 판매':silk?'인접 비단 함정 해제 (1턴)':gate?`${gate.label} · 이 방 배수 6턴 / 재사용 16턴`:branch?`${branch.label} · F 또는 상호작용 버튼으로 출입` :onStairs?'다음 층':hasItem?'줍기':anvil?'모루에서 같은 장비 두 개 합성':pushable?'밀기':closable?'인접 열린 문 닫기':'현재 상호작용 대상 없음'}
   }
   function textOnly(html){const d=document.createElement('div');d.innerHTML=String(html??'');return(d.textContent||d.innerText||'').replace(/\s+/g,' ').trim()}
   function directOpenInspect(title,html,target=null,previewItem=null){
@@ -1267,7 +1291,7 @@ function updateMobileHud(){
     if(!state)return;const p=state.player,st=getStats(),side=!!state.artifactDungeon46,location58=hudLocation58(),boss=state.monsters.find(m=>m.boss&&m.hp>0);setText('mFloor',location58.floor);setText('mHp',`${displayHealth(p.hp)}/${displayHealth(p.maxHp)}`);setText('mFocus',`${displayNumber53(p.focus)}/${displayNumber53(st.maxFocus)}`);setText('mHunger',Math.round(p.hunger));
     const hpBlock=document.querySelector('#mobileHud .hp');if(hpBlock)hpBlock.style.setProperty('--hp',(clamp(100*p.hp/p.maxHp,0,100)*.72)+'%');
     const tag=document.getElementById('terrainTag');if(tag){tag.textContent=location58.challenge||location58.tag;tag.style.opacity=location58.challenge||['artifact','shop'].includes(location58.kind)?'.92':'0';tag.classList.toggle('withBoss58',!!boss)}
-    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs?.x&&p.y===state.stairs?.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
+    const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=p.x===state.stairs?.x&&p.y===state.stairs?.y,hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable}
     document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
     const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
     if(mapOpen49())syncLargeMinimap();
@@ -1300,4 +1324,3 @@ function inventoryFiltered(){
 let runtimeLoopStarted57=0;
 function runtimeReady57(){return typeof updateMobileHud==='function'&&typeof visualLoop==='function'}
 function startRuntimeLoop57(){if(runtimeLoopStarted57)return true;if(!runtimeReady57())throw new ReferenceError('canonical runtime entrypoints are not initialized');runtimeLoopStarted57=1;requestAnimationFrame(visualLoop);return true}
-  const hk={attack:'SPC',pickup:'G',open:'E',skill:'Q',inv:'I',rest:'R',summon0:'V',summon1:'T'},rn={attack:'칼',pickup:'줍',open:'점멸',skill:'무',inv:'행',rest:'숨',summon0:'',summon1:''};

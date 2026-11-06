@@ -503,9 +503,9 @@ function bindFullscreenAndResizeListeners(){
   /* Phase 12: CameraProjection12 and WorldHitTest12 are installed before runtime input can fire. */
   window.addEventListener('resize',syncViewportOnWindowResize,{passive:true});
 }
-function createMobileAutoButton(){
-  const m=document.querySelector('#mobileHud .mButtons');
-  if(m&&!document.getElementById('mobileAutoBtn')){const b=document.createElement('button');b.id='mobileAutoBtn';b.setAttribute('aria-label','이동 / 자동 탐사');b.textContent='行';b.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});m.insertBefore(b,document.getElementById('mobilePanelBtn'))}
+function bindMobileAutoButton(){
+  const button=document.getElementById('mobileAutoBtn');
+  if(button)button.onclick=()=>ClientEnvironment.emit({type:'AUTO_EXPLORE',source:'mobile-hud'});
 }
 function rebindInspectClose(){
     // adaptive versions of layouts that need to fill the larger maps

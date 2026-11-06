@@ -7,13 +7,13 @@
  "defineProperty": 6,
  "mutationObserver": 1,
  "duplicateSelector": 276,
- "important": 2178,
+ "important": 2165,
  "suffixFunction": 743,
  "emptyCatch": 0,
  "timer": 40,
  "sameBody": 0,
  "qaLeak": 0,
- "spineLines": 389,
- "spineDeclarations": 13,
- "spineLooseStatements": 134
+ "spineLines": 387,
+ "spineDeclarations": 12,
+ "spineLooseStatements": 133
 }

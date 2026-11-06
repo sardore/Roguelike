@@ -40,7 +40,11 @@
     @media(max-width:1080px){#mfCombatHud{left:5px;right:5px;top:calc(96px + var(--safe-top));max-width:none;gap:3px}.mfCH{min-width:0;flex:1;padding:4px 5px}.mfCH .k{font-size:calc(6px * var(--ui-font-scale, 1))}.mfCH .v{font-size:calc(10px * var(--ui-font-scale, 1))}.mfCH .s{font-size:calc(7px * var(--ui-font-scale, 1))}#mfAction{display:none}}
 
     /* action buttons */
-    .quickbar button{position:relative!important;overflow:hidden!important}.quickbar button .mfKey{position:absolute;right:3px;top:3px;padding:1px 3px;border:1px solid #563b27;background:#080503;font:900 calc(6px * var(--ui-font-scale, 1)) ui-monospace,monospace;color:#8e7358;pointer-events:none}.quickbar button .mfRune{position:absolute;left:4px;top:3px;font:900 calc(8px * var(--ui-font-scale, 1)) Georgia,serif;color:#76553b;pointer-events:none}.quickbar button b{margin-top:4px!important}.quickbar button.available{box-shadow:inset 0 0 0 1px #180b06,0 0 0 1px rgba(188,123,70,.16),0 0 15px rgba(185,105,55,.13)!important}
+    .quickbar button{position:relative!important;overflow:hidden!important}
+    .actionIcon{flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+    #mobileAutoBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+    #mobileAutoBtn .actionIcon{width:15px;height:15px}
+    #attackActionMeta{position:absolute;top:3px;right:4px;color:#e2b887;font-size:calc(9px * var(--ui-font-scale, 1));line-height:1;pointer-events:none}
 
     /* inventory */
     #inventory{background:rgba(3,2,1,.84)!important}.mfInv{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%;background:linear-gradient(180deg,#130c08,#070403)}.mfInvHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-bottom:1px solid #583a24;background:linear-gradient(180deg,#291a11,#130b07)}.mfInvHead h2{margin:0;font:900 calc(22px * var(--ui-font-scale, 1)) Georgia,serif;color:#efd09a;letter-spacing:.10em}.mfInvHead small{display:block;margin-top:3px;font-size:calc(9px * var(--ui-font-scale, 1));color:#846c52}.mfInvMeta{display:flex;gap:8px;align-items:center;font:800 calc(8px * var(--ui-font-scale, 1)) ui-monospace,monospace;color:#9a7d5e}.mfInvMeta b{font-size:calc(13px * var(--ui-font-scale, 1));color:#dfc18d}.mfInvMeta button{height:36px;min-width:58px}
@@ -501,7 +505,7 @@
     .uxInvHead h2,.uxDetailHead h3,#mobileDrawer .mobileDrawerHead b,.inspectHead b,.cookHead57 h2{
       font-family:"SamsungOneKorean","SamsungOne","Noto Sans CJK KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif!important;font-weight:800!important;
     }
-    .mfRune,.mfKey,.mfBtnMark,.seal,.rune,.eg,.er,.classSeal{
+    .mfBtnMark,.seal,.rune,.eg,.er,.classSeal{
       font-family:"Noto Serif CJK KR","Noto Serif KR","Batang","Times New Roman",serif!important;
     }
 
@@ -757,10 +761,7 @@
     }
     body.mf75-clean #mobileControls .actions.quickbar button.ux54-hidden{opacity:.42!important;filter:saturate(.55)!important}
     body.mf75-clean #mobileControls .actions.quickbar button.available{opacity:1!important;filter:none!important;border-color:#956138!important;background:linear-gradient(180deg,#2b1b12,#120b07)!important}
-    body.mf75-clean #mobileControls .actions.quickbar button b{font:900 calc(19px * var(--ui-font-scale, 1)) "Noto Serif CJK KR","Batang",serif!important;color:#edd1a1!important;margin:0!important}
-    body.mf75-clean #mobileControls .actions.quickbar button small{font-size:calc(7px * var(--ui-font-scale, 1))!important;line-height:1!important;color:#927a5c!important}
-    body.mf75-clean #mobileControls .actions.quickbar .mfKey{right:2px!important;top:2px!important;border:0!important;background:transparent!important;color:#69543d!important;font-size:calc(5px * var(--ui-font-scale, 1))!important}
-    body.mf75-clean #mobileControls .actions.quickbar .mfRune{display:none!important}
+    body.mf75-clean #mobileControls .actions.quickbar button small{font-size:calc(10px * var(--ui-font-scale, 1))!important;line-height:1.15!important;color:#d9bb93!important;letter-spacing:0;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
     body.mf75-clean #attackActionBtn{border-color:#8a5137!important;background:linear-gradient(180deg,#2b1711,#120806)!important}
     body.mf75-clean #attackActionBtn.ready{border-color:#b56c47!important;box-shadow:inset 0 0 0 1px #2a110b,0 0 12px rgba(182,90,54,.18)!important}
 
@@ -802,9 +803,9 @@
     body.mf75-clean .uxSlot.selected,body.mf75-clean .uxEq.selected{border-color:#688ca2!important;background:linear-gradient(155deg,#263e4b,#12242e)!important;box-shadow:inset 0 0 0 1px #86b0c033,inset 0 1px #d1e6ed22!important}
     body.mf75-clean .uxSlot .nm{font-size:10px!important;color:#ad997d!important}
     body.mf75-clean .uxDetail{border-radius:3px!important;border-color:#68472c!important;background:rgba(22,14,9,.985)!important;box-shadow:0 -8px 24px #0009!important}
-    body.mf75-clean .uxDetailHead h3{font-family:"SamsungOneKorean","Noto Sans CJK KR",sans-serif!important;font-size:17px!important;color:#e8ca96!important}
-    body.mf75-clean .uxStats{gap:3px!important;margin:6px 0!important}.mf75-clean .uxStat{padding:4px 6px!important;font-size:9px!important}
-    body.mf75-clean .uxDesc{font-size:11px!important;color:#a58e70!important;line-height:1.45!important}
+    body.mf75-clean .uxDetailHead h3{font-family:"SamsungOneKorean","Noto Sans CJK KR",sans-serif!important;font-size:calc(18px * var(--ui-font-scale, 1))!important;color:#f2d8ac!important}
+    body.mf75-clean .uxStats{gap:3px!important;margin:6px 0!important}.mf75-clean .uxStat{padding:4px 6px!important;font-size:calc(11px * var(--ui-font-scale, 1))!important;color:#e3c69b}
+    body.mf75-clean .uxDesc{font-size:calc(12px * var(--ui-font-scale, 1))!important;color:#c1ab8c!important;line-height:1.45!important}
     body.mf75-clean .uxActions{gap:4px!important;margin-top:7px!important}.mf75-clean .uxActions button{height:40px!important;border-radius:2px!important;font-size:11px!important}
 
     /* fusion / gear infusion: same hierarchy as inventory, clear 1 -> 2 -> result */
