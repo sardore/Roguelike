@@ -1138,6 +1138,17 @@ export const scenarios = {
       await s.tick(800);
       search.after = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; return D.stage + '|' + D.pickNote; });
       const closed = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; D.stage = 'queued'; D.socketClosed(); return { stage: D.stage, note: D.pickNote }; });
+      // an offer the relay withdraws puts the search back in the queue (and the next offer is taken); a relay that does not know the mode ends the search saying so
+      const states = await s.page.evaluate(() => {
+        const D = globalThis.__MANRU_QA_DUEL__.api, out = [];
+        D.stage = 'offered'; D.matchId = 'm1'; D.receive({ type: 'match.offer-cancelled', matchId: 'm1' }); out.push(D.stage);
+        D.receive({ type: 'match.offer', mode: 'MANRU_DUEL', matchId: 'm2', role: 'host', remotePlayerId: 'x' }); out.push(D.stage + ':' + D.matchId);
+        D.receive({ type: 'match.queued', mode: 'MANRU_DUEL', position: 3 }); out.push(D.stage + ':' + D.note);
+        D.receive({ type: 'session.failed', code: 'INVALID_MODE' }); out.push(D.stage + ':' + D.pickNote);
+        return out;
+      });
+      out['duelpicker.states'] = JSON.stringify(states);
+      if (states[0] !== 'queued' || !states[1].startsWith('offered:m2') || !/3번째/.test(states[2]) || !/^idle:.*INVALID_MODE/.test(states[3])) throw Error('duelpicker: states ' + JSON.stringify(states));
       out['duelpicker.search'] = JSON.stringify({ search, closed });
       if (closed.stage !== 'idle') throw Error('duelpicker: a closed socket left the search ' + JSON.stringify(closed));
       out['duelpicker.errors'] = JSON.stringify(s.errors);
