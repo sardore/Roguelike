@@ -532,7 +532,7 @@
       border:1px solid #50647d; background:linear-gradient(180deg,#1b2631,#10161d); font-weight:700;
     }
     #mobileInspect, #mobileMapModal{
-      position:absolute; inset:0; z-index:60; background:rgba(2,4,8,.72);
+      position:absolute; inset:0; z-index:170; background:rgba(2,4,8,.72);
       align-items:flex-end; justify-content:center;
     }
     #mobileInspect.open, #mobileMapModal.open{display:flex}
