@@ -78,7 +78,7 @@ function useInventoryItem(idx,...rest){
   if(state?.duel&&pending?.talismanKind==='upgrade'&&playerClassRules58().upgradeTalismanMode==='bodyBoost'&&state.status.blind>0&&state.status.upset>0){toast('탈진한 동안에는 강화부적을 쓸 수 없다.');return false}
   const act=playerAction57('item',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 물건을 사용하지 못했다.'});if(!act.ok)return !!act.consumed;const item=state?.player?.inventory?.[idx];if(!item)return false;
   // the upgrade talisman (강화부적) is outside the duel's shared cooldown of potions and talismans
-  if(['potion','talisman'].includes(item.type)&&item.talismanKind!=='upgrade'){if(duelCooling('item'))return false;act.duelCooldown='item'}
+  if(['potion','talisman'].includes(item.type)&&item.talismanKind!=='upgrade'&&duelCooling('item'))return false;
   const identity991=globalThis.__MANRU_ITEM_IDENTITY991__;
   const library1022=globalThis.__MANRU_LIBRARY1022_ACTIONS__;
   const talisman74=globalThis.__MANRU_TALISMAN74_ACTIONS__;
@@ -1179,6 +1179,7 @@ function setupInfusionPanels(){
 }
   function safeBlink56(x,y){return validatePlayerTransfer57(x,y,{cause:'talisman-blink'}).ok}
   function castTalisman56(tx,ty){const action=playerAction57('modal-action',{uiOwner:'talismanTarget56'});if(!action.ok)return false;
+
     const a=V56.target;if(!a||!state)return false;const p=state.player,ox=p.x,oy=p.y;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(a.wasUnknown?'부적의 기운이 그곳까지 닿지 않는다.':`사거리 ${a.range}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))){toast('아직 확인하지 못한 칸이다.');return false}
     if(a.kind==='blink'){if(!safeBlink56(tx,ty)){toast('현재 열린 진행 구역 안의 안전한 칸만 접을 수 있다.');return false}const landing=resolvePlayerLanding57(tx,ty,{cause:'talisman-blink',resetVisual:true});if(!landing.ok){toast('축지할 수 없는 칸이다.');return false}identifyTalisman56(a.kind,'사용 효과 관찰');projectileFX(ox,oy,tx,ty,'#d9be7b');burst(p.x,p.y,'#e2cb87',18,.72);addLog('축지부: 본 공간을 접어 이동했다.')}else{
       if(typeof lineClear==='function'&&!lineClear(p.x,p.y,tx,ty)){toast('부적의 기운이 벽에 막힌다.');return false}

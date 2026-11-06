@@ -1113,7 +1113,7 @@ export const scenarios = {
       await D(a, () => globalThis.__MANRU_QA_DUEL__.api.find());
       await D(b, () => globalThis.__MANRU_QA_DUEL__.api.find());
       if (!(await until(async () => (await stage(a)) === 'matched' && (await stage(b)) === 'matched'))) throw Error('duel: not matched ' + (await stage(a)) + ' ' + (await stage(b)));
-      const info = async (s) => D(s, () => { const d = globalThis.__MANRU_QA_DUEL__.api; return { role: d.role, remote: d.remote, turn: d.TURN_MS, mode: d.MODE }; });
+      const info = async (s) => D(s, () => { const d = globalThis.__MANRU_QA_DUEL__.api; return { role: d.role, remote: d.remote, turn: globalThis.__MANRU_QA_DUEL__.turnMsNow(), mode: d.MODE }; });
       const ia = await info(a), ib = await info(b);
       if (ia.role === ib.role || ![ia.role, ib.role].includes('host') || ia.turn !== 20000 || ia.mode !== 'MANRU_DUEL') throw Error('duel: roles ' + JSON.stringify([ia, ib]));
       await D(a, () => globalThis.__MANRU_QA_DUEL__.api.send({ type: 'hello', n: 1 }));
@@ -1694,6 +1694,22 @@ export const scenarios = {
       const job = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; D.setJob({ release: true, match: 'm-1', ghost: 'g-1', until: Date.now() + 60000, busy: false }); const kept = localStorage.getItem('manru.duelPending'); D.settling = null; D.resumed = false; D.resumeJob(); const back = D.settling; D.setJob(null); return { kept: !!kept, back: back && [back.ghost, back.match, back.release], cleared: localStorage.getItem('manru.duelPending') === '' }; });
       out['duelrules.pending'] = JSON.stringify(job);
       if (!job.kept || job.back?.join() !== 'g-1,m-1,true' || !job.cleared) throw Error('duelrules: pending job ' + JSON.stringify(job));
+      // the other player's 괴변 is drawn here: its pieces fly at this player (one picture each)
+      const flown = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageVs(2, 'archer'); return Q.oddityMirrorNow([{ x: 10, y: 8, tile: 1, mat: 'wood' }, { x: 11, y: 9, tile: 1, mat: 'stone' }]); });
+      out['duelrules.oddity'] = JSON.stringify({ flown });
+      if (flown !== 2) throw Error('duelrules: the oddity pieces were not drawn ' + flown);
+      // drinking a potion starts the shared cooldown (it is started where every action is committed, whatever the item), and a second one is refused while it runs
+      const drink = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageWithPotions(3); Q.hurtSelf(6); const before = Q.cooldownNow(), potionsBefore = Q.potions()[0]; Q.usePotion(); const after = Q.cooldownNow(), potionsAfter = Q.potions()[0]; Q.hurtSelf(4); Q.usePotion(); return { before: before.item ?? null, after: after.item ?? null, turn: after.turn, potions: [potionsBefore, potionsAfter, Q.potions()[0]] }; });
+      out['duelrules.drinkCooldown'] = JSON.stringify(drink);
+      if (!(drink.after > drink.turn - 1) || drink.after === null || drink.potions[1] !== drink.potions[0] - 1 || drink.potions[2] !== drink.potions[1]) throw Error('duelrules: the potion did not start the cooldown ' + JSON.stringify(drink));
+      // time presses: no mist at first; the boss arena's mist closes in from the walls as the clock runs (its radius shrinks, outside it hurts), and the turns get shorter (six seconds at least)
+      const press = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageVs(2, 'archer'); Q.api.reported = false; return [0, 23, 24, 40, 100].map((c) => Q.cloudProbe(c)); });
+      out['duelrules.pressure'] = JSON.stringify(press);
+      if (press[0].ring !== 0 || press[0].edge || press[1].ring !== 0 || press[2].ring !== 1 || !press[2].edge || press[2].mid || !(press[3].radius < press[2].radius) || press[0].turnMs !== 20000 || press[3].turnMs >= press[0].turnMs || press[4].turnMs !== 6000 || press[4].radius !== 0 || !press[4].edge) throw Error('duelrules: pressure ' + JSON.stringify(press));
+      // standing outside the mist radius at the end of a turn hurts and poisons (the boss arena's own rule, tickBossArenaMist)
+      const hurt = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageVs(2, 'archer'); Q.api.reported = false; Q.cloudProbe(100); const hp = Q.fight().hp, before = Q.statusOf().poison; Q.spend(1); return { hp, after: Q.fight().hp, poison: [before, Q.statusOf().poison] }; });
+      out['duelrules.mistHurts'] = JSON.stringify(hurt);
+      if (!(hurt.after < hurt.hp) || !(hurt.poison[1] > hurt.poison[0])) throw Error('duelrules: the mist did not hurt ' + JSON.stringify(hurt));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

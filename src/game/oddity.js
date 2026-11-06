@@ -87,6 +87,15 @@ function oddityHit(actor,mon,obj,lv,form,leg){
   if(obj.tile===TT.JAR&&!leg)shatterJar(mon.x,mon.y,{forced:true,from:{x:obj.x,y:obj.y}});
   martialCheckDeath(mon,actor);
 }
+// The other player's art, as a picture: the pieces it lifted fly here at this player (the blows come as hits, the floor as terrain changes), on the same timing as there.
+function oddityMirror(msg){
+  if(!state?.duel)return;
+  const t=ODDITY_RULES.timing,now=performance.now(),p=state.player,stand=Duel.opponent();
+  for(const piece of Array.isArray(msg.pieces)?msg.pieces.slice(0,8):[]){
+    const mat=ODDITY_RULES.materials.find(m=>m.id===piece.mat);if(!mat||!Number.isFinite(piece.x)||!Number.isFinite(piece.y))continue;
+    ODDITY_FX.push({run:state,map:state.map,start:now,hitAt:now+t.lift+t.charge+t.flight,from:{x:piece.x,y:piece.y},caster:{x:stand?.x??p.x,y:stand?.y??p.y},to:{x:p.x,y:p.y},mat:mat.id,aura:ODDITY_RULES.auras[msg.form]||ODDITY_RULES.auras.base,color:mat.color,tile:piece.tile,sprite:oddityPieceSprite(piece.tile,piece.x,piece.y),seed:(piece.x*31+piece.y*17+Math.floor(now))>>>0,hit:false,bounceNext:false});
+  }
+}
 // the pieces in the air, by the chosen enemy: oddityPlan answers with them while the art is under way (their tiles are already gone from the floor)
 let ODDITY_FLIGHT=null;
 function oddityPlan(actor,cell,lv,form){
@@ -108,6 +117,7 @@ function oddityBegin(actor,lv,form,cell){
     if(plan.bounce){const hit2=hitAt+t.bounce;fx(obj,{x:obj.x,y:obj.y},{x:plan.bounce.x,y:plan.bounce.y},hitAt,{kind:'bounce',hitAt:hit2});entries.push({hitAt:hit2,step:'hit',mon:plan.bounce,obj,leg:1});last=hit2}
   }else{
     // all the pieces rise together from their own places and fly at the same moment
+    if(mon.duelOpponent)Duel.sendOddity(plan.objects.map(o=>({x:o.x,y:o.y,tile:o.tile,mat:o.mat.id})),form);
     plan.objects.forEach(obj=>{fx(obj,{x:obj.x,y:obj.y},{x:mon.x,y:mon.y},now,{bounceNext:!!plan.bounce});oddityDetach(obj.x,obj.y);entries.push({hitAt:now+t.lift+t.charge+t.flight,step:'hit',mon,obj})});
     last=now+t.lift+t.charge+t.flight;
     if(plan.bounce){const hit2=last+t.bounce;plan.objects.forEach(obj=>{fx(obj,{x:mon.x,y:mon.y},{x:plan.bounce.x,y:plan.bounce.y},last,{kind:'bounce',hitAt:hit2});entries.push({hitAt:hit2,step:'hit',mon:plan.bounce,obj,leg:1})});last=hit2}
