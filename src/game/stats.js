@@ -301,7 +301,7 @@ const PlayStats={
   this.render();
  },
  // The state of one of the player's ghosts, with its score while it stands.
- ghostStateEl(row){const state=this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다 · ');if(row.status!=='taken')state.append(Duel.scoreNode(Duel.scoreOf(row.id,row.floor)));return state},
+ ghostStateEl(row){const state=this.el('em',null,row.status==='taken'?'빼앗김':Duel.isGone(row)?'사라짐':'남아 있다 · ');if(row.status!=='taken'&&!Duel.isGone(row))state.append(Duel.scoreNode(Duel.scoreOf(row.id,row.floor)));return state},
  ghostView(){
   const view=this.el('div','ghostView'),notice={unset:'수집 서버가 연결되어 있지 않다.',loading:'망령을 불러오는 중…',error:'망령을 불러오지 못했다.'}[this.ghostState||'']||'';
   if(notice||!this.ghosts){view.append(this.el('p','statsNote',notice||'탭을 열면 내 망령이 보인다.'));return view}
@@ -323,7 +323,7 @@ const PlayStats={
    level:(a,b)=>b.level-a.level||b.floor-a.floor||b.kills-a.kills||a.turns-b.turns,
    kills:(a,b)=>b.kills-a.kills||b.floor-a.floor||b.level-a.level||a.turns-b.turns},boards={};
   const counted=row=>row.cause===this.END_CAUSE?{...row,floor:this.END_FLOOR}:row;
-  for(const [id] of this.BOARDS)boards[id]=id==='ghost'?data.boards.ghost:[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
+  for(const [id] of this.BOARDS)boards[id]=id==='ghost'?data.boards.ghost?.filter(row=>!Duel.isGone(row)):[...(data.boards[id]||[]).map(counted),...rows].sort(order[id]).slice(0,this.RANK_ROWS);
   return{...data,total:(+data.total||0)+rows.length,boards};
  },
  el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node},

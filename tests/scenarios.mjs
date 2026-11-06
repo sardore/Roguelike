@@ -859,6 +859,15 @@ export const scenarios = {
         result.empty = [...document.querySelectorAll('.statsNote')].map((n) => n.textContent);
         A.board = 'depth'; A.close(); return JSON.stringify(result);
       });
+      // a ghost whose score is at or under its death score is not listed, whether or not the server has settled it yet
+      out['stats.ghostGone'] = await s.page.evaluate(() => {
+        const A = __MANRU_QA_STATS__.api, g = (tag, score, peak) => ({ tag, nick: '', cls: 'archer', floor: 9, level: 9, kills: 10, turns: 500, cause: '함정', score, peak });
+        A.open('rank'); A.board = 'ghost';
+        A.ranking = A.withLegacyRanking({ total: 3, boards: { depth: [], level: [], kills: [], ghost: [g('ALIVE1', 9, 9), g('GONE11', 3, 30), g('ALIVE2', 0, 0)] } }); A.failed = {}; A.render();
+        const tags = [...document.querySelectorAll('.rankTag,.rankWho b')].map((n) => n.textContent);
+        A.board = 'depth'; A.close(); return JSON.stringify(tags);
+      });
+      if (/GONE11/.test(out['stats.ghostGone']) || !/ALIVE1/.test(out['stats.ghostGone'])) throw Error('stats: a ghost that is gone is listed ' + out['stats.ghostGone']);
       // a server that does not serve the ghost board has no ghost tab (the records alone cannot tell which ghosts still stand)
       out['stats.ghostFallback'] = await s.page.evaluate(() => { const A = __MANRU_QA_STATS__.api; A.open('rank'); A.board = 'depth'; A.ranking = A.withLegacyRanking({ total: 1, boards: { depth: [{ tag: 'AAAA11', nick: '', cls: 'archer', floor: 9, level: 5, kills: 1, turns: 9, cause: '함정' }], level: [], kills: [] } }); A.failed = {}; A.render(); const tabs = [...document.querySelectorAll('[data-rank-board]')].map((b) => b.textContent); A.close(); return JSON.stringify({ tabs, ghost: A.ranking.boards.ghost ?? null }); });
       // The board names a run by its nickname when the server sends one.
@@ -1550,6 +1559,10 @@ export const scenarios = {
       const settles = calls.filter((c) => c.post?.ghostSettle).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostSettle.won]);
       out['duelstakes.settle'] = JSON.stringify({ hostWon: settles.some((x) => x[0] === 'host' && x[1] === true), guestLost: settles.some((x) => x[0] === 'guest' && x[1] === false), noOtherWord: settles.every((x) => (x[0] === 'host') === x[1]), askedAgain: settles.length > 2 });
       if (!settles.some((x) => x[0] === 'host' && x[1] === true) || !settles.some((x) => x[0] === 'guest' && x[1] === false) || settles.length <= 2) throw Error('duelstakes: settle ' + JSON.stringify(settles));
+      // the loser says where its score ended up too (it fell to its death score: the others can tell it is gone before the server has settled it)
+      const scoreCalls = calls.filter((c) => c.post?.ghostScore).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostScore.score, c.post.ghostScore.peak]);
+      out['duelstakes.scoreSent'] = JSON.stringify(scoreCalls);
+      if (!scoreCalls.some((x) => x[0] === 'guest' && x[1] <= 23 && x[1] >= 0)) throw Error('duelstakes: the loser did not say its score ' + JSON.stringify(scoreCalls));
       out['duelstakes.errors'] = JSON.stringify([a.errors, b.errors]);
 
       // what the win brought (this device took nothing from a drop, so it is what the server holds) is in the start chest of the next new run, once; the upgrade talisman is not among it
@@ -1559,6 +1572,9 @@ export const scenarios = {
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await both(600);
       const chest = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
       const claims = calls.filter((c) => c.post?.lootClaim).length;
+      const lv = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.levelsOf());
+      out['duelstakes.level'] = JSON.stringify(lv);
+      if (lv.level !== 2 || lv.pending !== '0') throw Error('duelstakes: the ghost put out did not give a level ' + JSON.stringify(lv));
       out['duelstakes.loot'] = JSON.stringify({ inChest: chest?.loot?.map((i) => i.name), claims });
       if (chest?.loot?.map((i) => i.name).join() !== '전리품 물약,전리품 투구' || claims !== 1) throw Error('duelstakes: loot ' + JSON.stringify({ chest, claims }));
       // what was picked up from the drop is what comes, not what the server holds
@@ -1670,6 +1686,10 @@ export const scenarios = {
       const blink = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, out = {}; for (const level of [0, 2, 3]) out[level] = Q.blinkOfGhost(level); return out; });
       out['duelrules.blink'] = JSON.stringify(blink);
       if (blink[0] !== 2 || blink[2] !== 2 || blink[3] !== 3) throw Error('duelrules: blink ' + JSON.stringify(blink));
+      // a ghost whose score fell to its death score is gone (whatever the server still lists); a ghost put out is a level for the next run, given once
+      const gone = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; localStorage.setItem('manru.duelLevels', '2'); const before = Q.levelsOf(); D.grantLevels(); const after = Q.levelsOf(); D.grantLevels(); return { isGone: [[3, 30], [23, 30], [24, 30], [5, 7], [0, 0]].map(([s, p]) => D.isGone({ score: s, peak: p })), before, after, again: Q.levelsOf() }; });
+      out['duelrules.gone'] = JSON.stringify(gone);
+      if (gone.isGone.join() !== 'true,true,false,false,false' || gone.after.level !== gone.before.level + 2 || gone.after.points !== gone.before.points + 2 || gone.after.pending !== '0' || gone.again.level !== gone.after.level) throw Error('duelrules: gone/levels ' + JSON.stringify(gone));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
