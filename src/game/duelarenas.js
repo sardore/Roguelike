@@ -242,6 +242,27 @@ const DUEL_ARENAS=Object.freeze([
     "#sssssssssssssssssss#",
     "#####################"
    ]}
+  ,{name:"미궁 회랑",ground:"STONE_PATH",
+   spawns:{"host": [2, 8], "guest": [18, 8]},door:[10, 0],
+   rows:[
+    "##########D##########",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#sss####ss#ss####sss#",
+    "#ssssss#sssss#ssssss#",
+    "#cccsss#sssss#sssccc#",
+    "#cAc####ss#ss####cBc#",
+    "#ccc#sssss#sssss#ccc#",
+    "#sss#sssss#sssss#sss#",
+    "#sss#ss#######ss#sss#",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#sssssssssssssssssss#",
+    "#####################"
+   ]}
 ]);
 
 /* The floor of a ghost duel: the drawing is the whole map (new-run core, `buildDuelArena({arena,role})`, instead of NormalFloorGenerator.generate).
