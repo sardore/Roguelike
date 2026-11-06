@@ -1171,6 +1171,17 @@ export const scenarios = {
       out['duelpicker.confirm'] = JSON.stringify(await t.page.evaluate(() => ({ view: document.getElementById('duelScene').dataset.view, chips: [...document.querySelectorAll('.duelConfirmCard .duelChip b')].map((b) => b.textContent), warn: /되돌릴 수 없다/.test(document.querySelector('.duelWarn')?.textContent || ''), buttons: ['duelConfirm', 'duelBack'].map((id) => !!document.getElementById(id)) })));
       await t.page.click('#duelBack'); await t.tick(300);
       out['duelpicker.back'] = JSON.stringify(await t.page.evaluate(() => ({ view: document.getElementById('duelScene').dataset.view, cards: document.querySelectorAll('#duelGhosts .duelGhost').length })));
+      // a match made but the fight not yet open (the ghost is being locked on the server): the card stays and says so, then goes when the fight opens
+      const wait = await t.page.evaluate(() => {
+        const D = globalThis.__MANRU_QA_DUEL__.api, out = [];
+        D.stage = 'matched'; D.fighting = false; D.note = '상대와 연결됐다. 망령을 거는 중…'; D.renderPicker();
+        out.push([!!document.getElementById('duelScene'), document.getElementById('duelScene')?.dataset.view, document.querySelector('.duelSearch .duelName')?.textContent]);
+        D.fighting = true; D.renderPicker(); out.push(!!document.getElementById('duelScene'));
+        D.fighting = false; D.stage = 'idle';
+        return out;
+      });
+      out['duelpicker.waiting'] = JSON.stringify(wait);
+      if (!wait[0][0] || wait[0][1] !== 'search' || !/거는 중/.test(wait[0][2]) || wait[1]) throw Error('duelpicker: waiting card ' + JSON.stringify(wait));
       out['duelpicker.errors2'] = JSON.stringify(t.errors);
     } finally { await t.close(); await ctx.close(); }
     return out;
