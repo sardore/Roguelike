@@ -2,7 +2,7 @@
    The relay only matches two players and carries what they send; the game itself (arena, rules) is built on top of `send` and `inbox`.
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
- MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
+ MODE:'MANRU_DUEL',SEND_GAP_MS:120,cloudClock:0,cloudRing:0,
  stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',LEVELS_KEY:'manru.duelLevels',PENDING_KEY:'manru.duelPending',resumed:false,lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
@@ -233,7 +233,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0,theirScore=null){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.carried=false;this.lastStand=null;this.fellTurn=-1;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
+  this.fighting=true;this.cloudClock=0;this.cloudRing=0;this.carried=false;this.lastStand=null;this.fellTurn=-1;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   try{newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor})}
   catch(error){ignoreError('duel arena could not be opened',error);this.pickNote='전장을 열지 못했다.';this.leave('전장을 열지 못했다');return false}
@@ -257,6 +257,7 @@ const Duel={
    case 'hit':this.applyHit(payload);return true;
    case 'status':this.applyStatus(payload);return true;
    case 'force':this.applyForce(payload);return true;
+   case 'oddity':this.applyOddity(payload);return true;
    case 'field':this.applyField(payload);return true;
    case 'terrain':this.applyTerrain(payload);return true;
    case 'tile':this.applyTile(payload);return true;
@@ -279,6 +280,8 @@ const Duel={
   if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
   if(sync.facing)stand.facing=sync.facing;
   if(Number.isFinite(sync.stun))stand.stunned=Math.max(0,sync.stun);
+  // the other player's stealth (귀영): the stand-in is concealed here as any concealed creature is (not seen, not picked as a target by what hunts), and drawn faint
+  if(sync.stealth!==undefined)(stand.martialStatus105||(stand.martialStatus105={})).stealth=sync.stealth>0?sync.stealth:0;
   for(const key of ['atk','def','eva','will'])if(Number.isFinite(sync.stats?.[key]))stand[key]=sync.stats[key];
   if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   VisibilityService.compute();updateAll();
@@ -382,6 +385,9 @@ const Duel={
   try{resolveForcedMovement57(state.player,{x:force.x,y:force.y},Math.min(6,Math.floor(force.steps)),{mode:force.mode==='pull'?'pull':'push',hostile:true,orthogonal:!!force.orthogonal})}finally{this.applying=false}
   updateAll();
  },
+ // The art that pulls furniture and throws it (괴변): the other page is told which pieces rose, to draw them flying at its player.
+ sendOddity(pieces,form){if(!this.applying&&!this.environment)this.send({kind:'oddity',pieces,form})},
+ applyOddity(msg){if(!state?.duel||state.dead||this.reported||this.turn!==this.other())return;oddityMirror(msg)},
  applyStatus(status){
   if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0)||this.turn!==this.other())return;
   this.applying=true;
@@ -527,11 +533,11 @@ const Duel={
   if(stand){addLog('상대 망령이 자리를 떠났다.');stand.hp=0;killMonster(stand)}
  },
  // ---- turns: one side acts at a time, twenty seconds each ---------------------------------------------------------------------
- // The host acts first. A side's turn ends when it has acted (the game's turn counter moved) or when TURN_MS has passed (the turn is then spent waiting);
+ // The host acts first. A side's turn ends when it has acted (the game's turn counter moved) or when the turn time (duelTurnMs) has passed (the turn is then spent waiting);
  // the next side is told in `sync`. The turn and its end are kept in `state.duel` for the top bar.
  myTurn(){return !state?.duel||this.stage!=='matched'||this.turn===this.role},
  giveTurn(side){
-  this.turn=side;this.turnEnds=Date.now()+this.TURN_MS;this.turnSeen=state.turn;
+  this.turn=side;this.turnEnds=Date.now()+duelTurnMs();this.turnSeen=state.turn;
   if(state?.duel){state.duel.turn=side;state.duel.turnEnds=this.turnEnds}
   this.lastSig='';
  },
@@ -542,11 +548,22 @@ const Duel={
   const mine=state.duel?.clock||0,theirs=this.theirClock;
   return mine<theirs-1e-6||(Math.abs(mine-theirs)<1e-6&&this.role==='host');
  },
+ // The cloud hurts whoever stands in it each time the clock moves; it only closes in (it never opens again).
+ tickCloud(){
+  const ring=duelCloudRing(),p=state.player;
+  if(ring>this.cloudRing){this.cloudRing=ring;addLog('독구름이 가장자리에서 한 칸 더 밀려온다.');toast('독구름이 좁혀 온다')}
+  const clock=state.duel.clock||0;if(clock<=this.cloudClock)return;
+  this.cloudClock=clock;
+  if(!duelInCloud(p.x,p.y))return;
+  const dmg=1+Math.floor(ring/2);
+  damageEntity(p,dmg,null);floatText(p.x,p.y,'독구름 -'+dmg,'#8fd36a',11);addLog('독구름이 폐를 파고든다. '+dmg);
+  if(p.hp<=0)die('독구름');
+ },
  tickTurn(){
   if(!state?.duel||state.duel.finished||state.dead)return;
   const side=this.holdsTurn()?this.role:this.other();
   if(side!==this.turn)this.giveTurn(side);
-  else if(state.turn!==this.turnSeen){this.turnSeen=state.turn;this.turnEnds=Date.now()+this.TURN_MS;state.duel.turnEnds=this.turnEnds;this.lastSig=''} // acted and still has the turn
+  else if(state.turn!==this.turnSeen){this.turnSeen=state.turn;this.turnEnds=Date.now()+duelTurnMs();state.duel.turnEnds=this.turnEnds;this.lastSig=''} // acted and still has the turn
   if(this.turn!==this.role||Date.now()<this.turnEnds)return;
   addLog('시간이 다 되어 이번 차례를 넘겼다.');
   globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'duel-timeout'});
@@ -588,7 +605,7 @@ const Duel={
   if(rect&&innerWidth>700){box.style.left=rect.left+rect.width/2+'px';box.style.width=Math.min(660,rect.width-24)+'px'}
   else{box.style.left='';box.style.width=''}
   const bar=box.querySelector('.dhTimer i');
-  if(bar)bar.style.transform=`scaleX(${live?Math.min(1,Math.max(0,left/this.TURN_MS)):1})`;
+  if(bar)bar.style.transform=`scaleX(${live?Math.min(1,Math.max(0,left/duelTurnMs())):1})`;
  },
  // Every frame, on both sides.
  pump(now){
@@ -606,15 +623,17 @@ const Duel={
   // this side won and went down in the same turn (the same poison, the same fire): nobody won. Later (on the way to the door): the win stands, and so does the drop.
   if(this.reported&&this.outcome==='win'&&state.dead&&state.turn<=this.fellTurn){this.turnDraw();return}
   if(this.reported)return;
+  this.tickCloud();
+  if(this.reported||state.dead)return;
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);
   if(second!==this.shown){this.shown=second;updatePanels()}
   if(now-this.lastSend<this.SEND_GAP_MS)return;
   // what the other page works the stand-in's blows and its dodging out from: this player's stats as they are now (a potion of fortitude, a swift one…), not as they were at the start
   const live=getStats(),stats={atk:live.atk,def:live.def,eva:live.eva,will:live.will};
-  const allies=this.ownAllies(),stun=state.status?.stun||0,sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,stun,stats.atk,stats.def,stats.eva,stats.will,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
+  const allies=this.ownAllies(),stun=state.status?.stun||0,stealth=state.status?.stealth||0,sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,stun,stats.atk,stats.def,stats.eva,stats.will,stealth,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
   if(sig===this.lastSig)return;
   this.lastSig=sig;this.lastSend=now;
-  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,stun,stats,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
+  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,stun,stealth,stats,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
  },
 };

@@ -622,7 +622,7 @@ const ActionDispatcher=Object.freeze({
     const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
     if(state?.spectator)return{handled:true,attempted:false,committed:false,successful:false,status:'denied',reason:'spectator',timeCost:0,advancesWorld:false,value:false};
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
-    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
+    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],duelItems=entry?.duel?duelItemCount():0,before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
     const frame={result,turns:result.turns,denial:null};if(!parent)ACTION_AUDIT5.roots++;ACTION_AUDIT5.stack.push(frame);
     let completed=false;
@@ -657,6 +657,8 @@ const ActionDispatcher=Object.freeze({
       result.timeCost=result.turns.reduce((sum,turn)=>sum+turn.timeCost,0);
       result.advancesWorld=result.logicalTurns>0;result.playerDied=!before.dead&&!!state?.dead;
       result.lifecycleAborted=!completed||!state||state.runId984!==before.run;
+      // In a duel a potion or a talisman used up, by whatever action (drunk, thrown, cast; items not yet made too), starts the cooldown they share: every command comes through here.
+      if(!result.lifecycleAborted&&state?.duel&&duelItemCount()<duelItems)duelCooldownStart('item');
       result.pending=!!result.value&&!result.advancesWorld&&((['BLINK','ITEM_USE','QUICK_SLOT'].includes(type)&&activeGameplayPanels57().some(panel=>!before.panels.includes(panel.id)))||(type==='DESCEND'&&before.floor===21&&state?.floor===21));
       result.committed=!result.pending&&(frame.committed===true||result.advancesWorld||result.value===true||result.children.some(child=>child.committed));
       if(type==='TARGET_CANCEL')result.committed=false;
