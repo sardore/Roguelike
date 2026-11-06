@@ -1158,7 +1158,7 @@ export const scenarios = {
     await ctx.route('https://stats.test/**', async (route) => {
       const u = route.request().url(), cors = { 'access-control-allow-origin': '*' };
       let res = { ok: true };
-      if (u.includes('view=ghosts&')) res = { ok: true, list: [{ id: 'g1', cls: 'swordsman', floor: 18, level: 21, cause: '광견 대장', status: 'alive' }, { id: 'g2', cls: 'archer', floor: 12, level: 14, cause: '독안개', status: 'alive' }, { id: 'g3', cls: 'summoner', floor: 7, level: 9, cause: '함정', status: 'taken' }] };
+      if (u.includes('view=ghosts&')) res = { ok: true, list: [{ id: 'g1', cls: 'swordsman', floor: 18, level: 21, cause: '광견 대장', status: 'alive' }, { id: 'g2', cls: 'archer', floor: 12, level: 14, cause: '독안개', status: 'alive' }, { id: 'g3', cls: 'summoner', floor: 7, level: 9, cause: '함정', status: 'taken' }, { id: 'g4', cls: 'strongman', floor: 5, level: 6, cause: '함정', status: 'locked' }] };
       if (u.includes('view=ghost&')) res = { ok: true, body: JSON.stringify({ classId: 'swordsman', maxHp: 40, inventory: [{ name: 'a', type: 'potion' }, { name: 'b', type: 'potion' }], weapon: { name: '검', type: 'weapon' } }) };
       return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(res) });
     });
@@ -1166,7 +1166,7 @@ export const scenarios = {
     try {
       await t.page.evaluate(() => document.getElementById('nickAsk')?.remove());
       await t.page.click('#duelBtn'); await t.tick(600);
-      out['duelpicker.cards'] = JSON.stringify(await t.page.evaluate(() => [...document.querySelectorAll('#duelGhosts .duelGhost')].map((c) => ({ name: c.querySelector('.duelName').textContent, chips: [...c.querySelectorAll('.duelChip b')].map((b) => b.textContent), portrait: !!c.querySelector('canvas.duelPortrait'), view: document.getElementById('duelScene').dataset.view }))));
+      out['duelpicker.cards'] = JSON.stringify(await t.page.evaluate(() => [...document.querySelectorAll('#duelGhosts .duelGhost')].map((c) => ({ name: c.querySelector('.duelName').textContent, chips: [...c.querySelectorAll('.duelChip b')].map((b) => b.textContent), portrait: !!c.querySelector('canvas.duelPortrait'), locked: c.disabled, view: document.getElementById('duelScene').dataset.view }))));
       await t.page.click('.duelGhost'); await t.tick(600);
       out['duelpicker.confirm'] = JSON.stringify(await t.page.evaluate(() => ({ view: document.getElementById('duelScene').dataset.view, chips: [...document.querySelectorAll('.duelConfirmCard .duelChip b')].map((b) => b.textContent), warn: /되돌릴 수 없다/.test(document.querySelector('.duelWarn')?.textContent || ''), buttons: ['duelConfirm', 'duelBack'].map((id) => !!document.getElementById(id)) })));
       await t.page.click('#duelBack'); await t.tick(300);

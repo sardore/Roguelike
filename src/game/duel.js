@@ -122,7 +122,7 @@ const Duel={
   this.pickNote='내 망령을 불러오는 중…';this.renderPicker();
   try{
    const data=await PlayStats.fetchView(url,'ghosts&'+PlayStats.ownerQuery());
-   this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status==='alive'):null;
+   this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status==='alive'||g.status==='locked'):null;
    this.pickNote=this.ghosts?'':'망령을 불러오지 못했다.'; // the rules strip and the empty-state card already say the rest
   }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
   this.renderPicker();
@@ -146,7 +146,10 @@ const Duel={
   card.type='button';card.dataset.ghost=row.id;
   chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('승리 점수',(Number(row.floor)||1)+1));
   body.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · ${row.cause}`),chips);
-  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter','출전'));card.onclick=()=>this.choose(row);return card;
+  const locked=row.status==='locked'; // in a duel (or one that ended without a word): the server frees it by itself after half an hour
+  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter',locked?'대전 중 · 최대 30분':'출전'));
+  if(locked){card.disabled=true;card.classList.add('locked')}else card.onclick=()=>this.choose(row);
+  return card;
  },
  confirmCard(){
   const {row,body}=this.pending,card=Spectate.el('div','duelConfirmCard'),head=Spectate.el('div','duelConfirmHead'),title=Spectate.el('div'),buttons=Spectate.el('div','duelButtons');
