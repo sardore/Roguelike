@@ -253,8 +253,8 @@ function duelOpponentDown(){
 // ---- score: a ghost has a current score (S) and a death score (D); it dies only when a lost duel takes S down to D or below -------------------------------
 // Both numbers live on the owner's device (no server field). D follows the best S ever reached, and rises faster the higher that is. Duels move S by a small
 // Elo-like step: beating a stronger ghost gives more, losing to a weaker one costs more. Both sides compute the same numbers from what they exchange.
-const DUEL_SCORE={STEP:4,SPAN:10};
-function duelDeathOf(peak){peak=Math.max(1,Math.floor(Number(peak)||1));return Math.max(1,Math.min(peak-1,Math.floor(peak*peak/60+peak/6)))}
+const DUEL_SCORE={STEP:4,SPAN:10,GAIN:.7};
+function duelDeathOf(peak){peak=Math.max(1,Math.floor(Number(peak)||1));return Math.max(1,Math.min(peak-1,Math.floor(peak*peak/50+peak/6)))}
 function duelScoreStart(floor){const s=Math.max(3,Math.floor(Number(floor)||1)+2);return{s,peak:s,d:duelDeathOf(s)}}
 function duelScoreClean(raw,floor){
   const base=duelScoreStart(floor);if(!raw||typeof raw!=='object')return base;
@@ -263,9 +263,13 @@ function duelScoreClean(raw,floor){
   return{s,peak,d:duelDeathOf(peak)};
 }
 function duelExpected(mine,theirs){return 1/(1+Math.pow(10,((Number(theirs)||0)-(Number(mine)||0))/DUEL_SCORE.SPAN))}
-function duelScoreWin(mine,theirs){return Math.max(1,Math.round(DUEL_SCORE.STEP*(1-duelExpected(mine,theirs))))}
-function duelScoreLoss(mine,theirs){return Math.max(1,Math.round(DUEL_SCORE.STEP*duelExpected(mine,theirs)))}
+// A win pays less than the same stake costs, and a loss is never smaller than the winner's gain + 1: the two sides' changes always add up below zero, more so
+// the higher the loser's score (the loss grows with it).
+function duelScoreWin(mine,theirs){return Math.max(1,Math.round(DUEL_SCORE.STEP*DUEL_SCORE.GAIN*(1-duelExpected(mine,theirs))))}
+function duelScoreLoss(mine,theirs){return Math.max(duelScoreWin(theirs,mine)+1,Math.round(DUEL_SCORE.STEP*duelExpected(mine,theirs)*(1.25+Math.min(Number(mine)||0,40)/30)))}
 // Would losing against `foe` end this ghost?
+// How near a ghost is to its death score, 0 (far) to 1 (one ordinary loss from it): measured in losses, since that is how it is lost.
+function duelDanger(score){const loss=duelScoreLoss(score.s,score.s),gap=score.s-score.d;return Math.round(Math.max(0,Math.min(1,1-(gap-loss)/(loss*2)))*100)/100}
 function duelDiesOnLoss(me,foe){return me.s-duelScoreLoss(me.s,foe.s)<=me.d}
 function duelScoreAfter(me,foe,won){
   const s=Math.max(0,won?me.s+duelScoreWin(me.s,foe.s):me.s-duelScoreLoss(me.s,foe.s)),peak=Math.max(me.peak||me.s,s);
