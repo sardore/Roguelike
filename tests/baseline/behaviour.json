@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "83c827dee1d040306567f777e82486185b177d80",
- "values.branch": "06c9231de6c1b47da8746ee7ae246e6f321a51c2",
+ "values.empty": "cca59c4c5e3f7c496e0ab10c70c6f69a1ec8b37a",
+ "values.branch": "f9a7d6b0d67633f3f36deb93bce833c51a33761d",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -523,5 +523,6 @@
  "stats.ghostGone": "1beab26a5b5f53e4780bea160e3010d8a00a45bd",
  "duelstakes.scoreSent": "2d055c9ccf74677dd44255b5a5cb31f6dece4ad7",
  "duelstakes.level": "e1ee4f68ecf0cbfa42531194554b0165892e1f7e",
- "duelrules.gone": "2b4517704029e03609a35caf3ba9ada7fa7e4ad1"
+ "duelrules.gone": "2b4517704029e03609a35caf3ba9ada7fa7e4ad1",
+ "duelrules.pending": "136a25e3e4b60e442fe8a30ca81e8e62d814dcd8"
 }

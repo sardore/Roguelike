@@ -1690,6 +1690,10 @@ export const scenarios = {
       const gone = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; localStorage.setItem('manru.duelLevels', '2'); const before = Q.levelsOf(); D.grantLevels(); const after = Q.levelsOf(); D.grantLevels(); return { isGone: [[3, 30], [23, 30], [24, 30], [5, 7], [0, 0]].map(([s, p]) => D.isGone({ score: s, peak: p })), before, after, again: Q.levelsOf() }; });
       out['duelrules.gone'] = JSON.stringify(gone);
       if (gone.isGone.join() !== 'true,true,false,false,false' || gone.after.level !== gone.before.level + 2 || gone.after.points !== gone.before.points + 2 || gone.after.pending !== '0' || gone.again.level !== gone.after.level) throw Error('duelrules: gone/levels ' + JSON.stringify(gone));
+      // the job that tells the server how the fight ended survives a reload (the way back from the end card reloads the page), or the ghost stays locked for half an hour
+      const job = await s.page.evaluate(() => { const D = globalThis.__MANRU_QA_DUEL__.api; D.setJob({ release: true, match: 'm-1', ghost: 'g-1', until: Date.now() + 60000, busy: false }); const kept = localStorage.getItem('manru.duelPending'); D.settling = null; D.resumed = false; D.resumeJob(); const back = D.settling; D.setJob(null); return { kept: !!kept, back: back && [back.ghost, back.match, back.release], cleared: localStorage.getItem('manru.duelPending') === '' }; });
+      out['duelrules.pending'] = JSON.stringify(job);
+      if (!job.kept || job.back?.join() !== 'g-1,m-1,true' || !job.cleared) throw Error('duelrules: pending job ' + JSON.stringify(job));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
