@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -187,7 +187,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
+  this.fighting=true;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor});
   this.giveTurn('host');
@@ -228,7 +228,7 @@ const Duel={
   if(Number.isFinite(sync.maxHp))stand.maxHp=sync.maxHp;
   if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
   if(sync.facing)stand.facing=sync.facing;
-  if(sync.turn===this.role&&this.turn!==this.role)this.giveTurn(this.role);
+  if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   VisibilityService.compute();updateAll();
  },
  // The summons of the other player are on its page only. Here each is a picture of it: a hostile monster of the same kind that takes no turn, stands where the
@@ -374,13 +374,21 @@ const Duel={
   if(state?.duel){state.duel.turn=side;state.duel.turnEnds=this.turnEnds}
   this.lastSig='';
  },
+ // The sides take turns by the time their actions cost (`state.duel.clock`, which the turn engine adds up): the side that has spent less acts, the host when they
+ // are even, so that an action that costs three turns lets the other side act three times. Each side works this out from its own clock and the last clock it was
+ // told of the other (a clock only grows, so an out-of-date one can make a side wait too long but never act when it is not its turn); nothing is handed over.
+ holdsTurn(){
+  const mine=state.duel?.clock||0,theirs=this.theirClock;
+  return mine<theirs-1e-6||(Math.abs(mine-theirs)<1e-6&&this.role==='host');
+ },
  tickTurn(){
-  if(!state?.duel||state.duel.finished||state.dead||this.turn!==this.role)return;
-  if(state.turn!==this.turnSeen){this.giveTurn(this.other());return}
-  if(Date.now()<this.turnEnds)return;
+  if(!state?.duel||state.duel.finished||state.dead)return;
+  const side=this.holdsTurn()?this.role:this.other();
+  if(side!==this.turn)this.giveTurn(side);
+  else if(state.turn!==this.turnSeen){this.turnSeen=state.turn;this.turnEnds=Date.now()+this.TURN_MS;state.duel.turnEnds=this.turnEnds;this.lastSig=''} // acted and still has the turn
+  if(this.turn!==this.role||Date.now()<this.turnEnds)return;
   addLog('시간이 다 되어 이번 차례를 넘겼다.');
   globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'duel-timeout'});
-  this.giveTurn(this.other());
  },
  // The duel's heads-up display (the strip over the top of the arena): both healths with the look of each side, whose turn it is and how long it has left, the
  // cooldown of potions and talismans and of martial arts (five pips: each turn that passes puts one out), and how it ended. It reads what the game already keeps
@@ -433,9 +441,9 @@ const Duel={
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);
   if(second!==this.shown){this.shown=second;updatePanels()}
-  const allies=this.ownAllies(),sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,state.turn,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
+  const allies=this.ownAllies(),sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
   if(sig===this.lastSig||now-this.lastSend<this.SEND_GAP_MS)return;
   this.lastSig=sig;this.lastSend=now;
-  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,facing:p.facing,turn:this.turn,ends:this.turnEnds,allies});
+  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
  },
 };

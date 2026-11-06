@@ -1217,12 +1217,14 @@ export const scenarios = {
       const hpAfter = (await fight(guest)).hp, potionsAfter = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.potions());
       const seenHealed = stand(await fight(host))[3] === hpAfter;
       out['duelfight.after'] = JSON.stringify({ early, adjacent: near.player[0], guestHurt, standHurt, potion: { healed: hpAfter > hpBefore, count: [potionsBefore[0], potionsAfter[0]], hostSeesIt: seenHealed } });
+      // the turn goes by the time spent: a cheap action of the guest (the potion) may leave the turn with it; it passes until the host has it
+      for (let i = 0; i < 6 && !(await fight(host)).myTurn; i++) { if ((await fight(guest)).myTurn) await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(400); }
       // a status put on the stand-in (poison) lands on the real player on the other page
       const poisonBefore = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.poisonOpponent()); await both(500);
       const poisonAfter = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
       out['duelfight.status'] = JSON.stringify({ before: poisonBefore, landed: poisonAfter > poisonBefore });
-      if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross');
+      if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross ' + JSON.stringify([await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo()), await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo())]));
       // a field the host puts on the map is put on the guest's map too, with the stand-in as its source; the burning it causes is taken on the guest's own map, once
             const fireBefore = (await fight(guest)).hp;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.castFireOnOpponent()); await both(600);
@@ -1370,6 +1372,47 @@ export const scenarios = {
       out['duelend.again'] = JSON.stringify(again);
       if (!again) throw Error('duelend: a new search was refused');
       out['duelend.errors'] = JSON.stringify([a.errors, b.errors]);
+      await a.close(); await b.close();
+    } finally { relay.kill(); }
+    return out;
+  },
+
+  // The turns go by the time the actions cost: an action that costs three turns lets the other side act three times before this one acts again.
+  async duelcost(browser, root) {
+    const out = {};
+    const port = await new Promise((resolve) => { const srv = net.createServer(); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => resolve(p)); }); });
+    const relay = spawn(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'tools', 'cp32-relay.cjs')], { env: { ...process.env, CP32_RELAY_HOST: '127.0.0.1', CP32_RELAY_PORT: String(port) }, stdio: 'ignore' });
+    try {
+      for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/health`)).ok) break; } catch { /* not up yet */ } await new Promise((r) => setTimeout(r, 100)); }
+      const init = `(()=>{const d=Object.getOwnPropertyDescriptor(HTMLMetaElement.prototype,'content');Object.defineProperty(HTMLMetaElement.prototype,'content',{...d,get(){return this.name==='manru-relay'?'ws://127.0.0.1:${port}/online':d.get.call(this)}})})()`;
+      const a = await openSession(browser, root, { seed: 9601, init });
+      const b = await openSession(browser, root, { seed: 9602, init });
+      for (const s of [a, b]) await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const both = async (ms = 250) => { await Promise.all([a.tick(ms), b.tick(ms)]); await new Promise((r) => setTimeout(r, 40)); };
+      const until = async (fn, n = 120) => { for (let i = 0; i < n; i++) { if (await fn()) return true; await both(); } return false; };
+      const fight = (s) => s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.fight());
+      const stand = (f) => f.others.find((m) => m[0] === '상대 망령');
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1)));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1)));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelcost: no fight');
+      const host = (await fight(a)).role === 'host' ? a : b, guest = host === a ? b : a;
+      const mine = async (s) => (await fight(s)).myTurn;
+      const wait = async (s) => { await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(500); };
+      // the host starts; it spends three turns on one action
+      if (!(await mine(host))) throw Error('duelcost: the host does not start');
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.spend(3)); await both(600);
+      const trail = [];
+      for (let i = 0; i < 3; i++) { trail.push([await mine(host), await mine(guest)]); if (await mine(guest)) await wait(guest); }
+      trail.push([await mine(host), await mine(guest)]);
+      out['duelcost.trail'] = JSON.stringify(trail);
+      // the guest acted three times (it held the turn each time), then the host has it again
+      if (!(trail[0][1] && trail[1][1] && trail[2][1] && trail[3][0] && !trail[3][1])) throw Error('duelcost: ' + JSON.stringify(trail));
+      // an even exchange alternates one for one
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.spend(1)); await both(600);
+      const alt = [await mine(host), await mine(guest)];
+      out['duelcost.alternate'] = JSON.stringify(alt);
+      if (alt[0] || !alt[1]) throw Error('duelcost: alternate ' + JSON.stringify(alt));
+      out['duelcost.errors'] = JSON.stringify([a.errors, b.errors]);
       await a.close(); await b.close();
     } finally { relay.kill(); }
     return out;
