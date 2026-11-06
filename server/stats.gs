@@ -8,6 +8,7 @@
 // Everything about ghosts needs owner + key: GET ?view=ghosts|ghost take &key=...; a `ghost` on a death record is kept only with a right `key`.
 // POST {ghostLock:{owner,key,ghost,duel}} -> {ok:true} when the ghost was alive (or its lock ran out), else {ok:false,error:'busy'|'none'|'auth'|'duel'}; both ghosts of a duel lock with the same duel id.
 // POST {ghostRelease:{owner,key,ghost,duel}} -> {ok:true}: the duel never began (nobody has spoken in it), so the ghost is free again and the duel is void.
+// POST {ghostScore:{owner,key,ghost,score,peak}} -> {ok:true}: the owner's current and best score of a ghost, shown on the ghost board (and in `list` of the owner's ghosts).
 // POST {ghostSettle:{owner,key,ghost,duel,won}} -> {ok:true,state:'pending'|'won'|'lost'|'void'}: the result stands when the two sides say opposite things (the loser's ghost is taken, its things become a row of the winner on the `loot` sheet),
 //   the same thing from both voids the duel (both ghosts alive again), and when only one side has spoken for SETTLE_MS its word stands. Asking again gives the same answer.
 // POST {lootClaim:{owner,key}} -> {ok:true,items:[...]} at most LOOT_PER_CLAIM things of the pending loot of that player ID, each handed out once.
@@ -18,7 +19,7 @@ const SHEET_NAME = 'deaths';
 const NICK_SHEET = 'nicks';
 // Ghosts: the dead character of a run (the player object as JSON) kept for the owner (player ID), and later for others to fight. status is 'alive' until a fight takes it.
 const GHOST_SHEET = 'ghosts';
-const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime'];
+const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime', 'score', 'peak'];
 const BODY_COL = GHOST_HEADER.indexOf('body') + 1, LOCK_COL = GHOST_HEADER.indexOf('lock') + 1;
 // Stakes: ids (player ID -> hash of its device secret), duels (one row per duel id), loot (what a winner has coming).
 const ID_SHEET = 'ids', DUEL_SHEET = 'duels', LOOT_SHEET = 'loot';
@@ -111,7 +112,7 @@ function ghostPut_(id, owner, nick, cls, floor, level, cause, body) {
   if (rows >= GHOST_ROWS) return;
   if (rows > 1 && sheet.getRange(2, 3, rows - 1, 1).createTextFinder(owner).matchEntireCell(true).findAll().length >= GHOSTS_PER_OWNER) return;
   // a leading = + - @ in the body would run as a formula
-  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body, '', '']);
+  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body, '', '', '', '']);
 }
 
 // A ghost whose lock ran out is alive again (unless a duel still has to be settled: ghostFree_ looks).
@@ -125,7 +126,7 @@ function ghostList_(owner, key) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues() : [];
   const list = values.filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
-    .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row) }));
+    .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row), score: Number(row[12]) || 0, peak: Number(row[13]) || 0 }));
   return reply_({ ok: true, list });
 }
 
@@ -251,6 +252,22 @@ function ghostRelease_(req) {
   return reply_({ ok: true });
 }
 
+// The owner reports the current score and the best score of one of its ghosts (the game keeps the arithmetic; this only shows it on the board).
+function ghostScore_(req) {
+  const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64);
+  const score = Math.floor(Number(req.score)), peak = Math.floor(Number(req.peak));
+  if (!ghost || !(score >= 0 && score <= 9999) || !(peak >= score && peak <= 9999)) return reply_({ ok: false, error: 'fields' });
+  if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ghosts = ghosts_(), grow = ghostRow_(ghosts, ghost);
+    if (!grow || String(ghosts.getRange(grow, 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
+    ghosts.getRange(grow, GHOST_HEADER.indexOf('score') + 1, 1, 2).setValues([[score, peak]]);
+  } finally { lock.releaseLock(); }
+  return reply_({ ok: true });
+}
+
 // A side says how the duel ended for it. Asking again returns the standing answer.
 function ghostSettle_(req) {
   const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64), duel = String(req.duel || '').slice(0, 64);
@@ -358,6 +375,7 @@ function doPost(e) {
   if (record.ghostLock) return ghostLock_(record.ghostLock);
   if (record.ghostRelease) return ghostRelease_(record.ghostRelease);
   if (record.ghostSettle) return ghostSettle_(record.ghostSettle);
+  if (record.ghostScore) return ghostScore_(record.ghostScore);
   if (record.lootClaim) return lootClaim_(record.lootClaim);
   const id = String(record.id || '').slice(0, 64);
   const floor = int_(record.floor, 1, 25), level = int_(record.level, 1, 99);
@@ -399,13 +417,16 @@ const BOARDS = {
   kills: (a, b) => b.kills - a.kills || b.floor - a.floor || b.level - a.level || a.turns - b.turns,
 };
 
-// The ghosts that still stand (not taken), as the runs they came from (the same rows the other boards use), by the score a win over them gives:
-// the floor they died on plus one (depth, then level, kills and fewer turns break a tie).
+// The ghosts that still stand (not taken), as the runs they came from (the same rows the other boards use) with their current score and best score, by current
+// score (a ghost that has not dueled yet has the starting score, the floor it died on + 2, at least 3); depth, level, kills and fewer turns break a tie.
 function standingGhosts_(runs) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   if (rows < 2) return [];
-  const standing = new Set(sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues().filter(row => String(row[8]) !== 'taken').map(row => String(row[1])));
-  return runs.filter(run => standing.has(run.id)).sort(BOARDS.depth).slice(0, RANK_ROWS).map(({ id, ...run }) => run);
+  const scores = {};
+  for (const row of sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues()) if (String(row[8]) !== 'taken') scores[String(row[1])] = { score: Number(row[12]) || 0, peak: Number(row[13]) || 0 };
+  const start = run => Math.max(3, (Number(run.floor) || 1) + 2);
+  return runs.filter(run => scores[run.id]).map(run => ({ ...run, score: scores[run.id].score, peak: scores[run.id].peak }))
+    .sort((a, b) => (b.score || start(b)) - (a.score || start(a)) || BOARDS.depth(a, b)).slice(0, RANK_ROWS).map(({ id, ...run }) => run);
 }
 
 function ranking_() {

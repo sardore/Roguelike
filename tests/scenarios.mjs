@@ -1538,6 +1538,9 @@ export const scenarios = {
       const scoresAfter = await Promise.all([host2, guest2].map((x) => x.page.evaluate(() => JSON.parse(localStorage.getItem('manru.duelScores') || '{}'))));
       const freed = calls.filter((c) => c.post?.ghostRelease).length, settled = calls.filter((c) => c.post?.ghostSettle).length;
       out['duelstakes.plain'] = JSON.stringify({ freed, settled, scoresAfter });
+      const reported = calls.filter((c) => c.post?.ghostScore).map((c) => c.post.ghostScore);
+      out['duelstakes.reported'] = JSON.stringify(reported.map((r) => [r.ghost, r.score, r.peak]).sort());
+      if (reported.length < 2 || reported.some((r) => !(r.peak >= r.score))) throw Error('duelstakes: score not reported ' + JSON.stringify(reported));
       if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled }));
       await a.close(); await b.close();
     } finally { relay.kill(); }

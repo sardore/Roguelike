@@ -71,6 +71,7 @@ const PlayStats={
  // The stakes calls (server/stats.gs): who we are is always the player ID with the secret.
  ghostLock(ghost,duel){return this.post({ghostLock:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
  ghostRelease(ghost,duel){return this.post({ghostRelease:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
+ ghostScore(ghost,score,peak){return this.post({ghostScore:{owner:this.deviceTag(),key:this.secret(),ghost,score,peak}})},
  ghostSettle(ghost,duel,won){return this.post({ghostSettle:{owner:this.deviceTag(),key:this.secret(),ghost,duel,won}})},
  lootClaim(){return this.post({lootClaim:{owner:this.deviceTag(),key:this.secret()}})},
  // The nickname the player chose (once, on the ranking board): Hangul, letters and digits, two to eight characters. The board then shows it instead of the player ID.
@@ -348,15 +349,11 @@ const PlayStats={
   view.append(this.podium(list.slice(0,3)),this.rankRows(list));
   return view;
  },
- // The score of a ghost row (death/current): a ghost of this device shows the numbers kept here (matched to its saved run by what the row shows); any other
- // ghost shows its starting score, because the scores of other devices are not on the server.
- ghostScore(row){
-  const own=row.tag&&row.tag===this.deviceTag()?this.mine().find(r=>r.floor===row.floor&&r.level===row.level&&r.kills===row.kills&&r.turns===row.turns&&r.cls===row.cls):null;
-  return Duel.scoreOf(own?.id,row.floor);
- },
+ // The score of a ghost row (death/current), as the server keeps it; a ghost that has not dueled has its starting score.
+ rowScore(row){return duelScoreClean(row.score>0?{s:row.score,peak:row.peak}:null,row.floor)},
  // What a row is ranked by on the open board, and how full its bar is.
  metric(row,list){
-  if(this.board==='ghost'){const score=this.ghostScore(row);return{value:score.d+'/'+score.s+'점',fill:Math.min(1,score.s/(this.TOTAL_FLOORS+1))}}
+  if(this.board==='ghost'){const score=this.rowScore(row);return{value:score.d+'/'+score.s+'점',fill:Math.min(1,score.s/(this.TOTAL_FLOORS+1))}}
   if(this.board==='level')return{value:'Lv '+row.level,fill:row.level/Math.max(1,...list.map(r=>+r.level||0))};
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
