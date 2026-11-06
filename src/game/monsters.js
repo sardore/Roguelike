@@ -48,6 +48,8 @@ function findMonsterAt(x,y){return state.monsters.find(m=>m.hp>0&&monCovers(m,x,
 function combatBlinkActive(entity){return !!entity&&Number.isFinite(entity.combatBlinkTurn57)&&state.turn>=entity.combatBlinkTurn57&&state.turn-entity.combatBlinkTurn57<=1;}
 function aquaticStranded(mon){const tile=state?.map?.[mon?.y]?.[mon?.x];return !!(mon?.aquatic&&!mon.flying&&tile!=null&&!runtimeTerrainSolid57(tile)&&!globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile)&&!PlacementService.terrainStandable(mon,tile))}
 function setMonsterStatus(mon,key,value,source=null,opts={}){
+ // A stun put on the other player's stand-in (weapon, ice, martial control: they all end here) is the other player's to take; applyCombatStatus sends its own.
+ if(mon?.duelOpponent&&key==='stunned'&&value>0&&!opts.resistanceHandled105)Duel.sendStatus('stun',value,1);
  if(!mon||mon.statusImmune||mon.cloak?.statusImmune)return 0;if(!opts.resistanceHandled105&&mon.martialActor105&&key==='stunned'&&mon.cloak?.staggerResist&&globalThis.__MANRU_RANDOM57__()<mon.cloak.staggerResist)return 0;
  if(!opts.resistanceHandled105&&mon.martialActor105&&key==='stunned'&&value>0&&combatTargetValid57(source,mon)&&globalThis.__MANRU_RANDOM57__()>=hostileStatusChance(1,mon.will||0))return 0;
  if(key==='poisoned57')mon.poisonSource57=source&&value>0?effectSource57(source):null;
@@ -96,6 +98,13 @@ function monsterAttackResultR(mon,context={},patch={}){
 }
 function monsterAttackCanContinueR(result){return !!(result?.continueBundle&&result.attackerAlive&&!result.interrupted&&!result.blocked&&runState57()==='playing')}
 function attackMonster(mon,bonus=0,context={}){const ctx=monsterAttackContextR(context),target=ctx.target||state?.player;ctx.target=target;if(!mon||!state||!combatTargetValid57(mon,target))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'inactive'});const line=monsterAttackLineR(mon,ctx.range,ctx);if(!line.ok)return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:line.reason||'line-blocked'});markCombatActivity57('monster-attack');const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const ready=ctx.delivery==='melee'?(mon.strongReady||0):0,stealth=mon.martialStatus105?.stealth>0;if(target===state.player)mon.hasSeenPlayer105=true;let result;if(target===state.player&&movementDiscoveryEvades105(mon,ctx)){mon.attackUntil=performance.now()+150;mon.attackTarget={x:state.player.x,y:state.player.y};floatText(state.player.x,state.player.y,'회피','#c7b58f',10);addLog(`${mon.name}의 첫 발견 공격을 피했다.`);result=monsterAttackResultR(mon,ctx,{hit:false,evaded:true,reason:'first-sight-movement'});}else result=runAttackStages('monster',[mon,bonus+equipmentOpeningBonus105(mon,target)+(ready?strongBonus(ready)-(martialFormOf('strong',mon)==='drive'?2:0):0),ctx]);if(result.hit&&result.damage>0)applyWeaponBrandHit(mon,target,result.damage,entityFootprintCells57(target),ctx);finishMartialStrike(mon,target,result,ready,stealth,ctx);if(target!==state.player&&target.hp<=0)killMonster(target);return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
+// What a monster's blow that lands looks like: the target's flash, the impact, the number over it and the log line. A duel's stand-in hits through here too, so the
+// other player's blows look like any monster's.
+function presentMonsterHit(mon,target,dmg,elemental=false){
+ const player=target===state.player;
+ if(player){state.playerHitUntil=performance.now()+130;vfVibrate(HAPTIC_PATTERN57.hurt)}else target.hitUntil=performance.now()+130;
+ impact(target.x,target.y,'#d85f68',4);if(dmg>0&&!elemental)floatText(target.x,target.y,'-'+dmg,'#ff777f',13);addLog(`${state.debugBattle57&&mon.debugId57!=null?mon.debugSide57+mon.debugId57+' ':''}${mon.name} → ${state.debugBattle57&&target.debugId57!=null?target.debugSide57+target.debugId57+' ':''}${target.name}: ${dmg}`);
+}
 function combatDepth(actor){return Math.max(1,Number(actor?.debugFloor57)||branchCombatFloor()||state?.floor||1)}
 function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  const ctx=monsterAttackContextR(context),target=ctx.target||state.player,player=target===state.player;
@@ -110,9 +119,8 @@ function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  let dmg=damageFormula(atk,st.def||0,globalThis.__MANRU_RANDOM57__()<(.05+(w.crit||0)),{defenseBonus,defenseScale:mon.armorPierce||w.armorPierce?.25:1});if(mon.kind==='undead'&&target.armor?.elementGuard74==='holy')dmg=Math.max(1,Math.round(dmg*.85));
  dmg=ctx.damageElement105?resolveElementDamage57(target,ctx.damageElement105,dmg,{effect:effectSource57(mon),ground:!!ctx.ground105,source:mon.name,color:ELEMENT_FX_COLORS105[ctx.damageElement105],impact:false,logDamage57:false}).damage:damageEntity(target,dmg,mon,null,{delivery:ctx.delivery});if(!player&&guard>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(target);else consumeMartialGuard(target);}
  if(state.floor>=11&&ctx.delivery!=='area'&&ctx.delivery!=='hazard')alertNearby(target.x,target.y,ctx.projectile?6:5,ctx.projectile?'projectile':'combat',dmg);
- if(player){state.playerHitUntil=performance.now()+130;vfVibrate(HAPTIC_PATTERN57.hurt)}else target.hitUntil=performance.now()+130;
+ presentMonsterHit(mon,target,dmg,!!ctx.damageElement105);
  if(!player&&target.martialActor105&&ctx.projectile)dojoRememberHit(target,'ranged');
- impact(target.x,target.y,'#d85f68',4);if(dmg>0&&!ctx.damageElement105)floatText(target.x,target.y,'-'+dmg,'#ff777f',13);addLog(`${state.debugBattle57&&mon.debugId57!=null?mon.debugSide57+mon.debugId57+' ':''}${mon.name} → ${state.debugBattle57&&target.debugId57!=null?target.debugSide57+target.debugId57+' ':''}${target.name}: ${dmg}`);
  if(dmg>0)applyMonsterAttackStatus57(mon,target,{damage:dmg,delivery:ctx.delivery});
  if(dmg>0&&combatDepth(mon)>=16&&mon.kind==='undead'&&['melee','ranged'].includes(ctx.delivery))globalThis.__MANRU_ITEM_IDENTITY991__?.hostileHit?.(target);
  if(player&&target.hp<=0)die(mon.name);

@@ -494,7 +494,7 @@
  "duelpicker.confirm": "0f1dade50870d82ea47220933bf67cbae8e90485",
  "duelpicker.back": "dabd3e0e2022528ae486810811ff3d94fcf71d7c",
  "duelpicker.errors2": "97d170e1550eee4afc0af065b78cda302a97674c",
- "duelrules.hud": "f164f40274be4843f793546c7026fdceed2b0fdd",
+ "duelrules.hud": "5776a22470d276d6abfa53b53675f81bcb9e2c81",
  "duelend.stages": "a51c95bbd416c410e0ffd2f66c80704c91336876",
  "duelend.again": "5ffe533b830f08a0326348a9160afafc8ada44db",
  "duelend.errors": "164374825086dc65cd5dc548c248f61328b5d668",
@@ -507,5 +507,9 @@
  "duelpicker.states": "91a2b0689ed2d946b48ed197876e11539595a064",
  "duelpicker.waiting": "7aa14e9a93c5773164710b197a58e8771bbcc0a9",
  "duelstakes.plain": "b4976be30bdacd2f9640c76996389825f949e815",
- "duelstakes.reported": "1e94698f5121838aa18f78780ba268bcba416835"
+ "duelstakes.reported": "1e94698f5121838aa18f78780ba268bcba416835",
+ "duelfight.lookOutOfTurn": "cfa2e549bec9480d08be6a244f98564df0b5454f",
+ "duelfight.hitLine": "852531fad83387ff25dae9343cff922133b291ba",
+ "duelfight.stun": "004505520420aa04ecba9711add8aad643e9bd3f",
+ "duelrules.blow": "900f42b16bbf8f88b8e70ac76a0f9459ae2d421b"
 }

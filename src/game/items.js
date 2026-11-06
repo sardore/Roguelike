@@ -1026,6 +1026,8 @@ function bodyPowerExhaustion58(p=state?.player){return bodyPowerDuration58(p)}
 function addLog(msg){const raw=String(msg??'');if(state){for(const p of POTION_LIST)if(raw.startsWith(p.name+':')&&effectLog56(raw)&&!isPotionKnownByPlayer(p))identifyPotion(p.potionKind,'사용 효과 관찰')}return logWithCategory(sanitize56(raw))}
 function playerAction57(kind,opts={}){
   if(runState57()!=='playing'){ActionDispatcher.denied('inactive');return{ok:false,kind,reason:'inactive'}};
+  // In a duel only the side whose turn it is acts; looking around (zoom, inspect, panels) is always free.
+  if(state?.duel&&!Duel.myTurn()){ActionDispatcher.denied('turn');return{ok:false,kind,reason:'turn'}};
   if(!gameplayInputAllowed57(opts)){ActionDispatcher.denied('blocked');return{ok:false,kind,reason:'blocked'}};
   if(ACTION_PRESENTATION58.run===state&&performance.now()<ACTION_PRESENTATION58.inputUntil){ActionDispatcher.denied('presenting');return{ok:false,kind,reason:'presenting'}}
   if(dojoSleeping()){ActionDispatcher.denied('asleep');return{ok:false,kind,reason:'asleep'};}

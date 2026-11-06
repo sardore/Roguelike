@@ -830,7 +830,6 @@ function gameplayInputOwner57(){
 }
 function gameplayInputAllowed57(opts={}){
   if(state?.debugBattle57)return false;
-  if(state?.duel&&!Duel.myTurn())return false;
   if(RuntimeState.ui.generationPending)return false;
   if(OrientationGate.active()&&runState57()==='playing')return false;
   const owner=gameplayInputOwner57();if(owner.kind==='terminal')return false;if(owner.kind==='none')return true;
