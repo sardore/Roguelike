@@ -205,6 +205,8 @@ function reviveGhost(player,ghost){
   for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete ghost[key];
   Object.assign(player,ghost,{x:player.x,y:player.y,facing:player.facing,busyUntil:0,nextAttackAt:0,hunger:100});
   player.hp=player.maxHp;player.focus=player.maxFocus;
+  // the blink is there from the start of a duel, two cells at least, whether or not the gatekeeper of 청풍루 fell in that run (a ghost that learned more keeps it)
+  player.blinkLevel=Math.max(2,Math.floor(Number(player.blinkLevel))||0);
   initializeMartial(state);normalizeClassState58(player,0);
   for(const slot of GEAR_SLOT_TYPES)if(player[slot]){player[slot].identified=true;player[slot].curseImmune991=true}
 }

@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',LEVELS_KEY:'manru.duelLevels',lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -59,6 +59,8 @@ const Duel={
  scoreMap(){try{const map=JSON.parse(lsGet(this.SCORE_KEY)||'{}');return map&&typeof map==='object'&&!Array.isArray(map)?map:{}}catch(error){ignoreError('duel scores unreadable',error);return{}}},
  scoreOf(id,floor){return duelScoreClean(id?this.scoreMap()[id]:null,floor)},
  saveScore(id,score){if(!id)return;const map=this.scoreMap();if(score)map[id]={s:score.s,peak:score.peak};else delete map[id];lsSet(this.SCORE_KEY,JSON.stringify(map))},
+ // A ghost whose current score is at or under its death score is gone, whether or not the server has settled it yet (a row with a score and a best score).
+ isGone(row){const s=Number(row?.score)||0,peak=Number(row?.peak)||0;return s>0&&peak>=s&&s<=duelDeathOf(peak)},
  // death score (purple-grey, with a red pulsing glow that grows as the current score nears it) / current score
  scoreNode(score){
   const node=Spectate.el('span','dsScore'),danger=duelDanger(score);
@@ -133,7 +135,7 @@ const Duel={
   this.pickNote='내 망령을 불러오는 중…';this.renderPicker();
   try{
    const data=await PlayStats.fetchView(url,'ghosts&'+PlayStats.ownerQuery());
-   this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>g.status==='alive'||g.status==='locked'):null;
+   this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>(g.status==='alive'||g.status==='locked')&&!this.isGone(g)):null;
    for(const g of this.ghosts||[])if(g.score>0&&!this.scoreMap()[g.id])this.saveScore(g.id,{s:g.score,peak:g.peak}); // a cleared browser gets its scores back from the server
    this.pickNote=this.ghosts?'':'망령을 불러오지 못했다.'; // the rules strip and the empty-state card already say the rest
   }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
@@ -201,10 +203,19 @@ const Duel={
   let reply=null;
   try{reply=await PlayStats.lootClaim()}catch(error){ignoreError('duel winnings not claimed',error)}
   if(!(reply?.ok&&Array.isArray(reply.items)&&reply.items.length))return; // the server says a win stands
+  this.grantLevels();
   // what was picked up from the drop is what comes (a win from another device has no list here: then what the server has)
   const raw=lsGet(this.CARRY_KEY);let items=reply.items;
   if(raw!==null){try{const carried=JSON.parse(raw);if(Array.isArray(carried))items=carried}catch(error){ignoreError('duel carry unreadable',error)}lsSet(this.CARRY_KEY,'[]')}
   this.deliver(items);
+ },
+ // A ghost put out (a duel won against a score that fell to its death score) is a level for the next new run, which brings a martial-arts point to spend: given
+ // once the server has said the win stands.
+ grantLevels(){
+  const count=Number(lsGet(this.LEVELS_KEY))||0;if(count<=0||!state?.player)return;
+  lsSet(this.LEVELS_KEY,'0');let gained=0;
+  for(let i=0;i<count&&state.player.level<BALANCE.maxLevel;i++){state.player.xp=state.player.nextXp;checkLevel();gained++}
+  if(gained){addLog(`망령전에서 망령을 소멸시킨 보상: 레벨 ${gained} 상승.`);updateAll()}
  },
  // Into the start chest if it is still shut; if the player has opened it already (or there is none), straight into the bag. The upgrade talisman (강화부적) is not among it.
  deliver(items){
@@ -388,8 +399,8 @@ const Duel={
   this.dies=draw?false:win?duelDiesOnLoss(foe,me):duelDiesOnLoss(me,foe);
   this.before=me;this.after=draw?me:duelScoreAfter(me,foe,win);
   if(!draw&&this.mineGhostId)this.saveScore(this.mineGhostId,win||!this.dies?this.after:null);
-  if(!draw&&this.mineGhostId&&(win||!this.dies)&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
-  if(win&&this.dies)this.dropLoot();
+  if(!draw&&this.mineGhostId&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
+  if(win&&this.dies){this.dropLoot();lsSet(this.LEVELS_KEY,String((Number(lsGet(this.LEVELS_KEY))||0)+1))} // a ghost put out is a level for the next run
   if(!(this.stakes&&this.mineGhostId))return;
   const hold=performance.now()+5000;
   // a draw is told to the server as a win by this side: the other side says the same, and the same word from both voids the duel (both ghosts stand again)
@@ -435,7 +446,7 @@ const Duel={
  endCard(){
   const win=this.outcome==='win',draw=this.outcome==='draw',gone=!win&&!draw&&this.dies,a=this.before,b=this.after,foe=this.theirScore;
   const title=win?'망령전 승리':draw?'무승부':gone?'망령이 사라졌다':'패배';
-  const note=draw?'둘이 같은 순간에 쓰러졌다. 점수도 망령도 그대로다. 아무것도 빼앗기지 않았다.':win?(this.dies?'상대 망령은 사라졌다. 보스처럼 소모품을 떨어뜨렸고, 다음 새 판의 시작 상자에 들어 있다.':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
+  const note=draw?'둘이 같은 순간에 쓰러졌다. 점수도 망령도 그대로다. 아무것도 빼앗기지 않았다.':win?(this.dies?'상대 망령은 사라졌다. 쓰러진 자리에 떨어진 것 중 주운 것은 다음 새 판의 시작 상자에 들어 있고, 다음 새 판에서 레벨이 1 오른다(무술 포인트를 쓸 수 있다).':'상대 망령은 살아남았다. 아무것도 빼앗지 않았다.'):gone?'현점수가 데스점수 아래로 떨어졌다. 이 망령과 가진 것은 모두 사라진다.':'현점수만 내려갔다. 이 망령은 그대로 남아 있다.';
   let mine={},theirs={};try{mine=JSON.parse(this.mineBody||'{}')}catch(error){ignoreError('duel ghost body unreadable',error)}
   theirs=this.theirs||{};
   const el=Spectate.el.bind(Spectate),card=document.getElementById('card'),root=el('div','death94 duelEnd '+(win?'victory94 win':draw?'draw':gone?'gone':'lose'));
