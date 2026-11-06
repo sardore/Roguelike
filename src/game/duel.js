@@ -240,6 +240,7 @@ const Duel={
    case 'sync':this.applySync(payload);return true;
    case 'hit':this.applyHit(payload);return true;
    case 'status':this.applyStatus(payload);return true;
+   case 'force':this.applyForce(payload);return true;
    case 'field':this.applyField(payload);return true;
    case 'terrain':this.applyTerrain(payload);return true;
    case 'tile':this.applyTile(payload);return true;
@@ -261,6 +262,7 @@ const Duel={
   if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
   if(sync.facing)stand.facing=sync.facing;
   if(Number.isFinite(sync.stun))stand.stunned=Math.max(0,sync.stun);
+  for(const key of ['atk','def','eva','will'])if(Number.isFinite(sync.stats?.[key]))stand[key]=sync.stats[key];
   if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   VisibilityService.compute();updateAll();
  },
@@ -355,6 +357,14 @@ const Duel={
  },
  // A status the other player put on its stand-in (poison, stun…): the real player takes it here, with its own resistance.
  sendStatus(effect,turns,chance){if(!this.applying)this.send({kind:'status',effect,turns,chance})},
+ // A push or pull on the other player's stand-in (a knock-back, a pulled-in blow): sent as where it came from, so the real player is moved by the same function here.
+ sendForce(source,steps,opts){if(!this.applying)this.send({kind:'force',x:source.x,y:source.y,steps,mode:opts.mode||'push',orthogonal:!!opts.orthogonal})},
+ applyForce(force){
+  if(!state?.duel||state.dead||this.reported||!(force.steps>0)||!Number.isFinite(force.x)||!Number.isFinite(force.y)||this.turn!==this.other())return;
+  this.applying=true;
+  try{resolveForcedMovement57(state.player,{x:force.x,y:force.y},Math.min(6,Math.floor(force.steps)),{mode:force.mode==='pull'?'pull':'push',hostile:true,orthogonal:!!force.orthogonal})}finally{this.applying=false}
+  updateAll();
+ },
  applyStatus(status){
   if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0)||this.turn!==this.other())return;
   this.applying=true;
@@ -499,9 +509,12 @@ const Duel={
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);
   if(second!==this.shown){this.shown=second;updatePanels()}
-  const allies=this.ownAllies(),stun=state.status?.stun||0,sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,stun,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
-  if(sig===this.lastSig||now-this.lastSend<this.SEND_GAP_MS)return;
+  if(now-this.lastSend<this.SEND_GAP_MS)return;
+  // what the other page works the stand-in's blows and its dodging out from: this player's stats as they are now (a potion of fortitude, a swift one…), not as they were at the start
+  const live=getStats(),stats={atk:live.atk,def:live.def,eva:live.eva,will:live.will};
+  const allies=this.ownAllies(),stun=state.status?.stun||0,sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,stun,stats.atk,stats.def,stats.eva,stats.will,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
+  if(sig===this.lastSig)return;
   this.lastSig=sig;this.lastSend=now;
-  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,stun,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
+  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,stun,stats,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
  },
 };
