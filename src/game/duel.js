@@ -28,8 +28,17 @@ const Duel={
  // Every packet of the relay that belongs to a match.
  receive(packet){
   switch(packet.type){
+   // The relay put this side in its queue (again, if an offer fell through): say where, and be ready for the next offer.
+   case 'match.queued':
+    if(packet.mode!==this.MODE||!['connecting','queued','offered'].includes(this.stage))return;
+    this.matchId='';this.setStage('queued',packet.position>1?`상대를 찾는 중… (대기 ${packet.position}번째)`:'상대를 찾는 중…');return;
+   // An offer the relay withdrew (the other side did not answer in time): it queues this side again, so the search goes on instead of staying at "found".
+   case 'match.offer-cancelled':
+    if(this.stage!=='offered'||packet.matchId!==this.matchId)return;
+    this.matchId='';this.setStage('queued','상대가 떠나 다시 찾는 중…');return;
+   case 'session.failed':this.failed(packet);return;
    case 'match.offer':
-    if(packet.mode!==this.MODE||this.stage!=='queued')return;
+    if(packet.mode!==this.MODE||!['queued','offered'].includes(this.stage))return;
     this.matchId=packet.matchId;this.role=packet.role;this.remote=packet.remotePlayerId;this.setStage('offered','상대를 찾았다');
     Spectate.send({type:'match.ready',matchId:packet.matchId,queueEntryId:this.queueEntryId});return;
    case 'session.commit':
@@ -69,6 +78,12 @@ const Duel={
   this.locked=true;
   if(this.role==='guest')this.send({kind:'hello',body:this.mineBody,floor:this.mineFloor});
   else if(this.helloBody!==null)this.startFight(Math.floor(Math.random()*DUEL_ARENAS.length),this.helloBody,this.helloFloor);
+ },
+ // The relay refused something during a search: say why (the one that matters is a relay that does not know the duel mode yet).
+ failed(packet){
+  if(!['connecting','queued','offered'].includes(this.stage))return;
+  const text=packet.code==='INVALID_MODE'?'서버가 아직 망령전을 모른다. 서버를 갱신해야 한다. (INVALID_MODE)':`서버가 거절했다. (${packet.code||'?'}${packet.detail?' · '+packet.detail:''})`;
+  this.pickNote=text;this.leave(text);
  },
  // The socket closed: a search still going on (waking, queued, offered) cannot go on. A match already made is the relay's business (the session ends there).
  socketClosed(){

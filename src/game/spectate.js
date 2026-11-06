@@ -56,7 +56,7 @@ const Spectate={
  },
  receive(packet){
   if(packet.type==='relay.ready'){this.selfId=packet.connectionId||'';this.ready=true;this.connecting=false;this.lastBeat=performance.now();this.setNet('ready',this.hosting?'서버에 연결됨':'서버에 연결됨');this.onReady();return}
-  if(packet.type==='session.failed'){this.setNet('refused','서버가 거절했다: '+(packet.code||'')+' '+(packet.detail||''));return}
+  if(packet.type==='session.failed'){this.setNet('refused','서버가 거절했다: '+(packet.code||'')+' '+(packet.detail||''));Duel.receive(packet);return}
   if(/^match\./.test(packet.type)||['session.commit','session.ended','session.closed','session.expired','relay.message'].includes(packet.type)){Duel.receive(packet);return}
   if(packet.type!=='spectator.event')return;
   const data=packet.payload||{};
