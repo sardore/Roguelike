@@ -1484,6 +1484,8 @@ export const scenarios = {
       out['duelstakes.busy'] = JSON.stringify(refused);
       if (refused.fought || refused.stages.some((x) => x !== 'idle')) throw Error('duelstakes: a busy ghost fought ' + JSON.stringify(refused));
 
+      // both ghosts are one lost duel from death (a low current score under a high death score), so this match is a death match
+      for (const x of [a, b]) await x.page.evaluate(() => localStorage.setItem('manru.duelScores', JSON.stringify({ 'A-ghost': { s: 3, peak: 30 }, 'B-ghost': { s: 3, peak: 30 } })));
       // both locked: the fight begins, with one duel id and each side's own ghost and secret
       server.lock = 'ok'; calls.length = 0;
       await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1), 5, 'A-ghost'));
@@ -1521,6 +1523,22 @@ export const scenarios = {
       const again = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.chestLoot());
       out['duelstakes.once'] = JSON.stringify({ loot: again?.loot ?? null });
       if (again?.loot) throw Error('duelstakes: the winnings came twice');
+
+      // an ordinary match (the loser stays above its death score): nothing is settled, both locks are freed, the loser's ghost lives on with a lower score
+      for (const x of [a, b]) await x.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun());
+      await both(600);
+      calls.length = 0;
+      await a.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('swordsman', 1), 5, 'C-ghost'));
+      await b.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.api.find(true, globalThis.__MANRU_QA_DUEL__.ghostOf('archer', 1), 6, 'D-ghost'));
+      if (!(await until(async () => { const [x, y] = [await fight(a), await fight(b)]; return x.duel && y.duel && stand(x) && stand(y); }))) throw Error('duelstakes: no second fight ' + JSON.stringify(calls));
+      const host2 = (await fight(a)).role === 'host' ? a : b, guest2 = host2 === a ? b : a;
+      await host2.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.dropOpponent());
+      await until(async () => (await fight(guest2)).outcome === 'lose');
+      await both(5000);
+      const scoresAfter = await Promise.all([host2, guest2].map((x) => x.page.evaluate(() => JSON.parse(localStorage.getItem('manru.duelScores') || '{}'))));
+      const freed = calls.filter((c) => c.post?.ghostRelease).length, settled = calls.filter((c) => c.post?.ghostSettle).length;
+      out['duelstakes.plain'] = JSON.stringify({ freed, settled, scoresAfter });
+      if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled }));
       await a.close(); await b.close();
     } finally { relay.kill(); }
     return out;
@@ -1549,22 +1567,22 @@ export const scenarios = {
       const tired = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.exhaustUpgrade());
       out['duelrules.exhaust'] = JSON.stringify(tired);
       if (!tired.tiredRefused || !tired.restedNotRefused) throw Error('duelrules: exhaustion ' + JSON.stringify(tired));
-      if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || r.score !== 2 || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
-      // the score of a round is the floor the ghost died on plus one for the win
-      const score = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreWith(9));
-      out['duelrules.score'] = JSON.stringify(score);
-      if (score !== 10) throw Error('duelrules: score ' + score);
+      if (!r.doorBefore || r.descendClosed || !r.won || !r.doorAfter || !r.finish || !r.ephemeral) throw Error('duelrules: door ' + JSON.stringify(r));
+      // the score arithmetic: starting numbers, the death score rising faster at high scores, small Elo-like steps, death only at or under the death score
+      const math = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.scoreMath());
+      out['duelrules.score'] = JSON.stringify(math);
+      if (math.start.map((x) => x.s).join() !== '3,7,14' || math.start.map((x) => x.d).join() !== '1,1,5') throw Error('duelrules: start ' + JSON.stringify(math.start));
+      const ratio = math.death.map((d, i) => d / [3, 6, 11, 20, 30, 50][i]);
+      if (math.death.join() !== '1,1,3,10,20,49' && math.death.join() !== '1,1,2,10,20,49') throw Error('duelrules: death ' + math.death);
+      if (!(ratio[4] > ratio[2])) throw Error('duelrules: death ratio ' + ratio);
+      if (math.win.join() !== '2,3,1' || math.loss.join() !== '2,1,3') throw Error('duelrules: steps ' + JSON.stringify([math.win, math.loss]));
+      if (math.dies.join() !== 'true,true,false' || math.after.s !== 13 || math.after.d !== 4) throw Error('duelrules: dies ' + JSON.stringify([math.dies, math.after]));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
       const shown = await s.page.evaluate(() => { const h = document.getElementById('duelHud'); return h && { turn: h.querySelector('.dhTurn b')?.textContent, pips: [...h.querySelectorAll('.dhCool')].map((c) => [c.querySelector('small').textContent, c.querySelectorAll('.dhPips i.on').length, c.querySelector('em').textContent]), sides: h.querySelectorAll('.dhSide').length }; });
       out['duelrules.hud'] = JSON.stringify(shown);
       if (!shown || shown.sides !== 2 || shown.pips[0][1] !== 5 || shown.pips[1][2] !== '준비') throw Error('duelrules: hud ' + JSON.stringify(shown));
-      // a win over a ghost that died on a shallower floor does not raise the score; over an equal or deeper one (or an unknown one) it does
-      const scores = [];
-      for (const other of [4, 9, 12, 0]) scores.push(await s.page.evaluate((o) => globalThis.__MANRU_QA_DUEL__.scoreWith(9, o), other));
-      out['duelrules.rank'] = JSON.stringify(scores);
-      if (scores.join() !== '9,10,10,10') throw Error('duelrules: rank ' + scores);
       // the other ghost is drawn as the player of its class (not a generic figure)
       const looks = [];
       for (const id of ['archer', 'swordsman']) { await s.page.evaluate((i) => globalThis.__MANRU_QA_DUEL__.stageVs(2, i), id); await s.tick(300); looks.push(await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.lookProbe())); }

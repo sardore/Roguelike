@@ -303,7 +303,7 @@ const PlayStats={
   const view=this.el('div','ghostView'),notice={unset:'수집 서버가 연결되어 있지 않다.',loading:'망령을 불러오는 중…',error:'망령을 불러오지 못했다.'}[this.ghostState||'']||'';
   if(notice||!this.ghosts){view.append(this.el('p','statsNote',notice||'탭을 열면 내 망령이 보인다.'));return view}
   if(!this.ghosts.length){view.append(this.el('p','statsNote','아직 망령이 없다. 죽은 계정은 이곳에 남는다.'));return view}
-  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다'));view.append(line)}
+  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.el('em',null,row.status==='taken'?'빼앗김':'남아 있다 · '+Duel.scoreText(Duel.scoreOf(row.id,row.floor))));view.append(line)}
   return view;
  },
  legacyRows(){return this.LEGACY.map(([t,floor,cause,level,kills,turns])=>({t,floor,cause,level,kills,turns}))},
@@ -348,9 +348,15 @@ const PlayStats={
   view.append(this.podium(list.slice(0,3)),this.rankRows(list));
   return view;
  },
+ // The score of a ghost row (death/current): a ghost of this device shows the numbers kept here (matched to its saved run by what the row shows); any other
+ // ghost shows its starting score, because the scores of other devices are not on the server.
+ ghostScore(row){
+  const own=row.tag&&row.tag===this.deviceTag()?this.mine().find(r=>r.floor===row.floor&&r.level===row.level&&r.kills===row.kills&&r.turns===row.turns&&r.cls===row.cls):null;
+  return Duel.scoreOf(own?.id,row.floor);
+ },
  // What a row is ranked by on the open board, and how full its bar is.
  metric(row,list){
-  if(this.board==='ghost')return{value:(+row.floor||0)+1+'점',fill:((+row.floor||0)+1)/(this.TOTAL_FLOORS+1)};
+  if(this.board==='ghost'){const score=this.ghostScore(row);return{value:score.d+'/'+score.s+'점',fill:Math.min(1,score.s/(this.TOTAL_FLOORS+1))}}
   if(this.board==='level')return{value:'Lv '+row.level,fill:row.level/Math.max(1,...list.map(r=>+r.level||0))};
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};

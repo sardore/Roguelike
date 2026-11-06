@@ -250,12 +250,33 @@ function duelOpponentDown(){
   addLog('상대 망령이 쓰러졌다. 위쪽 문이 열렸다.'); // the strip over the arena says what to do next
   VisibilityService.compute();Duel.reportWin();
 }
-// Going through the open door ends the round: the score is the floor the ghost died on (`baseFloor`) plus one for this win; a win over a ghost that died on a shallower floor than this one (when the other floor is known) does not raise it.
+// ---- score: a ghost has a current score (S) and a death score (D); it dies only when a lost duel takes S down to D or below -------------------------------
+// Both numbers live on the owner's device (no server field). D follows the best S ever reached, and rises faster the higher that is. Duels move S by a small
+// Elo-like step: beating a stronger ghost gives more, losing to a weaker one costs more. Both sides compute the same numbers from what they exchange.
+const DUEL_SCORE={STEP:4,SPAN:10};
+function duelDeathOf(peak){peak=Math.max(1,Math.floor(Number(peak)||1));return Math.max(1,Math.min(peak-1,Math.floor(peak*peak/60+peak/6)))}
+function duelScoreStart(floor){const s=Math.max(3,Math.floor(Number(floor)||1)+2);return{s,peak:s,d:duelDeathOf(s)}}
+function duelScoreClean(raw,floor){
+  const base=duelScoreStart(floor);if(!raw||typeof raw!=='object')return base;
+  const s=Math.floor(Number(raw.s)),peak=Math.floor(Number(raw.peak));
+  if(!(s>0)||!(peak>=s))return base;
+  return{s,peak,d:duelDeathOf(peak)};
+}
+function duelExpected(mine,theirs){return 1/(1+Math.pow(10,((Number(theirs)||0)-(Number(mine)||0))/DUEL_SCORE.SPAN))}
+function duelScoreWin(mine,theirs){return Math.max(1,Math.round(DUEL_SCORE.STEP*(1-duelExpected(mine,theirs))))}
+function duelScoreLoss(mine,theirs){return Math.max(1,Math.round(DUEL_SCORE.STEP*duelExpected(mine,theirs)))}
+// Would losing against `foe` end this ghost?
+function duelDiesOnLoss(me,foe){return me.s-duelScoreLoss(me.s,foe.s)<=me.d}
+function duelScoreAfter(me,foe,won){
+  const s=Math.max(0,won?me.s+duelScoreWin(me.s,foe.s):me.s-duelScoreLoss(me.s,foe.s)),peak=Math.max(me.peak||me.s,s);
+  return{s,peak,d:duelDeathOf(peak)};
+}
+// Going through the open door ends the round.
 function finishDuelRound(){
   const d=state.duel;
   if(!d.won){toast('상대 망령을 쓰러뜨려야 문이 열린다.');return false}
   if(d.finished)return false;
-  d.finished=true;d.score=(d.baseFloor||1)+(d.opponentFloor>0&&d.opponentFloor<d.baseFloor?0:1);
-  addLog(`망령전 승리 · ${d.score}점`);
+  d.finished=true;
+  addLog('망령전 승리');if(Duel.outcome==='win')Duel.endCard();
   return true;
 }
