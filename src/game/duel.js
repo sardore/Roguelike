@@ -260,6 +260,7 @@ const Duel={
   if(Number.isFinite(sync.maxHp))stand.maxHp=sync.maxHp;
   if(Array.isArray(sync.allies))this.syncProxies(sync.allies);
   if(sync.facing)stand.facing=sync.facing;
+  if(Number.isFinite(sync.stun))stand.stunned=Math.max(0,sync.stun);
   if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   VisibilityService.compute();updateAll();
  },
@@ -289,7 +290,12 @@ const Duel={
   const target=hit.proxy?state.monsters.find(m=>m.combatantId54===hit.proxy&&summonActive(m)):state.player;
   if(!target)return;
   this.applying=true;
-  try{damageEntity(target,Math.round(hit.amount),stand,hit.element||null)}finally{this.applying=false}
+  const dmg=Math.round(hit.amount);
+  // the blow looks like any monster's: the stand-in lunges (swinging what it holds, or loosing it), then the target flashes and the number rises over it
+  stand.attackUntil=performance.now()+150;stand.attackTarget={x:target.x,y:target.y};
+  if(stand.duelLook?.weapon?.ranged||stand.duelLook?.weapon?.kind==='bow')projectileFX(stand.x,stand.y,target.x,target.y,'#d9c8a4');
+  try{damageEntity(target,dmg,stand,hit.element||null)}finally{this.applying=false}
+  presentMonsterHit(stand,target,dmg,!!hit.element);
   updateAll();
  },
  // Sent from damageEntity when the stand-in is hurt by this player.
@@ -493,9 +499,9 @@ const Duel={
   this.tickTurn();
   const second=Math.ceil((this.turnEnds-Date.now())/1000);
   if(second!==this.shown){this.shown=second;updatePanels()}
-  const allies=this.ownAllies(),sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
+  const allies=this.ownAllies(),stun=state.status?.stun||0,sig=[this.turn,second,p.x,p.y,p.hp,p.maxHp,stun,state.turn,state.duel.clock||0,allies.map(a=>[a.id,a.x,a.y,a.hp].join(',')).join(';')].join(':');
   if(sig===this.lastSig||now-this.lastSend<this.SEND_GAP_MS)return;
   this.lastSig=sig;this.lastSend=now;
-  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
+  this.send({kind:'sync',x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,stun,facing:p.facing,turn:this.turn,ends:this.turnEnds,clock:state.duel.clock||0,allies});
  },
 };

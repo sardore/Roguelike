@@ -1215,6 +1215,19 @@ export const scenarios = {
       // a key out of turn does nothing: the host is first
       await guest.page.keyboard.press('ArrowLeft'); await both(300);
       const early = (await fight(guest)).player[0] === g0.player[0];
+      // ...but looking around is free out of turn: a finger on the arena (a long press inspects, two fingers zoom, a drag pans) is taken, only acting is refused
+      const touch = (s, type, id, x, y) => s.page.evaluate(([type, id, x, y]) => { const el = document.getElementById('runtimeInput81'); el.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: x, clientY: y, bubbles: true, cancelable: true, button: 0 })); }, [type, id, x, y]);
+      const box = await guest.page.evaluate(() => { const r = document.getElementById('runtimeInput81').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+      const zoomOf = (x) => x.page.evaluate(() => document.getElementById('zoomVal')?.textContent);
+      const zoom0 = await zoomOf(guest), turnNow = (await fight(guest)).myTurn;
+      await touch(guest, 'pointerdown', 1, box[0], box[1]); await touch(guest, 'pointerdown', 2, box[0] + 40, box[1]);
+      for (let k = 1; k <= 6; k++) { await touch(guest, 'pointermove', 2, box[0] + 40 + k * 25, box[1]); await both(60); }
+      await touch(guest, 'pointerup', 2, box[0] + 190, box[1]); await touch(guest, 'pointerup', 1, box[0], box[1]); await both(300);
+      const zoom1 = await zoomOf(guest);
+      out['duelfight.lookOutOfTurn'] = JSON.stringify({ zoom0, zoom1, myTurn: turnNow });
+      if (turnNow) throw Error('duelfight: it was the guest turn, the check means nothing');
+      if (zoom0 === zoom1) throw Error('duelfight: a pinch out of turn did nothing ' + [zoom0, zoom1]);
+      if ((await fight(guest)).player[0] !== g0.player[0]) throw Error('duelfight: the guest acted out of turn');
       // turns alternate: each steps towards the other until they stand side by side
       const step = async (s, key) => { await s.page.keyboard.press(key); await both(350); };
       for (let i = 0; i < 20; i++) {
@@ -1231,6 +1244,10 @@ export const scenarios = {
         guestHurt = (await fight(guest)).hp < guestBefore; standHurt = stand(await fight(host))[3] < standBefore;
         if (!guestHurt) { await until(async () => (await fight(guest)).myTurn); await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(400); }
       }
+      // the blow reads like any monster's on the page that takes it: the log line "name → name: damage" (the number over the target and the stand-in's lunge come with it)
+      const logSeen = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.logLines())).find((l) => /상대 망령 → .*: \d+/.test(l)) || null;
+      out['duelfight.hitLine'] = JSON.stringify({ logSeen });
+      if (guestHurt && !logSeen) throw Error('duelfight: the blow left no monster-style line on the page that took it');
       // then it is the guest's turn: it drinks a potion from its real inventory, and the host's stand-in is healed
       if (!(await until(async () => (await fight(guest)).myTurn))) throw Error('duelfight: the turn did not come to the guest');
       await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hurtSelf(4));
@@ -1247,6 +1264,19 @@ export const scenarios = {
       const poisonAfter = (await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusOf())).poison;
       out['duelfight.status'] = JSON.stringify({ before: poisonBefore, landed: poisonAfter > poisonBefore });
       if (!(poisonAfter > poisonBefore)) throw Error('duelfight: the status did not cross ' + JSON.stringify([await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo()), await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.turnInfo())]));
+      // a stun put on the stand-in by a weapon (it is set directly, not through applyCombatStatus) lands on the real player too, and the stand-in shows how much of
+      // it is left: the count goes down as the real player spends it, not never
+      const stunBefore = ((await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusAll())).stun || 0);
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.stunStand(2, false)); await both(600);
+      const stunTaken = ((await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusAll())).stun || 0);
+      const stunShown = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.standStun());
+      await until(async () => (await fight(guest)).myTurn);
+      await guest.page.evaluate(() => globalThis.__MANRU_QA_UI__.dispatch({ type: 'REST' })); await both(700);
+      const stunLeft = ((await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.statusAll())).stun || 0);
+      const stunShownAfter = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.standStun());
+      out['duelfight.stun'] = JSON.stringify({ before: stunBefore, taken: stunTaken, shown: stunShown, left: stunLeft, shownAfter: stunShownAfter });
+      if (!(stunTaken > stunBefore)) throw Error('duelfight: the stun did not cross ' + JSON.stringify([stunBefore, stunTaken]));
+      if (!(stunLeft < stunTaken) || stunShownAfter !== stunLeft) throw Error('duelfight: the stun count did not go down ' + JSON.stringify([stunTaken, stunLeft, stunShown, stunShownAfter]));
       // a field the host puts on the map is put on the guest's map too, with the stand-in as its source; the burning it causes is taken on the guest's own map, once
             const fireBefore = (await fight(guest)).hp;
       await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.castFireOnOpponent()); await both(600);
@@ -1582,6 +1612,11 @@ export const scenarios = {
       // both sides' changes together are always below zero (a win pays less than a loss costs), and more so at high scores
       if (math.sums.some((x) => x >= 0) || math.sums[4] >= math.sums[3] || math.sums[7] > math.sums[0]) throw Error('duelrules: sum ' + math.sums);
       if (math.dies.join() !== 'true,true,false' || math.after.s !== 12 || math.after.d !== 4) throw Error('duelrules: dies ' + JSON.stringify([math.dies, math.after]));
+      // a blow the other player lands reads like any monster's blow: the number over the target and the "피격 -N" popup, the log line, and the stand-in's lunge
+      await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.stage(0)); await s.tick(300);
+      const taken = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, r = Q.takeHit(3); return { ...r, floats: Q.floatsNow(), feed: Q.hitFeedNow(), log: Q.logLines().filter((l) => /상대 망령 → .*: 3/.test(l)).length }; });
+      out['duelrules.blow'] = JSON.stringify(taken);
+      if (taken.after !== taken.hp - 3 || !taken.floats.includes('-3') || !taken.feed.some((f) => /피격 -3/.test(f)) || !taken.log || !taken.stand) throw Error('duelrules: a blow taken does not read like a monster blow ' + JSON.stringify(taken));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
