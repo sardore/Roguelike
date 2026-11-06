@@ -82,7 +82,7 @@ body.title-class-mode #titleCorner{display:none}
 .rankTag{font-size:calc(12px * var(--ui-font-scale, 1));letter-spacing:.06em;color:#e7d5b0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rankValue{font:900 calc(24px * var(--ui-font-scale, 1)) Georgia,serif;color:var(--pl);text-shadow:0 0 16px var(--glow)}
 .rankPlate.p1 .rankValue{font-size:calc(32px * var(--ui-font-scale, 1))}
-.rankDetail{font-size:calc(10px * var(--ui-font-scale, 1));color:#a8957a;word-break:keep-all;text-wrap:balance}
+.rankDetail{font-size:calc(10px * var(--ui-font-scale, 1));color:#a8957a}
 .rankCause{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(10px * var(--ui-font-scale, 1));color:#6f5c44}
 .rankPlate.mine{outline:1px solid #efd49b;outline-offset:2px}
 .rankPlate.mine:after{content:'나';position:absolute;top:6px;right:6px;padding:0 6px;font-size:calc(10px * var(--ui-font-scale, 1));background:#efd49b;color:#2a1a0a;letter-spacing:.1em}
