@@ -128,7 +128,7 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
    --de-motion is 1, and 0 for a reader who asked for less motion: the animations then end where they were going to end. */
 :root{--de-motion:1}
 .duelEnd .deVs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;margin:14px 0 8px}
-.duelEnd .deSide{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:10px 6px;border:1px solid #2e3a68;background:linear-gradient(180deg,rgba(40,34,92,.5),rgba(8,10,26,.6))}
+.duelEnd .deSide{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:10px 6px;border:1px solid #2e3a68;background:linear-gradient(180deg,rgba(40,34,92,.5),rgba(8,10,26,.6))}
 .duelEnd .deSide.foe{border-color:#6a3b57;background:linear-gradient(180deg,rgba(92,34,60,.45),rgba(8,10,26,.6))}
 .duelEnd .deWho{font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.22em;color:#8fc6ff}
 .duelEnd .deSide.foe .deWho{color:#e88a8a}
@@ -152,5 +152,12 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 @keyframes deRing{0%,50%{transform:scale(.4);opacity:0}52%{opacity:.9}100%{transform:scale(4.2);opacity:0}}
 @keyframes deDelta{0%,62%{transform:translateY(8px) scale(.4);opacity:0}74%{transform:translateY(-4px) scale(1.4);opacity:1}100%{transform:none;opacity:1}}
 @keyframes deShake{0%,50%{transform:none}53%{transform:translate(-5px,3px)}56%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}64%{transform:translate(2px,-1px)}68%,100%{transform:none}}
+/* the ghost that is gone: its card catches fire after the blow, the flames climb it and the card darkens to ash and fades; embers rise off it */
+.duelEnd .deSide.burn{animation:deBurn calc(3.4s * var(--de-motion)) ease-in calc(1.3s * var(--de-motion)) both}
+.duelEnd .deSide.burn:before{content:"";position:absolute;left:-10%;right:-10%;bottom:-20%;height:130%;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 22% 100%,#ffe27a 0,#ff9a2e 22%,rgba(220,60,20,.85) 48%,transparent 70%),radial-gradient(ellipse at 62% 100%,#ffd35a 0,#ff7a1e 24%,rgba(200,40,16,.85) 50%,transparent 72%),radial-gradient(ellipse at 90% 100%,#ffc84a 0,#ff6a18 22%,rgba(180,36,14,.8) 48%,transparent 70%);mix-blend-mode:screen;transform-origin:50% 100%;animation:deFlame calc(3.4s * var(--de-motion)) ease-in calc(1.3s * var(--de-motion)) both}
+.duelEnd .deSide.burn:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 20% 80%,#ffb347 0 2px,transparent 3px),radial-gradient(circle at 48% 90%,#ffd27a 0 1.5px,transparent 2.5px),radial-gradient(circle at 74% 84%,#ff9a3a 0 2px,transparent 3px),radial-gradient(circle at 86% 94%,#ffcf6a 0 1.5px,transparent 2.5px);animation:deEmber calc(3.4s * var(--de-motion)) ease-out calc(1.3s * var(--de-motion)) both}
+@keyframes deBurn{0%{filter:none;opacity:1}18%{filter:brightness(1.5) sepia(.5) saturate(2);opacity:1}55%{filter:brightness(.55) sepia(.8) contrast(1.2);opacity:.85}100%{filter:brightness(.25) grayscale(1);opacity:.14;transform:translateY(3px) scale(.985)}}
+@keyframes deFlame{0%{opacity:0;transform:scaleY(.2)}14%{opacity:1;transform:scaleY(.55)}40%{opacity:1;transform:scaleY(1.05)}60%{opacity:.95;transform:scaleY(.9) scaleX(1.04)}78%{opacity:.8;transform:scaleY(1.1)}100%{opacity:0;transform:scaleY(1.25)}}
+@keyframes deEmber{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-90px)}}
 @media (max-width:520px){.duelEnd .deVs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.duelEnd .deSlam{grid-column:1/-1;grid-row:1;margin-bottom:14px}}
 @media (prefers-reduced-motion:reduce){:root{--de-motion:0}}

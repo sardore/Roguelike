@@ -1634,6 +1634,10 @@ export const scenarios = {
       const card = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; Q.stageVs(2, 'archer'); D.mineBody = Q.ghostOf('swordsman', 1); D.mineFloor = 9; D.theirFloor = 12; D.mineScore = { s: 11, peak: 11, d: 4 }; D.theirScore = { s: 14, peak: 14, d: 6 }; D.conclude('win'); D.endCard(); const c = document.getElementById('duelEnd'), r = c?.getBoundingClientRect(); return { shown: !!r && r.width > 0 && r.height > 0, sides: c?.querySelectorAll('.deSide').length, fresh: c?.querySelector('.deNew')?.textContent, old: c?.querySelector('.deOld')?.textContent }; });
       out['duelrules.endCard'] = JSON.stringify(card);
       if (!card.shown || card.sides !== 2 || card.old !== '11' || Number(card.fresh) <= 11) throw Error('duelrules: the end card ' + JSON.stringify(card));
+      // the ghost that is gone burns away on the card (the loser whose score fell to its death score); a win over a ghost that lives on burns nobody
+      const burn = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api; Q.stageVs(2, 'archer'); D.mineBody = Q.ghostOf('swordsman', 1); D.mineFloor = 9; D.theirFloor = 12; D.mineScore = { s: 5, peak: 30, d: 23 }; D.theirScore = { s: 14, peak: 14, d: 6 }; D.conclude('lose'); D.endCard(); return { gone: D.dies, burning: [...document.querySelectorAll('#duelEnd .deSide.burn')].map((e) => e.classList.contains('me') ? 'me' : 'foe') }; });
+      out['duelrules.burn'] = JSON.stringify({ win: card.sides, ...burn });
+      if (!burn.gone || burn.burning.join() !== 'me') throw Error('duelrules: the gone ghost does not burn ' + JSON.stringify(burn));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

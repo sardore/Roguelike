@@ -399,7 +399,7 @@ const Duel={
   root.id='duelEnd';root.append(el('span','uiCorners63'),el('div','deathSeal94',win?'勝':'敗'),el('div','brand','만루 · 망령전'),el('h1',null,title));
   // one side of the face-off: the portrait, the class, depth and level, and the score (the loser's is struck through when it is gone)
   const side=(who,ghost,floor,score,after,over)=>{
-    const part=el('div','deSide '+who),info=el('span','deInfo');
+    const part=el('div','deSide '+who+(over?' burn':'')),info=el('span','deInfo');
     info.append(el('b',null,this.className(ghost.classId)),el('small',null,`${floor}층에서 쓰러짐${ghost.level?' · Lv '+ghost.level:''}`));
     const sc=el('span','deScore'),node=this.scoreNode(after||score);if(over)node.classList.add('over');sc.append(node);
     part.append(el('small','deWho',who==='me'?'내 망령':'상대 망령'),this.portrait(ghost.classId,'big'),info,sc);return part;
