@@ -3,7 +3,7 @@
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
  MODE:'MANRU_DUEL',TURN_MS:20000,SEND_GAP_MS:120,
- stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',LEVELS_KEY:'manru.duelLevels',lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
+ stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',LEVELS_KEY:'manru.duelLevels',PENDING_KEY:'manru.duelPending',resumed:false,lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
  find(play=false,body='',floor=1,ghostId=''){
@@ -121,7 +121,7 @@ const Duel={
   scene.id='duelScene';scene.setAttribute('role','dialog');scene.setAttribute('aria-label','망령전');note.id='duelNote';list.id='duelGhosts';
   close.type='button';close.id='duelClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.closePicker();
   title.append(Spectate.el('small',null,'저승의 전장'),Spectate.el('h2',null,'망령전'));
-  for(const [mark,text] of [['건다','가진 것을 모두 건다'],['잃는다','지면 망령이 사라진다'],['얻는다','이기면 상대의 것을 모두 얻는다']]){const rule=Spectate.el('li');rule.append(Spectate.el('b',null,mark),Spectate.el('span',null,text));rules.append(rule)}
+  for(const [mark,text] of [['건다','가진 것을 모두 건다'],['잃는다','점수가 데스점수 아래로 떨어지면 망령이 사라진다'],['얻는다','상대를 소멸시키면 떨어진 것을 줍고 레벨이 오른다']]){const rule=Spectate.el('li');rule.append(Spectate.el('b',null,mark),Spectate.el('span',null,text));rules.append(rule)}
   head.append(title,close);panel.append(head,rules,note,list);scene.append(panel);document.body.append(scene);
   this.ghosts=null;this.pickNote='';this.loadMine();return true;
  },
@@ -172,7 +172,7 @@ const Duel={
   title.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · Lv ${row.level}`));
   head.append(this.portrait(row.cls,'big'),title);
   const stake=Spectate.el('div','duelStake');stake.append(this.chip('소지품',bag+'개'),this.chip('장비',worn+'개'),this.chip('데스/현재',this.scoreNode(this.scoreOf(row.id,row.floor))));
-  const warn=Spectate.el('p','duelWarn','이기면 현점수가 오르고, 지면 내려간다. 현점수가 데스점수 이하로 떨어지는 패배만 이 망령과 가진 것을 모두 잃는다. 그때는 이긴 쪽이 모두 얻는다.');
+  const warn=Spectate.el('p','duelWarn','이기면 현점수가 오르고, 지면 내려간다. 현점수가 데스점수 이하로 떨어지는 패배만 이 망령과 가진 것을 모두 잃는다. 그때는 이긴 쪽이 쓰러진 자리에서 줍고 레벨이 오른다.');
   const go=Spectate.el('button','duelGo','건다'),back=Spectate.el('button','duelBack','돌아가기');go.type=back.type='button';go.id='duelConfirm';back.id='duelBack';
   go.onclick=()=>{this.pending=null;this.find(true,body,row.floor,row.id)};back.onclick=()=>{this.pending=null;this.renderPicker()};
   buttons.append(go,back);card.append(head,stake,warn,buttons);return card;
@@ -404,8 +404,8 @@ const Duel={
   if(!(this.stakes&&this.mineGhostId))return;
   const hold=performance.now()+5000;
   // a draw is told to the server as a win by this side: the other side says the same, and the same word from both voids the duel (both ghosts stand again)
-  if(this.dies||draw)this.settling={won:win||draw,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false};
-  else this.settling={release:true,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false}; // nobody is lost: the lock is freed after the hold
+  if(this.dies||draw)this.setJob({won:win||draw,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false});
+  else this.setJob({release:true,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false}); // nobody is lost: the lock is freed after the hold
  },
  // The other side's word contradicts this side's (both say they won, or both say they lost), or both went down together: nobody won. What this side had concluded is taken back.
  turnDraw(){
@@ -414,7 +414,7 @@ const Duel={
    if(this.mineGhostId&&this.before){this.saveScore(this.mineGhostId,this.before);if(PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.before.s,this.before.peak).catch(error=>ignoreError('duel score not sent',error))}
    this.discardLoot();
    this.outcome='draw';this.dies=false;this.after=this.before;
-   if(this.stakes&&this.mineGhostId)this.settling={won:true,match:this.matchId,ghost:this.mineGhostId,next:performance.now()+1500,until:Date.now()+13*60*1000,busy:false};
+   if(this.stakes&&this.mineGhostId)this.setJob({won:true,match:this.matchId,ghost:this.mineGhostId,next:performance.now()+1500,until:Date.now()+13*60*1000,busy:false});
   }else this.conclude('draw');
   state.duel.finished=true;
   this.send({kind:'result',winner:'draw'});
@@ -471,16 +471,27 @@ const Duel={
   showEndingScreen();
   card.replaceChildren(root);document.getElementById('overlay').style.display='flex';
  },
+ // The server job that tells how this side's fight ended (settle, or free the lock) is kept on the device until it is done: leaving the page (the way back from the end
+ // card reloads it) must not strand it, or the ghost stays locked for half an hour.
+ setJob(job){
+  this.settling=job;
+  lsSet(this.PENDING_KEY,job?JSON.stringify({won:!!job.won,release:!!job.release,match:job.match,ghost:job.ghost,until:job.until}):'');
+ },
+ resumeJob(){
+  this.resumed=true;
+  try{const job=JSON.parse(lsGet(this.PENDING_KEY)||'null');if(job&&job.ghost&&job.match&&Date.now()<job.until)this.settling={...job,next:0,busy:false}}catch(error){ignoreError('duel pending job unreadable',error)}
+ },
  async pollSettle(now){
+  if(!this.resumed)this.resumeJob();
   const job=this.settling;
   if(!job||job.busy||now<job.next)return;
-  if(Date.now()>job.until){this.settling=null;return}
-  if(job.release){this.settling=null;PlayStats.ghostRelease(job.ghost,job.match).catch(error=>ignoreError('duel release not sent',error));return}
+  if(Date.now()>job.until){this.setJob(null);return}
+  if(job.release){this.setJob(null);PlayStats.ghostRelease(job.ghost,job.match).catch(error=>ignoreError('duel release not sent',error));return}
   job.busy=true;
   try{
    const reply=await PlayStats.ghostSettle(job.ghost,job.match,job.won);
    if(reply?.ok&&reply.state&&reply.state!=='pending'){
-    this.settling=null;
+    this.setJob(null);
     const text={won:'판돈 정산: 상대 망령의 것을 모두 얻었다. 새 판을 시작하면 시작 상자에 들어 있다.',lost:'판돈 정산: 이 망령은 사라졌다. 가진 것도 모두 잃었다.',void:'판돈 정산: 양쪽의 말이 같아 무효가 되었다. 아무도 잃지 않았다.'}[reply.state];
     if(text){this.settledText=text.replace('판돈 정산: ','');addLog(text)}
   }
