@@ -2286,7 +2286,8 @@ function silkThreadAt54(x,y){
     state.playerAgencyTurns57=Number.isFinite(state.playerAgencyTurns57)?state.playerAgencyTurns57:0;
     if(playerAgency){state.playerAgencyTurns57++;if(state.status.illness>0&&--state.status.illness===0){addLog('중병의 유예가 끝났다.');die('중병');turnResult.aborted=true;turnResult.abortStage='illness';return}}
     state._turnAgencyCounted57=playerAgency;
-    state.turn++;palaceAdvance(c);summonCleanup();summonUpdateButtons();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
+    state.turn++;if(state.duel)state.duel.clock=Math.round(((state.duel.clock||0)+c)*1000)/1000; // the time a duel side has spent: what the other side's turns are measured against
+    palaceAdvance(c);summonCleanup();summonUpdateButtons();turnResult.timeCost=c;turnResult.stageOrder.push('core:logical-turn');
     turnResult.stageOrder.push('core:regen');dojoBedTick();if(state.status.regen>0){state.player.hp=Math.min(state.player.maxHp,state.player.hp+1);state.status.regen--}
     turnResult.stageOrder.push('core:status');applyStatusTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:status';return}turnResult.stageOrder.push('core:hunger');hungerTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:hunger';return}
     tickBossArenaMist(playerAgency);if(state.dead){turnResult.aborted=true;return}
