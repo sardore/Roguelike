@@ -2384,7 +2384,7 @@ function populateFloor2Branches(){
      const members=state.monsters.filter(m=>!claimed.has(m)&&nearby(m)).slice(0,pack.names.length);members.forEach(m=>claimed.add(m));let added=0;
      const candidates=branch.cells.map(kk=>{const[x,y]=kk.split(',').map(Number);return{x,y,d:Math.abs(x-pack.x)+Math.abs(y-pack.y)}}).filter(q=>q.d<=4).sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);
      for(let n=members.length;n<pack.names.length;n++){
-       const name=pack.names[n]==='객잔 경비병'&&globalThis.__MANRU_RANDOM57__()>=.8?'취객':pack.names[n];if(!MONSTERS.some(m=>m.name===name&&state.floor>=m.min&&state.floor<=m.max)){audit.failures.push(`enemy-prototype:${name}`);continue}
+       const name=pack.names[n]==='객잔 경비병'&&globalThis.__MANRU_RANDOM57__()>=.6?'취객':pack.names[n];if(!MONSTERS.some(m=>m.name===name&&state.floor>=m.min&&state.floor<=m.max)){audit.failures.push(`enemy-prototype:${name}`);continue}
        let mon=null;for(const spacing of [2,1]){for(const q of candidates){if(state.monsters.some(m=>m.hp>0&&Math.max(Math.abs(m.x-q.x),Math.abs(m.y-q.y))<spacing))continue;mon=spawnNamed(name,q,{placementMode:'exact',provenance:'floor2-branch'});if(mon)break}if(mon)break}
        if(mon){members.push(mon);claimed.add(mon);added++}else audit.failures.push(`enemy-placement:${branch.id}:${index}:${name}`);
      }

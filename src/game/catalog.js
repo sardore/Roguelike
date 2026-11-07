@@ -9,7 +9,7 @@ const MONSTERS=[
   {min:1,max:5,name:'객잔 쥐',hp:7,atk:3,def:0,eva:7,xp:3,color:'#807261',shape:'beast',kind:'beast',fast:true,concept57:'작은 몸으로 빠르게 달려들어 발목을 무는 객잔 쥐다.'},
   {min:1,max:5,name:'취객',hp:14,atk:5,def:1,eva:2,xp:5,color:'#8b6451',shape:'human',kind:'human',drunk57:true,concept57:'몽둥이나 빈 술병을 휘두르는 취객이다.'},
   {min:1,max:5,name:'시종',hp:8,atk:4,def:0,eva:5,xp:5,color:'#a58b70',shape:'human',kind:'human',ranged:true,range:5,dishThrow57:true,concept57:'쟁반과 그릇을 던지며 멀리서 방해하는 시종이다.'},
-  {min:2,max:5,name:'객잔 경비병',guardPost57:true,hp:23,atk:6,def:4,eva:1,xp:9,color:'#8c704f',shape:'guard',kind:'human',reach:2,guardChance57:.26,concept57:'갑옷과 창으로 길목을 지키는 경비병이다.'},
+  {min:2,max:5,name:'객잔 경비병',guardPost57:true,hp:23,atk:5,def:4,eva:1,xp:9,color:'#8c704f',shape:'guard',kind:'human',reach:2,guardChance57:.26,concept57:'갑옷과 창으로 길목을 지키는 경비병이다.'},
   {min:2,max:5,name:'떠돌이 도둑',hp:12,atk:6,def:1,eva:9,xp:8,color:'#514940',shape:'human',kind:'human',ambush:true,thiefRetreat57:true,concept57:'어둠에 숨어 있다가 기습하고 곧바로 거리를 벌리는 도둑이다.'},
   {min:3,max:5,name:'거대 거미',hp:22,atk:5,def:3,eva:2,xp:9,color:'#77636a',shape:'beast',kind:'beast',footprint:'x3',web:true,concept57:'객잔 천장에 숨어 살던 거미다.'},
 

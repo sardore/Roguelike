@@ -694,5 +694,6 @@ function legendaryPreTurn(){syncEquip47()}
 function legendaryPostTurn(){if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);tickLegendFields();state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}
 function bossZonesPrePreGeneration(){V54.marks=[];rule.classList.remove('show')}
   // Natural recovery replaces explicit Rest. Hunger controls the very slow recovery interval; combat/status suppresses it.
-  // Turns per point of health by hunger. Down to floor 10 the interval is shorter (the numbers themselves, no multiplier).
-  function naturalInterval94(){const h=state?.player?.hunger??0,early=(state?.floor??1)<=10;return h>=90?(early?10:16):h>=65?(early?14:22):h>=40?(early?19:30):h>=20?(early?26:42):Infinity}
+  // Turns per point of health by hunger. The loss of speed as hunger falls is gentle (the slowest is twice the fastest), and down to floor 10 the whole table
+  // is twice as fast (the numbers themselves, no multiplier).
+  function naturalInterval94(){const h=state?.player?.hunger??0,early=(state?.floor??1)<=10;return h>=90?(early?5:16):h>=65?(early?6.5:20):h>=40?(early?8:25):h>=20?(early?10:32):Infinity}
