@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "2f71896285a7e9ce231617dcfa355499332eb590",
- "values.branch": "3a54d6e2ac3355661e84aeaf0d869bb31ac664f2",
+ "values.empty": "b745549ebdf9e31625d6cab8fef5d73521018999",
+ "values.branch": "8cb2606c0f29f93040648836dfb6ff28b9ad2f49",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -540,5 +540,6 @@
  "duelrules.known": "f4835f45c263d4b5fb90ba1671508cc9fedd575a",
  "duelfight.actShown": "6643236eb2e9c2b0207e38d0fc979e7e38a25cd5",
  "duelfight.ghostArt": "42480bafbd1425ca2229fdb99491115558a3c34d",
- "duelpicker.lockedCard": "2b59439cdbf819e02af5eb3dab2d07d9415b0fff"
+ "duelpicker.lockedCard": "2b59439cdbf819e02af5eb3dab2d07d9415b0fff",
+ "duelfight.elementFx": "4537abcf119e9729234978f7c0bc9d030d3112a6"
 }

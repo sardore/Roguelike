@@ -260,6 +260,7 @@ const Duel={
    case 'force':this.applyForce(payload);return true;
    case 'oddity':this.applyOddity(payload);return true;
    case 'act':this.applyAct(payload);return true;
+   case 'elfx':this.applyElementFx(payload);return true;
    case 'field':this.applyField(payload);return true;
    case 'terrain':this.applyTerrain(payload);return true;
    case 'tile':this.applyTile(payload);return true;
@@ -403,6 +404,14 @@ const Duel={
   floatText(stand.x,stand.y,names.join(' · '),color,12);burst(stand.x,stand.y,color,16,1);impact(stand.x,stand.y,color,6);
   const cell=act.cell&&Number.isFinite(act.cell.x)&&Number.isFinite(act.cell.y)?act.cell:null;
   if(cell)projectileFX(stand.x,stand.y,Math.round(cell.x),Math.round(cell.y),color);
+ },
+ // The element animation of an attack (the one drawing function, `elementAttackFx105`): the other page draws it at the same cells (both pages have the same arena).
+ sendElementFx(elem,cells,origin){if(!this.applying&&!this.environment)this.send({kind:'elfx',elem,cells:cells.map(q=>[q.x,q.y]),origin:origin?[origin.x,origin.y]:null})},
+ applyElementFx(msg){
+  if(!state?.duel||state.dead||this.reported||!ELEMENT_FX_COLORS105[msg.elem]||!Array.isArray(msg.cells))return;
+  const cells=msg.cells.slice(0,81).filter(c=>Array.isArray(c)&&Number.isFinite(c[0])&&Number.isFinite(c[1])).map(c=>({x:Math.round(c[0]),y:Math.round(c[1])})),o=Array.isArray(msg.origin)&&Number.isFinite(msg.origin[0])&&Number.isFinite(msg.origin[1])?{x:Math.round(msg.origin[0]),y:Math.round(msg.origin[1])}:null;
+  if(!cells.length)return;
+  this.applying=true;try{elementAttackFx105(msg.elem,cells,o)}finally{this.applying=false}
  },
  applyOddity(msg){if(!state?.duel||state.dead||this.reported||this.turn!==this.other())return;oddityMirror(msg)},
  applyStatus(status){
