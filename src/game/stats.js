@@ -3,8 +3,6 @@ const PlayStats={
  GHOST_MAX:45000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  // The secret of this device (32 letters and digits, made once): it proves the player ID is ours. The server keeps only its hash (docs/GHOST_STAKES.md).
  SECRET_KEY:'manruDeviceSecret',STAKES_KEY:'manruStakes',
- // Each accepted code adds one bundle. The existing pending key counts bundles; an old '1' still means one.
- GIFT:{code:'19721',items:[['소회복 비약',2],['보강부적',2],['성부',1],['신비부적',1]]},GIFT_KEY:'manruGiftPending',
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치'],['ghost','망령']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -336,8 +334,6 @@ const PlayStats={
   if(this.tab==='log'){body.append(this.logView());return}
   if(this.tab==='ghost'){body.append(this.ghostView());return}
   if(this.tab==='rank'){body.append(this.rankView(status));return}
-  // the code box stands over the record tab whatever the server says, and is the same element on every redraw: what is being typed stays
-  if(this.tab==='rows')body.append(this.giftNode||(this.giftNode=this.giftBox()));
   const notice={loading:'기록을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.',error:'기록을 불러오지 못했다.'}[status]||(this.failed?.summary?'기록을 불러오지 못했다.':'');
   if(notice||!this.data){body.append(this.el('p','statsNote',notice||'기록이 없다.'));return}
   body.append(this.tab==='rows'?this.rowsView(this.data):this.summaryView(this.data));
@@ -435,37 +431,6 @@ const PlayStats={
   const causes=this.el('div','statsCauses'),list=(data.causes||[]).slice(0,this.TOP_CAUSES),top=Math.max(1,...list.map(c=>+c[1]||0));
   for(const [name,count] of list){const row=this.el('div','statsCause'),bar=this.el('i');bar.style.width=Math.round(count/top*100)+'%';row.append(this.el('span','statsCauseName',name),bar,this.el('b',null,count));causes.append(row)}
   box.append(tiles,this.el('h3',null,'도달 층별 사망'),hist,this.el('h3',null,'사망 원인'),causes);return box;
- },
- // The code box: a field and a button over the table of the record tab.
- giftBox(){
-  const box=this.el('div','giftBox'),input=this.el('input'),button=this.el('button',null,'확인'),note=this.el('span','giftNote');
-  input.type='text';input.placeholder='코드 입력';input.autocomplete='off';input.inputMode='numeric';button.type='button';
-  button.onclick=()=>{note.textContent=this.redeem(input.value);input.value=''};
-  input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();button.click()}};
-  box.append(input,button,note);return box;
- },
- // Returns what to tell the player.
- redeem(code){
-  if(String(code).trim()!==this.GIFT.code)return '알 수 없는 코드다.';
-  if(state?.duel)return '대전 중에는 받을 수 없다.';
-  const list=this.GIFT.items.map(([name,count])=>name+' '+count+'개').join(', '),live=!!state&&!state.dead&&!state.victory&&runState57()==='playing'&&!runIsEphemeral()&&!state.debugMapGeneration57;
-  lsSet(this.GIFT_KEY,String(Math.max(0,Math.floor(Number(lsGet(this.GIFT_KEY))||0))+1));
-  // Keep the pending bundles until the run containing them has actually been saved.
-  if(live){this.claimGift();const saved=writeRun('gift-code');if(saved.ok)lsRemove(this.GIFT_KEY);return '받았다. 지금 판에 지급했다: '+list+'. 가방이 가득 차면 발밑에 놓인다.'+(saved.ok?'':' 저장에 실패했다. 다시 불러올 때 지급한다.')}
-  return '받았다. 이어하기 또는 새 판을 시작할 때 지급한다: '+list+'. 가방이 가득 차면 발밑에 놓인다.';
- },
- // Both new and restored runs claim the queue; the lifecycle clears it only after committing the run.
- claimGift(){
-  const bundles=Math.max(0,Math.floor(Number(lsGet(this.GIFT_KEY))||0));
-  if(!bundles||!state||state.dead||state.victory||runIsEphemeral()||state.debugMapGeneration57)return 0;
-  this.deliverGift(bundles);return bundles;
- },
- // Rewards use the normal stack rules; overflow stays on safe ground (or in the existing pending-ground queue).
- deliverGift(bundles=1){
-  const items=this.GIFT.items.map(([name,count])=>{const source=itemPrototype(name)||[...Object.values(MINE_ITEMS105),...Object.values(MOUNTAIN_REWARDS105)].find(i=>i.name===name); // 보강부적 and 신비부적 are the mountain branches' own rewards (the stockade, the mine's last floor)
-   if(!source)throw Error('Missing gift item: '+name);const item=clone(source);item.count=count*bundles;return item});
-  for(const item of items)addInventoryItem(item,{x:state.player.x,y:state.player.y});
-  addLog('코드로 받은 것을 얻었다.');updateAll();
  },
  rowsView(data){
   const table=this.el('table','statsRows'),head=table.createTHead().insertRow();
