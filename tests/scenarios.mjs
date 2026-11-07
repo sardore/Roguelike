@@ -712,54 +712,95 @@ export const scenarios = {
     return out;
   },
 
-  // The code box of the record tab: a wrong code does nothing, the right one (once per device) puts 소회복 비약 x2, 보강부적 x2, 성부 x1 and 신비부적 x1 into the next new run, once.
+  // Every valid submission gives a bundle, including old claim marks, full bags and saved runs resumed from the title.
   async giftCode(browser, root) {
-    const out = {};
+    const out = {}, names = ['소회복 비약', '보강부적', '성부', '신비부적'];
     const s = await openSession(browser, root, { seed: 4249 });
     await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
     out['giftCode.box'] = JSON.stringify(await s.page.evaluate(() => {
       const A = __MANRU_QA_STATS__.api; A.open(); A.tab = 'rows'; A.render();
-      const box = document.querySelector('.giftBox'), input = box?.querySelector('input'), button = box?.querySelector('button'), note = box?.querySelector('.giftNote'), say = (code) => { input.value = code; button.click(); return note.textContent; };
-      if (!box) return { box: false };
-      const wrong = say('00000'), right = say('19721'), again = say('19721');
-      const redraw = (A.render(), document.querySelector('.giftBox') === box);
-      A.close();
-      return { box: true, wrong, right, again, redrawSameBox: redraw, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone2') };
+      const box = document.querySelector('.giftBox'), input = box?.querySelector('input'), button = box?.querySelector('button'), note = box?.querySelector('.giftNote');
+      if (!box) throw Error('missing code box');
+      localStorage.setItem('manruGiftDone', '1'); localStorage.setItem('manruGiftDone2', '1');
+      const say = (code) => { input.value = code; button.click(); return note.textContent; };
+      const wrong = say('00000'), wrongPending = localStorage.getItem('manruGiftPending'), right = say('19721'), again = say(' 19721 ');
+      const redraw = (A.render(), document.querySelector('.giftBox') === box); A.close();
+      return { wrong, wrongPending, right, again, redraw, pending: localStorage.getItem('manruGiftPending') };
     }));
     await s.tick(800);
-    out['giftCode.run'] = JSON.stringify(await s.page.evaluate(() => {
-      globalThis.__MANRU_QA_DUEL__.newRun(); // the start of a new run is where the things are handed over
-      const st = __MANRU_QA_UI__.state(), all = [...(st.tutorialChest?.loot || []), ...st.player.inventory], count = (name) => all.filter((i) => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
-      return { potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), inChest: !!st.tutorialChest && !st.tutorialChest.opened, pending: localStorage.getItem('manruGiftPending') };
-    }));
+    out['giftCode.run'] = JSON.stringify(await s.page.evaluate((names) => {
+      __MANRU_QA_DUEL__.newRun();
+      const st = __MANRU_QA_UI__.state(), count = name => st.player.inventory.filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
+      return { bag: names.map(count), chest: (st.tutorialChest?.loot || []).filter(i => names.includes(i.name)).map(i => i.name), pending: localStorage.getItem('manruGiftPending') };
+    }, names));
     out['giftCode.errors'] = JSON.stringify(s.errors);
     await s.close();
-    // with a run on the screen the things go into this run's bag at once (not the next run)
+
     const t = await openSession(browser, root, { seed: 4250 });
     await t.page.evaluate(() => document.getElementById('nickAsk')?.remove());
-    await t.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await t.tick(500);
-    out['giftCode.live'] = JSON.stringify(await t.page.evaluate(() => {
-      const st = __MANRU_QA_UI__.state(), A = __MANRU_QA_STATS__.api, owned = () => st.player.inventory.reduce((n, i) => n + (['소회복 비약', '보강부적', '성부', '신비부적'].includes(i.name) ? (i.count || 1) : 0), 0), before = owned();
-      // the marks of the first version (the code taken, the things waiting for a next run that never brought them) do not shut the code out
-      localStorage.setItem('manruGiftDone', '1'); localStorage.setItem('manruGiftPending', '1');
+    await t.page.evaluate(() => __MANRU_QA_DUEL__.newRun()); await t.tick(500);
+    out['giftCode.live'] = JSON.stringify(await t.page.evaluate((names) => {
+      const st = __MANRU_QA_UI__.state(), A = __MANRU_QA_STATS__.api;
+      const counts = () => names.map(name => st.player.inventory.filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0));
+      const before = counts(), chest = JSON.stringify(st.tutorialChest), run = st.runId984, turn = st.turn;
+      localStorage.setItem('manruGiftDone', '1'); localStorage.setItem('manruGiftDone2', '1');
       A.open(); A.tab = 'rows'; A.render();
       const input = document.querySelector('.giftBox input'), button = document.querySelector('.giftBox button'), note = document.querySelector('.giftNote');
-      input.value = '19721'; button.click();
-      const text = note.textContent, all = st.player.inventory, count = (name) => all.filter((i) => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
+      input.value = '19721'; button.click(); const text = note.textContent;
+      input.value = '19721'; input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const again = note.textContent, after = counts();
+      // A separate full-bag redemption must retain every item, including overflow on the floor.
+      while (st.player.inventory.length < 25) st.player.inventory.push({ type: 'weapon', name: '시험 무기', count: 1 });
+      const total = () => names.map(name => [...st.player.inventory, ...st.items, ...(st.pendingGroundItems57 || []).map(q => q.item)].filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0));
+      const fullBefore = total(); input.value = '19721'; button.click(); const fullAfter = total();
       A.close();
-      return { text, before, potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), chestLoot: (st.tutorialChest?.loot || []).filter((i) => ['보강부적', '신비부적', '성부'].includes(i.name)).length, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone2') };
+      return { text, again, before, after, fullBefore, fullAfter, chestUnchanged: chest === JSON.stringify(st.tutorialChest), runUnchanged: run === st.runId984 && turn === st.turn, pending: localStorage.getItem('manruGiftPending') };
+    }, names));
+    // Redemption itself saved the rewards; no manual save or game action is needed before reloading.
+    await t.page.reload(); await t.tick(500);
+    await t.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    await t.page.click('#continueBtn'); await t.tick(500);
+    out['giftCode.reload'] = JSON.stringify(await t.page.evaluate((names) => {
+      const st = __MANRU_QA_UI__.state();
+      return { bag: names.map(name => [...st.player.inventory, ...st.items, ...(st.pendingGroundItems57 || []).map(q => q.item)].filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0)), pending: localStorage.getItem('manruGiftPending') };
+    }, names));
+    const storage = await storageDump(t);
+    out['giftCode.live.errors'] = JSON.stringify(t.errors); await t.close();
+
+    const r = await openSession(browser, root, { seed: 4251, storage });
+    await r.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    out['giftCode.resumeBox'] = JSON.stringify(await r.page.evaluate(() => {
+      const A = __MANRU_QA_STATS__.api;
+      if (__MANRU_QA_UI__.state()) throw Error('expected a saved run at the title, not an in-memory run');
+      localStorage.setItem('manruGiftPending', '1'); // a bundle left waiting by an earlier release
+      const right = A.redeem('19721'), again = A.redeem('19721');
+      return { right, again, pending: localStorage.getItem('manruGiftPending') };
     }));
-    out['giftCode.live.errors'] = JSON.stringify(t.errors);
-    await t.close();
-    {
-      const l = JSON.parse(out['giftCode.live']);
-      if (!/지금 판의 가방/.test(l.text) || l.potion < 2 || l.reinforce < 2 || l.holy < 1 || l.mystery < 1 || l.chestLoot !== 0 || l.pending !== null || l.done !== '1') throw Error('giftCode: with a run on, the things did not go into its bag at once ' + out['giftCode.live']);
-    }
-    {
-      const b = JSON.parse(out['giftCode.box']), r = JSON.parse(out['giftCode.run']);
-      if (!b.box || !/알 수 없는/.test(b.wrong) || !/다음 새 판/.test(b.right) || !/이미/.test(b.again) || !b.redrawSameBox || b.pending !== '1') throw Error('giftCode: the box ' + out['giftCode.box']);
-      if (r.potion < 2 || r.reinforce < 2 || r.holy < 1 || r.mystery < 1 || r.pending !== null) throw Error('giftCode: the things did not come, or came again ' + out['giftCode.run']);
-    }
+    // This new session starts its fake clock from the same epoch; advance past the source session's save time.
+    await r.tick(10000);
+    await r.page.click('#continueBtn'); await r.tick(500);
+    out['giftCode.resumed'] = JSON.stringify(await r.page.evaluate((names) => {
+      const st = __MANRU_QA_UI__.state();
+      return { bag: names.map(name => [...st.player.inventory, ...st.items, ...(st.pendingGroundItems57 || []).map(q => q.item)].filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0)), pending: localStorage.getItem('manruGiftPending') };
+    }, names));
+    await r.page.reload(); await r.tick(500);
+    await r.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    await r.page.click('#continueBtn'); await r.tick(500);
+    out['giftCode.resumedAgain'] = JSON.stringify(await r.page.evaluate((names) => {
+      const st = __MANRU_QA_UI__.state();
+      return { bag: names.map(name => [...st.player.inventory, ...st.items, ...(st.pendingGroundItems57 || []).map(q => q.item)].filter(i => i.name === name).reduce((n, i) => n + (i.count || 1), 0)), pending: localStorage.getItem('manruGiftPending') };
+    }, names));
+    out['giftCode.resume.errors'] = JSON.stringify(r.errors); await r.close();
+
+    const box = JSON.parse(out['giftCode.box']), run = JSON.parse(out['giftCode.run']), live = JSON.parse(out['giftCode.live']), reload = JSON.parse(out['giftCode.reload']), resumeBox = JSON.parse(out['giftCode.resumeBox']), resumed = JSON.parse(out['giftCode.resumed']);
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    if (!/알 수 없는/.test(box.wrong) || box.wrongPending !== null || !/이어하기/.test(box.right) || !/이어하기/.test(box.again) || !box.redraw || box.pending !== '2') throw Error('giftCode: repeated submissions failed ' + out['giftCode.box']);
+    if (!eq(run.bag, [4, 4, 2, 2]) || run.pending !== null || run.chest.includes('보강부적') || run.chest.includes('신비부적') || run.chest.includes('성부')) throw Error('giftCode: queued rewards did not reach the new bag ' + out['giftCode.run']);
+    if (!/지금 판에 지급/.test(live.text) || !/지금 판에 지급/.test(live.again) || !eq(live.after.map((n, i) => n - live.before[i]), [4, 4, 2, 2]) || !eq(live.fullAfter.map((n, i) => n - live.fullBefore[i]), [2, 2, 1, 1]) || !live.chestUnchanged || !live.runUnchanged || live.pending !== null) throw Error('giftCode: full live bag did not receive both bundles ' + out['giftCode.live']);
+    if (!eq(reload.bag, live.fullAfter) || reload.pending !== null) throw Error('giftCode: rewards were not persisted immediately ' + JSON.stringify({live, reload}));
+    if (resumeBox.pending !== '3' || !eq(resumed.bag.map((n, i) => n - reload.bag[i]), [6, 6, 3, 3]) || resumed.pending !== null) throw Error('giftCode: title rewards did not reach the existing save ' + out['giftCode.resumed']);
+    if (out['giftCode.resumedAgain'] !== out['giftCode.resumed']) throw Error('giftCode: consumed rewards were delivered twice on load ' + JSON.stringify({first: out['giftCode.resumed'], second: out['giftCode.resumedAgain']}));
+    for (const [key, value] of Object.entries(out)) if (key.endsWith('errors') && value !== '[]') throw Error(key + ': ' + value);
     return out;
   },
 
