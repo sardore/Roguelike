@@ -532,5 +532,7 @@
  "duelfloor.8": "a98d38f7d3f23f77d3a4a36aca516c1faa08d19e",
  "duelfloor.9": "1447158c73a5643b29886b12337e1d40d1310d08",
  "duelfloor.10": "1d0a06cd535d4d704337e061650417a1c9afaf29",
- "duelfloor.11": "ac16199be41f186e3f7198ba93f244215482d225"
+ "duelfloor.11": "ac16199be41f186e3f7198ba93f244215482d225",
+ "intentoffscreen.result": "f5454968df57442a68603754b7c5b8d651dc399b",
+ "intentoffscreen.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
