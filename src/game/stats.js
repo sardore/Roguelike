@@ -306,26 +306,8 @@ const PlayStats={
   const view=this.el('div','ghostView'),notice={unset:'수집 서버가 연결되어 있지 않다.',loading:'망령을 불러오는 중…',error:'망령을 불러오지 못했다.'}[this.ghostState||'']||'';
   if(notice||!this.ghosts){view.append(this.el('p','statsNote',notice||'탭을 열면 내 망령이 보인다.'));return view}
   if(!this.ghosts.length){view.append(this.el('p','statsNote','아직 망령이 없다. 죽은 계정은 이곳에 남는다.'));return view}
-  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.ghostStateEl(row));if(row.status==='alive')line.append(this.reviveButton(row));view.append(line)}
+  for(const row of this.ghosts){const line=this.el('div','ghostRow');line.append(this.classIcon(row.cls),this.el('b',null,row.floor+'층 · Lv '+row.level),this.el('span',null,row.cause),this.ghostStateEl(row));view.append(line)}
   return view;
- },
- // A dead account stands up again from its ghost: the same character on a new map of the floor it died on, once per ghost. The server keeps the body; the map does not come back.
- reviveButton(row){
-  const done=(()=>{try{return JSON.parse(lsGet('manru.revived')||'[]').includes(row.id)}catch(error){ignoreError('revived list unreadable',error);return false}})(),button=this.el('button','ghostRevive',done?'이미 되살렸다':'되살리기');
-  button.type='button';button.disabled=done;button.onclick=()=>this.revive(row,button);return button;
- },
- async revive(row,button){
-  if(this.reviving)return;
-  if(button.dataset.sure!=='1'){button.dataset.sure='1';button.textContent='한 번 더 누르면 '+row.floor+'층에서 되살린다';return}
-  this.reviving=true;button.textContent='되살리는 중…';
-  try{
-   const data=await this.fetchView(this.endpoint(),'ghost&'+this.ownerQuery()+'&id='+encodeURIComponent(row.id)),body=JSON.parse(data?.body||'null');
-   if(!body||typeof body!=='object')throw Error('no body');
-   const cls=CLASSES.find(c=>c.id===body.classId)||CLASSES[0];
-   this.close();newGame(cls,null,{ghost:body,floor:row.floor});
-   const list=JSON.parse(lsGet('manru.revived')||'[]');list.push(row.id);lsSet('manru.revived',JSON.stringify(list.slice(-64)));
-  }catch(error){ignoreError('revive failed',error);button.textContent='되살리지 못했다';button.dataset.sure=''}
-  finally{this.reviving=false}
  },
  legacyRows(){return this.LEGACY.map(([t,floor,cause,level,kills,turns])=>({t,floor,cause,level,kills,turns}))},
  withLegacySummary(data){
