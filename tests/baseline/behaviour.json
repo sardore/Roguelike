@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "0d10657ae2324cc5feb87549b45a5712c7afc1c5",
- "values.branch": "46dd0cc4b1be513db1f64392fec2ace4d6ce2172",
+ "values.empty": "ded7abb942ee8ac6f0adab81efac8c30c4ede799",
+ "values.branch": "bcafea2054f0ae6d2fef860c19dfcc16fdfbc4bb",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -551,5 +551,8 @@
  "blinkTrap.pocket": "901d89b5d9519a6439d5e764af986f0113f3b76f",
  "blinkTrap.errors.pocket": "97d170e1550eee4afc0af065b78cda302a97674c",
  "blinkTrap.ground": "b8a99ea80782593031d614f886fb2e8916a85b42",
- "blinkTrap.errors.ground": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "blinkTrap.errors.ground": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "giftCode.box": "5f27987fc090dae9b70ddc756e0e79162ecf3f5f",
+ "giftCode.run": "06ea17cb90f0c85f3252a147ae09a439a8e6ef79",
+ "giftCode.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

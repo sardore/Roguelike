@@ -103,6 +103,7 @@ function afterNewRun(ctx){
   setupCameraForNewRun(ctx);
   initCursesForNewRun();
   Duel.claimWinnings();
+  PlayStats.claimGift();
   showGameScreenIfPlaying();
   normalizeAllItems();
 }

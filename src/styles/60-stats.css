@@ -134,3 +134,7 @@ body.title-class-mode #titleCorner{display:none}
  50%{text-shadow:0 0 calc(5px + 15px * var(--danger,0)) rgba(255,48,48,calc(.45 + .55 * var(--danger,0)))}
 }
 @media (prefers-reduced-motion:reduce){.dsScore.hot .dsD{animation:none;text-shadow:0 0 calc(4px + 10px * var(--danger,0)) rgba(255,48,48,.7)}}
+.giftBox{display:flex;align-items:center;gap:6px;margin:0 0 10px}
+.giftBox input{flex:0 1 140px;min-width:0;padding:6px 8px;border:1px solid #634329;background:#1a1109;color:#e7d4ac;font:inherit}
+.giftBox button{flex:none;padding:6px 12px;border:1px solid #8a6a3a;background:#2a1b0e;color:#f0d9a8;font:inherit;cursor:pointer}
+.giftNote{flex:1;color:#a8946f;font-size:12px}
