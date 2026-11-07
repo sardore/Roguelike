@@ -411,7 +411,7 @@ const Duel={
   const hold=performance.now()+5000;
   // a draw is told to the server as a win by this side: the other side says the same, and the same word from both voids the duel (both ghosts stand again)
   if(this.dies||draw)this.setJob({won:win||draw,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false});
-  else this.setJob({release:true,match:this.matchId,ghost:this.mineGhostId,next:hold,until:Date.now()+13*60*1000,busy:false}); // nobody is lost: the lock is freed after the hold
+  else PlayStats.ghostRelease(this.mineGhostId,this.matchId).catch(error=>ignoreError('duel release not sent',error)); // nobody is lost: the lock is freed at once (nothing waits on a page that may be closed)
  },
  // The other side's word contradicts this side's (both say they won, or both say they lost), or both went down together: nobody won. What this side had concluded is taken back.
  turnDraw(){
@@ -490,7 +490,7 @@ const Duel={
  async pollSettle(now){
   if(!this.resumed)this.resumeJob();
   const job=this.settling;
-  if(!job||job.busy||now<job.next)return;
+  if(!job||job.busy||performance.now()<job.next)return;
   if(Date.now()>job.until){this.setJob(null);return}
   if(job.release){this.setJob(null);PlayStats.ghostRelease(job.ghost,job.match).catch(error=>ignoreError('duel release not sent',error));return}
   job.busy=true;

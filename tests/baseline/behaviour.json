@@ -535,6 +535,7 @@
  "duelfloor.11": "ac16199be41f186e3f7198ba93f244215482d225",
  "intentoffscreen.result": "f5454968df57442a68603754b7c5b8d651dc399b",
  "intentoffscreen.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "enchantglow.result": "637af224b7201018adfa930336fb95b622c79d6e",
- "enchantglow.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "enchantglow.result": "dbe8250f9fcd96449276acc89c46fc9353be2645",
+ "enchantglow.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "duelrules.known": "f4835f45c263d4b5fb90ba1671508cc9fedd575a"
 }

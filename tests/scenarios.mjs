@@ -1607,7 +1607,7 @@ export const scenarios = {
       const reported = calls.filter((c) => c.post?.ghostScore).map((c) => c.post.ghostScore);
       out['duelstakes.reported'] = JSON.stringify(reported.map((r) => [r.ghost, r.score, r.peak]).sort());
       if (reported.length < 2 || reported.some((r) => !(r.peak >= r.score))) throw Error('duelstakes: score not reported ' + JSON.stringify(reported));
-      if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled }));
+      if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled, calls: calls.filter((c) => c.post?.ghostRelease || c.post?.ghostSettle || c.post?.ghostScore).map((c) => [c.by, Object.keys(c.post)[0], c.post.ghostRelease?.ghost || c.post.ghostSettle?.ghost || c.post.ghostScore?.ghost]) }));
       await a.close(); await b.close();
     } finally { relay.kill(); }
     return out;
@@ -1617,7 +1617,7 @@ export const scenarios = {
   // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
   // the score; a duel run is never saved or sent to the statistics.
   // A monster that is out of sight, and has marked a cell that is in sight: the mark is drawn (it was drawn only while the monster itself was seen).
-  // An enchanted weapon or armor glows in the colour of its element: in the side panel, on the slot in the bag, and (through the sprite key) on the held weapon.
+  // An enchanted weapon or armor glows in the colour of its element: its picture in the bag, in the worn row and on the floor, its name in the side panel, and the held weapon (through the sprite key). The slot's border does not glow.
   async enchantglow(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 7 });
@@ -1625,7 +1625,7 @@ export const scenarios = {
       await startRun(s, 'swordsman');
       const r = await s.page.evaluate(() => globalThis.__MANRU_QA_ENCHANT__.probe());
       out['enchantglow.result'] = JSON.stringify(r);
-      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || !r.brandSlot || r.plainSlot || !r.iconGlow || r.plainIcon || !r.equipIcon || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
+      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || r.brandSlot || r.plainSlot || !r.iconGlow || r.plainIcon || !r.equipIcon || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
       out['enchantglow.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
