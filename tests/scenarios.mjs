@@ -1616,6 +1616,22 @@ export const scenarios = {
   // The rules of the ghost duel on its map: both ghosts take element damage as a boss does, potions/talismans share a five-turn cooldown and martial arts
   // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
   // the score; a duel run is never saved or sent to the statistics.
+  // A monster that is out of sight, and has marked a cell that is in sight: the mark is drawn (it was drawn only while the monster itself was seen).
+  async intentoffscreen(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 7 });
+    try {
+      await startRun(s, 'swordsman');
+      const r = await s.page.evaluate(() => globalThis.__MANRU_QA_INTENT__.offscreen());
+      out['intentoffscreen.result'] = JSON.stringify(r);
+      if (!r.monster || !r.cell) throw Error('intentoffscreen: no monster out of sight on this floor ' + JSON.stringify(r));
+      const changed = r.before.some((v, i) => Math.abs(v - r.after[i]) > 8);
+      if (r.seen || !changed) throw Error('intentoffscreen: the mark of a monster out of sight was not drawn ' + JSON.stringify(r));
+      out['intentoffscreen.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   async duelrules(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 3 });
