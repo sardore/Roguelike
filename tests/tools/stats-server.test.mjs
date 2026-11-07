@@ -264,6 +264,9 @@ test('the ranking has a board of the ghosts that still stand, and a taken ghost 
   settle(s, 'ABCD12', KEY_A, a, 'd', true); settle(s, 'WXYZ34', KEY_B, b, 'd', false);
   board = s.get('ranking').boards.ghost;
   assert.deepEqual(board.map((g) => g.tag), ['ABCD12'], 'the taken ghost is gone at once (the cached board is dropped)');
+  assert.deepEqual([board[0].wins, board[0].losses], [1, 0], 'the winner has one win on the board');
+  const loser = s.ghosts().find((row) => row[1] === b);
+  assert.deepEqual([Number(loser[14]) || 0, loser[15]], [0, 1], 'the loser has one loss (and no win)');
 });
 
 test('the ghost board is ordered by the score a win gives (the floor they died on plus one)', () => {

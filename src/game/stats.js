@@ -362,7 +362,7 @@ const PlayStats={
   if(this.board==='kills')return{value:String(row.kills),fill:row.kills/Math.max(1,...list.map(r=>+r.kills||0))};
   return{value:this.floorText(row),fill:Math.min(1,this.floorOf(row)/this.TOTAL_FLOORS)};
  },
- detail(row){return this.board==='depth'||this.board==='ghost'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
+ detail(row){return this.board==='ghost'?`Lv ${row.level} · ${row.wins||0}승 ${row.losses||0}패`:this.board==='depth'?`Lv ${row.level} · 처치 ${row.kills} · ${row.turns}턴`:this.board==='level'?`${row.floor}층 · 처치 ${row.kills} · ${row.turns}턴`:`${row.floor}층 · Lv ${row.level} · ${row.turns}턴`},
  // The one-time nickname form on the board.
  nickForm(done){
   const wrap=this.el('div','rankNick'),input=this.el('input'),button=this.el('button',null,'등록'),note=this.el('small','rankNickNote','한 번 정하면 바꿀 수 없다. 한글·영문·숫자 '+this.NICK_MIN+'~'+this.NICK_MAX+'글자.');

@@ -19,7 +19,7 @@ const SHEET_NAME = 'deaths';
 const NICK_SHEET = 'nicks';
 // Ghosts: the dead character of a run (the player object as JSON) kept for the owner (player ID), and later for others to fight. status is 'alive' until a fight takes it.
 const GHOST_SHEET = 'ghosts';
-const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime', 'score', 'peak'];
+const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime', 'score', 'peak', 'wins', 'losses'];
 const BODY_COL = GHOST_HEADER.indexOf('body') + 1, LOCK_COL = GHOST_HEADER.indexOf('lock') + 1;
 // Stakes: ids (player ID -> hash of its device secret), duels (one row per duel id), loot (what a winner has coming).
 const ID_SHEET = 'ids', DUEL_SHEET = 'duels', LOOT_SHEET = 'loot';
@@ -126,7 +126,7 @@ function ghostList_(owner, key) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues() : [];
   const list = values.filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
-    .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row), score: Number(row[12]) || 0, peak: Number(row[13]) || 0 }));
+    .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row), score: Number(row[12]) || 0, peak: Number(row[13]) || 0, wins: Number(row[14]) || 0, losses: Number(row[15]) || 0 }));
   return reply_({ ok: true, list });
 }
 
@@ -188,6 +188,9 @@ function resolve_(duels, row) {
   }
   const loser = winner === ghostA ? ghostB : ghostA, winnerOwner = winner === ghostA ? ownerA : ownerB;
   const loserRow = loser === ghostA ? rowA : rowB, winnerRow = winner === ghostA ? rowA : rowB;
+  // the record of a ghost: a settled duel is one win for the winner and one loss for the loser (a void duel counts for neither)
+  const count = (r, name) => { if (r) { const cell = ghosts.getRange(r, GHOST_HEADER.indexOf(name) + 1); cell.setValue((Number(cell.getValue()) || 0) + 1); } };
+  count(winnerRow, 'wins'); count(loserRow, 'losses');
   if (loserRow) {
     const items = lootOf_(ghosts.getRange(loserRow, BODY_COL).getValue());
     setGhost_(ghosts, loserRow, 'taken');
@@ -441,9 +444,9 @@ function standingGhosts_(runs) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   if (rows < 2) return [];
   const scores = {};
-  for (const row of sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues()) if (String(row[8]) !== 'taken') scores[String(row[1])] = { score: Number(row[12]) || 0, peak: Number(row[13]) || 0 };
+  for (const row of sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues()) if (String(row[8]) !== 'taken') scores[String(row[1])] = { score: Number(row[12]) || 0, peak: Number(row[13]) || 0, wins: Number(row[14]) || 0, losses: Number(row[15]) || 0 };
   const start = run => Math.max(3, (Number(run.floor) || 1) + 2);
-  return runs.filter(run => scores[run.id]).map(run => ({ ...run, score: scores[run.id].score, peak: scores[run.id].peak }))
+  return runs.filter(run => scores[run.id]).map(run => ({ ...run, score: scores[run.id].score, peak: scores[run.id].peak, wins: scores[run.id].wins, losses: scores[run.id].losses }))
     .sort((a, b) => (b.score || start(b)) - (a.score || start(a)) || BOARDS.depth(a, b)).slice(0, RANK_ROWS).map(({ id, ...run }) => run);
 }
 
