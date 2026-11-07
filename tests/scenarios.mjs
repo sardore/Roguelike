@@ -724,7 +724,7 @@ export const scenarios = {
       const wrong = say('00000'), right = say('19721'), again = say('19721');
       const redraw = (A.render(), document.querySelector('.giftBox') === box);
       A.close();
-      return { box: true, wrong, right, again, redrawSameBox: redraw, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone') };
+      return { box: true, wrong, right, again, redrawSameBox: redraw, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone2') };
     }));
     await s.tick(800);
     out['giftCode.run'] = JSON.stringify(await s.page.evaluate(() => {
@@ -740,12 +740,14 @@ export const scenarios = {
     await t.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await t.tick(500);
     out['giftCode.live'] = JSON.stringify(await t.page.evaluate(() => {
       const st = __MANRU_QA_UI__.state(), A = __MANRU_QA_STATS__.api, owned = () => st.player.inventory.reduce((n, i) => n + (['소회복 비약', '보강부적', '성부', '신비부적'].includes(i.name) ? (i.count || 1) : 0), 0), before = owned();
+      // the marks of the first version (the code taken, the things waiting for a next run that never brought them) do not shut the code out
+      localStorage.setItem('manruGiftDone', '1'); localStorage.setItem('manruGiftPending', '1');
       A.open(); A.tab = 'rows'; A.render();
       const input = document.querySelector('.giftBox input'), button = document.querySelector('.giftBox button'), note = document.querySelector('.giftNote');
       input.value = '19721'; button.click();
       const text = note.textContent, all = st.player.inventory, count = (name) => all.filter((i) => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
       A.close();
-      return { text, before, potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), chestLoot: (st.tutorialChest?.loot || []).filter((i) => ['보강부적', '신비부적', '성부'].includes(i.name)).length, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone') };
+      return { text, before, potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), chestLoot: (st.tutorialChest?.loot || []).filter((i) => ['보강부적', '신비부적', '성부'].includes(i.name)).length, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone2') };
     }));
     out['giftCode.live.errors'] = JSON.stringify(t.errors);
     await t.close();

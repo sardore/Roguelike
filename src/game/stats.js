@@ -4,7 +4,8 @@ const PlayStats={
  // The secret of this device (32 letters and digits, made once): it proves the player ID is ours. The server keeps only its hash (docs/GHOST_STAKES.md).
  SECRET_KEY:'manruDeviceSecret',STAKES_KEY:'manruStakes',
  // The code box of the record tab: one code, once per device; its things go into the bag at the start of the next new run.
- GIFT:{code:'19721',items:[['소회복 비약',2],['보강부적',2],['성부',1],['신비부적',1]]},GIFT_KEY:'manruGiftPending',GIFT_DONE:'manruGiftDone',
+ GIFT:{code:'19721',items:[['소회복 비약',2],['보강부적',2],['성부',1],['신비부적',1]]},GIFT_KEY:'manruGiftPending',GIFT_DONE:'manruGiftDone2', // the mark of an earlier try (manruGiftDone) is not honoured: the things went nowhere (next-run only), so the code stands again once
+ GIFT_OLD:['manruGiftDone'],
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치'],['ghost','망령']],TOTAL_FLOORS:25,
  RANK_ROWS:30,
  // Deaths recorded before the statistics server moved (kept by hand from the record list): [UTC time, floor, cause, level, kills, turns]. They are folded into the summary and the boards below.
@@ -450,9 +451,9 @@ const PlayStats={
   if(lsGet(this.GIFT_DONE))return '이미 받은 코드다.';
   if(state?.duel)return '대전 중에는 받을 수 없다.';
   const list=this.GIFT.items.map(([name,count])=>name+' '+count+'개').join(', '),live=!!state&&!state.dead&&!state.victory&&runState57()==='playing'&&!runIsEphemeral()&&!state.debugMapGeneration57;
-  lsSet(this.GIFT_DONE,'1');
+  lsSet(this.GIFT_DONE,'1');for(const old of this.GIFT_OLD)lsRemove(old);
   // in a run, into the bag of this run now; with no run on, the things wait for the next one
-  if(live){this.deliverGift(false);return '받았다. 지금 판의 가방에 들어갔다: '+list+'.'}
+  if(live){lsRemove(this.GIFT_KEY);this.deliverGift(false);return '받았다. 지금 판의 가방에 들어갔다: '+list+'.'}
   lsSet(this.GIFT_KEY,'1');return '받았다. 지금 하는 판이 없어서 다음 새 판을 시작할 때 가방에 들어간다: '+list+'.';
  },
  // At the start of a new run: what the code gave goes into the starting chest, or into the bag when it is already open.
