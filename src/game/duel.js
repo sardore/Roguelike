@@ -160,9 +160,10 @@ const Duel={
   card.type='button';card.dataset.ghost=row.id;
   chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('데스/현재',this.scoreNode(this.scoreOf(row.id,row.floor))));
   body.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · ${row.cause}`),chips);
-  const locked=row.status==='locked'; // in a duel (or one that ended without a word): the server frees it by itself after half an hour
-  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter',locked?'대전 중 · 최대 30분':'출전'));
-  if(locked){card.disabled=true;card.classList.add('locked')}else card.onclick=()=>this.choose(row);
+  // a ghost the server still shows as in a duel is the player's own, and the player is on this screen: not in a duel. It is never shut away here; the server
+  // gives the old lock back when the ghost is asked for (a duel with a word in it stays, and the refusal says so when the duel is made)
+  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter','출전'));
+  card.onclick=()=>this.choose(row);
   return card;
  },
  confirmCard(){
