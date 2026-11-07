@@ -676,8 +676,7 @@ export const scenarios = {
     return out;
   },
 
-  // A blink may cross water or a cliff but never lands in a pocket the player could not walk out of (a run ended on one): the same blink across to ground that is
-  // connected still works.
+  // Blink landings follow ray/terrain rules, including isolated ground. Walking connectivity is not a landing restriction.
   async blinkTrap(browser, root) {
     const out = {};
     for (const pocket of [true, false]) {
@@ -706,9 +705,46 @@ export const scenarios = {
     }
     {
       const a = JSON.parse(out['blinkTrap.pocket']), b = JSON.parse(out['blinkTrap.ground']);
-      if (a.moved) throw Error('blinkTrap: the blink landed in a pocket it could not walk out of ' + JSON.stringify(a));
+      if (!a.moved || a.after.x !== a.before.x + 3) throw Error('blinkTrap: isolated ground was rejected ' + JSON.stringify(a));
       if (!b.moved || b.after.x !== b.before.x + 3) throw Error('blinkTrap: the control blink over open ground did not work ' + JSON.stringify(b));
     }
+    // 21F is deliberately made of isolated islands: the intermediate island has no walking exit or anchor.
+    const s = await openSession(browser, root, { seed: 4250 });
+    try {
+      await startRun(s, 'strongman'); await s.tick(900);
+      out['blinkTrap.floor21'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), p = st.player, T = A.TT;
+        for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+        st.floor = 21; st.requiresBlink = true; st.tempFields = []; st.decor = []; st.items = []; st.jarGasFields57 = [];
+        for (let y = 14; y <= 26; y++) for (let x = 14; x <= 34; x++) st.map[y][x] = T.VOID;
+        for (const x of [20, 23, 26]) st.map[20][x] = T.FLOOR;
+        st.fixedStart = { x: 20, y: 20 }; st.fixedExit = st.stairs = { x: 26, y: 20 }; st.branchPortals105 = [];
+        p.blinkLevel = 3; p.focus = p.maxFocus; A.move(p, 20, 20); __MANRU_QA_VIS__.compute();
+        st.map[19][20] = T.WALL; st.map[18][20] = T.FLOOR; st.map[23][20] = T.FLOOR;
+        const enemy = A.place('객잔 쥐', { x: 20, y: 23 }), cells = A.blinkCells(p, 3);
+        const safe = cells.every(q => st.map[q.y][q.x] !== T.VOID && q.dist <= 3 && !(q.x === 20 && (q.y === 18 || q.y === 23)));
+        st.tempFields = [{ kind: 'sealingWard', targetId: 'player', ttl: 4, cells: [{ x: 20, y: 20 }] }];
+        const sealed = A.blinkCells(p, 3).length === 0;
+        st.tempFields = []; A.occupancy.removeMonster(enemy);
+        const before = { focus: p.focus, turn: st.turn }, available = A.blinkCells(p, 3).some(q => q.x === 23 && q.y === 20);
+        __MANRU_QA_UI__.dispatch({ type: 'BLINK', args: [] });
+        const selecting = document.getElementById('worldTarget57')?.classList.contains('show') || false;
+        const unspent = p.focus === before.focus && st.turn === before.turn;
+        __MANRU_QA_UI__.dispatch({ type: 'TARGET_CONFIRM', cell: { x: 23, y: 20 } });
+        return { available, safe, sealed, selecting, unspent, landed: p.x === 23 && p.y === 20, cost: before.focus - p.focus };
+      }));
+      await s.tick(1000);
+      out['blinkTrap.floor21Return'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), p = st.player;
+        const onward = A.blinkCells(p, 3).some(q => q.x === 26 && q.y === 20), back = A.blinkCells(p, 3).some(q => q.x === 20 && q.y === 20);
+        __MANRU_QA_UI__.dispatch({ type: 'BLINK', args: [] });
+        __MANRU_QA_UI__.dispatch({ type: 'TARGET_MOVE', dx: -1, dy: 0 });
+        return { onward, back, returned: p.x === 20 && p.y === 20 };
+      }));
+      out['blinkTrap.errors.floor21'] = JSON.stringify(s.errors);
+      const a = JSON.parse(out['blinkTrap.floor21']), b = JSON.parse(out['blinkTrap.floor21Return']);
+      if (!a.available || !a.safe || !a.sealed || !a.selecting || !a.unspent || !a.landed || a.cost !== 2 || !b.onward || !b.back || !b.returned || s.errors.length) throw Error('21F intermediate blink island rejected: ' + JSON.stringify({ a, b, errors: s.errors }));
+    } finally { await s.close(); }
     return out;
   },
 
