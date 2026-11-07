@@ -448,18 +448,25 @@ const PlayStats={
  redeem(code){
   if(String(code).trim()!==this.GIFT.code)return '알 수 없는 코드다.';
   if(lsGet(this.GIFT_DONE))return '이미 받은 코드다.';
-  lsSet(this.GIFT_DONE,'1');lsSet(this.GIFT_KEY,'1');
-  return '받았다. 다음 새 판을 시작할 때 가방에 들어간다: '+this.GIFT.items.map(([name,count])=>name+' '+count+'개').join(', ')+'.';
+  if(state?.duel)return '대전 중에는 받을 수 없다.';
+  const list=this.GIFT.items.map(([name,count])=>name+' '+count+'개').join(', '),live=!!state&&!state.dead&&!state.victory&&runState57()==='playing'&&!runIsEphemeral()&&!state.debugMapGeneration57;
+  lsSet(this.GIFT_DONE,'1');
+  // in a run, into the bag of this run now; with no run on, the things wait for the next one
+  if(live){this.deliverGift(false);return '받았다. 지금 판의 가방에 들어갔다: '+list+'.'}
+  lsSet(this.GIFT_KEY,'1');return '받았다. 지금 하는 판이 없어서 다음 새 판을 시작할 때 가방에 들어간다: '+list+'.';
  },
  // At the start of a new run: what the code gave goes into the starting chest, or into the bag when it is already open.
  claimGift(){
   if(!lsGet(this.GIFT_KEY)||!state||state.duel||runIsEphemeral()||state.debugMapGeneration57)return;
-  lsRemove(this.GIFT_KEY);
+  lsRemove(this.GIFT_KEY);this.deliverGift(true);
+ },
+ // The things of the code into the run on the screen: the starting chest while it is still shut (`toChest`), else the bag (what does not fit falls at the feet).
+ deliverGift(toChest){
   const items=this.GIFT.items.map(([name,count])=>{const source=itemPrototype(name)||[...Object.values(MINE_ITEMS105),...Object.values(MOUNTAIN_REWARDS105)].find(i=>i.name===name); // 보강부적 and 신비부적 are the mountain branches' own rewards (the stockade, the mine's last floor)
    if(!source)return null;const item=clone(source);item.count=count;return item}).filter(Boolean),chest=state.tutorialChest;
-  if(chest&&!chest.opened){chest.loot=[...(chest.loot||[]),...items];addLog('코드로 받은 것이 시작 상자에 들어 있다.');return}
-  for(const item of items)addInventoryItem(item);
-  addLog('코드로 받은 것을 얻었다.');
+  if(toChest&&chest&&!chest.opened){chest.loot=[...(chest.loot||[]),...items];addLog('코드로 받은 것이 시작 상자에 들어 있다.');return}
+  for(const item of items)addInventoryItem(item,{x:state.player.x,y:state.player.y});
+  addLog('코드로 받은 것을 얻었다.');updateAll();
  },
  rowsView(data){
   const table=this.el('table','statsRows'),head=table.createTHead().insertRow();
