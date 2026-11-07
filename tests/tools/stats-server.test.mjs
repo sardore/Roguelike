@@ -169,12 +169,15 @@ test('the secret of a device owns its player ID: the others get nothing', () => 
   assert.equal(s.ids().some((row) => row.includes(KEY_A)), false, 'only the hash is kept');
 });
 
-test('a ghost is locked to one duel; a second duel is refused until the lock runs out', () => {
+test('a ghost is locked to one duel; its owner takes back a lock nobody spoke in, and a lock that runs out frees itself', () => {
   const s = server();
   const a = dead(s, 'ABCD12', KEY_A, 'r1'), b = dead(s, 'WXYZ34', KEY_B, 'r1');
   assert.equal(lock(s, 'ABCD12', KEY_A, a, 'duel1').ok, true);
   assert.equal(lock(s, 'ABCD12', KEY_A, a, 'duel1').ok, true, 'the same duel may ask again');
-  assert.deepEqual(lock(s, 'ABCD12', KEY_A, a, 'duel2'), { ok: false, error: 'busy' });
+  assert.equal(lock(s, 'WXYZ34', KEY_B, b, 'duel1').ok, true, 'the other ghost of that duel');
+  // the owner asking again for another duel is no longer in the first one, which nobody spoke in: both locks are given back and the duel is void
+  assert.equal(lock(s, 'ABCD12', KEY_A, a, 'duel2').ok, true, 'a lock nobody spoke in is the owner\'s to take back');
+  assert.equal(statusOf(s, b), 'alive', 'and the other ghost of the voided duel is free');
   assert.deepEqual(lock(s, 'WXYZ34', KEY_A, b, 'duel1'), { ok: false, error: 'auth' });
   assert.deepEqual(lock(s, 'WXYZ34', KEY_B, a, 'duel1'), { ok: false, error: 'none' }, 'not the ghost of this player');
   assert.equal(statusOf(s, a), 'locked');

@@ -160,9 +160,10 @@ const Duel={
   card.type='button';card.dataset.ghost=row.id;
   chips.append(this.chip('깊이',row.floor+'층'),this.chip('레벨',row.level),this.chip('데스/현재',this.scoreNode(this.scoreOf(row.id,row.floor))));
   body.append(Spectate.el('b','duelName',this.className(row.cls)),Spectate.el('span','duelCause',`${row.floor}층에서 쓰러짐 · ${row.cause}`),chips);
-  const locked=row.status==='locked'; // in a duel (or one that ended without a word): the server frees it by itself after half an hour
-  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter',locked?'대전 중 · 최대 30분':'출전'));
-  if(locked){card.disabled=true;card.classList.add('locked')}else card.onclick=()=>this.choose(row);
+  // a ghost the server still shows as in a duel is the player's own, and the player is on this screen: not in a duel. It is never shut away here; the server
+  // gives the old lock back when the ghost is asked for (a duel with a word in it stays, and the refusal says so when the duel is made)
+  card.append(this.portrait(row.cls),body,Spectate.el('span','duelEnter','출전'));
+  card.onclick=()=>this.choose(row);
   return card;
  },
  confirmCard(){
@@ -258,6 +259,7 @@ const Duel={
    case 'status':this.applyStatus(payload);return true;
    case 'force':this.applyForce(payload);return true;
    case 'oddity':this.applyOddity(payload);return true;
+   case 'act':this.applyAct(payload);return true;
    case 'field':this.applyField(payload);return true;
    case 'terrain':this.applyTerrain(payload);return true;
    case 'tile':this.applyTile(payload);return true;
@@ -387,6 +389,21 @@ const Duel={
  },
  // The art that pulls furniture and throws it (괴변): the other page is told which pieces rose, to draw them flying at its player.
  sendOddity(pieces,form){if(!this.applying&&!this.environment)this.send({kind:'oddity',pieces,form})},
+ // What the other player used (a potion, a talisman, a martial art): the common command path sends it once (`duelActOf`), and it is shown here as one thing
+ // whatever it was: the name over the stand-in in the item's colour with a burst, and a bolt to the cell it was thrown or cast at. A concealed user shows nothing.
+ sendAct(act){if(act&&!this.applying&&!this.environment)this.send({kind:'act',...act})},
+ applyAct(act){
+  const stand=this.opponent();
+  if(!stand||!state?.duel||state.dead||this.reported)return; // it comes after the turn has passed (the command is finished), and changes nothing but what is drawn
+  const names=[...(Array.isArray(act.items)?act.items:[]).slice(0,4).map(i=>String(i?.name||'').slice(0,16)),act.art?String(act.art).slice(0,16):''].filter(Boolean);
+  if(!names.length)return;
+  if(act.hidden){addLog('상대 망령이 모습을 감추었다.');return}
+  addLog(`상대 망령: ${names.join(', ')}.`);
+  const first=act.items?.[0],color=/^#[0-9a-f]{6}$/i.test(first?.color||'')?first.color:act.art?'#9dcad4':'#d8c79b';
+  floatText(stand.x,stand.y,names.join(' · '),color,12);burst(stand.x,stand.y,color,16,1);impact(stand.x,stand.y,color,6);
+  const cell=act.cell&&Number.isFinite(act.cell.x)&&Number.isFinite(act.cell.y)?act.cell:null;
+  if(cell)projectileFX(stand.x,stand.y,Math.round(cell.x),Math.round(cell.y),color);
+ },
  applyOddity(msg){if(!state?.duel||state.dead||this.reported||this.turn!==this.other())return;oddityMirror(msg)},
  applyStatus(status){
   if(!state?.duel||state.dead||this.reported||!status.effect||!(status.turns>0)||this.turn!==this.other())return;
