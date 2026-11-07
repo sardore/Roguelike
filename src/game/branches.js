@@ -2100,7 +2100,7 @@ function effectCanAffect57(effect,target){return !!target&&target.hp>0&&(effect?
 
 
 function breakFurnitureTerrain57(x,y,weapon,options={}){
-  if(!state)return false;const t=state.map?.[y]?.[x],key=k(x,y),usedBed=options.cause==='bed-use'&&t===TT.BED,crush=usedBed||['rising-gate','wave'].includes(options.cause);
+  if(!state)return false;const t=state.map?.[y]?.[x],key=k(x,y),usedBed=options.cause==='bed-use'&&t===TT.BED,crush=usedBed||['rising-gate','wave','blast'].includes(options.cause);
   if(!crush&&state.terrainAttachment58?.[key]==='secret-wall')return !!globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,null)?.result;
   const mine=crush?mineState():null,tileFurniture=crush?terrainLayerCatalog58().overlays.has(t):isToolBreakableTerrain57(t),prop=crush&&(Object.hasOwn(state.branchTerrain105?.props||{},key)||state.branchTerrain105?.palace105?.props?.[key]?.tile===t),decor=crush&&(state.decor||[]).some(d=>d.x===x&&d.y===y),lamp=mine?.lanterns.some(l=>l.x===x&&l.y===y);
   if(!tileFurniture&&!prop&&!decor&&!lamp)return false;
@@ -2114,7 +2114,7 @@ function breakFurnitureTerrain57(x,y,weapon,options={}){
    if(mine)mine.lanterns=mine.lanterns.filter(l=>l.x!==x||l.y!==y);
    branchInvalidateTerrain(state.map,x,y);
   }
-  if(t!==TT.JAR)burst(x,y,'#a78357',10,.65);if(!usedBed)alertNearby(x,y,7);addLog(usedBed?'낡은 침상이 무너졌다. 다시 사용할 수 없다.':crush?(options.cause==='wave'?'창해의 파도에 가구가 부서졌다.':'솟아오르는 격벽에 가구가 부서졌다.'):`${weapon?.name||'도구'}로 가구를 철거했다.`);VisibilityService.compute();return true;
+  if(t!==TT.JAR)burst(x,y,'#a78357',10,.65);if(!usedBed)alertNearby(x,y,7);addLog(usedBed?'낡은 침상이 무너졌다. 다시 사용할 수 없다.':crush?(options.cause==='wave'?'창해의 파도에 가구가 부서졌다.':options.cause==='blast'?'폭발에 가구가 부서졌다.':'솟아오르는 격벽에 가구가 부서졌다.'):`${weapon?.name||'도구'}로 가구를 철거했다.`);VisibilityService.compute();return true;
 }
 function lineClear(x0,y0,x1,y1){return combatLineCheckR8(x0,y0,x1,y1,{units:false}).ok}
 function contextAction(){

@@ -631,6 +631,51 @@ export const scenarios = {
     return out;
   },
 
+  // What breaks by walking into it (a table, a screen, a hedge, bamboo) breaks by a blow too, and the blast talisman breaks the furniture in the 3x3 it explodes in.
+  async furnitureBreak(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4246 });
+    await startRun(s, 'strongman'); await s.tick(900);
+    out['furnitureBreak.attack'] = JSON.stringify(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), T = __MANRU_QA_VIS__.TT, p = st.player, res = {};
+      let spot = null;
+      for (let y = 4; y < st.map.length - 4 && !spot; y++) for (let x = 6; x < st.map[0].length - 8 && !spot; x++) if ([0, 1, 2, 3, 4].every((i) => st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+      p.x = spot.x; p.y = spot.y; p.facing = { x: 1, y: 0 };
+      for (const m of [...st.monsters]) m.hp = 0;
+      globalThis.__furnSpot = spot;
+      st.map[p.y][p.x + 1] = T.TABLE; __MANRU_QA_VIS__.compute();
+      const r = __MANRU_QA_UI__.dispatch({ type: 'ATTACK', args: [] });
+      res.table = { status: r.status, broken: st.map[p.y][p.x + 1] !== T.TABLE };
+      return res;
+    }));
+    await s.tick(900);
+    out['furnitureBreak.use'] = JSON.stringify(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), T = __MANRU_QA_VIS__.TT, p = st.player, spot = globalThis.__furnSpot;
+      const cells = [[0, 0], [1, 0], [0, 1], [-1, -1]].map(([dx, dy]) => [spot.x + 3 + dx, spot.y + dy]);
+      [T.TABLE, T.CRATE, T.SCREEN, T.BENCH].forEach((t, i) => { st.map[cells[i][1]][cells[i][0]] = t; });
+      __MANRU_QA_VIS__.compute();
+      globalThis.__furnCells = cells;
+      const idx = __MANRU_QA_BAL__.give('폭발부적');
+      const use = __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', args: [idx] });
+      return { status: use.status, furniture: cells.map(([x, y]) => st.map[y][x] !== T.FLOOR) };
+    }));
+    await s.tick(900);
+    out['furnitureBreak.blast'] = JSON.stringify(await s.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), T = __MANRU_QA_VIS__.TT, spot = globalThis.__furnSpot, cells = globalThis.__furnCells;
+      const r = __MANRU_QA_UI__.dispatch({ type: 'TARGET_CONFIRM', cell: { x: spot.x + 3, y: spot.y } });
+      return { status: r.status, left: cells.map(([x, y]) => st.map[y][x] !== T.FLOOR), log: st.log.slice(0, 4).some((l) => /가구/.test(l)) };
+    }));
+    {
+      const a = JSON.parse(out['furnitureBreak.attack']), u = JSON.parse(out['furnitureBreak.use']), b = JSON.parse(out['furnitureBreak.blast']);
+      if (a.table.status !== 'committed' || !a.table.broken) throw Error('furnitureBreak: a blow did not break the table ' + JSON.stringify(a));
+      if (u.status !== 'pending' || !u.furniture.every(Boolean)) throw Error('furnitureBreak: the blast test was not set up ' + JSON.stringify(u));
+      if (b.status !== 'committed' || b.left.some(Boolean) || !b.log) throw Error('furnitureBreak: the blast left furniture standing ' + JSON.stringify(b));
+    }
+    out['furnitureBreak.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    return out;
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });

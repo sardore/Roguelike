@@ -543,5 +543,9 @@
  "duelpicker.lockedCard": "2b59439cdbf819e02af5eb3dab2d07d9415b0fff",
  "duelfight.elementFx": "4537abcf119e9729234978f7c0bc9d030d3112a6",
  "attackFacing.flail": "c704a9e43bc7b5188d2b92fa325537414bfc8b3d",
- "attackFacing.flail.errors": "164374825086dc65cd5dc548c248f61328b5d668"
+ "attackFacing.flail.errors": "164374825086dc65cd5dc548c248f61328b5d668",
+ "furnitureBreak.attack": "083d85ab783000dc085ce04de245f459e182932d",
+ "furnitureBreak.use": "716a970c6107688c8d2f6d4f04849ad26db2fb3b",
+ "furnitureBreak.blast": "9ed7519b8ffc5d2aed53c00116e50cafd64ead94",
+ "furnitureBreak.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }
