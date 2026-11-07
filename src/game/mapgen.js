@@ -2532,6 +2532,7 @@ function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityServ
 function validatePlayerTransfer57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
   const cause=opts.cause||'teleport',policy=opts.policy||playerTransferPolicy57(cause)||{},p=state.player;
+  if(!opts.forced&&combatFieldBlocks57(x,y,{actor:p}))return{ok:false,reason:'sealing-ward'};
   if((opts.excludeOrigin??policy.excludeOrigin)&&x===p.x&&y===p.y)return{ok:false,reason:'origin'};
   if((opts.requireSeen??policy.seen)&&!state.seen?.has(k(x,y)))return{ok:false,reason:'unseen'};
   if((opts.requireSafe??policy.safe)&&!playerTransferLandingSafe57(x,y))return{ok:false,reason:'unsafe'};
@@ -2543,7 +2544,7 @@ function blinkTargetCells57(origin=state?.player,range=state?.player?.blinkLevel
   if(!state||!origin||range<=0)return[];const out=[],hazards=new Set([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].filter(Number.isFinite));
   for(const[dx,dy]of DIRS8)for(let dist=1;dist<=range;dist++){
     const x=origin.x+dx*dist,y=origin.y+dy*dist;if(x<0||y<0||x>=COLS||y>=ROWS)break;const t=state.map[y][x];if(blinkHardBlock(t))break;
-    const standable=!hazards.has(t)&&ReachabilityService.playerPassable(x,y)&&(!opts.ignoreOccupants?!OccupancyService.isOccupied(x,y):true);if(standable)out.push({x,y,dx,dy,dist,tile:t});if(t===TT.PORTAL)break;
+    const standable=!hazards.has(t)&&ReachabilityService.playerPassable(x,y)&&(!opts.ignoreOccupants?!OccupancyService.isOccupied(x,y):true);if(standable&&!combatFieldBlocks57(x,y,{actor:origin}))out.push({x,y,dx,dy,dist,tile:t});if(t===TT.PORTAL)break;
   }
   return origin===state.player&&!opts.allowTrap?out.filter(blinkLandingNotATrap(origin)):out;
 }
@@ -3172,6 +3173,7 @@ function movePlayer(dx,dy){
     const t=state.map[ny][nx];if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x:nx,y:ny};ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(t);
     if(!ReachabilityService.playerStepAllowed(p,nx,ny,{allowHazardEntry:!!kind})){ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[nx,ny,act]}).value;return}
     const discovery105=captureMovementDiscovery105();
+    if(t===TT.DOOR&&combatFieldBlocks57(nx,ny,{actor:p})){toast('봉인진 밖으로 나갈 수 없다.');ctx.result=false;return false}
     if(t===TT.DOOR){setTerrainTile58(state.map,nx,ny,TT.OPEN_DOOR);branchWarningDoor(nx,ny);doorFX(nx,ny);addLog('문을 밀어 열었다.')}
     const landing=resolvePlayerLanding57(nx,ny,{cause:'walk',discovery105});if(!landing.ok){ctx.result=false;return false}if(state.dead){ctx.result=true;return true}if(WorldTransition57.commit(act,moveTurnCost())){ctx.result=true;return true}if(state.map[ny][nx]===TT.STAIR)toast('다음 층으로 이어지는 문이다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true
   }finally{
@@ -3338,6 +3340,7 @@ const MOVE_HOOKS={pre:[blockWhileZooming,blockWhileModalOpen,blockWhileCooking,m
 function resolveOccupancyInteraction57(actor,target){
   if(!occupancySwapAllowed57(actor,target))return false;
   const ax=actor.x,ay=actor.y,tx=target.x,ty=target.y;
+  if(combatFieldBlocks57(tx,ty,{actor})||combatFieldBlocks57(ax,ay,{actor:target}))return false;
   OccupancyService.move(target,ax,ay);resolvePlayerLanding57(tx,ty,{cause:'ally-swap'});globalThis.__MANRU_HAZARD_CORE__?.standing?.(target,'ally-swap');return true
 }
   function qaPickupProgressKey23_60(){

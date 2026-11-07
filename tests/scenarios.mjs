@@ -749,6 +749,97 @@ export const scenarios = {
     } finally { await s.close(); }
   },
 
+  async sealingWard(browser, root) {
+    const out = {}, s = await openSession(browser, root, { seed: 1911 });
+    await startRun(s, 'wanderer');
+    try {
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+        st.floor = 12; st.monsters = []; st.items = []; st.tempFields = []; st.status = {}; st.jarGasFields57 = []; st.player.x = 30; st.player.y = 30;
+        st.player.hp = st.player.maxHp = st.player.baseMaxHpPermanent = 1000;
+        st.map = st.map.map(r => r.slice());
+        for (let y = 20; y <= 42; y++) for (let x = 20; x <= 44; x++) { st.map[y][x] = A.TT.FLOOR; st.seen.add(x + ',' + y); }
+        __MANRU_QA_VIS__.compute();
+      });
+      out['sealingWard.casters'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, ordinary = A.definitions.filter(m => m.sealingWard), legendary = __MANRU_LEGEND47__.mobCatalog().filter(m => m.sealingWard);
+        return [...ordinary, ...legendary].map(m => ({ name: m.name, size: m.sealingWard.radius * 2 + 1, duration: m.sealingWard.duration, cooldown: m.sealingWard.cooldown }));
+      }));
+      out['sealingWard.player'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), caster = A.place('비단 술래', { x: 35, y: 30 });
+        caster.alerted = true; A.special(caster, null, st.player); const warning = structuredClone(caster.intent61);
+        A.intent(caster); const prepared = !st.tempFields.length;
+        st.turn++; A.intent(caster); const ward = st.tempFields.find(f => f.kind === 'sealingWard');
+        const cells = ward?.cells.length, ttl = ward?.ttl; A.expire(); const bornNotSpent = ward.ttl === ttl;
+        const inside = A.land(31, 30, { cause: 'walk' }).ok;
+        const reasons = ['walk', 'blink', 'talisman-blink', 'fusion-blink', 'holy-blink'].map(cause => A.land(33, 30, { cause }).reason);
+        const transfer = A.transfer(33, 30, { cause: 'talisman-blink' }).reason;
+        const filtered = A.blinkCells(st.player, 5).every(q => q.x >= 28 && q.x <= 32 && q.y >= 28 && q.y <= 32);
+        const worldBlocked = !A.transition(), rawBlocked = !A.move(st.player, 33, 30), before = st.tempFields.length;
+        A.force(st.player, { x: 29, y: 30 }, 3, { mode: 'push', hostile: true });
+        return { warning: warning.type, prepared, cells, bornNotSpent, inside, reasons, transfer, filtered, worldBlocked, rawBlocked, before, forcedOutside: st.player.x > 32, removed: !st.tempFields.some(f => f.kind === 'sealingWard'), skills: A.skills(caster).map(s => s.id) };
+      }));
+      out['sealingWard.expiry'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), caster = st.monsters.find(m => m.name === '비단 술래');
+        A.move(st.player, 30, 30); caster.nextSealingWardTurn = 0; caster.intent61 = null;
+        A.special(caster, null, st.player); st.turn++; A.intent(caster);
+        const ttl = st.tempFields.find(f => f.kind === 'sealingWard').ttl, until = caster.nextSealingWardTurn;
+        for (let i = 0; i < ttl; i++) { st.turn++; A.expire(); }
+        const expired = !st.tempFields.some(f => f.kind === 'sealingWard');
+        A.special(caster, null, st.player); const cooling = caster.intent61?.type !== 'sealingWard' && until > st.turn;
+        caster.intent61 = null; st.turn = until; A.special(caster, null, st.player);
+        return { ttl, expired, cooling, rearmed: caster.intent61?.type === 'sealingWard' };
+      }));
+      out['sealingWard.evade'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), caster = st.monsters.find(m => m.name === '비단 술래');
+        const cells = structuredClone(caster.intent61.cells); A.land(34, 33, { cause: 'walk' }); st.turn++; A.intent(caster);
+        return { fixed: cells.every(c => c.x >= 28 && c.x <= 32 && c.y >= 28 && c.y <= 32), absent: !st.tempFields.some(f => f.kind === 'sealingWard') };
+      }));
+      out['sealingWard.monster'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+        for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+        A.move(st.player, 25, 25); const caster = A.place('신전 사제 망령', { x: 30, y: 30 }), victim = A.place('객잔 쥐', { x: 33, y: 30 });
+        caster.faction57 = 'player'; caster.friendly47 = true; caster.alerted = true;
+        A.special(caster, null, victim); st.turn++; A.intent(caster);
+        const cells = st.tempFields.find(f => f.kind === 'sealingWard')?.cells.length;
+        const blocked = !A.move(victim, 36, 30), internal = A.move(victim, 35, 30);
+        A.force(victim, { x: 34, y: 30 }, 2, { mode: 'push', hostile: true });
+        return { cells, blocked, internal, pushed: victim.x > 35, removed: !st.tempFields.some(f => f.kind === 'sealingWard') };
+      }));
+      out['sealingWard.save'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+        for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+        A.move(st.player, 30, 30); const caster = A.place('사당 주술시종', { x: 35, y: 30 }, { legendDungeon47: 'curse_blade', combatFloor: 12 });
+        caster.alerted = true; A.special(caster, null, st.player); st.turn++; A.intent(caster);
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('ward save/load failed');
+        const run = __MANRU_QA_UI__.state(), ward = run.tempFields.find(f => f.kind === 'sealingWard');
+        const restored = !!ward && ward.cells.length === 25 && A.land(33, 30, { cause: 'blink' }).reason === 'sealing-ward';
+        A.force(run.player, { x: 32, y: 30 }, 3, { mode: 'pull', hostile: true });
+        const pullInside = run.tempFields.some(f => f.kind === 'sealingWard');
+        A.force(run.player, { x: 37, y: 30 }, 4, { mode: 'pull', hostile: true });
+        return { restored, pullInside, pulledOut: run.player.x > 32, removed: !run.tempFields.some(f => f.kind === 'sealingWard') };
+      }));
+      out['sealingWard.hazard'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), caster = st.monsters.find(m => m.name === '사당 주술시종');
+        A.move(st.player, 30, 30); caster.nextSealingWardTurn = 0; caster.intent61 = null; caster.alerted = true;
+        A.special(caster, null, st.player); st.turn++; A.intent(caster);
+        A.land(32, 30, { cause: 'walk' }); st.map[30][33] = A.TT.WATER;
+        A.force(st.player, { x: 31, y: 30 }, 1, { mode: 'push', hostile: true });
+        return { survived: !st.dead, rescued: st.player.x === 32 && st.player.y === 30, removed: !st.tempFields.some(f => f.kind === 'sealingWard') };
+      }));
+      out['sealingWard.errors'] = JSON.stringify(s.errors);
+      const casters = JSON.parse(out['sealingWard.casters']), p = JSON.parse(out['sealingWard.player']), expiry = JSON.parse(out['sealingWard.expiry']), evade = JSON.parse(out['sealingWard.evade']), mon = JSON.parse(out['sealingWard.monster']), save = JSON.parse(out['sealingWard.save']);
+      if (casters.length !== 3 || casters.find(c => c.name === '신전 사제 망령').size !== 5 || casters.find(c => c.name === '비단 술래').size !== 5 || casters.some(c => c.cooldown <= c.duration)) throw Error('ward casters: ' + out['sealingWard.casters']);
+      if (p.warning !== 'sealingWard' || !p.prepared || p.cells !== 25 || !p.bornNotSpent || !p.inside || !p.reasons.every(r => r === 'sealing-ward') || p.transfer !== 'sealing-ward' || !p.filtered || !p.worldBlocked || !p.rawBlocked || !p.forcedOutside || !p.removed || !p.skills.includes('sealing-ward')) throw Error('ward player containment: ' + out['sealingWard.player']);
+      if (!expiry.expired || !expiry.cooling || !expiry.rearmed || !evade.fixed || !evade.absent) throw Error('ward timing: ' + JSON.stringify({ expiry, evade }));
+      if (mon.cells !== 25 || !mon.blocked || !mon.internal || !mon.pushed || !mon.removed) throw Error('ward monster containment: ' + out['sealingWard.monster']);
+      const hazard = JSON.parse(out['sealingWard.hazard']);
+      if (!hazard.survived || !hazard.rescued || !hazard.removed) throw Error('ward forced hazard rescue: ' + out['sealingWard.hazard']);
+      if (!save.restored || !save.pullInside || !save.pulledOut || !save.removed || s.errors.length) throw Error('ward persistence: ' + out['sealingWard.save'] + out['sealingWard.errors']);
+      return out;
+    } finally { await s.close(); }
+  },
+
   async motherSpider(browser, root) {
     const out = {}, s = await openSession(browser, root, { seed: 9021 });
     await startRun(s, 'wanderer');
