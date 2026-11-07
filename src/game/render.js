@@ -1659,6 +1659,12 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(const {x,y} of tempFieldCells57(f)){
       if(x<0||y<0||x>=COLS||y>=ROWS||!state.visible.has(k(x,y)))continue;
       const px=x*TILE,py=y*TILE,a=.13+.035*Math.sin(now/190+x+y);
+      if(f.kind==='sealingWard'){
+        X.fillStyle=`rgba(133,71,179,${a+.10})`;X.fillRect(px+1,py+1,30,30);
+        X.strokeStyle='#d2a9f0';X.lineWidth=2;
+        for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
+        X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
+      }
       if(f.kind==='steam'){X.fillStyle=`rgba(108,165,176,${a+.12})`;for(let i=0;i<3;i++){X.beginPath();X.ellipse(px+8+i*8,py+19-Math.sin(now/450+x+i)*3,7,5,0,0,Math.PI*2);X.fill()}}
       if(f.kind==='smoke'){const warning=f.martialSmoke&&f.smokeForm==='burst'&&f.ttl===1;X.fillStyle=warning?`rgba(205,49,41,${a+.18})`:`rgba(120,126,128,${a})`;X.fillRect(px+2,py+2,28,28);if(f.martialSmoke){X.strokeStyle=warning?'#e8765d':f.smokeForm==='cloud'?'#8ba9b9':'#979b9c';X.globalAlpha=.55;X.beginPath();X.arc(px+16,py+16,8+Math.sin(now/300+x)*2,0,Math.PI*1.7);X.stroke();X.globalAlpha=1}}
       else if(f.kind==='fire')drawFireFloor(X,px,py,TILE,x,y,now);

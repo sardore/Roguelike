@@ -2137,7 +2137,7 @@ function contextAction(){
 }
 function clone(o){return JSON.parse(JSON.stringify(o))}
 const WorldTransition57=Object.freeze({
- allowed(){return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
+ allowed(){if(state?.player&&combatFieldBlocks57(state.player.x,state.player.y,{actor:state.player,leaving:true})){toast('봉인진 안에서는 다른 구역으로 나갈 수 없다.');return false}return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
  portal(x,y,active,cause){
   const branch=state?.branchPortals105?.find(p=>p.x===x&&p.y===y),legend=state?.artifactDungeon46?state.artifactExit46:state?.artifactPortal46;
   const hasLegend=legend?.x===x&&legend?.y===y;if(!branch&&!hasLegend)return false;
@@ -2259,7 +2259,7 @@ function bumpTileAction(x,y,opts={}){
   // Folded-room portal interaction. Its destination is a new landing with an explicit portal cause.
   if(tile===TT.PORTAL&&!state.branchPortals105?.some(p=>p.x===x&&p.y===y)){
     const portalKey=k(x,y),link=state.portalLinks981?.[portalKey];
-    if(link){cancelAutoWalk?.();const landing=resolvePortalLanding57(link);if(!landing){addLog('접힌 문의 반대편 착지 공간이 막혀 이동하지 못했다.');toast('포탈 반대편에 안전한 착지점이 없다.');return true}burst(x,y,'#bf8fe8',14,.8);resolvePlayerLanding57(landing.x,landing.y,{cause:'portal',hazard:false});burst(state.player.x,state.player.y,'#8fd8e6',16,.9);VisibilityService.compute();addLog('접힌 문이 열리며 전혀 다른 내실로 이동했다.');state.discoveredPortals981=state.discoveredPortals981||{};const destPortalKey=k(link.destPortal.x,link.destPortal.y);state.discoveredPortals981[portalKey]=destPortalKey;return true;}
+    if(link){cancelAutoWalk?.();const landing=resolvePortalLanding57(link);if(!landing){addLog('접힌 문의 반대편 착지 공간이 막혀 이동하지 못했다.');toast('포탈 반대편에 안전한 착지점이 없다.');return true}burst(x,y,'#bf8fe8',14,.8);const result=resolvePlayerLanding57(landing.x,landing.y,{cause:'portal',hazard:false});if(!result.ok)return true;burst(state.player.x,state.player.y,'#8fd8e6',16,.9);VisibilityService.compute();addLog('접힌 문이 열리며 전혀 다른 내실로 이동했다.');state.discoveredPortals981=state.discoveredPortals981||{};const destPortalKey=k(link.destPortal.x,link.destPortal.y);state.discoveredPortals981[portalKey]=destPortalKey;return true;}
   }
   // Stations and deliberate containers remain walk-only interactions. Forced/teleport landing never opens a UI or loots a station for the player.
   if(active&&tile===TT.BRAZIER){openCooking('brazier');return true;}
@@ -2412,7 +2412,7 @@ function combatLineCheckR8(x0,y0,x1,y1,opts={}){
   const maxRange=Number.isFinite(opts.range)?opts.range:Infinity,dist=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));if(dist>maxRange)return{ok:false,reason:`사거리 밖 · ${dist}/${maxRange}칸`,dist};
   const cells=combatLineCellsR8(x0,y0,x1,y1);
   for(let i=0;i<cells.length;i++){const c=cells[i],last=i===cells.length-1;
-    if(combatFieldBlocksSight57(c.x,c.y))return{ok:false,reason:'연막이나 증기가 사선을 끊는다.',dist};if(!last&&tileBlocksSight(state.map[c.y]?.[c.x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};if(!last&&opts.units!==false){const block=findMonsterAt(c.x,c.y);if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block}}}
+    if(combatFieldBlocks57(c.x,c.y))return{ok:false,reason:'연막이나 증기가 사선을 끊는다.',dist};if(!last&&tileBlocksSight(state.map[c.y]?.[c.x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};if(!last&&opts.units!==false){const block=findMonsterAt(c.x,c.y);if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block}}}
   return{ok:true,dist,range:maxRange}
 }
 function safeLootGround42(x,y){

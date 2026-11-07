@@ -27,7 +27,7 @@ const MONSTERS=[
 
   // 3구역 유혹의 내실: 비단/거울/환각 중심.
   {min:11,max:15,name:'윈도',concept57:"문틈과 거울 뒤에 사람의 윤곽만 남기는 환영이다.",hp:17,atk:8,def:1,eva:5,xp:7,color:'#6f5e72',shape:'human',kind:'spirit',ambush:true},
-  {min:11,max:15,name:'비단 술래',concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:18,atk:6,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},
+  {min:11,max:15,name:'비단 술래',sealingWard:{species:'비단 술래',radius:2,duration:4,cooldown:9,range:6},concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:18,atk:6,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},
   {min:11,max:15,name:'환각의 향로',concept57:"불씨가 꺼지지 않는 향로 안에서 달큰한 연기가 샌다.",hp:21,atk:5,def:3,eva:0,xp:8,color:'#786377',shape:'mage',kind:'construct',fixed:true,gasStatus57:'drunk'},
   {min:12,max:15,name:'향기요정',hp:16,atk:5,def:1,eva:7,xp:8,color:'#a989b5',shape:'angel',kind:'spirit',waterTrail:true,roleDesc61:'지나간 바닥을 잠시 물길로 바꿔 퇴로와 동선을 꼬이게 만든다.',concept57:'향기를 흩뿌리며 떠다니는 작은 요정이다.'},
   {min:12,max:15,name:'분홍거미',concept57:"비단빛 배를 끌고 좁은 내실을 비집는 거대한 거미다.",silkTrapCount57:2,hp:36,atk:7,def:6,eva:2,xp:12,color:'#a26784',shape:'beast',kind:'beast',footprint:'x3',web:true,wallBreak:true},
@@ -55,7 +55,7 @@ const MONSTERS=[
   {min:21,max:25,name:'공허 가오리',concept57:"바닥 없는 공간을 물처럼 가르는 영물이다.",hp:40,atk:13,def:3,eva:8,xp:14,color:'#695d79',shape:'angel',kind:'spirit',flying:true,fast:true,knockback:true},
   {min:21,max:25,name:'만루의 수호상',concept57:"수없이 드나든 발자국을 내려다보던 돌 수호상이다.",guardPost57:true,hp:70,atk:14,def:10,eva:0,xp:18,color:'#aa9569',shape:'brute',kind:'construct',armorPierce:false,heavyHit57:true},
   {min:21,max:25,name:'천수 아수라',concept57:"겹겹의 팔이 서로 다른 박자로 움직이는 전투의 영체다.",hp:58,atk:14,def:6,eva:5,xp:18,color:'#8f7ab0',shape:'angel',kind:'spirit',multiAttack:true,asura47:true,asuraRadius47:3,asuraDuration47:5,asuraCooldown47:6,asuraRange47:9,enrage:true},
-  {min:22,max:25,name:'신전 사제 망령',concept57:"주인을 잃은 신전에서도 의식을 멈추지 않는 사제다.",hp:40,atk:12,def:4,eva:5,xp:16,color:'#8c7895',shape:'mage',kind:'undead',ranged:true,range:8,sealSkill:true},
+  {min:22,max:25,name:'신전 사제 망령',sealingWard:{species:'신전 사제 망령',radius:2,duration:4,cooldown:9,range:8},concept57:"주인을 잃은 신전에서도 의식을 멈추지 않는 사제다.",hp:40,atk:12,def:4,eva:5,xp:16,color:'#8c7895',shape:'mage',kind:'undead',ranged:true,range:8,sealSkill:true},
   {min:22,max:25,name:'차원 포식자',concept57:"공간의 어두운 틈에서 몸을 드러내는 포식자다.",hp:50,atk:16,def:5,eva:6,xp:18,color:'#6a445f',shape:'void',kind:'spirit',ambush:true,focusDrain:3},
   {min:23,max:25,name:'보주의 파수꾼',concept57:"황금빛 무장을 두른 만루보주의 최후 전열이다.",guardPost57:true,hp:76,atk:16,def:8,eva:3,xp:22,color:'#b19055',shape:'knight',kind:'spirit',knockback:true,enrage:true},
   {min:21,max:25,name:'금령',hp:32,atk:10,def:4,eva:3,xp:12,color:'#c6a85f',shape:'spirit',kind:'spirit',ranged:true,range:4,artillery:true,artilleryRange61:4,hungerDrain:8,flying:true,summonOnly57:true,concept57:'황금 제단의 기운이 뭉친 영체다.',roleDesc61:'4칸 안에서 3×3 폭발탄을 예고한다. 폭발이나 직접 공격에 맞으면 허기가 8 감소한다.'},

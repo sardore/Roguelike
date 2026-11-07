@@ -225,10 +225,11 @@ function playerDebuffRows(){
   if(s.weaken>0)rows.push({key:'weaken',label:'쇠약',turns:s.weaken,effect:'현재 ATK ×0.80 · DEF ×0.75 · EVA ×0.80'});
   if(s.stun>0)rows.push({key:'stun',label:'기절',turns:s.stun,effect:'다음 입력 행동권 상실 · 적 턴은 정상 진행'});
   if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:'현재 이동비용 ×1.45 · 공격비용 ×1.20'});
+  for(const f of state.tempFields||[])if(f.kind==='sealingWard'&&f.targetId==='player'&&f.ttl>0)rows.push({key:'sealingWard',color:'#c79ae4',label:'봉인진',turns:f.ttl,effect:'진 안 이동 가능 · 경계 밖 자발적 이동·점멸 불가 · 밀쳐져 나가면 해제'});
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
-  return rows.map(row=>({...row,color:STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
+  return rows.map(row=>({...row,color:row.color||STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
 }
 function cleanseStatuses(status=state?.status,limit=Infinity){const removed=[];for(const [name,meta]of Object.entries(STATUS_META57).sort((a,b)=>Number(!!b[1].lethal)-Number(!!a[1].lethal)))if(meta.harmful&&meta.cleanseable&&status?.[name]>0&&removed.length<limit){status[name]=0;removed.push(name)}return removed}
 function installMartialJar(actor){
@@ -375,8 +376,15 @@ function combatStatus(source,target,kind,turns){return combatTargetValid57(sourc
 function damageCombatTarget(source,target,amount,why,color='#e78372'){
  if(!combatTargetValid57(source,target))return 0;const dealt=damageEntity(target,Math.max(0,Math.round(amount)),source);if(dealt>0){floatText(target.x,target.y,'-'+dealt,color,15);impact(target.x,target.y,color,5);addLog(`${source.name} → ${target.name}: ${why} -${dealt} HP`);}if(target.hp<=0){if(target===state.player)die(why);else killMonster(target)}return dealt;
 }
-function expireCombatFields(){
- for(const f of [...state.tempFields]){if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);
+function expireCombatFields(opts={}){
+ for(const f of [...state.tempFields]){
+  if(f.kind==='sealingWard'){
+   const target=f.targetId==='player'?state.player:state.monsters.find(m=>m.combatantId54===f.targetId);
+   if(!target||target.hp<=0||!f.cells?.some(c=>c.x===target.x&&c.y===target.y))f.ttl=0;
+   if(opts.movement||state.turn<=f.bornTurn)continue;
+  }
+  if(opts.movement)continue;
+  if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);
 }
 function entityAttackMissChance(attacker,target,{base=.06,max=.42,evaScale=1,evaIgnore=0}={}){const blinded=combatStatusTurns(attacker,'blind')>0,eva=Math.max(0,Number(target?combatEntityStats(target).eva:0)||0),minChance=target===state?.player?0:base;return clamp(base+Math.max(0,eva-evaIgnore)*evaScale*.022+(blinded?STATUS_META57.blind.missPenalty57:0),minChance,max)}
 const MARTIAL_INFO={strong:{name:'강타',type:'active',cost:3,desc:'기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.'},roar:{name:'호효',type:'active',cost:5,desc:'충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.'},ghost:{name:'귀영',type:'active',cost:4,desc:'형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.'},brawl:{name:'격투',type:'passive',cost:0,desc:'맨손과 권갑의 공격력을 단계당 +1 높인다. 권갑은 기본 성능이 높지만 강화 효율이 매우 낮다.'},constitution:{name:'체력 단련',type:'passive',cost:0,desc:'강화할 때마다 최대 HP 약 8% 증가.'}};

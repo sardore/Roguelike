@@ -169,7 +169,7 @@ function movePlatform57(platform,dx,dy){
   state.terrainMutationVersion57=state.terrainMutationVersion57||{};
   for(const [key,tile]of tiles){const [x,y]=key.split(',').map(Number);setTerrainTile58(state.map,x,y,tile);state.terrainMutationSeq57=(state.terrainMutationSeq57||0)+1;state.terrainMutationVersion57[key]=state.terrainMutationSeq57}
   platform.x+=dx;platform.y+=dy;
-  for(const entity of riders){if(state.items.includes(entity))PlacementService.moveItem(entity,entity.x+dx,entity.y+dy);else OccupancyService.move(entity,entity.x+dx,entity.y+dy)}
+  for(const entity of riders){if(state.items.includes(entity))PlacementService.moveItem(entity,entity.x+dx,entity.y+dy);else OccupancyService.move(entity,entity.x+dx,entity.y+dy,{forced:true})}
   for(const entity of riders)if(!state.items.includes(entity))globalThis.__MANRU_HAZARD_CORE__?.standing?.(entity,'platform');
   if(riderSet.has(state.player)){resolvePlayerLanding57(state.player.x,state.player.y,{cause:'platform',hazard:false,resetVisual:true});addLog(state.branchContext105?.id==='palace'?'뗏목이 용궁 수원 사이로 미끄러진다.':'뗏목이 향수강을 따라 미끄러진다.')}
   return{ok:true,riders:riders.length,oldCells,newCells}
@@ -263,12 +263,14 @@ function resolvePlayerLanding57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,moved:false,reason:'bounds'};
   if(neutralInteractableAt58(x,y))return{ok:false,moved:false,reason:'neutral-occupant'};
   const p=state.player,origin=opts.origin||{x:p.x,y:p.y},cause=opts.cause||'walk',policy=playerTransferPolicy57(cause);
-  if(policy){const validation=validatePlayerTransfer57(x,y,{cause,policy});if(!validation.ok)return{ok:false,moved:false,reason:validation.reason,cause,x:p.x,y:p.y}}
+  const forced=!!opts.forced||cause==='forced-push'||cause==='forced-pull';
+  if(!forced&&combatFieldBlocks57(x,y,{actor:p})){toast('봉인진 밖으로 나갈 수 없다.');return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
+  if(policy){const validation=validatePlayerTransfer57(x,y,{cause,policy,forced});if(!validation.ok)return{ok:false,moved:false,reason:validation.reason,cause,x:p.x,y:p.y}}
   const discovery=opts.discovery105||captureMovementDiscovery105();
   const tile=state.map?.[y]?.[x],haz=globalThis.__MANRU_HAZARD_CORE__,kind=opts.hazard===false?null:haz?.kind?.(tile);
   let hazardResult=null;
-  if(kind)hazardResult=haz.resolve(p,tile,x,y,origin,{consumeTurn:false,forced:cause==='forced-push'||cause==='forced-pull',landingCause57:cause});
-  else{OccupancyService.move(p,x,y)}
+  if(kind)hazardResult=haz.resolve(p,tile,x,y,origin,{consumeTurn:false,forced,landingCause57:cause});
+  else{if(!OccupancyService.move(p,x,y,{forced}))return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
   if(['blink','talisman-blink','fusion-blink','holy-blink'].includes(cause)&&(p.x!==origin.x||p.y!==origin.y))markCombatBlink57(p);
   if(p.classState?.aimPower>0&&(p.x!==origin.x||p.y!==origin.y)){
     const agency=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);
@@ -336,7 +338,7 @@ function resolveForcedMovement57(entity,source,steps=1,opts={}){
           const out=haz.resolve?.(entity,t,q.x,q.y,before,{consumeTurn:false,forced:true,creditPlayer:opts.creditPlayer!==false});
           if(out){if(entity.x!==before.x||entity.y!==before.y){moved++;rememberVisualStep(q)}interrupted=out!=='adapted';advanced=true;break}
         }
-        if(PlacementService.monsterCanStand(entity,q.x,q.y)){OccupancyService.move(entity,q.x,q.y);moved++;rememberVisualStep(q);advanced=true;break}
+        if(PlacementService.monsterCanStand(entity,q.x,q.y)){OccupancyService.move(entity,q.x,q.y,{forced:true});moved++;rememberVisualStep(q);advanced=true;break}
       }
     }
     if(advanced&&!slid&&!entity.flying&&state.map[entity.y]?.[entity.x]===TT.ICE){slid=true;limit++;floatText(entity.x,entity.y,'미끄러짐','#88bdce',9)}
