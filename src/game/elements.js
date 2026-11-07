@@ -99,7 +99,9 @@ function revealEnvironmentalClue105(x,y,elem){
 }
 const ELEMENT_FX_COLORS105={fire:'#f18a32',water:'#42bfdb',ice:'#83d7eb',shock:'#edc451',earth:'#bb824c',grass:'#8abc4b',holy:'#e6bd68'};
 function elementAttackFx105(elem,cells,origin=null){
- if(!ELEMENT_FX_COLORS105[elem]||!state)return;const visible=elementCells105(0,0,0,cells).filter(q=>state.visible.has(k(q.x,q.y)));if(!visible.length)return;
+ if(!ELEMENT_FX_COLORS105[elem]||!state)return;
+ // the one place an element attack is drawn: in a duel the other player's page draws the same thing, whatever made it (a talisman, a bomb, a blow)
+ if(state.duel)Duel.sendElementFx(elem,elementCells105(0,0,0,cells).slice(0,81),origin);const visible=elementCells105(0,0,0,cells).filter(q=>state.visible.has(k(q.x,q.y)));if(!visible.length)return;
  const events=FX.elementAttacks105||(FX.elementAttacks105=[]);events.push({elem,cells:visible.slice(0,81),origin:origin?{x:origin.x,y:origin.y}:visible[0],start:performance.now(),life:880,map:state.map});if(events.length>24)events.splice(0,events.length-24);
 }
 function freezeWater105(x,y){
