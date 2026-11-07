@@ -47,7 +47,9 @@ body.title-class-mode #titleCorner{display:none}
 @keyframes spectateGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(255,224,140,.35))}50%{filter:drop-shadow(0 0 11px rgba(255,224,140,.95)) brightness(1.12)}}
 @media (prefers-reduced-motion:reduce){#titleCorner #spectateBtn{animation:none;filter:drop-shadow(0 0 8px rgba(255,224,140,.8))}}
 @media (max-width:480px){#titleCorner{top:16px;right:14px;gap:6px;flex-direction:column;align-items:flex-end}#rankBtn,#spectateBtn,#duelBtn{padding:5px 11px 5px 9px;letter-spacing:.14em}}
-#statsScene[data-mode=rank] .statsPanel{background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
+/* the board keeps one size whatever tab is open (a long list and a short one no longer change the panel): the list scrolls inside it */
+#statsScene[data-mode=rank] .statsPanel{display:flex;flex-direction:column;height:min(900px,calc(100dvh - 28px - var(--safe-top,0px) - var(--safe-bottom,0px)));background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
+#statsScene[data-mode=rank] #statsBody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 #statsScene[data-mode=rank] h2{background:linear-gradient(180deg,#fff0c4,#c9994a);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.4em;font-size:calc(17px * var(--ui-font-scale, 1))}
 .rankView{display:flex;flex-direction:column;gap:16px}
 .rankMine{position:relative;display:flex;align-items:center;gap:14px;margin-top:6px;padding:14px 16px;background:linear-gradient(100deg,rgba(166,111,52,.26),rgba(27,18,12,.92) 58%),#1b120c;border:1px solid #a66f34;box-shadow:inset 0 0 0 1px #000,inset 0 1px 0 rgba(255,226,160,.14),0 8px 22px #0009}
