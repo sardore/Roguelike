@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "fd2040b7c8634d79f7cbc4c7873bd7e07010ee26",
- "values.branch": "80c96e2b66b47b32ccb4bb4258b46d59f0cebe94",
+ "values.empty": "2f71896285a7e9ce231617dcfa355499332eb590",
+ "values.branch": "3a54d6e2ac3355661e84aeaf0d869bb31ac664f2",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -537,5 +537,7 @@
  "intentoffscreen.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "enchantglow.result": "dbe8250f9fcd96449276acc89c46fc9353be2645",
  "enchantglow.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
- "duelrules.known": "f4835f45c263d4b5fb90ba1671508cc9fedd575a"
+ "duelrules.known": "f4835f45c263d4b5fb90ba1671508cc9fedd575a",
+ "duelfight.actShown": "6643236eb2e9c2b0207e38d0fc979e7e38a25cd5",
+ "duelfight.ghostArt": "42480bafbd1425ca2229fdb99491115558a3c34d"
 }

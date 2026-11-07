@@ -622,7 +622,7 @@ const ActionDispatcher=Object.freeze({
     const type=command?.type,route=ACTION_ROUTES.get(type),special=['TARGET_MOVE','TARGET_CONFIRM','TARGET_CANCEL','QUICK_SLOT'].includes(type);
     if(state?.spectator)return{handled:true,attempted:false,committed:false,successful:false,status:'denied',reason:'spectator',timeCost:0,advancesWorld:false,value:false};
     if(!route&&!special)return{handled:false,attempted:false,committed:false,successful:false,status:'ignored',reason:'unknown-command',timeCost:0,advancesWorld:false,value:undefined};
-    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],duelItems=entry?.duel?duelItemCount():0,before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
+    const entry=state,parent=ACTION_AUDIT5.stack[ACTION_AUDIT5.stack.length-1],duelItems=entry?.duel?duelItemCount():0,duelBag=entry?.duel?duelBagSnapshot():null,before={turn:entry?.turn||0,floorTurn:entry?.floorTurn||0,agency:entry?.playerAgencyTurns57||0,run:entry?.runId984,floor:entry?.floor,x:entry?.player?.x,y:entry?.player?.y,hp:entry?.player?.hp,dead:!!entry?.dead,panels:activeGameplayPanels57().map(panel=>panel.id),item:type==='ITEM_USE'?state?.player?.inventory?.[command.args?.[0]??command.index]?.name:undefined};
     const result={id:++ACTION_AUDIT5.serial,parentId:parent?.result.id||null,command:type,source:command.source||'internal',handled:true,attempted:true,committed:false,successful:false,status:'attempted',reason:type,timeCost:0,advancesWorld:false,playerDied:false,lifecycleAborted:false,pending:false,turns:[],children:[],value:undefined};
     const frame={result,turns:result.turns,denial:null};if(!parent)ACTION_AUDIT5.roots++;ACTION_AUDIT5.stack.push(frame);
     let completed=false;
@@ -635,6 +635,7 @@ const ActionDispatcher=Object.freeze({
         else if(type==='CLOSE_DOOR')args=[command.quiet??false];
         else args=[];
       }
+      if(type==='MARTIAL')result.martialId=args[0];if(command.cell)result.cell=command.cell;
       if(route)result.value=route(...args);
       else if(type==='TARGET_CANCEL')result.value=dismissGameplayInput57();
       else if(type==='TARGET_MOVE')result.value=worldTargetDirection57(command.dx,command.dy);
@@ -663,6 +664,8 @@ const ActionDispatcher=Object.freeze({
       result.committed=!result.pending&&(frame.committed===true||result.advancesWorld||result.value===true||result.children.some(child=>child.committed));
       if(type==='TARGET_CANCEL')result.committed=false;
       result.successful=result.committed&&!frame.denial&&!result.playerDied&&!result.lifecycleAborted;
+      // and the other page is shown what it was (potion, talisman, martial art), once, from here
+      if(!parent&&duelBag&&result.committed&&!result.lifecycleAborted&&state?.duel)Duel.sendAct(duelActOf(duelBag,result));
       result.status=result.lifecycleAborted?'aborted':result.playerDied?'dead':frame.denial==='stun'?'denied':frame.denial?'blocked':result.pending?'pending':type==='TARGET_CANCEL'?'cancelled':result.committed?'committed':!result.attempted?'no-action':result.handled?'failed':'ignored';
       if(frame.denial)result.reason=frame.denial;
       if(!parent)PlayStats.logAction(type,command,result,frame.denial,before);
