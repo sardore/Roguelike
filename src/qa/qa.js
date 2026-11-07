@@ -862,6 +862,7 @@ globalThis.__MANRU_QA_FEATURES__={
 // Health is topped up before every action so the duel never ends in a death; the damage taken is summed per action (`realMax` is what the class really has).
 globalThis.__MANRU_QA_BAL__={
  placeAt(name,dx,dy){const p=state.player;return placeNamedMonster(name,{x:p.x+dx,y:p.y+dy},{provenance:'qa-bench'})},
+ give(name){addInventoryItem(clone(itemPrototype(name)));return state.player.inventory.findIndex(i=>i.name===name)},
  equip(name){const w=WEAPONS.find(v=>v.name===name);if(!w)return false;state.player.weapon={...w,count:1,identified:true};return true},
  spawnNear(name){const p=state.player;for(let d=2;d<=5;d++)for(const [ox,oy] of [[d,0],[-d,0],[0,d],[0,-d]])if(placeNamedMonster(name,{x:p.x+ox,y:p.y+oy},{provenance:'qa-bench'}))return true;return false},
  duel(name,combatFloor,cap=160){
