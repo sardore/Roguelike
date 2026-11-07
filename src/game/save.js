@@ -103,7 +103,6 @@ function afterNewRun(ctx){
   setupCameraForNewRun(ctx);
   initCursesForNewRun();
   Duel.claimWinnings();
-  PlayStats.claimGift();
   showGameScreenIfPlaying();
   normalizeAllItems();
 }
@@ -175,8 +174,10 @@ const RunLifecycle={
       if(ctx.aborted)throw Error('Lifecycle rejected at '+ctx.abortStage);
       ctx.result=core(...ctx.args);if(ctx.result===false)throw Error('Load initialization rejected');
       steps.after(ctx);
+      const gifts=PlayStats.claimGift();
       if(ctx.result===false||!state||state.dead||state.victory)throw Error('Candidate is not a playable run');RuntimeState.lifecycle.validate(state);
       const persistence=save.commit(kind);if(!persistence.ok)throw Error('Run persistence failed: '+persistence.failure);
+      if(gifts)lsRemove(PlayStats.GIFT_KEY);
       RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
     }catch(e){
       ctx.aborted=true;state=prior.state;COLS=prior.cols;ROWS=prior.rows;window.__MANRU_RUN_SEED984=prior.seed;RuntimeState.lifecycle.phase=prior.phase;RuntimeState.lifecycle.generation++;
