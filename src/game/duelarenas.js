@@ -292,6 +292,11 @@ function reviveGhost(player,ghost){
   // the blink is there from the start of a duel, two cells at least, whether or not the gatekeeper of 청풍루 fell in that run (a ghost that learned more keeps it)
   player.blinkLevel=Math.max(2,Math.floor(Number(player.blinkLevel))||0);
   initializeMartial(state);normalizeClassState58(player,0);
+  // everything is known in a duel: every potion and talisman has its name, every piece of gear (worn or in the bag) its curse and its enchantment
+  const K=globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();
+  for(const potion of window.MANRU_POTIONS||[])K.potionKnown[potion.potionKind]=true;
+  for(const talisman of window.MANRU_TALISMANS||[])K.talismanKnown[talisman.talismanKind]=true;
+  for(const item of player.inventory||[])if(item&&typeof item==='object')item.identified=true;
   for(const slot of GEAR_SLOT_TYPES)if(player[slot]){player[slot].identified=true;player[slot].curseImmune991=true}
 }
 // The other player's ghost, standing on the other start. With its saved character (`ghost`) it has that character's stats (worked out as the game works

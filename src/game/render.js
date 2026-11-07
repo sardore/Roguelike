@@ -1315,7 +1315,8 @@ function drawWorldLights(now=performance.now(),bounds=null){if(!state?.map||!sta
 }
 function drawItem(item){
   const impl=globalThis.__MANRU_DRAW_ITEM_IMPL_R7__;if(typeof impl==='function'){
-   const result=impl(item);if(item.charcoalBurn105?.lit){X.save();const now=performance.now(),x=item.x*TILE,y=item.y*TILE;for(let i=0;i<5;i++){X.globalAlpha=.55+.35*Math.sin(now/210+i*1.9+item.x);X.fillStyle=i%2?'#f59b35':'#ba4521';X.fillRect(x+10+i*3,y+16+i%3*3,2,1.5)}X.restore()}return result;
+   X.save();const glow=enchantColor(item);if(glow){X.shadowColor=glow;X.shadowBlur=9} // an enchanted item on the floor shines too
+   const result=impl(item);X.restore();if(item.charcoalBurn105?.lit){X.save();const now=performance.now(),x=item.x*TILE,y=item.y*TILE;for(let i=0;i<5;i++){X.globalAlpha=.55+.35*Math.sin(now/210+i*1.9+item.x);X.fillStyle=i%2?'#f59b35':'#ba4521';X.fillRect(x+10+i*3,y+16+i%3*3,2,1.5)}X.restore()}return result;
   }
   // Bootstrap fallback only; R7 is installed before a run can start.
   const px=item.x*TILE,py=item.y*TILE,col=rarityColor(item.rarity),dark=colorShift(col,-75),light=colorShift(col,45),spark=(Math.floor(performance.now()/360)+item.x+item.y)%5===0;

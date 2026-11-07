@@ -1625,7 +1625,7 @@ export const scenarios = {
       await startRun(s, 'swordsman');
       const r = await s.page.evaluate(() => globalThis.__MANRU_QA_ENCHANT__.probe());
       out['enchantglow.result'] = JSON.stringify(r);
-      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || !r.brandSlot || r.plainSlot || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
+      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || !r.brandSlot || r.plainSlot || !r.iconGlow || r.plainIcon || !r.equipIcon || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
       out['enchantglow.errors'] = JSON.stringify(s.errors);
     } finally { await s.close(); }
     return out;
@@ -1740,6 +1740,10 @@ export const scenarios = {
       const hurt = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageVs(2, 'archer'); Q.api.reported = false; Q.cloudProbe(100); const hp = Q.fight().hp, before = Q.statusOf().poison; Q.spend(1); return { hp, after: Q.fight().hp, poison: [before, Q.statusOf().poison] }; });
       out['duelrules.mistHurts'] = JSON.stringify(hurt);
       if (!(hurt.after < hurt.hp) || !(hurt.poison[1] > hurt.poison[0])) throw Error('duelrules: the mist did not hurt ' + JSON.stringify(hurt));
+      // a duel is fought with everything known: all potions and talismans named, all gear identified
+      const known = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageWithPotions(2); return globalThis.__MANRU_QA_KNOWN__.probe(); });
+      out['duelrules.known'] = JSON.stringify(known);
+      if (known.potions[0] !== known.potions[1] || known.talismans[0] !== known.talismans[1] || !known.bagIdentified || !known.gear || !known.potions[1]) throw Error('duelrules: not everything is known ' + JSON.stringify(known));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);
