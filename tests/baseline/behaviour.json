@@ -547,5 +547,9 @@
  "furnitureBreak.attack": "083d85ab783000dc085ce04de245f459e182932d",
  "furnitureBreak.use": "716a970c6107688c8d2f6d4f04849ad26db2fb3b",
  "furnitureBreak.blast": "9ed7519b8ffc5d2aed53c00116e50cafd64ead94",
- "furnitureBreak.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "furnitureBreak.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "blinkTrap.pocket": "901d89b5d9519a6439d5e764af986f0113f3b76f",
+ "blinkTrap.errors.pocket": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "blinkTrap.ground": "b8a99ea80782593031d614f886fb2e8916a85b42",
+ "blinkTrap.errors.ground": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

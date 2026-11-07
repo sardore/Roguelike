@@ -2545,7 +2545,18 @@ function blinkTargetCells57(origin=state?.player,range=state?.player?.blinkLevel
     const x=origin.x+dx*dist,y=origin.y+dy*dist;if(x<0||y<0||x>=COLS||y>=ROWS)break;const t=state.map[y][x];if(blinkHardBlock(t))break;
     const standable=!hazards.has(t)&&ReachabilityService.playerPassable(x,y)&&(!opts.ignoreOccupants?!OccupancyService.isOccupied(x,y):true);if(standable)out.push({x,y,dx,dy,dist,tile:t});if(t===TT.PORTAL)break;
   }
-  return out;
+  return origin===state.player&&!opts.allowTrap?out.filter(blinkLandingNotATrap(origin)):out;
+}
+// A blink may cross what walking cannot, but never into a pocket the player could not walk out of: a landing is allowed when it is on the ground the player already
+// walks (the way back is the way there), or when walking from it reaches the way out of the floor (the stairs, a portal, the start). A cell cut off by water or a
+// cliff, entered by blink, was a grave (docs/ghost: the run ended on it).
+function blinkLandingNotATrap(origin){
+  const walk={unlock:true,ignoreOccupants:true},home=ReachabilityService.playerSearch(origin,walk).cells,anchors=[state.stairs,state.fixedStart,state.fixedExit,...(state.branchPortals105||[])].filter(q=>q&&Number.isFinite(q.x)&&Number.isFinite(q.y)),verdict=new Map();
+  return q=>{
+    const key=k(q.x,q.y);if(home.has(key))return true;
+    if(!verdict.has(key)){const cells=ReachabilityService.playerSearch(q,walk).cells,ok=anchors.some(a=>cells.has(k(a.x,a.y)));for(const c of cells)verdict.set(c,ok)}
+    return verdict.get(key)===true;
+  };
 }
 function selectCoreDestination54(owner=null,target=state.player){
  const p=target||owner,search=p===state.player?ReachabilityService.playerSearch(p,{ignoreOccupants:true,projectHazards:true,blinkBudget:Math.floor((p.focus||0)/2),blinkRange:state.status.skillSeal>0?0:p.blinkLevel||0}):null,candidates=[];
