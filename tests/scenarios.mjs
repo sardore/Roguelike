@@ -1617,6 +1617,20 @@ export const scenarios = {
   // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
   // the score; a duel run is never saved or sent to the statistics.
   // A monster that is out of sight, and has marked a cell that is in sight: the mark is drawn (it was drawn only while the monster itself was seen).
+  // An enchanted weapon or armor glows in the colour of its element: in the side panel, on the slot in the bag, and (through the sprite key) on the held weapon.
+  async enchantglow(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 7 });
+    try {
+      await startRun(s, 'swordsman');
+      const r = await s.page.evaluate(() => globalThis.__MANRU_QA_ENCHANT__.probe());
+      out['enchantglow.result'] = JSON.stringify(r);
+      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || !r.brandSlot || r.plainSlot || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
+      out['enchantglow.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   async intentoffscreen(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 7 });

@@ -944,6 +944,18 @@ globalThis.__MANRU_QA_ODDITY__={
 };
 
 // The ghost duel's first part (the `duel` scenario): matching and passing payloads over the relay.
+globalThis.__MANRU_QA_ENCHANT__={
+  probe:()=>{
+    const p=state.player,keyBefore=gearKey1004(p),plain=p.weapon;
+    p.weapon={...(p.weapon||WEAPONS[0]),elementBrand74:'fire'};p.armor={...(p.armor||ARMORS[0]),elementGuard74:'water'};updatePanels();
+    const text=id=>document.getElementById(id)?.style.textShadow||'';
+    const branded={...WEAPONS[0],type:'weapon',elementBrand74:'shock',identified:true},plainItem={...WEAPONS[1],type:'weapon',identified:true};
+    p.inventory.push(branded,plainItem);openInventory();gearIdentityInventory();
+    const slots=[...document.querySelectorAll('#inventory [data-invslot]')],slot=n=>slots.find(el=>+el.dataset.invslot===p.inventory.indexOf(n));
+    const out={weaponGlow:text('weaponTxt'),armorGlow:text('armorTxt'),cloakGlow:text('cloakTxt'),keyChanged:gearKey1004(p)!==keyBefore,brandSlot:slot(branded)?.style.boxShadow||'',plainSlot:slot(plainItem)?.style.boxShadow||'',colors:[enchantColor(p.weapon),enchantColor(p.armor),enchantColor(plainItem)]};
+    p.weapon=plain;return out;
+  }
+};
 globalThis.__MANRU_QA_INTENT__={
   // a monster that is out of sight marks a cell that is in sight: how much does the picture of that cell change?
   offscreen:()=>{
