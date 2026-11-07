@@ -225,7 +225,7 @@ function playerDebuffRows(){
   if(s.weaken>0)rows.push({key:'weaken',label:'쇠약',turns:s.weaken,effect:'현재 ATK ×0.80 · DEF ×0.75 · EVA ×0.80'});
   if(s.stun>0)rows.push({key:'stun',label:'기절',turns:s.stun,effect:'다음 입력 행동권 상실 · 적 턴은 정상 진행'});
   if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:'현재 이동비용 ×1.45 · 공격비용 ×1.20'});
-  if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타'});
+  if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
   return rows.map(row=>({...row,color:STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
@@ -598,6 +598,7 @@ function applyMonsterAttackStatus57(mon,target,context={}){
   let hits;if(target===state.player)hits=mon.infectionHits57=(mon.infectionHits57||0)+1;else{const id=combatantId(target),counts=mon.infectionTargets105||(mon.infectionTargets105={});hits=counts[id]=(counts[id]||0)+1;}
   if(hits>=mon.infectionHitsRequired57)applyCombatStatus(target,'illness',27,1,{...opts,log:'창고 쥐의 감염이 깊어졌다. 해독산이나 정화가 필요하다.'});
  }
+ if(mon.sting&&context.delivery==='ranged')for(const[key,turns]of Object.entries(mon.sting))applyCombatStatus(target,key,turns,1,opts);
  if(mon.poison)applyCombatStatus(target,'poison',4,.32,opts);
  if(mon.bleed)applyCombatStatus(target,'bleed',4,.34,opts);
  if(mon.web)applyCombatStatus(target,'stun',1,.30,{...opts,stagger:true});

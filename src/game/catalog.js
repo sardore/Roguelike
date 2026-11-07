@@ -22,6 +22,9 @@ const MONSTERS=[
   {min:7,max:10,name:'정원 바위괴물',hp:42,atk:8,def:9,eva:0,xp:13,color:'#74796d',shape:'brute',kind:'construct',heavyHit57:true,knockback:true,concept57:'느리지만 단단한 바위괴물이다.'},
   {min:6,max:10,name:'식인 물고기',hp:13,atk:10,def:0,eva:5,xp:7,color:'#688b91',shape:'beast',kind:'beast',aquatic:true,fixed:true,waterOnly57:true,fishDrop:true,concept57:'물을 벗어나지 못하는 식인 물고기다.'},
 
+  {min:9,max:9,name:'어미거미',hp:40,atk:3,def:3,eva:1,xp:14,color:'#639447',shape:'beast',kind:'beast',footprint:'x3',spriteScale:2.1,ranged:true,range:6,spawnWeight:3,poisonImmune57:true,sting:{poison:4,drunk:4},deathBrood:{species:'독거미',count:8,gasTurns:6,gasRadius:2},concept57:'독을 품은 거대한 녹색 거미. 낮은 위력의 독침으로 중독과 취함을 일으키며, 죽으면 독가스 속에서 새끼들이 쏟아진다.'},
+  {min:9,max:9,name:'독거미',hp:12,atk:5,def:1,eva:6,xp:0,color:'#82ac4c',shape:'beast',kind:'beast',summonOnly57:true,spriteScale:.85,poison:true,poisonImmune57:true,leap:{range:3,cooldown:4},concept57:'어미거미에게서 쏟아진 작은 녹색 독거미. 한 칸을 차지하며 낮은 장애물을 뛰어넘는다.'},
+
   // 3구역 유혹의 내실: 비단/거울/환각 중심.
   {min:11,max:15,name:'윈도',concept57:"문틈과 거울 뒤에 사람의 윤곽만 남기는 환영이다.",hp:17,atk:8,def:1,eva:5,xp:7,color:'#6f5e72',shape:'human',kind:'spirit',ambush:true},
   {min:11,max:15,name:'비단 술래',concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:18,atk:6,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},

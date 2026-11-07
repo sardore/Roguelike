@@ -749,6 +749,147 @@ export const scenarios = {
     } finally { await s.close(); }
   },
 
+  async motherSpider(browser, root) {
+    const out = {}, s = await openSession(browser, root, { seed: 9021 });
+    await startRun(s, 'wanderer');
+    try {
+      out['motherSpider.status'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), names = ['등명부', '강화부적', '성부', '폭발부적', '감정부적'];
+        st.monsters = []; st.status.drunk = 5;
+        const turn = st.turn, rows = names.map(name => {
+          const index = __MANRU_QA_BAL__.give(name), item = st.player.inventory[index], count = item.count;
+          const result = __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index });
+          return { name, refused: result.status !== 'committed', kept: item.count === count && st.player.inventory.includes(item) };
+        });
+        const refused = A.canAct('item', { talisman: true }).reason === 'drunk';
+        const noTalismanTurn = st.turn === turn, index = __MANRU_QA_BAL__.give('소회복 비약'); st.player.hp = 1;
+        const potion = __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index });
+        return { rows, refused, noTalismanTurn, potion: potion.status === 'committed', healed: st.player.hp > 1 };
+      }));
+      await s.tick(600);
+      // Use a roomy, flat region away from the tutorial for deterministic placement and obstacle tests.
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state();
+        st.floor = 9; st.status = {}; st.monsters = []; st.items = []; st.jarGasFields57 = []; st.player.x = 30; st.player.y = 30;
+        st.player.hp = st.player.maxHp = st.player.baseMaxHpPermanent = 10000;
+        for (let y = 20; y <= 40; y++) for (let x = 20; x <= 45; x++) st.map[y][x] = A.TT.FLOOR;
+        A.occupancy.beginShared(); A.occupancy.endShared(); __MANRU_QA_VIS__.compute();
+      });
+      out['motherSpider.definition'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = A.definitions.find(m => m.name === '어미거미'), child = A.definitions.find(m => m.name === '독거미'), floors = {};
+        for (const f of [8, 9, 10]) { st.floor = f; floors[f] = A.eligible().some(m => m.name === mother.name); }
+        st.floor = 9;
+        return { floors, weight: A.weight(mother), childNatural: A.eligible().some(m => m.name === child.name), motherBody: A.body(mother).length, childBody: A.body(child).length };
+      }));
+      out['motherSpider.sting'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = A.place('어미거미', { x: 35, y: 30 }, { combatFloor: 9 });
+        if (!mother) throw Error('mother placement failed');
+        for (let n = 0; n < 30 && !(st.status.poison > 0 && st.status.drunk > 0); n++) A.attack(mother, 0, { target: st.player, delivery: 'ranged', projectile: true, range: 6 });
+        return { poison: st.status.poison > 0, drunk: st.status.drunk > 0, skills: A.skills(mother).map(s => s.id) };
+      }));
+      out['motherSpider.death'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = st.monsters.find(m => m.name === '어미거미');
+        mother.hp = 0; A.kill(mother);
+        const children = st.monsters.filter(m => m.name === '독거미'), gas = st.jarGasFields57.find(f => f.status57 === 'poison');
+        A.kill(mother);
+        return { children: children.length, afterRepeatedKill: st.monsters.filter(m => m.name === '독거미').length, gas: !!gas, gasTurns: gas?.duration57, oneCell: children.every(m => A.body(m).length === 1), immune: children.every(m => A.poisonImmune(m)), traits: children.every(m => !!m.leap), skills: A.skills(children[0]).map(s => s.id) };
+      }));
+      out['motherSpider.restore'] = JSON.stringify(await s.page.evaluate(() => {
+        const st = __MANRU_QA_UI__.state(), before = st.monsters.filter(m => m.name === '독거미').length;
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('brood save/load failed');
+        const restored = __MANRU_QA_UI__.state(), children = restored.monsters.filter(m => m.name === '독거미');
+        return { before, after: children.length, traits: children.every(m => m.leap?.range === 3 && m.poison), gas: restored.jarGasFields57.some(f => f.status57 === 'poison') };
+      }));
+      out['motherSpider.leap'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state();
+        for (const mon of [...st.monsters]) A.occupancy.removeMonster(mon);
+        st.status = {}; st.jarGasFields57 = []; st.player.x = 34; st.player.y = 30;
+        const mon = A.place('독거미', { x: 30, y: 30 }, { combatFloor: 9 }); mon.alerted = true;
+        // Keep the landing safe while a low obstacle occupies the path.
+        st.map[30][31] = A.TT.CRATE;
+        const armed = A.special(mon, null, st.player), intent = structuredClone(mon.intent61), before = { x: mon.x, y: mon.y };
+        if (!intent) throw Error('leap did not arm');
+        A.intent(mon); const waited = mon.x === before.x && mon.y === before.y;
+        st.turn++; A.intent(mon); const landed = mon.x === intent.cells[0].x && mon.y === intent.cells[0].y;
+        const cooldown = !A.special(mon, null, st.player), destination = { x: mon.x, y: mon.y };
+        // A newly occupied landing cancels rather than overlapping another actor.
+        A.occupancy.move(mon, 30, 30); mon.nextLeapTurn = 0; st.map[30][31] = A.TT.FLOOR;
+        A.special(mon, null, st.player); const blockedIntent = structuredClone(mon.intent61);
+        const blocker = A.place('객잔 쥐', blockedIntent.cells[0], { combatFloor: 9 });
+        st.turn++; A.intent(mon); const occupiedRefused = mon.x === 30 && mon.y === 30;
+        A.occupancy.removeMonster(blocker);
+        // A solid wall across every possible path cannot be jumped.
+        mon.nextLeapTurn = 0; for (let y = 26; y <= 34; y++) st.map[y][31] = A.TT.WALL;
+        const wallRefused = !A.special(mon, null, st.player);
+        for (let y = 26; y <= 34; y++) st.map[y][31] = A.TT.DOOR;
+        const doorRefused = !A.special(mon, null, st.player);
+        return { armed, waited, landed, cooldown, occupiedRefused, wallRefused, doorRefused, destination };
+      }));
+      out['motherSpider.leapLoad'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state();
+        for (const mon of [...st.monsters]) A.occupancy.removeMonster(mon);
+        for (let y = 26; y <= 34; y++) for (let x = 28; x <= 36; x++) st.map[y][x] = A.TT.FLOOR;
+        const mon = A.place('독거미', { x: 30, y: 30 }, { combatFloor: 9 }); mon.alerted = true;
+        if (!A.special(mon, null, st.player)) throw Error('saved leap did not arm');
+        const landing = structuredClone(mon.intent61.cells[0]);
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('armed leap save/load failed');
+        const run = __MANRU_QA_UI__.state(), restored = run.monsters.find(m => m.name === '독거미');
+        const preserved = restored.intent61?.type === 'leap'; run.turn++; A.intent(restored);
+        return { preserved, landed: restored.x === landing.x && restored.y === landing.y };
+      }));
+      await s.tick(600);
+      out['motherSpider.confirm'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state();
+        st.status = {}; st.knowledge56.talismanKnown.blast = true;
+        const index = __MANRU_QA_BAL__.give('폭발부적'), item = st.player.inventory[index];
+        __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index });
+        st.status.drunk = 4; const count = item.count, turn = st.turn;
+        const refused = A.cast(st.player.x, st.player.y) === false;
+        return { refused, kept: item.count === count && st.player.inventory.includes(item), noTurn: st.turn === turn };
+      }));
+      await s.page.keyboard.press('Escape'); await s.tick(400);
+      out['motherSpider.generation'] = JSON.stringify(await s.page.evaluate(() => {
+        const rows = [];
+        for (const seed of [221, 222, 223, 224]) {
+          __reseed(seed); __MANRU_RELEASE__.regen(9);
+          const st = __MANRU_QA_UI__.state();
+          rows.push({ seed, mothers: st.monsters.filter(m => m.name === '어미거미').length, naturalChildren: st.monsters.filter(m => m.name === '독거미').length });
+        }
+        return rows;
+      }));
+      out['motherSpider.crowded'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state();
+        for (const mon of [...st.monsters]) A.occupancy.removeMonster(mon);
+        st.jarGasFields57 = []; st.player.x = 25; st.player.y = 25;
+        for (let y = 25; y <= 38; y++) for (let x = 25; x <= 38; x++) st.map[y][x] = A.TT.FLOOR;
+        const mother = A.place('어미거미', { x: 32, y: 32 }, { combatFloor: 9 });
+        mother.faction57 = 'player'; mother.friendly47 = true;
+        const body = new Set(A.body(mother).map(([dx, dy]) => (mother.x + dx) + ',' + (mother.y + dy)));
+        for (let y = 29; y <= 35; y++) for (let x = 29; x <= 35; x++) st.map[y][x] = body.has(x + ',' + y) ? A.TT.FLOOR : A.TT.WALL;
+        mother.hp = 0; A.kill(mother);
+        const children = st.monsters.filter(m => m.name === '독거미');
+        return { count: children.length, useVacatedBody: children.every(m => body.has(m.x + ',' + m.y)), allied: children.every(m => m.faction57 === 'player'), distinct: new Set(children.map(m => m.x + ',' + m.y)).size === children.length };
+      }));
+      out['motherSpider.errors'] = JSON.stringify(s.errors);
+      const status = JSON.parse(out['motherSpider.status']), def = JSON.parse(out['motherSpider.definition']), sting = JSON.parse(out['motherSpider.sting']), death = JSON.parse(out['motherSpider.death']), restored = JSON.parse(out['motherSpider.restore']), leap = JSON.parse(out['motherSpider.leap']);
+      if (!status.rows.every(r => r.refused && r.kept) || !status.refused || !status.noTalismanTurn || !status.potion || !status.healed) throw Error('drunk talisman gate: ' + out['motherSpider.status']);
+      if (def.floors[8] || !def.floors[9] || def.floors[10] || def.weight !== 3 || def.childNatural || def.motherBody <= 1 || def.childBody !== 1) throw Error('brood definitions: ' + out['motherSpider.definition']);
+      if (!sting.poison || !sting.drunk || !sting.skills.includes('sting') || !sting.skills.includes('brood')) throw Error('mother sting: ' + out['motherSpider.sting']);
+      if (death.children !== 8 || death.afterRepeatedKill !== 8 || !death.gas || death.gasTurns !== 6 || !death.oneCell || !death.immune || !death.traits || !death.skills.includes('leap')) throw Error('brood death: ' + out['motherSpider.death']);
+      if (restored.before !== restored.after || !restored.traits || !restored.gas) throw Error('brood persistence: ' + out['motherSpider.restore']);
+      if (!['armed', 'waited', 'landed', 'cooldown', 'occupiedRefused', 'wallRefused', 'doorRefused'].every(k => leap[k])) throw Error('brood leap: ' + out['motherSpider.leap']);
+      const leapLoad = JSON.parse(out['motherSpider.leapLoad']);
+      if (!leapLoad.preserved || !leapLoad.landed) throw Error('armed leap persistence: ' + out['motherSpider.leapLoad']);
+      const confirm = JSON.parse(out['motherSpider.confirm']), generation = JSON.parse(out['motherSpider.generation']);
+      if (!confirm.refused || !confirm.kept || !confirm.noTurn) throw Error('drunk target confirmation: ' + out['motherSpider.confirm']);
+      if (generation.reduce((n, r) => n + r.mothers, 0) < 4 || generation.some(r => r.naturalChildren)) throw Error('brood spawn frequency: ' + out['motherSpider.generation']);
+      const crowded = JSON.parse(out['motherSpider.crowded']);
+      if (crowded.count !== 5 || !crowded.useVacatedBody || !crowded.allied || !crowded.distinct) throw Error('crowded brood placement: ' + out['motherSpider.crowded']);
+      if (s.errors.length) throw Error('brood browser errors: ' + out['motherSpider.errors']);
+      return out;
+    } finally { await s.close(); }
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });

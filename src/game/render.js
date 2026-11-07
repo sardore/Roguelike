@@ -229,11 +229,11 @@ function forcedMotionSample(m,now=performance.now()){
   for(const seg of m.segments){
     if(distance>seg.end)continue;
     const t=seg.length>0?(distance-seg.start)/seg.length:1;
-    return{x:seg.a.x+(seg.b.x-seg.a.x)*t,y:seg.a.y+(seg.b.y-seg.a.y)*t,done:false,progress:u};
+    return{x:seg.a.x+(seg.b.x-seg.a.x)*t,y:seg.a.y+(seg.b.y-seg.a.y)*t-Math.sin(Math.PI*u)*(m.arc||0),done:false,progress:u};
   }
   return{x:last.x,y:last.y,done:false,progress:u};
 }
-function beginForcedMotion(entity,points,now=performance.now()){
+function beginForcedMotion(entity,points,now=performance.now(),opts={}){
   if(!state||!entity||!points?.length)return false;
   const player=entity===state.player;let visual=null,start;
   if(player){
@@ -248,7 +248,7 @@ function beginForcedMotion(entity,points,now=performance.now()){
   const segments=[];let length=0;
   for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],segment=Math.hypot(b.x-a.x,b.y-a.y);if(segment<=.0001)continue;segments.push({a,b,length:segment,start:length,end:length+segment});length+=segment}
   if(!segments.length)return false;
-  const rate=Math.max(.5,automationPresentationRate70()),duration=Math.max(110,length*FORCED_MOTION_TILE_MS)/rate,motion={points:path,segments,length,start:now,duration};
+  const rate=Math.max(.5,automationPresentationRate70()),duration=Math.max(110,length*FORCED_MOTION_TILE_MS)/rate,motion={points:path,segments,length,start:now,duration,arc:opts.arc||0};
   if(player)VIS.forced105=motion;else{const v=MON_VIS.get(entity);v.forced105=motion;v.last=now}
   forcedMotionUntil=Math.max(forcedMotionUntil,now+duration);return true;
 }
@@ -2255,6 +2255,8 @@ const ACTOR_SPEC={
   '객잔 경비병':{a:'inn_guard',c:'#5c4838',h:'#9f7652',ac:'#d2a45f'},
   '떠돌이 도둑':{a:'thief',c:'#403a3d',h:'#756a70',ac:'#bc6c63'},
   '시종':{a:'servant',c:'#80654c',h:'#c9ad82',ac:'#d6bd7e'},
+  '어미거미':{a:'spider',c:'#355b2b',h:'#78a84c',ac:'#d0e888'},
+  '독거미':{a:'spider',c:'#456a2a',h:'#97c451',ac:'#e2ed91'},
   '거대 거미':{a:'spider',c:'#4c3b45',h:'#8e6a7a',ac:'#df806e'},
   '정원사 망령':{a:'reaper',c:'#526558',h:'#8fa28b',ac:'#b8d38d'},
   '독꽃':{a:'flower',c:'#4e733b',h:'#8eb65c',ac:'#b76a9a'},
@@ -2920,7 +2922,7 @@ function renderSprite(m,c,player=false){const now=FX.frameNow??performance.now()
   const fp=player?[[0,0]]:(typeof footprintOffsets==='function'?footprintOffsets(m):[[0,0]]);if(fp.length>1){X.fillStyle='rgba(0,0,0,.11)';for(const[ox,oy]of fp)X.fillRect((m.x+ox)*TILE+5,(m.y+oy)*TILE+20,22,8)}
   if(!player&&m.summonOwner105==='player'&&m.aquatic){X.fillStyle='rgba(66,143,177,.20)';X.beginPath();X.ellipse(px+16,py+31,13,4,0,0,Math.PI*2);X.fill();X.strokeStyle='rgba(126,207,224,.50)';X.lineWidth=1;X.beginPath();X.ellipse(px+16,py+31,10+Math.sin(now/420+m.x)*1.2,3,0,.2,Math.PI*1.75);X.stroke();}
   if(!dormantMimic){X.fillStyle='rgba(0,0,0,.35)';X.fillRect(px+8,py+28,16,3)}if(m.boss&&!player){X.globalCompositeOperation='screen';const g=X.createRadialGradient(px+16,py+15,4,px+16,py+15,26);g.addColorStop(0,'rgba(226,176,85,.14)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(px-10,py-12,52,55);X.globalCompositeOperation='source-over'}
-  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1)),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x,spriteTop,dw,dh);if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
+  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x,spriteTop,dw,dh);if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
 function drawWorldCreature(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite(m,c,false)}if(m.duelLook){const c=ACTOR_ART.player(m.duelLook.classId||'wanderer',m.duelLook,dir1012(m,true),(m.attackUntil||0)>performance.now());X.save();if(m.martialStatus105?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,false);X.restore();return r}const c=monsterCanvas(m,((performance.now()/430+m.x*3+m.y)|0)&1);return renderSprite(m,c,false)}
 const rarityCol={common:'#b9aa8d',uncommon:'#91b889',rare:'#7eb4d1',relic:'#c493dc',sealed:'#e7bc55',legendary:'#e8c75d',artifact:'#ef8b45'};
 const tierMetal=['#a99a82','#bdad8c','#c9b889','#d1b36e','#e3c66d'];
