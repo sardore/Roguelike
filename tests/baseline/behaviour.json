@@ -490,7 +490,7 @@
  "duelrules.upgrade": "90107de8ca1fd016ab76c21764673f641347afe6",
  "duelrules.exhaust": "d64ea23c08e5f3cbdf875065b03345ed0b6e16c2",
  "duelrules.look": "79853ac9401243dd035c2936980b51784693b6f7",
- "duelpicker.cards": "76e3d33434dcdd92162e5bded982cfdb2cd9e4c7",
+ "duelpicker.cards": "06f491e52006038810dfdf4449a19c6cb1a0d711",
  "duelpicker.confirm": "0f1dade50870d82ea47220933bf67cbae8e90485",
  "duelpicker.back": "dabd3e0e2022528ae486810811ff3d94fcf71d7c",
  "duelpicker.errors2": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -539,5 +539,6 @@
  "enchantglow.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
  "duelrules.known": "f4835f45c263d4b5fb90ba1671508cc9fedd575a",
  "duelfight.actShown": "6643236eb2e9c2b0207e38d0fc979e7e38a25cd5",
- "duelfight.ghostArt": "42480bafbd1425ca2229fdb99491115558a3c34d"
+ "duelfight.ghostArt": "42480bafbd1425ca2229fdb99491115558a3c34d",
+ "duelpicker.lockedCard": "2b59439cdbf819e02af5eb3dab2d07d9415b0fff"
 }

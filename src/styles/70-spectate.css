@@ -26,8 +26,6 @@ body.spectating #mobileControls,body.spectating #bottomBar,body.spectating #mobi
 #duelScene .duelGhosts{padding-top:2px}
 #duelGhosts .duelGhost{display:grid;grid-template-columns:76px minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px 14px;text-align:left;--button-color:var(--d-ink);--button-edge:1px solid var(--d-edge);--button-surface:linear-gradient(90deg,rgba(32,26,84,.55),rgba(11,14,34,.9) 70%);--button-gloss:none;--button-shadow:none}
 #duelGhosts .duelGhost:hover,#duelGhosts .duelGhost:focus-visible{--button-edge:1px solid var(--d-spirit);--button-shadow:0 0 22px rgba(122,92,255,.35);outline:none}
-#duelGhosts .duelGhost.locked{opacity:.55;cursor:default}
-#duelGhosts .duelGhost.locked .duelEnter{color:var(--d-mute);letter-spacing:.06em}
 .duelPedestal{position:relative;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;border:1px solid var(--d-edge);background:radial-gradient(circle at 50% 62%,rgba(143,198,255,.38),rgba(122,92,255,.16) 55%,transparent 72%),#0a0d22}
 .duelPedestal.big{width:104px;height:104px}
 .duelPortrait{width:52px;height:52px;background:transparent;image-rendering:pixelated;filter:drop-shadow(0 0 6px rgba(143,198,255,.55))}

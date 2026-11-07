@@ -1176,6 +1176,10 @@ export const scenarios = {
       await t.page.evaluate(() => document.getElementById('nickAsk')?.remove());
       await t.page.click('#duelBtn'); await t.tick(600);
       out['duelpicker.cards'] = JSON.stringify(await t.page.evaluate(() => [...document.querySelectorAll('#duelGhosts .duelGhost')].map((c) => ({ name: c.querySelector('.duelName').textContent, chips: [...c.querySelectorAll('.duelChip b')].map((b) => b.textContent), portrait: !!c.querySelector('canvas.duelPortrait'), locked: c.disabled, view: document.getElementById('duelScene').dataset.view }))));
+      // a ghost the server still lists as in a duel is the player's own while the player is here, not in a duel: its card is open like the others
+      const lockedCard = await t.page.evaluate(() => { const c = document.querySelector('#duelGhosts .duelGhost[data-ghost="g4"]'); return { found: !!c, disabled: c?.disabled, label: c?.querySelector('.duelEnter')?.textContent }; });
+      out['duelpicker.lockedCard'] = JSON.stringify(lockedCard);
+      if (!lockedCard.found || lockedCard.disabled || lockedCard.label !== '출전') throw Error('duelpicker: a ghost the server lists as locked is shut away ' + JSON.stringify(lockedCard));
       await t.page.click('.duelGhost'); await t.tick(600);
       out['duelpicker.confirm'] = JSON.stringify(await t.page.evaluate(() => ({ view: document.getElementById('duelScene').dataset.view, chips: [...document.querySelectorAll('.duelConfirmCard .duelChip b')].map((b) => b.textContent), warn: /되돌릴 수 없다/.test(document.querySelector('.duelWarn')?.textContent || ''), buttons: ['duelConfirm', 'duelBack'].map((id) => !!document.getElementById(id)) })));
       await t.page.click('#duelBack'); await t.tick(300);

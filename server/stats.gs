@@ -198,7 +198,8 @@ function resolve_(duels, row) {
   duels.getRange(row, DUEL_HEADER.indexOf('state') + 1, 1, 2).setValues([['done', winner]]);
 }
 
-// The caller's ghost goes into a duel: it must be alive (a lock that ran out counts as alive unless its duel has someone's word in it).
+// The caller's ghost goes into a duel: it must be alive (a lock that ran out counts as alive unless its duel has someone's word in it; a lock of a duel nobody
+// has spoken in is the owner's to take back: asking for it means they are not in that duel).
 function ghostLock_(req) {
   const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64), duel = String(req.duel || '').slice(0, 64);
   if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
@@ -221,7 +222,24 @@ function ghostLock_(req) {
     }
     const status = String(current[8]);
     if (status === 'taken') return reply_({ ok: false, error: 'none' });
-    if (status === 'locked' && String(current[LOCK_COL - 1]) !== duel) return reply_({ ok: false, error: 'busy' });
+    if (status === 'locked' && String(current[LOCK_COL - 1]) !== duel) {
+      // the owner is asking for it, so they are not in that duel any more: a lock of an earlier duel that nobody has spoken in (the page was closed, the
+      // other player never came) is given back, and the other ghost of that duel with it. A duel with a word in it stays until it settles.
+      const oldId = String(current[LOCK_COL - 1]), oldRow = duelRow_(duels, oldId);
+      let free = !oldRow;
+      if (oldRow) {
+        const [, , oldA, , oldB, , claimA, claimB, , , state] = duels.getRange(oldRow, 1, 1, DUEL_HEADER.length).getValues()[0];
+        if (String(state) !== 'open') free = true;
+        else if (!claimA && !claimB) {
+          duels.getRange(oldRow, DUEL_HEADER.indexOf('state') + 1, 1, 2).setValues([['void', '']]);
+          for (const id of [oldA, oldB]) { const r = id ? ghostRow_(ghosts, id) : 0; if (r && String(ghosts.getRange(r, LOCK_COL).getValue()) === oldId) setGhost_(ghosts, r, 'alive'); }
+          free = true;
+        }
+      }
+      if (free) setGhost_(ghosts, grow, 'alive');
+      current = held();
+      if (String(current[8]) === 'locked') return reply_({ ok: false, error: 'busy' });
+    }
     if (!drow) { duels.appendRow([duel, new Date().toISOString(), ghost, owner, '', '', '', '', '', '', 'open', '']); drow = duels.getLastRow(); }
     else {
       const [, , ghostA, , ghostB] = duels.getRange(drow, 1, 1, DUEL_HEADER.length).getValues()[0];
