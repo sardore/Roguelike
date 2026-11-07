@@ -330,6 +330,16 @@ function duelCooling(kind){
 }
 // The potions and talismans (not the upgrade talisman) in the bag, counted by the piece.
 function duelItemCount(){return(state?.player?.inventory||[]).reduce((n,i)=>n+(['potion','talisman'].includes(i.type)&&i.talismanKind!=='upgrade'?itemQuantity(i):0),0)}
+// What a committed command used, for the other page to show: one message from the common command path (ActionDispatcher), whatever the item or the art is.
+// `duelBagSnapshot` is taken before the command; `duelActOf` names what left the bag (a potion or a talisman gone, or fewer of it), the martial art used (the
+// command that carries it leaves `martialId` on its result) and the cell it was thrown or cast at (`cell`), and whether the user stands concealed afterwards.
+function duelBagSnapshot(){return(state?.player?.inventory||[]).filter(i=>['potion','talisman'].includes(i.type)).map(i=>[i,itemQuantity(i)])}
+function duelActOf(snapshot,result){
+  const bag=state.player.inventory,pick=(r,key)=>r[key]??r.children.map(c=>pick(c,key)).find(v=>v!=null)??null;
+  const items=snapshot.filter(([i,n])=>!bag.includes(i)||itemQuantity(i)<n).map(([i])=>({name:i.name,seal:i.seal||'',color:i.color||''})),art=pick(result,'martialId'),cell=pick(result,'cell');
+  if(!items.length&&!art)return null;
+  return{items,art:art?martialPresentation(art,MARTIAL_INFO[art],state.player).name:null,cell:cell?{x:cell.x,y:cell.y}:null,hidden:(state.status?.stealth||0)>0};
+}
 // Called when an action is committed: the cooldown of what was used starts.
 function duelCooldownStart(kind){
   if(state?.duel&&kind)(state.duel.cooldown||={})[kind]=state.turn+DUEL_COOLDOWN_TURNS;

@@ -1264,6 +1264,10 @@ export const scenarios = {
       await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.usePotion()); await both(600);
       const hpAfter = (await fight(guest)).hp, potionsAfter = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.potions());
       const seenHealed = stand(await fight(host))[3] === hpAfter;
+      // what the guest used is shown on the host's page (the common command path sends it once, whatever it was): the name in the log, over the stand-in
+      const potionShown = (await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.logLines())).some((l) => /상대 망령: 소회복 비약/.test(l));
+      out['duelfight.actShown'] = JSON.stringify({ potionShown });
+      if (!potionShown) throw Error('duelfight: the potion the other player drank was not shown on this page');
       out['duelfight.after'] = JSON.stringify({ early, adjacent: near.player[0], guestHurt, standHurt, potion: { healed: hpAfter > hpBefore, count: [potionsBefore[0], potionsAfter[0]], hostSeesIt: seenHealed } });
       // the turn goes by the time spent: a cheap action of the guest (the potion) may leave the turn with it; it passes until the host has it
       for (let i = 0; i < 6 && !(await fight(host)).myTurn; i++) { if ((await fight(guest)).myTurn) await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(400); }
@@ -1312,6 +1316,14 @@ export const scenarios = {
       out['duelfight.field'] = JSON.stringify({ mirrored: true, source: guestFields.find((f) => f[0] === 'fire')[3], burned: fireAfter < hpBeforeTurn || hpBeforeTurn < fireBefore, standSeesIt: hostSees === fireAfter });
       if (hostSees !== fireAfter) throw Error('duelfight: the stand-in does not show the guest health ' + hostSees + ' ' + fireAfter);
       if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
+      // the host uses 귀영 (one command, through the common path): the guest's page conceals the stand-in (not seen, not drawn) and shows nothing of where it stands
+      const art = await host.page.evaluate(() => { const st = globalThis.__MANRU_QA_UI__.state(); st.player.martial.ghost = 3; st.player.focus = st.player.maxFocus; return globalThis.__MANRU_QA_UI__.dispatch({ type: 'MARTIAL', id: 'ghost' }).status; });
+      await both(700);
+      const hidden = await guest.page.evaluate(() => ({ ...globalThis.__MANRU_QA_DUEL__.standSeen(), log: globalThis.__MANRU_QA_DUEL__.logLines().filter((l) => /상대 망령/.test(l)).slice(0, 3), floats: globalThis.__MANRU_QA_DUEL__.floatsNow() }));
+      out['duelfight.ghostArt'] = JSON.stringify({ art, stealth: hidden.stealth, observable: hidden.observable, told: hidden.log.some((l) => /모습을 감추었다/.test(l)), floatsRevealIt: hidden.floats.some((t) => /귀영/.test(t)) });
+      if (art !== 'committed' || !(hidden.stealth > 0) || hidden.observable) throw Error('duelfight: the other page still sees the one who vanished ' + JSON.stringify([art, hidden]));
+      if (!hidden.log.some((l) => /모습을 감추었다/.test(l)) || hidden.floats.some((t) => /귀영/.test(t))) throw Error('duelfight: the vanishing was not told, or its place was shown ' + JSON.stringify(hidden));
+      for (let i = 0; i < 6 && !(await fight(host)).myTurn; i++) { if ((await fight(guest)).myTurn) await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.wait()); await both(400); }
       // a side that does nothing loses its turn after twenty seconds: the host's turn (after the guest's potion) passes to the guest
       if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
       // (each page has its own clock: only the host's runs on, or the guest would time out in its turn on the same jump)
