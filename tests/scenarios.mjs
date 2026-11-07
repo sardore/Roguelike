@@ -712,6 +712,23 @@ export const scenarios = {
     return out;
   },
 
+  // A dead account stands up again from its ghost: the same character (health full, its bag) on a new map of the floor it died on, on any floor.
+  async revive(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4248 });
+    await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    const rows = {};
+    for (const floor of [1, 2, 3, 4, 5, 6, 8, 12]) {
+      rows[floor] = await s.page.evaluate((f) => { try { return globalThis.__MANRU_QA_DUEL__.reviveRun(f); } catch (e) { return { error: String(e.stack || e).slice(0, 300) }; } }, floor);
+      await s.tick(300);
+    }
+    out['revive.floors'] = JSON.stringify(rows);
+    out['revive.errors'] = JSON.stringify(s.errors);
+    for (const [f, r] of Object.entries(rows)) if (r.error || r.floor !== Number(f) || r.hp !== r.maxHp || !(r.maxHp > 0) || r.cls !== 'swordsman' || r.potions < 1 || !r.stairs || r.dead) throw Error('revive: floor ' + f + ' ' + JSON.stringify(r));
+    await s.close();
+    return out;
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });
