@@ -734,9 +734,28 @@ export const scenarios = {
     }));
     out['giftCode.errors'] = JSON.stringify(s.errors);
     await s.close();
+    // with a run on the screen the things go into this run's bag at once (not the next run)
+    const t = await openSession(browser, root, { seed: 4250 });
+    await t.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    await t.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.newRun()); await t.tick(500);
+    out['giftCode.live'] = JSON.stringify(await t.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), A = __MANRU_QA_STATS__.api, owned = () => st.player.inventory.reduce((n, i) => n + (['소회복 비약', '보강부적', '성부', '신비부적'].includes(i.name) ? (i.count || 1) : 0), 0), before = owned();
+      A.open(); A.tab = 'rows'; A.render();
+      const input = document.querySelector('.giftBox input'), button = document.querySelector('.giftBox button'), note = document.querySelector('.giftNote');
+      input.value = '19721'; button.click();
+      const text = note.textContent, all = st.player.inventory, count = (name) => all.filter((i) => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
+      A.close();
+      return { text, before, potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), chestLoot: (st.tutorialChest?.loot || []).filter((i) => ['보강부적', '신비부적', '성부'].includes(i.name)).length, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone') };
+    }));
+    out['giftCode.live.errors'] = JSON.stringify(t.errors);
+    await t.close();
+    {
+      const l = JSON.parse(out['giftCode.live']);
+      if (!/지금 판의 가방/.test(l.text) || l.potion < 2 || l.reinforce < 2 || l.holy < 1 || l.mystery < 1 || l.chestLoot !== 0 || l.pending !== null || l.done !== '1') throw Error('giftCode: with a run on, the things did not go into its bag at once ' + out['giftCode.live']);
+    }
     {
       const b = JSON.parse(out['giftCode.box']), r = JSON.parse(out['giftCode.run']);
-      if (!b.box || !/알 수 없는/.test(b.wrong) || !/받았다/.test(b.right) || !/이미/.test(b.again) || !b.redrawSameBox || b.pending !== '1') throw Error('giftCode: the box ' + out['giftCode.box']);
+      if (!b.box || !/알 수 없는/.test(b.wrong) || !/다음 새 판/.test(b.right) || !/이미/.test(b.again) || !b.redrawSameBox || b.pending !== '1') throw Error('giftCode: the box ' + out['giftCode.box']);
       if (r.potion < 2 || r.reinforce < 2 || r.holy < 1 || r.mystery < 1 || r.pending !== null) throw Error('giftCode: the things did not come, or came again ' + out['giftCode.run']);
     }
     return out;
