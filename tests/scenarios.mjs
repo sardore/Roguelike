@@ -712,6 +712,36 @@ export const scenarios = {
     return out;
   },
 
+  // The code box of the record tab: a wrong code does nothing, the right one (once per device) puts 소회복 비약 x2, 보강부적 x2, 성부 x1 and 신비부적 x1 into the next new run, once.
+  async giftCode(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 4249 });
+    await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+    out['giftCode.box'] = JSON.stringify(await s.page.evaluate(() => {
+      const A = __MANRU_QA_STATS__.api; A.open(); A.tab = 'rows'; A.render();
+      const box = document.querySelector('.giftBox'), input = box?.querySelector('input'), button = box?.querySelector('button'), note = box?.querySelector('.giftNote'), say = (code) => { input.value = code; button.click(); return note.textContent; };
+      if (!box) return { box: false };
+      const wrong = say('00000'), right = say('19721'), again = say('19721');
+      const redraw = (A.render(), document.querySelector('.giftBox') === box);
+      A.close();
+      return { box: true, wrong, right, again, redrawSameBox: redraw, pending: localStorage.getItem('manruGiftPending'), done: localStorage.getItem('manruGiftDone') };
+    }));
+    await s.tick(800);
+    out['giftCode.run'] = JSON.stringify(await s.page.evaluate(() => {
+      globalThis.__MANRU_QA_DUEL__.newRun(); // the start of a new run is where the things are handed over
+      const st = __MANRU_QA_UI__.state(), all = [...(st.tutorialChest?.loot || []), ...st.player.inventory], count = (name) => all.filter((i) => i.name === name).reduce((n, i) => n + (i.count || 1), 0);
+      return { potion: count('소회복 비약'), reinforce: count('보강부적'), holy: count('성부'), mystery: count('신비부적'), inChest: !!st.tutorialChest && !st.tutorialChest.opened, pending: localStorage.getItem('manruGiftPending') };
+    }));
+    out['giftCode.errors'] = JSON.stringify(s.errors);
+    await s.close();
+    {
+      const b = JSON.parse(out['giftCode.box']), r = JSON.parse(out['giftCode.run']);
+      if (!b.box || !/알 수 없는/.test(b.wrong) || !/받았다/.test(b.right) || !/이미/.test(b.again) || !b.redrawSameBox || b.pending !== '1') throw Error('giftCode: the box ' + out['giftCode.box']);
+      if (r.potion < 2 || r.reinforce < 2 || r.holy < 1 || r.mystery < 1 || r.pending !== null) throw Error('giftCode: the things did not come, or came again ' + out['giftCode.run']);
+    }
+    return out;
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });
