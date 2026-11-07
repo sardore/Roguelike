@@ -676,6 +676,42 @@ export const scenarios = {
     return out;
   },
 
+  // A blink may cross water or a cliff but never lands in a pocket the player could not walk out of (a run ended on one): the same blink across to ground that is
+  // connected still works.
+  async blinkTrap(browser, root) {
+    const out = {};
+    for (const pocket of [true, false]) {
+      const s = await openSession(browser, root, { seed: 4247 });
+      await startRun(s, 'strongman'); await s.tick(900);
+      out['blinkTrap.' + (pocket ? 'pocket' : 'ground')] = JSON.stringify(await s.page.evaluate((pocket) => {
+        const st = __MANRU_QA_UI__.state(), T = __MANRU_QA_VIS__.TT, p = st.player;
+        let spot = null;
+        for (let y = 5; y < st.map.length - 5 && !spot; y++) for (let x = 6; x < st.map[0].length - 10 && !spot; x++) if ([0, 1, 2, 3, 4, 5].every((i) => st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+        for (const m of [...st.monsters]) m.hp = 0;
+        p.x = spot.x; p.y = spot.y; p.facing = { x: 1, y: 0 }; p.blinkLevel = 3; p.focus = p.maxFocus;
+        if (pocket) {
+          // the landing cell, three steps on, is ringed by water: no way to walk in or out
+          const lx = spot.x + 3, ly = spot.y;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) st.map[ly + dy][lx + dx] = T.WATER;
+          st.map[ly][lx] = T.FLOOR;
+          // and the ground before it is water too, so the only standable cell in the ray is the pocket
+          st.map[spot.y][spot.x + 1] = T.WATER; st.map[spot.y][spot.x + 2] = T.WATER;
+        }
+        __MANRU_QA_VIS__.compute();
+        const before = { x: p.x, y: p.y }, r = __MANRU_QA_UI__.dispatch({ type: 'BLINK', args: [] });
+        return { status: r.status, before, after: { x: p.x, y: p.y }, moved: p.x !== before.x || p.y !== before.y };
+      }, pocket));
+      out['blinkTrap.errors.' + (pocket ? 'pocket' : 'ground')] = JSON.stringify(s.errors);
+      await s.close();
+    }
+    {
+      const a = JSON.parse(out['blinkTrap.pocket']), b = JSON.parse(out['blinkTrap.ground']);
+      if (a.moved) throw Error('blinkTrap: the blink landed in a pocket it could not walk out of ' + JSON.stringify(a));
+      if (!b.moved || b.after.x !== b.before.x + 3) throw Error('blinkTrap: the control blink over open ground did not work ' + JSON.stringify(b));
+    }
+    return out;
+  },
+
   async vision(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 4243 });
