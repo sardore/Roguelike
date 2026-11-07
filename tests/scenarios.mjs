@@ -1607,7 +1607,7 @@ export const scenarios = {
       const reported = calls.filter((c) => c.post?.ghostScore).map((c) => c.post.ghostScore);
       out['duelstakes.reported'] = JSON.stringify(reported.map((r) => [r.ghost, r.score, r.peak]).sort());
       if (reported.length < 2 || reported.some((r) => !(r.peak >= r.score))) throw Error('duelstakes: score not reported ' + JSON.stringify(reported));
-      if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled }));
+      if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled, calls: calls.filter((c) => c.post?.ghostRelease || c.post?.ghostSettle || c.post?.ghostScore).map((c) => [c.by, Object.keys(c.post)[0], c.post.ghostRelease?.ghost || c.post.ghostSettle?.ghost || c.post.ghostScore?.ghost]) }));
       await a.close(); await b.close();
     } finally { relay.kill(); }
     return out;
@@ -1617,6 +1617,20 @@ export const scenarios = {
   // have their own, the lava talisman is not laid under the other player, the other ghost's fall opens the door, and going through it ends the round with
   // the score; a duel run is never saved or sent to the statistics.
   // A monster that is out of sight, and has marked a cell that is in sight: the mark is drawn (it was drawn only while the monster itself was seen).
+  // An enchanted weapon or armor glows in the colour of its element: its picture in the bag, in the worn row and on the floor, its name in the side panel, and the held weapon (through the sprite key). The slot's border does not glow.
+  async enchantglow(browser, root) {
+    const out = {};
+    const s = await openSession(browser, root, { seed: 7 });
+    try {
+      await startRun(s, 'swordsman');
+      const r = await s.page.evaluate(() => globalThis.__MANRU_QA_ENCHANT__.probe());
+      out['enchantglow.result'] = JSON.stringify(r);
+      if (!r.weaponGlow || !r.armorGlow || r.cloakGlow || !r.keyChanged || r.brandSlot || r.plainSlot || !r.iconGlow || r.plainIcon || !r.equipIcon || r.colors[0] !== '#f18a32' || r.colors[1] !== '#42bfdb' || r.colors[2] !== null) throw Error('enchantglow: ' + JSON.stringify(r));
+      out['enchantglow.errors'] = JSON.stringify(s.errors);
+    } finally { await s.close(); }
+    return out;
+  },
+
   async intentoffscreen(browser, root) {
     const out = {};
     const s = await openSession(browser, root, { seed: 7 });
@@ -1726,6 +1740,10 @@ export const scenarios = {
       const hurt = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageVs(2, 'archer'); Q.api.reported = false; Q.cloudProbe(100); const hp = Q.fight().hp, before = Q.statusOf().poison; Q.spend(1); return { hp, after: Q.fight().hp, poison: [before, Q.statusOf().poison] }; });
       out['duelrules.mistHurts'] = JSON.stringify(hurt);
       if (!(hurt.after < hurt.hp) || !(hurt.poison[1] > hurt.poison[0])) throw Error('duelrules: the mist did not hurt ' + JSON.stringify(hurt));
+      // a duel is fought with everything known: all potions and talismans named, all gear identified
+      const known = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__; Q.stageWithPotions(2); return globalThis.__MANRU_QA_KNOWN__.probe(); });
+      out['duelrules.known'] = JSON.stringify(known);
+      if (known.potions[0] !== known.potions[1] || known.talismans[0] !== known.talismans[1] || !known.bagIdentified || !known.gear || !known.potions[1]) throw Error('duelrules: not everything is known ' + JSON.stringify(known));
       // the heads-up display: both healths, the turn, and the cooldown pips
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.cool('item'));
       await s.tick(300);

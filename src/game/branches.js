@@ -2336,7 +2336,7 @@ function queueBossDropTransaction55(plan,origin,floor){
     for(let part of parts){part=part.trim();if(!part)continue;const key=part.replace(/[.!?。！？]+$/,'').replace(/\s+/g,' ').trim();if(!key||seen.has(key))continue;seen.add(key);out.push(part)}
     return out.join(' ').replace(/\s+/g,' ').trim();
   }
-    function gearKey1004(p){return ['weapon','armor','cloak','relic','trinket'].map(k=>{const i=p?.[k];return `${k}:${i?.name||''}:${i?.tier||0}:${i?.rarity||''}:${k==='weapon'?heldWeaponKey1001(i):''}`}).join('|')}
+    function gearKey1004(p){return ['weapon','armor','cloak','relic','trinket'].map(k=>{const i=p?.[k];return `${k}:${i?.name||''}:${i?.tier||0}:${i?.rarity||''}:${enchantColor(i)||''}:${k==='weapon'?heldWeaponKey1001(i):''}`}).join('|')}
 /* crumble + paper bridge: warn first; paper collapses on the next consumed action, crumble after leaving; rebuild exactly 10 turns later. */
 function collapseFragileAt105(x,y,kind='paper'){
  const tile=kind==='paper'?TT.PAPER_BRIDGE:TT.CRUMBLE;if(state.map[y]?.[x]!==tile)return false;

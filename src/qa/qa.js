@@ -944,6 +944,25 @@ globalThis.__MANRU_QA_ODDITY__={
 };
 
 // The ghost duel's first part (the `duel` scenario): matching and passing payloads over the relay.
+globalThis.__MANRU_QA_KNOWN__={
+  probe:()=>{
+    const K=state.knowledge56||{},potions=(window.MANRU_POTIONS||[]).map(p=>p.potionKind),talismans=(window.MANRU_TALISMANS||[]).map(t=>t.talismanKind);
+    return{potions:[potions.filter(k=>K.potionKnown?.[k]).length,potions.length],talismans:[talismans.filter(k=>K.talismanKnown?.[k]).length,talismans.length],bagIdentified:(state.player.inventory||[]).every(i=>i.identified===true),gear:['weapon','armor','cloak','relic','trinket'].every(k=>!state.player[k]||state.player[k].identified===true)};
+  }
+};
+globalThis.__MANRU_QA_ENCHANT__={
+  probe:()=>{
+    const p=state.player,keyBefore=gearKey1004(p),plain=p.weapon;
+    p.weapon={...(p.weapon||WEAPONS[0]),elementBrand74:'fire'};p.armor={...(p.armor||ARMORS[0]),elementGuard74:'water'};updatePanels();
+    const text=id=>document.getElementById(id)?.style.textShadow||'';
+    const branded={...WEAPONS[0],type:'weapon',elementBrand74:'shock',identified:true},plainItem={...WEAPONS[1],type:'weapon',identified:true};
+    p.inventory.push(branded,plainItem);openInventory();gearIdentityInventory();
+    const slots=[...document.querySelectorAll('#inventory [data-invslot]')],slot=n=>slots.find(el=>+el.dataset.invslot===p.inventory.indexOf(n));
+    const out={weaponGlow:text('weaponTxt'),armorGlow:text('armorTxt'),cloakGlow:text('cloakTxt'),keyChanged:gearKey1004(p)!==keyBefore,brandSlot:slot(branded)?.style.boxShadow||'',plainSlot:slot(plainItem)?.style.boxShadow||'',colors:[enchantColor(p.weapon),enchantColor(p.armor),enchantColor(plainItem)]};
+    out.iconGlow=slot(branded)?.querySelector('img')?.style.filter||'';out.plainIcon=slot(plainItem)?.querySelector('img')?.style.filter||'';out.equipIcon=document.querySelector('#inventory [data-uxeq=weapon] img')?.style.filter||'';
+    p.weapon=plain;return out;
+  }
+};
 globalThis.__MANRU_QA_INTENT__={
   // a monster that is out of sight marks a cell that is in sight: how much does the picture of that cell change?
   offscreen:()=>{
