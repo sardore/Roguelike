@@ -270,6 +270,12 @@ function bestRangedTargetR(){
   const manual=state._manualRangedTargetR8;if(manual&&state.monsters.includes(manual)&&combatShotCheckR(manual).ok)return manual;state._manualRangedTargetR8=null;
   return state.monsters.filter(m=>isThreatVisibleToPlayer(m)&&combatShotCheckR(m).ok).sort((a,b)=>(b.boss?1:0)-(a.boss?1:0)||(b.alerted?1:0)-(a.alerted?1:0)||entityDistance57(a,p)-entityDistance57(b,p))[0]||rangedJarTargetR()
 }
+// 곡격 (a weapon with cornerHit, the flail): the strike goes round corners, so like a ranged weapon it takes the best foe in reach in any direction, not only the one the
+// player faces (walls between do not matter, being seen does).
+function cornerTargetR(){
+  if(!state)return null;const p=state.player,w=p.weapon||{};if(!w.cornerHit||w.ranged||w.kind==='bow')return null;const range=weaponRange();
+  return state.monsters.filter(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,p)<=range).sort((a,b)=>(b.boss?1:0)-(a.boss?1:0)||(b.alerted?1:0)-(a.alerted?1:0)||entityDistance57(a,p)-entityDistance57(b,p))[0]||null
+}
 function applyPlayerPostHitR(target,w,range){
   if(target.hp>0&&w.knockback)knockMonster(target,w.knockback);if(target.hp>0&&w.shred){target.def=Math.max(0,target.def-1);target.shredDef105=(target.shredDef105||0)+1;}
   if(target.hp>0&&w.execute&&target.hp/target.maxHp<=w.execute&&!target.boss){target.hp=0;killMonster(target);addLog('종결. 약해진 적을 단번에 끝냈다.')}
@@ -287,6 +293,7 @@ function basicAttack(){
   // Whatever the strike is aimed at (a ranged shot or the foe that stands next to the player), the player turns to it: the next strike reaches along the new facing.
   if(target){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};const fx=Math.sign(last.x-p.x),fy=Math.sign(last.y-p.y);if(fx||fy)p.facing={x:fx,y:fy}}
   else if(ranged){target=bestRangedTargetR();if(!target){state._activeAmmo967=null;toast(`사거리 ${range}칸 안에 사격 가능한 적이 없다.`);return false}last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
+  else if(w.cornerHit&&(target=cornerTargetR())){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
   else for(let i=1;i<=range;i++){const x=p.x+f.x*i,y=p.y+f.y*i;if(x<0||y<0||x>=COLS||y>=ROWS)break;last={x,y};const mon=findMonsterAt(x,y);if(isEntityObservableToPlayer57(mon)){if(isHostileTarget57(mon))target=mon;break}if(state.map[y][x]===TT.JAR){const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(weaponElement105(w)&&elementalWorldTarget105(x,y))break;if(tileBlocksSight(state.map[y][x])&&!w.cornerHit)break}
   const wasStealthed=state.status.stealth>0;
   if(state.status.stealth>0){state.status.stealth=0;globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('ghostBreak',430);burst(p.x,p.y,'#c8d7db',11,.68);addLog('공격 동작과 함께 은신이 풀렸다.')}

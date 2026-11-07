@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "66824959be8d6497c2677fed41e060584574b6db",
- "values.branch": "843f3555eb00e960abe6c0c70f6a8fd789ec6321",
+ "values.empty": "0d10657ae2324cc5feb87549b45a5712c7afc1c5",
+ "values.branch": "46dd0cc4b1be513db1f64392fec2ace4d6ce2172",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -541,5 +541,7 @@
  "duelfight.actShown": "6643236eb2e9c2b0207e38d0fc979e7e38a25cd5",
  "duelfight.ghostArt": "42480bafbd1425ca2229fdb99491115558a3c34d",
  "duelpicker.lockedCard": "2b59439cdbf819e02af5eb3dab2d07d9415b0fff",
- "duelfight.elementFx": "4537abcf119e9729234978f7c0bc9d030d3112a6"
+ "duelfight.elementFx": "4537abcf119e9729234978f7c0bc9d030d3112a6",
+ "attackFacing.flail": "c704a9e43bc7b5188d2b92fa325537414bfc8b3d",
+ "attackFacing.flail.errors": "164374825086dc65cd5dc548c248f61328b5d668"
 }

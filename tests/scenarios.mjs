@@ -598,6 +598,34 @@ export const scenarios = {
       __MANRU_QA_UI__.dispatch({ type: 'ATTACK', args: [] });
       return { placed: true, before, after: { ...p.facing } };
     }));
+    // 곡격 (the flail): like a ranged weapon it strikes a foe in reach in any direction, turning to it; a plain melee weapon still strikes only what it faces
+    const flail = {}, flailErrors = [];
+    for (const weapon of ['편곤', '조잡한 단검']) {
+      const f = await openSession(browser, root, { seed: 4245 }); // a fresh run for each: after one attack the next input is held for a while
+      await startRun(f, 'strongman'); await f.tick(900);
+      flail[weapon] = await f.page.evaluate(async (weapon) => {
+        const st = __MANRU_QA_UI__.state(), B = __MANRU_QA_BAL__, T = __MANRU_QA_VIS__.TT, p = st.player;
+        let spot = null;
+        for (let y = 4; y < st.map.length - 4 && !spot; y++) for (let x = 6; x < st.map[0].length - 8 && !spot; x++) if ([-2, -1, 0, 1, 2].every((i) => st.map[y + i][x] === T.FLOOR && st.map[y][x + i] === T.FLOOR)) spot = { x, y };
+        for (const m of [...st.monsters]) m.hp = 0;
+        p.x = spot.x; p.y = spot.y; p.facing = { x: 1, y: 0 }; st.status.stealth = 0;
+        B.equip(weapon); __MANRU_QA_VIS__.compute();
+        const foe = B.placeAt('취객', 0, -2);
+        __MANRU_QA_VIS__.compute();
+        const turn = st.turn;
+        const r = __MANRU_QA_UI__.dispatch({ type: 'ATTACK', args: [] });
+        return { placed: !!foe, facing: { ...p.facing }, acted: st.turn > turn, status: r.status, hit: !!foe && (foe.hp < foe.maxHp || foe.alerted === true) };
+      }, weapon);
+      flailErrors.push(f.errors); await f.close();
+    }
+    out['attackFacing.flail'] = JSON.stringify(flail);
+    out['attackFacing.flail.errors'] = JSON.stringify(flailErrors);
+    {
+      const fl = JSON.parse(out['attackFacing.flail']);
+      if (!fl['편곤'].placed || fl['편곤'].facing.x !== 0 || fl['편곤'].facing.y !== -1 || !fl['편곤'].acted || !fl['편곤'].hit) throw Error('attackFacing: the flail did not strike a foe it was not facing ' + out['attackFacing.flail']);
+      if (fl['조잡한 단검'].status !== 'committed') throw Error('attackFacing: the control attack did not happen ' + out['attackFacing.flail']);
+      if (fl['조잡한 단검'].facing.x !== 1 || fl['조잡한 단검'].facing.y !== 0) throw Error('attackFacing: a plain weapon turned to a foe it was not facing ' + out['attackFacing.flail']);
+    }
     out['attackFacing.errors'] = JSON.stringify(s.errors);
     await s.close();
     return out;
