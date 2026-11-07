@@ -1320,6 +1320,13 @@ export const scenarios = {
       out['duelfight.field'] = JSON.stringify({ mirrored: true, source: guestFields.find((f) => f[0] === 'fire')[3], burned: fireAfter < hpBeforeTurn || hpBeforeTurn < fireBefore, standSeesIt: hostSees === fireAfter });
       if (hostSees !== fireAfter) throw Error('duelfight: the stand-in does not show the guest health ' + hostSees + ' ' + fireAfter);
       if (!(await until(async () => (await fight(host)).myTurn))) throw Error('duelfight: the turn did not come back to the host');
+      // an element animation the host makes (the one drawing function) is drawn on the guest's page too, at the same cells: the stand-in's cell is the guest's own
+      const fxBefore = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.elementFxCount());
+      await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.elementFxAtStand('ice')); await both(250);
+      const fxAfter = await guest.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.elementFxCount()), fxHost = await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.elementFxCount());
+      out['duelfight.elementFx'] = JSON.stringify({ before: fxBefore, guest: fxAfter, host: fxHost });
+      if (!fxAfter.includes('ice') || fxAfter.length !== fxBefore.length + 1) throw Error('duelfight: the element animation did not reach the other page ' + JSON.stringify({ fxBefore, fxAfter }));
+      if ((await host.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.elementFxCount())).length !== fxHost.length) throw Error('duelfight: the animation came back to its maker');
       // the host uses 귀영 (one command, through the common path): the guest's page conceals the stand-in (not seen, not drawn) and shows nothing of where it stands
       const art = await host.page.evaluate(() => { const st = globalThis.__MANRU_QA_UI__.state(); st.player.martial.ghost = 3; st.player.focus = st.player.maxFocus; return globalThis.__MANRU_QA_UI__.dispatch({ type: 'MARTIAL', id: 'ghost' }).status; });
       await both(700);
