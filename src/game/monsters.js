@@ -33,7 +33,7 @@ function forcedJarAccident(x,y){
  if(globalThis.__MANRU_RANDOM57__()>=.22)return null;const mon=scaledMonster(MONSTERS.find(m=>m.name==='지네'),branchCombatFloor()),q=PlacementService.findMonster(mon,{placementMode:'local',origin:{x,y},radius:2,reachable:true,safe:true});if(!q)return null;Object.assign(mon,q);mon.alerted=true;mon.spawnProvenance57='jar-accident';if(!OccupancyService.addMonster(mon))return null;addLog('깨진 장독에서 지네가 튀어나왔다.');return mon;
 }
 function entityDistanceAt(entity,x,y,target){if(!entity||!target||![x,y,target.x,target.y].every(Number.isFinite))return Infinity;const a=entity===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(entity),b=target===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(target);let best=Infinity;for(const[ax,ay]of a)for(const[bx,by]of b)best=Math.min(best,Math.max(Math.abs(x+ax-target.x-bx),Math.abs(y+ay-target.y-by)));return best}
-function ordinaryEnemyWeight(def){if(state.branchContext105||state.artifactDungeon46)return 1;return state.floor===1&&def.name==='시종'?.65:state.floor===2&&def.name==='객잔 경비병'?.8:1}
+function ordinaryEnemyWeight(def){if(state.branchContext105||state.artifactDungeon46)return 1;return state.floor===1&&def.name==='시종'?.65:def.name==='객잔 경비병'?.6:1}
 function ordinaryEnemyPick(defs){let roll=globalThis.__MANRU_RANDOM57__()*defs.reduce((n,d)=>n+ordinaryEnemyWeight(d),0);for(const d of defs){roll-=ordinaryEnemyWeight(d);if(roll<0)return d;}return defs.at(-1)}
 function scaledMonster(def,combatFloor=branchCombatFloor(),opts={}){
   // Fixed-stat species retain V18 stats, including summons; preview only skips loot creation.
