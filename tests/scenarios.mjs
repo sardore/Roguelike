@@ -715,32 +715,35 @@ export const scenarios = {
       }));
       out['crossfireCannon.crossing'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0];
-        const ally = A.place('시종', { x: 34, y: 30 }); A.step(m, st.player); const noFriendly = !m.intent61;
-        A.move(st.player, 33, 29); A.move(st.player, 33, 30); A.move(st.player, 33, 31); A.step(m, st.player);
-        const I = m.intent61, hp = st.player.hp; A.intent(m); const waits = st.player.hp === hp && m.intent61 === I;
-        const row = { noFriendly, trackedCrossing: I?.data.x === 33 && I?.data.y === 30, cells: I?.cells.length, bonus: I?.data.bonus, waits };
-        if (!noFriendly || !row.trackedCrossing || row.cells !== 9 || row.bonus !== 8 || !waits) throw Error('crossing intent: ' + JSON.stringify(row));
-        A.move(st.player, 36, 35); st.turn++; st.floorTurn++; A.intent(m); if (st.player.hp !== hp) throw Error('moved-out player was tracked');
-        A.occupancy.removeMonster(ally); return row;
+        const ally = A.place('시종', { x: 34, y: 30 }), before = A.fx.projectiles.length; A.step(m, st.player); const noFriendly = A.fx.projectiles.length === before;
+        A.move(st.player, 33, 29); const turn = st.turn, hp = st.player.hp; st.intentBudget61=0; A.move(st.player, 33, 30);
+        const shell = A.fx.projectiles.at(-1), count = A.fx.projectiles.length, hit = st.player.hp < hp;
+        A.move(st.player, 33, 31); A.step(m, st.player);
+        const row = { noFriendly, immediate: count > before && st.turn === turn, noWarning: !m.intent61, crossing: shell?.x1 === 33*32+16 && shell?.y1 === 30*32+16, once: A.fx.projectiles.length === count, hit };
+        if (!row.noFriendly || !row.immediate || !row.noWarning || !row.crossing || !row.once) throw Error('instant crossing: ' + JSON.stringify(row));
+        st.intentBudget61=Infinity;A.move(st.player,36,35);A.occupancy.removeMonster(ally);return row;
       }));
       out['crossfireCannon.factions'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0];
         const hostile = A.place('수비병', { x: 34, y: 30 }), ally = A.place('시종', { x: 34, y: 31 });
         __MANRU_COMBATANTS57__.setFaction(hostile, 'player'); hostile.hp = hostile.maxHp = 10000; const hp = hostile.hp, friendlyHp = ally.hp;
-        let marked = false; for (let i=0; i<10; i++) { st.turn += 4; st.floorTurn += 4; A.step(m, st.player); marked ||= m.intent61?.data.x === 34 && m.intent61?.data.y === 30; st.turn++; st.floorTurn++; A.intent(m); }
-        const shell = A.fx.projectiles.find(p => p.kind === 'shell'), row = { marked, enemyDamaged: hostile.hp < hp, allySafe: ally.hp === friendlyHp, shell: !!shell, arrow: shell?.arrow984, cooldown: m.nextArtilleryTurn - st.turn };
-        if (!marked || !row.enemyDamaged || !row.allySafe || !shell || shell.arrow984 || row.cooldown !== 3) throw Error('cannon faction blast: ' + JSON.stringify(row));
+        let fired = false; for (let i=0; i<10; i++) { st.turn += 4; st.floorTurn += 4; const before=A.fx.projectiles.length;A.step(m, st.player);fired ||= A.fx.projectiles.length>before;if(m.intent61)throw Error('cannon armed a delayed warning'); }
+        const shell = A.fx.projectiles.find(p => p.kind === 'shell'), row = { fired, noWarning: !m.intent61, enemyDamaged: hostile.hp < hp, allySafe: ally.hp === friendlyHp, shell: !!shell, arrow: shell?.arrow984, cooldown: m.nextArtilleryTurn - st.turn };
+        if (!fired || !row.enemyDamaged || !row.allySafe || !shell || shell.arrow984 || row.cooldown !== 3) throw Error('instant cannon faction blast: ' + JSON.stringify(row));
         A.occupancy.removeMonster(hostile); A.occupancy.removeMonster(ally); return row;
       }));
       out['crossfireCannon.cooldown'] = JSON.stringify(await s.page.evaluate(() => {
-        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; A.move(st.player, 34, 30); A.step(m, st.player); const cooling = !m.intent61; st.turn += 3; st.floorTurn += 3; m.skillSeal105 = 2; A.step(m, st.player); const sealed = !m.intent61; m.skillSeal105 = 0; m.stunned = 1; A.step(m, st.player); const stunned = !m.intent61; A.step(m, st.player); const ready = m.intent61?.type === 'blast';
-        if (!cooling || !sealed || !stunned || !ready) throw Error('cannon cooldown or control'); return { cooling, sealed, stunned, ready };
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; const before=A.fx.projectiles.length;A.move(st.player,34,30);A.step(m,st.player);const cooling=A.fx.projectiles.length===before;st.turn+=3;st.floorTurn+=3;m.skillSeal105=2;A.step(m,st.player);const sealed=A.fx.projectiles.length===before;m.skillSeal105=0;m.stunned=1;A.step(m,st.player);const stunned=A.fx.projectiles.length===before;A.step(m,st.player);const ready=A.fx.projectiles.length>before&&!m.intent61;
+        const card=A.skills(m).find(s=>s.id==='artillery'),description=JSON.stringify(card);const described=description.includes('진입 즉시')&&!description.includes('예고 1턴');
+        if (!cooling || !sealed || !stunned || !ready || !described) throw Error('instant cannon cooldown or control'); return { cooling, sealed, stunned, ready, described };
       }));
       out['crossfireCannon.restore'] = JSON.stringify(await s.page.evaluate(() => {
-        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; delete m.crossfire; delete m.deathBlast;
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0], hp=m.hp, def=m.def, expected=A.scale(A.definitions.find(d=>d.name==='대포'),m.combatFloor105,{inventory:false}).atk;
+        delete m.crossfire; delete m.deathBlast;delete m.attackRevision;m.atk=21;m.crossfireContact={x:34,y:30,targetId:'player',until:9999};m.intent61={type:'blast',cells:[{x:34,y:30}],data:{x:34,y:30,bonus:8},armedPlayerTurn:st.turn};
         if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('cannon restore');
-        const loaded = __MANRU_QA_UI__.state().monsters[0], row = { crossfire: loaded.crossfire?.bonus === 8, deathBlast: loaded.deathBlast?.radius === 1, warning: loaded.intent61?.type === 'blast', skills: A.skills(loaded).map(s => s.id) };
-        if (!row.crossfire || !row.deathBlast || !row.warning) throw Error('cannon restored traits'); return row;
+        const restored=__MANRU_QA_UI__.state(),loaded=restored.monsters[0],before=A.fx.projectiles.length;A.step(loaded,restored.player);
+        const row = { crossfire: loaded.crossfire?.bonus === 8, deathBlast: loaded.deathBlast?.radius === 1, buffed:loaded.atk===expected, preserved:loaded.hp===hp&&loaded.def===def, noContact:!loaded.crossfireContact, immediateLegacyShot:A.fx.projectiles.length>before&&!loaded.intent61, skills:A.skills(loaded).map(s=>s.id) };
+        if (!row.crossfire || !row.deathBlast || !row.buffed || !row.preserved || !row.noContact || !row.immediateLegacyShot) throw Error('cannon restored instant traits: '+JSON.stringify(row)); return row;
       }));
       out['crossfireCannon.death'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; m.intent61 = null; A.move(st.player, 31, 30); const ally = A.place('시종', { x: 30, y: 31 }), enemy = A.place('수비병', { x: 29, y: 30 }); __MANRU_COMBATANTS57__.setFaction(enemy,'player'); enemy.hp = enemy.maxHp = 10000;
@@ -752,7 +755,7 @@ export const scenarios = {
       }));
       out['crossfireCannon.legacy'] = JSON.stringify(await s.page.evaluate(() => {
         const A=__MANRU_QA_SEALING__, st=__MANRU_QA_UI__.state();for(const m of [...st.monsters])A.occupancy.removeMonster(m);A.move(st.player,34,30);const m=A.place('경비 인형 - 포병',{x:30,y:30});m.alerted=true;let warned=false;
-        for(let i=0;i<12&&!warned;i++){st.floorTurn++;st.turn++;__MANRU_AI61__.artillery(m,st.player);warned=!!m.intent61;}if(!warned)throw Error('legacy artillery no warning');st.turn++;st.floorTurn++;A.intent(m);if(!A.fx.projectiles.some(p=>p.kind==='shell'))throw Error('legacy artillery no shell');return{warning:warned,bonus:3,shell:true};
+        for(let i=0;i<12&&!warned;i++){st.floorTurn++;st.turn++;__MANRU_AI61__.artillery(m,st.player);warned=!!m.intent61;}if(!warned)throw Error('legacy artillery no warning');const hp=st.player.hp,pending=m.intent61;A.intent(m);const waits=st.player.hp===hp&&m.intent61===pending;if(!waits)throw Error('legacy artillery lost its warning turn');st.turn++;st.floorTurn++;A.intent(m);if(!A.fx.projectiles.some(p=>p.kind==='shell'))throw Error('legacy artillery no shell');return{warning:warned,waits,shell:true};
       }));
       out['crossfireCannon.errors'] = JSON.stringify(s.errors); if(s.errors.length)throw Error(JSON.stringify(s.errors)); return out;
     } finally { await s.close(); }
