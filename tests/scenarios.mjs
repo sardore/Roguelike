@@ -676,6 +676,88 @@ export const scenarios = {
     return out;
   },
 
+  // All gear identity writers must clear legacy flags, while refused equips and hidden inventory remain untouched.
+  async gearIdentity(browser, root) {
+    const out = {};
+    for (const mobile of [false, true]) {
+      const form = mobile ? 'mobile' : 'pc', s = await openSession(browser, root, { seed: 1941, mobile, viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 } });
+      try {
+        await startRun(s, 'wanderer');
+        await s.page.evaluate(() => { const st = __MANRU_QA_UI__.state(); st.monsters = []; st.player.inventory = []; st.tempFields = []; });
+        const slots = [['weapon', '대나무창'], ['armor', '경량복'], ['cloak', '질긴 가죽망토'], ['relic', '붉은 등롱 심지'], ['trinket', '비단 매듭']], rows = [];
+        for (const [slot, name] of slots) {
+          await s.tick(1000);
+          const row = await s.page.evaluate(({ slot, name }) => {
+            const A = __MANRU_QA_IDENTIFY__, I = __MANRU_ITEM_IDENTITY991__, st = __MANRU_QA_UI__.state(), p = st.player;
+            const item = { ...A.prototype(name), count: 1, upgrade: 2, identified: false, isIdentified: false, unidentified: true, curse991: 'binding', curseRoll991: true };
+            p.inventory.push(item); const hiddenBefore = A.info(item).name === '미감정 물건';
+            __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index: p.inventory.indexOf(item) });
+            const equipped = p[slot] === item, known = !I.isUnknown(item) && A.info(item).name === name && A.info(item).stats.some(v => v.includes('속박'));
+            const active = item.curseActive991 === true && item.upgrade === 2;
+            return { slot, hiddenBefore, equipped, known, active };
+          }, { slot, name });
+          await s.tick(1000);
+          Object.assign(row, await s.page.evaluate(({ slot, name }) => {
+            const A = __MANRU_QA_IDENTIFY__, I = __MANRU_ITEM_IDENTITY991__, st = __MANRU_QA_UI__.state(), p = st.player, item = p[slot];
+            const replacement = { ...A.prototype(name), count: 1, identified: false, isIdentified: false, unidentified: true, curseRoll991: true };
+            p.inventory.push(replacement); const untouched = JSON.stringify(replacement);
+            const refused = __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index: p.inventory.indexOf(replacement) });
+            const blocked = p[slot] === item && JSON.stringify(replacement) === untouched && !refused.committed && document.getElementById('toast').textContent.includes('저주');
+            I.purifyGear(item);
+            __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index: p.inventory.indexOf(replacement) });
+            const plainKnown = p[slot] === replacement && !I.isUnknown(replacement) && !replacement.curse991 && A.info(replacement).name === name;
+            return { blocked, plainKnown };
+          }, { slot, name }));
+          rows.push(row);
+          if (Object.entries(row).some(([key, value]) => key !== 'slot' && !value)) throw Error('gear identification: ' + JSON.stringify(row));
+        }
+        out[`gearIdentity.${form}.equip`] = JSON.stringify(rows);
+        out[`gearIdentity.${form}.identify`] = JSON.stringify(await s.page.evaluate(() => {
+          const A = __MANRU_QA_IDENTIFY__, I = __MANRU_ITEM_IDENTITY991__, st = __MANRU_QA_UI__.state();
+          const variants = [{ identified: false }, { identified: true, isIdentified: false }, { identified: true, unidentified: true }];
+          return variants.map(flags => {
+            const item = { ...A.prototype('대나무창'), ...flags, count: 1, curse991: 'binding', curseRoll991: true }; st.player.inventory.push(item);
+            const first = I.identifyOne(item), second = I.identifyOne(item);
+            const row = { first, second, known: !I.isUnknown(item), described: A.info(item).name === item.name && A.info(item).stats.some(v => v.includes('속박')) };
+            if (!first || second || !row.known || !row.described) throw Error('shared identify: ' + JSON.stringify(row));
+            return row;
+          });
+        }));
+        out[`gearIdentity.${form}.hostile`] = JSON.stringify(await s.page.evaluate(() => {
+          const A = __MANRU_QA_IDENTIFY__, I = __MANRU_ITEM_IDENTITY991__, p = __MANRU_QA_UI__.state().player, item = p.armor;
+          delete item.curseImmune991; item.identified = false; item.isIdentified = false; item.unidentified = true;
+          I.markGear(item, { hostile: true });
+          const row = { active: !!item.curseActive991, known: !I.isUnknown(item), described: A.info(item).name === item.name };
+          if (!row.active || !row.known || !row.described) throw Error('equipped hostile curse: ' + JSON.stringify(row));
+          return row;
+        }));
+        out[`gearIdentity.${form}.load`] = JSON.stringify(await s.page.evaluate(() => {
+          const A = __MANRU_QA_IDENTIFY__, I = __MANRU_ITEM_IDENTITY991__, st = __MANRU_QA_UI__.state();
+          for (const slot of ['weapon', 'armor', 'cloak', 'relic', 'trinket']) Object.assign(st.player[slot], { identified: true, isIdentified: false, unidentified: true, curse991: 'blood_clock', curseActive991: true, curseActivatedTurn991: st.turn - 2, upgrade: 2 });
+          const hidden = { ...A.prototype('대나무창'), count: 1, identified: false, isIdentified: false, unidentified: true, curse991: 'binding', curseRoll991: true, identityTest: true }; st.player.inventory.push(hidden);
+          const clock = JSON.stringify(I.curseClocks());
+          if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('gear identity save/load failed');
+          const run = __MANRU_QA_UI__.state(), worn = ['weapon', 'armor', 'cloak', 'relic', 'trinket'].map(slot => run.player[slot]);
+          const carried = run.player.inventory.find(item => item.identityTest);
+          const row = { known: worn.every(item => !I.isUnknown(item) && A.info(item).name === item.name), curseKept: worn.every(item => item.curse991 === 'blood_clock' && item.curseActive991 && item.upgrade === 2), clockKept: clock === JSON.stringify(I.curseClocks()), bagKept: I.isUnknown(carried) && carried.identified === false && carried.isIdentified === false && carried.unidentified === true && carried.curse991 === 'binding' && A.info(carried).name === '미감정 물건' };
+          if (Object.values(row).some(v => !v)) throw Error('legacy equipped gear restore: ' + JSON.stringify(row));
+          return row;
+        }));
+        await s.tick(1000); await s.page.keyboard.press('i'); await s.tick(300);
+        await s.page.locator('#inventory [data-uxeq="armor"]').click(); await s.tick(100);
+        out[`gearIdentity.${form}.ui`] = JSON.stringify(await s.page.evaluate(() => {
+          const detail = document.querySelector('#uxDetail'), text = detail?.textContent || '';
+          const row = { named: detail?.querySelector('h3')?.textContent === '경량복', curseShown: text.includes('혈루'), redacted: text.includes('아직 감정되지') || text.includes('미감정 물건') };
+          if (!row.named || !row.curseShown || row.redacted) throw Error('equipped gear UI: ' + JSON.stringify({ row, text }));
+          return row;
+        }));
+        out[`gearIdentity.${form}.errors`] = JSON.stringify(s.errors);
+        if (s.errors.length) throw Error('gear identity browser errors: ' + JSON.stringify(s.errors));
+      } finally { await s.close(); }
+    }
+    return out;
+  },
+
   // Blink landings follow ray/terrain rules, including isolated ground. Walking connectivity is not a landing restriction.
   async blinkTrap(browser, root) {
     const out = {};

@@ -618,7 +618,7 @@ globalThis.__MANRU_QA_FLOOR6_REPAIR__=()=>{
     gateRestored:state.map[gate.y]?.[gate.x]===TT.LOCKED_GATE};
 };
 globalThis.__MANRU_QA_SPECTATE__={vis:()=>({x:VIS.playerX,y:VIS.playerY,cam:CameraState.snapshot()}),move:(dx,dy)=>ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}),api:Spectate,state:()=>state,die:by=>die(by),go:to=>branchTransition({id:'qa',to,arrival:'up'}),regen:f=>globalThis.__MANRU_RELEASE__?.regen?.(f)};
-globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56};
+globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56,info:itemInfo,prototype:itemPrototype};
 // load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
 globalThis.__MANRU_QA_LOAD__={
   setAim:(m,jar=null)=>{AIM_STATE.target=m;AIM_STATE.jar=jar;if(state)state._manualTerrainTargetR8=jar?{}:null},

@@ -414,7 +414,7 @@ const GEAR_SLOT_TYPES=new Set(['weapon','armor','cloak','relic','trinket']);
   const isGearItem=i=>!!i&&GEAR_SLOT_TYPES.has(i.type);
   const curseDefOf=i=>CURSE_BY_ID.get(i?.curse991)||null;
   const isUnknownPotion=i=>i?.type==='potion'&&i.potionKind&&!state?.knowledge56?.potionKnown?.[i.potionKind];
-  const isUnknownGear=i=>isGearItem(i)&&i.identified===false;
+  const isUnknownGear=i=>isGearItem(i)&&(i.identified===false||i.isIdentified===false||i.unidentified===true);
   const isUnidentifiedItem=i=>!!i&&(isUnknownPotion(i)||isUnknownTalisman991(i)||isUnknownGear(i)||i.identified===false||i.isIdentified===false||i.unidentified===true);
   function chooseCurse(item){
     const pool=CURSES[item.type]||[];return pool.length?pool[Math.floor(globalThis.__MANRU_RANDOM57__()*pool.length)]:null;
@@ -430,15 +430,16 @@ function undeadItemCurse(p=state.player){
   }
 function prepareGearCurse(item,opt={}){
     if(!isGearItem(item))return item;
-    if(opt.hostile){if(!canReceiveHostileCurse991(item))return item;const curse=chooseCurse(item);if(curse){item.curse991=curse.id;item.curseRoll991=true;if([...GEAR_SLOT_TYPES].some(slot=>(opt.actor||state.player)[slot]===item)){activateItemCurse(item,opt.actor||state.player);revealItemCurse(item)}else if(item.identified)revealItemCurse(item)}return item}
-    if(item.curseImmune991||item.name==='용의 여의주 파편'){item.curseImmune991=true;item.identified=true;delete item.curse991;delete item.curse;return item}
-    if(opt.known){item.identified=true;return item}
+    if(opt.hostile){if(!canReceiveHostileCurse991(item))return item;const curse=chooseCurse(item);if(curse){item.curse991=curse.id;item.curseRoll991=true;if([...GEAR_SLOT_TYPES].some(slot=>(opt.actor||state.player)[slot]===item)){activateItemCurse(item,opt.actor||state.player);identifyGearItem(item,'저주 발현')}else if(item.identified)revealItemCurse(item)}return item}
+    if(item.curseImmune991||item.name==='용의 여의주 파편'){item.curseImmune991=true;delete item.curse991;identifyGearItem(item,'');return item}
+    if(opt.known){identifyGearItem(item,'');return item}
     if(item.identified==null)item.identified=false;
     if(item.curseRoll991==null){item.curseRoll991=true;if(globalThis.__MANRU_RANDOM57__()<CURSE_RATE){const c=chooseCurse(item);if(c)item.curse991=c.id}}
     return item;
   }
   function revealItemCurse(item){const c=curseDefOf(item);if(c)item.curse=`${c.name} — ${c.desc} · 같은 저주를 중복 장착하면 효과가 1→2→4→8배로 증폭된다.`;else delete item.curse;return c}
-  function identifyGearItem(item,reason='감정'){if(!isGearItem(item))return false;const was=item.identified===false;item.identified=true;const c=revealItemCurse(item);if(was)addLog(`${item.name} 완전 감정${c?` · 저주 ${c.name}`:' · 저주 없음'} (${reason}).`);return was}
+  // All gear identification clears legacy flags used by inspection; an empty reason suppresses restore/setup logs.
+  function identifyGearItem(item,reason='감정'){if(!isGearItem(item))return false;const was=isUnknownGear(item);item.identified=true;delete item.isIdentified;delete item.unidentified;const c=revealItemCurse(item);if(was&&reason)addLog(`${item.name} 완전 감정${c?` · 저주 ${c.name}`:' · 저주 없음'} (${reason}).`);return was}
   function useIdentifyScrollOn(item,reason='감정부적'){
     if(!item)return false;
     if(isUnknownGear(item))return identifyGearItem(item,reason);
@@ -447,7 +448,7 @@ function prepareGearCurse(item,opt={}){
     if(item.identified===false||item.isIdentified===false||item.unidentified===true){item.identified=true;item.isIdentified=true;item.unidentified=false;addLog(`물품 완전 감정 · ${item.name||'물품'} (${reason}).`);return true}
     return false;
   }
-  function purifyGearItem(item){if(!isGearItem(item)||!item.curse991)return false;const id=item.curse991,c=curseDefOf(item);delete item.curse991;delete item.curse;delete item.curseActive991;delete item.curseActivatedTurn991;item.cursePurified991=true;item.identified=true;if(curseStackCount(id)===0)delete curseClocks991()[id];else syncCurseClocks991();addLog(`${item.name}의 ${c?.name||'저주'}가 정화됐다. 장비와 강화 수치는 그대로다.`);return true}
+  function purifyGearItem(item){if(!isGearItem(item)||!item.curse991)return false;const id=item.curse991,c=curseDefOf(item);delete item.curse991;delete item.curse;delete item.curseActive991;delete item.curseActivatedTurn991;item.cursePurified991=true;identifyGearItem(item,'');if(curseStackCount(id)===0)delete curseClocks991()[id];else syncCurseClocks991();addLog(`${item.name}의 ${c?.name||'저주'}가 정화됐다. 장비와 강화 수치는 그대로다.`);return true}
   function cursedEntries(){const p=state?.player;if(!p)return[];const out=[];for(const slot of GEAR_SLOT_TYPES){const it=p[slot];if(it?.curse991)out.push({item:it,slot,equipped:true})}for(const it of p.inventory||[])if(isGearItem(it)&&it.curse991&&!isUnknownGear(it))out.push({item:it,slot:null,equipped:false});return out}
   function consumeInventoryItem(item){const i=state?.player?.inventory?.indexOf(item)??-1;if(i<0)return false;consumeOne(i);return true}
   function markHolyKnown(){if(!state)return;state.knowledge56=state.knowledge56||{};state.knowledge56.talismanKnown=state.knowledge56.talismanKnown||{};state.knowledge56.talismanKnown.holy=true}
@@ -473,7 +474,7 @@ function prepareGearCurse(item,opt={}){
   // Curse assignment is a real 15% roll on generated gear only. Starter gear and boss uniques are excluded.
   // Canonical dropRandomItem marks runtime drops through __MANRU_ITEM_IDENTITY991__.markGear;
   // applyCurses991 below covers every generated/restored gear container after final geometry.
-  function applyCursesToAllGear(){if(!state)return;for(const it of state.items||[])prepareGearCurse(it);for(const it of state.player?.inventory||[])if(isGearItem(it)&&it.identified==null)prepareGearCurse(it);for(const slot of GEAR_SLOT_TYPES){const it=state.player?.[slot];if(it){it.identified=true;if(it.curse991)revealItemCurse(it)}}}
+  function applyCursesToAllGear(){if(!state)return;for(const it of state.items||[])prepareGearCurse(it);for(const it of state.player?.inventory||[])if(isGearItem(it)&&it.identified==null)prepareGearCurse(it);for(const slot of GEAR_SLOT_TYPES)identifyGearItem(state.player?.[slot],'')}
   // One guaranteed holy talisman per five-floor chapter, plus its low-weight normal random inclusion.
   function holyProto(){return(window.MANRU_TALISMANS||[]).find(t=>t.talismanKind==='holy')}
   function holySchedule(){if(!state)return null;state.holy991=state.holy991||{schedule:{},spawned:{}};const ch=Math.max(0,Math.min(4,Math.floor((state.floor-1)/5))),k=String(ch);if(!state.holy991.schedule[k]){const lo=ch===0?2:ch*5+1,hi=ch*5+5;state.holy991.schedule[k]=lo+Math.floor(globalThis.__MANRU_RANDOM57__()*(hi-lo+1))}return{ch,k,floor:state.holy991.schedule[k]}}
