@@ -30,14 +30,14 @@ function advanceHeldInput(now=performance.now()){
  if(!d||now<INPUT.nextMoveAt)return false;
  INPUT.nextMoveAt=now+Math.max(125,movementInterval());ClientEnvironment.emit({type:'MOVE',dx:d[0],dy:d[1],source:'keyboard-hold'});return true;
 }
-function floatText(x,y,text,color="#ffffff",size=13,element=null){
+function floatText(x,y,text,color="#ffffff",size=13,element=null,delay=0){
   const elementColor=element&&ELEMENT_FX_COLORS105[element];
   if(elementColor)color=elementColor;
   text=displayCombatText58(text);
   const dmg=/^-\d+/.test(text),n=dmg?Math.max(14,size):size;
-  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now(),life:dmg?820:720});
+  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now()+delay,life:dmg?820:720});
   const feed=dmg&&state?document.getElementById('mfHitFeed'):null;
-  if(feed){const hurt=x===state.player.x&&y===state.player.y,d=document.createElement('div');d.className=`mfHit ${hurt?'hurt':''}`;d.textContent=`${hurt?'피격':'타격'} ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
+  if(feed&&!delay){const hurt=x===state.player.x&&y===state.player.y,d=document.createElement('div');d.className=`mfHit ${hurt?'hurt':''}`;d.textContent=`${hurt?'피격':'타격'} ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
 }
 function projectInteractionUI(){
   for(const panel of gameplayPanels57()){
