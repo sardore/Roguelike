@@ -259,7 +259,7 @@ function branchEntrance({required=true}={}){
  return true;
 }
 function branchTransition(portal){
- if(!portal||!WorldTransition57.allowed())return false;if(portal.requireWorld105&&!portal.requireWorld105.keys.every(key=>state.branchWorld105?.[portal.requireWorld105.section]?.opened?.[key])){toast(portal.requireWorld105.hint);return false;}if(state.branchContext105?.id==='dojo'){if(!dojoPortalReady(portal))return false;if(portal.kind==='dojo-local')return dojoTraverse(portal);}const transaction=captureGenerationSnapshot();
+ if(!portal||!WorldTransition57.allowed(portal))return false;if(portal.requireWorld105&&!portal.requireWorld105.keys.every(key=>state.branchWorld105?.[portal.requireWorld105.section]?.opened?.[key])){toast(portal.requireWorld105.hint);return false;}if(state.branchContext105?.id==='dojo'){if(!dojoPortalReady(portal))return false;if(portal.kind==='dojo-local')return dojoTraverse(portal);}const transaction=captureGenerationSnapshot();
  try{
  const world=state.branchWorld105||(state.branchWorld105={version:1,pages:{}}),oldKey=branchWorldKey(),carry=branchCarry(),ward={drownUntil:state.hazard1005?.drownUntil||0,voidUntil:state.hazard1005?.voidUntil||0};
  if(portal.to==='black:1')world.blackReturn105={to:oldKey,arrival:portal.id};
@@ -2081,9 +2081,9 @@ const DOJO_STYLE_WEIGHTS105=Object.freeze([
 // Authored multi-height tower graph; no repair pass or encounter-clear gates.
 const CITADEL_ENEMIES105=Object.freeze([
  {name:'흑철 창위병',kind:'human',hp:48,atk:12,def:7,eva:2,reach:2,formation:true,role61:'formation',citadelActor105:'lancer',color:'#8295a8',shape:'knight',xp:18,concept57:'검은 철갑을 두른 성채 창병.'},
- {name:'철쇄 집행관',kind:'human',hp:46,atk:13,def:5,eva:3,hook:true,role61:'hook',citadelActor105:'chain',color:'#b58966',shape:'knight',xp:20,concept57:'철쇄를 던져 적을 끌어당기는 집행관.'},
+ {name:'철쇄 집행관',passageSeal:{species:'철쇄 집행관',radius:8,range:8,duration:6,cooldown:12},kind:'human',hp:46,atk:13,def:5,eva:3,hook:true,role61:'hook',citadelActor105:'chain',color:'#b58966',shape:'knight',xp:20,concept57:'철쇄를 던져 적을 끌어당기는 집행관.'},
  {name:'흑성 노수',kind:'human',hp:30,atk:11,def:3,eva:4,ranged:true,range:7,role61:'skirmisher',citadelActor105:'crossbow',color:'#a39fba',shape:'archer',xp:17,concept57:'회랑과 사격실에서 쇠뇌를 겨누는 성채 사수.'},
- {name:'종루 파수령',kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
+ {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
  {name:'납골 철갑시체',kind:'undead',hp:58,atk:13,def:8,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
  {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
@@ -2137,16 +2137,16 @@ function contextAction(){
 }
 function clone(o){return JSON.parse(JSON.stringify(o))}
 const WorldTransition57=Object.freeze({
- allowed(){if(state?.player&&combatFieldBlocks57(state.player.x,state.player.y,{actor:state.player,leaving:true})){toast('봉인진 안에서는 다른 구역으로 나갈 수 없다.');return false}return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
+ allowed(exit=state?.player){if(exit&&combatFieldBlocks57(exit.x,exit.y,{passage:'exit'})){toast('봉쇄된 계단이나 출입구는 사용할 수 없다. 시전자를 쓰러뜨리거나 봉쇄가 끝나기를 기다리자.');return false}if(state?.player&&combatFieldBlocks57(state.player.x,state.player.y,{actor:state.player,leaving:true})){toast('봉인진 안에서는 다른 구역으로 나갈 수 없다.');return false}return !!state&&!state.dead&&!state._turnPipelineActive57&&!OccupancyService.metrics().shared},
  portal(x,y,active,cause){
   const branch=state?.branchPortals105?.find(p=>p.x===x&&p.y===y),legend=state?.artifactDungeon46?state.artifactExit46:state?.artifactPortal46;
   const hasLegend=legend?.x===x&&legend?.y===y;if(!branch&&!hasLegend)return false;
   if(branch)return false; // Branch gates are passable floor markers; only explicit interaction travels.
-  if(!active||cause!=='walk'||!this.allowed())return true;
+  if(!active||cause!=='walk'||!this.allowed({x,y}))return true;
   globalThis.__MANRU_ARTIFACT46__?.handlePortalAt?.(x,y);
   return true;
  },
- complete(){OccupancyService.endShared();state._worldTransition57=true},
+ complete(){OccupancyService.endShared();if(state.tempTerrain74?.some(t=>t.kind==='passageSeal'))RuntimeTerrainOwner.tick({movement:true});state._worldTransition57=true},
  commit(ctx,cost){if(!state?._worldTransition57)return false;delete state._worldTransition57;commitPlayerAction57(ctx,cost);return true}
 });
 const TEMP_TERRAIN_IMMUTABLE57=new Set([TT.STAIR,TT.PORTAL,TT.KEY_TILE,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.SWITCH,TT.DRAWBRIDGE_UP,TT.DRAWBRIDGE_DOWN]);
@@ -2247,6 +2247,7 @@ function adjacentBranchPortal105(){
 function dropLootWithTalismans(pos,special=false){if(mountainOutdoor(pos)){if(globalThis.__MANRU_RANDOM57__()<.10){const item=clone(MOUNTAIN_BERRY);PlacementService.placeItem(item,pos);return item}return null}if(state&&globalThis.__MANRU_RANDOM57__()<(special?.34:.20)){const t=talismanPick56();if(t){PlacementService.placeItem({...t,x:pos.x,y:pos.y,count:1});return}}const n=state?.items?.length||0,r=dropFloorLoot(pos,special);for(const i of(state?.items||[]).slice(n))decoratePotion56(i,i.x,i.y);return r}
 function bumpTileAction(x,y,opts={}){
   const tile=state?.map?.[y]?.[x],cause=opts.cause||'walk',active=opts.activeInteraction??cause==='walk';
+  if(tile===TT.DOOR&&combatFieldBlocks57(x,y,{passage:'door'})){if(active)toast('봉쇄된 문이다. 시전자를 쓰러뜨리거나 봉쇄가 끝나기를 기다리자.');return true}
   if(tile===TT.PORTAL&&!state.branchPortals105?.some(p=>p.x===x&&p.y===y))clearHeldInput53?.();
   // Canonical typed-key service owns all typed-key pickup. The service is installed by the lock system later in the same script; lookup happens at interaction time.
   if(tile===TT.KEY_TILE&&state?.keyPlan96&&globalThis.__MANRU_TYPED_KEYS__?.pickupAt){
@@ -2505,7 +2506,7 @@ build(a,options={}){
 },
 enter(id){if(id==='water_crossbow'){toast('창해 수압연노는 본관 9층 창해 용궁에서 얻을 수 있다.');return false;}const a=adef46(id);citadelEnsurePlan();if(citadelReservedRelic(id)){toast('이번 전승은 본관 16층의 흑성채 성소에 깃들었다.');return false;}if(possesses47(id)||claimed47(id)){toast('이미 획득한 전승이다.');return false;}if(!WorldTransition57.allowed()||!a||state.artifactDungeon46)return false;const transition57=captureGenerationSnapshot(),followers=summonFollowers();for(const mon of followers)OccupancyService.removeMonster(mon);state.artifactReturn46=snapshot46();state.artifactPortal46=null;try{LegendaryDungeonBuilder.build(a);summonPlaceFollowers105(followers);return true}catch(e){restoreGenerationSnapshot(transition57);console.error('legend dungeon generation rejected',e);toast('전설무기 던전의 구조가 불안정해 포탈이 닫혔다.');return false}}
 });
-function handlePortalAt46(x,y){if(!WorldTransition57.allowed())return false;if(state.artifactDungeon46&&state.artifactExit46?.x===x&&state.artifactExit46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.restore()}if(state.artifactPortal46?.x===x&&state.artifactPortal46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.enter(state.artifactPortal46.id)}return false}
+function handlePortalAt46(x,y){if(!WorldTransition57.allowed({x,y}))return false;if(state.artifactDungeon46&&state.artifactExit46?.x===x&&state.artifactExit46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.restore()}if(state.artifactPortal46?.x===x&&state.artifactPortal46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.enter(state.artifactPortal46.id)}return false}
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*3:0}
 function fireAbsorb47(){return possesses47('ember_axe')&&state?.player?.armor?.elementGuard74==='fire'}
 function healFire47(n=1){n=Math.max(0,Math.round(Number(n)||0));if(!state||!fireAbsorb47())return 0;const p=state.player,b=p.hp;p.hp=Math.min(p.maxHp,p.hp+n);const g=p.hp-b;if(g>0)floatText(p.x,p.y,`화염흡수 +${g}`,'#ffb365',9);return g}

@@ -264,6 +264,7 @@ function resolvePlayerLanding57(x,y,opts={}){
   if(neutralInteractableAt58(x,y))return{ok:false,moved:false,reason:'neutral-occupant'};
   const p=state.player,origin=opts.origin||{x:p.x,y:p.y},cause=opts.cause||'walk',policy=playerTransferPolicy57(cause);
   const forced=!!opts.forced||cause==='forced-push'||cause==='forced-pull';
+  if(combatFieldBlocks57(x,y,{passage:'door',actor:p})){toast('봉쇄된 문을 통과할 수 없다.');return{ok:false,moved:false,reason:'passage-seal',cause,x:p.x,y:p.y}}
   if(!forced&&combatFieldBlocks57(x,y,{actor:p})){toast('봉인진 밖으로 나갈 수 없다.');return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
   if(policy){const validation=validatePlayerTransfer57(x,y,{cause,policy,forced});if(!validation.ok)return{ok:false,moved:false,reason:validation.reason,cause,x:p.x,y:p.y}}
   const discovery=opts.discovery105||captureMovementDiscovery105();
@@ -455,6 +456,8 @@ function pickup(...args){
     [TT.PORTAL,{desc:'공간을 접어 다른 방과 맞붙이는 무명 포탈. 표면에는 목적지를 나타내는 글자나 문양이 없다.',hint:'들어가기 전에는 어느 방으로 이어질지 지형만으로 확정하기 어렵다.'}]
   ]);
   function terrainInfo986(t,x,y){
+    const seal=state?.tempTerrain74?.find(f=>f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&f.x===x&&f.y===y&&f.tile===t);
+    if(seal)return{name:t===TT.DOOR?'봉쇄된 문':'봉쇄된 계단 · 출입구',desc:`${Math.max(0,seal.expiresTurn105-state.turn)}턴 동안 봉쇄된다. 시전자를 쓰러뜨리거나 지속시간이 끝나면 해제된다.`,hint:t===TT.DOOR?'일반 열기·이동·점멸로 문을 통과할 수 없다. 문 자체를 파괴해도 봉쇄가 깨진다.':'이 칸을 걸어 지날 수는 있지만 다른 층이나 구역으로 이동할 수 없다.'};
     const definition=TERRAIN986.get(t);if(definition?.inspectPriority57==='terrain')return{name:terrainName(t),...definition};
     const world=terrainReactions105(),steam=state.tempFields?.find(f=>f.kind==='steam'&&f.x===x&&f.y===y&&f.ttl>0),spill=world.spills?.[k(x,y)],clue=world.clues?.[k(x,y)];
     if(steam)return{name:'증기',desc:`${steam.ttl}턴 동안 시야와 사선을 가린다.`,hint:'통행 가능. 피해·중독·경직이 없으며 소리는 통과한다.'};

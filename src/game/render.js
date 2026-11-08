@@ -1659,6 +1659,10 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(const {x,y} of tempFieldCells57(f)){
       if(x<0||y<0||x>=COLS||y>=ROWS||!state.visible.has(k(x,y)))continue;
       const px=x*TILE,py=y*TILE,a=.13+.035*Math.sin(now/190+x+y);
+      if(f.kind==='passageSeal'){
+        X.fillStyle=`rgba(113,35,31,${a+.16})`;X.fillRect(px+1,py+1,30,30);X.strokeStyle='#e2b46c';X.lineWidth=2;X.strokeRect(px+3,py+3,26,26);
+        X.beginPath();X.moveTo(px+5,py+5);X.lineTo(px+27,py+27);X.moveTo(px+27,py+5);X.lineTo(px+5,py+27);X.stroke();X.fillStyle='#b7493d';X.fillRect(px+12,py+10,8,12);
+      }
       if(f.kind==='sealingWard'){
         X.fillStyle=`rgba(133,71,179,${a+.10})`;X.fillRect(px+1,py+1,30,30);
         X.strokeStyle='#d2a9f0';X.lineWidth=2;
@@ -1771,6 +1775,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(const n of state.neutralInteractables58||[])drawNeutralInteractable(n);
 
     for(const f of state.tempFields||[])if(inB58(f,b,6))drawField(f,now);
+    for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
     drawMineWorld(now,b);

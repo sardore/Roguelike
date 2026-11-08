@@ -677,6 +677,140 @@ export const scenarios = {
   },
 
   // All gear identity writers must clear legacy flags, while refused equips and hidden inventory remain untouched.
+  async equipmentFocus(browser, root) {
+    const out = {};
+    for (const mobile of [false, true]) {
+      const form = mobile ? 'mobile' : 'pc', s = await openSession(browser, root, { seed: 1951, mobile, viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 } });
+      try {
+        await startRun(s, 'wanderer');
+        await s.page.evaluate(() => { const st = __MANRU_QA_UI__.state(); st.monsters = []; st.player.inventory = []; st.player.relic = null; st.player.trinket = null; });
+        for (const mode of ['UNEQUIP', 'DROP_EQUIPPED', 'swap']) {
+          await s.tick(1000);
+          await s.page.evaluate(() => {
+            const p = __MANRU_QA_UI__.state().player, A = __MANRU_QA_IDENTIFY__; p.focus = 3;
+            p.inventory.push({ ...A.prototype('붉은 등롱 심지'), identified: true, curseRoll991: true, count: 1 });
+            __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index: p.inventory.length - 1 });
+            if (p.focus !== 3) throw Error('equipping focus gear refilled focus');
+            p.focus = __MANRU_QA_SEALING__.stats().maxFocus;
+          });
+          await s.tick(1000);
+          out[`equipmentFocus.${form}.${mode}`] = JSON.stringify(await s.page.evaluate(mode => {
+            const p = __MANRU_QA_UI__.state().player, A = __MANRU_QA_SEALING__, before = p.focus;
+            if (mode === 'swap') { p.inventory.push({ ...__MANRU_QA_IDENTIFY__.prototype('깨진 천면경'), identified: true, curseRoll991: true, count: 1 }); __MANRU_QA_UI__.dispatch({ type: 'ITEM_USE', index: p.inventory.length - 1 }); }
+            else __MANRU_QA_UI__.dispatch({ type: mode, args: [p, 'relic'] });
+            const row = { removed: p.relic?.name !== '붉은 등롱 심지', capDropped: before - A.stats().maxFocus === 2, synchronized: p.focus === A.stats().maxFocus };
+            if (!row.removed || !row.capDropped || !row.synchronized) throw Error('focus removal: ' + JSON.stringify(row));
+            return row;
+          }, mode));
+        }
+        await s.tick(1000);
+        out[`equipmentFocus.${form}.restore`] = JSON.stringify(await s.page.evaluate(() => {
+          const A = __MANRU_QA_SEALING__, p = __MANRU_QA_UI__.state().player; p.focus = 2; A.sync(); const lowKept = p.focus === 2;
+          p.focus = A.stats().maxFocus + 2;
+          if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('focus restore failed');
+          const loaded = __MANRU_QA_UI__.state().player, row = { lowKept, restored: loaded.focus === A.stats().maxFocus };
+          if (!row.lowKept || !row.restored) throw Error('focus synchronization: ' + JSON.stringify(row));
+          return row;
+        }));
+        out[`equipmentFocus.${form}.errors`] = JSON.stringify(s.errors);
+      } finally { await s.close(); }
+    }
+    return out;
+  },
+
+  async passageSeals(browser, root) {
+    const out = {}, s = await openSession(browser, root, { seed: 1952 });
+    try {
+      await startRun(s, 'wanderer');
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(); st.floor = 20; st.monsters = []; st.items = []; st.decor = []; st.tempFields = []; st.tempTerrain74 = []; st.jarGasFields57 = [];
+        for (let y = 20; y < Math.min(44, st.map.length - 1); y++) for (let x = 20; x < Math.min(45, st.map[y].length - 1); x++) { st.map[y][x] = A.TT.FLOOR; st.seen.add(x + ',' + y); }
+        A.move(st.player, 30, 30); st.player.hp = st.player.maxHp = st.player.baseMaxHpPermanent = 1000;
+        st.map[29][30] = A.TT.OPEN_DOOR; st.map[32][30] = A.TT.STAIR; st.stairs = { x: 30, y: 32 };
+        st.map[30][28] = A.TT.PORTAL; st.branchPortals105 = [{ id: 'seal-test', kind: 'stairs', x: 28, y: 30, to: 'citadel:2', arrival: 'up' }];
+        st.map[28][32] = A.TT.LOCKED_GATE; __MANRU_QA_VIS__.compute();
+      });
+      out['passageSeals.casters'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, defs = [...A.definitions, ...A.citadel].filter(m => m.passageSeal);
+        const rows = defs.map(d => {
+          const mon = A.scale(d, 20); mon.x = 34; mon.y = 30; A.occupancy.addMonster(mon); delete mon.passageSeal; A.configure(mon);
+          const row = { name: mon.name, copied: !!mon.passageSeal, duration: mon.passageSeal.duration, cooldown: mon.passageSeal.cooldown, described: A.skills(mon).some(v => v.id === 'passage-seal') }; A.occupancy.removeMonster(mon); return row;
+        });
+        if (rows.length !== 3 || rows.some(r => !r.copied || !r.described || r.duration >= r.cooldown)) throw Error('passage casters: ' + JSON.stringify(rows));
+        return rows;
+      }));
+      out['passageSeals.active'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = A.place('수비병', { x: 34, y: 30 }); m.alerted = true;
+        A.special(m, null, st.player); const warning = m.intent61; if (warning?.type !== 'passageSeal') throw Error('no passage warning');
+        A.intent(m); const pending = st.tempTerrain74.length === 0; A.move(st.player, 30, 29); st.turn++; A.intent(m);
+        const seals = st.tempTerrain74.filter(f => f.kind === 'passageSeal'), door = seals.find(f => f.x === 30 && f.y === 29);
+        const pushed = st.player.x !== 30 || st.player.y !== 29, denied = A.land(30, 29, { cause: 'walk' }).reason === 'passage-seal';
+        A.move(st.player, 30, 30); const blinkBlocked = !A.blinkCells(st.player, 5).some(q => q.dx === 0 && q.dy === -1);
+        const branchBlocked = A.branch(st.branchPortals105[0]) === false;
+        A.move(st.player, 30, 32); const floor = st.floor, stairsBlocked = A.descend() === false && st.floor === floor;
+        A.move(st.player, 30, 30);
+        const row = { pending, marked: warning.cells.length === 3, sealed: seals.length === 3, doorClosed: st.map[29][30] === A.TT.DOOR, pushed, denied, blinkBlocked, branchBlocked, stairsBlocked, originalKept: door.old === A.TT.OPEN_DOOR, keyGateKept: st.map[28][32] === A.TT.LOCKED_GATE, inspected: A.terrainInfo(A.TT.DOOR, 30, 29).name === '봉쇄된 문' };
+        if (Object.values(row).some(v => !v)) throw Error('passage blocking: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.restore'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters.find(m => m.name === '수비병');
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('passage save/load failed');
+        const run = __MANRU_QA_UI__.state(), restored = A.blocks(30, 29, { passage: 'door' }) && !A.transition({ x: 30, y: 32 });
+        run.turn += m.passageSeal.duration; A.terrain.tick({ movement: true });
+        const row = { restored, expired: !run.tempTerrain74.some(f => f.kind === 'passageSeal'), doorRestored: run.map[29][30] === A.TT.OPEN_DOOR, stairsKept: run.map[32][30] === A.TT.STAIR, portalKept: run.map[30][28] === A.TT.PORTAL };
+        if (Object.values(row).some(v => !v)) throw Error('passage expiry: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.death'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters.find(m => m.name === '수비병');
+        m.nextPassageSealTurn = 0; m.intent61 = null; m.alerted = true; A.special(m, null, st.player); st.turn++; A.intent(m);
+        const armed = A.blocks(30, 29, { passage: 'door' }); m.hp = 0; A.kill(m);
+        const row = { armed, immediatelyReleased: !st.tempTerrain74.some(f => f.kind === 'passageSeal'), doorRestored: st.map[29][30] === A.TT.OPEN_DOOR };
+        if (Object.values(row).some(v => !v)) throw Error('passage caster death: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.destroy'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), d = A.citadel.find(m => m.name === '철쇄 집행관'), m = A.scale(d, 20); m.x = 34; m.y = 30; m.alerted = true; A.occupancy.addMonster(m);
+        A.special(m, null, st.player); st.turn++; A.intent(m); const count = st.tempTerrain74.length;
+        A.terrain.mutate(30, 29, A.TT.FLOOR, { source: 'qa-door-break' }); A.terrain.tick({ movement: true });
+        const broken = !A.blocks(30, 29, { passage: 'door' }) && st.map[29][30] === A.TT.FLOOR;
+        m.hp = 0; A.kill(m); const row = { armed: count === 3, broken, notResurrected: st.map[29][30] === A.TT.FLOOR, exitsReleased: A.transition({ x: 30, y: 32 }) };
+        if (Object.values(row).some(v => !v)) throw Error('passage destroyed door: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.overlap'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), casters = ['철쇄 집행관', '종루 파수령'].map((name, i) => {
+          const m = A.scale(A.citadel.find(d => d.name === name), 20); m.x = 34; m.y = 30 + i; m.alerted = true; A.occupancy.addMonster(m); return m;
+        });
+        st.map[29][30] = A.TT.OPEN_DOOR; A.special(casters[0], null, st.player); st.turn++; A.intent(casters[0]);
+        const until = st.tempTerrain74.find(f => f.x === 30 && f.y === 29).expiresTurn105;
+        st.map[31][32] = A.TT.OPEN_DOOR; A.special(casters[1], null, st.player); const skippedExisting = casters[1].intent61?.cells.length === 1; st.turn++; A.intent(casters[1]);
+        const notRefreshed = until === st.tempTerrain74.find(f => f.x === 30 && f.y === 29).expiresTurn105;
+        casters[0].hp = 0; A.kill(casters[0]); const independent = !A.blocks(30, 29, { passage: 'door' }) && A.blocks(32, 31, { passage: 'door' });
+        casters[1].hp = 0; A.kill(casters[1]);
+        const row = { skippedExisting, notRefreshed, independent, released: !st.tempTerrain74.some(f => f.kind === 'passageSeal') };
+        if (Object.values(row).some(v => !v)) throw Error('overlapping passage seals: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.safety'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = A.place('수비병', { x: 34, y: 30 }); m.alerted = true;
+        st.map[29][29] = A.TT.OPEN_DOOR; A.special(m, null, st.player); const warned = m.intent61.cells.some(c => c.x === 29 && c.y === 29);
+        const victim = A.place('객잔 쥐', { x: 29, y: 29 }), hp = victim.hp; A.move(st.player, 31, 31);
+        for (let y = 28; y <= 30; y++) for (let x = 28; x <= 30; x++) if (x !== 29 || y !== 29) st.map[y][x] = A.TT.WALL;
+        st.turn++; A.intent(m);
+        const safe = victim.x === 29 && victim.y === 29 && victim.hp === hp && st.map[29][29] === A.TT.OPEN_DOOR && !A.blocks(29, 29, { passage: 'door' });
+        const guarded = !A.terrain.temporary(30, 32, A.TT.WALL, 3, 'passageSeal', { ownerId: m.combatantId54, sourceFaction: 'hostile' }) && st.map[32][30] === A.TT.STAIR;
+        const variant = { ...m, name: '다른 수비병', intent61: null }; const scoped = !A.skills(variant).some(s => s.id === 'passage-seal');
+        const row = { warned, safe, guarded, scoped }; if (Object.values(row).some(v => !v)) throw Error('passage seal safety: ' + JSON.stringify(row));
+        return row;
+      }));
+      out['passageSeals.errors'] = JSON.stringify(s.errors);
+      if (s.errors.length) throw Error('passage page errors: ' + JSON.stringify(s.errors));
+    } finally { await s.close(); }
+    return out;
+  },
+
   async gearIdentity(browser, root) {
     const out = {};
     for (const mobile of [false, true]) {
