@@ -2266,7 +2266,7 @@ const ACTOR_SPEC={
   '객잔 경비병':{a:'inn_guard',c:'#5c4838',h:'#9f7652',ac:'#d2a45f'},
   '떠돌이 도둑':{a:'thief',c:'#403a3d',h:'#756a70',ac:'#bc6c63'},
   '시종':{a:'servant',c:'#80654c',h:'#c9ad82',ac:'#d6bd7e'},
-  '어미거미':{a:'spider',c:'#355b2b',h:'#78a84c',ac:'#d0e888'},
+  '어미거미':{a:'brood_spider',c:'#355b2b',h:'#78a84c',ac:'#d0e888',resolution:2},
   '독거미':{a:'spider',c:'#456a2a',h:'#97c451',ac:'#e2ed91'},
   '거대 거미':{a:'spider',c:'#4c3b45',h:'#8e6a7a',ac:'#df806e'},
   '정원사 망령':{a:'reaper',c:'#526558',h:'#8fa28b',ac:'#b8d38d'},
@@ -2282,7 +2282,7 @@ const ACTOR_SPEC={
   '윈도':{a:'widow',c:'#4e354d',h:'#8c627f',ac:'#d496b8'},
   '비단 술래':{a:'silk',c:'#784e68',h:'#c37f9e',ac:'#efd0dd'},
   '환각의 향로':{a:'censer',c:'#4b3c52',h:'#8c728e',ac:'#d1a76e'},
-  '향기요정':{a:'fragrance_fairy',c:'#76648a',h:'#b49dcc',ac:'#efd0ef',resolution:2},
+  '향기요정':{a:'fairy',c:'#76648a',h:'#b49dcc',ac:'#efd0ef'},
   '분홍거미':{a:'spider',c:'#6e3f5c',h:'#bd7195',ac:'#f1a1b4'},
   '구미호':{a:'fox',c:'#805d65',h:'#d2a0a0',ac:'#f0d3b7'},
   '구미묘':{a:'fox',c:'#9a651f',h:'#f2c75a',ac:'#ef8a2f'},
@@ -2717,6 +2717,56 @@ break;}
     lR9(q,12,28+b,15,29+b,'#a1b49c',1);lR9(q,15,29+b,19,28+b,'#a1b49c',1);
     eR9(q,3,16+b,1,1,'#a9d3cf',null);
    }break}
+  case'brood_spider':{
+   const ink='#14231d',shell='#29452b',green='#486e31',ridge='#7e9a46',venom='#b7ce62',glint='#e4eca4',joint='#626e3a';const {r}=drawKit(q);
+   shadow1012(q,16,34,30);
+   // Eight long jointed legs spread beyond the swollen abdomen, ending in inward hooks.
+   for(const side of[-1,1]){
+    const x=n=>16+side*n;
+    for(const [root,knee,tip,w]of[[[4,16],[10,5],[14,2],2.4],[[7,19],[14,12],[15,21],2.7],[[7,23],[14,23],[15,31],2.6],[[4,26],[9,30],[11,34],2.3]]){
+     const yy=root[1]+b,ky=knee[1]+(frame?side*.5:0),ty=tip[1];
+     lR9(q,x(root[0]),yy,x(knee[0]),ky,ink,w+1.4);lR9(q,x(knee[0]),ky,x(tip[0]),ty,ink,w+.7);
+     lR9(q,x(root[0]),yy,x(knee[0]),ky,green,w);lR9(q,x(knee[0]),ky,x(tip[0]),ty,shell,w*.65);
+     lR9(q,x(root[0]),yy-.5,x(knee[0]),ky-.5,ridge,.6);
+     eR9(q,x(knee[0]),ky,1.4,1.5,joint,ink,.5);r(venom,x(knee[0])-.5,ky-1,1,.5);
+     lR9(q,x(tip[0]),ty,x(tip[0]-1.5),ty-1.5,'#a1aa70',.7);
+     const sx=x((root[0]+knee[0])*.5),sy=(yy+ky)*.5;pR9(q,'#314c2c',[[sx,sy],[sx+side*2,sy-3],[sx+side*1.5,sy+1]],ink,.4);
+    }
+   }
+   // A distended green brood sac, ringed by serrated plates and poisonous translucent blisters.
+   pR9(q,ink,[[9,7+b],[13,4+b],[19,4+b],[23,7+b],[26,13+b],[25,21+b],[22,26+b],[16,29+b],[10,26+b],[7,21+b],[6,14+b]],null);
+   pR9(q,shell,[[10,7+b],[16,5+b],[22,8+b],[25,14+b],[23,22+b],[19,26+b],[12,25+b],[8,20+b],[8,13+b]],null);
+   pR9(q,green,[[11,8+b],[16,6+b],[21,9+b],[22,15+b],[19,21+b],[13,23+b],[9,19+b],[9,13+b]],null);
+   pR9(q,'#667e3a',[[12,8+b],[16,7+b],[19,9+b],[17,13+b],[11,15+b],[10,12+b]],null);
+   for(const side of[-1,1])for(const [x,y]of[[7,10],[9,6],[8,18],[6,23]]){
+    const xx=16+side*x;pR9(q,'#375232',[[xx-side*2,y+b],[xx+side*1.5,y-2+b],[xx+side,y+2+b]],ink,.5);r(ridge,xx-side*.5,y-1+b,1,.7);
+   }
+   for(const [x,y,rx,ry]of[[11,12,2,2.6],[20,13,2.3,3],[13,19,2.5,3],[21,20,1.7,2.4],[16,9,1.3,1.8]]){
+    eR9(q,x,y+b,rx,ry,'#263f27',ink,.5);eR9(q,x-.3,y-.4+b,rx*.77,ry*.8,'#849e49',null);
+    eR9(q,x-.7,y-1+b,rx*.32,ry*.25,venom,null);r(glint,x-1,y-1.5+b,.5,.5);
+   }
+   // Dark seams pull the bulging plates together; pale scratches describe the hard carapace.
+   for(const [x,y,xx,yy]of[[15,11,16,16],[16,16,18,20],[16,16,12,16],[18,20,16,24],[9,17,11,19],[21,10,22,12]]){
+    lR9(q,x,y+b,xx,yy+b,'#233b25',.8);lR9(q,x+.5,y+b,xx+.5,yy+b,'#8b9e50',.35);
+   }
+   // Low armored head, clustered red eyes and two hooked ivory fangs face the player.
+   pR9(q,ink,[[11,22+b],[16,20+b],[21,22+b],[23,26+b],[20,30+b],[12,30+b],[9,26+b]],null);
+   pR9(q,'#3c592d',[[12,22+b],[16,21+b],[20,23+b],[21,26+b],[18,28+b],[13,27+b],[11,25+b]],null);
+   pR9(q,ridge,[[12,23+b],[16,22+b],[19,23+b],[17,24+b],[13,24+b]],null);
+   for(const [x,y,w]of[[11.5,24,1],[14,24.5,1.5],[17,24.5,1.5],[20,24,1]]){
+    r('#111d19',x-.5,y-.5+b,w+1,2);r('#d94d3c',x,y+b,w,1);r('#ffc474',x,y+b,.5,.5);
+   }
+   pR9(q,'#111c19',[[12,27+b],[20,27+b],[21,30+b],[18,32+b],[14,32+b],[11,30+b]],null);
+   for(const side of[-1,1]){
+    const x=n=>16+side*n;
+    pR9(q,'#9c9d6b',[[x(3),27+b],[x(5),28+b],[x(5),31+b],[x(2),34],[x(3),30+b]],ink,.5);
+    lR9(q,x(3.5),28+b,x(4),30.5+b,'#e3d5a0',.8);lR9(q,x(4),30.5+b,x(2),33.5,'#ced7a1',.5);
+    lR9(q,x(6),26+b,x(8),29+b,shell,1.5);lR9(q,x(8),29+b,x(6),31+b,ridge,.8);
+   }
+   // Toxic fluid beads on a fang and leaks from the brood sac, without adding combat effects.
+   eR9(q,19.5,32.5,1,1.7,venom,null);r(glint,19,31.5,.5,1);eR9(q,8,28+b,.7,1.1,'#90aa51',null);
+   break;
+  }
   case'spider':{shadow1012(q,16,33,28);for(const [x1,y1,x2,y2]of[[11,19,1,10],[10,22,0,19],[11,26,1,32],[21,19,31,10],[22,22,32,19],[21,26,31,32],[13,18,5,4],[19,18,27,4]])lR9(q,x1,y1+b,x2,y2+b,hi,2);eR9(q,16,22+b,10,8,base);eR9(q,16,13+b,6,5,hi);for(const[x,y]of[[13,11],[17,10],[20,13],[15,15]])eye1012(q,x,y+b,ac);break}
   case'reaper':{shadow1012(q,16,33,22);pR9(q,base,[[8,15+b],[16,9+b],[24,15+b],[27,30+b],[20,28+b],[16,34],[12,28+b],[5,30+b]]);eR9(q,16,11+b,4,4,'#7f9382');pR9(q,'#27372e',[[5,9+b],[16,4+b],[27,9+b],[23,11+b],[9,11+b]],null);eyePairR9(q,14,18,11+b,ac);lR9(q,25,29,29,8,'#b7c5aa',2);pR9(q,'#cdd7bd',[[29,7],[24,9],[29,11],[32,10]],null);q.globalAlpha=.35;glowR9(q,16,19,10,'rgba(160,210,170,.45)');q.globalAlpha=1;break}
   case'flower':{shadow1012(q,16,33,20);lR9(q,16,31,16,16,base,3);for(const [x,y,rx,ry]of[[16,8,5,7],[8,14,7,5],[24,14,7,5],[10,22,6,5],[22,22,6,5]])eR9(q,x,y+b,rx,ry,hi);eR9(q,16,15+b,6,6,ac);eyePairR9(q,14,18,15+b,'#3b2636');for(const x of[8,12,20,24])lR9(q,16,29,x,34,'#3f5d34',2);break}
@@ -2753,39 +2803,6 @@ break;}
  pR9(q,'#ba955e',[[7,17+b],[11,12+b],[21,12+b],[25,17+b]],null);lR9(q,8,17+b,24,17+b,'#f1d49c',1);eR9(q,16,11+b,2,2,'#c7a465');
  for(const x of[12,16,20]){eR9(q,x,22+b,1.3,2,'#302639',null);lR9(q,x-1,25+b,x+1,25+b,'#dcc58e',.6)}for(const x of[10,22])pR9(q,'#9b7746',[[x-1,28],[x+2,28],[x+3,33],[x-2,33]]);lR9(q,12,29,21,29,'#cdae74',1);
 break;}
-  case'fragrance_fairy':{
-   const ink='#35283f',hair='#a698c7',hairHi='#e4d8ef',dress='#9571a8',fold='#614c7b',skin='#f3d6de',gold='#dbc18d';const {r}=drawKit(q);
-   // A tiny hovering flower sprite: oversized round head, little bell dress and stubby feet.
-   shadow1012(q,16,34,10);
-   for(const side of[-1,1]){
-    const x=n=>16+side*n,tip=frame?1:0;
-    q.fillStyle='#7c749d';q.strokeStyle=ink;q.lineWidth=.7;q.beginPath();q.moveTo(x(3),20+b);q.bezierCurveTo(x(10),20+b,x(13),12+tip,x(10),10+tip);q.bezierCurveTo(x(6),10+tip,x(3),15+b,x(3),20+b);q.fill();q.stroke();
-    q.fillStyle='#c4b4d9';q.beginPath();q.moveTo(x(4),19+b);q.bezierCurveTo(x(8),18+b,x(11),13+tip,x(10),12+tip);q.bezierCurveTo(x(7),12+tip,x(5),16+b,x(4),19+b);q.fill();
-    pR9(q,'#b39ac6',[[x(3),20+b],[x(9),20+b],[x(10),23+b],[x(7),26-b],[x(4),24+b]],ink,.6);
-    lR9(q,x(4),20+b,x(9),14+tip,'#f1ddea',.45);lR9(q,x(4),21+b,x(8),24-b,'#e9cedf',.45);
-   }
-   pR9(q,ink,[[12,10+b],[16,8+b],[20,10+b],[21,16+b],[19,20+b],[12,19+b],[10,16+b]],null);
-   pR9(q,fold,[[13,20+b],[19,20+b],[20,24+b],[22,27+b],[18,28+b],[16,27+b],[13,28+b],[10,26+b],[12,23+b]],ink,.7);
-   pR9(q,dress,[[14,20+b],[18,20+b],[18,24+b],[20,26+b],[17,26+b],[16,25+b],[13,27+b],[12,25+b]],null);
-   pR9(q,'#d1a7cc',[[14,21+b],[16,22+b],[15,25+b],[13,26+b]],null);
-   lR9(q,12,26+b,14,27+b,gold,.55);lR9(q,17,26+b,20,26+b,gold,.55);
-   r(skin,13,28+b,1.5,2);r(skin,17.5,27+b,1.5,2);r(fold,12.5,29+b,2,.7);r(fold,18,29+b,2,.7);
-   lR9(q,13,21+b,10,23+b,fold,2);lR9(q,19,21+b,22,22+b,dress,2);eR9(q,10,23+b,1,1,skin,null);eR9(q,22,22+b,1,1,skin,null);
-   // Chubby cheeks, large ink eyes, a tiny smile and a swept lavender fringe.
-   eR9(q,16,15+b,4.5,4.7,skin,ink,.7);
-   pR9(q,hair,[[11,14+b],[12,10+b],[16,8.5+b],[20,10+b],[21,14+b],[19,13+b],[17,11+b],[15,13+b],[12,14+b]],null);
-   lR9(q,13,11+b,16,10+b,hairHi,.7);lR9(q,18,11+b,20,13+b,'#c7b8db',.6);
-   r('#453049',13,15+b,1.5,2);r('#453049',17.5,15+b,1.5,2);r('#fff3e6',13,15+b,.5,.5);r('#fff3e6',17.5,15+b,.5,.5);
-   r('#e6a6bc',12,17+b,1.5,.7);r('#e6a6bc',19,17+b,1.2,.7);lR9(q,15.5,18+b,16.5,18.5+b,'#ab6989',.5);
-   for(const [x,y]of[[11,10],[13,9],[14,11],[12,12],[10,11]])eR9(q,x,y+b,1,.8,'#e4bddb',null);
-   r('#ffe6a5',11.5,10.5+b,1,1);lR9(q,18,10+b,20,7+b,gold,.5);eR9(q,20,7+b,.75,.75,'#edcfed',null);
-   r('#d9b8df',13,20+b,6,.6);r(gold,15,21+b,2,.7);lR9(q,16,22+b,17,25+b,gold,.6);
-   // One little perfume flask and a curl of fragrance keep the species readable at small size.
-   pR9(q,'#655179',[[22,22+b],[25,22+b],[26,25+b],[22,25+b]],ink,.55);r(gold,22.5,21.5+b,2,.7);r('#efcbe1',23,23+b,1,1);
-   q.strokeStyle='#c8abd7';q.lineWidth=.5;q.beginPath();q.moveTo(24,21+b);q.bezierCurveTo(26,19+b,22,18+b,24,16-b);q.stroke();
-   for(const [x,y]of[[6,15],[26,10],[8,27]]){r('#d4bccf',x,y-b,.5,1.5);r('#f2dba9',x-.5,y+.5-b,1.5,.5)}
-   break;
-  }
   case'fairy':{shadow1012(q,16,33,18);q.globalAlpha=.65;eR9(q,8,16+b,7,10,hi);eR9(q,24,16+b,7,10,hi);eR9(q,7,25+b,6,7,hi);eR9(q,25,25+b,6,7,hi);q.globalAlpha=1;eR9(q,16,10+b,4,4,'#d6b6c7');pR9(q,base,[[12,15+b],[20,15+b],[22,29+b],[16,33],[10,29+b]]);eyePairR9(q,14,18,10+b,ac);lR9(q,13,29,12,34,ACTOR_INK,2);lR9(q,19,29,20,34,ACTOR_INK,2);break}
   case'fox':{shadow1012(q,16,34,28);const blue=m?.shopPortrait58===2,phase=m?.revivePhase57||'normal',hair=blue?'#182e4c':base,hair2=blue?'#2e5277':hi,hairHi=blue?'#6297bc':ac,skin=blue?'#c5e2ed':hi,skinHi=blue?'#e8f5f8':ac,robe=blue?'#396b92':base,robeHi=blue?'#73accb':hi,eye=blue?'#d4f8ff':ac;
     if(phase==='corpse'){
