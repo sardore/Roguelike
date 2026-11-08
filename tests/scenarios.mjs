@@ -676,6 +676,88 @@ export const scenarios = {
     return out;
   },
 
+  // Fixed artillery watches cardinal rays; crossing, faction checks and death use canonical combat owners.
+  async crossfireCannon(browser, root) {
+    const out = {}, s = await openSession(browser, root, { seed: 12016 });
+    try {
+      await startRun(s, 'wanderer');
+      out['crossfireCannon.spawn'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), def = A.definitions.find(m => m.name === '대포'), floors = {};
+        for (const f of [11, 12, 15, 16, 19, 20, 21]) { st.floor = f; floors[f] = { eligible: A.eligible().includes(def), weight: A.weight(def) }; }
+        if (!def.fixed || !def.immobile105 || def.atk <= 10 || def.def <= 5 || floors[11].eligible || floors[21].eligible || ![12,15,16,19,20].every(f => floors[f].eligible) || floors[16].weight !== 4 || floors[20].weight !== 4) throw Error('cannon spawn definition');
+        return { floors, stats: [def.hp, def.atk, def.def] };
+      }));
+      for (const f of [16, 20]) {
+        await s.page.evaluate(f => __MANRU_ARCH1020__.regen(f), f); await s.tick(200);
+        const n = await s.page.evaluate(() => __MANRU_QA_UI__.state().monsters.filter(m => m.name === '대포').length);
+        if (n < 2) throw Error('cannon missing on authored floor ' + f + ': ' + n);
+        out['crossfireCannon.floor' + f] = JSON.stringify({ count: n });
+      }
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(); st.floor = 16; st.monsters = []; st.items = []; st.decor = []; st.tempFields = []; st.tempTerrain74 = []; st.jarGasFields57 = []; st.status = {}; st.intentBudget61 = Infinity; st.turn = st.floorTurn = 100;
+        for (let y = 19; y <= 43; y++) for (let x = 19; x <= 45; x++) st.map[y][x] = A.TT.FLOOR;
+        A.occupancy.endShared(); A.move(st.player, 34, 31); st.player.hp = st.player.maxHp = st.player.baseMaxHpPermanent = 10000;
+        A.place('대포', { x: 30, y: 30 }); __MANRU_QA_VIS__.compute();
+      });
+      out['crossfireCannon.idle'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0], hp = st.player.hp, p = [m.x,m.y];
+        for (let i = 0; i < 3; i++) A.step(m, st.player, { act: true, steps: 2 });
+        const melee = __MANRU_QA_BROOD__.attack(m, 0, { target: st.player, delivery: 'melee' }), ranged = __MANRU_QA_BROOD__.attack(m, 1, { target: st.player, delivery: 'ranged', range: 9 });
+        const row = { idle: !m.intent61, stationary: m.x === p[0] && m.y === p[1], noDamage: st.player.hp === hp, melee: melee.reason, ranged: ranged.reason, skills: A.skills(m).map(s => s.id) };
+        if (!row.idle || !row.stationary || !row.noDamage || melee.reason !== 'no-basic-attack' || ranged.reason !== 'no-basic-attack' || !row.skills.includes('death-blast')) throw Error('cannon basic attack guard');
+        return row;
+      }));
+      out['crossfireCannon.occlusion'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; st.map[30][32] = A.TT.WALL; st.map[28][30] = A.TT.DOOR;
+        A.move(st.player, 34, 30); delete m.crossfireContact; A.step(m, st.player);
+        const cells = A.lines(m, null, m.crossfire.range), row = { blocked: !m.intent61, wallStops: !cells.some(c => c.y === 30 && c.x >= 32), doorStops: !cells.some(c => c.x === 30 && c.y <= 28), cardinal: cells.every(c => c.x === 30 || c.y === 30) };
+        if (Object.values(row).some(v => !v)) throw Error('cannon occlusion: ' + JSON.stringify({row,cells,intent:m.intent61})); st.map[30][32] = st.map[28][30] = A.TT.FLOOR; A.move(st.player, 34, 34); delete m.crossfireContact; return row;
+      }));
+      out['crossfireCannon.crossing'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0];
+        const ally = A.place('시종', { x: 34, y: 30 }); A.step(m, st.player); const noFriendly = !m.intent61;
+        A.move(st.player, 33, 29); A.move(st.player, 33, 30); A.move(st.player, 33, 31); A.step(m, st.player);
+        const I = m.intent61, hp = st.player.hp; A.intent(m); const waits = st.player.hp === hp && m.intent61 === I;
+        const row = { noFriendly, trackedCrossing: I?.data.x === 33 && I?.data.y === 30, cells: I?.cells.length, bonus: I?.data.bonus, waits };
+        if (!noFriendly || !row.trackedCrossing || row.cells !== 9 || row.bonus !== 8 || !waits) throw Error('crossing intent: ' + JSON.stringify(row));
+        A.move(st.player, 36, 35); st.turn++; st.floorTurn++; A.intent(m); if (st.player.hp !== hp) throw Error('moved-out player was tracked');
+        A.occupancy.removeMonster(ally); return row;
+      }));
+      out['crossfireCannon.factions'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0];
+        const hostile = A.place('수비병', { x: 34, y: 30 }), ally = A.place('시종', { x: 34, y: 31 });
+        __MANRU_COMBATANTS57__.setFaction(hostile, 'player'); hostile.hp = hostile.maxHp = 10000; const hp = hostile.hp, friendlyHp = ally.hp;
+        let marked = false; for (let i=0; i<10; i++) { st.turn += 4; st.floorTurn += 4; A.step(m, st.player); marked ||= m.intent61?.data.x === 34 && m.intent61?.data.y === 30; st.turn++; st.floorTurn++; A.intent(m); }
+        const shell = A.fx.projectiles.find(p => p.kind === 'shell'), row = { marked, enemyDamaged: hostile.hp < hp, allySafe: ally.hp === friendlyHp, shell: !!shell, arrow: shell?.arrow984, cooldown: m.nextArtilleryTurn - st.turn };
+        if (!marked || !row.enemyDamaged || !row.allySafe || !shell || shell.arrow984 || row.cooldown !== 3) throw Error('cannon faction blast: ' + JSON.stringify(row));
+        A.occupancy.removeMonster(hostile); A.occupancy.removeMonster(ally); return row;
+      }));
+      out['crossfireCannon.cooldown'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; A.move(st.player, 34, 30); A.step(m, st.player); const cooling = !m.intent61; st.turn += 3; st.floorTurn += 3; m.skillSeal105 = 2; A.step(m, st.player); const sealed = !m.intent61; m.skillSeal105 = 0; m.stunned = 1; A.step(m, st.player); const stunned = !m.intent61; A.step(m, st.player); const ready = m.intent61?.type === 'blast';
+        if (!cooling || !sealed || !stunned || !ready) throw Error('cannon cooldown or control'); return { cooling, sealed, stunned, ready };
+      }));
+      out['crossfireCannon.restore'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; delete m.crossfire; delete m.deathBlast;
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('cannon restore');
+        const loaded = __MANRU_QA_UI__.state().monsters[0], row = { crossfire: loaded.crossfire?.bonus === 8, deathBlast: loaded.deathBlast?.radius === 1, warning: loaded.intent61?.type === 'blast', skills: A.skills(loaded).map(s => s.id) };
+        if (!row.crossfire || !row.deathBlast || !row.warning) throw Error('cannon restored traits'); return row;
+      }));
+      out['crossfireCannon.death'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; m.intent61 = null; A.move(st.player, 31, 30); const ally = A.place('시종', { x: 30, y: 31 }), enemy = A.place('수비병', { x: 29, y: 30 }); __MANRU_COMBATANTS57__.setFaction(enemy,'player'); enemy.hp = enemy.maxHp = 10000;
+        const hp = st.player.hp, ehp = enemy.hp, ahp = ally.hp; m.hp = 0; A.kill(m); const after = st.player.hp; A.kill(m);
+        const row = { player: after < hp, enemy: enemy.hp < ehp, allySafe: ally.hp === ahp, once: st.player.hp === after, removed: !st.monsters.includes(m) }; if (Object.values(row).some(v => !v)) throw Error('cannon death explosion: ' + JSON.stringify(row)); return row;
+      }));
+      out['crossfireCannon.chain'] = JSON.stringify(await s.page.evaluate(() => {
+        const A=__MANRU_QA_SEALING__,st=__MANRU_QA_UI__.state();for(const m of [...st.monsters])A.occupancy.removeMonster(m);A.move(st.player,38,38);const a=A.place('대포',{x:30,y:30}),b=A.place('대포',{x:31,y:30});__MANRU_COMBATANTS57__.setFaction(b,'player');a.hp=0;b.hp=1;A.kill(a);const gone=!st.monsters.includes(a)&&!st.monsters.includes(b),hp=st.player.hp;A.kill(a);A.kill(b);if(!gone||st.player.hp!==hp)throw Error('recursive death explosion');return{gone,once:st.player.hp===hp};
+      }));
+      out['crossfireCannon.legacy'] = JSON.stringify(await s.page.evaluate(() => {
+        const A=__MANRU_QA_SEALING__, st=__MANRU_QA_UI__.state();for(const m of [...st.monsters])A.occupancy.removeMonster(m);A.move(st.player,34,30);const m=A.place('경비 인형 - 포병',{x:30,y:30});m.alerted=true;let warned=false;
+        for(let i=0;i<12&&!warned;i++){st.floorTurn++;st.turn++;__MANRU_AI61__.artillery(m,st.player);warned=!!m.intent61;}if(!warned)throw Error('legacy artillery no warning');st.turn++;st.floorTurn++;A.intent(m);if(!A.fx.projectiles.some(p=>p.kind==='shell'))throw Error('legacy artillery no shell');return{warning:warned,bonus:3,shell:true};
+      }));
+      out['crossfireCannon.errors'] = JSON.stringify(s.errors); if(s.errors.length)throw Error(JSON.stringify(s.errors)); return out;
+    } finally { await s.close(); }
+  },
+
   // Species share the priest's on-hit seal, including skill inspection and existing-save hydration.
   async skillSealEnemies(browser, root) {
     const out = {}, s = await openSession(browser, root, { seed: 1961 });
