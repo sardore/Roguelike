@@ -2313,7 +2313,7 @@ const ACTOR_SPEC={
   '금령':{a:'goldspirit',c:'#7a5d26',h:'#c6a85f',ac:'#fff0a0'},
   '여의 수룡':{a:'dragon',c:'#506a70',h:'#8e9fa0',ac:'#d0e7dd'},
   '광견 대장':{a:'houndboss',c:'#443936',h:'#806b5e',ac:'#d85b4b',resolution:2},
-  '화공 노인':{a:'painter',c:'#4f6256',h:'#879b87',ac:'#d6c98e'},
+  '화공 노인':{a:'painter',c:'#4f6256',h:'#879b87',ac:'#d6c98e',resolution:2},
   '환각의 침모':{a:'seamstress',c:'#6d405d',h:'#b36f90',ac:'#f0b0ca'},
   '장고의 간수':{a:'keeper'},
   '객주 주인: 만루보주':{a:'master'},
@@ -2754,52 +2754,36 @@ break;}
  for(const x of[12,16,20]){eR9(q,x,22+b,1.3,2,'#302639',null);lR9(q,x-1,25+b,x+1,25+b,'#dcc58e',.6)}for(const x of[10,22])pR9(q,'#9b7746',[[x-1,28],[x+2,28],[x+3,33],[x-2,33]]);lR9(q,12,29,21,29,'#cdae74',1);
 break;}
   case'fragrance_fairy':{
-   const ink='#2d233b',wing='#706b99',vein='#b5abc9',edge='#ead8e5',silk='#73517f',fold='#463450',light='#b790b5',gold='#d9b57e',skin='#dfbfc9',hair='#2d293e';
-   const {r}=drawKit(q);shadow1012(q,16,34,14);
-   // Four separate petal wings, with pointed scallops and continuous branching veins.
+   const ink='#35283f',hair='#a698c7',hairHi='#e4d8ef',dress='#9571a8',fold='#614c7b',skin='#f3d6de',gold='#dbc18d';const {r}=drawKit(q);
+   // A tiny hovering flower sprite: oversized round head, little bell dress and stubby feet.
+   shadow1012(q,16,34,10);
    for(const side of[-1,1]){
     const x=n=>16+side*n,tip=frame?1:0;
-    pR9(q,ink,[[x(2),17+b],[x(7),8+b],[x(14),3+tip],[x(14),10+b],[x(12),13+b],[x(14),16+b],[x(8),21+b],[x(3),23+b]],null);
-    pR9(q,wing,[[x(3),17+b],[x(8),9+b],[x(13),5+tip],[x(12),11+b],[x(10),14+b],[x(12),16+b],[x(7),19+b]],null);
-    pR9(q,'#9692b1',[[x(4),17+b],[x(9),10+b],[x(12),7+tip],[x(10),12+b],[x(7),15+b]],null);
-    pR9(q,'#413650',[[x(3),20+b],[x(11),19+b],[x(14),23+b],[x(10),30-b],[x(6),28+b],[x(4),24+b]],null);
-    pR9(q,'#8a7eab',[[x(4),21+b],[x(10),20+b],[x(12),23+b],[x(10),27-b],[x(7),26+b]],null);
-    lR9(q,x(3),20+b,x(12),7+tip,vein,.55);lR9(q,x(6),16+b,x(12),15+b,vein,.5);
-    lR9(q,x(5),22+b,x(10),26-b,edge,.5);lR9(q,x(8),12+b,x(12),11+b,edge,.5);
-    r(edge,x(12)-.5,7+tip,1,.5);r('#c8b7d1',x(10)-.5,24-b,1,1);
+    q.fillStyle='#7c749d';q.strokeStyle=ink;q.lineWidth=.7;q.beginPath();q.moveTo(x(3),20+b);q.bezierCurveTo(x(10),20+b,x(13),12+tip,x(10),10+tip);q.bezierCurveTo(x(6),10+tip,x(3),15+b,x(3),20+b);q.fill();q.stroke();
+    q.fillStyle='#c4b4d9';q.beginPath();q.moveTo(x(4),19+b);q.bezierCurveTo(x(8),18+b,x(11),13+tip,x(10),12+tip);q.bezierCurveTo(x(7),12+tip,x(5),16+b,x(4),19+b);q.fill();
+    pR9(q,'#b39ac6',[[x(3),20+b],[x(9),20+b],[x(10),23+b],[x(7),26-b],[x(4),24+b]],ink,.6);
+    lR9(q,x(4),20+b,x(9),14+tip,'#f1ddea',.45);lR9(q,x(4),21+b,x(8),24-b,'#e9cedf',.45);
    }
-   // Long swept hair sits behind the tiny face, shoulders and split layered skirt.
-   pR9(q,hair,[[12,6+b],[17,4+b],[21,8+b],[21,15+b],[24,23+b],[20,24+b],[18,20+b],[11,22+b],[9,18+b],[11,12+b]]);
-   pR9(q,'#55405f',[[12,8+b],[14,7+b],[13,17+b],[11,20+b],[11,14+b]],null);
-   pR9(q,fold,[[12,17+b],[20,17+b],[20,23+b],[24,29+b],[22,31+b],[18,29+b],[16,33+b],[12,30+b],[8,30+b],[11,23+b]]);
-   pR9(q,silk,[[13,18+b],[18,18+b],[18,24+b],[21,29+b],[18,28+b],[16,31+b],[13,28+b],[10,29+b],[13,23+b]],null);
-   pR9(q,light,[[13,21+b],[15,22+b],[14,27+b],[16,30+b],[12,28+b]],null);
-   pR9(q,'#96719c',[[18,23+b],[22,29+b],[19,28+b],[17,26+b]],null);
-   lR9(q,9,29+b,12,29+b,gold,.6);lR9(q,17,30+b,18,28+b,gold,.6);lR9(q,20,29+b,23,30+b,gold,.6);
-   lR9(q,13,30+b,12,33+b,skin,1);lR9(q,18,29+b,19,32+b,skin,1);r(hair,11,33+b,2,.7);r(hair,19,32+b,2,.7);
-   // Bell sleeves frame a suspended bronze perfume burner, rather than hiding the hands.
-   pR9(q,fold,[[12,14+b],[9,15+b],[7,20+b],[4,23+b],[8,26+b],[11,21+b],[14,18+b]]);
-   pR9(q,light,[[10,15+b],[11,16+b],[9,21+b],[6,23+b],[8,24+b],[10,21+b]],null);
-   pR9(q,silk,[[19,14+b],[22,16+b],[24,20+b],[22,25+b],[19,22+b],[18,18+b]]);
-   lR9(q,6,24+b,8,25+b,gold,.7);lR9(q,21,24+b,23,21+b,gold,.7);
-   pR9(q,skin,[[9,18+b],[11,17+b],[12,18+b],[10,20+b],[9,20+b]],null);r('#f4dbe0',10,18+b,1,.5);
-   pR9(q,skin,[[21,18+b],[23,18+b],[24,20+b],[22,21+b],[21,20+b]],null);
-   pR9(q,'#d5c3d2',[[13,13+b],[16,16+b],[19,13+b],[18,17+b],[15,18+b]],null);
-   lR9(q,13,14+b,16,17+b,gold,.65);lR9(q,19,14+b,16,17+b,edge,.6);
-   r('#3f2d48',12,19+b,8,1.5);r(gold,13,19+b,6,.5);r('#f4d4ad',16,19+b,1,1);
-   lR9(q,17,20+b,19,25+b,gold,.7);r('#eccec0',18.5,25+b,1,2);
-   // Defined face, swept fringe, pale eyes and a five-petal hair ornament.
-   pR9(q,skin,[[13,7+b],[17,6+b],[20,8+b],[19,12+b],[16,14+b],[13,12+b],[12,9+b]]);
-   pR9(q,'#f3dce0',[[14,8+b],[18,8+b],[18,11+b],[16,12+b],[14,11+b]],null);
-   pR9(q,hair,[[11,8+b],[12,4+b],[17,3+b],[21,7+b],[20,10+b],[18,8+b],[16,6+b],[14,8+b],[12,10+b]],null);
-   r('#8d658c',13,9+b,2,.5);r('#8d658c',17,9+b,2,.5);r('#332539',14,9.5+b,1,.5);r('#332539',18,9.5+b,1,.5);r('#b67991',15.5,12+b,1,.5);
-   for(const [x,y]of[[11,5],[13,4],[14,6],[12,7],[10,6]])pR9(q,'#ccb0d1',[[x,y+b],[x+1,y-.5+b],[x+1.5,y+1+b],[x,y+1.5+b]],null);
-   r('#f6db9b',12,5.5+b,1,1);lR9(q,13,5+b,20,3+b,gold,.5);r(edge,20,3+b,1,1);
-   lR9(q,22,20+b,26,23+b,gold,.45);lR9(q,22,20+b,23,23+b,gold,.45);
-   pR9(q,'#493449',[[22,23+b],[28,23+b],[27,27+b],[24,28+b],[22,26+b]]);
-   r('#b2906a',23,23+b,4,1);r('#ddc596',24,24+b,1,2);r('#9d735e',26,24+b,1,2);r('#dfcba3',24,27+b,2,.5);
-   q.strokeStyle='#d3b9d8';q.lineWidth=.55;q.beginPath();q.moveTo(25,22+b);q.bezierCurveTo(28,19+b,22,17+b,26,14-b);q.stroke();
-   for(const [x,y]of[[3,15],[28,8],[5,29]]){r('#d4bccf',x,y-b,.5,1.5);r('#f2dba9',x-.5,y+.5-b,1.5,.5)}
+   pR9(q,ink,[[12,10+b],[16,8+b],[20,10+b],[21,16+b],[19,20+b],[12,19+b],[10,16+b]],null);
+   pR9(q,fold,[[13,20+b],[19,20+b],[20,24+b],[22,27+b],[18,28+b],[16,27+b],[13,28+b],[10,26+b],[12,23+b]],ink,.7);
+   pR9(q,dress,[[14,20+b],[18,20+b],[18,24+b],[20,26+b],[17,26+b],[16,25+b],[13,27+b],[12,25+b]],null);
+   pR9(q,'#d1a7cc',[[14,21+b],[16,22+b],[15,25+b],[13,26+b]],null);
+   lR9(q,12,26+b,14,27+b,gold,.55);lR9(q,17,26+b,20,26+b,gold,.55);
+   r(skin,13,28+b,1.5,2);r(skin,17.5,27+b,1.5,2);r(fold,12.5,29+b,2,.7);r(fold,18,29+b,2,.7);
+   lR9(q,13,21+b,10,23+b,fold,2);lR9(q,19,21+b,22,22+b,dress,2);eR9(q,10,23+b,1,1,skin,null);eR9(q,22,22+b,1,1,skin,null);
+   // Chubby cheeks, large ink eyes, a tiny smile and a swept lavender fringe.
+   eR9(q,16,15+b,4.5,4.7,skin,ink,.7);
+   pR9(q,hair,[[11,14+b],[12,10+b],[16,8.5+b],[20,10+b],[21,14+b],[19,13+b],[17,11+b],[15,13+b],[12,14+b]],null);
+   lR9(q,13,11+b,16,10+b,hairHi,.7);lR9(q,18,11+b,20,13+b,'#c7b8db',.6);
+   r('#453049',13,15+b,1.5,2);r('#453049',17.5,15+b,1.5,2);r('#fff3e6',13,15+b,.5,.5);r('#fff3e6',17.5,15+b,.5,.5);
+   r('#e6a6bc',12,17+b,1.5,.7);r('#e6a6bc',19,17+b,1.2,.7);lR9(q,15.5,18+b,16.5,18.5+b,'#ab6989',.5);
+   for(const [x,y]of[[11,10],[13,9],[14,11],[12,12],[10,11]])eR9(q,x,y+b,1,.8,'#e4bddb',null);
+   r('#ffe6a5',11.5,10.5+b,1,1);lR9(q,18,10+b,20,7+b,gold,.5);eR9(q,20,7+b,.75,.75,'#edcfed',null);
+   r('#d9b8df',13,20+b,6,.6);r(gold,15,21+b,2,.7);lR9(q,16,22+b,17,25+b,gold,.6);
+   // One little perfume flask and a curl of fragrance keep the species readable at small size.
+   pR9(q,'#655179',[[22,22+b],[25,22+b],[26,25+b],[22,25+b]],ink,.55);r(gold,22.5,21.5+b,2,.7);r('#efcbe1',23,23+b,1,1);
+   q.strokeStyle='#c8abd7';q.lineWidth=.5;q.beginPath();q.moveTo(24,21+b);q.bezierCurveTo(26,19+b,22,18+b,24,16-b);q.stroke();
+   for(const [x,y]of[[6,15],[26,10],[8,27]]){r('#d4bccf',x,y-b,.5,1.5);r('#f2dba9',x-.5,y+.5-b,1.5,.5)}
    break;
   }
   case'fairy':{shadow1012(q,16,33,18);q.globalAlpha=.65;eR9(q,8,16+b,7,10,hi);eR9(q,24,16+b,7,10,hi);eR9(q,7,25+b,6,7,hi);eR9(q,25,25+b,6,7,hi);q.globalAlpha=1;eR9(q,16,10+b,4,4,'#d6b6c7');pR9(q,base,[[12,15+b],[20,15+b],[22,29+b],[16,33],[10,29+b]]);eyePairR9(q,14,18,10+b,ac);lR9(q,13,29,12,34,ACTOR_INK,2);lR9(q,19,29,20,34,ACTOR_INK,2);break}
@@ -2916,7 +2900,53 @@ break;}
    lR9(q,23,24+b,27,25+b,warm,.8);r('#d8e0c7',29,22+b,.6,3);r('#d8e0c7',30,25+b,.5,1);
    break;
   }
-  case'painter':{shadow1012(q,16,34,22);pR9(q,base,[[8,16+b],[14,12+b],[22,15+b],[25,31],[11,31],[5,25+b]]);eR9(q,15,10+b,5,5,'#bca887');pR9(q,'#d1d0c0',[[9,8+b],[10,4+b],[18,2+b],[23,7+b],[20,11+b]],null);pR9(q,'#40382c',[[5,5+b],[16,2+b],[26,5+b],[23,8+b],[8,8+b]],null);pR9(q,'#d9d0ad',[[1,17+b],[8,16+b],[10,30],[2,31]],null);q.fillStyle='#273d4b';q.fillRect(3,20+b,5,3);q.fillStyle='#c04e5e';q.fillRect(4,25+b,3,3);lR9(q,24,5,31,33,'#9b6239',3);q.fillStyle=ac;q.fillRect(26,4+b,3,8);break}
+  case'painter':{
+   const ink='#202b2a',robe='#4e685c',fold='#30483e',light='#8b9b7b',skin='#b6997b',skinHi='#dcc3a0',silver='#d3d3b6',paper='#e4d3a3',wood='#8b5c38',gold='#c0a36c';const {r}=drawKit(q);
+   shadow1012(q,16,34,25);
+   // Rolled painting and brush case sit behind the bent shoulders, with visible paper ends.
+   pR9(q,'#3e372c',[[3,11+b],[7,9+b],[10,12+b],[8,28],[3,29]],ink,.75);
+   r(paper,4,11+b,3,16);r('#aa936a',6,12+b,1,14);r(wood,3,10+b,5,2);r(wood,3,27,5,2);r('#e8d6a1',4,10+b,3,.5);
+   r('#ae4d3c',4,22+b,2,2);r('#e4c49a',4.5,22.5+b,.5,.5);
+   pR9(q,ink,[[10,14+b],[19,13+b],[23,18+b],[22,25],[24,32],[20,34],[15,32],[10,34],[7,32],[9,23]]);
+   pR9(q,robe,[[11,15+b],[18,15+b],[21,19+b],[19,25],[22,32],[18,32],[15,30],[10,32],[9,30],[11,23]],null);
+   pR9(q,light,[[11,16+b],[14,18+b],[13,23],[11,30],[10,31],[10,25]],null);
+   pR9(q,fold,[[18,18+b],[21,20+b],[19,25],[21,31],[18,31],[16,28],[17,23]],null);
+   lR9(q,14,24,13,30,'#a4ae8d',.6);lR9(q,18,26,20,31,'#73886c',.6);lR9(q,10,32,14,31,gold,.6);
+   r('#272a25',10,33,5,1.5);r('#272a25',18,33,6,1.5);r('#bba885',10,33,3,.5);r('#bba885',19,33,3,.5);
+   // Broad hanging sleeves frame a palette in one hand and the oversized calligraphy brush in the other.
+   pR9(q,fold,[[11,15+b],[8,16+b],[5,21+b],[6,27+b],[10,26+b],[12,20+b]],ink,.7);
+   pR9(q,light,[[8,17+b],[10,17+b],[8,22+b],[8,25+b],[6,24+b]],null);
+   pR9(q,robe,[[20,15+b],[23,17+b],[24,20+b],[27,18+b],[29,21+b],[25,26+b],[21,24+b],[20,20+b]],ink,.7);
+   pR9(q,light,[[22,18+b],[23,21+b],[26,20+b],[27,21+b],[24,24+b],[22,23+b]],null);
+   lR9(q,6,25+b,9,26+b,gold,.6);lR9(q,24,25+b,27,22+b,gold,.6);
+   lR9(q,11,15+b,16,19+b,'#c8c4a1',.8);lR9(q,19,15+b,16,19+b,'#a1ae91',.8);
+   r('#40372d',10,22+b,10,2);r(gold,11,22+b,8,.5);r('#d8b577',15,22+b,2,2);r('#5b4a37',15.5,22.5+b,1,1);
+   pR9(q,'#74523b',[[17,24+b],[21,24+b],[22,29],[18,30],[17,28]],ink,.6);r(gold,18,24+b,2,.5);r('#332e25',19,26,1,1.5);
+   // An aged narrow face under a soft scholar cap: heavy brows, nose, moustache and a forked beard.
+   pR9(q,'#747966',[[11,4+b],[15,2+b],[20,4+b],[21,7+b],[19,10+b],[12,10+b],[10,8+b]],ink,.7);
+   pR9(q,'#b4b49a',[[12,4+b],[15,3+b],[18,4+b],[18,6+b],[12,7+b]],null);
+   r('#3a493e',10,7+b,12,2);r('#8d9978',11,7+b,10,.5);r(gold,15,6+b,2,2);
+   pR9(q,skin,[[12,9+b],[19,9+b],[21,12+b],[19,16+b],[15,17+b],[12,14+b],[11,11+b]],ink,.65);
+   pR9(q,skinHi,[[14,9+b],[18,9+b],[19,12+b],[17,14+b],[14,13+b]],null);
+   lR9(q,12,10+b,15,10.5+b,silver,1);lR9(q,17,10.5+b,20,10+b,silver,1);
+   r('#3b3c32',13,11+b,1.5,.6);r('#3b3c32',18,11+b,1.5,.6);lR9(q,16,11.5+b,17,13.5+b,'#94745b',.6);r('#edd5ae',16,12+b,.5,1);
+   lR9(q,12,12.5+b,13.5,13+b,'#876e59',.45);lR9(q,19,13+b,20,12.5+b,'#876e59',.45);
+   pR9(q,'#9b9f8b',[[12,13+b],[15,14+b],[17,13.5+b],[20,14+b],[20,17+b],[18,20+b],[16,22+b],[15,19+b],[13,20+b],[12,16+b]],ink,.5);
+   pR9(q,silver,[[13,14+b],[16,15+b],[18,14+b],[19,15+b],[18,18+b],[16,20+b],[15,17+b],[13,18+b]],null);
+   lR9(q,13,14+b,15,14.5+b,'#eee4c8',.6);lR9(q,17,14.5+b,20,14+b,'#eee4c8',.6);lR9(q,16,16+b,16,19+b,'#f1e4c6',.5);
+   // A thumb hole, four pigment daubs and dirty cuffs make the palette read as a working tool.
+   eR9(q,7,23+b,1.3,1.2,skin,null);pR9(q,'#9f7651',[[2,22+b],[5,20+b],[10,21+b],[11,24+b],[8,26+b],[3,25+b]],ink,.65);
+   eR9(q,8,22+b,1,.8,ink,null);r('#bd5949',3,22+b,1.5,1);r('#6e9f9b',5,21.5+b,1.3,1);r('#d3b46e',4,24+b,1.4,1);r('#4c5d49',7,24+b,1.5,1);
+   // Continuous bamboo handle and ferrule reach the white bristles, dipped in black ink.
+   lR9(q,25,30+b,28,9+b,ink,3);lR9(q,25,30+b,28,9+b,wood,1.8);lR9(q,25,28+b,27.5,11+b,'#c59d5d',.6);
+   for(const y of[12,17,27])lR9(q,26+(27-y)*.13,y+b,27.5+(27-y)*.13,y+b,'#4d382b',.6);
+   pR9(q,'#c5b28a',[[26,8+b],[29,8+b],[29,12+b],[27,12+b]],ink,.6);r('#eee0b6',26.5,9+b,1,2);
+   pR9(q,'#e3d8b6',[[26,8+b],[25,5+b],[28,0+b],[30,5+b],[29,8+b]],ink,.65);
+   pR9(q,'#273b3c',[[25.5,5+b],[28,0+b],[29.5,5+b],[28,4+b],[27,6+b]],null);lR9(q,27,6+b,27,8+b,'#a4a58e',.5);
+   pR9(q,skin,[[24,20+b],[26,19+b],[28,20+b],[27,22+b],[25,22+b]],ink,.45);r(skinHi,25,20+b,1.5,.5);
+   for(const [x,y,c]of[[10,28,'#344443'],[13,25,'#556e7b'],[20,30,'#485945'],[8,23,'#3d5551']])r(c,x,y,1,1.5);
+   break;
+  }
   case'seamstress':{
    // Pale silk artisan: a visible face, pinned black hair and an asymmetric sewing pose.
    const hair='#231a25',hairHi='#493447',silk='#6d405d',fold='#44273e',silkHi='#a66b8e',skin='#d4b5bb',skinHi='#efdcda',gold='#c6a16b',steel='#e4d7c2';
