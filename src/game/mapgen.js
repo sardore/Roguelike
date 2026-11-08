@@ -287,6 +287,7 @@ traversalTile(x,y,opts={}){
 playerTerrainPassable(x,y,opts={}){
   if(!state||x<0||y<0||x>=COLS||y>=ROWS)return false;
   const t=ReachabilityService.traversalTile(x,y,opts);if(t==null)return false;
+  if(combatFieldBlocks57(x,y,{passage:'door',actor:state.player}))return false;
   if(!citadelAccess(x,y))return false;
   if(opts.excludeRafts&&t===TT.RAFT)return false;
   const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(t);
@@ -2532,6 +2533,7 @@ function playerMobilityStandable57(x,y){return !!state?.player&&ReachabilityServ
 function validatePlayerTransfer57(x,y,opts={}){
   if(!state?.player||x<0||y<0||x>=COLS||y>=ROWS)return{ok:false,reason:'bounds'};
   const cause=opts.cause||'teleport',policy=opts.policy||playerTransferPolicy57(cause)||{},p=state.player;
+  if(combatFieldBlocks57(x,y,{passage:'door',actor:p}))return{ok:false,reason:'passage-seal'};
   if(!opts.forced&&combatFieldBlocks57(x,y,{actor:p}))return{ok:false,reason:'sealing-ward'};
   if((opts.excludeOrigin??policy.excludeOrigin)&&x===p.x&&y===p.y)return{ok:false,reason:'origin'};
   if((opts.requireSeen??policy.seen)&&!state.seen?.has(k(x,y)))return{ok:false,reason:'unseen'};
@@ -2543,7 +2545,7 @@ function blinkHardBlock(t){if(BLOCK85.has(t)||t===TT.HIDDEN_BRIDGE||t===TT.HIDDE
 function blinkTargetCells57(origin=state?.player,range=state?.player?.blinkLevel||0,opts={}){
   if(!state||!origin||range<=0)return[];const out=[],hazards=new Set([TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].filter(Number.isFinite));
   for(const[dx,dy]of DIRS8)for(let dist=1;dist<=range;dist++){
-    const x=origin.x+dx*dist,y=origin.y+dy*dist;if(x<0||y<0||x>=COLS||y>=ROWS)break;const t=state.map[y][x];if(blinkHardBlock(t))break;
+    const x=origin.x+dx*dist,y=origin.y+dy*dist;if(x<0||y<0||x>=COLS||y>=ROWS)break;const t=state.map[y][x];if(blinkHardBlock(t)||combatFieldBlocks57(x,y,{passage:'door',actor:origin}))break;
     const standable=!hazards.has(t)&&ReachabilityService.playerPassable(x,y)&&(!opts.ignoreOccupants?!OccupancyService.isOccupied(x,y):true);if(standable&&!combatFieldBlocks57(x,y,{actor:origin}))out.push({x,y,dx,dy,dist,tile:t});if(t===TT.PORTAL)break;
   }
   return out;
@@ -3362,6 +3364,7 @@ function descend(){
   const act=playerAction57('descend',{stunMessage:'몸이 굳어 층을 내려가지 못했다.'});
   if(!act.ok)return !!act.consumed;
   if(state.player.x!==state.stairs.x||state.player.y!==state.stairs.y){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
+  if(!WorldTransition57.allowed(state.player))return false;
   if(state.duel)return finishDuelRound();
   if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor)&&!state.bossDefeated){toast('구역 보스를 쓰러뜨려야 길이 열린다.');return false}
   if(state.floor===23&&!state.floor23?.keyAcquired){toast('수은 심부 열쇠가 있어야 다음 층으로 내려갈 수 있다.');return false}
