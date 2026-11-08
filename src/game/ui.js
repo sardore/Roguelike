@@ -402,7 +402,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     state.player.martial=Object.assign({strong:0,roar:0,ghost:0,brawl:0,constitution:0},state.player.martial||{});state.player.nextAttackAt=0;state.player.busyUntil=0;
     state.status=Object.assign({haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0,swift:0,fortify:0,willBoost:0},state.status||{});if(!Number.isFinite(state.makgeolliRecoveryTurns57))state.makgeolliRecoveryTurns57=state.status.drunk||0;state.makgeolliHealHundredths57=Math.max(0,Math.min(99,Math.floor(Number(state.makgeolliHealHundredths57)||0)));if(state.status.drunk>0&&!Number.isFinite(state.drunkBornTurn57))state.drunkBornTurn57=state.turn;
     normalizeTerrainUnderlays();
-    for(const mon of state.monsters||[])normalizeBoss(mon,{loading:true});
+    for(const mon of state.monsters||[]){normalizeBoss(mon,{loading:true});configureMonsterTraits(mon);}
     document.body.classList.add('run-active');const ov=document.getElementById('overlay');if(ov)ov.style.display='none';
     normalizeShop();normalizeRunState57();migrateRetiredItems(state);normalizeItemContainers57();VisibilityService.compute();resetVisualState();resetTurnState();if(!hasSavedDecor70)vfBuildDecor();updateAll();return true;
   }

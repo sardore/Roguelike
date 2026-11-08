@@ -676,7 +676,61 @@ export const scenarios = {
     return out;
   },
 
-  // All gear identity writers must clear legacy flags, while refused equips and hidden inventory remain untouched.
+  // Species share the priest's on-hit seal, including skill inspection and existing-save hydration.
+  async skillSealEnemies(browser, root) {
+    const out = {}, s = await openSession(browser, root, { seed: 1961 });
+    try {
+      await startRun(s, 'wanderer');
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(); st.floor = 12; st.monsters = []; st.items = []; st.decor = []; st.tempFields = []; st.tempTerrain74 = []; st.jarGasFields57 = [];
+        for (let y = 20; y < Math.min(39, st.map.length - 1); y++) for (let x = 20; x < Math.min(42, st.map[y].length - 1); x++) st.map[y][x] = A.TT.FLOOR;
+        A.move(st.player, 30, 30); st.player.hp = st.player.maxHp = st.player.baseMaxHpPermanent = 10000;
+      });
+      out['skillSealEnemies.definitions'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, defs = [...A.definitions, ...__MANRU_LEGEND47__.mobCatalog()].filter(m => m.sealSkill).map(m => m.name).sort();
+        const expected = ['신전 사제 망령', '향기요정', '식귀', '거울 시녀'].sort();
+        if (JSON.stringify(defs) !== JSON.stringify(expected)) throw Error('skill seal species: ' + JSON.stringify(defs));
+        return defs;
+      }));
+      for (const [name, dungeon] of [['향기요정', null], ['식귀', null], ['거울 시녀', 'mirror_blade']]) {
+        out['skillSealEnemies.' + name] = JSON.stringify(await s.page.evaluate(({ name, dungeon }) => {
+          const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+          for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+          const mon = A.place(name, { x: 31, y: 30 }, dungeon ? { legendDungeon47: dungeon, combatFloor: 12 } : {});
+          const preserved = name === '향기요정' ? !!mon.waterTrail : name === '식귀' ? mon.hungerDrain === 8 : mon.gaze && mon.ranged && mon.range === 7;
+          const card = A.skills(mon).find(v => v.id === 'sealSkill');
+          let procs = 0, hits = 0; const turns = new Set();
+          for (let i = 0; i < 64; i++) {
+            st.status.skillSeal = 0; const hp = st.player.hp;
+            const result = __MANRU_QA_BROOD__.attack(mon, 0, { target: st.player });
+            if (st.player.hp < hp) hits++;
+            if (st.status.skillSeal > 0) { procs++; turns.add(st.status.skillSeal); }
+            if (!result.hit && st.status.skillSeal > 0) throw Error('miss applied skill seal');
+          }
+          st.status.skillSeal = 5;
+          const blinkBlocked = __MANRU_QA_BROOD__.canAct('blink', { skill: true }).reason === 'skillSeal', martialBlocked = __MANRU_QA_BROOD__.canAct('martial', { skill: true }).reason === 'skillSeal';
+          st.status.skillSeal = 0;
+          const row = { preserved, card: !!card && JSON.stringify(card).includes('42%'), hits, procs, turns: [...turns], blinkBlocked, martialBlocked };
+          if (!preserved || !row.card || procs < 1 || procs >= hits || turns.size !== 1 || !turns.has(5) || !blinkBlocked || !martialBlocked) throw Error('shared skill seal: ' + JSON.stringify({ name, row }));
+          return row;
+        }, { name, dungeon }));
+      }
+      out['skillSealEnemies.restore'] = JSON.stringify(await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+        for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+        const mons = [A.place('향기요정', { x: 32, y: 30 }), A.place('식귀', { x: 32, y: 31 }), A.place('거울 시녀', { x: 32, y: 32 }, { legendDungeon47: 'mirror_blade', combatFloor: 12 })];
+        for (const m of mons) delete m.sealSkill;
+        if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('skill seal save/load failed');
+        const loaded = __MANRU_QA_UI__.state().monsters, rows = loaded.map(m => ({ name: m.name, restored: m.sealSkill === true, described: A.skills(m).some(s => s.id === 'sealSkill') }));
+        if (rows.length !== 3 || rows.some(r => !r.restored || !r.described)) throw Error('existing monsters did not receive skill seal: ' + JSON.stringify(rows));
+        return rows;
+      }));
+      out['skillSealEnemies.errors'] = JSON.stringify(s.errors);
+      if (s.errors.length) throw Error('skill seal browser errors: ' + JSON.stringify(s.errors));
+      return out;
+    } finally { await s.close(); }
+  },
+
   async equipmentFocus(browser, root) {
     const out = {};
     for (const mobile of [false, true]) {
