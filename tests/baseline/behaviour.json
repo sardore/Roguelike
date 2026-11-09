@@ -634,5 +634,13 @@
  "hiddenBattle.mobile.menu": "70936f46ced0bce987f3934585905aff3fa68ff2",
  "hiddenBattle.mobile.battle": "8a04b39e93a50a0f782e9a27aa4cfd6c5030924d",
  "hiddenBattle.mobile.return": "b227dab54cd88f59a7af768a6177d3deb50651e7",
- "hiddenBattle.mobile.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "hiddenBattle.mobile.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "fireArtillery.pc.화염 가고일": "7aa7126245f595ffa2696e4ef3e17d67a658d9b2",
+ "fireArtillery.pc.살라맨더": "7aa7126245f595ffa2696e4ef3e17d67a658d9b2",
+ "fireArtillery.pc.escape": "9cafff5b7453a47e202cdf96382be57a7f09d5a7",
+ "fireArtillery.pc.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "fireArtillery.mobile.화염 가고일": "7aa7126245f595ffa2696e4ef3e17d67a658d9b2",
+ "fireArtillery.mobile.살라맨더": "7aa7126245f595ffa2696e4ef3e17d67a658d9b2",
+ "fireArtillery.mobile.escape": "9cafff5b7453a47e202cdf96382be57a7f09d5a7",
+ "fireArtillery.mobile.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

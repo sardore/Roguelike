@@ -291,21 +291,24 @@ function projectileFX(x0,y0,x1,y1,color="#c9a6ff",opts={}){
   const projectile={
     x0:x0*TILE+TILE/2,y0:y0*TILE+TILE/2,
     x1:x1*TILE+TILE/2,y1:y1*TILE+TILE/2,
-    color:['gas','shell'].includes(opts.kind)?color:ammo?.color||color,start:performance.now(),life:opts.life||220,arrow984:!!ammo&&!['gas','shell'].includes(opts.kind),kind:opts.kind||null,size:opts.size||0
+    color:['gas','shell'].includes(opts.kind)?color:ammo?.color||color,start:performance.now(),life:opts.life||220,arrow984:!!ammo&&!['gas','shell'].includes(opts.kind),kind:opts.kind||null,size:opts.size||0,...(opts.element?{element:opts.element,cells:(opts.cells||[]).map(c=>({x:c.x,y:c.y}))}:{})
   };FX.projectiles.push(projectile);return projectile;
 }
 function drawCombatProjectile(q,pj,now){
  const t=(now-pj.start)/pj.life;if(t<0||t>=1)return;const x=pj.x0+(pj.x1-pj.x0)*t,y=pj.y0+(pj.y1-pj.y0)*t;q.save();q.globalAlpha=1;
  if(pj.kind==='shell'){
-  const flight=.74,u=Math.min(1,t/flight),height=Math.max(84,Math.min(160,Math.hypot(pj.x1-pj.x0,pj.y1-pj.y0)*.42+72)),sx=pj.x0+(pj.x1-pj.x0)*u,sy=pj.y0+(pj.y1-pj.y0)*u-Math.sin(u*Math.PI)*height;
+  const fire=pj.element==='fire',flight=.74,u=Math.min(1,t/flight),height=Math.max(84,Math.min(160,Math.hypot(pj.x1-pj.x0,pj.y1-pj.y0)*.42+72)),sx=pj.x0+(pj.x1-pj.x0)*u,sy=pj.y0+(pj.y1-pj.y0)*u-Math.sin(u*Math.PI)*height;
   q.fillStyle='rgba(19,12,8,.30)';q.beginPath();q.ellipse(pj.x1,pj.y1,5+u*9,2+u*3,0,0,Math.PI*2);q.fill();
   if(t<flight){
-   for(let i=6;i>=1;i--){const v=Math.max(0,u-i*.024),tx=pj.x0+(pj.x1-pj.x0)*v,ty=pj.y0+(pj.y1-pj.y0)*v-Math.sin(v*Math.PI)*height;q.globalAlpha=(1-i/7)*.65;q.fillStyle=i<3?'#f8ce86':'#9a8169';q.beginPath();q.arc(tx,ty,1.2+i*.32,0,Math.PI*2);q.fill()}
-   q.globalAlpha=1;q.fillStyle='#252b2c';q.beginPath();q.arc(sx,sy,4.5,0,Math.PI*2);q.fill();q.strokeStyle='#cbc1a3';q.lineWidth=1;q.stroke();q.fillStyle='#92998b';q.fillRect(sx-2,sy-3,2,1.5);q.fillStyle='#ffd89a';q.fillRect(sx+2,sy-4,2,2);
+   for(let i=6;i>=1;i--){const v=Math.max(0,u-i*.024),tx=pj.x0+(pj.x1-pj.x0)*v,ty=pj.y0+(pj.y1-pj.y0)*v-Math.sin(v*Math.PI)*height;q.globalAlpha=(1-i/7)*.65;q.fillStyle=fire?(i<3?'#ffe8a2':i<5?'#ff8c36':'#873b29'):(i<3?'#f8ce86':'#9a8169');q.beginPath();q.arc(tx,ty,1.2+i*.32,0,Math.PI*2);q.fill()}
+   q.globalAlpha=1;
+   if(fire){const glow=q.createRadialGradient(sx,sy,1,sx,sy,16);glow.addColorStop(0,'#fff2bc');glow.addColorStop(.3,'#ffad50c9');glow.addColorStop(1,'#e5481600');q.fillStyle=glow;q.beginPath();q.arc(sx,sy,16,0,Math.PI*2);q.fill();q.fillStyle='#e55a25';q.beginPath();q.moveTo(sx-6,sy+4);q.bezierCurveTo(sx-10,sy-3,sx-3,sy-5,sx-1,sy-13);q.bezierCurveTo(sx+5,sy-7,sx+8,sy-2,sx+5,sy+4);q.closePath();q.fill();}
+   q.fillStyle=fire?'#ffca71':'#252b2c';q.beginPath();q.arc(sx,sy,4.5,0,Math.PI*2);q.fill();q.strokeStyle=fire?'#fff3c7':'#cbc1a3';q.lineWidth=1;q.stroke();q.fillStyle=fire?'#fff3c7':'#92998b';q.fillRect(sx-2,sy-3,2,1.5);q.fillStyle='#ffd89a';q.fillRect(sx+2,sy-4,2,2);
   }else{
    const a=(t-flight)/(1-flight),radius=8+a*43;q.globalAlpha=1-a;q.strokeStyle=pj.color;q.lineWidth=3*(1-a)+1;q.beginPath();q.ellipse(pj.x1,pj.y1,radius,radius*.55,0,0,Math.PI*2);q.stroke();
    for(let i=0;i<9;i++){const angle=i*Math.PI*2/9,len=12+a*26,xx=pj.x1+Math.cos(angle)*len,yy=pj.y1+Math.sin(angle)*len*.6-a*12;q.fillStyle=i%2?'#ef9c47':'#ffe1a0';q.beginPath();q.arc(xx,yy,(6-i%3*1.2)*(1-a),0,Math.PI*2);q.fill()}
    q.fillStyle='#fff0bb';q.beginPath();q.arc(pj.x1,pj.y1-3,(1-a)*12,0,Math.PI*2);q.fill();
+   if(fire)for(const c of pj.cells||[]){const spread=1-Math.pow(1-a,3),cx=pj.x1+((c.x+.5)*TILE-pj.x1)*spread,cy=pj.y1+((c.y+.5)*TILE-pj.y1)*spread,w=5+Math.sin(a*Math.PI)*5,h=(16+Math.sin(c.x*2+c.y)*4)*(1-a)+6;q.globalAlpha=(1-a)*.9;q.fillStyle='#ed5825';q.beginPath();q.moveTo(cx-w,cy+3);q.bezierCurveTo(cx-w*1.6,cy-h*.3,cx-2,cy-h*.65,cx+Math.sin(a*8+c.x)*3,cy-h);q.bezierCurveTo(cx+w*.3,cy-h*.5,cx+w*1.7,cy-h*.2,cx+w,cy+3);q.closePath();q.fill();q.fillStyle='#ffe7a0';q.beginPath();q.ellipse(cx,cy-h*.2,w*.45,h*.3,0,0,Math.PI*2);q.fill();}
   }
  }else if(pj.kind==='gas'){
   const dx=pj.x1-pj.x0,dy=pj.y1-pj.y0,len=Math.max(.001,Math.hypot(dx,dy)),ux=dx/len,uy=dy/len,r=pj.size||14;
@@ -1666,6 +1669,8 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   // ---- fast renderer: bypass accumulated drawMap wrapper stack on mobile/desktop
   const FRAME_PERF_STATE={last:0,lastMini:0,lastHud:0,lastViewport:0,dirty:true,avg:0,lastCost:0,frames:0};
   function drawField(f,now){
+    // Field mechanics commit with the turn; the floor flames appear when their shell lands.
+    if(f.kind==='fire'&&FX.projectiles.some(p=>p.element==='fire'&&p.x1===(f.x+.5)*TILE&&p.y1===(f.y+.5)*TILE&&now>=p.start&&now<p.start+p.life*.74))return;
     for(const {x,y} of tempFieldCells57(f)){
       if(x<0||y<0||x>=COLS||y>=ROWS||!state.visible.has(k(x,y)))continue;
       const px=x*TILE,py=y*TILE,a=.13+.035*Math.sin(now/190+x+y);
