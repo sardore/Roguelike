@@ -8,6 +8,8 @@
 #statsScene button.on{--button-surface:#3a2616;--button-color:#efd49b;--button-edge:1px solid #a66f34}
 #statsScene #statsClose{font-size:calc(18px * var(--ui-font-scale, 1));line-height:1;padding:3px 9px}
 #statsBody{padding:12px}
+#statsScene .statsTools{display:flex;justify-content:flex-end;padding:8px 12px;border-top:1px solid #35261a}
+#statsScene .statsTools button{min-height:32px;padding:5px 10px;font-size:calc(11px * var(--ui-font-scale,1));--button-color:#ad9875;--button-surface:#17100b;--button-edge:1px solid #493522}
 .statsNote{margin:24px 0;text-align:center;color:#8e7a5d}
 .statsTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .statsTile{background:#1b120c;border:1px solid #3a2616;padding:8px 6px;text-align:center}

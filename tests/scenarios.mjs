@@ -340,6 +340,38 @@ export const scenarios = {
     return out;
   },
 
+  // The real seven-tap menu route, including saved exploration preservation.
+  async hiddenBattle(browser, root) {
+    const out = {}, fixture = JSON.parse(fs.readFileSync(path.join(savesDir,'progress.json'),'utf8'));
+    for (const mobile of [false,true]) {
+      const s=await openSession(browser,root,{seed:77,mobile,viewport:mobile?{width:390,height:844}:{width:1280,height:800},storage:fixture.storage}),label=mobile?'mobile':'pc';
+      try {
+        const tap=async selector=>mobile?await s.page.tap(selector):await s.page.click(selector);
+        if(await s.page.locator('#nickAsk').isVisible())await s.page.click('.nickAskLater');
+        if(await s.page.locator('#debugBattleBtn57').count())throw Error('arena entry leaked onto title');
+        for(let i=0;i<6;i++)await tap('#card h1');
+        if(await s.page.locator('#statsScene').count())throw Error('hidden menu opened before seventh tap');
+        await tap('#card h1');await s.tick(100);
+        const menu=await s.page.evaluate(()=>{const b=document.getElementById('debugBattleBtn57'),r=b?.getBoundingClientRect();return{button:!!b,footer:!!b?.closest('footer'),compact:!!b&&parseFloat(getComputedStyle(b).fontSize)<=12,visible:!!r&&r.width>0&&r.height>0,duplicates:document.querySelectorAll('#debugBattleBtn57').length}});
+        if(!menu.button||!menu.footer||!menu.compact||!menu.visible||menu.duplicates!==1)throw Error('hidden arena entry '+JSON.stringify(menu));out['hiddenBattle.'+label+'.menu']=JSON.stringify(menu);
+        const stored=await storageDump(s);await tap('#debugBattleBtn57');await s.tick(300);
+        if(await s.page.locator('#statsScene').count()||!await s.page.locator('#debugBattle57').isVisible())throw Error('arena did not replace hidden statistics');
+        for(const[name,team]of[['대포','A'],['어미거미','B']]){await s.page.fill('#battleSearch57',name);await s.page.getByRole('button',{name:name+' 선택',exact:true}).click();await s.page.fill('#battleFloor57','16');await tap('#battleAdd'+team+'57');}
+        for(let i=0;i<3;i++){await tap('#battleStep57');await s.tick(200);}
+        const battle=await s.page.evaluate(()=>{const q=__MANRU_DEBUG_BATTLE57__.snapshot();return{round:q.round,names:q.units.map(u=>u.name).sort(),rendered:!!document.querySelector('#battleViewport57 canvas'),open:!!q.debug}});
+        if(battle.round<1||battle.names.length<2||!battle.rendered||!battle.open)throw Error('actual arena battle '+JSON.stringify(battle));out['hiddenBattle.'+label+'.battle']=JSON.stringify(battle);
+        await tap('#battleExit57');await s.tick(100);
+        const restored=await s.page.evaluate(()=>({screen:document.body.dataset.manruScreen,closed:document.getElementById('debugBattle57').hidden,canvasRestored:!document.querySelector('#battleViewport57 canvas')}));
+        if(restored.screen!=='title'||!restored.closed||!restored.canvasRestored)throw Error('arena return '+JSON.stringify(restored));
+        if(JSON.stringify(stored)!==JSON.stringify(await storageDump(s)))throw Error('arena changed saved exploration');
+        for(let i=0;i<7;i++)await tap('#card h1');if(await s.page.locator('#debugBattleBtn57').count()!==1)throw Error('duplicate hidden entry on reopen');await tap('#statsClose');
+        await tap('#rankBtn');if(await s.page.locator('#debugBattleBtn57').count())throw Error('arena entry appeared on normal ranking board');await tap('#statsClose');
+        out['hiddenBattle.'+label+'.return']=JSON.stringify({...restored,saveKept:true,reopened:true,rankUnchanged:true});out['hiddenBattle.'+label+'.errors']=JSON.stringify(s.errors);if(s.errors.length)throw Error(JSON.stringify(s.errors));
+      } finally {await s.close();}
+    }
+    return out;
+  },
+
   // Debug arena with the AGENTS.md regression species: real placement, then combat rounds.
   async battle(browser, root) {
     const out = {};
