@@ -566,7 +566,10 @@ function runEndEffects(kind){if(!state||state.runEndEffects57||runState57()!==ki
   function ensure74(restoring=false){
     if(!state)return;const K=K74();state.tempTerrain74=Array.isArray(state.tempTerrain74)?state.tempTerrain74:[];state.elementFields74=Array.isArray(state.elementFields74)?state.elementFields74:[];state.elementWard74=state.elementWard74||null;
     if(!restoring)for(const m of state.monsters||[]){m.burn74=m.burn74||0;m.poison74=m.poison74||0}
-    for(const it of [...(state.items||[]),...(state.player?.inventory||[])])if(it?.fusion74){if(it.talismanKind==='f_holy_upgrade'){it.element74='holy';it.fusionMode74='gear';it.fusionEffect74=null;it.targeted=false;it.ability='무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소';it.desc='성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'}K.talismanKnown[it.talismanKind]=true;}
+    for(const it of [...(state.items||[]),...(state.player?.inventory||[])]){
+      if(it?.fusion74){const recipe=FUSION_RECIPES.find(r=>r.kind===it.talismanKind);if(recipe){const fresh=recipeItem(recipe);for(const key of ['name','seal','element74','targeted','targetRange','fusionMode74','fusionEffect74','ability','desc'])it[key]=fresh[key];}K.talismanKnown[it.talismanKind]=true;}
+      else if(it?.talismanKind==='ward'){const def=BASE_KIND74.get('ward');it.ability=def.ability;it.desc=def.desc;}
+    }
   }
   function core982(){
     if(!state)return null;
