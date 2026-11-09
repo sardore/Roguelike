@@ -378,9 +378,28 @@ function palaceAdvance(cost){if(state?.branchContext105?.id!=='palace')return;co
 function palaceGateNearby(){if(state?.branchContext105?.id!=='palace')return null;return (state.branchTerrain105.palace105.handles||[]).find(h=>entityDistance57(h,state.player)<=1&&anvilNearby(h))||null;}
 function palaceUseGate(h,act){const w=palaceWorld(),key=`${state.branchContext105.level}:${h.room}`,g=w.gates[key];if(g&&g.ready>w.time){toast(`수문 재사용까지 ${Math.ceil(g.ready-w.time)}턴`);return false;}w.gates[key]={until:w.time+6,ready:w.time+16};palaceApplyTide();addLog(`${h.label}: 이 방의 수위 -1 · 6턴. 재사용 16턴.`);commitPlayerAction57(act,1);return true;}
 function palaceWarningInfo(x,y){if(!state?.visible?.has(k(x,y)))return null;const mon=state.monsters.find(m=>m.hp>0&&m.intent54?.type.startsWith('palace')&&m.intent54.cells.some(c=>c.x===x&&c.y===y));if(!mon)return null;const I=mon.intent54,left=Math.max(1,(I.data.resolveTurn105??I.armedPlayerTurn+1)-state.turn),when=left===1?'다음 행동 뒤':`${left}번 행동 뒤`;const info={palaceRoots105:{name:'바위뿌리 융기 예고',desc:`${when} 바위벽이 실제로 솟은 칸의 대상만 1턴 기절하며 벽과 겹친다. 빙판 등으로 융기가 막히면 기절도 걸리지 않는다.`,hint:'벽은 솟은 다음 행동 뒤 붕괴하며 주변 3×3에 대지 피해를 준다. 여러 벽의 폭발은 중첩된다.'},palacePull105:{name:'해련의 견인 예고',desc:`${when} 물 위의 해련이 목표를 자기 바로 앞으로 끌어당긴다.`,hint:'해련이 물에서 벗어나거나 경로가 벽·다른 개체로 막히면 견인이 제한된다.'},palaceCannon105:{name:'수압포 사선',desc:`${when} 이 칸을 관통하는 수압포가 발사된다.`,hint:'예고된 직선에서 벗어나거나 기둥 뒤로 피한다.'},palaceSweep105:{name:`용미 쓸기 · 전방위 ${I.data.radius105}/${PALACE_SWEEP_RULES105.maxRadius}칸`,desc:'적이 4칸 이내에 접근했을 때만 시작한다. 예고 반경이 행동마다 1칸씩 커진다. 5칸까지 넓어진 뒤 다음 행동에 꼬리로 쓸고 1칸 밀친다.',hint:'물방울이 솟는 칸은 용미 예고 범위다. 용왕은 준비부터 쓸기가 끝날 때까지 무적. 재사용 간격은 보통 15턴, 최고 수위 10턴. 명중하면 중독·출혈·실명·쇠약·기절·배탈·취함·기봉인 각각 2턴. 최종 범위 밖이나 벽 뒤로 피하자.'},palaceWave105:{name:'창해의 삼중 파도',desc:`${when} 벽을 따라 파도가 밀려온다. 한 턴마다 한 겹씩 총 세 겹이 나타나 반대편 벽까지 전진한다.`,hint:'높은 바닥만으로 파도를 피할 수 없다. 석벽·기둥·가구 뒤로 대피한다. 파도는 생물을 밀치고 물리 피해를 준 뒤 그 칸의 물결이 부서진다.'},palaceStone105:{name:'간수 철창 해방 예고',desc:`${when} 창해군이 이 스위치에 광산의 돌을 던진다.`,hint:'연결된 철창이 열리면 쇠사슬 간수가 나온다.'},palaceRoyal105:{name:'왕의 밀물 예고',desc:`${when} 궁전 수위가 한 단계 높아진다.`,hint:'높은 석단으로 피한다. 자연 조수는 계속 흐르고 추가 밀물은 8턴 뒤 끝난다.'}}[I.type];return info||null;}
-function palaceRootWallExplode(records){const walls=Array.isArray(records)?records:[records],hits=new Map(),targets=[state.player,...state.monsters];for(const wall of walls){const cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:wall.rootWall105.faction,owner:wall.rootWall105.id,credit:wall.rootWall105.credit};elementAttackFx105('earth',cells,{x:wall.x,y:wall.y});for(const target of targets){if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;let hit=hits.get(target);if(!hit){hit={parts:[],effect};hits.set(target,hit);}hit.parts.push(wall.rootWall105.atk*1.4);if(effect.credit==='player')hit.effect=effect;}elementBreakFx105(wall.x,wall.y,'earth');}
- let damaged=0;for(const[target,hit]of hits){const result=resolveElementDamage57(target,'earth',hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:'해련 바위벽 붕괴',ground:true,color:'#bf8b59',contactHandled105:true});if(result.damage>0)damaged++;}
- if(damaged)addLog(`해련 바위벽 붕괴: ${damaged}체 피해.`);return damaged;
+function palaceRootWallsRise(cells,root){
+ const grass=root.element==='grass';let raised=0;
+ for(const c of cells){const old=state.map[c.y]?.[c.x];if(!palaceRootFloor(c.x,c.y))continue;
+  if(!RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,1,'palace-root-wall105',{allowedOld:[old],source:grass?'wood-spirit-roots':'palace-roots',overlapSolid:true}))continue;
+  const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=state.turn+1;t.rootWall105={...root};
+  Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,grass?'grass':'earth');
+  const effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target))applyCombatStatus(target,'stun',root.stunTurns,1,{source:effect});raised++;
+ }return raised;
+}
+function palaceRootWallExplode(records){
+ const walls=Array.isArray(records)?records:[records],hits=new Map(),targets=[state.player,...state.monsters];
+ for(const wall of walls){const root=wall.rootWall105,elem=root.element||'earth',cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};
+  elementAttackFx105(elem,cells,{x:wall.x,y:wall.y});
+  for(const target of targets){if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;
+   let groups=hits.get(target);if(!groups){groups=new Map();hits.set(target,groups);}let hit=groups.get(elem);if(!hit){hit={parts:[],effect,poison:0,drunk:0};groups.set(elem,hit);}
+   hit.parts.push(root.damage??root.atk*1.4);hit.poison=Math.max(hit.poison,root.poison||0);hit.drunk=Math.max(hit.drunk,root.drunk||0);if(effect.credit==='player')hit.effect=effect;
+  }elementBreakFx105(wall.x,wall.y,elem);
+ }
+ let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:!grass,color:grass?'#b7d85d':'#bf8b59',contactHandled105:true});
+  if(result.damage>0){damaged++;if(grass&&target.hp>0){applyCombatStatus(target,'poison',hit.poison,1,{source:hit.effect,element:elem});applyCombatStatus(target,'drunk',hit.drunk,1,{source:hit.effect,element:elem});}}
+ }
+ if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
 function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
 function palaceResolveIntent(mon,I){
@@ -394,7 +413,7 @@ function palaceResolveIntent(mon,I){
  }else if(state.turn<(I.data.resolveTurn105??I.armedPlayerTurn+1))return true;
  if(I.type==='palaceWave105'){palaceStartWave(mon,I.data.wave105);}
  else if(I.type==='palaceStone105'){const button=palaceKingSwitch(mon,I.data.buttonId105),stone=mon.inventory?.find(i=>i.mineItem105==='stone'&&itemQuantity(i)>0);if(button&&stone)resolveMineStone(mon,stone,button);}
- else if(I.type==='palaceRoots105'){for(const c of I.cells){const old=state.map[c.y]?.[c.x];if(!palaceRootFloor(c.x,c.y))continue;if(RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,1,'palace-root-wall105',{allowedOld:[old],source:'palace-roots',overlapSolid:true})){const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=state.turn+1;Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,'earth');t.rootWall105={id:combatantId(mon),faction:entityFaction(mon),credit:isPlayerAlly57(mon)?'player':null,atk:mon.atk,stunTurns:1};const effect={sourceFaction:t.rootWall105.faction,owner:t.rootWall105.id,credit:t.rootWall105.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target))applyCombatStatus(target,'stun',t.rootWall105.stunTurns,1,{source:effect});}}}
+ else if(I.type==='palaceRoots105')palaceRootWallsRise(I.cells,{id:combatantId(mon),faction:entityFaction(mon),credit:isPlayerAlly57(mon)?'player':null,atk:mon.atk,stunTurns:1});
  else if(I.type==='palacePull105'){const target=[state.player,...state.monsters].find(t=>t===state.player?I.data.targetId105==='player':combatantId(t)===I.data.targetId105);if(palaceWet(mon)&&target&&combatTargetValid57(mon,target)&&entityDistance57(mon,target)<=6&&monsterAttackLineR(mon,6,{target}).ok){playHookPullFx57(mon,target);resolveForcedMovement57(target,mon,Math.max(COLS,ROWS),{mode:'pull',hostile:true,creditPlayer:isPlayerAlly57(mon)});attackMonster(mon,3,{target,delivery:'melee',range:6});}}
  else if(I.type==='palaceRoyal105'){const w=palaceWorld();w.royalUntil=w.time+8;palaceApplyTide();addLog('왕의 밀물: 자연 조수에 수위 +1, 최대 3 · 8턴.');}
  else {const scale=I.type==='palaceCannon105'?1.6:I.type==='palaceSweep105'?1.2:1.3;for(const target of bossAreaTargets(mon,I.cells)){const hit=attackMonster(mon,0,{target,delivery:'area',projectile:I.type==='palaceCannon105',reflectable:I.type==='palaceCannon105',damageElement105:I.type==='palaceCannon105'?'water':null,ground105:false,fixedArea58:true,range:99,atkScale:scale});if(hit.hit&&hit.damage>0&&I.type==='palaceSweep105'&&target.hp>0){for(const[key,meta]of Object.entries(STATUS_META57))if(meta.harmful&&key!=='illness')applyCombatStatus(target,key,PALACE_SWEEP_RULES105.statusTurns,1,{source:mon});resolveForcedMovement57(target,mon,1,{mode:'push',hostile:true,creditPlayer:isPlayerAlly57(mon)});}}emitElementContact105('water',I.cells,effectSource57(mon));if(I.type==='palaceCannon105')mon.palaceRecoverUntil105=state.floorTurn+1;}
@@ -849,8 +868,15 @@ function mountainEquip(item,old){
  item.martialSlot105=picked?.id||null;
  if(picked){if(picked.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(picked.id==='roar'){state.martialEcho=null;if(playerClassRules58(p).roar==='aim')setAimPower(0)}addLog(`흑산 목령인: ${MARTIAL_INFO[picked.id].name} ${picked.lv}단을 목령술로 대체했다.`)}else addLog('흑산 목령인: 습득한 액티브 무술이 없어 대체하지 못했다. 무술을 익힌 뒤 다시 착용하자.');
 }
-function mountainWoodPresentation(id,p=state.player){if(mountainWoodSlot(p)!==id)return null;const lv=p.martial[id]||0;return{name:'목령술',type:'active',cost:5,seal:'木',desc:`흑산의 목령을 불러 가시와 독으로 적을 휘감는다. 반경 2칸의 가로막히지 않은 적에게 목속성 피해 ${6+lv*2}, 독 3턴을 준다. 보스가 아닌 적은 1턴 동안 움직임이 굳는다.`}}
-function mountainWoodCast(id,act){const p=state.player,lv=p.martial[id]||0;if(lv<1||p.focus<5)return false;p.focus-=5;globalThis.__MANRU_TALISMAN74_ACTIONS__.woodEffect(6+lv*2);burst(p.x,p.y,'#adc984',16,.7);impact(p.x,p.y,'#799b66',2);floatText(p.x,p.y,'木靈','#e2e6bc',15);addLog(`목령술 ${lv}단 · 목속성 피해 ${6+lv*2} · 반동 없음.`);installMartialJar(p);closeMartial();commitPlayerAction57(act,1);return true}
+const MOUNTAIN_WOOD_RULES=Object.freeze({damage:[0,3,5,7,10,14],poison:[0,8,12,16,22,30],drunk:[0,6,9,12,16,22]});
+function mountainWoodPresentation(id,p=state.player){if(mountainWoodSlot(p)!==id)return null;const lv=p.martial[id]||0;return{name:'목령술',type:'active',cost:5,seal:'木',desc:`자신을 중심으로 5×5 테두리에 목령벽을 예고한다. 1턴 뒤 솟은 칸의 적을 1턴 기절시키고, 그다음 턴 각 벽이 주변 3×3에 목속성 피해 ${MOUNTAIN_WOOD_RULES.damage[lv]}, 독 ${MOUNTAIN_WOOD_RULES.poison[lv]}턴·취함 ${MOUNTAIN_WOOD_RULES.drunk[lv]}턴을 준다. 벽별 폭발 피해는 중첩되며 자신과 아군은 해치지 않는다.`}}
+function mountainWoodCast(id,act){
+ const p=state.player,lv=p.martial[id]||0;if(lv<1||p.focus<5)return false;
+ const cells=[];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.max(Math.abs(dx),Math.abs(dy))===2&&palaceRootFloor(p.x+dx,p.y+dy))cells.push({x:p.x+dx,y:p.y+dy});
+ if(!cells.length){toast('목령벽을 세울 공간이 없다.');return false;}
+ p.focus-=5;addField('rootWall',p.x,p.y,2,cells,{rootWall105:{id:'player',faction:entityFaction(p),credit:'player',element:'grass',damage:MOUNTAIN_WOOD_RULES.damage[lv],poison:MOUNTAIN_WOOD_RULES.poison[lv],drunk:MOUNTAIN_WOOD_RULES.drunk[lv],stunTurns:1}});
+ burst(p.x,p.y,'#b7d85d',16,.7);impact(p.x,p.y,'#799b46',2);floatText(p.x,p.y,'木靈','#e2ed9c',15);addLog(`목령술 ${lv}단 · 5×5 테두리 융기 예고 · 벽별 피해 ${MOUNTAIN_WOOD_RULES.damage[lv]} · 독 ${MOUNTAIN_WOOD_RULES.poison[lv]}턴 · 취함 ${MOUNTAIN_WOOD_RULES.drunk[lv]}턴.`);installMartialJar(p);closeMartial();commitPlayerAction57(act,1);return true;
+}
 function mountainMimicTurn(mon,target=selectCombatOpponent(mon)){
  if(!mon.treeMimic105||!target)return false;const p=target,d=entityDistance57(mon,p),close=d<=1&&entityCombatLineCheckR(mon,p,{range:1,units:false}).ok&&(p!==state.player||!playerConcealed58());
  if(mon.mimicDormant105!==false){if(!mon.summonOwner105&&mon.hp===mon.maxHp&&!close)return true;mon.mimicDormant105=false;mon.alerted=true;burst(mon.x,mon.y,'#ab9a78',14,.7);floatText(mon.x,mon.y,'고목이 움직인다!','#d7c5a1',11);addLog('메마른 나무가 목매로 깨어났다. 가지가 손목을 노린다.');}
@@ -2058,7 +2084,7 @@ const PALACE_TIDE105=Object.freeze([0,1,2,3,2,1]);
 const PALACE_COLORS105=Object.freeze(['#233f59','#478d87','#91c5ac','#dedbc0']);
 const PALACE_INNER_COLORS105=Object.freeze(['#5062a0','#7d8dc7','#b1b9e8','#dedbc0']);
 const PALACE_SWEEP_RULES105=Object.freeze({maxRadius:5,cooldownTurns:15,highTideCooldownTurns:10,statusTurns:2});
-const PALACE_LOTUS105=Object.freeze({name:'용궁 해련',concept57:'궁전 물길에 뿌리를 내린 수생 연꽃.',hp:30,atk:10,def:3,eva:0,xp:14,min:99,max:99,kind:'plant',shape:'plant',color:'#dfbdca',fixed:true,immobile105:true,aquatic:true,amphibious57:true,palaceActor105:'lotus',palaceLotus105:true,range:5});
+const PALACE_LOTUS105=Object.freeze({name:'용궁 해련',concept57:'궁전 물길에 뿌리를 내린 수생 연꽃.',hp:30,atk:9,def:3,eva:0,xp:14,min:99,max:99,kind:'plant',shape:'plant',color:'#dfbdca',fixed:true,immobile105:true,aquatic:true,amphibious57:true,palaceActor105:'lotus',palaceLotus105:true,range:5});
 const PALACE_KING105=Object.freeze({name:'퇴위한 용왕 · 창해군',concept57:'깨어진 용관과 옥색 왕복을 두른 창해의 옛 왕.',hp:160,atk:11,def:5,eva:2,xp:0,boss:true,kind:'beast',shape:'dragon',color:'#83b5a2',aquatic:true,amphibious57:true,bossPattern:'palaceKing105',palaceActor105:'king',equipmentActor105:true,idlePotionKind105:'heal_medium',guardTerritory105:true,weaponStrikeInterval105:2,territory105:{x:23,y:15,w:31,h:28},guardHome57:{x:38,y:30},weaponPhases105:[{ratio:1,weapon:'철두창',elementBrand74:'water'},{ratio:.5,artifact:'water_crossbow'}],baseAtk:9,baseDef:5,baseEva:2,palaceKingRevision105:9,palaceSweepCooldownRevision105:2});
 const PALACE_GARDENER105=Object.freeze({...clone(MONSTERS.find(d=>d.name==='정원사 망령')),name:'용궁 정원사',min:99,max:99,nativeBranch105:{id:'palace',level:2},palaceActor105:'gardener',concept57:'침수된 내궁의 화단을 돌보는 망령.',visStack57:{trait:'gardenSummon',effect:'summon',counter:'gardenSight105',range:7,turns:4,species:'용궁 해련',cap:2}});
 const PALACE_KING_IMAGE105=new Image();
@@ -2067,7 +2093,7 @@ const BRANCH_DISTRICT_LOOKUP105=new WeakMap();
 /* Mountain branches: visual altitude only. WALL/GARDEN_TREE/VOID are canonical physics. */
 const MOUNTAIN_REWARDS105={
  stockade:{name:'보강부적',type:'talisman',talismanKind:'reinforce105',seal:'補',tier:2,rarity:'rare',count:1,stackMax:99,identified:true,branchExclusive105:true,ability:'T2 이하 무기·방어구 강화 +1',desc:'산채와 광산에서 찾을 수 있는 보강부적. T2 이하 무기·방어구에 강화부적과 같은 +1 강화를 적용한다. T3 이상·전설무기에는 사용할 수 없다. 천하장사도 장비에 사용하며 괴력을 부여하지 않는다. 합성 재료로 사용할 수 없다.'},
- black:{name:'흑산 목령인',type:'trinket',tier:3,rarity:'relic',identified:true,curseImmune991:true,branchEffect105:'woodMartial',desc:'흑산 목령의 힘이 깃든 인장. 착용하면 익힌 사용 무술 중 가장 낮은 단계를 목령술로 바꾼다(동률은 M·N·B 순). 기력 5로 반경 2칸에 가시와 독을 펼치며, 수련한 단계가 높을수록 강해진다. 벗으면 본래 무술로 돌아온다.'}
+ black:{name:'흑산 목령인',type:'trinket',tier:3,rarity:'relic',identified:true,curseImmune991:true,branchEffect105:'woodMartial',desc:'흑산 목령의 힘이 깃든 인장. 착용하면 익힌 사용 무술 중 가장 낮은 단계를 목령술로 바꾼다(동률은 M·N·B 순). 기력 5로 자신 중심 5×5 테두리에 목령벽을 예고한다. 1턴 뒤 솟아 적을 1턴 기절시키고 다음 턴 목속성 폭발과 긴 독·취함을 남긴다. 단계가 높을수록 피해와 상태 지속시간이 크게 늘어난다. 벗으면 본래 무술로 돌아온다.'}
 };
 const DOJO_BLINK105=Object.freeze({range:4,cost:2,cooldown:5});
 const DOJO_STYLE_WEIGHTS105=Object.freeze([
@@ -2158,6 +2184,7 @@ function tickCombatFields57(){
  Duel.environment++;
  try{
  state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
+ for(const f of state.tempFields.filter(f=>f.kind==='rootWall'&&f.ttl>0&&state.turn>f.bornTurn)){palaceRootWallsRise(f.cells,f.rootWall105);f.ttl=0;}
  for(const f of state.tempFields.filter(f=>f.kind==='palaceWave105'&&f.ttl>0))palaceAdvanceWave(f);
  for(const f of state.tempFields.filter(f=>f.kind==='fire'&&f.ttl>0&&state.turn>(f.bornTurn??-1))){applyElementField57(f,'fire',3,{source:'화염 지대',color:'#ff9b55',size:12});if(runState57()!=='playing')return false}return true;
  }finally{Duel.environment--}

@@ -55,7 +55,7 @@ function touchElementTerrain105(x,y){const r=terrainReactions105();r.revision=(r
 function elementBreakFx105(x,y,kind){
  if(!state.visible?.has(k(x,y)))return;
  (FX.terrainReactions105||=([])).push({x,y,kind,map:state.map,start:performance.now(),life:kind==='earth'?850:1100});if(FX.terrainReactions105.length>96)FX.terrainReactions105.splice(0,FX.terrainReactions105.length-96);
- burst(x,y,kind==='earth'?'#a67847':'#342820',kind==='earth'?20:12,kind==='earth'?1.05:.6);
+ burst(x,y,kind==='grass'?'#b7d85d':kind==='earth'?'#a67847':'#342820',kind==='earth'?20:12,kind==='earth'?1.05:.6);
 }
 function igniteCharcoal105(item,source={}){
  if(!state.items.includes(item)||item.charcoalBurn105?.lit)return false;

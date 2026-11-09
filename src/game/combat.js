@@ -123,7 +123,7 @@ function expireMartialSmoke(f){
  if(cells.some(c=>c.x===state.player.x&&c.y===state.player.y)){const d=damageEntity(state.player,f.castDamage,f);if(d>0)floatText(state.player.x,state.player.y,'폭연 -'+d,'#ed977e',13);if(state.player.hp<=0)die('폭연')}
  addLog(`폭연 폭발: 설치 피해 ${f.castDamage}.`);return true;
 }
-function martialWorldInfo(x,y){if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'연막이 사선을 가린다.'}:null}
+function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'연막이 사선을 가린다.'}:null}
 let martialOpen = false;
 function bodyPowerHeal(p){
   if(!bodyPowerActive(p)||p.hp<=0)return 0;
@@ -595,7 +595,7 @@ function tempFieldCells57(f){
 }
 function addField(kind,x,y,ttl,cells=null,metadata={}){
  if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,metadata)}finally{Duel.environment--}}
- state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke));
+ state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));
  state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...metadata});syncSmokeEntry();
  Duel.sendField(kind,x,y,ttl,cells,metadata);
 }
