@@ -1299,6 +1299,133 @@ export const scenarios = {
     } finally { await s.close(); }
   },
 
+  async summonBrood(browser, root) {
+    const s=await openSession(browser,root,{seed:9043}),out={};
+    await startRun(s,'wanderer');
+    const setup=async(upgrade=0,name='어미거미',element='fire')=>{
+      await dismissModals(s);await s.tick(1200);
+      return s.page.evaluate(({upgrade,name,element})=>{
+        const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),p=st.player;
+        st.floor=9;st.turn=20;st.floorTurn=20;st.playerAgencyTurns57=20;st.enemyEnergy=0;
+        st.monsters=[];st.items=[];st.status={};st.jarGasFields57=[];st.tempFields=[];st.tempTerrain74=[];st.elementFields74=[];
+        st.branchContext105=null;st.branchTerrain105=null;st.branchWorld105={version:1,pages:{}};st.artifactReturn46=null;st.shopIntermission=null;
+        st.terrainUnderlay58={};st.terrainAttachment58={};st.terrainMutationVersion57={};st.tutorialEntry60={completed:true};
+        p.x=30;p.y=30;p.hp=p.maxHp=p.baseMaxHpPermanent=100000;p.hunger=100;p.inventory=[];delete p.summoning105;
+        for(let y=1;y<st.map.length-1;y++)for(let x=1;x<st.map[y].length-1;x++)st.map[y][x]=A.TT.FLOOR;
+        const book=A.book(),def=A.definitions.find(d=>d.name===name);book.upgrade=upgrade;book.summonElement105=element;
+        book.summonPictures105={[name]:{count:1,portrait:structuredClone(def)}};p.inventory.push(book);A.summoning();
+        A.occupancy.endShared();__MANRU_QA_VIS__.compute();
+        if(!A.summon(name,book.summonBookId105))throw Error('real book summon failed: '+name);
+        const mon=st.monsters.find(m=>m.summonBookId105===book.summonBookId105&&!m.summonParent105);
+        if(!mon)throw Error('missing direct summon');
+        return{bookId:book.summonBookId105,rootId:mon.allyId53,contract:mon.summonContract105,limit:A.limit(book.summonBookId105)};
+      },{upgrade,name,element});
+    };
+    try{
+      const limits=[];
+      for(const [upgrade,prefill]of [[0,0],[1,0],[2,0],[7,0],[2,1],[2,3]]){
+        const ids=await setup(upgrade);
+        const row=await s.page.evaluate(({ids,prefill,upgrade})=>{
+          const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=st.monsters.find(m=>m.allyId53===ids.rootId),old=[];
+          for(let i=0;i<prefill;i++){const child=A.near(mon,'독거미');if(!child)throw Error('prefill failed');old.push(child.allyId53);}
+          mon.hp=0;if(!A.kill(mon))throw Error('death did not run');A.cleanup();
+          const children=A.all().filter(m=>m.summonBookId105===ids.bookId),before=children.length,repeated=A.kill(mon);
+          const blocked=A.near(mon,'독거미',{vacatedOrigin:true})===null;
+          return{upgrade,prefill,limit:ids.limit,count:before,repeated,blocked,
+            retained:old.every(id=>children.some(c=>c.allyId53===id)),contract:!!st.player.summoning105.contracts[ids.contract],
+            rootGone:!A.all().some(m=>!m.summonParent105&&m.summonBookId105===ids.bookId),
+            bound:children.every(c=>c.summonRoot105===ids.rootId&&c.summonContract105===ids.contract&&c.faction57==='player'&&c.friendly47&&!c.rewardPolicy57.kills),
+            traits:children.every(c=>c.name==='독거미'&&A.body(c).length===1&&c.leap&&c.poison&&A.poisonImmune(c)),
+            gas:st.jarGasFields57.some(f=>f.status57==='poison'&&f.sourceFaction==='player')};
+        },{ids,prefill,upgrade});
+        if(row.limit!==Math.min(1+upgrade,3)||row.count!==row.limit||row.repeated||!['blocked','retained','contract','rootGone','bound','traits','gas'].every(k=>row[k]))throw Error('book brood limit: '+JSON.stringify(row));
+        limits.push(row);
+      }
+      out['summonBrood.limits']=JSON.stringify(limits);
+      const ids=await setup(2);
+      const persisted=await s.page.evaluate(ids=>{
+        const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=st.monsters.find(m=>m.allyId53===ids.rootId);
+        mon.hp=0;A.kill(mon);A.cleanup();
+        // A pre-change contract derives its root from surviving descendants exactly once.
+        delete st.player.summoning105.contracts[ids.contract].summonRoot105;st.player.summoning105.bookContractsVersion105=1;A.summoning();
+        const migrated=st.player.summoning105.bookContractsVersion105===2&&st.player.summoning105.contracts[ids.contract].summonRoot105===ids.rootId;
+        if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('posthumous family save/load failed');
+        A.cleanup();const after=A.all().filter(m=>m.summonBookId105===ids.bookId);
+        const snapshot=after.map(m=>[m.allyId53,m.summonRoot105,m.summonContract105]);
+        const followers=A.followers(),restored=__MANRU_QA_UI__.state();restored.monsters=[];restored.map=restored.map.map(row=>row.slice());restored.floor=10;restored.floorTurn=0;
+        A.occupancy.endShared();A.placeFollowers(followers);A.cleanup();
+        const moved=A.all().filter(m=>m.summonBookId105===ids.bookId);
+        return{migrated,saved:after.length===3,travelled:moved.length===3&&JSON.stringify(moved.map(m=>[m.allyId53,m.summonRoot105,m.summonContract105]))===JSON.stringify(snapshot),contract:!!restored.player.summoning105.contracts[ids.contract]};
+      },ids);
+      if(!Object.values(persisted).every(Boolean))throw Error('orphan persistence: '+JSON.stringify(persisted));
+      out['summonBrood.persistence']=JSON.stringify(persisted);
+      await dismissModals(s);await s.tick(1200);
+      const lineage=await s.page.evaluate(ids=>{
+        const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),children=A.all().filter(m=>m.summonBookId105===ids.bookId);
+        for(const child of children.slice(1)){child.hp=0;A.kill(child);}A.cleanup();
+        const first=children[0],grandchild=A.near(first,'독거미');if(!grandchild)throw Error('descendant admission lost contract');
+        const badRoot={...grandchild,allyId53:'invalid-root',summonRoot105:'unrelated'},badBook={...grandchild,allyId53:'invalid-book',summonBookId105:'absent'};
+        const guarded=!A.occupancy.addMonster(badRoot)&&!A.occupancy.addMonster(badBook);
+        const last=A.near(grandchild,'독거미'),blocked=A.near(grandchild,'독거미')===null;
+        const across=A.all().find(m=>m===last);A.occupancy.removeMonster(across);st.artifactReturn46={outer:{monsters:[across]}};A.cleanup();
+        const globalCount=A.count(ids.bookId),offPageBlocked=A.near(first,'독거미')===null;
+        for(const child of [...st.monsters].filter(m=>m.summonBookId105===ids.bookId)){child.hp=0;A.kill(child);}A.cleanup();
+        const offPageKept=!!st.player.summoning105.contracts[ids.contract];
+        st.artifactReturn46.outer.monsters=[];A.cleanup();
+        return{guarded,grandchild:grandchild.summonParent105===first.allyId53&&last.summonRoot105===ids.rootId,blocked,globalCount,offPageBlocked,offPageKept,lastMemberRetired:!st.player.summoning105.contracts[ids.contract]};
+      },ids);
+      if(!['guarded','grandchild','blocked','offPageBlocked','offPageKept','lastMemberRetired'].every(k=>lineage[k])||lineage.globalCount!==3)throw Error('shared lineage/admission: '+JSON.stringify(lineage));
+      out['summonBrood.lineage']=JSON.stringify(lineage);
+      const crowd=[];
+      for(const available of [0,2]){
+        const id=await setup(2);
+        const row=await s.page.evaluate(({id,available})=>{
+          const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=st.monsters.find(m=>m.allyId53===id.rootId),body=A.body(mon).map(([dx,dy])=>({x:mon.x+dx,y:mon.y+dy}));
+          const xs=body.map(c=>c.x),ys=body.map(c=>c.y);
+          for(let y=Math.min(...ys)-1;y<=Math.max(...ys)+1;y++)for(let x=Math.min(...xs)-1;x<=Math.max(...xs)+1;x++)if(x!==st.player.x||y!==st.player.y)st.map[y][x]=A.TT.WALL;
+          for(const c of body.slice(0,available))st.map[c.y][c.x]=A.TT.FLOOR;
+          mon.hp=0;A.kill(mon);A.cleanup();const children=A.all().filter(m=>m.summonBookId105===id.bookId);
+          return{available,count:children.length,unique:new Set(children.map(m=>m.x+','+m.y)).size===children.length,contract:!!st.player.summoning105.contracts[id.contract]};
+        },{id,available});
+        if(row.count!==available||!row.unique||row.contract!==(available>0))throw Error('crowded posthumous brood: '+JSON.stringify(row));crowd.push(row);
+      }
+      out['summonBrood.crowding']=JSON.stringify(crowd);
+      const species=[];
+      for(const [name,element]of [['산성 슬라임','water'],['벌집나무','grass']]){
+        const id=await setup(0,name,element);
+        const row=await s.page.evaluate(({id,name})=>{
+          const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=st.monsters.find(m=>m.allyId53===id.rootId);
+          if(name==='벌집나무')A.damage(mon,mon.hp+100,{faction57:'hostile',hp:1,x:mon.x+5,y:mon.y});else mon.hp=0;
+          A.kill(mon);A.cleanup();const children=A.all().filter(m=>m.summonBookId105===id.bookId);
+          return{name,count:children.length,bound:children.every(m=>m.summonRoot105===id.rootId&&m.summonContract105===id.contract&&m.faction57==='player')};
+        },{id,name});
+        if(row.count!==1||!row.bound)throw Error('shared death summon path: '+JSON.stringify(row));species.push(row);
+      }
+      out['summonBrood.species']=JSON.stringify(species);
+      const book=await setup(2);
+      await s.page.evaluate(book=>{const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),m=st.monsters.find(m=>m.allyId53===book.rootId);m.hp=0;A.kill(m);A.cleanup();},book);
+      await s.tick(1200);
+      const replacement=await s.page.evaluate(book=>{
+        const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),p=st.player,held=p.inventory.find(i=>i.summonBookId105===book.bookId),old=A.all().filter(m=>m.summonBookId105===book.bookId).map(m=>m.allyId53);
+        held.summonRecoveryUntil105=st.turn;p.hp=p.maxHp;
+        const ok=A.summon('어미거미',book.bookId),all=A.all().filter(m=>m.summonBookId105===book.bookId);
+        return{ok,root:all.filter(m=>!m.summonParent105).length,oldGone:!all.some(m=>old.includes(m.allyId53)),oldContractGone:!p.summoning105.contracts[book.contract]};
+      },book);
+      if(!replacement.ok||replacement.root!==1||!replacement.oldGone||!replacement.oldContractGone)throw Error('book replacement: '+JSON.stringify(replacement));
+      out['summonBrood.replacement']=JSON.stringify(replacement);
+      const removal=await s.page.evaluate(book=>{
+        const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=A.all().find(m=>!m.summonParent105&&m.summonBookId105===book.bookId);
+        A.near(mon,'독거미');const child=A.all().find(m=>m.summonParent105);A.occupancy.removeMonster(child);st.artifactReturn46={outer:{monsters:[child]}};
+        st.player.inventory=st.player.inventory.filter(i=>i.summonBookId105!==book.bookId);A.cleanup();
+        return{empty:A.all().length===0,contracts:Object.keys(st.player.summoning105.contracts).length===0,offPage:st.artifactReturn46.outer.monsters.length===0};
+      },book);
+      if(!Object.values(removal).every(Boolean))throw Error('book retirement: '+JSON.stringify(removal));
+      out['summonBrood.retirement']=JSON.stringify(removal);
+      out['summonBrood.errors']=JSON.stringify(s.errors);if(s.errors.length)throw Error('summon brood page errors: '+JSON.stringify(s.errors));
+      return out;
+    }finally{await s.close();}
+  },
+
   async motherSpider(browser, root) {
     const out = {}, s = await openSession(browser, root, { seed: 9021 });
     await startRun(s, 'wanderer');
