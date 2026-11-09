@@ -1383,9 +1383,10 @@ export const scenarios = {
           const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),mon=st.monsters.find(m=>m.allyId53===id.rootId),body=A.body(mon).map(([dx,dy])=>({x:mon.x+dx,y:mon.y+dy}));
           const xs=body.map(c=>c.x),ys=body.map(c=>c.y);
           for(let y=Math.min(...ys)-1;y<=Math.max(...ys)+1;y++)for(let x=Math.min(...xs)-1;x<=Math.max(...xs)+1;x++)if(x!==st.player.x||y!==st.player.y)st.map[y][x]=A.TT.WALL;
-          for(const c of body.slice(0,available))st.map[c.y][c.x]=A.TT.FLOOR;
+          const cells=[...new Map(body.flatMap(c=>[[0,0],[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]].map(([dx,dy])=>({x:c.x+dx,y:c.y+dy}))).filter(c=>c.x!==st.player.x||c.y!==st.player.y).map(c=>[c.x+','+c.y,c])).values()];
+          for(const c of cells.slice(0,available))st.map[c.y][c.x]=A.TT.FLOOR;
           mon.hp=0;A.kill(mon);A.cleanup();const children=A.all().filter(m=>m.summonBookId105===id.bookId);
-          return{available,count:children.length,unique:new Set(children.map(m=>m.x+','+m.y)).size===children.length,contract:!!st.player.summoning105.contracts[id.contract],body,player:{x:st.player.x,y:st.player.y},positions:children.map(m=>({x:m.x,y:m.y})),failure:mon.lastSummonFailure57};
+          return{available,count:children.length,unique:new Set(children.map(m=>m.x+','+m.y)).size===children.length,contract:!!st.player.summoning105.contracts[id.contract]};
         },{id,available});
         if(row.count!==available||!row.unique||row.contract!==(available>0))throw Error('crowded posthumous brood: '+JSON.stringify(row));crowd.push(row);
       }
