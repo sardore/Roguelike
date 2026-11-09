@@ -1329,13 +1329,18 @@ export const scenarios = {
         const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = A.definitions.find(m => m.name === '어미거미'), child = A.definitions.find(m => m.name === '독거미'), floors = {};
         for (const f of [8, 9, 10]) { st.floor = f; floors[f] = A.eligible().some(m => m.name === mother.name); }
         st.floor = 9;
-        return { floors, weight: A.weight(mother), childNatural: A.eligible().some(m => m.name === child.name), motherBody: A.body(mother).length, childBody: A.body(child).length };
+        return { floors, atk: mother.atk, weight: A.weight(mother), childNatural: A.eligible().some(m => m.name === child.name), motherBody: A.body(mother).length, childBody: A.body(child).length };
       }));
       out['motherSpider.sting'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = A.place('어미거미', { x: 35, y: 30 }, { combatFloor: 9 });
         if (!mother) throw Error('mother placement failed');
-        for (let n = 0; n < 30 && !(st.status.poison > 0 && st.status.drunk > 0); n++) A.attack(mother, 0, { target: st.player, delivery: 'ranged', projectile: true, range: 6 });
-        return { poison: st.status.poison > 0, drunk: st.status.drunk > 0, skills: A.skills(mother).map(s => s.id) };
+        for (let n = 0; n < 30 && !(st.status.drunk > 0); n++) A.attack(mother, 0, { target: st.player, delivery: 'ranged', projectile: true, range: 6 });
+        const poison = st.status.poison > 0, drunk = st.status.drunk > 0, expectedAttack = mother.atk;
+        mother.sting = { poison: 4, drunk: 4 }; mother.atk += 5; delete mother.attackRevision;
+        __MANRU_QA_SEALING__.configure(mother);
+        const migrated = mother.atk === expectedAttack && !mother.sting.poison && mother.sting.drunk === 4;
+        const sting = A.skills(mother).find(s => s.id === 'sting');
+        return { poison, drunk, migrated, described: !!sting && !sting.desc.includes('중독') && !sting.desc.includes('undefined') && sting.desc.includes('취함 4턴'), skills: A.skills(mother).map(s => s.id) };
       }));
       out['motherSpider.death'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_BROOD__, st = __MANRU_QA_UI__.state(), mother = st.monsters.find(m => m.name === '어미거미');
@@ -1423,8 +1428,8 @@ export const scenarios = {
       out['motherSpider.errors'] = JSON.stringify(s.errors);
       const status = JSON.parse(out['motherSpider.status']), def = JSON.parse(out['motherSpider.definition']), sting = JSON.parse(out['motherSpider.sting']), death = JSON.parse(out['motherSpider.death']), restored = JSON.parse(out['motherSpider.restore']), leap = JSON.parse(out['motherSpider.leap']);
       if (!status.rows.every(r => r.refused && r.kept) || !status.refused || !status.noTalismanTurn || !status.potion || !status.healed) throw Error('drunk talisman gate: ' + out['motherSpider.status']);
-      if (def.floors[8] || !def.floors[9] || def.floors[10] || def.weight !== 3 || def.childNatural || def.motherBody <= 1 || def.childBody !== 1) throw Error('brood definitions: ' + out['motherSpider.definition']);
-      if (!sting.poison || !sting.drunk || !sting.skills.includes('sting') || !sting.skills.includes('brood')) throw Error('mother sting: ' + out['motherSpider.sting']);
+      if (def.atk !== 2 || def.floors[8] || !def.floors[9] || def.floors[10] || def.weight !== 3 || def.childNatural || def.motherBody <= 1 || def.childBody !== 1) throw Error('brood definitions: ' + out['motherSpider.definition']);
+      if (sting.poison || !sting.drunk || !sting.migrated || !sting.described || !sting.skills.includes('sting') || !sting.skills.includes('brood')) throw Error('mother sting: ' + out['motherSpider.sting']);
       if (death.children !== 8 || death.afterRepeatedKill !== 8 || !death.gas || death.gasTurns !== 6 || !death.oneCell || !death.immune || !death.traits || !death.skills.includes('leap')) throw Error('brood death: ' + out['motherSpider.death']);
       if (restored.before !== restored.after || !restored.traits || !restored.gas) throw Error('brood persistence: ' + out['motherSpider.restore']);
       if (!['armed', 'waited', 'landed', 'cooldown', 'occupiedRefused', 'wallRefused', 'doorRefused'].every(k => leap[k])) throw Error('brood leap: ' + out['motherSpider.leap']);
