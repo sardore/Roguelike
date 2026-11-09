@@ -1385,7 +1385,7 @@ export const scenarios = {
           for(let y=Math.min(...ys)-1;y<=Math.max(...ys)+1;y++)for(let x=Math.min(...xs)-1;x<=Math.max(...xs)+1;x++)if(x!==st.player.x||y!==st.player.y)st.map[y][x]=A.TT.WALL;
           for(const c of body.slice(0,available))st.map[c.y][c.x]=A.TT.FLOOR;
           mon.hp=0;A.kill(mon);A.cleanup();const children=A.all().filter(m=>m.summonBookId105===id.bookId);
-          return{available,count:children.length,unique:new Set(children.map(m=>m.x+','+m.y)).size===children.length,contract:!!st.player.summoning105.contracts[id.contract]};
+          return{available,count:children.length,unique:new Set(children.map(m=>m.x+','+m.y)).size===children.length,contract:!!st.player.summoning105.contracts[id.contract],body,player:{x:st.player.x,y:st.player.y},positions:children.map(m=>({x:m.x,y:m.y})),failure:mon.lastSummonFailure57};
         },{id,available});
         if(row.count!==available||!row.unique||row.contract!==(available>0))throw Error('crowded posthumous brood: '+JSON.stringify(row));crowd.push(row);
       }
