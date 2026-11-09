@@ -709,6 +709,42 @@ export const scenarios = {
   },
 
   // Fixed artillery watches cardinal rays; crossing, faction checks and death use canonical combat owners.
+  async fireArtillery(browser, root) {
+    const out={};
+    for(const mobile of [false,true]){
+      const s=await openSession(browser,root,{seed:2016,mobile,viewport:mobile?{width:390,height:844}:{width:1280,height:800}}),label=mobile?'mobile':'pc';
+      try{
+        await startRun(s,'wanderer');await s.page.evaluate(()=>__MANRU_ARCH1020__.regen(16));
+        for(const name of ['화염 가고일','살라맨더']){
+          out[`fireArtillery.${label}.${name}`]=JSON.stringify(await s.page.evaluate(name=>{
+            const A=__MANRU_QA_SEALING__,st=__MANRU_QA_UI__.state();st.floor=20;st.monsters=[];st.items=[];st.decor=[];st.tempFields=[];st.tempTerrain74=[];st.elementFields74=[];st.jarGasFields57=[];st.status={};st.intentBudget61=Infinity;st.turn=st.floorTurn=100;st.visible=new Set();st.seen=new Set();
+            for(let y=19;y<=43;y++)for(let x=19;x<=45;x++){st.map[y][x]=A.TT.FLOOR;st.visible.add(x+','+y);st.seen.add(x+','+y);}
+            A.occupancy.endShared();A.move(st.player,34,30);st.player.hp=st.player.maxHp=10000;const m=A.place(name,{x:30,y:30});m.alerted=true;
+            const ally=A.place('시종',{x:34,y:31}),allyHp=ally.hp,hp=st.player.hp;A.fx.projectiles=[];A.fx.particles=[];A.fx.floats=[];
+            for(let i=0;i<12&&!m.intent61;i++){st.turn++;st.floorTurn++;__MANRU_AI61__.artillery(m,st.player);}
+            const warning=m.intent61;if(warning?.type!=='fire'||warning.cells.length!==9)throw Error('missing fire warning');A.intent(m);
+            const waits=st.player.hp===hp&&!st.tempFields.length&&!A.fx.projectiles.length&&m.intent61===warning;if(!waits)throw Error('lost one-turn warning');st.turn++;st.floorTurn++;A.intent(m);
+            const shell=A.fx.projectiles.at(-1),field=st.tempFields.find(f=>f.kind==='fire'),impact=shell.start+shell.life*.74;
+            if(shell.kind!=='shell'||shell.element!=='fire'||shell.arrow984||shell.cells.length!==9||field?.ttl!==4||field.cells.length!==9||st.player.hp>=hp||ally.hp!==allyHp||m.intent61)throw Error('fire attack mechanics');
+            if(!A.fx.particles.length||A.fx.particles.some(p=>p.start<impact)||!A.fx.floats.some(f=>f.start>=impact))throw Error('impact timing');
+            const c=document.createElement('canvas');c.width=420;c.height=200;const q=c.getContext('2d');
+            const frame=(t,fire=true)=>{q.clearRect(0,0,c.width,c.height);const p={...shell,x0:48,y0:164,x1:336,y1:164,cells:shell.cells.map(v=>({x:v.x-24,y:v.y-25}))};if(!fire)delete p.element;A.drawProjectile(q,p,p.start+p.life*t);return c.toDataURL()};
+            const rise=frame(.22),fall=frame(.6),burst=frame(.84);if(rise===fall||fall===burst||rise===frame(.22,false)||burst===frame(.84,false))throw Error('fire shell rendering');
+            const game=document.getElementById('game'),g=game.getContext('2d'),paint=(f,now)=>{g.save();g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,192,192);g.translate(96-field.x*32,96-field.y*32);A.drawField(f,now);g.restore();return g.getImageData(0,0,192,192).data.some((v,i)=>i%4!==3&&v>0)};
+            const hidden=!paint(field,shell.start+shell.life*.5),landed=paint(field,impact+1),smokeVisible=paint({...field,kind:'smoke'},shell.start+shell.life*.5);if(!hidden||!landed||!smokeVisible)throw Error('floor field presentation timing');
+            const shots=A.fx.projectiles;A.fx.projectiles=[];const restoredVisible=paint(field,shell.start);A.fx.projectiles=shots;if(!restoredVisible)throw Error('restored fire needs no presentation state');
+            return{waits,damage:true,friendlySafe:true,ttl:field.ttl,cells:field.cells.length,fieryShell:true,impactTimed:true,distinctStages:true,hidden,landed,smokeVisible,restoredVisible};
+          },name));
+        }
+        out[`fireArtillery.${label}.escape`]=JSON.stringify(await s.page.evaluate(()=>{
+          const A=__MANRU_QA_SEALING__,st=__MANRU_QA_UI__.state(),m=st.monsters.find(m=>m.name==='살라맨더');st.tempFields=[];A.fx.projectiles=[];A.move(st.player,34,30);m.intent61={type:'fire',cells:Array.from({length:9},(_,i)=>({x:33+i%3,y:29+Math.floor(i/3)})),data:{x:34,y:30},armedPlayerTurn:st.turn};const hp=st.player.hp;A.move(st.player,37,33);st.turn++;st.floorTurn++;A.intent(m);const field=st.tempFields.find(f=>f.kind==='fire');if(st.player.hp!==hp||field?.x!==34||field.y!==30||field.ttl!==4)throw Error('fire warning followed escaped target');return{escaped:true,fixedArea:true,ttl:field.ttl};
+        }));
+        out[`fireArtillery.${label}.errors`]=JSON.stringify(s.errors);if(s.errors.length)throw Error(JSON.stringify(s.errors));
+      }finally{await s.close();}
+    }
+    return out;
+  },
+
   async crossfireCannon(browser, root) {
     const out = {}, s = await openSession(browser, root, { seed: 12016 });
     try {
