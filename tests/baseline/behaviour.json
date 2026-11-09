@@ -253,8 +253,8 @@
  "saves.dead.boot": "431ca812f38a7c5a5ce23d0b7a729a270df22515",
  "saves.branch.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
  "saves.legend.boot": "75d7c3926e18ddc51ae47a393010cc80b145260d",
- "values.empty": "d86038f9be33e957deeeef14c61a026b584d49ab",
- "values.branch": "1a6477f923982f7c94e4eb5d8ab2532a0f84ad8d",
+ "values.empty": "35c41cea82a626f8e3053cb5362e67986dc934b1",
+ "values.branch": "198c71fd9a7cc776f135add6de032de2ccb19596",
  "features.fusion": "78fe0d2d4719b1ebc7cc204ce743deab5eeb4b25",
  "features.citadel": "4367793aa2dc967ae38943dd13ce8fe3e396413d",
  "features.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
@@ -626,5 +626,13 @@
  "crossfireCannon.death": "fe38e3da07947229609df13a3c14e2c2c31ccba6",
  "crossfireCannon.chain": "b75a0f8a0ce26642ff16d09ca57e4ceb4dc517af",
  "crossfireCannon.legacy": "049b594473f2323927c385a813305f4e7c6adbae",
- "crossfireCannon.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
+ "crossfireCannon.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "hiddenBattle.pc.menu": "70936f46ced0bce987f3934585905aff3fa68ff2",
+ "hiddenBattle.pc.battle": "8a04b39e93a50a0f782e9a27aa4cfd6c5030924d",
+ "hiddenBattle.pc.return": "b227dab54cd88f59a7af768a6177d3deb50651e7",
+ "hiddenBattle.pc.errors": "97d170e1550eee4afc0af065b78cda302a97674c",
+ "hiddenBattle.mobile.menu": "70936f46ced0bce987f3934585905aff3fa68ff2",
+ "hiddenBattle.mobile.battle": "8a04b39e93a50a0f782e9a27aa4cfd6c5030924d",
+ "hiddenBattle.mobile.return": "b227dab54cd88f59a7af768a6177d3deb50651e7",
+ "hiddenBattle.mobile.errors": "97d170e1550eee4afc0af065b78cda302a97674c"
 }

@@ -275,7 +275,9 @@ const PlayStats={
   this.mode=mode;this.tab=board?'rank':'stats';
   if(!board)for(const [tab,name] of [['rank','랭킹'],['stats','통계'],['rows','기록'],['ghost','망령'],['log','로그']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render();if(tab==='ghost')this.loadGhosts()};tabs.append(button)}
   head.append(this.el('h2',null,board?'기록판':'탐사 기록 통계'),tabs,close);
-  const body=this.el('div');body.id='statsBody';panel.append(head,body);scene.append(panel);document.body.append(scene);
+  const body=this.el('div');body.id='statsBody';panel.append(head,body);
+  if(!board){const tools=this.el('footer','statsTools'),battle=this.el('button',null,'디버그 전장');battle.id='debugBattleBtn57';battle.type='button';battle.onclick=()=>{this.close();openDebugBattle57()};tools.append(battle);panel.append(tools)}
+  scene.append(panel);document.body.append(scene);
   this.data=null;this.ranking=null;this.failed={};this.render('loading');this.load();return true;
  },
  close(){document.getElementById('statsScene')?.remove()},
