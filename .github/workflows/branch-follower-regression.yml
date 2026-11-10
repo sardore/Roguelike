@@ -27,10 +27,18 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/node_modules" "$reference_dir/node_modules"
           (cd "$reference_dir" && npm run build:qa)
           node tests/branch-followers.mjs --root "$reference_dir/dist-qa" --reference
+          node tests/branch-followers.mjs --root "$reference_dir/dist-qa" --benchmark-only --bench-json /tmp/branch-before.json
       - name: Exercise real palace portals and save restoration
-        run: npm run build:qa && node tests/branch-followers.mjs
+        run: npm run build:qa && node tests/branch-followers.mjs --bench-json /tmp/branch-after.json
+      - name: Compare steady-state cleanup cost
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import assert from 'node:assert/strict';
+          const before=JSON.parse(fs.readFileSync('/tmp/branch-before.json')),after=JSON.parse(fs.readFileSync('/tmp/branch-after.json'));
+          for(const key of ['empty','book']){const ratio=after[key].milliseconds/before[key].milliseconds;console.log('CLEANUP_COST='+JSON.stringify({key,before:before[key],after:after[key],ratio}));assert.ok(ratio<.65,'cleanup still decodes stored floors on every call');}
+          JS
       - name: Shared summon admission and existing branch regressions
-        run: npm test -- --only summonBrood,saves,features,battle --label branch-followers
+        run: npm test -- --only summonBrood,saves,features,battle,values --label branch-followers
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
