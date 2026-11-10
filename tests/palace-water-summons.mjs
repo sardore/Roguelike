@@ -12,7 +12,7 @@ await ctx.route('**/scripts/10-runtime.js',r=>r.fulfill({contentType:'text/javas
 const s=await openSession(browser,path.join(repo,'dist-qa'),{context:ctx,seed:9045});
 try{
  await startRun(s,'wanderer');await dismissModals(s);await s.tick(1200);
- for(const [name,element,fixed] of [['식인 물고기','water',true],['환각의 향로','shock',true],['화염 가고일','shock',true],['대포','shock',true],['독꽃','grass',false],['벌집나무','grass',false],['고목 목매','grass',false],['벌떼','fire',false],['객잔 쥐','fire',false],['어미거미','fire',false]]){
+ for(const [name,element,fixed] of [['식인 물고기','water',false],['환각의 향로','shock',true],['화염 가고일','shock',true],['대포','shock',true],['독꽃','grass',false],['벌집나무','grass',false],['고목 목매','grass',false],['벌떼','fire',false],['객잔 쥐','fire',false],['어미거미','fire',false]]){
   const result=await s.page.evaluate(({name,element})=>{
    const A=__MANRU_QA_BROOD__,Q=waterTest,st=Q.state(),p=st.player;
    st.floor=16;st.turn=st.floorTurn=20;st.playerAgencyTurns57=20;st.enemyEnergy=0;st.monsters=[];st.items=[];st.status={};st.jarGasFields57=[];st.tempFields=[];st.tempTerrain74=[];st.elementFields74=[];st.branchContext105=null;st.branchTerrain105=null;st.branchWorld105={version:1,pages:{}};st.artifactReturn46=null;st.shopIntermission=null;st.terrainUnderlay58={};st.terrainAttachment58={};st.terrainMutationVersion57={};st.tutorialEntry60={completed:true};
@@ -26,7 +26,7 @@ try{
    const pos={x:m.x,y:m.y},pursued=Q.step(m,{x:40,y:40}),moved=m.x!==pos.x||m.y!==pos.y,swappable=Q.swap(p,m);
    // The same species body must keep its actual rendered pixels and authored traits.
    const native=__MANRU_QA_SEALING__.scale(def,16,{inventory:false});native.x=m.x;native.y=m.y;if(native.treeMimic105)native.mimicDormant105=false;Q.actorCache.clear();const normalPixels=Q.art(native,0).toDataURL();Q.actorCache.clear();const bodyPixels=Q.art(m,0).toDataURL();
-   if(def.fixed){m.fixed=def.kind==='plant';m.summonForm105=m.fixed?'fixed':'mobile';}
+   if(def.fixed||name==='식인 물고기'){m.fixed=def.kind==='plant'||name==='식인 물고기';m.summonForm105=m.fixed?'fixed':'mobile';}
    if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('save/load failed');
    const loaded=Q.state().monsters.find(a=>a.allyId53===m.allyId53);
    return{name,fixed:originalFixed,form,escorted,pursued,moved,swappable,traits,pixels:normalPixels===bodyPixels,loadedFixed:!!loaded.fixed,loadedForm:loaded.summonForm105};

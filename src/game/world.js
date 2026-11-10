@@ -18,7 +18,7 @@ flushPendingItems(){
   if(!state?.pendingGroundItems57?.length){PlacementService.reconcileBossDrop();return}const pending=state.pendingGroundItems57,reachable=ReachabilityService.lootCells();state.pendingGroundItems57=[];for(const q of pending)PlacementService.placeItem(q.item,q.origin,{reachable});PlacementService.reconcileBossDrop()
 },
 terrainStandable(entity,tile){
-  if(tile==null)return false;if(tile===TT.PALACE_ROCK)return false;if(state?.debugBattle57&&state.debugBattleIgnoreTerrain57&&terrainSurface58(tile))return true;if(tile===TT.RAFT)return true;
+  if(tile==null)return false;if(tile===TT.PALACE_ROCK)return false;if(entity?.waterOnly57)return tile===TT.WATER;if(state?.debugBattle57&&state.debugBattleIgnoreTerrain57&&terrainSurface58(tile))return true;if(tile===TT.RAFT)return true;
   const hazardKind=globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile);if(hazardKind)return !!globalThis.__MANRU_HAZARD_CORE__?.adapted?.(entity,hazardKind);
   if(tile>=500&&tile<660&&tileBlocks(tile))return false;
   return entity?.flying?!FLYING_BLOCKING_TILES57.has(tile):entity?.aquatic&&!entity.amphibious57?AQUATIC_STAND_TILES57.has(tile):entity?.lava?(tile===TT.LAVA||!tileBlocks(tile)):!tileBlocks(tile)
@@ -39,7 +39,6 @@ findMonster(mon,opts={}){
 monsterCanStand(mon,x,y,spawnCtx57=null,opts={}){
   if(state.generationInProgress57&&state.floor===2&&state.floor2Choice63?.safeCells.includes(k(x,y)))return false;
   if(entityFootprintCells57(mon,x,y).some(p=>inTutorialEntry(p.x,p.y)))return false;
-  if(mon?.waterOnly57){if(x<1||y<1||x>=COLS-1||y>=ROWS-1||state.map[y][x]!==TT.WATER||OccupancyService.isOccupied(x,y,mon)||(x===state.player.x&&y===state.player.y))return false;return true}
   if(!spawnCtx57)return PlacementService.canPlaceEntity(mon,x,y,opts);
   for(const q of entityFootprintCells57(mon,x,y))if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||!PlacementService.terrainStandable(mon,state.map[q.y][q.x])||spawnCtx57.occupied.has(q.y*COLS+q.x)||(q.x===state.player.x&&q.y===state.player.y))return false;return true
 },
