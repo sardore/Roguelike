@@ -1260,7 +1260,7 @@ function summonState(){
   for(const l of summonContainers()){for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'){configureSummonBody105(mon);mon.summonBookId105=mon.summonBookId105||book?.summonBookId105||null;mon.summonRoot105=mon.summonRoot105||(!mon.summonParent105?mon.allyId53:mon.summonParent105);const contract=q.contracts[mon.summonContract105];if(contract){contract.bookId105=mon.summonBookId105;contract.summonRoot105=contract.summonRoot105||mon.summonRoot105;}}if(l.pageKey)state.branchWorld105.pages[l.pageKey]=branchEncodePage(l.world);}
   q.bookContractsVersion105=1;OccupancyService.endShared();
  }
- // Restore native plant bodies in contracts saved while plants were made mobile.
+ // Refresh native plant traits before applying the summon body movement rules.
  if(q.plantBodyVersion105!==1){
   const definitions=summonDefinitions();
   for(const l of summonContainers()){let changed=false;for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'&&mon.kind==='plant'){
@@ -2066,7 +2066,7 @@ function debugBattleBindViewport57(el){
 }
 let SUMMON_PANEL_SESSION105=null;
 function summonRecovery105(upgrade=summonState().upgrade){return Math.max(1,Math.ceil(SUMMON_RULES.cooldown/(1+SUMMON_RULES.cooldownDecay*Math.max(0,Math.floor(Number(upgrade)||0)))));}
-function configureSummonBody105(mon,definition=null){mon.fixed=!!(mon.combatFixture54||mon.immobile105||definition?.fixed||mon.fixed);mon.summonForm105=mon.boss||mon.miniBoss?'boss':mon.fixed?'fixed':'mobile';if(mon.treeMimic105)mon.mimicDormant105=false;mon.footprint='one';if(mon.aquatic)mon.amphibious57=true;mon.waterOnly57=false;mon.guardHome57=null;return mon;}
+function configureSummonBody105(mon,definition=null){mon.fixed=!!(mon.combatFixture54||mon.kind!=='plant'&&(mon.immobile105||definition?.fixed||mon.fixed));mon.summonForm105=mon.boss||mon.miniBoss?'boss':mon.fixed?'fixed':'mobile';if(mon.treeMimic105)mon.mimicDormant105=false;mon.footprint='one';if(mon.aquatic)mon.amphibious57=true;mon.waterOnly57=false;mon.guardHome57=null;return mon;}
 function normalizeSummonSpeciesItem105(item,defs=null,aliases=new Map()){
  if(!item?.summonItem105||item.summonSpeciesVersion105===1)return;
  defs=defs||summonDefinitions();
