@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {assembleGame,QA_MARKER} from '../tools/lib/game.mjs';
 import {launch,openSession,startRun,dismissModals} from './harness.mjs';
-const repo=path.resolve('.'),art=path.join(repo,'tests/artifacts/palace-water');fs.mkdirSync(art,{recursive:true});
-const bridge=`globalThis.waterTest={state:()=>state,TT,escort:summonEscortTurn,step:moveMonsterToward,swap:occupancySwapAllowed57,body:configureSummonBody105,art:monsterCanvas,actorCache:ACTOR_CACHE,water:drawPalaceWater,atlas:palaceWaterSprite,cache:PALACE_WATER_ART,floor:drawPalaceFloorMaterial,base:terrainBaseTile58,info:terrainInfo986,lotus:PALACE_LOTUS105,draw:drawMap,update:updateAll};`;
+const mobile=process.argv.includes('--mobile'),repo=path.resolve('.'),art=path.join(repo,'tests/artifacts/palace-water');fs.mkdirSync(art,{recursive:true});
+const bridge=`globalThis.waterTest={state:()=>state,TT,escort:summonEscortTurn,step:moveMonsterToward,swap:occupancySwapAllowed57,body:configureSummonBody105,art:monsterCanvas,actorCache:ACTOR_CACHE,water:drawPalaceWater,atlas:palaceWaterSprite,cache:PALACE_WATER_ART,floor:drawPalaceFloorMaterial,base:terrainBaseTile58,info:terrainInfo986,lotus:PALACE_LOTUS105,paints:()=>RC.perf.frames,active:active70,screen:(x,y)=>{const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),p=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(x,y,cam);return{x:Math.round((p.x-p.s/2+2)*VIEW.dpr),y:Math.round((p.y-p.s/2+2)*VIEW.dpr),size:Math.round((p.s-4)*VIEW.dpr)};},pixels:r=>Array.from(X.getImageData(r.x,r.y,r.size,r.size).data),draw:drawMap,update:updateAll};`;
 const runtime=assembleGame(path.join(repo,'src')).text.replace(QA_MARKER,fs.readFileSync(path.join(repo,'src/qa/qa.js'),'utf8')+'\n'+bridge);
-const browser=await launch(),ctx=await browser.newContext({viewport:{width:1280,height:800}});
+const browser=await launch(),ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
 await ctx.route('**/scripts/10-runtime.js',r=>r.fulfill({contentType:'text/javascript',body:runtime}));
 const s=await openSession(browser,path.join(repo,'dist-qa'),{context:ctx,seed:9045});
 try{
@@ -51,7 +51,18 @@ try{
   const spot=ranked[0];if(!spot)throw Error('no actual palace water');st.player.x=spot.x;st.player.y=spot.y;
   for(let y=0;y<st.map.length;y++)for(let x=0;x<st.map[y].length;x++){st.visible.add(x+','+y);st.seen.add(x+','+y);}Q.update();return spot;
  });console.log('actual palace water focus '+JSON.stringify(focus));await s.tick(1000);
- await s.page.screenshot({path:path.join(art,'palace-game.png')});
+ await s.page.screenshot({path:path.join(art,mobile?'palace-mobile.png':'palace-game.png')});
+ // No manual draw or game action: observe the real idle visual loop on the main canvas.
+ await s.tick(3000);
+ const probe=await s.page.evaluate(()=>{const Q=waterTest,st=Q.state(),p=st.player;const tile=[[2,0],[-2,0],[0,2],[0,-2]].map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).find(c=>Q.base(c.x,c.y)===Q.TT.WATER);if(!tile)throw Error('missing visible water probe');return{rect:Q.screen(tile.x,tile.y),paint:Q.paints(),active:Q.active(),turn:st.turn};});
+ assert.equal(probe.active,false,'probe must exercise idle rendering');
+ const frames=[],pixels=[];
+ for(let i=0;i<8;i++){await s.tick(150);pixels.push(await s.page.evaluate(r=>waterTest.pixels(r),probe.rect));frames.push(await s.page.screenshot({clip:{x:probe.rect.x,y:probe.rect.y,width:probe.rect.size,height:probe.rect.size}}));}
+ const idle=await s.page.evaluate(()=>({paints:waterTest.paints(),turn:waterTest.state().turn}));
+ const changed=pixels.slice(1).map((p,i)=>{let changed=0;for(let j=0;j<p.length;j+=4)if(Math.abs(p[j]-pixels[i][j])+Math.abs(p[j+1]-pixels[i][j+1])+Math.abs(p[j+2]-pixels[i][j+2])>=12)changed++;return changed/(p.length/4);});
+ const unique=new Set(pixels.map(p=>JSON.stringify(p))).size,paints=idle.paints-probe.paint;
+ assert.ok(paints>=(mobile?8:11),'idle water paint cadence: '+paints);assert.ok(unique>=7,'idle water must keep moving');assert.ok(changed.reduce((a,b)=>a+b,0)/changed.length>.15,'water motion must cover a visible part of the tile');assert.equal(idle.turn,probe.turn,'water animation cannot spend turns');
+ for(let i=0;i<frames.length;i++)fs.writeFileSync(path.join(art,`motion-${mobile?'mobile':'pc'}-${i}.png`),frames[i]);console.log('IDLE_WATER='+JSON.stringify({mobile,paints,unique,changed,turns:idle.turn-probe.turn}));
  const inspected=await s.page.evaluate(()=>{
   const Q=waterTest,st=Q.state(),d=st.branchTerrain105.palace105,T=Q.TT;
   const key=Object.keys(d.floors).find(key=>{const[x,y]=key.split(',').map(Number),t=st.map[y][x];return t>=T.PALACE_LOW&&t<=T.PALACE_HIGH&&!d.props[key]&&!d.arches?.[key]&&!d.handles.some(h=>h.x===x&&h.y===y)&&!d.permanentWater[key];});

@@ -24,7 +24,7 @@ jobs:
       - name: Actual branch follower transfers and stored-floor cleanup
         run: npm run build:qa && node tests/branch-followers.mjs
       - name: Stationary book summons, native sprites and bounded palace water
-        run: node tests/palace-water-summons.mjs
+        run: node tests/palace-water-summons.mjs && node tests/palace-water-summons.mjs --mobile
       - name: Behaviour and screenshots on the QA build (seeded replay, V40 saves, floors, debug arena, pinned fonts)
         run: npm test -- --skip render
       - name: Release source publishes no QA hooks and saves the same data
