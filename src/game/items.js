@@ -203,6 +203,8 @@ const FOOD_RECIPES=[
   {id:'grilled_fish',name:'구운 생선 살',ingredients:['신선한 생선 살'],stations:['brazier'],hint:'날생선을 불에 직접 익힌다.'},
   {id:'power_riceball',name:'전력 주먹밥',ingredients:['주먹밥','엽전 엿'],hint:'밥과 단것을 함께 뭉친다.'},
   {id:'spicy_jerky',name:'매콤한 육포',ingredients:['말린 육포','화유병'],alternatives:{'화유병':['화룡유']},hint:'육포에 화염 기름을 한 방울 바른다.'},
+  {id:'charcoal_meat',name:'숯불고기',ingredients:['검게 탄 숯','말린 육포'],hint:'숯의 불기운으로 말린 고기를 굽는다.'},
+  {id:'illness_bomb',name:'중병탄',ingredients:['해초','검게 탄 숯','떫은 산열매'],hint:'바다 약초와 숯, 산채의 떫은 열매를 뭉친다.'},
   {id:'medicinal_fish',name:'한방 생선찜',ingredients:['신선한 생선 살','독버섯 꼬치'],hint:'독기를 약재로 중화해 생선을 찐다.'},
   {id:'talisman_sungnyung',name:'원력 숭늉',ingredients:['식어버린 국밥','깨끗한 물'],hint:'식은 국물에 맑은 물을 붓는다.'},
   {id:'vital_hotpot',name:'보신 전골',ingredients:['말린 육포','신선한 생선 살','깨끗한 물'],hint:'육지와 바다의 재료를 물에 고아낸다.'},
@@ -238,6 +240,7 @@ function consumeFoodAtCost(item,idx){
   if(item.cleanse)cleanseFood();
   if(item.foodHasteTurns57)state.status.foodHaste57=Math.max(state.status.foodHaste57,item.foodHasteTurns57+1);
   if(item.warmTurns57)state.status.warm57=Math.max(state.status.warm57,item.warmTurns57+1);
+  if(item.fireResistTurns57)state.status.fireResist57=Math.max(state.status.fireResist57||0,item.fireResistTurns57+1);
   if(item.fireCoatTurns57)state.status.fireCoat57=Math.max(state.status.fireCoat57,item.fireCoatTurns57+1);
   if(item.poisonResistTurns57){state.status.poison=0;state.status.poisonResist57=Math.max(state.status.poisonResist57,item.poisonResistTurns57+1)}
   if(item.vitalityTurns57){if(!p.foodVital57){p.foodVital57=10;p.temporaryMaxHpBonus+=10;recomputeMaxHp(p,true)}state.status.vitality57=Math.max(state.status.vitality57,item.vitalityTurns57+1)}
@@ -245,11 +248,30 @@ function consumeFoodAtCost(item,idx){
   if(item.charcoalDamage57){const dealt=damageEntity(p,item.charcoalDamage57);if(dealt>0)floatText(p.x,p.y,`-${dealt}`,'#b28a6c',12);if(p.hp<=0){consumeOne(idx);closeInventory();die('검게 탄 숯');return}}
   floatText(p.x,p.y,'냠냠','#e5c98e',10);addLog(`${item.name} 섭취 · 허기 ${Math.round(p.hunger)}/${BALANCE.hungerMax}.`);consumeOne(idx);closeInventory();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:item.eatCost57??1,reason:"consumeFood57"}).value
 }
-// 독버섯 꼬치 투척
+// 투척 음식 공용 처리
 const foodTargetPanel=document.createElement('div');
-function cancelFoodTarget(silent=false){V57.foodTarget=null;foodTargetPanel.classList.remove('show');syncWorldTargetInput();endTargetInput57(320);if(!silent)toast('꼬치 투척을 취소했다.');drawMap(true)}
+function cancelFoodTarget(silent=false){V57.foodTarget=null;foodTargetPanel.classList.remove('show');syncWorldTargetInput();endTargetInput57(320);if(!silent)toast('음식 투척을 취소했다.');drawMap(true)}
 function beginFoodTarget(item){if(!gameplayUiOpen57())return false;cancelAutoWalk();closeInventory();V57.foodTarget={item,range:item.throwRange57||4};foodTargetPanel.classList.add('show');syncWorldTargetInput();document.getElementById('foodTargetName57').textContent=`${item.name} 투척`;drawMap(true)}
-function throwFood(tx,ty){const act=playerAction57('target',{uiOwner:'foodTarget57'});if(!act.ok)return false;const a=V57.foodTarget;if(!a||!state)return false;const p=state.player;if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(`사거리 ${a.range}칸 밖이다.`);return false}if(!state.seen.has(k(tx,ty))||!lineClear(p.x,p.y,tx,ty)){toast('꼬치를 던질 길이 막혔다.');return false}const m=findMonsterAt(tx,ty);if(!isThreatVisibleToPlayer(m)){toast('먹일 적대 요괴가 없다.');return false}markCombatActivity57('food-throw');if(state.floor>=11)alertNearby(tx,ty,6,'projectile');projectileFX(p.x,p.y,tx,ty,'#9bb061');if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${m.name}의 아수라장이 투척물을 튕겨냈다.`)}else if(m.kind==='construct'){floatText(tx,ty,'무효','#a6a29a',10);addLog(`${m.name}은 독버섯을 먹지 않는다.`)}else{if(m.duelOpponent)Duel.sendStatus('poison',5,1);setMonsterStatus(m,'poisoned57',Math.max(m.poisoned57||0,5),p);if(m.poisoned57>0)setMonsterAttackInvestigation(m,p);setMonsterWeakened(m,3);floatText(tx,ty,'중독 5','#9dc77e',10);addLog(`${m.name}에게 독버섯 꼬치를 먹였다.`)}consumeStack(a.item);cancelFoodTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'reference-effect'});return true}
+function throwFood(tx,ty){
+ const act=playerAction57('target',{uiOwner:'foodTarget57'});if(!act.ok)return false;
+ const a=V57.foodTarget;if(!a||!state)return false;const p=state.player,item=a.item,proto=foodDef(item.name),status=item.throwStatus57||proto?.throwStatus57,feeding=item.throwFeeding57??proto?.throwFeeding57;
+ if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(`사거리 ${a.range}칸 밖이다.`);return false}
+ if(!state.seen.has(k(tx,ty))||!lineClear(p.x,p.y,tx,ty)){toast('음식을 던질 길이 막혔다.');return false}
+ const m=findMonsterAt(tx,ty);if(!isThreatVisibleToPlayer(m)){toast('투척할 적대 요괴가 없다.');return false}
+ markCombatActivity57('food-throw');if(state.floor>=11)alertNearby(tx,ty,6,'projectile');projectileFX(p.x,p.y,tx,ty,item.throwColor57||'#9bb061');
+ if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${m.name}의 아수라장이 투척물을 튕겨냈다.`)}
+ else if(m.kind==='construct'&&feeding){floatText(tx,ty,'무효','#a6a29a',10);addLog(`${m.name}은 ${item.name}을 먹지 않는다.`)}
+ else{
+  if(item.throwDamage57>0){const damage=damageEntity(m,item.throwDamage57,p,null,{delivery:'ranged',projectile:true});if(damage>0)floatText(tx,ty,'-'+damage,item.throwColor57||'#d7b46d',12);}
+  if(m.hp<=0)killMonster(m);
+  else{
+   if(status&&applyCombatStatus(m,status.key,status.turns,1,{source:p})){setMonsterAttackInvestigation(m,p);floatText(tx,ty,`${STATUS_META57[status.key]?.label||status.key} ${combatStatusTurns(m,status.key)}`,item.throwColor57||'#9dc77e',10);}
+   const weakened=item.throwWeakenTurns57??proto?.throwWeakenTurns57;if(weakened)setMonsterWeakened(m,weakened);
+  }
+  addLog(feeding?`${m.name}에게 ${item.name}를 먹였다.`:`${m.name}에게 ${item.name}을 던졌다.`);
+ }
+ consumeStack(item);cancelFoodTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'food-throw'});return true
+}
 // 비방 조리 UI
 const cookingPanel=document.createElement('div');
 function isPotionKindVisible(item){return item?.type!=='potion'||(item.potionKind==='mine_fire105'&&item.identified===true)||!!state?.knowledge56?.potionKnown?.[item.potionKind]}
@@ -1177,7 +1199,7 @@ function createTalismanTargetHud(){
 }
 function createFoodTargetPanel(){
   foodTargetPanel.id='foodTarget57';
-  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
+  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">음식 투척</b><small>사거리 4칸 · 대상 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
   document.body.appendChild(foodTargetPanel);
   foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
 }

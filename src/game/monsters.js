@@ -1164,7 +1164,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.passageSeal?.species===mon.name){const r=mon.passageSeal;add('passage-seal','문·계단 봉쇄','鎖',`목표 주변 ${r.radius}칸 · 예고 1턴 · 지속 ${r.duration}턴 · 재사용 ${r.cooldown}턴`,'목표가 볼 수 있는 일반 문과 계단을 일시적으로 봉쇄한다. 문은 닫히며, 계단과 분기 출입구는 사용하지 못한다. 시전자를 쓰러뜨리거나 지속시간이 끝나면 해제된다. 봉쇄된 문은 파괴할 수 있다.','ghost');}
     if(mon.sealingWard?.species===mon.name){const r=mon.sealingWard;add('sealing-ward','봉인진','封',`${r.radius*2+1}×${r.radius*2+1} · 예고 1턴 · 지속 ${r.duration}턴 · 재사용 ${r.cooldown}턴`,'표적 중심의 고정된 범위에 봉인진을 만든다. 범위 안에서는 이동·점멸할 수 있지만 자발적으로 밖으로 나갈 수 없다. 밀치기·끌어당기기 등으로 표적이 밖으로 나가거나 시간이 끝나면 진이 사라진다.','ghost');}
     if(mon.sting)add('sting','독침','毒',`사거리 ${mon.range||6}칸 · 원거리 적중 시`,`${Object.entries(mon.sting).filter(([,turns])=>turns>0).map(([key,turns])=>`${STATUS_META57[key]?.label||key} ${turns}턴`).join(' · ')}. 취함 중에는 부적을 읽을 수 없다. 면역에 따라 적용되지 않을 수 있다.`,'brawl');
-    if(mon.deathBrood){const r=mon.deathBrood;add('brood','독성 산란','卵','사망 시',`반경 ${r.gasRadius}칸에 ${r.gasTurns}턴 독가스와 ${r.species} 최대 ${r.count}마리. 공간이 있는 곳에만 소환된다.`,'constitution','조건')}
+    if(mon.deathBrood){const r=mon.deathBrood;add('brood','독성 산란','卵','사망 시',`반경 ${r.gasRadius}칸에 ${r.gasTurns}턴 독가스와 ${r.species} 최대 ${mon.summonOwner105==='player'?Math.min(r.count,summonChildLimit(mon.summonBookId105)):r.count}마리. 공간이 있는 곳에만 소환된다.${mon.summonOwner105==='player'?' 생전·사후 소환이 책별 추가 한도를 공유한다.':''}`,'constitution','조건')}
     if(mon.leap)add('leap','도약','躍',`최대 ${mon.leap.range}칸 · 예고 1턴 · 재사용 ${mon.leap.cooldown}턴`,'착지점을 예고하고 낮은 가구·물·구덩이를 뛰어넘는다. 벽·닫힌 문은 넘지 못하며 안전한 빈칸에만 착지한다. 착지와 공격은 별도 행동이다.','ghost');
     if(mon.summoner&&mon.summonName57)add('summon',mon.summonName57+' 소환','召','발견 후 6턴 · 재사용 6턴','한 번 발견한 뒤 전투·수색 중 보조 개체를 부른다.');
     if(mon.charge)add('charge','직선 돌진','衝','2~6칸 · 예고 1턴 · 재사용 5턴','직선으로 최대 5칸 전진, 공격력 +3과 밀침. 견고한 벽에 막히면 경직 1턴.');
@@ -1230,7 +1230,7 @@ const SUMMON_RULES=Object.freeze({upgradeDecay:.18,cooldownDecay:.18,maxHpDiscou
 const SUMMON_COLORS=Object.freeze({fire:'#c9654f',water:'#6da9cc',shock:'#b8a3d8',grass:'#78a879',earth:'#bf9867',ice:'#94c7d0',holy:'#ddc582'});
 function summonHpMultiplier(upgrade=summonState().upgrade){const u=Math.max(0,Math.floor(Number(upgrade)||0));return 1-SUMMON_RULES.maxHpDiscount+SUMMON_RULES.maxHpDiscount/(1+SUMMON_RULES.upgradeDecay*u);}
 function summonHpCost(entry=null,upgrade=summonState().upgrade){const p=state.player,mudang=p.classId==='summoner';return Math.max(1,Math.ceil((mudang?p.hp:p.maxHp)*.5*summonHpMultiplier(upgrade)*(mudang?.75:1)));}
-function summonBookItem(){return{name:'만령 소환술서',type:'book',summonItem105:'book',summonRecoveryUntil105:0,tier:4,rarity:'rare',identified:true,curseImmune991:true,desc:'소환술서마다 보유한 동안 적 종류별 처치가 따로 쌓여 기본 8회, 테마 후반부터 등장하는 일반 적은 6회마다 해당 적의 그림이 떨어진다. 문지기는 그림 처치 횟수에 포함되지 않는다. 그림을 한 장 이상 끼우고 속성부적으로 종족을 정한 뒤 책에서 원하는 영을 고른다. 같은 그림의 첫 장은 현재 전투 층배율, 추가 한 장마다 +1층 배율을 받는다. 기본 소모 HP는 최대 HP의 절반을 기준으로 하며 무당은 현재 HP를 기준으로 한다. 기운 회복은 책마다 따로 72턴이며 책을 강화하면 두 비용이 점차 적게 감소한다. 책마다 한 마리씩 죽거나 교체할 때까지 함께하며 영이 다시 부른 개체는 책의 소환 한도에 포함되지 않는다. 같은 속성부적을 다시 끼우면 해당 종족의 끼운 그림 하나를 복제한다.'};}
+function summonBookItem(){return{name:'만령 소환술서',type:'book',summonItem105:'book',summonRecoveryUntil105:0,tier:4,rarity:'rare',identified:true,curseImmune991:true,desc:'소환술서마다 보유한 동안 적 종류별 처치가 따로 쌓여 기본 8회, 테마 후반부터 등장하는 일반 적은 6회마다 해당 적의 그림이 떨어진다. 문지기는 그림 처치 횟수에 포함되지 않는다. 그림을 한 장 이상 끼우고 속성부적으로 종족을 정한 뒤 책에서 원하는 영을 고른다. 같은 그림의 첫 장은 현재 전투 층배율, 추가 한 장마다 +1층 배율을 받는다. 기본 소모 HP는 최대 HP의 절반을 기준으로 하며 무당은 현재 HP를 기준으로 한다. 기운 회복은 책마다 따로 72턴이며 책을 강화하면 두 비용이 점차 적게 감소한다. 책마다 직접 소환 1마리와 추가 소환 기본 1마리(강화마다 +1, 최대 3마리)를 둘 수 있다. 생전·사후에 나온 개체는 같은 추가 한도를 공유하며, 주 영이 죽어도 자식 영은 남고 같은 책으로 새로 소환하면 함께 교체된다. 같은 속성부적을 다시 끼우면 해당 종족의 끼운 그림 하나를 복제한다.'};}
 function summonSealItem(){return clone((window.MANRU_TALISMANS||[]).find(i=>i.talismanKind==='upgrade'));}
 function summonBook(id=null){const books=(state?.player?.inventory||[]).filter(i=>i.summonItem105==='book'),active=id??state?.player?.summoning105?.activeBook105;return active?books.find(b=>b.summonBookId105===active)||(!id?books[0]:null):books[0]||null;}
 function summonState(){
@@ -1255,8 +1255,8 @@ function summonState(){
  if(books.length)q.pictureCounterVersion105=1;
  const book=summonBook();
  // Preserve existing book contracts while normalizing old summon geometry once.
- if(!q.bookContractsVersion105){
-  for(const l of summonContainers()){for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'){configureSummonBody105(mon);mon.summonBookId105=mon.summonBookId105||book?.summonBookId105||null;const contract=q.contracts[mon.summonContract105];if(contract)contract.bookId105=mon.summonBookId105;}if(l.pageKey)state.branchWorld105.pages[l.pageKey]=branchEncodePage(l.world);}
+ if(!q.bookContractsVersion105||Object.values(q.contracts).some(contract=>!contract.summonRoot105)){
+  for(const l of summonContainers()){for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'){configureSummonBody105(mon);mon.summonBookId105=mon.summonBookId105||book?.summonBookId105||null;mon.summonRoot105=mon.summonRoot105||(!mon.summonParent105?mon.allyId53:mon.summonParent105);const contract=q.contracts[mon.summonContract105];if(contract){contract.bookId105=mon.summonBookId105;contract.summonRoot105=contract.summonRoot105||mon.summonRoot105;}}if(l.pageKey)state.branchWorld105.pages[l.pageKey]=branchEncodePage(l.world);}
   q.bookContractsVersion105=1;OccupancyService.endShared();
  }
  // Restore native plant bodies in contracts saved while plants were made mobile.
@@ -1364,22 +1364,32 @@ function summonCells(recipes=summonRecipes(),ignore=new Set()){
 }
 function summonChildLimit(bookId){const book=summonBook(bookId);return book?Math.min(1+Math.max(0,Math.floor(Number(book.upgrade)||0)),SUMMON_RULES.descendantCap):0;}
 function summonChildCount(bookId,all=summonAll(),ignore=null){return all.filter(m=>m!==ignore&&m.summonBookId105===bookId&&m.summonParent105&&!m.combatFixture54).length;}
-function summonCanAdmit(mon){
+function summonCanAdmit(mon,{existing=false}={}){
  if(!mon?.summonOwner105)return true;if(mon.summonOwner105!=='player'||!summonActive(mon))return false;
- if(state.monsters.some(m=>m===mon||mon.allyId53&&m.allyId53===mon.allyId53))return false;
- const q=summonState(),contract=q.contracts?.[mon.summonContract105];if(!contract||!(contract.persistent105===true||Number.isFinite(contract.expires)&&contract.expires>state.turn))return false;
- const all=summonAll(),roots=all.filter(m=>!m.summonParent105);
- if(mon.summonParent105){
-  const root=roots.find(m=>m.summonContract105===mon.summonContract105&&m.summonRoot105===mon.summonRoot105&&m.summonBookId105===mon.summonBookId105);
-  if(!root||!summonBook(mon.summonBookId105))return false;
-  return !!mon.combatFixture54||summonChildCount(mon.summonBookId105,all,mon)<summonChildLimit(mon.summonBookId105);
- }
- return !!summonBook(mon.summonBookId105)&&!roots.some(m=>m.summonBookId105===mon.summonBookId105);
+ if(!existing&&state.monsters.some(m=>m===mon||mon.allyId53&&m.allyId53===mon.allyId53))return false;
+ const q=summonState(),contract=q.contracts?.[mon.summonContract105];
+ if(!contract||!summonBook(mon.summonBookId105)||contract.bookId105!==mon.summonBookId105||!mon.summonRoot105||contract.summonRoot105!==mon.summonRoot105||!(contract.persistent105===true||Number.isFinite(contract.expires)&&contract.expires>state.turn))return false;
+ // The book owns the contract. Its root may have died before creating descendants.
+ // Retained actors share these checks; only a new insertion consumes capacity.
+ if(existing)return true;
+ const all=summonAll();
+ if(mon.summonParent105)return !!mon.combatFixture54||summonChildCount(mon.summonBookId105,all,mon)<summonChildLimit(mon.summonBookId105);
+ return !all.some(m=>!m.summonParent105&&m.summonBookId105===mon.summonBookId105);
 }
 function summonInherit(child,parent){if(!parent?.summonOwner105)return child;Object.assign(child,{faction57:entityFaction(parent),friendly47:isPlayerAlly57(parent),allyId53:`summon-child-${++state.player.summoning105.serial}-${state.turn}`,summonOwner105:parent.summonOwner105,summonBookId105:parent.summonBookId105,summonContract105:parent.summonContract105,summonParent105:parent.allyId53||combatantId(parent),summonRoot105:parent.summonRoot105||parent.allyId53,summonElement105:parent.summonElement105,summonPersistent105:parent.summonPersistent105,summonExpire105:parent.summonExpire105,rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'player-summon-child'});delete child.allyExpireTurn47;delete child.ttl47;configureSummonBody105(child);return child;}
 function summonCleanup(){
- if(!state?.player?.summoning105)return;const q=summonState();for(const mon of [...state.monsters])if(mon.summonOwner105&&(!summonActive(mon)||mon.summonParent105&&!q.contracts[mon.summonContract105]))removeAlly(mon);
- for(const [id,contract]of Object.entries(q.contracts||{}))if(!contract.persistent105&&Number.isFinite(contract.expires)&&contract.expires<=state.turn)delete q.contracts[id];
+ if(!state?.player?.summoning105)return;const q=summonState();
+ for(const location of summonContainers()){
+  if(location.pageKey===branchWorldKey())continue;
+  let changed=false;
+  for(const mon of [...(location.world.monsters||[])])if(mon.summonOwner105&&!summonCanAdmit(mon,{existing:true})){
+   if(location.current)removeAlly(mon);else location.world.monsters.splice(location.world.monsters.indexOf(mon),1);
+   changed=true;
+  }
+  if(changed&&location.pageKey)state.branchWorld105.pages[location.pageKey]=branchEncodePage(location.world);
+ }
+ const active=new Set(summonAll().map(mon=>mon.summonContract105));
+ for(const [id,contract]of Object.entries(q.contracts||{}))if(!active.has(id)||!contract.persistent105&&Number.isFinite(contract.expires)&&contract.expires<=state.turn)delete q.contracts[id];
 }
 function summonCombatTarget(mon){
  if(mon?.summonOwner105!=='player'||!mon.allyTargetId54||entityDistance57(mon,state.player)>SUMMON_RULES.combatLeash)return null;
@@ -1412,7 +1422,7 @@ function summonCast(name,bookId=null){
  const act=playerAction57('summon',{uiOwner:'summonPanel105',skill:true,stunMessage:'몸이 굳어 소환하지 못했다.'});if(!act.ok)return false;
  const mon=summonNative(recipe.entry,recipe.floor),had=summonAll().some(m=>!m.summonParent105&&m.summonBookId105===book.summonBookId105);closeSummonPanel();const snapshot=captureGenerationSnapshot();
  try{
-  summonRetire(null,summonContainers(),book.summonBookId105);for(const [key,c]of Object.entries(q.contracts))if(c.bookId105===book.summonBookId105)delete q.contracts[key];const contract=`summon-${++q.serial}-${state.turn}`,id=`${contract}-0`;q.contracts[contract]={persistent105:true,expires:null,bookId105:book.summonBookId105};
+  summonRetire(null,summonContainers(),book.summonBookId105);for(const [key,c]of Object.entries(q.contracts))if(c.bookId105===book.summonBookId105)delete q.contracts[key];const contract=`summon-${++q.serial}-${state.turn}`,id=`${contract}-0`;q.contracts[contract]={persistent105:true,expires:null,bookId105:book.summonBookId105,summonRoot105:id};
   Object.assign(mon,spot,{faction57:'player',friendly47:true,allyId53:id,summonBookId105:book.summonBookId105,summonRoot105:id,summonContract105:contract,summonOwner105:'player',summonElement105:book.summonElement105,summonPersistent105:true,summonExpire105:null,summonPictureCount105:recipe.pictureCount105,summonCombatFloor105:recipe.floor,rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'player-summon',mimicDormant105:false,dormant57:false,alerted:true,hidden:false});delete mon.allyExpireTurn47;delete mon.ttl47;
   if(mon.martialActor105)mon.dojoActorId105=id;if(!OccupancyService.addMonster(mon))throw Error('소환체 배치 계약 불일치');
  }catch(error){restoreGenerationSnapshot(snapshot);console.error('summon placement rejected',error);toast('소환하지 못했다. 기존 소환체와 체력은 유지된다.');return false;}
@@ -1684,7 +1694,7 @@ function spawnPressureReinforcement57(mon,name,target=null){
 }
 function killMonster(mon){
   if(!state||!mon)return false;if(!state.debugBattle57&&factionsHostile57(entityFaction(state.player),entityFaction(mon))&&mon.boss&&mon.storyPhase992===1&&state.floor===25&&typeof globalThis.storyBreakFriendMask992==='function')return globalThis.storyBreakFriendMask992(mon);if(!(state.monsters||[]).includes(mon)||mon.deathProcessed57)return false;if(mon.revivalLives57){if(mon.revivePhase57==='corpse')return true;if(beginMonsterRevival(mon))return true;}mon.deathProcessed57=true;vfVibrate(mon.boss?HAPTIC_PATTERN57.bossKill:HAPTIC_PATTERN57.kill);const charred=mon.kind==='plant'&&mon.lastDamageElement105==='fire';if(!charred)globalThis.__MANRU_DEATH_FX54__?.record?.(mon);else{if(!mon.summonOwner105)dropBurntCharcoal105(mon.x,mon.y);elementBreakFx105(mon.x,mon.y,'fire')}delete mon.plantBurn105;
-  const reward=monsterRewardPolicy(mon);if(mon.boss){if(mon.bossPattern==='keeper'&&reward.kills&&!state.debugBattle57)releaseKeeperExit54(mon);for(const fixture of [...state.monsters])if(bossChildOf(fixture,mon)&&fixture.combatFixture54){OccupancyService.removeMonster(fixture)};releaseBossWave(child=>bossChildOf(child,mon)&&(child.coreWave54||child.silkSourceMirror54));delete mon.silk54;clearIntent(mon)}OccupancyService.removeMonster(mon);summonRecordKill(mon,reward);if(mon.summonOwner105==='player'&&!mon.summonParent105&&state.player.summoning105?.contracts){delete state.player.summoning105.contracts[mon.summonContract105];for(const child of [...state.monsters])if(child.summonContract105===mon.summonContract105)removeAlly(child);}if(mon.duelOpponent)duelOpponentDown();if(mon.bossPattern==='palaceKing105')palaceKingDefeated(mon);if(mon.martialActor105&&reward.kills)dojoDefeated(mon);if(mon.combatFixture54==='silk')severSilk(mon);if(mon.combatFixture54==='core')releaseCorePhase(mon);if(reward.kills)state.player.kills++;if(reward.xp&&!mon.boss)state.player.xp+=mon.xp||0;
+  const reward=monsterRewardPolicy(mon);if(mon.boss){if(mon.bossPattern==='keeper'&&reward.kills&&!state.debugBattle57)releaseKeeperExit54(mon);for(const fixture of [...state.monsters])if(bossChildOf(fixture,mon)&&fixture.combatFixture54){OccupancyService.removeMonster(fixture)};releaseBossWave(child=>bossChildOf(child,mon)&&(child.coreWave54||child.silkSourceMirror54));delete mon.silk54;clearIntent(mon)}OccupancyService.removeMonster(mon);summonRecordKill(mon,reward);if(mon.duelOpponent)duelOpponentDown();if(mon.bossPattern==='palaceKing105')palaceKingDefeated(mon);if(mon.martialActor105&&reward.kills)dojoDefeated(mon);if(mon.combatFixture54==='silk')severSilk(mon);if(mon.combatFixture54==='core')releaseCorePhase(mon);if(reward.kills)state.player.kills++;if(reward.xp&&!mon.boss)state.player.xp+=mon.xp||0;
   if(!mon.combatFixture54&&!charred)state.decals.push({x:mon.x,y:mon.y,type:mon.kind==='undead'?'bones':'corpse',color:mon.color||'#d7dde6',t:performance.now()});
   if(mon.deathBlast){const r=mon.deathBlast,cells=intentCells(mon.x,mon.y,r.radius),keys=new Set(cells.map(c=>k(c.x,c.y)));impact(mon.x,mon.y,'#f1b36a',8);burst(mon.x,mon.y,'#d17b42',28,1.3);alertNearby(mon.x,mon.y,10,'explosion');addLog(`${mon.name}의 화약 자폭!`);for(const target of [state.player,...state.monsters]){if(target.hp<=0||!factionsHostile57(entityFaction(mon),entityFaction(target))||!entityFootprintCells57(target).some(c=>keys.has(k(c.x,c.y)))||!entityCombatLineCheckR(mon,target,{range:r.radius,units:false,ignore:target}).ok)continue;const damage=damageEntity(target,Math.max(1,Math.round(mon.atk+r.bonus)),mon,null,{delivery:'area'});if(damage>0)floatText(target.x,target.y,'-'+damage,'#ffb675',14);if(target.hp<=0){if(target===state.player)die(mon.name+'의 자폭');else killMonster(target)}}}
   if(mon.deathBrood){const r=mon.deathBrood;spawnJarGasField57(mon.x,mon.y,{status:'poison',duration:r.gasTurns,maxRadius:r.gasRadius,burstRadius:r.gasRadius,source:mon});let born=0;for(let i=0;i<r.count;i++)if(summonNear(mon,r.species,{vacatedOrigin:true}))born++;addLog(`${mon.name}의 배가 터져 독가스와 ${r.species} ${born}마리가 쏟아졌다.`)}

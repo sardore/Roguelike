@@ -22,7 +22,7 @@ const MONSTERS=[
   {min:7,max:10,name:'정원 바위괴물',hp:42,atk:8,def:9,eva:0,xp:13,color:'#74796d',shape:'brute',kind:'construct',heavyHit57:true,knockback:true,concept57:'느리지만 단단한 바위괴물이다.'},
   {min:6,max:10,name:'식인 물고기',hp:13,atk:10,def:0,eva:5,xp:7,color:'#688b91',shape:'beast',kind:'beast',aquatic:true,fixed:true,waterOnly57:true,fishDrop:true,concept57:'물을 벗어나지 못하는 식인 물고기다.'},
 
-  {min:9,max:9,name:'어미거미',hp:40,atk:2,attackRevision:1,def:3,eva:1,xp:14,color:'#639447',shape:'beast',kind:'beast',footprint:'x3',spriteScale:2.1,ranged:true,range:6,spawnWeight:3,poisonImmune57:true,sting:{drunk:4},deathBrood:{species:'독거미',count:8,gasTurns:6,gasRadius:2},concept57:'독을 품은 거대한 녹색 거미. 낮은 위력의 독침으로 취함을 일으키며, 죽으면 독가스 속에서 새끼들이 쏟아진다.'},
+  {min:9,max:9,name:'어미거미',hp:40,atk:3,attackRevision:2,def:3,eva:1,xp:14,color:'#639447',shape:'beast',kind:'beast',footprint:'x3',spriteScale:2.1,ranged:true,range:6,spawnWeight:3,poisonImmune57:true,sting:{drunk:4},deathBrood:{species:'독거미',count:8,gasTurns:6,gasRadius:2},concept57:'독을 품은 거대한 녹색 거미. 낮은 위력의 독침으로 취함을 일으키며, 죽으면 독가스 속에서 새끼들이 쏟아진다.'},
   {min:9,max:9,name:'독거미',hp:12,atk:5,def:1,eva:6,xp:0,color:'#82ac4c',shape:'beast',kind:'beast',summonOnly57:true,spriteScale:.85,poison:true,poisonImmune57:true,leap:{range:3,cooldown:4},concept57:'어미거미에게서 쏟아진 작은 녹색 독거미. 한 칸을 차지하며 낮은 장애물을 뛰어넘는다.'},
 
   // 3구역 유혹의 내실: 비단/거울/환각 중심.
@@ -153,13 +153,15 @@ const CONSUMABLES=[
   {name:'엽전 엿',type:'food',foodKind:'coin_candy',rarity:'rare',hunger:7,eatCost57:.5,focusPercent57:.60,stackMax:99,minFloor:1,desc:'달콤한 조청을 굳혀 만든 간식입니다. 허기는 거의 채우지 못하지만 최대 기력의 60%를 빠르게 회복합니다. 상점 교환과 조리에도 쓰입니다.'},
   {name:'신선로',type:'food',foodKind:'royal_hotpot',rarity:'relic',hungerFull57:true,eatCost57:1,regenTurns:12,stackMax:1,minFloor:16,desc:'각종 귀한 재료를 넣고 끓인 화려한 요리입니다. 허기를 완전히 채우고 12턴 동안 체력이 재생됩니다.'},
   {name:'식어버린 국밥',type:'food',foodKind:'cold_soup',rarity:'common',hunger:55,eatCost57:2,slowEat:true,stackMax:2,minFloor:1,desc:'기름이 둥둥 뜬 차가운 국밥이다. 허기를 많이 채워주지만 먹는 데 2턴이 걸린다.'},
-  {name:'독버섯 꼬치',type:'food',foodKind:'poison_skewer',rarity:'rare',hunger:28,eatCost57:1,poisonSelf:true,throwableFood57:true,throwRange57:4,stackMax:2,minFloor:6,desc:'색깔이 화려한 버섯을 구워 만들었습니다. 먹으면 중독되지만 요괴에게 던져 독을 먹일 수 있습니다.'},
+  {name:'독버섯 꼬치',type:'food',foodKind:'poison_skewer',rarity:'rare',hunger:28,eatCost57:1,poisonSelf:true,throwableFood57:true,throwRange57:4,throwFeeding57:true,throwStatus57:{key:'poison',turns:5},throwWeakenTurns57:3,stackMax:2,minFloor:6,desc:'색깔이 화려한 버섯을 구워 만들었습니다. 먹으면 중독되지만 요괴에게 던져 독을 먹일 수 있습니다.'},
   {name:'신선도',type:'food',foodKind:'peach',rarity:'relic',hunger:42,eatCost57:.75,cleanse:true,stackMax:2,minFloor:21,desc:'만루의 심장에서 자란 영험한 복숭아입니다. 허기를 채우고 모든 해로운 상태를 정화합니다.'},
 
   // 현장 조리 및 PDF 비방 레시피 결과물
   {name:'구운 생선 살',type:'food',foodKind:'grilled_fish',rarity:'rare',hunger:30,eatCost57:.75,craftedOnly57:true,stackMax:3,desc:'불에 알맞게 익혀 잡내를 없앴습니다. 날생선보다 허기 회복량이 1.5배 높고 배탈 위험이 없습니다.'},
   {name:'전력 주먹밥',type:'food',foodKind:'power_riceball',rarity:'rare',hunger:42,eatCost57:.75,craftedOnly57:true,foodHasteTurns57:6,stackMax:3,desc:'엿을 섞어 뭉친 주먹밥이다. 6턴 동안 공격에 드는 시간이 10% 줄어든다.'},
   {name:'매콤한 육포',type:'food',foodKind:'spicy_jerky',rarity:'rare',hunger:40,eatCost57:1,craftedOnly57:true,warmTurns57:12,fireCoatTurns57:12,stackMax:3,desc:'화염 기름에 살짝 구운 육포입니다. 12턴 동안 추위에 면역이며 공격 시 낮은 확률로 불을 붙입니다.'},
+  {name:'숯불고기',type:'food',foodKind:'charcoal_meat',rarity:'rare',hunger:40,eatCost57:1,craftedOnly57:true,fireResistTurns57:12,stackMax:3,ability:'허기 +40 · 화염저항 12턴',desc:'검게 탄 숯과 말린 육포를 함께 구운 고기. 허기를 40 채우고 12턴 동안 화염 피해에 저항한다.'},
+  {name:'중병탄',type:'food',foodKind:'illness_bomb',rarity:'rare',hunger:0,eatCost57:1,craftedOnly57:true,throwableFood57:true,throwRange57:4,throwDamage57:3,throwStatus57:{key:'illness',turns:27},throwColor57:'#b96bc9',stackMax:3,ability:'4칸 투척 · 피해 3 · 중병 27턴',desc:'해초와 검게 탄 숯, 흑산채의 떫은 산열매를 뭉친 투척 음식. 적에게 던져 작은 피해 3과 중병 27턴을 준다. 중병은 유예가 끝나면 44 피해를 주며 재감염마다 남은 유예가 6턴 줄어든다.'},
   {name:'한방 생선찜',type:'food',foodKind:'medicinal_fish',rarity:'relic',hunger:46,eatCost57:1,craftedOnly57:true,poisonResistTurns57:12,stackMax:2,desc:'독버섯의 독기를 약재로 중화해 쪄낸 생선입니다. 중독을 해제하고 12턴 동안 새 중독을 막습니다.'},
   {name:'원력 숭늉',type:'food',foodKind:'talisman_sungnyung',rarity:'rare',hunger:18,eatCost57:.75,craftedOnly57:true,focusPercent57:.30,stackMax:3,desc:'식은 국밥에 깨끗한 물을 부어 끓였습니다. 허기를 조금 채우고 최대 기력의 30%를 회복합니다.'},
   {name:'보신 전골',type:'food',foodKind:'vital_hotpot',rarity:'relic',hungerFull57:true,eatCost57:1.25,craftedOnly57:true,vitalityTurns57:100,stackMax:2,desc:'육지와 바다의 재료를 푹 고았습니다. 허기를 완전히 채우고 100턴 동안 최대 HP가 10 증가합니다.'},
