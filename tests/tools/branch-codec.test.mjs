@@ -29,3 +29,10 @@ test('a warm cache does not bypass invalid encoding checks',()=>{
 test('unencoded legacy pages keep their existing identity',()=>{
  const page={monsters:[]};assert.strictEqual(decode(page),page);assert.equal(decode(null),null);
 });
+test('already normalized summon books skip construction of the species catalog',()=>{
+ const monsters=fs.readFileSync(new URL('../../src/game/monsters.js',import.meta.url),'utf8');
+ const fn=parse(monsters,{ecmaVersion:'latest'}).body.find(n=>n.type==='FunctionDeclaration'&&n.id.name==='normalizeSummonSpeciesItem105');
+ let calls=0;const scope=vm.createContext({summonDefinitions(){calls++;throw Error('unnecessary species catalog construction');}});
+ vm.runInContext(monsters.slice(fn.start,fn.end)+'\nnormalizeSummonSpeciesItem105({summonItem105:"book",summonSpeciesVersion105:1});',scope);
+ assert.equal(calls,0);
+});
