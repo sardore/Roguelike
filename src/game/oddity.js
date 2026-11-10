@@ -17,6 +17,7 @@ const ODDITY_RULES=Object.freeze({
     // the furniture that is none of these: a light blow, and what it carries is a curse (a status the other arts never use)
     {id:'misc',need:4,name:'기타',rank:0,power:.8,color:'#c9a7ff',tiles:['INCENSE_STAND','IRON_HOOK','PAPER_CRANE','RUMOR_SILK_DIVAN','RUMOR_CHARRED_COUNTER','RUMOR_INVESTIGATION_BOARD','RUMOR_SMUGGLER_BUNDLE','RUMOR_GREENHOUSE_FRAME','RUMOR_ARCHIVE_PILE','RUMOR_RITUAL_OBELISK','RUMOR_GAS_PIPE','RUMOR_FLOOD_GRATE','UNDERWORLD_BELL']}
   ]),
+  palaceTiles:Object.freeze({banquet:'TABLE',bench:'BENCH',dresser:'TABLE',bed:'BED',curtain:'SCREEN',weapon:'RACK',books:'BOOK_STACK',jar:'JAR',throne:'STATUE',rail:'LOW_FENCE',cups:'RACK',mirror:'STATUE',column:'STONE_PILLAR',dragon:'STATUE',basin:'BASIN',altar:'STATUE',engine:'STATUE',pipe:'STATUE',record:'STATUE',coral:'CRYSTAL','stone-lamp':'LANTERN_POST',planter:'GARDEN_TREE',incense:'INCENSE_STAND'}),
   curses:Object.freeze({INCENSE_STAND:['skillSeal','기봉인'],RUMOR_INVESTIGATION_BOARD:['skillSeal','기봉인'],RUMOR_RITUAL_OBELISK:['skillSeal','기봉인'],IRON_HOOK:['bleed','출혈'],PAPER_CRANE:['upset','동요'],RUMOR_SILK_DIVAN:['drunk','취기'],RUMOR_SMUGGLER_BUNDLE:['drunk','취기'],RUMOR_CHARRED_COUNTER:['blind','실명'],RUMOR_GREENHOUSE_FRAME:['poison','중독'],RUMOR_GAS_PIPE:['poison','중독'],RUMOR_ARCHIVE_PILE:['weaken','쇠약'],RUMOR_FLOOD_GRATE:['weaken','쇠약'],UNDERWORLD_BELL:['upset','동요']}),
   anomalyPieces:Object.freeze({1:2,2:2,3:3,4:3,5:4}),anomalyShare:.48,bounceShare:.75,bounceReach:3,
   // each way of the art has its own seal on the card (see styles: form-psychic, form-anomaly) and its own light in the picture
@@ -31,7 +32,9 @@ function oddityDescription(lv,n,form){
   return `주변의 가구와 구조물을 끌어당긴다. ${how} ${reach}칸 안의 ${mats}.${n>=5?' 5단: 한 번 튕겨 두 번째 적도 친다.':''}`;
 }
 function oddityPullRange(lv){return 2+Math.max(1,lv)}
-function oddityMaterialOf(tile,lv){
+function oddityMaterialOf(tile,lv,x=null,y=null){
+  const prop=state.branchTerrain105?.palace105?.props?.[k(x,y)];
+  if(prop?.tile===tile){if(prop.style==='handle')return null;tile=TT[ODDITY_RULES.palaceTiles[prop.style]]??tile;}
   for(const m of ODDITY_RULES.materials){if(lv<m.need)continue;for(const name of m.tiles)if(Number.isFinite(TT[name])&&TT[name]===tile)return m}
   return null;
 }
@@ -43,8 +46,8 @@ function oddityTargets(actor,lv,form){
 function oddityObjects(actor,lv,form,target){
   const pull=oddityPullRange(lv,form),out=[];
   for(let y=Math.max(1,actor.y-pull);y<=Math.min(ROWS-2,actor.y+pull);y++)for(let x=Math.max(1,actor.x-pull);x<=Math.min(COLS-2,actor.x+pull);x++){
-    const mat=oddityMaterialOf(state.map[y][x],lv);if(!mat||!state.visible.has(k(x,y))||protectedProp105(x,y)||(x===target.x&&y===target.y))continue;
-    out.push({x,y,tile:state.map[y][x],mat,dist:Math.max(Math.abs(x-actor.x),Math.abs(y-actor.y)),near:Math.max(Math.abs(x-target.x),Math.abs(y-target.y))});
+    const mat=oddityMaterialOf(state.map[y][x],lv,x,y);if(!mat||!state.visible.has(k(x,y))||protectedProp105(x,y)||(x===target.x&&y===target.y))continue;
+    out.push({x,y,tile:state.map[y][x],prop:state.branchTerrain105?.palace105?.props?.[k(x,y)]?.tile===state.map[y][x]?clone(state.branchTerrain105.palace105.props[k(x,y)]):null,mat,dist:Math.max(Math.abs(x-actor.x),Math.abs(y-actor.y)),near:Math.max(Math.abs(x-target.x),Math.abs(y-target.y))});
   }
   return out.sort((a,b)=>b.mat.rank-a.mat.rank||a.near-b.near||a.y-b.y||a.x-b.x);
 }
@@ -65,9 +68,11 @@ function oddityDamage(actor,lv,mat,form,leg){
 }
 // takes the piece out of the floor without a sound: what it leaves behind is the floor under it
 function oddityDetach(x,y){
-  const base=furnitureFloor57(x,y),r=RuntimeTerrainOwner.mutate(x,y,base,{source:'oddity'});if(!r.ok)return false;
-  releaseTerrainUnderlay58(x,y,base);const key=k(x,y);
+  const palace=state.branchTerrain105?.palace105,key=k(x,y),prop=palace?.props?.[key],base=prop?.tile===state.map[y][x]&&palace.floors[key]!=null?palaceWaterTile(x,y):furnitureFloor57(x,y),r=RuntimeTerrainOwner.mutate(x,y,base,{source:'oddity'});if(!r.ok)return false;
+  releaseTerrainUnderlay58(x,y,base);
   if(state.branchTerrain105?.props)delete state.branchTerrain105.props[key];
+  if(palace?.props)delete palace.props[key];
+  if(palace?.lights)palace.lights=palace.lights.filter(l=>l.x!==x||l.y!==y||l.wall);
   state.decor=(state.decor||[]).filter(d=>!(d.x===x&&d.y===y));touchElementTerrain105(x,y);return true;
 }
 function oddityPushSource(obj,mon){return{x:mon.x-Math.sign(mon.x-obj.x),y:mon.y-Math.sign(mon.y-obj.y)}}
@@ -81,7 +86,7 @@ function oddityHit(actor,mon,obj,lv,form,leg){
     damageEntity(mon,dmg,actor);
     if(mon.hp>0&&form!=='psychic'&&(id==='wood'||id==='tree'))resolveForcedMovement57(mon,oddityPushSource(obj,mon),id==='tree'&&lv>=4?2:1,{mode:'push',hostile:true,creditPlayer:true,reportCollision:true});
     if(mon.hp>0&&(id==='stone'||id==='tree'))applyMartialControl1005(mon,id==='stone'&&lv>=4?3:2);
-    if(mon.hp>0&&id==='misc'){const curse=ODDITY_RULES.curses[Object.keys(TT).find(n=>TT[n]===obj.tile)];if(curse&&applyCombatStatus(mon,curse[0],3+(lv>=5?1:0),1,{source:actor}))floatText(mon.x,mon.y,curse[1],'#c9a7ff',11)}
+    if(mon.hp>0&&id==='misc'){const curse=ODDITY_RULES.curses[ODDITY_RULES.palaceTiles[obj.prop?.style]||Object.keys(TT).find(n=>TT[n]===obj.tile)];if(curse&&applyCombatStatus(mon,curse[0],3+(lv>=5?1:0),1,{source:actor}))floatText(mon.x,mon.y,curse[1],'#c9a7ff',11)}
   }
   // a jar that is thrown breaks where it lands: its contents spill, or its gas rises
   if(obj.tile===TT.JAR&&!leg)shatterJar(mon.x,mon.y,{forced:true,from:{x:obj.x,y:obj.y}});
@@ -93,7 +98,7 @@ function oddityMirror(msg){
   const t=ODDITY_RULES.timing,now=performance.now(),p=state.player,stand=Duel.opponent();
   for(const piece of Array.isArray(msg.pieces)?msg.pieces.slice(0,8):[]){
     const mat=ODDITY_RULES.materials.find(m=>m.id===piece.mat);if(!mat||!Number.isFinite(piece.x)||!Number.isFinite(piece.y))continue;
-    ODDITY_FX.push({run:state,map:state.map,start:now,hitAt:now+t.lift+t.charge+t.flight,from:{x:piece.x,y:piece.y},caster:{x:stand?.x??p.x,y:stand?.y??p.y},to:{x:p.x,y:p.y},mat:mat.id,aura:ODDITY_RULES.auras[msg.form]||ODDITY_RULES.auras.base,color:mat.color,tile:piece.tile,sprite:oddityPieceSprite(piece.tile,piece.x,piece.y),seed:(piece.x*31+piece.y*17+Math.floor(now))>>>0,hit:false,bounceNext:false});
+    ODDITY_FX.push({run:state,map:state.map,start:now,hitAt:now+t.lift+t.charge+t.flight,from:{x:piece.x,y:piece.y},caster:{x:stand?.x??p.x,y:stand?.y??p.y},to:{x:p.x,y:p.y},mat:mat.id,aura:ODDITY_RULES.auras[msg.form]||ODDITY_RULES.auras.base,color:mat.color,tile:piece.tile,sprite:oddityPieceSprite(piece.tile,piece.x,piece.y,piece.prop),seed:(piece.x*31+piece.y*17+Math.floor(now))>>>0,hit:false,bounceNext:false});
   }
 }
 // the pieces in the air, by the chosen enemy: oddityPlan answers with them while the art is under way (their tiles are already gone from the floor)
@@ -108,7 +113,7 @@ function oddityFlightMs(from,to){return Math.max(110,Math.max(Math.abs(to.x-from
 function oddityBegin(actor,lv,form,cell){
   const plan=oddityChoose(actor,cell,lv,form);if(!plan)return false;
   const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target,entries=[];let last=now;
-  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,aura:ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
+  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,aura:ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y,obj.prop),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
   if(form==='psychic'){
     // the enemy is lifted, and thrown to where the piece stands; the piece is broken by it when it lands
     const obj=plan.objects[0],fly=oddityFlightMs(mon,obj),launchAt=now+t.lift+t.charge,hitAt=launchAt+fly;
@@ -117,7 +122,7 @@ function oddityBegin(actor,lv,form,cell){
     if(plan.bounce){const hit2=hitAt+t.bounce;fx(obj,{x:obj.x,y:obj.y},{x:plan.bounce.x,y:plan.bounce.y},hitAt,{kind:'bounce',hitAt:hit2});entries.push({hitAt:hit2,step:'hit',mon:plan.bounce,obj,leg:1});last=hit2}
   }else{
     // all the pieces rise together from their own places and fly at the same moment
-    if(mon.duelOpponent)Duel.sendOddity(plan.objects.map(o=>({x:o.x,y:o.y,tile:o.tile,mat:o.mat.id})),form);
+    if(mon.duelOpponent)Duel.sendOddity(plan.objects.map(o=>({x:o.x,y:o.y,tile:o.tile,mat:o.mat.id,prop:o.prop})),form);
     plan.objects.forEach(obj=>{fx(obj,{x:obj.x,y:obj.y},{x:mon.x,y:mon.y},now,{bounceNext:!!plan.bounce});oddityDetach(obj.x,obj.y);entries.push({hitAt:now+t.lift+t.charge+t.flight,step:'hit',mon,obj})});
     last=now+t.lift+t.charge+t.flight;
     if(plan.bounce){const hit2=last+t.bounce;plan.objects.forEach(obj=>{fx(obj,{x:mon.x,y:mon.y},{x:plan.bounce.x,y:plan.bounce.y},last,{kind:'bounce',hitAt:hit2});entries.push({hitAt:hit2,step:'hit',mon:plan.bounce,obj,leg:1})});last=hit2}
@@ -164,10 +169,12 @@ function oddityBeginTarget(info){
 }
 /* ---- the picture ---- */
 // the piece as it stands on the floor, drawn once into a canvas of its own (the tile is gone from the map a moment later)
-function oddityPieceSprite(tile,x,y){
+function oddityPieceSprite(tile,x,y,prop=null){
   const c=document.createElement('canvas');c.width=c.height=96;const q=c.getContext('2d');q.scale(3,3);
   try{
-    if(tile===TT.CRATE){drawCrateX(q,0,0)}
+    const palaceProp=prop||state.branchTerrain105?.palace105?.props?.[k(x,y)];
+    if(palaceProp?.tile===tile)drawPalaceProp(q,palaceProp);
+    else if(tile===TT.CRATE){drawCrateX(q,0,0)}
     else if(tile===TT.GARDEN_TREE||tile===TT.PEACH_TREE||tile===TT.FLOWERBED){drawBotanical(q,tile,0,0,x,y,regionIndex())}
     else if(!drawSharedProp(q,tile,0,0,regionIndex(),0,performance.now(),true)&&!drawStructureSpecialTerrain(tile,0,0,x,y,performance.now(),q)){q.fillStyle='#8a7a5a';q.fillRect(6,8,20,20)}
   }catch(error){ignoreError('oddity sprite',error);q.fillStyle='#8a7a5a';q.fillRect(6,8,20,20)}
