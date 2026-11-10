@@ -56,10 +56,15 @@ async function scenario(seed,mode){
   const loaded=await s.page.evaluate(()=>__MANRU_RELEASE__.save().ok&&__MANRU_RELEASE__.load());assert.ok(loaded);await check('saved palace family');
   assert.deepEqual(s.errors,[]);
   console.log(JSON.stringify({seed,mode,roundTrip:true,saved:true,family:ids.length}));
+  await travel('main:9');await s.tick(1200);
+  const legend=await s.page.evaluate(()=>{
+   const api=__MANRU_LEGEND47__;for(const def of api.defs()){if(def.id==='water_crossbow')continue;const portal=api.forcePortal(def.id);if(portal)return{ok:api.enter(portal.id),id:portal.id};}throw Error('no available real legendary portal');
+  });assert.equal(legend.ok,true,'legendary entry');await check('legendary entry');await s.tick(1200);
+  assert.equal(await s.page.evaluate(()=>__MANRU_LEGEND47__.restore()),true,'legendary return');await check('legendary return');
+  console.log(JSON.stringify({seed,mode,legend:legend.id,legendRoundTrip:true}));
   if(mode==='none'){
-   await travel('main:9');await s.tick(1200);
    for(const held of [false,true]){
-    if(held){await s.page.evaluate(()=>{const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),book=A.book(),name='객잔 쥐';book.summonElement105='fire';book.summonPictures105={[name]:{count:1,portrait:structuredClone(A.definitions.find(d=>d.name===name))}};st.player.inventory.push(book);A.summoning();if(!A.summon(name,book.summonBookId105))throw Error('benchmark book cast failed');});await s.tick(1200);}
+    if(held){await s.page.evaluate(()=>{const A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),book=A.book(),name='객잔 쥐';book.summonElement105='fire';book.summonPictures105={[name]:{count:1,portrait:structuredClone(A.definitions.find(d=>d.name===name))}};st.player.inventory.push(book);A.summoning();});await s.tick(1200);}
     await s.page.evaluate(()=>__MANRU_QA_BROOD__.cleanup());const times=[];
     for(let trial=0;trial<3;trial++){const start=process.hrtime.bigint();await s.page.evaluate(()=>{for(let i=0;i<20;i++)__MANRU_QA_BROOD__.cleanup();});times.push(Number(process.hrtime.bigint()-start)/1e6);}
     times.sort((a,b)=>a-b);metrics[held?'book':'empty']={milliseconds:times[1],iterations:20};

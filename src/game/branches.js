@@ -52,6 +52,7 @@ function branchEncodePage(page){
  if(w)out.push(String.fromCharCode((w.length===1?w.charCodeAt(0):dict.get(w))+256));
  return{pageCodec105:1,bytes105:bytes.length,data105:out.join('')};
 }
+// Snapshot replacement invalidates this weak cache; hot-path readers share one decode.
 const BRANCH_DECODE_CACHE=new WeakMap();
 function branchDecodePage(page){
  if(page?.pageCodec105==null)return page;
