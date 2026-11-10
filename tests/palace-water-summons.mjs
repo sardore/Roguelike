@@ -42,7 +42,7 @@ try{
   return{fired:S.fx.projectiles.length>before,damage:enemy.hp<1000,fixed:gun.fixed,childMobile:!child.fixed};
  });assert.deepEqual(combat,{fired:true,damage:true,fixed:true,childMobile:true});console.log(JSON.stringify(combat));
  await s.page.evaluate(()=>{const st=waterTest.state();st.player.inventory=[];delete st.player.summoning105;st.monsters=[];st.player.hp=st.player.maxHp=100000;__MANRU_RELEASE__.regen(9);st.monsters=[];__MANRU_QA_BROOD__.occupancy.endShared();});await s.tick(1200);
- assert.equal(await s.page.evaluate(()=>{const st=waterTest.state();return __MANRU_QA_SEALING__.branch(st.branchPortals105.find(p=>p.id==='palace'));}),true);await s.tick(1200);
+ assert.equal(await s.page.evaluate(()=>{const st=waterTest.state();return __MANRU_QA_SEALING__.branch(st.branchPortals105.find(p=>p.id==='palace'));}),true);await dismissModals(s);await s.tick(1200);
  const focus=await s.page.evaluate(()=>{
   const Q=waterTest,st=Q.state(),d=st.branchTerrain105.palace105;st.monsters=[];__MANRU_QA_BROOD__.occupancy.endShared();
   const water=Object.keys(d.floors).filter(key=>{const[x,y]=key.split(',').map(Number);return Q.base(x,y)===Q.TT.WATER;});

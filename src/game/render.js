@@ -3626,13 +3626,13 @@ function palaceWaterSprite(frame,deep){
  const q=c.getContext('2d'),image=q.createImageData(size,size),tau=Math.PI*2,phase=frame/16*tau;
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
   const u=x/size*tau,v=y/size*tau,warp=Math.sin(u*2+v-phase)*.45+Math.cos(v*3+phase)*.24;
-  const a=Math.sin(u*4+v*2+warp+Math.sin(phase)*.6),b=Math.cos(v*5-u*2+warp-Math.cos(phase)*.6);
-  const caustic=Math.pow(Math.max(0,1-Math.abs(a+b)*3.8),3),light=(Math.sin(u+v*2-phase)+Math.cos(u*2-v+phase))*.5;
+  const a=Math.sin(u*4+v*2+warp+Math.sin(v*3-phase)*.9),b=Math.cos(v*5-u*2+Math.cos(u*3-v*2+phase)*.8);
+  const caustic=Math.pow(Math.max(0,1-Math.abs(a+b+.45*Math.sin(u*3+v*4+Math.cos(v*2+u+phase)*.6))*3.1),3),light=(Math.sin(u+v*2-phase)+Math.cos(u*2-v+phase))*.5;
   const ripple=Math.pow(Math.max(0,Math.cos(v*12+Math.sin(u*3+phase)*.8+Math.sin(phase)*.5)),22)*Math.pow(Math.max(0,Math.sin(u*4-v+phase)),4);
   const grain=hash2(x,y,220)-.5,i=(y*size+x)*4;
-  image.data[i]=(deep?10:28)+light*4+caustic*(deep?12:34)+ripple*52+grain*3;
-  image.data[i+1]=(deep?57:112)+light*10+caustic*(deep?30:53)+ripple*67+grain*4;
-  image.data[i+2]=(deep?83:119)+light*12+caustic*(deep?34:43)+ripple*65+grain*4;
+  image.data[i]=(deep?10:28)+light*4+caustic*(deep?23:34)+ripple*52+grain*3;
+  image.data[i+1]=(deep?57:112)+light*10+caustic*(deep?47:53)+ripple*67+grain*4;
+  image.data[i+2]=(deep?83:119)+light*12+caustic*(deep?53:43)+ripple*65+grain*4;
   image.data[i+3]=deep?242:142+caustic*45+ripple*35;
  }
  q.putImageData(image,0,0);PALACE_WATER_ART.set(key,c);return c;
