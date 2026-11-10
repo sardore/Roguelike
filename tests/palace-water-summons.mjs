@@ -25,7 +25,7 @@ try{
    A.occupancy.move(p,36,36);st.turn++;delete st.lastSummonEscortTurn105;Q.escort();const escorted=m.x!==before.x||m.y!==before.y;
    const pos={x:m.x,y:m.y},pursued=Q.step(m,{x:40,y:40}),moved=m.x!==pos.x||m.y!==pos.y,swappable=Q.swap(p,m);
    // The same species body must keep its actual rendered pixels and authored traits.
-   const native=A.scale(def,16,{inventory:false});native.x=m.x;native.y=m.y;if(native.treeMimic105)native.mimicDormant105=false;Q.actorCache.clear();const normalPixels=Q.art(native,0).toDataURL();Q.actorCache.clear();const bodyPixels=Q.art(m,0).toDataURL();
+   const native=__MANRU_QA_SEALING__.scale(def,16,{inventory:false});native.x=m.x;native.y=m.y;if(native.treeMimic105)native.mimicDormant105=false;Q.actorCache.clear();const normalPixels=Q.art(native,0).toDataURL();Q.actorCache.clear();const bodyPixels=Q.art(m,0).toDataURL();
    if(def.fixed){m.fixed=false;m.summonForm105='mobile';}
    if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('save/load failed');
    const loaded=Q.state().monsters.find(a=>a.allyId53===m.allyId53);
@@ -38,7 +38,7 @@ try{
  const combat=await s.page.evaluate(()=>{
   const Q=waterTest,A=__MANRU_QA_BROOD__,S=__MANRU_QA_SEALING__,st=Q.state();st.monsters=[];A.occupancy.endShared();
   const gun=S.place('대포',{x:30,y:30}),enemy=S.place('객잔 쥐',{x:34,y:30});gun.summonOwner105='player';gun.faction57='player';gun.friendly47=true;Q.body(gun);enemy.hp=enemy.maxHp=1000;const before=S.fx.projectiles.length;st.intentBudget61=Infinity;__MANRU_AI61__.artillery(gun,enemy);
-  const child=A.scale(A.definitions.find(d=>d.name==='벌떼'),16,{inventory:false});Q.body(child);
+  const child=__MANRU_QA_SEALING__.scale(A.definitions.find(d=>d.name==='벌떼'),16,{inventory:false});Q.body(child);
   return{fired:S.fx.projectiles.length>before,damage:enemy.hp<1000,fixed:gun.fixed,childMobile:!child.fixed};
  });assert.deepEqual(combat,{fired:true,damage:true,fixed:true,childMobile:true});console.log(JSON.stringify(combat));
  await s.page.evaluate(()=>{const st=waterTest.state();st.player.inventory=[];delete st.player.summoning105;st.monsters=[];st.player.hp=st.player.maxHp=100000;__MANRU_RELEASE__.regen(9);st.monsters=[];__MANRU_QA_BROOD__.occupancy.endShared();});await s.tick(1200);
