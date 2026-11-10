@@ -3686,6 +3686,21 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
+ if(m.palaceActor105==='imugi'){
+  // A heavy, coiled water serpent with an unfinished crest, distinct from the crowned water dragon.
+  q.save();q.lineCap='round';q.lineJoin='round';r('#07152566',2,31,30,4);
+  const coil=()=>{q.beginPath();q.moveTo(2,28+b);q.bezierCurveTo(8,35,29,35,28,27+b);q.bezierCurveTo(27,21+b,9,30-b,9,23-b);q.bezierCurveTo(9,17-b,25,25+b,23,16+b);q.lineTo(22,12+b);};
+  coil();q.strokeStyle='#111a35';q.lineWidth=9;q.stroke();coil();q.strokeStyle='#465377';q.lineWidth=7;q.stroke();coil();q.strokeStyle='#819cb0';q.lineWidth=3;q.stroke();
+  for(const[x,y]of[[4,29],[9,31],[15,31],[22,29],[25,26],[18,25],[11,23],[14,20],[20,20]]){r('#b3c8bd',x,y+b,2,1);r('#647197',x+1,y+1+b,2,1);}
+  for(const[x,y]of[[6,27],[13,29],[23,23],[12,19],[21,16]])poly('#a2b5b9',[[x,y+b],[x+1,y-3+b],[x+3,y+b]]);
+  poly('#17233d',[[17,14+b],[15,9+b],[17,4+b],[25,2+b],[31,7+b],[32,13+b],[28,18+b],[21,18+b]]);
+  poly('#62789c',[[18,11+b],[18,6+b],[25,4+b],[29,7+b],[30,12+b],[26,15+b],[21,15+b]]);
+  poly('#a2b7bd',[[18,6+b],[23,4+b],[27,5+b],[21,8+b]]);poly('#ccd0b6',[[24,12+b],[31,11+b],[29,16+b],[24,16+b],[21,14+b]]);
+  poly('#829b9d',[[17,6+b],[14,3+b],[17,2+b],[21,5+b]]);poly('#d0c69b',[[23,3+b],[24,0+b],[26,1+b],[26,4+b]]);
+  r('#18223a',26,7+b,4,3);r('#f0cc78',27,8+b,2,1);r('#eef0cc',29,13+b,1,2);
+  line('#c7dfcd',23,12+b,13,10-b,1);line('#91c2c3',23,14+b,12,17-b,1);line('#52648a',8,32,3,33,1);
+  q.restore();return;
+ }
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
  if(m.palaceActor105==='gardener'||monsterSpeciesName(m)==='용궁 정원사'){r('#081b2a55',7,33,18,2);if(PALACE_GARDENER_IMAGE105.complete&&PALACE_GARDENER_IMAGE105.naturalWidth)q.drawImage(PALACE_GARDENER_IMAGE105,(frame%2)*64,0,64,72,0,0,32,36);return;}
  r('#081b2a55',5,33,23,2);if(m.palaceActor105==='lotus'){const bloom=palaceWet(m);for(const ps of [[[15,23],[9,30],[2,32]],[[18,22],[23,28],[30,31]],[[15,27],[12,35]],[[18,26],[20,35]]])for(let i=1;i<ps.length;i++)line('#244d4e',...ps[i-1],...ps[i],3);line('#4d8677',15,30,16,16,5);poly('#205250',[[3,25],[9,22],[15,27],[12,30],[5,29]]);poly('#517e6f',[[19,29],[24,23],[30,23],[27,28]]);

@@ -1288,7 +1288,7 @@ export const scenarios = {
       }));
       out['sealingWard.errors'] = JSON.stringify(s.errors);
       const casters = JSON.parse(out['sealingWard.casters']), p = JSON.parse(out['sealingWard.player']), expiry = JSON.parse(out['sealingWard.expiry']), evade = JSON.parse(out['sealingWard.evade']), mon = JSON.parse(out['sealingWard.monster']), save = JSON.parse(out['sealingWard.save']);
-      if (casters.length !== 3 || casters.find(c => c.name === '신전 사제 망령').size !== 5 || casters.find(c => c.name === '비단 술래').size !== 5 || casters.some(c => c.cooldown <= c.duration)) throw Error('ward casters: ' + out['sealingWard.casters']);
+      if (casters.length !== 4 || !['이무기', '신전 사제 망령', '비단 술래', '사당 주술시종'].every(name => casters.some(c => c.name === name && c.size === 5)) || casters.some(c => c.cooldown <= c.duration)) throw Error('ward casters: ' + out['sealingWard.casters']);
       if (p.warning !== 'sealingWard' || !p.prepared || p.cells !== 25 || !p.bornNotSpent || !p.inside || !p.reasons.every(r => r === 'sealing-ward') || p.transfer !== 'sealing-ward' || !p.filtered || !p.worldBlocked || !p.rawBlocked || !p.forcedOutside || !p.removed || !p.skills.includes('sealing-ward')) throw Error('ward player containment: ' + out['sealingWard.player']);
       if (!expiry.expired || !expiry.cooling || !expiry.rearmed || !evade.fixed || !evade.absent) throw Error('ward timing: ' + JSON.stringify({ expiry, evade }));
       if (mon.cells !== 25 || !mon.blocked || !mon.internal || !mon.pushed || !mon.removed) throw Error('ward monster containment: ' + out['sealingWard.monster']);
