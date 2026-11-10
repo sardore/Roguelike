@@ -165,7 +165,7 @@ function drawSharedProp(ctx,t,px,py,region=0,variant=0,now=0,lit=true,appearance
  if(lit&&t===TT.COOKPOT)drawPotSteam(ctx,px,py,now);
  return true;
 }
-function actorSpriteCanvas(actor=null,resolution=1){const c=document.createElement('canvas'),imugi=actor?.palaceActor105==='imugi',pad=!imugi&&(actor?.weapon||actor?.palaceActor105==='king');c.actorResolution105=Math.max(1,resolution);c.width=(imugi?48:pad?48:32)*c.actorResolution105;c.height=(imugi?52:pad?48:36)*c.actorResolution105;c.actorFrame105={x:pad?8:0,y:pad?12:0,w:imugi?48:32,h:imugi?52:36};const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.scale(c.actorResolution105,c.actorResolution105);q.translate(c.actorFrame105.x,c.actorFrame105.y);return[c,q];}
+function actorSpriteCanvas(actor=null,resolution=1){const c=document.createElement('canvas'),pad=actor?.palaceActor105!=='imugi'&&!!(actor?.weapon||actor?.palaceActor105==='king');c.actorResolution105=Math.max(1,resolution);c.width=(pad?48:32)*c.actorResolution105;c.height=(pad?48:36)*c.actorResolution105;c.actorFrame105={x:pad?8:0,y:pad?12:0,w:32,h:36};const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.scale(c.actorResolution105,c.actorResolution105);q.translate(c.actorFrame105.x,c.actorFrame105.y);return[c,q];}
 function actorSpriteRect(c,x,y,scale=1){const f=c.actorFrame105||{x:0,y:0,w:32,h:36};return{x:x+16-f.w*scale/2-f.x*scale,y:y+32-(f.h+f.y)*scale,w:c.width/(c.actorResolution105||1)*scale,h:c.height/(c.actorResolution105||1)*scale};}
 // The weapon and the armor named in the side panel glow in the colour of their enchantment.
 function glowEquip(p){for(const [id,item] of [['weaponTxt',p.weapon],['armorTxt',p.armor]]){const el=document.getElementById(id),glow=enchantColor(item);if(el)el.style.textShadow=glow?`0 0 9px ${glow},0 0 3px ${glow}`:''}}
@@ -2688,7 +2688,7 @@ function drawBranchCreature(q,m,frame,sp){
 }
 function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
- if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:m.palaceActor105==='imugi'?2:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
@@ -3686,7 +3686,33 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
- if(m.palaceActor105==='imugi'){r('#06101d66',7,49,35,2);if(PALACE_IMUGI_IMAGE.complete&&PALACE_IMUGI_IMAGE.naturalWidth)q.drawImage(PALACE_IMUGI_IMAGE,0,b?-1:0,48,52);return;}
+ if(m.palaceActor105==='imugi'){
+  // One native 32x36 actor: broad head, arched neck and a grounded coil.
+  // Every mark is an integer pixel cluster; the two poses only shift the head and tail.
+  r('#091b2455',4,33,24,2);
+  const ink='#111e2b',deep='#203f52',shade='#2b5967',jade='#3c7d7b',light='#74ad98',bone='#d3c69a',gold='#a68c58';
+  for(const[x,y,w,h]of [[3,23,5,5],[2,27,5,4],[5,30,7,3],[10,26,17,8],[25,23,5,8],[23,20,5,5],[16,18,10,5],[12,15,9,5],[10,10,10,7]])r(ink,x,y,w,h);
+  // Tail curls behind the foreground coil, rather than lengthening the body above the tile.
+  r(deep,3,27,4,3);r(jade,4,25,3,3);r(light,5,23-b,2,3);r(deep,6,30,7,2);
+  r(deep,11,27,15,6);r(shade,9,28,18,3);r(jade,11,26,14,3);r(light,13,26,9,1);r(gold,11,31,12,1);r(bone,13,31,8,1);
+  r(deep,25,24,4,6);r(shade,24,22,4,6);r(jade,23,21,3,5);r(light,24,22,1,3);
+  r(ink,11,28,11,2);r(deep,13,27,9,1);r(gold,25,27,2,3);r(bone,24,29,2,2);
+  // The forward neck covers the rear loop; belly plates keep its direction readable.
+  r(deep,17,19,8,3);r(shade,14,17,7,3);r(jade,13,14,6,4);r(light,13,14,2,3);r(deep,12,11,7,5);
+  r(gold,18,15,2,4);r(bone,18,16,1,2);r(gold,20,19,3,2);r(bone,21,19,2,1);
+  for(const[x,y]of [[9,13],[10,17],[13,20],[19,22],[26,26]]){r(ink,x,y,3,3);r(light,x+1,y,2,1);r(jade,x+1,y+1,1,2);}
+  for(const[x,y]of [[12,28],[17,29],[21,27],[25,23],[14,15]]){r(shade,x,y,2,1);r(light,x+1,y+1,1,1);}
+  // Short swept crest, angular brow and long muzzle: an immature dragon, not a round mascot.
+  for(const[x,y,w,h]of [[9,5,6,3],[8,8,5,5],[11,7,12,7],[20,9,10,6],[19,14,8,3]])r(ink,x,y+b,w,h);
+  r(shade,10,6+b,5,3);r(jade,11,7+b,10,6);r(light,13,7+b,7,2);r(shade,10,9+b,4,4);
+  r(deep,14,12+b,9,3);r(jade,20,10+b,8,4);r(light,22,10+b,5,1);r(shade,26,11+b,2,3);
+  r(ink,18,10+b,6,2);r(gold,19,10+b,4,1);r('#efd27b',21,11+b,2,1);r(ink,22,11+b,1,1);
+  r(ink,27,11+b,1,1);r(ink,22,14+b,7,1);r(bone,24,14+b,1,2);r(gold,20,15+b,4,1);
+  r(ink,11,2+b,3,5);r(gold,12,3+b,1,4);r(bone,12,2+b,1,2);r(ink,17,3+b,3,4);r(bone,18,3+b,1,3);
+  r(ink,7,8+b,3,3);r(light,8,8+b,2,1);r(ink,6,12+b,5,2);r(jade,7,12+b,4,1);
+  r(bone,25,16+b,3,1);r(gold,28,15+b,2,1);r(bone,29,13+b,1,2);
+  return;
+ }
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
  if(m.palaceActor105==='gardener'||monsterSpeciesName(m)==='용궁 정원사'){r('#081b2a55',7,33,18,2);if(PALACE_GARDENER_IMAGE105.complete&&PALACE_GARDENER_IMAGE105.naturalWidth)q.drawImage(PALACE_GARDENER_IMAGE105,(frame%2)*64,0,64,72,0,0,32,36);return;}
  r('#081b2a55',5,33,23,2);if(m.palaceActor105==='lotus'){const bloom=palaceWet(m);for(const ps of [[[15,23],[9,30],[2,32]],[[18,22],[23,28],[30,31]],[[15,27],[12,35]],[[18,26],[20,35]]])for(let i=1;i<ps.length;i++)line('#244d4e',...ps[i-1],...ps[i],3);line('#4d8677',15,30,16,16,5);poly('#205250',[[3,25],[9,22],[15,27],[12,30],[5,29]]);poly('#517e6f',[[19,29],[24,23],[30,23],[27,28]]);

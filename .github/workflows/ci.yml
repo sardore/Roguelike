@@ -26,7 +26,7 @@ jobs:
       - name: Stationary book summons, native sprites and bounded palace water
         run: node tests/palace-water-summons.mjs && node tests/palace-water-summons.mjs --mobile
       - name: Palace imugi, rapid actions and aquatic pursuit
-        run: node tests/palace-imugi.mjs
+        run: node tests/palace-imugi.mjs && node tests/palace-oddity.mjs
       - name: Behaviour and screenshots on the QA build (seeded replay, V40 saves, floors, debug arena, pinned fonts)
         run: npm test -- --skip render
       - name: Release source publishes no QA hooks and saves the same data
