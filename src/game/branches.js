@@ -52,14 +52,17 @@ function branchEncodePage(page){
  if(w)out.push(String.fromCharCode((w.length===1?w.charCodeAt(0):dict.get(w))+256));
  return{pageCodec105:1,bytes105:bytes.length,data105:out.join('')};
 }
+// Snapshot replacement invalidates this weak cache; hot-path readers share one decode.
+const BRANCH_DECODE_CACHE=new WeakMap();
 function branchDecodePage(page){
  if(page?.pageCodec105==null)return page;
  if(page.pageCodec105!==1||typeof page.data105!=='string'||!Number.isSafeInteger(page.bytes105)||page.bytes105<1||page.bytes105>8000000)throw Error('Invalid branch page encoding');
+ const cached=BRANCH_DECODE_CACHE.get(page);if(cached&&cached.data===page.data105&&cached.bytes===page.bytes105)return cached.value;
  const dict=Array.from({length:256},(_,i)=>String.fromCharCode(i)),data=page.data105;let next=256,w=dict[data.charCodeAt(0)-256];if(w==null)throw Error('Invalid branch page first code');
  const out=[w];let size=w.length;
  for(let i=1;i<data.length;i++){const code=data.charCodeAt(i)-256,entry=dict[code]??(code===next?w+w[0]:null);if(entry==null)throw Error('Invalid branch page code');size+=entry.length;if(size>page.bytes105)throw Error('Branch page length overflow');out.push(entry);if(next<32768)dict[next++]=w+entry[0];w=entry}
  if(size!==page.bytes105)throw Error('Truncated branch page');
- const binary=out.join(''),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+ const binary=out.join(''),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0)),value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));BRANCH_DECODE_CACHE.set(page,{data,bytes:page.bytes105,value});return value;
 }
 // Lossless persistence encoding: runtime terrain remains the canonical tile/grid state.
 function branchGridPack(grid){const h=grid.length,w=grid[0]?.length||0,r=[];for(const row of grid)for(const v of row){if(r.length&&r[r.length-2]===v)r[r.length-1]++;else r.push(v,1);}return{w,h,r}}
@@ -276,7 +279,7 @@ function branchTransition(portal){
  if(state.branchContext105?.id==='mine'){mineEnsureEntrance();migrateMineAppearance105();}
  const anchor=state.branchPortals105.find(p=>p.id===portal.arrival);if(!anchor)throw Error('Missing arrival anchor '+portal.arrival);
  const cells=[...DIRS4,...DIRS8].map(([dx,dy])=>({x:anchor.x+dx,y:anchor.y+dy})).filter(q=>ReachabilityService.playerTerrainPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y));
- if(!cells.length)throw Error('Arrival blocked');Object.assign(state.player,cells[0]);state.player.smokeInside1005=false;summonCleanup();summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();
+ if(!cells.length)throw Error('Arrival blocked');Object.assign(state.player,cells[0]);state.player.smokeInside1005=false;summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();
  state.hazard1005={...(state.hazard1005||{armed:{},collapsed:{},lastWarn:{}}),...ward};
  if(state.branchContext105?.id==='palace')globalThis.__MANRU_HAZARD_CORE__?.revalidateAll('palace-arrival');WorldTransition57.complete();cancelAutoWalk();clearHeldInput53();normalizeRunState57();normalizeItemContainers57();resetVisualState();resetTurnState();VisibilityService.compute();BRANCH_TILE_CACHE.clear();updateAll();
  addLog(`${hudLocation58().full}에 들어섰다. 돌아가는 문은 항상 열려 있다.`);if(id==='stockade'&&level===1&&!world.elevationHint){world.elevationHint=true;addLog('절벽벽과 나무 사이의 산길을 따라 오른다. 절벽벽은 이동과 시야를 막고, 검은 낭떠러지는 추락 위험이다. 보급품은 초소와 정상 건물에 모여 있다.');}
@@ -2500,7 +2503,7 @@ restore(){
  if(!WorldTransition57.allowed())return false;const {artifactReturn46:r}=state;if(!r)return false;const followers=summonFollowers();
  if(r.schema46===2&&r.outer){const carry=artifactCarry46(),pos={x:r.outer.player?.x??0,y:r.outer.player?.y??0};COLS=r.cols;ROWS=r.rows;const outer=normalizeSnapshotCollections46(structuredClone(r.outer));state=outer;for(const [k0,v] of Object.entries(carry))if(k0!=='hazardPlayer1005')state[k0]=v;if(carry.hazardPlayer1005){state.hazard1005=state.hazard1005||{armed:{},collapsed:{},lastWarn:{}};state.hazard1005.drownUntil=carry.hazardPlayer1005.drownUntil;state.hazard1005.voidUntil=carry.hazardPlayer1005.voidUntil}state.player.x=pos.x;state.player.y=pos.y}
  else{const keep=artifactCarry46(),pos=r.playerPos||{x:state.player.x,y:state.player.y};COLS=r.cols;ROWS=r.rows;state.pendingGroundItems57=[];for(const [k0,v] of Object.entries(r)){if(['cols','rows','playerPos','seen','visible','hazardFloor1005'].includes(k0))continue;state[k0]=structuredClone(v)}for(const [k0,v] of Object.entries(keep))if(k0!=='hazardPlayer1005')state[k0]=v;if(state.hazard1005&&r.hazardFloor1005){state.hazard1005.armed=structuredClone(r.hazardFloor1005.armed||{});state.hazard1005.collapsed=structuredClone(r.hazardFloor1005.collapsed||{});state.hazard1005.lastWarn=structuredClone(r.hazardFloor1005.lastWarn||{});state._lastPlayerPos60=structuredClone(r.hazardFloor1005.lastPlayerPos60||null)}state.seen=new Set(r.seen||[]);state.visible=new Set(r.visible||[]);state.grassTufts1020=state.grassTufts1020 instanceof Set?state.grassTufts1020:new Set(state.grassTufts1020||[]);if(keep.hazardPlayer1005&&state.hazard1005){state.hazard1005.drownUntil=keep.hazardPlayer1005.drownUntil;state.hazard1005.voidUntil=keep.hazardPlayer1005.voidUntil}state.player.x=pos.x;state.player.y=pos.y}
- summonCleanup();summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();delete state.artifactReturn46;delete state.artifactDungeon46;delete state.artifactExit46;delete state.artifactReward46;state.legendDecor47=[];delete state.legendPalette47;normalizeRunState57();normalizeItemContainers57();WorldTransition57.complete();syncEquip47();resetVisualState();VisibilityService.compute();vfBuildDecor?.();updateAll();addLog('전용 문이 닫히며 원래 만루의 층으로 돌아왔다.');return true
+ summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();delete state.artifactReturn46;delete state.artifactDungeon46;delete state.artifactExit46;delete state.artifactReward46;state.legendDecor47=[];delete state.legendPalette47;normalizeRunState57();normalizeItemContainers57();WorldTransition57.complete();syncEquip47();resetVisualState();VisibilityService.compute();vfBuildDecor?.();updateAll();addLog('전용 문이 닫히며 원래 만루의 층으로 돌아왔다.');return true
 },
 build(a,options={}){
  if(a?.id==='water_crossbow'){toast('창해 수압노궁은 본관 9층의 창해 용궁으로 통합됐다.');return false;}if(!a||!state)return false;const seed=Number.isFinite(options.seed)?options.seed>>>0:(globalThis.__MANRU_RANDOM57__()*4294967296)>>>0,spec=LEGEND_DUNGEON_LAYOUTS[a.id],t=LEGEND_TILES49[a.id];let accepted=false,last;

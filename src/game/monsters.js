@@ -1301,7 +1301,7 @@ function summonState(){
 function summonActive(mon){return !!mon&&mon.summonOwner105==='player'&&!mon.deathProcessed57&&(mon.hp>0||mon.revivePhase57==='corpse')&&(mon.summonPersistent105===true||Number.isFinite(mon.summonExpire105)&&mon.summonExpire105>state.turn);}
 function summonContainers(){
  const locations=[{world:state,current:true},{world:state.artifactReturn46?.outer},{world:state.shopIntermission?.outer?.state}].filter(l=>l.world);
- for(const [pageKey,raw]of Object.entries(state.branchWorld105?.pages||{}))locations.push({world:branchDecodePage(raw),pageKey});return locations;
+ for(const [pageKey,raw]of Object.entries(state.branchWorld105?.pages||{}))if(pageKey!==branchWorldKey())locations.push({world:branchDecodePage(raw),pageKey});return locations;
 }
 function summonAll(){return summonContainers().filter(l=>!l.pageKey||l.pageKey!==branchWorldKey()).flatMap(l=>l.world.monsters||[]).filter(summonActive);}
 function summonRetire(keep=null,locations=summonContainers(),bookId=null){
@@ -1378,17 +1378,17 @@ function summonCanAdmit(mon,{existing=false}={}){
 }
 function summonInherit(child,parent){if(!parent?.summonOwner105)return child;Object.assign(child,{faction57:entityFaction(parent),friendly47:isPlayerAlly57(parent),allyId53:`summon-child-${++state.player.summoning105.serial}-${state.turn}`,summonOwner105:parent.summonOwner105,summonBookId105:parent.summonBookId105,summonContract105:parent.summonContract105,summonParent105:parent.allyId53||combatantId(parent),summonRoot105:parent.summonRoot105||parent.allyId53,summonElement105:parent.summonElement105,summonPersistent105:parent.summonPersistent105,summonExpire105:parent.summonExpire105,rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'player-summon-child'});delete child.allyExpireTurn47;delete child.ttl47;configureSummonBody105(child);return child;}
 function summonCleanup(){
- if(!state?.player?.summoning105)return;const q=summonState();
+ if(!state?.player?.summoning105)return;const q=summonState(),active=new Set();
  for(const location of summonContainers()){
   if(location.pageKey===branchWorldKey())continue;
   let changed=false;
-  for(const mon of [...(location.world.monsters||[])])if(mon.summonOwner105&&!summonCanAdmit(mon,{existing:true})){
+  for(const mon of [...(location.world.monsters||[])])if(mon.summonOwner105){
+   if(summonCanAdmit(mon,{existing:true})){active.add(mon.summonContract105);continue;}
    if(location.current)removeAlly(mon);else location.world.monsters.splice(location.world.monsters.indexOf(mon),1);
    changed=true;
   }
   if(changed&&location.pageKey)state.branchWorld105.pages[location.pageKey]=branchEncodePage(location.world);
  }
- const active=new Set(summonAll().map(mon=>mon.summonContract105));
  for(const [id,contract]of Object.entries(q.contracts||{}))if(!active.has(id)||!contract.persistent105&&Number.isFinite(contract.expires)&&contract.expires<=state.turn)delete q.contracts[id];
 }
 function summonCombatTarget(mon){
@@ -2066,8 +2066,9 @@ function debugBattleBindViewport57(el){
 let SUMMON_PANEL_SESSION105=null;
 function summonRecovery105(upgrade=summonState().upgrade){return Math.max(1,Math.ceil(SUMMON_RULES.cooldown/(1+SUMMON_RULES.cooldownDecay*Math.max(0,Math.floor(Number(upgrade)||0)))));}
 function configureSummonBody105(mon){mon.summonForm105=mon.summonForm105||(mon.boss||mon.miniBoss?'boss':mon.fixed?'fixed':'mobile');mon.fixed=!!(mon.combatFixture54||mon.immobile105||mon.kind==='plant'&&mon.fixed);if(mon.treeMimic105)mon.mimicDormant105=false;mon.footprint='one';if(mon.aquatic)mon.amphibious57=true;mon.waterOnly57=false;mon.guardHome57=null;return mon;}
-function normalizeSummonSpeciesItem105(item,defs=summonDefinitions(),aliases=new Map()){
+function normalizeSummonSpeciesItem105(item,defs=null,aliases=new Map()){
  if(!item?.summonItem105||item.summonSpeciesVersion105===1)return;
+ defs=defs||summonDefinitions();
  const byName=new Map(defs.map(d=>[d.name,d])),resolve=old=>aliases.get(old)||monsterSpeciesName(old),sum=(a,b)=>Math.min(Number.MAX_SAFE_INTEGER,(Number.isSafeInteger(a)&&a>0?a:0)+(Number.isSafeInteger(b)&&b>0?b:0));
  if(item.summonItem105==='picture'){
   const original=resolve(item.summonSpecies105),name=byName.has(original)?original:monsterSpeciesName(item.summonPortrait105),def=byName.get(name);
@@ -2449,7 +2450,8 @@ function silkThreadAt54(x,y){
   }
   function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}
 function entityFootprintCells57(entity,x=entity?.x,y=entity?.y){if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return[];const offsets=entity===state?.player?FOOTPRINT_OFFSETS57.one:footprintOffsets(entity);return offsets.map(([ox,oy])=>({x:x+ox,y:y+oy}))}
-function summonPlaceFollowers105(list){for(const mon of list){if(!summonActive(mon))continue;const q=PlacementService.findMonster(mon,{placementMode:'local',origin:state.player,radius:5});if(!q)throw Error('추종 소환체 착지 공간 부족');Object.assign(mon,q);const delta=state.floorTurn-(mon.summonTravelFloorTurn105??state.floorTurn);for(const key of ['nextSummonTurn57','nextAction54','nextShot54','corpseUntilFloorTurn57','reviveFullTurn57'])if(Number.isFinite(mon[key]))mon[key]+=delta;delete mon.summonTravelFloorTurn105;delete mon.allyLastActionRound57;delete mon.allyTargetId54;delete mon.allyLastSeenPosition54;delete mon.allySearchUntilTurn54;delete mon.intent54;delete mon.intent61;if(!OccupancyService.addMonster(mon))throw Error('추종 소환체 계약 불일치');}}
+// Travelling actors are absent from both snapshots until all arrivals finish.
+function summonPlaceFollowers105(list){for(const mon of list){if(!summonActive(mon))continue;const q=PlacementService.findMonster(mon,{placementMode:'local',origin:state.player,radius:5});if(!q)throw Error('추종 소환체 착지 공간 부족');Object.assign(mon,q);const delta=state.floorTurn-(mon.summonTravelFloorTurn105??state.floorTurn);for(const key of ['nextSummonTurn57','nextAction54','nextShot54','corpseUntilFloorTurn57','reviveFullTurn57'])if(Number.isFinite(mon[key]))mon[key]+=delta;delete mon.summonTravelFloorTurn105;delete mon.allyLastActionRound57;delete mon.allyTargetId54;delete mon.allyLastSeenPosition54;delete mon.allySearchUntilTurn54;delete mon.intent54;delete mon.intent61;if(!OccupancyService.addMonster(mon))throw Error('추종 소환체 계약 불일치');}summonCleanup();}
 const MOVE_COST_STAGES=[{id:'potions41',run:potionMoveCost},{id:'food57',run:foodMoveCost},{id:'elements74',run:elementGuardMoveCost},{id:'curse991',run:curseMoveCost}];
 function updateRolePanel(){if(state){const near=state.monsters.filter(m=>m.role61&&isThreatVisibleToPlayer(m)).sort((a,b)=>entityDistance57(a,state.player)-entityDistance57(b,state.player))[0],el=document.getElementById('monsterInfo');if(near&&el&&!el.innerHTML.includes('role61'))el.innerHTML+=`<div class="role61" style="margin-top:5px;color:#d5b57d"><b>${ROLE_RUNE[near.role61]||'적'} ${near.role61}</b> · ${near.roleDesc61}</div>`}}
 function bossExperience(mon){if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLog(`보스 경험치 +${mon.xp}`);checkLevel()}if(mon?.bossPattern==='master')state.visionPenalty=0}
