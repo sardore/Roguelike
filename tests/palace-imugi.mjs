@@ -4,7 +4,7 @@ import path from 'node:path';
 import {assembleGame,QA_MARKER} from '../tools/lib/game.mjs';
 import {launch,openSession,startRun,dismissModals} from './harness.mjs';
 const repo=path.resolve('.'),art=path.join(repo,'tests/artifacts/imugi');fs.mkdirSync(art,{recursive:true});
-const bridge=`globalThis.imugiTest={state:()=>state,TT,monsters:monsterTurn,allies:alliesTurn,schedule:monsterActionSchedule,step:moveMonsterToward,path:monsterPathStep,can:canMonsterStep,place:PlacementService,occupancy:OccupancyService,scale:scaledMonster,summon:tryMonsterSummon,engage:updateSummonerEngagement,fields:combatFieldBlocks57,skills:monsterSkills,art:monsterCanvas,cache:ACTOR_CACHE,debug:DEBUG_BATTLE57,round:debugBattleRound57,update:updateAll,fx:FX,configure:configureMonsterTraits};`;
+const bridge=`globalThis.imugiTest={state:()=>state,TT,monsters:monsterTurn,allies:alliesTurn,schedule:monsterActionSchedule,step:moveMonsterToward,path:monsterPathStep,can:canMonsterStep,place:PlacementService,occupancy:OccupancyService,scale:scaledMonster,summon:tryMonsterSummon,engage:updateSummonerEngagement,fields:combatFieldBlocks57,skills:monsterSkills,art:monsterCanvas,cache:ACTOR_CACHE,debug:DEBUG_BATTLE57,round:debugBattleRound57,update:updateAll,fx:FX,configure:configureMonsterTraits,id:combatantId,project:()=>GameState.project(state),load:loadGame};`;
 const runtime=assembleGame(path.join(repo,'src')).text.replace(QA_MARKER,fs.readFileSync(path.join(repo,'src/qa/qa.js'),'utf8')+'\n'+bridge);
 const browser=await launch(),ctx=await browser.newContext({viewport:{width:1280,height:800}});await ctx.route('**/scripts/10-runtime.js',r=>r.fulfill({contentType:'text/javascript',body:runtime}));
 const s=await openSession(browser,path.join(repo,'dist-qa'),{context:ctx,seed:9045}),ev=(fn,arg)=>s.page.evaluate(fn,arg);s.page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER: '+msg.text());});
@@ -37,14 +37,22 @@ try{
  });
  await check('actions',async()=>{
  // Compare one rapid hostile decision phase against two ordinary phases with identical RNG and bodies.
- const trial=async(speed,rounds,mode='hostile',near=true)=>{await setup();return ev(({speed,rounds,mode,near})=>{
-  const Q=imugiTest,st=Q.state(),A=__MANRU_QA_SEALING__,m=A.place('이무기',{x:30,y:30});m.actionSpeed=speed;m.skillSeal105=100;m.summoner=false;m.alerted=true;m.hasSeenPlayer105=true;Q.occupancy.move(st.player,near?32:34,30);
+ const trial=async(speed,rounds,mode='hostile',near=true,oldAttack=false)=>{await setup();return ev(({speed,rounds,mode,near,oldAttack})=>{
+  const Q=imugiTest,st=Q.state(),A=__MANRU_QA_SEALING__,m=A.place('이무기',{x:30,y:30});m.actionSpeed=speed;if(oldAttack)m.atk=19;m.skillSeal105=100;m.summoner=false;m.alerted=true;m.hasSeenPlayer105=true;Q.occupancy.move(st.player,near?32:34,30);
   let target=st.player;if(mode==='ally'){Q.occupancy.move(st.player,40,40);target=A.place('객잔 쥐',{x:near?32:34,y:30});target.hp=target.maxHp=100000;target.def=0;target.eva=0;__MANRU_COMBATANTS57__.setFaction(m,'player');}
   const hp=target.hp;__reseed(42);for(let i=0;i<rounds;i++){st.turn++;st.floorTurn++;if(mode==='ally')Q.allies();else Q.monsters();}
   return{damage:hp-target.hp,x:m.x,y:m.y,schedule:Q.schedule(m),skills:Q.skills(m).map(s=>s.id)};
- },{speed,rounds,mode,near});};
- const attacks={};for(const mode of ['hostile','ally']){const rapid=await trial(2,1,mode),normalTwo=await trial(1,2,mode),normalOne=await trial(1,1,mode);console.log('ATTACK_TRIAL='+JSON.stringify({mode,rapid,normalTwo,normalOne}));assert.equal(rapid.damage,normalTwo.damage,mode+' two complete attacks');assert.ok(rapid.damage>normalOne.damage&&normalOne.damage>0,mode+' attack speed boost: '+JSON.stringify({rapid,normalTwo,normalOne}));attacks[mode]={rapid,normalTwo,normalOne};}
+ },{speed,rounds,mode,near,oldAttack});};
+ const attacks={};for(const mode of ['hostile','ally']){const rapid=await trial(2,1,mode),normalTwo=await trial(1,2,mode),normalOne=await trial(1,1,mode),oldThreat=await trial(2,1,mode,true,true);assert.ok(rapid.damage<=oldThreat.damage*.6,mode+' two-action damage must be substantially reduced');console.log('ATTACK_TRIAL='+JSON.stringify({mode,rapid,normalTwo,normalOne,oldThreat}));assert.equal(rapid.damage,normalTwo.damage,mode+' two complete attacks');assert.ok(rapid.damage>normalOne.damage&&normalOne.damage>0,mode+' attack speed boost: '+JSON.stringify({rapid,normalTwo,normalOne}));attacks[mode]={rapid,normalTwo,normalOne,oldThreat};}
  const rapidMove=await trial(2,1,'hostile',false),normalMove=await trial(1,1,'hostile',false);assert.equal(rapidMove.x,32);assert.equal(normalMove.x,31);console.log('ACTION_SPEED='+JSON.stringify({attacks,rapidMove,normalMove}));
+ });
+ await check('balance and legacy saves',async()=>{
+  await setup();const migration=await ev(()=>{
+   const Q=imugiTest,st=Q.state(),m=__MANRU_QA_SEALING__.place('이무기',{x:30,y:30}),id=Q.id(m);Object.assign(m,{balanceVersion57:0,hp:45,maxHp:90,atk:19,def:9,eva:8,nextSummonTurn57:102,nextSealingWardTurn:102,sealingWard:{species:'이무기',radius:2,duration:4,cooldown:5,range:8}});delete m.summonWarmup;delete m.summonCooldown;
+   const cells=[];for(let y=28;y<=32;y++)for(let x=32;x<=36;x++)cells.push({x,y});st.tempFields.push({kind:'sealingWard',x:34,y:30,ttl:4,cells,sourceFaction:'hostile',targetId:'player',ownerId:id,bornTurn:100});
+   if(!Q.load({state:Q.project(),label:'legacy-imugi-balance'}))throw Error('legacy balance restore failed');const loaded=Q.state(),unit=loaded.monsters.find(m=>m.combatantId54===id),read=()=>({hp:unit.hp,maxHp:unit.maxHp,atk:unit.atk,def:unit.def,eva:unit.eva,speed:unit.actionSpeed,warmup:unit.summonWarmup,cooldown:unit.summonCooldown,ward:unit.sealingWard.duration,wardCooldown:unit.sealingWard.cooldown,summonAt:unit.nextSummonTurn57,wardAt:unit.nextSealingWardTurn,field:loaded.tempFields.find(f=>f.ownerId===id)?.ttl});const out=read();Q.configure(unit);if(JSON.stringify(read())!==JSON.stringify(out))throw Error('balance migration must be idempotent');return out;
+  });assert.deepEqual(migration,{hp:45,maxHp:90,atk:9,def:5,eva:5,speed:2,warmup:6,cooldown:8,ward:4,wardCooldown:5,summonAt:108,wardAt:102,field:4});console.log('BALANCE_SAVE='+JSON.stringify(migration));
+  await setup();const cadence=await ev(()=>{const Q=imugiTest,st=Q.state(),m=__MANRU_QA_SEALING__.place('이무기',{x:30,y:30});st.map[29][29]=Q.TT.WATER;Q.engage(m,true);const first=m.nextSummonTurn57;st.floorTurn=105;const early=!!Q.summon(m);st.floorTurn=106;const ready=!!Q.summon(m);return{first,early,ready,next:m.nextSummonTurn57};});assert.deepEqual(cadence,{first:106,early:false,ready:true,next:114});console.log('SUMMON_CADENCE='+JSON.stringify(cadence));
  });
  await check('ward',async()=>{
  // A fast warning cannot resolve in the second slot of the same player turn.

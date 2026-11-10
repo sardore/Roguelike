@@ -2688,7 +2688,7 @@ function drawBranchCreature(q,m,frame,sp){
 }
 function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
- if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:m.palaceActor105==='imugi'?2:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
@@ -3686,71 +3686,7 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
- if(m.palaceActor105==='imugi'){
-  // Large 48x52 inner-palace water dragon: severe brow, projecting jaws,
-  // swept antler-horns and a long rising neck instead of a tiny snake coil.
-  q.save();q.lineCap='round';q.lineJoin='round';
-  const ink='#091b2a',dark='#18344b',bodyBlue='#315c74',scaleBlue='#4a8ba2',light='#91c6c8',ivory='#e3dec2',foam='#baf5e7';
-  r('#06101d88',2,47,44,4);
-  // Wide tail with a tapered spade and large water-frill spines.
-  poly(ink,[[9,44],[1,42],[0,34],[7,37],[16,42]]);
-  poly(scaleBlue,[[8,43],[3,40],[2,37],[10,40],[15,44]]);
-  poly(ink,[[12,39],[3,29],[6,25],[16,33],[20,41]]);
-  poly('#67b4b8',[[12,38],[7,29],[9,28],[18,39]]);
-  // Full-body silhouette crosses the tile in an S, not a round snail shell.
-  const spine=()=>{q.beginPath();q.moveTo(6,43+b);q.bezierCurveTo(14,48,33,50,40,42+b);q.bezierCurveTo(45,33+b,24,40-b,20,34-b);q.bezierCurveTo(15,26-b,31,29+b,30,19+b);q.bezierCurveTo(29,16+b,27,16+b,26,14+b);};
-  spine();q.strokeStyle=ink;q.lineWidth=15;q.stroke();
-  spine();q.strokeStyle=dark;q.lineWidth=12;q.stroke();
-  spine();q.strokeStyle=bodyBlue;q.lineWidth=9;q.stroke();
-  spine();q.strokeStyle=scaleBlue;q.lineWidth=4;q.stroke();
-  // Scaled belly plates give mass; staggered overlapping scales add surface depth.
-  for(const[x,y,w]of[[8,44,5],[14,47,5],[21,48,5],[29,47,5],[36,44,4],[38,39,4],[31,36,4],[24,34,4],[23,29,4],[29,25,4]]){r('#17364b',x,y+b,w,2);r('#a5c6c4',x,y+b,w-1,1);}
-  for(const[x,y]of[[11,42],[19,44],[28,43],[36,40],[29,33],[21,32],[25,25],[28,21]]){poly('#74a7b0',[[x-2,y+b],[x,y-3+b],[x+3,y+b]]);r('#c0d8cd',x,y-2+b,2,1);}
-  // Dorsal fins rise off the spine and neck; hard angular shapes keep the silhouette fierce.
-  for(const [x,y] of [[12,35],[19,38],[30,36],[23,28],[25,22]]){
-   poly(ink,[[x-3,y+b],[x-1,y-7+b],[x+3,y-1+b],[x+4,y+2+b]]);
-   poly('#458ca2',[[x-1,y-1+b],[x,y-5+b],[x+2,y+b]]);
-   r('#a7d5cd',x,y-3+b,1,2);
-  }
-  // Gill-fin mane spans behind the long neck.
-  poly(ink,[[22,19+b],[13,17+b],[10,9+b],[19,13+b],[18,7+b],[26,12+b],[29,20+b]]);
-  poly('#377d93',[[22,18+b],[15,16+b],[13,12+b],[20,16+b],[20,10+b],[27,15+b]]);
-  poly('#9fd5d0',[[15,13+b],[19,15+b],[19,10+b],[23,15+b]]);
-  // The two high, swept antler horns and cheek fin read above the arena floor.
-  poly(ink,[[20,14+b],[17,4],[21,0],[28,11+b]]);
-  poly('#93cad1',[[20,10+b],[19,4],[22,1],[24,10+b]]);
-  poly(ink,[[30,12+b],[32,2],[37,0],[36,11+b]]);
-  poly('#a8c4c9',[[32,10+b],[34,3],[36,1],[35,10+b]]);
-  poly(ink,[[22,20+b],[16,23+b],[12,29+b],[23,25+b],[28,24+b]]);
-  poly('#4c9eb0',[[21,20+b],[17,25+b],[22,24+b],[26,22+b]]);
-  // Forward-jutting skull, sharply sloped brows, and plated cheeks.
-  poly(ink,[[19,17+b],[21,11+b],[28,8+b],[37,10+b],[44,13+b],[47,18+b],[45,23+b],[41,27+b],[31,29+b],[22,25+b],[18,22+b]]);
-  poly(bodyBlue,[[22,18+b],[23,13+b],[30,10+b],[38,12+b],[44,16+b],[42,20+b],[36,23+b],[25,23+b]]);
-  poly(scaleBlue,[[24,15+b],[29,11+b],[36,12+b],[41,15+b],[36,17+b],[30,18+b]]);
-  poly(light,[[29,12+b],[34,11+b],[41,15+b],[38,16+b],[32,15+b]]);
-  poly('#18354e',[[21,20+b],[27,21+b],[30,26+b],[25,28+b],[20,25+b]]);
-  poly('#6caeb6',[[23,23+b],[28,24+b],[28,26+b],[24,26+b]]);
-  // Eyes: single focused turquoise glare beneath a heavy scowling eyebrow.
-  poly(ink,[[32,16+b],[36,13+b],[44,15+b],[42,18+b],[36,18+b]]);
-  r('#b6fff1',37,16+b,4,2);r('#12abb4',39,16+b,1,2);
-  r('#f3e0b4',40,16+b,1,1);
-  // Gaping mouth and teeth — clearly a predator instead of a passive water snake.
-  poly('#06141e',[[31,22+b],[46,20+b],[43,27+b],[37,30+b],[30,27+b]]);
-  poly('#649aab',[[30,28+b],[36,29+b],[43,26+b],[44,27+b],[37,32+b],[31,31+b]]);
-  poly(ivory,[[35,22+b],[38,22+b],[36,28+b]]);
-  poly(ivory,[[42,21+b],[45,21+b],[43,26+b]]);
-  poly('#e9eed7',[[39,28+b],[41,27+b],[40,30+b]]);
-  r(ink,45,18+b,2,2);r(foam,45,17+b,2,1);
-  // Whiskers, beard and trailing water feel distinctly East-Asian rather than reptilian.
-  line('#c5eadd',30,24+b,16,30+b,1.4);
-  line('#8cd5d4',42,24+b,47,33+b,1);
-  line('#b9eae0',44,23+b,48,29+b,1);
-  poly(ink,[[29,27+b],[26,31+b],[24,36+b],[30,32+b],[33,28+b]]);
-  poly('#8ec5c7',[[29,28+b],[27,32+b],[30,31+b]]);
-  // Water wake is restrained to the base so the face remains legible.
-  for(const[x,y]of[[2,47],[6,48],[37,49],[44,46]]){r('#63a8be',x,y,3,1);r('#c2e8df',x+1,y-1,1,1);}
-  q.restore();return;
- }
+ if(m.palaceActor105==='imugi'){r('#06101d66',7,49,35,2);if(PALACE_IMUGI_IMAGE.complete&&PALACE_IMUGI_IMAGE.naturalWidth)q.drawImage(PALACE_IMUGI_IMAGE,0,b?-1:0,48,52);return;}
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
  if(m.palaceActor105==='gardener'||monsterSpeciesName(m)==='용궁 정원사'){r('#081b2a55',7,33,18,2);if(PALACE_GARDENER_IMAGE105.complete&&PALACE_GARDENER_IMAGE105.naturalWidth)q.drawImage(PALACE_GARDENER_IMAGE105,(frame%2)*64,0,64,72,0,0,32,36);return;}
  r('#081b2a55',5,33,23,2);if(m.palaceActor105==='lotus'){const bloom=palaceWet(m);for(const ps of [[[15,23],[9,30],[2,32]],[[18,22],[23,28],[30,31]],[[15,27],[12,35]],[[18,26],[20,35]]])for(let i=1;i<ps.length;i++)line('#244d4e',...ps[i-1],...ps[i],3);line('#4d8677',15,30,16,16,5);poly('#205250',[[3,25],[9,22],[15,27],[12,30],[5,29]]);poly('#517e6f',[[19,29],[24,23],[30,23],[27,28]]);
