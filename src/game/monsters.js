@@ -1359,7 +1359,7 @@ function summonPictureKills(mon){
  const def=summonDefinitions().find(d=>d.name===monsterSpeciesName(mon))||mon?.def||mon;
  const min=def?.min,themeStart=Number.isInteger(min)?Math.floor((min-1)/5)*5+1:null;
  const late=Number.isInteger(min)&&min>=1&&min<=25&&min>=themeStart+2&&!def.boss&&!def.miniBoss&&!def.summonOnly57&&!def.martialActor105;
- return late?SUMMON_RULES.latePictureKills:SUMMON_RULES.pictureKills;
+ return Number.isInteger(def?.pictureKills)&&def.pictureKills>0?def.pictureKills:late?SUMMON_RULES.latePictureKills:SUMMON_RULES.pictureKills;
 }
 function summonRecordKill(mon,reward){
  if(!reward.kills||state.debugBattle57||mon.legendElite47||!summonBook()||mon.summonOwner105||mon.combatFixture54||mon.martialActor105||mon.dojoRank105||mon.shape==='martialist')return;
