@@ -1,0 +1,38 @@
+name: Branch follower regression
+on:
+  push:
+    branches: [codex/palace-transition]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
+      - run: npx --yes playwright@1.56.1 install --with-deps chromium
+      - name: Reproduce the reported rollback on main
+        run: |
+          reference_dir=$(mktemp -d)
+          git archive 9eb31f817054bd1ff0f90869d75c50bbff0d48b7 | tar -x -C "$reference_dir"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$reference_dir/node_modules"
+          (cd "$reference_dir" && npm run build:qa)
+          node tests/branch-followers.mjs --root "$reference_dir/dist-qa" --reference
+      - name: Exercise real palace portals and save restoration
+        run: npm run build:qa && node tests/branch-followers.mjs
+      - name: Shared summon admission and existing branch regressions
+        run: npm test -- --only summonBrood,saves,features,battle --label branch-followers
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: branch-followers-debug
+          path: tests/artifacts
