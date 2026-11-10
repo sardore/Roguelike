@@ -1268,7 +1268,7 @@ function drawMaterialSpecialTerrain(tile,px,py,x,y,now){const r=drawCoreSpecialT
 function drawCoreSpecialTerrain(tile,px,py,x,y,now){
     if(tile===TT.LAVA)return drawLavaTerrain(X,px,py,x,y,now);
     if(tile===TT.PEACH_TREE)return drawBotanical(X,tile,px,py,x,y,regionIndex());
-    if(tile===TT.COOKPOT||tile===TT.BRAZIER){const visible=state.visible.has(k(x,y)),lit=!terrainUnlit105(x,y);if(visible&&lit)hearthAnimationSeen105=performance.now();return drawSharedProp(X,tile,px,py,regionIndex(),0,visible?now+x*173+y*319:0,lit)}
+    if(tile===TT.COOKPOT||tile===TT.BRAZIER){const visible=state.visible.has(k(x,y)),lit=!terrainUnlit105(x,y);if(visible&&lit)terrainAnimationSeen=performance.now();return drawSharedProp(X,tile,px,py,regionIndex(),0,visible?now+x*173+y*319:0,lit)}
     const dynamic=tile===TT.WATER||tile===TT.MERCURY||tile===TT.LAVA||tile===TT.VOID||tile===TT.STAMINA_PAD;
     const frame=dynamic?(Math.floor(now/220)+x+y)%3:0;
     let extra=terrainUnlit105(x,y)?'unlit':'';if(tile===TT.SWITCH){const sw=state.switches?.find(v=>v.x===x&&v.y===y);extra=sw?.kind==='bell'?(sw.used?'bellUsed':'bell'):sw?.used?'used':sw?.kind==='cipher'?'cipher':''}
@@ -1291,7 +1291,7 @@ function drawFurnitureInteractiveTerrain(tile,px,py,x,y,now){const z=regionIndex
 function drawCoreInteractiveTerrain(tile,px,py,x,y,now){
     if(tile===TT.LAVA)return drawLavaTerrain(X,px,py,x,y,now);
     if(tile===TT.PEACH_TREE)return drawBotanical(X,tile,px,py,x,y,regionIndex());
-    if(tile===TT.COOKPOT||tile===TT.BRAZIER){const visible=state.visible.has(k(x,y)),lit=!terrainUnlit105(x,y);if(visible&&lit)hearthAnimationSeen105=performance.now();return drawSharedProp(X,tile,px,py,regionIndex(),0,visible?now+x*173+y*319:0,lit)}
+    if(tile===TT.COOKPOT||tile===TT.BRAZIER){const visible=state.visible.has(k(x,y)),lit=!terrainUnlit105(x,y);if(visible&&lit)terrainAnimationSeen=performance.now();return drawSharedProp(X,tile,px,py,regionIndex(),0,visible?now+x*173+y*319:0,lit)}
     const frame=(Math.floor(now/180)+x+y)%3;let extra=terrainUnlit105(x,y)?'unlit':'';if(tile===TT.SWITCH){const sw=state.switches?.find(v=>v.x===x&&v.y===y);extra=sw?.kind==='bell'?(sw.used?'bellUsed':'bell'):sw?.used?'used':sw?.kind==='cipher'?'cipher':''}
     const c=hiTerrain(tile,regionIndex(),Math.floor(vfHash(x,y,37)*4),frame,extra);if(!c)return false;drawHi(c,px,py,32,32,1,false);return true;
   }
@@ -1472,7 +1472,7 @@ function drawDecorSprite(e,fogHandled58=false){
     if(e?.layer==='wall'&&!vfFrontWall(e.x,e.y))return;
     if(!state.seen.has(k(e.x,e.y)))return;const vis=state.visible.has(k(e.x,e.y)),alpha=(fogHandled58||vis?1:.46)*(e.alpha??1),dx=e.x*TILE,dy=e.y*TILE+(e.layer==='wall'?24:0);
     if(e.kind==='keeperBridge54'){X.save();X.globalAlpha*=alpha;drawKeeperBridge(X,dx,dy,e);X.restore();return}
-    if(e.kind==='brazier'){const lit=!terrainUnlit105(e.x,e.y);if(vis&&lit)hearthAnimationSeen105=performance.now();X.save();X.globalAlpha*=alpha;drawSharedProp(X,TT.BRAZIER,dx,dy,e.region??regionIndex(),0,vis?(FX.frameNow||performance.now())+e.x*173+e.y*319:0,lit);X.restore();return}
+    if(e.kind==='brazier'){const lit=!terrainUnlit105(e.x,e.y);if(vis&&lit)terrainAnimationSeen=performance.now();X.save();X.globalAlpha*=alpha;drawSharedProp(X,TT.BRAZIER,dx,dy,e.region??regionIndex(),0,vis?(FX.frameNow||performance.now())+e.x*173+e.y*319:0,lit);X.restore();return}
     const c=hiDecor(e.kind,e.region??regionIndex(),e.flip,!terrainUnlit105(e.x,e.y));drawHi(c,dx,dy,32,32,alpha,false);
   }
 // Visible autowalk state, while retaining verified stop-on-danger behavior.
@@ -3638,9 +3638,20 @@ function palaceWaterSprite(frame,deep){
  q.putImageData(image,0,0);PALACE_WATER_ART.set(key,c);return c;
 }
 function drawPalaceWater(q,px,py,x,y,deep,now){
- const time=TERRAIN_MOTION54.matches||!state.visible.has(k(x,y))?0:now,frame=Math.floor(time/120)%16;
- q.save();q.imageSmoothingEnabled=false;
- q.drawImage(palaceWaterSprite(frame,deep),(x%4+4)%4*32,(y%4+4)%4*32,32,32,px,py,32,32);
+ const animated=!TERRAIN_MOTION54.matches&&state.visible.has(k(x,y)),time=animated?now:0,frame=Math.floor(time/180)%16;
+ if(animated)terrainAnimationSeen=now;
+ q.save();q.imageSmoothingEnabled=false;q.beginPath();q.rect(px,py,32,32);q.clip();
+ // Advect the seamless atlas across tile boundaries, rather than only changing its brightness.
+ const sprite=palaceWaterSprite(frame,deep),sx=((x*32+Math.floor(time/100))%128+128)%128,sy=((y*32-Math.floor(time/180))%128+128)%128;
+ for(let ox=0;ox<32;){const u=(sx+ox)%128,w=Math.min(32-ox,128-u);
+  for(let oy=0;oy<32;){const v=(sy+oy)%128,h=Math.min(32-oy,128-v);q.drawImage(sprite,u,v,w,h,px+ox,py+oy,w,h);oy+=h;}ox+=w;
+ }
+ // Broad travelling crests make the current legible even when the player stands still.
+ const drift=time*.009;
+ for(let n=Math.floor((y*32-drift-4)/40);n<=Math.ceil(((y+1)*32-drift+4)/40);n++){
+  q.beginPath();for(let xx=-4;xx<=36;xx+=4){const yy=n*40+drift+2.3*Math.sin((x*32+xx)*.055-time/700)-y*32;if(xx===-4)q.moveTo(px+xx,py+yy);else q.lineTo(px+xx,py+yy);}
+  q.strokeStyle=deep?'#9bdfea68':'#dcf1d878';q.lineWidth=1;q.stroke();
+ }
  // Foam belongs to the shoreline, never to the seam between two water tiles.
  for(const[dx,dy]of DIRS4){
   const nx=x+dx,ny=y+dy,base=terrainBaseTile58(nx,ny);
@@ -4342,7 +4353,7 @@ function drawDebugBattleOverview(cam,now){
 }
 function citadelRelicPalette(base,site,strength){const out={...base};for(const key of ['stone','joint','light','rim','accent','wall']){const a=base[key],b=site.palette[key],rgb=[1,3,5].map(n=>Math.round(parseInt(a.slice(n,n+2),16)*(1-strength)+parseInt(b.slice(n,n+2),16)*strength).toString(16).padStart(2,'0'));out[key]='#'+rgb.join('');}return out;}
 // Hearth animation is visual time only: no gameplay RNG, particles, turns or save fields.
-let hearthAnimationSeen105=-Infinity;
+let terrainAnimationSeen=-Infinity;
 function menuLanternLight1001(now,phase,baseRadius,reduced=false){
   const t=reduced?0:now/1000,breath=.5+.5*Math.sin(t*.94+phase);
   return {radius:baseRadius*(.72+.46*breath),energy:.66+.30*breath,bob:reduced?0:Math.sin(t*.94+phase)*1.6};
@@ -5512,7 +5523,7 @@ function visualLoop(now=performance.now()){
       Reel.tick(now);
       if(state&&!state.debugBattle57&&!state.spectator){
         dojoSleepFrame(now);updateVisualMotion(now);
-        const active=active70(),budget=frameBudget(active?(state.branchContext105?33:16):(now-hearthAnimationSeen105<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130))),pending=renderUpdatePending;
+        const active=active70(),budget=frameBudget(active?(state.branchContext105?33:16):(now-terrainAnimationSeen<400?(isMobileViewport()?90:66):(isMobileViewport()?230:130))),pending=renderUpdatePending;
         if(pending||cameraRenderPending||now-RC.lastDraw>=budget){
           drawFrame(now,pending);
         }
