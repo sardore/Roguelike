@@ -1255,9 +1255,9 @@ function summonState(){
  if(books.length)q.pictureCounterVersion105=1;
  const book=summonBook();
  // Preserve existing book contracts while normalizing old summon geometry once.
- if(q.bookContractsVersion105!==2){
+ if(!q.bookContractsVersion105||Object.values(q.contracts).some(contract=>!contract.summonRoot105)){
   for(const l of summonContainers()){for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'){configureSummonBody105(mon);mon.summonBookId105=mon.summonBookId105||book?.summonBookId105||null;mon.summonRoot105=mon.summonRoot105||(!mon.summonParent105?mon.allyId53:mon.summonParent105);const contract=q.contracts[mon.summonContract105];if(contract){contract.bookId105=mon.summonBookId105;contract.summonRoot105=contract.summonRoot105||mon.summonRoot105;}}if(l.pageKey)state.branchWorld105.pages[l.pageKey]=branchEncodePage(l.world);}
-  q.bookContractsVersion105=2;OccupancyService.endShared();
+  q.bookContractsVersion105=1;OccupancyService.endShared();
  }
  // Restore native plant bodies in contracts saved while plants were made mobile.
  if(q.plantBodyVersion105!==1){

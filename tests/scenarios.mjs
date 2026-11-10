@@ -1319,7 +1319,7 @@ export const scenarios = {
         const row=await s.page.evaluate(({station,name})=>{
           const F=__MANRU_QA_FOOD__,st=__MANRU_QA_UI__.state(),recipe=F.recipes.find(r=>r.name===name);
           st.map[30][31]=station==='pot'?__MANRU_QA_BROOD__.TT.COOKPOT:__MANRU_QA_BROOD__.TT.BRAZIER;
-          st.player.inventory=recipe.ingredients.map(n=>({...n===F.berry.name?F.berry:F.prototype(n),count:2,identified:true}));
+          st.player.inventory=recipe.ingredients.map(n=>({...(n===F.berry.name?F.berry:F.prototype(n)),count:2,identified:true}));
           F.open(station);for(let i=0;i<recipe.ingredients.length;i++)F.context.selected.add(i);
           const ok=F.cook(),made=st.player.inventory.find(i=>i.name===name);
           return{station,name,ok,made:made?.count===1,ingredients:recipe.ingredients.every(n=>st.player.inventory.find(i=>i.name===n)?.count===1),learned:!!st.cookbook57[recipe.id]};
@@ -1412,7 +1412,7 @@ export const scenarios = {
         mon.hp=0;A.kill(mon);A.cleanup();
         // A pre-change contract derives its root from surviving descendants exactly once.
         delete st.player.summoning105.contracts[ids.contract].summonRoot105;st.player.summoning105.bookContractsVersion105=1;A.summoning();
-        const migrated=st.player.summoning105.bookContractsVersion105===2&&st.player.summoning105.contracts[ids.contract].summonRoot105===ids.rootId;
+        const migrated=st.player.summoning105.bookContractsVersion105===1&&st.player.summoning105.contracts[ids.contract].summonRoot105===ids.rootId;
         if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('posthumous family save/load failed');
         A.cleanup();const after=A.all().filter(m=>m.summonBookId105===ids.bookId);
         const snapshot=after.map(m=>[m.allyId53,m.summonRoot105,m.summonContract105]);

@@ -43,7 +43,7 @@ jobs:
           console.log('SUMMON_BROOD_SAVE_DIFFS='+JSON.stringify(diffs));
           fs.copyFileSync('/tmp/summon-brood-reviewed.json','tests/baseline/behaviour.json');
           JS
-      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values,battle,saves,features --label summon-brood-verify
+      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values,battle,saves,features,duelfight --label summon-brood-verify
       - name: Report reviewed baselines
         if: always()
         run: |
