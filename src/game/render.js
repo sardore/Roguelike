@@ -165,7 +165,7 @@ function drawSharedProp(ctx,t,px,py,region=0,variant=0,now=0,lit=true,appearance
  if(lit&&t===TT.COOKPOT)drawPotSteam(ctx,px,py,now);
  return true;
 }
-function actorSpriteCanvas(actor=null,resolution=1){const c=document.createElement('canvas'),pad=actor?.weapon||actor?.palaceActor105==='king';c.actorResolution105=Math.max(1,resolution);c.width=(pad?48:32)*c.actorResolution105;c.height=(pad?48:36)*c.actorResolution105;c.actorFrame105={x:pad?8:0,y:pad?12:0,w:32,h:36};const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.scale(c.actorResolution105,c.actorResolution105);q.translate(c.actorFrame105.x,c.actorFrame105.y);return[c,q];}
+function actorSpriteCanvas(actor=null,resolution=1){const c=document.createElement('canvas'),imugi=actor?.palaceActor105==='imugi',pad=!imugi&&(actor?.weapon||actor?.palaceActor105==='king');c.actorResolution105=Math.max(1,resolution);c.width=(imugi?48:pad?48:32)*c.actorResolution105;c.height=(imugi?52:pad?48:36)*c.actorResolution105;c.actorFrame105={x:pad?8:0,y:pad?12:0,w:imugi?48:32,h:imugi?52:36};const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.scale(c.actorResolution105,c.actorResolution105);q.translate(c.actorFrame105.x,c.actorFrame105.y);return[c,q];}
 function actorSpriteRect(c,x,y,scale=1){const f=c.actorFrame105||{x:0,y:0,w:32,h:36};return{x:x+16-f.w*scale/2-f.x*scale,y:y+32-(f.h+f.y)*scale,w:c.width/(c.actorResolution105||1)*scale,h:c.height/(c.actorResolution105||1)*scale};}
 // The weapon and the armor named in the side panel glow in the colour of their enchantment.
 function glowEquip(p){for(const [id,item] of [['weaponTxt',p.weapon],['armorTxt',p.armor]]){const el=document.getElementById(id),glow=enchantColor(item);if(el)el.style.textShadow=glow?`0 0 9px ${glow},0 0 3px ${glow}`:''}}
@@ -3687,53 +3687,68 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
  if(m.palaceActor105==='imugi'){
-  // A broad-jawed, horned inner-palace sea dragon; readable even at a 32px tile.
-  // Its armored coil occupies the lower tile while its crown and fangs own the silhouette.
+  // Large 48x52 inner-palace water dragon: severe brow, projecting jaws,
+  // swept antler-horns and a long rising neck instead of a tiny snake coil.
   q.save();q.lineCap='round';q.lineJoin='round';
-  const ink='#0b1a2b',deep='#1e3850',armor='#35677e',shell='#5a91a2',edge='#a2ced0',glow='#9cebe0',ivory='#e6dfc4';
-  r('#06121c88',1,32,30,3);
-  const body=()=>{q.beginPath();q.moveTo(2,27+b);q.bezierCurveTo(5,33,23,35,28,28+b);q.bezierCurveTo(33,21+b,16,27-b,11,25-b);q.bezierCurveTo(4,21-b,9,16+b,17,19+b);q.bezierCurveTo(22,20+b,23,18+b,20,13+b);};
-  body();q.strokeStyle=ink;q.lineWidth=11;q.stroke();
-  body();q.strokeStyle=deep;q.lineWidth=8;q.stroke();
-  body();q.strokeStyle=armor;q.lineWidth=6;q.stroke();
-  body();q.strokeStyle=shell;q.lineWidth=2;q.stroke();
-  // Pale belly plating is visible inside the heavy serpentine coils.
-  for(const [x,y,w] of [[4,28,4],[9,31,4],[15,32,5],[22,31,4],[26,27,3],[20,25,3],[13,23,3],[12,18,3]]){r('#233b55',x,y+b,w,2);r(edge,x,y+b,w-1,1);}
-  for(const[x,y]of[[5,24],[9,27],[16,29],[24,29],[26,24],[18,21],[12,22],[15,17]]){poly('#89bcc1',[[x-2,y+b],[x,y-3+b],[x+2,y+b]]);r('#c9e0d2',x-1,y-1+b,2,1);}
-  // Long fin-like dorsal ridges, not a round snake's head.
-  poly(ink,[[12,18+b],[7,14+b],[9,10+b],[13,12+b],[13,6+b],[18,9+b],[21,15+b]]);
-  poly(armor,[[11,16+b],[9,13+b],[11,12+b],[15,14+b],[15,9+b],[19,12+b],[19,17+b]]);
-  poly('#79b8bd',[[11,13+b],[12,10+b],[15,13+b],[14,7+b],[18,12+b]]);
-  // Distinct two-pronged swept crown and a secondary horn at the jaw.
-  poly(ink,[[16,8+b],[15,2+b],[18,0],[22,7+b]]);
-  poly('#75b5c1',[[17,6+b],[17,2],[19,1],[20,7+b]]);
-  poly(ink,[[23,7+b],[25,0],[29,1],[28,9+b]]);
-  poly('#9fcfd2',[[25,6+b],[26,2],[28,2],[27,8+b]]);
-  // Dark skull mass, forward-facing muzzle, open predatory mouth.
-  poly(ink,[[14,11+b],[17,6+b],[22,5+b],[28,7+b],[31,11+b],[30,15+b],[26,18+b],[21,19+b],[16,16+b]]);
-  poly(armor,[[16,11+b],[19,7+b],[23,6+b],[28,8+b],[29,11+b],[26,13+b],[20,14+b],[17,13+b]]);
-  poly(shell,[[18,9+b],[22,7+b],[27,8+b],[27,10+b],[23,11+b],[18,11+b]]);
-  poly(edge,[[20,8+b],[24,7+b],[28,9+b],[24,9+b]]);
-  // A pronounced brow and two-pixel luminous eye.
-  poly(ink,[[21,10+b],[24,8+b],[29,9+b],[28,11+b],[23,11+b]]);
-  r('#c4f8e5',25,10+b,3,2);r('#10a6ac',26,10+b,1,2);
-  // Mouth, pale jaw armor and individually readable fangs.
-  poly('#07111b',[[21,13+b],[30,12+b],[28,17+b],[24,18+b],[20,16+b]]);
-  poly('#719fa7',[[20,16+b],[24,17+b],[28,16+b],[29,17+b],[25,19+b],[22,19+b]]);
-  poly(ivory,[[24,13+b],[26,13+b],[25,17+b]]);
-  poly(ivory,[[28,13+b],[30,12+b],[28,16+b]]);
-  poly('#edf5dc',[[26,17+b],[27,17+b],[26,19+b]]);
-  r('#dbf2e5',29,11+b,2,1);r(ink,30,11+b,1,1);
-  // Whiskers and translucent gill-blades carry the Korean water-dragon identity.
-  poly(deep,[[16,13+b],[10,16+b],[8,21+b],[15,18+b],[19,18+b]]);
-  poly('#77bac5',[[16,14+b],[12,16+b],[10,19+b],[17,17+b]]);
-  line('#bcefe0',20,15+b,10,19+b,1);
-  line('#7bcad1',28,15+b,31,20+b,1);
-  line('#d9f5df',29,14+b,32,17+b,1);
-  line('#69a8bb',14,18+b,8,23+b,1);
-  // Small wake accents; avoid adding visual noise around the eyes.
-  r('#a5dae1',2,24+b,2,1);r('#8ed3d3',4,22+b,2,1);
-  r('#c2ece0',28,31,2,1);r('#67aab9',29,29,2,1);
+  const ink='#091b2a',dark='#18344b',bodyBlue='#315c74',scaleBlue='#4a8ba2',light='#91c6c8',ivory='#e3dec2',foam='#baf5e7';
+  r('#06101d88',2,47,44,4);
+  // Wide tail with a tapered spade and large water-frill spines.
+  poly(ink,[[9,44],[1,42],[0,34],[7,37],[16,42]]);
+  poly(scaleBlue,[[8,43],[3,40],[2,37],[10,40],[15,44]]);
+  poly(ink,[[12,39],[3,29],[6,25],[16,33],[20,41]]);
+  poly('#67b4b8',[[12,38],[7,29],[9,28],[18,39]]);
+  // Full-body silhouette crosses the tile in an S, not a round snail shell.
+  const spine=()=>{q.beginPath();q.moveTo(6,43+b);q.bezierCurveTo(14,48,33,50,40,42+b);q.bezierCurveTo(45,33+b,24,40-b,20,34-b);q.bezierCurveTo(15,26-b,31,29+b,30,19+b);q.bezierCurveTo(29,16+b,27,16+b,26,14+b);};
+  spine();q.strokeStyle=ink;q.lineWidth=15;q.stroke();
+  spine();q.strokeStyle=dark;q.lineWidth=12;q.stroke();
+  spine();q.strokeStyle=bodyBlue;q.lineWidth=9;q.stroke();
+  spine();q.strokeStyle=scaleBlue;q.lineWidth=4;q.stroke();
+  // Scaled belly plates give mass; staggered overlapping scales add surface depth.
+  for(const[x,y,w]of[[8,44,5],[14,47,5],[21,48,5],[29,47,5],[36,44,4],[38,39,4],[31,36,4],[24,34,4],[23,29,4],[29,25,4]]){r('#17364b',x,y+b,w,2);r('#a5c6c4',x,y+b,w-1,1);}
+  for(const[x,y]of[[11,42],[19,44],[28,43],[36,40],[29,33],[21,32],[25,25],[28,21]]){poly('#74a7b0',[[x-2,y+b],[x,y-3+b],[x+3,y+b]]);r('#c0d8cd',x,y-2+b,2,1);}
+  // Dorsal fins rise off the spine and neck; hard angular shapes keep the silhouette fierce.
+  for(const [x,y] of [[12,35],[19,38],[30,36],[23,28],[25,22]]){
+   poly(ink,[[x-3,y+b],[x-1,y-7+b],[x+3,y-1+b],[x+4,y+2+b]]);
+   poly('#458ca2',[[x-1,y-1+b],[x,y-5+b],[x+2,y+b]]);
+   r('#a7d5cd',x,y-3+b,1,2);
+  }
+  // Gill-fin mane spans behind the long neck.
+  poly(ink,[[22,19+b],[13,17+b],[10,9+b],[19,13+b],[18,7+b],[26,12+b],[29,20+b]]);
+  poly('#377d93',[[22,18+b],[15,16+b],[13,12+b],[20,16+b],[20,10+b],[27,15+b]]);
+  poly('#9fd5d0',[[15,13+b],[19,15+b],[19,10+b],[23,15+b]]);
+  // The two high, swept antler horns and cheek fin read above the arena floor.
+  poly(ink,[[20,14+b],[17,4],[21,0],[28,11+b]]);
+  poly('#93cad1',[[20,10+b],[19,4],[22,1],[24,10+b]]);
+  poly(ink,[[30,12+b],[32,2],[37,0],[36,11+b]]);
+  poly('#a8c4c9',[[32,10+b],[34,3],[36,1],[35,10+b]]);
+  poly(ink,[[22,20+b],[16,23+b],[12,29+b],[23,25+b],[28,24+b]]);
+  poly('#4c9eb0',[[21,20+b],[17,25+b],[22,24+b],[26,22+b]]);
+  // Forward-jutting skull, sharply sloped brows, and plated cheeks.
+  poly(ink,[[19,17+b],[21,11+b],[28,8+b],[37,10+b],[44,13+b],[47,18+b],[45,23+b],[41,27+b],[31,29+b],[22,25+b],[18,22+b]]);
+  poly(bodyBlue,[[22,18+b],[23,13+b],[30,10+b],[38,12+b],[44,16+b],[42,20+b],[36,23+b],[25,23+b]]);
+  poly(scaleBlue,[[24,15+b],[29,11+b],[36,12+b],[41,15+b],[36,17+b],[30,18+b]]);
+  poly(light,[[29,12+b],[34,11+b],[41,15+b],[38,16+b],[32,15+b]]);
+  poly('#18354e',[[21,20+b],[27,21+b],[30,26+b],[25,28+b],[20,25+b]]);
+  poly('#6caeb6',[[23,23+b],[28,24+b],[28,26+b],[24,26+b]]);
+  // Eyes: single focused turquoise glare beneath a heavy scowling eyebrow.
+  poly(ink,[[32,16+b],[36,13+b],[44,15+b],[42,18+b],[36,18+b]]);
+  r('#b6fff1',37,16+b,4,2);r('#12abb4',39,16+b,1,2);
+  r('#f3e0b4',40,16+b,1,1);
+  // Gaping mouth and teeth — clearly a predator instead of a passive water snake.
+  poly('#06141e',[[31,22+b],[46,20+b],[43,27+b],[37,30+b],[30,27+b]]);
+  poly('#649aab',[[30,28+b],[36,29+b],[43,26+b],[44,27+b],[37,32+b],[31,31+b]]);
+  poly(ivory,[[35,22+b],[38,22+b],[36,28+b]]);
+  poly(ivory,[[42,21+b],[45,21+b],[43,26+b]]);
+  poly('#e9eed7',[[39,28+b],[41,27+b],[40,30+b]]);
+  r(ink,45,18+b,2,2);r(foam,45,17+b,2,1);
+  // Whiskers, beard and trailing water feel distinctly East-Asian rather than reptilian.
+  line('#c5eadd',30,24+b,16,30+b,1.4);
+  line('#8cd5d4',42,24+b,47,33+b,1);
+  line('#b9eae0',44,23+b,48,29+b,1);
+  poly(ink,[[29,27+b],[26,31+b],[24,36+b],[30,32+b],[33,28+b]]);
+  poly('#8ec5c7',[[29,28+b],[27,32+b],[30,31+b]]);
+  // Water wake is restrained to the base so the face remains legible.
+  for(const[x,y]of[[2,47],[6,48],[37,49],[44,46]]){r('#63a8be',x,y,3,1);r('#c2e8df',x+1,y-1,1,1);}
   q.restore();return;
  }
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
