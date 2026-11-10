@@ -1,0 +1,29 @@
+name: Common monster renderer review
+on:
+  push:
+    branches: [codex/imugi-common-render]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check && npm run build && npm run build:qa
+      - run: npx --yes playwright@1.56.1 install --with-deps chromium
+      - run: node tests/palace-imugi.mjs
+      - if: always()
+        run: node tests/run.mjs --only battle
+      - if: always()
+        run: node tests/palace-water-summons.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: imugi-common-review
+          path: tests/artifacts
