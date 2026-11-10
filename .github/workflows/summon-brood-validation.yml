@@ -10,6 +10,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -18,7 +20,7 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npx --yes playwright@1.56.1 install --with-deps chromium
-      - run: npm test -- --only summonBrood,values --update --label summon-brood
+      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values --update --label summon-brood
       - run: npm test -- --only saves --update --label summon-brood-save-new
       - name: Compare migrated saves with main
         run: |
@@ -41,7 +43,7 @@ jobs:
           console.log('SUMMON_BROOD_SAVE_DIFFS='+JSON.stringify(diffs));
           fs.copyFileSync('/tmp/summon-brood-reviewed.json','tests/baseline/behaviour.json');
           JS
-      - run: npm test -- --only summonBrood,motherSpider,values,battle,saves --label summon-brood-verify
+      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values,battle,saves,features --label summon-brood-verify
       - name: Report reviewed baselines
         if: always()
         run: |
@@ -51,7 +53,7 @@ jobs:
           const before=JSON.parse(execFileSync('git',['show','HEAD:tests/baseline/behaviour.json'],{encoding:'utf8'}));
           const after=JSON.parse(fs.readFileSync('tests/baseline/behaviour.json','utf8'));
           console.log('SUMMON_BROOD_BASELINE_CHANGES='+JSON.stringify(Object.fromEntries(Object.entries(after).filter(([k,v])=>before[k]!==v))));
-          for(const file of fs.existsSync('tests/artifacts/summon-brood')?fs.readdirSync('tests/artifacts/summon-brood'):[])if(file.startsWith('summonBrood.'))console.log('SUMMON_BROOD_RESULT='+file+':'+fs.readFileSync('tests/artifacts/summon-brood/'+file,'utf8'));
+          for(const file of fs.existsSync('tests/artifacts/summon-brood')?fs.readdirSync('tests/artifacts/summon-brood'):[])if(/^(summonBrood|charcoalFood)\./.test(file))console.log('SUMMON_BROOD_RESULT='+file+':'+fs.readFileSync('tests/artifacts/summon-brood/'+file,'utf8'));
           JS
       - uses: actions/upload-artifact@v4
         if: failure()

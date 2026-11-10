@@ -151,6 +151,7 @@ function statusSummary(){
   if(s.willBoost>0)out.push(`청심 ${s.willBoost}`);
   if(s.foodHaste57>0)out.push(`전력식 ${s.foodHaste57}`);
   if(s.warm57>0)out.push(`온기 ${s.warm57}`);
+  if(s.fireResist57>0)out.push(`화염저항 ${s.fireResist57}`);
   if(s.fireCoat57>0)out.push(`화미 ${s.fireCoat57}`);
   if(s.poisonResist57>0)out.push(`독저항 ${s.poisonResist57}`);
   if(s.vitality57>0)out.push(`보신 ${s.vitality57}`);
@@ -186,7 +187,7 @@ function applyStatusTick(){
   }
   if(state.dead)return;
   tickMonsterCombatStatuses();
-  for(const q of ['foodHaste57','warm57','fireCoat57','poisonResist57','vitality57','freeStamina57'])if(state.status[q]>0)state.status[q]--;
+  for(const q of ['foodHaste57','warm57','fireResist57','fireCoat57','poisonResist57','vitality57','freeStamina57'])if(state.status[q]>0)state.status[q]--;
   if(state.status.vitality57<=0&&state.player.foodVital57>0){const n=state.player.foodVital57;state.player.foodVital57=0;state.player.temporaryMaxHpBonus=Math.max(0,(state.player.temporaryMaxHpBonus||0)-n);recomputeMaxHp(state.player);addLog('보신 전골의 기운이 가셨다. 최대 HP가 돌아왔다.')}
 
 }

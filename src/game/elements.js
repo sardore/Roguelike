@@ -193,7 +193,7 @@ function applyElementField57(field,elem,damage,opts={}){
 function entityElementGuard57(entity,elem){
   if(!entity)return false;
   if(entity!==state?.player)return entity.armor?.elementGuard74===elem||(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe');
-  return (elem==='ice'&&(state?.status?.warm57||0)>0)||state?.player?.armor?.elementGuard74===elem||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0)||!!globalThis.__MANRU_LEGEND47__?.guard?.(elem);
+  return (elem==='fire'&&(state?.status?.fireResist57||0)>0)||(elem==='ice'&&(state?.status?.warm57||0)>0)||state?.player?.armor?.elementGuard74===elem||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0)||!!globalThis.__MANRU_LEGEND47__?.guard?.(elem);
 }
 function entityElementMultiplier57(entity,elem){
   if(!entity||entity===state?.player)return entityElementGuard57(entity,elem)?0:state?.duel?DUEL_ELEMENT_RESIST:1;

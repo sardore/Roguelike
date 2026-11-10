@@ -1299,6 +1299,70 @@ export const scenarios = {
     } finally { await s.close(); }
   },
 
+  async charcoalFood(browser, root) {
+    const s=await openSession(browser,root,{seed:9044}),out={};
+    await startRun(s,'wanderer');
+    const reset=async()=>{
+      await dismissModals(s);await s.tick(1200);
+      await s.page.evaluate(()=>{
+        const st=__MANRU_QA_UI__.state(),p=st.player,A=__MANRU_QA_BROOD__;
+        st.monsters=[];st.items=[];st.status={};st.floor=9;st.turn=20;st.floorTurn=20;st.enemyEnergy=0;st.jarGasFields57=[];st.tempFields=[];st.elementFields74=[];st.tempTerrain74=[];
+        p.inventory=[];p.x=30;p.y=30;p.hp=p.maxHp=p.baseMaxHpPermanent=10000;p.hunger=20;p.armor={};
+        for(let y=25;y<=35;y++)for(let x=25;x<=38;x++)st.map[y][x]=A.TT.FLOOR;
+        A.occupancy.endShared();__MANRU_QA_VIS__.compute();
+      });
+    };
+    try {
+      const recipes=[];
+      for(const station of ['pot','brazier'])for(const name of ['숯불고기','중병탄']){
+        await reset();
+        const row=await s.page.evaluate(({station,name})=>{
+          const F=__MANRU_QA_FOOD__,st=__MANRU_QA_UI__.state(),recipe=F.recipes.find(r=>r.name===name);
+          st.map[30][31]=station==='pot'?__MANRU_QA_BROOD__.TT.COOKPOT:__MANRU_QA_BROOD__.TT.BRAZIER;
+          st.player.inventory=recipe.ingredients.map(n=>({...n===F.berry.name?F.berry:F.prototype(n),count:2,identified:true}));
+          F.open(station);for(let i=0;i<recipe.ingredients.length;i++)F.context.selected.add(i);
+          const ok=F.cook(),made=st.player.inventory.find(i=>i.name===name);
+          return{station,name,ok,made:made?.count===1,ingredients:recipe.ingredients.every(n=>st.player.inventory.find(i=>i.name===n)?.count===1),learned:!!st.cookbook57[recipe.id]};
+        },{station,name});
+        if(!row.ok||!row.made||!row.ingredients||!row.learned)throw Error('charcoal cooking: '+JSON.stringify(row));recipes.push(row);
+      }
+      out['charcoalFood.recipes']=JSON.stringify(recipes);
+      await reset();
+      const resist=await s.page.evaluate(()=>{
+        const F=__MANRU_QA_FOOD__,st=__MANRU_QA_UI__.state(),item={...F.prototype('숯불고기'),count:1};st.player.inventory.push(item);
+        F.eat(item,0);const duration=st.status.fireResist57,full=st.player.hunger===60,guarded=F.element(st.player,'fire',10).damage===0;
+        if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('food resistance save failed');
+        const restored=__MANRU_QA_UI__.state(),saved=restored.status.fireResist57===duration;
+        for(let i=0;i<11;i++)F.tick();const eleventh=F.guard(restored.player,'fire');F.tick();const expired=!F.guard(restored.player,'fire'),hp=restored.player.hp;
+        const damage=F.element(restored.player,'fire',10).damage;
+        return{duration,full,guarded,saved,eleventh,expired,damage,applied:restored.player.hp===hp-damage};
+      });
+      if(resist.duration!==12||!['full','guarded','saved','eleventh','expired','applied'].every(k=>resist[k])||resist.damage!==10)throw Error('fire food resistance: '+JSON.stringify(resist));
+      out['charcoalFood.resistance']=JSON.stringify(resist);
+      await reset();
+      const bomb=await s.page.evaluate(()=>{
+        const F=__MANRU_QA_FOOD__,A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),item={...F.prototype('중병탄'),count:3};st.player.inventory.push(item);
+        const mon=A.place('객잔 쥐',{x:32,y:30},{combatFloor:9});mon.hp=mon.maxHp=1000;mon.fixed=true;__MANRU_QA_VIS__.compute();
+        F.begin(item);const turn=st.turn,before=mon.hp,ok=F.throw(32,30),illness=mon.illness105,damage=before-mon.hp,firstCount=item.count;
+        mon.illness105=27;const reinfect=F.status(mon,'illness',27,1,{source:st.player})&&mon.illness105===21;
+        mon.illness105=1;mon.illnessBorn105=st.turn-1;const hp=mon.hp;F.tick();
+        return{ok,damage,illness,firstCount,turn:st.turn-turn,reinfect,burst:hp-mon.hp,cleared:mon.illness105===0};
+      });
+      if(!bomb.ok||bomb.damage!==3||bomb.illness<26||bomb.illness>27||bomb.firstCount!==2||bomb.turn!==1||!bomb.reinfect||bomb.burst!==44||!bomb.cleared)throw Error('illness food throw: '+JSON.stringify(bomb));
+      out['charcoalFood.bomb']=JSON.stringify(bomb);
+      await reset();
+      const skewer=await s.page.evaluate(()=>{
+        const F=__MANRU_QA_FOOD__,A=__MANRU_QA_BROOD__,st=__MANRU_QA_UI__.state(),item={...F.prototype('독버섯 꼬치'),count:2};
+        // Old inventory items predate the declarative throw fields.
+        delete item.throwStatus57;delete item.throwWeakenTurns57;delete item.throwFeeding57;st.player.inventory.push(item);
+        const mon=A.place('객잔 쥐',{x:32,y:30},{combatFloor:9});mon.hp=mon.maxHp=1000;mon.fixed=true;__MANRU_QA_VIS__.compute();F.begin(item);const ok=F.throw(32,30);
+        return{ok,poison:mon.poisoned57>0,weaken:mon.weakened>0,consumed:item.count===1};
+      });
+      if(!Object.values(skewer).every(Boolean))throw Error('legacy food throw: '+JSON.stringify(skewer));out['charcoalFood.skewer']=JSON.stringify(skewer);
+      out['charcoalFood.errors']=JSON.stringify(s.errors);if(s.errors.length)throw Error('food page errors: '+JSON.stringify(s.errors));return out;
+    }finally{await s.close();}
+  },
+
   async summonBrood(browser, root) {
     const s=await openSession(browser,root,{seed:9043}),out={};
     await startRun(s,'wanderer');
@@ -1556,7 +1620,7 @@ export const scenarios = {
       out['motherSpider.errors'] = JSON.stringify(s.errors);
       const status = JSON.parse(out['motherSpider.status']), def = JSON.parse(out['motherSpider.definition']), sting = JSON.parse(out['motherSpider.sting']), death = JSON.parse(out['motherSpider.death']), restored = JSON.parse(out['motherSpider.restore']), leap = JSON.parse(out['motherSpider.leap']);
       if (!status.rows.every(r => r.refused && r.kept) || !status.refused || !status.noTalismanTurn || !status.potion || !status.healed) throw Error('drunk talisman gate: ' + out['motherSpider.status']);
-      if (def.atk !== 2 || def.floors[8] || !def.floors[9] || def.floors[10] || def.weight !== 3 || def.childNatural || def.motherBody <= 1 || def.childBody !== 1) throw Error('brood definitions: ' + out['motherSpider.definition']);
+      if (def.atk !== 3 || def.floors[8] || !def.floors[9] || def.floors[10] || def.weight !== 3 || def.childNatural || def.motherBody <= 1 || def.childBody !== 1) throw Error('brood definitions: ' + out['motherSpider.definition']);
       if (sting.poison || !sting.drunk || !sting.migrated || !sting.described || !sting.skills.includes('sting') || !sting.skills.includes('brood')) throw Error('mother sting: ' + out['motherSpider.sting']);
       if (death.children !== 8 || death.afterRepeatedKill !== 8 || !death.gas || death.gasTurns !== 6 || !death.oneCell || !death.immune || !death.traits || !death.skills.includes('leap')) throw Error('brood death: ' + out['motherSpider.death']);
       if (restored.before !== restored.after || !restored.traits || !restored.gas) throw Error('brood persistence: ' + out['motherSpider.restore']);
