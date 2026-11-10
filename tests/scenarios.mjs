@@ -797,20 +797,20 @@ export const scenarios = {
         __MANRU_COMBATANTS57__.setFaction(hostile, 'player'); hostile.hp = hostile.maxHp = 10000; const hp = hostile.hp, friendlyHp = ally.hp;
         let fired = false; for (let i=0; i<10; i++) { st.turn += 4; st.floorTurn += 4; const before=A.fx.projectiles.length;A.step(m, st.player);fired ||= A.fx.projectiles.length>before;if(m.intent61)throw Error('cannon armed a delayed warning'); }
         const shell = A.fx.projectiles.find(p => p.kind === 'shell'), row = { fired, noWarning: !m.intent61, enemyDamaged: hostile.hp < hp, allySafe: ally.hp === friendlyHp, shell: !!shell, arrow: shell?.arrow984, cooldown: m.nextArtilleryTurn - st.turn };
-        if (!fired || !row.enemyDamaged || !row.allySafe || !shell || shell.arrow984 || row.cooldown !== 3) throw Error('instant cannon faction blast: ' + JSON.stringify(row));
+        if (!fired || !row.enemyDamaged || !row.allySafe || !shell || shell.arrow984 || row.cooldown !== 4) throw Error('instant cannon faction blast: ' + JSON.stringify(row));
         A.occupancy.removeMonster(hostile); A.occupancy.removeMonster(ally); return row;
       }));
       out['crossfireCannon.cooldown'] = JSON.stringify(await s.page.evaluate(() => {
-        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; const before=A.fx.projectiles.length;A.move(st.player,34,30);A.step(m,st.player);const cooling=A.fx.projectiles.length===before;st.turn+=3;st.floorTurn+=3;m.skillSeal105=2;A.step(m,st.player);const sealed=A.fx.projectiles.length===before;m.skillSeal105=0;m.stunned=1;A.step(m,st.player);const stunned=A.fx.projectiles.length===before;A.step(m,st.player);const ready=A.fx.projectiles.length>before&&!m.intent61;
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0]; const before=A.fx.projectiles.length;A.move(st.player,34,30);A.step(m,st.player);const cooling=A.fx.projectiles.length===before;st.turn+=3;st.floorTurn+=3;A.step(m,st.player);const fourthTurnBlocked=A.fx.projectiles.length===before;st.turn++;st.floorTurn++;m.skillSeal105=2;A.step(m,st.player);const sealed=A.fx.projectiles.length===before;m.skillSeal105=0;m.stunned=1;A.step(m,st.player);const stunned=A.fx.projectiles.length===before;A.step(m,st.player);const ready=A.fx.projectiles.length>before&&!m.intent61;
         const card=A.skills(m).find(s=>s.id==='artillery'),description=JSON.stringify(card);const described=description.includes('진입 즉시')&&!description.includes('예고 1턴');
-        if (!cooling || !sealed || !stunned || !ready || !described) throw Error('instant cannon cooldown or control'); return { cooling, sealed, stunned, ready, described };
+        if (!cooling || !fourthTurnBlocked || !sealed || !stunned || !ready || !described) throw Error('instant cannon cooldown or control'); return { cooling, fourthTurnBlocked, sealed, stunned, ready, described };
       }));
       out['crossfireCannon.restore'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state(), m = st.monsters[0], hp=m.hp, def=m.def, expected=A.scale(A.definitions.find(d=>d.name==='대포'),m.combatFloor105,{inventory:false}).atk;
-        delete m.crossfire; delete m.deathBlast;delete m.attackRevision;m.atk=21;m.crossfireContact={x:34,y:30,targetId:'player',until:9999};m.intent61={type:'blast',cells:[{x:34,y:30}],data:{x:34,y:30,bonus:8},armedPlayerTurn:st.turn};
+        m.crossfire={range:9,bonus:8,cooldown:3}; delete m.deathBlast;delete m.attackRevision;m.atk=21;m.crossfireContact={x:34,y:30,targetId:'player',until:9999};m.intent61={type:'blast',cells:[{x:34,y:30}],data:{x:34,y:30,bonus:8},armedPlayerTurn:st.turn};
         if (!__MANRU_RELEASE__.save().ok || !__MANRU_RELEASE__.load()) throw Error('cannon restore');
         const restored=__MANRU_QA_UI__.state(),loaded=restored.monsters[0],before=A.fx.projectiles.length;A.step(loaded,restored.player);
-        const row = { crossfire: loaded.crossfire?.bonus === 8, deathBlast: loaded.deathBlast?.radius === 1, buffed:loaded.atk===expected, preserved:loaded.hp===hp&&loaded.def===def, noContact:!loaded.crossfireContact, immediateLegacyShot:A.fx.projectiles.length>before&&!loaded.intent61, skills:A.skills(loaded).map(s=>s.id) };
+        const row = { crossfire: loaded.crossfire?.bonus === 8 && loaded.crossfire?.cooldown === 4, deathBlast: loaded.deathBlast?.radius === 1, buffed:loaded.atk===expected, preserved:loaded.hp===hp&&loaded.def===def, noContact:!loaded.crossfireContact, immediateLegacyShot:A.fx.projectiles.length>before&&!loaded.intent61, skills:A.skills(loaded).map(s=>s.id) };
         if (!row.crossfire || !row.deathBlast || !row.buffed || !row.preserved || !row.noContact || !row.immediateLegacyShot) throw Error('cannon restored instant traits: '+JSON.stringify(row)); return row;
       }));
       out['crossfireCannon.death'] = JSON.stringify(await s.page.evaluate(() => {
