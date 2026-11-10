@@ -3618,6 +3618,44 @@ function drawPalaceProp(q,p){const {r}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.str
 }
 function drawPalaceWallLamp(q,l={}){const {r}=drawKit(q);r('#152631',7,4,19,24);r('#263b44',9,3,16,26);r('#9b794e',11,5,12,3);r('#d0ab76',11,5,10,1);r('#574b38',9,10,4,16);r('#b99562',10,10,2,14);r('#2c4149',14,8,10,17);q.fillStyle='#edd0a0';q.beginPath();q.ellipse(18,16,6,8,0,0,Math.PI*2);q.fill();q.fillStyle='#b99e70';q.beginPath();q.ellipse(20,17,3,6,0,0,Math.PI*2);q.fill();r('#fff0bd',15,11,4,10);r('#fff8df',16,11,2,6);r('#927348',13,8,11,2);r('#785b38',13,23,11,2);r('#d9b57a',13,9,1,14);r('#7b6546',22,9,2,15);r('#cbb082',16,25,4,2);r('#21373d',16,27,4,2);}
 function drawPressureGrate(q,shut){const {r}=drawKit(q);r('#1c2429',0,0,32,5);r('#b09463',0,1,32,2);for(let a=4;a<32;a+=6){r('#0d151e',a+2,4,3,shut?28:3);r('#a2a89a',a,4,2,shut?28:3);r('#d3c7a1',a,4,1,shut?24:2);}if(shut){r('#485856',0,11,32,3);r('#485856',0,25,32,3);r('#a78b5e',14,12,5,5);}}
+const PALACE_WATER_ART=new Map();
+function palaceWaterSprite(frame,deep){
+ const key=frame+(deep?16:0);if(PALACE_WATER_ART.has(key))return PALACE_WATER_ART.get(key);
+ // A bounded, seamless 4×4-tile atlas. Only 32 images can exist, independent of map size.
+ const size=128,c=document.createElement('canvas');c.width=c.height=size;
+ const q=c.getContext('2d'),image=q.createImageData(size,size),tau=Math.PI*2,phase=frame/16*tau;
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const u=x/size*tau,v=y/size*tau,warp=Math.sin(u*2+v-phase)*.45+Math.cos(v*3+phase)*.24;
+  const a=Math.sin(u*4+v*2+warp+Math.sin(phase)*.6),b=Math.cos(v*5-u*2+warp-Math.cos(phase)*.6);
+  const caustic=Math.pow(Math.max(0,1-Math.abs(a+b)*3.8),3),light=(Math.sin(u+v*2-phase)+Math.cos(u*2-v+phase))*.5;
+  const ripple=Math.pow(Math.max(0,Math.cos(v*12+Math.sin(u*3+phase)*.8+Math.sin(phase)*.5)),22)*Math.pow(Math.max(0,Math.sin(u*4-v+phase)),4);
+  const grain=hash2(x,y,220)-.5,i=(y*size+x)*4;
+  image.data[i]=(deep?10:28)+light*4+caustic*(deep?12:34)+ripple*52+grain*3;
+  image.data[i+1]=(deep?57:112)+light*10+caustic*(deep?30:53)+ripple*67+grain*4;
+  image.data[i+2]=(deep?83:119)+light*12+caustic*(deep?34:43)+ripple*65+grain*4;
+  image.data[i+3]=deep?242:142+caustic*45+ripple*35;
+ }
+ q.putImageData(image,0,0);PALACE_WATER_ART.set(key,c);return c;
+}
+function drawPalaceWater(q,px,py,x,y,deep,now){
+ const time=TERRAIN_MOTION54.matches||!state.visible.has(k(x,y))?0:now,frame=Math.floor(time/120)%16;
+ q.save();q.imageSmoothingEnabled=false;
+ q.drawImage(palaceWaterSprite(frame,deep),(x%4+4)%4*32,(y%4+4)%4*32,32,32,px,py,32,32);
+ // Foam belongs to the shoreline, never to the seam between two water tiles.
+ for(const[dx,dy]of DIRS4){
+  const nx=x+dx,ny=y+dy,base=terrainBaseTile58(nx,ny);
+  if(isWaterTile105(base)||state.branchTerrain105.palace105.permanentWater[k(nx,ny)])continue;
+  const edge=q.createLinearGradient(px+(dx>0?32:0),py+(dy>0?32:0),px+(dx?dx>0?26:6:0),py+(dy?dy>0?26:6:0));
+  edge.addColorStop(0,'#a4d7c65c');edge.addColorStop(.35,'#69b4b32c');edge.addColorStop(1,'#529eab00');q.fillStyle=edge;
+  q.fillRect(px+(dx>0?26:0),py+(dy>0?26:0),dx?6:32,dy?6:32);
+  q.fillStyle='#c9e6d879';
+  for(let n=0;n<5;n++){
+   const along=n*7+Math.floor(hash2(x+n,y,221)*3),inset=1+Math.round(1+Math.sin(time/600+n+x*.4+y*.7));
+   q.fillRect(px+(dx?dx>0?31-inset:inset:along),py+(dy?dy>0?31-inset:inset:along),dx?1:3,dy?1:2);
+  }
+ }
+ q.restore();
+}
 function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain105?.palace105;if(!d)return false;if([TT.VOID,TT.LAVA,TT.MERCURY].includes(t)){X.fillStyle='#102532';X.fillRect(px,py,32,32);drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());return true;}if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}const key=k(x,y),height=d.floors[key],prop=d.props[key]?.tile===t?d.props[key]:null,window=t===TT.WALL?d.windows[key]:null,base=terrainBaseTile58(x,y),stamp=[t,height,prop?.style,d.materials?.[key],d.permanentWater?.[key],window?.kind,window?.damaged,d.facades?.[key]?.style,!!d.outdoors?.[key],!!d.mosaics?.[key]].join(':');let entry=BRANCH_TILE_CACHE.get('palace:'+key);if(entry?.stamp!==stamp){const c=document.createElement('canvas');c.width=c.height=32;const q=c.getContext('2d');q.imageSmoothingEnabled=false;
  if(d.facades?.[key]?.style==='iron-grate'){drawPalaceFloorMaterial(q,3,x,y,d);drawPressureGrate(q,t===TT.WALL);}
  else if(t===TT.WALL||t===TT.PALACE_WALL_LAMP){drawPalaceArchitecture(q,d.facades?.[key],x,y,d);if(window)drawPalaceWindow(q,window,x,y);if(t===TT.PALACE_WALL_LAMP)drawPalaceWallLamp(q,d.wallLamps105?.[key]);}
@@ -3626,7 +3664,7 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
   if(prop)drawPalaceProp(q,prop);else if(t===TT.PALACE_ROCK)drawPalaceRock(q);
  }
  entry={stamp,canvas:c};BRANCH_TILE_CACHE.set('palace:'+key,entry);}
- X.drawImage(entry.canvas,px,py);const nativeMaterial=d.materials?.[key];if(t!==TT.PALACE_ROCK&&nativeMaterial!=null&&(base===nativeMaterial||isWaterTile105(base))){if(nativeMaterial===TT.FLOOR){if(state.branchContext105.level!==2)drawFloorTexture(px,py,x,y,REGION_ART[1],true);}else drawSpecialTerrain(nativeMaterial,px,py,x,y,FX.frameNow||performance.now());X.fillStyle=height===3?'#ddcf982b':height===2?'#a6d2af18':'#17425233';X.fillRect(px,py,32,32);if(prop){X.save();X.translate(px,py);drawPalaceProp(X,prop);X.restore();}}const now=FX.frameNow||performance.now();if(isWaterTile105(base)||t===TT.RAFT&&d.permanentWater[key]){X.save();X.fillStyle=base===TT.WATER||t===TT.RAFT?'#12375dab':'#367d9358';X.fillRect(px,py,32,32);X.strokeStyle=base===TT.WATER?'#76aebb45':'#c6e4d050';X.lineWidth=1;const shift=3*Math.sin(now/850+x*.71+y*.28);for(const yy of [10,23]){X.beginPath();X.moveTo(px+3,py+yy+shift);X.bezierCurveTo(px+11,py+yy-2+shift,px+22,py+yy+2+shift,px+29,py+yy+shift);X.stroke();}if(hash2(x,y,219)>.7){X.strokeStyle='#d1ca8c30';X.beginPath();X.moveTo(px+14,py+4);X.lineTo(px+15,py+28);X.stroke();}X.restore();}
+ X.drawImage(entry.canvas,px,py);const nativeMaterial=d.materials?.[key];if(t!==TT.PALACE_ROCK&&nativeMaterial!=null&&(base===nativeMaterial||isWaterTile105(base))){if(nativeMaterial===TT.FLOOR){if(state.branchContext105.level!==2)drawFloorTexture(px,py,x,y,REGION_ART[1],true);}else drawSpecialTerrain(nativeMaterial,px,py,x,y,FX.frameNow||performance.now());X.fillStyle=height===3?'#ddcf982b':height===2?'#a6d2af18':'#17425233';X.fillRect(px,py,32,32);if(prop){X.save();X.translate(px,py);drawPalaceProp(X,prop);X.restore();}}const now=FX.frameNow||performance.now();if(isWaterTile105(base)||t===TT.RAFT&&d.permanentWater[key])drawPalaceWater(X,px,py,x,y,base===TT.WATER||t===TT.RAFT,now);
  if(t===TT.PAPER_BRIDGE)drawSpecialTerrain(TT.PAPER_BRIDGE,px,py,x,y,now);if(t===TT.SWITCH){if(foreground)foreground.push({t,px,py,x,y});else drawSpecialTerrain(t,px,py,x,y,now);}if(t===TT.RAFT)drawSpecialTerrain(TT.RAFT,px,py,x,y,now);if(t===TT.ICE){X.fillStyle='#aad8d5a0';X.fillRect(px,py,32,32);X.strokeStyle='#e1eddf';X.beginPath();X.moveTo(px+4,py+7);X.lineTo(px+22,py+25);X.lineTo(px+29,py+19);X.stroke();}
  const tide=palaceTide();if(height!=null&&tide.rising&&tide.remaining<=2&&tide.next>height&&base!==TT.WATER){X.strokeStyle='#a7e6df';X.lineWidth=1;X.setLineDash([3,3]);X.strokeRect(px+2,py+2,28,28);X.setLineDash([]);}
  const roomId=d.roomCells[key],gate=palaceWorld().gates[`${state.branchContext105.level}:${roomId}`];if(height!=null&&gate?.until>palaceWorld().time){X.strokeStyle='#e5c485aa';X.lineWidth=2;for(const[dx,dy]of DIRS4)if(d.roomCells[k(x+dx,y+dy)]!==roomId){X.beginPath();if(dx){X.moveTo(px+(dx<0?1:31),py);X.lineTo(px+(dx<0?1:31),py+32);}else{X.moveTo(px,py+(dy<0?1:31));X.lineTo(px+32,py+(dy<0?1:31));}X.stroke();}}

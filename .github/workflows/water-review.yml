@@ -1,0 +1,35 @@
+name: Palace water and stationary summon review
+on:
+  push:
+    branches: [codex/palace-water-fixed-summons]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check && npm run build && npm run build:qa
+      - run: node --test tests/tools/branch-codec.test.mjs
+      - run: npx --yes playwright@1.56.1 install --with-deps chromium
+      - name: Real book movement, save restoration, sprites and palace water
+        run: node tests/palace-water-summons.mjs
+      - name: Cannon trigger cadence and summon descendants
+        if: always()
+        run: node tests/run.mjs --only crossfireCannon,summonBrood,battle --update
+      - name: Preserve branch transfers
+        if: always()
+        run: node tests/branch-followers.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: water-review
+          path: |
+            tests/artifacts
+            tests/baseline/behaviour.json
