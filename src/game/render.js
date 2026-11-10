@@ -3687,18 +3687,53 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
  if(m.palaceActor105==='imugi'){
-  // A heavy, coiled water serpent with an unfinished crest, distinct from the crowned water dragon.
-  q.save();q.lineCap='round';q.lineJoin='round';r('#07152566',2,31,30,4);
-  const coil=()=>{q.beginPath();q.moveTo(2,28+b);q.bezierCurveTo(8,35,29,35,28,27+b);q.bezierCurveTo(27,21+b,9,30-b,9,23-b);q.bezierCurveTo(9,17-b,25,25+b,23,16+b);q.lineTo(22,12+b);};
-  coil();q.strokeStyle='#111a35';q.lineWidth=9;q.stroke();coil();q.strokeStyle='#465377';q.lineWidth=7;q.stroke();coil();q.strokeStyle='#819cb0';q.lineWidth=3;q.stroke();
-  for(const[x,y]of[[4,29],[9,31],[15,31],[22,29],[25,26],[18,25],[11,23],[14,20],[20,20]]){r('#b3c8bd',x,y+b,2,1);r('#647197',x+1,y+1+b,2,1);}
-  for(const[x,y]of[[6,27],[13,29],[23,23],[12,19],[21,16]])poly('#a2b5b9',[[x,y+b],[x+1,y-3+b],[x+3,y+b]]);
-  poly('#17233d',[[17,14+b],[15,9+b],[17,4+b],[25,2+b],[31,7+b],[32,13+b],[28,18+b],[21,18+b]]);
-  poly('#62789c',[[18,11+b],[18,6+b],[25,4+b],[29,7+b],[30,12+b],[26,15+b],[21,15+b]]);
-  poly('#a2b7bd',[[18,6+b],[23,4+b],[27,5+b],[21,8+b]]);poly('#ccd0b6',[[24,12+b],[31,11+b],[29,16+b],[24,16+b],[21,14+b]]);
-  poly('#829b9d',[[17,6+b],[14,3+b],[17,2+b],[21,5+b]]);poly('#d0c69b',[[23,3+b],[24,0+b],[26,1+b],[26,4+b]]);
-  r('#18223a',26,7+b,4,3);r('#f0cc78',27,8+b,2,1);r('#eef0cc',29,13+b,1,2);
-  line('#c7dfcd',23,12+b,13,10-b,1);line('#91c2c3',23,14+b,12,17-b,1);line('#52648a',8,32,3,33,1);
+  // A broad-jawed, horned inner-palace sea dragon; readable even at a 32px tile.
+  // Its armored coil occupies the lower tile while its crown and fangs own the silhouette.
+  q.save();q.lineCap='round';q.lineJoin='round';
+  const ink='#0b1a2b',deep='#1e3850',armor='#35677e',shell='#5a91a2',edge='#a2ced0',glow='#9cebe0',ivory='#e6dfc4';
+  r('#06121c88',1,32,30,3);
+  const body=()=>{q.beginPath();q.moveTo(2,27+b);q.bezierCurveTo(5,33,23,35,28,28+b);q.bezierCurveTo(33,21+b,16,27-b,11,25-b);q.bezierCurveTo(4,21-b,9,16+b,17,19+b);q.bezierCurveTo(22,20+b,23,18+b,20,13+b);};
+  body();q.strokeStyle=ink;q.lineWidth=11;q.stroke();
+  body();q.strokeStyle=deep;q.lineWidth=8;q.stroke();
+  body();q.strokeStyle=armor;q.lineWidth=6;q.stroke();
+  body();q.strokeStyle=shell;q.lineWidth=2;q.stroke();
+  // Pale belly plating is visible inside the heavy serpentine coils.
+  for(const [x,y,w] of [[4,28,4],[9,31,4],[15,32,5],[22,31,4],[26,27,3],[20,25,3],[13,23,3],[12,18,3]]){r('#233b55',x,y+b,w,2);r(edge,x,y+b,w-1,1);}
+  for(const[x,y]of[[5,24],[9,27],[16,29],[24,29],[26,24],[18,21],[12,22],[15,17]]){poly('#89bcc1',[[x-2,y+b],[x,y-3+b],[x+2,y+b]]);r('#c9e0d2',x-1,y-1+b,2,1);}
+  // Long fin-like dorsal ridges, not a round snake's head.
+  poly(ink,[[12,18+b],[7,14+b],[9,10+b],[13,12+b],[13,6+b],[18,9+b],[21,15+b]]);
+  poly(armor,[[11,16+b],[9,13+b],[11,12+b],[15,14+b],[15,9+b],[19,12+b],[19,17+b]]);
+  poly('#79b8bd',[[11,13+b],[12,10+b],[15,13+b],[14,7+b],[18,12+b]]);
+  // Distinct two-pronged swept crown and a secondary horn at the jaw.
+  poly(ink,[[16,8+b],[15,2+b],[18,0],[22,7+b]]);
+  poly('#75b5c1',[[17,6+b],[17,2],[19,1],[20,7+b]]);
+  poly(ink,[[23,7+b],[25,0],[29,1],[28,9+b]]);
+  poly('#9fcfd2',[[25,6+b],[26,2],[28,2],[27,8+b]]);
+  // Dark skull mass, forward-facing muzzle, open predatory mouth.
+  poly(ink,[[14,11+b],[17,6+b],[22,5+b],[28,7+b],[31,11+b],[30,15+b],[26,18+b],[21,19+b],[16,16+b]]);
+  poly(armor,[[16,11+b],[19,7+b],[23,6+b],[28,8+b],[29,11+b],[26,13+b],[20,14+b],[17,13+b]]);
+  poly(shell,[[18,9+b],[22,7+b],[27,8+b],[27,10+b],[23,11+b],[18,11+b]]);
+  poly(edge,[[20,8+b],[24,7+b],[28,9+b],[24,9+b]]);
+  // A pronounced brow and two-pixel luminous eye.
+  poly(ink,[[21,10+b],[24,8+b],[29,9+b],[28,11+b],[23,11+b]]);
+  r('#c4f8e5',25,10+b,3,2);r('#10a6ac',26,10+b,1,2);
+  // Mouth, pale jaw armor and individually readable fangs.
+  poly('#07111b',[[21,13+b],[30,12+b],[28,17+b],[24,18+b],[20,16+b]]);
+  poly('#719fa7',[[20,16+b],[24,17+b],[28,16+b],[29,17+b],[25,19+b],[22,19+b]]);
+  poly(ivory,[[24,13+b],[26,13+b],[25,17+b]]);
+  poly(ivory,[[28,13+b],[30,12+b],[28,16+b]]);
+  poly('#edf5dc',[[26,17+b],[27,17+b],[26,19+b]]);
+  r('#dbf2e5',29,11+b,2,1);r(ink,30,11+b,1,1);
+  // Whiskers and translucent gill-blades carry the Korean water-dragon identity.
+  poly(deep,[[16,13+b],[10,16+b],[8,21+b],[15,18+b],[19,18+b]]);
+  poly('#77bac5',[[16,14+b],[12,16+b],[10,19+b],[17,17+b]]);
+  line('#bcefe0',20,15+b,10,19+b,1);
+  line('#7bcad1',28,15+b,31,20+b,1);
+  line('#d9f5df',29,14+b,32,17+b,1);
+  line('#69a8bb',14,18+b,8,23+b,1);
+  // Small wake accents; avoid adding visual noise around the eyes.
+  r('#a5dae1',2,24+b,2,1);r('#8ed3d3',4,22+b,2,1);
+  r('#c2ece0',28,31,2,1);r('#67aab9',29,29,2,1);
   q.restore();return;
  }
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
