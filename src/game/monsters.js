@@ -612,6 +612,7 @@ function monsterPathStep(mon,target,exact=false,placement=null,opts={}){
  return null;
 }
 function moveMonsterToward(mon,target=null,opts={}){
+ if(monsterMovementLocked57(mon))return false;
  if(isHostileTarget57(mon)&&playerConcealed58()&&!dojoMarkedPursuer(mon)&&(!target||target===state.player))return false;
  let p=target||monsterInvestigationTarget(mon)||mon.migrationTarget57||(mon.boss?state.player:null);if(!p)return false;if(mon.guardHome57&&!monsterPatrolAllows(mon,p.x,p.y))p=mon.guardHome57;
  if(mon.drunk57||mon.drunk>0){const drunk=drunkMovementOutcome57();if(drunk==='misstep')return wanderMonster(mon,null,opts);if(drunk==='stumble')return false;}
