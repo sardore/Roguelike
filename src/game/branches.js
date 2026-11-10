@@ -457,6 +457,7 @@ function palaceKingDefeated(mon){
  const w=palaceWorld();w.kingDefeated=true;w.royalUntil=0;palaceApplyTide();addLog('창해군이 쓰러졌다. 왕좌전 배수장치가 열렸다. 소지품이 사망 지점에 떨어졌다.');
 }
 function palaceEntranceRoom(candidates){const p=candidates.find(c=>c.room&&c.room.w>=7&&c.room.h>=7&&c.x>=c.room.x+2&&c.x<c.room.x+c.room.w-2&&c.y>=c.room.y+2&&c.y<c.room.y+c.room.h-2)||candidates[0];if(!p)return null;const r=p.room;if(r){r.name='창해 용궁 출입실';r.branchEntrance105='palace';}for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(!tileBlocks(state.map[y]?.[x]))state.decor.push({x,y,kind:'coral',label:'용궁 입구의 진주·산호 문장'});}return p;}
+function palaceGuideItem(){return{type:'guide',branchGuide105:true,name:'용궁 조수 안내서',rarity:'common',count:1,identified:true,desc:'물은 8턴마다 차오르거나 빠진다. 물길이 깊어지면 높은 회랑이나 금테 석단에서 썰물을 기다리자. 끊긴 물길은 뗏목을 타고 건널 수 있다. 환류 수문을 열면 그 방의 수위가 6턴 동안 한 단계 내려간다. 수문은 16턴 뒤에 다시 열 수 있다.'};}
 function buildPalace(level){
  const ter=state.branchTerrain105,m=state.map,cx=COLS>>1,cy=ROWS>>1,d=ter.palace105={version:9,basins105:[],paperBridges105:{},materials:{},permanentWater:{},thresholds:[],chambers:[],routeCells:{},floors:{},roomCells:{},windows:{},props:{},traces:{},rooms:[],handles:[],lights:[],outdoors:{},facades:{},arches:{},mosaics:{},wallLamps105:{},doors105:[],outdoorCourts105:[],reward:{x:cx,y:cy-13}};
  state.generationInProgress57=true;state.keyPlan96=null;const rng=RngService.shop(`${state.runId984||state.runId||'palace'}|changhae-courts-v8:${level}`),ri=(a,b)=>a+Math.floor(rng()*(b-a+1)),lo=ri(7,8),hi=COLS-1-lo,gap=18;
@@ -676,7 +677,7 @@ function buildPalace(level){
  }
  const recovery=ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_medium');for(const id of[banquet.id,armory.id,altar.id]){const r=d.rooms.find(r=>r.id===id);if(recovery&&r)supply({...clone(recovery),count:1,identified:true,palaceExploration105:true},r);}
  const provisions=CONSUMABLES.find(f=>f.foodKind==='jerky');for(const id of[guest.id,bedroom.id,machine.id]){const r=d.rooms.find(r=>r.id===id);if(provisions&&r)supply({...clone(provisions),count:3,identified:true,palaceExploration105:true},r);}
- const guide={type:'guide',branchGuide105:true,name:'용궁 조수 안내서',rarity:'common',count:1,identified:true,desc:'야외 수원을 지나 궁전의 구역 순서와 방 테마는 매번 달라지며, 감실 미궁을 돌아 중심으로 들어간다. 각 구역의 갈래길과 순환로를 탐색하고, 상아 금테 석단에서 조수를 기다릴 수 있다. 수위0→1→2→3→2→1은 8턴마다 변한다. 높이2 회랑과 금테 석단은 안전한 육로다. 낮은 갈래와 오목한 석단은 썰물을 기다려 건널 수 있다. 외원의 끊긴 물길은 뗏목을 기다려 반드시 건넌다. 내궁 동쪽의 압력판 보상 미로와 종이다리는 선택 탐색 구역이다. 벽에 달린 진주 등롱은 통로를 막지 않는다. 환류 수문은 이 방만 6턴간 수위-1, 재사용16턴.'};PlacementService.placeItem(guide,{x:cx+2,y:hi});
+ PlacementService.placeItem(palaceGuideItem(),{x:cx+2,y:hi});
  state.generationInProgress57=false;palaceApplyTide();VisibilityService.compute();return true;
 }
 function palaceMiniColor(t,x,y){if(t===TT.WALL||t===TT.PALACE_WALL_LAMP)return '#4d6471';if(t===TT.PORTAL)return '#edd599';if(t===TT.PALACE_ROCK)return '#ad8258';if(state.branchTerrain105.palace105.permanentWater?.[k(x,y)])return '#193d62';const height=state.branchTerrain105.palace105.floors[k(x,y)];return height==null?'#253845':palaceColors()[height];}
