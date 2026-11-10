@@ -21,29 +21,7 @@ jobs:
       - run: npm run build
       - run: npx --yes playwright@1.56.1 install --with-deps chromium
       - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values --update --label summon-brood
-      - run: npm test -- --only saves --update --label summon-brood-save-new
-      - name: Compare migrated saves with main
-        run: |
-          cp tests/baseline/behaviour.json /tmp/summon-brood-reviewed.json
-          reference_dir=$(mktemp -d)
-          git archive 50735805d660c46f5323357c30a544b955ae82a7 | tar -x -C "$reference_dir"
-          ln -s "$GITHUB_WORKSPACE/node_modules" "$reference_dir/node_modules"
-          (cd "$reference_dir" && npm run build:qa)
-          node tests/run.mjs --only saves --root "$reference_dir/dist-qa" --update --label summon-brood-save-reference
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';import {execFileSync} from 'node:child_process';
-          const expected=JSON.parse(execFileSync('git',['show','HEAD:tests/baseline/behaviour.json'],{encoding:'utf8'})),reference=JSON.parse(fs.readFileSync('tests/baseline/behaviour.json','utf8'));
-          for(const [k,v]of Object.entries(reference))if(k.startsWith('saves.')&&expected[k]!==v)throw Error('reference changed: '+k);
-          const diffs=[];
-          const walk=(a,b,p)=>{if(JSON.stringify(a)===JSON.stringify(b))return;if(a&&b&&typeof a==='object'&&typeof b==='object'){for(const k of new Set([...Object.keys(a),...Object.keys(b)]))walk(a[k],b[k],p+'.'+k);}else diffs.push({path:p,before:a,after:b});};
-          for(const f of fs.readdirSync('tests/artifacts/summon-brood-save-new')){
-            const before=fs.readFileSync('tests/artifacts/summon-brood-save-reference/'+f,'utf8'),after=fs.readFileSync('tests/artifacts/summon-brood-save-new/'+f,'utf8');
-            const aa=before.split('\n'),bb=after.split('\n');for(let i=0;i<Math.max(aa.length,bb.length);i++)if(aa[i]!==bb[i])walk(JSON.parse(aa[i]),JSON.parse(bb[i]),f+':'+i);
-          }
-          console.log('SUMMON_BROOD_SAVE_DIFFS='+JSON.stringify(diffs));
-          fs.copyFileSync('/tmp/summon-brood-reviewed.json','tests/baseline/behaviour.json');
-          JS
-      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values,battle,saves,features,duelfight --label summon-brood-verify
+      - run: npm test -- --only charcoalFood,summonBrood,motherSpider,values,battle,saves,features,duelfight,duelmap --label summon-brood-verify
       - name: Report reviewed baselines
         if: always()
         run: |

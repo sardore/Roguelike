@@ -1199,7 +1199,7 @@ function createTalismanTargetHud(){
 }
 function createFoodTargetPanel(){
   foodTargetPanel.id='foodTarget57';
-  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">독버섯 꼬치 투척</b><small>사거리 4칸 · 먹일 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
+  foodTargetPanel.innerHTML='<div><b id="foodTargetName57">음식 투척</b><small>사거리 4칸 · 대상 요괴를 터치</small></div><button id="foodTargetCancel57">취소</button>';
   document.body.appendChild(foodTargetPanel);
   foodTargetPanel.querySelector('#foodTargetCancel57').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
 }
