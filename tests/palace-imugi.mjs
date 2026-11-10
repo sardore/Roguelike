@@ -15,8 +15,10 @@ const setup=async(debug=false)=>{await dismissModals(s);await s.tick(1000);await
  st.visible=new Set();st.seen=new Set();for(let y=1;y<st.map.length-1;y++)for(let x=1;x<st.map[y].length-1;x++){st.map[y][x]=T.FLOOR;st.visible.add(x+','+y);st.seen.add(x+','+y);}
  for(const key of ['particles','floats','slashes','rings','projectiles','doors'])Q.fx[key]=[];Q.occupancy.endShared();if(debug){Q.debug.winner=null;Q.debug.round=0;}
 },debug);};
+const failures=[];async function check(name,body){try{await body();console.log('PASS_GROUP='+name);}catch(error){failures.push(name+': '+error.stack);console.error('FAIL_GROUP='+name+' '+error.stack);}}
 try{
  await startRun(s,'wanderer');
+ await check('generation',async()=>{
  const generated=[];
  for(const seed of [9045,71,319,12016]){
   await setup();await ev(seed=>{const st=imugiTest.state();st.runId984='imugi-generation-'+seed;__reseed(seed);__MANRU_RELEASE__.regen(9);st.monsters=[];imugiTest.occupancy.endShared();},seed);await s.tick(1000);
@@ -31,6 +33,8 @@ try{
   assert.equal(await ev(()=>__MANRU_RELEASE__.save().ok&&__MANRU_RELEASE__.load()),true);assert.deepEqual(await ev(()=>imugiTest.state().monsters.filter(m=>m.name==='이무기').map(m=>({hp:m.hp,x:m.x,y:m.y,speed:m.actionSpeed}))),before,'saved inner palace must not duplicate or reset imugi');
  }
  console.log('GENERATION='+JSON.stringify(generated));
+ });
+ await check('actions',async()=>{
  // Compare one rapid hostile decision phase against two ordinary phases with identical RNG and bodies.
  const trial=async(speed,rounds,mode='hostile',near=true)=>{await setup();return ev(({speed,rounds,mode,near})=>{
   const Q=imugiTest,st=Q.state(),A=__MANRU_QA_SEALING__,m=A.place('이무기',{x:30,y:30});m.actionSpeed=speed;m.skillSeal105=100;m.summoner=false;m.alerted=true;m.hasSeenPlayer105=true;Q.occupancy.move(st.player,near?32:34,30);
@@ -40,8 +44,12 @@ try{
  },{speed,rounds,mode,near});};
  const attacks={};for(const mode of ['hostile','ally']){const rapid=await trial(2,1,mode),normalTwo=await trial(1,2,mode),normalOne=await trial(1,1,mode);console.log('ATTACK_TRIAL='+JSON.stringify({mode,rapid,normalTwo,normalOne}));assert.equal(rapid.damage,normalTwo.damage,mode+' two complete attacks');assert.ok(rapid.damage>normalOne.damage&&normalOne.damage>0,mode+' attack speed boost: '+JSON.stringify({rapid,normalTwo,normalOne}));attacks[mode]={rapid,normalTwo,normalOne};}
  const rapidMove=await trial(2,1,'hostile',false),normalMove=await trial(1,1,'hostile',false);assert.equal(rapidMove.x,32);assert.equal(normalMove.x,31);console.log('ACTION_SPEED='+JSON.stringify({attacks,rapidMove,normalMove}));
+ });
+ await check('ward',async()=>{
  // A fast warning cannot resolve in the second slot of the same player turn.
  await setup();const ward=await ev(()=>{const Q=imugiTest,st=Q.state(),m=__MANRU_QA_SEALING__.place('이무기',{x:30,y:30});m.summoner=false;m.alerted=true;Q.monsters();const warned=m.intent61?.type==='sealingWard',cells=m.intent61?.cells.length,early=st.tempFields.some(f=>f.kind==='sealingWard');st.turn++;st.floorTurn++;Q.monsters();const field=st.tempFields.find(f=>f.kind==='sealingWard'),p=st.player,blocked=Q.fields(p.x+3,p.y,{actor:p}),moved=Q.occupancy.move(p,p.x+3,p.y);return{warned,cells,early,raised:!!field,duration:field?.ttl,blocked,moved};});assert.deepEqual(ward,{warned:true,cells:25,early:false,raised:true,duration:4,blocked:true,moved:false});console.log('WARD='+JSON.stringify(ward));
+ });
+ await check('summoning',async()=>{
  // Native fish are water-only and cap at three per summoner; the existing book cap still wins.
  for(const bookUpgrade of [null,0,2]){
   await setup();const row=await ev(bookUpgrade=>{
@@ -53,6 +61,8 @@ try{
    const fish=st.monsters.filter(a=>a.name==='식인 물고기'),inWater=fish.every(a=>st.map[a.y][a.x]===T.WATER),dry=fish[0]&&Q.place.terrainStandable(fish[0],T.FLOOR),speed=m.actionSpeed;return{upgrade:bookUpgrade,count:fish.length,inWater,dry,speed,cap:fish.every(a=>a.bossOwnerId57),immobile:fish.some(a=>a.fixed)};
   },bookUpgrade);assert.equal(row.count,bookUpgrade===0?1:3);assert.equal(row.inWater,true);assert.equal(row.dry,bookUpgrade!==null);assert.equal(row.immobile,false);assert.equal(row.speed,2);assert.equal(row.cap,true);console.log('FISH_SUMMON='+JSON.stringify(row));
  }
+ });
+ await check('pursuit',async()=>{
  // An unreachable land target still draws aquatic hunters through a connected water detour.
  await setup();const pursuit=await ev(()=>{
   const Q=imugiTest,st=Q.state(),T=Q.TT;st.player.x=36;st.player.y=32;
@@ -61,6 +71,8 @@ try{
   const native={waterOnly:positions.every(([x,y])=>st.map[y][x]===T.WATER),detour:positions.some(([x,y])=>y<30),distance:final,mobile:!fish.fixed};
   const book=__MANRU_QA_BROOD__.book(),A=__MANRU_QA_BROOD__;book.summonElement105='water';book.summonPictures105={'식인 물고기':{count:1,portrait:structuredClone(A.definitions.find(d=>d.name==='식인 물고기'))}};st.player.inventory.push(book);A.summoning();if(!A.summon('식인 물고기',book.summonBookId105))throw Error('fish book cast');const owned=st.monsters.find(m=>m.summonOwner105==='player');return{native,bookDry:Q.place.terrainStandable(owned,T.FLOOR),bookMoves:Q.step(owned,{x:40,y:32})};
  });assert.deepEqual(pursuit.native,{waterOnly:true,detour:true,distance:4,mobile:true});assert.equal(pursuit.bookDry,true);assert.equal(pursuit.bookMoves,true);console.log('PURSUIT='+JSON.stringify(pursuit));
+ });
+ await check('debug',async()=>{
  // Real debug placement retains the new art/traits and executes two attacks as well.
  await ev(()=>__MANRU_QA_DEBUGBATTLE__.open());await s.tick(800);
  await s.page.evaluate(()=>{const input=document.getElementById('battleSearch57');input.value='이무기';input.dispatchEvent(new Event('input',{bubbles:true}));const sel=document.getElementById('battleMonster57'),option=[...sel.options].find(o=>o.textContent.split(' · ')[0]==='이무기');if(!option)throw Error('imugi missing from debug catalog');sel.value=option.value;sel.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('battleCount57').value='1';});await s.page.click('#battleAddA57');await s.tick(500);
@@ -69,5 +81,6 @@ try{
  const debug=await ev(()=>{const Q=imugiTest,st=Q.state(),m=st.monsters.find(a=>a.name==='이무기'),def=__MANRU_QA_BROOD__.definitions.find(d=>d.name==='이무기');if(!m)throw Error('debug imugi missing');const native=Q.scale(def,11,{inventory:false});Q.cache.clear();const a=Q.art(native,0).toDataURL();Q.cache.clear();const b=Q.art(m,0).toDataURL();return{speed:m.actionSpeed,ward:m.sealingWard.radius,summon:m.summonName57,pixels:a===b,aquatic:m.aquatic,amphibious:m.amphibious57};});assert.deepEqual(debug,{speed:2,ward:2,summon:'식인 물고기',pixels:true,aquatic:true,amphibious:true});await s.page.screenshot({path:path.join(art,'debug-imugi.png')});
  // Render the actual full sprite, enlarged only for review.
  const sprite=await ev(()=>{const Q=imugiTest,m=Q.state().monsters.find(m=>m.name==='이무기');return Q.art(m,0).toDataURL().split(',')[1];});fs.writeFileSync(path.join(art,'imugi-sprite.png'),Buffer.from(sprite,'base64'));
- assert.deepEqual(s.errors,[]);console.log('PASS: imugi population/food, full action speed, warnings, fish caps and water pursuit, book compatibility, saves and real debug art');
+ });
+ assert.deepEqual(s.errors,[]);if(failures.length)throw new Error(failures.join('\n'));console.log('PASS: imugi population/food, full action speed, warnings, fish caps and water pursuit, book compatibility, saves and real debug art');
 }finally{await s.close();await ctx.close();await browser.close();}
