@@ -994,10 +994,10 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       m.nextPassageSealTurn=state.turn+rule.cooldown;VisibilityService.compute();addLog(`${m.name}이 문과 계단을 봉쇄했다. 시전자를 쓰러뜨리거나 봉쇄가 끝나면 해제된다.`);
     }
     else if(I.type==='sealingWard'){
-      const victim=I.data.targetId==='player'?state.player:state.monsters.find(v=>v.combatantId54===I.data.targetId);
-      if(victim&&victim.hp>0&&I.cells.some(c=>c.x===victim.x&&c.y===victim.y)){
+      const victims=targets.filter(actor=>I.cells.some(c=>c.x===actor.x&&c.y===actor.y));
+      if(victims.length){
         const rule=m.sealingWard;
-        addField('sealingWard',I.data.x,I.data.y,rule.duration,I.cells,{...effectSource57(m),targetId:I.data.targetId,ownerId:combatantId(m),bornTurn:state.turn});
+        addField('sealingWard',I.data.x,I.data.y,rule.duration,I.cells,{...effectSource57(m),targetIds:victims.map(actor=>actor===state.player?'player':combatantId(actor)),ownerId:combatantId(m),bornTurn:state.turn});
         m.nextSealingWardTurn=state.turn+rule.cooldown;
         addLog(`${m.name}의 봉인진 · ${rule.duration}턴 동안 자발적으로 경계를 벗어날 수 없다.`);
       }
@@ -1065,8 +1065,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       if(cells.length&&setMonsterIntent(m,'passageSeal',cells,'문·계단 봉쇄 예고')){m.nextPassageSealTurn=state.turn+rule.cooldown;return true}
     }
     if(m.sealingWard?.species===m.name&&d<=m.sealingWard.range&&state.turn>=(m.nextSealingWardTurn||0)&&monsterAttackLineR(m,m.sealingWard.range,{target}).ok&&!combatFieldBlocks57(target.x,target.y,{actor:target,leaving:true})){
-      const rule=m.sealingWard,id=target===state.player?'player':combatantId(target);
-      if(setMonsterIntent(m,'sealingWard',intentCells(target.x,target.y,rule.radius),'봉인진 예고',{x:target.x,y:target.y,targetId:id})){
+      const rule=m.sealingWard;
+      if(setMonsterIntent(m,'sealingWard',intentCells(target.x,target.y,rule.radius),'봉인진 예고',{x:target.x,y:target.y})){
         m.nextSealingWardTurn=state.turn+rule.cooldown;return true;
       }
     }
@@ -2352,6 +2352,13 @@ function moveGroundItemStep57(it,toward){
 }
 function markCombatBlink57(entity){if(entity&&state)entity.combatBlinkTurn57=state.turn;}
 const RUNTIME_ENTRY_REACTIVE57=new Set([TT.PAPER_BRIDGE,TT.CRUMBLE,TT.PORTAL,TT.RUMOR,TT.TRAP,TT.MIRROR,TT.SNARE,TT.GOLD,TT.KEY_TILE,TT.STAMINA_PAD,TT.FLOOR,TT.PAVILION]);
+function sealingWardAffects(field,actor){
+ if(field.kind!=='sealingWard'||field.ttl<=0||!actor||actor.hp<=0)return false;
+ const id=actor===state.player?'player':actor.combatantId54;
+ if(!id||!(field.targetIds?.includes(id)??(field.targetId===id)))return false;
+ return (!field.sourceFaction||factionsHostile57(field.sourceFaction,entityFaction(actor)))&&
+   field.cells?.some(c=>c.x===actor.x&&c.y===actor.y);
+}
 function combatFieldBlocks57(x,y,opts={}){
  if(opts.passage){
   const actor=opts.actor||state?.player;
@@ -2360,8 +2367,7 @@ function combatFieldBlocks57(x,y,opts={}){
  if(opts.actor){
   const actor=opts.actor;if(!actor||actor.hp<=0)return false;
   if(!opts.leaving&&(actor===state?.player||actor.hp>0)&&combatFieldBlocks57(x,y,{actor,passage:'door'}))return true;
-  const id=actor===state?.player?'player':actor.combatantId54;if(!id)return false;
-  return !!state?.tempFields?.some(f=>f.kind==='sealingWard'&&f.ttl>0&&f.targetId===id&&f.cells?.some(c=>c.x===actor.x&&c.y===actor.y)&&(opts.leaving||!f.cells.some(c=>c.x===x&&c.y===y)));
+  return !!state?.tempFields?.some(f=>sealingWardAffects(f,actor)&&(opts.leaving||!f.cells.some(c=>c.x===x&&c.y===y)));
  }
  return !!state?.tempFields?.some(f=>['smoke','steam'].includes(f.kind)&&f.ttl>0&&(f.cells?f.cells.some(c=>c.x===x&&c.y===y):Math.abs(x-f.x)<=1&&Math.abs(y-f.y)<=1));
 }

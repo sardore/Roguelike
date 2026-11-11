@@ -226,7 +226,7 @@ function playerDebuffRows(){
   if(s.weaken>0)rows.push({key:'weaken',label:'쇠약',turns:s.weaken,effect:'현재 ATK ×0.80 · DEF ×0.75 · EVA ×0.80'});
   if(s.stun>0)rows.push({key:'stun',label:'기절',turns:s.stun,effect:'다음 입력 행동권 상실 · 적 턴은 정상 진행'});
   if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:'현재 이동비용 ×1.45 · 공격비용 ×1.20'});
-  for(const f of state.tempFields||[])if(f.kind==='sealingWard'&&f.targetId==='player'&&f.ttl>0)rows.push({key:'sealingWard',color:'#c79ae4',label:'봉인진',turns:f.ttl,effect:'진 안 이동 가능 · 경계 밖 자발적 이동·점멸 불가 · 밀쳐져 나가면 해제'});
+  for(const f of state.tempFields||[])if(sealingWardAffects(f,state.player))rows.push({key:'sealingWard',color:'#c79ae4',label:'봉인진',turns:f.ttl,effect:'진 안 이동 가능 · 경계 밖 자발적 이동·점멸 불가 · 밀쳐져 나가면 해제'});
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
@@ -380,8 +380,12 @@ function damageCombatTarget(source,target,amount,why,color='#e78372'){
 function expireCombatFields(opts={}){
  for(const f of [...state.tempFields]){
   if(f.kind==='sealingWard'){
-   const target=f.targetId==='player'?state.player:state.monsters.find(m=>m.combatantId54===f.targetId);
-   if(!target||target.hp<=0||!f.cells?.some(c=>c.x===target.x&&c.y===target.y))f.ttl=0;
+   const targetIds=(f.targetIds||[f.targetId]).filter(id=>{
+    const target=id==='player'?state.player:state.monsters.find(m=>m.combatantId54===id);
+    return sealingWardAffects(f,target);
+   });
+   f.targetIds=targetIds;
+   if(!targetIds.length)f.ttl=0;
    if(opts.movement||state.turn<=f.bornTurn)continue;
   }
   if(opts.movement)continue;

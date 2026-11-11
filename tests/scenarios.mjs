@@ -1262,6 +1262,28 @@ export const scenarios = {
         A.force(victim, { x: 34, y: 30 }, 2, { mode: 'push', hostile: true });
         return { cells, blocked, internal, pushed: victim.x > 35, removed: !st.tempFields.some(f => f.kind === 'sealingWard') };
       }));
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
+        for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
+        const caster = A.place('신전 사제 망령', { x: 30, y: 30 });
+        const bait = A.place('객잔 쥐', { x: 33, y: 30 });
+        const first = A.place('객잔 쥐', { x: 34, y: 29 });
+        const second = A.place('객잔 쥐', { x: 34, y: 31 });
+        const ally = A.place('객잔 쥐', { x: 33, y: 32 });
+        __MANRU_COMBATANTS57__.setFaction(caster, 'player');
+        __MANRU_COMBATANTS57__.setFaction(ally, 'player');
+        A.special(caster, null, bait);
+        if (!A.move(bait, 36, 30)) throw Error('bait could not evade warning');
+        st.turn++; A.intent(caster);
+        const field = st.tempFields.find(f => f.kind === 'sealingWard');
+        if (field?.targetIds?.length !== 2 || A.move(first, 36, 29) || A.move(second, 36, 31) ||
+            !A.move(ally, 33, 33) || !A.move(bait, 37, 30)) throw Error('ward hostile area membership');
+        A.force(first, { x: 33, y: 29 }, 2, { mode: 'push', hostile: true });
+        if (first.x <= 35 || field.targetIds.length !== 1 || A.move(second, 36, 31))
+          throw Error('escaping one target released the other');
+        A.force(second, { x: 33, y: 31 }, 2, { mode: 'push', hostile: true });
+        if (st.tempFields.some(f => f.kind === 'sealingWard')) throw Error('empty ward persisted');
+      });
       out['sealingWard.save'] = JSON.stringify(await s.page.evaluate(() => {
         const A = __MANRU_QA_SEALING__, st = __MANRU_QA_UI__.state();
         for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
