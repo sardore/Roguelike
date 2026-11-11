@@ -161,7 +161,8 @@ try {
           MANRU_TALISMANS.every(item => st.knowledge56.talismanKnown[item.talismanKind] === true)
         ],
         chest: [chest.x===p.x+p.facing.x && chest.y===p.y+p.facing.y, chest.items.reduce((count,item)=>count+item.count,0),
-          chest.items.some(item=>item.type==='food'||(item.type==='talisman'&&item.talismanKind!=='upgrade')),
+          chest.items.some(item=>item.type==='food'),
+          chest.items.some(item=>item.type==='talisman'&&item.talismanKind!=='upgrade'),
           __MANRU_QA_ODDITY__.material(st.map[chest.y][chest.x], 1, chest.x, chest.y)?.id]
       };
     });
@@ -172,7 +173,7 @@ try {
     assert.deepEqual(first.book, ['grass',[1,1],['어미거미','용궁 해련']]);
     assert.deepEqual(first.known,[true,true]);
     assert.ok(first.chest[1]>25);
-    assert.deepEqual([first.chest[0],first.chest[2],first.chest[3]],[true,false,'wood']);
+    assert.deepEqual([first.chest[0],first.chest[2],first.chest[3],first.chest[4]],[true,false,true,'wood']);
     await starter.page.reload();
     const continueButton=starter.page.locator('#continueBtn');
     assert.equal(await continueButton.isEnabled(),true);
