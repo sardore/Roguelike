@@ -39,6 +39,7 @@ const PlayStats={
    potionMap:state.knowledge56?.potionMap,potionKnown:state.knowledge56?.potionKnown,
    talismanMap:state.knowledge56?.talismanMap,talismanKnown:state.knowledge56?.talismanKnown
   };
+  compactSummonSave({player:p});
   return JSON.stringify(p);
  },
  recordDeath(cause){

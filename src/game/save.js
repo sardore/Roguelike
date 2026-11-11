@@ -17,6 +17,35 @@ const GAMESTATE_FIELDS=Object.freeze('terrainReactions105,branchWorld105,branchC
 const GAMESTATE_RUNTIME_FIELDS=Object.freeze('_movementDiscovery105,retiredItemMigration57,terrainRecovery58,legendLightingDirty49,_activeAmmo967,_worldTransition57,_forcedAdjacentTargetR8,_manualRangedTargetR8,_manualTerrainTargetR8,_spawnV60,_turnAgencyCounted57,_turnAgencyWillCount57,_turnPipelineActive57,attackUntil,blinkArmed61,blinkSpent52,cameraInspecting,evadeUntil,fullDetail78,generationInProgress57,integrity81,playerAttackOutcome57,playerAttackTarget,playerAttackUntil,playerHitUntil'.split(','));
 /* A run that must never reach the player's save, death record or server stats: the debug battle, and the video-reel showcase. */
 function runIsEphemeral(source=state){return !!(source?.debugBattle57||source?.spectator||source?.duel||Reel.on)}
+function compactSummonSave(world){
+  if(!world)return;
+  const summoning=world.player?.summoning105;
+  // Legacy migration uses old catalog entries to resolve renamed species.
+  if(summoning?.speciesVersion105===1&&Array.isArray(summoning.prototypes)){
+    summoning.prototypes=summoning.prototypes.filter(entry=>entry.actor);
+  }
+  const items=[...(world.player?.inventory||[]),...(world.items||[]),
+    ...(world.pendingGroundItems57||[]).map(entry=>entry?.item),
+    ...(world.shopIntermission?.stock||[]).map(entry=>entry.item),
+    ...(world.branchTerrain105?.palace105?.starterChest?.items||[]),...(world.tutorialChest?.loot||[])];
+  let names;
+  for(const item of items){
+    if(item?.summonSpeciesVersion105!==1)continue;
+    if(item.summonItem105==='picture'&&item.summonPortrait105){
+      names??=new Set(summonDefinitions().map(def=>def.name));
+      if(names.has(item.summonSpecies105))delete item.summonPortrait105;
+    }
+    if(item.summonItem105==='book'){
+      for(const [name,picture] of Object.entries(item.summonPictures105||{})){
+        if(!picture?.portrait)continue;
+        names??=new Set(summonDefinitions().map(def=>def.name));
+        if(names.has(name))delete picture.portrait;
+      }
+    }
+  }
+  compactSummonSave(world.artifactReturn46?.outer||world.artifactReturn46);
+  compactSummonSave(world.shopIntermission?.outer?.state);
+}
 function projectGameState(source=state){
   if(!source||typeof source!=='object'||Array.isArray(source))return null;
   if(source.debugBattle57)throw new Error('Debug battle state cannot be saved');
@@ -34,6 +63,7 @@ function projectGameState(source=state){
   plain.saveWrittenAt1004=Number(source.saveWrittenAt1004)||Date.now();plain.saveSeq1004=Number(source.saveSeq1004)||1;
   if(plain.player){delete plain.player.nextAttackAt;delete plain.player.busyUntil}
   for(const m of plain.monsters){delete m.hitUntil;delete m.evadeUntil;delete m.attackUntil;delete m.attackTarget;delete m.hitDir}
+  compactSummonSave(plain);
   branchPackWorld(plain);return plain;
 }
 function migrateGameState(candidate){

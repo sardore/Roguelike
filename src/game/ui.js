@@ -707,7 +707,7 @@ function summonPictureAsset(it){
  r(25,26,46,1,'#fff0cb');r(25,27,1,60,'#f6e6bf');r(70,28,1,60,'#b89b6b');r(27,87,43,1,'#a98e61');
  for(let i=0;i<19;i++){const x=27+(i*17)%41,y=30+(i*23)%54;r(x,y,1,i%3+1,i%2?'#b3955720':'#fff1ce50');}
  stroke([[27,81],[38,78],[43,80],[55,76],[68,79]],'#b39d6a42');stroke([[28,37],[37,33],[43,35]],'#fff4d32d');
- const mon=it.summonPortrait105,art=mon?globalThis.__MANRU_ACTOR_ART__.monster(mon,0):null;
+ const mon=it.summonPortrait105||summonDefinitions().find(def=>def.name===it.summonSpecies105),art=mon?globalThis.__MANRU_ACTOR_ART__.monster(mon,0):null;
  if(art){const scale=Math.min(42/art.width,46/art.height),w=Math.round(art.width*scale),h=Math.round(art.height*scale);q.drawImage(art,Math.round(48-w/2),Math.round(57-h/2),w,h);}
  r(59,75,9,9,'#8b4132');r(60,76,7,7,'#b96148');r(61,77,1,4,'#efd4a1');r(63,77,3,1,'#efd4a1');r(64,79,1,3,'#efd4a1');r(62,81,4,1,'#efd4a1');
  // Six grades combine the former small-step variants into visibly different carved, tasselled, jade, amethyst and crowned frames.
