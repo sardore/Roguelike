@@ -17,7 +17,7 @@ function martialPresentation(id,info,p=state.player){
 /* 10.0.5 acquired martial rules: producer -> persisted state -> existing consumers. */
 const MARTIAL_RULES=Object.freeze({ids:['strong','roar','ghost','brawl','constitution'],keys:['b','n','m'],assassinTurns:3,smokeTurns:5,guardActions:2,latePoints:[13,15,17,18]});
 const MARTIAL_FORMS={oddity:{psychic:'염력',anomaly:'이변'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
-function martialFamily(id,p=state.player){return id==='brawl'&&p?.martialFamilyOverride19232==='oddity'?'oddity':id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
+function martialFamily(id,p=state.player){return id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
 function martialFormOf(id,p=state?.player){return p?.martialForm?.[id]||null}
 function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
 function strongBonus(lv){return lv>=5?14:2+lv*2}
@@ -63,7 +63,7 @@ function showMartialManual(item){
  if(!state.player.inventory.includes(item))return false;
  let pending=state.pendingMartialManualChoice;
  if(pending&&pending.manualId!==item.manualId){toast('먼저 펼친 비급의 선택을 마쳐야 한다.');return false}
- if(!pending){const guaranteed=item.guaranteedMartialForm19232==='anomaly'?[{id:'brawl',form:'anomaly',family:'oddity'}]:[];const choices=rollMartialChoices1005(state.player,globalThis.__MANRU_RANDOM57__,guaranteed);if(!choices.length){toast('더 해금할 후천무술이 없다. 비급은 보존된다.');return false}pending=state.pendingMartialManualChoice={manualId:item.manualId,choices,createdTurn:state.turn}}
+ if(!pending){const guaranteed=item.guaranteedMartialForm19232==='anomaly'?[{id:'brawl',form:'anomaly'}]:[];const choices=rollMartialChoices1005(state.player,globalThis.__MANRU_RANDOM57__,guaranteed);if(!choices.length){toast('더 해금할 후천무술이 없다. 비급은 보존된다.');return false}pending=state.pendingMartialManualChoice={manualId:item.manualId,choices,createdTurn:state.turn}}
  // Extend older three-offer saves once, preserving every already revealed offer.
  if(pending.choices.length<6)pending.choices=rollMartialChoices1005(state.player,globalThis.__MANRU_RANDOM57__,pending.choices);
  // Commit before showing RNG results. Storage failure does not discard the in-memory roll.
@@ -74,10 +74,9 @@ function chooseMartialManual(index){
  const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return false;
  const pending=state.pendingMartialManualChoice,c=pending?.choices?.[index],p=state.player,item=p.inventory.find(i=>i.manualId===pending?.manualId&&i.type==='martial_manual');if(!c||!item)return false;
  // Honor a persisted form offer even if the player trains an already-unlocked cap before reopening.
- const anomaly=c.id==='brawl'&&c.form==='anomaly'&&c.family==='oddity'&&item.guaranteedMartialForm19232==='anomaly';
- const applicable=anomaly?!(p.martialForm?.brawl==='anomaly'&&martialFamily('brawl',p)==='oddity'):MARTIAL_RULES.ids.includes(c.id)&&(c.form==='breakthrough'?!p.martialBreakthrough[c.id]:!martialFormOf(c.id,p)&&Object.hasOwn(MARTIAL_FORMS[martialFamily(c.id,p)],c.form));
+ const applicable=MARTIAL_RULES.ids.includes(c.id)&&(c.form==='breakthrough'?!p.martialBreakthrough[c.id]:!martialFormOf(c.id,p)&&Object.hasOwn(MARTIAL_FORMS[martialFamily(c.id,p)],c.form));
  if(!applicable){toast('이 후보는 이미 완성됐다. 다른 확정 후보를 선택해라.');return false}
- const oldHp=p.maxHp;if(anomaly)p.martialFamilyOverride19232='oddity';if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
+ const oldHp=p.maxHp;if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
  if(c.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(c.id==='roar'){state.martialEcho=null;if(p.classState?.aimPower>0)setAimPower(p.classState.aimPower)}
  if(c.id==='constitution')recomputeMaxHp(p);p.focus=Math.min(p.focus,getStats().maxFocus);
  consumeItemQuantity(item);state.pendingMartialManualChoice=null;globalThis.__MANRU_ITEM_IDENTITY991__.closeChoice();
