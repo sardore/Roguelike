@@ -135,7 +135,10 @@ function ghostGet_(owner, id, key) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   const found = rows > 1 ? sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
   if (!found || String(sheet.getRange(found.getRow(), 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
-  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), BODY_COL).getValue()).replace(/^'/, '') });
+  const runs = sheet_(), runCount = runs.getLastRow();
+  const run = runCount > 1 ? runs.getRange(2, 2, runCount - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
+  const turns = run ? Number(runs.getRange(run.getRow(), HEADER.indexOf('turns') + 1).getValue()) : null;
+  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), BODY_COL).getValue()).replace(/^'/, ''), turns });
 }
 
 // ---- stakes ----------------------------------------------------------------------------------------------------------------

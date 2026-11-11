@@ -286,7 +286,7 @@ function buildDuelArena(duel){
 // A dead account stands up again: the saved character (PlayStats.ghostBody) is laid over the player of the new run, at full health and focus, fed, and with
 // nothing of the place it died in (position, facing, pending actions).
 function reviveGhost(player,ghost){
-  for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete ghost[key];
+  for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','recovery'])delete ghost[key];
   Object.assign(player,ghost,{x:player.x,y:player.y,facing:player.facing,busyUntil:0,nextAttackAt:0,hunger:100});
   player.hp=player.maxHp;player.focus=player.maxFocus;
   // the blink is there from the start of a duel, two cells at least, whether or not the gatekeeper of 청풍루 fell in that run (a ghost that learned more keeps it)

@@ -795,12 +795,15 @@ function worldTargetDirection57(dx,dy){
 }
 const INPUT_PRIORITY57=Object.freeze(['fatal/blocking','modal/dialogue','targeting','special interaction','gameplay HUD','canvas/world','gameplay keyboard','passive shortcut']);
 function restorePalaceRun(ghost){
-  const p=state.player,body=structuredClone(ghost);
+  const p=state.player,{recovery,...body}=structuredClone(ghost);
   for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','guardReady1005','guardCharges1005','foodVital57','temporaryMaxHpBonus'])delete body[key];
   Object.assign(p,body);
   state.floor=BRANCH_DEFS105.palace.parent;
+  if(Number.isSafeInteger(recovery?.turns)&&recovery.turns>=0)state.turn=recovery.turns;
+  if(Number.isSafeInteger(recovery?.agency)&&recovery.agency>=0)state.playerAgencyTurns57=recovery.agency;
   initializeMartial(state);
-  normalizeClassState58(p,0);
+  normalizeClassState58(p,state.playerAgencyTurns57);
+  restorePotionKnowledge(p.inventory,recovery);
   p.hp=p.maxHp;
   p.focus=p.maxFocus;
   p.hunger=Math.max(70,Number(p.hunger)||0);
