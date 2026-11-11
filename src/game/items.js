@@ -827,7 +827,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
   }
   function uxIcon(item,cls=''){try{return vfIconHtml(item,cls)}catch(_){return `<span>${itemGlyph(item)}</span>`}}
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
-  function relics47(floor=state.floor){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&floor>=(f[x.name]||1))}
+  function relics47(){const f={'붉은 등롱 심지':1,'먹빛 벼루 조각':6,'깨진 천면경':11,'장고의 쇠갈고리':16,'용의 여의주 파편':99,'방 번호패':1,'비단 매듭':6,'금박 부적':16};return[...RELICS.map(x=>({...x,type:'relic'})),...TRINKETS.map(x=>({...x,type:'trinket'}))].filter(x=>!x.jarOnly57&&state.floor>=(f[x.name]||1))}
   function guaranteedResource48(){
     if(!state||state.specialFloor)return;
     // One recovery checkpoint per chapter. Like SPD's limited drops, this prevents pure RNG starvation.

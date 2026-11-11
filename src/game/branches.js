@@ -2136,7 +2136,7 @@ function k(x,y){ return x+","+y; }
 function effectCanAffect57(effect,target){return !!target&&target.hp>0&&(effect?.friendlyFire||factionsHostile57(effect?.sourceFaction||'neutral',entityFaction(target)))}
 
 
-function placePalaceStarterChest(){
+function placePalaceStarterChest(items){
   const p=state.player,terrain=state.branchTerrain105.palace105;
   const up=state.branchPortals105.find(portal=>portal.id==='up');
   const candidates=DIRS4.map(([dx,dy])=>({x:p.x+dx,y:p.y+dy,dx,dy})).filter(q=>{
@@ -2148,28 +2148,9 @@ function placePalaceStarterChest(){
   const spot=candidates[0];
   if(!spot)throw Error('No dry starter chest cell at the palace entrance');
   const {x,y,dx,dy}=spot;
-  const loot=[
-    ...ordinaryGearPool(1,1),...ordinaryGearPool(2,8),...ordinaryGearPool(3,8),
-    ...relics47(8),...RELICS.filter(item=>item.jarOnly57),
-    ...POTION_LIST.filter(item=>(item.minFloor||1)<=8),
-    ...AMMO_TYPES.filter(item=>(item.minFloor||1)<=8).map(item=>makeAmmo(item)),
-    ...CONSUMABLES.filter(item=>item.type==='ingredient'&&(item.minFloor||1)<=8&&!item.craftedOnly57),
-    ...LEGENDS47.filter(item=>item.minFloor<=8&&item.id!=='water_crossbow'&&!citadelReservedRelic(item.id)),
-    BRANCH_REWARDS.granary,MINE_ITEMS105.stone,MINE_ITEMS105.oil,
-    summonBookItem(),makeMartialManual({kind:'boss-martial-manual',floor:5},'palace-starter:boss:5'),
-    ...summonDefinitions().filter(def=>!def.summonOnly57&&def.min>=1&&def.min<=8).map(def=>summonPictureItem(def.name,def))
-  ];
-  const unique=new Map();
-  for(const definition of loot){
-    if(!definition||['food','talisman'].includes(definition.type)||unique.has(definition.name))continue;
-    const item=clone(definition);
-    item.count=item.count||(item.stackMax>1?randInt967(1,Math.min(3,item.stackMax)):1);
-    if(anvilGear(item))naturalGearUpgrade(item,globalThis.__MANRU_RANDOM57__);
-    unique.set(item.name,item);
-  }
   if(setTerrainTile58(state.map,x,y,TT.CRATE)!==TT.CRATE)throw Error('Starter chest placement rejected');
   terrain.props[k(x,y)]={tile:TT.CRATE,style:'chest',name:'탐사 보급 상자',label:'탐사 보급 상자'};
-  terrain.starterChest={x,y,items:shuffle([...unique.values()])};
+  terrain.starterChest={x,y,items,generatedSupply:true};
   p.facing={x:dx,y:dy};
   BRANCH_TILE_CACHE.clear();
 }
