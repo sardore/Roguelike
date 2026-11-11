@@ -288,10 +288,11 @@ function buildDuelArena(duel){
 function reviveGhost(player,ghost){
   for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','recovery'])delete ghost[key];
   Object.assign(player,ghost,{x:player.x,y:player.y,facing:player.facing,busyUntil:0,nextAttackAt:0,hunger:100});
-  player.hp=player.maxHp;player.focus=player.maxFocus;
+  player.hp=player.maxHp;
   // the blink is there from the start of a duel, two cells at least, whether or not the gatekeeper of 청풍루 fell in that run (a ghost that learned more keeps it)
   player.blinkLevel=Math.max(2,Math.floor(Number(player.blinkLevel))||0);
   initializeMartial(state);normalizeClassState58(player,0);
+  player.focus=player.maxFocus;
   // everything is known in a duel: every potion and talisman has its name, every piece of gear (worn or in the bag) its curse and its enchantment
   const K=globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();
   for(const potion of window.MANRU_POTIONS||[])K.potionKnown[potion.potionKind]=true;
@@ -304,11 +305,12 @@ function reviveGhost(player,ghost){
 // own (`duelOpponent`: monsterTurn skips it; it moves only when the other player's input arrives) and gives no xp, kill or drop.
 function placeDuelOpponent(at,ghost=null){
   const p=state.player,source=ghost||p,saved=state.player;
+  const baseFocus=source.classId==='summoner'?summonerBaseFocus(source.level):source.maxFocus;
   let stats;
   if(ghost){state.player={...ghost,hp:ghost.maxHp};try{stats=getStats()}finally{state.player=saved}}
   const mon={name:'상대 망령',concept57:'다른 이의 죽은 계정이 망령이 되어 선 모습. 가진 것을 모두 걸고 이곳에 섰다.',shape:'human',kind:'human',duelOpponent:true,
     atk:stats?stats.atk:p.baseAtk,def:stats?stats.def:p.baseDef,eva:stats?stats.eva:p.baseEva,will:stats?stats.will:p.baseWill,baseAtk:source.baseAtk,baseDef:source.baseDef,baseEva:source.baseEva,baseWill:source.baseWill,
-    maxHp:source.maxHp,hp:source.maxHp,maxFocus:source.maxFocus,focus:source.maxFocus,weapon:ghost?.weapon||null,
+    maxHp:source.maxHp,hp:source.maxHp,maxFocus:baseFocus,focus:baseFocus,weapon:ghost?.weapon||null,
     martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},martialForm:{},martialBreakthrough:{},classState:{},xp:0,color:source.color,weakened:0,alerted:true,
     spawnProvenance57:'duel',rewardPolicy57:{xp:false,kills:false,drops:false},x:at[0],y:at[1]};
   // how it is drawn: as the player of that class, with what that ghost wore (kept apart from the stand-in's own fields, which the combat rules read)
