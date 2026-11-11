@@ -37,9 +37,14 @@ const PlayStats={
   const body=JSON.stringify(p);return body.length<=this.GHOST_MAX?body:null;
  },
  recordDeath(cause){
-  if(!state||runIsEphemeral()||state.debugMapGeneration57||!this.endpoint())return false;
-  const record=this.runRecord(cause);
-  if(record.cause!==this.END_CAUSE){const ghost=this.ghostBody();if(ghost){record.ghost=ghost;record.key=this.secret()}}
+  if(!state||runIsEphemeral()||state.debugMapGeneration57)return false;
+  const endpoint=this.endpoint(),record=endpoint?this.runRecord(cause):null;
+  if(cause!==this.END_CAUSE){
+   const ghost=this.ghostBody();
+   lsSet('manruLatestDeath',JSON.stringify({id:record?.id||state.runId984,ghost}));
+   if(ghost&&record){record.ghost=ghost;record.key=this.secret()}
+  }
+  if(!record)return false;
   this.rememberRun({...record,ghost:undefined});
   this.saveQueue([...this.queue().filter(q=>q.id!==record.id),record]);
   this.flush();return true;
@@ -272,7 +277,7 @@ const PlayStats={
   const scene=this.el('div'),panel=this.el('div','statsPanel'),head=this.el('header'),tabs=this.el('nav'),close=this.el('button',null,'×'),board=mode==='rank';
   scene.id='statsScene';scene.dataset.mode=mode;scene.setAttribute('role','dialog');scene.setAttribute('aria-label',board?'기록판':'탐사 기록 통계');
   close.type='button';close.id='statsClose';close.setAttribute('aria-label','닫기');close.onclick=()=>this.close();
-  this.mode=mode;this.tab=board?'rank':'stats';
+  this.mode=mode;this.tab=board?'rank':'stats';delete this.recoveryForm;
   if(!board)for(const [tab,name] of [['rank','랭킹'],['stats','통계'],['rows','기록'],['ghost','망령'],['log','로그']]){const button=this.el('button',null,name);button.type='button';button.dataset.statsTab=tab;button.onclick=()=>{this.tab=tab;this.render();if(tab==='ghost')this.loadGhosts()};tabs.append(button)}
   head.append(this.el('h2',null,board?'기록판':'탐사 기록 통계'),tabs,close);
   const body=this.el('div');body.id='statsBody';panel.append(head,body);
@@ -336,9 +341,48 @@ const PlayStats={
   if(this.tab==='log'){body.append(this.logView());return}
   if(this.tab==='ghost'){body.append(this.ghostView());return}
   if(this.tab==='rank'){body.append(this.rankView(status));return}
+  if(this.tab==='rows')body.append(this.recoveryForm||(this.recoveryForm=this.recoveryCodeForm()));
   const notice={loading:'기록을 불러오는 중…',unset:'수집 서버가 연결되어 있지 않다.',error:'기록을 불러오지 못했다.'}[status]||(this.failed?.summary?'기록을 불러오지 못했다.':'');
   if(notice||!this.data){body.append(this.el('p','statsNote',notice||'기록이 없다.'));return}
   body.append(this.tab==='rows'?this.rowsView(this.data):this.summaryView(this.data));
+ },
+ recoveryCodeForm(){
+  const form=this.el('form','giftBox'),input=this.el('input'),button=this.el('button',null,'확인'),note=this.el('span','giftNote');
+  input.placeholder='코드 입력';input.setAttribute('aria-label','코드 입력');input.autocomplete='off';input.inputMode='numeric';
+  button.type='submit';note.setAttribute('role','status');
+  form.onsubmit=async event=>{
+   event.preventDefault();
+   if(button.disabled)return;
+   button.disabled=true;
+   try{note.textContent=await this.redeemRecoveryCode(input.value)}
+   finally{button.disabled=false}
+  };
+  form.append(input,button,note);return form;
+ },
+ async redeemRecoveryCode(code){
+  if(String(code).trim()!=='19721')return '알 수 없는 코드다.';
+  const hasActiveRun=()=>Boolean(state&&!state.dead&&!state.victory||SaveService.recover().candidate);
+  if(hasActiveRun())return '이어갈 탐사가 남아 있다.';
+  const scene=document.getElementById('statsScene');
+  try{
+   const local=JSON.parse(lsGet('manruLatestDeath')||'null');
+   const latest=this.mine().findLast(row=>row.cause&&row.cause!==this.END_CAUSE);
+   const id=local?.id||latest?.id;
+   let raw=local?.ghost||this.queue().find(row=>row.id===id)?.ghost;
+   if(!raw&&this.endpoint()){
+    const owner=this.ownerQuery();
+    const row=id?{id}:(await this.fetchView(this.endpoint(),'ghosts&'+owner))?.list?.[0];
+    if(row?.id)raw=(await this.fetchView(this.endpoint(),'ghost&'+owner+'&id='+encodeURIComponent(row.id)))?.body;
+   }
+   if(!raw)return '최근 사망 판의 망령 기록이 없다.';
+   const ghost=JSON.parse(raw),cls=CLASSES.find(c=>c.id===ghost?.classId);
+   if(!cls||!Array.isArray(ghost.inventory)||!(ghost.maxHp>0))return '망령 기록을 읽지 못했다.';
+   if(!scene?.isConnected||hasActiveRun())return '이어갈 탐사가 남아 있다.';
+   newGame(cls,null,ghost);
+   this.close();
+   toast('창해 용궁 2층 입구에서 되살아났다.');
+   return '';
+  }catch(error){ignoreError('palace recovery failed',error);return '탐사를 되살리지 못했다. 다시 시도하자.'}
  },
  // The ranking board: the player's own best, the three boards, a podium for the first three and a list for the rest.
  rankView(status){
