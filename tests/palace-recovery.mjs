@@ -151,7 +151,7 @@ try {
       const book = p.inventory.find(item => item.summonItem105 === 'book');
       return {
         place: [st.floor, st.branchContext105.id, st.branchContext105.level, Math.max(Math.abs(p.x-up.x), Math.abs(p.y-up.y))],
-        player: [p.classId, p.level, st.turn, p.skillPoints, p.blinkLevel, p.trinket.name],
+        player: [p.classId, p.level, st.turn, p.skillPoints, p.blinkLevel, p.trinket.name,p.armor.name,p.armor.upgrade],
         stock: Object.fromEntries(['축지부','대지부적','화염부적','수류부적','목령부적','빙폭부적','엽전 엿','보신 전골'].map(name =>
           [name,p.inventory.filter(item => item.name === name).reduce((sum,item) => sum + item.count,0)])),
         book: [book.summonElement105, Object.values(book.summonPictures105).map(pic=>pic.count),
@@ -167,7 +167,7 @@ try {
     });
     const first = await verify();
     assert.deepEqual(first.place, [9,'palace',2,1]);
-    assert.deepEqual(first.player, ['summoner',18,20000,16,2,'수문지기의 접힌 행낭']);
+    assert.deepEqual(first.player, ['summoner',18,20000,16,2,'수문지기의 접힌 행낭','강화 가죽 갑옷',1]);
     assert.deepEqual(Object.values(first.stock), [2,2,3,2,1,2,7,4]);
     assert.deepEqual(first.book, ['grass',[1,1],['어미거미','용궁 해련']]);
     assert.deepEqual(first.known,[true,true]);
@@ -186,16 +186,39 @@ try {
     await dismissModals(starter);
     await starter.tick(800);
     await starter.page.keyboard.press('f');
-    const opened = await starter.page.evaluate(() => {
-      const st=__MANRU_QA_UI__.state();
-      return [!!st.branchTerrain105.palace105.starterChest,st.items.filter(item=>item.palaceStarterLoot).reduce((count,item)=>count+item.count,0),document.querySelector('#toast')?.textContent];
+    const panel = starter.page.locator('#choice991');
+    await panel.waitFor({state:'visible'});
+    const rows = panel.locator('.choice991Row');
+    const confirm = panel.getByRole('button',{name:/받기/});
+    assert.equal(await confirm.isDisabled(),true);
+    const isScrollable = await panel.locator('#choice991List').evaluate(list=>list.scrollHeight>list.clientHeight);
+    assert.equal(isScrollable,true);
+    await rows.evaluateAll(buttons=>buttons.slice(0,60).forEach(button=>button.click()));
+    await confirm.click();
+    assert.match(await panel.locator('output').textContent(),/행낭 공간/);
+    await panel.getByRole('button',{name:'닫기'}).click();
+    assert.deepEqual(await verify(),first);
+    await starter.page.keyboard.press('f');
+    await panel.waitFor({state:'visible'});
+    const upgradesToClaim = rows.filter({hasText:'강화부적'});
+    await upgradesToClaim.evaluateAll(buttons=>buttons.forEach(button=>button.click()));
+    await rows.filter({hasNotText:'강화부적'}).first().click();
+    const selectedQty = await starter.page.evaluate(() => {
+      const st=__MANRU_QA_UI__.state(), chest=st.branchTerrain105.palace105.starterChest;
+      const buttons=[...document.querySelectorAll('#choice991List .choice991Row')];
+      return chest.items.reduce((n,item,i)=>n+(buttons[i].getAttribute('aria-pressed')==='true'?item.count:0),0);
     });
-    assert.equal(opened[0],false,JSON.stringify(opened));
-    assert.ok(opened[1]>=first.chest[1]);
+    await confirm.click();
+    await panel.waitFor({state:'hidden'});
+    const after=await verify();
+    assert.equal(after.chest[1],first.chest[1]-selectedQty);
+    assert.equal(after.player[2],20001);
+    assert.equal(await starter.page.evaluate(()=>__MANRU_RELEASE__.load()),true);
+    assert.deepEqual(await verify(),after);
     const upgrades = await starter.page.evaluate(() => {
       const state = () => __MANRU_QA_UI__.state();
       const count = items => items.filter(item=>item.talismanKind==='upgrade').reduce((n,item)=>n+item.count,0);
-      const supplied = count(state().items.filter(item=>item.palaceStarterLoot));
+      const supplied = count(state().player.inventory);
       for(const dest of ['palace:1','main:9']){
         const portal = state().branchPortals105.find(candidate=>candidate.to===dest);
         if(!__MANRU_QA_SEALING__.branch(portal))throw Error('broken route to '+dest);
