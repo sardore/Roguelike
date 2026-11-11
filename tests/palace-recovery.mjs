@@ -187,6 +187,37 @@ try {
     }), true);
     assert.deepEqual(gift.errors, []);
   } finally { await gift.close(); }
+  const savedGift = await openSession(browser, root, { seed: 19233 });
+  try {
+    await openRecords(savedGift);
+    await submit(savedGift, '19232');
+    assert.match(await savedGift.page.locator('.giftNote').textContent(), /진행 중인 탐사가 없다/);
+    await savedGift.page.locator('#statsClose').click();
+    await startRun(savedGift, 'summoner');
+    const before = await savedGift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      return [st.runId984, st.floor, st.turn];
+    });
+    await savedGift.page.reload();
+    assert.equal(await savedGift.page.evaluate(() => __MANRU_QA_UI__.state()), null, 'saved run must not be loaded on title');
+    assert.equal(await savedGift.page.locator('#continueBtn').isEnabled(), true);
+    await openRecords(savedGift);
+    await submit(savedGift, '19232');
+    assert.equal(await savedGift.page.locator('#statsScene').count(), 0, 'redeeming from title should return to game');
+    assert.match(await savedGift.page.locator('#toast').textContent(), /이변 무술비급 1개를 행낭에 지급/);
+    const after = await savedGift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      return { run:[st.runId984, st.floor, st.turn],
+        count:st.player.inventory.filter(i => i.guaranteedMartialForm19232 === 'anomaly').length };
+    });
+    assert.deepEqual(after.run, before, 'saved run identity and progress must survive gift redemption');
+    assert.equal(after.count, 1);
+    await savedGift.page.reload();
+    await savedGift.page.locator('#continueBtn').click();
+    assert.equal(await savedGift.page.evaluate(() => __MANRU_QA_UI__.state().player.inventory.filter(
+      i => i.guaranteedMartialForm19232 === 'anomaly').length), 1, 'gift must survive a second resume');
+    assert.deepEqual(savedGift.errors, []);
+  } finally { await savedGift.close(); }
   const starter = await openSession(browser, root, { seed: 8301 });
   try {
     await openRecords(starter);
