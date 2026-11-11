@@ -216,6 +216,10 @@ function setTerrainTile58(map,x,y,tile,placement={}){
     }
     layers.underlay[key]=base;layers.attachment[key]=attachment;
   }else{delete layers.underlay[key];delete layers.attachment[key]}
+  if(map===state?.map&&old===TT.CRATE&&tile!==TT.CRATE){
+    const palace=state.branchTerrain105?.palace105,chest=palace?.starterChest;
+    if(chest?.x===x&&chest.y===y){delete palace.starterChest;delete palace.props[key];}
+  }
   if(map===state?.map&&old!==tile&&state.terrainReactions105){const r=state.terrainReactions105,key=k(x,y);if(!([TT.DOOR,TT.OPEN_DOOR].includes(old)&&[TT.DOOR,TT.OPEN_DOOR].includes(tile)))delete r.burning[key];if(!lightAt(x,y)&&!elementMaterial105(tile,'light'))delete r.unlit[key];if(r.char)delete r.char[key];r.revision=(r.revision||0)+1}map[y][x]=tile;if(old!==tile)TERRAIN_RENDER_REV.set(map,(TERRAIN_RENDER_REV.get(map)||0)+1);branchInvalidateTerrain(map,x,y);if(map===state?.map&&!state.generationInProgress57&&old===TT.DOOR&&tile===TT.OPEN_DOOR)branchWarningDoor(x,y);if(map===state?.map&&noiseBudget)noiseBudget.fields.clear();return tile;
 }
 // Surface changes use the same terrain owner as prop placement, including authored-area protection.
