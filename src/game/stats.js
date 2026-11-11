@@ -360,16 +360,22 @@ const PlayStats={
   const form=this.el('form','giftBox'),input=this.el('input'),button=this.el('button',null,'확인'),note=this.el('span','giftNote');
   input.placeholder='코드 입력';input.setAttribute('aria-label','코드 입력');input.autocomplete='off';input.inputMode='numeric';
   button.type='submit';note.setAttribute('role','status');
+  let pending=null;
+  input.oninput=()=>{pending=null;note.textContent=''};
   form.onsubmit=async event=>{
    event.preventDefault();
    if(button.disabled)return;
    button.disabled=true;
-   try{note.textContent=await this.redeemRecoveryCode(input.value)}
+   try{
+    const result=await this.redeemRecoveryCode(input.value,pending);
+    pending=typeof result==='object'?result:null;
+    note.textContent=pending?.notice??result;
+   }
    finally{button.disabled=false}
   };
   form.append(input,button,note);return form;
  },
- async redeemRecoveryCode(code){
+ async redeemRecoveryCode(code,pending=null){
   if(String(code).trim()!=='19721')return '알 수 없는 코드다.';
   const checkSave=()=>{
    const saved=SaveService.recover();
@@ -381,26 +387,56 @@ const PlayStats={
   if(saveNotice)return saveNotice;
   const scene=document.getElementById('statsScene');
   try{
-   let backup=null;
-   try{backup=sessionStorage.getItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup unreadable',error)}
-   const local=JSON.parse(backup||lsGet('manruLatestDeath')||'null');
-   const latest=this.mine().findLast(row=>row.cause&&row.cause!==this.END_CAUSE);
-   const id=local?.id||latest?.id;
-   const queued=this.queue().find(row=>row.id===id);
-   let raw=local?.ghost||queued?.ghost,turns=(latest?.id===id?latest?.turns:undefined)??queued?.turns;
-   if(!raw&&this.endpoint()){
-    const owner=this.ownerQuery();
-    const row=id?{id}:(await this.fetchView(this.endpoint(),'ghosts&'+owner))?.list?.[0];
-    if(row?.id){
-     const archived=await this.fetchView(this.endpoint(),'ghost&'+owner+'&id='+encodeURIComponent(row.id));
-     if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
-     raw=archived?.body;
-     turns??=archived?.turns;
+   const parseGhost=raw=>{
+    try{
+     const body=JSON.parse(raw||'null');
+     return Array.isArray(body?.inventory)&&body.maxHp>0&&CLASSES.some(cls=>cls.id===body.classId)?body:null;
+    }catch(error){ignoreError('unreadable recovery ghost',error);return null}
+   };
+   let {ghost,turns}=pending||{};
+   if(!ghost){
+    let backup=null;
+    try{backup=sessionStorage.getItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup unreadable',error)}
+    let local=null;
+    try{local=JSON.parse(backup||lsGet('manruLatestDeath')||'null')}catch(error){ignoreError('death snapshot unreadable',error)}
+    const mine=this.mine().filter(row=>row.cause&&row.cause!==this.END_CAUSE);
+    const death=SaveService.death(),deathId=death?.runId;
+    const id=deathId?this.deviceTag()+'-'+deathId:local?.id||mine.at(-1)?.id;
+    const queued=this.queue().find(row=>row.id===id);
+    turns=deathId?death.turn:mine.find(row=>row.id===id)?.turns??queued?.turns;
+    if(local?.id===id||deathId&&local?.id===deathId)ghost=parseGhost(local?.ghost);
+    ghost??=parseGhost(queued?.ghost);
+    if(!ghost&&deathId&&state?.dead&&state.runId984===deathId)ghost=parseGhost(this.ghostBody());
+
+    const endpoint=this.endpoint();
+    if(!ghost&&endpoint){
+     const owner=this.ownerQuery();
+     const fetchGhost=row=>this.fetchView(endpoint,'ghost&'+owner+'&id='+encodeURIComponent(row.id));
+     if(id){
+      const archived=await fetchGhost({id});
+      if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
+      ghost=parseGhost(archived?.body);
+      turns??=archived?.turns;
+     }
+     if(!ghost){
+      const archive=await this.fetchView(endpoint,'ghosts&'+owner);
+      if(archive?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
+      if(!Array.isArray(archive?.list))return '서버에서 망령 목록을 읽지 못했다.';
+      for(const row of archive.list){
+       if(!row?.id||row.id===id)continue;
+       const archived=await fetchGhost(row);
+       if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
+       ghost=parseGhost(archived?.body);
+       if(!ghost)continue;
+       turns=mine.find(record=>record.id===row.id)?.turns??archived?.turns;
+       if(id)return {ghost,turns,notice:`최근 판을 찾지 못했다. 확인을 다시 누르면 이전 판(${row.floor}층 · Lv ${row.level})을 되살린다.`};
+       break;
+      }
+     }
     }
    }
-   if(!raw)return '최근 사망 판의 망령 기록이 없다.';
-   const ghost=JSON.parse(raw),cls=CLASSES.find(c=>c.id===ghost?.classId);
-   if(!cls||!Array.isArray(ghost.inventory)||!(ghost.maxHp>0))return '망령 기록을 읽지 못했다.';
+   if(!ghost)return '이 기기와 서버에서 복구할 망령 본문을 찾지 못했다.';
+   const cls=CLASSES.find(cls=>cls.id===ghost.classId);
    if(!scene?.isConnected)return '';
    const updatedSaveNotice=checkSave();
    if(updatedSaveNotice)return updatedSaveNotice;

@@ -92,42 +92,52 @@ try {
     await checkRoute(local, 8, 3, 1380, potionMap, talismanMap);
   } finally { await local.close(); }
 
-  const legacy = await openSession(browser, root, { seed: 4952 });
-  try {
-    const ghost = await legacy.page.evaluate(() => {
-      const body = JSON.parse(__MANRU_QA_DUEL__.ghostOf('wanderer', 3));
-      body.inventory[0].appearance56 = 'azure';
-      body.inventory.push({ ...body.inventory[0], count: 2 });
-      body.inventory.push({ ...window.MANRU_TALISMANS.find(item => item.talismanKind === 'elem_fire'), appearance56: 'jadepaper', count: 1 });
-      body.level = 11;
-      const A = __MANRU_QA_STATS__.api;
-      A.rememberRun({ id: 'older-death', cause: '함정' });
-      A.rememberRun({ id: 'newest-death', cause: '취객', turns: 2084 });
-      A.rememberRun({ id: 'later-clear', cause: 'End' });
-      document.querySelector('meta[name="manru-stats"]').content = location.origin + '/ghost-fixture';
-      return JSON.stringify(body);
-    });
-    const requested = [];
-    await legacy.page.route('**/ghost-fixture?*', async route => {
-      const url = new URL(route.request().url());
-      if (url.searchParams.get('view') !== 'ghost') return route.fulfill({ json: {} });
-      requested.push(url.searchParams.get('id'));
-      await route.fulfill({ json: { ok: true, body: ghost } });
-    });
-    const title = legacy.page.locator('#card h1').first();
-    for (let tap = 0; tap < 7; tap++) await title.dispatchEvent('pointerdown', { button: 0 });
-    await legacy.page.locator('[data-stats-tab="rows"]').click();
-    await submit(legacy, '19721');
-    await legacy.page.evaluate(() => {
-      const st = __MANRU_QA_UI__.state(), map = st.knowledge56.talismanMap;
-      delete st.branchWorld105.recoveryTalismans;
-      [map.elem_fire, map.elem_water] = [map.elem_water, map.elem_fire];
-      if (!__MANRU_RELEASE__.save().ok) throw Error('could not create pre-update continuation fixture');
-    });
-    await legacy.page.reload();
-    await legacy.page.locator('#continueBtn').click();
-    await checkRoute(legacy, 11, 5, 2084, { heal_small: 'azure' }, { elem_fire: 'jadepaper' });
-    assert.deepEqual(requested, ['newest-death']);
-  } finally { await legacy.close(); }
+  for (const missingLatest of [false, true]) {
+    const legacy = await openSession(browser, root, { seed: 4952 });
+    try {
+      const ghost = await legacy.page.evaluate(() => {
+        const body = JSON.parse(__MANRU_QA_DUEL__.ghostOf('wanderer', 3));
+        body.inventory[0].appearance56 = 'azure';
+        body.inventory.push({ ...body.inventory[0], count: 2 });
+        body.inventory.push({ ...window.MANRU_TALISMANS.find(item => item.talismanKind === 'elem_fire'), appearance56: 'jadepaper', count: 1 });
+        body.level = 11;
+        const A = __MANRU_QA_STATS__.api;
+        A.rememberRun({ id: 'older-death', cause: '함정', turns: 2084 });
+        A.rememberRun({ id: 'newest-death', cause: '취객', turns: 2084 });
+        A.rememberRun({ id: 'later-clear', cause: 'End' });
+        document.querySelector('meta[name="manru-stats"]').content = location.origin + '/ghost-fixture';
+        return JSON.stringify(body);
+      });
+      const requested = [];
+      await legacy.page.route('**/ghost-fixture?*', async route => {
+        const url = new URL(route.request().url());
+        if (url.searchParams.get('view') === 'ghosts') return route.fulfill({ json: { ok: true, list: [{ id: 'older-death', floor: 9, level: 11 }] } });
+        if (url.searchParams.get('view') !== 'ghost') return route.fulfill({ json: {} });
+        requested.push(url.searchParams.get('id'));
+        if (missingLatest && url.searchParams.get('id') === 'newest-death') return route.fulfill({ json: { ok: false, error: 'none' } });
+        await route.fulfill({ json: { ok: true, body: ghost } });
+      });
+      const title = legacy.page.locator('#card h1').first();
+      for (let tap = 0; tap < 7; tap++) await title.dispatchEvent('pointerdown', { button: 0 });
+      await legacy.page.locator('[data-stats-tab="rows"]').click();
+      await submit(legacy, '19721');
+      if (missingLatest) {
+        assert.match(await legacy.page.locator('.giftNote').textContent(), /확인을 다시 누르면 이전 판/);
+        assert.equal(await legacy.page.evaluate(() => __MANRU_QA_UI__.state()), null);
+        await legacy.page.locator('.giftBox button').click();
+        await legacy.page.locator('.giftBox button:disabled').waitFor({ state: 'hidden' });
+      }
+      await legacy.page.evaluate(() => {
+        const st = __MANRU_QA_UI__.state(), map = st.knowledge56.talismanMap;
+        delete st.branchWorld105.recoveryTalismans;
+        [map.elem_fire, map.elem_water] = [map.elem_water, map.elem_fire];
+        if (!__MANRU_RELEASE__.save().ok) throw Error('could not create pre-update continuation fixture');
+      });
+      await legacy.page.reload();
+      await legacy.page.locator('#continueBtn').click();
+      await checkRoute(legacy, 11, 5, 2084, { heal_small: 'azure' }, { elem_fire: 'jadepaper' });
+      assert.deepEqual(requested, missingLatest ? ['newest-death', 'older-death'] : ['newest-death']);
+    } finally { await legacy.close(); }
+  }
   console.log('PASS: recovery code, latest local and archived ghosts, save/load, palace 2F ↔ 1F ↔ main 9F');
 } finally { await browser.close(); }
