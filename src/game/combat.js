@@ -385,7 +385,12 @@ function expireCombatFields(opts={}){
     return sealingWardAffects(f,target);
    });
    f.targetIds=targetIds;
-   if(!targetIds.length)f.ttl=0;
+   if(!targetIds.length){
+    const hasHostileInside=f.sourceFaction&&[state.player,...state.monsters].some(actor=>
+     actor?.hp>0&&!actor.deathProcessed57&&actor.revivePhase57!=='corpse'&&
+     factionsHostile57(f.sourceFaction,entityFaction(actor))&&f.cells?.some(c=>c.x===actor.x&&c.y===actor.y));
+    if(!hasHostileInside)f.ttl=0;
+   }
    if(opts.movement||state.turn<=f.bornTurn)continue;
   }
   if(opts.movement)continue;

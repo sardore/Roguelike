@@ -1281,7 +1281,11 @@ export const scenarios = {
         A.force(first, { x: 33, y: 29 }, 2, { mode: 'push', hostile: true });
         if (first.x <= 35 || field.targetIds.length !== 1 || A.move(second, 36, 31))
           throw Error('escaping one target released the other');
+        if (!A.move(bait, 35, 30)) throw Error('hostile could not enter the ward');
         A.force(second, { x: 33, y: 31 }, 2, { mode: 'push', hostile: true });
+        if (!st.tempFields.includes(field)) throw Error('ward vanished with a hostile inside');
+        A.occupancy.removeMonster(bait);
+        A.expire({movement:true});
         if (st.tempFields.some(f => f.kind === 'sealingWard')) throw Error('empty ward persisted');
       });
       out['sealingWard.save'] = JSON.stringify(await s.page.evaluate(() => {
