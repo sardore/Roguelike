@@ -887,10 +887,10 @@ function createPalaceReplacement(cls){
   p.armor=palaceStarterArmor();
   for(let level=2;level<=18;level++){
     p.baseMaxHpPermanent+=level>=13?3:level%4===0?2:1;
-    if([4,7,10].includes(level))p.maxFocus++;
     if(level<=12||MARTIAL_RULES.latePoints.includes(level))p.skillPoints++;
   }
   p.level=18;
+  p.maxFocus=summonerBaseFocus(p.level);
   p.kills=430;
   normalizePlayerProgression57(p);
   p.blinkLevel=2;
