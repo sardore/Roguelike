@@ -669,20 +669,32 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     for(const t of TALISMANS)if(!K.talismanMap[t.talismanKind])K.talismanMap[t.talismanKind]=freeT.shift()||TALISMAN_APPEARANCES[Object.keys(K.talismanMap).length%TALISMAN_APPEARANCES.length].id;
     return K;
   }
-  function restorePotionKnowledge(inventory,recovery){
-    const potionMap={},potionKnown={},used=new Set();
-    const carried=inventory.filter(item=>item?.type==='potion'&&!item.mineItem105&&POTION_BY_KIND.has(item.potionKind));
-    // Old ghost records only have the appearances stamped on the carried bottles.
-    const pairs=[...Object.entries(recovery?.potionMap||{}),...carried.map(item=>[item.potionKind,item.appearance56])];
-    for(const [kind,appearance] of pairs){
-      if(!POTION_BY_KIND.has(kind)||!APP_BY_ID.has(appearance)||potionMap[kind]||used.has(appearance))continue;
-      potionMap[kind]=appearance;
-      used.add(appearance);
+  function restoreConsumableKnowledge(inventory,recovery,repairTalismans=false){
+    const groups=[
+      {type:'potion',catalog:POTION_BY_KIND,appearances:APP_BY_ID},
+      {type:'talisman',catalog:TALISMAN_BY_KIND,appearances:TALISMAN_APP_BY_ID}
+    ];
+    const carried=[];
+    for(const {type,catalog,appearances} of groups){
+      if(repairTalismans&&type!=='talisman')continue;
+      const map={},known={},used=new Set(),kindKey=type+'Kind',mapKey=type+'Map',knownKey=type+'Known';
+      const items=inventory.filter(item=>item?.type===type&&!item.mineItem105&&!item.branchExclusive105&&!item.fusion74&&catalog.has(item[kindKey]));
+      // Older ghosts may still have an appearance on an individual carried item.
+      const saved=Object.entries(recovery?.[mapKey]||{}),stamped=items.map(item=>[item[kindKey],item.appearance56]);
+      const pairs=repairTalismans?[...stamped,...saved]:[...saved,...stamped];
+      for(const [kind,appearance] of pairs){
+        if(!catalog.has(kind)||!appearances.has(appearance)||map[kind]||used.has(appearance))continue;
+        map[kind]=appearance;
+        used.add(appearance);
+      }
+      for(const kind of catalog.keys())if(recovery?.[knownKey]?.[kind]===true)known[kind]=true;
+      Object.assign(state.knowledge56,{[mapKey]:map,[knownKey]:known});
+      if(!repairTalismans)state.knowledge56[type+'Seen']={};
+      carried.push({items,kindKey,mapKey});
     }
-    for(const kind of POTION_BY_KIND.keys())if(recovery?.potionKnown?.[kind]===true)potionKnown[kind]=true;
-    Object.assign(state.knowledge56,{potionMap,potionKnown,potionSeen:{},clueSeen:{}});
+    if(!repairTalismans)state.knowledge56.clueSeen={};
     const knowledge=ensureKnowledge56();
-    for(const item of carried)item.appearance56=knowledge.potionMap[item.potionKind];
+    for(const {items,kindKey,mapKey} of carried)for(const item of items)item.appearance56=knowledge[mapKey][item[kindKey]];
   }
   function app56(item){if(item?.mineItem105==='oil')return {...APPEARANCES[0],color:'#bc7135',glass:'#e3c791',name:item.name};const K=state?.knowledge56,id=item?.appearance56||K?.potionMap?.[item?.potionKind];return APP_BY_ID.get(id)||APPEARANCES[0]}
   function publicTalismanSeal56(item){if(item?.branchExclusive105||item?.fusion74)return item.seal||'合';return talismanApp56(item)?.seal||'符'}

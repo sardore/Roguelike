@@ -36,7 +36,8 @@ const PlayStats={
   const p=JSON.parse(JSON.stringify(state.player));for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete p[key];
   p.recovery={
    turns:state.turn,agency:state.playerAgencyTurns57,
-   potionMap:state.knowledge56?.potionMap,potionKnown:state.knowledge56?.potionKnown
+   potionMap:state.knowledge56?.potionMap,potionKnown:state.knowledge56?.potionKnown,
+   talismanMap:state.knowledge56?.talismanMap,talismanKnown:state.knowledge56?.talismanKnown
   };
   const body=JSON.stringify(p);return body.length<=this.GHOST_MAX?body:null;
  },
