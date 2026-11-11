@@ -1252,8 +1252,12 @@ export const scenarios = {
         for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
         A.move(st.player, 25, 25); const caster = A.place('신전 사제 망령', { x: 30, y: 30 }), victim = A.place('객잔 쥐', { x: 33, y: 30 });
         caster.faction57 = 'player'; caster.friendly47 = true; caster.alerted = true;
+        Object.assign(caster.sealingWard, { duration: 4, cooldown: 9 });
+        A.configure(caster);
         A.special(caster, null, victim); st.turn++; A.intent(caster);
-        const cells = st.tempFields.find(f => f.kind === 'sealingWard')?.cells.length;
+        const field = st.tempFields.find(f => f.kind === 'sealingWard');
+        const cells = field?.cells.length;
+        if (field?.ttl !== 9 || caster.nextSealingWardTurn !== st.turn + 12) throw Error('priest ward timing did not migrate');
         const blocked = !A.move(victim, 36, 30), internal = A.move(victim, 35, 30);
         A.force(victim, { x: 34, y: 30 }, 2, { mode: 'push', hostile: true });
         return { cells, blocked, internal, pushed: victim.x > 35, removed: !st.tempFields.some(f => f.kind === 'sealingWard') };

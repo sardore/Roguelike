@@ -22,7 +22,7 @@ async function checkRoute(session, level, count) {
     if (st.floor !== 9 || st.branchContext105?.id !== 'palace' || st.branchContext105.level !== 2 ||
         !up || Math.max(Math.abs(p.x - up.x), Math.abs(p.y - up.y)) !== 1) throw Error('missing 2F entry landing');
     if (p.level !== level || p.hp !== p.maxHp || p.focus !== p.maxFocus ||
-        !p.inventory.some(item => item.potionKind === 'heal_small' && item.count === count)) throw Error('ghost body lost');
+        p.inventory.filter(item => item.potionKind === 'heal_small').reduce((sum, item) => sum + item.count, 0) !== count) throw Error('ghost body lost');
     if (!release.load()) throw Error('recovered run was not saved');
     const transition = destination => {
       const portal = state().branchPortals105.find(candidate => candidate.to === destination);
@@ -60,7 +60,8 @@ try {
   const legacy = await openSession(browser, root, { seed: 4952 });
   try {
     const ghost = await legacy.page.evaluate(() => {
-      const body = JSON.parse(__MANRU_QA_DUEL__.ghostOf('wanderer', 5));
+      const body = JSON.parse(__MANRU_QA_DUEL__.ghostOf('wanderer', 3));
+      body.inventory.push({ ...body.inventory[0], count: 2 });
       body.level = 11;
       const A = __MANRU_QA_STATS__.api;
       A.rememberRun({ id: 'older-death', cause: '함정' });
