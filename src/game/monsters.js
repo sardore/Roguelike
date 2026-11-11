@@ -1334,9 +1334,9 @@ function summonDefinitions(){
 }
 function summonCatalog(){
  const q=summonState(),actors=(q.prototypes||[]).filter(e=>e.actor);
- q.prototypes=summonDefinitions().map(d=>({name:d.name,def:clone(d)}));
- for(let rank=1;rank<=4;rank++){const name=['','문하생','수련생','상급 무도가','사범급 무도가'][rank],stored=actors.find(e=>e.name===name&&e.actor.martialActor105&&e.actor.dojoRank105===rank),actor=stored?.actor||dojoCreateMartialist(rank,-1,rank,false,5,{level:rank<=2?1:2});q.prototypes.push({name,actor:clone(actor)});}
- return q.prototypes;
+ q.prototypes=[];
+ for(let rank=1;rank<=4;rank++){const name=['','문하생','수련생','상급 무도가','사범급 무도가'][rank],stored=actors.find(e=>e.name===name&&e.actor.martialActor105&&e.actor.dojoRank105===rank),actor=stored?.actor||dojoCreateMartialist(rank,-1,rank,false,5,{level:rank<=2?1:2});q.prototypes.push({name,actor});}
+ return [...summonDefinitions().map(def=>({name:def.name,def})),...q.prototypes];
 }
 function summonMatches(def,element){const race=SUMMON_RACES[element];return !!race&&!!def&&(race.kinds.includes(def.kind)&&!(race.dry&&def.aquatic)||!!(race.aquatic&&def.aquatic));}
 function summonNative(entry,floor){

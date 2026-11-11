@@ -36,3 +36,26 @@ test('already normalized summon books skip construction of the species catalog',
  vm.runInContext(monsters.slice(fn.start,fn.end)+'\nnormalizeSummonSpeciesItem105({summonItem105:"book",summonSpeciesVersion105:1});',scope);
  assert.equal(calls,0);
 });
+test('compact summon saves retain book state, custom portraits and legacy aliases',()=>{
+ const save=fs.readFileSync(new URL('../../src/game/save.js',import.meta.url),'utf8');
+ const catalog=fs.readFileSync(new URL('../../src/game/catalog.js',import.meta.url),'utf8');
+ const pick=(s,name)=>parse(s,{ecmaVersion:'latest'}).body.find(n=>n.id?.name===name||n.declarations?.some(d=>d.id.name===name));
+ const fn=pick(save,'compactSummonSave'),defs=pick(catalog,'MONSTERS');
+ const scope=vm.createContext();
+ vm.runInContext(catalog.slice(defs.start,defs.end)+'\nfunction summonDefinitions(){return MONSTERS}\n'+save.slice(fn.start,fn.end)+'\nglobalThis.compact=compactSummonSave;globalThis.defs=MONSTERS;',scope);
+ const monster=plain(scope.defs.find(def=>def.name==='이무기'));
+ const book={summonItem105:'book',summonSpeciesVersion105:1,summonBookId105:'book-4',summonElement105:'water',upgrade:2,summonRecoveryUntil105:2072,summonKillCounts105:{이무기:5},summonPictures105:{이무기:{count:3,portrait:monster},문하생:{count:1,portrait:{name:'문하생',martialActor105:true}}}};
+ const picture={summonItem105:'picture',summonSpeciesVersion105:1,summonSpecies105:'이무기',summonPortrait105:monster};
+ const summoning={speciesVersion105:1,prototypes:[...plain(scope.defs).map(def=>({name:def.name,def})),{name:'문하생',actor:{martialActor105:true}}],contracts:{active:{bookId105:'book-4'}}};
+ const source={player:{inventory:[book,picture],summoning105:summoning},items:[picture],artifactReturn46:{outer:{items:[picture]}}};
+ const packed=structuredClone(source);scope.compact(packed);
+ const [savedBook,savedPicture]=packed.player.inventory;
+ assert.deepEqual(plain(savedBook),{...book,summonPictures105:{이무기:{count:3},문하생:book.summonPictures105.문하생}});
+ assert.equal(savedPicture.summonPortrait105,undefined);
+ assert.equal(packed.artifactReturn46.outer.items[0].summonPortrait105,undefined);
+ assert.deepEqual(plain(packed.player.summoning105),{...summoning,prototypes:summoning.prototypes.slice(-1)});
+ assert.ok(JSON.stringify(packed).length<JSON.stringify(source).length*.2);
+ assert.ok(book.summonPictures105.이무기.portrait);
+ const old={player:{inventory:[{...book,summonSpeciesVersion105:undefined}],summoning105:{...summoning,speciesVersion105:undefined}}};
+ const before=JSON.stringify(old);scope.compact(old);assert.equal(JSON.stringify(old),before);
+});

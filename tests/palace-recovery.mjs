@@ -255,6 +255,16 @@ try {
     await continueButton.click();
     assert.match(await starter.page.locator('#toast').textContent(),/최신 저장본이 없어 20,000턴의 복구 지점/);
     assert.deepEqual(await verify(),first);
+    const stored=await starter.page.evaluate(()=>{
+      const meta=JSON.parse(__MANRU_SAVE1004__.raw());
+      const book=meta.player.inventory.find(item=>item.summonItem105==='book');
+      return {portraits:Object.values(book.summonPictures105).some(picture=>picture.portrait),
+        catalog:meta.player.summoning105?.prototypes?.some(entry=>entry.def)??false};
+    });
+    assert.deepEqual(stored,{portraits:false,catalog:false});
+    await dismissModals(starter);
+    await starter.tick(800);
+    assert.equal(await starter.page.evaluate(()=>__MANRU_QA_BROOD__.summon('어미거미')),true);
     assert.deepEqual(starter.errors,[]);
   } finally { await starter.close(); }
   const oldChest=await openSession(browser,root,{seed:1});
