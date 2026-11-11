@@ -160,8 +160,8 @@ try {
           MANRU_POTIONS.every(item => st.knowledge56.potionKnown[item.potionKind] === true),
           MANRU_TALISMANS.every(item => st.knowledge56.talismanKnown[item.talismanKind] === true)
         ],
-        chest: [chest.x===p.x+p.facing.x && chest.y===p.y+p.facing.y, chest.items.length,
-          chest.items.some(item=>['food','talisman'].includes(item.type)),
+        chest: [chest.x===p.x+p.facing.x && chest.y===p.y+p.facing.y, chest.items.reduce((count,item)=>count+item.count,0),
+          chest.items.some(item=>item.type==='food'||(item.type==='talisman'&&item.talismanKind!=='upgrade')),
           __MANRU_QA_ODDITY__.material(st.map[chest.y][chest.x], 1, chest.x, chest.y)?.id]
       };
     });
@@ -188,10 +188,21 @@ try {
     await starter.page.keyboard.press('f');
     const opened = await starter.page.evaluate(() => {
       const st=__MANRU_QA_UI__.state();
-      return [!!st.branchTerrain105.palace105.starterChest,st.items.filter(item=>item.palaceStarterLoot).length,document.querySelector('#toast')?.textContent];
+      return [!!st.branchTerrain105.palace105.starterChest,st.items.filter(item=>item.palaceStarterLoot).reduce((count,item)=>count+item.count,0),document.querySelector('#toast')?.textContent];
     });
     assert.equal(opened[0],false,JSON.stringify(opened));
     assert.ok(opened[1]>=first.chest[1]);
+    const upgrades = await starter.page.evaluate(() => {
+      const state = () => __MANRU_QA_UI__.state();
+      const count = items => items.filter(item=>item.talismanKind==='upgrade').reduce((n,item)=>n+item.count,0);
+      const supplied = count(state().items.filter(item=>item.palaceStarterLoot));
+      for(const dest of ['palace:1','main:9']){
+        const portal = state().branchPortals105.find(candidate=>candidate.to===dest);
+        if(!__MANRU_QA_SEALING__.branch(portal))throw Error('broken route to '+dest);
+      }
+      return supplied+count(state().items);
+    });
+    assert.equal(upgrades,7);
     assert.deepEqual(starter.errors,[]);
   } finally { await starter.close(); }
   console.log('PASS: recovery code, latest local and archived ghosts, save/load, palace 2F ↔ 1F ↔ main 9F');

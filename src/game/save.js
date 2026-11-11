@@ -362,6 +362,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       if(st?.saveVersion1004&&!['v10.0.4','v10.0.5','v10.0.6'].includes(st.saveVersion1004))throw new Error('다른 빌드의 세이브다.');
       restoreState(st);
       repairRecoveredTalismans();
+      migratePalaceSupply();
       // the aim target is runtime-only state of the previous run (a monster object or a jar cell): it must not outlive a load
       AIM_STATE.target=null;AIM_STATE.jar=null;if(state)state._manualTerrainTargetR8=null;
       if(env.settings?.camera)try{globalThis.__MANRU_CAMERA_STATE12__.setMode(env.settings.camera)}catch(error){ignoreError('saved camera mode could not be applied',error)}
@@ -853,6 +854,73 @@ function createPalaceReplacement(cls){
     talismanKnown:Object.fromEntries(TALISMANS.map(item=>[item.talismanKind,true]))
   }};
 }
+function generatePalaceSupply(){
+  const original={state,cols:COLS,rows:ROWS};
+  const loot=[];
+  const gather=()=>{
+    for(const item of state.items){
+      if(item.type==='food'||(item.type==='talisman'&&item.talismanKind!=='upgrade'))continue;
+      const {x,y,...copy}=structuredClone(item);
+      loot.push(copy);
+    }
+  };
+  try{
+    const cls=CLASSES.find(candidate=>candidate.id===original.state.player.classId);
+    state=createRunState57(cls);
+    state.runId984=original.state.runId984;
+    state.knowledge56=structuredClone(original.state.knowledge56);
+    GameState.initialize(state);
+    for(let floor=1;floor<=8;floor++){
+      resetFloorScopedState57();
+      state.floor=floor;
+      NormalFloorGenerator.generate();
+      gather();
+      const branches=floor===3?['granary']:floor===7?['stockade','mine']:[];
+      if(!branches.length)continue;
+      const parent=captureGenerationSnapshot();
+      for(const id of branches)for(let level=1;level<=BRANCH_DEFS105[id].count;level++){
+        restoreGenerationSnapshot(parent);
+        buildBranch(id,level);
+        gather();
+      }
+      restoreGenerationSnapshot(parent);
+    }
+    return {loot,coreLoot:state.coreLoot982};
+  }finally{
+    state=original.state;
+    COLS=original.cols;
+    ROWS=original.rows;
+    BRANCH_TILE_CACHE.clear();
+  }
+}
+function countUpgradeTalismans(items){
+  return (items||[]).filter(item=>item.talismanKind==='upgrade').reduce((count,item)=>count+itemQuantity(item),0);
+}
+function finishPalaceSupply(loot,floorNineUpgrades){
+  const extra=7-floorNineUpgrades-countUpgradeTalismans(loot);
+  if(extra>0)loot.push({...clone(upgradeProto()),count:extra});
+  return loot;
+}
+function migratePalaceSupply(){
+  const world=state.branchWorld105;
+  if(!world?.recoveryTalismans)return;
+  const current=state.branchContext105?.id==='palace'&&state.branchContext105.level===2;
+  const page=current?state:branchDecodePage(world.pages?.['palace:2']);
+  const chest=page?.branchTerrain105?.palace105?.starterChest;
+  if(!chest||chest.generatedSupply)return;
+  const main=state.floor===9&&!state.branchContext105?state:branchDecodePage(world.pages?.['main:9']);
+  const floorNineUpgrades=Number(main?.coreLoot982?.spawned?.upgrade?.[9]||main?.coreLootAudit982?.upgrades?.includes(9)||0);
+  try{
+    const {loot}=generatePalaceSupply();
+    const replacement={...chest,items:finishPalaceSupply(loot,floorNineUpgrades),generatedSupply:true};
+    if(current)state.branchTerrain105.palace105.starterChest=replacement;
+    else{
+      const updated=structuredClone(page);
+      updated.branchTerrain105.palace105.starterChest=replacement;
+      world.pages['palace:2']=branchEncodePage(updated);
+    }
+  }catch(error){console.warn('Could not regenerate the unopened palace supply chest',error)}
+}
 function restorePalaceRun(ghost){
   const p=state.player,{recovery,...body}=structuredClone(ghost);
   for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','guardReady1005','guardCharges1005','foodVital57','temporaryMaxHpBonus'])delete body[key];
@@ -868,15 +936,18 @@ function restorePalaceRun(ghost){
   p.hunger=Math.max(70,Number(p.hunger)||0);
   globalThis.storyInitNewRun992?.();
   if(state.story992)state.story992.dispatchPending60=false;
+  const supply=recovery?.starterSupply?generatePalaceSupply():null;
+  if(supply)state.coreLoot982=supply.coreLoot;
   NormalFloorGenerator.generate();
+  const floorNineUpgrades=supply?countUpgradeTalismans(state.items):0;
   for(const target of ['palace:1','palace:2']){
     const portal=state.branchPortals105.find(candidate=>candidate.to===target);
     if(!branchTransition(portal))throw Error('Palace recovery route unavailable: '+target);
     delete state._worldTransition57;
   }
   state.branchWorld105.recoveryTalismans=true;
-  if(recovery?.starterSupply){
-    placePalaceStarterChest();
+  if(supply){
+    placePalaceStarterChest(finishPalaceSupply(supply.loot,floorNineUpgrades));
     addLog('입구의 보급 상자는 직접 열어 물품을 꺼낼 수 있다.');
   }
 }
