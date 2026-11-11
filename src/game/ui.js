@@ -587,7 +587,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     modal.querySelector('#choice991Title').textContent='후천무술 선택';modal.querySelector('#choice991Sub').textContent='펼쳐진 가르침 중 하나를 고른다. 선택하면 비급을 소비한다. 잠시 덮어도 가르침은 바뀌지 않는다.';
     modal.classList.remove('choiceBatch');modal.querySelector('.choiceBatchFooter').hidden=true;
     modal.classList.add('martialManual1005');const list=modal.querySelector('#choice991List');list.innerHTML='';pending.choices.forEach((c,index)=>{
-      const p=structuredClone(state.player);if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
+      const p=structuredClone(state.player);if(c.family==='oddity')p.martialFamilyOverride19232='oddity';if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
       const current=p.martial[c.id];if(c.form==='breakthrough')p.martial[c.id]=5;
       const v=martialPresentation(c.id,MARTIAL_INFO[c.id],p),b=document.createElement('button');b.className=martialCardClasses(c.id,p)+' martialChoice1005';b.dataset.manualSkill=c.id;b.dataset.manualForm=c.form;
       const note=c.form==='breakthrough'?`현재 ${current}단. 5단까지 수련할 길을 연다. 아래는 5단의 경지이며, 단계는 무술 포인트로 올린다.`:`쌓아 온 ${current}단의 수련을 이어, 이 무술로 바꾼다.`;
