@@ -201,7 +201,7 @@ const RunLifecycle={
   refreshContinue(){
     const b=document.getElementById('continueBtn');if(!b)return;
     const recovery=globalThis.__MANRU_SAVE_SERVICE__?.recover(),yes=!!recovery?.ok&&!!recovery.candidate;
-    b.classList.toggle('noSave',!yes);b.onclick=RunLifecycle.continueRun;
+    b.classList.toggle('noSave',!yes);b.disabled=!yes;b.onclick=RunLifecycle.continueRun;
   },
   continueRun(){requestGameFullscreen65();const recovery=globalThis.__MANRU_SAVE_SERVICE__?.recover();if(!recovery?.ok||!recovery.candidate){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return false}return RunLifecycle.runLoad({raw:recovery.candidate.raw})},
   terminate(next){
