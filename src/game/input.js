@@ -470,7 +470,10 @@ const RuntimeState={
       const q=typeof tx==='object'?tx:{x:tx,y:ty};
       if(!this.valid(q)||!canAct81())return false;
       if(!state.seen.has(k(q.x,q.y))){toast('아직 본 적 없는 칸이다.');return false}
-      Runtime81.qa.mapTaps++;CameraController.resume(false);if((q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
+      Runtime81.qa.mapTaps++;CameraController.resume(false);
+      const tile=state.map[q.y][q.x];
+      const walkSurface=terrainSurface58(tile)&&tile!==TT.ICE&&!isWaterTile105(tile);
+      if(!walkSurface&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
       const t=this.targetAt(q.x,q.y);
       if(q.x===state.player.x&&q.y===state.player.y){
         this.stop('same-tile',true);

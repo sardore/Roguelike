@@ -365,6 +365,14 @@ function palaceTideResponse(mon){
 }
 function palaceWet(mon){return isWaterTile105(terrainBaseTile58(mon.x,mon.y));}
 function palaceApplyTide({deferHazard=false}={}){if(state?.branchContext105?.id!=='palace')return;const d=state.branchTerrain105.palace105,wet=[];let changed=false;
+ if(state.branchContext105.level===2&&palaceWorld().kingDefeated&&!d.throneDoorOpened105){
+  const doors=(d.doors105||[]).filter(door=>door.room==='throne');
+  for(const {x,y} of doors){
+   if(state.map[y]?.[x]!==TT.DOOR||state.tempTerrain74?.some(field=>field.x===x&&field.y===y))continue;
+   changed=setTerrainTile58(state.map,x,y,TT.OPEN_DOOR)===TT.OPEN_DOOR||changed;
+  }
+  d.throneDoorOpened105=doors.length>0&&doors.every(({x,y})=>state.map[y]?.[x]!==TT.DOOR);
+ }
  for(const key of Object.keys(d.floors)){const[x,y]=key.split(',').map(Number),next=palaceWaterTile(x,y),top=state.map[y][x],base=terrainBaseTile58(x,y),temporary=state.tempTerrain74?.find(t=>t.x===x&&t.y===y);
   if(d.paperBridges105?.[key]||state.branchTerrain105.mine105?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y)))continue;
   if(top===TT.RAFT&&state.rafts?.some(r=>r.palaceRaft105&&entityFootprintCells57(r).some(c=>c.x===x&&c.y===y)))continue;
@@ -2061,7 +2069,7 @@ const MINE_ITEMS105=Object.freeze({
 /* ===== MANRU r48: LEGENDARY WEAPONS / GRAND PORTAL DUNGEONS ===== */
 const LEGENDS47=[
  {id:'ember_axe',name:'적련 불꽃도끼',kind:'blunt',atk:6,speed:0.63,range:2,armorPierce:true,ability:'화신 · 낙화',dungeon:'구천낙화 제련성',hudName:'구천낙화',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 소유 중 화염 피해에 면역. 이미 화염 방어각인이 있다면 불길에서 조금씩 회복한다. 이 무기로 적중할 때마다 낙화 스택이 쌓이며 10스택에서 시야 내 적 하나에 하늘의 도끼가 자동 낙하해 고정 피해 7을 주고 3턴 화염지대를 만든다. 방어무시를 유지하지만 후반 화력은 강화 무기에 뒤처진다.'},
- {id:'water_crossbow',name:'창해 수압연노',kind:'bow',crossbow47:true,tier:2,ranged:true,atk:1,speed:0.54,range:6,ability:'해압 폭쇄',dungeon:'창해 용궁 · 잠긴 조정',hudName:'창해 용궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'창해 용궁 보상 · T2 · 강화 불가. ATK 1 · 속도 0.54 · 사거리 6. 적중점 주변 3×3에 물 접촉과 적에게 고정 추가 피해 4. 직접 맞은 대상도 폭쇄를 맞는다. 폭쇄는 다시 폭쇄를 일으키지 않으며 물 타일을 생성하지 않는다.'},
+ {id:'water_crossbow',name:'창해 수압연노',kind:'bow',crossbow47:true,tier:2,ranged:true,atk:1,speed:0.54,range:6,ability:'해압 폭쇄',dungeon:'창해 용궁 · 잠긴 조정',hudName:'창해 용궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'창해 용궁 보상 · T2 · 강화 불가. ATK 1 · 속도 0.54 · 사거리 6. 적중점 주변 3×3에 물 접촉과 적에게 고정 추가 피해 5. 직접 맞은 대상도 폭쇄를 맞는다. 폭쇄는 다시 폭쇄를 일으키지 않으며 물 타일을 생성하지 않는다.'},
  {id:'thunder_spear',name:'청뢰 장창',kind:'spear',atk:6,speed:0.67,range:4,knockback:1,ability:'낙뢰 연쇄',dungeon:'뇌정 칠주 수문궁',hudName:'뇌정 수문궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 적중하면 가까운 적 둘에게 청뢰가 연쇄되어 추가 피해를 준다.'},
  {id:'curse_blade',name:'주박 저주칼',kind:'blade',atk:8,speed:1.12,range:2,crit:.07,ability:'혈명 주박',dungeon:'혈문 주박사당',hudName:'혈문 사당',minFloor:11,maxFloor:19,stage:'3~4테마',desc:'전설의 무기 · 강화 불가. 장착 중 최대 HP가 30% 감소한다. 대신 현재 착용한 저주받은 다른 장비 1개마다 ATK +3, 치명타율 +5%가 추가되어 저주 장비를 감수할수록 폭발적으로 강해진다.'},
  {id:'earth_gauntlet',name:'지맥 대지수갑',kind:'brawl',brawlWeapon42:true,atk:6,speed:1.35,range:1,ability:'지맥 연타',dungeon:'천근 붕락권역',hudName:'붕락 권역',minFloor:11,maxFloor:19,stage:'3~4테마',desc:'전설의 무기 · 강화 불가. 적중할 때마다 지맥 스택을 최대 8까지 쌓는다. 공격하지 않는 턴에는 스택이 줄고, 스택에 비례해 DEF가 임시 상승한다. 현재 기본 DEF가 높을수록 추가 방어 효율은 감소한다.'},
