@@ -906,7 +906,7 @@ function generatePalaceSupply(){
   const loot=[];
   const gather=()=>{
     for(const item of state.items){
-      if(item.type==='food'||(item.type==='talisman'&&item.talismanKind!=='upgrade'))continue;
+      if(item.type==='food')continue;
       const {x,y,...copy}=structuredClone(item);
       loot.push(copy);
     }
