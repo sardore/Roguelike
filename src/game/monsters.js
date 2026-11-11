@@ -1348,7 +1348,7 @@ function summonNative(entry,floor){
 }
 function summonRecipes(level=summonState().level,floor=branchCombatFloor(),book=summonBook()){
  if(!level||!book||!SUMMON_RACES[book.summonElement105])return [];
- return summonCatalog().filter(e=>Number.isSafeInteger(book.summonPictures105[e.name]?.count)&&book.summonPictures105[e.name].count>0&&summonMatches(e.def||e.actor,book.summonElement105)).map(base=>{
+ return summonCatalog().filter(e=>Number.isSafeInteger(book.summonPictures105[e.name]?.count)&&book.summonPictures105[e.name].count>0&&(summonMatches(e.def||e.actor,book.summonElement105)||book.summonElement105==='grass'&&book.extraGrassSpecies105?.includes(e.name))).map(base=>{
   const picture=book.summonPictures105[base.name],count=picture.count,effectiveFloor=floor+count-1,preview=summonNative(base,effectiveFloor);
   return{entry:{...base,preview,portrait105:picture.portrait},count:1,pictureCount105:count,level,floor:effectiveFloor,baseFloor105:floor};
  }).sort((a,b)=>a.entry.name.localeCompare(b.entry.name,'ko'));

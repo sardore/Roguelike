@@ -383,7 +383,8 @@ const PlayStats={
   form.append(input,button,note);return form;
  },
  async redeemRecoveryCode(code,pending=null){
-  if(String(code).trim()!=='19721')return '알 수 없는 코드다.';
+  const entered=String(code).trim();
+  if(entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
   const checkSave=()=>{
    const saved=SaveService.recover();
    if(!saved.ok)return '이 기기의 저장 기록을 읽지 못했다.';
@@ -394,6 +395,13 @@ const PlayStats={
   if(saveNotice)return saveNotice;
   const scene=document.getElementById('statsScene');
   try{
+   if(entered==='19721'){
+    const cls=CLASSES.find(c=>c.id==='summoner');
+    newGame(cls,null,createPalaceReplacement(cls));
+    this.close();
+    toast('창해 용궁 2층 입구에서 탐사를 시작한다.');
+    return '';
+   }
    const parseGhost=raw=>{
     try{
      const body=JSON.parse(raw||'null');

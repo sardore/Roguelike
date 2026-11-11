@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { launch, openSession, startRun } from './harness.mjs';
+import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const browser = await launch();
 const root = path.resolve('dist-qa');
@@ -60,7 +60,7 @@ try {
   try {
     await startRun(local, 'wanderer');
     await openRecords(local);
-    await submit(local, '19721');
+    await submit(local, '19722');
     assert.match(await local.page.locator('.giftNote').textContent(), /이어갈 탐사/);
     await local.page.locator('#statsClose').click();
     const { potionMap, talismanMap } = await local.page.evaluate(() => {
@@ -79,7 +79,7 @@ try {
     await openRecords(local);
     await submit(local, '19720');
     assert.match(await local.page.locator('.giftNote').textContent(), /알 수 없는 코드/);
-    await submit(local, '19721');
+    await submit(local, '19722');
     await local.page.evaluate(() => {
       if (!sessionStorage.getItem('manru1004_palace_recovery_raw')) throw Error('checkpoint missing');
       localStorage.removeItem('manru1004_active_run');
@@ -120,7 +120,7 @@ try {
       const title = legacy.page.locator('#card h1').first();
       for (let tap = 0; tap < 7; tap++) await title.dispatchEvent('pointerdown', { button: 0 });
       await legacy.page.locator('[data-stats-tab="rows"]').click();
-      await submit(legacy, '19721');
+      await submit(legacy, '19722');
       if (missingLatest) {
         assert.match(await legacy.page.locator('.giftNote').textContent(), /확인을 다시 누르면 이전 판/);
         assert.equal(await legacy.page.evaluate(() => __MANRU_QA_UI__.state()), null);
@@ -139,5 +139,60 @@ try {
       assert.deepEqual(requested, missingLatest ? ['newest-death', 'older-death'] : ['newest-death']);
     } finally { await legacy.close(); }
   }
+  const starter = await openSession(browser, root, { seed: 8301 });
+  try {
+    await openRecords(starter);
+    await submit(starter, '19721');
+    const verify = () => starter.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      if (!st) throw Error(document.querySelector('.giftNote')?.textContent || 'starter failed');
+      const p = st.player, chest = st.branchTerrain105.palace105.starterChest;
+      const up = st.branchPortals105.find(portal => portal.id === 'up');
+      const book = p.inventory.find(item => item.summonItem105 === 'book');
+      return {
+        place: [st.floor, st.branchContext105.id, st.branchContext105.level, Math.max(Math.abs(p.x-up.x), Math.abs(p.y-up.y))],
+        player: [p.classId, p.level, st.turn, p.skillPoints, p.blinkLevel, p.trinket.name],
+        stock: Object.fromEntries(['축지부','대지부적','화염부적','수류부적','목령부적','빙폭부적','엽전 엿','보신 전골'].map(name =>
+          [name,p.inventory.filter(item => item.name === name).reduce((sum,item) => sum + item.count,0)])),
+        book: [book.summonElement105, Object.values(book.summonPictures105).map(pic=>pic.count),
+          __MANRU_QA_BROOD__.recipes().map(recipe=>recipe.entry.name).sort()],
+        known: [
+          MANRU_POTIONS.every(item => st.knowledge56.potionKnown[item.potionKind] === true),
+          MANRU_TALISMANS.every(item => st.knowledge56.talismanKnown[item.talismanKind] === true)
+        ],
+        chest: [chest.x===p.x+p.facing.x && chest.y===p.y+p.facing.y, chest.items.length,
+          chest.items.some(item=>['food','talisman'].includes(item.type)),
+          __MANRU_QA_ODDITY__.material(st.map[chest.y][chest.x], 1, chest.x, chest.y)?.id]
+      };
+    });
+    const first = await verify();
+    assert.deepEqual(first.place, [9,'palace',2,1]);
+    assert.deepEqual(first.player, ['summoner',18,20000,16,2,'수문지기의 접힌 행낭']);
+    assert.deepEqual(Object.values(first.stock), [2,2,3,2,1,2,7,4]);
+    assert.deepEqual(first.book, ['grass',[1,1],['어미거미','용궁 해련']]);
+    assert.deepEqual(first.known,[true,true]);
+    assert.ok(first.chest[1]>25);
+    assert.deepEqual([first.chest[0],first.chest[2],first.chest[3]],[true,false,'wood']);
+    assert.equal(await starter.page.evaluate(() => __MANRU_RELEASE__.load()),true);
+    assert.deepEqual(await verify(),first);
+    const destroyed = await starter.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), chest = st.branchTerrain105.palace105.starterChest;
+      const before = st.items.length;
+      const ok = __MANRU_QA_ODDITY__.detach(chest.x,chest.y);
+      return [ok,!!st.branchTerrain105.palace105.starterChest,st.items.length-before];
+    });
+    assert.deepEqual(destroyed,[true,false,0]);
+    assert.equal(await starter.page.evaluate(() => __MANRU_RELEASE__.load()),true);
+    await dismissModals(starter);
+    await starter.tick(800);
+    await starter.page.keyboard.press('f');
+    const opened = await starter.page.evaluate(() => {
+      const st=__MANRU_QA_UI__.state();
+      return [!!st.branchTerrain105.palace105.starterChest,st.items.filter(item=>item.palaceStarterLoot).length,document.querySelector('#toast')?.textContent];
+    });
+    assert.equal(opened[0],false,JSON.stringify(opened));
+    assert.ok(opened[1]>=first.chest[1]);
+    assert.deepEqual(starter.errors,[]);
+  } finally { await starter.close(); }
   console.log('PASS: recovery code, latest local and archived ghosts, save/load, palace 2F ↔ 1F ↔ main 9F');
 } finally { await browser.close(); }
