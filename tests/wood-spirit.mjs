@@ -143,5 +143,21 @@ try {
   await evaluate(() => { rootTest.state().turn++; rootTest.terrain.tick(); });
   assert.equal(await evaluate(() => 1000 - rootTest.state().player.hp), 13);
   console.log('PASS lotus retains earth explosion at attack 9 × 1.4');
+
+  await setup();
+  out = await evaluate(() => {
+    const Q = rootTest, st = Q.state();
+    const mon = st.monsters.find(m => m.name === '테두리 적');
+    mon.atk = 9; mon.palaceLotus105 = true;
+    st.player.weapon = { ...st.player.weapon, name: '철두창', elementBrand74: 'water' };
+    st.player.armor = { ...st.player.armor, name: '강화 가죽 갑옷', elementGuard74: 'earth' };
+    Q.resolve(mon, { type: 'palaceRoots105', data: { resolveTurn105: st.turn },
+      cells: [{ x: 16, y: 15 }, { x: 15, y: 16 }], armedPlayerTurn: st.turn - 1 });
+    const walls = st.tempTerrain74.filter(t => t.rootWall105).length;
+    st.turn++; Q.terrain.tick();
+    return { walls, hp: st.player.hp, remaining: st.tempTerrain74.filter(t => t.rootWall105).length };
+  });
+  assert.deepEqual(out, { walls: 2, hp: 1000, remaining: 0 });
+  console.log('PASS earth armor blocks overlapping lotus wall blasts with a water-branded spear');
   assert.deepEqual(s.errors, []);
 } finally { await s.close(); await ctx.close(); await browser.close(); }
