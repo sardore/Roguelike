@@ -2155,11 +2155,29 @@ function placePalaceStarterChest(items){
   BRANCH_TILE_CACHE.clear();
 }
 
-function openPalaceStarterChest(chest,act){
-  const result=placeDropItems(chest.items,{x:chest.x,y:chest.y},'palaceStarterLoot');
-  if(!result.ok){toast('상자 물품을 놓을 공간이 없다.');return false}
-  setTerrainTile58(state.map,chest.x,chest.y,terrainBaseTile58(chest.x,chest.y));
-  addLog('탐사 보급 상자를 열어 주변에 물품을 꺼냈다.');
+function openPalaceStarterChest(chest){
+  return openChoice('탐사 보급 상자','가져갈 물품을 모두 고르세요.',chest.items,
+    {type:'CLAIM_PALACE_SUPPLY',args:[]},{multiple:true});
+}
+function claimPalaceSupply(indices){
+  const chest=state?.branchTerrain105?.palace105?.starterChest;
+  if(!chest||entityDistance57(chest,state.player)>1||!indices.length)return false;
+  const selected=[...new Set(indices)].map(index=>chest.items[index]);
+  if(selected.some(item=>!item))return false;
+  const act=playerAction57('choice',{uiOwner:'choice991'});
+  if(!act.ok)return false;
+  const staged=structuredClone(state.player.inventory),capacity=inventoryCapacity();
+  for(const item of selected){
+    const copy=structuredClone(item);
+    if(transferItemQuantity(copy,null,staged,itemQuantity(copy),{capacity}).remaining)return{reason:'capacity'};
+  }
+  const taken=new Set(selected);
+  state.player.inventory=staged;
+  chest.items=chest.items.filter(item=>!taken.has(item));
+  if(selected.some(item=>item.artifactId46))globalThis.__MANRU_LEGEND47__?.recordAcquisition?.();
+  if(!chest.items.length)setTerrainTile58(state.map,chest.x,chest.y,terrainBaseTile58(chest.x,chest.y));
+  closeChoice991();
+  addLog(`탐사 보급 상자에서 물품 ${selected.length}묶음을 꺼냈다.`);
   commitPlayerAction57(act,1);
   return true;
 }
@@ -2190,7 +2208,7 @@ function contextAction(){
   if(silk&&snareEvent(silk.x,silk.y,true)){commitPlayerAction57(act,1);return true}
   if(state.map[state.player.y]?.[state.player.x]===TT.ALTAR){const handled=bumpTileAction(state.player.x,state.player.y,{cause:'interact',activeInteraction:true});if(handled)commitPlayerAction57(act,1);return handled;}
   const chest=state.branchTerrain105?.palace105?.starterChest;
-  if(chest&&entityDistance57(chest,state.player)<=1)return openPalaceStarterChest(chest,act);
+  if(chest&&entityDistance57(chest,state.player)<=1)return openPalaceStarterChest(chest);
   const gate=palaceGateNearby();if(gate)return palaceUseGate(gate,act);
   const branch=adjacentBranchPortal105();if(branch){if(branchTransition(branch)){WorldTransition57.commit(act,1);return true}return false}
   if(state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return}
@@ -2433,7 +2451,7 @@ function inferTerrainUnderlay58(x,y,tile=state?.map?.[y]?.[x]){
   const counts=new Map();for(const[dx,dy]of DIRS8){const t=state?.map?.[y+dy]?.[x+dx];if(terrainSurface58(t))counts.set(t,(counts.get(t)||0)+1)}
   let best=TT.FLOOR,n=-1;for(const[t,c]of counts)if(c>n){best=t;n=c}return best;
 }
-function bumpBlockedTile(x,y,actionCtx=null){if(x<0||y<0||x>=COLS||y>=ROWS)return false;const act=actionCtx||playerAction57('interact',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;const t=state.map[y][x];const chest=state.branchTerrain105?.palace105?.starterChest;if(chest?.x===x&&chest.y===y)return openPalaceStarterChest(chest,act);if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x,y};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}const branch=state.branchPortals105?.find(p=>p.x===x&&p.y===y);if(branch){toast('문 옆에서 상호작용 버튼(F)으로 출입할 수 있다.');return false}if(t===TT.BED&&branchBedData()){const bed=dojoAdjacentBed();if(bed?.x===x&&bed?.y===y)return dojoUseBed(bed,act);return true;}const rumorEntrance=globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,act);if(rumorEntrance?.handled)return rumorEntrance.result;const silent=[TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW];if(silent.includes(t))return true;if(t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL){if(globalThis.__MANRU_HIDDEN60_ACTIONS__?.revealAt?.(x,y)){commitPlayerAction57(act,1);return true}}const noisy=[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR].includes(t);if(noisy)alertNearby(x,y,7);if(t===TT.HEDGE){setTerrainTile58(state.map,x,y,state.floor===24?TT.LIGHT_GRASS:TT.GRASS);burst(x,y,'#8ab36b',10,.55);addLog('울타리를 베어 통로를 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.BAMBOO){setTerrainTile58(state.map,x,y,TT.FLOOR);burst(x,y,'#7caf60',10,.55);addLog('대나무를 베어 샛길을 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE&&state?.keyPlan96&&globalThis.__MANRU_TYPED_KEYS__?.tryOpenAt){const rr=globalThis.__MANRU_TYPED_KEYS__.tryOpenAt(x,y);if(rr?.handled)return true}if(t===TT.TABLE||t===TT.SCREEN){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y)));impact(x,y,t===TT.SCREEN?'#c76858':'#9a704b',3);burst(x,y,'#b48b65',12,.9);addLog(t===TT.SCREEN?'비단 병풍을 베어 통로를 냈다.':'탁자를 부숴 길을 냈다.');if(t===TT.TABLE&&globalThis.__MANRU_RANDOM57__()<.12)dropRandomItem({x,y},false);commitPlayerAction57(act,1);return true}if(t===TT.FAKE_DOOR){setTerrainTile58(state.map,x,y,TT.WALL);doorFX(x,y);addLog('문을 밀었지만 뒤에는 차가운 벽뿐이다. 가짜 문이었다.');commitPlayerAction57(act,1);return true}if(t===TT.SECRET_DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);burst(x,y,'#d8bd77',12,.7);addLog('벽 문양이 갈라지며 숨은 문이 열렸다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE){if((state.floorKeys||0)>=(state.floorKeysRequired||0)){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);addLog(state.floor===6?'봉인 고문서고 열쇠로 문을 열었다.':'모은 열쇠로 봉쇄문을 열었다.');commitPlayerAction57(act,1)}else toast(`열쇠 ${state.floorKeys||0}/${state.floorKeysRequired||0}. 창고를 더 뒤져야 한다.`);return true}if(t===TT.PEACH_TREE){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,TT.GRASS));burst(x,y,'#e1a9a3',13,.7);giveFood('신선도',x,y);addLog('복숭아나무에서 신선도 한 알을 땄다.');commitPlayerAction57(act,1);return true}return false}
+function bumpBlockedTile(x,y,actionCtx=null){if(x<0||y<0||x>=COLS||y>=ROWS)return false;const act=actionCtx||playerAction57('interact',{stunMessage:'몸이 굳어 상호작용하지 못했다.'});if(!act.ok)return !!act.consumed;const t=state.map[y][x];const chest=state.branchTerrain105?.palace105?.starterChest;if(chest?.x===x&&chest.y===y)return openPalaceStarterChest(chest);if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x,y};return ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value}const branch=state.branchPortals105?.find(p=>p.x===x&&p.y===y);if(branch){toast('문 옆에서 상호작용 버튼(F)으로 출입할 수 있다.');return false}if(t===TT.BED&&branchBedData()){const bed=dojoAdjacentBed();if(bed?.x===x&&bed?.y===y)return dojoUseBed(bed,act);return true;}const rumorEntrance=globalThis.__MANRU_RUMOR_SPACES1030__?.openEntranceAt?.(x,y,t,act);if(rumorEntrance?.handled)return rumorEntrance.result;const silent=[TT.STONE_PILLAR,TT.LANTERN_POST,TT.WALL_BANNER,TT.CRATE,TT.BENCH,TT.FLOWERBED,TT.ROCK,TT.STATUE,TT.RACK,TT.LOW_FENCE,TT.WINDOW];if(silent.includes(t))return true;if(t===TT.HIDDEN_BRIDGE||t===TT.HIDDEN_WALL){if(globalThis.__MANRU_HIDDEN60_ACTIONS__?.revealAt?.(x,y)){commitPlayerAction57(act,1);return true}}const noisy=[TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO,TT.FAKE_DOOR,TT.SECRET_DOOR].includes(t);if(noisy)alertNearby(x,y,7);if(t===TT.HEDGE){setTerrainTile58(state.map,x,y,state.floor===24?TT.LIGHT_GRASS:TT.GRASS);burst(x,y,'#8ab36b',10,.55);addLog('울타리를 베어 통로를 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.BAMBOO){setTerrainTile58(state.map,x,y,TT.FLOOR);burst(x,y,'#7caf60',10,.55);addLog('대나무를 베어 샛길을 냈다. 주변 적이 소리를 들었다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE&&state?.keyPlan96&&globalThis.__MANRU_TYPED_KEYS__?.tryOpenAt){const rr=globalThis.__MANRU_TYPED_KEYS__.tryOpenAt(x,y);if(rr?.handled)return true}if(t===TT.TABLE||t===TT.SCREEN){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,furnitureFloor57(x,y)));impact(x,y,t===TT.SCREEN?'#c76858':'#9a704b',3);burst(x,y,'#b48b65',12,.9);addLog(t===TT.SCREEN?'비단 병풍을 베어 통로를 냈다.':'탁자를 부숴 길을 냈다.');if(t===TT.TABLE&&globalThis.__MANRU_RANDOM57__()<.12)dropRandomItem({x,y},false);commitPlayerAction57(act,1);return true}if(t===TT.FAKE_DOOR){setTerrainTile58(state.map,x,y,TT.WALL);doorFX(x,y);addLog('문을 밀었지만 뒤에는 차가운 벽뿐이다. 가짜 문이었다.');commitPlayerAction57(act,1);return true}if(t===TT.SECRET_DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);burst(x,y,'#d8bd77',12,.7);addLog('벽 문양이 갈라지며 숨은 문이 열렸다.');commitPlayerAction57(act,1);return true}if(t===TT.LOCKED_GATE){if((state.floorKeys||0)>=(state.floorKeysRequired||0)){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y);addLog(state.floor===6?'봉인 고문서고 열쇠로 문을 열었다.':'모은 열쇠로 봉쇄문을 열었다.');commitPlayerAction57(act,1)}else toast(`열쇠 ${state.floorKeys||0}/${state.floorKeysRequired||0}. 창고를 더 뒤져야 한다.`);return true}if(t===TT.PEACH_TREE){setTerrainTile58(state.map,x,y,releaseTerrainUnderlay58(x,y,TT.GRASS));burst(x,y,'#e1a9a3',13,.7);giveFood('신선도',x,y);addLog('복숭아나무에서 신선도 한 알을 땄다.');commitPlayerAction57(act,1);return true}return false}
   function unequipAction5(p,slot){const act=playerAction57('unequip',{allowInventory:true,closeInventory:true,stunMessage:'몸이 굳어 장비를 해제하지 못했다.'});if(!act.ok)return;const it=p[slot];if(!it)return;if(p.inventory.length>=inventoryCapacity()&&it.branchEffect105!=='capacity'){toast('행낭이 가득 찼다.');return}UX.modalDirty=true;UX.paused=null;p[slot]=null;branchInventoryOverflow();addInventoryItem(it);globalThis.__MANRU_LEGEND47__?.syncEquip?.();addLog(`${it.name} 해제.`);UX.invEquipSlot=null;inventorySelection=p.inventory.length-1;renderInventory();commitPlayerAction57(act,1)}
   function validateSpecial60(){return state.floor===23?validate23Progress60():state.floor===24?validate24Progress60():{ok:true,floor:state.floor}}
 /* R58 canonical semantic policies: one owner for tool-breakable furniture and one turn-owned jar gas field. */

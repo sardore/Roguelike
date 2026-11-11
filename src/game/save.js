@@ -552,7 +552,7 @@ function normalizeSavedItem(it){
 }
 function worldTargetActive57(){return !!WORLD_TARGET}
 // Phase 5: one invocation registry; entries reference their existing implementation.
-const ACTION_ROUTES=new Map([['CONTEXT_ACTION',contextAction],['CIPHER_SUBMIT',submitCipher],['STRUCTURE_INTERACT',bumpBlockedTile],['MOVE',movePlayer],['BLINK',useBlink],['ATTACK',basicAttack],['PICKUP',pickup],['SHOP_BUY',purchaseShop58],['SHOP_SELL',sellShop58],['DESCEND',descend],['REST',rest],['UPGRADE_MARTIAL',upgradeMartial],['MARTIAL_MANUAL_CHOICE',chooseMartialManual],['MARTIAL',activateMartial],['ITEM_USE',useInventoryItem],['ITEM_DROP',dropInventoryItem],['UNEQUIP',unequipAction5],['DROP_EQUIPPED',dropEquippedAction5],['UPGRADE_GEAR',upgradeGearAction5],['COOK',cookSelected],['FUSE',fuse74],['GEAR_APPLY',applyGear],['CLOSE_DOOR',closeAdjacentDoor964],['IDENTIFY_CHOICE',identifyChoiceAction5],['PURIFY_CHOICE',purifyChoiceAction5],['ANVIL_FUSE105',anvilFuse],['SUMMON_CAST105',summonCast],['SUMMON_PICTURE105',summonInstallPicture],['SUMMON_TALISMAN105',summonBindTalisman]]),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
+const ACTION_ROUTES=new Map([['CONTEXT_ACTION',contextAction],['CLAIM_PALACE_SUPPLY',claimPalaceSupply],['CIPHER_SUBMIT',submitCipher],['STRUCTURE_INTERACT',bumpBlockedTile],['MOVE',movePlayer],['BLINK',useBlink],['ATTACK',basicAttack],['PICKUP',pickup],['SHOP_BUY',purchaseShop58],['SHOP_SELL',sellShop58],['DESCEND',descend],['REST',rest],['UPGRADE_MARTIAL',upgradeMartial],['MARTIAL_MANUAL_CHOICE',chooseMartialManual],['MARTIAL',activateMartial],['ITEM_USE',useInventoryItem],['ITEM_DROP',dropInventoryItem],['UNEQUIP',unequipAction5],['DROP_EQUIPPED',dropEquippedAction5],['UPGRADE_GEAR',upgradeGearAction5],['COOK',cookSelected],['FUSE',fuse74],['GEAR_APPLY',applyGear],['CLOSE_DOOR',closeAdjacentDoor964],['IDENTIFY_CHOICE',identifyChoiceAction5],['PURIFY_CHOICE',purifyChoiceAction5],['ANVIL_FUSE105',anvilFuse],['SUMMON_CAST105',summonCast],['SUMMON_PICTURE105',summonInstallPicture],['SUMMON_TALISMAN105',summonBindTalisman]]),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
 function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
 function requestGameFullscreen65(){
  fullscreenWanted66=true;
@@ -818,6 +818,11 @@ function repairRecoveredTalismans(){
   }
   world.recoveryTalismans=true;
 }
+function palaceStarterArmor(){
+  const armor={...clone(ARMORS.find(item=>item.name==='강화 가죽 갑옷')),identified:true,curseImmune991:true};
+  applyArmorUpgrade(armor);
+  return armor;
+}
 function createPalaceReplacement(cls){
   const p=createRunState57(cls).player;
   const book={...summonBookItem(),summonElement105:'grass',summonSpeciesVersion105:1,
@@ -838,7 +843,7 @@ function createPalaceReplacement(cls){
   }
   p.trinket=clone(BRANCH_REWARDS.canal);
   p.weapon={...clone(WEAPONS.find(w=>w.name===cls.startWeapon)),type:'weapon',identified:true,curseImmune991:true};
-  Object.assign(p.armor,{identified:true,curseImmune991:true});
+  p.armor=palaceStarterArmor();
   for(let level=2;level<=18;level++){
     p.baseMaxHpPermanent+=level>=13?3:level%4===0?2:1;
     if([4,7,10].includes(level))p.maxFocus++;
@@ -907,6 +912,15 @@ function migratePalaceSupply(){
   const current=state.branchContext105?.id==='palace'&&state.branchContext105.level===2;
   const page=current?state:branchDecodePage(world.pages?.['palace:2']);
   const chest=page?.branchTerrain105?.palace105?.starterChest;
+  if(!world.starterArmorGranted&&(chest||state.player.inventory.some(item=>item.extraGrassSpecies105?.includes('어미거미')))){
+    const armor=palaceStarterArmor();
+    if(state.player.armor?.name==='경량복'&&!state.player.armor.upgrade){
+      state.player.armor=armor;
+      world.starterArmorGranted=true;
+    }else{
+      world.starterArmorGranted=!!transferItemQuantity(armor,null,state.player.inventory,1,{capacity:inventoryCapacity()}).moved;
+    }
+  }
   if(!chest||chest.generatedSupply)return;
   const main=state.floor===9&&!state.branchContext105?state:branchDecodePage(world.pages?.['main:9']);
   const floorNineUpgrades=Number(main?.coreLoot982?.spawned?.upgrade?.[9]||main?.coreLootAudit982?.upgrades?.includes(9)||0);
@@ -947,8 +961,9 @@ function restorePalaceRun(ghost){
   }
   state.branchWorld105.recoveryTalismans=true;
   if(supply){
+    state.branchWorld105.starterArmorGranted=true;
     placePalaceStarterChest(finishPalaceSupply(supply.loot,floorNineUpgrades));
-    addLog('입구의 보급 상자는 직접 열어 물품을 꺼낼 수 있다.');
+    addLog('입구의 보급 상자를 열고 가져갈 물품을 고를 수 있다.');
   }
 }
 function newGameCoreLifecycle(cls,duel=null,ghost=null){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();if(ghost)restorePalaceRun(ghost);else if(duel)buildDuelArena(duel);else{globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate()}resetVisualState();resetTurnState();startFloorTransition();if(duel)addLog(`망령전 · ${DUEL_ARENAS[duel.arena].name}. 상대 망령을 쓰러뜨리면 위쪽 문이 열린다.`);else{addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.')}addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}

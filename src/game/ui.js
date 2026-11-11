@@ -534,10 +534,58 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     if(item&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(item,'inspect984Icon');if(unidentifiedItem(item))box.dataset.redacted='physical-only';return}
     const r=document.createElement('span');r.className='inspect984Rune';r.textContent=String(title||'?').trim().slice(0,1);box.appendChild(r);
   }
-  function openChoice(title,sub,entries,command){modal.classList.remove('martialManual1005');if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();const list=modal.querySelector('#choice991List');modal.querySelector('#choice991Title').textContent=title;modal.querySelector('#choice991Sub').textContent=sub||'';list.innerHTML='';entries.forEach((e,n)=>{const it=e.item||e,b=document.createElement('button');b.className='choice991Row';let icon='';try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}b.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b>${displayName991(it)}</b><small>${e.equipped?'장착 중 · ':''}${isGearItem(it)?publicGearType(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품'}</small></span><i>선택</i>`;b.onclick=()=>{return ActionDispatcher.dispatch({...command,args:[e,...command.args],source:'item-choice'}).value};list.appendChild(b)});if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';setInteraction8('choice991',true)}
+  function openChoice(title,sub,entries,command,{multiple=false}={}){
+    if(!gameplayUiOpen57())return false;
+    cancelAutoWalk();
+    if(inventoryOpen)closeInventory();
+    modal.classList.remove('martialManual1005');
+    modal.classList.toggle('choiceBatch',multiple);
+    const list=modal.querySelector('#choice991List'),footer=modal.querySelector('.choiceBatchFooter');
+    const confirm=footer.querySelector('button'),note=footer.querySelector('output'),selected=new Set();
+    modal.querySelector('#choice991Title').textContent=title;
+    modal.querySelector('#choice991Sub').textContent=sub||'';
+    list.replaceChildren();
+    list.scrollTop=0;
+    footer.hidden=!multiple;
+    confirm.disabled=true;
+    note.textContent='';
+    confirm.onclick=multiple?()=>{
+      const result=ActionDispatcher.dispatch({...command,args:[[...selected],...command.args],source:'item-choice'}).value;
+      if(result?.reason==='capacity')note.textContent='행낭 공간이 부족하다. 선택을 줄여 주세요.';
+    }:null;
+    for(const [index,entry] of entries.entries()){
+      const it=entry.item||entry,button=document.createElement('button');
+      button.className='choice991Row';
+      let icon='';
+      try{icon=typeof vfIconHtml==='function'?vfIconHtml(it,'choice991Visual'):''}catch(error){ignoreError('item icon renderer unavailable',error)}
+      const kind=isGearItem(it)?publicGearType(it.type):it.type==='potion'?'약병':it.type==='talisman'?'부적':'물품';
+      button.innerHTML=`<span class="choice991Icon">${icon||`<span class="choice991Fallback">${itemGlyph(it)}</span>`}</span><span><b></b><small></small></span><i>선택</i>`;
+      const upgrade=multiple&&isGearItem(it)&&!unidentifiedItem(it)&&it.upgrade>0?` +${it.upgrade}`:'';
+      button.querySelector('b').textContent=displayName991(it)+upgrade;
+      button.querySelector('small').textContent=(entry.equipped?'장착 중 · ':'')+kind+(multiple&&itemQuantity(it)>1?` · ${itemQuantity(it)}개`:'');
+      if(multiple)button.setAttribute('aria-pressed','false');
+      button.onclick=()=>{
+        if(!multiple)return ActionDispatcher.dispatch({...command,args:[entry,...command.args],source:'item-choice'}).value;
+        if(selected.has(index))selected.delete(index);
+        else selected.add(index);
+        const checked=selected.has(index);
+        button.setAttribute('aria-pressed',String(checked));
+        button.querySelector('i').textContent=checked?'선택됨':'선택';
+        note.textContent='';
+        confirm.disabled=!selected.size;
+        confirm.textContent=selected.size?`선택한 ${selected.size}묶음 받기`:'선택한 물품 받기';
+      };
+      list.appendChild(button);
+    }
+    confirm.textContent='선택한 물품 받기';
+    if(!entries.length)list.innerHTML='<div class="choice991Empty">선택할 물건이 없다.</div>';
+    setInteraction8('choice991',true);
+    return true;
+  }
   function openMartialManualChoice(pending){
     if(!gameplayUiOpen57())return false;cancelAutoWalk();if(inventoryOpen)closeInventory();
     modal.querySelector('#choice991Title').textContent='후천무술 선택';modal.querySelector('#choice991Sub').textContent='펼쳐진 가르침 중 하나를 고른다. 선택하면 비급을 소비한다. 잠시 덮어도 가르침은 바뀌지 않는다.';
+    modal.classList.remove('choiceBatch');modal.querySelector('.choiceBatchFooter').hidden=true;
     modal.classList.add('martialManual1005');const list=modal.querySelector('#choice991List');list.innerHTML='';pending.choices.forEach((c,index)=>{
       const p=structuredClone(state.player);if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
       const current=p.martial[c.id];if(c.form==='breakthrough')p.martial[c.id]=5;
@@ -1086,7 +1134,7 @@ let modal;
 function createChoiceModal(){
   modal=document.createElement('div');
   modal.id='choice991';
-  modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div></div>';
+  modal.innerHTML='<div class="choice991Card"><span class="uiCorners63" aria-hidden="true"></span><div class="choice991Head"><div><b id="choice991Title"></b><small id="choice991Sub"></small></div><button class="uxClose" id="choice991Close" aria-label="닫기">×</button></div><div id="choice991List"></div><div class="choiceBatchFooter" hidden><output aria-live="polite"></output><button type="button">선택한 물품 받기</button></div></div>';
   document.body.appendChild(modal);
   modal.querySelector('#choice991Close').onclick=()=>InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-close'});
   modal.addEventListener('pointerdown',e=>{if(e.target===modal)InputRouter.dispatch({type:'MODAL_CANCEL',source:'choice-backdrop'})});
