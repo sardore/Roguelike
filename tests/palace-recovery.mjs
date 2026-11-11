@@ -192,6 +192,13 @@ try {
     assert.equal(await starter.page.locator('#bossHud').isVisible(),true);
     assert.match(await starter.page.locator('#bossName').textContent(),/창해군/);
     assert.equal(await starter.page.locator('#contextActionLabel').textContent(),'상자 열기');
+    await starter.page.evaluate(() => {
+      const {x,y}=__MANRU_QA_UI__.state().branchTerrain105.palace105.starterChest;
+      __MANRU_INSPECT984__({x,y});
+    });
+    assert.equal(await starter.page.locator('#inspectTitle').textContent(),'탐사 보급 상자');
+    assert.match(await starter.page.locator('#inspectBody').textContent(),/물품 목록이 열린다/);
+    await dismissModals(starter);
     await starter.page.keyboard.press('f');
     const panel = starter.page.locator('#choice991');
     await panel.waitFor({state:'visible'});
@@ -239,7 +246,42 @@ try {
       return supplied+count(state().items);
     });
     assert.equal(upgrades,7);
+    await starter.page.evaluate(() => {
+      localStorage.removeItem('manru1004_active_run');
+      localStorage.removeItem('manru1004_active_run_shadow');
+    });
+    await starter.page.reload();
+    assert.match(await continueButton.textContent(),/복구 지점에서 이어가기/);
+    await continueButton.click();
+    assert.match(await starter.page.locator('#toast').textContent(),/최신 저장본이 없어 20,000턴의 복구 지점/);
+    assert.deepEqual(await verify(),first);
     assert.deepEqual(starter.errors,[]);
   } finally { await starter.close(); }
+  const oldChest=await openSession(browser,root,{seed:1});
+  try{
+    await oldChest.page.evaluate(()=>{
+      let id=100;
+      crypto.randomUUID=()=>`00000000-0000-4000-8000-${String(++id).padStart(12,'0')}`;
+    });
+    await openRecords(oldChest);
+    await submit(oldChest,'19721');
+    for(const generated of [false,true]){
+      await oldChest.page.evaluate(generated=>{
+        const st=__MANRU_QA_UI__.state(),chest=st.branchTerrain105.palace105.starterChest;
+        if(!st.coreLoot982?.spawned?.upgrade?.[9])throw Error('expected a floor 9 upgrade');
+        chest.generatedSupply=generated;
+        if(generated)chest.items.find(i=>i.talismanKind==='upgrade'&&!i.coreDrop982).count++;
+        if(!__MANRU_RELEASE__.save().ok)throw Error('fixture save failed');
+      },generated);
+      await oldChest.page.reload();
+      await oldChest.page.locator('#continueBtn').click();
+      const count=await oldChest.page.evaluate(()=>{
+        const chest=__MANRU_QA_UI__.state().branchTerrain105.palace105.starterChest;
+        return chest.items.filter(i=>i.talismanKind==='upgrade').reduce((n,i)=>n+i.count,0);
+      });
+      assert.equal(count,6);
+    }
+    assert.deepEqual(oldChest.errors,[]);
+  }finally{await oldChest.close()}
   console.log('PASS: recovery code, latest local and archived ghosts, save/load, palace 2F ↔ 1F ↔ main 9F');
 } finally { await browser.close(); }
