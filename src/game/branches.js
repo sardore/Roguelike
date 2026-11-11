@@ -437,7 +437,7 @@ function palaceLotusTurn(mon,target){mon.palaceBloom105=palaceWet(mon);if(mon.st
 }
 function palaceKingInventory(mon){
  if(mon.inventoryRevision105===1){mon.idlePotionKind105='heal_medium';return;}
- const spear={...clone(WEAPONS.find(w=>w.name==='철두창')),type:'weapon',elementBrand74:'water',count:1},crossbow={...clone(globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='water_crossbow')),type:'weapon',artifactId46:'water_crossbow',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1,palaceReward105:true};
+ const spear={...clone(WEAPONS.find(w=>w.name==='철두창')),type:'weapon',elementBrand74:'water',count:1},crossbow={...clone(globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='water_crossbow')),type:'weapon',artifactId46:'water_crossbow',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1};
  const fusionPool=globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates('elem_water'),fusion=[];
  for(let n=0;n<3;n++)fusion.push({...fusionPool.splice(rand(0,fusionPool.length-1),1)[0],count:1,identified:true});
  mon.inventory=[{...clone(MINE_ITEMS105.stone),count:1},spear,...fusion,crossbow,...['heal_small','heal_medium'].map(kind=>({...clone(window.MANRU_POTIONS.find(i=>i.potionKind===kind)),count:1}))];
@@ -652,7 +652,7 @@ function buildPalace(level){
   for(const n of nodes){for(const sign of[-1,1]){const x=n.x+sign,y=n.y;if(!d.routeCells[k(x,y)]&&m[y]?.[x]!==TT.SWITCH)prop(x,y,TT.JAR,'진주 봉인의 해주 장독','jar');}const wx=n.x,wy=n.y-2;if(m[wy]?.[wx]===TT.WALL){d.facades[k(wx,wy)]={style:'bronze'};wallLamp(wx,wy,0,1,'bronze');}}
   const leaf=nodes.filter(n=>n!==root&&links.filter(l=>l.a===n||l.b===n).length===1),rewards=leaf.length?leaf:[nodes[0],nodes[3]];
   d.switchMaze105={x:mx,y:my,w:mw,h:mh,entry,nodes,links:links.map(l=>({a:[l.a.x,l.a.y],b:[l.b.x,l.b.y]})),rewards:[]};
-  for(const[n,q]of rewards.slice(0,3).entries()){const item=n%2?ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_small'):foodDef('말린 육포');if(item){const reward={...clone(item),count:level===2&&item.type==='food'?2:1,identified:true,palaceMazeReward105:true};PlacementService.placeItem(reward,q,{placementMode:'exact',requireReachable:false});d.switchMaze105.rewards.push({x:q.x,y:q.y,name:item.name});}}
+  for(const[n,q]of rewards.slice(0,3).entries()){const item=n%2?ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_small'):foodDef('말린 육포');if(item){const reward={...clone(item),count:level===2&&item.type==='food'?2:1,identified:true};PlacementService.placeItem(reward,q,{placementMode:'exact',requireReachable:false});d.switchMaze105.rewards.push({x:q.x,y:q.y,name:item.name});}}
   d.generation105.zones.push({id:r.id,stage:8,algorithm:r.algorithm105,chambers:nodes.length,links:links.length});
  }
  if(level===2){const arena=d.arena105,px=arena.x+arena.w-8,py=arena.y+1,cell='palace-royal-cell',gate={x:px+3,y:py+6},button={id:'palace-royal-release',x:px+3,y:py+7,activation105:['player','stone'],gateOnly:true,bossRelease105:true,prisonCell105:cell,prisonEntry105:'out'};rect(px+1,py+1,5,5,3,'throne',14);for(let xx=px;xx<=px+6;xx++){wall(xx,py,'bronze');wall(xx,py+6,'bronze');}for(let yy=py;yy<=py+6;yy++){wall(px,yy,'bronze');wall(px+6,yy,'bronze');}delete d.props[k(button.x,button.y)];put(button.x,button.y,3,'throne',14);setTerrainTile58(m,button.x,button.y,TT.SWITCH);d.facades[k(gate.x,gate.y)]={style:'iron-grate'};ter.mine105.buttons.push(button);ter.mine105.walls.push({id:cell,prisonCell105:cell,buttonIds:[button.id],cells:[gate],open:false,until:0,persistent105:true,floorTile105:TT.PALACE_HIGH});d.prison105={cell,bounds:{x:px+1,y:py+1,w:5,h:5},gate,button:{x:button.x,y:button.y},spawn:{x:px+3,y:py+3}};}
@@ -690,8 +690,8 @@ function buildPalace(level){
   const nodes=r.nodes105.filter(n=>!n.basin105),anchors=[nodes[0],nodes[nodes.length>>1],nodes[nodes.length-1]].filter(Boolean);
   for(const n of anchors)supply({...clone(foodDef('해초')),count:level===2?4:2,identified:true}, {...r,cx:n.x,cy:n.y});
  }
- const recovery=ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_medium');for(const id of[banquet.id,armory.id,altar.id]){const r=d.rooms.find(r=>r.id===id);if(recovery&&r)supply({...clone(recovery),count:1,identified:true,palaceExploration105:true},r);}
- const provisions=CONSUMABLES.find(f=>f.foodKind==='jerky');for(const id of[guest.id,bedroom.id,machine.id]){const r=d.rooms.find(r=>r.id===id);if(provisions&&r)supply({...clone(provisions),count:level===2?6:3,identified:true,palaceExploration105:true},r);}
+ const recovery=ordinaryPotionPool(false,9).find(p=>p.potionKind==='heal_medium');for(const id of[banquet.id,armory.id,altar.id]){const r=d.rooms.find(r=>r.id===id);if(recovery&&r)supply({...clone(recovery),count:1,identified:true},r);}
+ const provisions=CONSUMABLES.find(f=>f.foodKind==='jerky');for(const id of[guest.id,bedroom.id,machine.id]){const r=d.rooms.find(r=>r.id===id);if(provisions&&r)supply({...clone(provisions),count:level===2?6:3,identified:true},r);}
  PlacementService.placeItem(palaceGuideItem(),{x:cx+2,y:hi});
  state.generationInProgress57=false;palaceApplyTide();VisibilityService.compute();return true;
 }
