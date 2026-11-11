@@ -80,6 +80,15 @@ try {
     await submit(local, '19720');
     assert.match(await local.page.locator('.giftNote').textContent(), /알 수 없는 코드/);
     await submit(local, '19721');
+    await local.page.evaluate(() => {
+      if (!sessionStorage.getItem('manru1004_palace_recovery_raw')) throw Error('checkpoint missing');
+      localStorage.removeItem('manru1004_active_run');
+      localStorage.removeItem('manru1004_active_run_shadow');
+    });
+    await local.page.reload();
+    await local.page.locator('#continueBtn').click();
+    const debug = await local.page.evaluate(() => ({ live: !!__MANRU_QA_UI__.state(), cls:document.querySelector('#continueBtn').className, toast:document.querySelector('#toast').textContent, meta:__MANRU_SAVE1004__.meta() }));
+    assert.ok(debug.live, JSON.stringify(debug));
     await checkRoute(local, 8, 3, 1380, potionMap, talismanMap);
   } finally { await local.close(); }
 

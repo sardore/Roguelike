@@ -383,6 +383,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     const DEADRUNS='manru1004_dead_runs';
     const LEGACY_RUN='manru984_active_run';
     const BOOT_RECOVERY='manru1004_boot_recovery_raw';
+    const PALACE_RECOVERY='manru1004_palace_recovery_raw';
     /* ---------- save namespace: never auto-open a previous-build run ---------- */
     function purgeLegacy1004(){
       try{
@@ -418,12 +419,13 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         const transaction=SaveService.recoverTransaction();if(!transaction.ok)return{...transaction,candidate:null};
         try{
           const primary=candidate1004(localStorage.getItem(SAVE1004),'primary'),shadow=candidate1004(localStorage.getItem(SHADOW),'shadow'),recovered=primary||shadow?null:candidate1004(sessionStorage.getItem(BOOT_RECOVERY),'recovery');
-          const best=newer1004(newer1004(primary,shadow),recovered);if(!best)return{ok:true,candidate:null};
+          const palace=primary||shadow?null:candidate1004(sessionStorage.getItem(PALACE_RECOVERY),'palace-recovery');
+          const best=newer1004(newer1004(primary,shadow),newer1004(recovered,palace));if(!best)return{ok:true,candidate:null};
           // Both alternating slots are already durable. Reading the newer slot must
           // not duplicate two large floor snapshots into a third transaction journal.
-          if(best.source==='recovery'){
+          if(best.source==='recovery'||best.source==='palace-recovery'){
             localStorage.setItem(SAVE1004,best.raw);if(localStorage.getItem(SAVE1004)!==best.raw)throw Error('recovery read-back mismatch');
-            sessionStorage.removeItem(BOOT_RECOVERY);
+            sessionStorage.removeItem(best.source==='palace-recovery'?PALACE_RECOVERY:BOOT_RECOVERY);
           }
           return{ok:true,candidate:best};
         }catch(e){return{ok:false,failure:'recovery',message:String(e),candidate:null}}
@@ -451,7 +453,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           if(record.complete&&(!Array.isArray(record.complete)||record.complete.length>4||record.complete.some(row=>!Array.isArray(row)||!allowed.includes(row[0])||(row[1]!==null&&typeof row[1]!=='string'))))throw Error('invalid terminal journal');
           if(storageKey===TERMINAL_INTENT&&!record.complete)throw Error('missing terminal intent');
           const rollback=SaveService.settle(record);if(!rollback.ok)return{ok:false,failure:'recovery',rollback};
-          if(record.complete)sessionStorage.removeItem(BOOT_RECOVERY);
+          if(record.complete){sessionStorage.removeItem(BOOT_RECOVERY);sessionStorage.removeItem(PALACE_RECOVERY)}
           if(storageKey===TERMINAL_INTENT){store.removeItem(storageKey);if(store.getItem(storageKey)!==null)throw Error('terminal intent removal')}
           }
           return{ok:true};
@@ -501,7 +503,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           entries.push([DEATH1004,JSON.stringify({at:Date.now(),runId:rid,floor:state?.floor||0,turn:state?.turn||0,version:SAVE_RELEASE_TAG})],[DEADRUNS,JSON.stringify(ids.slice(-64))]);
         }
         entries.push([SHADOW,null],[SAVE1004,null]);const result=SaveService.transact(entries,kind,true);
-        if(result.ok){sessionStorage.removeItem(BOOT_RECOVERY);purgeLegacy1004()}return result;
+        if(result.ok){sessionStorage.removeItem(BOOT_RECOVERY);sessionStorage.removeItem(PALACE_RECOVERY);purgeLegacy1004()}return result;
       },
       snapshot(){return structuredClone(RuntimeState.persistence)}
     });
@@ -523,6 +525,13 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         }catch(e){
           result=SaveService.record({ok:false,committed:false,source:'active-run',reason,primaryWritten:false,shadowWritten:false,failure:'write',message:String(e)});
         }
+      }
+      if(result.ok&&reason==='new'){
+        // Keep a second copy in the current tab until normal saves take over.
+        try{
+          if(state.branchWorld105?.recoveryTalismans)sessionStorage.setItem(PALACE_RECOVERY,raw);
+          else sessionStorage.removeItem(PALACE_RECOVERY);
+        }catch(error){ignoreError('could not retain recovery checkpoint',error)}
       }
       if(result.ok){state.saveVersion1004=SAVE_RELEASE_TAG;state.saveSchema1004=1;state.saveWrittenAt1004=plain.saveWrittenAt1004;state.saveSeq1004=plain.saveSeq1004;purgeLegacy1004()}
       const frame=ACTION_AUDIT5.stack[0];if(frame)frame.result.persistence=result;return result;
