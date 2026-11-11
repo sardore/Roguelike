@@ -19,14 +19,17 @@ const SHEET_NAME = 'deaths';
 const NICK_SHEET = 'nicks';
 // Ghosts: the dead character of a run (the player object as JSON) kept for the owner (player ID), and later for others to fight. status is 'alive' until a fight takes it.
 const GHOST_SHEET = 'ghosts';
-const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime', 'score', 'peak', 'wins', 'losses'];
+const GHOST_PART_HEADERS = Array.from({ length: 9 }, (_, i) => 'body_part_' + (i + 2));
+const GHOST_HEADER = ['time', 'id', 'owner', 'nick', 'cls', 'floor', 'level', 'cause', 'status', 'body', 'lock', 'lockTime', 'score', 'peak', 'wins', 'losses', ...GHOST_PART_HEADERS];
 const BODY_COL = GHOST_HEADER.indexOf('body') + 1, LOCK_COL = GHOST_HEADER.indexOf('lock') + 1;
+const GHOST_PART_COL = GHOST_HEADER.indexOf(GHOST_PART_HEADERS[0]) + 1;
 // Stakes: ids (player ID -> hash of its device secret), duels (one row per duel id), loot (what a winner has coming).
 const ID_SHEET = 'ids', DUEL_SHEET = 'duels', LOOT_SHEET = 'loot';
 const DUEL_HEADER = ['id', 'time', 'ghostA', 'ownerA', 'ghostB', 'ownerB', 'claimA', 'claimB', 'timeA', 'timeB', 'state', 'winner'];
-const LOOT_HEADER = ['time', 'owner', 'duel', 'ghost', 'items', 'status'];
+const LOOT_HEADER = ['time', 'owner', 'duel', 'ghost', 'items', 'status', ...GHOST_PART_HEADERS];
 const LOCK_MS = 30 * 60 * 1000, SETTLE_MS = 10 * 60 * 1000, LOOT_PER_CLAIM = 12;
-const GHOST_MAX = 45000, GHOST_ROWS = 20000, GHOSTS_PER_OWNER = 200, GHOST_LIST = 100;
+const LEGACY_BODY_MAX = 45000, BODY_PART_SIZE = 46000;
+const GHOST_MAX = 450000, GHOST_ROWS = 20000, GHOSTS_PER_OWNER = 200, GHOST_LIST = 100;
 const HEADER = ['time', 'id', 'floor', 'cause', 'level', 'kills', 'turns', 'nick', 'cls', 'live'];
 // A run still being played is one row that its player keeps updating (same id); its last update time sits in the `live` column and is cleared
 // when the final record (death or clear) arrives. A run not updated for LIVE_TTL_MS is treated as given up.
@@ -103,16 +106,41 @@ function depthRanked_(id) {
   return runs.sort(BOARDS.depth).slice(0, RANK_ROWS).some((run) => run.id === id);
 }
 
+// Long JSON uses prefixed chunks so Sheets cannot interpret any slice as a formula or a number.
+function jsonCells_(body) {
+  if (body.length <= LEGACY_BODY_MAX) return ["'" + body];
+  const cells = [];
+  for (let start = 0; start < body.length;) {
+    let end = Math.min(body.length, start + BODY_PART_SIZE);
+    const last = body.charCodeAt(end - 1);
+    if (end < body.length && last >= 0xD800 && last <= 0xDBFF) end--;
+    cells.push('~' + body.slice(start, end));
+    start = end;
+  }
+  return cells;
+}
+
+function readJsonCells_(row, bodyColumn, partColumn) {
+  const first = String(row[bodyColumn - 1] || '');
+  if (!first.startsWith('~')) return first.replace(/^'/, '');
+  const cells = [first, ...row.slice(partColumn - 1)];
+  const end = cells.findIndex(cell => cell === '');
+  const parts = end < 0 ? cells : cells.slice(0, end);
+  if (parts.some(cell => typeof cell !== 'string' || !cell.startsWith('~'))) throw new Error('Invalid JSON cell parts');
+  return parts.map(cell => cell.slice(1)).join('');
+}
+
 // Keeps the ghost of a run (once per run id). Call with the lock held. A character is a JSON object; anything else is dropped.
 function ghostPut_(id, owner, nick, cls, floor, level, cause, body) {
   if (typeof body !== 'string' || body.length > GHOST_MAX) return;
   try { if (typeof JSON.parse(body) !== 'object') return; } catch (error) { return; }
   const sheet = ghosts_(), rows = sheet.getLastRow();
-  if (rows > 1 && sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext()) return;
+  if (rows > 1 && sheet.getRange(2, 2, rows - 1, 1).createTextFinder(id).matchEntireCell(true).findNext()) return true;
   if (rows >= GHOST_ROWS) return;
   if (rows > 1 && sheet.getRange(2, 3, rows - 1, 1).createTextFinder(owner).matchEntireCell(true).findAll().length >= GHOSTS_PER_OWNER) return;
-  // a leading = + - @ in the body would run as a formula
-  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', "'" + body, '', '', '', '']);
+  const [first, ...parts] = jsonCells_(body);
+  sheet.appendRow([new Date().toISOString(), id, owner, nick, cls, floor, level, cause, 'alive', first, '', '', '', '', '', '', ...parts]);
+  return true;
 }
 
 // A ghost whose lock ran out is alive again (unless a duel still has to be settled: ghostFree_ looks).
@@ -124,8 +152,10 @@ function statusOf_(row) {
 function ghostList_(owner, key) {
   if (!authed_(owner, key)) return reply_({ ok: false, error: 'auth' });
   const sheet = ghosts_(), rows = sheet.getLastRow();
-  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues() : [];
-  const list = values.filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
+  const values = rows > 1 ? sheet.getRange(2, 1, rows - 1, 9).getValues() : [];
+  const stats = rows > 1 ? sheet.getRange(2, LOCK_COL + 1, rows - 1, 5).getValues() : [];
+  const list = values.map((row, i) => [...row, '', '', ...stats[i]])
+    .filter(row => String(row[2]) === owner).reverse().slice(0, GHOST_LIST)
     .map(row => ({ t: row[0], id: row[1], cls: row[4], floor: row[5], level: row[6], cause: row[7], status: statusOf_(row), score: Number(row[12]) || 0, peak: Number(row[13]) || 0, wins: Number(row[14]) || 0, losses: Number(row[15]) || 0 }));
   return reply_({ ok: true, list });
 }
@@ -138,7 +168,7 @@ function ghostGet_(owner, id, key) {
   const runs = sheet_(), runCount = runs.getLastRow();
   const run = runCount > 1 ? runs.getRange(2, 2, runCount - 1, 1).createTextFinder(id).matchEntireCell(true).findNext() : null;
   const turns = run ? Number(runs.getRange(run.getRow(), HEADER.indexOf('turns') + 1).getValue()) : null;
-  return reply_({ ok: true, body: String(sheet.getRange(found.getRow(), BODY_COL).getValue()).replace(/^'/, ''), turns });
+  return reply_({ ok: true, body: readJsonCells_(sheet.getRange(found.getRow(), 1, 1, GHOST_HEADER.length).getValues()[0], BODY_COL, GHOST_PART_COL), turns });
 }
 
 // ---- stakes ----------------------------------------------------------------------------------------------------------------
@@ -195,10 +225,13 @@ function resolve_(duels, row) {
   const count = (r, name) => { if (r) { const cell = ghosts.getRange(r, GHOST_HEADER.indexOf(name) + 1); cell.setValue((Number(cell.getValue()) || 0) + 1); } };
   count(winnerRow, 'wins'); count(loserRow, 'losses');
   if (loserRow) {
-    const items = lootOf_(ghosts.getRange(loserRow, BODY_COL).getValue());
+    const items = lootOf_(readJsonCells_(ghosts.getRange(loserRow, 1, 1, GHOST_HEADER.length).getValues()[0], BODY_COL, GHOST_PART_COL));
     setGhost_(ghosts, loserRow, 'taken');
     CacheService.getScriptCache().removeAll(['ranking']);
-    if (items.length) sheetOf_(LOOT_SHEET, LOOT_HEADER).appendRow([new Date().toISOString(), winnerOwner, id, loser, "'" + JSON.stringify(items), 'pending']);
+    if (items.length) {
+      const [first, ...parts] = jsonCells_(JSON.stringify(items));
+      sheetOf_(LOOT_SHEET, LOOT_HEADER).appendRow([new Date().toISOString(), winnerOwner, id, loser, first, 'pending', ...parts]);
+    }
   }
   if (winnerRow) setGhost_(ghosts, winnerRow, 'alive');
   duels.getRange(row, DUEL_HEADER.indexOf('state') + 1, 1, 2).setValues([['done', winner]]);
@@ -331,13 +364,17 @@ function lootClaim_(req) {
   try {
     const sheet = sheetOf_(LOOT_SHEET, LOOT_HEADER), rows = sheet.getLastRow();
     for (let r = 2; r <= rows && taken.length < LOOT_PER_CLAIM; r++) {
-      const [, who, , , items, status] = sheet.getRange(r, 1, 1, LOOT_HEADER.length).getValues()[0];
+      const row = sheet.getRange(r, 1, 1, LOOT_HEADER.length).getValues()[0];
+      const [, who, , , , status] = row;
       if (String(who) !== owner || String(status) !== 'pending') continue;
       let list;
-      try { list = JSON.parse(String(items).replace(/^'/, '')); } catch (error) { list = []; }
+      try { list = JSON.parse(readJsonCells_(row, 5, 7)); } catch (error) { list = []; }
       const give = list.slice(0, LOOT_PER_CLAIM - taken.length), rest = list.slice(give.length);
       taken.push(...give);
-      if (rest.length) sheet.getRange(r, 5).setValue("'" + JSON.stringify(rest));
+      if (rest.length) {
+        const [first, ...parts] = jsonCells_(JSON.stringify(rest));
+        sheet.getRange(r, 5, 1, LOOT_HEADER.length - 4).setValues([[first, 'pending', ...GHOST_PART_HEADERS.map((_, i) => parts[i] || '')]]);
+      }
       else sheet.getRange(r, 6).setValue('claimed');
     }
   } finally { lock.releaseLock(); }
@@ -411,6 +448,8 @@ function doPost(e) {
   const cls = /^[a-z][a-z0-9_]{0,23}$/.test(String(record.cls || '')) ? String(record.cls) : '';
   const live = record.live === 1;
   const ghost = !live && cause !== 'End' && typeof record.ghost === 'string' && authed_(owner, String(record.key || '')) ? record.ghost : null;
+  const largeGhost = typeof record.ghost === 'string' && record.ghost.length > LEGACY_BODY_MAX;
+  let ghostStored = false;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -420,18 +459,26 @@ function doPost(e) {
     if (found) {
       // A finished run never changes again (a late progress update or a resent record is dropped); a run in progress is updated in place.
       const row = found.getRow();
-      if (!sheet.getRange(row, LIVE_COL).getValue()) return reply_({ ok: true, duplicate: true });
+      if (!sheet.getRange(row, LIVE_COL).getValue()) {
+        if (!largeGhost) return reply_({ ok: true, duplicate: true });
+        const final = sheet.getRange(row, 1, 1, HEADER.length).getValues()[0];
+        const matches = final[2] === floor && final[3] === cause && final[4] === level &&
+          final[5] === kills && final[6] === turns && final[8] === cls;
+        if (matches && ghost && depthRanked_(id)) ghostStored = !!ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
+        if (ghostStored) CacheService.getScriptCache().removeAll(['ranking']);
+        return reply_({ ok: true, duplicate: true, ghostStored });
+      }
       sheet.getRange(row, 3, 1, 7).setValues([[floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls]]);
       sheet.getRange(row, LIVE_COL).setValue(live ? Date.now() : '');
-      if (ghost && depthRanked_(id)) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
+      if (ghost && depthRanked_(id)) ghostStored = !!ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     } else {
       if (rows >= MAX_ROWS) return reply_({ ok: false, error: 'full' });
       sheet.appendRow([new Date().toISOString(), id, floor, live ? LIVE_CAUSE : cause, level, kills, turns, nick, cls, live ? Date.now() : '']);
-      if (ghost && depthRanked_(id)) ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
+      if (ghost && depthRanked_(id)) ghostStored = !!ghostPut_(id, owner, nick, cls, floor, level, cause, ghost);
     }
     CacheService.getScriptCache().removeAll(['summary', 'ranking']);
   } finally { lock.releaseLock(); }
-  return reply_({ ok: true });
+  return reply_(largeGhost ? { ok: true, ghostStored } : { ok: true });
 }
 
 // Each board orders by its own number first, then by how far the run got.
@@ -447,7 +494,14 @@ function standingGhosts_(runs) {
   const sheet = ghosts_(), rows = sheet.getLastRow();
   if (rows < 2) return [];
   const scores = {};
-  for (const row of sheet.getRange(2, 1, rows - 1, GHOST_HEADER.length).getValues()) if (String(row[8]) !== 'taken') scores[String(row[1])] = { score: Number(row[12]) || 0, peak: Number(row[13]) || 0, wins: Number(row[14]) || 0, losses: Number(row[15]) || 0 };
+  const rowsById = sheet.getRange(2, 2, rows - 1, 1).getValues();
+  const states = sheet.getRange(2, 9, rows - 1, 1).getValues();
+  const stats = sheet.getRange(2, 13, rows - 1, 4).getValues();
+  rowsById.forEach(([id], i) => {
+    if (String(states[i][0]) === 'taken') return;
+    const [score, peak, wins, losses] = stats[i].map(value => Number(value) || 0);
+    scores[String(id)] = { score, peak, wins, losses };
+  });
   const start = run => Math.max(3, (Number(run.floor) || 1) + 2);
   return runs.filter(run => scores[run.id]).map(run => ({ ...run, score: scores[run.id].score, peak: scores[run.id].peak, wins: scores[run.id].wins, losses: scores[run.id].losses }))
     .sort((a, b) => (b.score || start(b)) - (a.score || start(a)) || BOARDS.depth(a, b)).slice(0, RANK_ROWS).map(({ id, ...run }) => run);
@@ -471,6 +525,7 @@ function ranking_() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.view === 'ghost-capacity') return reply_({ ok: true, max: GHOST_MAX });
   if (e && e.parameter && e.parameter.view === 'ghosts') return ghostList_(String(e.parameter.owner || ''), String(e.parameter.key || ''));
   if (e && e.parameter && e.parameter.view === 'ghost') return ghostGet_(String(e.parameter.owner || ''), String(e.parameter.id || '').slice(0, 64), String(e.parameter.key || ''));
   if (e && e.parameter && e.parameter.view === 'ranking') return ranking_();
