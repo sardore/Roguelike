@@ -39,15 +39,20 @@ const PlayStats={
    potionMap:state.knowledge56?.potionMap,potionKnown:state.knowledge56?.potionKnown,
    talismanMap:state.knowledge56?.talismanMap,talismanKnown:state.knowledge56?.talismanKnown
   };
-  const body=JSON.stringify(p);return body.length<=this.GHOST_MAX?body:null;
+  return JSON.stringify(p);
  },
  recordDeath(cause){
   if(!state||runIsEphemeral()||state.debugMapGeneration57)return false;
   const endpoint=this.endpoint(),record=endpoint?this.runRecord(cause):null;
   if(cause!==this.END_CAUSE){
    const ghost=this.ghostBody();
-   lsSet('manruLatestDeath',JSON.stringify({id:record?.id||state.runId984,ghost}));
-   if(ghost&&record){record.ghost=ghost;record.key=this.secret()}
+   const snapshot=JSON.stringify({id:record?.id||state.runId984,ghost});
+   if(!lsSet('manruLatestDeath',snapshot)){
+    try{sessionStorage.setItem('manruLatestDeath',snapshot)}catch(error){ignoreError('death snapshot could not be stored',error)}
+   }else{
+    try{sessionStorage.removeItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup cleanup failed',error)}
+   }
+   if(ghost.length<=this.GHOST_MAX&&record){record.ghost=ghost;record.key=this.secret()}
   }
   if(!record)return false;
   this.rememberRun({...record,ghost:undefined});
@@ -366,11 +371,19 @@ const PlayStats={
  },
  async redeemRecoveryCode(code){
   if(String(code).trim()!=='19721')return '알 수 없는 코드다.';
-  const hasActiveRun=()=>Boolean(state&&!state.dead&&!state.victory||SaveService.recover().candidate);
-  if(hasActiveRun())return '이어갈 탐사가 남아 있다.';
+  const checkSave=()=>{
+   const saved=SaveService.recover();
+   if(!saved.ok)return '이 기기의 저장 기록을 읽지 못했다.';
+   if(saved.candidate||state&&!state.dead&&!state.victory)return '이어갈 탐사가 남아 있다.';
+   return '';
+  };
+  const saveNotice=checkSave();
+  if(saveNotice)return saveNotice;
   const scene=document.getElementById('statsScene');
   try{
-   const local=JSON.parse(lsGet('manruLatestDeath')||'null');
+   let backup=null;
+   try{backup=sessionStorage.getItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup unreadable',error)}
+   const local=JSON.parse(backup||lsGet('manruLatestDeath')||'null');
    const latest=this.mine().findLast(row=>row.cause&&row.cause!==this.END_CAUSE);
    const id=local?.id||latest?.id;
    const queued=this.queue().find(row=>row.id===id);
@@ -380,6 +393,7 @@ const PlayStats={
     const row=id?{id}:(await this.fetchView(this.endpoint(),'ghosts&'+owner))?.list?.[0];
     if(row?.id){
      const archived=await this.fetchView(this.endpoint(),'ghost&'+owner+'&id='+encodeURIComponent(row.id));
+     if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
      raw=archived?.body;
      turns??=archived?.turns;
     }
@@ -387,7 +401,9 @@ const PlayStats={
    if(!raw)return '최근 사망 판의 망령 기록이 없다.';
    const ghost=JSON.parse(raw),cls=CLASSES.find(c=>c.id===ghost?.classId);
    if(!cls||!Array.isArray(ghost.inventory)||!(ghost.maxHp>0))return '망령 기록을 읽지 못했다.';
-   if(!scene?.isConnected||hasActiveRun())return '이어갈 탐사가 남아 있다.';
+   if(!scene?.isConnected)return '';
+   const updatedSaveNotice=checkSave();
+   if(updatedSaveNotice)return updatedSaveNotice;
    newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}});
    this.close();
    toast('창해 용궁 2층 입구에서 되살아났다.');
