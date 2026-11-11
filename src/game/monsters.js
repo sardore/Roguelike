@@ -1111,7 +1111,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   // Inspection reads the live actor's traits; it never configures or mutates combat.
   function monsterSkills(mon){
     const skills=[],floor=combatDepth(mon),add=(id,name,seal,meta,desc,style='roar',type='기술')=>skills.push({id,name,seal,meta,type,desc,style});
-    if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 ${mon.actionSpeed}번 판단하고 이동·공격·소환·기술을 실행한다. 이동만 빨라지는 신속과는 다르다.`,'ghost','지속');
+    if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
     if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
       add('sweep','용미 쓸기','尾',`전방위 ${PALACE_SWEEP_RULES105.maxRadius}칸 · 재사용 ${PALACE_SWEEP_RULES105.cooldownTurns}/${PALACE_SWEEP_RULES105.highTideCooldownTurns}턴`,`적이 4칸 이내일 때 시작. 반경이 매 행동 1칸씩 커진 뒤 쓸기. 준비부터 종료까지 무적. 공격력 ×1.2, 1칸 밀침. 중병을 뺀 해로운 상태 ${PALACE_SWEEP_RULES105.statusTurns}턴. 재사용은 평소/최고 수위 기준.`);
