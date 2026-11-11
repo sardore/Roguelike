@@ -173,7 +173,11 @@ try {
     assert.deepEqual(first.known,[true,true]);
     assert.ok(first.chest[1]>25);
     assert.deepEqual([first.chest[0],first.chest[2],first.chest[3]],[true,false,'wood']);
-    assert.equal(await starter.page.evaluate(() => __MANRU_RELEASE__.load()),true);
+    await starter.page.reload();
+    const continueButton=starter.page.locator('#continueBtn');
+    assert.equal(await continueButton.isEnabled(),true);
+    assert.equal(await continueButton.evaluate(button=>button.classList.contains('noSave')),false);
+    await continueButton.click();
     assert.deepEqual(await verify(),first);
     const destroyed = await starter.page.evaluate(() => {
       const st = __MANRU_QA_UI__.state(), chest = st.branchTerrain105.palace105.starterChest;
@@ -185,10 +189,19 @@ try {
     assert.equal(await starter.page.evaluate(() => __MANRU_RELEASE__.load()),true);
     await dismissModals(starter);
     await starter.tick(800);
+    assert.equal(await starter.page.locator('#bossHud').isVisible(),true);
+    assert.match(await starter.page.locator('#bossName').textContent(),/창해군/);
+    assert.equal(await starter.page.locator('#contextActionLabel').textContent(),'상자 열기');
     await starter.page.keyboard.press('f');
     const panel = starter.page.locator('#choice991');
     await panel.waitFor({state:'visible'});
     const rows = panel.locator('.choice991Row');
+    const potions = await rows.evaluateAll(buttons => {
+      const items=__MANRU_QA_UI__.state().branchTerrain105.palace105.starterChest.items;
+      return items.flatMap((item,index)=>item.type==='potion'?[[buttons[index].querySelector('.choice991ItemName').textContent,item.name]]:[]);
+    });
+    assert.ok(potions.length>0);
+    for(const [visible,name] of potions)assert.equal(visible,name);
     const confirm = panel.getByRole('button',{name:/받기/});
     assert.equal(await confirm.isDisabled(),true);
     const isScrollable = await panel.locator('#choice991List').evaluate(list=>list.scrollHeight>list.clientHeight);
