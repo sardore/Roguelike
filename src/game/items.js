@@ -18,9 +18,8 @@ function itemStackIdentity(item,inventory=false){
   if(item?.summonItem105==='picture')ignored.add('summonPortrait105');
   if(consumable){
     for(const k of ['stackMax','desc','ability','color','seal','appearance56','identified','isIdentified','unidentified','origin56','minFloor','maxFloor','craftedOnly57','naturalOnly57','weight','weight74','spawnMin','spawnMax'])ignored.add(k);
-    // Ground placement tags remain distinct until pickup; no room reward/topology data is merged on the map.
-    if(inventory){ignored.add('placement57');for(const k of ITEM_PLACEMENT_FIELDS58)ignored.add(k);}
   }
+  if(inventory)for(const key of ITEM_PLACEMENT_FIELDS58)ignored.add(key);
   const data={},source=proto?{...proto,...item}:item;
   // Older field-cooked fish retained the raw input flag; cooked food has no raw effect.
   if(item?.foodKind==='grilled_fish')ignored.add('raw');
@@ -39,7 +38,7 @@ function transferItemQuantity(item,source,target,quantity=itemQuantity(item),opt
   const moved=quantity-left;if(!moved)return{moved:0,remaining:total};
   for(const entry of merges)entry.stack.count=itemQuantity(entry.stack)+entry.n;
   const remaining=total-moved;let reused=false;
-  for(const n of chunks){const stack=!remaining&&!reused?item:structuredClone(item);reused=true;stack.count=n;if(opts.position){stack.x=opts.position.x;stack.y=opts.position.y}else{delete stack.x;delete stack.y;if(stack.foodKind==='charcoal')coolCharcoal105(stack);if(['food','ingredient','potion','talisman','ammo'].includes(stack.type))for(const key of ['placement57',...ITEM_PLACEMENT_FIELDS58])delete stack[key]}target.push(stack)}
+  for(const n of chunks){const stack=!remaining&&!reused?item:structuredClone(item);reused=true;stack.count=n;if(opts.position){stack.x=opts.position.x;stack.y=opts.position.y}else{delete stack.x;delete stack.y;if(stack.foodKind==='charcoal')coolCharcoal105(stack);for(const key of ITEM_PLACEMENT_FIELDS58)delete stack[key]}target.push(stack)}
   if(remaining)item.count=remaining;else if(source)source.splice(source.indexOf(item),1);
   if(target===state?.player?.inventory&&item.artifactId46)globalThis.__MANRU_LEGEND47__?.recordAcquisition?.();return{moved,remaining}
 }
@@ -531,7 +530,7 @@ function prepareGearCurse(item,opt={}){
   function holyProto(){return(window.MANRU_TALISMANS||[]).find(t=>t.talismanKind==='holy')}
   function holySchedule(){if(!state)return null;state.holy991=state.holy991||{schedule:{},spawned:{}};const ch=Math.max(0,Math.min(4,Math.floor((state.floor-1)/5))),k=String(ch);if(!state.holy991.schedule[k]){const lo=ch===0?2:ch*5+1,hi=ch*5+5;state.holy991.schedule[k]=lo+Math.floor(globalThis.__MANRU_RANDOM57__()*(hi-lo+1))}return{ch,k,floor:state.holy991.schedule[k]}}
   function holyCell(){for(let n=0;n<80;n++){const q=PlacementService.randomFloor(0),t=state.map[q.y]?.[q.x];if(ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y)&&!state.items.some(i=>i.x===q.x&&i.y===q.y)&&![TT.STAIR,TT.TRAP,TT.SNARE,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(t))return q}return{x:state.player.x,y:state.player.y}}
-  function ensureHolyDrop(){const h=holySchedule(),proto=holyProto();if(!h||!proto||h.floor!==state.floor||state.holy991.spawned[h.k])return false;const q=holyCell(),it=clone(proto);Object.assign(it,{x:q.x,y:q.y,count:1,coreHoly991:true});PlacementService.placeItem(it);state.holy991.spawned[h.k]=true;return true}
+  function ensureHolyDrop(){const h=holySchedule(),proto=holyProto();if(!h||!proto||h.floor!==state.floor||state.holy991.spawned[h.k])return false;const q=holyCell(),it=clone(proto);Object.assign(it,{x:q.x,y:q.y,count:1});PlacementService.placeItem(it);state.holy991.spawned[h.k]=true;return true}
   function applyCurseStats(stats,actor=state.player){const drainStacks=curseStackCount('drain',actor),nightmare=curseMultiplier('nightmare',actor),brittle=curseMultiplier('brittle',actor);if(drainStacks>0)stats.maxFocus+=2*drainStacks;if(nightmare>0){stats.will-=Math.round(2*nightmare);stats.vision-=Math.round(nightmare)}if(brittle>0){stats.def-=Math.round(brittle);stats.eva-=Math.round(brittle)}return stats}
   function triggerPeriodicCurse(c,clocks=syncCurseClocks991(),actor=state.player){const power=curseMultiplier(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
   function tickActorCurses(actor){
@@ -558,11 +557,12 @@ let inventoryDirty = false;
 function displayNumber53(value){const n=Number(value);return Number.isFinite(n)?String(Number(n.toFixed(2))):'—'}
 function fountainEvent(x,y){const r=drinkFromFountain(x,y);giveItem(foodDef('깨끗한 물'),x,y);addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');return r}
 // Placement provenance is needed by ground reward audits, but never changes a carried item's effect.
-const ITEM_PLACEMENT_FIELDS58=Object.freeze(['floor2Bonus66','floor2BonusIndex66','restaurantReward42','restaurantId42','restaurantRewardSpot42','miniVaultOrigin62','f20LooseLoot1020','r8LibraryPrize','f6Prize1023','resource48','resource53','bossDrop55','coreDrop982','coreHoly991','rumorSpaceId1030','f22Holy1023','generatedPeach53','branchReward105','branchFoodLevel105','palaceExploration105','palaceMazeReward105','palaceReward105']);
+const ITEM_PLACEMENT_FIELDS58=Object.freeze(['placement57','floor2Bonus66','floor2BonusIndex66','restaurantReward42','restaurantId42','restaurantRewardSpot42','miniVaultOrigin62','f20LooseLoot1020','r8LibraryPrize','f6Prize1023','resource48','resource53','bossDrop55','coreDrop982','coreHoly991','rumorSpaceId1030','f22Holy1023','generatedPeach53','branchReward105','branchFoodLevel105','palaceExploration105','palaceMazeReward105','palaceReward105']);
 function normalizeItemContainers57(){
   if(!state?.player)return;
   const normalizeWeapon=item=>{if(!item||item.type!=='weapon')return;const d=WEAPONS.find(w=>w.name===item.name);if(d?.heavyStrikeBalance105&&!item.legendaryWeapon47&&!item.artifactWeapon46){if((item.heavyStrikeBalance105||0)<d.heavyStrikeBalance105){const old=((item.heavyStrikeBalance105||0)>=2?{'무쇠 메':16,'대형 오해머':20,'대장간 망치':21}:item.heavyStrikeBalance105?{'무쇠 메':13,'대형 오해머':16,'대장간 망치':21}:{'무쇠 메':8,'대형 오해머':10,'대장간 망치':14})[item.name];item.atk=Number.isFinite(item.atk)?item.atk+d.atk-old:d.atk+(item.upgrade||0);item.heavyStrikeBalance105=d.heavyStrikeBalance105;}item.speed=d.speed;}if(item.kind==='spear'&&!item.legendaryWeapon47&&!item.artifactWeapon46){const tier=item.tier||1;item.range=tier===1?3:tier>=4?5:4}if(item.name==='낫')item.ability='광역타격';else if(item.name==='암살용 비수')item.ability='치명 +10%';else if(item.name==='별운검')item.ability='치명 +14%';else if(item.name==='철참도'){item.ability='없음';item.atk=10+Math.max(0,Math.floor(Number(item.upgrade)||0))}};
   for(const item of [...(state.player.inventory||[]),...(state.items||[]),...(state.pendingGroundItems57||[]).map(q=>q?.item)]){if(item?.branchGuide105){const guide=itemPrototype(item.name);if(guide?.branchGuide105)item.desc=guide.desc;}if(item?.foodKind==='charcoal')item.desc=CONSUMABLES.find(i=>i.foodKind==='charcoal').desc;if(item?.foodKind==='coin_candy'){item.focusPercent57=.60;item.stackMax=99;item.desc=CONSUMABLES.find(i=>i.foodKind==='coin_candy').desc}if(item?.foodKind==='grilled_fish'){delete item.raw;delete item.naturalOnly57}normalizeWeapon(item)}normalizeWeapon(state.player.weapon);
+  for(const slot of GEAR_SLOT_TYPES){const item=state.player[slot];if(item)for(const key of ITEM_PLACEMENT_FIELDS58)delete item[key];}
   const inventory=[...(state.player.inventory||[])];state.player.inventory=[];for(const item of inventory)addInventoryItem(item);
   const ground=[...(state.items||[])];state.items=[];for(const item of ground){
     // Restoring an existing pile is not a fresh drop. A monster standing on its
