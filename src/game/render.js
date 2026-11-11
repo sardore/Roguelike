@@ -3687,30 +3687,41 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
  if(m.palaceActor105==='imugi'){
-  // One native 32x36 actor: broad head, arched neck and a grounded coil.
-  // Every mark is an integer pixel cluster; the two poses only shift the head and tail.
-  r('#091b2455',4,33,24,2);
-  const ink='#111e2b',deep='#203f52',shade='#2b5967',jade='#3c7d7b',light='#74ad98',bone='#d3c69a',gold='#a68c58';
-  for(const[x,y,w,h]of [[3,23,5,5],[2,27,5,4],[5,30,7,3],[10,26,17,8],[25,23,5,8],[23,20,5,5],[16,18,10,5],[12,15,9,5],[10,10,10,7]])r(ink,x,y,w,h);
-  // Tail curls behind the foreground coil, rather than lengthening the body above the tile.
-  r(deep,3,27,4,3);r(jade,4,25,3,3);r(light,5,23-b,2,3);r(deep,6,30,7,2);
-  r(deep,11,27,15,6);r(shade,9,28,18,3);r(jade,11,26,14,3);r(light,13,26,9,1);r(gold,11,31,12,1);r(bone,13,31,8,1);
-  r(deep,25,24,4,6);r(shade,24,22,4,6);r(jade,23,21,3,5);r(light,24,22,1,3);
-  r(ink,11,28,11,2);r(deep,13,27,9,1);r(gold,25,27,2,3);r(bone,24,29,2,2);
-  // The forward neck covers the rear loop; belly plates keep its direction readable.
-  r(deep,17,19,8,3);r(shade,14,17,7,3);r(jade,13,14,6,4);r(light,13,14,2,3);r(deep,12,11,7,5);
-  r(gold,18,15,2,4);r(bone,18,16,1,2);r(gold,20,19,3,2);r(bone,21,19,2,1);
-  for(const[x,y]of [[9,13],[10,17],[13,20],[19,22],[26,26]]){r(ink,x,y,3,3);r(light,x+1,y,2,1);r(jade,x+1,y+1,1,2);}
-  for(const[x,y]of [[12,28],[17,29],[21,27],[25,23],[14,15]]){r(shade,x,y,2,1);r(light,x+1,y+1,1,1);}
-  // Short swept crest, angular brow and long muzzle: an immature dragon, not a round mascot.
-  for(const[x,y,w,h]of [[9,5,6,3],[8,8,5,5],[11,7,12,7],[20,9,10,6],[19,14,8,3]])r(ink,x,y+b,w,h);
-  r(shade,10,6+b,5,3);r(jade,11,7+b,10,6);r(light,13,7+b,7,2);r(shade,10,9+b,4,4);
-  r(deep,14,12+b,9,3);r(jade,20,10+b,8,4);r(light,22,10+b,5,1);r(shade,26,11+b,2,3);
-  r(ink,18,10+b,6,2);r(gold,19,10+b,4,1);r('#efd27b',21,11+b,2,1);r(ink,22,11+b,1,1);
-  r(ink,27,11+b,1,1);r(ink,22,14+b,7,1);r(bone,24,14+b,1,2);r(gold,20,15+b,4,1);
-  r(ink,11,2+b,3,5);r(gold,12,3+b,1,4);r(bone,12,2+b,1,2);r(ink,17,3+b,3,4);r(bone,18,3+b,1,3);
-  r(ink,7,8+b,3,3);r(light,8,8+b,2,1);r(ink,6,12+b,5,2);r(jade,7,12+b,4,1);
-  r(bone,25,16+b,3,1);r(gold,28,15+b,2,1);r(bone,29,13+b,1,2);
+  // Use the canonical creature outline, shaded polygons and curved body at native 32x36.
+  const deep='#203f52',jade='#3c7d7b',light='#74ad98',bone='#d3c69a',gold='#a68c58';
+  shadow1012(q,16,33,26);
+  // Rear tail and coil stay behind the rising neck, with an open centre.
+  pR9(q,jade,[[10,31],[5,31],[2,28],[3,24],[6,21-b],[5,26],[7,28],[13,28]]);
+  pR9(q,light,[[3,26],[5,23-b],[5,27],[8,29],[5,29]],null);
+  eR9(q,18,27,11.5,6,deep);
+  eR9(q,18,25.5,10.5,5,jade);
+  eR9(q,17,25,6,2.5,'#172e3b');
+  pR9(q,light,[[8,25],[11,22],[20,21],[25,23],[19,22.5],[12,24]],null);
+  pR9(q,gold,[[8,28],[13,30],[24,29],[27,27],[26,30],[21,32],[12,32],[8,30]],null);
+  for(const x of[12,16,20,24])lR9(q,x,30,x-.5,31.5,deep,.6);
+  // Curved neck tapers into the head; its belly follows the bend.
+  q.beginPath();q.moveTo(12,10+b);q.bezierCurveTo(7,17+b,14,21,23,23);q.bezierCurveTo(27,25,26,28,22,29);q.lineTo(18,27);q.bezierCurveTo(22,26,16,25,12,23);q.bezierCurveTo(6,20,6,13+b,9,10+b);q.closePath();q.fillStyle=jade;q.fill();q.strokeStyle=ACTOR_OUTLINE;q.lineWidth=1;q.stroke();
+  pR9(q,light,[[9,12+b],[10,16+b],[12,19],[18,22],[15,22],[10,19],[8,15+b]],null);
+  pR9(q,deep,[[13,13+b],[12,17+b],[16,20],[23,22],[25,25],[22,27],[21,25],[17,23],[11,20],[10,16+b]],null);
+  pR9(q,bone,[[13,14+b],[14,18+b],[18,20],[23,22],[24,24],[20,23],[16,21],[12,18+b],[11,15+b]],null);
+  for(const[x,y]of[[13,17+b],[16,20],[20,22]])lR9(q,x-1,y,x+1.5,y-1,gold,.7);
+  for(const[x,y]of[[7,14+b],[8,18+b],[11,21],[25,25]])pR9(q,light,[[x,y+2],[x-1.5,y-2],[x+1.5,y],[x+2,y+3]]);
+  // Swept horns, an angular brow and a long jaw preserve the dragon silhouette.
+  pR9(q,gold,[[10,9+b],[8,5+b],[9,1+b],[11,5+b],[14,7+b]]);
+  pR9(q,bone,[[9,2+b],[10,5+b],[12,7+b],[10,6+b]],null);
+  pR9(q,gold,[[17,7+b],[18,2+b],[20,1+b],[19,6+b],[21,8+b]]);
+  pR9(q,jade,[[8,8+b],[12,5+b],[19,6+b],[23,9+b],[28,10+b],[30,13+b],[27,16+b],[19,16+b],[16,14+b],[10,14+b],[7,11+b]]);
+  pR9(q,light,[[10,8+b],[13,6+b],[19,7+b],[22,9+b],[17,9+b],[13,8+b],[10,11+b]],null);
+  pR9(q,deep,[[9,11+b],[14,12+b],[18,14+b],[27,14+b],[26,16+b],[19,16+b],[15,14+b],[10,14+b]],null);
+  pR9(q,gold,[[17,10+b],[21,9+b],[24,11+b],[20,12+b]],null);
+  lR9(q,17,10+b,23,10+b,ACTOR_OUTLINE,1);
+  eye1012(q,21,11+b,'#efd27b');r(ACTOR_OUTLINE,22,11+b,1,1);
+  lR9(q,23,14+b,29,14+b,ACTOR_OUTLINE,.8);
+  pR9(q,bone,[[24,14+b],[25.5,14+b],[24.5,17+b]],null);
+  eR9(q,28,12+b,.7,.5,ACTOR_OUTLINE,null);
+  pR9(q,jade,[[9,8+b],[5,7+b],[6,10+b],[4,12+b],[9,12+b]]);
+  lR9(q,25,16+b,28,18+b,bone,.7);lR9(q,28,18+b,30,16+b,bone,.7);
+  for(const[x,y]of[[10,16+b],[13,21],[9,27],[25,24],[20,29]])lR9(q,x,y,x+2,y-.7,light,.6);
   return;
  }
  if(m.palaceActor105==='king'){if(PALACE_KING_IMAGE105.complete&&PALACE_KING_IMAGE105.naturalWidth)q.drawImage(PALACE_KING_IMAGE105,(frame%PALACE_KING_SPRITE.frames)*PALACE_KING_SPRITE.width,0,PALACE_KING_SPRITE.width,PALACE_KING_SPRITE.height,PALACE_KING_SPRITE.x,PALACE_KING_SPRITE.y,PALACE_KING_SPRITE.displayWidth,PALACE_KING_SPRITE.displayHeight);drawHeldWeapon(q,m,'right',false);return;}
