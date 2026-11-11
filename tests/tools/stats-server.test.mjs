@@ -275,3 +275,32 @@ test('the ghost board is ordered by the score a win gives (the floor they died o
   run('AAAA11', KEY_A, 'r1', 8, 5); run('BBBB22', KEY_B, 'r1', 20, 3); run('CCCC33', 'c'.repeat(32), 'r1', 20, 9); run('DDDD44', 'd'.repeat(32), 'r1', 3, 30);
   assert.deepEqual(s.get('ranking').boards.ghost.map((g) => [g.tag, g.floor, g.level]), [['CCCC33', 20, 9], ['BBBB22', 20, 3], ['AAAA11', 8, 5], ['DDDD44', 3, 30]]);
 });
+
+test('large ghosts round-trip at the 450,000 character limit without oversized sheet cells', () => {
+  const s = server(), owner = 'ABCD12', id = base.id;
+  const initial = JSON.stringify({ classId: 'archer', inventory: [{ name: '부적', description: '가🦊'.repeat(140000) }] });
+  const body = initial.slice(0, -4) + '가'.repeat(450000 - initial.length) + initial.slice(-4);
+  assert.equal(body.length, 450000);
+  assert.deepEqual(s.get('ghost-capacity'), { ok: true, max: 450000 });
+  s.post({ ...base, cause: '함정' });
+  assert.deepEqual(s.post({ ...base, cause: '함정', ghost: body, key: KEY_A }), { ok: true, duplicate: true, ghostStored: true });
+  assert.equal(s.get('ghost', { owner, id, key: KEY_A }).body, body);
+  const row = s.ghosts()[1];
+  assert.equal(row.length, 25);
+  assert.ok(row.every(cell => String(cell).length <= 46001));
+  assert.equal(s.get('ghosts', { owner, key: KEY_A }).list[0].status, 'alive');
+  assert.equal(s.post({ ...base, id: owner + '-too-large', cause: '함정', ghost: body + ' ', key: KEY_A }).ghostStored, false);
+  assert.equal(s.ghosts().length, 2);
+});
+
+test('large ghost loot survives settlement and partial claims', () => {
+  const s = server();
+  const inventory = Array.from({ length: 15 }, (_, i) => ({ name: '부적' + i, note: '가'.repeat(16000) }));
+  const a = dead(s, 'ABCD12', KEY_A, 'big', inventory), b = dead(s, 'WXYZ34', KEY_B, 'normal');
+  lock(s, 'ABCD12', KEY_A, a, 'd'); lock(s, 'WXYZ34', KEY_B, b, 'd');
+  settle(s, 'ABCD12', KEY_A, a, 'd', false); settle(s, 'WXYZ34', KEY_B, b, 'd', true);
+  const first = s.post({ lootClaim: { owner: 'WXYZ34', key: KEY_B } }).items;
+  const second = s.post({ lootClaim: { owner: 'WXYZ34', key: KEY_B } }).items;
+  assert.equal(first.length, 12);
+  assert.deepEqual([...first, ...second].slice(0, 15), inventory);
+});

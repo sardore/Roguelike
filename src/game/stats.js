@@ -1,6 +1,6 @@
 /* Play statistics. Out: one anonymous record per death (the numbers on the death screen). In: the ranking board (a title button) and the aggregate view behind a hidden title gesture. */
 const PlayStats={
- GHOST_MAX:45000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
+ GHOST_MAX:450000,LOG_KEY:'manruDebugLog',LOG_MAX:1500,LOG_BYTES:160000,logStored:true,FLUSH_EVERY:20,LOG_SHOWN:120,SNAP_EVERY:40,logList:null,logPending:0,lastRun:null,tileNames:null,lifecycleBound:false,DEVICE_KEY:'manruDeviceTag',device:'',NICK_KEY:'manruNick',boardNick:null,CLAIMED_KEY:'manruNickClaimed',asked:false,NICK_MIN:2,NICK_MAX:8,LIVE_TURNS:60,LIVE_GAP_MS:8000,liveKey:'',liveTurn:0,liveAt:0,liveBusy:false,END_CAUSE:'End',END_FLOOR:30,DEFAULT_CLASS:'strongman',QUEUE_KEY:'manruStatsQueue',QUEUE_MAX:20,MINE_KEY:'manruMyRuns',MINE_MAX:30,TAPS:7,TAP_GAP_MS:1000,TOP_CAUSES:12,
  // The secret of this device (32 letters and digits, made once): it proves the player ID is ours. The server keeps only its hash (docs/GHOST_STAKES.md).
  SECRET_KEY:'manruDeviceSecret',STAKES_KEY:'manruStakes',
  BOARDS:[['depth','깊이'],['level','레벨'],['kills','처치'],['ghost','망령']],TOTAL_FLOORS:25,
@@ -141,9 +141,16 @@ const PlayStats={
   const url=this.endpoint();if(!url||this.sending)return 0;
   this.sending=true;let sent=0;
   try{
+   let capacity;
    for(const record of this.queue()){
+    const largeGhost=typeof record.ghost==='string'&&record.ghost.length>45000;
+    if(largeGhost){
+     capacity??=Number((await this.fetchView(url,'ghost-capacity'))?.max)||0;
+     if(capacity<record.ghost.length)continue;
+    }
     const reply=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(record)});
     if(!reply.ok)break;
+    if(largeGhost&&!(await reply.json()).ghostStored)continue;
     this.saveQueue(this.queue().filter(q=>q.id!==record.id));sent++;
    }
   }catch(error){ignoreError('play stats send failed',error)}
