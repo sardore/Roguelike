@@ -34,6 +34,10 @@ const PlayStats={
  // It goes to the server with the record of the death and stays there as a ghost of its owner (docs/GHOSTS.md). A clear is not a death: no ghost.
  ghostBody(){
   const p=JSON.parse(JSON.stringify(state.player));for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady'])delete p[key];
+  p.recovery={
+   turns:state.turn,agency:state.playerAgencyTurns57,
+   potionMap:state.knowledge56?.potionMap,potionKnown:state.knowledge56?.potionKnown
+  };
   const body=JSON.stringify(p);return body.length<=this.GHOST_MAX?body:null;
  },
  recordDeath(cause){
@@ -368,17 +372,22 @@ const PlayStats={
    const local=JSON.parse(lsGet('manruLatestDeath')||'null');
    const latest=this.mine().findLast(row=>row.cause&&row.cause!==this.END_CAUSE);
    const id=local?.id||latest?.id;
-   let raw=local?.ghost||this.queue().find(row=>row.id===id)?.ghost;
+   const queued=this.queue().find(row=>row.id===id);
+   let raw=local?.ghost||queued?.ghost,turns=(latest?.id===id?latest?.turns:undefined)??queued?.turns;
    if(!raw&&this.endpoint()){
     const owner=this.ownerQuery();
     const row=id?{id}:(await this.fetchView(this.endpoint(),'ghosts&'+owner))?.list?.[0];
-    if(row?.id)raw=(await this.fetchView(this.endpoint(),'ghost&'+owner+'&id='+encodeURIComponent(row.id)))?.body;
+    if(row?.id){
+     const archived=await this.fetchView(this.endpoint(),'ghost&'+owner+'&id='+encodeURIComponent(row.id));
+     raw=archived?.body;
+     turns??=archived?.turns;
+    }
    }
    if(!raw)return '최근 사망 판의 망령 기록이 없다.';
    const ghost=JSON.parse(raw),cls=CLASSES.find(c=>c.id===ghost?.classId);
    if(!cls||!Array.isArray(ghost.inventory)||!(ghost.maxHp>0))return '망령 기록을 읽지 못했다.';
    if(!scene?.isConnected||hasActiveRun())return '이어갈 탐사가 남아 있다.';
-   newGame(cls,null,ghost);
+   newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}});
    this.close();
    toast('창해 용궁 2층 입구에서 되살아났다.');
    return '';

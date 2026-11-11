@@ -669,6 +669,21 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     for(const t of TALISMANS)if(!K.talismanMap[t.talismanKind])K.talismanMap[t.talismanKind]=freeT.shift()||TALISMAN_APPEARANCES[Object.keys(K.talismanMap).length%TALISMAN_APPEARANCES.length].id;
     return K;
   }
+  function restorePotionKnowledge(inventory,recovery){
+    const potionMap={},potionKnown={},used=new Set();
+    const carried=inventory.filter(item=>item?.type==='potion'&&!item.mineItem105&&POTION_BY_KIND.has(item.potionKind));
+    // Old ghost records only have the appearances stamped on the carried bottles.
+    const pairs=[...Object.entries(recovery?.potionMap||{}),...carried.map(item=>[item.potionKind,item.appearance56])];
+    for(const [kind,appearance] of pairs){
+      if(!POTION_BY_KIND.has(kind)||!APP_BY_ID.has(appearance)||potionMap[kind]||used.has(appearance))continue;
+      potionMap[kind]=appearance;
+      used.add(appearance);
+    }
+    for(const kind of POTION_BY_KIND.keys())if(recovery?.potionKnown?.[kind]===true)potionKnown[kind]=true;
+    Object.assign(state.knowledge56,{potionMap,potionKnown,potionSeen:{},clueSeen:{}});
+    const knowledge=ensureKnowledge56();
+    for(const item of carried)item.appearance56=knowledge.potionMap[item.potionKind];
+  }
   function app56(item){if(item?.mineItem105==='oil')return {...APPEARANCES[0],color:'#bc7135',glass:'#e3c791',name:item.name};const K=state?.knowledge56,id=item?.appearance56||K?.potionMap?.[item?.potionKind];return APP_BY_ID.get(id)||APPEARANCES[0]}
   function publicTalismanSeal56(item){if(item?.branchExclusive105||item?.fusion74)return item.seal||'合';return talismanApp56(item)?.seal||'符'}
   function decoratePotion56(item,x=item?.x,y=item?.y){if(!item||item.type!=='potion'||!item.potionKind)return item;const K=ensureKnowledge56();item.appearance56=item.appearance56||K.potionMap[item.potionKind];if(!item.origin56&&Number.isFinite(x)&&Number.isFinite(y))item.origin56=contextAt56(x,y,item.potionKind);return item}
