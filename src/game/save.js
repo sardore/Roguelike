@@ -202,8 +202,19 @@ const RunLifecycle={
     const b=document.getElementById('continueBtn');if(!b)return;
     const recovery=globalThis.__MANRU_SAVE_SERVICE__?.recover(),yes=!!recovery?.ok&&!!recovery.candidate;
     b.classList.toggle('noSave',!yes);b.disabled=!yes;b.onclick=RunLifecycle.continueRun;
+    b.querySelector('span').textContent=recovery?.candidate?.source==='palace-recovery'?'복구 지점에서 이어가기':'기록 이어가기';
   },
-  continueRun(){requestGameFullscreen65();const recovery=globalThis.__MANRU_SAVE_SERVICE__?.recover();if(!recovery?.ok||!recovery.candidate){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return false}return RunLifecycle.runLoad({raw:recovery.candidate.raw})},
+  continueRun(){
+    requestGameFullscreen65();
+    const recovery=SaveService.recover(),candidate=recovery.candidate;
+    if(!recovery.ok||!candidate){toast('v10.0.4에서 이어갈 탐사 기록이 없다.');return false}
+    const loaded=RunLifecycle.runLoad({raw:candidate.raw});
+    if(loaded&&candidate.source==='palace-recovery'){
+      try{sessionStorage.removeItem(PALACE_RECOVERY)}catch(error){ignoreError('could not clear used palace checkpoint',error)}
+      toast(`최신 저장본이 없어 ${candidate.turn.toLocaleString('ko-KR')}턴의 복구 지점에서 이어간다.`);
+    }
+    return loaded;
+  },
   terminate(next){
     if(!state||!['death','victory'].includes(next)||runState57()!=='playing')return false;
     if(next==='victory'&&state.player.hp<=0){die('동시 효과');return false}
@@ -424,9 +435,9 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           const best=newer1004(newer1004(primary,shadow),newer1004(recovered,palace));if(!best)return{ok:true,candidate:null};
           // Both alternating slots are already durable. Reading the newer slot must
           // not duplicate two large floor snapshots into a third transaction journal.
-          if(best.source==='recovery'||best.source==='palace-recovery'){
+          if(best.source==='recovery'){
             localStorage.setItem(SAVE1004,best.raw);if(localStorage.getItem(SAVE1004)!==best.raw)throw Error('recovery read-back mismatch');
-            sessionStorage.removeItem(best.source==='palace-recovery'?PALACE_RECOVERY:BOOT_RECOVERY);
+            sessionStorage.removeItem(BOOT_RECOVERY);
           }
           return{ok:true,candidate:best};
         }catch(e){return{ok:false,failure:'recovery',message:String(e),candidate:null}}
@@ -921,12 +932,20 @@ function migratePalaceSupply(){
       world.starterArmorGranted=!!transferItemQuantity(armor,null,state.player.inventory,1,{capacity:inventoryCapacity()}).moved;
     }
   }
-  if(!chest||chest.generatedSupply)return;
-  const main=state.floor===9&&!state.branchContext105?state:branchDecodePage(world.pages?.['main:9']);
-  const floorNineUpgrades=Number(main?.coreLoot982?.spawned?.upgrade?.[9]||main?.coreLootAudit982?.upgrades?.includes(9)||0);
+  if(!chest)return;
+  const floorNineUpgrades=Number(!!state.coreLoot982?.spawned?.upgrade?.[9]);
   try{
-    const {loot}=generatePalaceSupply();
-    const replacement={...chest,items:finishPalaceSupply(loot,floorNineUpgrades),generatedSupply:true};
+    let items;
+    if(chest.generatedSupply){
+      const excess=countUpgradeTalismans(chest.items)+floorNineUpgrades-7;
+      if(excess<=0)return;
+      items=structuredClone(chest.items);
+      const bonus=items.find(item=>item.talismanKind==='upgrade'&&!item.coreDrop982);
+      if(!consumeItemQuantity(bonus,excess,items))return;
+    }else{
+      items=finishPalaceSupply(generatePalaceSupply().loot,floorNineUpgrades);
+    }
+    const replacement={...chest,items,generatedSupply:true};
     if(current)state.branchTerrain105.palace105.starterChest=replacement;
     else{
       const updated=structuredClone(page);

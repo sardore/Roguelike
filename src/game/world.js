@@ -470,6 +470,8 @@ function pickup(...args){
     if(t===TT.JAR){const contents=jarContents105(x,y);return{name:'장독',desc:({water:'물',oil:'기름',poison:'독액',wine:'술'})[contents]+'이 담겨 있다. '+(contents==='poison'?'깨지면 독가스가 점차 퍼진 뒤 옅어진다.':'깨지면 주변 바닥에 5턴간 쏟아진다.'),hint:'일반 공격·사격·강제 파괴로 깨진다. 공격 한 번으로 깨며 그 칸으로 이동하지 않는다.'};}
     if(t===TT.MIRROR)return{name:'천면경',desc:'차가운 유리면이 광선과 시선 공격을 발원자에게 되돌린다.',hint:'공격 경로 위의 거울만 반사한다. 화살·투척물·폭발은 반사하지 않는다.'};
     if(t===TT.PAPER_BRIDGE&&!world.burning[k(x,y)])return{name:'종이다리',desc:'플레이어가 밟거나 물속성이 닿으면 붕괴를 예고한다. 몬스터의 보행만으로는 무너지지 않는다.',hint:'불이 붙으면 3턴간 화염 접촉 지대가 되고, 다 타면 물로 무너진다.'};
+    const supply=state.branchTerrain105?.palace105?.starterChest;
+    if(t===TT.CRATE&&supply?.x===x&&supply.y===y)return{name:'탐사 보급 상자',desc:'가져갈 물품을 여러 개 골라 한 번에 받을 수 있다. 상자가 부서지면 남은 물품은 사라진다.',hint:'곁에서 상호작용(F)하면 물품 목록이 열린다.'};
     if(t===TT.CRATE&&!world.burning[k(x,y)])return{name:'목상자',desc:'불에 타고, 강하게 밀린 개체와 충돌하면 부서진다.',hint:'바로 앞에서 바라보고 상호작용(F)하면 1칸 민다. 통로를 봉쇄하는 밀기는 불가.'};
 
     if(t===TT.ICE){const left=state.tempTerrain74?.find(q=>q.x===x&&q.y===y&&q.kind==='frozen-water105')?.ttl;return{name:'얼어붙은 물',desc:`냉기에 얼어 잠시 건널 수 있다. ${left??'?'}턴 뒤 물로 돌아간다.`,hint:'냉기를 다시 가하면 5턴으로 연장된다. 불·대지에 닿으면 즉시 깨진다. 강제이동은 1칸 더 미끄러진다. 해빙 시 물의 위험 판정이 적용된다.'};}
