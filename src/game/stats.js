@@ -385,6 +385,20 @@ const PlayStats={
  },
  async redeemRecoveryCode(code,pending=null){
   const entered=String(code).trim();
+  if(entered==='19232'){
+   if(!state||state.dead||state.victory)return '진행 중인 탐사가 없다.';
+   if(RunLifecycle.busy())return '탐사를 전환하는 중이다.';
+   const item={...makeMartialManual({kind:'gift-code',code:entered},`${state.runId984||state.runId||'run'}:19232:${crypto.randomUUID()}`),
+    name:'이변 무술비급',desc:'펼치면 선택 가능한 후천무술에 이변이 반드시 포함되는 비급.',guaranteedMartialForm19232:'anomaly'};
+   addInventoryItem(item);
+   const inventory=state.player.inventory.some(i=>i.manualId===item.manualId);
+   const ground=state.items.some(i=>i.manualId===item.manualId)||
+     (state.pendingGroundItems57||[]).some(i=>i.item?.manualId===item.manualId);
+   if(!inventory&&!ground)return '비급을 배치하지 못했다.';
+   updateAll();
+   const saved=SaveService.commit('gift-code-19232');
+   return saved.ok?`이변 무술비급 1개를 ${inventory?'행낭':'바닥'}에 지급했다.`:'비급은 지급했지만 저장에 실패했다.';
+  }
   if(entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
   const checkSave=()=>{
    const saved=SaveService.recover();

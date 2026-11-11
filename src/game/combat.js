@@ -63,7 +63,7 @@ function showMartialManual(item){
  if(!state.player.inventory.includes(item))return false;
  let pending=state.pendingMartialManualChoice;
  if(pending&&pending.manualId!==item.manualId){toast('먼저 펼친 비급의 선택을 마쳐야 한다.');return false}
- if(!pending){const choices=rollMartialChoices1005();if(!choices.length){toast('더 해금할 후천무술이 없다. 비급은 보존된다.');return false}pending=state.pendingMartialManualChoice={manualId:item.manualId,choices,createdTurn:state.turn}}
+ if(!pending){const guaranteed=item.guaranteedMartialForm19232==='anomaly'?[{id:'brawl',form:'anomaly'}]:[];const choices=rollMartialChoices1005(state.player,globalThis.__MANRU_RANDOM57__,guaranteed);if(!choices.length){toast('더 해금할 후천무술이 없다. 비급은 보존된다.');return false}pending=state.pendingMartialManualChoice={manualId:item.manualId,choices,createdTurn:state.turn}}
  // Extend older three-offer saves once, preserving every already revealed offer.
  if(pending.choices.length<6)pending.choices=rollMartialChoices1005(state.player,globalThis.__MANRU_RANDOM57__,pending.choices);
  // Commit before showing RNG results. Storage failure does not discard the in-memory roll.

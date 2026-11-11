@@ -139,6 +139,54 @@ try {
       assert.deepEqual(requested, missingLatest ? ['newest-death', 'older-death'] : ['newest-death']);
     } finally { await legacy.close(); }
   }
+  const gift = await openSession(browser, root, { seed: 19232 });
+  try {
+    await startRun(gift, 'summoner');
+    const before = await gift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      return [st.runId984, st.floor, st.turn];
+    });
+    await openRecords(gift);
+    await submit(gift, '19232');
+    assert.match(await gift.page.locator('.giftNote').textContent(), /이변 무술비급 1개를 행낭에 지급/);
+    const itemState = await gift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), item = st.player.inventory.find(i => i.guaranteedMartialForm19232 === 'anomaly');
+      return {run:[st.runId984, st.floor, st.turn], name:item?.name, count:item?.count, manualId:item?.manualId};
+    });
+    assert.deepEqual(itemState.run, before, 'gift must not restart or advance the run');
+    assert.equal(itemState.name, '이변 무술비급');
+    assert.equal(itemState.count, 1);
+    assert.ok(itemState.manualId);
+    await gift.page.locator('#statsClose').click();
+    const options = await gift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state(), index = st.player.inventory.findIndex(i => i.guaranteedMartialForm19232 === 'anomaly');
+      __MANRU_QA_UI__.dispatch({type:'ITEM_USE',args:[index]});
+      return {choices:st.pendingMartialManualChoice?.choices, shown:!!document.querySelector('#choice991 [data-manual-form="anomaly"]')};
+    });
+    assert.ok(options.choices?.some(c => c.id === 'brawl' && c.form === 'anomaly'));
+    assert.equal(options.shown, true);
+    await gift.page.reload();
+    await gift.page.locator('#continueBtn').click();
+    assert.equal(await gift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      return st.player.inventory.some(i => i.manualId === st.pendingMartialManualChoice?.manualId &&
+        i.guaranteedMartialForm19232 === 'anomaly');
+    }), true, 'gift and guaranteed choices survive save/load');
+    await dismissModals(gift);
+    await gift.page.evaluate(() => {
+      const p = __MANRU_QA_UI__.state().player;
+      while(p.inventory.length < 25)p.inventory.push({name:'시험용 짐',type:'relic',count:1,stackMax:1});
+    });
+    await openRecords(gift);
+    await submit(gift, '19232');
+    assert.match(await gift.page.locator('.giftNote').textContent(), /이변 무술비급 1개를 바닥에 지급/);
+    assert.equal(await gift.page.evaluate(() => {
+      const st = __MANRU_QA_UI__.state();
+      return st.items.concat((st.pendingGroundItems57||[]).map(q=>q.item)).some(i => i?.guaranteedMartialForm19232 === 'anomaly' &&
+        i.manualId !== st.pendingMartialManualChoice?.manualId);
+    }), true);
+    assert.deepEqual(gift.errors, []);
+  } finally { await gift.close(); }
   const starter = await openSession(browser, root, { seed: 8301 });
   try {
     await openRecords(starter);
