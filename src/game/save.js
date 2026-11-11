@@ -861,6 +861,7 @@ function createPalaceReplacement(cls){
     if(level<=12||MARTIAL_RULES.latePoints.includes(level))p.skillPoints++;
   }
   p.level=18;
+  p.kills=430;
   normalizePlayerProgression57(p);
   p.blinkLevel=2;
   return {...p,recovery:{
