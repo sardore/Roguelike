@@ -2952,7 +2952,7 @@ function budgetPeaches52(){
  const before=trees+items;if(before>budget.limit)throw new Error('theme 2 peach producer exceeded shared generation budget');
  const reach=finalReachSet1029(),candidates=[];
  for(const id of reach){const [x,y]=id.split(',').map(Number),t=state.map[y]?.[x];if(!Number.isFinite(x)||!Number.isFinite(y)||tileBlocks(t)||HAZ1020().has(t)||[TT.KEY_TILE,TT.STAIR,TT.DOOR,TT.OPEN_DOOR,TT.CACHE,TT.ARMORY,TT.VAULT].includes(t)||state.items.some(i=>i.x===x&&i.y===y)||state.monsters.some(m=>monCovers(m,x,y))||entityDistance57({x,y},state.player)<3)continue;candidates.push({x,y,h:hash1022(floorSeedKey(`peach-resource53:${x},${y}`))})}
- candidates.sort((a,b)=>a.h-b.h);for(let i=before;i<budget.limit;i++){const q=candidates.pop();if(!q)throw new Error('no reachable peach resource placement');PlacementService.placeItem({...structuredClone(foodDef('신선도')),count:1,x:q.x,y:q.y,generatedPeach53:true})}
+ candidates.sort((a,b)=>a.h-b.h);for(let i=before;i<budget.limit;i++){const q=candidates.pop();if(!q)throw new Error('no reachable peach resource placement');PlacementService.placeItem({...structuredClone(foodDef('신선도')),count:1,x:q.x,y:q.y})}
  state.peachBudget52={floor:state.floor,before,limit:budget.limit,after:budget.limit,trees,items:budget.limit-trees,sources:['shared budget tree generators','reachable resource allocation'],policy:'one guaranteed, 35% second, no post-generation deletion'};
 }
 function rescueOrdinaryExit1029(){
