@@ -1,7 +1,7 @@
 name: Palace imugi review
 on:
   push:
-    branches: [codex/palace-imugi, codex/imugi-sprite-redesign]
+    branches: [codex/palace-imugi, codex/imugi-sprite-redesign, codex/imugi-shared-creature-art]
 permissions:
   contents: read
 jobs:
