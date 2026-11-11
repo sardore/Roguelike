@@ -87,7 +87,7 @@ function resetTipsForNewRun(){closeCurrentTip(true);RC.tutorialQueue=[];RC.tutor
 function initTalismansForNewRun(){ensure74();V74.first=null;V74.gearScroll=null;V74.target=null;setInteraction8('fusion74',false);setInteraction8('gear74',false);addLog(playerClassRules58().talismanFusion?'부적 개편: 6원소 생부적은 강하지만 역류한다. 감정된 기본 부적끼리는 합성으로 합성할 수 있다.':'천하장사는 부적을 합성할 수 없다. 강화부적은 육체에 괴력을 일으킨다.');updateAll()}
 function centerCameraForNewRun(){CameraController.center();ConnectedDecor81.build();queuePlace81()}
 function setupCameraForNewRun(ctx){const q=ctx.data.camera984||{};if(state){state.runId984=q.runSeed;cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): the zoom limits depend on the game screen's laid-out size, which exists only after the screen switch that follows this stage; 90 ms waits for that layout. */setTimeout(()=>{syncGameViewport();CameraState.setZoom(state?.duel?CameraState.fitZoom():q.desiredZoom??1,false);if(state?.duel)CameraState.centerOnPlayer()},90)}}
-function initCursesForNewRun(){for(const slot of GEAR_SLOT_TYPES)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}
+function initCursesForNewRun(preserveEquipment=false){if(!preserveEquipment)for(const slot of GEAR_SLOT_TYPES)if(state.player?.[slot]){state.player[slot].identified=true;state.player[slot].curseImmune991=true;delete state.player[slot].curse991}state.lastCombat57=state.turn;state.lastCombat991=state.turn;state.curseClocks991={};addLog('미감정 장비에는 저주가 숨어 있을 수 있다. 감정부적은 짧게 눌러 미감정품 하나를 골라 완전 감정한다.');addLog('기술 버튼: 짧게 누르면 지금 쓸 수 있는 기술 · 길게 누르면 강화 선택.');updateAll()}
 function beforeNewRun(ctx){prepareNewRunSeed(ctx);return null}
 function afterNewRun(ctx){
   logAutoWalkHelp();
@@ -101,7 +101,7 @@ function afterNewRun(ctx){
   initTalismansForNewRun();
   centerCameraForNewRun();
   setupCameraForNewRun(ctx);
-  initCursesForNewRun();
+  initCursesForNewRun(!!ctx.args[2]);
   Duel.claimWinnings();
   showGameScreenIfPlaying();
   normalizeAllItems();
@@ -794,7 +794,26 @@ function worldTargetDirection57(dx,dy){
   pool.sort((a,b)=>(b.dist??entityDistance57(b,state.player))-(a.dist??entityDistance57(a,state.player)));return finishWorldTarget(pool[0],'direction');
 }
 const INPUT_PRIORITY57=Object.freeze(['fatal/blocking','modal/dialogue','targeting','special interaction','gameplay HUD','canvas/world','gameplay keyboard','passive shortcut']);
-function newGameCoreLifecycle(cls,duel=null){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();if(duel)buildDuelArena(duel);else{globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate()}resetVisualState();resetTurnState();startFloorTransition();if(duel)addLog(`망령전 · ${DUEL_ARENAS[duel.arena].name}. 상대 망령을 쓰러뜨리면 위쪽 문이 열린다.`);else{addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.')}addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
+function restorePalaceRun(ghost){
+  const p=state.player,body=structuredClone(ghost);
+  for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','guardReady1005','guardCharges1005','foodVital57','temporaryMaxHpBonus'])delete body[key];
+  Object.assign(p,body);
+  state.floor=BRANCH_DEFS105.palace.parent;
+  initializeMartial(state);
+  normalizeClassState58(p,0);
+  p.hp=p.maxHp;
+  p.focus=p.maxFocus;
+  p.hunger=Math.max(70,Number(p.hunger)||0);
+  globalThis.storyInitNewRun992?.();
+  if(state.story992)state.story992.dispatchPending60=false;
+  NormalFloorGenerator.generate();
+  for(const target of ['palace:1','palace:2']){
+    const portal=state.branchPortals105.find(candidate=>candidate.to===target);
+    if(!branchTransition(portal))throw Error('Palace recovery route unavailable: '+target);
+    delete state._worldTransition57;
+  }
+}
+function newGameCoreLifecycle(cls,duel=null,ghost=null){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();if(ghost)restorePalaceRun(ghost);else if(duel)buildDuelArena(duel);else{globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate()}resetVisualState();resetTurnState();startFloorTransition();if(duel)addLog(`망령전 · ${DUEL_ARENAS[duel.arena].name}. 상대 망령을 쓰러뜨리면 위쪽 문이 열린다.`);else{addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.')}addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
 function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
 function autoExplore(resume=false){return Auto81.explore(resume)}
 function restoreLibraryVisual1022(){state.bookWalls1022=Array.isArray(state.bookWalls1022)?state.bookWalls1022:[];state.libraryZones1022=Array.isArray(state.libraryZones1022)?state.libraryZones1022:[];state.libraryScrolls1022=Array.isArray(state.libraryScrolls1022)?state.libraryScrolls1022:[]}

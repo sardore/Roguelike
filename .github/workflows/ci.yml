@@ -27,6 +27,8 @@ jobs:
         run: node tests/palace-water-summons.mjs && node tests/palace-water-summons.mjs --mobile
       - name: Palace imugi, rapid actions and aquatic pursuit
         run: node tests/palace-imugi.mjs && node tests/palace-oddity.mjs
+      - name: Death recovery code and palace return route
+        run: node tests/palace-recovery.mjs
       - name: Behaviour and screenshots on the QA build (seeded replay, V40 saves, floors, debug arena, pinned fonts)
         run: npm test -- --skip render
       - name: Release source publishes no QA hooks and saves the same data

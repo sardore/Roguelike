@@ -1,0 +1,22 @@
+name: Palace recovery review
+on:
+  push:
+    branches: [codex/palace-death-recovery]
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci && npm run build:qa
+      - run: npx --yes playwright@1.56.1 install chromium
+      - run: node tests/palace-recovery.mjs
+      - if: always()
+        run: node tests/run.mjs --only giftCode,sealingWard,values --update
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: palace-recovery-baseline
+          path: tests/baseline/behaviour.json

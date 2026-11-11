@@ -1171,18 +1171,11 @@ export const scenarios = {
     return out;
   },
 
-  // The retired code has no entry point; old pending rewards cannot change new or restored runs.
+  // Old pending item rewards cannot change new or restored runs.
   async giftCode(browser, root) {
     const s = await openSession(browser, root, { seed: 4249 });
     const out = {};
     try {
-      out['giftCode.removed'] = JSON.stringify(await s.page.evaluate(() => {
-        const A = __MANRU_QA_STATS__.api; A.open(); A.tab = 'rows'; A.render();
-        const removed = !document.querySelector('.giftBox') && ['redeem', 'claimGift', 'deliverGift', 'GIFT', 'GIFT_KEY'].every(key => !(key in A));
-        A.close();
-        if (!removed) throw Error('retired gift code is still exposed');
-        return { removed };
-      }));
       // An old, unclaimed reward must not add anything to a new run.
       const control = await s.page.evaluate(() => {
         __MANRU_QA_DUEL__.newRun();
@@ -1288,7 +1281,7 @@ export const scenarios = {
       }));
       out['sealingWard.errors'] = JSON.stringify(s.errors);
       const casters = JSON.parse(out['sealingWard.casters']), p = JSON.parse(out['sealingWard.player']), expiry = JSON.parse(out['sealingWard.expiry']), evade = JSON.parse(out['sealingWard.evade']), mon = JSON.parse(out['sealingWard.monster']), save = JSON.parse(out['sealingWard.save']);
-      if (casters.length !== 4 || !['이무기', '신전 사제 망령', '비단 술래', '사당 주술시종'].every(name => casters.some(c => c.name === name && c.size === 5)) || casters.some(c => c.cooldown <= c.duration)) throw Error('ward casters: ' + out['sealingWard.casters']);
+      if (casters.length !== 4 || !['이무기', '신전 사제 망령', '비단 술래', '사당 주술시종'].every(name => casters.some(c => c.name === name && c.size === 5)) || casters.some(c => c.cooldown <= c.duration || (['이무기', '신전 사제 망령'].includes(c.name) && (c.duration !== 9 || c.cooldown !== 12)))) throw Error('ward casters: ' + out['sealingWard.casters']);
       if (p.warning !== 'sealingWard' || !p.prepared || p.cells !== 25 || !p.bornNotSpent || !p.inside || !p.reasons.every(r => r === 'sealing-ward') || p.transfer !== 'sealing-ward' || !p.filtered || !p.worldBlocked || !p.rawBlocked || !p.forcedOutside || !p.removed || !p.skills.includes('sealing-ward')) throw Error('ward player containment: ' + out['sealingWard.player']);
       if (!expiry.expired || !expiry.cooling || !expiry.rearmed || !evade.fixed || !evade.absent) throw Error('ward timing: ' + JSON.stringify({ expiry, evade }));
       if (mon.cells !== 25 || !mon.blocked || !mon.internal || !mon.pushed || !mon.removed) throw Error('ward monster containment: ' + out['sealingWard.monster']);
