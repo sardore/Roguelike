@@ -1252,7 +1252,7 @@ export const scenarios = {
         for (const m of [...st.monsters]) A.occupancy.removeMonster(m);
         A.move(st.player, 25, 25); const caster = A.place('신전 사제 망령', { x: 30, y: 30 }), victim = A.place('객잔 쥐', { x: 33, y: 30 });
         caster.faction57 = 'player'; caster.friendly47 = true; caster.alerted = true;
-        Object.assign(caster.sealingWard, { duration: 4, cooldown: 9 });
+        caster.sealingWard = { ...caster.sealingWard, duration: 4, cooldown: 9 };
         A.configure(caster);
         A.special(caster, null, victim); st.turn++; A.intent(caster);
         const field = st.tempFields.find(f => f.kind === 'sealingWard');
