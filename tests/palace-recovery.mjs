@@ -151,7 +151,7 @@ try {
       const book = p.inventory.find(item => item.summonItem105 === 'book');
       return {
         place: [st.floor, st.branchContext105.id, st.branchContext105.level, Math.max(Math.abs(p.x-up.x), Math.abs(p.y-up.y))],
-        player: [p.classId, p.level, st.turn, p.skillPoints, p.blinkLevel, p.trinket.name,p.armor.name,p.armor.upgrade],
+        player: [p.classId, p.level, st.turn, p.kills, p.skillPoints, p.blinkLevel, p.trinket.name,p.armor.name,p.armor.upgrade],
         stock: Object.fromEntries(['축지부','대지부적','화염부적','수류부적','목령부적','빙폭부적','엽전 엿','보신 전골'].map(name =>
           [name,p.inventory.filter(item => item.name === name).reduce((sum,item) => sum + item.count,0)])),
         book: [book.summonElement105, Object.values(book.summonPictures105).map(pic=>pic.count),
@@ -167,7 +167,7 @@ try {
     });
     const first = await verify();
     assert.deepEqual(first.place, [9,'palace',2,1]);
-    assert.deepEqual(first.player, ['summoner',18,20000,16,2,'수문지기의 접힌 행낭','강화 가죽 갑옷',1]);
+    assert.deepEqual(first.player, ['summoner',18,20000,430,16,2,'수문지기의 접힌 행낭','강화 가죽 갑옷',1]);
     assert.deepEqual(Object.values(first.stock), [2,2,3,2,1,2,7,4]);
     assert.deepEqual(first.book, ['grass',[1,1],['어미거미','용궁 해련']]);
     assert.deepEqual(first.known,[true,true]);
