@@ -2062,7 +2062,7 @@ const MINE_ITEMS105=Object.freeze({
     graveDrain:['혼백 흡수','魂','6칸 · 주기 5턴','공격력 +1, 기력 2 감소.'],
     lavaShot:['용암탄','熔','8칸 · 주기 5턴','대상 양옆 바닥을 3턴 용암으로 바꾼다.'],
     chainRush:['사슬 강타','鎖','2~6칸 · 주기 4턴','공격력 +1, 1칸 밀침.'],
-    wardPulse:['금단 수호','禁','5칸 안 · 주기 5턴','공격력 +3과 방어 자세, 3턴.','strong']
+    wardPulse:['금단 수호','禁','5칸 안 · 주기 5턴',`공격력 +3과 방어 자세, ${MONSTER_GUARD_TURNS.forbidden}턴.`,'strong']
   });
 /* ===== MANRU r48: LEGENDARY WEAPONS / GRAND PORTAL DUNGEONS ===== */
 const LEGENDS47=[
