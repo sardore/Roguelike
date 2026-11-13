@@ -79,6 +79,9 @@ function oddityPushSource(obj,mon){return{x:mon.x-Math.sign(mon.x-obj.x),y:mon.y
 // one blow of one piece on one enemy; leg 1 is the bounce. A thrown enemy (psychic) is not pushed: it already lies where the piece was.
 function oddityHit(actor,mon,obj,lv,form,leg){
   const dmg=oddityDamage(actor,lv,obj.mat,form,leg),id=obj.mat.id;
+  // An intact thrown jar already emits its impact noise when it shatters.
+  const breaksJar=obj.tile===TT.JAR&&!leg;
+  if(!breaksJar)alertNearby(mon.x,mon.y,id==='lantern'?8:id==='stone'||id==='tree'?7:6,id==='lantern'?'explosion':'impact',dmg);
   if(id==='lantern'){
     resolveElementDamage57(mon,'fire',dmg,{ground:false,source:'괴변 · 등불의 폭발',color:'#ffb347',size:15});
     addElemField74('fire',mon.x,mon.y,3,2+lv);
@@ -89,7 +92,7 @@ function oddityHit(actor,mon,obj,lv,form,leg){
     if(mon.hp>0&&id==='misc'){const curse=ODDITY_RULES.curses[ODDITY_RULES.palaceTiles[obj.prop?.style]||Object.keys(TT).find(n=>TT[n]===obj.tile)];if(curse&&applyCombatStatus(mon,curse[0],3+(lv>=5?1:0),1,{source:actor}))floatText(mon.x,mon.y,curse[1],'#c9a7ff',11)}
   }
   // a jar that is thrown breaks where it lands: its contents spill, or its gas rises
-  if(obj.tile===TT.JAR&&!leg)shatterJar(mon.x,mon.y,{forced:true,from:{x:obj.x,y:obj.y}});
+  if(breaksJar)shatterJar(mon.x,mon.y,{forced:true,from:{x:obj.x,y:obj.y}});
   martialCheckDeath(mon,actor);
 }
 // The other player's art, as a picture: the pieces it lifted fly here at this player (the blows come as hits, the floor as terrain changes), on the same timing as there.

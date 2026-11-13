@@ -3066,6 +3066,24 @@ export const scenarios = {
       if (pending !== 0) throw Error('oddity: the picture does not end ' + pending);
       const forms = await ev(() => globalThis.__MANRU_QA_ODDITY__.options());
       if (!['psychic', 'anomaly', 'breakthrough'].every((f) => forms.includes(f))) throw Error('oddity: a manual offers ' + JSON.stringify(forms));
+      for (const form of [null, 'psychic', 'anomaly']) {
+        const origin = await ev(form => {
+          const q = __MANRU_QA_ODDITY__.setup({lv: 3, form, tiles: ['STATUE', 'TABLE']});
+          const st = __MANRU_QA_UI__.state();
+          st.floor = 11;
+          delete st.noiseSequence57;
+          st.enemyEnergy = -100;
+          return form === 'psychic' ? q.pieces[0] : q.target;
+        }, form);
+        const attack = await ev(() => __MANRU_QA_ODDITY__.cast());
+        if (!attack.ok) throw Error('oddity noise: cast failed');
+        await s.tick(300);
+        if (await ev(() => !!__MANRU_QA_UI__.state().noiseSequence57)) throw Error('oddity noise before impact');
+        await s.tick(1100);
+        const heard = await ev(() => __MANRU_QA_UI__.state().noiseSequence57);
+        if (heard?.x !== origin.x || heard?.y !== origin.y) throw Error('oddity noise did not originate at impact');
+        await s.tick(600);
+      }
       out['oddity.casts'] = JSON.stringify(Object.fromEntries(Object.entries(res).map(([k, v]) => [k, { ok: v.ok, spent: v.spent, dealt: v.dealt, stunned: v.stunned, events: v.events, fire: v.fire }])));
       out['oddity.forms'] = JSON.stringify(forms);
       out['oddity.errors'] = JSON.stringify(s.errors);
