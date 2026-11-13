@@ -87,6 +87,9 @@ function monsterAttackLineR(mon,range,context={}){const target=context.target||s
 function monsterIsEvil(mon){
   return ["undead","eldritch","mutant"].includes(mon.kind);
 }
+const CROSSFIRE_BOMBARDMENT_SKILL_ID='crossfire-bombardment';
+const FIRST_DISCOVERY_EVASION_SKILLS=new Set([CROSSFIRE_BOMBARDMENT_SKILL_ID]);
+
 function monsterAttackContextR(context={}){
   const src=context&&typeof context==='object'&&!Array.isArray(context)?context:{};
   const delivery=['melee','ranged','area','hazard'].includes(src.delivery)?src.delivery:'melee',projectile=src.projectile??delivery==='ranged',reflectable=src.reflectable??projectile;
@@ -98,7 +101,7 @@ function monsterAttackResultR(mon,context={},patch={}){
   result.continueBundle=attackerAlive&&!interrupted&&!blocked&&runState57()==='playing';return result;
 }
 function monsterAttackCanContinueR(result){return !!(result?.continueBundle&&result.attackerAlive&&!result.interrupted&&!result.blocked&&runState57()==='playing')}
-function attackMonster(mon,bonus=0,context={}){const ctx=monsterAttackContextR(context),target=ctx.target||state?.player;ctx.target=target;if(!mon||!state||!combatTargetValid57(mon,target))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'inactive'});if(mon.crossfire&&!['area','hazard'].includes(ctx.delivery))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'no-basic-attack'});const line=monsterAttackLineR(mon,ctx.range,ctx);if(!line.ok)return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:line.reason||'line-blocked'});markCombatActivity57('monster-attack');const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const ready=ctx.delivery==='melee'?(mon.strongReady||0):0,stealth=mon.martialStatus105?.stealth>0;if(target===state.player)mon.hasSeenPlayer105=true;let result;if(target===state.player&&movementDiscoveryEvades105(mon,ctx)){mon.attackUntil=performance.now()+150;mon.attackTarget={x:state.player.x,y:state.player.y};floatText(state.player.x,state.player.y,'회피','#c7b58f',10);addLog(`${mon.name}의 첫 발견 공격을 피했다.`);result=monsterAttackResultR(mon,ctx,{hit:false,evaded:true,reason:'first-sight-movement'});}else result=runAttackStages('monster',[mon,bonus+equipmentOpeningBonus105(mon,target)+(ready?strongBonus(ready)-(martialFormOf('strong',mon)==='drive'?2:0):0),ctx]);if(result.hit&&result.damage>0)applyWeaponBrandHit(mon,target,result.damage,entityFootprintCells57(target),ctx);finishMartialStrike(mon,target,result,ready,stealth,ctx);if(target!==state.player&&target.hp<=0)killMonster(target);return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
+function attackMonster(mon,bonus=0,context={}){const ctx=monsterAttackContextR(context),target=ctx.target||state?.player;ctx.target=target;if(!mon||!state||!combatTargetValid57(mon,target))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'inactive'});if(mon.crossfire&&!['area','hazard'].includes(ctx.delivery))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'no-basic-attack'});const line=monsterAttackLineR(mon,ctx.range,ctx);if(!line.ok)return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:line.reason||'line-blocked'});markCombatActivity57('monster-attack');const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const ready=ctx.delivery==='melee'?(mon.strongReady||0):0,stealth=mon.martialStatus105?.stealth>0;if(target===state.player)mon.hasSeenPlayer105=true;let result;if(target===state.player&&movementDiscoveryEvades105(mon,ctx)){mon.attackUntil=performance.now()+150;mon.attackTarget={x:state.player.x,y:state.player.y};floatText(state.player.x,state.player.y,'회피','#c7b58f',10,null,ctx.impactDelay);addLog(`${mon.name}의 첫 발견 공격을 피했다.`);result=monsterAttackResultR(mon,ctx,{hit:false,evaded:true,reason:'first-sight-movement'});}else result=runAttackStages('monster',[mon,bonus+equipmentOpeningBonus105(mon,target)+(ready?strongBonus(ready)-(martialFormOf('strong',mon)==='drive'?2:0):0),ctx]);if(result.hit&&result.damage>0)applyWeaponBrandHit(mon,target,result.damage,entityFootprintCells57(target),ctx);finishMartialStrike(mon,target,result,ready,stealth,ctx);if(target!==state.player&&target.hp<=0)killMonster(target);return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
 // What a monster's blow that lands looks like: the target's flash, the impact, the number over it and the log line. A duel's stand-in hits through here too, so the
 // other player's blows look like any monster's.
 function presentMonsterHit(mon,target,dmg,elemental=false,delay=0){
@@ -967,7 +970,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   function intentLineCells(a,b,range=8){if(!b){const cells=[];for(const[dx,dy]of DIRS4)for(let i=1;i<=range;i++){const x=a.x+dx*i,y=a.y+dy*i,t=state.map[y]?.[x];if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||t==null||t===TT.DOOR||tileBlocks(t))break;cells.push({x,y})}return cells}const out=[],dx=Math.sign(b.x-a.x),dy=Math.sign(b.y-a.y);let x=a.x,y=a.y;for(let i=0;i<range;i++){if(Math.abs(b.x-x)>=Math.abs(b.y-y))x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)break;out.push({x,y});if(x===b.x&&y===b.y)break}return out}
   function setMonsterIntent(m,type,cells,label,data={}){if(Number.isFinite(state.intentBudget61)&&state.intentBudget61<=0&&!data.force61)return false;if(Number.isFinite(state.intentBudget61)&&!data.force61)state.intentBudget61--;m.intent61={type,cells,label,data,armedPlayerTurn:state.turn};floatText(m.x,m.y,'예고','#efb171',10);return true}
   function executeMonsterIntent(m,immediate=null){const I=immediate||m.intent61;if(!I)return false;if(!immediate&&!m.crossfire&&state.turn<=(I.armedPlayerTurn??state.turn))return true;const targets=bossAreaTargets(m,I.cells),target=targets[0]||selectCombatOpponent(m),hit=targets.length>0;
-    if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70()});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
+    if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',skillId:m.crossfire?CROSSFIRE_BOMBARDMENT_SKILL_ID:undefined,reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70()});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
     else if(I.type==='fire'){alertNearby(I.data.x,I.data.y,8,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#f0823c',{kind:'shell',element:'fire',cells:I.cells,life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,2,{target,delivery:'area',reflectable:false,range:10,impactDelay:720*.74/automationPresentationRate70()});addField('fire',I.data.x,I.data.y,4,I.cells||null,effectSource57(m));burst(I.data.x,I.data.y,'#f0823c',18,.9,720*.74/automationPresentationRate70())}
     else if(I.type==='poison'){for(const target of targets){const r=monsterAttacksTarget(m,0,{target,delivery:'area',reflectable:false,range:10});if(r.hit)applyCombatStatus(target,'poison',5,1,{source:m})}for(const c of I.cells)if(state.map[c.y][c.x]===TT.FLOOR&&globalThis.__MANRU_RANDOM57__()<.20)RuntimeTerrainOwner.mutate(c.x,c.y,TT.SNARE,{source:'poison-intent61'})}
     else if(I.type==='seal'){for(const target of targets){const r=monsterAttacksTarget(m,1,{target,delivery:'area',reflectable:false,range:10});if(r.hit)applyCombatStatus(target,'skillSeal',combatDepth(m)>=21?4:3,1,{source:m})}}
@@ -1729,7 +1732,7 @@ function finishMovementDiscovery105(before,voluntary){
   mon.hasSeenPlayer105=true;
   if(!voluntary||!moved||!before.unseen.has(mon))continue;
   const reach=mon.reach||1,range=mon.ranged?(mon.range||6):reach;
-  if(!monsterAttackLineR(mon,range).ok)continue;
+  if(!monsterAttackLineR(mon,range,{delivery:mon.crossfire?'area':'melee'}).ok)continue;
   let grace=state._movementDiscovery105;
   if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};
   grace.monsters.add(mon);
@@ -2224,10 +2227,10 @@ function remain(kind){const h=hz();if(!h)return 0;const u=kind==='drown'?h.drown
 function resolveEntityHazard1005(e,t,nx,ny,origin,opt={}){
   const kind=hazardTile(t);if(!kind||!e)return null;const player=entityIsPlayer(e),consumeTurn=opt.consumeTurn!==false,standing=opt.standing===true;
   if(entityAdapted(e,kind,nx,ny)){
-    if(!standing){OccupancyService.move(e,nx,ny,{forced:!!opt.forced});if(player){resetVisualState?.();if(kind==='water'&&remain('drown')>0)addLog(`익사 면역 ${remain('drown')}턴 · 물 위를 버틴다.`);if(kind==='void'&&remain('void')>0)addLog(`공허 면역 ${remain('void')}턴 · 발밑의 공허를 견딘다.`);bumpTileAction(nx,ny,{cause:opt.landingCause57||'hazard'});if(consumeTurn)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:moveTurnCost(),reason:"resolveEntityHazard1005"}).value}}
+    if(!standing){OccupancyService.move(e,nx,ny,{forced:!!opt.forced,discovery:opt.discovery,voluntaryDiscovery:opt.voluntaryDiscovery});if(player){resetVisualState?.();if(kind==='water'&&remain('drown')>0)addLog(`익사 면역 ${remain('drown')}턴 · 물 위를 버틴다.`);if(kind==='void'&&remain('void')>0)addLog(`공허 면역 ${remain('void')}턴 · 발밑의 공허를 견딘다.`);bumpTileAction(nx,ny,{cause:opt.landingCause57||'hazard'});if(consumeTurn)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:moveTurnCost(),reason:"resolveEntityHazard1005"}).value}}
     return'adapted'
   }
-  if(!standing){OccupancyService.move(e,nx,ny,{forced:!!opt.forced});if(player)resetVisualState?.()}
+  if(!standing){OccupancyService.move(e,nx,ny,{forced:!!opt.forced,discovery:opt.discovery,voluntaryDiscovery:opt.voluntaryDiscovery});if(player)resetVisualState?.()}
   if(kind==='water'){
     const ax=standing?e.x:nx,ay=standing?e.y:ny,land=nearestLandFor1005(e,ax,ay,standing?null:origin);
     if(land){
@@ -2332,7 +2335,24 @@ const OccupancyService=(()=>{
  function removeItem(item){release(item);const i=state.items.indexOf(item);if(i<0)return false;state.items.splice(i,1);return true}
  function addMonster(mon){if(mon.summonOwner105&&!summonCanAdmit(mon))return 0;if(mon.faction57&&!['player','hostile','neutral'].includes(mon.faction57))throw new Error('Unknown combat faction: '+mon.faction57);mon.faction57=entityFaction(mon);mon.friendly47=mon.faction57==='player';if(state.debugBattle57){mon.debugSide57=mon.faction57==='player'?'A':'B';mon.debugId57??=++DEBUG_BATTLE57.serial;mon.rewardPolicy57={xp:false,kills:false,drops:false}}const length=state.monsters.push(mon);put(mon,'monster');return length}
  function removeMonster(mon){release(mon);const found=state.monsters.includes(mon);state.monsters=state.monsters.filter(item=>item!==mon);if(state.tempTerrain74?.some(t=>t.kind==='passageSeal'&&t.ownerId===mon.combatantId54))RuntimeTerrainOwner.tick({movement:true});return found}
- function move(entity,x,y,opts={}){const ox=entity?.x,oy=entity?.y;if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return false;if(!opts.forced&&combatFieldBlocks57(x,y,{actor:entity}))return false;const kind=category.get(entity)||(entity===state.player?'player':state.items?.includes(entity)?'item':state.neutralInteractables58?.includes(entity)?'neutral':'monster');release(entity);entity.x=x;entity.y=y;put(entity,kind);if((ox!==x||oy!==y)&&(kind==='player'||kind==='monster')){entityTerrainEntry105(entity,x,y,ox,oy);if(!state.generationInProgress57)for(const mon of [...state.monsters]){if(!mon.crossfire||mon.intent61||mon.skillSeal105>0||mon.stunned>0||state.turn<(mon.nextArtilleryTurn||0)||!combatTargetValid57(mon,entity)||entityConcealed(entity))continue;const cells=intentLineCells(mon,null,mon.crossfire.range);if(entityFootprintCells57(entity).some(p=>cells.some(c=>c.x===p.x&&c.y===p.y)))artilleryTurn(mon,entity);}}if(state.tempFields?.some(f=>f.kind==='sealingWard'))expireCombatFields({movement:true});return true}
+ function move(entity,x,y,opts={}){
+  const ox=entity?.x,oy=entity?.y;
+  if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return false;
+  if(!opts.forced&&combatFieldBlocks57(x,y,{actor:entity}))return false;
+  const kind=category.get(entity)||(entity===state.player?'player':state.items?.includes(entity)?'item':state.neutralInteractables58?.includes(entity)?'neutral':'monster');
+  release(entity);entity.x=x;entity.y=y;put(entity,kind);
+  if((ox!==x||oy!==y)&&(kind==='player'||kind==='monster')){
+   entityTerrainEntry105(entity,x,y,ox,oy);
+   if(opts.discovery)finishMovementDiscovery105(opts.discovery,opts.voluntaryDiscovery);
+   if(!state.generationInProgress57)for(const mon of [...state.monsters]){
+    if(!mon.crossfire||mon.intent61||mon.skillSeal105>0||mon.stunned>0||state.turn<(mon.nextArtilleryTurn||0)||!combatTargetValid57(mon,entity)||entityConcealed(entity))continue;
+    const cells=intentLineCells(mon,null,mon.crossfire.range);
+    if(entityFootprintCells57(entity).some(p=>cells.some(c=>c.x===p.x&&c.y===p.y)))artilleryTurn(mon,entity);
+   }
+  }
+  if(state.tempFields?.some(f=>f.kind==='sealingWard'))expireCombatFields({movement:true});
+  return true
+ }
  function metrics(){ensureWorld();return{shared:!!shared,rebuilds,queries,linearFallbacks,cells:shared?.size||0}}
  return Object.freeze({beginShared,endShared,isOccupied,blocksEntityCell,occupants,addMonster,removeMonster,removeItem,move,metrics});
 })();
@@ -2374,7 +2394,8 @@ function combatFieldBlocks57(x,y,opts={}){
 function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&mon.hp<=mon.maxHp*.5?3:2):1}
 function movementDiscoveryEvades105(mon,ctx){
  const grace=state?._movementDiscovery105;
- return !!(grace&&grace.map===state.map&&grace.monsters.has(mon)&&['melee','ranged'].includes(ctx.delivery));
+ if(!grace||grace.map!==state.map||!grace.monsters.has(mon))return false;
+ return ['melee','ranged'].includes(ctx.delivery)||FIRST_DISCOVERY_EVASION_SKILLS.has(ctx.skillId);
 }
 function playAmbushReveal57(mon,reason='proximity'){if(!mon)return;const grass=!!mon.grassHide57,color=grass?'#9fc77a':(mon.color||'#c6ad88'),terrainLost=reason==='terrain';if(!terrainLost)vfVibrate(HAPTIC_PATTERN57.ambush);burst(mon.x,mon.y,color,grass?28:22,grass?1.15:.95);impact(mon.x,mon.y,color,grass?6:5);floatText(mon.x,mon.y,terrainLost?'은신 해제':grass?'풀숲 기습!':'기습!',color,grass?13:12);mon.hitUntil=Math.max(mon.hitUntil||0,performance.now()+220);if(terrainLost)addLog(`${mon.name}의 은신처가 사라져 모습을 드러냈다.`);else addLog(`${mon.name}이 숨어 있던 곳에서 튀어나왔다.`)}
 function releaseKeeperExit54(mon){
