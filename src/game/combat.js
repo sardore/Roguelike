@@ -719,7 +719,7 @@ function naturalHealPostTurn(ctx){
     if(heal){p.hp=Math.min(p.maxHp,p.hp+heal);updateAll()}
   }
 function legendaryPreTurn(){syncEquip47()}
-function legendaryPostTurn(){if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);tickLegendFields();state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}
+function legendaryPostTurn(){if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}
 function bossZonesPrePreGeneration(){V54.marks=[];rule.classList.remove('show')}
   // Natural recovery replaces explicit Rest. Hunger controls the very slow recovery interval; combat/status suppresses it.
   // Turns per point of health by hunger. The loss of speed as hunger falls is gentle (the slowest is twice the fastest), and down to floor 10 the whole table
