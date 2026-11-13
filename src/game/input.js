@@ -9,6 +9,7 @@ function clientTargetEvent(client,e){
   if(e.type==='pointerup'&&!window.__manruZoomActive){e.preventDefault();e.stopImmediatePropagation();touchStart=null;VIS.tapTrack=null;client.emit({type:'TARGET_CONFIRM',cell:globalThis.__MANRU_WORLD_HITTEST12__.cellAtClient(e.clientX,e.clientY),source:e.pointerType==='touch'?'touch':'pointer'})}
 }
 function clientKeyboardEvent(client,e){
+  if(e.type==='keydown'&&ItemCodex.isOpen())return;
   if(state?.debugBattle57){if(e.type==='keydown'&&e.key==='Escape'){e.preventDefault();if(document.body.classList.contains('manru-inspect-open'))closeInspect();else closeDebugBattle57()}return;}
   if(e.type==='keyup'){const key=String(e.key||'').toLowerCase();INPUT.held.delete(String(e.code||'').toLowerCase());INPUT.held.delete(key);if(key==='q'){const hold=RuntimeState.input.qHold61;if(hold){clearTimeout(hold.timer);RuntimeState.input.qHold61=null;e.preventDefault();if(!hold.fired&&RunLifecycle.isCurrent(hold.generation))client.emit({type:'CLASS_SKILL',source:'keyboard'})}}return}
   if(document.body.classList.contains('title-class-mode'))return;

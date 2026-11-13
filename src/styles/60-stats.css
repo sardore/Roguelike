@@ -31,10 +31,10 @@
 #statsScene .statsLogRow{display:flex;gap:8px}
 
 /* Ranking board: the title button and the "기록판" view (also the first tab of the hidden statistics view). */
-#titleCorner{position:absolute;top:20px;right:20px;z-index:6;display:flex;gap:8px}
-#rankBtn,#spectateBtn,#duelBtn{display:flex;align-items:center;gap:7px;min-height:0;padding:6px 13px 6px 10px;font:700 calc(11px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.2em;cursor:pointer;--button-color:#ecd49b;--button-radius:999px;--button-surface:linear-gradient(180deg,rgba(82,51,26,.94),rgba(24,14,8,.94));--button-edge:1px solid #b88a4e;--button-hover-edge:#f0cd86;--button-shadow:inset 0 0 0 1px #120906,inset 0 1px 0 rgba(255,226,160,.24),0 4px 14px #000a,0 0 18px rgba(214,160,80,.14)}
-#rankBtn:hover,#spectateBtn:hover,#duelBtn:hover{--button-surface:linear-gradient(180deg,rgba(104,66,34,.96),rgba(34,20,11,.96))}
-#rankBtn:focus-visible,#spectateBtn:focus-visible,#duelBtn:focus-visible{outline:2px solid #efddac;outline-offset:3px}
+#titleCorner{position:absolute;top:20px;right:20px;z-index:6;display:flex;align-items:flex-start;gap:8px}
+#rankBtn,#spectateBtn,#duelBtn,#itemCodexBtn{display:flex;align-items:center;gap:7px;min-height:0;padding:6px 13px 6px 10px;font:700 calc(11px * var(--ui-font-scale, 1)) Georgia,serif;letter-spacing:.2em;cursor:pointer;--button-color:#ecd49b;--button-radius:999px;--button-surface:linear-gradient(180deg,rgba(82,51,26,.94),rgba(24,14,8,.94));--button-edge:1px solid #b88a4e;--button-hover-edge:#f0cd86;--button-shadow:inset 0 0 0 1px #120906,inset 0 1px 0 rgba(255,226,160,.24),0 4px 14px #000a,0 0 18px rgba(214,160,80,.14)}
+#rankBtn:hover,#spectateBtn:hover,#duelBtn:hover,#itemCodexBtn:hover{--button-surface:linear-gradient(180deg,rgba(104,66,34,.96),rgba(34,20,11,.96))}
+#rankBtn:focus-visible,#spectateBtn:focus-visible,#duelBtn:focus-visible,#itemCodexBtn:focus-visible{outline:2px solid #efddac;outline-offset:3px}
 #rankBtn .rankIcon{position:relative;display:block;width:16px;height:14px;flex:none;filter:drop-shadow(0 1px 2px #000b)}
 #rankBtn .rankIcon:before{content:'';position:absolute;inset:0 0 4px;background:linear-gradient(180deg,#fff0b8,#c58c34);clip-path:polygon(0 100%,0 20%,25% 55%,50% 0,75% 55%,100% 20%,100% 100%)}
 #rankBtn .rankIcon:after{content:'';position:absolute;left:1px;right:1px;bottom:0;height:3px;background:linear-gradient(180deg,#e2b65f,#8a5d1b)}
@@ -48,7 +48,7 @@ body.title-class-mode #titleCorner{display:none}
 #titleCorner #spectateBtn{animation:spectateGlow 2.4s ease-in-out infinite}
 @keyframes spectateGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(255,224,140,.35))}50%{filter:drop-shadow(0 0 11px rgba(255,224,140,.95)) brightness(1.12)}}
 @media (prefers-reduced-motion:reduce){#titleCorner #spectateBtn{animation:none;filter:drop-shadow(0 0 8px rgba(255,224,140,.8))}}
-@media (max-width:480px){#titleCorner{top:16px;right:14px;gap:6px;flex-direction:column;align-items:flex-end}#rankBtn,#spectateBtn,#duelBtn{padding:5px 11px 5px 9px;letter-spacing:.14em}}
+@media (max-width:480px){#titleCorner{top:16px;right:14px;gap:6px;flex-direction:column;align-items:flex-end}#rankBtn,#spectateBtn,#duelBtn,#itemCodexBtn{padding:5px 11px 5px 9px;letter-spacing:.14em}}
 /* the board keeps one size whatever tab is open (a long list and a short one no longer change the panel): the list scrolls inside it */
 #statsScene[data-mode=rank] .statsPanel{display:flex;flex-direction:column;height:min(900px,calc(100dvh - 28px - var(--safe-top,0px) - var(--safe-bottom,0px)));background:radial-gradient(120% 60% at 50% 0,#2b1a0d 0,rgba(18,12,8,0) 70%),linear-gradient(180deg,#1a110a,#0f0906)}
 #statsScene[data-mode=rank] #statsBody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
@@ -140,3 +140,23 @@ body.title-class-mode #titleCorner{display:none}
 .giftBox input{flex:0 1 140px;min-width:0;padding:6px 8px;border:1px solid #634329;background:#1a1109;color:#e7d4ac;font:inherit}
 .giftBox button{flex:none;padding:6px 12px;border:1px solid #8a6a3a;background:#2a1b0e;color:#f0d9a8;font:inherit;cursor:pointer}
 .giftNote{flex:1;color:#a8946f;font-size:12px}
+
+
+.titleDuelColumn{display:grid;justify-items:end;gap:6px}
+#itemCodex{width:min(650px,calc(100vw - 28px));height:min(740px,calc(100dvh - 32px - var(--safe-top,0px) - var(--safe-bottom,0px)));box-sizing:border-box;margin:auto;padding:clamp(14px,3vw,26px);border:1px solid #8e653b;border-radius:10px;background:linear-gradient(155deg,#24170f,#100b08 55%);color:#e9d5b3;box-shadow:0 16px 54px #000c}
+#itemCodex[open]{display:flex;flex-direction:column;gap:14px}
+#itemCodex::backdrop{background:#080503ca}
+#itemCodex header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #63442a;padding-bottom:12px}
+#itemCodex h2{margin:0;font-size:calc(24px * var(--ui-font-scale,1));color:#f3d49a}
+#itemCodexProgress{margin:4px 0 0;color:#c3a47e}
+.itemCodexFilters{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}
+.itemCodexFilters :is(select,input){min-width:0;width:100%;box-sizing:border-box;padding:8px;border:1px solid #705033;border-radius:5px;background:#140d09;color:#f1dbb3;font:inherit}
+.itemCodexFilters input::placeholder{color:#b99e7b}
+#itemCodexList{min-height:0;overflow:auto;overscroll-behavior:contain;list-style:none;padding:0;margin:0;display:grid;align-content:start;gap:6px}
+#itemCodexList li{display:flex;align-items:flex-start;gap:12px;padding:10px;border:1px solid #553b25;border-radius:6px;background:#1d130c;overflow-wrap:anywhere}
+#itemCodexList li[data-locked]{color:#b69c79;background:#17100b}
+#itemCodexList img{width:38px;height:38px;object-fit:contain;image-rendering:pixelated;flex:none}
+#itemCodexList :is(small,strong){display:block}
+#itemCodexList small{color:#c0a37b;margin-bottom:2px}
+#itemCodexList p{margin:5px 0 0;color:#ceba9b;line-height:1.45}
+#itemCodexEmpty{margin:0;color:#c0a37b}

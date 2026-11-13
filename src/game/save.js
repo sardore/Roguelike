@@ -387,6 +387,8 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     const j=at(DEATH1004);
     if(j>=0){const mine=jsonOr(lsGet(DEATH1004),null),theirs=jsonOr(entries[j][1],null);
       if(mine?.at>(theirs?.at||0))entries[j][1]=lsGet(DEATH1004)}
+    const codex=at(ItemCodex.key);
+    if(codex>=0)entries[codex][1]=ItemCodex.merge(lsGet(ItemCodex.key),entries[codex][1]);
     const before=entries.map(([key])=>[key,lsGet(key)]);
     if(!writeAccountKeys(entries)){writeAccountKeys(before);throw new Error('계정 정보를 저장하지 못했다.')}
     if(!loadGame({raw:p.run,label:'세이브 문자열'})){writeAccountKeys(before);throw new Error('세이브 문자열의 진행을 적용하지 못했다.')}
@@ -490,9 +492,9 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           if(storageKey===TERMINAL_INTENT){try{store=sessionStorage;raw=store.getItem(storageKey)}catch(_){continue}}
           else raw=store.getItem(storageKey);
           if(!raw)continue;
-          const record=JSON.parse(raw),allowed=[SAVE1004,SHADOW,DEATH1004,DEADRUNS];
-          if(record.version!==1||!Array.isArray(record.before)||record.before.length>4||record.before.some(row=>!Array.isArray(row)||!allowed.includes(row[0])||(row[1]!==null&&typeof row[1]!=='string')))throw Error('invalid transaction journal');
-          if(record.complete&&(!Array.isArray(record.complete)||record.complete.length>4||record.complete.some(row=>!Array.isArray(row)||!allowed.includes(row[0])||(row[1]!==null&&typeof row[1]!=='string'))))throw Error('invalid terminal journal');
+          const record=JSON.parse(raw),allowed=[SAVE1004,SHADOW,DEATH1004,DEADRUNS,ItemCodex.key];
+          if(record.version!==1||!Array.isArray(record.before)||record.before.length>allowed.length||record.before.some(row=>!Array.isArray(row)||!allowed.includes(row[0])||(row[1]!==null&&typeof row[1]!=='string')))throw Error('invalid transaction journal');
+          if(record.complete&&(!Array.isArray(record.complete)||record.complete.length>allowed.length||record.complete.some(row=>!Array.isArray(row)||!allowed.includes(row[0])||(row[1]!==null&&typeof row[1]!=='string'))))throw Error('invalid terminal journal');
           if(storageKey===TERMINAL_INTENT&&!record.complete)throw Error('missing terminal intent');
           const rollback=SaveService.settle(record);if(!rollback.ok)return{ok:false,failure:'recovery',rollback};
           if(record.complete){sessionStorage.removeItem(BOOT_RECOVERY);sessionStorage.removeItem(PALACE_RECOVERY)}
@@ -544,6 +546,8 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           const rid=state?.runId984||null,ids=[...deadRuns1004()].filter(x=>x!==rid);if(rid)ids.push(rid);
           entries.push([DEATH1004,JSON.stringify({at:Date.now(),runId:rid,floor:state?.floor||0,turn:state?.turn||0,version:SAVE_RELEASE_TAG})],[DEADRUNS,JSON.stringify(ids.slice(-64))]);
         }
+        const codex=ItemCodex.change(state);
+        if(codex)entries.push(codex);
         entries.push([SHADOW,null],[SAVE1004,null]);const result=SaveService.transact(entries,kind,true);
         if(result.ok){sessionStorage.removeItem(BOOT_RECOVERY);sessionStorage.removeItem(PALACE_RECOVERY);purgeLegacy1004()}return result;
       },
@@ -575,7 +579,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
           else sessionStorage.removeItem(PALACE_RECOVERY);
         }catch(error){ignoreError('could not retain recovery checkpoint',error)}
       }
-      if(result.ok){state.saveVersion1004=SAVE_RELEASE_TAG;state.saveSchema1004=1;state.saveWrittenAt1004=plain.saveWrittenAt1004;state.saveSeq1004=plain.saveSeq1004;purgeLegacy1004()}
+      if(result.ok){state.saveVersion1004=SAVE_RELEASE_TAG;state.saveSchema1004=1;state.saveWrittenAt1004=plain.saveWrittenAt1004;state.saveSeq1004=plain.saveSeq1004;ItemCodex.save(state);purgeLegacy1004()}
       const frame=ACTION_AUDIT5.stack[0];if(frame)frame.result.persistence=result;return result;
     }
     function deadRuns1004(){try{const a=JSON.parse(localStorage.getItem(DEADRUNS)||'[]');return new Set(Array.isArray(a)?a.filter(Boolean).slice(-64):[])}catch(_){return new Set()}}

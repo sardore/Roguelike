@@ -1179,6 +1179,7 @@ function createPotionTargetHud(){
   ph.querySelector('#potionTargetCancel').onclick=e=>{e.preventDefault();e.stopPropagation();InputRouter.dispatch({type:'TARGET_CANCEL',source:'target-hud'})};
 }
 function bindTitleButtons(){
+  ItemCodex.bind();
     enterBtn.onclick=showClassPick;
   classBackBtn.onclick=showStartGate;
   document.getElementById('rankBtn').onclick=()=>PlayStats.open('rank');
