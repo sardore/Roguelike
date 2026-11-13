@@ -322,7 +322,7 @@ function labelSections(){
   function countRole(x){return state.player.inventory.filter(i=>x==='all'||role47(i)===x).length}
   function selectedGear(){const slot=RuntimeState.ui.inventory?.invEquipSlot;if(slot){const it=state.player[slot];if(it&&['weapon','armor','cloak'].includes(it.type))return it}const it=state.player.inventory[inventorySelection];return it&&['weapon','armor','cloak'].includes(it.type)?it:null}
   function decorateInventory(){
-    if(!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;const defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy','전술'],['relic','유물']],tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')];tabs.forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];if(b.firstChild)b.firstChild.nodeValue=d[1];const s=b.querySelector('span');if(s)s.textContent=countRole(d[0]);b.classList.toggle('active',inventoryTab===d[0])});
+    if(!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;const defs=INVENTORY_CATEGORIES,tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')];tabs.forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];if(b.firstChild)b.firstChild.nodeValue=d[1];const s=b.querySelector('span');if(s)s.textContent=countRole(d[0]);b.classList.toggle('active',inventoryTab===d[0])});
     box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(!it)return;if(!el.querySelector('.uxRole47'))el.insertAdjacentHTML('beforeend',`<span class="uxRole47">${({gear:'장비',recovery:'회복',strategy:'전술',relic:'유물'})[role47(it)]||'기타'}</span>`);if(it.upgrade>0&&!el.querySelector('.uxPlus47'))el.insertAdjacentHTML('beforeend',`<span class="uxPlus47">+${it.upgrade}</span>`)});
     box.querySelectorAll('[data-uxeq]').forEach(el=>{const it=state.player[el.dataset.uxeq];if(it?.upgrade>0&&!el.querySelector('.uxPlus47'))el.insertAdjacentHTML('beforeend',`<span class="uxPlus47">+${it.upgrade}</span>`)});
     const it=selectedGear(),actions=box.querySelector('.uxActions');if(it&&actions&&!it.artifactWeapon46&&(state.player.upgradeMarks||0)>0&&(it.upgrade||0)<3&&!actions.querySelector('.uxUpgradeAction47')){const b=document.createElement('button');b.className='uxUpgradeAction47';b.textContent=`개량 인장×${state.player.upgradeMarks}`;b.onclick=e=>{e.preventDefault();e.stopPropagation();return ActionDispatcher.dispatch({type:'UPGRADE_GEAR',args:[it],source:'inventory'}).value};actions.prepend(b)}
@@ -331,7 +331,7 @@ function labelSections(){
   const roleName={gear:'장비',recovery:'회복',strategy:'전술',relic:'유물',other:'기타'};
   function cleanInventory(){
     if(!inventoryOpen)return;const box=document.getElementById('inventory');if(!box)return;
-    const tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')],defs=[['all','전체'],['gear','장비'],['recovery','회복'],['strategy','전술'],['relic','유물']];
+    const tabs=[...box.querySelectorAll('.uxTabs [data-invtab]')],defs=INVENTORY_CATEGORIES;
     tabs.forEach((b,i)=>{const d=defs[i];if(!d)return;b.dataset.invtab=d[0];b.childNodes[0].nodeValue=d[1];const n=b.querySelector('span');if(n)n.textContent=countRole(d[0])});
     box.querySelectorAll('[data-invslot]').forEach(el=>{const it=state.player.inventory[+el.dataset.invslot];if(!it)return;el.setAttribute('aria-label',`${it.name} · ${roleName[role47(it)]||'기타'}`)});
     const sub=box.querySelector('.uxInvHead small');if(sub)sub.textContent='장비 · 회복 · 전술 · 유물만 나눠서 관리 / 같은 소모품은 자동 중첩';
@@ -1336,8 +1336,9 @@ function inventoryFiltered(){
     const order={weapon:0,armor:1,cloak:2,upgrade:3,talisman:4,potion:5,food:6,relic:7,trinket:8};
     rows.sort((a,b)=>(order[a.item.type]??9)-(order[b.item.type]??9)||((b.item.tier||0)-(a.item.tier||0))||publicName56(a.item).localeCompare(publicName56(b.item),'ko'));
     // Keep the established order: ingredients follow recovery items; ammo follows strategy items.
-    const extra=role==='recovery'?'ingredient':tab==='strategy'?'ammo':null;
-    if(extra){const present=new Set(rows.map(v=>v.idx));for(const v of all)if(v.item.type===extra&&v.item.mineItem105!=='stone'&&!present.has(v.idx))rows.push(v)}
+    if(role)for(const v of all){
+      if(role56(v.item)!==role&&inventoryItemCategory(v.item)===role&&(tab!=='potion'||v.item.type!=='ammo'))rows.push(v);
+    }
     if(tab==='strategy')rows.sort((a,b)=>(a.item.type==='ammo'?1:0)-(b.item.type==='ammo'?1:0)||a.item.name.localeCompare(b.item.name,'ko'));
     return rows;
   }

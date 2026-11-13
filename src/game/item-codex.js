@@ -8,7 +8,8 @@ const ItemCodex=(()=>{
 
  function identity(item){
   if(typeof item?.type!=='string'||typeof item.name!=='string'||!item.name||item.count===0)return null;
-  const kind=item.artifactId46??item.summonSpecies105??item.mineItem105??item.foodKind??item.potionKind??item.talismanKind??item.ammoKind??item.name;
+  if(item.type==='painting'||item.summonItem105==='picture')return null;
+  const kind=item.artifactId46??item.mineItem105??item.foodKind??item.potionKind??item.talismanKind??item.ammoKind??item.name;
   return typeof kind==='string'&&kind.length<=160&&item.type.length<=32?item.type+':'+kind:null;
  }
 
@@ -20,7 +21,7 @@ const ItemCodex=(()=>{
    if(!Array.isArray(row)||row.length!==2)continue;
    const [id,item]=row;
    if(typeof id!=='string'||id.length>193||typeof item?.name!=='string'||!item.name||item.name.length>160||
-      typeof item.type!=='string'||!id.startsWith(item.type+':'))continue;
+      typeof item.type!=='string'||item.type==='painting'||!id.startsWith(item.type+':'))continue;
    entries.set(id,{type:item.type,name:item.name,desc:typeof item.desc==='string'?item.desc.slice(0,maxText):''});
   }
   lastRaw=raw;lastEntries=entries;
@@ -42,12 +43,7 @@ const ItemCodex=(()=>{
   const player=run?.player;
   if(!player||runIsEphemeral(run))return;
   for(const slot of GEAR_SLOT_TYPES)record(run,player[slot]);
-  for(const item of player.inventory||[]){
-   record(run,item);
-   if(item?.summonItem105==='book')for(const [name,picture] of Object.entries(item.summonPictures105||{})){
-    if(picture?.count>0)record(run,{type:'painting',name:`화공노인의 ${name} 그림`,summonSpecies105:name});
-   }
-  }
+  for(const item of player.inventory||[])record(run,item);
  }
 
  function change(run,raw=lsGet(key)){
@@ -74,7 +70,7 @@ const ItemCodex=(()=>{
   const items=[...WEAPONS,...ARMORS,...CLOAKS,...RELICS,...TRINKETS,...CONSUMABLES,...POTIONS,...TALISMANS,...AMMO_TYPES,
    ...LEGENDS47,...FUSION_RECIPES.map(recipeItem),...Object.values(BRANCH_REWARDS),...Object.values(MOUNTAIN_REWARDS105),
    ...Object.values(MINE_ITEMS105),MOUNTAIN_BERRY,WARD_DROWN,WARD_VOID,palaceGuideItem(),...CITADEL_RELEASES.map(citadelBridgeGuide),
-   summonBookItem(),makeMartialManual(),...summonDefinitions().map(({name})=>({type:'painting',name,summonSpecies105:name}))];
+   summonBookItem(),makeMartialManual()];
   catalog=new Map();
   for(const item of items){
    const id=identity(item);
@@ -87,12 +83,8 @@ const ItemCodex=(()=>{
   const acquired=read(lsGet(key));
   const all=new Map([...acquired,...definitions()]);
   return [...all].map(([id,item])=>{
-   const found=acquired.has(id);
-   if(found&&item.type==='painting'){
-    const species=id.slice('painting:'.length);
-    return {item:summonPictureItem(species),found};
-   }
-   return {item,found};
+   const knownItem=definitions().get(id)||item;
+   return {item,found:acquired.has(id),category:inventoryItemCategory(knownItem,true)};
   })
    .sort((a,b)=>Number(b.found)-Number(a.found)||a.item.name.localeCompare(b.item.name,'ko'));
  }
@@ -110,7 +102,7 @@ const ItemCodex=(()=>{
 
   function render(){
    const query=search.value.trim().toLocaleLowerCase('ko');
-   const visible=entries.filter(({item,found})=>(!category.value||item.type===category.value)&&
+   const visible=entries.filter(({item,found,category:group})=>(category.value==='all'||group===category.value)&&
     (!query||found&&item.name.toLocaleLowerCase('ko').includes(query)));
    const fragment=document.createDocumentFragment();
    for(const {item,found} of visible){
@@ -144,8 +136,7 @@ const ItemCodex=(()=>{
   document.getElementById('itemCodexBtn').onclick=()=>{
    if(dialog.open)return;
    entries=rows();
-   const types=[...new Set(entries.map(({item})=>item.type))].sort((a,b)=>itemTypeLabel(a).localeCompare(itemTypeLabel(b),'ko'));
-   category.replaceChildren(new Option('전체 분류',''),...types.map(type=>new Option(itemTypeLabel(type),type)));
+   category.replaceChildren(...INVENTORY_CATEGORIES.map(([id,label])=>new Option(label,id)));
    search.value='';
    progress.textContent=`${entries.filter(row=>row.found).length} / ${entries.length}종 발견`;
    render();
