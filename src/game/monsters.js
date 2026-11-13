@@ -2031,6 +2031,10 @@ function enemySpecial47(m,target=state.player){
 }
 function debugBattleRound57(){
  const b=DEBUG_BATTLE57;if(!b.open||b.winner)return;PresentationState.advance(performance.now());state.turn++;state.floorTurn++;b.round++;
+ // Debug arena resolves damage-over-time before its actors' attacks, just like exploration.
+ tickMonsterDurations();tickMonsterCombatStatuses();
+ if(!tickCombatFields57()){debugBattlePause57();debugBattleMessage57('화염 피해로 전투가 종료되었다.');return}
+ tickElementFields57();tickLegendFields();tickTerrainReactions105();
  const actors=[...state.monsters]; // Alternate the initiative advantage each round.
  if(b.round%2===0)actors.reverse();OccupancyService.beginShared();
  try{
@@ -2046,7 +2050,7 @@ function debugBattleRound57(){
    resolveMonsterTargetTurn57(mon,target,schedule);
    }
   }
-  tickMonsterDurations();tickMonsterCombatStatuses();tickCombatFields57();expireCombatFields();tickElementFields57();tickLegendFields();RuntimeTerrainOwner.tick();tickJarGasFields();tickTerrainReactions105();updateRafts();palaceAdvance(1);
+  expireCombatFields();RuntimeTerrainOwner.tick();tickJarGasFields();updateRafts();palaceAdvance(1);
  }catch(error){debugBattlePause57();debugBattleMessage57('전투 오류: '+error.message);console.error(error);return}
  finally{OccupancyService.endShared()}
  const sides=['A','B'].map(side=>state.monsters.filter(m=>m.debugSide57===side&&!m.combatFixture54&&(m.hp>0||m.revivePhase57==='corpse')).length);
@@ -2440,14 +2444,19 @@ function silkThreadAt54(x,y){
     turnResult.stageOrder.push('core:regen');dojoBedTick();if(state.status.regen>0){state.player.hp=Math.min(state.player.maxHp,state.player.hp+1);state.status.regen--}
     turnResult.stageOrder.push('core:status');applyStatusTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:status';return}turnResult.stageOrder.push('core:hunger');hungerTick();if(state.dead){turnResult.aborted=true;turnResult.abortStage='core:hunger';return}
     tickBossArenaMist(playerAgency);if(state.dead){turnResult.aborted=true;return}
+    // All fire sources and ongoing combustion resolve before enemies may act.
+    // Newly created fields still respect bornTurn, and newly ignited actors respect combustion.born.
+    turnResult.stageOrder.push('core:fields');state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
+    if(!tickCombatFields57()){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
+    tickElementFields57();tickLegendFields();tickTerrainReactions105();
+    if(state.dead||state.victory){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
     turnResult.stageOrder.push('core:durations');for(const q of ['haste','weaken','evade','markCrit','poison','bleed','ward','upset','drunk','blind','skillSeal'])if(state.status[q]>0)state.status[q]--;
     turnResult.stageOrder.push('core:loot');pullNearbyLoot();turnResult.stageOrder.push('core:summon-escort');summonEscortTurn();turnResult.stageOrder.push('core:energy');turnResult.energyAdded=c;state.enemyEnergy=(state.enemyEnergy||0)+c;let acted=0;
     while(state.enemyEnergy>=1&&acted<3&&!state.dead&&!state.victory){state.enemyEnergy-=1;state.floorTurn++;turnResult.enemyRounds++;turnResult.stageOrder.push('core:rafts');updateRafts();turnResult.stageOrder.push('core:monsters');monsterTurn();if(!state.dead&&!state.victory){turnResult.stageOrder.push('core:allies');alliesTurn()}acted++}
     turnResult.stageOrder.push('core:stealth');if(playerAgency&&state.status.stealth>0&&(state.player.stealthBornAgency1005??-1)<state.playerAgencyTurns57)state.status.stealth--;
     turnResult.stageOrder.push('core:focus');recoverActorFocus105(state.player,state.turn);
-    // potion fields / temporary potion buffs
-    turnResult.stageOrder.push('core:fields');state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};
-    if(!tickCombatFields57()){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
+    // Temporary potion buffs expire after the enemy phase.
+    state.status=state.status||{};
     turnResult.stageOrder.push('core:potion-buffs');for(const q of ['swift','fortify','willBoost'])if(state.status[q]>0)state.status[q]--;
     turnResult.stageOrder.push('core:field-expiry');expireCombatFields();
     if(playerAgency&&state.player.classState?.aimPower>0){const cs=state.player.classState,agency=state.playerAgencyTurns57;if(agency>cs.aimBornAgency&&agency!==cs.aimMoveAgency&&agency!==cs.aimAttackAgency)setAimPower(cs.aimPower+1)}
@@ -2513,7 +2522,7 @@ function parryStaggerMonsterAttack(next,mon,bonus=0,context={},...rest){
 }
 function monsterDurationsPostTurn(){return tickMonsterDurations()}
 function temporaryTerrainPostTurn(){return RuntimeTerrainOwner.tick()}
-function jarGasPostTurn(){tickJarGasFields();tickTerrainReactions105()}
+function jarGasPostTurn(){tickJarGasFields()}
 function foodPreTurn(ctx){ctx.food57={turn:state?.turn??0,focus:state?.player?.focus??0}}
 function curseStoryPreTurn(ctx){ctx.curse991={turn:state?.turn||0}}
 function permadeathCleanPostTurn(){/* Persistence cleanup belongs to SaveService commit. */}
