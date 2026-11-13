@@ -344,6 +344,7 @@ function damageEntity(entity,amount,source=null,element=null,context={}){
  }
  if(combatTargetValid57(entity,source))entity.lastDamageOpponent57=source===state.player?'player':combatantId(source);entity.lastDamageElement105=element;entity.hp-=amount;if(entity.equipmentActor105&&entity.hp>0)updateEquipmentPhase105(entity);if(entity.bossPattern==='needle'){if(entity.hp>0)prepareBossArena(entity);if(context.delivery==='ranged'&&entity.hp>0)entity.needleGasShotReady54=true;if(entity.hp>0)needleEscape(entity,source);}if(entity.bossPattern==='keeper'&&entity.hp>0)tickKeeperLava54(entity,source);
  if(entity!==state?.player&&entity.hp>0&&combatTargetValid57(entity,source)){entity.retaliationId53=source===state.player?'player':(source.allyId53||combatantId(source));entity.retaliationUntilTurn54=state.turn+4;entity.retaliationLastPosition54={x:source.x,y:source.y};entity.alerted=true;}
+ if(entity.name===SHACKLE_DOLL.name&&entity.hp>0)entity.shackleHit=state.turn;
  if(entity.hiveTree105)mountainHiveDamaged(entity);
  if(!state.debugBattle57&&entity!==state?.player&&entity.hpThreshold57&&before>entity.maxHp*(entity.hpThreshold57.ratio??.5)&&entity.hp<=entity.maxHp*(entity.hpThreshold57.ratio??.5))globalThis.__MANRU_SPECIAL_FLOORS60__?.onMonsterHpThreshold?.(entity,entity.hpThreshold57);
  if(entity!==state?.player&&entity.hp>0&&source&&factionsHostile57(entityFaction(entity),entityFaction(source))){

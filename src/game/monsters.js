@@ -823,7 +823,41 @@ function tryMonsterSummon(mon){
  if(mon.summoner&&!(mon.skillSeal105>0)&&mon.summonActivated57&&mon.summonName57&&state.floorTurn>=(mon.nextSummonTurn57??Infinity)){if(mon.summonCap&&state.monsters.filter(m=>m.hp>0&&bossChildOf(m,mon)).length>=mon.summonCap)return false;const summoned=summonNear(mon,mon.summonName57);if(summoned){mon.nextSummonTurn57=state.floorTurn+(mon.summonCooldown??Math.ceil(6/Math.max(1,mon.actionSpeed||1)));addLog(`${withJosa57(mon.name,'이/가')} 보조 개체를 불렀다.`);return true}}
  return false;
 }
+// Store only encounter IDs in the save. Presentation coordinates and timing stay in memory.
+const shackleFoldMotion=new WeakMap();
+function shackleCounterTurn(mon,target){
+ if(mon.name!==SHACKLE_DOLL.name)return false;
+ const valid=combatTargetValid57(mon,target),id=valid?(target===state.player?'player':combatantId(target)):null;
+ const vision=valid?(target===state.player?playerVisionRadius():Math.max(0,combatEntityStats(target).vision)):0;
+ const sees=(x,y)=>valid&&Math.hypot(x-target.x,y-target.y)<=vision+.35&&VisibilityService.lineClear(target.x,target.y,x,y);
+ const visible=!entityConcealed(mon)&&sees(mon.x,mon.y);
+ const lost=id&&mon.shackleSight?.id===id&&mon.shackleSight.visible&&!visible;
+ mon.shackleSight={id,visible};
+ const hit=mon.shackleHit===state.turn||mon.shackleHit===state.turn-1;
+ delete mon.shackleHit;
+ if(mon.intent61?.type==='shackleCounter')return executeMonsterIntent(mon);
+ if(!valid||!(lost||hit)||mon.skillSeal105>0||mon.stunned>0||mon.shackleCounterTurn===state.turn)return false;
+ let destination=null,farthest=-1;
+ for(let y=Math.max(1,target.y-Math.ceil(vision));y<=Math.min(ROWS-2,target.y+Math.ceil(vision));y++){
+  for(let x=Math.max(1,target.x-Math.ceil(vision));x<=Math.min(COLS-2,target.x+Math.ceil(vision));x++){
+   const distance=(x-target.x)**2+(y-target.y)**2;
+   if(distance<=farthest||(x===mon.x&&y===mon.y)||!sees(x,y)||!PlacementService.canPlaceEntity(mon,x,y)||combatFieldBlocks57(x,y,{actor:mon}))continue;
+   destination={x,y};farthest=distance;
+  }
+ }
+ if(!destination)return false;
+ const from={x:mon.x,y:mon.y},showFrom=state.visible.has(k(from.x,from.y));
+ if(!OccupancyService.move(mon,destination.x,destination.y))return false;
+ mon.shackleSight.visible=sees(mon.x,mon.y);
+ mon.shackleCounterTurn=state.turn;
+ shackleFoldMotion.set(mon,{from,showFrom,start:performance.now(),map:state.map,x:mon.x,y:mon.y});
+ const cells=combatLineCellsR8(mon.x,mon.y,target.x,target.y);
+ setMonsterIntent(mon,'shackleCounter',cells,'족쇄 사선 예고',{force61:true,x:mon.x,y:mon.y});
+ addLog(`${mon.name}이 접혔다 펼쳐지며 사슬을 겨눈다.`);
+ return true;
+}
 function evaluateMonsterSpecials(mon,sees,d,target=state.player){
+ if(shackleCounterTurn(mon,target))return true;
  if(mon.legion57&&legionTurn(mon,sees))return true;
  const stackRules=visibilityStackRules(mon),targetId=target===state.player?'player':combatTargetValid57(mon,target)?combatantId(target):null;if(mon.specialOpponent105!==targetId){mon.specialOpponent105=targetId;for(const rule of stackRules)mon[rule.counter]=0;}
  if((sees||mon.alerted||mon.intent61||mon.asuraZone61||mon.asuraWarn61)&&!mon.boss){const resolvingCharge=mon.intent61?.type==='charge',used=globalThis.__MANRU_AI61__?.special(mon,d,target);if(used){if(mon.stunned>0&&!resolvingCharge)mon.stunned--;return true}if(mon.stunned>0){mon.stunned--;return true}}
@@ -968,6 +1002,25 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   function setMonsterIntent(m,type,cells,label,data={}){if(Number.isFinite(state.intentBudget61)&&state.intentBudget61<=0&&!data.force61)return false;if(Number.isFinite(state.intentBudget61)&&!data.force61)state.intentBudget61--;m.intent61={type,cells,label,data,armedPlayerTurn:state.turn};floatText(m.x,m.y,'예고','#efb171',10);return true}
   function executeMonsterIntent(m,immediate=null){const I=immediate||m.intent61;if(!I)return false;if(!immediate&&!m.crossfire&&state.turn<=(I.armedPlayerTurn??state.turn))return true;const targets=bossAreaTargets(m,I.cells),target=targets[0]||selectCombatOpponent(m),hit=targets.length>0;
     if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70()});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
+    else if(I.type==='shackleCounter'){
+      if(!(m.skillSeal105>0)&&m.x===I.data.x&&m.y===I.data.y){
+        const cells=[];
+        for(const cell of I.cells){
+          if(tileBlocksSight(state.map[cell.y]?.[cell.x])||combatFieldBlocks57(cell.x,cell.y))break;
+          cells.push(cell);
+        }
+        const end=cells.at(-1);
+        if(end){
+          projectileFX(m.x,m.y,end.x,end.y,'#cba4ee');
+          const victims=bossAreaTargets(m,cells);
+          const victim=cells.map(cell=>victims.find(actor=>monCovers(actor,cell.x,cell.y))).find(Boolean);
+          if(victim){
+            const r=monsterAttacksTarget(m,SHACKLE_COUNTER.bonus,{target:victim,delivery:'ranged',projectile:true,reflectable:true,range:cells.length});
+            if(r.hit)for(const key of ['blind','skillSeal','bleed'])applyCombatStatus(victim,key,SHACKLE_COUNTER[key],1,{source:m});
+          }
+        }
+      }
+    }
     else if(I.type==='fire'){alertNearby(I.data.x,I.data.y,8,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#f0823c',{kind:'shell',element:'fire',cells:I.cells,life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,2,{target,delivery:'area',reflectable:false,range:10,impactDelay:720*.74/automationPresentationRate70()});addField('fire',I.data.x,I.data.y,4,I.cells||null,effectSource57(m));burst(I.data.x,I.data.y,'#f0823c',18,.9,720*.74/automationPresentationRate70())}
     else if(I.type==='poison'){for(const target of targets){const r=monsterAttacksTarget(m,0,{target,delivery:'area',reflectable:false,range:10});if(r.hit)applyCombatStatus(target,'poison',5,1,{source:m})}for(const c of I.cells)if(state.map[c.y][c.x]===TT.FLOOR&&globalThis.__MANRU_RANDOM57__()<.20)RuntimeTerrainOwner.mutate(c.x,c.y,TT.SNARE,{source:'poison-intent61'})}
     else if(I.type==='seal'){for(const target of targets){const r=monsterAttacksTarget(m,1,{target,delivery:'area',reflectable:false,range:10});if(r.hit)applyCombatStatus(target,'skillSeal',combatDepth(m)>=21?4:3,1,{source:m})}}
@@ -1111,6 +1164,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   // Inspection reads the live actor's traits; it never configures or mutates combat.
   function monsterSkills(mon){
     const skills=[],floor=combatDepth(mon),add=(id,name,seal,meta,desc,style='roar',type='기술')=>skills.push({id,name,seal,meta,type,desc,style});
+    if(mon.name===SHACKLE_DOLL.name)add('shackle-counter','접힌 족쇄','鎖','피격·시야 이탈 · 사선 예고 1턴',
+      `대상의 시야 끝으로 접혀 이동한 뒤 공격력 +${SHACKLE_COUNTER.bonus}의 사슬을 발사한다. 실명 ${SHACKLE_COUNTER.blind}턴, 기봉인 ${SHACKLE_COUNTER.skillSeal}턴, 출혈 ${SHACKLE_COUNTER.bleed}턴.`);
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
     if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
@@ -2487,7 +2542,11 @@ function bossExperience(mon){if(mon?.boss&&mon.xp){state.player.xp+=mon.xp;addLo
 function clearInvalidAim(){if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetValid()){AIM_STATE.target=null;AIM_STATE.jar=null;state._manualTerrainTargetR8=null}}
 function alertOnDoorOpen(ctx){if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)}
   function asuraDomainDist61(a,b){return Math.hypot((a?.x??0)-(b?.x??0),(a?.y??0)-(b?.y??0))}
-function mobDefs47(id){return(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}))}
+function mobDefs47(id){
+ const defs=(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}));
+ if(id==='chain_sickle')defs.splice(1,0,{...SHACKLE_DOLL,legendMob47:true,legendDungeon47:id});
+ return defs;
+}
 globalThis.__MANRU_TURN_ENGINE__=TurnEngine;
 globalThis.__MANRU_TURN_PIPELINE__={abort:MANRU_TURN_ABORT};
 globalThis.__MANRU_AI61__={configure:configureMonsterTraits,special:specialTurn,artillery:artilleryTurn,intent:executeMonsterIntent};
@@ -2503,7 +2562,7 @@ const DUNGEON_MOBS47={
  mirror_blade:[['반영 검객',38,13,4,7,'#879aa8','human','spirit',{concept57:"칼날보다 반사된 모습이 먼저 움직이는 검객이다.",fast:true,legendSkill47:'mirrorStep'}],['거울 시녀',33,11,3,5,'#b29aaf','mage','spirit',{sealSkill:true,concept57:"거울궁에 비친 손님을 오래 바라보는 시녀다.",ranged:true,range:7,gaze:true}],['파편 망령',31,12,3,6,'#91a6b0','angel','undead',{concept57:"깨진 거울의 날카로운 조각들이 망자의 윤곽을 이룬다.",ranged:true,range:7,multiAttack:true}]],
  curse_spear:[['부패 창병',49,14,6,3,'#725c69','guard','undead',{concept57:"썩은 갑옷 아래 창을 놓지 않은 병사다.",reach:3,role61:'formation'}],['묘문 사제',43,13,4,5,'#84687e','mage','undead',{concept57:"묘문에서 혼백을 거두는 사제다.",ranged:true,range:8,summoner:true,summonName57:'금령',legendSkill47:'graveDrain'}],['혼백 사냥꾼',39,15,3,7,'#5e526b','human','spirit',{concept57:"희미한 발소리로 사냥감을 따라붙는 영체다.",fast:true,ambush:true,focusDrain:2}]],
  lava_bow:[['월화 궁수',44,15,4,4,'#b54222','human','construct',{concept57:"붉은 두건과 주황빛 월화를 두른 수목 궁수의 이형이다.",ranged:true,range:9,lava:true,projectileImpact57:{element:'fire',radius:2,turns:3}}],['재의 감시자',37,13,2,8,'#8c756b','angel','spirit',{concept57:"재가 흩날리는 상공을 떠도는 감시령이다.",flying:true,ranged:true,range:8,role61:'alarm'}],['용암 살라맨더',54,16,5,4,'#c05d39','beast','beast',{concept57:"불길을 뒤집어쓴 날랜 살라맨더다.",lava:true,fast:true,fireTrail:true}]],
- chain_sickle:[['쇠사슬 간수',55,15,7,2,'#81705e','guard','human',{concept57:"쇠사슬 감옥의 길목을 지키는 간수다.",hook:true,role61:'formation'}],['족쇄 인형',58,14,9,1,'#706b64','armor','construct',{concept57:"족쇄와 철판을 겹겹이 두른 감옥의 인형이다.",role61:'shell'}],['갈고리 죄수',42,16,3,6,'#75564e','human','undead',{concept57:"죽어서도 갈고리를 놓지 못한 죄수다.",fast:true,hook:true,legendSkill47:'chainRush'}]],
+ chain_sickle:[['쇠사슬 간수',55,15,7,2,'#81705e','guard','human',{concept57:"쇠사슬 감옥의 길목을 지키는 간수다.",hook:true,role61:'formation'}],['갈고리 죄수',42,16,3,6,'#75564e','human','undead',{concept57:"죽어서도 갈고리를 놓지 못한 죄수다.",fast:true,hook:true,legendSkill47:'chainRush'}]],
  ward_hammer:[['파성 갑병',62,16,9,2,'#9a835d','guard','construct',{concept57:"성문을 허물 만큼 무거운 무장을 갖춘 병사다.",role61:'formation'}],['성벽 포수',49,16,6,2,'#7c7263','armor','construct',{concept57:"성벽과 한몸처럼 버티는 포격 인형이다.",ranged:true,range:9,role61:'artillery'}],['금단 수호상',74,17,11,0,'#b19a64','brute','construct',{concept57:"금지된 성소의 입구를 지키는 거대한 상이다.",heavyHit57:true,role61:'shell',legendSkill47:'wardPulse'}]]
 };
   /* ===== MANRU v9.6.4: DOOR CLOSING + 1.30x ENEMY POPULATION ===== */

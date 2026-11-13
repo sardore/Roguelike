@@ -232,6 +232,10 @@ function terrainUnderlayState58(){return state?.map?terrainMapLayers58(state.map
 function terrainUnderlayAt58(x,y){const v=terrainUnderlayState58()?.[k(x,y)];return Number.isInteger(v)?v:null}
 const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
+function playerVisionRadius(){
+ const nightmare=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('nightmare')||0;
+ return Math.max(nightmare>0?1:3,getStats().vision-(state.visionPenalty||0));
+}
 const VisibilityService=Object.freeze({
 isVisible(x,y){return state.visible.has(k(x,y))},
 isSeen(x,y){return state.seen.has(k(x,y))},
@@ -244,7 +248,7 @@ revealAll(){if(!state)return false;state.seen=new Set();state.visible=new Set();
 compute(){
   if(state?.debugBattle57)return VisibilityService.revealAll();
   state.visible=new Set();
-  const p=state.player,nightmare=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('nightmare')||0,vision=Math.max(nightmare>0?1:3,getStats().vision-(state.visionPenalty||0));
+  const p=state.player,vision=playerVisionRadius();
   const inVision=(x,y)=>Math.hypot(x-p.x,y-p.y)<=vision+.35;
   for(let y=Math.max(0,p.y-vision);y<=Math.min(ROWS-1,p.y+vision);y++)for(let x=Math.max(0,p.x-vision);x<=Math.min(COLS-1,p.x+vision);x++){
     if(inVision(x,y)&&VisibilityService.lineClear(p.x,p.y,x,y)){VisibilityService.addVisibleKey(k(x,y));if(!state.generationInProgress57)VisibilityService.rememberKey(k(x,y))}
