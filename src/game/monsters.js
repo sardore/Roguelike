@@ -1028,7 +1028,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       const victim=targetId==='player'?state.player:state.monsters.find(t=>t.combatantId54===targetId);
       if(monsterVolleyTarget(m,victim,range)){
         const shot=projectileFX(m.x,m.y,victim.x,victim.y,'#cba4ee',{kind:'shackle',life:640});
-        const result=monsterAttacksTarget(m,SHACKLE_COUNTER.bonus,{target:victim,skillId:SHACKLE_COUNTER.id,delivery:'ranged',projectile:true,reflectable:true,range,impactDelay:SHACKLE_COUNTER.flightMs});
+        const result=monsterAttacksTarget(m,0,{target:victim,skillId:SHACKLE_COUNTER.id,delivery:'ranged',projectile:true,reflectable:true,range,impactDelay:SHACKLE_COUNTER.flightMs});
         shot.mark=result.damage>0;
         if(shot.mark)for(const key of ['skillSeal','bleed'])applyCombatStatus(victim,key,SHACKLE_COUNTER[key],1,{source:m});
         addLog(`${m.name}이 사슬을 쐈다.`);
@@ -1178,7 +1178,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   function monsterSkills(mon){
     const skills=[],floor=combatDepth(mon),add=(id,name,seal,meta,desc,style='roar',type='기술')=>skills.push({id,name,seal,meta,type,desc,style});
     if(mon.name===SHACKLE_DOLL.name)add('shackle-counter','접힌 족쇄','鎖','피격·시야 이탈 · 예고 1턴',
-      `대상의 시야 끝으로 접혀 이동해 자세를 낮춘다. 다음 턴에 사거리 안에서 사선이 트인 대상을 향해 공격력 +${SHACKLE_COUNTER.bonus}의 사슬을 발사한다. 기봉인 ${SHACKLE_COUNTER.skillSeal}턴, 출혈 ${SHACKLE_COUNTER.bleed}턴.`);
+      `대상의 시야 끝으로 접혀 이동해 자세를 낮춘다. 다음 턴에 사거리 안에서 사선이 트인 대상에게 사슬을 발사한다. 명중 시 기봉인 ${SHACKLE_COUNTER.skillSeal}턴, 출혈 ${SHACKLE_COUNTER.bleed}턴.`);
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
     if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
