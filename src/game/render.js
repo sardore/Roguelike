@@ -1861,7 +1861,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
       if(fold?.map===state.map&&fold.showFrom){
         const t=clamp((now-fold.start)/SHACKLE_COUNTER.foldMs,0,1);
         if(t<1&&state.visible.has(k(fold.from.x,fold.from.y))){
-          const p=screen(fold.from.x,fold.from.y),art=monsterCanvas(m,0),width=p.s*Math.cos(t*Math.PI/2);
+          const p=screen(fold.from.x,fold.from.y),art=monsterCanvas({...m,shackleStyle:fold.previousStyle},0),width=p.s*Math.cos(t*Math.PI/2);
           X.imageSmoothingEnabled=false;X.drawImage(art,p.x-width/2,p.y-p.s*.62,width,p.s*art.height/art.width);
         }
       }
@@ -2681,20 +2681,38 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[3,25+b],[1,21-b],[4,22+b],[5,17+b],[7,24+b]],null);R(13,11-b,1,2,a);break;
  }
  case'shackle_doll':{
-  // Three hinged iron leaves around a porcelain mask and a purple furnace slit.
-  P('#242637',[[3,10],[10,7],[22,7],[29,10],[28,25],[23,29],[9,29],[4,25]]);
-  P('#343d54',[[3,10],[9,9],[11,14],[10,25],[5,26],[3,22]]);
-  P('#41455e',[[29,10],[23,9],[21,14],[22,25],[27,26],[29,22]]);
-  P('#515971',[[10,11],[22,11],[24,20],[21,27],[11,27],[8,20]]);
-  P('#242638',[[11,14],[21,14],[22,20],[19,24],[13,24],[10,20]]);
-  R(15,17+b,2,6,'#d494ef');R(15,17+b,1,4,'#fae5ff');
-  for(const x of [9,22])for(const y of [13,19,24]){R(x,y,2,2,'#9d8059');R(x,y,1,1,'#e6c28a')}
-  P('#d6c8ae',[[12,4+b],[20,4+b],[22,7+b],[20,12+b],[16,14+b],[12,12+b],[10,7+b]]);
-  R(12,7+b,8,3,'#292439');eyes(12,8,'#edb6ff');R(15,4+b,2,2,'#a95e78');
-  L(10,26,7,32,'#65677a',3);L(22,26,25,32,'#65677a',3);
-  bootR9(q,5,32,7);bootR9(q,20,32,7);
-  for(const [x,y] of [[2,19],[5,24],[8,28],[12,30],[16,31],[20,30],[24,28],[27,24]])link(x,y);
-  R(2,13,2,4,'#a88e65');R(28,13,2,4,'#a88e65');break;
+  const style=m.shackleStyle??0;
+  const [metal,edge,light]=[
+   ['#41465d','#929cb3','#eab8ff'],
+   ['#314f55','#79b2aa','#c4ffee'],
+   ['#603a48','#c68983','#ffd0aa'],
+  ][style];
+  if(style===0){
+   for(const side of [-1,1]){
+    P(metal,[[16-5*side,12],[16-13*side,4],[16-11*side,23],[16-6*side,29]]);
+    L(16-13*side,5,16-11*side,21,edge);
+   }
+  }else if(style===1){
+   for(const side of [-1,1]){
+    P(metal,[[16-5*side,15],[16-10*side,7],[16-14*side,10],[16-13*side,18],[16-7*side,23],[16-10*side,16]]);
+    trim([[16-14*side,11],[16-13*side,17],[16-8*side,22]],edge);
+   }
+  }else{
+   P(metal,[[13,14],[4,8],[2,9],[5,22],[11,27],[8,18]]);
+   P(metal,[[19,12],[28,3],[30,4],[26,19],[20,27],[23,17]]);
+   trim([[3,10],[6,21],[10,25]],edge);
+   trim([[29,5],[25,18],[21,24]],edge);
+  }
+  P('#242638',[[12,12],[20,12],[22,16],[19,25],[16,30],[13,25],[10,16]]);
+  P(metal,[[13,14],[19,14],[20,17],[16,25],[12,17]],null);
+  L(16,15+b,16,22+b,light);
+  P('#ded1b5',[[12,5+b],[16,3+b],[20,5+b],[21,8+b],[16,14+b],[11,8+b]]);
+  L(13,7+b,16,9+b,'#312538');L(16,9+b,19,7+b,'#312538');
+  R(15,8+b,2,1,light);
+  L(14,25,11,32,edge,2);L(18,25,21,32,edge,2);
+  bootR9(q,8,32,5);bootR9(q,19,32,5);
+  for(const [x,y] of [[4,21],[7,25],[10,28],[14,30],[18,29],[22,26],[25,22]])link(x,y);
+  break;
  }
  case'hook_prisoner':{
   // Emaciated prisoner with exposed bones, a striped rag and one exaggerated hooked arm.
@@ -2729,7 +2747,7 @@ function monsterCanvas(m,frame=0){
  if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
- const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
+ const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?(m.shackleStyle??0):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
  const hi=sp.h, base=sp.c, ac=sp.ac;
  switch(a){ case'branch':{drawBranchCreature(q,m,frame,sp);break;}case'dojo':{drawDojoActor(q,m,frame);break;
  }case'thought_core':{

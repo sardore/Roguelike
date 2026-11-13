@@ -1,6 +1,6 @@
 const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#706b64',shape:'armor',kind:'construct',
- role61:'shell',concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
-const SHACKLE_COUNTER={bonus:8,blind:3,skillSeal:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
+ role61:'shell',fixed:true,immobile105:true,concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
+const SHACKLE_COUNTER={id:'shackle-counter',bonus:8,skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
 const MONSTERS=[
  {name:'마을 군단장',min:99,max:99,hp:58,atk:8,def:4,eva:2,xp:36,color:'#c9a24a',shape:'guard',kind:'human',reach:2,legion57:{escort:['객잔 경비병','취객','시종'],escortMax:4,callEvery:5},concept57:'종소리에 깨어난 마을의 군단장이다. 병사를 불러 모으며 골목을 돌고, 어디에 있든 이따금 위치가 드러난다.'},
  {name:'갱도 투석꾼',min:99,max:99,nativeBranch105:{id:'mine',level:1},hp:17,atk:6,def:1,eva:3,xp:9,color:'#89908b',shape:'human',kind:'human',ranged:true,range:5,concept57:'무너진 갱도에 남아 돌을 움켜쥔 광부.'},
@@ -44,7 +44,7 @@ const MONSTERS=[
   {min:16,max:20,name:'지네',concept57:"장고의 틈새를 채운 마디들이 일제히 꿈틀거린다.",hp:26,atk:8,def:2,eva:5,xp:8,color:'#785b45',shape:'beast',kind:'beast',poison:true,ambush:true},
   {min:16,max:20,name:'강시',concept57:"굳은 관절을 억지로 움직이는 시체다.",hp:38,atk:10,def:5,eva:2,xp:12,color:'#6d7770',shape:'undead',kind:'undead',hook:true},
   {min:16,max:20,name:'식귀',sealSkill:true,concept57:"먹어도 채워지지 않는 배를 움켜쥔 망자다.",hp:34,atk:9,def:3,eva:4,xp:10,color:'#89695c',shape:'human',kind:'undead',hungerDrain:8},
-  {min:17,max:20,name:'산성 슬라임',concept57:"탁한 산액이 덩어리져 장고 바닥을 기어간다.",split:'acid',hp:32,atk:9,def:2,eva:1,xp:10,color:'#7f9d60',shape:'void',kind:'slime',armorPierce:true},
+  {min:17,max:20,name:'산성 슬라임',concept57:"탁한 산액이 덩어리져 장고 바닥을 기어간다.",split:'acid',blind:true,hp:32,atk:9,def:2,eva:1,xp:10,color:'#7f9d60',shape:'void',kind:'slime',armorPierce:true},
   {min:16,max:20,name:'굶주린 창고 쥐',concept57:"말라붙은 곡식 자루 사이에서 사람 냄새를 익힌 쥐다.",infectionHitsRequired57:2,hp:22,atk:7,def:1,eva:7,xp:7,color:'#705c51',shape:'beast',kind:'beast',fast:true},
   {...SHACKLE_DOLL,min:18,max:19,spawnCountByFloor:{18:1,19:1}},
   {min:18,max:20,name:'악어',concept57:"물속에 긴 몸을 감추고 턱만 내미는 포식자다.",hp:48,atk:11,def:5,eva:1,xp:13,color:'#596f55',shape:'beast',kind:'beast',footprint:'vertical3',aquatic:true,poison:true,heavyHit57:true},
