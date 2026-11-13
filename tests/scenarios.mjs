@@ -3718,7 +3718,13 @@ export const scenarios = {
       await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
       const duel = await s.page.locator('#duelBtn').boundingBox(), codex = await s.page.locator('#itemCodexBtn').boundingBox();
       if (!duel || !codex || codex.y < duel.y + duel.height) throw Error('codex should be below duel');
+      await s.page.evaluate(() => localStorage.setItem('manruItemCodex', JSON.stringify({
+        version:1,entries:[['painting:객잔 쥐',{type:'painting',name:'화공노인의 객잔 쥐 그림'}]]
+      })));
       await s.page.click('#itemCodexBtn');
+      const groups = await s.page.locator('#itemCodexCategory option').allTextContents();
+      if (groups.join(',') !== '전체,장비,회복,전술,유물') throw Error('inventory category mismatch');
+      if (await s.page.locator('#itemCodexList').getByText('화공의 그림').count()) throw Error('paintings should be excluded');
       if ((await s.page.locator('#itemCodexProgress').textContent()).split(' / ')[0] !== '0') throw Error('new profile should start empty');
       await s.page.keyboard.press('Escape');
       await startRun(s, 'wanderer');
@@ -3764,7 +3770,9 @@ export const scenarios = {
       await s.page.locator('#itemCodexSearch').fill('강철 보검');
       const rows = s.page.locator('#itemCodexList li');
       if (await rows.count() !== 1 || await rows.locator('strong').textContent() !== '강철 보검') throw Error('search failed');
-      await s.page.locator('#itemCodexCategory').selectOption('armor');
+      await s.page.locator('#itemCodexCategory').selectOption('gear');
+      if (await rows.count() !== 1) throw Error('weapon should be in gear');
+      await s.page.locator('#itemCodexCategory').selectOption('relic');
       if (await rows.count() !== 0 || !(await s.page.locator('#itemCodexEmpty').isVisible())) throw Error('category filter failed');
       await s.page.click('#itemCodexClose');
       if (await s.page.locator('#itemCodex').isVisible() || s.errors.length) throw Error('codex failed: '+JSON.stringify(s.errors));
