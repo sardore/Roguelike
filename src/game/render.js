@@ -1861,12 +1861,12 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
       if(fold?.map===state.map&&fold.showFrom){
         const t=clamp((now-fold.start)/SHACKLE_COUNTER.foldMs,0,1);
         if(t<1&&state.visible.has(k(fold.from.x,fold.from.y))){
-          const p=screen(fold.from.x,fold.from.y),art=monsterCanvas({...m,shackleStyle:fold.previousStyle},0),width=p.s*Math.cos(t*Math.PI/2);
+          const p=screen(fold.from.x,fold.from.y),art=monsterCanvas({...m,shackleStyle:fold.previousStyle,intent61:null},0),width=p.s*Math.cos(t*Math.PI/2);
           X.imageSmoothingEnabled=false;X.drawImage(art,p.x-width/2,p.y-p.s*.62,width,p.s*art.height/art.width);
         }
       }
       if(m.crossfire){const active=!(m.skillSeal105>0||m.stunned>0),ready=state.turn>=(m.nextArtilleryTurn||0),pulse=.55+.20*Math.sin(now/230);X.save();X.setLineDash([5*cam.zoom,4*cam.zoom]);X.lineDashOffset=-now/100;X.lineWidth=Math.max(1,1.3*cam.zoom);X.strokeStyle=active&&ready?`rgba(255,170,76,${pulse})`:'rgba(161,145,116,.34)';for(const c of intentLineCells(m,null,m.crossfire.range)){if(!state.visible.has(k(c.x,c.y)))continue;const p=screen(c.x,c.y),horizontal=c.y===m.y;X.beginPath();X.moveTo(p.x-(horizontal?p.s/2:0),p.y-(horizontal?0:p.s/2));X.lineTo(p.x+(horizontal?p.s/2:0),p.y+(horizontal?0:p.s/2));X.stroke();}X.restore();}
-      if(m.intent61)for(const c of m.intent61.cells){if(!state.visible.has(k(c.x,c.y)))continue;const q=screen(c.x,c.y),a=.18+.10*Math.sin(now/90);X.fillStyle=m.intent61.type==='poison'?`rgba(111,174,89,${a})`:m.intent61.type==='seal'?`rgba(154,112,188,${a})`:`rgba(221,104,58,${a})`;X.fillRect(q.x-q.s/2+3,q.y-q.s/2+3,q.s-6,q.s-6);X.strokeStyle='rgba(255,227,177,.68)';X.strokeRect(q.x-q.s/2+4.5,q.y-q.s/2+4.5,q.s-9,q.s-9)}
+      if(m.intent61)for(const c of m.intent61.cells){if(!state.visible.has(k(c.x,c.y)))continue;const q=screen(c.x,c.y),a=.18+.10*Math.sin(now/90);X.fillStyle=m.intent61.type==='shackleCounter'?`rgba(191,114,235,${a+.16})`:m.intent61.type==='poison'?`rgba(111,174,89,${a})`:m.intent61.type==='seal'?`rgba(154,112,188,${a})`:`rgba(221,104,58,${a})`;X.fillRect(q.x-q.s/2+3,q.y-q.s/2+3,q.s-6,q.s-6);X.strokeStyle='rgba(255,227,177,.68)';X.strokeRect(q.x-q.s/2+4.5,q.y-q.s/2+4.5,q.s-9,q.s-9)}
       if(seen&&m.role61==='asura'&&(m.asuraWarn61||(m.asuraZone61||0)>0)){const q=screen(m.x,m.y),rad=m.asuraRadius61||m.asuraRadius47||3,pulse=.58+.18*Math.sin(now/120);if((m.asuraZone61||0)>0){for(let yy=Math.max(0,m.y-rad);yy<=Math.min(ROWS-1,m.y+rad);yy++)for(let xx=Math.max(0,m.x-rad);xx<=Math.min(COLS-1,m.x+rad);xx++){if(!state.visible.has(k(xx,yy))||Math.hypot(xx-m.x,yy-m.y)>rad+.28)continue;const c=screen(xx,yy);X.fillStyle=`rgba(128,72,161,${.055+.035*pulse})`;X.fillRect(c.x-c.s/2+2,c.y-c.s/2+2,c.s-4,c.s-4)}X.strokeStyle=`rgba(229,190,103,${.72+.18*pulse})`;X.lineWidth=Math.max(2,2*cam.zoom);X.beginPath();X.arc(q.x,q.y,(rad+.48)*q.s,0,Math.PI*2);X.stroke();X.setLineDash([6*cam.zoom,4*cam.zoom]);X.strokeStyle='rgba(157,99,190,.68)';X.beginPath();X.arc(q.x,q.y,(rad-.15)*q.s,0,Math.PI*2);X.stroke();X.setLineDash([])}else{X.strokeStyle=`rgba(229,175,89,${pulse})`;X.lineWidth=Math.max(2,2*cam.zoom);X.setLineDash([5*cam.zoom,5*cam.zoom]);X.beginPath();X.arc(q.x,q.y,(rad+.48)*q.s,0,Math.PI*2);X.stroke();X.setLineDash([])}if(m.asuraVolleyWarn61){const pt=m.asuraVolleyTarget61||state.player,t=screen(pt.x,pt.y);X.strokeStyle=`rgba(245,126,82,${.72+.20*pulse})`;X.lineWidth=2;X.beginPath();X.arc(t.x,t.y,t.s*.45,0,Math.PI*2);X.moveTo(t.x-t.s*.58,t.y);X.lineTo(t.x+t.s*.58,t.y);X.moveTo(t.x,t.y-t.s*.58);X.lineTo(t.x,t.y+t.s*.58);X.stroke()}}
       if(seen&&m.role61){const q=screen(m.x,m.y),rune=ROLE_RUNE[m.role61]||'적';X.fillStyle='rgba(8,5,3,.82)';X.fillRect(q.x-8,q.y-q.s*.56-10,16,12);X.fillStyle=m.role61==='asura'?'#f0cf7c':'#e7c58c';X.font='900 9px "Noto Sans CJK KR",sans-serif';X.textAlign='center';X.fillText(rune,q.x,q.y-q.s*.56)}
     }
@@ -2681,37 +2681,51 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[3,25+b],[1,21-b],[4,22+b],[5,17+b],[7,24+b]],null);R(13,11-b,1,2,a);break;
  }
  case'shackle_doll':{
-  const style=m.shackleStyle??0;
-  const [metal,edge,light]=[
-   ['#41465d','#929cb3','#eab8ff'],
-   ['#314f55','#79b2aa','#c4ffee'],
-   ['#603a48','#c68983','#ffd0aa'],
-  ][style];
-  if(style===0){
-   for(const side of [-1,1]){
-    P(metal,[[16-5*side,12],[16-13*side,4],[16-11*side,23],[16-6*side,29]]);
-    L(16-13*side,5,16-11*side,21,edge);
-   }
-  }else if(style===1){
-   for(const side of [-1,1]){
-    P(metal,[[16-5*side,15],[16-10*side,7],[16-14*side,10],[16-13*side,18],[16-7*side,23],[16-10*side,16]]);
-    trim([[16-14*side,11],[16-13*side,17],[16-8*side,22]],edge);
-   }
+  const style=m.shackleStyle??0,arming=m.intent61?.type==='shackleCounter',drop=arming?5:b;
+  const steel='#445064',edge='#98a9b6',light='#e8c7ff',bone='#e0d1b3';
+  if(arming){
+   // Crouched, with the open gauntlets braced around a taut chain.
+   P(steel,[[13,17],[7,12],[2,16],[3,23],[9,26],[13,23]]);
+   P(steel,[[19,17],[25,12],[30,16],[29,23],[23,26],[19,23]]);
+   trim([[3,16],[7,14],[11,18]],edge);trim([[29,16],[25,14],[21,18]],edge);
+   L(13,24,8,29,steel,3);L(19,24,24,29,steel,3);
+   bootR9(q,4,30,8);bootR9(q,20,30,8);
+   for(const x of [5,9,13,17,21,25])link(x,19+(x===13||x===17?1:0));
+   P(light,[[16,17],[18,20],[16,23],[14,20]]);
   }else{
-   P(metal,[[13,14],[4,8],[2,9],[5,22],[11,27],[8,18]]);
-   P(metal,[[19,12],[28,3],[30,4],[26,19],[20,27],[23,17]]);
-   trim([[3,10],[6,21],[10,25]],edge);
-   trim([[29,5],[25,18],[21,24]],edge);
+   if(style===0){
+    // Twin executioner blades hang beyond the narrow torso.
+    P(steel,[[12,12],[6,10],[2,18],[4,31],[8,25],[10,17]]);
+    P(steel,[[20,12],[26,10],[30,18],[28,31],[24,25],[22,17]]);
+    trim([[5,14],[3,19],[4,28]],edge);trim([[27,14],[29,19],[28,28]],edge);
+   }else if(style===1){
+    // Split antler frame and long chain cuffs.
+    P(steel,[[13,12],[7,7],[4,2],[4,10],[8,16],[12,17]]);
+    P(steel,[[19,12],[25,7],[28,2],[28,10],[24,16],[20,17]]);
+    trim([[4,4],[5,9],[9,14]],edge);trim([[28,4],[27,9],[23,14]],edge);
+    for(const [x,y] of [[6,18],[5,21],[4,24],[23,18],[24,21],[25,24]])link(x,y);
+   }else{
+    // A single broad crescent and a narrow hanging counterweight.
+    P(steel,[[20,10],[25,3],[30,5],[29,14],[24,24],[20,25],[24,16],[24,10]]);
+    trim([[26,5],[29,6],[28,13],[24,21]],edge);
+    P(steel,[[13,12],[7,15],[4,25],[7,29],[11,23],[10,19]]);
+    trim([[8,16],[5,24],[7,27]],edge);link(4,27);
+   }
+   L(14,24,10,32,steel,3);L(18,24,22,32,steel,3);
+   bootR9(q,7,32,6);bootR9(q,19,32,6);
   }
-  P('#242638',[[12,12],[20,12],[22,16],[19,25],[16,30],[13,25],[10,16]]);
-  P(metal,[[13,14],[19,14],[20,17],[16,25],[12,17]],null);
-  L(16,15+b,16,22+b,light);
-  P('#ded1b5',[[12,5+b],[16,3+b],[20,5+b],[21,8+b],[16,14+b],[11,8+b]]);
-  L(13,7+b,16,9+b,'#312538');L(16,9+b,19,7+b,'#312538');
-  R(15,8+b,2,1,light);
-  L(14,25,11,32,edge,2);L(18,25,21,32,edge,2);
-  bootR9(q,8,32,5);bootR9(q,19,32,5);
-  for(const [x,y] of [[4,21],[7,25],[10,28],[14,30],[18,29],[22,26],[25,22]])link(x,y);
+  P('#222433',[[13,12+drop],[19,12+drop],[21,17+drop],[18,25],[14,25],[11,17+drop]]);
+  P(steel,[[12,14+drop],[16,17+drop],[20,14+drop],[18,22],[14,22]],null);
+  R(15,18+drop,2,3,light);
+  P(bone,[[12,6+drop],[16,3+drop],[20,6+drop],[19,10+drop],[16,13+drop],[13,10+drop]]);
+  L(13,7+drop,16,9+drop,'#211826');L(16,9+drop,19,7+drop,'#211826');
+  if(arming){L(7,16,11,20,edge,2);L(25,16,21,20,edge,2);R(15,20,2,2,'#fff2ff');}
+  else if(m.shell61>0){
+   P('#434252',[[7,13],[16,16],[25,13],[24,24],[16,30],[8,24]]);
+   trim([[8,15],[16,18],[24,15]],'#dfb77a');
+   trim([[9,23],[16,28],[23,23]],edge);
+   P('#b89865',[[16,18],[19,22],[16,26],[13,22]]);
+  }
   break;
  }
  case'hook_prisoner':{
@@ -2747,7 +2761,7 @@ function monsterCanvas(m,frame=0){
  if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
- const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?(m.shackleStyle??0):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
+ const source=m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?[m.shackleStyle??0,m.intent61?.type==='shackleCounter',m.shell61>0].join(':'):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
  const hi=sp.h, base=sp.c, ac=sp.ac;
  switch(a){ case'branch':{drawBranchCreature(q,m,frame,sp);break;}case'dojo':{drawDojoActor(q,m,frame);break;
  }case'thought_core':{
