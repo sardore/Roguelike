@@ -825,6 +825,24 @@ export const scenarios = {
         const A=__MANRU_QA_SEALING__, st=__MANRU_QA_UI__.state();for(const m of [...st.monsters])A.occupancy.removeMonster(m);A.move(st.player,34,30);const m=A.place('경비 인형 - 포병',{x:30,y:30});m.alerted=true;let warned=false;
         for(let i=0;i<12&&!warned;i++){st.floorTurn++;st.turn++;__MANRU_AI61__.artillery(m,st.player);warned=!!m.intent61;}if(!warned)throw Error('legacy artillery no warning');const hp=st.player.hp,pending=m.intent61;A.intent(m);const waits=st.player.hp===hp&&m.intent61===pending;if(!waits)throw Error('legacy artillery lost its warning turn');st.turn++;st.floorTurn++;A.intent(m);if(!A.fx.projectiles.some(p=>p.kind==='shell'))throw Error('legacy artillery no shell');return{warning:warned,waits,shell:true};
       }));
+      await s.page.evaluate(() => {
+        const A = __MANRU_QA_SEALING__, UI = __MANRU_QA_UI__, st = UI.state();
+        for (const mon of [...st.monsters]) A.occupancy.removeMonster(mon);
+        st.map[30][33] = A.TT.DOOR;
+        A.move(st.player, 34, 30);
+        const cannon = A.place('대포', { x: 30, y: 30 });
+        __MANRU_QA_VIS__.compute();
+        if (cannon.seenByPlayer105 || cannon.hasSeenPlayer105) throw Error('cannon should be undiscovered behind the closed door');
+        A.fx.floats = [];
+        const hp = st.player.hp, shots = A.fx.projectiles.length;
+        UI.dispatch({ type: 'MOVE', dx: -1, dy: 0 });
+        if (st.map[30][33] !== A.TT.OPEN_DOOR || st.player.x !== 33 || A.fx.projectiles.length <= shots ||
+            st.player.hp !== hp || !A.fx.floats.some(f => f.text === '회피')) throw Error('first cannon blast on door opening must be evaded');
+        st.turn = cannon.nextArtilleryTurn;
+        __reseed(42);
+        __MANRU_AI61__.artillery(cannon, st.player);
+        if (st.player.hp >= hp) throw Error('cannon blast after first discovery should damage the player');
+      });
       out['crossfireCannon.errors'] = JSON.stringify(s.errors); if(s.errors.length)throw Error(JSON.stringify(s.errors)); return out;
     } finally { await s.close(); }
   },

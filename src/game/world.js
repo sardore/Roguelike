@@ -271,16 +271,17 @@ function resolvePlayerLanding57(x,y,opts={}){
   if(!forced&&combatFieldBlocks57(x,y,{actor:p})){toast('봉인진 밖으로 나갈 수 없다.');return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
   if(policy){const validation=validatePlayerTransfer57(x,y,{cause,policy,forced});if(!validation.ok)return{ok:false,moved:false,reason:validation.reason,cause,x:p.x,y:p.y}}
   const discovery=opts.discovery105||captureMovementDiscovery105();
+  const voluntaryDiscovery=!forced&&!state._turnPipelineActive57&&['walk','blink','ally-swap','talisman-blink','fusion-blink','holy-blink','portal'].includes(cause);
   const tile=state.map?.[y]?.[x],haz=globalThis.__MANRU_HAZARD_CORE__,kind=opts.hazard===false?null:haz?.kind?.(tile);
   let hazardResult=null;
-  if(kind)hazardResult=haz.resolve(p,tile,x,y,origin,{consumeTurn:false,forced,landingCause57:cause});
-  else{if(!OccupancyService.move(p,x,y,{forced}))return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
+  if(kind)hazardResult=haz.resolve(p,tile,x,y,origin,{consumeTurn:false,forced,landingCause57:cause,discovery,voluntaryDiscovery});
+  else{if(!OccupancyService.move(p,x,y,{forced,discovery,voluntaryDiscovery}))return{ok:false,moved:false,reason:'sealing-ward',cause,x:p.x,y:p.y}}
   if(['blink','talisman-blink','fusion-blink','holy-blink'].includes(cause)&&(p.x!==origin.x||p.y!==origin.y))markCombatBlink57(p);
   if(p.classState?.aimPower>0&&(p.x!==origin.x||p.y!==origin.y)){
     const agency=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);
     if(p.classState.aimMoveAgency!==agency){p.classState.aimMoveAgency=agency;setAimPower(p.classState.aimPower-1)}
   }
-  finishMovementDiscovery105(discovery,!state._turnPipelineActive57&&['walk','blink','ally-swap','talisman-blink','fusion-blink','holy-blink','portal'].includes(cause));
+  if(p.x===origin.x&&p.y===origin.y)finishMovementDiscovery105(discovery,voluntaryDiscovery);
   martialLanding(origin);applyJarGasEffects57();if(state.floor>=11&&(p.x!==origin.x||p.y!==origin.y)){state.recentPlayerCells57=(state.recentPlayerCells57||[]).filter(c=>(state.playerAgencyTurns57||0)-c.agency<26);state.recentPlayerCells57.push({x:p.x,y:p.y,agency:state.playerAgencyTurns57||0});if(state.recentPlayerCells57.length>64)state.recentPlayerCells57.shift()}
   if(kind){resolveSilkCrossing54(origin,cause);return{ok:!!hazardResult,moved:p.x!==origin.x||p.y!==origin.y,cause,hazard:kind,result:hazardResult,x:p.x,y:p.y}}
   if(opts.resetVisual)resetVisualState();
