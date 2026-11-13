@@ -40,7 +40,11 @@ function transferItemQuantity(item,source,target,quantity=itemQuantity(item),opt
   const remaining=total-moved;let reused=false;
   for(const n of chunks){const stack=!remaining&&!reused?item:structuredClone(item);reused=true;stack.count=n;if(opts.position){stack.x=opts.position.x;stack.y=opts.position.y}else{delete stack.x;delete stack.y;if(stack.foodKind==='charcoal')coolCharcoal105(stack);for(const key of ITEM_PLACEMENT_FIELDS58)delete stack[key]}target.push(stack)}
   if(remaining)item.count=remaining;else if(source)source.splice(source.indexOf(item),1);
-  if(target===state?.player?.inventory&&item.artifactId46)globalThis.__MANRU_LEGEND47__?.recordAcquisition?.();return{moved,remaining}
+  if(target===state?.player?.inventory){
+    ItemCodex.record(state,item);
+    if(item.artifactId46)globalThis.__MANRU_LEGEND47__?.recordAcquisition?.();
+  }
+  return{moved,remaining}
 }
 function consumeItemQuantity(item,quantity=1,container=state?.player?.inventory){
   if(!item||!container?.includes(item)||!Number.isSafeInteger(quantity)||quantity<1||itemQuantity(item)<quantity)return false;

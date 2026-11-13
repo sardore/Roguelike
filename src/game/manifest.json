@@ -25,6 +25,7 @@
   "spectate.js",
   "duel.js",
   "duelarenas.js",
+  "item-codex.js",
   "reel.js",
   "boot.js"
  ],

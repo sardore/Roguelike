@@ -3236,6 +3236,9 @@ export const scenarios = {
     if (out['savestring.after'] !== out['savestring.control']) throw new Error('savestring: the run continued from the string differs from the run continued from the same save the normal way');
     const accountB = await accountOf(b);
     out['savestring.account'] = JSON.stringify({ a: accountA, b: accountB });
+    const codexIds = account => JSON.parse(account.find(([key]) => key === 'manruItemCodex')[1]).entries.map(([id]) => id);
+    const importedItems = codexIds(accountB);
+    if (!codexIds(accountA).every(id => importedItems.includes(id)) || !importedItems.includes('food:riceball')) throw Error('savestring: item codex entries were not merged');
     const deadRuns = JSON.parse(accountB.find(([k]) => k === 'manru1004_dead_runs')[1]);
     if (!(deadRuns.includes('dead-from-a') && deadRuns.includes('dead-from-b'))) throw new Error(`savestring: dead runs were not merged: ${JSON.stringify(deadRuns)}`);
     if (accountB.find(([k]) => k === 'manruUiVolume70')?.[1] !== '0.6') throw new Error('savestring: the volume setting did not come along');
@@ -3706,6 +3709,67 @@ export const scenarios = {
       }
     }
     return out;
+  },
+
+  async itemCodex(browser, root) {
+    const s = await openSession(browser, root, { seed: 1113, mobile: true, viewport: { width: 390, height: 844 } });
+    const read = () => s.page.evaluate(() => JSON.parse(localStorage.getItem('manruItemCodex') || '{"entries":[]}').entries.map(([id]) => id));
+    try {
+      await s.page.evaluate(() => document.getElementById('nickAsk')?.remove());
+      const duel = await s.page.locator('#duelBtn').boundingBox(), codex = await s.page.locator('#itemCodexBtn').boundingBox();
+      if (!duel || !codex || codex.y < duel.y + duel.height) throw Error('codex should be below duel');
+      await s.page.click('#itemCodexBtn');
+      if ((await s.page.locator('#itemCodexProgress').textContent()).split(' / ')[0] !== '0') throw Error('new profile should start empty');
+      await s.page.keyboard.press('Escape');
+      await startRun(s, 'wanderer');
+      await s.page.evaluate(() => {
+        const st = __MANRU_QA_UI__.state();
+        st.player.inventory.push({type:'relic',name:'기존 세이브 유물',desc:'복원 검사'});
+        if (!__MANRU_RELEASE__.save().ok) throw Error('failed to prepare run');
+        localStorage.removeItem('manruItemCodex');
+        if (!__MANRU_RELEASE__.load()) throw Error('failed to load old profile');
+      });
+      if (!(await read()).includes('relic:기존 세이브 유물')) throw Error('existing equipment or inventory was not backfilled');
+      await s.page.evaluate(() => {
+        const st = __MANRU_QA_UI__.state();
+        st.debugBattle57 = true;
+        const item = {type:'relic',name:'디버그 전용 유물'};
+        st.player.inventory.push(item);
+        __MANRU_RELEASE__.save();
+        st.player.inventory.pop();
+        st.debugBattle57 = false;
+      });
+      if ((await read()).includes('relic:디버그 전용 유물')) throw Error('debug inventory contaminated the profile');
+      await dismissModals(s);
+      await s.page.evaluate(() => {
+        const UI = __MANRU_QA_UI__, st = UI.state(), p = st.player;
+        st.items = [{type:'weapon',name:'강철 보검',kind:'blade',upgrade:3,desc:'획득 검사',x:p.x,y:p.y}];
+        if (!UI.dispatch({type:'PICKUP'}).value) throw Error('pickup failed');
+        st.items.push({type:'weapon',name:'강철 보검',kind:'blade',upgrade:7,x:p.x,y:p.y});
+        if (!UI.dispatch({type:'PICKUP'}).value) throw Error('second pickup failed');
+        st.items.push({type:'trinket',name:'미획득 검사',x:p.x+1,y:p.y});
+        if (!__MANRU_RELEASE__.save().ok) throw Error('save failed');
+        __MANRU_QA_SPECTATE__.die('도감 회귀 검사');
+      });
+      const ids = await read();
+      if (ids.filter(id => id === 'weapon:강철 보검').length !== 1 || ids.includes('trinket:미획득 검사')) throw Error('acquisition identity or ground filtering failed');
+      await s.page.reload();
+      await s.tick(1600);
+      await startRun(s, 'archer');
+      const restarted = await read();
+      if (!ids.every(id => restarted.includes(id))) throw Error('discoveries lost across runs');
+      await s.page.reload();
+      await s.tick(1600);
+      await s.page.click('#itemCodexBtn');
+      await s.page.locator('#itemCodexSearch').fill('강철 보검');
+      const rows = s.page.locator('#itemCodexList li');
+      if (await rows.count() !== 1 || await rows.locator('strong').textContent() !== '강철 보검') throw Error('search failed');
+      await s.page.locator('#itemCodexCategory').selectOption('armor');
+      if (await rows.count() !== 0 || !(await s.page.locator('#itemCodexEmpty').isVisible())) throw Error('category filter failed');
+      await s.page.click('#itemCodexClose');
+      if (await s.page.locator('#itemCodex').isVisible() || s.errors.length) throw Error('codex failed: '+JSON.stringify(s.errors));
+      return {'itemCodex.account': 'ok'};
+    } finally { await s.close(); }
   },
 
   async screens(browser, root) {
