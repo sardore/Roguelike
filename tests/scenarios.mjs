@@ -442,6 +442,12 @@ export const scenarios = {
       out['spectate.listed'] = String(await until(() => V(() => document.querySelectorAll('#spectateRooms .spectateRoom').length === 1)));
       out['spectate.listNote'] = await V(() => document.getElementById('spectateListNote').textContent);
       out['spectate.roomText'] = await V(() => document.querySelector('#spectateRooms .spectateRoom').textContent.replace(/\d+턴.*$/, ''));
+      if (!await V(() => {
+        const api = __MANRU_QA_SPECTATE__.api;
+        const button = document.querySelector('#spectateRooms .spectateRoom');
+        api.renderRooms();
+        return button && button === document.querySelector('#spectateRooms .spectateRoom');
+      })) throw Error('spectate: announce replaced an in-progress tap target');
       await view.page.tap('#spectateRooms .spectateRoom');
       out['spectate.joined'] = String(await until(() => V(() => !!__MANRU_QA_SPECTATE__.state()?.spectator)));
       out['spectate.hostSeesViewer'] = String(await until(() => H(() => __MANRU_QA_SPECTATE__.api.viewers.size === 1)));
