@@ -1,6 +1,7 @@
 const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#706b64',shape:'armor',kind:'construct',
  role61:'shell',fixed:true,immobile105:true,concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
-const SHACKLE_COUNTER={id:'shackle-counter',bonus:8,skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
+const SHACKLE_COUNTER={id:'shackle-counter',bonus:4,skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
+const MONSTER_GUARD_TURNS={early:3,late:4,forbidden:4};
 const MONSTERS=[
  {name:'마을 군단장',min:99,max:99,hp:58,atk:8,def:4,eva:2,xp:36,color:'#c9a24a',shape:'guard',kind:'human',reach:2,legion57:{escort:['객잔 경비병','취객','시종'],escortMax:4,callEvery:5},concept57:'종소리에 깨어난 마을의 군단장이다. 병사를 불러 모으며 골목을 돌고, 어디에 있든 이따금 위치가 드러난다.'},
  {name:'갱도 투석꾼',min:99,max:99,nativeBranch105:{id:'mine',level:1},hp:17,atk:6,def:1,eva:3,xp:9,color:'#89908b',shape:'human',kind:'human',ranged:true,range:5,concept57:'무너진 갱도에 남아 돌을 움켜쥔 광부.'},

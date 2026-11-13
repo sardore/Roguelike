@@ -847,7 +847,7 @@ function shackleCounterTurn(mon,target){
  if(!(lost||hit)){
   if(mon.role61==='shell'&&entityDistance57(mon,target)<=4&&(mon.shellCd61||0)<=0&&actorDetectedTarget57(mon,target,monsterSenseRadius(mon))){
    const late=combatDepth(mon)>=16;
-   mon.shell61=late?3:2;mon.shellCd61=late?6:7;
+   mon.shell61=late?MONSTER_GUARD_TURNS.late:MONSTER_GUARD_TURNS.early;mon.shellCd61=late?6:7;
    floatText(mon.x,mon.y,'방어 자세','#d8d0b4',10);
    if(state.debugBattle57)addLog(`${mon.name} · 방어 자세`);
    return true;
@@ -1254,7 +1254,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(role==='poison')add('poison-mist','독 안개','毒','6칸 · 3×3 · 예고 1턴','범위 공격에 적중하면 중독 5턴. 일부 바닥은 덫으로 변한다.');
     if(role==='controller')add('seal','기 봉인 사선','封','9칸 안 · 예고 1턴',`8칸 사선에 공격력 +1. 적중하면 기봉인 ${floor>=21?4:3}턴.`);
     if(role==='webber'&&floor>=11)add('web','비단·거미줄 포획','網','6칸 · 3×3 · 예고 1턴',`적중하면 기절 1턴.${mon.silkTrapCount57?` 비단 덫 최대 ${mon.silkTrapCount57}개: 현재 HP 절반 피해, 인접 상호작용으로 해제.`:' 일부 바닥에 덫이 남는다.'}`);
-    if(role==='shell')add('shell','방어 자세','盾','4칸 안에서 사용',`DEF +${floor>=16?8:7}, ${floor>=16?3:2}턴.`,'strong');
+    if(role==='shell')add('shell','방어 자세','盾','4칸 안에서 사용',`DEF +${floor>=16?8:7}, ${floor>=16?MONSTER_GUARD_TURNS.late:MONSTER_GUARD_TURNS.early}턴.`,'strong');
     if(role==='blinkPunisher')add('blink-punish','점멸 흔적 포식','食','점멸 직후 · 사거리 4칸',`공격력 +2. 적중하면 기력 ${floor>=21?3:2} 감소.`);
     if(role==='alarm')add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 공격력 +${floor>=16?3:2}, ${floor>=16?4:3}턴 강화.`);
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
@@ -2096,7 +2096,7 @@ function enemySpecial47(m,target=state.player){
  if(skill==='graveDrain'&&d<=6&&monsterAttackLineR(m,6,{target}).ok&&state.floorTurn%5===phase%5){projectileFX(m.x,m.y,target.x,target.y,'#9e6e9d');const r=attackMonster(m,1,{target,delivery:'ranged',projectile:true,reflectable:true,range:6});if(r.hit&&!state.dead)target.focus=Math.max(0,(target.focus||0)-2);setMonsterStatus(m,'stunned',1);return true}
  if(skill==='lavaShot'&&d<=8&&monsterAttackLineR(m,8,{target}).ok&&state.floorTurn%5===phase%5){emitElementContact105('fire',elementCells105(target.x,target.y,1),effectSource57(m));for(const[dx,dy]of DIRS4.slice(0,2)){const x=target.x+dx,y=target.y+dy,old=state.map[y]?.[x];if((old>=500&&old<660&&(old-500)%16<4)||[TT.FLOOR,TT.GRASS,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR].includes(old))RuntimeTerrainOwner.temporary(x,y,TT.LAVA,3,'legend-lava',{allowedOld:[old],source:'legend-enemy-lava47'})}addLog(`${m.name}이 퇴로 옆에 용암탄을 꽂았다.`);setMonsterStatus(m,'stunned',1);return true}
  if(skill==='chainRush'&&d>=2&&d<=6&&monsterAttackLineR(m,6,{target}).ok&&state.floorTurn%4===phase%4){const r=attackMonster(m,1,{target,delivery:'melee',projectile:false,reflectable:false,range:6});if(r.hit&&!state.dead)resolveForcedMovement57(target,m,1,{mode:'push',hostile:true});setMonsterStatus(m,'stunned',1);return true}
- if(skill==='wardPulse'&&d<=5&&state.floorTurn%5===phase%5){setMonsterBuff(m,3,3);m.shell61=3;floatText(m.x,m.y,'금단 수호','#e2c779',9);setMonsterStatus(m,'stunned',1);return true}return false
+ if(skill==='wardPulse'&&d<=5&&state.floorTurn%5===phase%5){const turns=MONSTER_GUARD_TURNS.forbidden;setMonsterBuff(m,3,turns);m.shell61=turns;floatText(m.x,m.y,'금단 수호','#e2c779',9);setMonsterStatus(m,'stunned',1);return true}return false
 }
 function debugBattleRound57(){
  const b=DEBUG_BATTLE57;if(!b.open||b.winner)return;PresentationState.advance(performance.now());state.turn++;state.floorTurn++;b.round++;
