@@ -1289,7 +1289,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.exitPressureSpeed57){const r=mon.exitPressureSpeed57;add('exit-speed','출구 추격','追',`행동 속도 ${Math.round(r.min*100)}~${Math.round(r.max*100)}%`,'플레이어가 24층 출구에 가까워질수록 행동 속도가 올라간다.','ghost','지속');}
     if(mon.exitPressureSense57)add('exit-sense','탈출자 추적','察','본관 24층 · 현관 개방 후','출구로 다가가는 상대의 위치를 시야 밖에서도 추정한다. 출구에 아주 가까워지면 위치를 정확히 짚는다.','ghost','지속');
     if(mon.revivalLives57)add('revive','아홉 목숨','命',`남은 목숨 ${mon.livesRemaining57??mon.revivalLives57}`,'쓰러지면 시체가 먼 곳으로 옮겨져 다시 일어난다. 부활 직후 잠시 약해지고 완전히 깨어나면 강화된다.','constitution','지속');
-    if(mon.legendSkill47==='fireWall')add('fire-wall','화염벽','炎','사거리 3칸 · 재사용 12턴','최대 HP의 18%를 회복하며 예고한다. 주변 3×3의 안쪽 벽과 모서리를 뺀 5×5의 바깥 벽이 차례로 솟는다. 벽 칸의 적을 1턴 기절시킨다. 각 벽은 주변 3×3에 공격력의 45%만큼 화염 피해를 주며 불바닥을 남긴다.');
+    if(mon.legendSkill47==='fireWall')add('fire-wall','화염벽','炎','사거리 3칸 · 재사용 12턴','화염벽 융기를 예고한다. 주변 3×3의 안쪽 벽과 모서리를 뺀 5×5의 바깥 벽이 차례로 솟는다. 벽 칸의 적을 1턴 기절시킨다. 각 벽은 주변 3×3에 공격력의 45%만큼 화염 피해를 주며 불바닥을 남긴다.');
     if(mon.losLostSummon57)add('lost-summon','시야 밖 증원','召',`시야 단절 · 재사용 ${mon.losLostSummon57.normalCooldown}/${mon.losLostSummon57.fullCooldown}턴`,`${mon.losLostSummon57.names.join('·')} 소환. 처치 순간에도 발동 가능. 정상/완전 부활 단계 기준.`,'constitution','지속');
     if(mon.waterTrail)add('water-trail','물길 흔적','水','이동 경로','지나간 바닥을 6턴 동안 물길로 바꾼다.','ghost','지속');
     if(mon.lavaTrail57)add('lava-trail','용암 흔적','熔','이동 경로 · 3턴','지나간 바닥을 용암으로 바꾼다.','ghost','지속');
@@ -1358,14 +1358,13 @@ function summonState(){
   q.bookContractsVersion105=1;OccupancyService.endShared();
  }
  // Refresh native plant traits before applying the summon body movement rules.
- if(q.plantBodyVersion105!==1){
+ if(q.plantBodyVersion105!==2){
   const definitions=summonDefinitions();
   for(const l of summonContainers()){let changed=false;for(const mon of l.world.monsters||[])if(mon.summonOwner105==='player'&&mon.kind==='plant'){
-   const def=definitions.find(d=>d.name===monsterSpeciesName(mon));if(!def)continue;
-   mon.fixed=!!def.fixed;if(def.immobile105)mon.immobile105=def.immobile105;else delete mon.immobile105;
-   mon.summonForm105=mon.fixed?'fixed':'mobile';configureSummonBody105(mon);changed=true;
+   const def=definitions.find(d=>d.name===monsterSpeciesName(mon));if(def?.immobile105)mon.immobile105=def.immobile105;
+   configureSummonBody105(mon,def);changed=true;
   }if(changed&&l.pageKey)state.branchWorld105.pages[l.pageKey]=branchEncodePage(l.world);}
-  delete q.mobilePlantsVersion105;q.plantBodyVersion105=1;OccupancyService.endShared();
+  delete q.mobilePlantsVersion105;q.plantBodyVersion105=2;OccupancyService.endShared();
  }
  // Old saves stored one player-wide deadline. Transfer it once to the active book.
  // If no book is held, retain the legacy deadline until a book can receive it.
@@ -1833,7 +1832,7 @@ function finishMovementDiscovery105(before,voluntary){
  }
 }
 // The debug option changes voluntary movement only; species/body flags stay authored.
-function monsterMovementLocked57(mon){return !!mon?.fixed&&!(state?.debugBattle57&&state.debugBattlePlantMove57&&mon.kind==='plant'&&!mon.combatFixture54);}
+function monsterMovementLocked57(mon){return !!mon?.fixed&&!(state?.debugBattle57&&state.debugBattlePlantMove57&&mon.kind==='plant'&&mon.summonOwner105!=='player'&&!mon.combatFixture54);}
 function layKeeperBridge54(mon,cells,centers,stage){
  const safe=new Set((state.decor||[]).filter(d=>d.kind==='keeperBridge54'&&d.owner54===combatantId(mon)).map(d=>k(d.x,d.y))),owner=combatantId(mon);
  for(const c of cells)if(RuntimeTerrainOwner.mutate(c.x,c.y,TT.STONE_PATH,{source:'keeper-bridge'}).ok){
@@ -2119,7 +2118,7 @@ function spawnDungeon46(id,rs){
  const goal=rs[rs.length-1],eliteDef=defs[(id.length+f)%defs.length];if(eliteDef){const eDef={...eliteDef};const e=scaledMonster(eDef);applyLegendGatekeeper47(e,f);let placed=false;for(let rr=4;rr<=7&&!placed;rr++)for(const[dx,dy]of DIRS8){const x=goal.cx+dx*rr,y=goal.cy+dy*rr;if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<9)continue;if(PlacementService.monsterCanStand(e,x,y)){Object.assign(e,{x,y,alerted:true,hidden:false});OccupancyService.addMonster(e);placed=true;break}}if(!placed){const q=place(eliteDef,goal,true);if(q){applyLegendGatekeeper47(q,f);q.alerted=true}}}
 }
 function pull47(mon){const dx=Math.sign(state.player.x-mon.x),dy=Math.sign(state.player.y-mon.y),x=mon.x+dx,y=mon.y+dy;if(resolveForcedMovement57(mon,state.player,1,{mode:'pull',hostile:true,creditPlayer:true}).moved){setMonsterWeakened(mon,2);floatText(mon.x,mon.y,'견인 · 방어저하','#d6bd9a',9)}}
-const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,healFraction:.18,damageFraction:.45,fireTurns:3});
+const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.45,fireTurns:3});
 function startSalamanderFireWall(mon){
  if(state.turn<(mon.nextFireWallTurn||0))return false;
  const inner=[],outer=[];
@@ -2130,16 +2129,15 @@ function startSalamanderFireWall(mon){
   if(palaceRootFloor(x,y))(distance===1?inner:outer).push({x,y});
  }
  if(!inner.length)return false;
- const effect=effectSource57(mon),heal=Math.min(mon.maxHp-mon.hp,Math.ceil(mon.maxHp*SALAMANDER_FIRE_WALL.healFraction));
- mon.hp+=heal;mon.nextFireWallTurn=state.turn+SALAMANDER_FIRE_WALL.cooldown;
+ const effect=effectSource57(mon);
+ mon.nextFireWallTurn=state.turn+SALAMANDER_FIRE_WALL.cooldown;
  const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'fire',
   damage:Math.max(1,Math.floor(mon.atk*SALAMANDER_FIRE_WALL.damageFraction)),stunTurns:1,fireTurns:SALAMANDER_FIRE_WALL.fireTurns};
  const detonateTurn=state.turn+3;
  addField('rootWall',mon.x,mon.y,4,inner,{rootWall105,raiseTurn:state.turn+1,detonateTurn});
  if(outer.length)addField('rootWall',mon.x,mon.y,4,outer,{rootWall105,raiseTurn:state.turn+2,detonateTurn});
- if(heal>0)floatText(mon.x,mon.y,'+'+heal,'#ffd66b',15);
  elementBreakFx105(mon.x,mon.y,'fire');
- addLog(mon.name+'의 화염벽 예고'+(heal>0?' · HP +'+heal:'')+'.');
+ addLog(mon.name+'의 화염벽 예고.');
  return true;
 }
 function enemySpecial47(m,target=state.player){
@@ -2214,7 +2212,7 @@ function debugBattleBindViewport57(el){
 }
 let SUMMON_PANEL_SESSION105=null;
 function summonRecovery105(upgrade=summonState().upgrade){return Math.max(1,Math.ceil(SUMMON_RULES.cooldown/(1+SUMMON_RULES.cooldownDecay*Math.max(0,Math.floor(Number(upgrade)||0)))));}
-function configureSummonBody105(mon,definition=null){mon.fixed=!!(mon.combatFixture54||mon.kind!=='plant'&&(mon.immobile105||definition?.fixed||mon.fixed));mon.summonForm105=mon.boss||mon.miniBoss?'boss':mon.fixed?'fixed':'mobile';if(mon.treeMimic105)mon.mimicDormant105=false;mon.footprint='one';if(mon.aquatic)mon.amphibious57=true;mon.waterOnly57=false;mon.guardHome57=null;return mon;}
+function configureSummonBody105(mon,definition=null){mon.fixed=!!(mon.combatFixture54||mon.kind==='plant'||mon.immobile105||definition?.fixed||mon.fixed);mon.summonForm105=mon.boss||mon.miniBoss?'boss':mon.fixed?'fixed':'mobile';if(mon.treeMimic105)mon.mimicDormant105=false;mon.footprint='one';if(mon.aquatic)mon.amphibious57=true;mon.waterOnly57=false;mon.guardHome57=null;return mon;}
 function normalizeSummonSpeciesItem105(item,defs=null,aliases=new Map()){
  if(!item?.summonItem105||item.summonSpeciesVersion105===1)return;
  defs=defs||summonDefinitions();

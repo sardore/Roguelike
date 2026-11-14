@@ -13,7 +13,7 @@ const bridge = `globalThis.checkFireWall = () => {
   const foe={name:'시험 대상',x:21,y:14,hp:999,maxHp:999,faction57:'player',kind:'human'};
   OccupancyService.addMonster(mon);OccupancyService.addMonster(foe);
   mon.hp=mon.maxHp-20;
-  const used=enemySpecial47(mon,foe),healed=mon.hp>mon.maxHp-20;
+  const used=enemySpecial47(mon,foe),healed=mon.hp!==mon.maxHp-20;
   const warnings=state.tempFields.map(f=>f.cells.length);
   const advance=()=>{
     state.turn++;tickCombatFields57();expireCombatFields();
@@ -48,7 +48,7 @@ const session=await openSession(browser,new URL('../dist-qa',import.meta.url).pa
 try {
   await startRun(session,'wanderer');
   const result=await session.page.evaluate(()=>checkFireWall());
-  assert.deepEqual(result,{used:true,healed:true,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
+  assert.deepEqual(result,{used:true,healed:false,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
   assert.deepEqual(session.errors,[]);
 } finally {
   await session.close();
