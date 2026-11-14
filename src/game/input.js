@@ -121,7 +121,8 @@ function attachLongPress(el,fn){
           p.holdFire=setTimeout(()=>{if(!Runtime81.pointers.has(p.id)||p.moved)return;p.held=true;Runtime81.qa.holds++;hold.classList.remove('show');ClientEnvironment.emit({type:'WORLD_INSPECT',cell:p.q,source:'world-long-press'})},CONFIG81.holdInspectMs);
         }
       }else if(Runtime81.pointers.size===2){
-        for(const v of Runtime81.pointers.values())cancelHold(v);const a=[...Runtime81.pointers.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);Runtime81.gesture={type:'pinch',dist,zoom0:ZoomController.value()/100};Runtime81.qa.pinches++;
+        cancelAutoWalk();clearHeldInput53();
+        for(const v of Runtime81.pointers.values()){cancelHold(v);v.moved=true;}const a=[...Runtime81.pointers.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);Runtime81.gesture={type:'pinch',dist,zoom0:ZoomController.value()/100};Runtime81.qa.pinches++;
       }
     },{passive:false});
     input.addEventListener('pointermove',e=>{
@@ -132,7 +133,7 @@ function attachLongPress(el,fn){
         const ratio=d/Math.max(1,g.dist);if(ratio>1.13){ClientEnvironment.emit({type:'CAMERA_ZOOM',delta:1,source:'world-pinch'});g.dist=d;g.zoom0=ZoomController.value()/100}else if(ratio<.885){ClientEnvironment.emit({type:'CAMERA_ZOOM',delta:-1,source:'world-pinch'});g.dist=d;g.zoom0=ZoomController.value()/100}return;
       }
       const totalX=e.clientX-p.x,totalY=e.clientY-p.y;
-      if(!p.moved&&Math.hypot(totalX,totalY)>CONFIG81.dragThreshold){p.moved=true;cancelHold(p);Runtime81.qa.drags++;CameraController.beginInspect();Runtime81.gesture={type:'pan',lastX:p.x,lastY:p.y}}
+      if(!p.moved&&Math.hypot(totalX,totalY)>CONFIG81.dragThreshold){p.moved=true;cancelHold(p);cancelAutoWalk();clearHeldInput53();Runtime81.qa.drags++;CameraController.beginInspect();Runtime81.gesture={type:'pan',lastX:p.x,lastY:p.y}}
       if(p.moved&&Runtime81.gesture?.type==='pan'){const dx=e.clientX-Runtime81.gesture.lastX,dy=e.clientY-Runtime81.gesture.lastY;ClientEnvironment.emit({type:'CAMERA_PAN',dx,dy,source:'world-pan'});Runtime81.gesture.lastX=e.clientX;Runtime81.gesture.lastY=e.clientY}
     },{passive:false});
     input.addEventListener('pointerup',e=>{
