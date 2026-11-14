@@ -1968,6 +1968,14 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const m of state.monsters||[]){if(m.hp<=0||m.hidden)continue;
       // what stands at the monster (its gaze line, its rune, its circle) is drawn only while the monster itself is seen; the cells it has marked are drawn wherever they are seen
       const seen=state.visible.has(k(m.x,m.y));
+      if(seen&&m.losLostSummon57&&m._sawPlayer57){
+        const id=m.losOpponentId105,target=id==='player'?state.player:id?state.monsters.find(actor=>actor.combatantId54===id):null;
+        if(target&&state.visible.has(k(target.x,target.y))&&actorDetectedTarget57(m,target)){
+          const a=screen(m.x,m.y),b=screen(target.x,target.y);
+          X.save();X.strokeStyle='rgba(234,184,87,.72)';X.lineWidth=Math.max(1,2*cam.zoom);
+          X.setLineDash([5*cam.zoom,4*cam.zoom]);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();X.restore();
+        }
+      }
       const gazeTarget=m.gazeCount>0?(m.specialOpponent105==='player'?state.player:state.monsters.find(t=>t.combatantId54===m.specialOpponent105)):null;
       if(seen&&m.gaze&&gazeTarget?.hp>0&&state.visible.has(k(gazeTarget.x,gazeTarget.y))){const a=screen(m.x,m.y),b=screen(gazeTarget.x,gazeTarget.y),stacks=Math.min(4,Math.max(1,m.gazeCount||0)),p=Math.min(1,stacks/4),pulse=.5+.5*Math.sin(now/125),dx=b.x-a.x,dy=b.y-a.y;X.save();X.globalCompositeOperation='screen';X.setLineDash([Math.max(3,(10-4*p)*cam.zoom),Math.max(2,(8-3*p)*cam.zoom)]);X.strokeStyle=`rgba(224,108,194,${.14+p*.82+pulse*.05})`;X.lineWidth=Math.max(1.2,(1.2+p*4.6)*cam.zoom);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();X.setLineDash([]);X.strokeStyle=`rgba(255,232,247,${.12+p*.54})`;X.lineWidth=Math.max(1,(.6+p*1.35)*cam.zoom);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();for(let i=1;i<=4;i++){const u=i/5,cx=a.x+dx*u,cy=a.y+dy*u,filled=i<=stacks;X.fillStyle=filled?`rgba(255,${Math.round(214+16*p)},240,${.20+p*.38})`:`rgba(255,222,241,.12)`;X.beginPath();X.arc(cx,cy,Math.max(1.1,(filled?1.5+p*2.6:1.2)*cam.zoom),0,Math.PI*2);X.fill()}for(const q of[a,b]){X.strokeStyle=`rgba(255,190,232,${.25+p*.58})`;X.lineWidth=Math.max(1,1.4*cam.zoom);X.beginPath();X.arc(q.x,q.y,q.s*(.12+p*.07),0,Math.PI*2);X.stroke()}X.restore()}
       const fold=shackleFoldMotion.get(m);
