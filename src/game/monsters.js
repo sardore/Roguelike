@@ -1757,6 +1757,16 @@ tick(opts={}){
   const roots=expired.filter(t=>t.rootWall105&&restored.has(t));
   state.tempTerrain74=state.tempTerrain74.filter(t=>t.ttl>0||expired.includes(t)&&!restored.has(t));
   if(roots.length)palaceRootWallExplode(roots);
+  if(opts.movement||state.dead||state.victory)return;
+  // Rise after actors have acted, as with the lotus. The new stun is available
+  // for the victim's next action even when it acts later in initiative order.
+  let raised=0;
+  for(const field of state.tempFields||[]){
+    if(field.kind!=='rootWall'||field.rootWall105?.element!=='fire'||field.ttl<=0||state.turn<field.raiseTurn)continue;
+    raised+=palaceRootWallsRise(field.cells,field.rootWall105,field.detonateTurn);
+    field.ttl=0;
+  }
+  if(raised&&!state.debugBattle57)VisibilityService.compute();
 },
 migrate(page){
   // Saved terrain owns legacy timer recovery; runtime never sweeps the map to patch walls.
