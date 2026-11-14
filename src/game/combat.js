@@ -637,9 +637,12 @@ function tempFieldCells57(f){
 }
 function addField(kind,x,y,ttl,cells=null,metadata={}){
  if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,metadata)}finally{Duel.environment--}}
+ const contactCells=cells;
+ if(kind==='fire')cells=fireGroundCells105(cells);
+ Duel.sendField(kind,x,y,ttl,contactCells,metadata);
+ if(kind==='fire'&&!cells.length)return;
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));
  state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...metadata});syncSmokeEntry();
- Duel.sendField(kind,x,y,ttl,cells,metadata);
 }
 function applyMonsterAttackStatus57(mon,target,context={}){
  if(!target||target.hp<=0)return;

@@ -279,12 +279,12 @@ function cookingName(item){if(item?.type==='potion'&&!isPotionKindVisible(item))
 function eligibleCooking(){return state.player.inventory.map((item,idx)=>({item,idx})).filter(v=>v.item.mineItem105!=='stone'&&(v.item.type==='food'||v.item.type==='ingredient'||['fire','mine_fire105','heal_small'].includes(v.item.potionKind)))}
 function selectedCooking(){return [...V57.selected].map(idx=>({idx,item:state.player.inventory[idx]})).filter(v=>v.item)}
 function matchRecipe(items){return FOOD_RECIPES.find(r=>{if(r.stations&&!r.stations.includes(V57.cookSource))return false;const keys=items.map(v=>{const key=ingredientKey57(v.item);return Object.keys(r.alternatives||{}).find(base=>r.alternatives[base].includes(key))||key}).sort((a,b)=>a.localeCompare(b,'ko'));return r.ingredients.slice().sort((a,b)=>a.localeCompare(b,'ko')).join('|')===keys.join('|')})||null}
-function openCooking(source='pot'){if(!gameplayUiOpen57())return false;if(!cookingFireAvailable105(source)){toast('불씨가 꺼져 있다. 불속성으로 다시 지펴야 한다.');return false;}if(!state)return;ensureFoodState();cancelAutoWalk();if(inventoryOpen)closeInventory();if(typeof closeMobileDrawer==='function')closeMobileDrawer();if(typeof closeInspect==='function')closeInspect();V57.cookSource=source;V57.selected.clear();V57.cookOpen=true;cookingPanel.classList.add('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0);renderCooking()}
-function closeCooking(){V57.cookOpen=false;V57.selected.clear();cookingPanel.classList.remove('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0)}
+function openCooking(x,y){if(!gameplayUiOpen57())return false;const tile=state?.map[y]?.[x],station={map:state?.map,x,y,tile};if(!cookingFireAvailable105(station)){toast('불씨가 꺼져 있다. 불속성으로 다시 지펴야 한다.');return false;}if(!state)return;ensureFoodState();cancelAutoWalk();if(inventoryOpen)closeInventory();if(typeof closeMobileDrawer==='function')closeMobileDrawer();if(typeof closeInspect==='function')closeInspect();V57.cookStation=station;V57.cookSource=tile===TT.BRAZIER?'brazier':'pot';V57.selected.clear();V57.cookOpen=true;cookingPanel.classList.add('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0);renderCooking()}
+function closeCooking(){V57.cookOpen=false;V57.cookStation=null;V57.selected.clear();cookingPanel.classList.remove('show');document.body.classList.toggle('ux-modal-open',activeGameplayPanels57().length>0)}
 function consumeCookingSelection(sel){for(const {idx} of [...sel].sort((a,b)=>b.idx-a.idx)){const it=state.player.inventory[idx];if(!it)continue;consumeItemQuantity(it)}}
 function cookSelected(){
  const action=playerAction57('cook',{uiOwner:'cook57'});if(!action.ok)return false;
- if(!cookingFireAvailable105(V57.cookSource)){toast('조리할 불씨가 꺼져 있다.');return false;}
+ if(!V57.cookOpen||!cookingFireAvailable105(V57.cookStation)){toast('조리할 불씨가 꺼져 있다.');return false;}
  const sel=selectedCooking();if(!sel.length){toast('재료를 고르시오.');return false;}
  if(sel.length>COOKING_INGREDIENT_LIMIT57){toast(`재료는 최대 ${COOKING_INGREDIENT_LIMIT57}종까지 넣을 수 있다.`);return false;}
  const rec=matchRecipe(sel),proto=itemPrototype(rec?.name||'검게 탄 숯');if(!proto)return false;
@@ -605,7 +605,11 @@ function normalizeItemContainers57(){
 
 
 
-function cookingFireAvailable105(source){if(source!=='pot'&&source!=='brazier')return true;const p=state.player,t=source==='pot'?TT.COOKPOT:TT.BRAZIER;return DIRS8.concat([[0,0]]).some(([dx,dy])=>state.map[p.y+dy]?.[p.x+dx]===t&&!terrainUnlit105(p.x+dx,p.y+dy))}
+function cookingFireAvailable105(station){
+ if(!station||!state?.player||state.map!==station.map)return false;
+ const {x,y,tile}=station;
+ return (tile===TT.COOKPOT||tile===TT.BRAZIER)&&state.map[y]?.[x]===tile&&entityDistance57(state.player,station)<=1&&!terrainUnlit105(x,y);
+}
 function jarReward57(x,y){
  if(globalThis.__MANRU_RANDOM57__()>=.20)return null;
  let item;if(globalThis.__MANRU_RANDOM57__()<.05){item={...clone(RELICS.find(r=>r.jarOnly57)),count:1};globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(item);PlacementService.placeItem(item,{x,y});}
@@ -760,7 +764,7 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     return false
   }
 /* ===== MANRU v5.7 · PDF 앞쪽 몬스터 초안 + 음식/비방 조리 완성 패스 ===== */
-const V57={cookOpen:false,cookSource:'pot',selected:new Set(),foodTarget:null};
+const V57={cookOpen:false,cookSource:'pot',cookStation:null,selected:new Set(),foodTarget:null};
 function foodFloorRewards57(){
   if(!state||state.artifactDungeon46||[5,10,15,20,25].includes(state.floor))return;
   // Every five-floor theme has four ordinary floors. Each ordinary floor keeps the same
