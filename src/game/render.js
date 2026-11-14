@@ -1788,6 +1788,22 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(const a of props)vfDrawDecor(a.o,true);
 
     if(!state.branchContext105)for(const p of state.branchPortals105||[])if(state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
+    if(state.floor===2&&!state.branchContext105){
+      const canal=state.branchPortals105?.find(p=>p.id==='canal');
+      if(canal){
+        const route=state.floor2Choice63?.branches?.find(r=>r.cells.includes(k(canal.x,canal.y)));
+        const gates=route?(state.keyPlan96?.doors||[]).filter(d=>d.branch===route.id&&!d.exitSeal68):[];
+        X.save();X.font='bold 10px sans-serif';X.textAlign='center';X.textBaseline='middle';
+        for(const p of [canal,...gates]){
+          if(!inB58(p,b,0)||!state.seen.has(k(p.x,p.y)))continue;
+          const px=p.x*TILE,py=p.y*TILE;
+          X.fillStyle='#123943';X.fillRect(px+1,py+22,30,10);
+          X.fillStyle='#69d0c7';X.fillRect(px+2,py+22,28,1);
+          X.fillStyle='#e2fffa';X.fillText('수로',px+16,py+28);
+        }
+        X.restore();
+      }
+    }
     // Revealed rumor entrances are a gameplay cue, so they must sit above the projected wall face/depth pass.
     // The old legacy renderer drew this cue inside the base-tile loop, but the canonical fast renderer did not draw it at all.
     // Keep ownership here: no wrapper/overlay renderer is allowed to repair this later.
