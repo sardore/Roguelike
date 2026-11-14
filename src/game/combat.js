@@ -278,10 +278,20 @@ function cornerTargetR(){
   if(!state)return null;const p=state.player,w=p.weapon||{};if(!w.cornerHit||w.ranged||w.kind==='bow')return null;const range=weaponRange();
   return state.monsters.filter(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,p)<=range).sort((a,b)=>(b.boss?1:0)-(a.boss?1:0)||(b.alerted?1:0)-(a.alerted?1:0)||entityDistance57(a,p)-entityDistance57(b,p))[0]||null
 }
+function applyWideWeaponHit(actor,target,weapon,range,attack){
+  if(!weapon.wide||target.type||runState57()!=='playing')return;
+  const reach=range+1,damage=Math.max(1,Math.floor(attack*.45));
+  for(const other of [state.player,...state.monsters]){
+    if(runState57()!=='playing')break;
+    if(other===target||!combatTargetValid57(actor,other)||entityDistance57(other,target)>1||entityDistance57(other,actor)>reach)continue;
+    if(!entityCombatLineCheckR(actor,other,{range:reach,ignore:other,units:false}).ok)continue;
+    damageCombatTarget(actor,other,damage,weapon.ability||'광역타격');
+  }
+}
 function applyPlayerPostHitR(target,w,range){
   if(target.hp>0&&w.knockback)knockMonster(target,w.knockback);if(target.hp>0&&w.shred){target.def=Math.max(0,target.def-1);target.shredDef105=(target.shredDef105||0)+1;}
   if(target.hp>0&&w.execute&&target.hp/target.maxHp<=w.execute&&!target.boss){target.hp=0;killMonster(target);addLog('종결. 약해진 적을 단번에 끝냈다.')}
-  if(w.wide)for(const m of [...state.monsters])if(m!==target&&isHostileTarget57(m)&&entityDistance57(m,target)<=1&&entityDistance57(m,state.player)<=range+1&&entityCombatLineCheckR(state.player,m,{range:range+1,ignore:m,units:false}).ok){damageEntity(m,Math.max(1,Math.floor(getStats().atk*.45)), state.player);if(m.hp<=0)killMonster(m)}
+  if(state.playerAttackOutcome57?.damage>0)applyWideWeaponHit(state.player,target,w,range,getStats().atk);
 }
 function adjacentAttackTargetR(){if(!state)return null;const p=state.player,forced=state._forcedAdjacentTargetR8;state._forcedAdjacentTargetR8=null;if(forced&&isThreatVisibleToPlayer(forced)&&entityDistance57(forced,p)<=1)return forced;return selectFacingAdjacentTarget57(state.monsters.filter(isThreatVisibleToPlayer),(a,b)=>(b.boss?1:0)-(a.boss?1:0)||(b.alerted?1:0)-(a.alerted?1:0))}
 function basicAttack(){
@@ -638,10 +648,11 @@ function effectProbe47(id){const a=adef46(id);if(!a||!state)return null;const ol
 function syncEquipmentActor105(mon){const w=mon.weapon||{};mon.atk=(mon.baseAtk??mon.atk)+(w.atk||0);mon.reach=w.ranged?1:weaponRange(mon);mon.range=w.range||1;mon.ranged=!!w.ranged;mon.armorPierce=!!w.armorPierce;}
 function equipmentContributions105(actor){const w=actor.weapon||{},a=actor.armor||{},c=actor.cloak||{},r=actor.relic||{},t=actor.trinket||{};return{atk:(w.atk||0)+(r.atk||0)+(t.atk||0)+martialBrawlBonus(actor,w),def:armorEffectiveDef(a)+(c.def||0)+(r.def||0)+(t.def||0),eva:(w.eva||0)+(a.eva||0)+(r.eva||0)+(t.eva||0),will:(a.will||0)+(r.will||0)+(t.will||0)}}
 function equipmentFocusChain105(actor,hit){const w=actor?.weapon||{};if(!w.focusChain){actor.focusChain1006=0;return;}actor.focusChain1006=hit?(actor.focusChain1006||0)+1:0;if(actor.focusChain1006>=2){actor.focusChain1006=0;actor.focus=Math.min(actor===state.player?getStats().maxFocus:actor.maxFocus,actor.focus+1);floatText(actor.x,actor.y,'기 +1','#9fd2c3',10);}}
-function equipmentHit105(actor,target){const w=actor.weapon||{};if(target.hp<=0)return;
+function equipmentHit105(actor,target){const w=actor.weapon||{};
+ applyWideWeaponHit(actor,target,w,actor.reach||1,actor.atk);
+ if(target.hp<=0)return;
  if(w.shred){target.def=Math.max(0,(target.def||0)-1);target.shredDef105=(target.shredDef105||0)+1;}
  if(w.execute&&!target.boss&&target.hp/target.maxHp<=w.execute){target.hp=0;martialCheckDeath(target,actor);return}
- if(w.wide)for(const other of [...martialTargets(actor)])if(other!==target&&entityDistance57(other,target)<=1&&entityDistance57(other,actor)<=(actor.reach||1)+1&&entityCombatLineCheckR(actor,other,{range:(actor.reach||1)+1,ignore:other,units:false}).ok){damageEntity(other,Math.max(1,Math.floor(actor.atk*.45)),actor);martialCheckDeath(other,actor)}
 if(w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&!target.statusImmune)applyCombatStatus(target,'bleed',4,1,{source:actor});if(target.hp>0&&w.stun&&globalThis.__MANRU_RANDOM57__()<w.stun){if(target.boss)applyMartialControl1005(target,1);else applyCombatStatus(target,'stun',1,1,{stagger:true,source:actor});}if(actor!==state.player&&w.knockback&&target.hp>0)resolveForcedMovement57(target,actor,w.knockback,{mode:'push',hostile:true,creditPlayer:false});}
 function recoverActorFocus105(actor,turn){if(turn%10||actor.focusRecoveredTurn105===turn)return;actor.focusRecoveredTurn105=turn;const bonus=(actor.cloak?.focusRegen||1)>=2?2:1;actor.focus=Math.min(actor===state.player?getStats().maxFocus:actor.maxFocus,actor.focus+bonus);}
 function normalizeClassState58(p,agency=0){
