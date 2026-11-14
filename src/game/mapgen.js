@@ -3358,12 +3358,15 @@ function resolveOccupancyInteraction57(actor,target){
   const IMMUTABLE_TILES=new Set([TT.STAIR,TT.LOCKED_GATE,TT.KEY_TILE,TT.SECRET_DOOR,TT.HIDDEN_BRIDGE,TT.HIDDEN_WALL,TT.CRUMBLE]);
 function closeGameplayInteractionState57(opts={}){cancelAutoWalk();for(const panel of activeGameplayPanels57())panel.close?.(opts.preserveProgress&&panel.id==='storyModal992'?{preserveProgress:true}:true);globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();clearHeldInput53();projectInteractionUI();return true}
 function neutralInteractableAt58(x,y){return(state?.neutralInteractables58||[]).find(n=>n.x===x&&n.y===y)||null}
+function isMainStair(x,y){
+  return !!state&&!state.branchContext105&&state.stairs?.x===x&&state.stairs?.y===y&&state.map?.[y]?.[x]===TT.STAIR;
+}
 function descend(){
   cancelAutoWalk();
-  if(state?.branchContext105){toast('분기에서는 문 옆에서 상호작용 버튼(F)으로 출입한다.');return false}
+  if(state?.branchContext105){if(adjacentBranchPortal105())toast('상호작용 버튼(F)으로 출입할 수 있다.');return false}
   const act=playerAction57('descend',{stunMessage:'몸이 굳어 층을 내려가지 못했다.'});
   if(!act.ok)return !!act.consumed;
-  if(state.player.x!==state.stairs.x||state.player.y!==state.stairs.y){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
+  if(!isMainStair(state.player.x,state.player.y)){toast('다음 층으로 이어지는 문 위에서 사용해야 한다.');return false}
   if(!WorldTransition57.allowed(state.player))return false;
   if(state.duel)return finishDuelRound();
   if(!state.shopIntermission?.active&&[5,10,15,20].includes(state.floor)&&!state.bossDefeated){toast('구역 보스를 쓰러뜨려야 길이 열린다.');return false}
