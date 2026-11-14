@@ -141,7 +141,7 @@ const CLOAKS=[
 const RELICS=[
   {type:'relic',name:'장독 속 무언가',rarity:'relic',def:1,vision:-1,jarOnly57:true,jarOnMartial57:true,desc:'장독 바닥에서 건져 올린 오래된 반지. DEF +1, VIS -1. 무술을 사용할 때마다 주변의 안전하고 넓은 빈 바닥에 장독 하나를 설치한다. 놓을 자리가 없으면 설치하지 않는다.'},
   {type:'relic',name:'붉은 등롱 심지',rarity:'relic',vision:1,focus:2,desc:'시야 +1, 기력 +2'},
-  {type:'relic',name:'먹빛 벼루 조각',rarity:'relic',will:2,focus:2,desc:'WILL +2, 기력 +2. 적의 확률형 상태이상에 더 잘 저항합니다.'},
+  {type:'relic',name:'먹빛 벼루 조각',rarity:'relic',will:2,focus:2,desc:'WILL +2, 기력 +2. 적의 상태이상에 더 잘 저항합니다.'},
   {type:'relic',name:'깨진 천면경',rarity:'relic',eva:3,desc:'EVA +3'},
   {type:'relic',name:'장고의 쇠갈고리',rarity:'relic',atk:2,desc:'ATK +2'},
   {type:'relic',name:'용의 여의주 파편',rarity:'sealed',atk:2,def:2,focus:3,desc:'ATK/DEF +2, 기력 +3'}
@@ -149,7 +149,7 @@ const RELICS=[
 const TRINKETS=[
   {type:'trinket',name:'방 번호패',rarity:'common',vision:1,desc:'길을 기억하기 쉬워진다. VIS +1'},
   {type:'trinket',name:'비단 매듭',rarity:'rare',eva:2,desc:'EVA +2'},
-  {type:'trinket',name:'금박 부적',rarity:'relic',will:2,desc:'WILL +2. 적의 확률형 상태이상에 더 잘 저항합니다.'}
+  {type:'trinket',name:'금박 부적',rarity:'relic',will:2,desc:'WILL +2. 적의 상태이상에 더 잘 저항합니다.'}
 ];
 const CONSUMABLES=[
   // PDF 기본 음식 8종

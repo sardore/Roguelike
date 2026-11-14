@@ -58,7 +58,6 @@ function setMonsterStatus(mon,key,value,source=null,opts={}){
  if(mon.martialActor105&&key==='stunned'&&value>0)dojoRememberHit(mon,'control');mon[key]=value;return value;
 }
 // `sent` is true when the caller has already told the other player (applyCombatStatus does).
-function setMonsterWeakened(mon,turns,sent=false){if(!mon||mon.statusImmune||mon.cloak?.statusImmune||turns<=0)return false;if(mon.duelOpponent&&!sent)Duel.sendStatus('weaken',turns,1);if(mon.martialActor105)dojoRememberHit(mon,'control');mon.weakened=Math.max(mon.weakened||0,turns);mon.weakenedTurn57=state?.turn??0;return true}
 function setMonsterBuff(mon,amount,turns){if(!mon||turns<=0)return false;if((mon.buff||0)<(amount||0))mon.buff=amount||0;if((mon.buffTurns61||0)<turns)mon.buffTurns61=turns;mon.buffTurn57=state?.turn??0;return true}
 function tickMonsterCombatStatuses(){
   for(const m of [...state.monsters]){for(const meta of Object.values(STATUS_META57))if(meta.legacyMonsterField57&&m[meta.legacyMonsterField57]!=null){m[meta.monsterField57]=Math.max(m[meta.monsterField57]||0,m[meta.legacyMonsterField57]||0);delete m[meta.legacyMonsterField57]}if(m.poison74>0){m.poisoned57=Math.max(m.poisoned57||0,m.poison74);m.poison74=0;}if(m.armor?.elementGuard74==='grass')m.poisoned57=m.poison74=0;if(m.armor?.elementGuard74==='water'&&state.turn%2===0){m.poisoned57=Math.max(0,(m.poisoned57||0)-1);m.bleeding55=Math.max(0,(m.bleeding55||0)-1)}if(m.illness105>0&&m.illnessBorn105!==state.turn&&--m.illness105===0){resolveCombatIllness(m);if(m.hp<=0)continue}if(m.poisoned55>0){m.poisoned57=Math.max(m.poisoned57||0,m.poisoned55);delete m.poisoned55}if(m.blinded55>0)m.blinded55--;if(m.bleeding55>0&&m.hp>0){
@@ -2117,7 +2116,7 @@ function spawnDungeon46(id,rs){
  let guard=0,di=0;while(state.monsters.filter(isHostileTarget57).length<target&&guard++<2200){const r=usable[guard%usable.length];if(!r)break;if((per.get(r)||0)>=roomCap)continue;place(defs[di++%defs.length],r)}
  const goal=rs[rs.length-1],eliteDef=defs[(id.length+f)%defs.length];if(eliteDef){const eDef={...eliteDef};const e=scaledMonster(eDef);applyLegendGatekeeper47(e,f);let placed=false;for(let rr=4;rr<=7&&!placed;rr++)for(const[dx,dy]of DIRS8){const x=goal.cx+dx*rr,y=goal.cy+dy*rr;if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<9)continue;if(PlacementService.monsterCanStand(e,x,y)){Object.assign(e,{x,y,alerted:true,hidden:false});OccupancyService.addMonster(e);placed=true;break}}if(!placed){const q=place(eliteDef,goal,true);if(q){applyLegendGatekeeper47(q,f);q.alerted=true}}}
 }
-function pull47(mon){const dx=Math.sign(state.player.x-mon.x),dy=Math.sign(state.player.y-mon.y),x=mon.x+dx,y=mon.y+dy;if(resolveForcedMovement57(mon,state.player,1,{mode:'pull',hostile:true,creditPlayer:true}).moved){setMonsterWeakened(mon,2);floatText(mon.x,mon.y,'견인 · 방어저하','#d6bd9a',9)}}
+function pull47(mon){const dx=Math.sign(state.player.x-mon.x),dy=Math.sign(state.player.y-mon.y),x=mon.x+dx,y=mon.y+dy;if(resolveForcedMovement57(mon,state.player,1,{mode:'pull',hostile:true,creditPlayer:true}).moved){if(applyCombatStatus(mon,'weaken',2))floatText(mon.x,mon.y,'견인 · 방어저하','#d6bd9a',9)}}
 const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.45,fireTurns:3});
 function startSalamanderFireWall(mon){
  if(state.turn<(mon.nextFireWallTurn||0))return false;
@@ -2597,7 +2596,7 @@ function silkThreadAt54(x,y){
         cs.powerTurns--;
         if(cs.powerTurns===0){
           const duration=cs.powerExhaustion??cs.powerTotal;cs.powerTotal=0;cs.powerExhaustion=0;
-          applyHostileStatus('blind',duration,1);applyHostileStatus('upset',duration,1);
+          setPlayerStatus('blind',duration);setPlayerStatus('upset',duration);updateDebuffHud();
           burst(state.player.x,state.player.y,'#b89870',12,.5);floatText(state.player.x,state.player.y,'탈진','#d7ab85',15);
           addLog('괴력이 가셨다. 무리한 팽창의 반동으로 시야와 속이 무너진다.');
         }
