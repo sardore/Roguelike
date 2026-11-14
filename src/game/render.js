@@ -19,6 +19,7 @@ function drawCrateX(ctx,px,py){
  ctx.fillStyle='rgba(240,206,140,.4)';ctx.fillRect(7.5,5.5,21.5,.8);
  ctx.fillStyle='#4a3420';ctx.beginPath();ctx.moveTo(25,10);ctx.lineTo(29,5.5);ctx.lineTo(29,23.5);ctx.lineTo(25,28.5);ctx.closePath();ctx.fill();
  ctx.fillStyle='rgba(20,12,6,.35)';ctx.fillRect(26.5,9,.6,15);ctx.fillStyle='#343932';ctx.fillRect(26,11,2,2);
+ ctx.restore();
 }
 // Shared deterministic material producer. World-aligned joints continue across tile boundaries.
 const WORLD_LIGHT_ART=Object.freeze({lantern:'#f29a38',gold:'#efb846',fire:'#ee852e',water:'#60b6bd',lava:'#e76a26',portal:'#ac73d1'});
