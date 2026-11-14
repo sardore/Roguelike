@@ -55,10 +55,10 @@ window.__MANRU_V56_TEST__={
     start:()=>{newGame(CLASSES[0]);return{floor:state.floor,map:{...state.knowledge56.potionMap}}},
     grantPotion:(kind,room='연금술방')=>{const p=POTION_BY_KIND.get(kind);if(!p)return null;const i=clone(p);i.count=1;i.origin56=ROOM_CONTEXT[room]?{label:room,text:ROOM_CONTEXT[room].text,kinds:[...ROOM_CONTEXT[room].kinds],strength:ROOM_CONTEXT[room].kinds.includes(kind)?2:0}:undefined;decoratePotion56(i);addInventoryItem(i);return{trueName:i.name,publicName:publicName56(i),html:potionClueHTML(i)}},
     grantTalisman:kind=>{const t=TALISMAN_BY_KIND.get(kind);if(!t)return null;const i=clone(t);i.count=1;addInventoryItem(i);return i.name},
-    identify:kind=>identifyPotion(kind,'테스트'),
+    identify:kind=>identifyItem(POTION_BY_KIND.get(kind),'테스트'),
     knowledge:()=>JSON.parse(JSON.stringify(state.knowledge56)),
     names:()=>state.player.inventory.map(i=>({true:i.name,public:publicName56(i),type:i.type,role:role56(i),seal:i.type==='talisman'?publicTalismanSeal56(i):null,known:i.type==='potion'?isPotionKnownByPlayer(i):i.type==='talisman'?knownTalisman56(i):true})),
-    identifyTalisman:kind=>identifyTalisman56(kind,'테스트'),
+    identifyTalisman:kind=>identifyItem(TALISMAN_BY_KIND.get(kind),'테스트'),
     useTrue:name=>{const i=state.player.inventory.findIndex(x=>x.name===name);if(i<0)return false;ActionDispatcher.dispatch({type:'ITEM_USE',args:[i]}).value;return true},
     cast:(x,y)=>castTalisman56(x,y),
     openBag:()=>{openInventory();return true},
@@ -292,7 +292,7 @@ window.__MANRU_TERRAIN_CODEX986__.sampleDecor=()=>{const d=(state?.decor||[]).fi
 window.__MANRU_TERRAIN_CODEX986__.inspectSampleDecor=()=>{const d=(state?.decor||[]).find(v=>DECOR986.has(String(v.kind||''))&&decorInspectTarget986(v))||null,t=d&&decorInspectTarget986(d);if(!d||!t)return false;const info=decorInfo986(d);directOpenInspect(info.name,simpleHtml986(info),t);return{x:t.x,y:t.y,kind:d.kind,anchor:{x:d.x,y:d.y,layer:d.layer},...info}};
 window.__MANRU_TERRAIN_CODEX986__.sampleMonster=()=>{const m=(state?.monsters||[]).find(isEntityObservableToPlayer57)||null;return m?{x:m.x,y:m.y,...monsterInfo986(m)}:null};
 window.__MANRU_TERRAIN_CODEX986__.inspectSampleMonster=()=>{const m=(state?.monsters||[]).find(isEntityObservableToPlayer57)||null;if(!m)return false;const info=monsterInfo986(m);directOpenInspect(info.name,simpleHtml986(info),{x:m.x,y:m.y});return{x:m.x,y:m.y,...info}};
-window.__MANRU_IDENTIFY991__={one:useIdentifyScrollOn,all:identifyAllInventory991,unknown:isUnidentifiedItem};
+window.__MANRU_IDENTIFY991__={one:identifyItem,all:identifyInventory,unknown:isUnidentifiedItem};
 window.__MANRU_USE_HOLY991__=useHolyItem;
 window.__MANRU_STORY992__.version=STORY_VERSION992;
 window.__MANRU_STORY992__.docs=()=>STORY_DOCS;
@@ -618,7 +618,7 @@ globalThis.__MANRU_QA_FLOOR6_REPAIR__=()=>{
     gateRestored:state.map[gate.y]?.[gate.x]===TT.LOCKED_GATE};
 };
 globalThis.__MANRU_QA_SPECTATE__={vis:()=>({x:VIS.playerX,y:VIS.playerY,cam:CameraState.snapshot()}),move:(dx,dy)=>ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}),api:Spectate,state:()=>state,die:by=>die(by),go:to=>branchTransition({id:'qa',to,arrival:'up'}),regen:f=>globalThis.__MANRU_RELEASE__?.regen?.(f)};
-globalThis.__MANRU_QA_IDENTIFY__={potion:identifyPotion,talisman:identifyTalisman56,info:itemInfo,prototype:itemPrototype};
+globalThis.__MANRU_QA_IDENTIFY__={potion:(kind,reason)=>identifyItem(POTION_BY_KIND.get(kind),reason),talisman:(kind,reason)=>identifyItem(TALISMAN_BY_KIND.get(kind),reason),info:itemInfo,prototype:itemPrototype};
 // load-hook experiment helpers: the aim state is runtime-only (not in the save) and the redraw flags are timing state
 globalThis.__MANRU_QA_LOAD__={
   setAim:(m,jar=null)=>{AIM_STATE.target=m;AIM_STATE.jar=jar;if(state)state._manualTerrainTargetR8=jar?{}:null},
