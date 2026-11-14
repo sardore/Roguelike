@@ -2193,7 +2193,7 @@ function spawnDungeon46(id,rs){
  const goal=rs[rs.length-1],eliteDef=defs[(id.length+f)%defs.length];if(eliteDef){const eDef={...eliteDef};const e=scaledMonster(eDef);applyLegendGatekeeper47(e,f);let placed=false;for(let rr=4;rr<=7&&!placed;rr++)for(const[dx,dy]of DIRS8){const x=goal.cx+dx*rr,y=goal.cy+dy*rr;if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<9)continue;if(PlacementService.monsterCanStand(e,x,y)){Object.assign(e,{x,y,alerted:true,hidden:false});OccupancyService.addMonster(e);placed=true;break}}if(!placed){const q=place(eliteDef,goal,true);if(q){applyLegendGatekeeper47(q,f);q.alerted=true}}}
 }
 function pull47(mon){const dx=Math.sign(state.player.x-mon.x),dy=Math.sign(state.player.y-mon.y),x=mon.x+dx,y=mon.y+dy;if(resolveForcedMovement57(mon,state.player,1,{mode:'pull',hostile:true,creditPlayer:true}).moved){setMonsterWeakened(mon,2);floatText(mon.x,mon.y,'견인 · 방어저하','#d6bd9a',9)}}
-const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.45,fireTurns:3});
+const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.40,fireTurns:3});
 function startSalamanderFireWall(mon){
  if(state.turn<(mon.nextFireWallTurn||0))return false;
  const inner=[],outer=[];
