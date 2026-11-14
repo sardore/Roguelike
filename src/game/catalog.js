@@ -45,7 +45,7 @@ const MONSTERS=[
   {min:16,max:20,name:'지네',concept57:"장고의 틈새를 채운 마디들이 일제히 꿈틀거린다.",hp:26,atk:8,def:2,eva:5,xp:8,color:'#785b45',shape:'beast',kind:'beast',poison:true,ambush:true},
   {min:16,max:20,name:'강시',concept57:"굳은 관절을 억지로 움직이는 시체다.",hp:38,atk:10,def:5,eva:2,xp:12,color:'#6d7770',shape:'undead',kind:'undead',hook:true},
   {min:16,max:20,name:'식귀',sealSkill:true,concept57:"먹어도 채워지지 않는 배를 움켜쥔 망자다.",hp:34,atk:9,def:3,eva:4,xp:10,color:'#89695c',shape:'human',kind:'undead',hungerDrain:8},
-  {min:17,max:20,name:'껍질슬라임',concept57:'장고의 딱딱한 껍질을 뒤집어쓴 슬라임. 밖으로 뛰쳐나오면 잠시 빈 껍질이 남는다.',hp:64,atk:11,def:3,eva:2,xp:19,color:'#a18c58',shape:'void',kind:'slime',shellSlime:true},
+  {min:17,max:20,name:'껍질슬라임',concept57:'층층이 자란 갑각 속에서 몸을 회복하는 슬라임. 껍질을 벗으면 등에서 자란 침을 쏜다.',hp:64,atk:11,def:3,eva:2,xp:19,color:'#a18c58',shape:'void',kind:'slime',shellSlime:true},
   {min:17,max:20,name:'산성 슬라임',concept57:"탁한 산액이 덩어리져 장고 바닥을 기어간다.",split:'acid',blind:true,hp:32,atk:9,def:2,eva:1,xp:10,color:'#7f9d60',shape:'void',kind:'slime',armorPierce:true},
   {min:16,max:20,name:'굶주린 창고 쥐',concept57:"말라붙은 곡식 자루 사이에서 사람 냄새를 익힌 쥐다.",infectionHitsRequired57:2,hp:22,atk:7,def:1,eva:7,xp:7,color:'#705c51',shape:'beast',kind:'beast',fast:true},
   {...SHACKLE_DOLL,min:18,max:19,spawnCountByFloor:{18:1,19:1}},

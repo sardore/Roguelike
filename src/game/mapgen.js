@@ -22,7 +22,7 @@ architectureRouteMetrics({K1020,inside1020,pass1020}){if(!state)return null;cons
 // UPDATE01 graph profiles: transient query data; no persistent topology cache.
 soundCosts(source,budget){
  const costs=new Map(),buckets=Array.from({length:Math.floor(budget)+1},()=>[]),blocked=new Set();
- for(const f of state.tempFields||[])if(['smoke','steam'].includes(f.kind)&&f.ttl>0)for(const c of tempFieldCells57(f))blocked.add(k(c.x,c.y));
+ for(const f of state.tempFields||[])if(isOpaqueCloud(f)&&f.ttl>0)for(const c of tempFieldCells57(f))blocked.add(k(c.x,c.y));
  const costAt=(x,y)=>{const t=state.map?.[y]?.[x];if(t==null||blocked.has(k(x,y)))return Infinity;if(t===TT.OPEN_DOOR)return 3;if(t===TT.DOOR||t===TT.LOCKED_GATE)return 6;if([TT.BAMBOO,TT.SCREEN,TT.HEDGE,TT.TABLE,TT.CRATE,TT.JAR].includes(t))return 4;if(tileBlocksSight(t)||tileBlocks(t))return Infinity;return 1};
  if(!Number.isFinite(costAt(source.x,source.y)))return costs;
  costs.set(k(source.x,source.y),0);buckets[0].push(source);

@@ -6,7 +6,10 @@ function martialPresentation(id,info,p=state.player){
  if(id==='strong')v.desc=form==='guard'?`굳게 자세를 낮춰 적의 공세를 받아낸다. 다음 두 번의 공격 행동을 막을 때 방어력 +${strongBonus(n)}. 각 행동의 연속 타격도 끝까지 막으며, 피한 공격에는 횟수를 소모하지 않는다.`:form==='drive'?`대지를 박차는 일격으로 적을 밀어낸다. 다음 근접 공격의 공격력 +${strongBonus(n)-2}, 최대 ${n}칸 밀침. 벽에 부딪히면 밀려난 칸 수만큼 경직된다(최소 1턴). 보스는 최대 1칸·1턴이며 연달아 제압할 수 없다.`:`온몸의 힘을 한 점에 모아 내지른다. 다음에 적중하는 근접 공격의 공격력 +${strongBonus(n)}.`;
  if(family==='roar'){v.cost=lv>=5?4:5;v.desc=`${form==='silent'?'소리 없는 기세로 주위를 짓누른다.':form==='echo'?'한 번의 외침이 길 위에 여운을 남긴다.':'범의 포효처럼 기운을 터뜨려 주위를 뒤흔든다.'} 반경 ${martialRoarRange(n)}칸의 적에게 피해 ${form==='silent'?Math.min(8,2+n*2):2+n*2}, 경직 ${n>=2?2:1}턴. ${form==='silent'?'포효 소리로 먼 적을 깨우지 않는다.':form==='echo'?`바라보는 방향 ${n}칸 앞의 안전한 빈자리에 메아리가 남는다. 밟으면 기력 소모 없이 한 번 더 울려 퍼진다.`:''} 벽에 가로막히며, 보스는 오래 붙잡아 둘 수 없다.`}
  if(family==='aim')v.desc=`${form==='focus'?'상처와 고통에도 흔들리지 않고 시위를 겨눈다.':form==='divine'?'하나의 시선으로 두 적의 빈틈을 꿰뚫는다.':'호흡을 멈추고 적의 빈틈에 시선을 모은다.'} 사격 피해 ×${(Math.min(5+n,6+n-(form==='divine'?1:0))/4).toFixed(2)}에서 최대 ×${((6+n-(form==='divine'?1:0))/4).toFixed(2)}까지. 방어와 회피를 꿰뚫는다. 이동하거나 쏘면 집중이 한 단계 줄고, 제자리에서 다시 쌓인다. ${form==='focus'?'피해나 해로운 상태에 시달려도 집중을 이어갈 수 있다.':form==='divine'?'쏠 수 있는 다른 적이 있으면 집중 한 단계와 탄약 한 발을 더 써 함께 쏜다. 피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.':'피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.'}`;
- if(family==='smoke')v.desc=`${form==='cloud'?'흐르는 구름처럼 연막을 두르고 움직인다.':form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} ${form==='cloud'?'몸을 중심으로': '4칸 안에 던져'} ${n}×${n}칸에 피해 ${n*3}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 사선을 가린다. ${form==='cloud'?'연막은 발걸음을 따라 움직인다.':form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${n*3}을 준다.`:''}`;
+ if(family==='smoke'){
+  const {size,damage}=martialSmokePower(p,n);
+  v.desc=`${form==='cloud'?'흐르는 구름처럼 연막을 두르고 움직인다.':form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} ${form==='cloud'?'몸을 중심으로': '4칸 안에 던져'} ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='cloud'?'연막은 발걸음을 따라 움직인다.':form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
+ }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
  if(family==='oddity'){v.cost=oddityCost(lv);v.desc=oddityDescription(lv,n,form);v.seal=ODDITY_RULES.seals[form]||v.seal}
  if(family==='brawl')v.desc=form==='reach'?`주먹의 위력 대신 뻗어 나가는 거리를 단련한다. 맨손과 권갑의 공격 사거리 ${n}칸. 가로막힌 적 너머로는 닿지 않는다.`:form==='close'?`짧은 병기를 손발처럼 다룬다. 사거리 1칸인 근접무기의 공격력 +${n}. 맨손과 권갑에는 이 힘이 실리지 않는다.`:`주먹과 몸놀림을 갈고닦아 맞붙는 싸움에 능해진다. 맨손과 권갑의 공격력 +${n}.`;
@@ -129,10 +132,23 @@ function syncSmokeEntry(allowEntry=true){
  const p=state.player,inside=smokeAt(p.x,p.y),before=!!p.smokeInside1005;
  if(allowEntry&&!before&&inside&&martialFormOf('ghost')==='darkcloud'&&p.martial.ghost>0){state.status.stealth=Math.max(state.status.stealth||0,ghostDuration(p.martial.ghost)*2);p.stealthBornAgency1005=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57&&state._turnAgencyCounted57?0:1);for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('darkcloud');addLog(`흑운: 은신 ${ghostDuration(p.martial.ghost)*2}턴.`)}p.smokeInside1005=inside;
 }
-function smokeCells(center,lv){const out=[],start=Math.floor((lv-1)/2);for(let dy=0;dy<lv;dy++)for(let dx=0;dx<lv;dx++){const x=center.x+dx-start,y=center.y+dy-start;if(x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksSight(state.map[y][x])&&lineClear(center.x,center.y,x,y))out.push({x,y})}return out}
+function martialSmokePower(actor,level){
+ const infiltrator=actor.classId==='infiltrator';
+ return {size:level+Number(infiltrator),damage:level*(infiltrator?4:3)};
+}
+function martialSmokeCells(center,size,form){
+ const offset=Math.floor((size-1)/2),randomOffset=form!=='cloud'&&size%2===0;
+ const ox=offset+(randomOffset?rand(0,1):0),oy=offset+(randomOffset?rand(0,1):0),cells=[];
+ for(let dy=0;dy<size;dy++)for(let dx=0;dx<size;dx++){
+  const x=center.x+dx-ox,y=center.y+dy-oy;
+  if(x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksSight(state.map[y][x])&&
+    combatLineCheckR8(center.x,center.y,x,y,{units:false,ignoreClouds:true}).ok)cells.push({x,y});
+ }
+ return cells;
+}
 function martialLanding(origin){
  const p=state.player,moved=p.x!==origin.x||p.y!==origin.y;
- if(moved)for(const f of state.tempFields||[])if(f.martialSmoke&&f.smokeForm==='cloud'&&f.ttl>0){f.x=p.x;f.y=p.y;f.cells=smokeCells(p,f.castLevel)}
+ if(moved)for(const f of state.tempFields||[])if(f.martialSmoke&&f.smokeForm==='cloud'&&f.owner==='player'&&f.ttl>0){f.x=p.x;f.y=p.y;f.cells=martialSmokeCells(p,martialSmokePower(p,f.castLevel).size,'cloud')}
  syncSmokeEntry();const e=state.martialEcho;if(moved&&e&&e.floor===state.floor&&e.x===p.x&&e.y===p.y){state.martialEcho=null;martialFx('echo');performRoar(false)}
 }
 function expireMartialSmoke(f){
@@ -142,7 +158,7 @@ function expireMartialSmoke(f){
  if(cells.some(c=>c.x===state.player.x&&c.y===state.player.y)){const d=damageEntity(state.player,f.castDamage,f);if(d>0)floatText(state.player.x,state.player.y,'폭연 -'+d,'#ed977e',13);if(state.player.hp<=0)die('폭연')}
  addLog(`폭연 폭발: 설치 피해 ${f.castDamage}.`);return true;
 }
-function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root?.rootWall105.element==='fire')return{name:'화염벽 융기 예고',desc:`${Math.max(1,root.raiseTurn-state.turn)}턴 뒤 이 칸에서 불벽이 솟아 적을 1턴 기절시킨다.`,hint:`벽마다 주변 3×3에 화염 피해 ${root.rootWall105.damage}를 주고 불바닥을 남긴다.`};if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'연막이 사선을 가린다.'}:null}
+function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root?.rootWall105.element==='fire')return{name:'화염벽 융기 예고',desc:`${Math.max(1,root.raiseTurn-state.turn)}턴 뒤 이 칸에서 불벽이 솟아 적을 1턴 기절시킨다.`,hint:`벽마다 주변 3×3에 화염 피해 ${root.rootWall105.damage}를 주고 불바닥을 남긴다.`};if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'사선이 연막이나 증기 두 칸을 지나면 차단된다.'}:null}
 let martialOpen = false;
 function bodyPowerHeal(p){
   if(!bodyPowerActive(p)||p.hp<=0)return 0;
@@ -350,7 +366,7 @@ function runAttackStages(kind,args){
   return call(stages.length-1,args);
 }
 function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
-function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor)){stats.atk+=SHELL_SLIME.attackBonus;stats.def+=SHELL_SLIME.armorBonus;}return applyCombatDebuffStats57(stats,actor)}
+function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor))stats.def+=SHELL_SLIME.armorBonus;return applyCombatDebuffStats57(stats,actor)}
 function combatDefenseBonus(target){
  if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
  if(target.shell61>0)bonus+=floor>=16?8:7;
@@ -402,7 +418,7 @@ function setPlayerStatus(key,turns){
 }
 const CLASS_MARTIAL={
  aim:{name:'명중',cost:3,seal:'準',visual:'aim',desc:'방어·회피를 꿰뚫는 사격. 공격·이동 시 약화, 제자리에서 회복. 피해·해로운 상태이상 시 해제.'},
- smoke:{name:'연막',cost:4,seal:'霧',visual:'smoke',desc:'4칸 내 3/6/9/12 피해. 단계별 1×1~4×4 연막으로 5턴간 사선을 가린다.'},
+ smoke:{name:'연막',cost:4,seal:'霧',visual:'smoke'},
  oddity:{name:'괴변',type:'active',cost:4,seal:'怪',visual:'oddity',desc:'가구와 구조물을 끌어당겨 적에게 던진다. 단계가 오를수록 멀리서 단단한 것을 끌어온다.'}
 };
 function combatStatus(source,target,kind,turns){return combatTargetValid57(source,target)&&applyCombatStatus(target,kind,turns,1,{source,stagger:kind==='weaken'})}
@@ -434,7 +450,7 @@ function upgradeMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();con
 function martialRoarRange(lv){return Math.max(1,Math.min(4,Math.floor(lv||1)))}
 function activateMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();const act=playerAction57('martial',{allowMartial:true,skill:true,closeMartial:true,stunMessage:'몸이 굳어 무술을 펼치지 못했다.'});if(!act.ok){if(id==='roar'&&playerClassRules58().roar==='aim'&&['stun','skillSeal'].includes(act.reason))globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);return !!act.consumed;}cancelAutoWalk();const p=state.player,lv=p.martial[id],info=martialPresentation(id,MARTIAL_INFO[id],p);if(info.type!=='active'){toast('지속 효과 무술이다.');return false}if(!lv){toast('먼저 무술을 배워야 한다.');return false}if(p.focus<info.cost){toast('기력이 부족하다.');return false}if(mountainWoodSlot(p)===id)return mountainWoodCast(id,act);if(martialFamily(id,p)==='oddity')return oddityBeginTarget(info);if(id==='roar'&&playerClassRules58(p).roar==='smoke'){if(martialFormOf('roar')==='cloud')return castMartialSmoke({x:p.x,y:p.y},'self',act);
  const cells=[];for(let y=Math.max(0,p.y-4);y<=Math.min(ROWS-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(COLS-1,p.x+4);x++)if(state.visible.has(k(x,y))&&!tileBlocksSight(state.map[y][x])&&lineClear(p.x,p.y,x,y))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
- if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:`사거리 4칸 · ${lv}×${lv} · 피해 ${lv*3} · 기 4 · 목표 칸 선택`,range:4,cells,onPick:castMartialSmoke});
+ if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}const {size,damage}=martialSmokePower(p,lv);closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:`사거리 4칸 · ${size}×${size} · 피해 ${damage} · 기 4 · 목표 칸 선택`,range:4,cells,onPick:castMartialSmoke});
  }if(!executeMartialActor(p,id))return false;if(!(id==='strong'&&martialFormOf(id)==='guard')&&!(id==='roar'&&playerClassRules58(p).roar==='aim'&&!p.classState.aimPower))globalThis.__MANRU_MARTIAL_FX965__?.used?.(id,lv);if(lv>=5)martialFx('transcend');closeMartial();commitPlayerAction57(act,id==='ghost'?.85:1);return true}
 function martialCardClasses(id,p=state.player){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `martialCard991 skill-${v.visual||id} ${v.classStyle||''} ${p.martial[id]===5?'martialTranscend1005':''} form-${martialFormOf(id,p)||'base'}`}
 function martialCardContent(id,p=state.player,title='',note='',compact=false){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `<div class="skillSig991">${v.seal||(id==='strong'?'力':id==='roar'?'吼':id==='ghost'?'影':id==='brawl'?'拳':v.classStyle?'力':'體')}</div><div class="skillCopy991"><h4>${title||v.name}</h4><div class="martialLv991">${'◆'.repeat(p.martial[id])}${compact?'':'◇'.repeat(Math.max(0,martialCap(id,p)-p.martial[id]))} · ${v.type==='active'?`기력 ${v.cost}`:'지속 효과'}</div><p>${note?note+'<br>':''}${compact?dojoMartialSummary(id,p):v.desc}</p></div>`}
@@ -487,10 +503,11 @@ function executeMartialActor(actor,id,cell=null){
  else if(family==='oddity'){if(!oddityBegin(actor,lv,form,cell))return false}
  else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower(5+lv)}
  else if(family==='smoke'){
-  const center=form==='cloud'?actor:cell,cells=form==='cloud'?smokeCells(center,lv):martialSmokeCells(center,lv);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
-  for(const m of martialTargets(actor))if(cells.some(c=>monCovers(m,c.x,c.y))&&!globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,actor)){damageEntity(m,lv*3,actor);martialCheckDeath(m,actor)}
+  const {size,damage}=martialSmokePower(actor,lv);
+  const center=form==='cloud'?actor:cell,cells=martialSmokeCells(center,size,form);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
+  for(const m of martialTargets(actor))if(cells.some(c=>monCovers(m,c.x,c.y))&&!globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,actor)){damageEntity(m,damage,actor);martialCheckDeath(m,actor)}
   const owner=player?'player':actor.dojoActorId105;if(form==='cloud')state.tempFields=(state.tempFields||[]).filter(f=>!(f.martialSmoke&&f.smokeForm==='cloud'&&f.owner===owner));
-  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:lv*3,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
+  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:damage,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
  }else performRoar(true,actor);
  installMartialJar(actor);floatText(actor.x,actor.y,info.name,lv===5?'#f5e9d0':'#d6b77d',12);addLog(`${actor.name} · ${info.name} ${lv}단 · 기 ${info.cost} 소모.`);if(lv===5)martialFx('transcend',actor);return true;
 }
@@ -502,7 +519,6 @@ function consumeMartialGuard(actor){
 function martialGuardHit(actor){const n=actor.guardReady1005||0;if(n)martialFx('guard',actor);return n}
 function syncMartialActorStats(mon){const e=equipmentContributions105(mon),s=mon.martialStatus105||{};mon.atk=mon.baseAtk+e.atk;mon.def=Math.max(0,mon.baseDef+e.def-(mon.shredDef105||0));mon.eva=mon.baseEva+e.eva+(s.evade>0?3:0)+(s.stealth>0?4:0);mon.will=(mon.baseWill||0)+e.will;mon.baseMaxFocus105=Number.isFinite(mon.baseMaxFocus105)?mon.baseMaxFocus105:mon.maxFocus;const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.curseStats?.({def:mon.def,eva:mon.eva,will:mon.will,vision:mon.baseVision||7,maxFocus:mon.baseMaxFocus105},mon);if(cursed){mon.def=Math.max(0,cursed.def);mon.eva=Math.max(0,cursed.eva);mon.will=cursed.will;mon.maxFocus=cursed.maxFocus;mon.focus=Math.min(mon.focus,mon.maxFocus)}mon.reach=weaponRange(mon);mon.armorPierce=!!mon.weapon?.armorPierce;mon.weaponRecovery105=Math.max(0,mon.weaponRecovery105||0);}
 function tickMartialActor(mon){const s=mon.martialStatus105||(mon.martialStatus105={});for(const key of ['stealth','evade'])if(s[key]>0)s[key]--;mon.martialCd105=Math.max(0,(mon.martialCd105||0)-1);mon.blinkCd105=Math.max(0,(mon.blinkCd105||0)-1);recoverActorFocus105(mon,state.turn);const fr=+mon.cloak?.focusRegen||1;if(fr>1){mon.cloakFocusCarry1006=(mon.cloakFocusCarry1006||0)+(fr-1)/10;while(mon.cloakFocusCarry1006>=1){mon.cloakFocusCarry1006--;mon.focus=Math.min(mon.maxFocus,mon.focus+1);}}syncMartialActorStats(mon)}
-function martialSmokeCells(center,lv){const ox=Math.floor((lv-1)/2)+(lv%2===0?rand(0,1):0),oy=Math.floor((lv-1)/2)+(lv%2===0?rand(0,1):0),out=[];for(let dy=0;dy<lv;dy++)for(let dx=0;dx<lv;dx++){const x=center.x-ox+dx,y=center.y-oy+dy;if(x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksSight(state.map[y][x])&&lineClear(center.x,center.y,x,y))out.push({x,y});}return out;}
 function applyWeaponBrandHit(actor,target,damage,contact=entityFootprintCells57(target),context={}){
  if(damage<=0)return;if(actor.weapon?.artifactId46==='water_crossbow'&&context.delivery!=='area')resolveWaterWeaponBlast(actor,contact[0]||target);
  const elem=actor.weapon?.elementBrand74;if(!elem)return;
@@ -631,6 +647,13 @@ function hostileStatusChance(baseChance,willOverride=null){
 function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune)return false;if((opts.element==='ice'||opts.cold)&&entityElementGuard57(state.player,'ice'))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();return true}
 function checkLevel(){const p=state.player;normalizePlayerProgression57(p);while(p.level<BALANCE.maxLevel&&p.xp>=p.nextXp){p.xp-=p.nextXp;p.level++;branchLevelFood();const hpGain=p.level>=13?3:(p.level%4===0?2:1);let martialGain=p.level<=12||MARTIAL_RULES.latePoints.includes(p.level)?1:0;p.baseMaxHpPermanent+=hpGain;recomputeMaxHp(p);p.hp=Math.min(p.maxHp,p.hp+Math.max(2,Math.ceil(p.maxHp*.22)));if([4,7,10].includes(p.level))p.maxFocus+=1;p.focus=Math.min(getStats().maxFocus,p.focus+2);if(martialGain){if(p.level>=13&&(state.martialProgression1005?.legacyBossCredit||0)>0){state.martialProgression1005.legacyBossCredit--;martialGain=0}else p.skillPoints+=martialGain;}p.nextXp=p.level<BALANCE.maxLevel?xpRequirementForLevel57(p.level+1):xpRequirementForLevel57(BALANCE.maxLevel);addLog(`LEVEL ${p.level}. HP +${hpGain}${martialGain?` · 무술 포인트 +${martialGain}`:' · 무술 포인트 지급 없음'}.`)}}
 function hungerTick(){const p=state.player;if(state.turn%BALANCE.hungerTick===0)p.hunger=Math.max(0,p.hunger-1);if(p.hunger===0&&state.turn%5===0){damageEntity(p,1);addLog('굶주림으로 체력이 깎인다.');if(p.hp<=0)die('굶주림')}}
+function isOpaqueCloud(field){
+ return field.kind==='smoke'||field.kind==='steam';
+}
+function opaqueCloudAt(x,y){
+ return !!state?.tempFields?.some(f=>isOpaqueCloud(f)&&f.ttl>0&&
+   (Array.isArray(f.cells)?f.cells.some(c=>c.x===x&&c.y===y):Math.abs(x-f.x)<=1&&Math.abs(y-f.y)<=1));
+}
 function tempFieldCells57(f){
  if(Array.isArray(f.cells))return f.cells;
  const cells=[];for(let y=f.y-1;y<=f.y+1;y++)for(let x=f.x-1;x<=f.x+1;x++)cells.push({x,y});return cells;
