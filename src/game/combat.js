@@ -11,12 +11,19 @@ function martialPresentation(id,info,p=state.player){
  if(family==='oddity'){v.cost=oddityCost(lv);v.desc=oddityDescription(lv,n,form);v.seal=ODDITY_RULES.seals[form]||v.seal}
  if(family==='brawl')v.desc=form==='reach'?`주먹의 위력 대신 뻗어 나가는 거리를 단련한다. 맨손과 권갑의 공격 사거리 ${n}칸. 가로막힌 적 너머로는 닿지 않는다.`:form==='close'?`짧은 병기를 손발처럼 다룬다. 사거리 1칸인 근접무기의 공격력 +${n}. 맨손과 권갑에는 이 힘이 실리지 않는다.`:`주먹과 몸놀림을 갈고닦아 맞붙는 싸움에 능해진다. 맨손과 권갑의 공격력 +${n}.`;
  if(id==='constitution'){v.desc=form==='vigor'?`몸집을 키우는 대신 호흡을 다스려 더 많은 기를 품는다. 최대 기력 +${2*n}.`:form==='revive'?`죽음의 문턱에서 남은 생기를 불사른다. 치명상을 막고 체력을 최대치의 80%까지 회복한다. 대가로 이 무술이 1단 낮아진다.`:`뼈와 살을 단련해 거친 싸움을 견딘다. 최대 체력 +${8*n}%.`;if(playerClassRules58(p).upgradeTalismanMode==='bodyBoost')v.desc+=` 장사 체질로 얻는 괴력은 ${bodyPowerDuration58(p)}턴 지속되며, 매턴 체력을 2% 회복한다. 힘이 다하면 같은 시간 동안 눈이 멀고 배탈을 앓는다.`}
+ if(id==='rapidFire')v.desc=`활 사격 속도 +${rapidFireSpeedBonus(n)}%. 사격에 드는 턴이 줄어든다.`;
  if(lv===0)v.desc='미습득 · 1단 효과: '+v.desc;
  return v;
 }
 /* 10.0.5 acquired martial rules: producer -> persisted state -> existing consumers. */
 const MARTIAL_RULES=Object.freeze({ids:['strong','roar','ghost','brawl','constitution'],keys:['b','n','m'],assassinTurns:3,smokeTurns:5,guardActions:2,latePoints:[13,15,17,18]});
 const MARTIAL_FORMS={oddity:{psychic:'염력',anomaly:'이변'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
+const RAPID_FIRE_ID='rapidFire';
+function rapidFireSpeedBonus(level){return 8*clamp(level,0,5)}
+function martialIds(p=state.player){
+ return playerClassRules58(p).rapidFire?[...MARTIAL_RULES.ids,RAPID_FIRE_ID]:MARTIAL_RULES.ids;
+}
+function martialUnlocked(id,p=state.player){return id!==RAPID_FIRE_ID||p.martial?.[id]>0}
 function martialFamily(id,p=state.player){return id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
 function martialFormOf(id,p=state?.player){return p?.martialForm?.[id]||null}
 function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
@@ -32,6 +39,10 @@ function recomputeMaxHp(p=state.player,grow=false){
 function initializeMartial(run){
  const p=run.player;if(!p)return;const legacy=!p.martialRules1005;p.martial=p.martial||{};p.martialForm=p.martialForm||{};p.martialBreakthrough=p.martialBreakthrough||{};
  for(const id of MARTIAL_RULES.ids){const forms=MARTIAL_FORMS[martialFamily(id,p)];p.martialForm[id]=Object.hasOwn(forms,p.martialForm[id])?p.martialForm[id]:null;p.martialBreakthrough[id]=p.martialBreakthrough[id]===true;p.martial[id]=clamp(Math.floor(Number(p.martial[id])||0),0,martialCap(id,p))}
+ if(playerClassRules58(p).rapidFire){
+  p.martialBreakthrough.rapidFire=p.martialBreakthrough.rapidFire===true;
+  p.martial.rapidFire=clamp(Math.floor(Number(p.martial.rapidFire)||0),0,martialCap(RAPID_FIRE_ID,p));
+ }
  p.temporaryMaxHpBonus=Number.isFinite(p.temporaryMaxHpBonus)?p.temporaryMaxHpBonus:Math.max(0,p.foodVital57||0);
  if(!Number.isFinite(p.baseMaxHpPermanent)){
   // Legacy saves did not record training order. Preserve their current maximum exactly,
@@ -46,8 +57,9 @@ function initializeMartial(run){
 }
 function martialBrawlBonus(p,w){if(martialFamily('brawl',p)!=='brawl')return 0;const f=martialFormOf('brawl',p),lv=p.martial.brawl||0,brawl=!p.weapon||isBrawlWeapon(w);return f==='reach'?0:f==='close'?(!brawl&&!w.ranged&&w.kind!=='bow'&&weaponRange(p)===1?lv:0):(brawl?lv:0)}
 function martialOptions(id,p=state.player){
+ if(id===RAPID_FIRE_ID&&!martialUnlocked(id,p))return [{id,form:'learn'}];
  if((p.martial[id]||0)>=5)return[];const out=[];
- if(!martialFormOf(id,p))for(const form of Object.keys(MARTIAL_FORMS[martialFamily(id,p)]))out.push({id,form});
+ if(!martialFormOf(id,p))for(const form of Object.keys(MARTIAL_FORMS[martialFamily(id,p)]||{}))out.push({id,form});
  if(!p.martialBreakthrough[id])out.push({id,form:'breakthrough'});return out;
 }
 function makeMartialManual(provenance,manualId){ return {type:'martial_manual',name:'무술비급',desc:'선인의 무학이 담긴 비급. 펼쳐진 가르침 중 하나를 골라 무술을 새롭게 익히거나 5단에 이르는 길을 연다.',seal:'秘',color:'#e9d9ac',rarity:'relic',count:1,stackMax:1,identified:true,manualId:manualId,provenance:provenance};}
@@ -74,9 +86,16 @@ function chooseMartialManual(index){
  const act=playerAction57('choice',{uiOwner:'choice991'});if(!act.ok)return false;
  const pending=state.pendingMartialManualChoice,c=pending?.choices?.[index],p=state.player,item=p.inventory.find(i=>i.manualId===pending?.manualId&&i.type==='martial_manual');if(!c||!item)return false;
  // Honor a persisted form offer even if the player trains an already-unlocked cap before reopening.
- const applicable=MARTIAL_RULES.ids.includes(c.id)&&(c.form==='breakthrough'?!p.martialBreakthrough[c.id]:!martialFormOf(c.id,p)&&Object.hasOwn(MARTIAL_FORMS[martialFamily(c.id,p)],c.form));
- if(!applicable){toast('이 후보는 이미 완성됐다. 다른 확정 후보를 선택해라.');return false}
- const oldHp=p.maxHp;if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;else p.martialForm[c.id]=c.form;
+ const applicable=martialIds(p).includes(c.id)&&(c.form==='learn'
+  ?c.id===RAPID_FIRE_ID&&!martialUnlocked(c.id,p)
+  :c.form==='breakthrough'?martialUnlocked(c.id,p)&&!p.martialBreakthrough[c.id]
+  :!martialFormOf(c.id,p)&&Object.hasOwn(MARTIAL_FORMS[martialFamily(c.id,p)]||{},c.form));
+ if(!applicable){
+  toast('이 후보는 이미 완성됐다. 다른 확정 후보를 선택해라.');return false;
+ }
+ if(c.form==='breakthrough')p.martialBreakthrough[c.id]=true;
+ else if(c.form==='learn')p.martial[c.id]=1;
+ else p.martialForm[c.id]=c.form;
  if(c.id==='strong'){p.strongReady=0;p.guardReady1005=0;p.guardCharges1005=0}if(c.id==='roar'){state.martialEcho=null;if(p.classState?.aimPower>0)setAimPower(p.classState.aimPower)}
  if(c.id==='constitution')recomputeMaxHp(p);p.focus=Math.min(p.focus,getStats().maxFocus);
  consumeItemQuantity(item);state.pendingMartialManualChoice=null;globalThis.__MANRU_ITEM_IDENTITY991__.closeChoice();
@@ -123,7 +142,7 @@ function expireMartialSmoke(f){
  if(cells.some(c=>c.x===state.player.x&&c.y===state.player.y)){const d=damageEntity(state.player,f.castDamage,f);if(d>0)floatText(state.player.x,state.player.y,'폭연 -'+d,'#ed977e',13);if(state.player.hp<=0)die('폭연')}
  addLog(`폭연 폭발: 설치 피해 ${f.castDamage}.`);return true;
 }
-function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'연막이 사선을 가린다.'}:null}
+function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root?.rootWall105.element==='fire')return{name:'화염벽 융기 예고',desc:`${Math.max(1,root.raiseTurn-state.turn)}턴 뒤 이 칸에서 불벽이 솟아 적을 1턴 기절시킨다.`,hint:`벽마다 주변 3×3에 화염 피해 ${root.rootWall105.damage}를 주고 불바닥을 남긴다.`};if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'연막이 사선을 가린다.'}:null}
 let martialOpen = false;
 function bodyPowerHeal(p){
   if(!bodyPowerActive(p)||p.hp<=0)return 0;
@@ -193,7 +212,9 @@ function applyStatusTick(){
 }
 function weaponRange(actor=state?.player){const w=actor?.weapon;if(martialFormOf('brawl',actor)==='reach'&&(!w||isBrawlWeapon(w)))return Math.max(1,actor.martial.brawl||0);if(w?.kind==='spear'){if(w.legendaryWeapon47||w.artifactWeapon46)return Math.max(1,w.range||1);const tier=w.tier||1;return tier===1?3:tier>=4?5:4}return Math.max(1,w?.range||1)}
 function weaponActionCost(item){return clamp(1.15-Math.log2(Math.max(.18,item?.speed||1.35))*.28,.58,1.85)}
-function attackTurnCost(item=state?.player?.weapon){let cost=weaponActionCost(item);for(const stage of ATTACK_COST_STAGES)cost=stage.run(cost,item);const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy')||0;return clamp(applyPlayerDebuffActionCost('attack',cost),.25,cursed>0?6:2.6)}
+function attackTurnCost(item=state?.player?.weapon){
+ const p=state?.player,bonus=item?.kind==='bow'&&p&&playerClassRules58(p).rapidFire?rapidFireSpeedBonus(p.martial?.rapidFire||0):0;
+ let cost=weaponActionCost(item)/(1+bonus/100);for(const stage of ATTACK_COST_STAGES)cost=stage.run(cost,item);const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy')||0;return clamp(applyPlayerDebuffActionCost('attack',cost),.25,cursed>0?6:2.6)}
 function combatEffectActor(source){if(!source||!state)return null;if(source===state.player||state.monsters.includes(source))return source;const id=source.owner;if(id==='player')return state.player;return state.monsters.find(m=>m.combatantId54===id||m.allyId53===id||m.dojoActorId105===id)||null}
 const DRUNK_RULES=Object.freeze({movementUnstable:.30,movementWanderWithinUnstable:.68,attackWhiff:.20,attackHeavyThreshold:.84,attackHeavyBonus:2});
 function drunkAttackOutcome(){const q=globalThis.__MANRU_RANDOM57__();return q<DRUNK_RULES.attackWhiff?'whiff':q>DRUNK_RULES.attackHeavyThreshold?'heavy':'steady'}
@@ -408,8 +429,8 @@ function expireCombatFields(opts={}){
   if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);
 }
 function entityAttackMissChance(attacker,target,{base=.06,max=.42,evaScale=1,evaIgnore=0}={}){const blinded=combatStatusTurns(attacker,'blind')>0,eva=Math.max(0,Number(target?combatEntityStats(target).eva:0)||0),minChance=target===state?.player?0:base;return clamp(base+Math.max(0,eva-evaIgnore)*evaScale*.022+(blinded?STATUS_META57.blind.missPenalty57:0),minChance,max)}
-const MARTIAL_INFO={strong:{name:'강타',type:'active',cost:3,desc:'기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.'},roar:{name:'호효',type:'active',cost:5,desc:'충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.'},ghost:{name:'귀영',type:'active',cost:4,desc:'형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.'},brawl:{name:'격투',type:'passive',cost:0,desc:'맨손과 권갑의 공격력을 단계당 +1 높인다. 권갑은 기본 성능이 높지만 강화 효율이 매우 낮다.'},constitution:{name:'체력 단련',type:'passive',cost:0,desc:'강화할 때마다 최대 HP 약 8% 증가.'}};
-function upgradeMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();const p=state.player;if(p.skillPoints<=0){toast('무술 포인트가 없다.');return}if(!MARTIAL_INFO[id]||p.martial[id]>=martialCap(id,p)){toast('현재 상한에 도달했다.');return}p.skillPoints--;p.martial[id]++;if(id==='constitution')recomputeMaxHp(p,true);addLog(`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}단계.`);renderMartialPanel();updateAll()}
+const MARTIAL_INFO={rapidFire:{name:'연사',type:'passive',cost:0,seal:'連',visual:'aim'},strong:{name:'강타',type:'active',cost:3,desc:'기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.'},roar:{name:'호효',type:'active',cost:5,desc:'충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.'},ghost:{name:'귀영',type:'active',cost:4,desc:'형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.'},brawl:{name:'격투',type:'passive',cost:0,desc:'맨손과 권갑의 공격력을 단계당 +1 높인다. 권갑은 기본 성능이 높지만 강화 효율이 매우 낮다.'},constitution:{name:'체력 단련',type:'passive',cost:0,desc:'강화할 때마다 최대 HP 약 8% 증가.'}};
+function upgradeMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();const p=state.player;if(p.skillPoints<=0){toast('무술 포인트가 없다.');return}if(!martialIds(p).includes(id)||!martialUnlocked(id,p)||p.martial[id]>=martialCap(id,p)){toast('현재 상한에 도달했다.');return}p.skillPoints--;p.martial[id]++;if(id==='constitution')recomputeMaxHp(p,true);addLog(`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}단계.`);renderMartialPanel();updateAll()}
 function martialRoarRange(lv){return Math.max(1,Math.min(4,Math.floor(lv||1)))}
 function activateMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();const act=playerAction57('martial',{allowMartial:true,skill:true,closeMartial:true,stunMessage:'몸이 굳어 무술을 펼치지 못했다.'});if(!act.ok){if(id==='roar'&&playerClassRules58().roar==='aim'&&['stun','skillSeal'].includes(act.reason))globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);return !!act.consumed;}cancelAutoWalk();const p=state.player,lv=p.martial[id],info=martialPresentation(id,MARTIAL_INFO[id],p);if(info.type!=='active'){toast('지속 효과 무술이다.');return false}if(!lv){toast('먼저 무술을 배워야 한다.');return false}if(p.focus<info.cost){toast('기력이 부족하다.');return false}if(mountainWoodSlot(p)===id)return mountainWoodCast(id,act);if(martialFamily(id,p)==='oddity')return oddityBeginTarget(info);if(id==='roar'&&playerClassRules58(p).roar==='smoke'){if(martialFormOf('roar')==='cloud')return castMartialSmoke({x:p.x,y:p.y},'self',act);
  const cells=[];for(let y=Math.max(0,p.y-4);y<=Math.min(ROWS-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(COLS-1,p.x+4);x++)if(state.visible.has(k(x,y))&&!tileBlocksSight(state.map[y][x])&&lineClear(p.x,p.y,x,y))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
@@ -517,8 +538,8 @@ function applyCombatStatus(target,key,turns,chance=1,opts={}){
 function playerClassRules58(p=state?.player){if(p?.martialActor105)return {roar:p.martialFamily105||'roar',brawl:'brawl'};return {talismanFusion:true,upgradeTalismanMode:'gear',roar:'roar',brawl:'brawl',...(CLASSES.find(c=>c.id===p?.classId)?.rules||{})}}
 function rollMartialChoices1005(p=state.player,rng=globalThis.__MANRU_RANDOM57__,initial=[]){
  const out=initial.slice(),used=new Set(out.map(c=>c.id+':'+c.form));
- const pool=MARTIAL_RULES.ids.map(id=>({id,weight:1+(p.martial[id]||0),choices:martialOptions(id,p).filter(c=>!used.has(c.id+':'+c.form))})).filter(x=>x.choices.length);
- // Draw the family first. Only the selected final option is removed, so six unique offers are possible across five slots.
+ const pool=martialIds(p).map(id=>({id,weight:1+(p.martial[id]||0),choices:martialOptions(id,p).filter(c=>!used.has(c.id+':'+c.form))})).filter(x=>x.choices.length);
+ // Draw the family first. Only the selected final option is removed, so six unique offers are possible across martial arts.
  while(pool.length&&out.length<6){let r=rng()*pool.reduce((n,x)=>n+x.weight,0),i=0;for(;i<pool.length-1;i++){r-=pool[i].weight;if(r<0)break}const family=pool[i],j=Math.min(family.choices.length-1,Math.floor(rng()*family.choices.length));out.push(family.choices.splice(j,1)[0]);if(!family.choices.length)pool.splice(i,1)}return out;
 }
 function applyMartialControl1005(mon,turns){if(!mon||mon.hp<=0)return false;if(mon.boss){if((mon.controlCd54||0)>0||!setMonsterStatus(mon,'stunned',1))return false;mon.controlCd54=4;mon.controlCdTurn54=state.turn;return true}return setMonsterStatus(mon,'stunned',Math.max(mon.stunned||0,turns))}

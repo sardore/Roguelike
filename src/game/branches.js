@@ -387,28 +387,34 @@ function palaceAdvance(cost){if(state?.branchContext105?.id!=='palace')return;co
 function palaceGateNearby(){if(state?.branchContext105?.id!=='palace')return null;return (state.branchTerrain105.palace105.handles||[]).find(h=>entityDistance57(h,state.player)<=1&&anvilNearby(h))||null;}
 function palaceUseGate(h,act){const w=palaceWorld(),key=`${state.branchContext105.level}:${h.room}`,g=w.gates[key];if(g&&g.ready>w.time){toast(`수문 재사용까지 ${Math.ceil(g.ready-w.time)}턴`);return false;}w.gates[key]={until:w.time+6,ready:w.time+16};palaceApplyTide();addLog(`${h.label}: 이 방의 수위 -1 · 6턴. 재사용 16턴.`);commitPlayerAction57(act,1);return true;}
 function palaceWarningInfo(x,y){if(!state?.visible?.has(k(x,y)))return null;const mon=state.monsters.find(m=>m.hp>0&&m.intent54?.type.startsWith('palace')&&m.intent54.cells.some(c=>c.x===x&&c.y===y));if(!mon)return null;const I=mon.intent54,left=Math.max(1,(I.data.resolveTurn105??I.armedPlayerTurn+1)-state.turn),when=left===1?'다음 행동 뒤':`${left}번 행동 뒤`;const info={palaceRoots105:{name:'바위뿌리 융기 예고',desc:`${when} 바위벽이 실제로 솟은 칸의 대상만 1턴 기절하며 벽과 겹친다. 빙판 등으로 융기가 막히면 기절도 걸리지 않는다.`,hint:'벽은 솟은 다음 행동 뒤 붕괴하며 주변 3×3에 대지 피해를 준다. 여러 벽의 폭발은 중첩된다.'},palacePull105:{name:'해련의 견인 예고',desc:`${when} 물 위의 해련이 목표를 자기 바로 앞으로 끌어당긴다.`,hint:'해련이 물에서 벗어나거나 경로가 벽·다른 개체로 막히면 견인이 제한된다.'},palaceCannon105:{name:'수압포 사선',desc:`${when} 이 칸을 관통하는 수압포가 발사된다.`,hint:'예고된 직선에서 벗어나거나 기둥 뒤로 피한다.'},palaceSweep105:{name:`용미 쓸기 · 전방위 ${I.data.radius105}/${PALACE_SWEEP_RULES105.maxRadius}칸`,desc:'적이 4칸 이내에 접근했을 때만 시작한다. 예고 반경이 행동마다 1칸씩 커진다. 5칸까지 넓어진 뒤 다음 행동에 꼬리로 쓸고 1칸 밀친다.',hint:'물방울이 솟는 칸은 용미 예고 범위다. 용왕은 준비부터 쓸기가 끝날 때까지 무적. 재사용 간격은 보통 15턴, 최고 수위 10턴. 명중하면 중독·출혈·실명·쇠약·기절·배탈·취함·기봉인 각각 2턴. 최종 범위 밖이나 벽 뒤로 피하자.'},palaceWave105:{name:'창해의 삼중 파도',desc:`${when} 벽을 따라 파도가 밀려온다. 한 턴마다 한 겹씩 총 세 겹이 나타나 반대편 벽까지 전진한다.`,hint:'높은 바닥만으로 파도를 피할 수 없다. 석벽·기둥·가구 뒤로 대피한다. 파도는 생물을 밀치고 물리 피해를 준 뒤 그 칸의 물결이 부서진다.'},palaceStone105:{name:'간수 철창 해방 예고',desc:`${when} 창해군이 이 스위치에 광산의 돌을 던진다.`,hint:'연결된 철창이 열리면 쇠사슬 간수가 나온다.'},palaceRoyal105:{name:'왕의 밀물 예고',desc:`${when} 궁전 수위가 한 단계 높아진다.`,hint:'높은 석단으로 피한다. 자연 조수는 계속 흐르고 추가 밀물은 8턴 뒤 끝난다.'}}[I.type];return info||null;}
-function palaceRootWallsRise(cells,root){
+function palaceRootWallsRise(cells,root,expiresTurn=state.turn+1){
  const grass=root.element==='grass';let raised=0;
  for(const c of cells){const old=state.map[c.y]?.[c.x];if(!palaceRootFloor(c.x,c.y))continue;
-  if(!RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,1,'palace-root-wall105',{allowedOld:[old],source:grass?'wood-spirit-roots':'palace-roots',overlapSolid:true}))continue;
-  const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=state.turn+1;t.rootWall105={...root};
-  Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,grass?'grass':'earth');
+  if(!RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,expiresTurn-state.turn,'palace-root-wall105',{allowedOld:[old],source:root.element==='fire'?'salamander-fire-wall':grass?'wood-spirit-roots':'palace-roots',overlapSolid:true}))continue;
+  const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=expiresTurn;t.rootWall105={...root};
+  Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,root.element||'earth');
   const effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target))applyCombatStatus(target,'stun',root.stunTurns,1,{source:effect});raised++;
  }return raised;
 }
 function palaceRootWallExplode(records){
- const walls=Array.isArray(records)?records:[records],hits=new Map(),targets=[state.player,...state.monsters];
+ const walls=Array.isArray(records)?records:[records],hits=new Map(),fires=new Map(),targets=[state.player,...state.monsters];
  for(const wall of walls){const root=wall.rootWall105,elem=root.element||'earth',cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};
   elementAttackFx105(elem,cells,{x:wall.x,y:wall.y});
+  if(elem==='fire'){
+   let patch=fires.get(root.id);
+   if(!patch){patch={x:wall.x,y:wall.y,cells:new Map(),turns:root.fireTurns,effect};fires.set(root.id,patch);}
+   for(const c of cells)if(!tileBlocks(state.map[c.y][c.x]))patch.cells.set(k(c.x,c.y),c);
+  }
   for(const target of targets){if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;
    let groups=hits.get(target);if(!groups){groups=new Map();hits.set(target,groups);}let hit=groups.get(elem);if(!hit){hit={parts:[],effect,poison:0,drunk:0};groups.set(elem,hit);}
    hit.parts.push(root.damage??root.atk*1.4);hit.poison=Math.max(hit.poison,root.poison||0);hit.drunk=Math.max(hit.drunk,root.drunk||0);if(effect.credit==='player')hit.effect=effect;
   }elementBreakFx105(wall.x,wall.y,elem);
  }
- let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:!grass,color:grass?'#b7d85d':'#bf8b59',contactHandled105:true});
+ let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:elem==='fire'?'화염벽 폭발':grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:elem==='earth',color:elem==='fire'?'#ff9652':grass?'#b7d85d':'#bf8b59',contactHandled105:true});
   if(result.damage>0){damaged++;if(grass&&target.hp>0){applyCombatStatus(target,'poison',hit.poison,1,{source:hit.effect,element:elem});applyCombatStatus(target,'drunk',hit.drunk,1,{source:hit.effect,element:elem});}}
  }
- if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
+ for(const patch of fires.values())if(patch.cells.size)addField('fire',patch.x,patch.y,patch.turns,[...patch.cells.values()],patch.effect);
+ if(damaged)addLog(`${fires.size?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
 function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
 function palaceResolveIntent(mon,I){
@@ -2248,7 +2254,7 @@ function tickCombatFields57(){
  Duel.environment++;
  try{
  state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
- for(const f of state.tempFields.filter(f=>f.kind==='rootWall'&&f.ttl>0&&state.turn>f.bornTurn)){palaceRootWallsRise(f.cells,f.rootWall105);f.ttl=0;}
+ for(const f of state.tempFields.filter(f=>f.kind==='rootWall'&&f.ttl>0&&state.turn>=(f.raiseTurn??f.bornTurn+1))){palaceRootWallsRise(f.cells,f.rootWall105,f.detonateTurn);f.ttl=0;}
  for(const f of state.tempFields.filter(f=>f.kind==='palaceWave105'&&f.ttl>0))palaceAdvanceWave(f);
  for(const f of state.tempFields.filter(f=>f.kind==='fire'&&f.ttl>0&&state.turn>(f.bornTurn??-1))){applyElementField57(f,'fire',3,{source:'화염 지대',color:'#ff9b55',size:12});if(runState57()!=='playing')return false}return true;
  }finally{Duel.environment--}

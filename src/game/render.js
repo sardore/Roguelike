@@ -1756,7 +1756,10 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     for(const {x,y} of tempFieldCells57(f)){
       if(x<0||y<0||x>=COLS||y>=ROWS||!state.visible.has(k(x,y)))continue;
       const px=x*TILE,py=y*TILE,a=.13+.035*Math.sin(now/190+x+y);
-      if(f.kind==='rootWall'){X.fillStyle=`rgba(157,192,54,${a+.10})`;X.fillRect(px+2,py+2,28,28);X.strokeStyle='#dbdf69';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);X.strokeStyle='#75a641';X.beginPath();X.moveTo(px+7,py+25);X.lineTo(px+13,py+17);X.lineTo(px+11,py+10);X.moveTo(px+13,py+17);X.lineTo(px+23,py+9);X.stroke();}
+      if(f.kind==='rootWall'&&f.rootWall105?.element==='fire'){
+        X.fillStyle='rgba(242,71,24,.34)';X.fillRect(px+2,py+2,28,28);X.strokeStyle='#ffc265';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);
+        X.beginPath();X.moveTo(px+9,py+23);X.lineTo(px+16,py+8);X.lineTo(px+23,py+23);X.lineTo(px+16,py+19);X.closePath();X.stroke();
+      }else if(f.kind==='rootWall'){X.fillStyle=`rgba(157,192,54,${a+.10})`;X.fillRect(px+2,py+2,28,28);X.strokeStyle='#dbdf69';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);X.strokeStyle='#75a641';X.beginPath();X.moveTo(px+7,py+25);X.lineTo(px+13,py+17);X.lineTo(px+11,py+10);X.moveTo(px+13,py+17);X.lineTo(px+23,py+9);X.stroke();}
       if(f.kind==='passageSeal'){
         X.fillStyle=`rgba(113,35,31,${a+.16})`;X.fillRect(px+1,py+1,30,30);X.strokeStyle='#e2b46c';X.lineWidth=2;X.strokeRect(px+3,py+3,26,26);
         X.beginPath();X.moveTo(px+5,py+5);X.lineTo(px+27,py+27);X.moveTo(px+27,py+5);X.lineTo(px+5,py+27);X.stroke();X.fillStyle='#b7493d';X.fillRect(px+12,py+10,8,12);
@@ -3792,16 +3795,17 @@ function drawPalaceArch(q,a){const {r}=drawKit(q);
  else{r('#736042',0,0,5,32);r('#c6ab76',1,0,2,32);if(Math.abs(a.index)===(a.wide>>1)){const y=a.index<0?0:27;r('#aa8c59',3,y,27,5);r('#ebd6a4',3,y,27,1);}}
 }
 function drawPalaceRock(q,rise=1,element='earth'){q.save();q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
- poly(element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
- poly(element==='grass'?'#3d5c23':'#3d302b',[[2,27],[7,5],[22,3],[26,8],[30,27],[27,30],[5,30]]);
- poly(element==='grass'?'#80a844':'#946843',[[4,26],[9,8],[22,6],[25,10],[27,26],[23,28],[6,28]]);
- poly(element==='grass'?'#c6d963':'#c29b68',[[7,10],[9,6],[22,4],[25,8],[22,12],[10,13]]);
- poly(element==='grass'?'#edf19a':'#e0ba82',[[10,6],[21,5],[23,7],[12,9],[8,9]]);
- poly(element==='grass'?'#426e2f':'#684830',[[22,12],[25,8],[29,27],[25,29],[22,25]]);
- poly(element==='grass'?'#a5c650':'#ad7c4c',[[9,13],[17,11],[21,15],[19,20],[6,23]]);
- poly(element==='grass'?'#d3df6a':'#bf925c',[[10,14],[16,12],[19,15],[14,17],[8,18]]);
- poly(element==='grass'?'#5b8b35':'#785335',[[6,23],[14,19],[21,20],[22,25],[17,27],[5,27]]);
- poly(element==='grass'?'#e0e578':'#d4a46c',[[14,20],[19,19],[20,22],[15,23]]);
+ const fire=element==='fire';
+ poly(fire?'#36130f':element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
+ poly(fire?'#651d14':element==='grass'?'#3d5c23':'#3d302b',[[2,27],[7,5],[22,3],[26,8],[30,27],[27,30],[5,30]]);
+ poly(fire?'#c44218':element==='grass'?'#80a844':'#946843',[[4,26],[9,8],[22,6],[25,10],[27,26],[23,28],[6,28]]);
+ poly(fire?'#ff8a24':element==='grass'?'#c6d963':'#c29b68',[[7,10],[9,6],[22,4],[25,8],[22,12],[10,13]]);
+ poly(fire?'#fff199':element==='grass'?'#edf19a':'#e0ba82',[[10,6],[21,5],[23,7],[12,9],[8,9]]);
+ poly(fire?'#8c2413':element==='grass'?'#426e2f':'#684830',[[22,12],[25,8],[29,27],[25,29],[22,25]]);
+ poly(fire?'#ff6326':element==='grass'?'#a5c650':'#ad7c4c',[[9,13],[17,11],[21,15],[19,20],[6,23]]);
+ poly(fire?'#ffbc41':element==='grass'?'#d3df6a':'#bf925c',[[10,14],[16,12],[19,15],[14,17],[8,18]]);
+ poly(fire?'#be3017':element==='grass'?'#5b8b35':'#785335',[[6,23],[14,19],[21,20],[22,25],[17,27],[5,27]]);
+ poly(fire?'#ffe28b':element==='grass'?'#e0e578':'#d4a46c',[[14,20],[19,19],[20,22],[15,23]]);
  poly(element==='grass'?'#46632c':'#503b2c',[[8,11],[10,13],[7,18],[5,20]]);
  poly(element==='grass'?'#304a25':'#392f2a',[[18,9],[21,10],[19,13],[18,15],[16,14]]);
  poly(element==='grass'?'#b9d65d':'#d1a16b',[[6,26],[9,24],[12,25],[10,28],[6,28]]);
@@ -3872,6 +3876,10 @@ function drawPalaceWater(q,px,py,x,y,deep,now){
    const along=n*7+Math.floor(hash2(x+n,y,221)*3),inset=1+Math.round(1+Math.sin(time/600+n+x*.4+y*.7));
    q.fillRect(px+(dx?dx>0?31-inset:inset:along),py+(dy?dy>0?31-inset:inset:along),dx?1:3,dy?1:2);
   }
+ }
+ if(fire){
+  const phase=(FX.frameNow||0)/115;
+  for(let i=0;i<6;i++){const y=25-((phase+i*5)%23),x=6+i*4+Math.sin(phase+i)*2;q.fillStyle=i%2?'#fff199':'#ffac36';q.fillRect(x,y,i%2?1:2,2);}
  }
  q.restore();
 }
@@ -5788,7 +5796,7 @@ function updatePanels(){
     if(!state)return;const p=state.player,st=getStats(),region=regionFor(state.floor),side=!!state.artifactDungeon46,location58=hudLocation58();
     setText('floorTxt',location58.desktop);setText('regionTxt',location58.kind==='branch'||location58.kind==='duel'?location58.tag:side?'전설 던전':location58.kind==='rumor'?`소문 공간 · ${String(state.floor).padStart(2,'0')}층`:region[2]);setText('depthLore',location58.kind==='branch'||location58.kind==='duel'?location58.full:side?location58.full:location58.kind==='rumor'?location58.full:region[3]);setText('hpTxt',`${displayHealth(p.hp)} / ${displayHealth(p.maxHp)}`);setWidth('hpFill',(100*p.hp/p.maxHp)+'%');setText('manaTxt',`${displayNumber53(p.focus)} / ${st.maxFocus}`);setWidth('manaFill',(100*p.focus/st.maxFocus)+'%');setText('xpTxt',p.level>=BALANCE.maxLevel?`LV ${p.level} · MAX · 무술 ${p.skillPoints}`:`LV ${p.level} · ${p.xp}/${p.nextXp} · 무술 ${p.skillPoints}`);setWidth('xpFill',(p.level>=BALANCE.maxLevel?100:Math.min(100,100*p.xp/Math.max(1,p.nextXp)))+'%');
     setText('atkTxt',st.atk);setText('defTxt',displayDef42(st.def));setText('evaTxt',st.eva);setText('wilTxt',st.will);setText('visTxt',st.vision);glowEquip(p);setText('weaponTxt',p.weapon?p.weapon.name:'맨손');setText('armorTxt',p.armor?p.armor.name:'경량복');setText('cloakTxt',p.cloak?p.cloak.name:'없음');setText('relicTxt',p.relic?p.relic.name:'없음');setText('trinketTxt',p.trinket?p.trinket.name:'없음');
-    setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${MARTIAL_RULES.ids.map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
+    setHTML('skillTxt',`<b>무술</b> · 포인트 ${p.skillPoints}<br>${martialIds(p).filter(id=>martialUnlocked(id,p)).map(id=>`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}/${martialCap(id,p)}`).join(' · ')} · 점멸 ${p.blinkLevel||0}<br><span style="color:#8f795f">공격비용 ${attackTurnCost().toFixed(1)}턴 · 사거리 ${weaponRange()}</span>`);setText('alertTxt',Math.round(p.hunger)+'%');setWidth('alertFill',Math.min(100,p.hunger)+'%');
     const visibleMonsters=state.monsters.filter(isThreatVisibleToPlayer);let near=null,nearDistance=Infinity;for(const mon of visibleMonsters){const distance=entityDistance57(mon,p);if(distance<nearDistance){near=mon;nearDistance=distance}};setHTML('monsterInfo',near?`<b style="color:${near.color}">${near.name}</b><br>HP ${displayHealth(near.hp)}/${displayHealth(near.maxHp)} · ATK ${near.atk} · DEF ${near.def} · EVA ${near.eva}${near.boss?'<br>구역 보스':''}`:'주변 생체 반응 없음.');setText('statusLine',`${p.combustion105?`연소 ${p.combustion105.remaining}턴 · `:''}${statusSummary()}${p.hunger<=0?' · 허기 0 (ATK -20%)':''}`);updateDebuffHud();setText('turnTxt',`${location58.challenge?location58.challenge+' · ':''}TURN ${state.turn} · 적 행동 ${Math.floor(state.enemyEnergy||0)}/${((state.enemyEnergy||0)%1).toFixed(2)}`);
     const logs=state.log.slice(0,10),sig=logs.join('\u0001');if(sig!==RENDER_PERF_STATE.lastLog){RENDER_PERF_STATE.lastLog=sig;const log=document.getElementById('messageLog');if(log)log.innerHTML=logs.map(x=>'<div>'+x+'</div>').join('')}
     setText('miniMonsters','적 '+visibleMonsters.length);setText('miniItems','아이템 '+state.items.filter(i=>VisibilityService.isVisible(i.x,i.y)).length);setText('miniCells',`턴 ${state.turn} · 무술 ${p.skillPoints}`);setText('miniThreat','허기 '+Math.round(p.hunger)+'%');
