@@ -1487,7 +1487,7 @@ function dojoEscapeTick(){
  if(!cells.length)return; // retry next round, rather than losing the spawn interval
  const q=choice(cells);configureDojoPursuer(mon);Object.assign(mon,q,{lastSeenPosition:{...e.mark}});OccupancyService.addMonster(mon);e.spawned++;e.nextAt=state.floorTurn+DOJO_ESCAPE_RULES.interval;burst(q.x,q.y,'#a78b80',10,.5);addLog('미궁 안에서 추격 사범의 발소리가 울린다.');
 }
-function dojoMartialSummary(id,p){const lv=p.martial[id],f=martialFormOf(id,p),family=martialFamily(id,p);if(id==='strong')return f==='guard'?`다음 2회 공격 행동 전체에 DEF +${strongBonus(lv)} · 회피 시 횟수 유지`:f==='drive'?`다음 근접 ATK +${strongBonus(lv)-2} · 최대 ${lv}칸 밀침 · 벽 충돌 시 이동 칸 수만큼 경직(최소 1턴)`:`다음 근접 공격 ATK +${strongBonus(lv)}`;if(family==='roar')return `반경 ${martialRoarRange(lv)}칸 · 피해 ${f==='silent'?Math.min(8,2+lv*2):2+lv*2} · 경직 ${lv>=2?2:1}턴${f==='silent'?' · 포효 소음 없음':''}`;if(family==='smoke')return `사거리 4칸 · ${lv}×${lv} 연막 · 피해 ${lv*3} · ${MARTIAL_RULES.smokeTurns}턴 사선 차단${f==='burst'?` · 소멸 시 피해 ${lv*3}(자신도 피해)`:''}`;if(id==='ghost')return `${ghostDuration(lv)}턴 은신·회피 · 공격하면 해제${f==='assassin'?` · 은신 첫 적중에 ${MARTIAL_RULES.assassinTurns}턴 약화`:''}`;return martialPresentation(id,MARTIAL_INFO[id],p).desc;}
+function dojoMartialSummary(id,p){const lv=p.martial[id],f=martialFormOf(id,p),family=martialFamily(id,p);if(id==='strong')return f==='guard'?`다음 2회 공격 행동 전체에 DEF +${strongBonus(lv)} · 회피 시 횟수 유지`:f==='drive'?`다음 근접 ATK +${strongBonus(lv)-2} · 최대 ${lv}칸 밀침 · 벽 충돌 시 이동 칸 수만큼 경직(최소 1턴)`:`다음 근접 공격 ATK +${strongBonus(lv)}`;if(family==='roar')return `반경 ${martialRoarRange(lv)}칸 · 피해 ${f==='silent'?Math.min(8,2+lv*2):2+lv*2} · 경직 ${lv>=2?2:1}턴${f==='silent'?' · 포효 소음 없음':''}`;if(family==='smoke')return martialPresentation(id,MARTIAL_INFO[id],p).desc;if(id==='ghost')return `${ghostDuration(lv)}턴 은신·회피 · 공격하면 해제${f==='assassin'?` · 은신 첫 적중에 ${MARTIAL_RULES.assassinTurns}턴 약화`:''}`;return martialPresentation(id,MARTIAL_INFO[id],p).desc;}
 function dojoInspect(mon,opts={}){return `${mon.dojoStyle105!=null?DOJO_STYLE_WEIGHTS105[mon.dojoStyle105].name+' 계열. ':''}착용: ${['weapon','armor','cloak'].map(slot=>mon[slot]?mon[slot].name+(mon[slot].upgrade?' +'+mon[slot].upgrade:''):'').filter(Boolean).join(', ')||'맨손'}. ${opts.battle?'전장에서는 장비·경험치 보상이 없다.':mon.dojoPursuer105?'낙인으로 네 위치를 추적한다. 격파해도 장비·경험치는 남지 않는다.':'처치하면 착용 장비가 남는다.'}`}
 function dojoSectorAt(x,y){return state.branchTerrain105?.dojo?.sectors.find(s=>x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h)?.id??-1}
 function dojoPortalReady(portal){if(portal.requireSector!=null&&state.monsters.some(m=>m.martialActor105&&m.dojoSector105===portal.requireSector&&m.hp>0)){toast('이 구획의 무도가를 넘어야 다음 문이 열린다.');return false;}return true}
@@ -2527,8 +2527,19 @@ function tileBlocksSight(t){if(SIGHT85.has(t)||t===TT.HIDDEN_WALL)return true;if
 function combatLineCheckR8(x0,y0,x1,y1,opts={}){
   const maxRange=Number.isFinite(opts.range)?opts.range:Infinity,dist=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));if(dist>maxRange)return{ok:false,reason:`사거리 밖 · ${dist}/${maxRange}칸`,dist};
   const cells=combatLineCellsR8(x0,y0,x1,y1);
-  for(let i=0;i<cells.length;i++){const c=cells[i],last=i===cells.length-1;
-    if(combatFieldBlocks57(c.x,c.y))return{ok:false,reason:'연막이나 증기가 사선을 끊는다.',dist};if(!last&&tileBlocksSight(state.map[c.y]?.[c.x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};if(!last&&opts.units!==false){const block=findMonsterAt(c.x,c.y);if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block}}}
+  let cloudTiles=0;
+  for(let i=0;i<cells.length-1;i++){
+    const {x,y}=cells[i];
+    // Like a wall face, the second cloud tile itself is visible; it hides what lies beyond.
+    if(!opts.ignoreClouds&&opaqueCloudAt(x,y)&&++cloudTiles>=2)
+      return{ok:false,reason:'연막이나 증기 두 칸이 사선을 막는다.',dist};
+    if(tileBlocksSight(state.map[y]?.[x]))return{ok:false,reason:'벽이나 지형이 사선을 막는다.',dist};
+    if(opts.units!==false){
+      const block=findMonsterAt(x,y);
+      if(block&&block.hp>0&&!block.hidden&&block!==opts.ignore&&block!==opts.attacker)
+        return{ok:false,reason:`${block.name}이 사선을 가로막는다.`,dist,blocker:block};
+    }
+  }
   return{ok:true,dist,range:maxRange}
 }
 function safeLootGround42(x,y){

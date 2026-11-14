@@ -467,7 +467,7 @@ function pickup(...args){
     if(seal)return{name:t===TT.DOOR?'봉쇄된 문':'봉쇄된 계단 · 출입구',desc:`${Math.max(0,seal.expiresTurn105-state.turn)}턴 동안 봉쇄된다. 시전자를 쓰러뜨리거나 지속시간이 끝나면 해제된다.`,hint:t===TT.DOOR?'일반 열기·이동·점멸로 문을 통과할 수 없다. 문 자체를 파괴해도 봉쇄가 깨진다.':'이 칸을 걸어 지날 수는 있지만 다른 층이나 구역으로 이동할 수 없다.'};
     const definition=TERRAIN986.get(t);if(definition?.inspectPriority57==='terrain')return{name:terrainName(t),...definition};
     const world=terrainReactions105(),steam=state.tempFields?.find(f=>f.kind==='steam'&&f.x===x&&f.y===y&&f.ttl>0),spill=world.spills?.[k(x,y)],clue=world.clues?.[k(x,y)];
-    if(steam)return{name:'증기',desc:`${steam.ttl}턴 동안 시야와 사선을 가린다.`,hint:'통행 가능. 피해·중독·경직이 없으며 소리는 통과한다.'};
+    if(steam)return{name:'증기',desc:`${steam.ttl}턴 동안 남는다. 사선이 연막이나 증기 두 칸을 지나면 차단된다.`,hint:'통행 가능. 피해·중독·경직이 없으며 소리는 통과한다.'};
     if(clue)return{name:terrainName(t)+' · 틈새 흔적',desc:clue.elem==='water'?'물이 벽 틈으로 스며들어 문처럼 생긴 윤곽을 남겼다.':'벽 틈으로 연기가 새어 나온다.',hint:'이 근처의 벽을 조사하거나 상호작용해 보자.'};
     if(spill)return{name:({water:'얕은 물자국',oil:'기름 웅덩이',poison:'독액',wine:'쏟아진 술'})[spill.kind],desc:`남은 ${spill.ttl}턴. `+({water:'몸의 불을 끈다.',oil:'불에 닿으면 화염이 생기며 개체의 연소가 5턴으로 늘어난다.',poison:'밟으면 중독된다.',wine:'밟으면 취기·약화, 불에 닿으면 점화된다.'})[spill.kind],hint:'물속성으로 기름·독·술을 씻어낼 수 있다.'};
     if([TT.DOOR,TT.OPEN_DOOR].includes(t)&&!protectedProp105(x,y)&&!world.burning[k(x,y)])return{name:terrainName(t),desc:'일반 목제문. 불에 닿으면 3턴간 타고 무너지며 검게 탄 숯을 남긴다.',hint:'문을 열거나 닫아도 연소는 이어진다. 물로 끌 수 있다.'};

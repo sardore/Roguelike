@@ -153,7 +153,7 @@ function itemPrototype(name){if(name==='용궁 조수 안내서')return palaceGu
     {name:'해독산',type:'potion',potionKind:'cleanse',tier:1,rarity:'common',stackMax:3,minFloor:1,color:'#d9d6b6',ability:'중병·독·출혈·약화·배탈 해제 · 최대 HP의 12% 회복',desc:'독기와 중병, 피멎음, 쇠약과 배탈을 다스리는 백색 약산. 독·중병·출혈·약화·배탈을 제거하고 최대 HP의 12%를 회복하며 최소 회복량은 4이다.',useCost:.8},
     {name:'경신약',type:'potion',potionKind:'swift',tier:3,rarity:'rare',stackMax:2,minFloor:6,color:'#70b46a',ability:'6턴 신속',desc:'6턴 동안 이동·공격 행동비용 20% 감소, EVA +10.',useCost:.8},
     {name:'강골주',type:'potion',potionKind:'fortify',tier:3,rarity:'rare',stackMax:2,minFloor:7,color:'#b7884c',ability:'8턴 DEF +3',desc:'뼈와 힘줄을 굳히는 독한 약주. 8턴 동안 DEF +3.',useCost:.8},
-    {name:'연막병',type:'potion',potionKind:'smoke',tier:3,rarity:'rare',stackMax:2,minFloor:7,color:'#747b84',ability:'투척 · 3×3 연막 5턴',desc:'사거리 4칸. 깨진 지점 주변 3×3에 5턴 동안 시야를 가리는 연막을 만든다.',throwable:true,throwRange:4,useCost:1},
+    {name:'연막병',type:'potion',potionKind:'smoke',tier:3,rarity:'rare',stackMax:2,minFloor:7,color:'#747b84',ability:'투척 · 3×3 연막 5턴',desc:'사거리 4칸. 깨진 지점 주변 3×3에 5턴 동안 연막을 만든다. 사선이 연막이나 증기 두 칸을 지나면 차단된다.',throwable:true,throwRange:4,useCost:1},
     {name:'화유병',type:'potion',potionKind:'fire',tier:4,rarity:'rare',stackMax:2,minFloor:12,color:'#df6a32',ability:'투척 · 3×3 화염 4턴',desc:'사거리 4칸. 직격 6 피해 후 주변 3×3을 4턴 동안 불태워 턴당 3 피해를 준다.',throwable:true,throwRange:4,useCost:1}
   ];
   // v4.5 canonical turn core below owns field/status ticking; the obsolete duplicate field ticker was removed.
@@ -1044,7 +1044,7 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
   {"a":"mapping","b":"ward","kind":"f_sanctuary_ward","name":"결계도부","seal":"界","mode":"instant","effect":"sanctuaryward","ward":{"turns":16},"ability":"전체 지도·보호막 16턴 + 반경 2칸 기봉인 5턴","desc":"층의 지맥을 밝히고 주변 적의 기술을 잠시 봉한다."},
   {"a":"bind","b":"ward","kind":"f_binding_ward","name":"봉호부적","seal":"縛","mode":"instant","effect":"bindingward","ward":{"turns":14},"ability":"보호막 14턴 + 반경 2칸 기절 3턴·기봉인 4턴","desc":"장막 밖으로 종이 사슬이 퍼져 적의 행동과 기술을 함께 봉한다. 보스의 기절은 내성을 따른다."},
   // 서로 다른 생원소 6종의 모든 15쌍
-  {a:'elem_fire',b:'elem_water',kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꿔 사선을 끊는다.'},
+  {a:'elem_fire',b:'elem_water',kind:'f_steam',name:'증기부적',seal:'霧',mode:'target',effect:'steam',range:5,ability:'3×3 증기 2턴 · 사선 차단',desc:'상극의 두 기운을 증기로 바꾼다. 사선이 연막이나 증기 두 칸을 지나면 차단된다.'},
   {a:'elem_water',b:'elem_ice',kind:'f_frostfield',name:'설빙부적',seal:'霜',mode:'target',effect:'frostfield',range:5,ability:'3×3 강빙결장',desc:'수기를 얼려 강한 제압장으로 만든다.'},
   {a:'elem_water',b:'elem_grass',kind:'f_regrowth',name:'생장부적',seal:'生',mode:'instant',effect:'regrowth',ability:'재생 7턴 + 인접 적 뿌리구속',desc:'수기와 목기를 생장으로 바꾼다.'},
   {a:'elem_fire',b:'elem_earth',kind:'f_lava',name:'용암부적',seal:'熔',mode:'target',effect:'lava',range:5,ability:'화염 충격 + 임시 용암',desc:'대지를 녹여 좁은 길을 5턴 동안 용암으로 만든다. 보스가 밟고 있는 칸에는 용암이 생기지 않는다.'},

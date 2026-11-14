@@ -14,10 +14,10 @@ function entityConcealed(entity){return !!(entity&&(entity.hidden||(entity===sta
 function reflectRay(origin,target,kind='beam',damage=0,elem='holy'){
  if(!['beam','gaze'].includes(kind))return false;
  for(const q of combatLineCellsR8(origin.x,origin.y,target.x,target.y)){
-  if(state.map[q.y]?.[q.x]===TT.MIRROR){elementAttackFx105('holy',[q],origin);projectileFX(q.x,q.y,origin.x,origin.y,'#96d6dd');
+  if(state.map[q.y]?.[q.x]===TT.MIRROR){if(!lineClear(origin.x,origin.y,q.x,q.y))return false;elementAttackFx105('holy',[q],origin);projectileFX(q.x,q.y,origin.x,origin.y,'#96d6dd');
    if(kind==='gaze')setMonsterStatus(origin,'stunned',Math.max(origin.stunned||0,2));else if(origin.hp>0)resolveElementDamage57(origin,elem,damage,{contactHandled105:true,effect:{sourceFaction:'neutral',friendlyFire:true},source:'천면경 반사',color:'#96d6dd'});
    if(state.visible.has(k(q.x,q.y)))addLog('천면경이 빛을 되돌려 보냈다.');return true}
-  if(tileBlocksSight(state.map[q.y]?.[q.x])||combatFieldBlocks57(q.x,q.y))break;
+  if(tileBlocksSight(state.map[q.y]?.[q.x]))break;
  }return false;
 }
 function jarGasAirPassable(x,y){if(!state||x<=0||y<=0||x>=COLS-1||y>=ROWS-1)return false;const t=state.map?.[y]?.[x];return t===TT.OPEN_DOOR||(!tileBlocks(t)&&t!==TT.DOOR)}
@@ -149,7 +149,7 @@ function monsterExitPressureSpeed(mon,progress=floor24PressureProgress57()){
   const trait=mon?.exitPressureSpeed57;if(!trait)return 1;const min=Number.isFinite(trait.min)?trait.min:.5,max=Number.isFinite(trait.max)?trait.max:1.5;
   return clamp(min+(max-min)*clamp(progress,0,1),Math.min(min,max),Math.max(min,max))
 }
-const SHELL_SLIME=Object.freeze({cooldown:14,fullHealthDelay:3,sortieLimit:5,shellHp:24,shellDef:4,healFraction:.05,armorBonus:9,attackBonus:8,ailments:{illness:[27,.12],upset:[5,.40],blind:[4,.35]}});
+const SHELL_SLIME=Object.freeze({cooldown:14,fullHealthDelay:3,sortieLimit:5,shellHp:24,shellDef:4,healFraction:.20,armorBonus:9,needleRange:2,ailmentChance:.25,ailments:{illness:27,upset:5,blind:4,bleed:4,poison:4}});
 function shellSlimeProtected(mon){
  return !!(mon?.shellSlime&&!mon.shellSlimeState?.phase);
 }
@@ -178,7 +178,7 @@ function shellSlimeSchedule(mon,target){
    }
   }
  }
- if(data.phase)return{act:true,steps:1,actions:2};
+ if(data.phase)return{act:true,steps:1};
  data.halfStep=!data.halfStep;
  return{act:!data.halfStep,steps:1};
 }
@@ -205,11 +205,17 @@ function shellSlimeTurn(mon,target,opts){
   if(!data.phase)wanderMonster(mon,null,opts);
   return true;
  }
- if(monsterAttackLineR(mon,1,{target}).ok){
-  const wasOutside=data.phase==='outside';
-  const hit=executeMonsterAttackBundle57(mon,target,{count:1,context:{delivery:'melee',range:1}}).results[0];
-  if(wasOutside&&hit?.attempted)data.strikes++;
-  if(data.phase&&hit?.hit&&hit.damage>0&&target.hp>0)for(const [key,[turns,chance]] of Object.entries(SHELL_SLIME.ailments))applyCombatStatus(target,key,turns,chance,{source:mon});
+ const ranged=!!data.phase,range=ranged?SHELL_SLIME.needleRange:1;
+ const delivery=ranged?'ranged':'melee';
+ if(monsterAttackLineR(mon,range,{target,delivery}).ok){
+  const hit=executeMonsterAttackBundle57(mon,target,{
+   count:1,context:{delivery,range,projectile:ranged,reflectable:ranged},
+   projectileColor:'#d8eea4',projectileVisual57:{kind:'slime-needle',life:170}
+  }).results[0];
+  if(data.phase==='outside'&&hit?.attempted)data.strikes++;
+  if(ranged&&hit?.hit&&hit.damage>0&&target.hp>0)
+   for(const [key,turns] of Object.entries(SHELL_SLIME.ailments))
+    applyCombatStatus(target,key,turns,SHELL_SLIME.ailmentChance,{source:mon});
  }else if(data.phase)moveMonsterToward(mon,target,opts);else wanderMonster(mon,null,opts);
  return true;
 }
@@ -1263,7 +1269,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.name===SHACKLE_DOLL.name)add('shackle-counter','접힌 족쇄','鎖','피격·시야 이탈 · 예고 1턴',
       `대상의 시야 끝으로 접혀 이동해 자세를 낮춘다. 다음 턴에 사거리 안에서 사선이 트인 대상에게 사슬을 발사한다. 명중 시 기봉인 ${SHACKLE_COUNTER.skillSeal}턴, 출혈 ${SHACKLE_COUNTER.bleed}턴.`);
     if(mon.name===SHACKLE_DOLL.name)add('shackle-pace','느린 움직임','遲','기본 행동 속도 ×0.5','기본 이동과 공격은 두 턴에 한 번 가능하다.','ghost','지속');
-    if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 행동 속도 ×2','껍질 안에서 매 턴 체력을 회복하며 공격력 +8, 방어력 +9. 밖에서는 중병 12%, 배탈 40%, 실명 35%를 각각 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.','constitution','지속');
+    if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 사거리 2칸',`껍질 안에서 매 턴 최대 체력의 ${SHELL_SLIME.healFraction*100}%를 회복하고 방어력 +${SHELL_SLIME.armorBonus}. 밖에서는 사거리 ${SHELL_SLIME.needleRange}칸의 침을 쏜다. 적중해 피해를 주면 중병·배탈·실명·출혈·독을 각각 기본 확률 ${SHELL_SLIME.ailmentChance*100}%로 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.`,'constitution','지속');
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
     if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
@@ -2576,7 +2582,7 @@ function combatFieldBlocks57(x,y,opts={}){
   if(!opts.leaving&&(actor===state?.player||actor.hp>0)&&combatFieldBlocks57(x,y,{actor,passage:'door'}))return true;
   return !!state?.tempFields?.some(f=>sealingWardAffects(f,actor)&&(opts.leaving||!f.cells.some(c=>c.x===x&&c.y===y)));
  }
- return !!state?.tempFields?.some(f=>['smoke','steam'].includes(f.kind)&&f.ttl>0&&(f.cells?f.cells.some(c=>c.x===x&&c.y===y):Math.abs(x-f.x)<=1&&Math.abs(y-f.y)<=1));
+ return false;
 }
 function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&mon.hp<=mon.maxHp*.5?3:2):1}
 function movementDiscoveryEvades105(mon,ctx){
