@@ -72,7 +72,7 @@ function tickMonsterCombatStatuses(){
   }}
   for(const m of [...state.monsters])if(m.hp>0&&(m.poisoned57||0)>0){const damage=damageEntity(m,combatDebuffDamage(m,'poison'),m.poisonSource57);m.poisoned57--;if(m.poisoned57<=0)m.poisonSource57=null;if(damage>0){floatText(m.x,m.y,`독 -${damage}`,'#94c779',10);if(state.debugBattle57)addLog(`${m.name} · 중독 -${damage} HP`);}if(m.hp<=0)killMonster(m)}
 }
-function tickMonsterDurations(){if(!state)return;for(const m of [...(state.monsters||[])]){tickKeeperLava54(m);if(m.shell61>0)m.shell61--;if(m.shellCd61>0)m.shellCd61--;globalThis.__MANRU_ITEM_IDENTITY991__?.tickCurses?.(m);if(m.upset>0)m.upset--;if(m.drunk>0)m.drunk--;if(m.skillSeal105>0)m.skillSeal105--;if((m.weakened||0)>0){if(!Number.isFinite(m.weakenedTurn57))m.weakenedTurn57=state.turn;else if(m.weakenedTurn57<state.turn){m.weakened=Math.max(0,m.weakened-1);m.weakenedTurn57=state.turn}}if((m.buffTurns61||0)>0){if(!Number.isFinite(m.buffTurn57))m.buffTurn57=state.turn;else if(m.buffTurn57<state.turn){m.buffTurns61=Math.max(0,m.buffTurns61-1);m.buffTurn57=state.turn;if(m.buffTurns61<=0)m.buff=0}}else if((m.buff||0)>0&&Number.isFinite(m.buffTurn57)&&m.buffTurn57<state.turn)m.buff=0}}
+function tickMonsterDurations(){if(!state)return;for(const m of [...(state.monsters||[])]){tickKeeperLava54(m);if(m.shellSlime)healShellSlime(m);if(m.shell61>0)m.shell61--;if(m.shellCd61>0)m.shellCd61--;globalThis.__MANRU_ITEM_IDENTITY991__?.tickCurses?.(m);if(m.upset>0)m.upset--;if(m.drunk>0)m.drunk--;if(m.skillSeal105>0)m.skillSeal105--;if((m.weakened||0)>0){if(!Number.isFinite(m.weakenedTurn57))m.weakenedTurn57=state.turn;else if(m.weakenedTurn57<state.turn){m.weakened=Math.max(0,m.weakened-1);m.weakenedTurn57=state.turn}}if((m.buffTurns61||0)>0){if(!Number.isFinite(m.buffTurn57))m.buffTurn57=state.turn;else if(m.buffTurn57<state.turn){m.buffTurns61=Math.max(0,m.buffTurns61-1);m.buffTurn57=state.turn;if(m.buffTurns61<=0)m.buff=0}}else if((m.buff||0)>0&&Number.isFinite(m.buffTurn57)&&m.buffTurn57<state.turn)m.buff=0}}
 function monsterRewardPolicy(mon){if(state?.debugBattle57)return{xp:false,drops:false,kills:false};if(!mon||!factionsHostile57(entityFaction(state?.player),entityFaction(mon)))return{xp:false,drops:false,kills:false};const p=mon?.rewardPolicy57;if(p)return{xp:p.xp!==false,drops:p.drops!==false,kills:p.kills!==false};const deny=NON_REWARDING_SPAWN_PROVENANCE57.has(mon?.spawnProvenance57);return{xp:!deny,drops:!deny,kills:!deny}}
 function knockMonster(mon,steps=1){if(!state||!mon||mon.hp<=0)return false;steps=mon.boss?Math.min(1,steps):steps;const f=state.player.facing||{x:0,y:-1},source={x:mon.x-f.x,y:mon.y-f.y};return resolveForcedMovement57(mon,source,steps,{mode:'push',hostile:true,creditPlayer:true}).moved>0}
 function entityCombatLineCheckR(attacker,target,opts={}){
@@ -149,7 +149,72 @@ function monsterExitPressureSpeed(mon,progress=floor24PressureProgress57()){
   const trait=mon?.exitPressureSpeed57;if(!trait)return 1;const min=Number.isFinite(trait.min)?trait.min:.5,max=Number.isFinite(trait.max)?trait.max:1.5;
   return clamp(min+(max-min)*clamp(progress,0,1),Math.min(min,max),Math.max(min,max))
 }
+const SHELL_SLIME=Object.freeze({cooldown:14,fullHealthDelay:3,sortieLimit:5,shellHp:24,shellDef:4,healFraction:.05,armorBonus:9,attackBonus:8,ailments:{illness:[27,.12],upset:[5,.40],blind:[4,.35]}});
+function shellSlimeProtected(mon){
+ return !!(mon?.shellSlime&&!mon.shellSlimeState?.phase);
+}
+function shellSlimeFixture(mon){
+ return state.monsters.find(shell=>shell.combatFixture54==='slime-shell'&&shell.bossOwnerId57===mon.combatantId54&&shell.hp>0);
+}
+function healShellSlime(mon){
+ if(!shellSlimeProtected(mon)||mon.hp<=0||mon.hp>=mon.maxHp)return;
+ const data=mon.shellSlimeState??={next:0};
+ mon.hp=Math.min(mon.maxHp,mon.hp+Math.ceil(mon.maxHp*SHELL_SLIME.healFraction));
+ if(mon.hp===mon.maxHp)data.next=Math.min(data.next,state.floorTurn+SHELL_SLIME.fullHealthDelay);
+}
+function shellSlimeSchedule(mon,target){
+ const data=mon.shellSlimeState??={next:0};
+ const round=state.floorTurn;
+ if(data.phase==='outside'&&(data.strikes>=2||round>=data.expires))data.phase='returning';
+ if(!data.phase){
+  if(round>=data.next&&!(mon.skillSeal105>0)&&actorDetectedTarget57(mon,target)){
+   const exits=DIRS8.map(([dx,dy])=>({x:mon.x+dx,y:mon.y+dy})).filter(cell=>canMonsterStep(mon,mon.x,mon.y,cell.x,cell.y)).sort((a,b)=>entityDistance57(a,target)-entityDistance57(b,target));
+   const shell={name:'슬라임 빈 껍질',x:mon.x,y:mon.y,hp:SHELL_SLIME.shellHp,maxHp:SHELL_SLIME.shellHp,atk:0,def:SHELL_SLIME.shellDef,eva:0,xp:0,color:mon.color,shape:'armor',kind:'construct',fixed:true,combatFixture54:'slime-shell',bossOwnerId57:combatantId(mon),faction57:entityFaction(mon),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture'};
+   if(exits.some(cell=>moveMonsterStep(mon,cell.x,cell.y))&&mon.hp>0&&state.monsters.includes(mon)){
+    data.phase='outside';data.strikes=0;data.expires=round+SHELL_SLIME.sortieLimit;
+    OccupancyService.addMonster(shell);
+    burst(shell.x,shell.y,'#b6c686',12,.6);
+    if(isEntityObservableToPlayer57(mon))addLog('껍질슬라임이 빈 껍질을 두고 뛰쳐나왔다.');
+   }
+  }
+ }
+ if(data.phase)return{act:true,steps:1,actions:2};
+ data.halfStep=!data.halfStep;
+ return{act:!data.halfStep,steps:1};
+}
+function shellSlimeTurn(mon,target,opts){
+ const data=mon.shellSlimeState;
+ if(data.returnedRound===state.floorTurn)return true;
+ const shell=data.phase==='returning'?shellSlimeFixture(mon):null;
+ if(data.phase==='returning'&&!shell)data.phase='broken';
+ if(shell){
+  const inShell=mon.x===shell.x&&mon.y===shell.y;
+  if(inShell||entityDistance57(mon,shell)<=1&&canMonsterStep(mon,mon.x,mon.y,shell.x,shell.y,null,{movementIgnore:new Set([shell])})&&!combatFieldBlocks57(shell.x,shell.y,{actor:mon})){
+   OccupancyService.removeMonster(shell);
+   data.phase=null;
+   data.next=state.floorTurn+(mon.hp===mon.maxHp?SHELL_SLIME.fullHealthDelay:SHELL_SLIME.cooldown);
+   data.halfStep=false;
+   data.returnedRound=state.floorTurn;
+   if(!inShell)moveMonsterStep(mon,shell.x,shell.y);
+   if(isEntityObservableToPlayer57(mon))addLog('껍질슬라임이 껍질로 돌아갔다.');
+  }else moveMonsterToward(mon,shell,opts);
+  return true;
+ }
+ if(data.phase==='outside'&&data.strikes>=2)return true;
+ if(!actorDetectedTarget57(mon,target)){
+  if(!data.phase)wanderMonster(mon,null,opts);
+  return true;
+ }
+ if(monsterAttackLineR(mon,1,{target}).ok){
+  const wasOutside=data.phase==='outside';
+  const hit=executeMonsterAttackBundle57(mon,target,{count:1,context:{delivery:'melee',range:1}}).results[0];
+  if(wasOutside&&hit?.attempted)data.strikes++;
+  if(data.phase&&hit?.hit&&hit.damage>0&&target.hp>0)for(const [key,[turns,chance]] of Object.entries(SHELL_SLIME.ailments))applyCombatStatus(target,key,turns,chance,{source:mon});
+ }else if(data.phase)moveMonsterToward(mon,target,opts);else wanderMonster(mon,null,opts);
+ return true;
+}
 function monsterActionSchedule(mon,opt={}){
+  if(mon?.shellSlime)return shellSlimeSchedule(mon,opt.target);
   const cadence=Number.isFinite(mon?.actionSpeed)&&mon.actionSpeed>1?{actions:Math.floor(mon.actionSpeed)}:{};
   if(mon?.exitPressureSpeed57){
     const progress=Number.isFinite(opt.pressureProgress57)?clamp(opt.pressureProgress57,0,1):floor24PressureProgress57(),speed=monsterExitPressureSpeed(mon,progress);
@@ -768,7 +833,7 @@ function alliesTurn(){
   if(Number.isFinite(a.allyExpireTurn47)){a.ttl47=Math.max(0,a.allyExpireTurn47-state.turn+1);if(state.turn>a.allyExpireTurn47){removeAlly(a);continue}}
   if(a.dormant57||a.sleeping105){finishAllyAction(a);continue}
   if(a.intent61?.type==='shackleCounter'){shackleCounterTurn(a,null);finishAllyAction(a);continue}
- if(a.martialActor105)tickMartialActor(a);if(a.stunned>0){a.stunned--;finishAllyAction(a);continue}const schedule=monsterActionSchedule(a),escort=a.summonOwner105==='player';
+ if(a.martialActor105)tickMartialActor(a);if(a.stunned>0){a.stunned--;finishAllyAction(a);continue}const schedule=monsterActionSchedule(a,{target:a.shellSlime?selectEnemyTarget(a):null}),escort=a.summonOwner105==='player';
   if(!schedule.act&&a.name!==SHACKLE_DOLL.name){finishAllyAction(a);continue}
   for(let action=0;action<(schedule.actions||1);action++){
   if(a.hp<=0||a.stunned>0||state.dead||!state.monsters.includes(a))break;
@@ -952,7 +1017,7 @@ function monsterTurn(){
     if(sees){mon.hasSeenPlayer105=true;mon.alerted=true;mon.lastSeenPosition={x:p.x,y:p.y,bornTurn:state.floorTurn||0};mon.attackInvestigation57=null;mon.searchTurns=state.floor>=11?Math.max(mon.searchTurns||0,12):6;mon.lostSight=0}
     else if(mon.alerted){mon.searchTurns=Math.max(0,(mon.searchTurns??5)-1);mon.lostSight=(mon.lostSight||0)+1;if(mon.searchTurns===0&&!mon.boss&&!mon.persistentChase57){mon.alerted=false;mon.lastSeenPosition=null;mon.heardPosition=null;mon.attackInvestigation57=null}}
     if(!observedOpponent||observedOpponent===p)updateSummonerEngagement(mon,sees);
-    const schedule57=monsterActionSchedule(mon);
+    const schedule57=monsterActionSchedule(mon,{target:observedOpponent});
     if(mon.name===SHACKLE_DOLL.name){resolveMonsterTargetTurn57(mon,observedOpponent,schedule57);continue}
     if(!schedule57.act)continue;
     for(let action=0;action<(schedule57.actions||1);action++){
@@ -960,6 +1025,7 @@ function monsterTurn(){
     if(palaceTideResponse(mon))continue;if(prisonEscapeTurn(mon))continue;
     const target=selectEnemyTarget(mon);if(!target){mon.targetKind53=null;resolveMonsterTargetTurn57(mon,null,schedule57);continue}const playerTarget=target===p;mon.targetKind53=playerTarget?'player':(target?.retaliationMemory54?'memory':'monster');
     if(!playerTarget){resolveMonsterTargetTurn57(mon,target,schedule57);continue}
+    if(mon.shellSlime){resolveMonsterTargetTurn57(mon,p,schedule57);continue}
     if(mon.palaceLotus105){palaceLotusTurn(mon,p);continue}if(mon.equipmentActor105)syncEquipmentActor105(mon);
     handleLosLostSummon(mon,sees,{target:p});
     if(!mon.martialActor105&&mon.weaponRecovery105>0&&!mon.intent54){mon.weaponRecovery105--;continue}
@@ -1197,6 +1263,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.name===SHACKLE_DOLL.name)add('shackle-counter','접힌 족쇄','鎖','피격·시야 이탈 · 예고 1턴',
       `대상의 시야 끝으로 접혀 이동해 자세를 낮춘다. 다음 턴에 사거리 안에서 사선이 트인 대상에게 사슬을 발사한다. 명중 시 기봉인 ${SHACKLE_COUNTER.skillSeal}턴, 출혈 ${SHACKLE_COUNTER.bleed}턴.`);
     if(mon.name===SHACKLE_DOLL.name)add('shackle-pace','느린 움직임','遲','기본 행동 속도 ×0.5','기본 이동과 공격은 두 턴에 한 번 가능하다.','ghost','지속');
+    if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 행동 속도 ×2','껍질 안에서 매 턴 체력을 회복하며 공격력 +8, 방어력 +9. 밖에서는 중병 12%, 배탈 40%, 실명 35%를 각각 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.','constitution','지속');
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
     if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
@@ -1957,6 +2024,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
   if(shackleCounterTurn(actor,target))return true;
  }
  if(!schedule.act)return false;
+ if(actor.shellSlime)return shellSlimeTurn(actor,target,opts);
  const range=actor.ranged?(actor.range||6):(actor.reach||1),hostile=combatTargetValid57(actor,target),live=hostile&&!entityConcealed(target);
  const sees=live&&actorDetectedTarget57(actor,target,monsterSenseRadius(actor));
  if(sees)actor.lastSeenPosition={x:target.x,y:target.y,bornTurn:state.floorTurn||0};
@@ -2170,7 +2238,7 @@ function debugBattleRound57(){
    if(!state.monsters.includes(mon))continue;if(advanceMonsterRevival(mon)||mon.hp<=0)continue;if(mon.combatFixture54){tickBossFixture(mon);continue}
    if(mon.intent61?.type==='shackleCounter'){shackleCounterTurn(mon,null);continue}
    if(mon.stunned>0){mon.stunned--;continue}if(mon.martialActor105)tickMartialActor(mon);
-   const schedule=monsterActionSchedule(mon);if(!schedule.act&&mon.name!==SHACKLE_DOLL.name)continue;
+   const schedule=monsterActionSchedule(mon,{target:mon.shellSlime?selectEnemyTarget(mon):null});if(!schedule.act&&mon.name!==SHACKLE_DOLL.name)continue;
    for(let action=0;action<(schedule.actions||1);action++){
    if(mon.hp<=0||mon.stunned>0||!state.monsters.includes(mon))break;
    const targets=state.monsters.filter(t=>combatTargetValid57(mon,t)).sort((a,c)=>entityDistance57(mon,a)-entityDistance57(mon,c));
@@ -2464,7 +2532,13 @@ const OccupancyService=(()=>{
  function occupants(cells0){ensureWorld();const keys=new Set(cells0.map(q=>k(q.x,q.y))),out=[];if(shared){const found=new Set();for(const key of keys)for(const entity of shared.get(key)||[]){const kind=category.get(entity);if((kind==='player'||kind==='monster'||kind==='item')&&!found.has(entity)){found.add(entity);out.push(entity)}}return out}linearFallbacks++;for(const entity of [state.player,...state.monsters,...state.items])if(entity&&(entity.hp==null||entity.hp>0)&&entityFootprintCells57(entity).some(q=>keys.has(k(q.x,q.y))))out.push(entity);return out}
  function removeItem(item){release(item);const i=state.items.indexOf(item);if(i<0)return false;state.items.splice(i,1);return true}
  function addMonster(mon){if(mon.summonOwner105&&!summonCanAdmit(mon))return 0;if(mon.faction57&&!['player','hostile','neutral'].includes(mon.faction57))throw new Error('Unknown combat faction: '+mon.faction57);mon.faction57=entityFaction(mon);mon.friendly47=mon.faction57==='player';if(state.debugBattle57){mon.debugSide57=mon.faction57==='player'?'A':'B';mon.debugId57??=++DEBUG_BATTLE57.serial;mon.rewardPolicy57={xp:false,kills:false,drops:false}}const length=state.monsters.push(mon);put(mon,'monster');return length}
- function removeMonster(mon){release(mon);const found=state.monsters.includes(mon);state.monsters=state.monsters.filter(item=>item!==mon);if(state.tempTerrain74?.some(t=>t.kind==='passageSeal'&&t.ownerId===mon.combatantId54))RuntimeTerrainOwner.tick({movement:true});return found}
+ function removeMonster(mon){
+ if(mon.shellSlime){const shell=shellSlimeFixture(mon);if(shell)removeMonster(shell);}
+ if(mon.combatFixture54==='slime-shell'&&mon.hp<=0){
+  const owner=state.monsters.find(m=>m.shellSlime&&m.combatantId54===mon.bossOwnerId57);
+  if(owner?.shellSlimeState)owner.shellSlimeState.phase='broken';
+ }
+ release(mon);const found=state.monsters.includes(mon);state.monsters=state.monsters.filter(item=>item!==mon);if(state.tempTerrain74?.some(t=>t.kind==='passageSeal'&&t.ownerId===mon.combatantId54))RuntimeTerrainOwner.tick({movement:true});return found}
  function move(entity,x,y,opts={}){const ox=entity?.x,oy=entity?.y;if(!entity||!Number.isFinite(x)||!Number.isFinite(y))return false;if(!opts.forced&&combatFieldBlocks57(x,y,{actor:entity}))return false;const kind=category.get(entity)||(entity===state.player?'player':state.items?.includes(entity)?'item':state.neutralInteractables58?.includes(entity)?'neutral':'monster');release(entity);entity.x=x;entity.y=y;put(entity,kind);if((ox!==x||oy!==y)&&(kind==='player'||kind==='monster')){entityTerrainEntry105(entity,x,y,ox,oy);if(!state.generationInProgress57)for(const mon of [...state.monsters]){if(!mon.crossfire||mon.intent61||mon.skillSeal105>0||mon.stunned>0||state.turn<(mon.nextArtilleryTurn||0)||!combatTargetValid57(mon,entity)||entityConcealed(entity))continue;const cells=intentLineCells(mon,null,mon.crossfire.range);if(entityFootprintCells57(entity).some(p=>cells.some(c=>c.x===p.x&&c.y===p.y)))artilleryTurn(mon,entity);}}if(state.tempFields?.some(f=>f.kind==='sealingWard'))expireCombatFields({movement:true});return true}
  function metrics(){ensureWorld();return{shared:!!shared,rebuilds,queries,linearFallbacks,cells:shared?.size||0}}
  return Object.freeze({beginShared,endShared,isOccupied,blocksEntityCell,occupants,addMonster,removeMonster,removeItem,move,metrics});

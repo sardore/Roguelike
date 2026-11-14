@@ -350,7 +350,7 @@ function runAttackStages(kind,args){
   return call(stages.length-1,args);
 }
 function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
-function combatEntityStats(actor){if(actor===state.player)return getStats();return applyCombatDebuffStats57({...actor,vision:actor.vision||monsterSenseRadius(actor)},actor)}
+function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor)){stats.atk+=SHELL_SLIME.attackBonus;stats.def+=SHELL_SLIME.armorBonus;}return applyCombatDebuffStats57(stats,actor)}
 function combatDefenseBonus(target){
  if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
  if(target.shell61>0)bonus+=floor>=16?8:7;
