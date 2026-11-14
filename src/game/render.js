@@ -1134,6 +1134,7 @@ function drawAuthoredTerrain(tile,px,py,x,y,now){
   if(tile===TT.BAMBOO){X.fillStyle='#0d170f';X.fillRect(px,py,32,32);for(let q=0;q<3;q++){const xx=px+7+q*9;X.fillStyle=q===1?'#5c7a59':'#48664b';X.fillRect(xx,py+2,3,30);X.fillStyle='#2b432e';X.fillRect(xx-4,py+8+q*5,6,2);X.fillRect(xx+2,py+15+q*3,7,2)}X.fillStyle='rgba(0,0,0,.34)';X.fillRect(px,py+29,32,3);return true}
   return false;
 }
+function drawPortalVortex(px,py,x,y,now){const p=.5+.5*Math.sin(now/180+x*.7+y*.9);X.save();X.fillStyle='rgba(24,12,35,.78)';X.fillRect(px+4,py+4,24,24);X.strokeStyle=`rgba(192,132,235,${.55+.35*p})`;X.lineWidth=2;X.beginPath();X.ellipse(px+16,py+16,10,12,0,0,Math.PI*2);X.stroke();X.strokeStyle=`rgba(103,218,229,${.35+.35*(1-p)})`;X.beginPath();X.ellipse(px+16,py+16,6,9,0,0,Math.PI*2);X.stroke();X.fillStyle=`rgba(238,221,255,${.35+.35*p})`;for(let i=0;i<4;i++){const a=now/520+i*Math.PI/2;X.fillRect(px+15+Math.cos(a)*9,py+15+Math.sin(a)*10,2,2)}X.restore();}
 function drawSpecialTerrain(tile,px,py,x,y,now){
    if(tile===TT.SWITCH){const button=mineButton(x,y);if(button)return drawSharedProp(X,tile,px,py,regionIndex(),pressureSwitchVariant105(button));}
   if(tile===TT.ICE){
@@ -1146,7 +1147,7 @@ function drawSpecialTerrain(tile,px,py,x,y,now){
   if(tile===TT.SHALLOW_WATER){drawShallowWater(px,py,x,y,now);return true}
 if([23,24].includes(state?.floor)&&drawAuthoredTerrain(tile,px,py,x,y,now))return true;
     const r41=globalThis.__MANRU_TERRAIN_R41__;if(r41?.libraryDesk52?.(tile,px,py,x,y,now)||r41?.specialBefore?.(tile,px,py,x,y,now)){r41?.specialAfter?.(tile,px,py,x,y,now,true);return true}
-    let r;if(tile===TT.PORTAL){const p=.5+.5*Math.sin(now/180+x*.7+y*.9);X.save();X.fillStyle='rgba(24,12,35,.78)';X.fillRect(px+4,py+4,24,24);X.strokeStyle=`rgba(192,132,235,${.55+.35*p})`;X.lineWidth=2;X.beginPath();X.ellipse(px+16,py+16,10,12,0,0,Math.PI*2);X.stroke();X.strokeStyle=`rgba(103,218,229,${.35+.35*(1-p)})`;X.beginPath();X.ellipse(px+16,py+16,6,9,0,0,Math.PI*2);X.stroke();X.fillStyle=`rgba(238,221,255,${.35+.35*p})`;for(let i=0;i<4;i++){const a=now/520+i*Math.PI/2;X.fillRect(px+15+Math.cos(a)*9,py+15+Math.sin(a)*10,2,2)}X.restore();r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
+    let r;if(tile===TT.PORTAL){drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
     r41?.specialKeyAfter?.(tile,px,py,x,y,now,r);r41?.specialAfter?.(tile,px,py,x,y,now,r);return r;
   }
 function drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now){
@@ -3917,7 +3918,7 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
  const roomId=d.roomCells[key],gate=palaceWorld().gates[`${state.branchContext105.level}:${roomId}`];if(height!=null&&gate?.until>palaceWorld().time){X.strokeStyle='#e5c485aa';X.lineWidth=2;for(const[dx,dy]of DIRS4)if(d.roomCells[k(x+dx,y+dy)]!==roomId){X.beginPath();if(dx){X.moveTo(px+(dx<0?1:31),py);X.lineTo(px+(dx<0?1:31),py+32);}else{X.moveTo(px,py+(dy<0?1:31));X.lineTo(px+32,py+(dy<0?1:31));}X.stroke();}}
  if(window){X.fillStyle=`rgba(150,222,218,${.035+.025*Math.sin(now/(1600+hash2(x,y,183)*1700)+x+y)})`;X.fillRect(px+7,py+8,18,17);}
  if(d.lights.some(l=>!l.wall&&l.x===x&&l.y===y)&&!terrainUnlit105(x,y)){X.fillStyle='#5a4a35';X.fillRect(px+23,py+9,6,12);X.fillStyle='#e6b96a';X.fillRect(px+24,py+11,4,7);X.fillStyle='#ffe0a0';X.fillRect(px+25,py+12,2,4);}
- if(t===TT.PORTAL){const p=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(p)drawBranchDoor(px,py,p);}
+ if(t===TT.PORTAL){const p=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(p?.kind==='palace-return')drawPortalVortex(px,py,x,y,now);else if(p)drawBranchDoor(px,py,p);}
  if(d.arches?.[key]&&!tileBlocks(t)&&!prop){X.save();X.translate(px,py);drawPalaceArch(X,d.arches[key]);X.restore();}else if(t===TT.DOOR||t===TT.OPEN_DOOR)drawDoor(px,py,t===TT.OPEN_DOOR);return true;
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
