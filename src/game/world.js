@@ -200,7 +200,7 @@ function terrainCellPlacement58(map,x,y){const layers=terrainMapLayers58(map),ke
 function terrainSurface58(tile){return terrainLayerCatalog58().surfaces.has(tile)||(Number.isInteger(tile)&&tile>=500&&tile<660&&[0,1,2,3,7].includes((tile-500)%16))}
 function setTerrainTile58(map,x,y,tile,placement={}){
   const old=map[y][x];if(map===state?.map&&[TT.DOOR,TT.OPEN_DOOR].includes(old)&&[TT.DOOR,TT.OPEN_DOOR].includes(tile)&&state.terrainReactions105?.burning?.[k(x,y)])state.terrainReactions105.burning[k(x,y)].tile=tile;if(map===state?.map&&state.generationInProgress57&&inTutorialEntry(x,y))return old;if(!Number.isInteger(tile))throw new Error('invalid terrain tile');
-  const cat=terrainLayerCatalog58(),layers=terrainMapLayers58(map),key=k(x,y);
+  const cat=terrainLayerCatalog58(),layers=terrainMapLayers58(map),key=k(x,y),oldBase=layers.underlay[key];
   if(cat.overlays.has(tile)){
     const base=placement.base??(cat.overlays.has(old)?layers.underlay[key]:old);
     if(tile===TT.WALL_BANNER&&base!==TT.WALL)return old;
@@ -220,7 +220,7 @@ function setTerrainTile58(map,x,y,tile,placement={}){
     const palace=state.branchTerrain105?.palace105,chest=palace?.starterChest;
     if(chest?.x===x&&chest.y===y){delete palace.starterChest;delete palace.props[key];}
   }
-  if(map===state?.map&&old!==tile&&state.terrainReactions105){const r=state.terrainReactions105,key=k(x,y);if(!([TT.DOOR,TT.OPEN_DOOR].includes(old)&&[TT.DOOR,TT.OPEN_DOOR].includes(tile)))delete r.burning[key];if(!lightAt(x,y)&&!elementMaterial105(tile,'light'))delete r.unlit[key];if(r.char)delete r.char[key];r.revision=(r.revision||0)+1}map[y][x]=tile;if(old!==tile)TERRAIN_RENDER_REV.set(map,(TERRAIN_RENDER_REV.get(map)||0)+1);branchInvalidateTerrain(map,x,y);if(map===state?.map&&!state.generationInProgress57&&old===TT.DOOR&&tile===TT.OPEN_DOOR)branchWarningDoor(x,y);if(map===state?.map&&noiseBudget)noiseBudget.fields.clear();return tile;
+  if(map===state?.map&&old!==tile&&state.terrainReactions105){const r=state.terrainReactions105,key=k(x,y);if(!([TT.DOOR,TT.OPEN_DOOR].includes(old)&&[TT.DOOR,TT.OPEN_DOOR].includes(tile)))delete r.burning[key];if(!lightAt(x,y)&&!elementMaterial105(tile,'light'))delete r.unlit[key];if(r.char)delete r.char[key];r.revision=(r.revision||0)+1}map[y][x]=tile;if(old!==tile||oldBase!==layers.underlay[key])TERRAIN_RENDER_REV.set(map,(TERRAIN_RENDER_REV.get(map)||0)+1);branchInvalidateTerrain(map,x,y);if(map===state?.map&&!state.generationInProgress57&&old===TT.DOOR&&tile===TT.OPEN_DOOR)branchWarningDoor(x,y);if(map===state?.map&&noiseBudget)noiseBudget.fields.clear();return tile;
 }
 // Surface changes use the same terrain owner as prop placement, including authored-area protection.
 function setTerrainSurface65(map,x,y,surface){
@@ -241,7 +241,7 @@ isVisible(x,y){return state.visible.has(k(x,y))},
 isSeen(x,y){return state.seen.has(k(x,y))},
 lineClear(x0,y0,x1,y1){return combatLineCheckR8(x0,y0,x1,y1,{units:false}).ok},
 reset(){if(!state)return false;state.visible=new Set();state.seen=new Set();return true},
-rememberKey(key){if(!state||mineHidden(...key.split(',').map(Number)))return false;state.seen.add(key);return true},
+rememberKey(key){const mine=mineState();if(!state||(mine?.luminous[key]&&!mine.discovered[key]))return false;state.seen.add(key);return true},
 remember(x,y){return VisibilityService.rememberKey(k(x,y))},
 addVisibleKey(key){if(!state)return false;state.visible.add(key);return true},
 revealAll(){if(!state)return false;state.seen=new Set();state.visible=new Set();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){state.seen.add(k(x,y));state.visible.add(k(x,y))}return true},

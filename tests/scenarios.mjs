@@ -3368,7 +3368,7 @@ export const scenarios = {
     const probe = await s.page.evaluate(() => globalThis.__MANRU_QA_CONSUMERS__.registries());
     out['registries.paths'] = JSON.stringify(probe);
     if (JSON.stringify(probe.attackTrace) !== JSON.stringify(['last-in', 'first-in', 'base', 'first-out', 'last-out'])) throw new Error(`registries: attack stage chain direction changed: ${JSON.stringify(probe.attackTrace)}`);
-    if (JSON.stringify(probe.minimapTrace) !== JSON.stringify(['first', 'last'])) throw new Error(`registries: minimap hook direction changed: ${JSON.stringify(probe.minimapTrace)}`);
+    if (!probe.minimapCacheHit) throw new Error('registries: unchanged minimap terrain was rebuilt');
     if (probe.unknown !== 'ignored') throw new Error(`registries: an unknown action was not ignored: ${probe.unknown}`);
     out['registries.errors'] = JSON.stringify(s.errors);
     await s.close();

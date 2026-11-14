@@ -49,7 +49,7 @@ function compactSummonSave(world){
 function projectGameState(source=state){
   if(!source||typeof source!=='object'||Array.isArray(source))return null;
   if(source.debugBattle57)throw new Error('Debug battle state cannot be saved');
-  const selected={};for(const key of GAMESTATE_FIELDS)if(Object.hasOwn(source,key))selected[key]=source[key];
+  const selected={};for(const key of GAMESTATE_FIELDS)if(Object.hasOwn(source,key))selected[key]=key==='seen'||key==='grassTufts1020'?null:source[key];
   if(source.branchContext105&&source.branchTerrain105?.staticPacked105){
     const terrain=source.branchTerrain105;
     selected.branchTerrain105={...terrain,heights:undefined,surfaces:undefined,ramps:undefined,packed105:terrain.staticPacked105};

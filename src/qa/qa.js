@@ -727,7 +727,7 @@ globalThis.__MANRU_QA_REGISTRIES__=()=>{
   const A=ATTACK_PIPELINE;
   add('attack','player-base:'+A.playerBase?.id,A.playerBase?.fn);A.playerStages.forEach(x=>add('attack','player:'+x.id,x.fn));
   add('attack','monster-base:'+A.monsterBase?.id,A.monsterBase?.fn);A.monsterStages.forEach(x=>add('attack','monster:'+x.id,x.fn));
-  add('minimap','before',MINIMAP_PIPELINE.before);MINIMAP_PIPELINE.hooks.forEach(x=>add('minimap',x.id,x.draw));
+  add('minimap','draw',drawMinimap);
   for(const [id,fn] of PRESENTATION_UPDATES)add('presentation',id,fn);
   const D=globalThis.__MANRU_DRAW_HOOKS_R19__;
   D.world.forEach(x=>add('drawHooks','world:'+x.id,x.draw));D.post.forEach(x=>add('drawHooks','post:'+x.id,x.draw));
@@ -789,11 +789,13 @@ globalThis.__MANRU_QA_CONSUMERS__={
     A.playerBase={id:'qa-base',fn:()=>{trace.push('base');return 'qa-result'}};A.playerStages.unshift(mk('first'));A.playerStages.push(mk('last'));
     const mon=state.monsters[0];out.attackResult=runAttackStages('player',[mon,0]);
     A.playerStages.shift();A.playerStages.pop();A.playerBase=base;out.attackTrace=trace.slice();
-    const mtrace=[];MINIMAP_PIPELINE.hooks.unshift({id:'qa-first',draw:()=>{mtrace.push('first')}});MINIMAP_PIPELINE.hooks.push({id:'qa-last',draw:()=>{mtrace.push('last')}});
-    drawMinimap(true);MINIMAP_PIPELINE.hooks.shift();MINIMAP_PIPELINE.hooks.pop();out.minimapTrace=mtrace;
+    drawMinimap(true);
+    const miniBase=minimapLayers.base.toDataURL(),miniKey=minimapLayers.key;
+    drawMinimap(true);
+    out.minimapCacheHit=minimapLayers.key===miniKey&&minimapLayers.base.toDataURL()===miniBase;
     let h=2166136261;const d=MC.toDataURL();for(let i=0;i<d.length;i++){h^=d.charCodeAt(i);h=Math.imul(h,16777619)}out.minimapDigest=(h>>>0).toString(16);
     const ptrace=[];PRESENTATION_UPDATES.set('qa-a',()=>ptrace.push('a'));PresentationState.advance(0);PRESENTATION_UPDATES.delete('qa-a');out.presentationRan=ptrace.length;
-    out.counts={routes:ACTION_ROUTES.size,turn:TurnEngine.stages.length,attackPlayer:A.playerStages.length,attackMonster:A.monsterStages.length,minimap:MINIMAP_PIPELINE.hooks.length,presentation:PRESENTATION_UPDATES.size,generation:GENERATION_PIPELINE.pre.length+GENERATION_PIPELINE.post.length};
+    out.counts={routes:ACTION_ROUTES.size,turn:TurnEngine.stages.length,attackPlayer:A.playerStages.length,attackMonster:A.monsterStages.length,presentation:PRESENTATION_UPDATES.size,generation:GENERATION_PIPELINE.pre.length+GENERATION_PIPELINE.post.length};
     return out;
   },
   boss(){
