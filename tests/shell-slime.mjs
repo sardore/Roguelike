@@ -13,7 +13,16 @@ const bridge=`globalThis.probe=()=>{
  const protectedStats=combatEntityStats(mon);
  const half=[monsterActionSchedule(mon).act,monsterActionSchedule(mon).act];
  state.floorTurn++;
- const sortie=monsterActionSchedule(mon,{target:p});
+ const skipped=monsterActionSchedule(mon);
+ const skippedInside=!skipped.act&&shellSlimeProtected(mon);
+ state.floorTurn++;
+ const beforeSortie=FX.projectiles.length;
+ const sortie=monsterActionSchedule(mon);
+ resolveMonsterTargetTurn57(mon,p,sortie);
+ const onlyEmerges=!!shellSlimeFixture(mon)&&mon.shellSlimeState.strikes===0&&FX.projectiles.length===beforeSortie;
+ resolveMonsterTargetTurn57(mon,p,{act:true,steps:1});
+ const noExtraAction=mon.shellSlimeState.strikes===0&&FX.projectiles.length===beforeSortie;
+ state.floorTurn++;
  OccupancyService.move(p,mon.x+2,mon.y);
  const atRange=entityDistance57(mon,p)===2;
  const needleStart=FX.projectiles.length;
@@ -40,17 +49,18 @@ const bridge=`globalThis.probe=()=>{
  tickMonsterDurations();
  const healed=mon.hp===mon.maxHp&&data.next===state.floorTurn+3;
  state.floorTurn=data.next;
- monsterActionSchedule(mon,{target:p});const shell=shellSlimeFixture(mon);
+ monsterActionSchedule(mon);
+ resolveMonsterTargetTurn57(mon,p,monsterActionSchedule(mon));const shell=shellSlimeFixture(mon);
  state._movementDiscovery105=null;
  const oldHp=shell.hp;
  const dealt=damageEntity(shell,oldHp,p);
  if(dealt>0&&shell.hp<=0)killMonster(shell);
  const broken=data.phase==='broken'&&!shellSlimeProtected(mon)&&!shellSlimeFixture(mon);
- return {half,dodges,noDamage,strikes,returned,healed,broken,atRange,needle,clean,
-  oneAction:(sortie.actions||1)===1,healAmount:healAmount===Math.ceil(mon.maxHp*.2),
-  armor:protectedStats.def===mon.def+9,attack:protectedStats.atk===mon.atk};
+ return {half,dodges,noDamage,strikes,returned,healed,broken,atRange,needle,clean,skippedInside,onlyEmerges,noExtraAction,
+  oneAction:(sortie.actions||1)===1,healAmount:healAmount===Math.ceil(mon.maxHp*.1),
+  armor:protectedStats.def===mon.def+14,attack:protectedStats.atk===mon.atk};
 };`;
 const runtime=assembleGame('src').text.replace(QA_MARKER,fs.readFileSync('src/qa/qa.js','utf8')+'\n'+bridge);
 const b=await launch(),c=await b.newContext({viewport:{width:1514,height:1080}});
 await c.route('**/scripts/10-runtime.js',r=>r.fulfill({contentType:'text/javascript',body:runtime}));
-const s=await openSession(b,new URL('../dist-qa',import.meta.url).pathname,{context:c,seed:77});try{await startRun(s,'wanderer');assert.deepEqual(await s.page.evaluate(()=>probe()),{half:[false,true],dodges:1,noDamage:true,strikes:1,returned:true,healed:true,broken:true,atRange:true,needle:true,clean:true,oneAction:true,healAmount:true,armor:true,attack:true});assert.deepEqual(s.errors,[])}finally{await s.close();await b.close()}
+const s=await openSession(b,new URL('../dist-qa',import.meta.url).pathname,{context:c,seed:77});try{await startRun(s,'wanderer');assert.deepEqual(await s.page.evaluate(()=>probe()),{half:[false,true],dodges:1,noDamage:true,strikes:1,returned:true,healed:true,broken:true,atRange:true,needle:true,clean:true,skippedInside:true,onlyEmerges:true,noExtraAction:true,oneAction:true,healAmount:true,armor:true,attack:true});assert.deepEqual(s.errors,[])}finally{await s.close();await b.close()}
