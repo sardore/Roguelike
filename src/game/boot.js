@@ -95,7 +95,6 @@ bindModalSwipeClose();
 
   syncCanvasWrapViewport();
 
-const mapOpen49=()=>!!interactionActive8('mobileMapModal');
 
   /* complete legacy interaction handlers that were referenced but never defined */
 startTitleCanvas();

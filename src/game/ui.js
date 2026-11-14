@@ -181,8 +181,7 @@ function bindEquipInspect(){
   }
 function openMapModal(){
   if(!gameplayUiOpen57())return false;globalThis.__MANRU_UX45_ACTIONS__?.beginViewer?.();
-  const wrap = document.getElementById("mobileMapModal");
-  syncLargeMinimap();
+  drawMinimap(true);syncLargeMinimap();
   setInteraction8('mobileMapModal',true);
 globalThis.__MANRU_UX45_ACTIONS__?.finishViewer?.();
 }
@@ -362,7 +361,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     updatePanels();
     if(inventoryDirty&&inventoryOpen)renderInventory();
     drawMap(true);R61.last=performance.now();R61.dirty=false;
-    if(mapModalOpen()||performance.now()-R61.lastMini>240){drawMinimap(true);R61.lastMini=performance.now()}
+    if(drawMinimap(mapModalOpen())&&mapModalOpen())syncLargeMinimap();
     const sk=document.getElementById('skillTxt');if(sk)sk.onclick=()=>InputRouter.dispatch({type:'CLASS_SKILL',source:'gameplay-hud'});
 }
   function updateFeelingUI(){const f=feeling62();if(!f){feelEl.classList.remove('show');return}feelEl.innerHTML=`<b>${f.glyph}</b><span>${f.name}</span>`;feelEl.classList.add('show')}
@@ -922,14 +921,13 @@ const UX={
 const COOKING_INGREDIENT_LIMIT57=Math.max(...FOOD_RECIPES.map(r=>r.ingredients.length));
 /* r53: camera984 owns camera snapshots; removed the dead camera61 cache/reset wrapper. */
 /* v6.1 final render coordinator: one camera snapshot and one world renderer per update */
-  const R61={last:0,lastMini:0,lastHud:0,dirty:true};
+  const R61={last:0,lastHud:0,dirty:true};
 /* ===== MANRU v7.0 RELEASE CANDIDATE CORE ===== */
 const RC={
     build:'r57 INPUT LOCK / HONEST CHAIN / SAVE VALIDATION',
     panelOpen:false,
     lastActionAt:0,
     lastDraw:0,
-    lastMini:0,
     lastHud:0,
     lastViewport:0,
     vw:0,vh:0,
@@ -1325,7 +1323,7 @@ function updateMobileHud(){
     const stock=ShopMapBuilder.groundAt(p.x,p.y),bed=dojoAdjacentBed(),anvil=citadelAdjacentAnvil(),pushable=adjacentPushable105(),silk=adjacentSilkTrap57(),gate=palaceGateNearby(),branch=adjacentBranchPortal105(),onStairs=isMainStair(p.x,p.y),hasItem=state.items.some(it=>it.x===p.x&&it.y===p.y),onAltar=state.map[p.y]?.[p.x]===TT.ALTAR,context=document.getElementById('contextActionLabel'),contextBtn=document.getElementById('contextActionBtn');if(context)context.textContent=stock?'구매':dojoSleeping()?'잠듦':bed?'취침':silk?'함정해제':gate?'수문':branch?'출입':onStairs?'내려감':hasItem?'줍기':anvil?'장비 합성':pushable?'밀기':'상호작용';if(contextBtn){const actionable=!!stock||!!bed||!!silk||!!gate||!!branch||onStairs||hasItem||!!anvil||!!pushable||onAltar;contextBtn.classList.toggle('available',actionable);contextBtn.disabled=!actionable;const b=contextBtn.querySelector('b');if(b)b.textContent=stock?'買':bed?'眠':silk?'解':gate?'閥':branch?'入':onStairs?'↓':hasItem?'줍':anvil?'合':pushable?'推':'·'}
     document.querySelector('#mobileControls [data-act="open"]')?.classList.toggle('available',(p.blinkLevel||0)>0);document.querySelector('#mobileControls [data-act="skill"]')?.classList.toggle('available',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));
     const bh=document.getElementById('bossHud');if(bh){bh.classList.toggle('show',!!boss);if(boss){setText('bossName',boss.name);setWidth('bossFill',clamp(100*boss.hp/boss.maxHp,0,100)+'%')}}
-    if(mapOpen49())syncLargeMinimap();
+
     if(isMobileViewport()){const enemy=state.monsters.some(isThreatVisibleToPlayer),show=(act,on)=>document.querySelector(`#mobileControls [data-act="${act}"]`)?.classList.toggle('ux54-hidden',!on);show('attack',true);show('pickup',true);show('inv',true);show('rest',true);show('open',(p.blinkLevel||0)>0);show('skill',p.skillPoints>0||Object.values(p.martial||{}).some(v=>v>0));document.querySelector('#mobileHud .mobileFocusBlock')?.classList.toggle('ux54-show',enemy||p.focus<st.maxFocus)}
     document.querySelectorAll('#mobileControls .actions.quickbar [data-act]').forEach(b=>b.setAttribute('aria-hidden','false'));if(hpBlock){const pct=Math.max(0,Math.min(100,(p.hp/Math.max(1,p.maxHp))*100));hpBlock.style.setProperty('--hp75',pct+'%')}
   }
