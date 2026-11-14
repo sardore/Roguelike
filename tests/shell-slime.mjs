@@ -29,10 +29,11 @@ const bridge=`globalThis.probe=()=>{
  state._movementDiscovery105={map:state.map,monsters:new Set([mon])};
  const hp=p.hp;
  monsterTurn();
+ resolveMonsterTargetTurn57(mon,p,{act:true,steps:1});
  const dodges=state.log.filter(t=>t.includes('첫 발견 공격을 피했다')).length;
  const noDamage=hp===p.hp;
  const strikes=mon.shellSlimeState.strikes;
- const needle=FX.projectiles.slice(needleStart).some(fx=>fx.kind==='slime-needle');
+ const needle=FX.projectiles.slice(needleStart).filter(fx=>fx.kind==='slime-needle').length===1;
  const clean=['illness','upset','blind','bleed','poison'].every(key=>!state.status[key]);
  mon.shellSlimeState.expires=state.floorTurn+1;
  state.floorTurn++;
