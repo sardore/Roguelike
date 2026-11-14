@@ -20,7 +20,17 @@ function dropBurntCharcoal105(x,y){
  // Spent material is a collectible item, never a fresh autonomous fire source.
  const item={...clone(foodDef('검게 탄 숯')),x,y,count:1};state.items.push(item);return item;
 }
-  function addElemField74(kind,x,y,ttl,damage=3){const cells=elementCells105(x,y,1);emitElementContact105(kind,cells,effectSource57(state.player));state.elementFields74=state.elementFields74.filter(f=>!(f.kind===kind&&f.x===x&&f.y===y));state.elementFields74.push({kind,x,y,ttl,damage:Math.max(1,Math.round(damage)),cells,bornTurn:state.turn+1,...effectSource57(state.player)})}
+function fireGroundCells(cells){
+ return cells.filter(({x,y})=>!tileBlocks(state.map[y][x]));
+}
+function addElemField74(kind,x,y,ttl,damage=3){
+ const source=effectSource57(state.player),contactCells=elementCells105(x,y,1);
+ emitElementContact105(kind,contactCells,source);
+ const cells=kind==='fire'?fireGroundCells(contactCells):contactCells;
+ if(!cells.length)return;
+ state.elementFields74=state.elementFields74.filter(f=>!(f.kind===kind&&f.x===x&&f.y===y));
+ state.elementFields74.push({kind,x,y,ttl,damage:Math.max(1,Math.round(damage)),cells,bornTurn:state.turn+1,...source});
+}
 function elementMaterial105(t,kind,x,y){
  if(kind==='wood'&&t===TT.WOOD_FLOOR&&state.branchContext105?.id==='palace'&&state.branchTerrain105?.palace105?.materials?.[k(x,y)]===t)return true;
  if(t===TT.WALL&&kind==='structural-stone')return true;
@@ -160,7 +170,7 @@ function tickTerrainReactions105(){
  if(!state?.map)return;const r=terrainReactions105();if(r.lastTick===state.turn)return;r.lastTick=state.turn;
  const embers=(state.items||[]).filter(i=>i.charcoalBurn105?.lit&&state.turn>i.charcoalBurn105.born);
  // Snapshot first: a newly ignited neighbour cannot spread again in this turn.
- const hot=[];for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.map[y][x]===TT.LAVA){hot.push({x,y});for(const[dx,dy]of DIRS4)if(elementMaterial105(state.map[y+dy]?.[x+dx],'wood',x+dx,y+dy))hot.push({x:x+dx,y:y+dy})}if(hot.length)emitElementContact105('fire',hot,{}, {propagation:true});
+ const hot=[];for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.map[y][x]===TT.LAVA){hot.push({x,y});for(const[dx,dy]of DIRS4){const nx=x+dx,ny=y+dy;if(state.map[ny]?.[nx]!=null&&(elementMaterial105(state.map[ny][nx],'wood',nx,ny)||lightAt(nx,ny)))hot.push({x:nx,y:ny});}}if(hot.length)emitElementContact105('fire',hot,{}, {propagation:true});
  for(const e of [state.player,...state.monsters]){if(e.plantBurn105||e.burn74>0){const old=e.plantBurn105;combustionContact105(e,'fire',old?.source||{});if(e.combustion105)e.combustion105.born=state.turn}environmentStanding105(e)}
  const active=Object.values(r.burning);for(const f of active){const key=k(f.x,f.y);if(state.map[f.y]?.[f.x]!==f.tile){delete r.burning[key];touchElementTerrain105(f.x,f.y);continue}if(state.turn<=f.born)continue;
   f.age++;

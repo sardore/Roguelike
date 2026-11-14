@@ -13,6 +13,9 @@ const bridge = `globalThis.checkFireWall = () => {
   const foe={name:'시험 대상',x:21,y:14,hp:999,maxHp:999,faction57:'player',kind:'human'};
   OccupancyService.addMonster(mon);OccupancyService.addMonster(foe);
   mon.hp=mon.maxHp-20;
+  const tree={x:19,y:12},bench={x:22,y:16};
+  setTerrainTile58(state.map,tree.x,tree.y,TT.GARDEN_TREE);
+  setTerrainTile58(state.map,bench.x,bench.y,TT.BENCH);
   const used=enemySpecial47(mon,foe),healed=mon.hp!==mon.maxHp-20;
   const warnings=state.tempFields.map(f=>f.cells.length);
   const advance=()=>{
@@ -35,8 +38,15 @@ const bridge = `globalThis.checkFireWall = () => {
   const perWall=walls()[0].rootWall105.damage;
   const hp=foe.hp;
   advance();
+  const reactions=terrainReactions105();
+  const ignited=[tree,bench].every(c=>!!reactions.burning[k(c.x,c.y)]);
   const fires=state.tempFields.filter(f=>f.kind==='fire');
-  return {used,healed,warnings,inner,stunned,glow,outer,centerFloor:center===TT.FLOOR,cornerFloor:corner===TT.FLOOR,
+  const solidExcluded=fires.every(f=>f.cells.every(c=>!tileBlocks(state.map[c.y][c.x])));
+  emitElementContact105('water',[bench]);
+  const extinguished=!reactions.burning[k(bench.x,bench.y)];
+  for(let i=0;i<3;i++){state.turn++;tickTerrainReactions105();}
+  const treeBurned=state.map[tree.y][tree.x]!==TT.GARDEN_TREE&&state.items.some(item=>item.x===tree.x&&item.y===tree.y&&item.foodKind==='charcoal');
+  return {used,healed,ignited,solidExcluded,extinguished,treeBurned,warnings,inner,stunned,glow,outer,centerFloor:center===TT.FLOOR,cornerFloor:corner===TT.FLOOR,
     lower:perWall<mon.atk,hit:foe.hp<hp,restored:walls().length===0&&state.map[14][21]===TT.FLOOR,
     fire:fires.length===1&&fires[0].ttl===3&&fires[0].cells.some(c=>c.x===21&&c.y===14)};
 };`;
@@ -48,7 +58,7 @@ const session=await openSession(browser,new URL('../dist-qa',import.meta.url).pa
 try {
   await startRun(session,'wanderer');
   const result=await session.page.evaluate(()=>checkFireWall());
-  assert.deepEqual(result,{used:true,healed:false,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
+  assert.deepEqual(result,{used:true,healed:false,ignited:true,solidExcluded:true,extinguished:true,treeBurned:true,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
   assert.deepEqual(session.errors,[]);
 } finally {
   await session.close();

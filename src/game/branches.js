@@ -408,14 +408,12 @@ function palaceRootWallsRise(cells,root,expiresTurn=state.turn+1){
  }return raised;
 }
 function palaceRootWallExplode(records){
- const walls=Array.isArray(records)?records:[records],hits=new Map(),fires=new Map(),targets=[state.player,...state.monsters];
+ const walls=Array.isArray(records)?records:[records],hits=new Map(),footprints=new Map(),targets=[state.player,...state.monsters];
  for(const wall of walls){const root=wall.rootWall105,elem=root.element||'earth',cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};
   elementAttackFx105(elem,cells,{x:wall.x,y:wall.y});
-  if(elem==='fire'){
-   let patch=fires.get(root.id);
-   if(!patch){patch={x:wall.x,y:wall.y,cells:new Map(),turns:root.fireTurns,effect};fires.set(root.id,patch);}
-   for(const c of cells)if(!tileBlocks(state.map[c.y][c.x]))patch.cells.set(k(c.x,c.y),c);
-  }
+  let patch=footprints.get(root.id);
+  if(!patch){patch={x:wall.x,y:wall.y,cells:new Map(),elem,turns:root.fireTurns,effect};footprints.set(root.id,patch);}
+  for(const c of cells)patch.cells.set(k(c.x,c.y),c);
   for(const target of targets){if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;
    let groups=hits.get(target);if(!groups){groups=new Map();hits.set(target,groups);}let hit=groups.get(elem);if(!hit){hit={parts:[],effect,poison:0,drunk:0};groups.set(elem,hit);}
    hit.parts.push(root.damage??root.atk*1.4);hit.poison=Math.max(hit.poison,root.poison||0);hit.drunk=Math.max(hit.drunk,root.drunk||0);if(effect.credit==='player')hit.effect=effect;
@@ -424,8 +422,12 @@ function palaceRootWallExplode(records){
  let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:elem==='fire'?'화염벽 폭발':grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:elem==='earth',color:elem==='fire'?'#ff9652':grass?'#b7d85d':'#bf8b59',contactHandled105:true});
   if(result.damage>0){damaged++;if(grass&&target.hp>0){applyCombatStatus(target,'poison',hit.poison,1,{source:hit.effect,element:elem});applyCombatStatus(target,'drunk',hit.drunk,1,{source:hit.effect,element:elem});}}
  }
- for(const patch of fires.values())if(patch.cells.size)addField('fire',patch.x,patch.y,patch.turns,[...patch.cells.values()],patch.effect);
- if(damaged)addLog(`${fires.size?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
+ for(const patch of footprints.values()){
+  const cells=[...patch.cells.values()];
+  if(patch.elem==='fire')addField('fire',patch.x,patch.y,patch.turns,cells,patch.effect);
+  else emitElementContact105(patch.elem,cells,patch.effect);
+ }
+ if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
 function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
 function palaceResolveIntent(mon,I){
@@ -2377,8 +2379,7 @@ function bumpTileAction(x,y,opts={}){
     if(link){cancelAutoWalk?.();const landing=resolvePortalLanding57(link);if(!landing){addLog('접힌 문의 반대편 착지 공간이 막혀 이동하지 못했다.');toast('포탈 반대편에 안전한 착지점이 없다.');return true}burst(x,y,'#bf8fe8',14,.8);const result=resolvePlayerLanding57(landing.x,landing.y,{cause:'portal',hazard:false});if(!result.ok)return true;burst(state.player.x,state.player.y,'#8fd8e6',16,.9);VisibilityService.compute();addLog('접힌 문이 열리며 전혀 다른 내실로 이동했다.');state.discoveredPortals981=state.discoveredPortals981||{};const destPortalKey=k(link.destPortal.x,link.destPortal.y);state.discoveredPortals981[portalKey]=destPortalKey;return true;}
   }
   // Stations and deliberate containers remain walk-only interactions. Forced/teleport landing never opens a UI or loots a station for the player.
-  if(active&&tile===TT.BRAZIER){openCooking('brazier');return true;}
-  if(active&&tile===TT.COOKPOT){openCooking('pot');return true;}
+  if(active&&(tile===TT.BRAZIER||tile===TT.COOKPOT)){openCooking(x,y);return true;}
   if(tile===TT.RUMOR){const record=state.branchTerrain105?.citadel105?.features105?.find(f=>f.x===x&&f.y===y&&f.theme==='archive');if(record&&state.branchContext105?.id==='citadel'){const district=CITADEL_TOWERS[record.tower105].district105,release=CITADEL_RELEASES.find(r=>CITADEL_TOWERS[r.tower].district105===district&&r.key!=='central-shortcut');addLog(release?`성채 기록: ${CITADEL_TOWERS[release.tower].name} ${release.level}층에서 ${release.targetLevel}층 ${release.label}의 걸쇠를 풀 수 있다.`:'성채 기록: 동쪽 상층 연결교를 따라 중앙탑 4층에 진입한 뒤 최하층으로 내려가라.');addLog('미궁 기록: 세 걸쇠의 순서는 자유다. 두 등불은 불로 켜고, 동쪽 바위는 옆 피난길에서 돌을 던져 풀어라. 내측 철창은 빠르지만 5턴 뒤 닫힌다.');}else rumorEvent();setTerrainTile58(state.map,x,y,TT.FLOOR);return true;}
   if(tile===TT.TRAP){trapEvent(x,y);return true;}
   if(active&&citadelAnvilAt(x,y))return anvilOpen({x,y});
