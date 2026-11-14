@@ -318,8 +318,8 @@ const RuntimeState={
       if(state.map[ty]?.[tx]===TT.JAR)return{type:'blocked',x:tx,y:ty,tile:TT.JAR};
       const item=(state.items||[]).find(it=>it.x===tx&&it.y===ty);
       if(item)return{type:'item',x:tx,y:ty,item};
-      if(state.branchPortals105?.some(p=>p.x===tx&&p.y===ty))return{type:'branch',x:tx,y:ty};
-      if(state.stairs&&state.stairs.x===tx&&state.stairs.y===ty)return{type:'stairs',x:tx,y:ty};
+      if(state.map[ty]?.[tx]===TT.PORTAL&&state.branchPortals105?.some(p=>p.x===tx&&p.y===ty))return{type:'branch',x:tx,y:ty};
+      if(isMainStair(tx,ty))return{type:'stairs',x:tx,y:ty};
       if(ReachabilityService.playerPassable(tx,ty)&&!OccupancyService.isOccupied(tx,ty))return{type:'tile',x:tx,y:ty};
       return{type:'blocked',x:tx,y:ty,tile:state.map[ty]?.[tx]};
     },
@@ -330,7 +330,7 @@ const RuntimeState={
         if(!m||m.hp<=0||!(state.monsters||[]).includes(m))return null;
         if(Number.isFinite(t.x)&&Number.isFinite(t.y)&&monCovers(m,t.x,t.y))return{x:t.x,y:t.y};const c=entityClosestCellTo57(m,state.player);return c?{x:c.x,y:c.y}:{x:m.x,y:m.y};
       }
-      if(t.type==='stairs')return state.stairs?{x:state.stairs.x,y:state.stairs.y}:null;
+      if(t.type==='stairs')return isMainStair(t.x,t.y)?{x:t.x,y:t.y}:null;
       if(t.type==='item'){
         const it=(state.items||[]).includes(t.item)?t.item:(state.items||[]).find(i=>i.x===t.x&&i.y===t.y);
         return it?{x:it.x,y:it.y}:{x:t.x,y:t.y};

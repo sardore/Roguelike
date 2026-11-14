@@ -2217,7 +2217,7 @@ function contextAction(){
   if(chest&&entityDistance57(chest,state.player)<=1)return openPalaceStarterChest(chest);
   const gate=palaceGateNearby();if(gate)return palaceUseGate(gate,act);
   const branch=adjacentBranchPortal105();if(branch){if(branchTransition(branch)){WorldTransition57.commit(act,1);return true}return false}
-  if(state.player.x===state.stairs.x&&state.player.y===state.stairs.y){ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;return}
+  if(isMainStair(state.player.x,state.player.y))return ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;
   if((state.items||[]).some(it=>it.x===state.player.x&&it.y===state.player.y)){ActionDispatcher.dispatch({type:'PICKUP',args:[]}).value;return}
   const anvil=citadelAdjacentAnvil();if(anvil)return anvilOpen(anvil);
   const pushable=adjacentPushable105();if(pushable){if(pushStructure105(pushable)){commitPlayerAction57(act,1);return true}toast('앞칸이 막혔거나 통로를 봉쇄하게 되어 밀 수 없다.');return false}
@@ -2332,7 +2332,13 @@ function hudLocation58(){
  return{kind:'normal',floor:String(state.floor).padStart(2,'0'),tag:'',desktop:`제 ${String(state.floor).padStart(2,'0')}층 / 25`,full:state.layoutName||regionFor(state.floor)[2]};
 }
 function adjacentBranchPortal105(){
-  if(!state?.player)return null;const p=state.player,near=(state.branchPortals105||[]).filter(q=>Math.max(Math.abs(q.x-p.x),Math.abs(q.y-p.y))<=1&&state.map[q.y]?.[q.x]===TT.PORTAL);
+  if(!state?.player)return null;
+  const p=state.player,near=(state.branchPortals105||[]).filter(q=>{
+    const dx=Math.abs(q.x-p.x),dy=Math.abs(q.y-p.y);
+    if(Math.max(dx,dy)>1||state.map[q.y]?.[q.x]!==TT.PORTAL)return false;
+    if(!dx&&!dy)return true;
+    return state.visible.has(k(q.x,q.y))&&(!dx||!dy||!tileBlocksSight(state.map[p.y]?.[q.x])&&!tileBlocksSight(state.map[q.y]?.[p.x]));
+  });
   return near.find(q=>q.x===p.x&&q.y===p.y)||near.find(q=>q.x===p.x+(p.facing?.x||0)&&q.y===p.y+(p.facing?.y||0))||near[0]||null;
 }
 function dropLootWithTalismans(pos,special=false){if(mountainOutdoor(pos)){if(globalThis.__MANRU_RANDOM57__()<.10){const item=clone(MOUNTAIN_BERRY);PlacementService.placeItem(item,pos);return item}return null}if(state&&globalThis.__MANRU_RANDOM57__()<(special?.34:.20)){const t=talismanPick56();if(t){PlacementService.placeItem({...t,x:pos.x,y:pos.y,count:1});return}}const n=state?.items?.length||0,r=dropFloorLoot(pos,special);for(const i of(state?.items||[]).slice(n))decoratePotion56(i,i.x,i.y);return r}
