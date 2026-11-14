@@ -171,6 +171,7 @@ function branchPruneWorld(run){
 }
 function branchPortalInfo(p){
  const [target,depth]=String(p.to||'').split(':'),def=BRANCH_DEFS105[target]||BRANCH_DEFS105[state?.branchContext105?.id],name=p.label||'계단문';
+ if(p.kind==='palace-return')return{name,desc:'용왕이 쓰러진 왕좌전에 열린 귀환 포탈. 만루 본관 9층 용궁 입구로 바로 돌아간다.',hint:'포탈 위나 옆에서 F키 또는 상호작용 버튼을 누른다.'};
  if(target==='main')return{name,desc:'만루 본관으로 올라가는 돌계단. 문 옆에서 상호작용하면 떠나온 층으로 돌아간다.',hint:'문은 걸어서 지나갈 수 있다. F키·상호작용 버튼로 출입한다. 다시 내려오면 탐사 상태가 이어진다.'};
  if(p.kind==='dojo-local')return{name,desc:p.id.startsWith('in')?'도장 안의 이전 구획으로 돌아가는 계단문.':'도장 안의 다음 구획으로 이어지는 계단문. 곁길을 거쳐 이전 구획으로 돌아갈 수도 있다.',hint:p.requireSector!=null?'무도가를 모두 쓰러뜨린 뒤 문 옆에서 상호작용한다.':'문 옆에서 F키·상호작용 버튼로 이동한다.'};
  if(p.id==='up')return{name,desc:`${def.name}의 이전 층으로 올라가는 계단. 되돌아가도 탐사한 곳은 그대로 남는다.`,hint:`문 옆에서 상호작용 · 목적지: ${def.name} ${depth||1}층.`};
@@ -362,6 +363,15 @@ function palaceTideResponse(mon){
  return false;
 }
 function palaceWet(mon){return isWaterTile105(terrainBaseTile58(mon.x,mon.y));}
+function palaceOpenReturnPortal(){
+ const arena=state.branchTerrain105?.palace105?.arena105;
+ if(!arena||state.branchPortals105.some(p=>p.kind==='palace-return'))return false;
+ const {cx:x,cy:y}=arena;
+ const out=RuntimeTerrainOwner.mutate(x,y,TT.PORTAL,{source:'palace-return',placement58:{base:palaceWaterTile(x,y)}});
+ if(!out.ok)return false;
+ state.branchPortals105.push({id:'royal-return',kind:'palace-return',x,y,to:'main:9',arrival:'palace',label:'본관 9층 귀환 포탈'});
+ return true;
+}
 function palaceApplyTide({deferHazard=false}={}){if(state?.branchContext105?.id!=='palace')return;const d=state.branchTerrain105.palace105,wet=[];let changed=false;
  if(state.branchContext105.level===2&&palaceWorld().kingDefeated&&!d.throneDoorOpened105){
   const doors=(d.doors105||[]).filter(door=>door.room==='throne');
@@ -379,6 +389,7 @@ function palaceApplyTide({deferHazard=false}={}){if(state?.branchContext105?.id!
   if(top===base){const out=RuntimeTerrainOwner.mutate(x,y,next,{source:'palace-tide',deferHazard57:true});changed=changed||out.changed;}else{setTerrainSurface65(state.map,x,y,next);changed=true;}
   if(isWaterTile105(next))wet.push({x,y});
  }
+ if(state.branchContext105.level===2&&palaceWorld().kingDefeated&&palaceOpenReturnPortal())changed=true;
  if(wet.length)emitElementContact105('water',wet,{sourceFaction:'neutral'},{ground:true});
  if(changed){if(!deferHazard)globalThis.__MANRU_HAZARD_CORE__?.revalidateAll('palace-tide');VisibilityService.compute();BRANCH_TILE_CACHE.clear();}
  for(const mon of state.monsters){if(mon.palaceLotus105)mon.palaceBloom105=palaceWet(mon);if(mon.bossPattern==='palaceKing105')mon.def=palaceKingDefense(mon,palaceTide().level);}
@@ -466,7 +477,7 @@ function palaceKingTurn(mon,target){palaceEquipKing(mon);if(mon.intent54)return 
 }
 function palaceKingDefeated(mon){
  if(state.branchContext105?.id!=='palace'||mon.bossPattern!=='palaceKing105'||!monsterRewardPolicy(mon).kills)return;
- const w=palaceWorld();w.kingDefeated=true;w.royalUntil=0;palaceApplyTide();addLog('창해군이 쓰러졌다. 왕좌전 배수장치가 열렸다. 소지품이 사망 지점에 떨어졌다.');
+ const w=palaceWorld();w.kingDefeated=true;w.royalUntil=0;palaceApplyTide();addLog('창해군이 쓰러졌다. 왕좌전 중앙에 본관 9층 귀환 포탈이 열렸다. 소지품이 사망 지점에 떨어졌다.');
 }
 function palaceEntranceRoom(candidates){const p=candidates.find(c=>c.room&&c.room.w>=7&&c.room.h>=7&&c.x>=c.room.x+2&&c.x<c.room.x+c.room.w-2&&c.y>=c.room.y+2&&c.y<c.room.y+c.room.h-2)||candidates[0];if(!p)return null;const r=p.room;if(r){r.name='창해 용궁 출입실';r.branchEntrance105='palace';}for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(!tileBlocks(state.map[y]?.[x]))state.decor.push({x,y,kind:'coral',label:'용궁 입구의 진주·산호 문장'});}return p;}
 function palaceGuideItem(){return{type:'guide',branchGuide105:true,name:'용궁 조수 안내서',rarity:'common',count:1,identified:true,desc:'물은 8턴마다 차오르거나 빠진다. 물길이 깊어지면 높은 회랑이나 금테 석단에서 썰물을 기다리자. 끊긴 물길은 뗏목을 타고 건널 수 있다. 환류 수문을 열면 그 방의 수위가 6턴 동안 한 단계 내려간다. 수문은 16턴 뒤에 다시 열 수 있다.'};}
