@@ -372,7 +372,7 @@ function pickup(...args){
 }
   function terrainKey(tile,region,variant,frame,extra=''){return `${tile}:${region}:${variant}:${frame}:${extra}`}
   const TERRAIN986=new Map([
-    [TT.PALACE_ROCK,{...palaceInspect(TT.PALACE_ROCK),inspectPriority57:'terrain'}],
+    [TT.PALACE_ROCK,{inspectPriority57:'terrain'}],
     [TT.WALL,{desc:'두꺼운 내벽. 층을 거듭 증축하면서 오래된 벽 위에 새 벽을 덧댄 흔적이 남아 있다.'}],
     [TT.FLOOR,{desc:'수많은 발자국에 닳은 객주 바닥. 얼룩과 긁힌 자국이 지나간 사람들의 흔적을 남긴다.'}],
     [TT.STAIR,{desc:'더 깊은 층으로 내려가는 계단. 아래에서 올라오는 공기는 층이 바뀔 때마다 냄새부터 달라진다.',hint:'계단 위에서 내려가면 다음 층으로 진행한다.'}],
@@ -465,6 +465,7 @@ function pickup(...args){
   function terrainInfo986(t,x,y){
     const seal=state?.tempTerrain74?.find(f=>f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&f.x===x&&f.y===y&&f.tile===t);
     if(seal)return{name:t===TT.DOOR?'봉쇄된 문':'봉쇄된 계단 · 출입구',desc:`${Math.max(0,seal.expiresTurn105-state.turn)}턴 동안 봉쇄된다. 시전자를 쓰러뜨리거나 지속시간이 끝나면 해제된다.`,hint:t===TT.DOOR?'일반 열기·이동·점멸로 문을 통과할 수 없다. 문 자체를 파괴해도 봉쇄가 깨진다.':'이 칸을 걸어 지날 수는 있지만 다른 층이나 구역으로 이동할 수 없다.'};
+    if(t===TT.PALACE_ROCK)return palaceInspect(t,x,y);
     const definition=TERRAIN986.get(t);if(definition?.inspectPriority57==='terrain')return{name:terrainName(t),...definition};
     const world=terrainReactions105(),steam=state.tempFields?.find(f=>f.kind==='steam'&&f.x===x&&f.y===y&&f.ttl>0),spill=world.spills?.[k(x,y)],clue=world.clues?.[k(x,y)];
     if(steam)return{name:'증기',desc:`${steam.ttl}턴 동안 남는다. 사선이 연막이나 증기 두 칸을 지나면 차단된다.`,hint:'통행 가능. 피해·중독·경직이 없으며 소리는 통과한다.'};
