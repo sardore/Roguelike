@@ -1,5 +1,5 @@
 const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#706b64',shape:'armor',kind:'construct',
- role61:'shell',fixed:true,immobile105:true,concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
+ role61:'shell',actionLag57:{period:2,skipTurns:1},concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
 const SHACKLE_COUNTER={id:'shackle-counter',skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
 const MONSTER_GUARD_TURNS={early:3,late:4,forbidden:4};
 const MONSTERS=[
