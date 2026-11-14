@@ -393,7 +393,7 @@ function palaceRootWallsRise(cells,root,expiresTurn=state.turn+1){
   if(!RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,expiresTurn-state.turn,'palace-root-wall105',{allowedOld:[old],source:root.element==='fire'?'salamander-fire-wall':grass?'wood-spirit-roots':'palace-roots',overlapSolid:true}))continue;
   const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=expiresTurn;t.rootWall105={...root};
   Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,root.element||'earth');
-  const effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target))applyCombatStatus(target,'stun',root.stunTurns,1,{source:effect});raised++;
+  const effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target)&&applyCombatStatus(target,'stun',root.stunTurns,1,{source:effect})&&root.element==='fire')floatText(target.x,target.y,'기절','#fff1ad',13);raised++;
  }return raised;
 }
 function palaceRootWallExplode(records){
@@ -2254,7 +2254,7 @@ function tickCombatFields57(){
  Duel.environment++;
  try{
  state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
- for(const f of state.tempFields.filter(f=>f.kind==='rootWall'&&f.ttl>0&&state.turn>=(f.raiseTurn??f.bornTurn+1))){palaceRootWallsRise(f.cells,f.rootWall105,f.detonateTurn);f.ttl=0;}
+ for(const f of state.tempFields.filter(f=>f.kind==='rootWall'&&f.ttl>0&&f.rootWall105?.element!=='fire'&&state.turn>f.bornTurn)){palaceRootWallsRise(f.cells,f.rootWall105,f.detonateTurn);f.ttl=0;}
  for(const f of state.tempFields.filter(f=>f.kind==='palaceWave105'&&f.ttl>0))palaceAdvanceWave(f);
  for(const f of state.tempFields.filter(f=>f.kind==='fire'&&f.ttl>0&&state.turn>(f.bornTurn??-1))){applyElementField57(f,'fire',3,{source:'화염 지대',color:'#ff9b55',size:12});if(runState57()!=='playing')return false}return true;
  }finally{Duel.environment--}

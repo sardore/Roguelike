@@ -15,17 +15,28 @@ const bridge = `globalThis.checkFireWall = () => {
   mon.hp=mon.maxHp-20;
   const used=enemySpecial47(mon,foe),healed=mon.hp>mon.maxHp-20;
   const warnings=state.tempFields.map(f=>f.cells.length);
-  const advance=()=>{state.turn++;tickCombatFields57();RuntimeTerrainOwner.tick();};
+  const advance=()=>{
+    state.turn++;tickCombatFields57();expireCombatFields();
+    if(foe.stunned>0)foe.stunned--;
+    RuntimeTerrainOwner.tick();
+  };
   const walls=()=>state.tempTerrain74.filter(w=>w.rootWall105?.element==='fire');
   advance();
   const inner=walls().length,stunned=foe.stunned===1;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=48;
+  const ctx=canvas.getContext('2d');ctx.translate(8,8);
+  drawPalaceRock(ctx,1,'fire',false);
+  const dark=ctx.getImageData(0,0,48,48).data;
+  ctx.clearRect(-8,-8,48,48);drawPalaceRock(ctx,1,'fire',true);
+  const bright=ctx.getImageData(0,0,48,48).data;
+  const glow=bright.some((value,index)=>index%4===3&&value>12&&dark[index]===0);
   advance();
   const outer=walls().length,center=state.map[14][20],corner=state.map[12][18];
   const perWall=walls()[0].rootWall105.damage;
   const hp=foe.hp;
   advance();
   const fires=state.tempFields.filter(f=>f.kind==='fire');
-  return {used,healed,warnings,inner,stunned,outer,centerFloor:center===TT.FLOOR,cornerFloor:corner===TT.FLOOR,
+  return {used,healed,warnings,inner,stunned,glow,outer,centerFloor:center===TT.FLOOR,cornerFloor:corner===TT.FLOOR,
     lower:perWall<mon.atk,hit:foe.hp<hp,restored:walls().length===0&&state.map[14][21]===TT.FLOOR,
     fire:fires.length===1&&fires[0].ttl===3&&fires[0].cells.some(c=>c.x===21&&c.y===14)};
 };`;
@@ -37,7 +48,7 @@ const session=await openSession(browser,new URL('../dist-qa',import.meta.url).pa
 try {
   await startRun(session,'wanderer');
   const result=await session.page.evaluate(()=>checkFireWall());
-  assert.deepEqual(result,{used:true,healed:true,warnings:[8,12],inner:8,stunned:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
+  assert.deepEqual(result,{used:true,healed:true,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
   assert.deepEqual(session.errors,[]);
 } finally {
   await session.close();

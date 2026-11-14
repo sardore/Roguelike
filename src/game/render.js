@@ -1929,7 +1929,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of living){drawCreature(a.o);if(state.debugBattle57){const m=a.o,p=v8CreatureCoords(m),color=entityFaction(m)==='player'?'#78c8ff':'#ff9d8e';X.save();X.strokeStyle=color;X.lineWidth=1.5;for(const c of entityFootprintCells57(m))X.strokeRect((c.x-m.x+p.x)*TILE+1,(c.y-m.y+p.y)*TILE+1,TILE-2,TILE-2);X.font='bold 9px system-ui';X.fillStyle=color;X.fillText((m.debugSide57||'')+(m.debugId57||''),p.x*TILE+2,p.y*TILE+TILE-2);X.restore();}}
     for(const n of state.neutralInteractables58||[])drawNeutralInteractable(n);
 
-    for(const f of state.tempFields||[])if(inB58(f,b,6))drawField(f,now);
+    for(const f of state.tempFields||[])if(f.ttl>0&&inB58(f,b,6))drawField(f,now);
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
@@ -3794,22 +3794,46 @@ function drawPalaceArch(q,a){const {r}=drawKit(q);
  if(a.axis==='x'){r('#344940',0,0,32,6);r('#b39260',0,2,32,4);r('#efd5a0',0,2,32,1);r('#665738',0,6,32,3);if(Math.abs(a.index)===(a.wide>>1)){const x=a.index<0?1:27;r('#736042',x,8,4,22);r('#c6ab76',x,8,2,21);}if(a.grand){r('#617e69',7,0,18,2);r('#e0c181',10,5,12,2);}}
  else{r('#736042',0,0,5,32);r('#c6ab76',1,0,2,32);if(Math.abs(a.index)===(a.wide>>1)){const y=a.index<0?0:27;r('#aa8c59',3,y,27,5);r('#ebd6a4',3,y,27,1);}}
 }
-function drawPalaceRock(q,rise=1,element='earth'){q.save();q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
- const fire=element==='fire';
+let fireWallGlow=null;
+function drawPalaceRock(q,rise=1,element='earth',visible=true){
+ const fire=element==='fire',phase=visible&&!TERRAIN_MOTION54.matches?(FX.frameNow||0)/115:0;
+ q.save();
+ if(fire&&visible){
+  if(!fireWallGlow){
+   fireWallGlow=document.createElement('canvas');fireWallGlow.width=fireWallGlow.height=48;
+   const glow=fireWallGlow.getContext('2d'),light=glow.createRadialGradient(24,24,3,24,24,24);
+   light.addColorStop(0,'rgba(255,211,98,.88)');light.addColorStop(.55,'rgba(255,120,36,.52)');light.addColorStop(1,'rgba(255,56,12,0)');
+   glow.fillStyle=light;glow.fillRect(0,0,48,48);
+  }
+  q.globalCompositeOperation='screen';q.globalAlpha=rise*(.82+.16*Math.sin(phase));
+  q.drawImage(fireWallGlow,-8,5-rise*14);q.globalCompositeOperation='source-over';q.globalAlpha=1;
+ }
+q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
  poly(fire?'#36130f':element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
  poly(fire?'#651d14':element==='grass'?'#3d5c23':'#3d302b',[[2,27],[7,5],[22,3],[26,8],[30,27],[27,30],[5,30]]);
- poly(fire?'#c44218':element==='grass'?'#80a844':'#946843',[[4,26],[9,8],[22,6],[25,10],[27,26],[23,28],[6,28]]);
- poly(fire?'#ff8a24':element==='grass'?'#c6d963':'#c29b68',[[7,10],[9,6],[22,4],[25,8],[22,12],[10,13]]);
+ poly(fire?'#ff692c':element==='grass'?'#80a844':'#946843',[[4,26],[9,8],[22,6],[25,10],[27,26],[23,28],[6,28]]);
+ poly(fire?'#ffbd45':element==='grass'?'#c6d963':'#c29b68',[[7,10],[9,6],[22,4],[25,8],[22,12],[10,13]]);
  poly(fire?'#fff199':element==='grass'?'#edf19a':'#e0ba82',[[10,6],[21,5],[23,7],[12,9],[8,9]]);
  poly(fire?'#8c2413':element==='grass'?'#426e2f':'#684830',[[22,12],[25,8],[29,27],[25,29],[22,25]]);
- poly(fire?'#ff6326':element==='grass'?'#a5c650':'#ad7c4c',[[9,13],[17,11],[21,15],[19,20],[6,23]]);
+ poly(fire?'#ff9e32':element==='grass'?'#a5c650':'#ad7c4c',[[9,13],[17,11],[21,15],[19,20],[6,23]]);
  poly(fire?'#ffbc41':element==='grass'?'#d3df6a':'#bf925c',[[10,14],[16,12],[19,15],[14,17],[8,18]]);
- poly(fire?'#be3017':element==='grass'?'#5b8b35':'#785335',[[6,23],[14,19],[21,20],[22,25],[17,27],[5,27]]);
+ poly(fire?'#ed4c20':element==='grass'?'#5b8b35':'#785335',[[6,23],[14,19],[21,20],[22,25],[17,27],[5,27]]);
  poly(fire?'#ffe28b':element==='grass'?'#e0e578':'#d4a46c',[[14,20],[19,19],[20,22],[15,23]]);
  poly(element==='grass'?'#46632c':'#503b2c',[[8,11],[10,13],[7,18],[5,20]]);
  poly(element==='grass'?'#304a25':'#392f2a',[[18,9],[21,10],[19,13],[18,15],[16,14]]);
  poly(element==='grass'?'#b9d65d':'#d1a16b',[[6,26],[9,24],[12,25],[10,28],[6,28]]);
-q.restore();}
+ if(fire){
+  q.strokeStyle='#fff3b0';q.lineWidth=1.6;q.beginPath();
+  q.moveTo(7,26);q.lineTo(13,18);q.lineTo(11,13);q.lineTo(18,8);
+  q.moveTo(13,18);q.lineTo(21,16);q.lineTo(25,23);q.stroke();
+  for(let i=0;i<6;i++){
+   const y=25-((phase+i*5)%23),x=6+i*4+Math.sin(phase+i)*2;
+   q.fillStyle=i%2?'#fffbd6':'#ffca55';q.fillRect(x,y,i%2?1:2,2);
+  }
+ }
+ q.restore();
+}
+
 function drawPalaceProp(q,p){const {r}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},ellipse=(c,x,y,rx,ry)=>{q.fillStyle=c;q.beginPath();q.ellipse(x,y,rx,ry,0,0,Math.PI*2);q.fill();};
  q.fillStyle='#07182444';q.fillRect(6,28,21,2);const style=p.style;
  if(style==='jar'||style==='books'){drawSharedProp(q,style==='jar'?TT.JAR:TT.BOOK_STACK,0,0,2);}
@@ -3876,10 +3900,6 @@ function drawPalaceWater(q,px,py,x,y,deep,now){
    const along=n*7+Math.floor(hash2(x+n,y,221)*3),inset=1+Math.round(1+Math.sin(time/600+n+x*.4+y*.7));
    q.fillRect(px+(dx?dx>0?31-inset:inset:along),py+(dy?dy>0?31-inset:inset:along),dx?1:3,dy?1:2);
   }
- }
- if(fire){
-  const phase=(FX.frameNow||0)/115;
-  for(let i=0;i<6;i++){const y=25-((phase+i*5)%23),x=6+i*4+Math.sin(phase+i)*2;q.fillStyle=i%2?'#fff199':'#ffac36';q.fillRect(x,y,i%2?1:2,2);}
  }
  q.restore();
 }
@@ -4067,7 +4087,7 @@ function drawIndoorBranchMaterial(q,t,s,x,y,P){
  q.restore();
 }
 function drawBranchCell(t,px,py,x,y,foreground=null){
- if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element);X.restore();return true;}
+ if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
  if(isWaterTile105(t)||t===TT.ICE)return drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
