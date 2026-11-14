@@ -638,7 +638,7 @@ function tempFieldCells57(f){
 function addField(kind,x,y,ttl,cells=null,metadata={}){
  if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,metadata)}finally{Duel.environment--}}
  const contactCells=cells;
- if(kind==='fire')cells=fireGroundCells105(cells);
+ if(kind==='fire')cells=fireGroundCells(cells);
  Duel.sendField(kind,x,y,ttl,contactCells,metadata);
  if(kind==='fire'&&!cells.length)return;
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));

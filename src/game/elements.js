@@ -20,13 +20,13 @@ function dropBurntCharcoal105(x,y){
  // Spent material is a collectible item, never a fresh autonomous fire source.
  const item={...clone(foodDef('검게 탄 숯')),x,y,count:1};state.items.push(item);return item;
 }
-function fireGroundCells105(cells){
+function fireGroundCells(cells){
  return cells.filter(({x,y})=>!tileBlocks(state.map[y][x]));
 }
 function addElemField74(kind,x,y,ttl,damage=3){
  const source=effectSource57(state.player),contactCells=elementCells105(x,y,1);
  emitElementContact105(kind,contactCells,source);
- const cells=kind==='fire'?fireGroundCells105(contactCells):contactCells;
+ const cells=kind==='fire'?fireGroundCells(contactCells):contactCells;
  if(!cells.length)return;
  state.elementFields74=state.elementFields74.filter(f=>!(f.kind===kind&&f.x===x&&f.y===y));
  state.elementFields74.push({kind,x,y,ttl,damage:Math.max(1,Math.round(damage)),cells,bornTurn:state.turn+1,...source});
