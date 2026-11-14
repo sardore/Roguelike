@@ -157,7 +157,7 @@ function restoreCoreLootAudit(){
     }
   }
 function restoreCameraAfterLoad(ctx,r){if(!r&&r!==undefined){return r}if(state?.dead){state=null;toast('사망한 탐사 기록은 되살릴 수 없다.');return false}const q=ctx.data.camera984||{};if(state){cameraData.lastPlayerX=state.player.x;cameraData.lastPlayerY=state.player.y;CameraState.setMode('follow',false);CameraState.centerOnPlayer();/* TIMER EXCEPTION (docs/TIMER_AUDIT.md, to be resolved with the boot domain): same wait for the laid-out game screen as in the new-run stage above. */setTimeout(()=>{CameraState.setZoom(q.desiredZoom??cameraData.zoom,false)},90)}return r}
-function syncCurseClockAfterLoad(){if(state){for(const slot of GEAR_SLOT_TYPES)identifyGearItem(state.player?.[slot],'');state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}
+function syncCurseClockAfterLoad(){if(state){for(const slot of GEAR_SLOT_TYPES)identifyItem(state.player?.[slot],'');state.lastCombat57=state.lastCombat57??state.lastCombat991??state.turn;syncCurseClocks991()}}
 function showGameScreenIfPlaying(){if(state&&!state.dead&&!state.victory)setScreen('game')}
 function sanitizeAfterLoad(ctx,r){sanitizeTransient1003();if(state){resetVisualState();updateAll()}return r}
 function auditStrictLocksAfterLoad(){if(state&&!state.artifactDungeon46&&!state.branchContext105&&strictKeyFloors1004.has(state.floor))state.strictLockAudit1004=lockAudit96()||null}
