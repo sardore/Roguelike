@@ -171,14 +171,15 @@ function shellSlimeSchedule(mon){
 function shellSlimeTurn(mon,target,opts){
  const data=mon.shellSlimeState;
  const round=state.floorTurn;
- if(data.returnedRound===round||data.emergedRound===round)return true;
+ if(data.actedRound===round||data.returnedRound===round||data.emergedRound===round)return true;
+ data.actedRound=round;
  if(data.phase==='outside'&&(data.strikes>=2||round>=data.expires))data.phase='returning';
  if(!data.phase&&round>=data.next&&!(mon.skillSeal105>0)&&actorDetectedTarget57(mon,target)){
   const exits=DIRS8.map(([dx,dy])=>({x:mon.x+dx,y:mon.y+dy})).filter(cell=>canMonsterStep(mon,mon.x,mon.y,cell.x,cell.y)).sort((a,b)=>entityDistance57(a,target)-entityDistance57(b,target));
   const shell={name:'슬라임 빈 껍질',x:mon.x,y:mon.y,hp:SHELL_SLIME.shellHp,maxHp:SHELL_SLIME.shellHp,atk:0,def:SHELL_SLIME.shellDef,eva:0,xp:0,color:mon.color,shape:'armor',kind:'construct',fixed:true,combatFixture54:'slime-shell',bossOwnerId57:combatantId(mon),faction57:entityFaction(mon),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture'};
   if(exits.some(cell=>moveMonsterStep(mon,cell.x,cell.y))){
    if(mon.hp>0&&state.monsters.includes(mon)){
-    data.phase='outside';data.strikes=0;data.expires=round+SHELL_SLIME.sortieLimit;data.emergedRound=round;
+    data.phase='outside';data.strikes=0;data.expires=round+SHELL_SLIME.sortieLimit;
     OccupancyService.addMonster(shell);
     burst(shell.x,shell.y,'#b6c686',12,.6);
     if(isEntityObservableToPlayer57(mon))addLog('껍질슬라임이 빈 껍질을 두고 뛰쳐나왔다.');
@@ -195,7 +196,6 @@ function shellSlimeTurn(mon,target,opts){
    data.phase=null;
    data.next=state.floorTurn+(mon.hp===mon.maxHp?SHELL_SLIME.fullHealthDelay:SHELL_SLIME.cooldown);
    data.halfStep=false;
-   data.returnedRound=state.floorTurn;
    if(!inShell)moveMonsterStep(mon,shell.x,shell.y);
    if(isEntityObservableToPlayer57(mon))addLog('껍질슬라임이 껍질로 돌아갔다.');
   }else moveMonsterToward(mon,shell,opts);
