@@ -266,7 +266,7 @@ function throwFood(tx,ty){
   if(m.hp<=0)killMonster(m);
   else{
    if(status&&applyCombatStatus(m,status.key,status.turns,1,{source:p})){setMonsterAttackInvestigation(m,p);floatText(tx,ty,`${STATUS_META57[status.key]?.label||status.key} ${combatStatusTurns(m,status.key)}`,item.throwColor57||'#9dc77e',10);}
-   const weakened=item.throwWeakenTurns57??proto?.throwWeakenTurns57;if(weakened)setMonsterWeakened(m,weakened);
+   const weakened=item.throwWeakenTurns57??proto?.throwWeakenTurns57;if(weakened)applyCombatStatus(m,'weaken',weakened);
   }
   addLog(feeding?`${m.name}에게 ${item.name}를 먹였다.`:`${m.name}에게 ${item.name}을 던졌다.`);
  }
@@ -370,7 +370,7 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
       else if(e==='repulseward'){elementAttackFx105('earth',cells,p);for(const m of targets){const dealt=damageEntity(m,30+depthStep*6,p);if(dealt>0)floatText(m.x,m.y,`-${dealt}`,'#e5c080',13);if(m.hp<=0)killMonster(m);else push74(m,p.x,p.y,3);}}
       else if(e==='insightward'){identifyInventory(item.name,{limit:3,typeOrder:['talisman','potion'],exclude:item});state.status.blind=0;state.status.willBoost=Math.max(state.status.willBoost||0,13);}
       else if(e==='sanctuaryward'||e==='bindingward'){if(e==='sanctuaryward')reveal74();for(const m of targets){applyCombatStatus(m,'skillSeal',e==='bindingward'?4:5,1,{source:p});if(e==='bindingward')applyMartialControl1005(m,3);}elementAttackFx105('holy',cells,p);}
-    }else if(e==='lifemap'){reveal74();p.hp=Math.min(p.maxHp,p.hp+8)}else if(e==='regrowth'){state.status.regen=Math.max(state.status.regen||0,7);for(const m of near74(p.x,p.y,1))if(!m.boss)m.stunned=Math.max(m.stunned||0,1)}else if(e==='bulwark'){state.status.ward=Math.max(state.status.ward||0,7);let n=0;for(const[dx,dy]of randOrder74(DIRS4))if(n<3&&tempTile74(p.x+dx,p.y+dy,TT.WALL,5,'bulwark'))n++}else if(e==='heaveneye'){const n=reveal74(),ids=identifyInventory(item.name,{limit:2,typeOrder:['talisman','potion'],exclude:item});addLog(`천안부적: 지도 공개 · 숨은 문 ${n} · 감정 ${ids}종.`)}else return false;
+    }else if(e==='lifemap'){reveal74();p.hp=Math.min(p.maxHp,p.hp+8)}else if(e==='regrowth'){state.status.regen=Math.max(state.status.regen||0,7);for(const m of near74(p.x,p.y,1))if(!m.boss)applyCombatStatus(m,'stun',1)}else if(e==='bulwark'){state.status.ward=Math.max(state.status.ward||0,7);let n=0;for(const[dx,dy]of randOrder74(DIRS4))if(n<3&&tempTile74(p.x+dx,p.y+dy,TT.WALL,5,'bulwark'))n++}else if(e==='heaveneye'){const n=reveal74(),ids=identifyInventory(item.name,{limit:2,typeOrder:['talisman','potion'],exclude:item});addLog(`천안부적: 지도 공개 · 숨은 문 ${n} · 감정 ${ids}종.`)}else return false;
     consumeRef(item);burst(p.x,p.y,E74[item.element74]?.color||'#d9b66f',22,.8);if(e!=='heaveneye')addLog(`${item.name}: ${item.ability}.`);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"useFusionInstant74"}).value;return true;
   }
   function addItem(r,special=false){const a=roomFreeCells90(r);if(!a.length)return false;const p=a[Math.floor(globalThis.__MANRU_RANDOM57__()*a.length)];try{dropRandomItem(p,special);return true}catch(_){return false}}
@@ -1008,11 +1008,12 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
   }
   const key74=(a,b)=>[a,b].sort().join('+');
   /* The fusion recipes in the order the fusion screen and the talisman shop list them. RECIPE is built from this list. */
-  const FUSION_RECIPES=[
+const WATER_BRAND_WEAKEN=Object.freeze({chance:.60,turns:4});
+const FUSION_RECIPES=[
   // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
   {a:'elem_fire',b:'upgrade',kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'},
   {a:'elem_shock',b:'upgrade',kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'},
-  {a:'elem_water',b:'upgrade',kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 방어 약화 / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'},
+  {a:'elem_water',b:'upgrade',kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 적중 시 쇠약 '+WATER_BRAND_WEAKEN.turns+'턴 · 기본 '+Math.round(WATER_BRAND_WEAKEN.chance*100)+'% / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'},
   {a:'elem_ice',b:'upgrade',kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'},
   {a:'elem_grass',b:'upgrade',kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'},
   {a:'elem_earth',b:'upgrade',kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'},
@@ -1317,7 +1318,7 @@ function setupInfusionPanels(){
       identifyItem(a.item,'사용 효과 관찰');
       const targets=[...state.monsters].filter(m=>isHostileTarget57(m)&&!m.hidden&&entityDistance57(m,{x:tx,y:ty})<=1);if(targets.length)markCombatActivity57(`talisman-${a.kind}`);
       if(a.kind==='blast'){const dmg=28+Math.floor((state.floor-1)/5)*6;alertNearby(tx,ty,8,'explosion',dmg);for(const m of targets){const d=damageEntity(m,m.boss?Math.max(6,Math.floor(dmg*.80)):dmg);m.hitUntil=performance.now()+160;if(d>0)floatText(m.x,m.y,'-'+d,'#f0c37c',14);impact(m.x,m.y,'#e1b26d',5);if(m.hp<=0)killMonster(m);else{const dx=Math.sign(m.x-tx)||Math.sign(m.x-p.x),dy=Math.sign(m.y-ty)||Math.sign(m.y-p.y);if(dx||dy)resolveForcedMovement57(m,{x:m.x-dx,y:m.y-dy},1,{mode:'push',hostile:true,creditPlayer:true})}}let broke=0;for(let yy=ty-1;yy<=ty+1;yy++)for(let xx=tx-1;xx<=tx+1;xx++)if(breakFurnitureTerrain57(xx,yy,null,{cause:'blast'}))broke++;addLog(`폭발부적: ${targets.length}체 파쇄${broke?` · 가구 ${broke}개 파괴`:''}.`);burst(tx,ty,'#e3ad5d',26,1.1)}
-      else if(a.kind==='bind'){for(const m of targets){if(m.boss){m.controlCd54=Math.max(0,m.controlCd54||0);if(m.controlCd54<=0){m.stunned=Math.max(m.stunned||0,1);m.controlCd54=4;m.controlCdTurn54=state.turn}}else m.stunned=Math.max(m.stunned||0,4);floatText(m.x,m.y,m.boss?'봉박 1':'봉박 4','#d8c58a',10)}addLog(`봉박부: ${targets.length}체 봉인 · 일반 적 4턴.`);burst(tx,ty,'#c9b77a',20,.65)}
+      else if(a.kind==='bind'){for(const m of targets){if(m.boss){m.controlCd54=Math.max(0,m.controlCd54||0);if(m.controlCd54<=0&&applyCombatStatus(m,'stun',1)){m.controlCd54=4;m.controlCdTurn54=state.turn}}else applyCombatStatus(m,'stun',4);floatText(m.x,m.y,m.boss?'봉박 1':'봉박 4','#d8c58a',10)}addLog(`봉박부: ${targets.length}체 봉인 · 일반 적 4턴.`);burst(tx,ty,'#c9b77a',20,.65)}
     }
     consumeRef(a.item);cancelTalismanTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"castTalisman56"}).value;return true
   }
