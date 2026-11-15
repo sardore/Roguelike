@@ -14,7 +14,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='oddity'){v.cost=oddityCost(lv);v.desc=oddityDescription(lv,n,form);v.seal=ODDITY_RULES.seals[form]||v.seal}
  if(family==='brawl')v.desc=form==='reach'?`주먹의 위력 대신 뻗어 나가는 거리를 단련한다. 맨손과 권갑의 공격 사거리 ${n}칸. 가로막힌 적 너머로는 닿지 않는다.`:form==='close'?`짧은 병기를 손발처럼 다룬다. 사거리 1칸인 근접무기의 공격력 +${n}. 맨손과 권갑에는 이 힘이 실리지 않는다.`:`주먹과 몸놀림을 갈고닦아 맞붙는 싸움에 능해진다. 맨손과 권갑의 공격력 +${n}.`;
  if(id==='constitution'){v.desc=form==='vigor'?`몸집을 키우는 대신 호흡을 다스려 더 많은 기를 품는다. 최대 기력 +${2*n}.`:form==='revive'?`죽음의 문턱에서 남은 생기를 불사른다. 치명상을 막고 체력을 최대치의 80%까지 회복한다. 대가로 이 무술이 1단 낮아진다.`:`뼈와 살을 단련해 거친 싸움을 견딘다. 최대 체력 +${8*n}%.`;if(playerClassRules58(p).upgradeTalismanMode==='bodyBoost')v.desc+=` 장사 체질로 얻는 괴력은 ${bodyPowerDuration58(p)}턴 지속되며, 매턴 체력을 2% 회복한다. 힘이 다하면 같은 시간 동안 눈이 멀고 배탈을 앓는다.`}
- if(id==='rapidFire')v.desc=`활 사격 속도 +${rapidFireSpeedBonus(n)}%. 사격에 드는 턴이 줄어든다.`;
+ if(id==='rapidFire')v.desc=`활 사격 속도 +${rapidFireSpeedBonus(n)}%. 화살을 쏠 때마다 ${rapidFireSpeedBonus(n)}% 확률로 화살을 소모하지 않는다.`;
  if(lv===0)v.desc='미습득 · 1단 효과: '+v.desc;
  return v;
 }

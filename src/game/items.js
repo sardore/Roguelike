@@ -391,7 +391,15 @@ const AMMO_TYPES=[
   function weightedAmmo(){const pool=AMMO_TYPES.filter(a=>(a.minFloor||1)<=Math.max(1,state?.floor||1));let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=globalThis.__MANRU_RANDOM57__()*Math.max(1,sum);for(const a of pool){r-=a.weight||1;if(r<=0)return a}return pool[0]||AMMO_TYPES[0]}
   function makeAmmo(def=weightedAmmo(),boost=false){const q=clone(def);q.count=randInt967(q.spawnMin||6,q.spawnMax||12);if(boost)q.count+=randInt967(2,5);return q}
   function selectedAmmo(){if(!state?.player)return null;const stacks=ammoStacks();if(!stacks.length)return null;let a=stacks.find(i=>i.ammoKind===state.player.loadedAmmoKind);if(!a){const order=['wood_arrow','iron_arrow','piercing_arrow'];a=[...stacks].sort((x,y)=>order.indexOf(x.ammoKind)-order.indexOf(y.ammoKind))[0];state.player.loadedAmmoKind=a.ammoKind}return a}
-  function consumeAmmo(stack){if(!consumeItemQuantity(stack))return false;if(!state.player.inventory.some(i=>i.ammoKind===state.player.loadedAmmoKind)){state.player.loadedAmmoKind=null;selectedAmmo()}return true}
+  function consumeAmmo(stack){
+    const p=state.player;
+    if(!stack||!p.inventory.includes(stack)||itemQuantity(stack)<1)return false;
+    const saveChance=playerClassRules58(p).rapidFire?rapidFireSpeedBonus(p.martial?.rapidFire||0):0;
+    if(saveChance>0&&globalThis.__MANRU_RANDOM57__()<saveChance/100)return true;
+    if(!consumeItemQuantity(stack))return false;
+    if(!p.inventory.some(i=>i.ammoKind===p.loadedAmmoKind)){p.loadedAmmoKind=null;selectedAmmo()}
+    return true
+  }
   function ammoUnit(salt=0){
     const src=`${state?.runId984||window.__MANRU_RUN_SEED984||'legacy'}|${state?.floor||1}|${salt}`;let h=2166136261>>>0;
     for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619)>>>0}h^=h>>>16;h=Math.imul(h,2246822507)>>>0;h^=h>>>13;return(h>>>0)/4294967296;
