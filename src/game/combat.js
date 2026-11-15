@@ -22,7 +22,7 @@ function martialPresentation(id,info,p=state.player){
 const MARTIAL_RULES=Object.freeze({ids:['strong','roar','ghost','brawl','constitution'],keys:['b','n','m'],assassinTurns:3,smokeTurns:5,guardActions:2,latePoints:[13,15,17,18]});
 const MARTIAL_FORMS={oddity:{psychic:'염력',anomaly:'이변'},strong:{drive:'진각',guard:'방어'},roar:{silent:'무성호효',echo:'회음호효'},aim:{focus:'집중',divine:'신궁'},smoke:{cloud:'유운',burst:'폭연'},ghost:{assassin:'암살',darkcloud:'흑운'},brawl:{reach:'장타',close:'근접'},constitution:{vigor:'활력',revive:'필사즉생'}};
 const RAPID_FIRE_ID='rapidFire';
-function rapidFireSpeedBonus(level){return 8*clamp(level,0,5)}
+function rapidFireSpeedBonus(level){return 12*clamp(level,0,5)}
 function martialIds(p=state.player){
  return playerClassRules58(p).rapidFire?[...MARTIAL_RULES.ids,RAPID_FIRE_ID]:MARTIAL_RULES.ids;
 }
