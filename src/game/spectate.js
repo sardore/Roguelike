@@ -1,10 +1,10 @@
 /* Live spectating over the shared cp32 relay (its generic `spectator.action` channel; no server change).
    Host: a player who allows it. Only what the host's own screen shows leaves the device: cells in `seen`, creatures in `visible`.
-   Viewer: draws a read-only copy with the game's own renderer; scroll and zoom are the viewer's, nothing else is accepted.
+   Live viewers receive the host's rendered game canvas. State snapshots serve older clients and death replays.
    The relay never fans out, so the host sends every packet once per viewer and relays chat itself. */
 const Spectate={
  RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
- CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
+ CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,CANVAS_GAP_MS:125,CANVAS_MAX_EDGE:1152,CANVAS_MAX_URL:420000,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
  PLAIN:['floor','specialFloor','turn','floorTurn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
@@ -12,7 +12,7 @@ const Spectate={
  PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','martialForm','combustion105','martialActor105','guardReady1005','strongReady','classState'],
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
- hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastChat:new Map(),
+ hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastChat:new Map(),canvasSeq:0,canvasLast:0,canvasBusy:false,canvasBuffer:null,
  watching:null,lastSeq:-1,rooms:new Map(),view:null,chat:[],unread:0,bound:false,
  endpoint(){return document.querySelector('meta[name="manru-relay"]')?.content.trim()||''},
  httpBase(){return this.endpoint().replace(/^ws/,'http').replace(/\/[^/]*$/,'')},
@@ -81,7 +81,7 @@ const Spectate={
  // The relay does not tell the host when a viewer's socket dies, so viewers say they are still there.
  watchPing(now,force){
   if(!force&&now-this.lastWatch<this.VIEWER_PING_MS)return;
-  this.lastWatch=now;this.act('watch',{matchId:this.watching.matchId,payload:{tag:this.TAG,resync:this.needsFull||!this.view}});
+  this.lastWatch=now;this.act('watch',{matchId:this.watching.matchId,payload:{tag:this.TAG,resync:this.needsFull||!this.view,canvas:true}});
  },
  tick(now){
   if(!this.hosting&&state&&!state.spectator&&!state.debugBattle57&&!this.listOpen&&!this.watching)this.startHosting();
@@ -116,12 +116,73 @@ const Spectate={
   if(action==='watch'){
    if(this.viewers.size>=this.MAX_VIEWERS&&!this.viewers.has(fromId)){this.toViewer(fromId,'snapshot',{tag:this.TAG,kind:'full',refused:'가득 찼다'});return}
    const known=this.viewers.get(fromId);
-   if(known){known.seenAt=performance.now();if(data.resync)known.needFull=true;return}
-   this.viewers.set(fromId,{joinedAt:performance.now(),seenAt:performance.now(),needFull:true});this.sysChat('관전자가 들어왔다 ('+this.viewers.size+')');this.updateHostPanel();
+   if(known){known.seenAt=performance.now();known.canvas=data.canvas===true;if(data.resync)known.needFull=true;return}
+   this.viewers.set(fromId,{joinedAt:performance.now(),seenAt:performance.now(),needFull:true,canvas:data.canvas===true});this.sysChat('관전자가 들어왔다 ('+this.viewers.size+')');this.updateHostPanel();
   }else if(action==='leave'){this.viewers.delete(fromId);this.lastChat.delete(fromId);this.updateHostPanel()}
   else if(action==='chat'&&this.viewers.has(fromId)){this.viewers.get(fromId).seenAt=performance.now();this.hostChatIn(fromId,data)}
  },
  toViewer(id,action,payload){return this.act(action,{matchId:state?.runId984?String(state.runId984):undefined,targetId:id,payload})},
+ async sendCanvas(now){
+  const run=state,ws=this.ws,screen=currentScreen();
+  if(!this.hosting||!this.ready||!this.viewers.size||now-this.canvasLast<this.CANVAS_GAP_MS||this.canvasBusy||
+    !run?.runId984||run.spectator||run.debugBattle57||!['game','ending'].includes(screen)||document.hidden||
+    !C.width||!C.height||!ws||ws.bufferedAmount>this.CANVAS_MAX_URL)return;
+  this.canvasLast=now;
+  const viewers=[...this.viewers.entries()].filter(([,viewer])=>viewer.canvas);
+  if(!viewers.length)return;
+  this.canvasBusy=true;
+  try{
+   const canvas=this.canvasBuffer??=document.createElement('canvas');
+   const scale=Math.min(1,this.CANVAS_MAX_EDGE/Math.max(C.width,C.height));
+   const w=Math.max(1,Math.round(C.width*scale)),h=Math.max(1,Math.round(C.height*scale));
+   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+   const ctx=canvas.getContext('2d');if(!ctx)return;
+   ctx.imageSmoothingEnabled=false;ctx.drawImage(C,0,0,w,h);
+   const {floor,turn,dead,victory,player}=run;
+   const info={floor,turn,dead,victory,hp:player.hp,maxHp:player.maxHp};
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.83));
+   if(!blob||blob.size*4/3>this.CANVAS_MAX_URL-40)return;
+   const src=await new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);reader.onerror=()=>resolve(null);reader.readAsDataURL(blob);
+   });
+   if(!src||this.ws!==ws||state!==run||!this.hosting||!this.ready||currentScreen()!==screen||ws.bufferedAmount>this.CANVAS_MAX_URL)return;
+   const seq=++this.canvasSeq;
+   const start=seq%viewers.length;
+   for(let i=0;i<viewers.length&&ws.bufferedAmount<=this.CANVAS_MAX_URL;i++){
+    const [id,viewer]=viewers[(start+i)%viewers.length];
+    if(this.viewers.get(id)===viewer&&viewer.canvas&&this.toViewer(id,'snapshot',{tag:this.TAG,kind:'canvas',seq,src,info}))viewer.needFull=false;
+   }
+  }catch(error){ignoreError('spectate canvas capture failed',error)}
+  finally{this.canvasBusy=false}
+ },
+ applyCanvas(data){
+  const watching=this.watching;
+  if(!watching||!Number.isSafeInteger(data.seq)||data.seq<=this.canvasIncoming||
+    typeof data.src!=='string'||data.src.length>this.CANVAS_MAX_URL||!/^data:image\/(?:webp|png);base64,[a-z0-9+/=]+$/i.test(data.src))return;
+  const info=data.info;
+  if(!info||![info.floor,info.turn,info.hp,info.maxHp].every(Number.isFinite))return;
+  this.canvasIncoming=data.seq;
+  // Wait for a complete image before hiding the existing frame.
+  const image=new Image();image.id='spectateGameFeed';image.alt='탐사자의 게임 화면';
+  image.onload=()=>{
+   if(this.watching!==watching||data.seq<=this.canvasDisplayed)return;
+   this.canvasDisplayed=data.seq;
+   const previous=document.getElementById(image.id);
+   if(previous)previous.replaceWith(image);else document.body.append(image);
+   if(!this.liveCanvas){
+    this.liveCanvas=true;
+    state=this.view=this.emptyView();
+    document.body.classList.add('spectating','spectatingCanvas');
+    setScreen('game');this.buildScreen();
+   }
+   Object.assign(this.view,{floor:info.floor,turn:info.turn,dead:info.dead,victory:info.victory});
+   Object.assign(this.view.player,{hp:info.hp,maxHp:info.maxHp});
+   this.needsFull=false;this.viewerNotice('');this.headerRefresh();
+   if(this.listOpen){this.closeList();this.setNet('joined','관전 화면을 받았다');if(innerWidth>1080)this.toggleChat()}
+  };
+  image.src=data.src;
+ },
  // The one place a state becomes a packet. Cells the host has not seen never enter `snap`.
  project(clock=performance.now()){
   const st=state,seen=st.seen,vis=st.visible,out={set:{},cells:{},seen:null,map:null,player:{},clock};
@@ -214,18 +275,18 @@ const Spectate={
  observe(now){
   if(!state||!state.player||state.debugBattle57||!state.map||!state.seen||!state.runId984)return;
   this.lastSend=now;
-  const waiting=this.ready&&[...this.viewers.values()].some(v=>v.needFull);
+  const legacyViewers=[...this.viewers.entries()].filter(([,v])=>!v.canvas),waiting=this.ready&&legacyViewers.some(([,v])=>v.needFull);
   const snap=this.project(now),first=!this.mirror||this.mirror.run!==state.runId984||this.mirror.world!==state.map||this.mirror.floor!==state.floor;
   const delta=this.diff(snap,first?null:this.mirror.snap);
   const changed=first||delta.map.length||delta.seenAdd.length||Object.keys(delta.set).length||Object.keys(delta.cells).length||
    snap.visible.length!==this.mirror.snap.visible.length||snap.visible.some((key,i)=>key!==this.mirror.snap.visible[i]);
   if(!changed&&!waiting)return;
   if(changed)this.record(snap,delta);
-  if(this.hosting&&this.ready&&this.viewers.size){
+  if(this.hosting&&this.ready&&legacyViewers.length){
    const resync=this.sentTurns++>=this.RESYNC_TURNS;if(resync)this.sentTurns=0;
    const full=first||resync?delta.full?delta:this.diff(snap,null):null;
    this.seq++;
-   for(const [id,v] of this.viewers){
+   for(const [id,v] of legacyViewers){
     const wantFull=v.needFull||first||resync;
     this.toViewer(id,'snapshot',{tag:this.TAG,kind:wantFull?'full':'delta',seq:this.seq,frame:wantFull?(full||this.diff(snap,null)):delta,turn:state.turn,floor:state.floor});
     v.needFull=false;
@@ -275,11 +336,18 @@ const Spectate={
   if(action==='announce'){
    if(data.protocol!==this.TAG||!matchId)return;
    if(data.ended){this.rooms.delete(matchId);if(this.watching?.matchId===matchId)this.viewerNotice('방송이 끝났다.')}
-   else this.rooms.set(matchId,{...data,hostId:fromId,matchId,seenAt:performance.now()});
+   else{
+    this.rooms.set(matchId,{...data,hostId:fromId,matchId,seenAt:performance.now()});
+    if(this.watching?.matchId===matchId&&this.watching.hostId!==fromId){
+     this.watching={...this.watching,hostId:fromId};this.canvasIncoming=this.canvasDisplayed=this.lastSeq=-1;
+     this.needsFull=true;this.watchPing(performance.now(),true);
+    }
+   }
    this.renderRooms();return;
   }
   if(!this.watching||this.watching.matchId!==matchId&&matchId)return;
-  if(action==='snapshot'){if(data.refused){this.viewerNotice('방송에 들어갈 수 없다: '+data.refused);return}this.applyFrame(data)}
+  if(action==='snapshot'&&fromId!==this.watching.hostId)return;
+  if(action==='snapshot'){if(data.refused){this.viewerNotice('방송에 들어갈 수 없다: '+data.refused);return}if(data.kind==='canvas')this.applyCanvas(data);else if(!this.liveCanvas||data.kind==='end')this.applyFrame(data)}
   else if(action==='chat'&&data.kind==='chat')this.pushChat({id:data.id,from:data.from,text:data.text,mine:data.own&&data.own===this.selfId});
  },
  emptyView(){
@@ -362,13 +430,14 @@ const Spectate={
   this.watching=null;this.view=null;this.floorKey='';this.chat.length=0;this.unread=0;document.getElementById('spectatePopups')?.remove();this.camReady=false;
   document.body.classList.remove('spectating');
   document.getElementById('spectateBar')?.remove();document.getElementById('spectateNote')?.remove();document.getElementById('spectateChat')?.remove();
+  this.liveCanvas=false;document.body.classList.remove('spectatingCanvas');document.getElementById('spectateGameFeed')?.remove();
   if(state?.spectator)state=null;
   this.close();setScreen('title');
  },
  // Called instead of the normal frame work while a viewer is watching: the host's state is never advanced here.
  frame(now){
   this.tick(now);
-  if(!state?.spectator)return;
+  if(!state?.spectator||this.liveCanvas)return;
   if(this.replaying)this.replayStep(now);
   updateVisualMotion(now);
   if(cameraRenderPending||now-RC.lastDraw>=frameBudget(33))drawFrame(now,false);
@@ -446,7 +515,7 @@ const Spectate={
  },
  join(room){
   if(this.watching)return;
-  this.watching={matchId:room.matchId,hostId:room.hostId};this.chat.length=0;this.view=null;this.lastSeq=-1;
+  this.watching={matchId:room.matchId,hostId:room.hostId};this.chat.length=0;this.view=null;this.lastSeq=-1;this.canvasIncoming=this.canvasDisplayed=-1;
   this.needsFull=true;
   this.setNet('joining','방송에 들어가는 중…');
   this.viewerNotice(this.netDetail);
