@@ -1101,7 +1101,7 @@ function buildMountainBranch(id,level){
  const free=q=>!OccupancyService.isOccupied(q.x,q.y)&&entityDistance57(q,up)>5&&state.branchPortals105.every(p=>entityDistance57(q,p)>2);
  const spawn=(name,q,extra={})=>{if(!q)return;const mon=spawnNamed(name,q,{placementMode:'exact',provenance:'subbranch-canonical',...extra});if(!mon)throw Error('Mountain spawn failed '+name);mon.branch105=id;return mon};
  for(const b of t.buildings){for(let i=0;i<(black&&level===2?(b.summit?3:1):(b.summit?12:2));i++){const choices=candidates.filter(q=>free(q)&&q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1&&(!b.summit||q.y>b.y+10));const q=choices[Math.floor(rnd()*choices.length)];spawn(black?(i%2?'경비 인형 - 포병':'경비 인형 - 보병'):(i%2?'떠돌이 도둑':'객잔 경비병'),q)}
-  for(let i=0;i<(b.summit?5:2);i++){const choices=candidates.filter(q=>q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1);const q=choices[Math.floor(rnd()*choices.length)];let item;if(i===0)item=mountainRewardGear(black,rnd);else if(i===1)item=clone((window.MANRU_POTIONS||[]).find(i=>i.name==='소회복 비약'));else item=naturalFoodPick();if(item)PlacementService.placeItem({...item},q)}
+  for(let i=0;i<(b.summit?7:2);i++){const choices=candidates.filter(q=>q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1);const q=choices[Math.floor(rnd()*choices.length)];let item;if(i===0)item=mountainRewardGear(black,rnd);else if(i===1)item=clone((window.MANRU_POTIONS||[]).find(i=>i.name==='소회복 비약'));else item=naturalFoodPick();if(item)PlacementService.placeItem({...item},q)}
  }
  for(const n of nodes.filter(n=>n.i!==0&&n.i!==13)){const pool=candidates.filter(q=>free(q)&&owner[q.y][q.x]===n.i&&mountainOutdoor(q));for(let i=0;i<3&&pool.length;i++){const q=pool.splice(Math.floor(rnd()*pool.length),1)[0];if(!free(q))continue;const entry=black?BLACK_OUTDOOR[level][i===0?n.i%2:i===1?2:3]:{name:i===0?(n.i%2?'벌집나무':'고목 목매'):i===1?'독꽃':'수목 궁수'};spawn(entry.name,q,entry)}if(n.i%2===1){const q=pool.find(free);if(q)PlacementService.placeItem(clone(MOUNTAIN_BERRY),q)}}
  if(black&&level===2){const boss=spawn('흑산 설귀',{x:crown.gate.x,y:crown.y+5});t.frostBoss105={x:boss.x,y:boss.y};t.enemyBalanceRevision105=1;}
@@ -2618,7 +2618,15 @@ build(a,options={}){
   markRooms47(rs);architecture47(a,rs);
   const start=rs[0],goal=rs.at(-1);state.player.x=start.cx;state.player.y=start.cy;setTerrainTile58(state.map,start.cx,start.cy,t.base);state.artifactExit46={x:start.x+1,y:start.y+1};setTerrainTile58(state.map,state.artifactExit46.x,state.artifactExit46.y,TT.PORTAL);
   state.artifactReward46={x:goal.cx,y:goal.cy,id:a.id};setTerrainTile58(state.map,goal.cx,goal.cy,t.base+1);PlacementService.placeItem({...clone(a),x:goal.cx,y:goal.cy,count:1});state.stairs={x:0,y:0};installLegendKeys47(a,rs);
-  last=GenerationValidator.legendary();if(!last.ok)continue;spawnDungeon46(a.id,rs);last=GenerationValidator.legendary();if(!last.ok)continue;state.legendIntegrity49={...last,attempt:attempt+1};accepted=true;break;
+  last=GenerationValidator.legendary();if(!last.ok)continue;spawnDungeon46(a.id,rs);
+  const provisions=[[start,'주먹밥'],[rs[Math.floor(rs.length/2)],'말린 육포']];
+  const reachable=ReachabilityService.playerSearch(state.player,{unlock:true}).cells;
+  for(const [room,name] of provisions){
+   const origin={x:room.cx,y:room.cy};
+   const options={reachable,allowPlayer:false,restrict:p=>p.x>room.x&&p.x<room.x+room.w-1&&p.y>room.y&&p.y<room.y+room.h-1};
+   if(!PlacementService.placeItem({...clone(foodDef(name)),count:1},origin,options))throw Error('Legendary food placement failed: '+name);
+  }
+  last=GenerationValidator.legendary();if(!last.ok)continue;state.legendIntegrity49={...last,attempt:attempt+1};accepted=true;break;
  }catch(e){last={error:String(e),attempt:attempt+1};}
  }
  rng49=RngService.nativeRuntime();if(!accepted){restoreGenerationSnapshot(dungeonBase57);throw new Error('r49 rejected all dungeon attempts '+a.id+' '+JSON.stringify(last))}
