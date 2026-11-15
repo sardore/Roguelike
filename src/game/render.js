@@ -2522,7 +2522,7 @@ const ACTOR_SPEC={
   '성채 비행 감시자':{a:'drone',c:'#765a3f',h:'#ae8560',ac:'#e2be70'},
   '공허 가오리':{a:'manta',c:'#403858',h:'#77698e',ac:'#79c8d0'},
   '만루의 수호상':{a:'statue',c:'#6e6346',h:'#aa9569',ac:'#e4c568'},
-  '천수 아수라':{a:'asura',c:'#6f5a8f',h:'#bda4e0',ac:'#f3c96e'},
+  '천수 아수라':{a:'asura',c:'#5a426c',h:'#b78fc6',ac:'#f8d68e',resolution:2},
   '신전 사제 망령':{a:'priest',c:'#57455f',h:'#8c7895',ac:'#d8c16c'},
   '차원 포식자':{a:'devourer',c:'#4e2841',h:'#823f62',ac:'#76c5d2'},
   '보주의 파수꾼':{a:'sentinel',c:'#6a542f',h:'#b19055',ac:'#f1d26c'},
@@ -2936,7 +2936,7 @@ function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
  if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
- if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(null,m.branchBoss105?2:1);if(!m.branchBoss105)q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.combatFixture54==='slime-shell'?{a:'slime_shell_empty'}:shellSlimeProtected(m)?{a:'slime_shell'}:m?.shellSlime?{a:'slime_shell_exposed'}:m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?[m.shackleStyle??0,m.intent61?.type==='shackleCounter'].join(':'):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
  const hi=sp.h, base=sp.c, ac=sp.ac;
  switch(a){ case'branch':{drawBranchCreature(q,m,frame,sp);break;}case'dojo':{drawDojoActor(q,m,frame);break;
@@ -3322,7 +3322,39 @@ break;}
   }
   case'keeper':{drawKeeperBoss(q,frame);break}
   case'master':{drawMasterBoss(q,frame);break}
-  case'asura':{shadow1012(q,16,35,29);pR9(q,base,[[8,15+b],[16,7+b],[24,15+b],[27,31],[16,35],[5,31]],null);eR9(q,16,9+b,5,5,'#c7b0a1');pR9(q,'#2b2135',[[9,8+b],[11,4+b],[21,4+b],[23,8+b],[20,12+b],[12,12+b]],null);eyePairR9(q,13,20,10+b,ac);for(const [x1,y1,x2,y2]of[[7,17,0,13],[25,17,32,13],[8,22,2,25],[24,22,30,25],[10,27,5,34],[22,27,27,34]])lR9(q,x1,y1+b,x2,y2+b,hi,2);q.fillStyle=ac;q.fillRect(10,18+b,12,2);q.fillRect(14,23+b,4,7);break}
+  case'asura':{
+   shadow1012(q,16,33,27);
+   const gold='#b17646',dark='#2c203a',silk='#493353';
+   q.strokeStyle=gold;q.lineWidth=.7;q.beginPath();q.arc(16,12+b,9,Math.PI*1.07,Math.PI*1.93);q.stroke();
+   pR9(q,ac,[[16,1+b],[17.3,3.5+b],[16,5+b],[14.7,3.5+b]],null);
+   for(const side of [-1,1]){
+    q.save();q.translate(16,b);q.scale(side,1);
+    // Three separately posed arms, behind the chest plates.
+    for(const [shoulder,y,elbowX,elbowY,handX,handY] of [[5,15,9,12,11,7-b],[6,18,11,19,14,14],[5,21,10,24,13,24+b]]){
+     lR9(q,shoulder,y,elbowX,elbowY,ACTOR_OUTLINE,4.6);
+     lR9(q,elbowX,elbowY,handX,handY,ACTOR_OUTLINE,4.6);
+     lR9(q,shoulder,y,elbowX,elbowY,base,3.3);
+     lR9(q,elbowX,elbowY,handX,handY,base,3.3);
+     lR9(q,elbowX,elbowY-.7,handX,handY-.7,hi,.85);
+     eR9(q,handX,handY,1.9,1.65,gold,ACTOR_OUTLINE);
+     lR9(q,handX-.7,handY-.5,handX+.55,handY-.5,ac,.7);
+    }
+    q.restore();
+   }
+   pR9(q,dark,[[10,21],[22,21],[25,30],[22,34],[17,32],[13,34],[7,31]]);
+   pR9(q,silk,[[12,23],[19,22],[22,30],[19,32],[15,30],[10,32],[9,30]],null);
+   pR9(q,base,[[9,15+b],[16,13+b],[23,15+b],[22,20+b],[19,23],[13,23],[10,20+b]]);
+   pR9(q,gold,[[10,15+b],[16,17+b],[22,15+b],[20,19+b],[16,21+b],[12,19+b]],null);
+   pR9(q,ac,[[11,15+b],[16,17+b],[21,15+b],[18,18+b],[16,19+b],[14,18+b]],null);
+   pR9(q,'#904858',[[12,22],[20,22],[18,25],[17,32],[14,29],[14,25]],null);
+   lR9(q,13,23,19,23,ac,.8);lR9(q,16,25,15,29,'#d18a79',.8);
+   pR9(q,'#30213b',[[9,8+b],[12,7+b],[13,4+b],[16,6+b],[19,4+b],[20,7+b],[23,8+b],[21,12+b],[18,15+b],[14,15+b],[11,12+b]]);
+   pR9(q,gold,[[10,8+b],[13,8+b],[16,6+b],[19,8+b],[22,8+b],[19,10+b],[16,8.5+b],[13,10+b]],null);
+   pR9(q,hi,[[13,10+b],[19,10+b],[19,12+b],[16,14+b],[13,12+b]],null);
+   lR9(q,13,10.5+b,15,11+b,ac,.9);lR9(q,17,11+b,19,10.5+b,ac,.9);
+   lR9(q,15,12.7+b,17,12.7+b,dark,.8);
+   break;
+  }
   case'master_true':{drawMasterBoss(q,frame,true);break}
   case'tiger':{shadow1012(q,16,34,30);pR9(q,ACTOR_OUTLINE,[[2,27+b],[5,19+b],[10,15+b],[16,15+b],[21,11+b],[27,12+b],[31,17+b],[32,24+b],[27,28+b],[23,31],[15,29],[8,32]],null);pR9(q,base,[[4,27+b],[7,20+b],[11,17+b],[17,17+b],[22,13+b],[27,14+b],[30,18+b],[30,23+b],[26,26+b],[22,28],[15,27],[9,29]],null);pR9(q,hi,[[19,15+b],[21,8+b],[25,12+b]],null);pR9(q,hi,[[25,13+b],[29,7+b],[30,15+b]],null);eyePairR9(q,23,28,17+b,ac);q.fillStyle='#f3e3bd';q.fillRect(28,21+b,2,2);for(const[x,y]of[[9,20],[13,18],[17,20],[21,17],[25,23],[13,25]])lR9(q,x,y+b,x+3,y+3+b,'#6c452b',2);for(const[x,y]of[[9,28],[20,27],[25,25]])lR9(q,x,y+b,x-1,y+6+b,hi,2);for(const[x,y]of[[9,20],[14,20],[19,22],[24,15]]){lR9(q,x,y+b,x+2,y+3+b,'#704626',1)}lR9(q,10,17+b,19,18+b,'#fff0bd',.8);break}
   default:{shadow1012(q,16,33,23);pR9(q,base,[[8,15+b],[16,8+b],[24,15+b],[27,31],[16,34],[5,31]]);eR9(q,16,10+b,5,5,hi);eyePairR9(q,13,20,10+b,ac);break}
@@ -4264,11 +4296,30 @@ function branchDistrictPalette(id,kind=0){
 }
 function drawMountainActor(q,m,frame){
  if(m.branchBoss105){
-  const {r}=drawKit(q);
-  r('#192c39',3,28,26,4);r('#374c60',8,13,17,17);r('#9eb8c7',10,12,13,15);r('#d5e4df',13,5,8,9);r('#6b8199',11,4,11,3);r('#d8edf0',10,1,2,6);r('#b0d6e3',16,0,2,6);r('#e0eef0',22,2,2,6);
-  r('#202b42',14,8,2,2);r('#446886',19,8,2,2);r('#8caac0',6,15,5,10);r('#bcd6dc',23,14,5,10);r('#e3f0ed',26,11+(frame%2),2,11);
-  for(let i=0;i<4;i++){r(i%2?'#a9c8d7':'#60778e',8+i*4,24,3,7-i%2);r('#d4e8e9',9+i*4,29,1,2)}
-  q.strokeStyle='#7697ac';q.lineWidth=1;q.beginPath();q.moveTo(14,14);q.lineTo(21,26);q.moveTo(21,14);q.lineTo(12,25);q.stroke();r('#bfccba',16,19,4,2);return;
+  const b=frame?1:0,ice='#a4dbe4',frost='#e3f8f7',blue='#527f9e',shade='#294358',night='#192638';
+  shadow1012(q,16,33,26);
+  // The exposed ice ridges frame a darker body so the face reads on snowy ground.
+  pR9(q,shade,[[3,13],[8,9+b],[12,11+b],[20,11+b],[25,9+b],[30,15],[29,25],[26,27],[24,22],[23,31],[19,34],[17,30],[12,33],[8,29],[8,22],[5,27],[2,23]]);
+  pR9(q,blue,[[10,16+b],[16,14+b],[23,17+b],[21,25],[19,31],[16,28],[12,31],[9,26]],null);
+  pR9(q,night,[[16,18+b],[22,19+b],[20,25],[18,29],[16,26],[12,29],[14,23]],null);
+  pR9(q,ice,[[3,14],[5,9+b],[8,11+b],[10,8+b],[12,14+b],[9,18+b],[6,17+b],[4,22]]);
+  pR9(q,ice,[[21,13+b],[24,8+b],[26,11+b],[28,10+b],[30,15],[27,19+b],[25,18+b],[24,22]]);
+  pR9(q,frost,[[4,14],[5,10+b],[8,13+b],[10,10+b],[10,14+b],[7,16+b]],null);
+  pR9(q,'#c4e8ee',[[23,14+b],[24,10+b],[26,13+b],[28,12+b],[28,15],[26,17+b]],null);
+  pR9(q,blue,[[3,23],[5,19+b],[7,21+b],[6,26],[4,28],[4,25],[2,26]]);
+  pR9(q,blue,[[25,22],[27,19+b],[29,22],[30,27],[28,25],[27,28],[26,25]]);
+  pR9(q,ice,[[12,17+b],[15,19+b],[14,24],[11,26],[12,21]],null);
+  pR9(q,'#72a9c0',[[19,18+b],[21,19+b],[19,26],[16,28],[18,23]],null);
+  pR9(q,night,[[10,8+b],[13,5+b],[19,5+b],[23,9+b],[21,14+b],[18,18+b],[15,16+b],[13,17+b],[11,13+b]]);
+  pR9(q,ice,[[10,8+b],[9,2+b],[13,6+b],[16,1+b],[18,5+b],[21,4+b],[23,2+b],[22,9+b],[18,8+b],[16,9+b],[13,8+b]]);
+  pR9(q,frost,[[12,6+b],[16,2+b],[16.5,6+b],[19,6+b],[21,5+b],[20,7+b],[16,8+b]],null);
+  pR9(q,'#6599b7',[[12,10+b],[15,11+b],[16,10+b],[20,10+b],[19,14+b],[17,16+b],[15,14+b],[13,15+b]],null);
+  lR9(q,12.7,11+b,15,11.7+b,'#e5ffff',1);
+  lR9(q,17,11.7+b,19.4,10.8+b,'#e5ffff',1);
+  lR9(q,15.2,14+b,17.5,14+b,night,.8);
+  lR9(q,10,27,12,29,ice,.8);lR9(q,22,27,20,30,ice,.8);
+  q.fillStyle=frost;q.fillRect(4,6+b,1,1);q.fillRect(27,6-b,1,1);q.fillRect(29,29-b,1,1);
+  return;
  }
 
  if(m.beeSwarm105){for(let i=0;i<5;i++){const x=5+(i*11)%23,y=8+(i*7)%19+(frame%2?i%2:-i%2);q.fillStyle='#b8d5ce';q.fillRect(x-2,y-3,3,3);q.fillRect(x+3,y-2,3,2);q.fillStyle='#272b28';q.fillRect(x-1,y,7,4);q.fillStyle='#d1a852';q.fillRect(x,y,2,3);q.fillRect(x+4,y,1,3);q.fillStyle='#efdb99';q.fillRect(x,y,2,1)}return;}
