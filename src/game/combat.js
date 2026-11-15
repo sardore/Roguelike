@@ -416,7 +416,7 @@ function basicAttack(){
   const act=playerAction57('attack',{stunMessage:'몸이 굳어 공격하지 못했다.'});if(!act.ok)return !!act.consumed;const p=state.player
   const w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow'),f=p.facing||{x:0,y:-1},range=weaponRange();
   // Tool weapons use one semantic furniture policy. Structural walls, doors, gates, stonework, windows and progression objects are never members.
-  if(!ranged&&w.breakPower){const bx=p.x+f.x,by=p.y+f.y,t=state.map?.[by]?.[bx];if(t!==TT.JAR&&isToolBreakableTerrain57(t)){const elem=weaponElement105(w);if(elem)emitElementContact105(elem,[{x:bx,y:by}],effectSource57(p));if(!(elem==='fire'&&elementMaterial105(t,'wood',bx,by)))breakFurnitureTerrain57(bx,by,w);if(state.status.stealth>0)state.status.stealth=0;commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true}}
+  if(!ranged&&w.breakPower){const bx=p.x+f.x,by=p.y+f.y,t=state.map?.[by]?.[bx];if(!state._manualTerrainTargetR8&&!findMonsterAt(bx,by)&&t!==TT.JAR&&isToolBreakableTerrain57(t)){const elem=weaponElement105(w);if(elem)emitElementContact105(elem,[{x:bx,y:by}],effectSource57(p),{terrainAttack105:true});if(!(elem==='fire'&&elementMaterial105(t,'wood',bx,by)))breakFurnitureTerrain57(bx,by,w);if(state.status.stealth>0)state.status.stealth=0;commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true}}
   const manual=state._manualTerrainTargetR8;if(manual){const check=combatTerrainTargetCheckR8(manual,range);if(!check.ok){state._manualTerrainTargetR8=null;toast(check.reason);return false;}}
   let ammoCtx=null;if(ranged&&globalThis.__MANRU_AMMO_ATTACK__){ammoCtx=globalThis.__MANRU_AMMO_ATTACK__.prepare?.();if(ammoCtx&&!ammoCtx.ok)return false;if(ammoCtx?.ammo)state._activeAmmo967=ammoCtx.ammo}
   let target=manual?{...manual,hp:1,maxHp:1}:adjacentAttackTargetR(),last={x:p.x+f.x,y:p.y+f.y};
@@ -424,7 +424,7 @@ function basicAttack(){
   if(target){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};const fx=Math.sign(last.x-p.x),fy=Math.sign(last.y-p.y);if(fx||fy)p.facing={x:fx,y:fy}}
   else if(ranged){target=bestRangedTargetR();if(!target){state._activeAmmo967=null;toast(`사거리 ${range}칸 안에 사격 가능한 적이 없다.`);return false}last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
   else if(w.cornerHit&&(target=cornerTargetR())){last=entityClosestCellTo57(target,p)||{x:target.x,y:target.y};p.facing={x:Math.sign(last.x-p.x),y:Math.sign(last.y-p.y)}}
-  else for(let i=1;i<=range;i++){const x=p.x+f.x*i,y=p.y+f.y*i;if(x<0||y<0||x>=COLS||y>=ROWS)break;last={x,y};const mon=findMonsterAt(x,y);if(isEntityObservableToPlayer57(mon)){if(isHostileTarget57(mon))target=mon;break}if(state.map[y][x]===TT.JAR){const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(weaponElement105(w)&&elementalWorldTarget105(x,y))break;if(tileBlocksSight(state.map[y][x])&&!w.cornerHit)break}
+  else for(let i=1;i<=range;i++){const x=p.x+f.x*i,y=p.y+f.y*i;if(x<0||y<0||x>=COLS||y>=ROWS)break;last={x,y};const mon=findMonsterAt(x,y);if(isEntityObservableToPlayer57(mon)){if(isHostileTarget57(mon))target=mon;break}if(state.map[y][x]===TT.JAR){const q={type:'jar',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(weaponElement105(w)&&elementalWorldTarget105(x,y)){const q={type:'terrain',x,y,hp:1,maxHp:1};if(combatTerrainTargetCheckR8(q,range).ok)target=q;break;}if(tileBlocksSight(state.map[y][x])&&!w.cornerHit)break}
   // What is cut or broken by walking into it (a table, a screen, a hedge, bamboo) is broken by a blow too: the same function does both (bumpBlockedTile)
   if(!target&&!ranged&&!manual){const bx=p.x+f.x,by=p.y+f.y,bt=state.map?.[by]?.[bx];if([TT.TABLE,TT.SCREEN,TT.HEDGE,TT.BAMBOO].includes(bt))return bumpBlockedTile(bx,by,act)}
   const wasStealthed=state.status.stealth>0;
@@ -434,8 +434,8 @@ function basicAttack(){
   const second=ranged&&martialFormOf('roar')==='divine'&&shotPower>5&&(!ammoCtx?.active||itemQuantity(ammoCtx.ammo)>=2)?state.monsters.find(m=>m!==target&&combatShotCheckR(m).ok):null;
   try{
     if(target){const targets=second?[target,second]:[target];for(let i=0;i<targets.length;i++){const m=targets[i];if(i>0&&!combatShotCheckR(m).ok)continue;if(ammoCtx?.active&&!globalThis.__MANRU_AMMO_ATTACK__.consume(ammoCtx.ammo))break;if(ammoCtx)ammoCtx.consumed=true;
-      const connected=attackPlayer(m,0,{wasStealthed:i===0&&wasStealthed,shotBundle:ranged,aimPower:shotPower})===true;if(connected)applyPlayerPostHitR(m,w,range);if(ranged&&shotPower>0)setAimPower((p.classState.aimPower||0)-1,'attack');if(i>0){projectileFX(p.x,p.y,m.x,m.y,'#f1d9db');martialFx('divine',m)}}state._manualRangedTargetR8=!target.type&&target.hp>0?target:null;state._manualTerrainTargetR8=null;}
-    else{presentPlayerAction58('attack',last);const elem=weaponElement105(w);if(elem&&combatLineCheckR8(p.x,p.y,last.x,last.y,{range,units:false}).ok)emitElementContact105(elem,[last],effectSource57(p),{baseDamage:getStats().atk})}
+      const connected=attackPlayer(m,0,{wasStealthed:i===0&&wasStealthed,shotBundle:ranged,aimPower:shotPower})===true;if(connected&&!m.type)applyPlayerPostHitR(m,w,range);if(ranged&&shotPower>0)setAimPower((p.classState.aimPower||0)-1,'attack');if(i>0){projectileFX(p.x,p.y,m.x,m.y,'#f1d9db');martialFx('divine',m)}}state._manualRangedTargetR8=!target.type&&target.hp>0?target:null;state._manualTerrainTargetR8=null;}
+    else presentPlayerAction58('attack',last);
     commitPlayerAction57(act,attackTurnCost(w));updateAttackButton();return true
   }finally{if(ammoCtx?.ok)globalThis.__MANRU_AMMO_ATTACK__?.finish?.(ammoCtx,turn0);state._activeAmmo967=null}
 }
@@ -446,7 +446,7 @@ function runAttackStages(kind,args){
   const call=(idx,a)=>idx<0?base.fn(...a):stages[idx].fn((...nextArgs)=>call(idx-1,nextArgs),...a);
   return call(stages.length-1,args);
 }
-function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
+function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=terrain?attackPlayerCore54R(mon,bonusAtk,...args):runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
 function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor))stats.def+=SHELL_SLIME.armorBonus;return applyCombatDebuffStats57(stats,actor)}
 function combatDefenseBonus(target){
  if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
@@ -611,7 +611,7 @@ function applyWeaponBrandHit(actor,target,damage,contact=entityFootprintCells57(
  const elem=actor.weapon?.elementBrand74;if(!elem)return;
  const source=effectSource57(actor),hurt=(victim,base)=>resolveElementDamage57(victim,elem,base,{contactHandled105:true,effect:source,source:'무기각인',color:'#e5c080'}).damage;
  emitElementContact105(elem,contact,source,{baseDamage:Math.max(1,damage),directTarget:target});if(target.hp<=0)return;
- if(elem==='fire'){hurt(target,2);if(target.hp>0)combustionContact105(target,'fire',source)}
+ if(elem==='fire')hurt(target,2);
  else if(elem==='shock'&&globalThis.__MANRU_RANDOM57__()<.22){const other=[state.player,...state.monsters].find(m=>m!==target&&combatTargetValid57(actor,m)&&entityDistance57(m,target)<=1);if(other)hurt(other,4)}
  else if(elem==='water'&&globalThis.__MANRU_RANDOM57__()<WATER_BRAND_WEAKEN.chance)applyCombatStatus(target,'weaken',WATER_BRAND_WEAKEN.turns,1,{source:actor});
  else if(elem==='ice'&&globalThis.__MANRU_RANDOM57__()<.16){if(target.boss){if((target.controlCd54||0)<=0&&globalThis.__MANRU_RANDOM57__()<.45)applyMartialControl1005(target,1)}else applyCombatStatus(target,'stun',1,1,{source:actor,element:elem});}
@@ -746,13 +746,14 @@ function tempFieldCells57(f){
  const cells=[];for(let y=f.y-1;y<=f.y+1;y++)for(let x=f.x-1;x<=f.x+1;x++)cells.push({x,y});return cells;
 }
 function addField(kind,x,y,ttl,cells=null,metadata={}){
- if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,metadata)}finally{Duel.environment--}}
+ const {terrainAttack105,...fieldMetadata}=metadata;
+ if(['fire','water','earth'].includes(kind)){cells=elementCells105(x,y,1,cells);Duel.environment++;try{emitElementContact105(kind,cells,fieldMetadata,{terrainAttack105:terrainAttack105===true})}finally{Duel.environment--}}
  const contactCells=cells;
  if(kind==='fire')cells=fireGroundCells(cells);
  Duel.sendField(kind,x,y,ttl,contactCells,metadata);
  if(kind==='fire'&&!cells.length)return;
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));
- state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...metadata});syncSmokeEntry();
+ state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...fieldMetadata});syncSmokeEntry();
 }
 function applyMonsterAttackStatus57(mon,target,context={}){
  if(!target||target.hp<=0)return;
@@ -811,6 +812,7 @@ function armorUpgradeGain42(base,level=0){const u=Math.max(0,Math.floor(+level||
 function attackTerrainTargetR8(target){
  const p=state.player,w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow'),check=combatTerrainTargetCheckR8(target);if(!check.ok)return false;
  const strong=!ranged&&p.strongReady>0;if(strong)p.strongReady=0;const jar=state.map[target.y]?.[target.x]===TT.JAR;if(jar&&!destroyJar57(target.x,target.y,{forced:true,source:ranged?'ranged':'melee'}).ok)return false;
+ const elem=weaponElement105(w);if(elem)emitElementContact105(elem,[target],effectSource57(p),{terrainAttack105:true,baseDamage:getStats().atk});
  if(ranged)projectileFX(p.x,p.y,target.x,target.y);else slashFX(p.x,p.y,target.x,target.y,'#e7c8a2');globalThis.__MANRU_SFX54__?.play?.('hit');target.hp=0;setPlayerAttackOutcome('hit',target,{damage:1});ACTION_PRESENTATION58.strong=strong;return true;
 }
 function rollHostileStatus(baseChance){return globalThis.__MANRU_RANDOM57__()<hostileStatusChance(baseChance)}
@@ -835,7 +837,7 @@ function combatGuardBlocks57(attacker,target){
 }
   function tone54(freq=220,dur=.055,type='square',gain=.035,slide=0){const a=ac54();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(freq,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),a.currentTime+dur);g.gain.setValueAtTime(gain,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.onended=()=>{o.disconnect();g.disconnect()};o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur+.01)}catch(error){ignoreError('tone cue could not play',error)}}
   function noise54(dur=.045,gain=.025){const a=ac54();if(!a)return;try{const n=Math.max(1,Math.floor(a.sampleRate*dur)),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(globalThis.__MANRU_RANDOM57__()*2-1)*(1-i/n);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=gain;s.onended=()=>{s.disconnect();g.disconnect();s.buffer=null};s.connect(g).connect(a.destination);s.start()}catch(error){ignoreError('noise cue could not play',error)}}
-function fireField47(x,y,ttl=4,source=state.player){emitElementContact105('fire',elementCells105(x,y),effectSource57(source));state.legendFireFields47=state.legendFireFields47||[];if(!insideMapInterior(x,y)||tileBlocks(state.map[y][x]))return false;const provenance=effectSource57(source),q=state.legendFireFields47.find(f=>f.x===x&&f.y===y&&fieldProvenance57(f).sourceFaction===provenance.sourceFaction);if(q)q.ttl=Math.max(q.ttl,ttl);else state.legendFireFields47.push({x,y,ttl,born:state.turn,...provenance});return true}
+function fireField47(x,y,ttl=4,source=state.player,contact={}){emitElementContact105('fire',elementCells105(x,y),effectSource57(source),contact);state.legendFireFields47=state.legendFireFields47||[];if(!insideMapInterior(x,y)||tileBlocks(state.map[y][x]))return false;const provenance=effectSource57(source),q=state.legendFireFields47.find(f=>f.x===x&&f.y===y&&fieldProvenance57(f).sourceFaction===provenance.sourceFaction);if(q)q.ttl=Math.max(q.ttl,ttl);else state.legendFireFields47.push({x,y,ttl,born:state.turn,...provenance});return true}
 function cursedEquipped47(){const p=state?.player;if(!p)return 0;return['armor','cloak','relic','trinket'].reduce((n,k0)=>n+((p[k0]?.curse991||p[k0]?.curseActive991)?1:0),0)}
   /* ---------- lightweight procedural SFX ---------- */
   function ac54(){if(!V54.sfx)return null;try{if(!V54.audio){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;V54.audio=new A()}if(V54.audio.state==='suspended')V54.audio.resume?.();return V54.audio}catch(_){return null}}

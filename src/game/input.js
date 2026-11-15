@@ -488,7 +488,7 @@ const RuntimeState={
       const tile=state.map[q.y][q.x];
       const trap=ReachabilityService.pressureTrapAt(q.x,q.y);
       const walkSurface=terrainSurface58(tile)&&tile!==TT.ICE&&!isWaterTile105(tile);
-      if(!trap&&!walkSurface&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
+      if(!trap&&!walkSurface&&!ReachabilityService.playerPassable(q.x,q.y)&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y)}
       const t=this.targetAt(q.x,q.y);
       if(q.x===state.player.x&&q.y===state.player.y){
         this.stop('same-tile',true);

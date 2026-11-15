@@ -5065,7 +5065,7 @@ function resolveProjectileImpact57(mon,line,result,target,impact=mon.projectileI
  if(impact.gasStatus57){const source=result.reflected?target:mon,gas=spawnJarGasField57(x,y,{status:impact.gasStatus57,duration:impact.turns,maxRadius:impact.radius,burstRadius:impact.burstRadius,linger:true,source,visualDelay57:impact.visualDelay57});if(gas){FX.rings.push({x:x*TILE+TILE/2,y:y*TILE+TILE/2,color:'#d7a3e0',start:performance.now()+(impact.visualDelay57||0),life:480,power:7});addLog(`${mon.name}의 환각 가스탄이 폭발했다.`);}return !!gas;}
  const cells=elementCells105(x,y,impact.radius).filter(q=>{const tile=state.map[q.y][q.x];return ![TT.VOID,TT.WATER,TT.MERCURY,TT.LAVA].includes(tile)&&(!runtimeTerrainSolid57(tile)||elementMaterial105(tile,'wood',q.x,q.y)||lightAt(q.x,q.y));});
  if(!cells.length)return false;const source=result.reflected?target:mon;
- addField(impact.element,x,y,impact.turns,cells,{...effectSource57(source),ground:true,projectileImpact57:true});return true;
+ addField(impact.element,x,y,impact.turns,cells,{...effectSource57(source),ground:true,projectileImpact57:true,terrainAttack105:true});return true;
 }
 function triggerGazeBurst57(mon,target=state.player){
  if(!state?.player||!mon)return;const now=performance.now();state.gazeBursts57=(state.gazeBursts57||[]).filter(b=>now-b.t<(b.ttl||460));state.gazeBursts57.push({x0:mon.x,y0:mon.y,x1:target.x,y1:target.y,t:now,ttl:460});burst(mon.x,mon.y,'#df8fce',18,.75);burst(target.x,target.y,'#f1b3df',28,1.0);impact(target.x,target.y,'#f0a9d9',6)

@@ -129,8 +129,10 @@ function thawWater105(x,y){
 function emitElementContact105(elem,cells,source={},contact={}){
  if(!state?.map||!['fire','water','earth','ice','shock','grass','holy'].includes(elem))return 0;
  const footprint=elementCells105(0,0,0,cells),r=terrainReactions105(),keys=new Set(footprint.map(q=>k(q.x,q.y)));let changed=0,melted=0;
+ const terrainAttack=contact.terrainAttack105===true;
+ const terrainFire=elem==='fire'&&terrainAttack,terrainEarth=elem==='earth'&&terrainAttack;
  // Water trims actual fire footprints, including fields whose origin lies outside the water.
- if(elem==='fire')for(const item of state.items||[])if(item.name==='신선한 생선 살'&&keys.has(k(item.x,item.y))){const {x,y}=item,count=item.count||1;delete item.raw;delete item.naturalOnly57;Object.assign(item,clone(foodDef('구운 생선 살')),{x,y,count});if(state.visible?.has(k(x,y)))addLog('불기운이 닿은 생선 살이 노릇하게 익었다.')}
+ if(terrainFire)for(const item of state.items||[])if(item.name==='신선한 생선 살'&&keys.has(k(item.x,item.y))){const {x,y}=item,count=item.count||1;delete item.raw;delete item.naturalOnly57;Object.assign(item,clone(foodDef('구운 생선 살')),{x,y,count});if(state.visible?.has(k(x,y)))addLog('불기운이 닿은 생선 살이 노릇하게 익었다.')}
  const steamCells=[];if(elem==='water')for(const name of ['tempFields','elementFields74','legendFireFields47']){
   state[name]=(state[name]||[]).filter(f=>{if(name!=='legendFireFields47'&&f.kind!=='fire')return true;
    const before=f.cells??elementCells105(f.x,f.y,name==='legendFireFields47'?0:1);for(const q of before)if(keys.has(k(q.x,q.y)))steamCells.push(q);f.cells=before.filter(q=>!keys.has(k(q.x,q.y)));return f.cells.length>0;
@@ -139,47 +141,45 @@ function emitElementContact105(elem,cells,source={},contact={}){
  for(const q of steamCells)steamCell105(q.x,q.y);
  for(const {x,y} of footprint){const key=k(x,y),t=state.map[y]?.[x];
   if(elem==='ice'&&(isWaterTile105(t)||t===TT.ICE)&&freezeWater105(x,y)){changed++;if(t===TT.WATER&&state.visible?.has(key))burst(x,y,'#75c8dc',8,.4)}
-  if((elem==='fire'||elem==='earth')&&t===TT.ICE&&thawWater105(x,y)){changed++;melted++;if(state.visible?.has(key))burst(x,y,'#599ba7',8,.4)}
-  if(elem==='earth'&&t===TT.ICE){elementBreakFx105(x,y,'earth');alertNearby(x,y,3)}
-  if(elem==='fire'||elem==='water')revealEnvironmentalClue105(x,y,elem);
+  if((terrainFire||terrainEarth)&&t===TT.ICE&&thawWater105(x,y)){changed++;melted++;if(state.visible?.has(key))burst(x,y,'#599ba7',8,.4)}
+  if(terrainEarth&&t===TT.ICE){elementBreakFx105(x,y,'earth');alertNearby(x,y,3)}
+  if(terrainFire||elem==='water')revealEnvironmentalClue105(x,y,elem);
   if(elem==='water'&&t===TT.PAPER_BRIDGE)globalThis.__MANRU_HAZARD_CORE__?.armFragile(x,y,t,{cause:'water-contact'});
   const spill=r.spills?.[key];if(elem==='water'&&spill&&spill.kind!=='water')delete r.spills[key];
-  if(elem==='fire'&&spill&&['oil','wine'].includes(spill.kind)){delete r.spills[key];addField('fire',x,y,4,[{x,y}],{...source,friendlyFire:true})}
+  if(terrainFire&&spill&&['oil','wine'].includes(spill.kind)){delete r.spills[key];addField('fire',x,y,4,[{x,y}],{...source,friendlyFire:true})}
   const coals=(state.items||[]).filter(i=>i.x===x&&i.y===y&&(i.foodKind==='charcoal'||i.name==='검게 탄 숯'));
-  if(elem==='fire'&&!contact.propagation&&!coals.some(i=>i.charcoalBurn105?.lit)){const item=coals.find(i=>(i.charcoalBurn105?.remaining??2)>0);if(item&&igniteCharcoal105(item,source))changed++}
+  if(terrainFire&&!contact.propagation&&!coals.some(i=>i.charcoalBurn105?.lit)){const item=coals.find(i=>(i.charcoalBurn105?.remaining??2)>0);if(item&&igniteCharcoal105(item,source))changed++}
   if(elem==='water')for(const item of coals)if(item.charcoalBurn105?.lit){coolCharcoal105(item);changed++;if(state.visible?.has(key))burst(x,y,'#7caaa6',8,.45)}
-  if(elem==='fire'&&elementMaterial105(t,'wood',x,y)&&!protectedProp105(x,y)&&!r.burning[key]){r.burning[key]={x,y,tile:t,age:0,born:state.turn,source:{sourceFaction:source.sourceFaction||'neutral',credit:source.credit||null}};touchElementTerrain105(x,y);changed++}
+  if(terrainFire&&elementMaterial105(t,'wood',x,y)&&!protectedProp105(x,y)&&!r.burning[key]){r.burning[key]={x,y,tile:t,age:0,born:state.turn,source:{sourceFaction:source.sourceFaction||'neutral',credit:source.credit||null}};touchElementTerrain105(x,y);changed++}
   if(elem==='water'&&r.burning[key]){steamCell105(x,y);delete r.burning[key];touchElementTerrain105(x,y);if(state.visible?.has(key))burst(x,y,'#7caaa6',8,.45);changed++}
-  if(elem==='earth'&&elementMaterial105(t,'stone')&&destroyElementProp105(x,y,elem))changed++;
+  if(terrainEarth&&elementMaterial105(t,'stone')&&destroyElementProp105(x,y,elem))changed++;
   const structure=elementalStructureAt105(x,y);
-  if(structure&&elem==='earth'&&destroyElementStructure105(structure,elem))changed++;
-  if(structure&&elem==='fire'&&elementAffectsMaterial105(elem,structure.material)&&!structure.object.burning105){structure.object.burning105={age:0,born:state.turn,source:{sourceFaction:source.sourceFaction||'neutral',credit:source.credit||null}};changed++;}
+  if(structure&&terrainEarth&&destroyElementStructure105(structure,elem))changed++;
+  if(structure&&terrainFire&&elementAffectsMaterial105(elem,structure.material)&&!structure.object.burning105){structure.object.burning105={age:0,born:state.turn,source:{sourceFaction:source.sourceFaction||'neutral',credit:source.credit||null}};changed++;}
   if(structure&&['water','ice'].includes(elem)&&structure.object.burning105){delete structure.object.burning105;steamCell105(x,y);changed++;}
 
-  if((elem==='fire'||elem==='water')&&lightAt(x,y)){
+  if((terrainFire||elem==='water')&&lightAt(x,y)){
    const lit=elem==='fire',mine=(state.branchTerrain105?.mine105?.lanterns||[]).find(l=>l.x===x&&l.y===y),was=mine?!!mine.lit:!r.unlit[key];
    if(lit)delete r.unlit[key];else r.unlit[key]=true;if(mine){mine.lit=lit;mine.lastElement105=elem;mine.lightChangedAt105=state.turn;}
    if(was!==lit){changed++;touchElementTerrain105(x,y);if(state.visible?.has(key))burst(x,y,lit?'#ef923d':'#6eaaa8',10,.55)}
   }
  }
- for(const entity of [state.player,...state.monsters])if(entity?.hp>0&&!(contact.ground&&entity.flying)&&entityFootprintCells57(entity).some(q=>keys.has(k(q.x,q.y)))){if(combustionContact105(entity,elem,source))changed++}
+ const terrainChanged=changed;
+ const affected=elem==='fire'&&contact.directTarget?[contact.directTarget]:[state.player,...state.monsters];
+ for(const entity of affected)if(entity?.hp>0&&!(contact.ground&&entity.flying)&&entityFootprintCells57(entity).some(q=>keys.has(k(q.x,q.y)))){if(combustionContact105(entity,elem,source))changed++}
  if(elem==='shock'&&!contact.noConduct)conductShock105(footprint,contact.baseDamage||source.baseDamage105||4,source,contact.directTarget);
- if(changed){VisibilityService.compute();if(footprint.some(q=>state.visible?.has(k(q.x,q.y))))addLog(elem==='ice'?'냉기가 닿은 물이 얼어붙었다.':melted?'열기에 얼음이 녹아 물로 돌아갔다.':elem==='earth'?'대지의 충격에 석재물이 갈색 돌가루와 파편으로 부서졌다.':elem==='water'?'물기운이 닿은 불길과 불씨가 꺼졌다.':'불씨가 가연물에 옮겨붙었다.')}return changed;
+ if(terrainChanged){VisibilityService.compute();if(footprint.some(q=>state.visible?.has(k(q.x,q.y))))addLog(elem==='ice'?'냉기가 닿은 물이 얼어붙었다.':melted?'열기에 얼음이 녹아 물로 돌아갔다.':elem==='earth'?'대지의 충격에 석재물이 갈색 돌가루와 파편으로 부서졌다.':elem==='water'?'물기운이 닿은 불길과 불씨가 꺼졌다.':'불씨가 가연물에 옮겨붙었다.')}return changed;
 }
 function tickTerrainReactions105(){
  if(!state?.map)return;const r=terrainReactions105();if(r.lastTick===state.turn)return;r.lastTick=state.turn;
  const embers=(state.items||[]).filter(i=>i.charcoalBurn105?.lit&&state.turn>i.charcoalBurn105.born);
- // Snapshot first: a newly ignited neighbour cannot spread again in this turn.
- const hot=[];for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(state.map[y][x]===TT.LAVA){hot.push({x,y});for(const[dx,dy]of DIRS4){const nx=x+dx,ny=y+dy;if(state.map[ny]?.[nx]!=null&&(elementMaterial105(state.map[ny][nx],'wood',nx,ny)||lightAt(nx,ny)))hot.push({x:nx,y:ny});}}if(hot.length)emitElementContact105('fire',hot,{}, {propagation:true});
  for(const e of [state.player,...state.monsters]){if(e.plantBurn105||e.burn74>0){const old=e.plantBurn105;combustionContact105(e,'fire',old?.source||{});if(e.combustion105)e.combustion105.born=state.turn}environmentStanding105(e)}
  const active=Object.values(r.burning);for(const f of active){const key=k(f.x,f.y);if(state.map[f.y]?.[f.x]!==f.tile){delete r.burning[key];touchElementTerrain105(f.x,f.y);continue}if(state.turn<=f.born)continue;
   f.age++;
-  const adjacent=DIRS4.map(([dx,dy])=>({x:f.x+dx,y:f.y+dy}));
-  emitElementContact105('fire',[{x:f.x,y:f.y},...adjacent],f.source,{propagation:true});
   if(f.age>=3)destroyElementProp105(f.x,f.y,'fire');
  }
  for(const item of embers){const burn=item.charcoalBurn105;if(!state.items.includes(item)||!burn?.lit||state.turn<=burn.born)continue;
-  emitElementContact105('fire',[{x:item.x,y:item.y},...DIRS4.map(([dx,dy])=>({x:item.x+dx,y:item.y+dy}))],burn.source,{propagation:true});
+  emitElementContact105('fire',[{x:item.x,y:item.y}],burn.source,{propagation:true,ground:true});
   if(--burn.remaining<=0)consumeItemQuantity(item,1,state.items);
  }
  for(const e of [state.player,...state.monsters]){const b=e.combustion105;if(e.hp<=0||!b||state.turn<=b.born||b.lastTick===state.turn)continue;b.lastTick=state.turn;
@@ -248,7 +248,7 @@ function tickElementFields57(){
   }
   function extinguish74(x,y,r=2){return emitElementContact105('water',elementCells105(x,y,r),effectSource57(state.player))}
   function rawElement74(item){
-    if(!item)return false;ensure74();const elem=baseElem74(item),p=state.player;if(!elem)return false;cancelAutoWalk();closeInventory();identifyItem(item,'생원소 폭주 관찰');const depthStep=Math.floor((state.floor-1)/5),targets=near74(p.x,p.y,elem==='fire'?1:2);const contactCells=elementCells105(p.x,p.y,elem==='fire'?1:2);emitElementContact105(elem,contactCells,effectSource57(p),{baseDamage:20+depthStep*5});elementAttackFx105(elem,contactCells,p);
+    if(!item)return false;ensure74();const elem=baseElem74(item),p=state.player;if(!elem)return false;cancelAutoWalk();closeInventory();identifyItem(item,'생원소 폭주 관찰');const depthStep=Math.floor((state.floor-1)/5),targets=near74(p.x,p.y,elem==='fire'?1:2);const contactCells=elementCells105(p.x,p.y,elem==='fire'?1:2);emitElementContact105(elem,contactCells,effectSource57(p),{baseDamage:20+depthStep*5,terrainAttack105:true});elementAttackFx105(elem,contactCells,p);
     if(elem==='fire'){for(const m of targets)hurtMon74(m,'fire',29+depthStep*6,true);addElemField74('fire',p.x,p.y,4,4);hurtSelf74('fire',5);addLog(`화염부적 폭주: ${targets.length}체를 태우고 불길이 번졌다.`)}
     else if(elem==='shock'){targets.sort((a,b)=>entityDistance57(a,p)-entityDistance57(b,p));for(const m of targets.slice(0,5))hurtMon74(m,'shock',28+depthStep*6,true);hurtSelf74('shock',4,'stun');addLog(`뇌전부적 폭주: 전류가 ${Math.min(5,targets.length)}체를 연쇄 타격했다.`)}
     else if(elem==='water'){for(const m of targets){hurtMon74(m,'water',24+depthStep*5,true);if(m.hp>0)push74(m,p.x,p.y,1)}extinguish74(p.x,p.y,2);hurtSelf74('water',3,'weaken');addLog(`수류부적 폭주: ${targets.length}체를 밀어내고 주변 불길을 껐다.`)}

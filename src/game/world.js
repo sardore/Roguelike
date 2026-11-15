@@ -496,7 +496,7 @@ function pickup(...args){
     else if(room?.name&&!/바닥|벽|문/.test(terrainName(t)))desc+=` ${room.name}에 놓인 구조물이다.`;
     const name=t===TT.PORTAL?(state?.portalLinks981?.[k(x,y)]?'접힌 문':state?.artifactPortal46?.x===x&&state?.artifactPortal46?.y===y?'전설무기 던전 입구':state?.artifactExit46?.x===x&&state?.artifactExit46?.y===y?'전설무기 던전 귀환문':terrainName(t)):terrainName(t);
     const legendHint=legendTerrainHint(t,x,y);
-    const materialHint=elementMaterial105(t,'wood',x,y)?'불속성이 닿으면 3턴간 타며 인접 가연물로 번진다. 물속성으로 끌 수 있다.':elementMaterial105(t,'stone')?'땅속성이 닿으면 돌가루와 파편을 튀기며 부서진다.':lightAt(x,y)?'물속성으로 끄고 불속성으로 다시 지필 수 있다.':'';return{name,desc,hint:[legendHint||base.hint||'',materialHint].filter(Boolean).join(' ')};
+    const materialHint=elementMaterial105(t,'wood',x,y)?'화염 공격이 직접 닿으면 3턴간 탄다. 물속성으로 끌 수 있다.':elementMaterial105(t,'stone')?'대지 공격이 직접 닿으면 돌가루와 파편을 튀기며 부서진다.':lightAt(x,y)?'물속성으로 끄고 불속성으로 다시 지필 수 있다.':'';return{name,desc,hint:[legendHint||base.hint||'',materialHint].filter(Boolean).join(' ')};
   }
 // Environmental reactions share contact, occupancy and temporary-field owners.
 function protectedProp105(x,y,world=state){
