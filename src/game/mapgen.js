@@ -301,7 +301,7 @@ pressureTrapAt(x,y){
 playerStepAllowed(from,x,y,opts={}){
   if(!from||Math.max(Math.abs(x-from.x),Math.abs(y-from.y))!==1)return false;
   if(opts.seenOnly&&!state.seen.has(k(x,y)))return false;
-  if(opts.avoidTraps&&ReachabilityService.pressureTrapAt(x,y))return false;
+  if(opts.avoidTraps&&ReachabilityService.pressureTrapAt(x,y)&&!(x===opts.trapDestination?.x&&y===opts.trapDestination.y))return false;
   const occupant=opts.ignoreOccupants===false?findMonsterAt(x,y):null,swap=opts.allowAllySwap&&occupant&&occupant.x===x&&occupant.y===y&&entityFootprintCells57(occupant).length===1&&occupancySwapAllowed57(state.player,occupant,from);
   return ReachabilityService.playerTerrainPassable(x,y,opts)&&(opts.ignoreOccupants!==false||!OccupancyService.isOccupied(x,y)||swap);
 },
@@ -332,9 +332,10 @@ frontierPath(weight=.35,dirs=DIRS8){
   return best?ReachabilityService.playerPath(search,best):null;
 },
 playerPassable(x,y){return ReachabilityService.playerTerrainPassable(x,y)},
-pathTo(tx,ty){
+pathTo(tx,ty,{allowTrapEntry=false}={}){
   if(!state||!state.seen.has(k(tx,ty)))return null;
-  return ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player,{goal:{x:tx,y:ty},seenOnly:true,ignoreOccupants:false,allowAllySwap:true,avoidTraps:true}),{x:tx,y:ty});
+  const goal={x:tx,y:ty};
+  return ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player,{goal,seenOnly:true,ignoreOccupants:false,allowAllySwap:true,avoidTraps:true,trapDestination:allowTrapEntry?goal:null}),goal);
 },
 floodNormal(start){return ReachabilityService.playerSearch(start).cells},
 terrainPassable(x,y){return x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocks(state.map[y][x])},
@@ -3147,8 +3148,8 @@ function playerTransferPolicy57(cause){
   if(cause==='holy-blink'||cause==='mirror-teleport'||cause==='boss-teleport')return{seen:false,safe:true,authorized:true,excludeOrigin:true};
   return null;
 }
-function movePlayer(dx,dy,{avoidTraps=false}={}){
- if(avoidTraps&&state?.player){
+function movePlayer(dx,dy,{avoidTraps=false,allowTrapEntry=false}={}){
+ if(avoidTraps&&!allowTrapEntry&&state?.player){
   const x=state.player.x+dx,y=state.player.y+dy;
   if(ReachabilityService.pressureTrapAt(x,y)&&(state.shopIntermission?.active||!isHostileTarget57(findMonsterAt(x,y))))return false;
  }
