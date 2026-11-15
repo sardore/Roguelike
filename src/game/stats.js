@@ -407,7 +407,8 @@ const PlayStats={
    if(resume){this.close();toast(notice);return '';}
    return notice;
   }
-  if(entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
+  const floorEight=entered==='1734';
+  if(!floorEight&&entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
   const checkSave=()=>{
    const saved=SaveService.recover();
    if(!saved.ok)return '이 기기의 저장 기록을 읽지 못했다.';
@@ -416,7 +417,7 @@ const PlayStats={
   };
   const saveNotice=checkSave();
   if(saveNotice)return saveNotice;
-  const scene=document.getElementById('statsScene');
+  const scene=document.getElementById('statsScene'),generation=RunLifecycle.generation();
   try{
    if(entered==='19721'){
     const cls=CLASSES.find(c=>c.id==='summoner');
@@ -431,18 +432,22 @@ const PlayStats={
      return Array.isArray(body?.inventory)&&body.maxHp>0&&CLASSES.some(cls=>cls.id===body.classId)?body:null;
     }catch(error){ignoreError('unreadable recovery ghost',error);return null}
    };
-   let {ghost,turns}=pending||{};
+   let {ghost,turns}=floorEight?{}:(pending||{});
    if(!ghost){
     let backup=null;
     try{backup=sessionStorage.getItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup unreadable',error)}
-    let local=null;
-    try{local=JSON.parse(backup||lsGet('manruLatestDeath')||'null')}catch(error){ignoreError('death snapshot unreadable',error)}
+    const localSnapshots=[];
+    for(const raw of [backup,lsGet('manruLatestDeath')]){
+     try{if(raw)localSnapshots.push(JSON.parse(raw))}catch(error){ignoreError('death snapshot unreadable',error)}
+    }
     const mine=this.mine().filter(row=>row.cause&&row.cause!==this.END_CAUSE);
     const death=SaveService.death(),deathId=death?.runId;
-    const id=deathId?this.deviceTag()+'-'+deathId:local?.id||mine.at(-1)?.id;
+    const id=deathId?this.deviceTag()+'-'+deathId:localSnapshots[0]?.id||mine.at(-1)?.id;
     const queued=this.queue().find(row=>row.id===id);
     turns=deathId?death.turn:mine.find(row=>row.id===id)?.turns??queued?.turns;
-    if(local?.id===id||deathId&&local?.id===deathId)ghost=parseGhost(local?.ghost);
+    for(const local of localSnapshots){
+     if(local?.id===id||deathId&&local?.id===deathId)ghost??=parseGhost(local?.ghost);
+    }
     ghost??=parseGhost(queued?.ghost);
     if(!ghost&&deathId&&state?.dead&&state.runId984===deathId)ghost=parseGhost(this.ghostBody());
 
@@ -456,11 +461,11 @@ const PlayStats={
       ghost=parseGhost(archived?.body);
       turns??=archived?.turns;
      }
-     if(!ghost){
+     if(!ghost&&(!floorEight||!id)){
       const archive=await this.fetchView(endpoint,'ghosts&'+owner);
       if(archive?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
       if(!Array.isArray(archive?.list))return '서버에서 망령 목록을 읽지 못했다.';
-      for(const row of archive.list){
+      for(const row of floorEight?archive.list.slice(0,1):archive.list){
        if(!row?.id||row.id===id)continue;
        const archived=await fetchGhost(row);
        if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
@@ -473,16 +478,17 @@ const PlayStats={
      }
     }
    }
-   if(!ghost)return '이 기기와 서버에서 복구할 망령 본문을 찾지 못했다.';
+   if(!ghost)return floorEight?'이 기기의 가장 최근 사망 기록을 찾지 못했다.':'이 기기와 서버에서 복구할 망령 본문을 찾지 못했다.';
+   if(floorEight&&!RunLifecycle.isCurrent(generation))return '탐사 기록이 바뀌었다. 코드를 다시 입력하자.';
    const cls=CLASSES.find(cls=>cls.id===ghost.classId);
    if(!scene?.isConnected)return '';
    const updatedSaveNotice=checkSave();
    if(updatedSaveNotice)return updatedSaveNotice;
-   newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}});
+   newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}},floorEight?8:undefined);
    this.close();
-   toast('창해 용궁 2층 입구에서 되살아났다.');
+   toast(floorEight?'8층에서 보신 전골 6개와 강화부적 4개를 받고 되살아났다.':'창해 용궁 2층 입구에서 되살아났다.');
    return '';
-  }catch(error){ignoreError('palace recovery failed',error);return '탐사를 되살리지 못했다. 다시 시도하자.'}
+  }catch(error){ignoreError('run recovery failed',error);return '탐사를 되살리지 못했다. 다시 시도하자.'}
  },
  // The ranking board: the player's own best, the three boards, a podium for the first three and a list for the rest.
  rankView(status){
