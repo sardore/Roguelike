@@ -295,9 +295,13 @@ playerTerrainPassable(x,y,opts={}){
   if(t===TT.LAVA&&playerCloak().lavaWalk)return true;
   return !tileBlocks(t);
 },
+pressureTrapAt(x,y){
+  const tile=state?.map?.[y]?.[x];return tile===TT.TRAP||tile===TT.SNARE;
+},
 playerStepAllowed(from,x,y,opts={}){
   if(!from||Math.max(Math.abs(x-from.x),Math.abs(y-from.y))!==1)return false;
   if(opts.seenOnly&&!state.seen.has(k(x,y)))return false;
+  if(opts.avoidTraps&&ReachabilityService.pressureTrapAt(x,y))return false;
   const occupant=opts.ignoreOccupants===false?findMonsterAt(x,y):null,swap=opts.allowAllySwap&&occupant&&occupant.x===x&&occupant.y===y&&entityFootprintCells57(occupant).length===1&&occupancySwapAllowed57(state.player,occupant,from);
   return ReachabilityService.playerTerrainPassable(x,y,opts)&&(opts.ignoreOccupants!==false||!OccupancyService.isOccupied(x,y)||swap);
 },
@@ -319,7 +323,7 @@ playerPath(search,goal){
   const path=[];while(search.prev.get(key)!=null){const[x,y]=key.split(',').map(Number);path.push({x,y});key=search.prev.get(key)}return path.reverse();
 },
 frontierPath(weight=.35,dirs=DIRS8){
-  if(!state)return null;const search=ReachabilityService.playerSearch(state.player,{seenOnly:true,ignoreOccupants:false,allowAllySwap:true});let best=null,score=Infinity;
+  if(!state)return null;const search=ReachabilityService.playerSearch(state.player,{seenOnly:true,ignoreOccupants:false,allowAllySwap:true,avoidTraps:true});let best=null,score=Infinity;
   // Preserve the former row/column tie order, with one BFS for all candidate frontiers.
   for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++){
     const d=search.dist.get(k(x,y));if(!d)continue;let unseen=0;for(const[dx,dy]of dirs)if(!state.seen.has(k(x+dx,y+dy)))unseen++;
@@ -330,7 +334,7 @@ frontierPath(weight=.35,dirs=DIRS8){
 playerPassable(x,y){return ReachabilityService.playerTerrainPassable(x,y)},
 pathTo(tx,ty){
   if(!state||!state.seen.has(k(tx,ty)))return null;
-  return ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player,{goal:{x:tx,y:ty},seenOnly:true,ignoreOccupants:false,allowAllySwap:true}),{x:tx,y:ty});
+  return ReachabilityService.playerPath(ReachabilityService.playerSearch(state.player,{goal:{x:tx,y:ty},seenOnly:true,ignoreOccupants:false,allowAllySwap:true,avoidTraps:true}),{x:tx,y:ty});
 },
 floodNormal(start){return ReachabilityService.playerSearch(start).cells},
 terrainPassable(x,y){return x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocks(state.map[y][x])},
@@ -3143,7 +3147,11 @@ function playerTransferPolicy57(cause){
   if(cause==='holy-blink'||cause==='mirror-teleport'||cause==='boss-teleport')return{seen:false,safe:true,authorized:true,excludeOrigin:true};
   return null;
 }
-function movePlayer(dx,dy){
+function movePlayer(dx,dy,{avoidTraps=false}={}){
+ if(avoidTraps&&state?.player){
+  const x=state.player.x+dx,y=state.player.y+dy;
+  if(ReachabilityService.pressureTrapAt(x,y)&&(state.shopIntermission?.active||!isHostileTarget57(findMonsterAt(x,y))))return false;
+ }
  if(state?.shopIntermission?.active){
   if(!gameplayInputAllowed57())return false;const p=state.player,x=p.x+dx,y=p.y+dy,npc=neutralInteractableAt58(x,y);if(npc)return interactNeutral58(npc);
   if(!ReachabilityService.playerStepAllowed(p,x,y)||OccupancyService.isOccupied(x,y))return false;
@@ -3158,7 +3166,7 @@ function movePlayer(dx,dy){
     const act=playerAction57('move',{stunMessage:'몸이 굳어 한 턴을 잃었다.'});if(!act.ok)return act.consumed||false;
     const p=state.player,intended={x:dx,y:dy},ix=p.x+dx,iy=p.y+dy,intendedMon=ix>=0&&iy>=0&&ix<COLS&&iy<ROWS?findMonsterAt(ix,iy):null;
     p.facing={...intended};if(intendedMon&&isHostileTarget57(intendedMon)){state._forcedAdjacentTargetR8=intendedMon;ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}
-    if((state.status?.drunk||0)>0){const drunk=drunkMovementOutcome57();if(drunk==='stumble'){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 묶어 제자리에서 휘청거렸다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}if(drunk==='misstep'){const choices=[];for(const[ddx,ddy]of DIRS8){const x=p.x+ddx,y=p.y+ddy;if(x<0||y<0||x>=COLS||y>=ROWS||findMonsterAt(x,y))continue;const tile=state.map?.[y]?.[x],hazard=globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile);if(ReachabilityService.playerStepAllowed(p,x,y,{allowHazardEntry:!!hazard}))choices.push({dx:ddx,dy:ddy})}if(!choices.length){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 꼬았지만 비틀어 갈 곳이 없었다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}const q=choice(choices);dx=q.dx;dy=q.dy;ctx.dx=dx;ctx.dy=dy;ctx.targetX=p.x+dx;ctx.targetY=p.y+dy;ctx.targetTile=state.map?.[ctx.targetY]?.[ctx.targetX];floatText(p.x,p.y,'비틀','#d7c39e',10);addLog('취기에 방향 감각이 흐려져 발걸음이 빗나갔다.')}}
+    if((state.status?.drunk||0)>0){const drunk=drunkMovementOutcome57();if(drunk==='stumble'){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 묶어 제자리에서 휘청거렸다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}if(drunk==='misstep'){const choices=[];for(const[ddx,ddy]of DIRS8){const x=p.x+ddx,y=p.y+ddy;if(x<0||y<0||x>=COLS||y>=ROWS||findMonsterAt(x,y))continue;const tile=state.map?.[y]?.[x],hazard=globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile);if(ReachabilityService.playerStepAllowed(p,x,y,{allowHazardEntry:!!hazard,avoidTraps}))choices.push({dx:ddx,dy:ddy})}if(!choices.length){floatText(p.x,p.y,'휘청','#d7c39e',10);addLog('취기가 발을 꼬았지만 비틀어 갈 곳이 없었다.');commitPlayerAction57(act,moveTurnCost());ctx.result=true;return true}const q=choice(choices);dx=q.dx;dy=q.dy;ctx.dx=dx;ctx.dy=dy;ctx.targetX=p.x+dx;ctx.targetY=p.y+dy;ctx.targetTile=state.map?.[ctx.targetY]?.[ctx.targetX];floatText(p.x,p.y,'비틀','#d7c39e',10);addLog('취기에 방향 감각이 흐려져 발걸음이 빗나갔다.')}}
     p.facing={x:dx,y:dy};const nx=p.x+dx,ny=p.y+dy;if(nx<0||ny<0||nx>=COLS||ny>=ROWS){ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[nx,ny,act]}).value;return}
     const mon=findMonsterAt(nx,ny);if(mon){if(!isHostileTarget57(mon)){ctx.result=resolveOccupancyInteraction57(p,mon);if(ctx.result)commitPlayerAction57(act,moveTurnCost());return ctx.result}state._forcedAdjacentTargetR8=mon;ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}
     const t=state.map[ny][nx];if(t===TT.JAR){state._manualTerrainTargetR8={type:'jar',x:nx,y:ny};ctx.result=ActionDispatcher.dispatch({type:'ATTACK',args:[]}).value;return ctx.result}const haz=globalThis.__MANRU_HAZARD_CORE__,kind=haz?.kind?.(t);
