@@ -30,14 +30,29 @@ function advanceHeldInput(now=performance.now()){
  if(!d||now<INPUT.nextMoveAt)return false;
  INPUT.nextMoveAt=now+Math.max(125,movementInterval());ClientEnvironment.emit({type:'MOVE',dx:d[0],dy:d[1],source:'keyboard-hold'});return true;
 }
+let combatFloatSequence=0;
 function floatText(x,y,text,color="#ffffff",size=13,element=null,delay=0){
   const elementColor=element&&ELEMENT_FX_COLORS105[element];
   if(elementColor)color=elementColor;
   text=displayCombatText58(text);
   const dmg=/^-\d+/.test(text),n=dmg?Math.max(14,size):size;
-  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now()+delay,life:dmg?820:720});
-  const feed=dmg&&state?document.getElementById('mfHitFeed'):null;
-  if(feed&&!delay){const hurt=x===state.player.x&&y===state.player.y,d=document.createElement('div');d.className=`mfHit ${hurt?'hurt':''}`;d.textContent=`${hurt?'피격':'타격'} ${text}`;if(elementColor)d.style.color=elementColor;feed.appendChild(d);setTimeout(()=>d.remove(),620)}
+  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now()+delay,life:dmg?820:720,
+    ...(dmg&&state?{hitFeed:{id:++combatFloatSequence,hurt:x===state.player.x&&y===state.player.y,color:elementColor||null}}:{})});
+}
+function renderCombatHitFeed(now){
+  const feed=document.getElementById('mfHitFeed');if(!feed)return;
+  const entries=(combatPresentationEffects().floats||[]).filter(e=>e.hitFeed&&now>=e.start&&now-e.start<620);
+  const rows=new Map([...feed.children].map(row=>[row.dataset.hitKey,row]));
+  for(const [i,e] of entries.entries()){
+    const key=String(e.hitFeed.id??[e.start,e.x,e.y,e.text,i].join('|'));
+    if(rows.delete(key))continue;
+    const row=document.createElement('div');row.dataset.hitKey=key;
+    row.className=`mfHit ${e.hitFeed.hurt?'hurt':''}`;row.textContent=`${e.hitFeed.hurt?'피격':'타격'} ${e.text}`;
+    if(e.hitFeed.color)row.style.color=e.hitFeed.color;
+    row.style.animationDelay=`-${Math.max(0,now-e.start)}ms`;
+    feed.append(row);
+  }
+  for(const row of rows.values())row.remove();
 }
 function projectInteractionUI(){
   for(const panel of gameplayPanels57()){

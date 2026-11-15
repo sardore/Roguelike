@@ -101,7 +101,7 @@ function oddityMirror(msg){
   const t=ODDITY_RULES.timing,now=performance.now(),p=state.player,stand=Duel.opponent();
   for(const piece of Array.isArray(msg.pieces)?msg.pieces.slice(0,8):[]){
     const mat=ODDITY_RULES.materials.find(m=>m.id===piece.mat);if(!mat||!Number.isFinite(piece.x)||!Number.isFinite(piece.y))continue;
-    ODDITY_FX.push({run:state,map:state.map,start:now,hitAt:now+t.lift+t.charge+t.flight,from:{x:piece.x,y:piece.y},caster:{x:stand?.x??p.x,y:stand?.y??p.y},to:{x:p.x,y:p.y},mat:mat.id,aura:ODDITY_RULES.auras[msg.form]||ODDITY_RULES.auras.base,color:mat.color,tile:piece.tile,sprite:oddityPieceSprite(piece.tile,piece.x,piece.y,piece.prop),seed:(piece.x*31+piece.y*17+Math.floor(now))>>>0,hit:false,bounceNext:false});
+    ODDITY_FX.push({run:state,map:state.map,start:now,hitAt:now+t.lift+t.charge+t.flight,from:{x:piece.x,y:piece.y},caster:{x:stand?.x??p.x,y:stand?.y??p.y},to:{x:p.x,y:p.y},mat:mat.id,aura:ODDITY_RULES.auras[msg.form]||ODDITY_RULES.auras.base,color:mat.color,tile:piece.tile,prop:piece.prop,sprite:oddityPieceSprite(piece.tile,piece.x,piece.y,piece.prop),seed:(piece.x*31+piece.y*17+Math.floor(now))>>>0,hit:false,bounceNext:false});
   }
 }
 // the pieces in the air, by the chosen enemy: oddityPlan answers with them while the art is under way (their tiles are already gone from the floor)
@@ -116,7 +116,7 @@ function oddityFlightMs(from,to){return Math.max(110,Math.max(Math.abs(to.x-from
 function oddityBegin(actor,lv,form,cell){
   const plan=oddityChoose(actor,cell,lv,form);if(!plan)return false;
   const t=ODDITY_RULES.timing,now=performance.now(),mon=plan.target,entries=[];let last=now;
-  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,aura:ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,color:obj.mat.color,tile:obj.tile,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y,obj.prop),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
+  const fx=(obj,from,to,start,extra)=>{const ev={run:state,map:state.map,start,hitAt:start+t.lift+t.charge+t.flight,from,caster:{x:actor.x,y:actor.y},to,mat:obj.mat.id,aura:ODDITY_RULES.auras[form]||ODDITY_RULES.auras.base,color:obj.mat.color,tile:obj.tile,prop:obj.prop,sprite:oddityPieceSprite(obj.tile,obj.x,obj.y,obj.prop),seed:(obj.x*31+obj.y*17+start)>>>0,hit:false,...extra};ODDITY_FX.push(ev);return ev};
   if(form==='psychic'){
     // the enemy is lifted, and thrown to where the piece stands; the piece is broken by it when it lands
     const obj=plan.objects[0],fly=oddityFlightMs(mon,obj),launchAt=now+t.lift+t.charge,hitAt=launchAt+fly;
@@ -193,22 +193,28 @@ function oddityHitFx(ev){
   globalThis.__MANRU_SFX54__?.play?.(ev.mat==='lantern'?'crit':'hit');
 }
 function drawOddityFx(){
-  oddityDue();
-  if(!state||!ODDITY_FX.length)return;const now=performance.now(),T=ODDITY_RULES.timing;
-  for(let i=ODDITY_FX.length-1;i>=0;i--){const ev=ODDITY_FX[i];if(ev.run!==state||now>ev.hitAt+T.after)ODDITY_FX.splice(i,1)}
+  if(!state)return;
+  const now=performance.now(),T=ODDITY_RULES.timing;
+  if(!state.spectator){
+    oddityDue();
+    for(let i=ODDITY_FX.length-1;i>=0;i--){const ev=ODDITY_FX[i];if(ev.run!==state||now>ev.hitAt+T.after)ODDITY_FX.splice(i,1)}
+  }
+  const effects=state.spectator?combatPresentationEffects().oddity||[]:ODDITY_FX;
+  if(!effects.length)return;
   const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=TILE*cam.zoom,sc=z/TILE;
   X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
   const S=(tx,ty)=>({x:cam.x+(tx+.5)*z,y:cam.y+(ty+.5)*z});
-  for(const ev of ODDITY_FX){
-    const el=now-ev.start;if(el<0)continue;
+  for(const ev of effects){
+    const el=now-ev.start;if(el<0||now>ev.hitAt+T.after)continue;
+    const sprite=ev.kind==='psychic'?null:(ev.sprite??=oddityPieceSprite(ev.tile,ev.from.x,ev.from.y,ev.prop));
     const liftEnd=T.lift,chargeEnd=T.lift+T.charge,flyEnd=chargeEnd+T.flight,a=S(ev.from.x,ev.from.y),b=S(ev.to.x,ev.to.y),c=S(ev.caster.x,ev.caster.y);
-    if(now>=ev.hitAt&&!ev.hit)oddityHitFx(ev);
+    if(!state.spectator&&now>=ev.hitAt&&!ev.hit)oddityHitFx(ev);
     if(ev.kind==='bounce'){
       // the piece, still whole, glances off the first enemy to the second
       const u0=1-(ev.hitAt-now)/T.bounce;
       if(u0>=0&&u0<1){const u=oddityEase(u0),bx=a.x+(b.x-a.x)*u,by=a.y+(b.y-a.y)*u-Math.sin(Math.PI*u)*.7*z-.2*z;
         X.save();X.globalAlpha=.3;X.fillStyle='#000';X.beginPath();X.ellipse(a.x+(b.x-a.x)*u,a.y+(b.y-a.y)*u+z*.3,z*.3,z*.1,0,0,Math.PI*2);X.fill();X.restore();
-        X.save();X.translate(bx,by);X.rotate(u*13);X.scale(sc,sc);X.shadowColor=ev.color;X.shadowBlur=16*sc;X.drawImage(ev.sprite,-16,-18,32,32);X.restore()}
+        X.save();X.translate(bx,by);X.rotate(u*13);X.scale(sc,sc);X.shadowColor=ev.color;X.shadowBlur=16*sc;X.drawImage(sprite,-16,-18,32,32);X.restore()}
     }else if(ev.kind==='psychic'){
       // the enemy is held (strands from the hands, a ring about it), the piece that will break it trembles, then the streak of the throw
       const k2=Math.min(1,el/liftEnd);
@@ -235,7 +241,7 @@ function drawOddityFx(){
       // the shadow stays on the floor
       X.save();X.globalAlpha=.32;X.fillStyle='#000';const gx=el<chargeEnd?a.x:a.x+(b.x-a.x)*u,gy=el<chargeEnd?a.y:a.y+(b.y-a.y)*u;X.beginPath();X.ellipse(gx,gy+z*.3,z*(.36-Math.min(.16,lift/z*.12)),z*.11,0,0,Math.PI*2);X.fill();X.restore();
       // afterimages along the way, then the piece itself with its light
-      const draw=(x,y,r,alpha,scale)=>{X.save();X.globalAlpha=alpha;X.translate(x,y);X.rotate(r);X.scale(scale*sc,scale*sc);if(glow>0){X.shadowColor=ev.color;X.shadowBlur=18*glow*sc}X.drawImage(ev.sprite,-16,-18,32,32);X.restore()};
+      const draw=(x,y,r,alpha,scale)=>{X.save();X.globalAlpha=alpha;X.translate(x,y);X.rotate(r);X.scale(scale*sc,scale*sc);if(glow>0){X.shadowColor=ev.color;X.shadowBlur=18*glow*sc}X.drawImage(sprite,-16,-18,32,32);X.restore()};
       if(el>chargeEnd)for(let s=4;s>=1;s--){const tu=Math.max(0,u-s*.07),ease=tu,arc=Math.sin(Math.PI*tu)*(.9+.14*Math.hypot(b.x-a.x,b.y-a.y)/z)*z;draw(a.x+(b.x-a.x)*ease,a.y+(b.y-a.y)*ease-(.55*z*(1-tu)+arc),1+tu*(ev.mat==='tree'?7:11),.16*(1-s/5),1)}
       draw(px,py-lift,rot,1,1+.12*glow);
       if(ev.mat==='lantern'&&el>liftEnd){X.save();X.globalAlpha=.5*glow;const g=X.createRadialGradient(px,py-lift,0,px,py-lift,z*.9);g.addColorStop(0,'rgba(255,200,110,.9)');g.addColorStop(1,'rgba(255,120,40,0)');X.fillStyle=g;X.beginPath();X.arc(px,py-lift,z*.9,0,Math.PI*2);X.fill();X.restore()}

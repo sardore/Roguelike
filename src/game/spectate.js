@@ -3,12 +3,12 @@
    Viewer: draws a read-only copy with the game's own renderer; scroll and zoom are the viewer's, nothing else is accepted.
    The relay never fans out, so the host sends every packet once per viewer and relays chat itself. */
 const Spectate={
- RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
+ RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:65,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
  CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
- PLAIN:['floor','specialFloor','turn','floorTurn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
+ PLAIN:['floor','specialFloor','turn','floorTurn','enemyEnergy','layoutName','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
- ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','gazeBursts57','legendFireFields47','legendSkyAxes47'],
+ ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','legendFireFields47','legendSkyAxes47'],
  PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','martialForm','combustion105','martialActor105','guardReady1005','strongReady','classState'],
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
@@ -134,14 +134,57 @@ const Spectate={
   const tr=st.terrainReactions105;
   if(tr){for(const key of ['burning','char','spills','unlit'])if(tr[key]&&typeof tr[key]==='object'&&!Array.isArray(tr[key]))out.cells['terrainReactions105.'+key]=cellMap(tr[key]);out.set.terrainReactions105Meta={version:tr.version,revision:tr.revision}}
   const hz=st.hazard1005;if(hz)for(const key of ['armed','collapsed'])out.cells['hazard1005.'+key]=cellMap(hz[key]);
-  const visible=e=>vis.has(k(e.x,e.y)),remembered=e=>seen.has(k(e.x,e.y));
+  const visible=e=>!!e&&vis.has(k(e.x,e.y)),remembered=e=>seen.has(k(e.x,e.y));
   const pixelVisible=(x,y)=>vis.has(k(Math.floor(x/TILE),Math.floor(y/TILE)));
-  out.set.spectateCombatEffects={
-   projectiles:FX.projectiles.filter(e=>clock-e.start<e.life&&pixelVisible(e.x0,e.y0)&&pixelVisible(e.x1,e.y1)).map(e=>e.cells?{...e,cells:e.cells.filter(visible)}:e),
-   slashes:FX.slashes.filter(e=>clock-e.start<e.life&&pixelVisible(e.x0,e.y0)&&pixelVisible(e.x1,e.y1)),
-   floats:FX.floats.filter(e=>clock-e.start<e.life&&pixelVisible(e.x,e.y))
+  const active=e=>Number.isFinite(e.start)&&clock-e.start<e.life;
+  const point=e=>pixelVisible(e.x,e.y);
+  const visiblePath=e=>{
+   if(pixelVisible(e.x0,e.y0)&&pixelVisible(e.x1,e.y1))return e;
+   const dx=e.x1-e.x0,dy=e.y1-e.y0,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/8));
+   let first=null,last=null;
+   for(let i=0;i<=steps;i++){
+    const x=e.x0+dx*i/steps,y=e.y0+dy*i/steps;
+    if(pixelVisible(x,y)){first??={x,y};last={x,y};}else if(first)break;
+   }
+   return first&&last?{...e,x0:first.x,y0:first.y,x1:last.x,y1:last.y}:null;
   };
-  out.set.spectateMartialEvents=MARTIAL_VISUAL.run===st?MARTIAL_VISUAL.events.filter(e=>clock-e.start<e.life&&vis.has(k(Math.floor(e.x),Math.floor(e.y)))):[];
+  const localFields=events=>(events||[]).flatMap(({map,...e})=>{
+   if(map!==st.map||!active(e))return [];
+   if(!e.cells)return visible(e)?[e]:[];
+   const cells=e.cells.filter(visible);
+   if(!cells.length)return [];
+   return [{...e,...(e.origin&&!visible(e.origin)?{origin:cells[0]}:{}),x:visible(e)?e.x:cells[0].x,y:visible(e)?e.y:cells[0].y,cells}];
+  });
+  const action=ACTION_PRESENTATION58,actionVisible=action.run===st&&clock<action.until&&visible(action.source)&&
+   (!action.target||visible(action.target)&&(!action.entity||isEntityObservableToPlayer57(action.entity)));
+  out.set.spectateCombatEffects={
+   projectiles:FX.projectiles.filter(active).map(visiblePath).filter(Boolean).map(e=>e.cells?{...e,cells:e.cells.filter(visible)}:e),
+   slashes:FX.slashes.filter(active).map(visiblePath).filter(Boolean),
+   floats:FX.floats.filter(e=>active(e)&&point(e)),
+   rings:FX.rings.filter(e=>active(e)&&point(e)),
+   doors:FX.doors.filter(e=>active(e)&&visible(e)),
+   particles:FX.particles.filter(e=>active(e)&&point(e)),
+   elementAttacks105:localFields(FX.elementAttacks105),
+   terrainReactions105:localFields(FX.terrainReactions105),
+   martialEvents:MARTIAL_VISUAL.run===st?MARTIAL_VISUAL.events.filter(e=>active(e)&&vis.has(k(Math.floor(e.x),Math.floor(e.y)))):[],
+   pulse:FX965.pulse?.until>clock?FX965.pulse:null,
+   flash:FX.flashUntil>clock?{until:FX.flashUntil,color:FX.flashColor}:null,
+   transition:FX.transition&&active(FX.transition)?FX.transition:null,
+   action:actionVisible?(({start,until,source,target,kind,weapon,hit,crit,strong})=>({start,until,source,target,kind,weapon,hit,crit,strong}))(action):null,
+   oddity:ODDITY_FX.filter(e=>e.run===st&&e.map===st.map&&clock<e.hitAt+ODDITY_RULES.timing.after&&
+     [e.from,e.to,e.caster].every(visible)).map(({run,map,sprite,...e})=>e),
+   gazeBursts: (st.gazeBursts57||[]).filter(e=>clock-e.t<(e.ttl||460)&&vis.has(k(e.x0,e.y0))&&vis.has(k(e.x1,e.y1)))
+  };
+  // A visible danger tile is public even if the creature preparing it is still concealed.
+  out.set.spectateWarnings=st.monsters.flatMap(mon=>{
+   if(isEntityObservableToPlayer57(mon))return [];
+   const warning={};
+   for(const key of ['intent54','intent61']){
+    const intent=mon[key],cells=(intent?.cells||[]).filter(visible);
+    if(cells.length)warning[key]={type:intent.type,cells,...(intent.type==='palaceSweep105'?{data:{origin57:cells[0],radius105:intent.data.radius105}}:{})};
+   }
+   return Object.keys(warning).length?[warning]:[];
+  });
   for(const key of this.ENTITIES){
    const list=st[key];if(!Array.isArray(list)){out.set[key]=[];continue}
    if(key==='tempFields'){
@@ -297,14 +340,16 @@ const Spectate={
    if(key==='player'){v.player={...v.player,...value,inventory:[]};continue}
    if(key==='terrainReactions105Meta'){Object.assign(v.terrainReactions105,value);continue}
    if(key==='spectateMartialEvents'){v[key]=value.map(e=>({...e,start:e.start+offset}));continue}
-   if(key==='spectateCombatEffects'){
-    for(const events of Object.values(value))for(const e of events)e.start+=offset;
+   if(key==='spectateCombatEffects'&&value){
+    for(const entry of Object.values(value))for(const e of Array.isArray(entry)?entry:entry?[entry]:[]){
+     for(const timer of ['start','until','hitAt','launchAt','t'])if(Number.isFinite(e[timer]))e[timer]+=offset;
+    }
    }
    if(key==='playerAttackUntil'||key==='playerHitUntil'){v[key]=clock===null?0:deadline(value);continue}
    if(key==='monsters'&&clock!==null){
     const motion=new Map(v.monsters.filter(mon=>mon.combatantId54).map(mon=>[mon.combatantId54,MON_VIS.get(mon)]));
     for(const mon of value){
-     for(const timer of ['attackUntil','hitUntil'])if(timer in mon)mon[timer]=deadline(mon[timer]);
+     for(const timer of ['attackUntil','hitUntil','evadeUntil'])if(timer in mon)mon[timer]=deadline(mon[timer]);
      const previous=motion.get(mon.combatantId54);if(previous)MON_VIS.set(mon,previous);
     }
    }
