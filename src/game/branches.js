@@ -1412,7 +1412,12 @@ function dojoMartialTurn(mon,sees,d,target=state.player){
  const form=martialFormOf('strong',mon),stealth=mon.martialStatus105?.stealth>0,drive=form==='drive'?dojoDriveValue(mon,mon,p):0;
  const pursuit=memory.retreatStreak>=2&&!low,control=memory.controlThreatUntil>now,blinkRisk=memory.blinkThreatUntil>now;
  const targetDistance=martialFormOf('brawl',mon)==='close'?1:ranged||pursuit?Math.min(reach,2):style===3||style===1?Math.max(2,reach):reach;
- const cast=id=>{const v=martialPresentation(id,MARTIAL_INFO[id],mon);if(mon.focus-v.cost<reserve||!executeMartialActor(mon,id,id==='roar'?p:null))return false;mon.martialCd105=2;if(id==='ghost')mon.dojoFlank105=2+(memory.areaThreatUntil>now?1:0);mon.dojoReposition105=0;return true;};
+ const cast=id=>{const v=martialPresentation(id,MARTIAL_INFO[id],mon);if(mon.focus-v.cost<reserve)return false;
+  let cell=id==='roar'?p:null;
+  if(id==='roar'&&martialFormOf(id,mon)==='cloud'&&!yuunPath(mon,p)){
+   cell=candidates.filter(q=>yuunPath(mon,q)).sort((a,b)=>entityDistance57(a,p)-entityDistance57(b,p))[0];
+  }
+  if(!executeMartialActor(mon,id,cell))return false;mon.martialCd105=2;if(id==='ghost')mon.dojoFlank105=2+(memory.areaThreatUntil>now?1:0);mon.dojoReposition105=0;return true;};
  if(style===4&&stealth&&mon.dojoFlank105>0&&d>1){const dx=p.x-mon.x,dy=p.y-mon.y,side=((mon.dojoLook105?.cut||0)%2?-1:1)*(memory.areaThreatUntil>now?-1:1);const flank=candidates.filter(q=>entityDistance57(q,p)<=d+1).sort((a,b)=>{const score=q=>Math.abs(entityDistance57(q,p)-Math.max(1,reach))+((q.x-mon.x)*dy-(q.y-mon.y)*dx)*side*.35;return score(a)-score(b);})[0];mon.dojoFlank105--;if(flank)return step(flank);}
  if(!mon.martialCd105){
   if(mon.martial.strong&&form==='guard'&&!mon.guardReady1005&&d<=Math.max(control?4:3,reach)&&cast('strong'))return true;

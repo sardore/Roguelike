@@ -8,7 +8,9 @@ function martialPresentation(id,info,p=state.player){
  if(family==='aim')v.desc=`${form==='focus'?'상처와 고통에도 흔들리지 않고 시위를 겨눈다.':form==='divine'?'하나의 시선으로 두 적의 빈틈을 꿰뚫는다.':'호흡을 멈추고 적의 빈틈에 시선을 모은다.'} 사격 피해 ×${(Math.min(5+n,6+n-(form==='divine'?1:0))/4).toFixed(2)}에서 최대 ×${((6+n-(form==='divine'?1:0))/4).toFixed(2)}까지. 방어와 회피를 꿰뚫는다. 이동하거나 쏘면 집중이 한 단계 줄고, 제자리에서 다시 쌓인다. ${form==='focus'?'피해나 해로운 상태에 시달려도 집중을 이어갈 수 있다.':form==='divine'?'쏠 수 있는 다른 적이 있으면 집중 한 단계와 탄약 한 발을 더 써 함께 쏜다. 피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.':'피해를 받거나 해로운 상태에 걸리면 집중이 풀린다.'}`;
  if(family==='smoke'){
   const {size,damage}=martialSmokePower(p,n);
-  v.desc=`${form==='cloud'?'흐르는 구름처럼 연막을 두르고 움직인다.':form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} ${form==='cloud'?'몸을 중심으로': '4칸 안에 던져'} ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='cloud'?'연막은 발걸음을 따라 움직인다.':form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
+  v.desc=form==='cloud'
+   ?`사거리 ${YUUN_RANGE}칸. HP ${yuunHealth(n)}의 비구름이 턴당 1칸 이동하며 ${size}×${size} 연막을 몰고 간다. 목표에 도착하거나 파괴되면 연막 범위에 피해 ${damage}과 ${yuunDebuffs(n).map(([key,turns])=>STATUS_META57[key].label+' '+turns+'턴').join(' · ')}을 주고 시전자가 폭발 지점으로 이동한다.`
+   :`${form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} 4칸 안에 던져 ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
  }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
  if(family==='oddity'){v.cost=oddityCost(lv);v.desc=oddityDescription(lv,n,form);v.seal=ODDITY_RULES.seals[form]||v.seal}
@@ -146,9 +148,88 @@ function martialSmokeCells(center,size,form){
  }
  return cells;
 }
+const YUUN_RANGE=4;
+function yuunHealth(level){return 8+4*level}
+function yuunDebuffs(level){
+ return [['weaken',4+2*level],['poison',3+2*level],['blind',2+level],['drunk',3+level],['skillSeal',level]].slice(0,level);
+}
+function yuunGround(x,y){
+ const tile=state.map[y]?.[x];
+ return tile!=null&&!tileBlocks(tile)&&!tileBlocksSight(tile)&&!PLAYER_TRANSFER_UNSAFE57.has(tile);
+}
+function yuunPath(actor,cell){
+ if(!cell||!Number.isInteger(cell.x)||!Number.isInteger(cell.y))return null;
+ const dx=cell.x-actor.x,dy=cell.y-actor.y,dist=Math.max(Math.abs(dx),Math.abs(dy));
+ if(dist<1||dist>YUUN_RANGE||!combatLineCheckR8(actor.x,actor.y,cell.x,cell.y,{units:false,ignoreClouds:true}).ok)return null;
+ const path=Array.from({length:dist},(_,i)=>({x:actor.x+Math.round(dx*(i+1)/dist),y:actor.y+Math.round(dy*(i+1)/dist)}));
+ const first=path[0];
+ return path.every(q=>yuunGround(q.x,q.y))&&!OccupancyService.blocksEntityCell(first.x,first.y,new Set())?path:null;
+}
+function yuunOwner(cloud){
+ const id=cloud.yuun.ownerId;if(!id)return null;
+ return id==='player'?state.player:state.monsters.find(m=>m.combatantId54===id);
+}
+function syncYuunSmoke(cloud){
+ const id=combatantId(cloud),{x,y}=cloud,cells=martialSmokeCells(cloud,cloud.yuun.size,'cloud');
+ let field=(state.tempFields||[]).find(f=>f.yuunId===id);
+ if(!field){field={kind:'smoke',ttl:1,martialSmoke:true,smokeForm:'cloud',yuunId:id};(state.tempFields??=[]).push(field);}
+ Object.assign(field,{x,y,cells});
+ syncSmokeEntry();
+}
+function spawnYuun(actor,level,path){
+ const {size,damage}=martialSmokePower(actor,level),hp=yuunHealth(level),[first,...route]=path;
+ const cloud={...first,name:'유운 비구름',concept57:'연막을 품고 턴마다 한 칸 전진한다. 파괴되거나 목표에 닿으면 폭발하고 시전자가 이 자리로 이동한다.',hp,maxHp:hp,atk:0,def:0,eva:0,xp:0,color:'#a8c5d7',shape:'void',kind:'spirit',fixed:true,flying:true,combatFixture54:'yuun-cloud',faction57:entityFaction(actor),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture',yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,damage,route,lastTurn:state.turn+Number(actor===state.player)}};
+ OccupancyService.addMonster(cloud);
+ if(!route.length)cloud.yuun.lastTurn=state.turn-Number(actor!==state.player);
+ syncYuunSmoke(cloud);projectileFX(actor.x,actor.y,cloud.x,cloud.y,cloud.color);martialFx('cloud',cloud);
+}
+function applyYuunBlast(source,origin,cells,level,damage){
+ const run=state;
+ for(const target of martialTargets(source)){
+  if(state!==run||state.dead||state.victory)break;
+  if(target.duelOpponent||target.duelProxy||!cells.some(c=>monCovers(target,c.x,c.y)))continue;
+  const dealt=damageEntity(target,damage,source,null,{delivery:'area'});
+  if(dealt>0)floatText(target.x,target.y,'-'+dealt,'#a8c5d7',13);
+  if(target.hp>0)for(const [key,turns] of yuunDebuffs(level))applyCombatStatus(target,key,turns,1,{source});
+  martialCheckDeath(target,origin);
+ }
+}
+function detonateYuun(cloud){
+ const run=state,{x,y}=cloud,data=cloud.yuun,actor=yuunOwner(cloud);
+ if(!OccupancyService.removeMonster(cloud))return false;
+ if(cloud.duelProxy||state.dead||state.victory)return true;
+ martialFx('burst',cloud);burst(x,y,cloud.color,16,.8);
+ if(!(actor?.hp>0)||actor.deathProcessed57)return true;
+ const cells=martialSmokeCells(cloud,data.size,'cloud');
+ alertNearby(x,y,8,'explosion',data.damage);
+ addLog(`${actor.name} · 유운 폭발`);
+ if(state.duel&&entityFaction(actor)==='player')Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:data.damage}});
+ applyYuunBlast(actor,cloud,cells,data.level,data.damage);
+ if(state!==run||state.dead||state.victory||!(actor.hp>0)||actor.deathProcessed57||!yuunGround(x,y))return true;
+ if(actor===state.player){
+  if(playerTransferLandingSafe57(x,y)&&resolvePlayerLanding57(x,y,{cause:'yuun',entry:false,resetVisual:true}).moved){
+   markCombatBlink57(actor);VisibilityService.compute();
+  }
+ }else if(state.monsters.includes(actor)&&PlacementService.monsterCanStand(actor,x,y)&&!combatFieldBlocks57(x,y,{passage:'door',actor})&&OccupancyService.move(actor,x,y))markCombatBlink57(actor);
+ return true;
+}
+function tickYuun(){
+ for(const cloud of [...state.monsters]){
+  const data=cloud.yuun;
+  if(!data||cloud.duelProxy||!state.monsters.includes(cloud)||data.lastTurn>=state.turn)continue;
+  const actor=yuunOwner(cloud);
+  if(!(actor?.hp>0)||actor.deathProcessed57||state.dead||state.victory){detonateYuun(cloud);continue;}
+  data.lastTurn=state.turn;
+  const next=data.route.shift();
+  if(cloud.hp<=0||!next||!yuunGround(next.x,next.y)||OccupancyService.blocksEntityCell(next.x,next.y,new Set([cloud]))||!OccupancyService.move(cloud,next.x,next.y)){
+   detonateYuun(cloud);continue;
+  }
+  if(!state.monsters.includes(cloud))continue;
+  if(!data.route.length)detonateYuun(cloud);else syncYuunSmoke(cloud);
+ }
+}
 function martialLanding(origin){
  const p=state.player,moved=p.x!==origin.x||p.y!==origin.y;
- if(moved)for(const f of state.tempFields||[])if(f.martialSmoke&&f.smokeForm==='cloud'&&f.owner==='player'&&f.ttl>0){f.x=p.x;f.y=p.y;f.cells=martialSmokeCells(p,martialSmokePower(p,f.castLevel).size,'cloud')}
  syncSmokeEntry();const e=state.martialEcho;if(moved&&e&&e.floor===state.floor&&e.x===p.x&&e.y===p.y){state.martialEcho=null;martialFx('echo');performRoar(false)}
 }
 function expireMartialSmoke(f){
@@ -407,7 +488,8 @@ function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
  const act=existingAction||playerAction57('martial',{uiOwner:'worldTarget57',skill:true});if(!act.ok)return false;
  const p=state.player,lv=p.martial.roar,info=martialPresentation('roar',MARTIAL_INFO.roar,p);
  if(playerClassRules58(p).roar!=='smoke'||lv<1||p.focus<info.cost){toast('연막을 사용할 기력이 부족하거나 기술을 배우지 않았다.');return false}
- if(!state.visible.has(k(cell.x,cell.y))||entityDistance57(p,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(p.x,p.y,cell.x,cell.y)){toast('연막을 던질 경로가 막혔다.');return false}
+ const cloud=martialFormOf('roar',p)==='cloud';
+ if(!state.visible.has(k(cell.x,cell.y))||!cloud&&(entityDistance57(p,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(p.x,p.y,cell.x,cell.y))){toast('연막을 던질 경로가 막혔다.');return false}
  if(!executeMartialActor(p,'roar',cell))return false;commitPlayerAction57(act,1);return true;
 }
 function setPlayerStatus(key,turns){
@@ -441,16 +523,18 @@ function expireCombatFields(opts={}){
    }
    if(opts.movement||state.turn<=f.bornTurn)continue;
   }
-  if(opts.movement)continue;
-  if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);
+  if(opts.movement||f.yuunId)continue;
+  if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);if(!opts.movement)tickYuun();
 }
 function entityAttackMissChance(attacker,target,{base=.06,max=.42,evaScale=1,evaIgnore=0}={}){const blinded=combatStatusTurns(attacker,'blind')>0,eva=Math.max(0,Number(target?combatEntityStats(target).eva:0)||0),minChance=target===state?.player?0:base;return clamp(base+Math.max(0,eva-evaIgnore)*evaScale*.022+(blinded?STATUS_META57.blind.missPenalty57:0),minChance,max)}
 const MARTIAL_INFO={rapidFire:{name:'연사',type:'passive',cost:0,seal:'連',visual:'aim'},strong:{name:'강타',type:'active',cost:3,desc:'기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.'},roar:{name:'호효',type:'active',cost:5,desc:'충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.'},ghost:{name:'귀영',type:'active',cost:4,desc:'형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.'},brawl:{name:'격투',type:'passive',cost:0,desc:'맨손과 권갑의 공격력을 단계당 +1 높인다. 권갑은 기본 성능이 높지만 강화 효율이 매우 낮다.'},constitution:{name:'체력 단련',type:'passive',cost:0,desc:'강화할 때마다 최대 HP 약 8% 증가.'}};
 function upgradeMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();const p=state.player;if(p.skillPoints<=0){toast('무술 포인트가 없다.');return}if(!martialIds(p).includes(id)||!martialUnlocked(id,p)||p.martial[id]>=martialCap(id,p)){toast('현재 상한에 도달했다.');return}p.skillPoints--;p.martial[id]++;if(id==='constitution')recomputeMaxHp(p,true);addLog(`${martialPresentation(id,MARTIAL_INFO[id],p).name} ${p.martial[id]}단계.`);renderMartialPanel();updateAll()}
 function martialRoarRange(lv){return Math.max(1,Math.min(4,Math.floor(lv||1)))}
-function activateMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();const act=playerAction57('martial',{allowMartial:true,skill:true,closeMartial:true,stunMessage:'몸이 굳어 무술을 펼치지 못했다.'});if(!act.ok){if(id==='roar'&&playerClassRules58().roar==='aim'&&['stun','skillSeal'].includes(act.reason))globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);return !!act.consumed;}cancelAutoWalk();const p=state.player,lv=p.martial[id],info=martialPresentation(id,MARTIAL_INFO[id],p);if(info.type!=='active'){toast('지속 효과 무술이다.');return false}if(!lv){toast('먼저 무술을 배워야 한다.');return false}if(p.focus<info.cost){toast('기력이 부족하다.');return false}if(mountainWoodSlot(p)===id)return mountainWoodCast(id,act);if(martialFamily(id,p)==='oddity')return oddityBeginTarget(info);if(id==='roar'&&playerClassRules58(p).roar==='smoke'){if(martialFormOf('roar')==='cloud')return castMartialSmoke({x:p.x,y:p.y},'self',act);
- const cells=[];for(let y=Math.max(0,p.y-4);y<=Math.min(ROWS-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(COLS-1,p.x+4);x++)if(state.visible.has(k(x,y))&&!tileBlocksSight(state.map[y][x])&&lineClear(p.x,p.y,x,y))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
- if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}const {size,damage}=martialSmokePower(p,lv);closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:`사거리 4칸 · ${size}×${size} · 피해 ${damage} · 기 4 · 목표 칸 선택`,range:4,cells,onPick:castMartialSmoke});
+function activateMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();const act=playerAction57('martial',{allowMartial:true,skill:true,closeMartial:true,stunMessage:'몸이 굳어 무술을 펼치지 못했다.'});if(!act.ok){if(id==='roar'&&playerClassRules58().roar==='aim'&&['stun','skillSeal'].includes(act.reason))globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);return !!act.consumed;}cancelAutoWalk();const p=state.player,lv=p.martial[id],info=martialPresentation(id,MARTIAL_INFO[id],p);if(info.type!=='active'){toast('지속 효과 무술이다.');return false}if(!lv){toast('먼저 무술을 배워야 한다.');return false}if(p.focus<info.cost){toast('기력이 부족하다.');return false}if(mountainWoodSlot(p)===id)return mountainWoodCast(id,act);if(martialFamily(id,p)==='oddity')return oddityBeginTarget(info);if(id==='roar'&&playerClassRules58(p).roar==='smoke'){
+ const cloud=martialFormOf('roar',p)==='cloud';
+ if(cloud&&state.monsters.some(m=>m.yuun&&m.hp>0&&yuunOwner(m)===p)){toast('이미 날아가는 유운 비구름이 있다.');return false}
+ const cells=[];for(let y=Math.max(0,p.y-4);y<=Math.min(ROWS-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(COLS-1,p.x+4);x++)if(state.visible.has(k(x,y))&&!tileBlocksSight(state.map[y][x])&&(cloud?yuunPath(p,{x,y}):lineClear(p.x,p.y,x,y)))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
+ if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}const {size,damage}=martialSmokePower(p,lv);closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:cloud?`사거리 ${YUUN_RANGE}칸 · 비구름 HP ${yuunHealth(lv)} · 목표 칸 선택`:`사거리 4칸 · ${size}×${size} · 피해 ${damage} · 기 4 · 목표 칸 선택`,range:4,cells,onPick:castMartialSmoke});
  }if(!executeMartialActor(p,id))return false;if(!(id==='strong'&&martialFormOf(id)==='guard')&&!(id==='roar'&&playerClassRules58(p).roar==='aim'&&!p.classState.aimPower))globalThis.__MANRU_MARTIAL_FX965__?.used?.(id,lv);if(lv>=5)martialFx('transcend');closeMartial();commitPlayerAction57(act,id==='ghost'?.85:1);return true}
 function martialCardClasses(id,p=state.player){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `martialCard991 skill-${v.visual||id} ${v.classStyle||''} ${p.martial[id]===5?'martialTranscend1005':''} form-${martialFormOf(id,p)||'base'}`}
 function martialCardContent(id,p=state.player,title='',note='',compact=false){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `<div class="skillSig991">${v.seal||(id==='strong'?'力':id==='roar'?'吼':id==='ghost'?'影':id==='brawl'?'拳':v.classStyle?'力':'體')}</div><div class="skillCopy991"><h4>${title||v.name}</h4><div class="martialLv991">${'◆'.repeat(p.martial[id])}${compact?'':'◇'.repeat(Math.max(0,martialCap(id,p)-p.martial[id]))} · ${v.type==='active'?`기력 ${v.cost}`:'지속 효과'}</div><p>${note?note+'<br>':''}${compact?dojoMartialSummary(id,p):v.desc}</p></div>`}
@@ -495,18 +579,21 @@ function executeMartialActor(actor,id,cell=null){
  const lv=actor.martial?.[id]||0,info=martialPresentation(id,MARTIAL_INFO[id],actor),form=martialFormOf(id,actor),player=actor===state.player,status=player?state.status:(actor.martialStatus105||(actor.martialStatus105={}));
  if(lv<1||info.type!=='active'||actor.focus<info.cost||(player?state.status.skillSeal:actor.skillSeal105)>0)return false;
  const family=martialFamily(id,actor);
- if(family==='smoke'&&(!cell||entityDistance57(actor,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(actor.x,actor.y,cell.x,cell.y)))return false;
+ const cloud=family==='smoke'&&form==='cloud',path=cloud?yuunPath(actor,cell):null;
+ if(cloud&&(!path||state.monsters.some(m=>m.yuun&&m.hp>0&&yuunOwner(m)===actor)))return false;
+ if(family==='smoke'&&!cloud&&(!cell||entityDistance57(actor,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(actor.x,actor.y,cell.x,cell.y)))return false;
  if(family==='oddity'&&!oddityPlan(actor,cell,lv,form))return false;
  actor.focus-=info.cost;
  if(id==='strong'){actor.strongReady=form==='guard'?0:lv;actor.guardReady1005=form==='guard'?strongBonus(lv):0;actor.guardCharges1005=form==='guard'?MARTIAL_RULES.guardActions:0;martialFx(form==='guard'?'guard':'drive',actor)}
  else if(id==='ghost'){const duration=ghostDuration(lv)+(player?1:0);status.stealth=Math.max(status.stealth||0,duration);status.evade=Math.max(status.evade||0,duration);if(player)for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('assassin',actor)}
  else if(family==='oddity'){if(!oddityBegin(actor,lv,form,cell))return false}
  else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower(5+lv)}
+ else if(cloud){status.stealth=0;spawnYuun(actor,lv,path);markCombatActivity57('martial-smoke');}
  else if(family==='smoke'){
   const {size,damage}=martialSmokePower(actor,lv);
-  const center=form==='cloud'?actor:cell,cells=martialSmokeCells(center,size,form);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
+  const center=cell,cells=martialSmokeCells(center,size,form);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
   for(const m of martialTargets(actor))if(cells.some(c=>monCovers(m,c.x,c.y))&&!globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,actor)){damageEntity(m,damage,actor);martialCheckDeath(m,actor)}
-  const owner=player?'player':actor.dojoActorId105;if(form==='cloud')state.tempFields=(state.tempFields||[]).filter(f=>!(f.martialSmoke&&f.smokeForm==='cloud'&&f.owner===owner));
+  const owner=player?'player':actor.dojoActorId105;
   addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:damage,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
  }else performRoar(true,actor);
  installMartialJar(actor);floatText(actor.x,actor.y,info.name,lv===5?'#f5e9d0':'#d6b77d',12);addLog(`${actor.name} · ${info.name} ${lv}단 · 기 ${info.cost} 소모.`);if(lv===5)martialFx('transcend',actor);return true;

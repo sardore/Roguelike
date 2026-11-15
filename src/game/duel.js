@@ -291,13 +291,16 @@ const Duel={
  },
  // The summons of the other player are on its page only. Here each is a picture of it: a hostile monster of the same kind that takes no turn, stands where the
  // summon stands and has its health (both come in `sync`); what hurts it here is sent back as a `hit` with the summon's id, and the summon takes it.
- ownAllies(){return state.monsters.filter(m=>summonActive(m)&&m.hp>0).map(m=>({id:combatantId(m),name:m.name,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp}))},
+ ownAllies(){return state.monsters.filter(m=>m.hp>0&&(summonActive(m)||m.yuun&&entityFaction(m)==='player')).map(m=>({id:combatantId(m),name:m.name,x:m.x,y:m.y,hp:m.hp,maxHp:m.maxHp,...(m.yuun?{yuunSize:m.yuun.size}:{})}))},
  syncProxies(list){
   const shown=state.monsters.filter(m=>m.duelProxy);
-  for(const m of shown)if(!list.some(a=>a.id===m.duelProxy))OccupancyService.removeMonster(m);
+  for(const m of shown)if(!list.some(a=>a.id===m.duelProxy)){if(m.yuun)detonateYuun(m);else OccupancyService.removeMonster(m);}
   for(const a of list){
    let m=shown.find(p=>p.duelProxy===a.id);
-   if(!m&&Number.isFinite(a.x)&&Number.isFinite(a.y)){
+   if(!m&&a.name==='유운 비구름'&&Number.isInteger(a.yuunSize)&&a.yuunSize>=1&&a.yuunSize<=6&&Number.isInteger(a.x)&&Number.isInteger(a.y)&&yuunGround(a.x,a.y)){
+    m={name:a.name,duelProxy:a.id,x:a.x,y:a.y,hp:1,maxHp:1,atk:0,def:0,eva:0,color:'#a8c5d7',kind:'spirit',shape:'void',fixed:true,flying:true,combatFixture54:'yuun-cloud',yuun:{size:a.yuunSize},faction57:'hostile',rewardPolicy57:{xp:false,kills:false,drops:false}};
+    OccupancyService.addMonster(m);
+   }else if(!m&&Number.isFinite(a.x)&&Number.isFinite(a.y)){
     m=placeNamedMonster(a.name,{x:a.x,y:a.y},{provenance:'duel'});
     if(m)Object.assign(m,{duelProxy:a.id,faction57:'hostile',alerted:true,rewardPolicy57:{xp:false,kills:false,drops:false}});
    }
@@ -305,6 +308,7 @@ const Duel={
    if(Number.isFinite(a.x)&&Number.isFinite(a.y)&&(m.x!==a.x||m.y!==a.y)){m.x=a.x;m.y=a.y;OccupancyService.move(m,a.x,a.y)}
    if(Number.isFinite(a.maxHp))m.maxHp=a.maxHp;
    if(Number.isFinite(a.hp))m.hp=Math.max(1,a.hp);
+   if(m.yuun)syncYuunSmoke(m);
   }
  },
  // Damage the other player dealt to its stand-in on its page: here it is taken by the real player.
@@ -312,14 +316,14 @@ const Duel={
   const stand=this.opponent();
   // Only what the other side does in its own turn counts: a hit that arrives while it is this side's turn was not dealt by the rules.
   if(!stand||state.dead||this.reported||!(hit.amount>0)||this.turn!==this.other())return;
-  const target=hit.proxy?state.monsters.find(m=>m.combatantId54===hit.proxy&&summonActive(m)):state.player;
+  const target=hit.proxy?state.monsters.find(m=>m.combatantId54===hit.proxy&&(summonActive(m)||m.yuun&&entityFaction(m)==='player')):state.player;
   if(!target)return;
   this.applying=true;
   const dmg=Math.round(hit.amount);
   // the blow looks like any monster's: the stand-in lunges (swinging what it holds, or loosing it), then the target flashes and the number rises over it
   stand.attackUntil=performance.now()+150;stand.attackTarget={x:target.x,y:target.y};
   if(stand.duelLook?.weapon?.ranged||stand.duelLook?.weapon?.kind==='bow')projectileFX(stand.x,stand.y,target.x,target.y,'#d9c8a4');
-  try{damageEntity(target,dmg,stand,hit.element||null)}finally{this.applying=false}
+  try{damageEntity(target,dmg,stand,hit.element||null);if(target.yuun&&target.hp<=0)killMonster(target)}finally{this.applying=false}
   presentMonsterHit(stand,target,dmg,!!hit.element);
   updateAll();
  },
@@ -354,6 +358,19 @@ const Duel={
  applyField(field){
   const stand=this.opponent();
   if(!stand||!field.field)return;
+  if(field.field==='yuun-blast'){
+   const {x,y,metadata}=field,{level,size,damage}=metadata||{};
+   if(state.dead||this.reported||!Number.isInteger(x)||!Number.isInteger(y)||state.map[y]?.[x]==null||
+     !Number.isInteger(level)||level<1||level>5||(size!==level&&size!==level+1)||(damage!==level*3&&damage!==level*4))return;
+   const origin={x,y,name:'유운 비구름'};
+   this.applying=true;
+   try{
+    martialFx('burst',origin);burst(x,y,'#a8c5d7',16,.8);
+    applyYuunBlast(stand,origin,martialSmokeCells(origin,size,'cloud'),level,damage);
+    VisibilityService.compute();
+   }finally{this.applying=false}
+   updateAll();return;
+  }
   this.replay(()=>addField(field.field,field.x,field.y,field.ttl,field.cells,{...(field.metadata||{}),...effectSource57(stand)}));
  },
  applyTerrain(terrain){
