@@ -2416,7 +2416,7 @@ function drawMap(force=false){
   for(const phase of ['world','post'])for(const h of hooks?.[phase]||[]){
     X.save();try{h.draw(force)}catch(e){console.warn(`[draw:${h.id}]`,e);globalThis.__MANRU_RESUME_R6__?.schedule?.('overlay-error',0)}finally{X.restore()}
   }
-  drawPalaceHud();Spectate.sendCanvas(frameNow);return true;
+  drawPalaceHud();return true;
 }
 function drawKeyTile(tile,px,py,x,y,now){
   if(tile!==TT.KEY_TILE||!state?.keyPlan96)return false;
