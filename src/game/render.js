@@ -2085,20 +2085,41 @@ function drawSubstrate(px,py,x,y,colors,visible){
   }
   function drawDoorAt(px,py,open,x,y){drawDoor(px,py,open,state.map[y-1]?.[x]===TT.WALL&&state.map[y+1]?.[x]===TT.WALL)}
   /* ---------- visual telegraphs / role readability / bright orchard ---------- */
+  function drawTrackedTargetLine(caster,target,progress,color,cam,now){
+    const project=globalThis.__MANRU_CAMERA_PROJECTION12__;
+    const from=actorPresentationPoint(caster,false,now),to=actorPresentationPoint(target,target===state.player,now);
+    const a=project.worldToViewport(from.x,from.y,cam),b=project.worldToViewport(to.x,to.y,cam);
+    const dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy),zoom=cam.zoom,p=clamp(progress,0,1);
+    if(length<Math.max(9,12*zoom))return;
+    const u=dx/length,v=dy/length,inset=Math.min(length*.24,8*zoom);
+    const headX=b.x-u*inset,headY=b.y-v*inset,arrow=Math.max(4,5*zoom);
+    X.save();X.globalCompositeOperation='source-over';X.lineCap='round';
+    X.setLineDash([Math.max(3,5*zoom),Math.max(3,4*zoom)]);
+    if(!TERRAIN_MOTION54.matches)X.lineDashOffset=-now*.032*zoom;
+    X.beginPath();X.moveTo(a.x+u*inset,a.y+v*inset);X.lineTo(headX,headY);
+    X.strokeStyle='#151018';X.globalAlpha=.78;X.lineWidth=Math.max(2.8,(3+p)*zoom);X.stroke();
+    X.strokeStyle=color;X.globalAlpha=.60+.36*p;X.lineWidth=Math.max(1.4,(1.4+p*.55)*zoom);X.stroke();
+    X.setLineDash([]);X.beginPath();X.moveTo(headX-u*arrow-v*arrow*.60,headY-v*arrow+u*arrow*.60);
+    X.lineTo(headX,headY);X.lineTo(headX-u*arrow+v*arrow*.60,headY-v*arrow-u*arrow*.60);X.stroke();X.restore();
+  }
   function drawRoleOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),screen=(x,y)=>globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(x,y,cam);X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
     for(const m of state.monsters||[]){if(m.hp<=0||m.hidden)continue;
       // what stands at the monster (its gaze line, its rune, its circle) is drawn only while the monster itself is seen; the cells it has marked are drawn wherever they are seen
       const seen=state.visible.has(k(m.x,m.y));
-      if(seen&&m.losLostSummon57&&m._sawPlayer57){
-        const id=m.losOpponentId105,target=id==='player'?state.player:id?state.monsters.find(actor=>actor.combatantId54===id):null;
-        if(target&&state.visible.has(k(target.x,target.y))&&actorDetectedTarget57(m,target)){
-          const a=screen(m.x,m.y),b=screen(target.x,target.y);
-          X.save();X.strokeStyle='rgba(234,184,87,.72)';X.lineWidth=Math.max(1,2*cam.zoom);
-          X.setLineDash([5*cam.zoom,4*cam.zoom]);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();X.restore();
+      if(isEntityObservableToPlayer57(m)){
+        const targetOf=id=>id==='player'?state.player:id?state.monsters.find(actor=>actor.combatantId54===id):null;
+        const canDraw=target=>target===state.player?target.hp>0:isEntityObservableToPlayer57(target);
+        const target=targetOf(m.specialOpponent105);
+        const rule=canDraw(target)?visibilityStackRules(m).find(rule=>m[rule.counter]>0&&
+          !(rule.effect==='summon'&&m.skillSeal105>0)&&visibilityStackTarget(m,target,rule)):null;
+        if(rule){
+          const color=rule.trait==='gaze'?'#f39bdc':rule.trait==='hook'?'#f6bb73':'#9bdaa9';
+          drawTrackedTargetLine(m,target,m[rule.counter]/Math.max(1,rule.turns-1),color,cam,now);
+        }else if(m.losLostSummon57&&m._sawPlayer57){
+          const watched=targetOf(m.losOpponentId105);
+          if(canDraw(watched)&&actorDetectedTarget57(m,watched))drawTrackedTargetLine(m,watched,.45,'#eab857',cam,now);
         }
       }
-      const gazeTarget=m.gazeCount>0?(m.specialOpponent105==='player'?state.player:state.monsters.find(t=>t.combatantId54===m.specialOpponent105)):null;
-      if(seen&&m.gaze&&gazeTarget?.hp>0&&state.visible.has(k(gazeTarget.x,gazeTarget.y))){const a=screen(m.x,m.y),b=screen(gazeTarget.x,gazeTarget.y),stacks=Math.min(4,Math.max(1,m.gazeCount||0)),p=Math.min(1,stacks/4),pulse=.5+.5*Math.sin(now/125),dx=b.x-a.x,dy=b.y-a.y;X.save();X.globalCompositeOperation='screen';X.setLineDash([Math.max(3,(10-4*p)*cam.zoom),Math.max(2,(8-3*p)*cam.zoom)]);X.strokeStyle=`rgba(224,108,194,${.14+p*.82+pulse*.05})`;X.lineWidth=Math.max(1.2,(1.2+p*4.6)*cam.zoom);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();X.setLineDash([]);X.strokeStyle=`rgba(255,232,247,${.12+p*.54})`;X.lineWidth=Math.max(1,(.6+p*1.35)*cam.zoom);X.beginPath();X.moveTo(a.x,a.y);X.lineTo(b.x,b.y);X.stroke();for(let i=1;i<=4;i++){const u=i/5,cx=a.x+dx*u,cy=a.y+dy*u,filled=i<=stacks;X.fillStyle=filled?`rgba(255,${Math.round(214+16*p)},240,${.20+p*.38})`:`rgba(255,222,241,.12)`;X.beginPath();X.arc(cx,cy,Math.max(1.1,(filled?1.5+p*2.6:1.2)*cam.zoom),0,Math.PI*2);X.fill()}for(const q of[a,b]){X.strokeStyle=`rgba(255,190,232,${.25+p*.58})`;X.lineWidth=Math.max(1,1.4*cam.zoom);X.beginPath();X.arc(q.x,q.y,q.s*(.12+p*.07),0,Math.PI*2);X.stroke()}X.restore()}
       const fold=shackleFoldMotion.get(m);
       if(fold?.map===state.map&&fold.showFrom){
         const t=clamp((now-fold.start)/SHACKLE_COUNTER.foldMs,0,1);
