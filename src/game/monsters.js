@@ -2281,7 +2281,13 @@ function debugBattleBindViewport57(el){
   if(!b.pointers.size){b.gesture=null;cam.cancelInertia();}
  },{passive:false});
  for(const type of ['pointercancel','lostpointercapture'])el.addEventListener(type,e=>{const p=b.pointers?.get(e.pointerId);if(p){clearTimeout(p.hold);b.pointers.delete(e.pointerId);}if(!b.pointers?.size){b.gesture=null;cam.cancelInertia();}});
- el.addEventListener('contextmenu',e=>{e.preventDefault();});
+ // Handle arena right clicks before the gameplay canvas router sees them.
+ el.addEventListener('contextmenu',e=>{
+  if(!b.open)return;
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.button===2&&e.pointerType!=='touch')debugBattleInspect57(hit(e));
+ },{capture:true,passive:false});
  el.addEventListener('wheel',e=>{if(!b.open)return;e.preventDefault();debugBattleZoom57(cam.desiredZoom()*Math.exp(-e.deltaY*.0015),e);},{passive:false});
  if(typeof ResizeObserver==='function')new ResizeObserver(()=>{if(b.open){syncGameViewport();b.viewDirty=true;}}).observe(el);
 }
