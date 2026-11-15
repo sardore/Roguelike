@@ -385,6 +385,16 @@ const PlayStats={
  },
  async redeemRecoveryCode(code,pending=null){
   const entered=String(code).trim();
+  if(entered==='10002'){
+   lsSet(AUTO_FULLSCREEN_DISABLED_KEY,'1');
+   fullscreenWanted66=false;
+   fullscreenResume66=false;
+   if(document.fullscreenElement){
+    try{await document.exitFullscreen()}
+    catch(error){ignoreError('could not exit fullscreen',error)}
+   }
+   return '강제 전체화면을 끄고 이 기기에 저장했다.';
+  }
   if(entered==='19232'){
    if(RunLifecycle.busy())return '탐사를 전환하는 중이다.';
    const resume=!state||state.dead||state.victory;

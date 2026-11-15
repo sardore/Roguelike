@@ -600,12 +600,17 @@ function worldTargetActive57(){return !!WORLD_TARGET}
 const ACTION_ROUTES=new Map([['CONTEXT_ACTION',contextAction],['CLAIM_PALACE_SUPPLY',claimPalaceSupply],['CIPHER_SUBMIT',submitCipher],['STRUCTURE_INTERACT',bumpBlockedTile],['MOVE',movePlayer],['BLINK',useBlink],['ATTACK',basicAttack],['PICKUP',pickup],['SHOP_BUY',purchaseShop58],['SHOP_SELL',sellShop58],['DESCEND',descend],['REST',rest],['UPGRADE_MARTIAL',upgradeMartial],['MARTIAL_MANUAL_CHOICE',chooseMartialManual],['MARTIAL',activateMartial],['ITEM_USE',useInventoryItem],['ITEM_DROP',dropInventoryItem],['UNEQUIP',unequipAction5],['DROP_EQUIPPED',dropEquippedAction5],['UPGRADE_GEAR',upgradeGearAction5],['COOK',cookSelected],['FUSE',fuse74],['GEAR_APPLY',applyGear],['CLOSE_DOOR',closeAdjacentDoor964],['IDENTIFY_CHOICE',identifyChoiceAction5],['PURIFY_CHOICE',purifyChoiceAction5],['ANVIL_FUSE105',anvilFuse],['SUMMON_CAST105',summonCast],['SUMMON_PICTURE105',summonInstallPicture],['SUMMON_TALISMAN105',summonBindTalisman]]),ACTION_AUDIT5={serial:0,roots:0,stack:[],history:[]};
 function retiredPainterItem57(item){return !!item&&String(item.name||'').replace(/\s+/g,'')==='화공노인의수목화'}
 function requestGameFullscreen65(){
+ if(lsGet(AUTO_FULLSCREEN_DISABLED_KEY)==='1')return false;
  fullscreenWanted66=true;
  if(document.fullscreenElement){fullscreenResume66=false;return false}
  fullscreenResume66=true;
  if(document.hidden||fullscreenPending65||!document.documentElement.requestFullscreen||navigator.userActivation?.isActive===false)return false;
  fullscreenPending65=true;
- document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{fullscreenResume66=false}).catch(()=>{fullscreenResume66=true}).finally(()=>{fullscreenPending65=false});return true;
+ document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{
+  fullscreenResume66=false;
+  if(!fullscreenWanted66&&document.fullscreenElement)return document.exitFullscreen();
+ }).catch(()=>{fullscreenResume66=fullscreenWanted66}).finally(()=>{fullscreenPending65=false});
+ return true;
 }
 function runEndEffects(kind){if(!state||state.runEndEffects57||runState57()!==kind)return false;state.runEndEffects57=true;closeGameplayInteractionState57();for(const effect of RUN_END_EFFECTS)effect(kind);return true}
   function qaRestore60(){if(!qaSnapshot60)return false;restoreGenerationSnapshot(qaSnapshot60);resetVisualState();resetTurnState();FX.transition=null;VisibilityService.compute();updateAll();return true}
@@ -739,6 +744,7 @@ const ActionDispatcher=Object.freeze({
 });
 function createRunState57(cls){return {floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
 // Fullscreen belongs to entering/resuming the game, with no floating HUD control.
+const AUTO_FULLSCREEN_DISABLED_KEY='manruAutoFullscreenDisabled';
 let fullscreenPending65=false,fullscreenWanted66=false,fullscreenResume66=false;
   function pstate(){if(!state)return;state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};for(const q of['swift','fortify','willBoost'])if(!Number.isFinite(state.status[q]))state.status[q]=0}
   /* ---------- deterministic F23/F24 runtime QA hooks ---------- */
