@@ -288,9 +288,22 @@ const RuntimeState={
     target:null,
     path:[],
     lastStop:'idle',
+    acknowledgedTraps:new WeakMap(),
     intervalMs:82/AUTO_MOVE_RATE70,
 
     valid(q){return !!q&&Number.isFinite(q.x)&&Number.isFinite(q.y)&&q.x>=0&&q.y>=0&&q.x<COLS&&q.y<ROWS},
+    pauseAtTrap(x,y){
+      if(!ReachabilityService.pressureTrapAt(x,y))return false;
+      const key=k(x,y),version=state.terrainMutationVersion57?.[key]??0;
+      const signature=state.map[y][x]+':'+version;
+      let traps=this.acknowledgedTraps.get(state.map);
+      if(traps?.get(key)===signature)return false;
+      if(!traps){traps=new Map();this.acknowledgedTraps.set(state.map,traps)}
+      traps.set(key,signature);
+      this.stop('trap',true);
+      toast('함정 앞에서 멈췄다. 다시 이동하면 지나갈 수 있다.');
+      return true;
+    },
     visibleEnemies(){return new Set((state?.monsters||[]).filter(isThreatVisibleToPlayer))},
     alertedEnemies(){return new Set((state?.monsters||[]).filter(m=>m.alerted&&isThreatVisibleToPlayer(m)))},
     setChip(text){try{v10AutoChip(text||null)}catch(error){ignoreError('auto-walk chip update',error)}},
@@ -338,7 +351,7 @@ const RuntimeState={
       return{x:t.x,y:t.y};
     },
     adjacentPath(pos){
-      const search=ReachabilityService.playerSearch(state.player,{seenOnly:true,ignoreOccupants:false,avoidTraps:true});let best=null;
+      const search=ReachabilityService.playerSearch(state.player,{seenOnly:true,ignoreOccupants:false});let best=null;
       for(const[dx,dy]of DIRS8){
         const x=pos.x+dx,y=pos.y+dy;
         if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||!state.seen.has(k(x,y))||!ReachabilityService.playerPassable(x,y)||OccupancyService.isOccupied(x,y))continue;
@@ -354,7 +367,7 @@ const RuntimeState={
       if(t.type==='merchant'){if(entityDistance57(pos,p)<=1)return[];return this.adjacentPath(pos)}
       if(t.type==='blocked'){if(entityDistance57(pos,p)<=1)return[];return this.adjacentPath(pos)}
       if(p.x===pos.x&&p.y===pos.y)return[];
-      return ReachabilityService.pathTo(pos.x,pos.y,{allowTrapEntry:t.allowTrapEntry});
+      return ReachabilityService.pathTo(pos.x,pos.y);
     },
     pickupAll(){
       if(!state||isGameplayInputBlocked())return 0;
@@ -380,7 +393,7 @@ const RuntimeState={
       if(t.type==='monster'){
         if(entityDistance57(t.mon,p)>1)return false;
         const dx=Math.sign(pos.x-p.x),dy=Math.sign(pos.y-p.y);
-        this.stop('target-monster',true);ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy,{avoidTraps:true}]}).value;return true;
+        this.stop('target-monster',true);ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy,{automatic:true}]}).value;return true;
       }
       if(t.type==='item'){
         if(p.x!==pos.x||p.y!==pos.y)return false;
@@ -398,7 +411,7 @@ const RuntimeState={
         if(entityDistance57(pos,p)>1)return false;
         this.stop('target-structure',true);
         const now=state.map[pos.y]?.[pos.x];
-        if(ReachabilityService.playerPassable(pos.x,pos.y)&&!OccupancyService.isOccupied(pos.x,pos.y))ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(pos.x-p.x),Math.sign(pos.y-p.y),{avoidTraps:true}]}).value;
+        if(ReachabilityService.playerPassable(pos.x,pos.y)&&!OccupancyService.isOccupied(pos.x,pos.y))ActionDispatcher.dispatch({type:'MOVE',args:[Math.sign(pos.x-p.x),Math.sign(pos.y-p.y),{automatic:true}]}).value;
         else if(!ActionDispatcher.dispatch({type:'STRUCTURE_INTERACT',args:[pos.x,pos.y]}).value)toast(`${terrainName(now)} 바로 앞이다.`);
         return true;
       }
@@ -437,8 +450,7 @@ const RuntimeState={
         if(this.target&&this.act(this.target))return;
         const pos=this.targetPos(this.target),head=this.path[0],player=state.player;
         const targetMoved=!!this.target&&(!pos||!plannedTarget||pos.x!==plannedTarget.x||pos.y!==plannedTarget.y);
-        const trapDestination=this.target?.allowTrapEntry?pos:null;
-        const blockedNext=!!head&&!ReachabilityService.playerStepAllowed(player,head.x,head.y,{seenOnly:true,ignoreOccupants:false,allowAllySwap:true,avoidTraps:true,trapDestination});
+        const blockedNext=!!head&&!ReachabilityService.playerStepAllowed(player,head.x,head.y,{seenOnly:true,ignoreOccupants:false,allowAllySwap:true});
         if(targetMoved||blockedNext||this.target&&!this.path.length){
           if(!this.target){this.active=false;this.path=[];this.syncPreview();this.schedule(()=>this.explore(true),76/AUTO_MOVE_RATE70);return}
           const fresh=this.computePath(this.target);
@@ -453,8 +465,7 @@ const RuntimeState={
         const next=this.path[0],p0={x:state.player.x,y:state.player.y,turn:state.turn},before=this.threatBefore();
         const dx=Math.sign(next.x-p0.x),dy=Math.sign(next.y-p0.y);
         if(!dx&&!dy){this.path.shift();this.schedule(tick,30);return}
-        const allowTrapEntry=next.x===trapDestination?.x&&next.y===trapDestination.y;
-        ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy,{avoidTraps:true,allowTrapEntry}]}).value;
+        ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy,{automatic:true}]}).value;
         if(token!==this.serial||!this.active)return;
         const moved=state.player.x!==p0.x||state.player.y!==p0.y,turnChanged=state.turn!==p0.turn;
         const danger=this.shouldStopForThreat(before,this.target);
@@ -475,11 +486,10 @@ const RuntimeState={
       if(!state.seen.has(k(q.x,q.y))){toast('아직 본 적 없는 칸이다.');return false}
       Runtime81.qa.mapTaps++;CameraController.resume(false);
       const tile=state.map[q.y][q.x];
-      const allowTrapEntry=ReachabilityService.pressureTrapAt(q.x,q.y);
+      const trap=ReachabilityService.pressureTrapAt(q.x,q.y);
       const walkSurface=terrainSurface58(tile)&&tile!==TT.ICE&&!isWaterTile105(tile);
-      if(!allowTrapEntry&&!walkSurface&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
+      if(!trap&&!walkSurface&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(q.x!==state.player.x||q.y!==state.player.y)&&elementalWorldTarget105(q.x,q.y)&&combatTerrainTargetCheckR8({type:'terrain',...q}).ok){this.stop('furniture-aim',true);return !!selectJarTarget(q.x,q.y,true)}
       const t=this.targetAt(q.x,q.y);
-      if(allowTrapEntry)t.allowTrapEntry=true;
       if(q.x===state.player.x&&q.y===state.player.y){
         this.stop('same-tile',true);
         if(t.type==='branch')toast('상호작용 버튼(F)으로 출입할 수 있다.');else if(t.type==='item')this.pickupAll();else if(t.type==='stairs')ActionDispatcher.dispatch({type:'DESCEND',args:[]}).value;else if(adjacentBranchPortal105())toast('상호작용 버튼(F)으로 출입할 수 있다.');else ActionDispatcher.dispatch({type:'CONTEXT_ACTION',args:[]}).value;
