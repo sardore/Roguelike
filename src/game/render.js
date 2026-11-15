@@ -195,8 +195,9 @@ function drawMenuLight(q,x,y,light){
 }
 function drawMartialVisual(now){
  if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=cam.zoom||1;
- if(MARTIAL_VISUAL.run!==state){MARTIAL_VISUAL.run=state;MARTIAL_VISUAL.events=[]}
- const events=MARTIAL_VISUAL.events=MARTIAL_VISUAL.events.filter(e=>now-e.start<e.life);
+ if(!state.spectator&&MARTIAL_VISUAL.run!==state){MARTIAL_VISUAL.run=state;MARTIAL_VISUAL.events=[]}
+ const events=(state.spectator?(state.spectateMartialEvents||[]):MARTIAL_VISUAL.events).filter(e=>now-e.start<e.life);
+ if(!state.spectator)MARTIAL_VISUAL.events=events;
  X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
  const polygon=(x,y,r,n,angle=0)=>{X.beginPath();for(let i=0;i<n;i++){const a=angle+i*Math.PI*2/n;if(i)X.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);else X.moveTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}X.closePath()};
  const cx=cam.x+(VIS.playerX*32+16)*z,cy=cam.y+(VIS.playerY*32+16)*z;
@@ -1471,6 +1472,7 @@ function drawCreature(m){
 }
 function drawCombatParticles(q,now){q.save();for(const p of FX.particles){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
 function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
+  const combatFx=state.spectator?state.spectateCombatEffects:FX;
   for(const r of FX.rings){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*.64;X.strokeStyle=r.color;X.lineWidth=Math.max(1,2.2*(1-t));X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
 
   for(const d of FX.doors){
@@ -1484,8 +1486,8 @@ function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
     X.beginPath(); X.moveTo(px+16,py+3); X.lineTo(px+16,py+29); X.stroke();
   }
 
-  for(const s of FX.slashes){
-    const t=(now-s.start)/s.life;
+  for(const s of combatFx?.slashes||[]){
+    const t=(now-s.start)/s.life;if(t<0||t>=1)continue;
     X.globalAlpha=1-t;
     X.strokeStyle=s.color;
     X.lineWidth=2 + (1-t)*3;
@@ -1501,11 +1503,11 @@ function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
     X.stroke();
   }
 
-  for(const pj of FX.projectiles)drawCombatProjectile(X,pj,now);
+  for(const pj of combatFx?.projectiles||[])drawCombatProjectile(X,pj,now);
 
   drawCombatParticles(X,now);
   X.textAlign="center";X.textBaseline="middle";X.font="700 13px Inter,system-ui,sans-serif";
-  for(const f of FX.floats){
+  for(const f of combatFx?.floats||[]){
     const t=(now-f.start)/f.life,y=f.y-t*20;if(t<0||t>=1)continue;
     X.globalAlpha=1-Math.max(0,(t-.45)/.55);
     X.font=`800 ${f.size}px Inter,system-ui,sans-serif`;
@@ -1869,7 +1871,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
   function drawField(f,now){
     // Field mechanics commit with the turn; the floor flames appear when their shell lands.
-    if(f.kind==='fire'&&FX.projectiles.some(p=>p.element==='fire'&&p.x1===(f.x+.5)*TILE&&p.y1===(f.y+.5)*TILE&&now>=p.start&&now<p.start+p.life*.74))return;
+    if(f.kind==='fire'&&(state.spectator?state.spectateCombatEffects?.projectiles||[]:FX.projectiles).some(p=>p.element==='fire'&&p.x1===(f.x+.5)*TILE&&p.y1===(f.y+.5)*TILE&&now>=p.start&&now<p.start+p.life*.74))return;
     for(const {x,y} of tempFieldCells57(f)){
       if(x<0||y<0||x>=COLS||y>=ROWS||!state.visible.has(k(x,y)))continue;
       const px=x*TILE,py=y*TILE,a=.13+.035*Math.sin(now/190+x+y);

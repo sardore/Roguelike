@@ -6,13 +6,13 @@ const Spectate={
  RELAY:'cp32-online-relay-v1',TAG:'manru-spectate-r1',ANNOUNCE_MS:1500,HEARTBEAT_MS:10000,SEND_GAP_MS:140,IDLE_GAP_MS:600,RESYNC_TURNS:120,MAX_VIEWERS:8,
  CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
- PLAIN:['floor','specialFloor','turn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
+ PLAIN:['floor','specialFloor','turn','floorTurn','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
  CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
  ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','gazeBursts57','legendFireFields47','legendSkyAxes47'],
- PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','combustion105','martialActor105','guardReady1005','strongReady','classState'],
+ PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','martialForm','combustion105','martialActor105','guardReady1005','strongReady','classState'],
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
  ws:null,connecting:false,ready:false,role:null,playerId:'',lastBeat:0,lastAnnounce:0,lastSend:0,reconnectAt:0,
- hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastSig:'',lastChat:new Map(),
+ hosting:false,viewers:new Map(),mirror:null,seq:0,sentTurns:0,lastChat:new Map(),
  watching:null,lastSeq:-1,rooms:new Map(),view:null,chat:[],unread:0,bound:false,
  endpoint(){return document.querySelector('meta[name="manru-relay"]')?.content.trim()||''},
  httpBase(){return this.endpoint().replace(/^ws/,'http').replace(/\/[^/]*$/,'')},
@@ -123,8 +123,8 @@ const Spectate={
  },
  toViewer(id,action,payload){return this.act(action,{matchId:state?.runId984?String(state.runId984):undefined,targetId:id,payload})},
  // The one place a state becomes a packet. Cells the host has not seen never enter `snap`.
- project(){
-  const st=state,seen=st.seen,vis=st.visible,out={set:{},cells:{},seen:null,map:null,player:{}};
+ project(clock=performance.now()){
+  const st=state,seen=st.seen,vis=st.visible,out={set:{},cells:{},seen:null,map:null,player:{},clock};
   const inSeen=key=>seen.has(key);
   for(const key of this.PLAIN)if(st[key]!==undefined)out.set[key]=st[key];
   out.set.log=(st.log||[]).slice(0,10); // what the message panel shows
@@ -134,11 +134,27 @@ const Spectate={
   const tr=st.terrainReactions105;
   if(tr){for(const key of ['burning','char','spills','unlit'])if(tr[key]&&typeof tr[key]==='object'&&!Array.isArray(tr[key]))out.cells['terrainReactions105.'+key]=cellMap(tr[key]);out.set.terrainReactions105Meta={version:tr.version,revision:tr.revision}}
   const hz=st.hazard1005;if(hz)for(const key of ['armed','collapsed'])out.cells['hazard1005.'+key]=cellMap(hz[key]);
-  const visible=e=>vis.has(e.x+','+e.y),remembered=e=>seen.has(e.x+','+e.y);
+  const visible=e=>vis.has(k(e.x,e.y)),remembered=e=>seen.has(k(e.x,e.y));
+  const pixelVisible=(x,y)=>vis.has(k(Math.floor(x/TILE),Math.floor(y/TILE)));
+  out.set.spectateCombatEffects={
+   projectiles:FX.projectiles.filter(e=>clock-e.start<e.life&&pixelVisible(e.x0,e.y0)&&pixelVisible(e.x1,e.y1)).map(e=>e.cells?{...e,cells:e.cells.filter(visible)}:e),
+   slashes:FX.slashes.filter(e=>clock-e.start<e.life&&pixelVisible(e.x0,e.y0)&&pixelVisible(e.x1,e.y1)),
+   floats:FX.floats.filter(e=>clock-e.start<e.life&&pixelVisible(e.x,e.y))
+  };
+  out.set.spectateMartialEvents=MARTIAL_VISUAL.run===st?MARTIAL_VISUAL.events.filter(e=>clock-e.start<e.life&&vis.has(k(Math.floor(e.x),Math.floor(e.y)))):[];
   for(const key of this.ENTITIES){
    const list=st[key];if(!Array.isArray(list)){out.set[key]=[];continue}
-   const keep=key==='monsters'?visible:remembered;
-   out.set[key]=list.filter(e=>e&&Number.isFinite(e.x)&&Number.isFinite(e.y)&&keep(e)&&!(key==='monsters'&&e.hp<=0));
+   if(key==='tempFields'){
+    out.set[key]=list.flatMap(field=>{
+     if(!field||field.ttl<=0)return [];
+     const cells=tempFieldCells57(field).filter(visible);
+     if(!cells.length)return [];
+     const anchor=visible(field)?field:cells[0];
+     return [{...field,x:anchor.x,y:anchor.y,cells,...(field.segments105?{segments105:field.segments105.filter(visible)}:{})}];
+    });
+   }else if(key==='monsters'){
+    out.set[key]=list.filter(isEntityObservableToPlayer57).map(mon=>mon.yuun?{...mon,yuun:{size:mon.yuun.size}}:mon);
+   }else out.set[key]=list.filter(e=>e&&Number.isFinite(e.x)&&Number.isFinite(e.y)&&remembered(e));
   }
   out.set.bookWalls1022=(st.bookWalls1022||[]).filter(e=>e&&(Number.isFinite(e.x)?remembered(e):true));
   out.set.rumorSpaces1030=(st.rumorSpaces1030||[]).filter(r=>r?.entry&&remembered(r.entry));
@@ -160,7 +176,7 @@ const Spectate={
     grid[yy][xx]=wallish(st.map[yy][xx])?TT.WALL:TT.FLOOR;
    }
   }
-  out.map=grid;return out;
+  out.map=grid;return structuredClone(out);
  },
  branchFilter(bt,inSeen){
   const walk=(v,depth)=>{
@@ -177,10 +193,11 @@ const Spectate={
  },
  // Diff the projection against what this viewer set already holds, as small as the change allows.
  diff(now,prev){
-  const out={set:{},cells:{},map:[],seenAdd:[]};
+  const out={set:{},cells:{},map:[],seenAdd:[],clock:now.clock};
   const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
   for(const key in now.set)if(!prev||!same(now.set[key],prev.set[key]))out.set[key]=now.set[key];
-  out.set.player=now.player;
+  for(const key in prev?.set)if(!(key in now.set))out.set[key]=null;
+  if(!prev||!same(now.player,prev.player))out.set.player=now.player;
   for(const key in now.cells){
    const a=now.cells[key],b=prev?.cells[key]||{},add={},del=[];
    for(const c in a)if(!(c in b)||!same(a[c],b[c]))add[c]=a[c];
@@ -196,13 +213,14 @@ const Spectate={
  // The one clock of the host side: when the screen changed, project it, record it for the replay ring and hand it to the viewers.
  observe(now){
   if(!state||!state.player||state.debugBattle57||!state.map||!state.seen||!state.runId984)return;
-  const sig=state.turn+':'+state.player.x+','+state.player.y+':'+state.player.hp+':'+state.visible.size+':'+state.seen.size+':'+state.floor+':'+(state.monsters?.length||0)+':'+(state.dead?1:0);
+  this.lastSend=now;
   const waiting=this.ready&&[...this.viewers.values()].some(v=>v.needFull);
-  if(sig===this.lastSig&&!waiting)return;
-  this.lastSig=sig;this.lastSend=now;
-  const snap=this.project(),first=!this.mirror||this.mirror.run!==state.runId984||this.mirror.floor!==state.floor;
+  const snap=this.project(now),first=!this.mirror||this.mirror.run!==state.runId984||this.mirror.world!==state.map||this.mirror.floor!==state.floor;
   const delta=this.diff(snap,first?null:this.mirror.snap);
-  this.record(snap,delta);
+  const changed=first||delta.map.length||delta.seenAdd.length||Object.keys(delta.set).length||Object.keys(delta.cells).length||
+   snap.visible.length!==this.mirror.snap.visible.length||snap.visible.some((key,i)=>key!==this.mirror.snap.visible[i]);
+  if(!changed&&!waiting)return;
+  if(changed)this.record(snap,delta);
   if(this.hosting&&this.ready&&this.viewers.size){
    const resync=this.sentTurns++>=this.RESYNC_TURNS;if(resync)this.sentTurns=0;
    const full=first||resync?delta.full?delta:this.diff(snap,null):null;
@@ -213,14 +231,14 @@ const Spectate={
     v.needFull=false;
    }
   }
-  this.liveRun=state.runId984;this.mirror={snap,floor:state.floor,run:state.runId984};
+  this.liveRun=state.runId984;this.mirror={snap,floor:state.floor,run:state.runId984,world:state.map};
  },
  endBroadcast(){
   const run=this.liveRun;this.liveRun=null;
   for(const id of this.viewers.keys())this.toViewer(id,'snapshot',{tag:this.TAG,kind:'end'});
   this.act('announce',{matchId:String(run),payload:{protocol:this.TAG,tag:this.TAG,matchId:String(run),ended:true,updatedAt:Date.now()}});
   for(const v of this.viewers.values())v.needFull=true;
-  this.lastSig='';this.mirror=null;
+  this.mirror=null;
  },
  // The last screens of this run for the death replay: recorders that each start with a full frame and then collect the same deltas
  // the viewers get; the oldest holds between REPLAY_KEEP and 2*REPLAY_KEEP screens, so the memory stays bounded.
@@ -273,13 +291,27 @@ const Spectate={
  merge(view,f){
   if(f.full||!view)view=this.emptyView();
   const v=view;
-  for(const key in f.set){
-   if(key==='player'){v.player={...v.player,...f.set.player,inventory:[]};continue}
-   if(key==='terrainReactions105Meta'){Object.assign(v.terrainReactions105,f.set[key]);continue}
-   v[key]=f.set[key];
+  const clock=Number.isFinite(f.clock)?f.clock:null,offset=clock===null?0:performance.now()-clock;
+  const deadline=value=>Number.isFinite(value)&&value>0?value+offset:0;
+  for(const [key,value] of Object.entries(structuredClone(f.set))){
+   if(key==='player'){v.player={...v.player,...value,inventory:[]};continue}
+   if(key==='terrainReactions105Meta'){Object.assign(v.terrainReactions105,value);continue}
+   if(key==='spectateMartialEvents'){v[key]=value.map(e=>({...e,start:e.start+offset}));continue}
+   if(key==='spectateCombatEffects'){
+    for(const events of Object.values(value))for(const e of events)e.start+=offset;
+   }
+   if(key==='playerAttackUntil'||key==='playerHitUntil'){v[key]=clock===null?0:deadline(value);continue}
+   if(key==='monsters'&&clock!==null){
+    const motion=new Map(v.monsters.filter(mon=>mon.combatantId54).map(mon=>[mon.combatantId54,MON_VIS.get(mon)]));
+    for(const mon of value){
+     for(const timer of ['attackUntil','hitUntil'])if(timer in mon)mon[timer]=deadline(mon[timer]);
+     const previous=motion.get(mon.combatantId54);if(previous)MON_VIS.set(mon,previous);
+    }
+   }
+   v[key]=value;
   }
-  for(const key in f.cells){
-   const [top,sub]=key.split('.'),holder=v[top]=v[top]||{},target=sub?(holder[sub]=holder[sub]||{}):holder,c=f.cells[key];
+  for(const [key,c] of Object.entries(structuredClone(f.cells))){
+   const [top,sub]=key.split('.'),holder=v[top]=v[top]||{},target=sub?(holder[sub]=holder[sub]||{}):holder;
    for(const k in c.a)target[k]=c.a[k];for(const k of c.d)delete target[k];
   }
   if(f.dims&&(f.full||v.map.length!==f.dims[1]||v.map[0].length!==f.dims[0])){v.map=Array.from({length:f.dims[1]},()=>new Array(f.dims[0]).fill(TT.VOID));v.seen=new Set()}
@@ -302,9 +334,11 @@ const Spectate={
 
  },
  present(v,full){
-  const key=v.floor+':'+v.map[0].length+'x'+v.map.length,first=!this.active()||this.floorKey!==key;
+  const world=v.branchContext105||v.artifactDungeon46;
+  const key=[v.floor,world?.id,world?.level,v.map[0].length,v.map.length].join(':'),first=!this.active()||this.floorKey!==key;
   state=v;ROWS=v.map.length;COLS=v.map[0].length;
   if(first){this.floorKey=key;this.enter(full)}
+  else if(full){BRANCH_TILE_CACHE.clear();globalThis.__MANRU_RENDER47__?.invalidate?.()}
   this.viewerNotice('');this.headerRefresh();cameraRenderPending=true;renderUpdatePending=false;
   try{updatePanels()}catch(error){ignoreError('spectate panels',error)}
  },
