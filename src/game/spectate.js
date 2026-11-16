@@ -199,6 +199,7 @@ const Spectate={
     out.set[key]=list.filter(isEntityObservableToPlayer57).map(mon=>mon.yuun?{...mon,yuun:{size:mon.yuun.size}}:mon);
    }else out.set[key]=list.filter(e=>e&&Number.isFinite(e.x)&&Number.isFinite(e.y)&&remembered(e));
   }
+  out.set.canalWaterway=canalWaterwayCells().filter(remembered);
   out.set.bookWalls1022=(st.bookWalls1022||[]).filter(e=>e&&(Number.isFinite(e.x)?remembered(e):true));
   out.set.rumorSpaces1030=(st.rumorSpaces1030||[]).filter(r=>r?.entry&&remembered(r.entry));
   if(st.branchTerrain105)out.set.branchTerrain105=this.branchFilter(st.branchTerrain105,inSeen);

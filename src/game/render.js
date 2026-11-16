@@ -1232,7 +1232,7 @@ function drawSpecialTerrain(tile,px,py,x,y,now){
   if(tile===TT.SHALLOW_WATER){drawShallowWater(px,py,x,y,now);return true}
 if([23,24].includes(state?.floor)&&drawAuthoredTerrain(tile,px,py,x,y,now))return true;
     const r41=globalThis.__MANRU_TERRAIN_R41__;if(r41?.libraryDesk52?.(tile,px,py,x,y,now)||r41?.specialBefore?.(tile,px,py,x,y,now)){r41?.specialAfter?.(tile,px,py,x,y,now,true);return true}
-    let r;if(tile===TT.PORTAL){drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
+    let r;if(tile===TT.PORTAL){if(state.branchContext105||!state.branchPortals105?.some(p=>p.id==='canal'&&p.x===x&&p.y===y))drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
     r41?.specialKeyAfter?.(tile,px,py,x,y,now,r);r41?.specialAfter?.(tile,px,py,x,y,now,r);return r;
   }
 function drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now){
@@ -2008,22 +2008,10 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of terrainProps63){X.save();X.lineWidth=1;X.setLineDash([]);const time=VisibilityService.isVisible(a.x,a.y)?now:0;if(!drawSpecialTerrain(a.t,a.px,a.py,a.x,a.y,time))drawInteractiveTerrain(a.t,a.px,a.py,a.x,a.y,time);X.restore()}
     for(const a of props)vfDrawDecor(a.o,true);
 
-    if(!state.branchContext105)for(const p of state.branchPortals105||[])if(inB58(p,b,1)&&state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
-    if(state.floor===2&&!state.branchContext105){
-      const canal=state.branchPortals105?.find(p=>p.id==='canal');
-      if(canal){
-        const route=state.floor2Choice63?.branches?.find(r=>r.cells.includes(k(canal.x,canal.y)));
-        const gates=route?(state.keyPlan96?.doors||[]).filter(d=>d.branch===route.id&&!d.exitSeal68):[];
-        X.save();X.font='bold 10px sans-serif';X.textAlign='center';X.textBaseline='middle';
-        for(const p of [canal,...gates]){
-          if(!inB58(p,b,0)||!state.seen.has(k(p.x,p.y)))continue;
-          const px=p.x*TILE,py=p.y*TILE;
-          X.fillStyle='#123943';X.fillRect(px+1,py+22,30,10);
-          X.fillStyle='#69d0c7';X.fillRect(px+2,py+22,28,1);
-          X.fillStyle='#e2fffa';X.fillText('수로',px+16,py+28);
-        }
-        X.restore();
-      }
+    if(!state.branchContext105)for(const p of state.branchPortals105||[])if(p.id!=='canal'&&inB58(p,b,1)&&state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
+    for(const cell of canalWaterwayCells()){
+      if(!inB58(cell,b,0)||!state.seen.has(k(cell.x,cell.y)))continue;
+      drawCanalWaterwayTile(cell,state.visible.has(k(cell.x,cell.y))?now:0);
     }
     // Revealed rumor entrances are a gameplay cue, so they must sit above the projected wall face/depth pass.
     // The old legacy renderer drew this cue inside the base-tile loop, but the canonical fast renderer did not draw it at all.
@@ -4321,6 +4309,82 @@ function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,
 function drawPalaceHud(){if(state?.branchContext105?.id!=='palace')return;X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);const width=Math.min(VIEW.cssW||C.clientWidth||360,620),mobile=isMobileViewport(),canvasTop=C.getBoundingClientRect().top,hud=document.getElementById('mobileHud'),zoom=document.getElementById('zoomHud')||document.querySelector('.zoomHud'),top=state.debugBattle57?8:mobile?Math.max(88,(hud?.getBoundingClientRect().bottom||0)-canvasTop+8,(zoom?.getBoundingClientRect().bottom||0)-canvasTop+8):8,t=palaceTide(),w=palaceWorld(),room=state.branchTerrain105.palace105.roomCells[k(state.player.x,state.player.y)],g=w.gates[`${state.branchContext105.level}:${room}`],extra=[state.monsters.some(m=>m.hp>0&&m.intent54?.type==='palaceRoyal105')?`왕의 밀물 예고 ${Math.max(0,state.monsters.find(m=>m.hp>0&&m.intent54?.type==='palaceRoyal105').intent54.data.resolveTurn105-state.turn)}턴 뒤 · 낮은 바닥 대피`:null,t.royal?`왕의 밀물 ${t.royalRemaining.toFixed(1)}턴`:null,g?.until>w.time?`이 방 배수 ${Math.ceil(g.until-w.time)}턴`:g?.ready>w.time?`수문 재사용 ${Math.ceil(g.ready-w.time)}턴`:null].filter(Boolean).join(' · '),lines=[];X.font='11px system-ui';if(extra){let line='';for(const c of extra){if(X.measureText(line+c).width>width-36){lines.push(line);line=c;}else line+=c;}if(line)lines.push(line);}const height=38+14*lines.length;X.fillStyle='#142b35ed';X.fillRect(8,top,width-16,height);X.strokeStyle='#b0b497';X.strokeRect(8.5,top+.5,width-17,height-1);X.fillStyle='#e3dec1';X.font='11px system-ui';X.fillText(`수위 ${t.level} / ${t.rising?'밀물 ↑':'썰물 ↓'} · 다음 ${t.next} · ${t.remaining.toFixed(1)}턴`,15,top+14);if(extra){X.fillStyle='#efd19b';lines.forEach((line,i)=>X.fillText(line,15,top+28+i*14));}const y=top+height-13;for(let i=0;i<4;i++){X.fillStyle=palaceColors()[i];X.fillRect(15+i*25,y,20,8);if(i===t.level){X.strokeStyle='#f4d485';X.strokeRect(14.5+i*25,y-.5,21,9);}}X.fillStyle='#adcebb';X.font='9px system-ui';X.fillText('물결 0 / 조개 1 / 비늘 2 / 금테 3',122,y+7);X.restore();}
 const BRANCH_TILE_CACHE=new Map();
 let BRANCH_RENDER_MAP=null;
+const canalWaterwayCache=new WeakMap();
+function canalWaterwayCells(){
+ if(state?.spectator)return state.canalWaterway||[];
+ if(state?.floor!==2||state.branchContext105||state.artifactDungeon46)return [];
+ const portal=state.branchPortals105?.find(p=>p.id==='canal');
+ if(!portal)return [];
+ const layout=state.floor2Choice63,key=k(portal.x,portal.y),cached=canalWaterwayCache.get(state.map);
+ if(cached?.portal===portal&&cached.layout===layout)return cached.cells;
+ const route=layout?.branches?.find(r=>r.cells.includes(key));
+ const cells=new Map([[key,{x:portal.x,y:portal.y,mouth:true,flow:[]}]]);
+ const connect=(from,to)=>{
+  for(const [a,b] of [[from,to],[to,from]]){
+   const id=k(a.x,a.y),cell=cells.get(id)||{x:a.x,y:a.y,flow:[]};
+   const dx=b.x-a.x,dy=b.y-a.y;
+   if(!cell.flow.some(v=>v.dx===dx&&v.dy===dy))cell.flow.push({dx,dy});
+   cells.set(id,cell);
+  }
+ };
+ if(route){
+  const gates=(layout.stages||[]).flatMap(stage=>stage.doors||[]).filter(d=>d.branch===route.id);
+  const allowed=new Set([...route.cells,...gates.map(g=>k(g.x,g.y))]),gateKeys=new Set(gates.map(g=>k(g.x,g.y)));
+  const queue=[portal],parents=new Map([[key,null]]);
+  for(let i=0;i<queue.length;i++){
+   const from=queue[i];
+   if(gateKeys.has(k(from.x,from.y)))continue;
+   for(const [dx,dy] of DIRS4){
+    const x=from.x+dx,y=from.y+dy,id=k(x,y),tile=state.map[y]?.[x];
+    if(!allowed.has(id)||parents.has(id)||tile==null||(!gateKeys.has(id)&&tile!==TT.DOOR&&tile!==TT.OPEN_DOOR&&(tileBlocks(tile)||tileBlocksSight(tile))))continue;
+    parents.set(id,from);queue.push({x,y});
+   }
+  }
+  for(const gate of gates){
+   const inside=parents.get(k(gate.x,gate.y));
+   if(!inside)continue;
+   for(let child=gate,parent; (parent=parents.get(k(child.x,child.y))); child=parent)connect(child,parent);
+   const outside={x:2*gate.x-inside.x,y:2*gate.y-inside.y},tile=state.map[outside.y]?.[outside.x];
+   if(tile!=null&&!tileBlocks(tile)&&!tileBlocksSight(tile))connect(gate,outside);
+  }
+ }
+ // On older maps or entrances outside a named lane, join the mouth to adjacent water.
+ for(const [dx,dy] of DIRS4){
+  const x=portal.x+dx,y=portal.y+dy;
+  if(!isWaterTile105(state.map[y]?.[x]))continue;
+  cells.get(key).flow.push({dx,dy});
+ }
+ const result=[...cells.values()];canalWaterwayCache.set(state.map,{portal,layout,cells:result});return result;
+}
+function drawCanalWaterwayTile(cell,now){
+ const tile=state.map[cell.y]?.[cell.x],closed=tile===TT.LOCKED_GATE||tile===TT.DOOR;
+ if(!cell.mouth&&!closed&&tileBlocks(tile))return;
+ const size=TILE,x=cell.x*size,y=cell.y*size,mid=size/2,pulse=(TERRAIN_MOTION54.matches?0:now)/650+cell.x*.7+cell.y*.5;
+ X.save();X.translate(x,y);X.beginPath();X.rect(0,0,size,size);X.clip();X.lineCap='round';X.lineJoin='round';
+ if(closed){
+  X.fillStyle='#243c41';X.fillRect(mid-7,size-7,14,7);
+  X.fillStyle='#73c9c1';X.fillRect(mid-4,size-5,8,1);
+  X.fillStyle='#397c86';X.fillRect(mid-3,size-2,6,1);
+  X.restore();return;
+ }
+ for(const [width,color] of [[12,'#263b3d'],[9,'#527270'],[6,'#20535c'],[3,'#469caa']]){
+  X.strokeStyle=color;X.lineWidth=width;X.beginPath();
+  for(const {dx,dy} of cell.flow){X.moveTo(mid,mid);X.lineTo(mid+dx*(mid+1),mid+dy*(mid+1))}
+  X.stroke();
+ }
+ X.fillStyle='#b1e1d1';for(const {dx,dy} of cell.flow){
+  const bend=6+(Math.sin(pulse)*.5+.5)*7;
+  X.fillRect(mid+dx*bend-1,mid+dy*bend-1,dx?3:1,dy?3:1);
+ }
+ if(cell.mouth){
+  for(const [rx,ry,color] of [[14,11,'#26363a'],[12,9,'#748a7e'],[10,7,'#102c39'],[8,5,'#296e7d']]){
+   X.fillStyle=color;X.beginPath();X.ellipse(mid,mid,rx,ry,0,0,Math.PI*2);X.fill();
+  }
+  X.strokeStyle='#8ad2cf';X.lineWidth=1;
+  for(let i=0;i<3;i++){const d=i*3,drift=Math.sin(pulse+i)*2;X.beginPath();X.moveTo(mid-6+d/2+drift,mid-3+d);X.quadraticCurveTo(mid+drift,mid-5+d,mid+6-d/2+drift,mid-3+d);X.stroke()}
+ }
+ X.restore();
+}
 function drawBranchDoor(px,py,p){
 
  const id=p.to?.split(':')[0],up=p.id==='up'||id==='main'||p.kind==='citadel-stair'&&p.id.endsWith('-up')||p.kind==='dojo-local'&&p.id.startsWith('in');
