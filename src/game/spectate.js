@@ -7,7 +7,7 @@ const Spectate={
  CHAT_MAX:120,CHAT_GAP_MS:1000,CHAT_KEEP:200,
  // The keys drawMap reads (measured with a read-recording proxy); nothing else is ever sent.
  PLAIN:['floor','specialFloor','turn','floorTurn','enemyEnergy','layoutName','dead','victory','floorFeeling62','branchContext105','artifactDungeon46','floorStyle980','status','legendTheme47','specialPlaces52','playerAttackUntil','playerHitUntil','martialEcho'],
- CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','terrainUnderlay58','terrainAttachment58'],
+ CELLS:['outerWall94','subthemeFloors972','subthemeWalls970','archDecor1020','floorPattern1022','rugPattern1022','libraryDesks52','terrainUnderlay58','terrainAttachment58'],
  ENTITIES:['monsters','items','decor','decals','neutralInteractables58','tempFields','elementFields74','tempTerrain74','branchPortals105','legendLights49','jarGasFields57','legendFireFields47','legendSkyAxes47'],
  PLAYER:['classId','name','x','y','hp','maxHp','level','hunger','color','facing','weapon','armor','cloak','relic','trinket','baseAtk','baseDef','baseEva','baseWill','baseVision','focus','maxFocus','xp','nextXp','skillPoints','blinkLevel','martial','martialForm','combustion105','martialActor105','guardReady1005','strongReady','classState'],
  net:'',netDetail:'',listedAt:0,retryAt:0,listOpen:false,waking:false,readyAt:0,netError:false,VIEWER_PING_MS:10000,VIEWER_TTL_MS:30000,lastWatch:0,REPLAY:true,REPLAY_KEEP:40,REPLAY_STEP_MS:520,recs:[],replaying:null,selfId:'',liveRun:null,
