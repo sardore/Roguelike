@@ -1422,7 +1422,7 @@ function dojoMartialTurn(mon,sees,d,target=state.player){
  if(!mon.martialCd105){
   if(mon.martial.strong&&form==='guard'&&!mon.guardReady1005&&d<=Math.max(control?4:3,reach)&&cast('strong'))return true;
   if(mon.martial.ghost&&!stealth&&d>reach&&d<=5&&(style===4||memory.areaThreatUntil<=now)&&cast('ghost'))return true;
-  if(mon.martial.roar){const smoke=mon.martialFamily105==='smoke',range=smoke?4:martialRoarRange(mon.martial.roar),ownSmoke=(state.tempFields||[]).some(f=>f.martialSmoke&&f.owner===mon.dojoActorId105);if(d<=range&&(smoke?!ownSmoke&&(ranged||style===4||d>reach):!mon.guardReady1005&&(style!==1||ranged))&&cast('roar'))return true;}
+  if(mon.martial.roar){const smoke=mon.martialFamily105==='smoke',range=smoke?(martialFormOf('roar',mon)==='cloud'?YUUN_RANGE:4):martialRoarRange(mon.martial.roar),ownSmoke=(state.tempFields||[]).some(f=>f.martialSmoke&&f.owner===mon.dojoActorId105);if(d<=range&&(smoke?!ownSmoke&&(ranged||style===4||d>reach):!mon.guardReady1005&&(style!==1||ranged))&&cast('roar'))return true;}
   if(mon.martial.strong&&!mon.strongReady&&form!=='guard'&&d<=reach+1&&(form!=='drive'||drive>0||style===0)&&cast('strong'))return true;
  }
  const defensive=style===3&&(low||control)&&d<=4||style===5&&low&&d<=2;

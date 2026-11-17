@@ -9,7 +9,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='smoke'){
   const {size,damage}=martialSmokePower(p,n);
   v.desc=form==='cloud'
-   ?`사거리 ${YUUN_RANGE}칸. HP ${yuunHealth(n)}의 비구름이 턴당 1칸 이동하며 ${size}×${size} 연막을 몰고 간다. 목표에 도착하거나 파괴되면 연막 범위에 피해 ${damage}과 ${yuunDebuffs(n).map(([key,turns])=>STATUS_META57[key].label+' '+turns+'턴').join(' · ')}을 주고 시전자가 폭발 지점으로 이동한다.`
+   ?`사거리 ${YUUN_RANGE}칸. HP ${yuunHealth(n)}의 비구름이 턴당 ${YUUN_SPEED}칸 이동하며 ${size}×${size} 연막을 몰고 간다. 목표에 도착하거나 파괴되면 연막 범위에 피해 ${yuunDamage(n)}과 ${yuunDebuffs(n).map(([key,turns])=>(key==='stun'?'기절':STATUS_META57[key].label)+' '+turns+'턴').join(' · ')}을 주고 시전자가 폭발 지점으로 이동한다.`
    :`${form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} 4칸 안에 던져 ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
  }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
@@ -148,10 +148,12 @@ function martialSmokeCells(center,size,form){
  }
  return cells;
 }
-const YUUN_RANGE=4;
-function yuunHealth(level){return 8+4*level}
+const YUUN_RANGE=8,YUUN_SPEED=2;
+function yuunHealth(level){return 10+6*level}
+function yuunDamage(level){return level*3}
 function yuunDebuffs(level){
- return [['weaken',4+2*level],['poison',3+2*level],['blind',2+level],['drunk',3+level],['skillSeal',level]].slice(0,level);
+ const turns=Math.ceil(level/2)*2+1,stunTurns=level>=5?2:1;
+ return [['weaken',turns],['blind',turns],['drunk',turns],['stun',stunTurns]].slice(0,level);
 }
 function yuunGround(x,y){
  const tile=state.map[y]?.[x];
@@ -177,20 +179,24 @@ function syncYuunSmoke(cloud){
  syncSmokeEntry();
 }
 function spawnYuun(actor,level,path){
- const {size,damage}=martialSmokePower(actor,level),hp=yuunHealth(level),[first,...route]=path;
- const cloud={...first,name:'유운 비구름',concept57:'연막을 품고 턴마다 한 칸 전진한다. 파괴되거나 목표에 닿으면 폭발하고 시전자가 이 자리로 이동한다.',hp,maxHp:hp,atk:0,def:0,eva:0,xp:0,color:'#a8c5d7',shape:'void',kind:'spirit',fixed:true,flying:true,combatFixture54:'yuun-cloud',faction57:entityFaction(actor),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture',yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,damage,route,lastTurn:state.turn+Number(actor===state.player)}};
+ const {size}=martialSmokePower(actor,level),hp=yuunHealth(level),[first,...route]=path;
+ const cloud={...first,name:'유운 비구름',concept57:`연막을 품고 턴마다 최대 ${YUUN_SPEED}칸 전진한다. 파괴되거나 목표에 닿으면 폭발하고 시전자가 이 자리로 이동한다.`,hp,maxHp:hp,atk:0,def:0,eva:0,xp:0,color:'#a8c5d7',shape:'void',kind:'spirit',fixed:true,flying:true,combatFixture54:'yuun-cloud',faction57:entityFaction(actor),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture',yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,route,lastTurn:state.turn+Number(actor===state.player)}};
  OccupancyService.addMonster(cloud);
  if(!route.length)cloud.yuun.lastTurn=state.turn-Number(actor!==state.player);
  syncYuunSmoke(cloud);projectileFX(actor.x,actor.y,cloud.x,cloud.y,cloud.color);martialFx('cloud',cloud);
 }
-function applyYuunBlast(source,origin,cells,level,damage){
- const run=state;
+function applyYuunBlast(source,origin,cells,level){
+ const run=state,damage=yuunDamage(level);
  for(const target of martialTargets(source)){
   if(state!==run||state.dead||state.victory)break;
   if(target.duelOpponent||target.duelProxy||!cells.some(c=>monCovers(target,c.x,c.y)))continue;
   const dealt=damageEntity(target,damage,source,null,{delivery:'area'});
   if(dealt>0)floatText(target.x,target.y,'-'+dealt,'#a8c5d7',13);
-  if(target.hp>0)for(const [key,turns] of yuunDebuffs(level))applyCombatStatus(target,key,turns,1,{source});
+  if(target.hp>0)for(const [key,turns] of yuunDebuffs(level)){
+   if(key!=='stun')applyCombatStatus(target,key,turns,1,{source});
+   else if(target===state.player)applyHostileStatus(key,turns,1,{stagger:true});
+   else applyMartialControl1005(target,turns);
+  }
   martialCheckDeath(target,origin);
  }
 }
@@ -201,10 +207,10 @@ function detonateYuun(cloud){
  martialFx('burst',cloud);burst(x,y,cloud.color,16,.8);
  if(!(actor?.hp>0)||actor.deathProcessed57)return true;
  const cells=martialSmokeCells(cloud,data.size,'cloud');
- alertNearby(x,y,8,'explosion',data.damage);
+ alertNearby(x,y,8,'explosion',yuunDamage(data.level));
  addLog(`${actor.name} · 유운 폭발`);
- if(state.duel&&entityFaction(actor)==='player')Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:data.damage}});
- applyYuunBlast(actor,cloud,cells,data.level,data.damage);
+ if(state.duel&&entityFaction(actor)==='player')Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level)}});
+ applyYuunBlast(actor,cloud,cells,data.level);
  if(state!==run||state.dead||state.victory||!(actor.hp>0)||actor.deathProcessed57||!yuunGround(x,y))return true;
  if(actor===state.player){
   if(playerTransferLandingSafe57(x,y)&&resolvePlayerLanding57(x,y,{cause:'yuun',entry:false,resetVisual:true}).moved){
@@ -220,12 +226,15 @@ function tickYuun(){
   const actor=yuunOwner(cloud);
   if(!(actor?.hp>0)||actor.deathProcessed57||state.dead||state.victory){detonateYuun(cloud);continue;}
   data.lastTurn=state.turn;
-  const next=data.route.shift();
-  if(cloud.hp<=0||!next||!yuunGround(next.x,next.y)||OccupancyService.blocksEntityCell(next.x,next.y,new Set([cloud]))||!OccupancyService.move(cloud,next.x,next.y)){
-   detonateYuun(cloud);continue;
+  for(let step=0;step<YUUN_SPEED&&state.monsters.includes(cloud);step++){
+   const next=data.route.shift();
+   if(cloud.hp<=0||!next||!yuunGround(next.x,next.y)||OccupancyService.blocksEntityCell(next.x,next.y,new Set([cloud]))||!OccupancyService.move(cloud,next.x,next.y)){
+    detonateYuun(cloud);break;
+   }
+   if(!state.monsters.includes(cloud))break;
+   if(!data.route.length){detonateYuun(cloud);break;}
+   syncYuunSmoke(cloud);
   }
-  if(!state.monsters.includes(cloud))continue;
-  if(!data.route.length)detonateYuun(cloud);else syncYuunSmoke(cloud);
  }
 }
 function martialLanding(origin){
@@ -483,13 +492,14 @@ function damageEntity(entity,amount,source=null,element=null,context={}){
  }
  if(entity===state?.player&&entity.hp<before){PlayStats.logHit(source,before-entity.hp,element,before,context);state.lastDamageAgencyTurn57=(state.playerAgencyTurns57||0)+(state._turnPipelineActive57?Number(!!state._turnAgencyWillCount57&&!state._turnAgencyCounted57):1);if(entity.classState?.aimPower>0&&martialFormOf('roar',entity)!=='focus')setAimPower(0);}return before-entity.hp;
 }
+function smokeTargetKnown(x,y,cloud){const key=k(x,y);return state.visible.has(key)||(cloud&&state.seen.has(key))}
 // World target callbacks receive (cell, inputSource); action context is a separate argument.
 function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
  const act=existingAction||playerAction57('martial',{uiOwner:'worldTarget57',skill:true});if(!act.ok)return false;
  const p=state.player,lv=p.martial.roar,info=martialPresentation('roar',MARTIAL_INFO.roar,p);
  if(playerClassRules58(p).roar!=='smoke'||lv<1||p.focus<info.cost){toast('연막을 사용할 기력이 부족하거나 기술을 배우지 않았다.');return false}
  const cloud=martialFormOf('roar',p)==='cloud';
- if(!state.visible.has(k(cell.x,cell.y))||!cloud&&(entityDistance57(p,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(p.x,p.y,cell.x,cell.y))){toast('연막을 던질 경로가 막혔다.');return false}
+ if(!smokeTargetKnown(cell.x,cell.y,cloud)||!cloud&&(entityDistance57(p,cell)>4||tileBlocksSight(state.map[cell.y]?.[cell.x])||!lineClear(p.x,p.y,cell.x,cell.y))){toast('연막을 던질 경로가 막혔다.');return false}
  if(!executeMartialActor(p,'roar',cell))return false;commitPlayerAction57(act,1);return true;
 }
 function setPlayerStatus(key,turns){
@@ -533,8 +543,8 @@ function martialRoarRange(lv){return Math.max(1,Math.min(4,Math.floor(lv||1)))}
 function activateMartial(id){globalThis.__MANRU_UX45_ACTIONS__?.markDirty?.();globalThis.__MANRU_ITEM_IDENTITY991__?.closeSkillQuick?.();const act=playerAction57('martial',{allowMartial:true,skill:true,closeMartial:true,stunMessage:'몸이 굳어 무술을 펼치지 못했다.'});if(!act.ok){if(id==='roar'&&playerClassRules58().roar==='aim'&&['stun','skillSeal'].includes(act.reason))globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);return !!act.consumed;}cancelAutoWalk();const p=state.player,lv=p.martial[id],info=martialPresentation(id,MARTIAL_INFO[id],p);if(info.type!=='active'){toast('지속 효과 무술이다.');return false}if(!lv){toast('먼저 무술을 배워야 한다.');return false}if(p.focus<info.cost){toast('기력이 부족하다.');return false}if(mountainWoodSlot(p)===id)return mountainWoodCast(id,act);if(martialFamily(id,p)==='oddity')return oddityBeginTarget(info);if(id==='roar'&&playerClassRules58(p).roar==='smoke'){
  const cloud=martialFormOf('roar',p)==='cloud';
  if(cloud&&state.monsters.some(m=>m.yuun&&m.hp>0&&yuunOwner(m)===p)){toast('이미 날아가는 유운 비구름이 있다.');return false}
- const cells=[];for(let y=Math.max(0,p.y-4);y<=Math.min(ROWS-1,p.y+4);y++)for(let x=Math.max(0,p.x-4);x<=Math.min(COLS-1,p.x+4);x++)if(state.visible.has(k(x,y))&&!tileBlocksSight(state.map[y][x])&&(cloud?yuunPath(p,{x,y}):lineClear(p.x,p.y,x,y)))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
- if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}const {size,damage}=martialSmokePower(p,lv);closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:cloud?`사거리 ${YUUN_RANGE}칸 · 비구름 HP ${yuunHealth(lv)} · 목표 칸 선택`:`사거리 4칸 · ${size}×${size} · 피해 ${damage} · 기 4 · 목표 칸 선택`,range:4,cells,onPick:castMartialSmoke});
+ const range=cloud?YUUN_RANGE:4,cells=[];for(let y=Math.max(0,p.y-range);y<=Math.min(ROWS-1,p.y+range);y++)for(let x=Math.max(0,p.x-range);x<=Math.min(COLS-1,p.x+range);x++)if(smokeTargetKnown(x,y,cloud)&&!tileBlocksSight(state.map[y][x])&&(cloud?yuunPath(p,{x,y}):lineClear(p.x,p.y,x,y)))cells.push({x,y,dx:x-p.x,dy:y-p.y,dist:Math.max(Math.abs(x-p.x),Math.abs(y-p.y))});
+ if(!cells.length){toast('연막을 던질 수 있는 칸이 없다.');return false}const {size,damage}=martialSmokePower(p,lv);closeMartial();return beginWorldTarget({kind:'smoke',title:info.name,text:cloud?`사거리 ${YUUN_RANGE}칸 · 비구름 HP ${yuunHealth(lv)} · 목표 칸 선택`:`사거리 4칸 · ${size}×${size} · 피해 ${damage} · 기 4 · 목표 칸 선택`,range,cells,onPick:castMartialSmoke});
  }if(!executeMartialActor(p,id))return false;if(!(id==='strong'&&martialFormOf(id)==='guard')&&!(id==='roar'&&playerClassRules58(p).roar==='aim'&&!p.classState.aimPower))globalThis.__MANRU_MARTIAL_FX965__?.used?.(id,lv);if(lv>=5)martialFx('transcend');closeMartial();commitPlayerAction57(act,id==='ghost'?.85:1);return true}
 function martialCardClasses(id,p=state.player){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `martialCard991 skill-${v.visual||id} ${v.classStyle||''} ${p.martial[id]===5?'martialTranscend1005':''} form-${martialFormOf(id,p)||'base'}`}
 function martialCardContent(id,p=state.player,title='',note='',compact=false){const v=martialPresentation(id,MARTIAL_INFO[id],p);return `<div class="skillSig991">${v.seal||(id==='strong'?'力':id==='roar'?'吼':id==='ghost'?'影':id==='brawl'?'拳':v.classStyle?'力':'體')}</div><div class="skillCopy991"><h4>${title||v.name}</h4><div class="martialLv991">${'◆'.repeat(p.martial[id])}${compact?'':'◇'.repeat(Math.max(0,martialCap(id,p)-p.martial[id]))} · ${v.type==='active'?`기력 ${v.cost}`:'지속 효과'}</div><p>${note?note+'<br>':''}${compact?dojoMartialSummary(id,p):v.desc}</p></div>`}
