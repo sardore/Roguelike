@@ -9,7 +9,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='smoke'){
   const {size,damage}=martialSmokePower(p,n);
   v.desc=form==='cloud'
-   ?`사거리 ${YUUN_RANGE}칸. HP ${yuunHealth(n)}의 비구름이 턴당 ${YUUN_SPEED}칸 이동하며 ${size}×${size} 연막을 몰고 간다. 목표에 도착하거나 파괴되면 연막 범위에 피해 ${yuunDamage(n)}과 ${yuunDebuffs(n).map(([key,turns])=>(key==='stun'?'기절':STATUS_META57[key].label)+' '+turns+'턴').join(' · ')}을 주고 시전자가 폭발 지점으로 이동한다.`
+   ?`사거리 ${YUUN_RANGE}칸. HP ${yuunHealth(n)}의 비구름이 턴당 ${YUUN_SPEED}칸 이동하며 ${size}×${size} 연막을 몰고 간다. 본체가 개체와 부딪히거나 목표에 도착하거나 파괴되면 폭발 범위에 피해 ${yuunDamage(n)}과 ${yuunDebuffs(n).map(([key,turns])=>(key==='stun'?'기절':STATUS_META57[key].label)+' '+turns+'턴').join(' · ')}을 주고 시전자가 비구름의 마지막 빈칸으로 이동한다.`
    :`${form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} 4칸 안에 던져 ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
  }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
@@ -164,8 +164,7 @@ function yuunPath(actor,cell){
  const dx=cell.x-actor.x,dy=cell.y-actor.y,dist=Math.max(Math.abs(dx),Math.abs(dy));
  if(dist<1||dist>YUUN_RANGE||!combatLineCheckR8(actor.x,actor.y,cell.x,cell.y,{units:false,ignoreClouds:true}).ok)return null;
  const path=Array.from({length:dist},(_,i)=>({x:actor.x+Math.round(dx*(i+1)/dist),y:actor.y+Math.round(dy*(i+1)/dist)}));
- const first=path[0];
- return path.every(q=>yuunGround(q.x,q.y))&&!OccupancyService.blocksEntityCell(first.x,first.y,new Set())?path:null;
+ return path.every(q=>yuunGround(q.x,q.y))?path:null;
 }
 function yuunOwner(cloud){
  const id=cloud.yuun.ownerId;if(!id)return null;
@@ -180,7 +179,12 @@ function syncYuunSmoke(cloud){
 }
 function spawnYuun(actor,level,path){
  const {size}=martialSmokePower(actor,level),hp=yuunHealth(level),[first,...route]=path;
- const cloud={...first,name:'유운 비구름',concept57:`연막을 품고 턴마다 최대 ${YUUN_SPEED}칸 전진한다. 파괴되거나 목표에 닿으면 폭발하고 시전자가 이 자리로 이동한다.`,hp,maxHp:hp,atk:0,def:0,eva:0,xp:0,color:'#a8c5d7',shape:'void',kind:'spirit',fixed:true,flying:true,combatFixture54:'yuun-cloud',faction57:entityFaction(actor),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture',yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,route,lastTurn:state.turn+Number(actor===state.player)}};
+ const cloud={...first,name:'유운 비구름',concept57:`연막을 품고 턴마다 최대 ${YUUN_SPEED}칸 전진한다. 본체가 개체와 부딪히거나 파괴되거나 목표에 닿으면 폭발한다. 시전자는 마지막으로 비구름이 지나간 빈칸으로 이동한다.`,hp,maxHp:hp,atk:0,def:0,eva:0,xp:0,color:'#a8c5d7',shape:'void',kind:'spirit',fixed:true,flying:true,combatFixture54:'yuun-cloud',faction57:entityFaction(actor),rewardPolicy57:{xp:false,kills:false,drops:false},spawnProvenance57:'boss-fixture',yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,route,lastTurn:state.turn+Number(actor===state.player)}};
+ if(OccupancyService.blocksEntityCell(first.x,first.y,new Set())){
+  projectileFX(actor.x,actor.y,first.x,first.y,cloud.color);
+  detonateYuun({...cloud,x:actor.x,y:actor.y},first,false);
+  return;
+ }
  OccupancyService.addMonster(cloud);
  if(!route.length)cloud.yuun.lastTurn=state.turn-Number(actor!==state.player);
  syncYuunSmoke(cloud);projectileFX(actor.x,actor.y,cloud.x,cloud.y,cloud.color);martialFx('cloud',cloud);
@@ -200,18 +204,20 @@ function applyYuunBlast(source,origin,cells,level){
   martialCheckDeath(target,origin);
  }
 }
-function detonateYuun(cloud){
+function detonateYuun(cloud,impactCell=cloud,registered=true){
  const run=state,{x,y}=cloud,data=cloud.yuun,actor=yuunOwner(cloud);
- if(!OccupancyService.removeMonster(cloud))return false;
+ if(registered&&!OccupancyService.removeMonster(cloud))return false;
  if(cloud.duelProxy||state.dead||state.victory)return true;
- martialFx('burst',cloud);burst(x,y,cloud.color,16,.8);
+ const impact={...cloud,x:impactCell.x,y:impactCell.y};
+ martialFx('burst',impact);burst(impact.x,impact.y,cloud.color,16,.8);
  if(!(actor?.hp>0)||actor.deathProcessed57)return true;
- const cells=martialSmokeCells(cloud,data.size,'cloud');
- alertNearby(x,y,8,'explosion',yuunDamage(data.level));
+ const cells=martialSmokeCells(impact,data.size,'cloud');
+ alertNearby(impact.x,impact.y,8,'explosion',yuunDamage(data.level));
  addLog(`${actor.name} · 유운 폭발`);
- if(state.duel&&entityFaction(actor)==='player')Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level)}});
- applyYuunBlast(actor,cloud,cells,data.level);
+ if(state.duel&&entityFaction(actor)==='player')Duel.send({kind:'field',field:'yuun-blast',x:impact.x,y:impact.y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level)}});
+ applyYuunBlast(actor,impact,cells,data.level);
  if(state!==run||state.dead||state.victory||!(actor.hp>0)||actor.deathProcessed57||!yuunGround(x,y))return true;
+ if(actor.x===x&&actor.y===y)return true;
  if(actor===state.player){
   if(playerTransferLandingSafe57(x,y)&&resolvePlayerLanding57(x,y,{cause:'yuun',entry:false,resetVisual:true}).moved){
    markCombatBlink57(actor);VisibilityService.compute();
@@ -228,7 +234,13 @@ function tickYuun(){
   data.lastTurn=state.turn;
   for(let step=0;step<YUUN_SPEED&&state.monsters.includes(cloud);step++){
    const next=data.route.shift();
-   if(cloud.hp<=0||!next||!yuunGround(next.x,next.y)||OccupancyService.blocksEntityCell(next.x,next.y,new Set([cloud]))||!OccupancyService.move(cloud,next.x,next.y)){
+   if(cloud.hp<=0||!next||!yuunGround(next.x,next.y)){
+    detonateYuun(cloud);break;
+   }
+   if(OccupancyService.blocksEntityCell(next.x,next.y,new Set([cloud]))){
+    detonateYuun(cloud,next);break;
+   }
+   if(!OccupancyService.move(cloud,next.x,next.y)){
     detonateYuun(cloud);break;
    }
    if(!state.monsters.includes(cloud))break;
