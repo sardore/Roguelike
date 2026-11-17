@@ -1426,7 +1426,10 @@ function worldLightSources(){
  for(const l of mine?.lanterns||[])if(l.lit)add(l.x,l.y,l.color||WORLD_LIGHT_ART.lantern,l.radius??3.8,l.power??.24,'mine');
  const palace=state.branchContext105?.id==='palace'?state.branchTerrain105?.palace105:null;if(palace){for(const l of palace.lights||[]){if(l.wall){if(state.map[l.y]?.[l.x]!==TT.PALACE_WALL_LAMP||terrainUnlit105(l.x,l.y))continue;add(l.x+l.dx,l.y+l.dy,l.color||'#ecc17d',3.7,.22,'palace-wall-lamp');}else add(l.x,l.y,l.color||'#ecc17d',3.4,.21,'palace-lamp');}for(const key of Object.keys(palace.windows||{})){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]===TT.WALL)add(x,y,'#78bfc5',3.2,.10,'palace-window');}}
  for(const l of dojo?.lanterns||[])add(l.x,l.y,WORLD_LIGHT_ART.lantern,3.2,.19,'dojo');
- for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST)add(x,y,WORLD_LIGHT_ART.lantern,3.5,.23);else if(t===TT.GOLD_LAMP)add(x,y,WORLD_LIGHT_ART.gold,3.5,.22);else if(t===TT.FOUNTAIN)add(x,y,WORLD_LIGHT_ART.water,2.3,.12);else if(t===TT.LAVA&&(x+y)%5===0)add(x,y,WORLD_LIGHT_ART.lava,2.3,.15,'lava');else if(t===TT.PORTAL)add(x,y,state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__.theme(state.artifactDungeon46.id).glow:WORLD_LIGHT_ART.portal,2.2,.13,'portal')}
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
+  const storm=state.branchTerrain105?.layoutVersion===12;
+  add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);
+ }else if(t===TT.GOLD_LAMP)add(x,y,WORLD_LIGHT_ART.gold,3.5,.22);else if(t===TT.FOUNTAIN)add(x,y,WORLD_LIGHT_ART.water,2.3,.12);else if(t===TT.LAVA&&(x+y)%5===0)add(x,y,WORLD_LIGHT_ART.lava,2.3,.15,'lava');else if(t===TT.PORTAL)add(x,y,state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__.theme(state.artifactDungeon46.id).glow:WORLD_LIGHT_ART.portal,2.2,.13,'portal')}
  for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:WORLD_LIGHT_ART.lantern,2.8,.17,'decor');
  LIGHT_CACHE={map:state.map,revision,lanternKey,lights:state.legendLights49,decor:state.decor,sources,geometry:new Map()};return sources;
 }
@@ -2007,6 +2010,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     // All physical props share one foreground pass above projected architecture, below FOV and actors.
     for(const a of terrainProps63){X.save();X.lineWidth=1;X.setLineDash([]);const time=VisibilityService.isVisible(a.x,a.y)?now:0;if(!drawSpecialTerrain(a.t,a.px,a.py,a.x,a.y,time))drawInteractiveTerrain(a.t,a.px,a.py,a.x,a.y,time);X.restore()}
     for(const a of props)vfDrawDecor(a.o,true);
+    drawStockadePines(b);
 
     if(!state.branchContext105)for(const p of state.branchPortals105||[])if(p.id!=='canal'&&inB58(p,b,1)&&state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
     for(const cell of canalWaterwayCells()){
@@ -2062,6 +2066,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
 
     // Atmosphere/vignette are screen-space post passes, matching the old quality order without restoring old ownership.
     drawRegionalAtmosphere(now);
+    if(state.branchTerrain105?.layoutVersion===12)drawStockadeRain(now);
     X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
     const vg58=X.createRadialGradient(VIEW.w/2,VIEW.h/2,Math.min(VIEW.w,VIEW.h)*.30,VIEW.w/2,VIEW.h/2,Math.max(VIEW.w,VIEW.h)*.68);vg58.addColorStop(0,'rgba(0,0,0,0)');vg58.addColorStop(1,'rgba(0,0,0,.24)');X.fillStyle=vg58;X.fillRect(0,0,VIEW.w,VIEW.h);
     const aim=currentAim();if(aim?.check?.ok)screenMark58(aim.x,aim.y,cam,'rgba(235,194,104,.92)');
@@ -4015,6 +4020,11 @@ function objectArt(d,T){const key=d.theme+':object:'+d.kind+':'+d.w+':'+d.h;if(A
  }else if(d.kind==='column'){q.fillStyle=T.trim;q.fillRect(w*.28,3,w*.44,h-6);q.fillStyle=T.wall2;q.fillRect(w*.4,7,w*.3,h-14);q.fillStyle=shade49(T.trim,20);q.fillRect(w*.28,4,3,h-8);q.fillStyle=T.trim;q.fillRect(3,3,w-6,6);q.fillRect(3,h-9,w-6,6)}else{drawLegendMotif(q,T,8,9,d.kind==='workset'?1:0,Math.min(w,h)-16);if(w>55)drawLegendMotif(q,T,w-30,h-31,1,23)}
  ART_CACHE.set(key,c);return c;
 }
+function drawWaterfallLip(ctx,px,py,stone){
+ ctx.fillStyle=stone;ctx.fillRect(px+1,py,30,7);
+ ctx.fillStyle='#699e9b';
+ for(let x=4;x<29;x+=5)ctx.fillRect(px+x,py+6,2,25);
+}
 function drawLegendDecorCell(d,px,py,T){if(!d)return;X.save();X.translate(px,py);
  if(d.object49){const o=d.object49;X.drawImage(objectArt(o,T),d.dx*32,d.dy*32,32,32,0,0,32,32)}
  else if(d.kind.startsWith('wall')){const n=+d.kind.at(-1);X.fillStyle=T.wall;X.fillRect(5,6,22,22);if(n===0)drawLegendMotif(X,T,6,6,0,20);else if(n===1){if(['forge','pressure','storm','range'].includes(T.style)){stroke49(X,T.trim,[[0,14],[10,14],[10,22],[32,22]],4);stroke49(X,T.accent,[[0,13],[11,13],[11,21],[32,21]],1);ring49(X,T.trim,22,22,5,2)}else if(T.style==='prison'){for(let y=7;y<30;y+=6)ring49(X,T.trim,16,y,4,2)}else{X.fillStyle=shade49(T.accent,-26);poly49(X,X.fillStyle,[[7,5],[25,5],[24,29],[16,25],[8,29]]);stroke49(X,T.trim,[[8,4],[24,4]],2);drawLegendMotif(X,T,11,9,0,10)}}else if(n===2){X.fillStyle=T.trim;X.beginPath();X.arc(16,11,5,0,Math.PI*2);X.fill();poly49(X,T.wall2,[[11,15],[21,15],[24,25],[8,25]]);stroke49(X,T.trim,[[7,27],[25,27]],2);X.fillStyle=T.wall;X.fillRect(13,10,2,2);X.fillRect(18,10,2,2)}else{X.fillStyle=shade49(T.wall2,-9);X.fillRect(4,7,24,18);stroke49(X,T.trim,[[5,8],[26,8],[26,24],[5,24],[5,8]],1);for(let i=0;i<3;i++)stroke49(X,T.trim,[[8,11+i*4],[12,13+i*4],[17,10+i*4],[23,12+i*4]],1)}}
@@ -4024,7 +4034,7 @@ function drawLegendDecorCell(d,px,py,T){if(!d)return;X.save();X.translate(px,py)
  }
  else if(d.kind==='mosaic'){X.globalAlpha*=.5;const xx=d.dx-2,yy=d.dy-1.5;X.strokeStyle=T.trim;X.lineWidth=2;X.beginPath();X.arc(-xx*32+16,-yy*32+16,47,0,Math.PI*2);X.stroke();X.lineWidth=1;X.beginPath();X.arc(-xx*32+16,-yy*32+16,37,0,Math.PI*2);X.stroke();if((d.dx+d.dy)%3===0)drawLegendMotif(X,T,11,11,0,10)}
  else if(d.kind==='light'){const lightColor=(state.legendLights49||[]).find(l=>l.x===d.x&&l.y===d.y)?.color||T.glow;X.fillStyle=T.wall;X.fillRect(11,12,10,16);X.fillStyle=T.trim;X.fillRect(10,25,12,3);X.fillRect(12,15,8,3);X.fillStyle=terrainUnlit105(d.x,d.y)?'#574535':lightColor;X.fillRect(14,10,4,7);X.fillStyle=terrainUnlit105(d.x,d.y)?'#73573c':colorShift(lightColor,24);X.fillRect(15,11,2,3)}
- else if(d.kind==='waterfall'){X.fillStyle=T.trim;X.fillRect(1,0,30,7);X.fillStyle='#699e9b';for(let x=4;x<29;x+=5)X.fillRect(x,6,2,25)}
+ else if(d.kind==='waterfall')drawWaterfallLip(X,0,0,T.trim);
  else if(d.kind==='route'){X.globalAlpha*=.5;X.strokeStyle=T.trim;X.strokeRect(12,12,8,8)}
  else if(d.kind==='lintel'){X.fillStyle=T.trim;X.fillRect(0,0,32,4);X.fillStyle=T.wall;X.fillRect(1,4,30,3)}
  X.restore();
@@ -4497,13 +4507,37 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
- if(isWaterTile105(t)||t===TT.ICE)return drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
+ if(isWaterTile105(t)||t===TT.ICE){
+  const drawn=drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
+  const surfaces=state.branchTerrain105?.surfaces;
+  const surface=surfaces?.[k(x,y)];
+  if(t===TT.WATER&&surface==='cascade'){
+   if(surfaces[k(x,y-1)]!=='cascade')drawWaterfallLip(X,px,py,'#596d65');
+   X.save();
+   X.beginPath();X.rect(px,py,32,32);X.clip();
+   const phase=TERRAIN_MOTION54.matches?0:(FX.frameNow||0)*.12;
+   for(let i=0;i<7;i++){
+    const dx=2+i*4,offset=hash2(x,i,606),run=(offset*32+phase+y*7)%32;
+    X.fillStyle=i%3===0?'rgba(194,229,224,.37)':'rgba(116,182,184,.32)';
+    X.fillRect(px+dx,py+run-17,1+i%2,21);
+    X.fillRect(px+dx,py+run+15,1+i%2,21);
+   }
+   X.restore();
+  }else if(t===TT.WATER&&surface==='plunge'){
+   X.save();
+   X.strokeStyle='rgba(170,213,211,.41)';X.beginPath();
+   const drift=TERRAIN_MOTION54.matches?0:Math.sin((FX.frameNow||0)*.007+x)*2;
+   for(let i=0;i<3;i++)X.ellipse(px+8+i*8,py+5+i*5+drift,6,1.7,0,0,Math.PI*2);
+   X.stroke();X.restore();
+  }
+  return drawn;
+ }
  if(state.branchContext105.id==='dojo')return drawDojoCell(t,px,py,x,y);
  if(state.branchContext105.id==='citadel')return drawCitadelCell(t,px,py,x,y,foreground);
  if(state.branchContext105.id==='mine')return drawMineCell(t,px,py,x,y,foreground);
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear()}
  const indoor=['canal','granary'].includes(state.branchContext105.id),actual=t;t=terrainBaseTile58(x,y,t);if(!indoor&&[TT.GARDEN_TREE,TT.STONE_PILLAR,TT.CRATE,TT.JAR,TT.RACK].includes(actual)&&state.branchTerrain105.props[k(x,y)])t=actual;
- if(t===TT.WATER||indoor&&[TT.VOID,TT.LAVA,TT.MERCURY].includes(t)){
+ if(isWaterTile105(t)||indoor&&[TT.VOID,TT.LAVA,TT.MERCURY].includes(t)){
   drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
   if(actual!==t){if(foreground)foreground.push({t:actual,px,py,x,y});else if(!drawSpecialTerrain(actual,px,py,x,y,FX.frameNow||performance.now()))drawInteractiveTerrain(actual,px,py,x,y,FX.frameNow||performance.now());}
   return true;
@@ -4525,7 +4559,66 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(s==='peat'||s==='garden'){r(black?(s==='peat'?'#3b393e':'#414d49'):(s==='peat'?'#534d40':'#526447'),0,0,32,32);for(let i=0;i<9;i++)r(s==='peat'?(i%2?'#81705a':'#373d32'):(i%2?'#809267':'#3a4d37'),Math.floor(hash2(x+i,y,41)*29),Math.floor(hash2(x,y+i,92)*29),3,1);}
  if(s==='gravel'){r(black?'#555c67':'#777973',0,0,32,32);for(let i=0;i<14;i++)r(black?(i%2?'#8b929b':'#343f4c'):(i%2?'#aaa99a':'#555f5d'),(hash2(x+i,y,12)*29)|0,(hash2(x,y+i,33)*29)|0,3,2);}
  if(black&&s==='stone'&&t!==TT.WALL){r('#4b505b',0,0,32,32);for(let yy=0;yy<32;yy+=8){line('#292f3a',0,yy,32,yy);line('#717581',2,yy+1,31,yy+1);line('#303842',(yy%16?7:21),yy,(yy%16?7:21),yy+7);}}
+ if(s==='oldGrowth'||s==='mountainTrail'){
+  const trail=s==='mountainTrail',patch=hash2(x>>1,y>>1,607);
+  r((trail?['#2c3d43','#314449','#35494b']:['#13292c','#172d2f','#1c3434'])[Math.min(2,Math.floor(patch*3))],0,0,32,32);
+  for(let i=0;i<17;i++){
+   const ax=(hash2(x*17+i,y,111)*30)|0,ay=(hash2(x,y*17+i,112)*31)|0;
+   r((trail?['#26363b','#41565a','#536667']:['#15282a','#2a4240','#334b43'])[i%3],ax,ay,1+i%4,1+(i%5===0));
+  }
+  if(trail&&h>.72){
+   r('#233438',8,19,17,3);
+   r('#4e676d',12,19,11,1);
+   r('#3e5357',9,21,15,1);
+  }
+  if(trail)for(const [dx,dy] of DIRS4){
+   if(ter.surfaces[k(x+dx,y+dy)]!=='oldGrowth')continue;
+   const edge=dx?dx<0?0:29:dy<0?0:29;
+   r('#253b3a',dx?edge:0,dx?0:edge,dx?3:32,dx?32:3);
+  }
+ }
  if(s==='cliff'){drawMountainCliff(q,x,y,height,b.id);}
+ else if(['ruinMasonry','storeMasonry','refugeMasonry'].includes(s)){
+  const timber=s==='storeMasonry',broken=s==='ruinMasonry';
+  r('#252e2d',0,0,32,32);
+  for(let yy=broken?9:4;yy<32;yy+=7)for(let xx=-(yy%2)*6;xx<32;xx+=12){
+   const w=broken?7+Math.floor(hash2(x+xx,y+yy,703)*5):11;
+   r(timber?'#52473b':'#434f4c',xx,yy,w,5);
+   r(timber?'#827157':'#667871',xx,yy,w,1);
+   if(!timber)r('#3f5643',xx+2,yy+4,w-3,1);
+  }
+  if(!broken){r(timber?'#2d241f':'#243537',0,0,32,5);r(timber?'#837154':'#536a66',0,1,32,2);}
+ }
+ else if(s==='wetSlate'){
+  r('#26383e',0,0,32,32);
+  for(let i=0;i<3;i++){
+   const yy=i*10,xx=Math.round(hash2(x,y,123+i)*13);
+   r(i===1?'#405359':'#35484d',0,yy+1,32,8);
+   r('#607276',xx,yy+1,16,1);r('#1a2c31',xx+6,yy+3,1,5);
+  }
+ }
+ else if(s==='rainPavilionRoof'){
+  const north=ter.surfaces[k(x,y-1)]==='rainPavilionRoof';
+  const left=ter.surfaces[k(x-1,y)]!=='rainPavilionRoof',right=ter.surfaces[k(x+1,y)]!=='rainPavilionRoof';
+  const inset=left||right?4:0;
+  r('#233032',0,0,32,32);
+  r(north?'#35484a':'#435758',left?inset:0,0,32-inset,30);
+  for(let xx=left?inset:0;xx<32-(right?inset:0);xx+=5){
+   r('#243639',xx,0,2,31);r('#597071',xx+2,1,1,26);
+  }
+  if(!north){r('#263536',0,0,32,5);r('#87968e',0,0,32,1);}
+  else{r('#352b25',0,28,32,4);r('#8d7551',0,28,32,2);}
+ }
+ else if(s==='rainPavilion'){
+  for(let yy=0;yy<32;yy+=8){
+   r(yy%16?'#524b40':'#4a443b',0,yy,32,7);
+   r('#665e4c',3,yy+1,23,1);
+  }
+  if(ter.surfaces[k(x,y-1)]!=='rainPavilion'){
+   for(let xx=0;xx<32;xx+=4){r('#152529',xx,0,4,10);r(xx%8?'#486061':'#35484c',xx,1,3,6);}
+   r('#726653',0,9,32,2);
+  }
+ }
  else if(t===TT.WALL&&DIRS8.every(([dx,dy])=>state.map[y+dy]?.[x+dx]===TT.WALL)){r(cold?'#182630':black?'#1b1b24':'#29251e',0,0,32,32);if(h>.91)r(cold?'#263b3a':'#383127',5,16,18,1);}
  else if(t===TT.WALL){const wood=s==='wood';r(wood?(black?'#302b30':'#493a2d'):'#2e4240',0,0,32,32);
   if(wood){for(let a=1;a<32;a+=6){r(black?'#65545b':'#806044',a,5,5,26);r('#ad8860',a,5,1,23);r('#342b26',a+4,6,1,26);}r('#392b26',0,11,32,4);r('#ad8760',0,11,32,1);r('#392b26',0,25,32,4);for(const a of[3,15,27])r('#b1a18a',a,12,2,2);
@@ -4545,7 +4638,14 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  }
  if(t===TT.WALL&&(s==='ironstone'||s==='rock')){r(s==='ironstone'?'#393d48':'#535e5d',0,0,32,32);for(let j=6;j<32;j+=9)for(let a=-(j%2)*7;a<32;a+=15){r(s==='ironstone'?'#646777':'#7a8580',a,j,14,7);r(s==='ironstone'?'#9797a7':'#adb3a2',a,j,14,1);}r('#a4a394',0,0,32,4);r('#1f2831',0,29,32,3);if(s==='ironstone'){r('#272831',3,4,3,25);r('#bbb2a0',3,8,2,2);r('#bbb2a0',3,23,2,2);}}
  if(s==='stairs'&&![TT.WALL,TT.VOID,TT.WATER].includes(t)){for(let a=2;a<32;a+=5){r('#373f3b',1,a,30,4);r('#b4b39a',1,a,30,1);r('#858979',2,a+1,28,2);}}
- if(prop){r('rgba(0,0,0,.35)',4,23,25,7);if(prop==='deadTree'){drawMountainTree(q,x,y,true,b.id,height);}
+ if(prop==='thicket'){
+  r('#122526',0,22,32,10);
+  for(let i=0;i<12;i++){
+   const ax=Math.floor(hash2(x*13+i,y,563)*31),ay=Math.floor(hash2(x,y*13+i,564)*28);
+   r(i%3===0?'#2c4740':'#213832',ax-2,ay+4,3+i%5,2+i%3);
+   if(i%3===0)r('#3e5145',ax,ay+4,2,1);
+  }
+ }else if(prop){r('rgba(0,0,0,.35)',4,23,25,7);if(prop==='deadTree'){drawMountainTree(q,x,y,true,b.id,height);}
  else if(prop==='tree'){drawMountainTree(q,x,y,false,b.id,height);}
  else if(prop==='jar'){r('#352b28',7,8,20,19);r('#805e47',8,10,17,16);r('#bb8e62',10,11,3,11);r('#3d3630',9,5,15,5);r('#ae8864',9,5,15,2);r('#493e36',10,24,13,3);}
  else if(prop==='sack'){r('#57442f',5,9,22,20);r('#baa074',6,11,20,15);r('#ddc394',7,12,15,2);r('#8b704c',19,12,6,14);r('#c9af80',10,6,12,8);r('#6e593b',9,8,14,2);line('#92794f',10,15,12,25);line('#e2c89a',14,17,14,25);}
@@ -4625,6 +4725,82 @@ function drawMountainActor(q,m,frame){
  if(m.hiveTree105){q.fillStyle='#263229';q.fillRect(5,27,24,4);q.strokeStyle='#3e332b';q.lineWidth=5;q.beginPath();q.moveTo(11,31);q.lineTo(16,21);q.lineTo(14,5);q.moveTo(15,17);q.lineTo(5,11);q.lineTo(1,4);q.moveTo(15,12);q.lineTo(25,8);q.lineTo(30,2);q.stroke();q.strokeStyle='#a48c66';q.lineWidth=2;q.stroke();q.fillStyle='#66533c';q.fillRect(19,10,8,13);q.fillStyle='#c1a05d';q.fillRect(18,12,10,8);q.fillStyle='#e0bd72';q.fillRect(20,10,5,2);for(let y=13;y<21;y+=3){q.fillStyle='#806537';q.fillRect(19,y,8,1);q.fillStyle='#332d24';q.fillRect(y%2?23:21,y+1,2,2)}q.fillStyle='#65734b';q.fillRect(3,3,5,2);q.fillRect(24,4,4,2);return;}
  if(m.mimicDormant105!==false){q.fillStyle='rgba(0,0,0,.35)';q.fillRect(4,23,25,7);drawMountainTree(q,m.x,m.y,true,state?.branchContext105?.id||'stockade',branchHeight(m.x,m.y));return;}drawMountainTree(q,17,23,true,'black',2);q.fillStyle='#ebc67e';q.fillRect(12,14,2,2);q.fillRect(18,14,2,2);q.strokeStyle='#ac9673';q.lineWidth=2;for(const sign of[-1,1]){q.beginPath();q.moveTo(16,23);q.lineTo(16+sign*9,27-frame);q.lineTo(16+sign*13,30);q.stroke()}
 }
+const STOCKADE_PINE_SPRITES = new Map();
+
+function stockadePineSprite(variant){
+ const cached=STOCKADE_PINE_SPRITES.get(variant);
+ if(cached)return cached;
+ const canvas=document.createElement('canvas');
+ canvas.width=88;
+ canvas.height=100;
+ const ctx=canvas.getContext('2d');
+ const polygon=(color,points)=>{
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for(const point of points.slice(1))ctx.lineTo(...point);
+  ctx.closePath();
+  ctx.fill();
+ };
+ const shift=variant%3-1;
+ const light=variant>=3?['#1a3937','#265045','#3a6456','#627e6c']:['#203e3a','#2b4d45','#406456','#6c806b'];
+ polygon('#332c28',[[19,94],[32,86],[39,80],[40,41],[49,33],[51,81],[59,89],[70,93],[55,94],[49,91],[42,96],[37,92]]);
+ polygon('#735740',[[31,91],[42,81],[44,54],[47,43],[47,85],[53,91],[45,87],[39,93]]);
+ polygon('#b38c5c',[[40,86],[43,72],[46,74],[45,85],[42,89]]);
+ for(const tier of [3,2,1,0]){
+  const y=5+tier*15,span=14+tier*6,center=43+shift*(5-tier);
+  polygon('#172b27',[[center,y],[center+span*.44,y+15],[center+span,y+29],[center+span*.82,y+34],[center+4,y+30],[center-11,y+36],[center-span,y+32],[center-span*.62,y+23]]);
+  for(let row=0;row<8;row++){
+   const yy=y+6+row*3,width=Math.min(span-2,4+row*(span*.13));
+   const left=Math.round(center-width),right=Math.round(center+width);
+   ctx.fillStyle=light[row<2?2:row<6?1:0];
+   ctx.fillRect(left,yy,right-left,3);
+   for(let i=0;i<6;i++){
+    const jitter=hash2(row*11+i,tier+variant*4,742);
+    const xx=Math.round(left+jitter*(right-left-2));
+    ctx.fillStyle=light[jitter<.42?2:jitter<.62?3:0];
+    ctx.fillRect(xx,yy,2+i%3,1+i%2);
+   }
+  }
+ }
+ STOCKADE_PINE_SPRITES.set(variant,canvas);
+ return canvas;
+}
+
+function drawStockadeRain(now){
+ if(TERRAIN_MOTION54.matches)return;
+ terrainAnimationSeen=now;
+ X.save();
+ X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
+ for(let layer=0;layer<2;layer++){
+  X.strokeStyle=layer?'rgba(162,193,208,.26)':'rgba(147,181,199,.16)';
+  X.lineWidth=layer?1.15:.75;
+  X.beginPath();
+  const speed=layer?.55:.34,length=layer?25:13;
+  for(let i=0;i<(layer?82:135);i++){
+   const x=(hash2(i,layer,921)*VIEW.w+now*speed*.22)%VIEW.w;
+   const y=(hash2(i,layer,922)*VIEW.h+now*speed)%VIEW.h;
+   X.moveTo(x,y);X.lineTo(x+length*.22,y+length);
+  }
+  X.stroke();
+ }
+ X.restore();
+}
+
+function drawStockadePines(bounds){
+ const terrain=state.branchTerrain105;
+ if(state.branchContext105?.id!=='stockade'||terrain?.layoutVersion!==12)return;
+ for(let y=Math.max(0,bounds.y0);y<=Math.min(ROWS-1,bounds.y1+3);y++){
+  for(let x=Math.max(0,bounds.x0-1);x<=Math.min(COLS-1,bounds.x1+1);x++){
+   const key=k(x,y);
+   if(terrain.props[key]!=='ancientPine'||state.map[y][x]!==TT.GARDEN_TREE||!state.seen.has(key))continue;
+   const variant=Math.min(5,Math.floor(hash2(x,y,950)*6));
+   const height=TILE*(3.1+variant%3*.52),width=height*.88;
+   X.drawImage(stockadePineSprite(variant),(x+.5)*TILE-width/2,(y+.93)*TILE-height,width,height);
+  }
+ }
+}
+
 function drawMountainTree(q,x,y,dead=false,id='stockade',height=0){
  const h=hash2(x,y,97),flip=h>.5?1:-1;q.save();q.translate(16,0);q.scale(flip,1);q.fillStyle='#202c25';q.fillRect(-10,27,23,4);
  q.strokeStyle='#3b302a';q.lineWidth=6;q.beginPath();q.moveTo(-5,32);q.lineTo(0,20);q.lineTo(-2,7);q.stroke();q.strokeStyle=dead?(id==='black'?'#95949b':'#a09278'):(id==='black'?'#696774':'#87765a');q.lineWidth=2;q.beginPath();q.moveTo(-3,31);q.lineTo(1,20);q.lineTo(-1,4);q.moveTo(0,20);q.lineTo(10,12);q.lineTo(9,5);q.moveTo(0,15);q.lineTo(-9,10);q.lineTo(-12,3);q.stroke();
