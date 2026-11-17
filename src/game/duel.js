@@ -366,7 +366,7 @@ const Duel={
    this.applying=true;
    try{
     martialFx('burst',origin);burst(x,y,'#a8c5d7',16,.8);
-    applyYuunBlast(stand,origin,martialSmokeCells(origin,size,'cloud'),level,damage);
+    applyYuunBlast(stand,origin,martialSmokeCells(origin,size,'cloud'),level);
     VisibilityService.compute();
    }finally{this.applying=false}
    updateAll();return;
