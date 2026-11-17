@@ -71,7 +71,27 @@ function branchTerrainPack(t){if(!t||t.packed105)return;const h=t.heights.length
 function branchTerrainUnpack(t){if(!t?.packed105)return;const p=t.packed105;Object.defineProperty(t,"staticPacked105",{value:p,configurable:true});if(p.version!==1)throw Error('Unsupported branch terrain encoding');t.heights=branchGridUnpack(p.heights);const s=branchGridUnpack(p.surfaces),w=p.heights.w;t.surfaces={};t.ramps={};for(let y=0;y<s.length;y++)for(let x=0;x<s[y].length;x++)if(s[y][x]){const v=p.dictionary[s[y][x]];if(typeof v!=='string')throw Error('Invalid branch surface');t.surfaces[k(x,y)]=v}for(let i=0;i<p.ramps.length;i+=2){const a=p.ramps[i],b=p.ramps[i+1];t.ramps[`${a%w},${Math.floor(a/w)}>${b%w},${Math.floor(b/w)}`]=true}delete t.packed105}
 function branchPackPage(p){if(p?.pageCodec105)return p;branchTerrainPack(p.branchTerrain105);if(p.branchContext105){const dim=p.map?{w:p.map[0].length,h:p.map.length}:p.branchMapPacked105;if(dim&&!p.branchSeenPacked105&&p.seen){const grid=Array.from({length:dim.h},()=>Array(dim.w).fill(0));for(const key of p.seen){const[x,y]=key.split(',').map(Number);if(grid[y]&&x>=0&&x<dim.w)grid[y][x]=1}p.branchSeenPacked105=branchGridPack(grid);delete p.seen}if(p.map){p.branchMapPacked105=branchGridPack(p.map);delete p.map}}return p}
 function branchPackWorld(plain){branchTerrainPack(plain.branchTerrain105);for(const p of Object.values(plain.branchWorld105?.pages||{}))branchPackPage(p);return plain}
+function rebalanceCitadelEnemies(page){
+ if(page.branchContext105?.id!=='citadel'||page.debugBattle57)return;
+ for(const mon of page.monsters||[]){
+  if(!['citadel-authored','citadel-trial'].includes(mon.spawnProvenance57)||mon.citadelBalanceRevision===CITADEL_BALANCE_REVISION)continue;
+  const species=monsterSpeciesName(mon),oldDepth=mon.combatFloor105??mon.citadelDepth105;
+  const defs=mon.legendDungeon47?mobDefs47(mon.legendDungeon47):CITADEL_ENEMIES105;
+  const def=defs.find(d=>d.name===species)||MONSTERS.find(d=>d.name===species);
+  if(!def||!Number.isFinite(oldDepth))continue;
+  const depth=oldDepth+CITADEL_COMBAT_OFFSET105+3,opts={inventory:false,configure:false,debugBattle:false};
+  const old=scaledMonster(def,oldDepth,opts),fresh=scaledMonster(def,depth,opts);
+  if(mon.legendElite47)applyLegendGatekeeper47(old,oldDepth);
+  if(mon.legendElite47&&mon.prisoner105?.elite)applyLegendGatekeeper47(fresh,depth);
+  const maxHp=Math.max(1,fresh.maxHp+((mon.maxHp??old.maxHp)-old.maxHp));
+  if(mon.hp>0)mon.hp=Math.max(1,Math.min(maxHp,Math.round(mon.hp/Math.max(1,mon.maxHp??old.maxHp)*maxHp)));
+  Object.assign(mon,{name:fresh.name,maxHp,atk:Math.max(0,mon.atk+fresh.atk-old.atk),def:Math.max(0,mon.def+fresh.def-old.def),combatFloor105:depth,citadelBalanceRevision:CITADEL_BALANCE_REVISION});
+  if(mon.citadelDepth105!=null)mon.citadelDepth105=depth;
+  if(!fresh.legendElite47)delete mon.legendElite47;
+ }
+}
 function branchRebalancePage(page){
+ rebalanceCitadelEnemies(page);
  const context=page.branchContext105,terrain=page.branchTerrain105;if(!context||context.level!==2)return;
  if(context.id==='black'&&terrain?.enemyBalanceRevision105!==1){
   for(const b of terrain?.buildings||[]){const guards=(page.monsters||[]).filter(m=>m.hp>0&&m.spawnProvenance57==='subbranch-canonical'&&['경비 인형 - 포병','경비 인형 - 보병'].includes(m.name)&&m.x>b.x&&m.x<b.x+b.w-1&&m.y>b.y&&m.y<b.y+b.h-1),keep=b.summit?3:1;
@@ -1710,15 +1730,6 @@ function citadelBridgeGuide(release){
   desc:`${release.label}의 철창을 해제하는 스위치는 ${citadelDirection(tower,release.level)}에 있다. ${tower.name}${room?'의 '+room:'의 중앙 계단 옆'}에서 스위치를 누르면 ${release.targetLevel}층의 이 다리가 영구히 열린다.`,
   guideHint105:'방향은 흑성채 중앙탑을 기준으로 한다. 한 칸은 동쪽·서쪽·북쪽·남쪽, 두 칸은 극동·극서·극북·극남으로 표시한다.'};
 }
-// Authored gatekeeper positions: floor -> tower -> population ranks (-1 is the last sentinel).
-// High-corruption approaches retain six ordinary chain keepers and seven each
-// of fetter dolls and rotten spearmen; captive elites have their own room plan.
-const CITADEL_GATEKEEPER_PLAN=Object.freeze({
- 1:{14:[1,3,7],18:[7],19:[1,2,5],23:[5],24:[1,2,5,7]},
- 2:{13:[5],14:[1],18:[6],19:[3,5,6],23:[1,5],24:[1,7]},
- 3:{14:[1],18:[6],19:[1,2,5,6],24:[1,3,5,7,-1]},
- 4:{9:[8],13:[5],14:[4]}
-});
 const CITADEL_RELIC_SITES=Object.freeze([
  {id:'curse_spear',tower:24,level:3,room:2,theme:'tomb',title:'황천 저주창의 잔향',props:['sarcophagus','urns','incense','statue'],light:'#bd80eb',palette:{stone:'#3c244c',joint:'#201527',light:'#d8badf',rim:'#b877d7',accent:'#672c8e',wall:'#291e36'},wallPattern:'funerary'},
  {id:'chain_sickle',tower:19,level:2,room:1,theme:'armory',title:'귀박 쇄겸의 잔향',props:['chains','prison-bed','rack','iron-mask'],light:'#f28b4b',palette:{stone:'#4c2920',joint:'#251917',light:'#db9a63',rim:'#e77e3e',accent:'#ad4724',wall:'#38201c'},wallPattern:'chains'},
@@ -2023,8 +2034,8 @@ function buildCitadel(level){
     const stage=influence?.stage||0,predator=stage&&n<count-1&&n%Math.max(2,6-stage)===0,legacy=stage? n===count-1||n%5<stage:n===count-1;
     const freeRooms=rooms.filter(r=>!r.prison105?.captive105),preferred=formation[n]||freeRooms[Math.floor(n/3)%freeRooms.length]||rooms[Math.floor(n/3)%rooms.length],captive=n<captiveRooms.length,roomRoles=preferred.enemyRoles105||roles;
     const def=captive?CITADEL_ENEMIES105.find(d=>d.citadelActor105===(n%2?'tomb':'chain')):predator?MONSTERS.find(d=>d.name==='차원 포식자'):legacy?defs[(tower.id+level+n)%defs.length]:CITADEL_ENEMIES105.find(d=>d.citadelActor105===roomRoles[n%roomRoles.length]),depth=citadelCombatDepth(tower.x,tower.y,level),mon=scaledMonster(def,depth);
-    const gatekeepers=CITADEL_GATEKEEPER_PLAN[level]?.[tower.id]||[];
-    if(captive?preferred.prison105.elite105:gatekeepers.includes(n)||gatekeepers.includes(n-count))globalThis.__MANRU_LEGEND47__.gatekeeper(mon,depth);
+    if(captive&&preferred.prison105.elite105)applyLegendGatekeeper47(mon,depth);
+    mon.citadelBalanceRevision=CITADEL_BALANCE_REVISION;
     const options=[];
     for(const room of rooms){if(captive&&room!==preferred||!captive&&room.prison105?.captive105)continue;const doors=data.roomDoors.filter(d=>d.tower105===tower.id&&Math.abs(d.x-room.cx)<=room.w/2+1&&Math.abs(d.y-room.cy)<=room.h/2+1),door=doors.sort((a,b)=>entityDistance57(a,tower)-entityDistance57(b,tower))[0]||tower,dx=Math.abs(door.x-room.cx)>=Math.abs(door.y-room.cy)?Math.sign(door.x-room.cx):0,dy=dx?0:Math.sign(door.y-room.cy),back=mon.ranged?-1:1,anchor={x:room.cx+dx*Math.max(1,(room.w-3)/2)*back,y:room.cy+dy*Math.max(1,(room.h-3)/2)*back};
      for(const q of cells)if(q.x>=room.x&&q.x<room.x+room.w&&q.y>=room.y&&q.y<room.y+room.h&&!mine.carts.some(c=>c.x===q.x&&c.y===q.y)&&m[q.y][q.x]===TT.STONE_PATH&&PlacementService.monsterCanStand(mon,q.x,q.y))options.push({...q,room,priority:room===preferred?0:1,distance:entityDistance57(q,anchor)});
@@ -2058,7 +2069,7 @@ function citadelTrialPress(button,source,rolling=[]){const data=state.branchTerr
  if(button.trialSeal105==null)return;const index=button.trialSeal105,lamp=mineState().lanterns.find(l=>l.trialLamp105===index);if(!lamp?.lit){toast('옆의 꺼진 등불에 먼저 불을 붙여야 한다.');return;}if(index===1&&!t.boulder){toast('공성 바위의 걸쇠를 먼저 풀어야 한다.');return;}if(!t.seals.includes(index)){t.seals.push(index);addLog(`흑성 미궁: ${index+1}번째 걸쇠 해제 (${t.seals.length}/3).`);}}
 function citadelTrialBegin(){const data=state.branchTerrain105?.citadel105?.trial105;if(!data){toast('이전에 생성된 중앙층에는 미궁이 없다. 새로 생성된 성채에서 도전할 수 있다.');return false;}if(state.branchContext105?.id!=='citadel'||state.branchContext105.level!==1||entityDistance57(state.player,data.start)>1||!state.visible.has(k(data.start.x,data.start.y)))return false;if(citadelWorld().rewardClaimed){toast('이 성채의 전승은 이미 받았다.');return false;}const t=citadelTrialState();if(t.status==='active'){toast(`남은 ${Math.max(0,t.deadline-state.turn)}턴 · 걸쇠 ${t.seals.length}/3`);return false;}
  const mine=mineState();if(!mine.carts.some(c=>c.home==='trial-boulder'&&c.alive)){const home=mine.sources.find(h=>h.id==='trial-boulder');toast(`공성 바위가 아직 없다. 적재 자리를 비우고 ${Math.max(0,(home?.nextAt||0)-state.floorTurn)}턴 후 보충을 확인하자.`);return false;}
- const prepared=[],reserved=new Set();for(const spec of data.keepers){if(state.monsters.some(m=>m.citadelTrialGuard105===spec.id&&m.hp>0))continue;const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105===spec.role),mon=scaledMonster(def,citadelCombatDepth(spec.x,spec.y,1));const cells=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)cells.push({x:spec.x+dx,y:spec.y+dy});cells.sort((a,b)=>entityDistance57(a,spec)-entityDistance57(b,spec));const pos=cells.find(p=>!reserved.has(k(p.x,p.y))&&!state.branchTerrain105.props[k(p.x,p.y)]&&PlacementService.monsterCanStand(mon,p.x,p.y));if(!pos){toast('시험실의 수호자가 설 자리를 비워야 한다.');return false;}Object.assign(mon,pos,{citadelTrialGuard105:spec.id,spawnProvenance57:'citadel-trial',rewardPolicy57:{xp:false,drops:false,kills:false},alerted:true,guardHome57:{...pos,room:{x:spec.x-2,y:spec.y-2,w:5,h:5}}});prepared.push(mon);reserved.add(k(pos.x,pos.y));}
+ const prepared=[],reserved=new Set();for(const spec of data.keepers){if(state.monsters.some(m=>m.citadelTrialGuard105===spec.id&&m.hp>0))continue;const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105===spec.role),mon=scaledMonster(def,citadelCombatDepth(spec.x,spec.y,1));const cells=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)cells.push({x:spec.x+dx,y:spec.y+dy});cells.sort((a,b)=>entityDistance57(a,spec)-entityDistance57(b,spec));const pos=cells.find(p=>!reserved.has(k(p.x,p.y))&&!state.branchTerrain105.props[k(p.x,p.y)]&&PlacementService.monsterCanStand(mon,p.x,p.y));if(!pos){toast('시험실의 수호자가 설 자리를 비워야 한다.');return false;}Object.assign(mon,pos,{citadelTrialGuard105:spec.id,citadelBalanceRevision:CITADEL_BALANCE_REVISION,spawnProvenance57:'citadel-trial',rewardPolicy57:{xp:false,drops:false,kills:false},alerted:true,guardHome57:{...pos,room:{x:spec.x-2,y:spec.y-2,w:5,h:5}}});prepared.push(mon);reserved.add(k(pos.x,pos.y));}
  Object.assign(t,{status:'active',deadline:state.turn+CITADEL_TRIAL_PLAN.turns+1,seals:[],boulder:false,attempt:t.attempt+1});for(const mon of prepared)OccupancyService.addMonster(mon);addLog('흑성 미궁 시작: 180턴 안에 세 걸쇠와 일곱 수호자를 돌파하고 동남 전승 제단에 도달하라. 걸쇠 순서는 자유이며 내측 철창은 단축로다.');return true;}
 function citadelAnvilAt(x,y){return state?.branchContext105?.id==='citadel'&&state.branchTerrain105?.props?.[k(x,y)]==='anvil'&&terrainSurface58(terrainBaseTile58(x,y));}
 function anvilNearby(q){const p=state?.player;return !!p&&entityDistance57(q,p)<=1&&(q.x===p.x||q.y===p.y||!runtimeTerrainSolid57(state.map[p.y]?.[q.x])&&!runtimeTerrainSolid57(state.map[q.y]?.[p.x]));}
@@ -2118,7 +2129,8 @@ const LEGEND_THEMES47={
  ward_hammer:{style:'fortress',wall:'#303435',wall2:'#7f8580',floor:'#4b4e48',floor2:'#7c7563',trim:'#a79878',accent:'#baa66e',glow:'#e5d9ac',light:'#d6c991',warm:'#dfac78',materials:['#60665f','#898373','#474b46','#515845'],walls:['성채 방패 부조','수비 군기','성문 쇠장치','파성 전승 벽화'],floordecor:['수비대 모자이크','군마 마모흔','파성 인레이','빗물 자국'],props:['성문 수비대','공성추 받침','쌍방패 장벽','군기 기단'],landmarks:['삼중 진문 대성문','수호장군 거대 갑주상']}
 };
 // Combat depth is derived from the branch graph, never from visit count.
-const CITADEL_COMBAT_OFFSET105=-3;
+const CITADEL_COMBAT_OFFSET105=-8;
+const CITADEL_BALANCE_REVISION=2;
 const BRANCH_RUN_FIELDS105=new Set(('player,status,turn,playerAgencyTurns57,enemyEnergy,dead,victory,runState57,runEndEffects57,log,runId,runId984,pendingMartialManualChoice,martialManualDrops,martialDamageSequence,martialProgression1005,artifactClaimed46,artifactHistory46,knowledge56,lootHistory47,uniqueKilled,harvested,holy991,story992,coreLoot982,coreLootAudit982,cookbook57,curseClocks991,elementWard74,nextAllyId53,nextCombatantId54,lastDamageAgencyTurn57,lastCombat57,lastCombat991,lastCombatReason57,makgeolliRecoveryTurns57,makgeolliHealHundredths57,drunkBornTurn57,passiveRecoveryUnlocked57,legacyUpgradeMigrated982,saveSeq1004,saveWrittenAt1004,saveVersion1004,saveSchema1004,tutorialSeen59,earlyRecoveryProgress58,earlyProgression58').split(','));
 /* Changhae palace: seeded architectural courts, canonical hydrology and shared combat intents. */
 const PALACE_TIDE105=Object.freeze([0,1,2,3,2,1]);
