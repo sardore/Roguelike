@@ -4503,6 +4503,44 @@ function drawIndoorBranchMaterial(q,t,s,x,y,P){
  }
  q.restore();
 }
+function isStockadeFallsDeck(x,y){
+ return state.branchContext105?.id==='stockade'&&state.branchContext105.level===2&&
+  state.branchTerrain105?.layoutVersion===12&&state.map[y]?.[x]===TT.DRAWBRIDGE_DOWN&&
+  state.branchTerrain105.surfaces[k(x,y)]==='bridge';
+}
+
+function drawStockadeFallsDeck(q,x,y){
+ const {r}=drawKit(q);
+ const left=!isStockadeFallsDeck(x-1,y),right=!isStockadeFallsDeck(x+1,y);
+ r('#16292d',0,0,32,32);
+ r('#352921',0,4,32,27);
+ for(let plank=0;plank<6;plank++){
+  const a=plank*5+1,grain=hash2(x,plank,503);
+  r(grain<.4?'#76573b':'#98724d',a,7,4,19);
+  r('#ae8960',a,8,1,17);
+  r('#57432f',a+2,12+Math.floor(grain*10),1,5);
+ }
+ for(const rail of [4,24]){
+  r('#282825',0,rail+1,32,5);
+  r('#65523c',0,rail,32,3);
+  r('#bf9967',0,rail,32,1);
+  for(const a of [5,21]){
+   r('#292926',a,rail-3,4,9);
+   r('#927657',a,rail-3,3,2);
+   r('#a3a7a0',a+1,rail+1,1,1);
+  }
+ }
+ for(const a of [left?3:null,right?23:null]){
+  if(a===null)continue;
+  r('#343f3e',a-2,2,9,8);r('#67716a',a-2,2,9,2);
+  r('#343f3e',a-2,23,9,8);r('#67716a',a-2,23,9,2);
+  const glow=q.createRadialGradient(a+2,9,0,a+2,9,10);
+  glow.addColorStop(0,'rgba(246,177,77,.60)');glow.addColorStop(1,'rgba(246,177,77,0)');
+  q.fillStyle=glow;q.fillRect(a-8,0,20,19);
+  r('#262822',a-1,3,7,9);r('#ffd28a',a+1,5,3,5);
+ }
+}
+
 function drawBranchCell(t,px,py,x,y,foreground=null){
  if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
@@ -4529,6 +4567,12 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
    const drift=TERRAIN_MOTION54.matches?0:Math.sin((FX.frameNow||0)*.007+x)*2;
    for(let i=0;i<3;i++)X.ellipse(px+8+i*8,py+5+i*5+drift,6,1.7,0,0,Math.PI*2);
    X.stroke();X.restore();
+  }
+  if(t===TT.WATER&&x%4===0&&isStockadeFallsDeck(x,y-1)){
+   X.fillStyle='rgba(10,21,23,.45)';X.fillRect(px+7,py,19,19);
+   X.fillStyle='#394b48';X.fillRect(px+10,py,13,14);
+   X.fillStyle='#637269';X.fillRect(px+10,py,3,13);
+   X.fillStyle='#9cb3a6';X.fillRect(px+8,py+13,6,1);X.fillRect(px+21,py+15,7,1);
   }
   return drawn;
  }
@@ -4634,7 +4678,8 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
   if(ter.mountainVersion105)drawMountainVoidSides(q,x,y);else{if(x>0&&state.map[y]?.[x-1]!==TT.VOID){r('#49574f',0,0,5,32);r('#293d3c',5,0,4,32);}if(x<COLS-1&&state.map[y]?.[x+1]!==TT.VOID)r('#4c5952',27,0,5,32);}
  }
  }
- if(t===TT.DRAWBRIDGE_DOWN||s==='bridge'){r('#1d3035',0,0,32,32);const vertical=ter.surfaces[k(x,y-2)]==='bridge'||ter.surfaces[k(x,y+2)]==='bridge';for(let a=1;a<32;a+=5){if(vertical){r('#a17c52',2,a,28,4);r('#c4a377',3,a,26,1);}else{r('#9a7751',a,2,4,28);r('#c4a377',a,3,1,26);}}for(const a of[2,28]){const side=a===2?-1:1;if(ter.surfaces[k(x+(vertical?side:0),y+(vertical?0:side))]==='bridge')continue;if(vertical){r('#3b322b',a,0,2,32);r('#c1ad80',a,0,1,32);}else{r('#3b322b',0,a,32,2);r('#c1ad80',0,a,32,1);}}
+ if(isStockadeFallsDeck(x,y))drawStockadeFallsDeck(q,x,y);
+ else if(t===TT.DRAWBRIDGE_DOWN||s==='bridge'){r('#1d3035',0,0,32,32);const vertical=ter.surfaces[k(x,y-2)]==='bridge'||ter.surfaces[k(x,y+2)]==='bridge';for(let a=1;a<32;a+=5){if(vertical){r('#a17c52',2,a,28,4);r('#c4a377',3,a,26,1);}else{r('#9a7751',a,2,4,28);r('#c4a377',a,3,1,26);}}for(const a of[2,28]){const side=a===2?-1:1;if(ter.surfaces[k(x+(vertical?side:0),y+(vertical?0:side))]==='bridge')continue;if(vertical){r('#3b322b',a,0,2,32);r('#c1ad80',a,0,1,32);}else{r('#3b322b',0,a,32,2);r('#c1ad80',0,a,32,1);}}
  }
  if(t===TT.WALL&&(s==='ironstone'||s==='rock')){r(s==='ironstone'?'#393d48':'#535e5d',0,0,32,32);for(let j=6;j<32;j+=9)for(let a=-(j%2)*7;a<32;a+=15){r(s==='ironstone'?'#646777':'#7a8580',a,j,14,7);r(s==='ironstone'?'#9797a7':'#adb3a2',a,j,14,1);}r('#a4a394',0,0,32,4);r('#1f2831',0,29,32,3);if(s==='ironstone'){r('#272831',3,4,3,25);r('#bbb2a0',3,8,2,2);r('#bbb2a0',3,23,2,2);}}
  if(s==='stairs'&&![TT.WALL,TT.VOID,TT.WATER].includes(t)){for(let a=2;a<32;a+=5){r('#373f3b',1,a,30,4);r('#b4b39a',1,a,30,1);r('#858979',2,a+1,28,2);}}
