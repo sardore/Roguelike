@@ -368,14 +368,16 @@ const Duel={
   const stand=this.opponent();
   if(!stand||!field.field)return;
   if(field.field==='yuun-blast'){
-   const {x,y,metadata}=field,{level,size,damage}=metadata||{};
+   const {x,y,metadata}=field,{level,size,damage,approach}=metadata||{};
    if(state.dead||this.reported||!Number.isInteger(x)||!Number.isInteger(y)||state.map[y]?.[x]==null||
      !Number.isInteger(level)||level<1||level>5||(size!==level&&size!==level+1)||(damage!==level*3&&damage!==level*4))return;
+   if(approach!=null&&(!Number.isInteger(approach.x)||!Number.isInteger(approach.y)||
+     Math.max(Math.abs(approach.x-x),Math.abs(approach.y-y))!==1||!yuunGround(approach.x,approach.y)))return;
    const origin={x,y,name:'유운 비구름'};
    this.applying=true;
    try{
     martialFx('burst',origin);burst(x,y,'#a8c5d7',16,.8);
-    applyYuunBlast(stand,origin,martialSmokeCells(origin,size,'cloud'),level);
+    applyYuunBlast(stand,origin,martialSmokeCells(origin,size,'cloud',approach),level);
     VisibilityService.compute();
    }finally{this.applying=false}
    updateAll();return;
