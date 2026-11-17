@@ -9,7 +9,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='smoke'){
   const {size,damage}=martialSmokePower(p,n);
   v.desc=form==='cloud'
-   ?`사거리 ${YUUN_RANGE}칸. ${size}×${size} 연막이 턴당 최대 ${YUUN_SPEED}칸 이동하며 적에게 약화 2턴을 건다. 벽에 막히거나 목표에 닿으면 폭발해 피해 ${yuunDamage(n)}와 ${yuunDebuffs(n).map(([key,turns])=>STATUS_META57[key].label+' '+turns+'턴').join(' · ')} 효과를 주고 시전자가 폭발 지점으로 이동한다.`
+   ?`사거리 ${YUUN_RANGE}칸. ${size}×${size} 연막이 턴당 최대 ${YUUN_SPEED}칸 이동하며 적에게 약화 2턴을 건다. 벽에 부딪힌 칸이나 목표 칸에서 폭발해 피해 ${yuunDamage(n)}와 ${yuunDebuffs(n).map(([key,turns])=>STATUS_META57[key].label+' '+turns+'턴').join(' · ')} 효과를 주고 시전자는 비구름이 마지막으로 통과한 칸으로 이동한다.`
    :`${form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} 4칸 안에 던져 ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
  }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
@@ -138,13 +138,14 @@ function martialSmokePower(actor,level){
  const infiltrator=actor.classId==='infiltrator';
  return {size:level+Number(infiltrator),damage:level*(infiltrator?4:3)};
 }
-function martialSmokeCells(center,size,form){
+function martialSmokeCells(center,size,form,approach=null){
  const offset=Math.floor((size-1)/2),randomOffset=form!=='cloud'&&size%2===0;
  const ox=offset+(randomOffset?rand(0,1):0),oy=offset+(randomOffset?rand(0,1):0),cells=[];
  for(let dy=0;dy<size;dy++)for(let dx=0;dx<size;dx++){
   const x=center.x+dx-ox,y=center.y+dy-oy;
   if(x>=0&&y>=0&&x<COLS&&y<ROWS&&!tileBlocksSight(state.map[y][x])&&
-    combatLineCheckR8(center.x,center.y,x,y,{units:false,ignoreClouds:true}).ok)cells.push({x,y});
+    combatLineCheckR8(center.x,center.y,x,y,{units:false,ignoreClouds:true}).ok&&
+    (!approach||combatLineCheckR8(approach.x,approach.y,x,y,{units:false,ignoreClouds:true}).ok))cells.push({x,y});
  }
  return cells;
 }
@@ -191,7 +192,7 @@ function spawnYuun(actor,level,path){
  const field={x:actor.x,y:actor.y,kind:'smoke',ttl:1,martialSmoke:true,smokeForm:'cloud',
   yuun:{ownerId:actor===state.player?'player':combatantId(actor),level,size,route,lastTurn:state.turn+Number(actor===state.player)}};
  state.tempFields.push(field);
- if(!yuunGround(first.x,first.y)){detonateYuun(field);return;}
+ if(!yuunGround(first.x,first.y)){detonateYuun(field,first);return;}
  Object.assign(field,first);
  if(!route.length)field.yuun.lastTurn=state.turn-Number(actor!==state.player);
  syncYuunSmoke(field,actor);
@@ -208,17 +209,18 @@ function applyYuunBlast(source,origin,cells,level){
   martialCheckDeath(target,origin);
  }
 }
-function detonateYuun(field){
+function detonateYuun(field,impact=field){
  const run=state,{x,y,yuun:data}=field,actor=yuunOwner(field);
  field.ttl=0;
  state.tempFields=state.tempFields.filter(f=>f!==field);
  syncSmokeEntry(false);
  if(!(actor?.hp>0)||actor.deathProcessed57||state.dead||state.victory)return;
- const origin={x,y,name:'유운 비구름'},cells=martialSmokeCells(origin,data.size,'cloud');
- martialFx('burst',origin);burst(x,y,'#a8c5d7',16,.8);
- alertNearby(x,y,8,'explosion',yuunDamage(data.level));
+ const origin={x:impact.x,y:impact.y,name:'유운 비구름'},approach=impact===field?null:{x,y};
+ const cells=martialSmokeCells(origin,data.size,'cloud',approach);
+ martialFx('burst',origin);burst(origin.x,origin.y,'#a8c5d7',16,.8);
+ alertNearby(origin.x,origin.y,8,'explosion',yuunDamage(data.level));
  addLog(`${actor.name} · 유운 폭발`);
- if(state.duel&&actor===state.player)Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level)}});
+ if(state.duel&&actor===state.player)Duel.send({kind:'field',field:'yuun-blast',x:origin.x,y:origin.y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level),approach}});
  applyYuunBlast(actor,origin,cells,data.level);
  if(state!==run||state.dead||state.victory||!(actor.hp>0)||actor.deathProcessed57||(actor.x===x&&actor.y===y))return;
  if(actor===state.player){
@@ -239,7 +241,7 @@ function tickYuun(){
   data.lastTurn=state.turn;
   for(let step=0;step<YUUN_SPEED;step++){
    const next=data.route.shift();
-   if(!next||!yuunGround(next.x,next.y)){detonateYuun(field);break;}
+   if(!next||!yuunGround(next.x,next.y)){detonateYuun(field,next??field);break;}
    Object.assign(field,next);
    syncYuunSmoke(field,actor);
    if(!data.route.length){detonateYuun(field);break;}
