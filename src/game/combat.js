@@ -9,7 +9,7 @@ function martialPresentation(id,info,p=state.player){
  if(family==='smoke'){
   const {size,damage}=martialSmokePower(p,n);
   v.desc=form==='cloud'
-   ?`사거리 ${YUUN_RANGE}칸. ${size}×${size} 연막이 턴당 최대 ${YUUN_SPEED}칸 이동하며 적에게 약화 2턴을 건다. 벽에 막히거나 목표에 닿으면 폭발해 피해 ${yuunDamage(n)}와 강한 밀치기, ${yuunDebuffs(n).map(([key,turns])=>(key==='stun'?'기절':STATUS_META57[key].label)+' '+turns+'턴').join(' · ')}을 주고 시전자가 폭발 지점으로 이동한다.`
+   ?`사거리 ${YUUN_RANGE}칸. ${size}×${size} 연막이 턴당 최대 ${YUUN_SPEED}칸 이동하며 적에게 약화 2턴을 건다. 벽에 막히거나 목표에 닿으면 폭발해 피해 ${yuunDamage(n)}와 ${yuunDebuffs(n).map(([key,turns])=>STATUS_META57[key].label+' '+turns+'턴').join(' · ')} 효과를 주고 시전자가 폭발 지점으로 이동한다.`
    :`${form==='burst'?'연기 속에 불씨를 감춰 때를 기다린다.':'짙은 연기를 흩뿌려 적의 눈을 가린다.'} 4칸 안에 던져 ${size}×${size}칸에 피해 ${damage}을 주고, ${MARTIAL_RULES.smokeTurns}턴 동안 연막을 남긴다. 사선이 연막이나 증기 두 칸을 지나면 차단된다. ${form==='burst'?`사라지기 1턴 전 붉게 물든 뒤 폭발해, 연막 안의 적과 자신에게 피해 ${damage}을 준다.`:''}`;
  }
  if(id==='ghost'){if(form==='darkcloud'){v.type='passive';v.cost=0;v.desc=`검은 연기 사이로 스며들어 기척을 감춘다. 연막 밖에서 안으로 들어설 때 ${ghostDuration(n)*2}턴 동안 은신한다. 공격하면 모습을 드러낸다.`}else v.desc=`${form==='assassin'?'그림자에 숨어 적의 허점을 노린다.':'귀신의 그림자처럼 몸을 감춘다.'} ${ghostDuration(n)}턴 동안 은신하고 회피를 높여, 적의 감지와 추적·직접 조준을 피한다. 공격하면 은신이 풀린다.${form==='assassin'?` 숨어서 가한 첫 공격이 적중하면 적을 ${MARTIAL_RULES.assassinTurns}턴 동안 약화시킨다.`:''}`}
@@ -151,8 +151,8 @@ function martialSmokeCells(center,size,form){
 const YUUN_RANGE=8,YUUN_SPEED=2;
 function yuunDamage(level){return level*3}
 function yuunDebuffs(level){
- const duration=level+2;
- return [['stun',level>=5?2:1],['poison',level>=5?2:1],['upset',duration],['drunk',duration],['skillSeal',duration]].slice(0,level);
+ const duration=level+4;
+ return [['poison',level>=5?3:2],['upset',duration],['drunk',duration],['skillSeal',duration]].slice(0,level);
 }
 function yuunGround(x,y){
  const tile=state.map[y]?.[x];
@@ -197,25 +197,14 @@ function spawnYuun(actor,level,path){
  syncYuunSmoke(field,actor);
  projectileFX(actor.x,actor.y,first.x,first.y,'#a8c5d7');martialFx('cloud',field);
 }
-function applyYuunBlast(source,origin,cells,level,size){
+function applyYuunBlast(source,origin,cells,level){
  const run=state,damage=yuunDamage(level);
  for(const target of martialTargets(source)){
   if(state!==run||state.dead||state.victory)break;
   if(target.duelOpponent||target.duelProxy||!cells.some(c=>monCovers(target,c.x,c.y)))continue;
   const dealt=damageEntity(target,damage,source,null,{delivery:'area'});
   if(dealt>0)floatText(target.x,target.y,'-'+dealt,'#a8c5d7',13);
-  if(target.hp>0)for(const [key,turns] of yuunDebuffs(level)){
-   if(key!=='stun')applyCombatStatus(target,key,turns,1,{source});
-   else if(target===state.player)applyHostileStatus(key,turns,1,{stagger:true});
-   else applyMartialControl1005(target,turns);
-  }
-  if(target.hp>0){
-   const dx=Math.sign(origin.x-source.x),dy=Math.sign(origin.y-source.y);
-   const pushOrigin=target.x===origin.x&&target.y===origin.y
-    ? {x:origin.x-(dx||Number(!dy)),y:origin.y-dy}
-    : origin;
-   resolveForcedMovement57(target,pushOrigin,size+2,{mode:'push',hostile:true,creditPlayer:source===state.player});
-  }
+  if(target.hp>0)for(const [key,turns] of yuunDebuffs(level))applyCombatStatus(target,key,turns,1,{source});
   martialCheckDeath(target,origin);
  }
 }
@@ -230,7 +219,7 @@ function detonateYuun(field){
  alertNearby(x,y,8,'explosion',yuunDamage(data.level));
  addLog(`${actor.name} · 유운 폭발`);
  if(state.duel&&actor===state.player)Duel.send({kind:'field',field:'yuun-blast',x,y,metadata:{level:data.level,size:data.size,damage:yuunDamage(data.level)}});
- applyYuunBlast(actor,origin,cells,data.level,data.size);
+ applyYuunBlast(actor,origin,cells,data.level);
  if(state!==run||state.dead||state.victory||!(actor.hp>0)||actor.deathProcessed57||(actor.x===x&&actor.y===y))return;
  if(actor===state.player){
   if(playerTransferLandingSafe57(x,y)&&resolvePlayerLanding57(x,y,{cause:'yuun',entry:false,resetVisual:true}).moved){
@@ -362,8 +351,9 @@ function combatStatusRows(actor){
  for(const [field,meta]of Object.entries(ACTOR_STATUS_MARKS)){const status=actor[field],turns=meta.turnsField?Math.max(0,Number(status?.[meta.turnsField])||0):null;if(status&&(turns===null||turns>0))rows.push({key:meta.key,label:meta.label,color:meta.color,glyph:meta.glyph57,turns});}
  return rows;
 }
+const UPSET_COST_MULTIPLIER={move:1.6,attack:1.35};
 function applyPlayerDebuffActionCost(kind,cost){
-  let out=Number(cost)||1;if(state?.status?.upset>0)out*=kind==='move'?1.45:1.20;return out
+  let out=Number(cost)||1;if(state?.status?.upset>0)out*=kind==='move'?UPSET_COST_MULTIPLIER.move:UPSET_COST_MULTIPLIER.attack;return out
 }
 function playerDebuffRows(){
   if(!state?.status)return[];const s=state.status,rows=[];
@@ -372,7 +362,7 @@ function playerDebuffRows(){
   if(s.bleed>0)rows.push({key:'bleed',label:'출혈',turns:s.bleed,effect:`최대·손실 HP 비례 · 다음 피해 ${combatDebuffDamage(state.player,'bleed')}`});
   if(s.weaken>0)rows.push({key:'weaken',label:'쇠약',turns:s.weaken,effect:'현재 ATK ×0.80 · DEF ×0.75 · EVA ×0.80'});
   if(s.stun>0)rows.push({key:'stun',label:'기절',turns:s.stun,effect:'다음 입력 행동권 상실 · 적 턴은 정상 진행'});
-  if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:'현재 이동비용 ×1.45 · 공격비용 ×1.20'});
+  if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:`현재 이동비용 ×${UPSET_COST_MULTIPLIER.move.toFixed(2)} · 공격비용 ×${UPSET_COST_MULTIPLIER.attack.toFixed(2)}`});
   for(const f of state.tempFields||[])if(sealingWardAffects(f,state.player))rows.push({key:'sealingWard',color:'#c79ae4',label:'봉인진',turns:f.ttl,effect:'진 안 이동 가능 · 경계 밖 자발적 이동·점멸 불가 · 밀쳐져 나가면 해제'});
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
@@ -648,7 +638,7 @@ function applyWeaponBrandHit(actor,target,damage,contact=entityFootprintCells57(
  else if(elem==='grass'&&globalThis.__MANRU_RANDOM57__()<.32)applyCombatStatus(target,'poison',3,1,{source:actor});
  else if(elem==='earth'){hurt(target,3);if(target.hp>0&&globalThis.__MANRU_RANDOM57__()<.25)resolveForcedMovement57(target,actor,1,{mode:'push',hostile:true,creditPlayer:entityFaction(actor)==='player'})}
 }
-function finishMartialStrike(mon,target,result,ready,stealth,ctx={}){if(mon.equipmentActor105&&ctx.delivery==='area')return;if(!mon.martialActor105){if(mon.weapon?.focusChain&&Number.isFinite(mon.focus)&&Number.isFinite(mon.maxFocus))equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted&&(mon.weapon||mon.upset>0)){const cost=weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0));mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,cost-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(result.hit&&result.damage>0&&mon.weapon){equipmentHit105(mon,target);}return}if(mon.martialActor105){equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted){mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,weaponActionCost(mon.weapon)*(mon.upset>0?1.2:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0))-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(mon.martialStatus105)mon.martialStatus105.stealth=0;if(result.hit&&result.damage>0){equipmentHit105(mon,target);if(target===state.player&&target.hp<=0)die(mon.name);mon.strongReady=0;if(stealth&&martialFormOf('ghost',mon)==='assassin')(target===state.player?applyHostileStatus('weaken',MARTIAL_RULES.assassinTurns,1):setMonsterWeakened(target,MARTIAL_RULES.assassinTurns));if(ready&&martialFormOf('strong',mon)==='drive')resolveDrive(target,ready,mon)}syncMartialActorStats(mon);}}
+function finishMartialStrike(mon,target,result,ready,stealth,ctx={}){if(mon.equipmentActor105&&ctx.delivery==='area')return;if(!mon.martialActor105){if(mon.weapon?.focusChain&&Number.isFinite(mon.focus)&&Number.isFinite(mon.maxFocus))equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted&&(mon.weapon||mon.upset>0)){const cost=weaponActionCost(mon.weapon)*(mon.upset>0?UPSET_COST_MULTIPLIER.attack:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0));mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,cost-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(result.hit&&result.damage>0&&mon.weapon){equipmentHit105(mon,target);}return}if(mon.martialActor105){equipmentFocusChain105(mon,result.hit&&result.damage>0);if(result.attempted){mon.weaponCostCarry105=(mon.weaponCostCarry105||0)+Math.max(0,weaponActionCost(mon.weapon)*(mon.upset>0?UPSET_COST_MULTIPLIER.attack:1)*(1+.08*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy',mon)||0))-1);mon.weaponRecovery105=Math.floor(mon.weaponCostCarry105);mon.weaponCostCarry105-=mon.weaponRecovery105;}if(mon.martialStatus105)mon.martialStatus105.stealth=0;if(result.hit&&result.damage>0){equipmentHit105(mon,target);if(target===state.player&&target.hp<=0)die(mon.name);mon.strongReady=0;if(stealth&&martialFormOf('ghost',mon)==='assassin')(target===state.player?applyHostileStatus('weaken',MARTIAL_RULES.assassinTurns,1):setMonsterWeakened(target,MARTIAL_RULES.assassinTurns));if(ready&&martialFormOf('strong',mon)==='drive')resolveDrive(target,ready,mon)}syncMartialActorStats(mon);}}
 function resolveCombatIllness(target){
  if(!target||target===state.player||target.hp<=0)return 0;const source=target.illnessSource105;target.illness105=0;target.illnessSource105=null;
  const damage=damageEntity(target,STATUS_META57.illness.monsterDamage57,source);if(damage>0){floatText(target.x,target.y,`중병 -${damage}`,'#c892d5',13);addLog(`${target.name}의 중병이 발현되어 ${damage} 피해를 입었다.`);}if(target.hp<=0)killMonster(target);return damage;

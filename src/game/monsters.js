@@ -406,7 +406,7 @@ function moveMonsterStep(mon,x,y,opts={}){
  if(palaceTideRisk(mon,x,y,1))return false;
  const bounds=opts.movementBounds||(mon.summonOwner105==='player'&&entityDistance57(mon,state.player)<=2?{owner:state.player,radius:2}:null);if(bounds&&entityDistanceAt(mon,x,y,bounds.owner)>bounds.radius)return false;
  if(!canMonsterStep(mon,mon.x,mon.y,x,y)&&!(opts.movementIgnore&&yieldMonsterSpace(mon,x,y,opts)))return false;
- const cost=(mon.upset>0?1.45:1)*(1+.12*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding',mon)||0));if(cost>1){mon.movementCostCarry105=(mon.movementCostCarry105||0)+cost-1;if(mon.movementCostCarry105>=1){mon.movementCostCarry105-=1;return false}}
+ const cost=(mon.upset>0?UPSET_COST_MULTIPLIER.move:1)*(1+.12*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('binding',mon)||0));if(cost>1){mon.movementCostCarry105=(mon.movementCostCarry105||0)+cost-1;if(mon.movementCostCarry105>=1){mon.movementCostCarry105-=1;return false}}
  const ox=mon.x,oy=mon.y;
  OccupancyService.move(mon,x,y);mon.facing57={x:Math.sign(x-ox),y:Math.sign(y-oy)};
  if(mon.goldTrail&&state.map[oy][ox]===TT.FLOOR)RuntimeTerrainOwner.mutate(ox,oy,TT.GOLD,{source:'gold-trail'});
