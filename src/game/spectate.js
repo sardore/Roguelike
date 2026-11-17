@@ -193,10 +193,11 @@ const Spectate={
      const cells=tempFieldCells57(field).filter(visible);
      if(!cells.length)return [];
      const anchor=visible(field)?field:cells[0];
-     return [{...field,x:anchor.x,y:anchor.y,cells,...(field.segments105?{segments105:field.segments105.filter(visible)}:{})}];
+     const {yuun,...publicField}=field;
+     return [{...publicField,x:anchor.x,y:anchor.y,cells,...(field.segments105?{segments105:field.segments105.filter(visible)}:{})}];
     });
    }else if(key==='monsters'){
-    out.set[key]=list.filter(isEntityObservableToPlayer57).map(mon=>mon.yuun?{...mon,yuun:{size:mon.yuun.size}}:mon);
+    out.set[key]=list.filter(isEntityObservableToPlayer57);
    }else out.set[key]=list.filter(e=>e&&Number.isFinite(e.x)&&Number.isFinite(e.y)&&remembered(e));
   }
   out.set.canalWaterway=canalWaterwayCells().filter(remembered);
