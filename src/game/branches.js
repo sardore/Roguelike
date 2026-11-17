@@ -951,6 +951,33 @@ function mountainHiveDamaged(mon){
  for(const[dx,dy]of DIRS8){const def=MONSTERS.find(d=>d.name==='벌떼');if(!def)return null;const bee=scaledMonster(def,mon.debugFloor57||branchCombatFloor());Object.assign(bee,{x:mon.x+dx,y:mon.y+dy,hiveOwner105:owner,alerted:true,spawnProvenance57:'summon'});inheritCombatFaction57(bee,mon);if(!PlacementService.monsterCanStand(bee,bee.x,bee.y)||!OccupancyService.addMonster(bee))continue;playSummonArrival(mon,bee);floatText(mon.x,mon.y,'벌떼!','#e4bd65',11);return bee;}
 }
 function mountainOutdoor(pos){return !!state?.branchTerrain105?.mountainVersion105&&!state.branchTerrain105.buildings.some(b=>pos.x>b.x&&pos.y>b.y&&pos.x<b.x+b.w-1&&pos.y<b.y+b.h-1)}
+function paintStockadeSummit(b,put,height){
+ const mid=b.w>>1;
+ function fill(left,top,right,bottom,tile,surface){
+  for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++)put(b.x+x,b.y+y,tile,surface,height);
+ }
+ // Both wings connect the lower court to the path behind the central stone store.
+ fill(1,1,b.w-2,b.h-2,TT.WALL,'ruinMasonry');
+ fill(9,12,17,17,TT.FLOOR,'rainPavilion');
+ fill(2,10,10,14,TT.FLOOR,'wetSlate');
+ fill(16,10,24,14,TT.FLOOR,'wetSlate');
+ fill(3,5,7,11,TT.FLOOR,'rainPavilion');
+ fill(19,5,23,11,TT.FLOOR,'rainPavilion');
+ fill(3,5,23,7,TT.FLOOR,'wetSlate');
+ fill(10,2,16,5,TT.FLOOR,'rainPavilion');
+ // Two narrow service passages reconnect the wings to the north gallery.
+ fill(4,2,4,5,TT.FLOOR,'wetSlate');
+ fill(4,2,10,2,TT.FLOOR,'wetSlate');
+ fill(22,2,22,5,TT.FLOOR,'wetSlate');
+ fill(16,2,22,2,TT.FLOOR,'wetSlate');
+ fill(10,13,10,13,TT.DOOR,'wetSlate');
+ fill(16,13,16,13,TT.DOOR,'wetSlate');
+ for(const [x,y,tile] of [
+  [2,11,TT.CRATE],[24,11,TT.RACK],[3,7,TT.JAR],[23,7,TT.BENCH],
+  [11,3,TT.LANTERN_POST],[15,3,TT.LANTERN_POST],[mid-2,16,TT.LANTERN_POST],[mid+2,16,TT.LANTERN_POST],
+ ])fill(x,y,x,y,tile,'rainPavilion');
+ b.arena={x:b.x+9,y:b.y+12,w:9,h:6};
+}
 function mountainFort(b,put,height,rnd,black){
  const level=state.branchContext105.level,profile=black?(level===1?'gunwings':'frostshrine'):(level===1?'courtyards':'barracks');
  const surface=black?'ironstone':'wood',nx=6+Math.floor(rnd()*2),ny=5+Math.floor(rnd()*2),rooms=[],edges=[],visited=new Set(),stack=[0];
@@ -1038,53 +1065,252 @@ function mountainBossReward(mon){
  addLog('흑산 설귀 격파. 얼음 속에서 흑산 목령인이 떨어졌다.');burst(mon.x,mon.y,'#d3e9e3',22,.8);
 }
 function buildMountainBranch(id,level){
- const def=BRANCH_DEFS105[id],m=state.map,t=state.branchTerrain105,black=id==='black';
- Object.assign(t,{mountainVersion105:2,layoutVersion:10,buildings:[],contours:[],districtsMountain105:[],routes105:[],ramps:{}});
+ const def=BRANCH_DEFS105[id],m=state.map,t=state.branchTerrain105,black=id==='black',oldGrowth=id==='stockade'&&level===2;
+ const layoutVersion=oldGrowth?12:10;
+ Object.assign(t,{mountainVersion105:2,layoutVersion,buildings:[],contours:[],districtsMountain105:[],routes105:[],ramps:{}});
+ const stream=new Map(),ruins=new Map(),routeCore=new Set();
+ const shelters=[
+  {label:'곡괭이 창고',rows:['  #####  ',' ##...## ','##.....##','#......J#','#......C#','####+####']},
+  {label:'무너진 산문',rows:['  ## ##  ',' ##   ## ',' #.. ..# ','##......#','#P......#','###.+.###']},
+  {label:'빗물 대피소',rows:['   ######',' ###....#','##......#','#.......#','#B.....L#','####+####']},
+ ];
+ const hollow=oldGrowth?{x:COLS>>1,y:Math.round(ROWS*.54),width:8}:null;
+ const bridgeCells=new Set();
+ const gorge=(x,y)=>oldGrowth&&Math.abs(x-hollow.x)<=hollow.width;
  const land=Array.from({length:ROWS},()=>Array(COLS).fill(false)),owner=Array.from({length:ROWS},()=>Array(COLS).fill(-1)),roads=new Set(),gaps=new Set(),reserved=new Set();
  const put=(x,y,tile,s='earth',h=0)=>{if(x<1||y<1||x>=COLS-1||y>=ROWS-1)return;if(terrainLayerCatalog58().overlays.has(tile)&&!terrainSurface58(terrainBaseTile58(x,y)))setTerrainTile58(m,x,y,TT.FLOOR);setTerrainTile58(m,x,y,tile);t.surfaces[k(x,y)]=s;t.heights[y][x]=h;delete t.props[k(x,y)];};
  const rnd=()=>globalThis.__MANRU_RANDOM57__(),mirror=rnd()<.5;
  const cuts=[76,65,54,43],bands=Array.from({length:5},(_,i)=>({i,top:i===4?4:cuts[i]+1,bottom:i===0?ROWS-4:cuts[i-1]-1}));
  const kinds=['meadow','trail','scree','bamboo','garden','forest','deadwood','scree','garden','forest','bamboo','trail','scree','fort','forest'];
- const nodes=bands.flatMap(b=>[0,1,2].map(j=>{const i=b.i*3+j,n={i,x:Math.round(COLS*[.22,.5,.78][j])+Math.floor(rnd()*7)-3,y:Math.floor((b.top+b.bottom)/2),kind:black?({meadow:'deadwood',garden:'scree',trail:'trail',forest:'forest',bamboo:'bamboo'}[kinds[i]]||kinds[i]):kinds[i],height:Math.min(3,b.i),band:b.i};if(mirror)n.x=COLS-1-n.x;t.districtsMountain105.push(n);return n}));
- // Keep the two upper approach nodes outside the declared 47-cell fortress.
- for(const n of nodes.filter(n=>n.band===4&&n.i!==13))n.x=n.x<nodes[13].x?Math.min(n.x,nodes[13].x-28):Math.max(n.x,nodes[13].x+28);
- t.ascentLines105=cuts.map((y,i)=>{const ys=[],cells=[];let off=Math.floor(rnd()*3)-1,remaining=0;for(let x=0;x<COLS;x++){if(!remaining){let step=rnd()<.5?-1:1;if(off>=1)step=-1;if(off<=-1)step=1;off+=step;remaining=3+Math.floor(rnd()*4)}ys.push(y+off);cells.push({x,y:y+off});remaining--;}for(let x=1;x<COLS;x++)if(ys[x]!==ys[x-1])cells.push({x,y:ys[x-1]});return {y,ys,cells,lowerBand:i,openings:[Math.floor(COLS*.25)+Math.floor(rnd()*23)-11,Math.floor(COLS*.73)+Math.floor(rnd()*23)-11].map(x=>({x,y:ys[x],width:2+Math.floor(rnd()*2)}))}});
- const openingAt=(x,y)=>t.ascentLines105.some(line=>line.cells.some(c=>c.x===x&&c.y===y)&&line.openings.some(g=>x>=g.x&&x<g.x+g.width));
- const cliffKeys=new Set(t.ascentLines105.flatMap(l=>l.cells.map(c=>k(c.x,c.y))));const cliffLine=(x,y)=>cliffKeys.has(k(x,y));
- const bandTop=(b,x)=>b===4?4:t.ascentLines105[b].ys[x]+1,bandBottom=(b,x)=>b===0?ROWS-4:t.ascentLines105[b-1].ys[x]-1;
- // Curved terraces are produced before routes: each horizontal run is at most seven cells.
- for(const b of bands)for(let x=5;x<COLS-5;x++)for(let y=bandTop(b.i,x);y<=bandBottom(b.i,x);y++){
-  const left=5+Math.floor(3+3*Math.sin(y*.53+level)),right=COLS-6-Math.floor(3+3*Math.cos(y*.41+level));if(x<left||x>right||cliffLine(x,y))continue;
-  const n=nodes.filter(n=>n.band===b.i).sort((a,b)=>Math.abs(x-a.x+5*Math.sin(y*.55+a.i*2+level))-Math.abs(x-b.x+5*Math.sin(y*.55+b.i*2+level)))[0];land[y][x]=true;owner[y][x]=n.i;t.heights[y][x]=n.height;
+ const nodes=bands.flatMap(b=>[0,1,2].map(j=>{const i=b.i*3+j,n={i,x:Math.round(COLS*(oldGrowth?[.29,.5,.71]:[.22,.5,.78])[j])+Math.floor(rnd()*7)-3,y:Math.floor((b.top+b.bottom)/2),kind:black?({meadow:'deadwood',garden:'scree',trail:'trail',forest:'forest',bamboo:'bamboo'}[kinds[i]]||kinds[i]):kinds[i],height:Math.min(3,b.i),band:b.i};if(mirror)n.x=COLS-1-n.x;t.districtsMountain105.push(n);return n}));
+ if(oldGrowth){
+  // Lower switchbacks on one bank, a single crossing, then a long climb on the far bank.
+  const plan=[[10,75],[24,76],[42,75],[40,65],[13,59],[13,44],[43,46],[68,46],
+   [69,59],[72,74],[91,75],[99,61],[99,38],[82,23],[94,26]];
+  const {x:cx,y:cy,width}=hollow;
+  for(const n of nodes){
+   const [x,y]=plan[n.i],jitter=Math.floor(rnd()*5)-2;
+   const xx=x+jitter;
+   n.x=mirror?COLS-1-xx:xx;
+   n.y=n.i===6||n.i===7?cy:y+Math.floor(rnd()*3)-1;
+   n.height=n.i<4?0:n.i<7?1:n.i<12?2:3;
+  }
+  // The gorge runs from the headwater shelf to the lower basin. Its shoulders remain steep
+  // above and below the water, so opening ground at either end cannot bypass the bridge.
+  for(let y=14;y<ROWS-4;y++){
+   const dy=y-cy,bend=Math.round(2.5*Math.sin(dy*.16));
+   const upper=5+Math.max(0,1-Math.abs(dy+13)/13)*5;
+   const lower=5+Math.max(0,1-Math.abs(dy-11)/14)*7;
+   const half=Math.min(dy<0?upper:lower,4+Math.abs(dy)*.52);
+   for(let dx=-Math.ceil(half);dx<=Math.ceil(half);dx++){
+    const x=cx+bend+dx;
+    if(Math.abs(dx)>half+(hash2(x,y,903)-.5)*1.8)continue;
+    const lip=2+Math.floor(dx*.24);
+    stream.set(k(x,y),dy>=lip-1&&dy<=lip+1?'cascade':dy===lip+2?'plunge':'basin');
+   }
+  }
+  t.ascentLines105=[];
+ }else{
+  // Keep the two upper approach nodes outside the declared 47-cell fortress.
+  for(const n of nodes.filter(n=>n.band===4&&n.i!==13))n.x=n.x<nodes[13].x?Math.min(n.x,nodes[13].x-28):Math.max(n.x,nodes[13].x+28);
+  t.ascentLines105=cuts.map((y,i)=>{const ys=[],cells=[];let off=Math.floor(rnd()*3)-1,remaining=0;for(let x=0;x<COLS;x++){if(!remaining){let step=rnd()<.5?-1:1;if(off>=1)step=-1;if(off<=-1)step=1;off+=step;remaining=3+Math.floor(rnd()*4)}ys.push(y+off);cells.push({x,y:y+off});remaining--;}for(let x=1;x<COLS;x++)if(ys[x]!==ys[x-1])cells.push({x,y:ys[x-1]});return {y,ys,cells,lowerBand:i,openings:[Math.floor(COLS*.25)+Math.floor(rnd()*23)-11,Math.floor(COLS*.73)+Math.floor(rnd()*23)-11].map(x=>({x,y:ys[x],width:2+Math.floor(rnd()*2)}))}});
  }
- for(const i of[13,3,7,11]){const n=nodes[i],summit=i===13,w=summit?47:9+(level-1)*2,h=summit?37:7,b={x:n.x-(w>>1),y:n.y-(h>>1),w,h,summit,node:i};const columns=Array.from({length:w},(_,j)=>b.x+j);b.y=Math.min(b.y,Math.min(...columns.map(x=>bandBottom(n.band,x)))-h);b.y=Math.max(b.y,Math.max(...columns.map(x=>bandTop(n.band,x))));b.gate={x:n.x,y:b.y+h-1};t.buildings.push(b);for(let y=b.y;y<b.y+h;y++)for(let x=b.x;x<b.x+w;x++){reserved.add(k(x,y));land[y][x]=true;owner[y][x]=i;t.heights[y][x]=n.height;}n.anchor={x:b.gate.x,y:b.gate.y+1};}
+ const openingAt=(x,y)=>t.ascentLines105.some(line=>line.cells.some(c=>c.x===x&&c.y===y)&&line.openings.some(g=>x>=g.x&&x<g.x+g.width));
+ const cliffKeys=new Set(t.ascentLines105.flatMap(l=>l.cells.map(c=>k(c.x,c.y))));
+ const cliffLine=(x,y)=>cliffKeys.has(k(x,y));
+ const bandTop=(b,x)=>b===4?4:t.ascentLines105[b].ys[x]+1;
+ const bandBottom=(b,x)=>b===0?ROWS-4:t.ascentLines105[b-1].ys[x]-1;
+ if(!oldGrowth){
+  // Curved terraces are produced before routes: each horizontal run is at most seven cells.
+  for(const b of bands)for(let x=5;x<COLS-5;x++)for(let y=bandTop(b.i,x);y<=bandBottom(b.i,x);y++){
+   const left=5+Math.floor(3+3*Math.sin(y*.53+level)),right=COLS-6-Math.floor(3+3*Math.cos(y*.41+level));if(x<left||x>right||cliffLine(x,y))continue;
+   const n=nodes.filter(n=>n.band===b.i).sort((a,b)=>Math.abs(x-a.x+5*Math.sin(y*.55+a.i*2+level))-Math.abs(x-b.x+5*Math.sin(y*.55+b.i*2+level)))[0];land[y][x]=true;owner[y][x]=n.i;t.heights[y][x]=n.height;
+  }
+ }
+ for(const i of [13,3,7,11]){
+  const n=nodes[i],summit=i===13,plan=oldGrowth&&!summit?shelters[[3,7,11].indexOf(i)]:null;
+  const w=summit?(oldGrowth?27:47):plan?plan.rows[0].length:9+(level-1)*2,h=summit?(oldGrowth?19:37):plan?plan.rows.length:7;
+  const b={x:n.x-(w>>1),y:n.y-(h>>1),w,h,summit,node:i};
+  if(oldGrowth){
+   // Roadside huts open onto the route from their south face. The summit is the endpoint.
+   b.y=n.y-h;
+   if(plan){
+    b.plan=plan;
+    const side=i===11?(mirror?1:-1):(mirror?-1:1);
+    const blocksSite=x=>{
+     if(x<4||x+w>=COLS-4||gorge(x,b.y)||gorge(x+w-1,b.y))return true;
+     const gateX=x+(w>>1);
+     if(reserved.has(k(gateX,n.y))||stream.has(k(gateX,n.y)))return true;
+     for(let y=b.y;y<n.y;y++)for(let xx=x;xx<x+w;xx++)if(reserved.has(k(xx,y))||stream.has(k(xx,y)))return true;
+     return nodes.some(q=>{
+      const a=q.anchor||q;
+      return q!==n&&a.x>=x-1&&a.x<=x+w&&a.y>=b.y-1&&a.y<=n.y;
+     });
+    };
+    const center=b.x;
+    const offsets=[side*5,-side*5,side*9,-side*9,side*14,-side*14,side*20,-side*20];
+    b.x=offsets.map(offset=>center+offset).find(x=>!blocksSite(x));
+    if(b.x==null)throw Error('Stockade roadside hut has no site');
+   }
+  }else{
+   const columns=Array.from({length:w},(_,j)=>b.x+j);
+   b.y=Math.min(b.y,Math.min(...columns.map(x=>bandBottom(n.band,x)))-h);
+   b.y=Math.max(b.y,Math.max(...columns.map(x=>bandTop(n.band,x))));
+  }
+  b.gate={x:oldGrowth?b.x+(w>>1):n.x,y:b.y+h-1};
+  t.buildings.push(b);
+  for(let y=b.y;y<b.y+h;y++)for(let x=b.x;x<b.x+w;x++){
+   reserved.add(k(x,y));land[y][x]=true;owner[y][x]=i;t.heights[y][x]=n.height;
+  }
+  n.anchor={x:b.gate.x,y:b.gate.y+1};
+ }
  if(black)nodes[4].kind='garden';for(const n of nodes)n.anchor=n.anchor||{x:n.x,y:n.y};
  // Gate sites are chosen against the declared building footprints, before any route is carved.
  for(const line of t.ascentLines105){const chosen=[];for(const g of line.openings){const xs=Array.from({length:COLS-26},(_,i)=>i+13).filter(x=>chosen.every(v=>Math.abs(v-x)>20)&&Array.from({length:g.width},(_,j)=>x+j).every(xx=>{const y=line.ys[xx];return [-3,-2,-1,0,1,2,3].every(dy=>!reserved.has(k(xx,y+dy)));})).sort((a,b)=>Math.abs(a-g.x)-Math.abs(b-g.x));if(!xs.length)throw Error('Mountain gate footprint unavailable');g.x=xs[0];g.y=line.ys[g.x];chosen.push(g.x);}}
  const extraCliffs=new Set();t.sideCliffs105=[];
- for(let i=0,count=2+Math.floor(rnd()*5);i<count;i++){const band=1+Math.floor(rnd()*3),y=Math.floor((bands[band].top+bands[band].bottom)/2),x=13+Math.floor(rnd()*(COLS-33)),len=3+Math.floor(rnd()*5),cells=Array.from({length:len},(_,j)=>({x:x+j,y}));if(cells.some(c=>reserved.has(k(c.x,c.y))||t.ascentLines105.some(l=>Math.abs(l.ys[c.x]-c.y)<3)||nodes.some(n=>n.anchor.x===c.x&&n.anchor.y===c.y)))continue;for(const c of cells){extraCliffs.add(k(c.x,c.y));land[c.y][c.x]=false;}t.sideCliffs105.push(cells);}
- const edges=[];for(const b of bands){const i=b.i*3;edges.push([i,i+1],[i+1,i+2],[i,i+2]);}
- for(const line of t.ascentLines105)line.openings.forEach((g,j)=>edges.push([line.lowerBand*3+j*2,(line.lowerBand+1)*3+j*2,g]));
- // Every contour is a wall/void cut except its two declared approaches. Routes cannot carve new holes.
+ if(!oldGrowth)for(let i=0,count=2+Math.floor(rnd()*5);i<count;i++){const band=1+Math.floor(rnd()*3),y=Math.floor((bands[band].top+bands[band].bottom)/2),x=13+Math.floor(rnd()*(COLS-33)),len=3+Math.floor(rnd()*5),cells=Array.from({length:len},(_,j)=>({x:x+j,y}));if(cells.some(c=>reserved.has(k(c.x,c.y))||t.ascentLines105.some(l=>Math.abs(l.ys[c.x]-c.y)<3)||nodes.some(n=>n.anchor.x===c.x&&n.anchor.y===c.y)))continue;for(const c of cells){extraCliffs.add(k(c.x,c.y));land[c.y][c.x]=false;}t.sideCliffs105.push(cells);}
+ const edges=[];
+ if(oldGrowth){
+  const order=[0,1,2,3,4,5,6,7,8,9,10,11,12,14,13];
+  for(let i=1;i<order.length;i++){
+   const a=order[i-1],b=order[i];
+   const bend=a===5?[[10,29],[20,14],[37,14],[42,23],[38,34]]:a===8?[[81,60],[81,67]]:null;
+   edges.push([a,b,null,bend?.map(([x,y])=>({x:mirror?COLS-1-x:x,y}))]);
+  }
+ }else{
+  for(const b of bands){const i=b.i*3;edges.push([i,i+1],[i+1,i+2],[i,i+2]);}
+  for(const line of t.ascentLines105)line.openings.forEach((g,j)=>{
+   const lane=j*2;
+   edges.push([line.lowerBand*3+lane,(line.lowerBand+1)*3+lane,g]);
+  });
+ }
+ // Routes cross contours only at their declared approaches.
  const inside=(x,y)=>x>2&&y>2&&x<COLS-3&&y<ROWS-3&&!reserved.has(k(x,y))&&!extraCliffs.has(k(x,y))&&(!cliffLine(x,y)||openingAt(x,y));
+ if(oldGrowth){
+  for(const [a,b] of [[1,2],[5,6],[8,9],[12,14]]){
+   const p=nodes[a].anchor,q=nodes[b].anchor;
+   const x=Math.round((p.x+q.x)/2),y=Math.round((p.y+q.y)/2);
+   if(Math.hypot(p.x-q.x,p.y-q.y)<8)continue;
+   for(const [dx,dy] of [[0,0],[0,1],[1,0],[-1,0],[-1,-1]]){
+    const xx=x+dx,yy=y+dy,key=k(xx,yy);
+    if(!inside(xx,yy)||stream.has(key)||nodes.some(n=>Math.hypot(n.anchor.x-xx,n.anchor.y-yy)<2.5))continue;
+    ruins.set(key,dx===0&&dy===0?TT.WALL:TT.ROCK);
+   }
+  }
+ }
+ const routeCell=(x,y)=>inside(x,y)&&!gorge(x,y)&&!stream.has(k(x,y))&&!ruins.has(k(x,y));
  function route(a,b,seed,withinBand=null){
   const start=k(a.x,a.y),end=k(b.x,b.y),open=[{...a,g:0,f:0}],cost=new Map([[start,0]]),from=new Map(),done=new Set();
   while(open.length){open.sort((a,b)=>b.f-a.f);const q=open.pop(),key=k(q.x,q.y);if(done.has(key))continue;if(key===end){const out=[];let key=end;while(key!==start){out.push(key.split(',').map(Number));key=from.get(key)}out.push([a.x,a.y]);return out.reverse()}done.add(key);
-   for(const[dx,dy]of DIRS8){const x=q.x+dx,y=q.y+dy;if(!inside(x,y)||(withinBand!==null&&(y<bandTop(withinBand,x)||y>bandBottom(withinBand,x)))||(dx&&dy&&(!inside(q.x+dx,q.y)||!inside(q.x,q.y+dy))))continue;const kk=k(x,y),ng=q.g+(dx&&dy?1.4:1)*(land[y][x]?1:1.3)+hash2(x+seed*13,y+seed*7)*.8;if(ng>=(cost.get(kk)??Infinity))continue;cost.set(kk,ng);from.set(kk,key);open.push({x,y,g:ng,f:ng+Math.max(Math.abs(x-b.x),Math.abs(y-b.y))});}
+   for(const[dx,dy]of DIRS8){const x=q.x+dx,y=q.y+dy;if(!routeCell(x,y)||(withinBand!==null&&(y<bandTop(withinBand,x)||y>bandBottom(withinBand,x)))||(dx&&dy&&(!routeCell(q.x+dx,q.y)||!routeCell(q.x,q.y+dy))))continue;const kk=k(x,y),ng=q.g+(dx&&dy?1.4:1)*(land[y][x]?1:1.3)+hash2(x+seed*13,y+seed*7)*.8;if(ng>=(cost.get(kk)??Infinity))continue;cost.set(kk,ng);from.set(kk,key);open.push({x,y,g:ng,f:ng+Math.max(Math.abs(x-b.x),Math.abs(y-b.y))});}
   }throw Error('Mountain route blocked at producer '+JSON.stringify({a,b,withinBand}));
  }
- edges.forEach(([a,b,gate],i)=>{const band=bands[nodes[a].band],detour=!gate&&i%3===2?Array.from({length:COLS-12},(_,j)=>({x:j+6,y:Math.max(band.top+2,bandTop(band.i,j+6)+1)})).filter(q=>inside(q.x,q.y)).sort((p,q)=>Math.abs(p.x-(nodes[a].x+nodes[b].x)/2)-Math.abs(q.x-(nodes[a].x+nodes[b].x)/2))[0]:null,seed=i+level*31,bridge=i===2||i===8;let cells;
-  if(gate){const below={x:gate.x,y:gate.y+2},above={x:gate.x,y:gate.y-2};cells=[...route(nodes[a].anchor,below,seed,nodes[a].band),[gate.x,gate.y+1],[gate.x,gate.y],[gate.x,gate.y-1],...route(above,nodes[b].anchor,seed,nodes[b].band)];}
-  else cells=detour?[...route(nodes[a].anchor,detour,seed,band.i),...route(detour,nodes[b].anchor,seed,band.i).slice(1)]:route(nodes[a].anchor,nodes[b].anchor,seed,band.i);
+ edges.forEach(([a,b,gate,bend],i)=>{const band=bands[nodes[a].band],detour=!oldGrowth&&!gate&&i%3===2?Array.from({length:COLS-12},(_,j)=>({x:j+6,y:Math.max(band.top+2,bandTop(band.i,j+6)+1)})).filter(q=>inside(q.x,q.y)).sort((p,q)=>Math.abs(p.x-(nodes[a].x+nodes[b].x)/2)-Math.abs(q.x-(nodes[a].x+nodes[b].x)/2))[0]:null,seed=i+level*31,bridge=oldGrowth?a===6&&b===7:i===2||i===8;let cells;
+  if(bridge&&oldGrowth){
+   const from=nodes[a].anchor,to=nodes[b].anchor,dx=Math.sign(to.x-from.x);
+   cells=Array.from({length:Math.abs(to.x-from.x)+1},(_,step)=>[from.x+step*dx,from.y]);
+   for(const [x,y] of cells){
+    const key=k(x,y);
+    if(reserved.has(key))throw Error('Stockade bridge overlaps a building');
+    if(gorge(x,y)||stream.has(key)){
+     stream.delete(key);bridgeCells.add(key);gaps.add(key);roads.add(key);
+     owner[y][x]=a;t.heights[y][x]=nodes[a].height;
+    }
+   }
+  }
+  else if(bend){
+   const points=[nodes[a].anchor,...bend,nodes[b].anchor];
+   cells=[];
+   for(let step=1;step<points.length;step++){
+    const segment=route(points[step-1],points[step],seed+step);
+    cells.push(...segment.slice(step===1?0:1));
+   }
+  }
+  else if(gate){const below={x:gate.x,y:gate.y+2},above={x:gate.x,y:gate.y-2};cells=[...route(nodes[a].anchor,below,seed,nodes[a].band),[gate.x,gate.y+1],[gate.x,gate.y],[gate.x,gate.y-1],...route(above,nodes[b].anchor,seed,nodes[b].band)];}
+  else cells=detour?[...route(nodes[a].anchor,detour,seed,band.i),...route(detour,nodes[b].anchor,seed,band.i).slice(1)]:route(nodes[a].anchor,nodes[b].anchor,seed,oldGrowth?null:band.i);
 
-  if(bridge){const c=cells[Math.floor(cells.length*.52)];for(let dy=-3;dy<=3;dy++)for(let dx=-2;dx<=2;dx++){const x=c[0]+dx,y=c[1]+dy;if(inside(x,y)&&t.ascentLines105.every(c=>Math.abs(c.ys[x]-y)>2)){gaps.add(k(x,y));land[y][x]=false}}}
+  if(bridge&&!oldGrowth){const c=cells[Math.floor(cells.length*.52)];for(let dy=-3;dy<=3;dy++)for(let dx=-2;dx<=2;dx++){const x=c[0]+dx,y=c[1]+dy;if(inside(x,y)&&t.ascentLines105.every(c=>Math.abs(c.ys[x]-y)>2)){gaps.add(k(x,y));land[y][x]=false}}}
   t.routes105.push({a,b,cells,bridge});
-  for(let z=0;z<cells.length;z++){const[x,y]=cells[z],n=nodes[a],r=i%3===0?1:0;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(inside(x+dx,y+dy)){const xx=x+dx,yy=y+dy;roads.add(k(xx,yy));if(!gaps.has(k(xx,yy)))land[yy][xx]=true;if(owner[yy][xx]<0){owner[yy][xx]=a;t.heights[yy][xx]=n.height}}if(z){const[px,py]=cells[z-1];if(x!==px&&y!==py){roads.add(k(x,py));if(!gaps.has(k(x,py)))land[py][x]=true;if(owner[py][x]<0){owner[py][x]=a;t.heights[py][x]=n.height}}}}
+  for(let z=0;z<cells.length;z++){const[x,y]=cells[z],n=nodes[a],r=oldGrowth?1:Number(i%3===0);if(oldGrowth)routeCore.add(k(x,y));for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(routeCell(x+dx,y+dy)){const xx=x+dx,yy=y+dy;roads.add(k(xx,yy));if(!gaps.has(k(xx,yy)))land[yy][xx]=true;if(owner[yy][xx]<0){owner[yy][xx]=a;t.heights[yy][xx]=n.height}}if(z){const[px,py]=cells[z-1];if(x!==px&&y!==py){roads.add(k(x,py));if(oldGrowth)routeCore.add(k(x,py));if(!gaps.has(k(x,py)))land[py][x]=true;if(owner[py][x]<0){owner[py][x]=a;t.heights[py][x]=n.height}}}}
  });
+ if(oldGrowth){
+  // Surround the spine with continuous forest shoulders and irregular outcrops.
+  for(const route of t.routes105)for(const [x,y] of route.cells){
+   const radius=4+Math.floor(hash2(x>>2,y>>2,175)*4);
+   for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+    const xx=x+dx,yy=y+dy;
+    if(!inside(xx,yy)||gorge(xx,yy)||dx*dx+dy*dy>radius*radius)continue;
+    land[yy][xx]=true;
+    if(owner[yy][xx]>=0)continue;
+    owner[yy][xx]=route.a;t.heights[yy][xx]=nodes[route.a].height;
+   }
+  }
+ }
+ if(oldGrowth){
+  const {x:centerX,y:centerY}=hollow;
+  const walls=new Set();
+  const approach=t.routes105[Math.floor(rnd()*2)].cells;
+  const [fordX,fordY]=approach[Math.floor(approach.length*(.40+rnd()*.20))];
+  // Rock walls and trees are generated around the wet basin, including the upstream side.
+  for(const [key,kind] of stream){
+   const [x,y]=key.split(',').map(Number);
+   land[y][x]=false;
+   for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){
+    const xx=x+dx,yy=y+dy,bank=k(xx,yy);
+    if(dx*dx+dy*dy>18+hash2(xx,yy,909)*8||!inside(xx,yy)||gorge(xx,yy)||stream.has(bank))continue;
+    land[yy][xx]=true;
+    if(owner[yy][xx]<0){owner[yy][xx]=6;t.heights[yy][xx]=2;}
+   }
+   if(kind!=='cascade')continue;
+   t.heights[y][x]=2;
+   for(const dx of [-1,1])for(let off=1;off<=3;off++){
+    const xx=x+dx*off,bank=k(xx,y);
+    if(!routeCell(xx,y)||roads.has(bank)||!land[y][xx])break;
+    walls.add(bank);
+   }
+  }
+  for(const key of walls)ruins.set(key,TT.WALL);
+  const overlook=nodes[6].anchor;
+  t.landmarks.push({x:overlook.x,y:overlook.y,label:'폭포 벼랑길'},{x:centerX,y:centerY-7,label:'상류 못'},{x:centerX,y:centerY+7,label:'폭포 아래 소'});
+  // A tributary off the entry-bank hillside crosses the lower trail and drains to the gorge.
+  for(let y=fordY-7;y<=Math.min(ROWS-4,fordY+5);y++){
+   const drift=Math.round(Math.sin((y-fordY)*.25)*2);
+   const x=fordX+drift,key=k(x,y);
+   if(!inside(x,y)||gorge(x,y)||stream.has(key)||ruins.has(key))continue;
+   const crossing=roads.has(key);
+   stream.set(key,crossing?'ford':'creek');
+   if(!crossing)land[y][x]=false;
+  }
+  // The stream owns its banks too, including the stretches beyond the trail's forest.
+  for(const [key,kind] of stream){
+   if(kind!=='creek')continue;
+   const [x,y]=key.split(',').map(Number);
+   const district=nodes.reduce((nearest,n)=>Math.hypot(n.anchor.x-x,n.anchor.y-y)<Math.hypot(nearest.anchor.x-x,nearest.anchor.y-y)?n:nearest);
+   for(const [dx,dy] of DIRS8){
+    const xx=x+dx,yy=y+dy,bank=k(xx,yy);
+    if(!inside(xx,yy)||gorge(xx,yy)||stream.has(bank)||gaps.has(bank)||land[yy][xx])continue;
+    land[yy][xx]=true;
+    owner[yy][xx]=district.i;
+    t.heights[yy][xx]=district.height;
+   }
+  }
+  t.landmarks.push({x:fordX,y:fordY,label:'빗물 징검다리'},{x:centerX,y:centerY,label:'폭포 협곡'},{x:centerX,y:centerY,label:'폭포 위 외나무다리'});
+ }
+ // Clearings give the trail room to open up around selected encounters.
+ if(oldGrowth)for(const n of nodes){
+  if(![0,4,7,10,13].includes(n.i))continue;
+  const {x,y}=n.anchor;
+  for(let dy=-3;dy<=3;dy++)for(let dx=-4;dx<=4;dx++){
+   const xx=x+dx,yy=y+dy;
+   if(dx*dx/16+dy*dy/9>1||!inside(xx,yy)||!land[yy][xx]||gaps.has(k(xx,yy))||!routeCell(xx,yy))continue;
+   roads.add(k(xx,yy));
+  }
+ }
  // Districts choose actual terrain and furniture, not just a floor tint.
  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(land[y][x]||roads.has(k(x,y))){
   const n=nodes[owner[y][x]]||nodes[0],s=n.kind==='scree'?'gravel':n.kind==='trail'||n.kind==='fort'?'stone':n.kind==='deadwood'?'peat':n.kind==='garden'?'garden':'earth';
-  put(x,y,gaps.has(k(x,y))?TT.DRAWBRIDGE_DOWN:TT.FLOOR,gaps.has(k(x,y))?'bridge':s,t.heights[y][x]);
+  const key=k(x,y),surface=oldGrowth?(roads.has(key)?'mountainTrail':'oldGrowth'):s;
+  put(x,y,gaps.has(key)?TT.DRAWBRIDGE_DOWN:TT.FLOOR,gaps.has(key)?'bridge':surface,t.heights[y][x]);
  }
  // One south-facing row per real ledge; never a wall along a north/top void edge.
  const faces=[];for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
@@ -1092,21 +1318,120 @@ function buildMountainBranch(id,level){
   if(!land[y][x]||cliffLine(x,y))faces.push({x,y,height:t.heights[y-1][x]});
  }
  const faceKeys=new Set();for(const c of faces){if(faceKeys.has(k(c.x,c.y-1)))continue;put(c.x,c.y,TT.WALL,'cliff',c.height);faceKeys.add(k(c.x,c.y));t.contours.push(c)}
+ if(oldGrowth)for(const [key,tile] of ruins){
+  const [x,y]=key.split(',').map(Number);
+  put(x,y,tile,tile===TT.WALL?'ruinMasonry':'wetSlate',t.heights[y][x]);
+ }
+ if(oldGrowth)for(const [key,kind] of stream){
+  const [x,y]=key.split(',').map(Number),height=t.heights[y][x];
+  if(kind==='ford'){
+   put(x,y,TT.SHALLOW_WATER,'creek',height);
+   put(x,y,TT.STEPPING_STONE,'creek',height);
+  }
+  else if(kind==='culvert')put(x,y,TT.FLOOR,'wetSlate',height);
+  else put(x,y,TT.WATER,['cascade','plunge'].includes(kind)?kind:'creek',height);
+ }
  // Natural cover lives off the reserved network. Cluster noise varies its density and silhouette.
  for(let y=2;y<ROWS-2;y++)for(let x=2;x<COLS-2;x++){
   if(m[y][x]!==TT.FLOOR||reserved.has(k(x,y))||roads.has(k(x,y)))continue;const n=nodes[owner[y][x]],v=hash2(x+level*71,y+43),cluster=hash2((x>>2)+level*5,y>>2),kind=n?.kind||'forest',h=t.heights[y][x],s=t.surfaces[k(x,y)];
+  if(oldGrowth){
+   const edge=DIRS8.some(([dx,dy])=>roads.has(k(x+dx,y+dy)));
+   const lakeBank=DIRS4.some(([dx,dy])=>['basin','cascade'].includes(stream.get(k(x+dx,y+dy))));
+   if(edge||v<(lakeBank?.40:.85)){
+    put(x,y,TT.GARDEN_TREE,s,h);
+    t.props[k(x,y)]=v<(edge?.54:.15)?'tree':'thicket';
+   }else put(x,y,TT.ROCK,s,h);
+   continue;
+  }
   if(kind==='scree'){if(v<(cluster>.52?.46:.12))put(x,y,TT.ROCK,'gravel',h);else if(v<.57)put(x,y,TT.STONE_PATH,'gravel',h);else if(v>.91)put(x,y,TT.LIGHT_GRASS,'gravel',h);}
   else if(kind==='trail'||kind==='fort'){if(v<(cluster>.58?.28:.07))put(x,y,TT.ROCK,s,h);else if(v<.24)put(x,y,TT.STONE_PILLAR,s,h);else if(v>.65)put(x,y,TT.LIGHT_GRASS,s,h);}
   else if(kind==='meadow'||kind==='garden'){if(v<.11){put(x,y,TT.GARDEN_TREE,s,h);t.props[k(x,y)]='tree'}else if(v<.18)put(x,y,TT.ROCK,s,h);else put(x,y,cluster>.25?TT.GRASS:TT.LIGHT_GRASS,s,h);}
   else if(kind==='bamboo'){if(v<.32)put(x,y,TT.BAMBOO,s,h);else if(v<.42)put(x,y,TT.ROCK,s,h);else put(x,y,TT.GRASS,s,h);}
   else if(v<(cluster>.4?.56:.28)){put(x,y,TT.GARDEN_TREE,s,h);t.props[k(x,y)]=kind==='deadwood'&&v<.33?'deadTree':v<.05?'deadTree':'tree'}else if(v<.67)put(x,y,TT.ROCK,s,h);else put(x,y,TT.GRASS,s,h);
  }
- // Preserve grass and paving on routes too, so a route is not always the same bare dirt strip.
- for(const key of roads){const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||reserved.has(key))continue;const n=nodes[owner[y][x]]||nodes[0];if(['meadow','garden','bamboo'].includes(n.kind))put(x,y,TT.LIGHT_GRASS,t.surfaces[key],t.heights[y][x]);else if(['trail','scree','fort'].includes(n.kind))put(x,y,TT.STONE_PATH,t.surfaces[key],t.heights[y][x]);}
- for(const b of t.buildings){const n=nodes[b.node],s=black&&b.summit?'ironstone':'wood';for(let y=b.y;y<b.y+b.h;y++)for(let x=b.x;x<b.x+b.w;x++)put(x,y,y===b.y||y===b.y+b.h-1||x===b.x||x===b.x+b.w-1?TT.WALL:TT.FLOOR,s,n.height);put(b.gate.x,b.gate.y,TT.DOOR,s,n.height);
+ if(oldGrowth){
+  const shelterNode=rnd()<.5?4:10,slateNode=shelterNode===4?10:4;
+  const landmarks=new Map([[0,'빗속 초입'],[shelterNode,'솔비정'],[7,'노송 터널'],[slateNode,'젖은 암반턱']]);
+  const groves=[],lanterns=[];
+
+  const pavilion=nodes[shelterNode].anchor;
+  const shelf=nodes[slateNode].anchor;
+  for(let dy=-2;dy<=2;dy++)for(let dx=-5;dx<=5;dx++){
+   const x=shelf.x+dx,y=shelf.y+dy,key=k(x,y);
+   if(!roads.has(key)||stream.has(key)||gaps.has(key)||hash2(x,y,788)<.24)continue;
+   put(x,y,TT.STONE_PATH,'wetSlate',t.heights[y][x]);
+  }
+  for(let dy=-2;dy<=2;dy++)for(let dx=-3;dx<=3;dx++){
+   const x=pavilion.x+dx,y=pavilion.y+dy,key=k(x,y);
+   if(!roads.has(key)||stream.has(key)||gaps.has(key)||!inside(x,y))continue;
+   const post=Math.abs(dx)===2&&Math.abs(dy)===2&&!routeCore.has(key);
+   const roof=dy<=-1&&Math.abs(dx)<=3;
+   put(x,y,post?TT.STONE_PILLAR:TT.FLOOR,roof?'rainPavilionRoof':'rainPavilion',t.heights[y][x]);
+  }
+  for(const dx of [-2,2]){
+   const x=pavilion.x+dx,y=pavilion.y-1,key=k(x,y);
+   if(t.surfaces[key]!=='rainPavilionRoof'||routeCore.has(key))continue;
+   put(x,y,TT.LANTERN_POST,'rainPavilionRoof',t.heights[y][x]);
+   lanterns.push({x,y});
+  }
+  for(const route of t.routes105){
+   const [x,y]=route.cells[Math.floor(route.cells.length*.42)];
+   const lamp=DIRS4.map(([dx,dy])=>({x:x+dx*2,y:y+dy*2})).find(q=>{
+    const key=k(q.x,q.y);
+    return land[q.y]?.[q.x]&&!roads.has(key)&&!reserved.has(key)&&!gaps.has(key)&&
+     lanterns.every(l=>Math.hypot(q.x-l.x,q.y-l.y)>8);
+   });
+   if(!lamp)continue;
+   put(lamp.x,lamp.y,TT.LANTERN_POST,'oldGrowth',t.heights[lamp.y][lamp.x]);
+   lanterns.push(lamp);
+  }
+  for(const n of nodes){
+   const label=landmarks.get(n.i);
+   if(label)t.landmarks.push({...n.anchor,label});
+   const candidates=[];
+   for(let y=3;y<ROWS-3;y++)for(let x=3;x<COLS-3;x++){
+    const key=k(x,y),tile=m[y][x];
+    if(owner[y][x]!==n.i||roads.has(key)||reserved.has(key)||!land[y][x])continue;
+    if(![TT.GARDEN_TREE,TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS].includes(tile))continue;
+    if(t.props[key]==='deadTree')continue;
+    const roadside=DIRS8.some(([dx,dy])=>roads.has(k(x+dx,y+dy)));
+    const nearTunnel=n.i===7&&Math.abs(y-n.anchor.y)<=3;
+    candidates.push({x,y,score:hash2(x,y,615)+(roadside?.65:0)+(nearTunnel?.55:0)});
+   }
+   candidates.sort((a,b)=>b.score-a.score);
+   let count=0;
+   for(const {x,y} of candidates){
+    if(groves.some(g=>Math.hypot(g.x-x,g.y-y)<(n.i===7?3.2:4.5)))continue;
+    const key=k(x,y);
+    put(x,y,TT.GARDEN_TREE,t.surfaces[key],t.heights[y][x]);
+    t.props[key]='ancientPine';
+    groves.push({x,y});
+    if(++count===(n.i===7?8:5))break;
+   }
+  }
+ }
+ // Preserve district-specific paving on the legacy mountain routes.
+ if(!oldGrowth)for(const key of roads){const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||reserved.has(key))continue;const n=nodes[owner[y][x]]||nodes[0];if(['meadow','garden','bamboo'].includes(n.kind))put(x,y,TT.LIGHT_GRASS,t.surfaces[key],t.heights[y][x]);else if(['trail','scree','fort'].includes(n.kind))put(x,y,TT.STONE_PATH,t.surfaces[key],t.heights[y][x]);}
+ for(const b of t.buildings){
+  if(b.plan){
+   const height=nodes[b.node].height,tiles={'#':TT.WALL,'.':TT.FLOOR,'+':b.node===3?TT.DOOR:TT.FLOOR,J:TT.JAR,C:TT.CRATE,P:TT.STONE_PILLAR,B:TT.BENCH,L:TT.LANTERN_POST};
+   for(const [dy,row] of b.plan.rows.entries())for(const [dx,glyph] of [...row].entries()){
+    const x=b.x+dx,y=b.y+dy;
+    if(glyph===' '){put(x,y,TT.GARDEN_TREE,'oldGrowth',height);t.props[k(x,y)]='thicket';continue;}
+    put(x,y,tiles[glyph],glyph==='#'?({3:'storeMasonry',7:'ruinMasonry',11:'refugeMasonry'}[b.node]):b.node===11?'rainPavilion':'wetSlate',height);
+   }
+   put(b.gate.x,b.gate.y+1,TT.STONE_PATH,'wetSlate',height);
+   state.rooms.push({...b,cx:b.gate.x,cy:b.y+(b.h>>1)});
+   t.landmarks.push({...b.gate,label:b.plan.label});
+   continue;
+  }
+const n=nodes[b.node],s=black&&b.summit?'ironstone':'wood';for(let y=b.y;y<b.y+b.h;y++)for(let x=b.x;x<b.x+b.w;x++)put(x,y,y===b.y||y===b.y+b.h-1||x===b.x||x===b.x+b.w-1?TT.WALL:TT.FLOOR,s,n.height);put(b.gate.x,b.gate.y,TT.DOOR,s,n.height);
   // Door approach is part of the initial declared endpoint, not an after-the-fact repair.
   put(b.gate.x,b.gate.y+1,TT.STONE_PATH,'stone',n.height);
-  if(b.summit)mountainFort(b,put,n.height,rnd,black);
+  if(b.summit){
+   if(oldGrowth)paintStockadeSummit(b,put,n.height);
+   else mountainFort(b,put,n.height,rnd,black);
+  }
   if(!black&&level===2&&!b.summit)put(b.x+b.w-3,b.y+b.h-3,TT.COOKPOT,s,n.height);
   if(!b.summit)for(const[x,y,tile]of[[b.x+2,b.y+2,TT.RUMOR_WEAPON_RACK],[b.x+b.w-3,b.y+2,TT.RUMOR_CHARRED_COUNTER],[b.x+2,b.y+b.h-3,TT.JAR]])put(x,y,tile,s,n.height);
   state.rooms.push({...b,cx:b.gate.x,cy:b.y+(b.h>>1)});t.landmarks.push({x:b.gate.x,y:b.gate.y,label:b.summit?(black?'흑기 정상성':'상봉 산성'):'산길 초소'});
@@ -1118,7 +1443,19 @@ function buildMountainBranch(id,level){
  if(level===1)portal('down',down,`${id}:2`,'up',`${def.name} 2층으로`);else if(!black)portal('black',down,'black:1','up','흑산채 입구');
  Object.assign(state.player,up);state.fixedStart={...up};state.fixedExit={...down};
  if(id==='stockade'&&level===2)mineEnsureEntrance({required:true});
- const reach=ReachabilityService.playerSearch(up,{unlock:true}).cells,candidates=[...reach].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(q=>![TT.VOID,TT.WATER,TT.DOOR,TT.PORTAL,TT.DRAWBRIDGE_DOWN].includes(m[q.y][q.x])&&!tileBlocks(m[q.y][q.x]));
+ const traversal=ReachabilityService.playerSearch(up,{unlock:true}),reach=traversal.cells;
+ let bridgeAudit=null;
+ if(oldGrowth){
+  const exit=k(down.x,down.y);
+  const withoutBridge=ReachabilityService.playerSearch(up,{
+   unlock:true,tileAt:(x,y)=>bridgeCells.has(k(x,y))?TT.VOID:m[y]?.[x],
+  });
+  const distance=traversal.dist.get(exit);
+  if(!Number.isFinite(distance)||distance<195||withoutBridge.cells.has(exit)||bridgeCells.size<15)
+   throw Error('Stockade route must cross the falls: '+JSON.stringify({distance,bridge:bridgeCells.size,bypass:withoutBridge.cells.has(exit)}));
+  bridgeAudit={distance,mandatory:true,span:bridgeCells.size};
+ }
+ const candidates=[...reach].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(q=>![TT.VOID,TT.WATER,TT.DOOR,TT.PORTAL,TT.DRAWBRIDGE_DOWN].includes(m[q.y][q.x])&&!tileBlocks(m[q.y][q.x]));
  const free=q=>!OccupancyService.isOccupied(q.x,q.y)&&entityDistance57(q,up)>5&&state.branchPortals105.every(p=>entityDistance57(q,p)>2);
  const spawn=(name,q,extra={})=>{if(!q)return;const mon=spawnNamed(name,q,{placementMode:'exact',provenance:'subbranch-canonical',...extra});if(!mon)throw Error('Mountain spawn failed '+name);mon.branch105=id;return mon};
  for(const b of t.buildings){for(let i=0;i<(black&&level===2?(b.summit?3:1):(b.summit?12:2));i++){const choices=candidates.filter(q=>free(q)&&q.x>b.x&&q.y>b.y&&q.x<b.x+b.w-1&&q.y<b.y+b.h-1&&(!b.summit||q.y>b.y+10));const q=choices[Math.floor(rnd()*choices.length)];spawn(black?(i%2?'경비 인형 - 포병':'경비 인형 - 보병'):(i%2?'떠돌이 도둑':'객잔 경비병'),q)}
@@ -1128,7 +1465,7 @@ function buildMountainBranch(id,level){
  if(black&&level===2){const boss=spawn('흑산 설귀',{x:crown.gate.x,y:crown.y+5});t.frostBoss105={x:boss.x,y:boss.y};t.enemyBalanceRevision105=1;}
  if(level===2&&!black){PlacementService.placeItem({...clone(MOUNTAIN_REWARDS105[id]),count:2},{x:crown.gate.x+2,y:crown.y+4});t.rewardBalanceRevision105=1;}
  if(state.branchPortals105.some(p=>!reach.has(k(p.x,p.y)))||state.items.some(i=>!reach.has(k(i.x,i.y)))||state.monsters.some(a=>!reach.has(k(a.x,a.y))))throw Error('Mountain production disconnected '+id+level);
- t.audit={layoutVersion:10,districts:nodes.length,links:edges.length,cycles:edges.length-nodes.length+1,buildings:t.buildings.length,reachable:reach.size,monsters:state.monsters.length,ramps:0,solidCliffs:faceKeys.size};state.generationInProgress57=false;BRANCH_TILE_CACHE.clear();
+ t.audit={layoutVersion,districts:nodes.length,links:edges.length,cycles:edges.length-nodes.length+1,buildings:t.buildings.length,reachable:reach.size,monsters:state.monsters.length,ramps:0,solidCliffs:faceKeys.size,...(bridgeAudit?{crossing:bridgeAudit}:{})};state.generationInProgress57=false;BRANCH_TILE_CACHE.clear();
 }
 function mountainLegacyPage(page){
  const c=page.branchContext105;if(!c||!['stockade','black'].includes(c.id)||page.branchTerrain105?.mountainVersion105)return;
