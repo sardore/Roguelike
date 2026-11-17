@@ -79,7 +79,8 @@ function rebalanceCitadelEnemies(page){
   const defs=mon.legendDungeon47?mobDefs47(mon.legendDungeon47):CITADEL_ENEMIES105;
   const def=defs.find(d=>d.name===species)||MONSTERS.find(d=>d.name===species);
   if(!def||!Number.isFinite(oldDepth))continue;
-  const depth=oldDepth+CITADEL_COMBAT_OFFSET105+3,opts={inventory:false,configure:false,debugBattle:false};
+  const oldOffset=mon.citadelBalanceRevision===2?-8:-3;
+  const depth=oldDepth-oldOffset+CITADEL_COMBAT_OFFSET105,opts={inventory:false,configure:false,debugBattle:false};
   const old=scaledMonster(def,oldDepth,opts),fresh=scaledMonster(def,depth,opts);
   if(mon.legendElite47)applyLegendGatekeeper47(old,oldDepth);
   if(mon.legendElite47&&mon.prisoner105?.elite)applyLegendGatekeeper47(fresh,depth);
@@ -2129,8 +2130,8 @@ const LEGEND_THEMES47={
  ward_hammer:{style:'fortress',wall:'#303435',wall2:'#7f8580',floor:'#4b4e48',floor2:'#7c7563',trim:'#a79878',accent:'#baa66e',glow:'#e5d9ac',light:'#d6c991',warm:'#dfac78',materials:['#60665f','#898373','#474b46','#515845'],walls:['성채 방패 부조','수비 군기','성문 쇠장치','파성 전승 벽화'],floordecor:['수비대 모자이크','군마 마모흔','파성 인레이','빗물 자국'],props:['성문 수비대','공성추 받침','쌍방패 장벽','군기 기단'],landmarks:['삼중 진문 대성문','수호장군 거대 갑주상']}
 };
 // Combat depth is derived from the branch graph, never from visit count.
-const CITADEL_COMBAT_OFFSET105=-8;
-const CITADEL_BALANCE_REVISION=2;
+const CITADEL_COMBAT_OFFSET105=-5;
+const CITADEL_BALANCE_REVISION=3;
 const BRANCH_RUN_FIELDS105=new Set(('player,status,turn,playerAgencyTurns57,enemyEnergy,dead,victory,runState57,runEndEffects57,log,runId,runId984,pendingMartialManualChoice,martialManualDrops,martialDamageSequence,martialProgression1005,artifactClaimed46,artifactHistory46,knowledge56,lootHistory47,uniqueKilled,harvested,holy991,story992,coreLoot982,coreLootAudit982,cookbook57,curseClocks991,elementWard74,nextAllyId53,nextCombatantId54,lastDamageAgencyTurn57,lastCombat57,lastCombat991,lastCombatReason57,makgeolliRecoveryTurns57,makgeolliHealHundredths57,drunkBornTurn57,passiveRecoveryUnlocked57,legacyUpgradeMigrated982,saveSeq1004,saveWrittenAt1004,saveVersion1004,saveSchema1004,tutorialSeen59,earlyRecoveryProgress58,earlyProgression58').split(','));
 /* Changhae palace: seeded architectural courts, canonical hydrology and shared combat intents. */
 const PALACE_TIDE105=Object.freeze([0,1,2,3,2,1]);
