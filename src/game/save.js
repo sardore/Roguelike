@@ -86,6 +86,7 @@ const GameState=Object.freeze({
     const profile=source.generationProfile93??source.roomGraph93?.profile??null;
     source.generationProfile93=['braid','offset-halls','cluster-loop'].includes(profile)?profile:null;
     source.tempFields=Array.isArray(source.tempFields)?source.tempFields:[];
+    migrateYuunFields(source);
     for(const key of ['legendDecor47','legendTerrain47','neutralInteractables58','pendingGroundItems57'])source[key]=Array.isArray(source[key])?source[key]:[];
     source.shopIntermission=source.shopIntermission||null;
     source.terrainUnderlayVersion58=2;
