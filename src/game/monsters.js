@@ -1191,7 +1191,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(!center)return false;
     const cells=intentCells(center.x,center.y,1);let broke=0;
     if(!state.floor24)for(const c of cells)if(state.map[c.y][c.x]===TT.WALL&&RuntimeTerrainOwner.mutate(c.x,c.y,TT.FLOOR,{source:'wall-slam'}).ok)broke++;
-    projectileFX(center.x,center.y,center.x,center.y,'#d8c08a',{kind:'slam',life:680});impact(center.x,center.y,'#d8c08a',9);burst(center.x,center.y,'#b8a27a',34,1.5);flash('#f1e2bd',60);alertNearby(center.x,center.y,10,'explosion');
+    projectileFX(center.x,center.y,center.x,center.y,'#d8c08a',{kind:'slam',life:900});impact(center.x,center.y,'#d8c08a',9);burst(center.x,center.y,'#b8a27a',34,1.5);flash('#f1e2bd',60);alertNearby(center.x,center.y,10,'explosion');
     addLog(`${m.name}이 성벽을 내리쳤다.${broke?' 벽이 무너진다.':''}`);
     for(const t of bossAreaTargets(m,cells)){const r=monsterAttacksTarget(m,5,{target:t,delivery:'area',reflectable:false,range:3,origin57:center,skillId:'wall-slam',discoveryEvade:true});if(r.hit&&r.damage>0&&t.hp>0)applyCombatStatus(t,'weaken',3,1,{source:m,stagger:true});if(state.dead)break}
     m.slamCd61=3;return true

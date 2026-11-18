@@ -324,13 +324,35 @@ function drawCombatProjectile(q,pj,now){
   q.restore();return;
  }
  if(pj.kind==='slam'){
-  // Ground-shaking strike: a 3x3 flash, a double shock ring, cracks and flying chips of stone.
-  const cx=pj.x1,cy=pj.y1,seed=Math.floor(pj.start)%997;
-  q.globalAlpha=(1-t)*.38;q.fillStyle='#ecd7a4';q.fillRect(cx-TILE*1.5,cy-TILE*1.5,TILE*3,TILE*3);
-  for(let i=0;i<2;i++){const a=Math.max(0,Math.min(1,(t-i*.12)/(1-i*.12))),r=10+a*TILE*1.9;q.globalAlpha=(1-a)*.85;q.strokeStyle=i?'#8d7b59':'#fff0c8';q.lineWidth=4*(1-a)+1;q.beginPath();q.ellipse(cx,cy,r,r*.62,0,0,Math.PI*2);q.stroke()}
-  q.strokeStyle='#2a2118';q.lineWidth=2;q.globalAlpha=(1-t)*.9;
-  for(let i=0;i<8;i++){const ang=i*Math.PI/4+hash2(i,seed,5)*.5,len=TILE*(.7+hash2(i,seed,9)*.9)*Math.min(1,t*4);q.beginPath();q.moveTo(cx,cy);q.lineTo(cx+Math.cos(ang)*len*.55,cy+Math.sin(ang)*len*.4+3);q.lineTo(cx+Math.cos(ang+.25)*len,cy+Math.sin(ang+.25)*len*.7);q.stroke()}
-  for(let i=0;i<12;i++){const ang=i*.5236+hash2(i,seed,13),dist=t*TILE*(.9+hash2(i,seed,17)*1.3),yy=cy+Math.sin(ang)*dist*.5-Math.sin(t*Math.PI)*TILE*(.7+hash2(i,seed,19));q.globalAlpha=1-t;q.fillStyle=i%2?'#8a7a5c':'#cdb98e';q.fillRect(cx+Math.cos(ang)*dist,yy,5-t*3,5-t*3)}
+  // Heavy ground strike: a hot flash, a pressure ring on the floor, branching cracks, rolling dust, arcing stone chunks and a lingering crater.
+  const cx=pj.x1,cy=pj.y1,seed=Math.floor(pj.start)%997,R=(i,k)=>hash2(i,seed,k),ease=(u)=>1-Math.pow(1-Math.min(1,Math.max(0,u)),3);
+  // crater: a dark dent with a pale broken rim that stays after the blow
+  const crater=t<.16?t/.16:Math.max(0,1-(t-.55)/.45);
+  q.save();q.translate(cx,cy+3);q.scale(1,.6);
+  q.globalAlpha=.5*crater;q.fillStyle='#1a140f';q.beginPath();for(let i=0;i<=14;i++){const a=i/14*Math.PI*2,r=TILE*(.78+R(i,3)*.34);i?q.lineTo(Math.cos(a)*r,Math.sin(a)*r):q.moveTo(Math.cos(a)*r,Math.sin(a)*r)}q.closePath();q.fill();
+  q.globalAlpha=.55*crater;q.strokeStyle='#cdbb94';q.lineWidth=1.6;q.stroke();q.restore();
+  // ground cracks: jagged, forking, drawn dark with a pale edge
+  const grow=ease(t*3.4),fade=t<.55?1:Math.max(0,1-(t-.55)/.45);
+  for(let i=0;i<9;i++){
+   const base=i/9*Math.PI*2+R(i,5)*.5,len=TILE*(1.05+R(i,7)*.75)*grow;let x=cx,y=cy+3,ang=base;const pts=[[x,y]];
+   for(let k=1;k<=5;k++){ang+=(R(i*7+k,11)-.5)*.9;x+=Math.cos(ang)*len/5;y+=Math.sin(ang)*len/5*.62;pts.push([x,y])}
+   q.globalAlpha=.9*fade;q.strokeStyle='#e4d4ac';q.lineWidth=2.6;q.beginPath();pts.forEach(([px,py],j)=>j?q.lineTo(px,py):q.moveTo(px,py));q.stroke();
+   q.strokeStyle='#17110c';q.lineWidth=1.5;q.beginPath();pts.forEach(([px,py],j)=>j?q.lineTo(px,py):q.moveTo(px,py));q.stroke();
+   if(R(i,13)>.35){const[bx,by]=pts[3],ba=base+(R(i,17)>.5?1:-1)*(.7+R(i,19)*.5),bl=len*.38;q.strokeStyle='#17110c';q.lineWidth=1.1;q.beginPath();q.moveTo(bx,by);q.lineTo(bx+Math.cos(ba)*bl,by+Math.sin(ba)*bl*.62);q.stroke()}
+  }
+  // hot flash at the instant of impact
+  if(t<.2){const f=1-t/.2,g=q.createRadialGradient(cx,cy,2,cx,cy,TILE*(1.1+f*.5));g.addColorStop(0,'#fffbe8');g.addColorStop(.4,'#ffd98a99');g.addColorStop(1,'#d9a04a00');q.globalAlpha=f;q.fillStyle=g;q.beginPath();q.arc(cx,cy,TILE*1.6,0,Math.PI*2);q.fill()}
+  // pressure rings travelling along the floor
+  for(let i=0;i<2;i++){const u=ease((t-i*.07)/.55);if(t<i*.07||u>=1)continue;const r=TILE*(.35+u*1.75);q.globalAlpha=(1-u)*.8;q.strokeStyle=i?'#8d7b59':'#fff0c8';q.lineWidth=4*(1-u)+1;q.beginPath();q.ellipse(cx,cy+3,r,r*.58,0,0,Math.PI*2);q.stroke()}
+  // rolling dust puffs
+  for(let i=0;i<16;i++){const delay=R(i,23)*.1,u=ease((t-delay)/.75);if(t<delay||u>=1)continue;const a=i/16*Math.PI*2+R(i,29),d=TILE*(.5+u*(1.1+R(i,31)*.7)),px=cx+Math.cos(a)*d,py=cy+3+Math.sin(a)*d*.55-u*TILE*(.25+R(i,37)*.4),r=TILE*(.2+u*(.4+R(i,41)*.3)),g=q.createRadialGradient(px,py,1,px,py,r);
+   g.addColorStop(0,'#e4d6b2ee');g.addColorStop(.6,'#b4a47ebb');g.addColorStop(1,'#7d6f5200');q.globalAlpha=Math.min(1,(1-u)*1.15);q.fillStyle=g;q.beginPath();q.ellipse(px,py,r,r*.8,0,0,Math.PI*2);q.fill()}
+  // stone shards flung up and back down under gravity, tumbling; each is an irregular jagged piece with a lit facet
+  for(let i=0;i<16;i++){const a=R(i,43)*Math.PI*2,sp=TILE*(.7+R(i,47)*1.4),vy=TILE*(1.5+R(i,53)*1.6),u=Math.min(1,t/.8),px=cx+Math.cos(a)*sp*ease(u),py=cy+3+Math.sin(a)*sp*.5*ease(u)-(vy*u-vy*1.35*u*u),sz=(2.4+R(i,59)*4.2)*(1-u*.35);
+   q.save();q.translate(px,py);q.rotate(R(i,61)*6+u*(5+R(i,67)*7));q.globalAlpha=t>.8?Math.max(0,1-(t-.8)/.2):1;
+   const n=4+Math.floor(R(i,71)*3),pts=[];for(let k=0;k<n;k++){const ang=k/n*Math.PI*2+R(i*5+k,73)*.7,rr=sz*(.45+R(i*5+k,79)*.75);pts.push([Math.cos(ang)*rr,Math.sin(ang)*rr*.85])}
+   q.fillStyle=i%3?'#7d6e52':'#a8977a';q.strokeStyle='#1d160f';q.lineWidth=1;q.beginPath();pts.forEach(([x,y],j)=>j?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();q.stroke();
+   q.fillStyle='#d9c99f';q.beginPath();q.moveTo(pts[0][0],pts[0][1]);q.lineTo(pts[1][0],pts[1][1]);q.lineTo(pts[1][0]*.35,pts[1][1]*.35);q.closePath();q.fill();q.restore()}
   q.restore();return;
  }
  if(pj.kind==='shackle'){
