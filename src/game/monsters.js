@@ -1170,7 +1170,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       }
     }
     else if(I.type==='rod'){
-      const{x,y}=I.data;projectileFX(x,y-7,x,y,'#8fc4ff',{kind:'lightning',life:600});flash('#bcd8ff',90);alertNearby(x,y,8,'explosion');
+      const{x,y}=I.data;projectileFX(x,y-7,x,y,'#8fc4ff',{kind:'lightning',life:900});flash('#bcd8ff',90);alertNearby(x,y,8,'explosion');
       for(const t of targets){const r=monsterAttacksTarget(m,6,{target:t,delivery:'area',reflectable:false,range:3,origin57:{x,y},skillId:'lightning-rod',damageElement105:'shock',atkScale:1.8});if(r.hit&&r.damage>0&&t.hp>0)applyCombatStatus(t,'stun',2,1,{source:m,stagger:true})}
       m.rodLeft61=(I.data.left||1)-1;
     }
