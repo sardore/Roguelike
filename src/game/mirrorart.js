@@ -219,7 +219,28 @@ function glassFurnitureSprite(kind,t,frame=0){
   else if(kind==='reading_table'||kind==='star_table'||kind==='bench'){const top=kind==='bench'?base-12:base-18;R(SD,4,top+4,4,base-top-6);R(SD,W-8,top+4,4,base-top-6);const g=q.createLinearGradient(0,top-2,0,top+6);g.addColorStop(0,GH);g.addColorStop(1,G);R(S,1,top-2,W-2,2);R(g,1,top,W-2,6);R(SD,1,top+6,W-2,1);
    if(kind==='star_table'){R(I,6,top+1,W-12,4);for(let i=0;i<9;i++)R(i%3?'#e8f4ff':'#f6c8ff',8+(i*11)%(W-16),top+1+(i%3),1,1);R(S,W/2,top+2,1,1)}
    else if(kind==='reading_table'){R(glassPal().lilacDeep,8,top-6,8,4);R(glassPal().glass,9,top-9,7,3);R(glassPal().silver,W-20,top-4,10,2);R(SD,W-14,top-12,2,8);q.fillStyle=glassRGBA('#bff4ff',.85);q.fillRect(W-17,top-15,8,4)}}
-  else if(kind==='telescope'){R(SD,10,base-28,3,24);R(SD,26,base-26,3,22);R(SD,40,base-28,3,24);R(SM,18,base-34,14,8);q.save();q.translate(25,base-32);q.rotate(-.55);R(SD,-6,-4,40,9);const g=q.createLinearGradient(0,-4,0,5);g.addColorStop(0,S);g.addColorStop(1,SM);R(g,-6,-3,40,7);R(GH,32,-3,5,7);R(SD,6,-5,3,11);R(SD,20,-5,3,11);q.restore();R('#bff4ff',47,base-56,3,3)}
+  else if(kind==='telescope'){
+   // a brass-and-silver telescope on a splayed tripod: legs from a hub plate, a yoke, a tube in telescoping sections aimed up
+   const hx=30,hy=base-34,P=glassPal();
+   const leg=(x1,y1,w)=>{q.strokeStyle=SD;q.lineWidth=w+1;q.lineCap='round';q.beginPath();q.moveTo(hx,hy);q.lineTo(x1,y1);q.stroke();q.strokeStyle=SM;q.lineWidth=w-1;q.beginPath();q.moveTo(hx-1,hy);q.lineTo(x1-1,y1);q.stroke();q.strokeStyle=S;q.lineWidth=1;q.beginPath();q.moveTo(hx-2,hy);q.lineTo(x1-2,y1);q.stroke()};
+   leg(10,base-4,3);leg(50,base-6,3);leg(33,base-1,3);
+   for(const[fx,fy]of[[10,base-4],[50,base-6],[33,base-1]]){R(SD,fx-2,fy,5,2)}
+   R(SD,hx-9,hy-3,18,6);R(SM,hx-9,hy-3,18,2);R(S,hx-9,hy-3,18,1);R(SD,hx-3,hy+3,6,3);
+   // yoke
+   R(SD,hx-6,hy-12,3,10);R(SD,hx+4,hy-12,3,10);R(SM,hx-6,hy-12,1,10);
+   q.save();q.translate(hx,hy-10);q.rotate(-.62);
+   const seg=(x0,x1,h)=>{const g=q.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,S);g.addColorStop(.35,SM);g.addColorStop(1,SD);q.fillStyle=g;q.fillRect(x0,-h/2,x1-x0,h);q.fillStyle=glassRGBA(P.white,.5);q.fillRect(x0,-h/2,x1-x0,1)};
+   seg(-15,-6,5);seg(-6,8,8);seg(8,24,11);seg(24,40,14);
+   // rings between the sections and a brass rim round the objective
+   for(const x of[-6,8,24]){q.fillStyle=glassPal().lilacDeep;q.fillRect(x-1,-8,2,16)}
+   q.fillStyle=P.silverDark;q.fillRect(40,-9,4,18);q.fillStyle=P.silver;q.fillRect(40,-9,4,2);
+   const lens=q.createLinearGradient(44,-7,47,7);lens.addColorStop(0,P.glassHi);lens.addColorStop(1,P.glass);q.fillStyle=lens;q.fillRect(44,-7,3,14);
+   // eyepiece cap and a small finder scope riding on the tube
+   q.fillStyle=P.silverDark;q.fillRect(-18,-3,3,6);q.fillStyle=P.violetInk;q.fillRect(-19,-2,1,4);
+   q.fillStyle=P.silverDark;q.fillRect(12,-12,2,5);q.fillRect(26,-12,2,5);q.translate(0,-15);seg(8,32,4);q.restore();
+   // a glint on the objective
+   R(glassRGBA(P.white,.9),hx+Math.round(Math.cos(-.62)*45)-1,hy-10+Math.round(Math.sin(-.62)*45)-3,2,2);
+  }
   else if(kind==='orrery'){R(SD,8,base-12,W-16,8);R(S,9,base-12,W-18,2);R(SM,14,base-20,W-28,8);R(SD,10,base-60,3,48);R(SD,W-13,base-60,3,48);R(S,10,base-60,1,48);const sw=Math.max(4,Math.round(Math.abs(Math.cos(frame*Math.PI/6))*20));q.fillStyle=SD;q.beginPath();q.ellipse(W/2,base-40,sw+3,20,0,0,Math.PI*2);q.fill();const g=q.createLinearGradient(W/2-sw,base-60,W/2+sw,base-20);g.addColorStop(0,glassPal().sky);g.addColorStop(.5,GH);g.addColorStop(1,glassPal().lilac);q.fillStyle=g;q.beginPath();q.ellipse(W/2,base-40,sw,17,0,0,Math.PI*2);q.fill();R(glassRGBA(glassPal().white,.7),W/2-Math.round(sw/2),base-52,2,10)}
   else if(kind==='crown_mirror'){R(SD,4,6,W-8,base-10);R(S,4,6,W-8,3);const g=q.createLinearGradient(0,10,0,base-6);g.addColorStop(0,glassPal().sky);g.addColorStop(.6,glassPal().lilac);g.addColorStop(1,GD);R(g,8,10,W-16,base-18);q.strokeStyle=glassRGBA(glassPal().white,.7);q.lineWidth=1;q.beginPath();for(const[a,b,c,d]of[[30,12,46,40],[46,40,28,70],[46,40,70,30],[46,40,62,74],[20,40,46,40]]){q.moveTo(a,b);q.lineTo(c,d)}q.stroke();R(S,0,0,W,6);R(SM,W/2-6,0,12,10);R('#f6c8ff',W/2-2,1,4,4)}
  });
