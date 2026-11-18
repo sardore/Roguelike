@@ -308,19 +308,36 @@ function drawCombatProjectile(q,pj,now){
   q.restore();return;
  }
  if(pj.kind==='lightning'){
-  // A jagged blue bolt drops from above onto the marked tile, then a ground flash and ring spread out.
-  const cx=pj.x1,cy=pj.y1,top=pj.y0-TILE*3,seed=Math.floor(pj.start)%997,flicker=t<.08?t/.08:t<.5?(t%.12<.06?1:.72):1-(t-.5)/.5,pts=[];
-  for(let i=0;i<=10;i++){const u=i/10;pts.push([cx+(i===0||i===10?0:(hash2(i,seed,7)-.5)*20*(1-u*.35)),top+(cy-top)*u])}
-  const trace=()=>{q.beginPath();pts.forEach(([px,py],i)=>i?q.lineTo(px,py):q.moveTo(px,py));q.stroke()};
+  // A real-looking strike: a stepped leader, then a forked return stroke that flickers twice, with a ground arc web, soot and sparks.
+  const cx=pj.x1,cy=pj.y1,top=pj.y0-TILE*2,seed=Math.floor(pj.start)%997,R=(i,k)=>hash2(i,seed,k);
+  const inten=t<.07?0:t<.17?1:t<.23?.25:t<.33?.95:Math.max(0,.95*(1-(t-.33)/.27));
+  const bolt=(x0,y0,x1,y1,depth,disp,k)=>{let pts=[[x0,y0],[x1,y1]];for(let l=0;l<depth;l++){const nx=[];for(let j=0;j<pts.length-1;j++){const[a0,b0]=[pts[j],pts[j+1]];nx.push(a0,[(a0[0]+b0[0])/2+(R(l*97+j,k)-.5)*disp,(a0[1]+b0[1])/2+(R(l*89+j,k+1)-.5)*disp*.35])}nx.push(pts[pts.length-1]);pts=nx;disp*=.55}return pts};
+  const trace=(pts,upto=pts.length)=>{q.beginPath();for(let i=0;i<upto;i++)i?q.lineTo(pts[i][0],pts[i][1]):q.moveTo(pts[i][0],pts[i][1]);q.stroke()};
+  const main=bolt(cx+(R(1,5)-.5)*24,top,cx,cy,6,30,7);
   q.lineCap='round';q.lineJoin='round';
-  q.globalAlpha=.28*flicker;q.strokeStyle='#4f86ff';q.lineWidth=15;trace();
-  q.globalAlpha=.62*flicker;q.strokeStyle='#8fc4ff';q.lineWidth=6.5;trace();
-  q.globalAlpha=flicker;q.strokeStyle='#f4fcff';q.lineWidth=2.2;trace();
-  for(let i=2;i<9;i+=3){const[px,py]=pts[i],dir=hash2(i,seed,11)>.5?1:-1;q.globalAlpha=.8*flicker;q.strokeStyle='#bfe0ff';q.lineWidth=1.6;q.beginPath();q.moveTo(px,py);q.lineTo(px+dir*14,py+10);q.lineTo(px+dir*8,py+22);q.stroke()}
-  const g=q.createRadialGradient(cx,cy,2,cx,cy,TILE*1.1);g.addColorStop(0,'#ffffffdd');g.addColorStop(.35,'#6aa8ffaa');g.addColorStop(1,'#2a4bd400');
-  q.globalAlpha=flicker;q.fillStyle=g;q.beginPath();q.arc(cx,cy,TILE*1.1,0,Math.PI*2);q.fill();
-  q.globalAlpha=(1-t)*.85;q.strokeStyle='#9ccbff';q.lineWidth=2.2;q.beginPath();q.ellipse(cx,cy+4,8+t*TILE,(8+t*TILE)*.5,0,0,Math.PI*2);q.stroke();
-  for(let i=0;i<7;i++){const a=hash2(i,seed,23)*Math.PI*2,r=t*TILE*(.6+hash2(i,seed,29)),sy=cy+Math.sin(a)*r*.5-Math.sin(t*Math.PI)*10;q.globalAlpha=1-t;q.fillStyle=i%2?'#e9f6ff':'#7db4ff';q.fillRect(cx+Math.cos(a)*r,sy,3-t*2,3-t*2)}
+  // sky flash behind the bolt
+  if(inten>0){const g=q.createRadialGradient(cx,cy-TILE*2.5,4,cx,cy-TILE*2.5,TILE*6);g.addColorStop(0,'#cfe0ff');g.addColorStop(1,'#5a7cff00');q.globalAlpha=.3*inten;q.fillStyle=g;q.beginPath();q.arc(cx,cy-TILE*2.5,TILE*6,0,Math.PI*2);q.fill()}
+  // stepped leader: a thin, faint line that races down before the stroke
+  if(t<.17){const prog=Math.min(1,t/.07);q.globalAlpha=.65;q.strokeStyle='#9fc4ff';q.lineWidth=2.2;trace(main,Math.max(2,Math.floor(main.length*prog)))}
+  // return stroke and its forks
+  if(inten>0){
+   for(const[pts,w]of[[main,1]]){
+    q.globalAlpha=.24*inten;q.strokeStyle='#3f6bff';q.lineWidth=30*w;trace(pts);
+    q.globalAlpha=.55*inten;q.strokeStyle='#86b6ff';q.lineWidth=14*w;trace(pts);
+    q.globalAlpha=inten;q.strokeStyle='#f6fbff';q.lineWidth=5.2*w;trace(pts)}
+  }
+  // afterglow: the ionised channel cools to violet
+  if(t>.3&&t<.7){q.globalAlpha=.4*(1-(t-.3)/.4);q.strokeStyle='#b49aff';q.lineWidth=3.2;trace(main)}
+  // ground: flash, marked tile, crawling arcs, soot ring
+  const gi=t<.07?0:inten;
+  if(gi>0){const g=q.createRadialGradient(cx,cy,1,cx,cy,TILE*1.5);g.addColorStop(0,'#ffffff');g.addColorStop(.35,'#9cc4ffcc');g.addColorStop(1,'#3f6bff00');q.globalAlpha=gi;q.fillStyle=g;q.beginPath();q.arc(cx,cy,TILE*1.5,0,Math.PI*2);q.fill()}
+  if(t>.07&&t<.4){q.globalAlpha=(1-(t-.07)/.33)*.9;q.strokeStyle='#cfe2ff';q.lineWidth=2;q.strokeRect(cx-TILE/2+2,cy-TILE/2+2,TILE-4,TILE-4)}
+  if(t>.07&&t<.55){for(let i=0;i<8;i++){if((Math.floor(t*38)+i)%3===0)continue;const ang=i/8*Math.PI*2+(R(i,29)-.5)*.7+R(99,29)*.4,len=TILE*(.55+R(i,31)*.8);let x=cx,y=cy+2;const arc=[[x,y]];for(let k=1;k<=4;k++){x+=Math.cos(ang+(R(i*5+k,37)-.5)*1.3)*len/4;y+=Math.sin(ang+(R(i*5+k,41)-.5)*1.3)*len/4*.55;arc.push([x,y])}
+   q.globalAlpha=.4;q.strokeStyle='#5f8cff';q.lineWidth=5;trace(arc);q.globalAlpha=.95;q.strokeStyle='#e6f1ff';q.lineWidth=2;trace(arc)}}
+  if(t>.1){const f=Math.min(1,(t-.1)/.1)*Math.max(0,1-(t-.5)/.5);q.save();q.translate(cx,cy+3);q.scale(1,.6);q.globalAlpha=.5*f;q.fillStyle='#120e14';q.beginPath();for(let i=0;i<=12;i++){const a2=i/12*Math.PI*2,r=TILE*(.42+R(i,43)*.22);i?q.lineTo(Math.cos(a2)*r,Math.sin(a2)*r):q.moveTo(Math.cos(a2)*r,Math.sin(a2)*r)}q.closePath();q.fill();q.restore()}
+  // sparks thrown off the impact
+  if(t>.07){for(let i=0;i<16;i++){const u=Math.min(1,(t-.07)/.5),a2=i/16*Math.PI*2+(R(i,47)-.5)*.5,sp=TILE*(.5+R(i,53)*1.1),vy=TILE*(.9+R(i,59)*1.3),px=cx+Math.cos(a2)*sp*u,py=cy+Math.sin(a2)*sp*.4*u-(vy*u-vy*1.25*u*u);
+   q.globalAlpha=Math.max(0,1-u);q.fillStyle=i%2?'#eef6ff':'#8fbaff';q.fillRect(px,py,1.6+R(i,61)*1.4,1.6+R(i,67)*1.4)}}
   q.restore();return;
  }
  if(pj.kind==='slam'){
