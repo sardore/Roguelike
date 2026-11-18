@@ -927,8 +927,7 @@ function carryWallEdges(px,py,x,y){
   const h=wallFaceOpen(x,y,0,1)?30:32;X.fillStyle=wallLineColors(x,y).cap;
   if(west)X.fillRect(px,py,2,h);if(east)X.fillRect(px+30,py,2,h);
 }
-// Walls that keep art of their own in a branch: the dojo draws its walls with its own edge lines, the stockades have no edge lines at all,
-// palace facades and windows, and the citadel gates (iron grates).
+// Skip the extra edge pass for dojo timber walls, stockade walls, palace facades and citadel gates.
 function wallKeepsOwnArt(x,y){
   const b=state.branchContext105,ter=state.branchTerrain105,key=k(x,y);
   if(['dojo','stockade','black'].includes(b?.id))return true;
@@ -1033,7 +1032,7 @@ function enclosedWall(x,y){
     &&above[x-1]===TT.WALL&&above[x]===TT.WALL&&above[x+1]===TT.WALL
     &&below[x-1]===TT.WALL&&below[x]===TT.WALL&&below[x+1]===TT.WALL;
 }
-function drawMainWall(px,py,x,y){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y),x,y);X.restore()}
+function drawMainWall(px,py,x,y,palette=dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y)){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,palette,x,y);X.restore()}
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
@@ -1979,7 +1978,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalAlpha=1;X.globalCompositeOperation='source-over';X.lineWidth=1;X.lineCap='butt';X.lineJoin='miter';X.setLineDash([]);X.lineDashOffset=0;X.filter='none';X.shadowBlur=0;X.shadowOffsetX=0;X.shadowOffsetY=0;X.shadowColor='rgba(0,0,0,0)';X.beginPath();
     X.fillStyle=colors.fog||'#080503';X.fillRect(0,0,VIEW.w,VIEW.h);
     X.save();X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.imageSmoothingEnabled=false;
-    const mine=mineState(),ordinaryWallMass=!state.branchContext105&&!state.artifactDungeon46&&wallsAreNegativeSpace();
+    const mine=mineState(),ordinaryWallMass=wallsAreNegativeSpace();
     const terrainProps63=[];
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const kk=k(x,y);if(!state.seen.has(kk)&&!(mine&&mineScenerySeen(x,y)))continue;const vis=state.visible.has(kk)||(mine&&mineSceneryVisible(x,y)),terrainTime=vis?now:0,px=x*TILE,py=y*TILE,t=mine&&mineHidden(x,y)?TT.VOID:state.map[y][x];
@@ -5220,13 +5219,19 @@ r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addCo
  if(wallFaceOpen(x,y,-1,0))r(P.cap,0,0,2,30);if(wallFaceOpen(x,y,1,0))r(P.cap,30,0,2,30);
 }
 function drawDojoCell(t,px,py,x,y){
- if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}const surface=state.branchTerrain105.surfaces[k(x,y)]||'wood',art=state.branchTerrain105.dojo,ornament=art.ornaments?.[k(x,y)],P=dojoPalette(x,y),stamp=t+':'+surface+':'+ornament+':'+P.name+':'+terrainUnlit105(x,y),key=y*COLS+x;let entry=BRANCH_TILE_CACHE.get(key);
+ const key=k(x,y),art=state.branchTerrain105.dojo,ornament=art.ornaments?.[key],P=dojoPalette(x,y),wall=t===TT.WALL;
+ if(wall){
+  // The live wall pass reads the current discovery state. Cache only the wall fittings.
+  drawMainWall(px,py,x,y,P);
+  if(!ornament||!wallFaceOpen(x,y,0,1))return true;
+ }
+ if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear();}
+ const surface=state.branchTerrain105.surfaces[key]||'wood',stamp=t+':'+surface+':'+ornament+':'+P.name+':'+terrainUnlit105(x,y),tileIndex=y*COLS+x;let entry=BRANCH_TILE_CACHE.get(tileIndex);
  if(!entry||entry.stamp!==stamp){const c=document.createElement('canvas');c.width=c.height=32;const q=c.getContext('2d'),{r}=drawKit(q),h=hash2(x,y,125),shade=h>.5;
- r('#161719',0,0,32,32);
+ if(!wall)r('#161719',0,0,32,32);
  const texture=(seed,count,c)=>{for(let i=0;i<count;i++){const a=hash2(x*31+i,y*17,seed),b=hash2(x*19,y*29+i,seed+1);r(c,2+Math.floor(a*27),2+Math.floor(b*27),a>.7?2:1,1);}};
  if(t===TT.VOID){r('#080c13',0,0,32,32);if(state.map[y-1]?.[x]!=null&&![TT.VOID,TT.WALL].includes(state.map[y-1][x])){r(P.cap,0,0,32,2);r(P.stone,0,2,32,5);r(P.dark,0,7,32,9);r('#22292d',0,16,32,4);for(let j=0;j<4;j++){const xx=j*8+Math.floor(h*3);r('#303939',xx,6,1,9+j%3);r('#101820',xx+2,16,5,3+j%2);}q.fillStyle='rgba(0,0,0,.28)';q.fillRect(0,12,32,12);}else if(h>.87)r('#222629',5,22,11,1);}
- else if(t===TT.WALL)drawDojoWall(q,r,P,x,y);
- else {const stone=surface==='stone'||surface==='ceremony'||surface==='throne';r(stone?(shade?P.stone:P.stone2):shade?P.floor:P.floor2,0,0,32,32);if(stone){r(P.beam,0,0,32,1);r(P.stone2,1,1,30,1);r(P.beam,0,0,1,32);}else{for(let i=0;i<32;i+=16){r(P.dark,0,i,32,1);r(P.grain,0,i+1,32,1);if(hash2(x,y+i,31)>.5)r(P.grain,5+((y+i)%7),i+4,13,1);}r(P.beam,(y%2)*15,1,1,15);}
+ else if(!wall){const stone=surface==='stone'||surface==='ceremony'||surface==='throne';r(stone?(shade?P.stone:P.stone2):shade?P.floor:P.floor2,0,0,32,32);if(stone){r(P.beam,0,0,32,1);r(P.stone2,1,1,30,1);r(P.beam,0,0,1,32);}else{for(let i=0;i<32;i+=16){r(P.dark,0,i,32,1);r(P.grain,0,i+1,32,1);if(hash2(x,y+i,31)>.5)r(P.grain,5+((y+i)%7),i+4,13,1);}r(P.beam,(y%2)*15,1,1,15);}
  // Fine material detail has stable, irregular world seeds; it never changes with zoom.
  if(stone){const offset=(y%2)*16;r('rgba(35,38,35,.3)',offset,1,1,30);r('rgba(241,231,200,.13)',offset+1,2,1,28);r('rgba(22,27,28,.20)',1,30,31,2);texture(442,7,'rgba(232,232,202,.12)');if(h>.87){const a=5+Math.floor(hash2(x,y,513)*15),b=7+Math.floor(hash2(x,y,514)*13);r('rgba(34,39,37,.3)',a,b,5,1);r('rgba(34,39,37,.23)',a+4,b+1,2,2);}}
  else{for(let j=0;j<4;j++){const yy=3+j*7+Math.floor(hash2(x,j+y,722)*3),xx=2+Math.floor(hash2(x+j,y,733)*12);r(j%2?'rgba(233,202,150,.12)':'rgba(31,20,18,.15)',xx,yy,8+Math.floor(hash2(x,y+j,744)*12),1);}if(h>.83){r(P.beam,9+Math.floor(h*8),10,4,2);r(P.grain,10+Math.floor(h*8),10,2,1);}r('rgba(0,0,0,.12)',0,30,32,2);}
@@ -5257,7 +5262,7 @@ function drawDojoCell(t,px,py,x,y){
   r(P.dark,22,3,3,25);r(P.metal,22,4,1,22);r(P.dark,10,4,14,2);r(P.metal,11,5,2,4);r('#433b30',6,10,15,18);r('#c3904e',5,9,17,2);r('#a25c2d',8,11,11,14);r(terrainUnlit105(x,y)?'#69432f':WORLD_LIGHT_ART.lantern,9,12,9,12);if(!terrainUnlit105(x,y)){r('#ffe2a2',11,14,5,8);r('#fff3c7',12,16,3,4);}r('#795b38',7,26,13,2);r('#554130',12,11,1,15);r('#554130',8,19,11,1);r(P.dark,11,29,7,2);
  }
 
- entry={stamp,canvas:c};BRANCH_TILE_CACHE.set(key,entry);}
+ entry={stamp,canvas:c};BRANCH_TILE_CACHE.set(tileIndex,entry);}
  X.drawImage(entry.canvas,px,py);if(t===TT.GARDEN_TREE)drawBotanical(X,t,px,py,x,y,regionIndex());if(t===TT.PORTAL){const portal=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(portal)drawBranchDoor(px,py,portal);}if(t===TT.SCREEN)drawInteractiveTerrain(t,px,py,x,y,FX.frameNow||performance.now());if(t===TT.DOOR||t===TT.OPEN_DOOR)drawDoor(px,py,t===TT.OPEN_DOOR);if(t===TT.LOCKED_GATE){drawDoor(px,py,false);globalThis.__MANRU_TERRAIN_R41__.specialKeyAfter(t,px,py,x,y,performance.now(),true);}if(t===TT.KEY_TILE)globalThis.__MANRU_TERRAIN_R41__.specialBefore(t,px,py,x,y,performance.now());if([TT.WATER,TT.LAVA,TT.LIGHT_GRASS].includes(t))drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());return true;
 }
 // At overview scale a tile is only a few screen pixels. Reuse the canonical
