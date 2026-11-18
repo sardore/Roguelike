@@ -1,6 +1,9 @@
 const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#706b64',shape:'armor',kind:'construct',
  role61:'shell',actionLag57:{period:2,skipTurns:1},concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
 const SHACKLE_COUNTER={id:'shackle-counter',skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
+const MIRROR_DUELIST={name:'반영 검객',hp:38,atk:13,def:4,eva:7,xp:13,color:'#879aa8',shape:'human',kind:'spirit',fast:true,blind:true,role61:'shell',concept57:'칼날보다 반사된 모습이 먼저 움직이는 검객이다. 거울 같은 칼날에 맞으면 눈앞이 번쩍이며 시야를 잃는다.'};
+const LIGHTNING_PLATE={name:'피뢰 갑병',hp:38,atk:10,def:7,eva:1,xp:13,color:'#75818a',shape:'guard',kind:'construct',role61:'formation',lightningRod61:true,concept57:'벼락 자국이 남은 철갑 병사다. 등의 피뢰침으로 하늘의 벼락을 끌어내려 표적의 발밑에 꽂는다.'};
+const BREACH_PLATE={name:'파성 갑병',hp:62,atk:16,def:9,eva:2,xp:21,color:'#9a835d',shape:'guard',kind:'construct',role61:'formation',wallSlam61:true,concept57:'성문을 허물 만큼 무거운 무장을 갖춘 병사다. 벽 너머의 기척도 가까우면 알아채고, 벽째 내리치며 길을 낸다.'};
 const MONSTER_GUARD_TURNS={early:3,late:4,forbidden:4};
 const MONSTERS=[
  {name:'마을 군단장',min:99,max:99,hp:58,atk:8,def:4,eva:2,xp:36,color:'#c9a24a',shape:'guard',kind:'human',reach:2,legion57:{escort:['객잔 경비병','취객','시종'],escortMax:4,callEvery:5},concept57:'종소리에 깨어난 마을의 군단장이다. 병사를 불러 모으며 골목을 돌고, 어디에 있든 이따금 위치가 드러난다.'},
@@ -31,17 +34,25 @@ const MONSTERS=[
   {min:9,max:9,name:'독거미',hp:12,atk:5,def:1,eva:6,xp:0,color:'#82ac4c',shape:'beast',kind:'beast',summonOnly57:true,spriteScale:.85,poison:true,poisonImmune57:true,leap:{range:3,cooldown:4},concept57:'어미거미에게서 쏟아진 작은 녹색 독거미. 한 칸을 차지하며 낮은 장애물을 뛰어넘는다.'},
 
   // 3구역 유혹의 내실: 비단/거울/환각 중심.
-  {min:11,max:15,name:'윈도',concept57:"문틈과 거울 뒤에 사람의 윤곽만 남기는 환영이다.",hp:17,atk:8,def:1,eva:5,xp:7,color:'#6f5e72',shape:'human',kind:'spirit',ambush:true},
-  {min:11,max:15,name:'비단 술래',sealingWard:{species:'비단 술래',radius:2,duration:4,cooldown:9,range:6},concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:18,atk:6,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},
-  {min:11,max:15,name:'환각의 향로',concept57:"불씨가 꺼지지 않는 향로 안에서 달큰한 연기가 샌다.",hp:21,atk:5,def:3,eva:0,xp:8,color:'#786377',shape:'mage',kind:'construct',fixed:true,gasStatus57:'drunk'},
-  {min:12,max:15,name:'향기요정',sealSkill:true,hp:16,atk:5,def:1,eva:7,xp:8,color:'#a989b5',shape:'angel',kind:'spirit',waterTrail:true,roleDesc61:'지나간 바닥을 잠시 물길로 바꿔 퇴로와 동선을 꼬이게 만든다.',concept57:'향기를 흩뿌리며 떠다니는 작은 요정이다.'},
-  {min:12,max:15,name:'분홍거미',concept57:"비단빛 배를 끌고 좁은 내실을 비집는 거대한 거미다.",silkTrapCount57:2,hp:36,atk:7,def:6,eva:2,xp:12,color:'#a26784',shape:'beast',kind:'beast',footprint:'x3',web:true,wallBreak:true},
-  {min:13,max:15,name:'구미호',hp:29,atk:8,def:3,eva:7,xp:14,color:'#d2a0a0',shape:'vampire',kind:'spirit',ranged:true,range:6,gaze:true,summoner:true,summonName57:'윈도',gumihoSkirm57:true,roleDesc61:'6칸 안에서 직선 시야를 계속 허용하면 시선이 점점 강해져 다섯 번째에 폭발하며 2턴 기절을 건다.',concept57:'시선을 붙들어 몸을 굳히는 요호다.'},
+  {min:11,max:15,name:'윈도',concept57:"문틈과 거울 뒤에 사람의 윤곽만 남기는 환영이다.",hp:19,atk:9,def:1,eva:5,xp:7,color:'#6f5e72',shape:'human',kind:'spirit',ambush:true},
+  {min:11,max:15,name:'비단 술래',sealingWard:{species:'비단 술래',radius:2,duration:4,cooldown:9,range:6},concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:20,atk:7,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},
+  {min:11,max:15,name:'환각의 향로',concept57:"불씨가 꺼지지 않는 향로 안에서 달큰한 연기가 샌다.",hp:23,atk:6,def:3,eva:0,xp:8,color:'#786377',shape:'mage',kind:'construct',fixed:true,gasStatus57:'drunk'},
+  {min:12,max:15,name:'향기요정',sealSkill:true,alarmSkill61:true,hp:18,atk:6,def:1,eva:7,xp:8,color:'#a989b5',shape:'angel',kind:'spirit',waterTrail:true,roleDesc61:'지나간 바닥을 잠시 물길로 바꿔 퇴로와 동선을 꼬이게 만든다.',concept57:'향기를 흩뿌리며 떠다니는 작은 요정이다.'},
+  {min:12,max:15,name:'분홍거미',concept57:"비단빛 배를 끌고 좁은 내실을 비집는 거대한 거미다.",silkTrapCount57:2,hp:40,atk:8,def:6,eva:2,xp:12,color:'#a26784',shape:'beast',kind:'beast',footprint:'x3',web:true,wallBreak:true},
+  {...MIRROR_DUELIST,min:13,max:15},
+  {min:13,max:15,name:'구미호',hp:32,atk:9,def:3,eva:7,xp:14,color:'#d2a0a0',shape:'vampire',kind:'spirit',ranged:true,range:6,gaze:true,summoner:true,summonName57:'윈도',gumihoSkirm57:true,roleDesc61:'6칸 안에서 직선 시야를 계속 허용하면 시선이 점점 강해져 다섯 번째에 폭발하며 2턴 기절을 건다.',concept57:'시선을 붙들어 몸을 굳히는 요호다.'},
+  {min:14,max:15,name:'악몽 시녀',hp:46,atk:11,def:2,eva:17,xp:24,color:'#5a3d78',shape:'ghost',kind:'spirit',flying:true,terrainIgnore61:true,fast:true,blind:true,stomachHit:true,summoner:true,summonName57:'꿰맨 입 망자',summonPool:['꿰맨 입 망자','기어 다니는 손','눈알 등롱'],summonRadius:3,summonCap:6,summonWarmup:3,summonCooldown:4,summonsVanish:true,roleDesc61:'지형을 무시하고 떠다니며 잔뜩 부른 언데드 시종으로 에워싼다. 스치기만 해도 눈이 멀거나 배가 뒤틀린다. 그녀가 쓰러지면 시종도 함께 사라진다.',concept57:'꿈속에서 시중들던 하녀가 끝내 깨어나지 못하고 악몽이 되어 떠돈다. 치맛자락이 닿는 자리마다 죽은 것들이 일어난다.'},
+  {min:14,max:15,name:'꿰맨 입 망자',summonOnly57:true,hp:20,atk:8,def:2,eva:2,xp:0,color:'#6e6b5c',shape:'undead',kind:'undead',heavyHit57:true,concept57:'입을 검은 실로 꿰맨 채 수의 차림으로 끌려 나온 망자. 말 대신 둔한 일격으로 힘을 앗는다.'},
+  {min:14,max:15,name:'기어 다니는 손',summonOnly57:true,hp:11,atk:6,def:0,eva:8,xp:0,color:'#a89a8d',shape:'beast',kind:'undead',fast:true,bleed:true,concept57:'잘려 나온 손들이 엉겨 손가락 끝으로 바닥을 긁으며 달려든다. 할퀸 자리마다 피가 번진다.'},
+  {min:14,max:15,name:'눈알 등롱',summonOnly57:true,hp:13,atk:7,def:1,eva:6,xp:0,color:'#b35a52',shape:'spirit',kind:'undead',flying:true,ranged:true,range:5,blind:true,concept57:'핏발 선 눈알을 갓 삼아 허공에 매달린 등롱. 그 시선이 닿으면 눈앞이 어두워진다.'},
   {min:24,max:24,name:'구미묘',hp:72,atk:16,def:6,eva:9,xp:48,color:'#f2c75a',shape:'vampire',kind:'spirit',summonOnly57:true,miniBoss:true,reach:2,exitPressureSpeed57:{min:.5,max:1.5},gumiBehaviorVersion57:4,corpseRelocateSpan57:21,corpseRelocateMinRadius57:6,floor24Chaser57:true,persistentChase57:true,dormant57:true,revivalLives57:9,reviveWeakTurns57:2,reviveWeakAtkMul57:.65,reviveWeakDefMul57:.75,reviveWeakEvaDelta57:-2,reviveFullAtkMul57:1.35,reviveFullDefMul57:1.20,reviveFullEvaDelta57:2,deathCountsAsLosBreak57:true,gumiScaleVersion57:3,warningAura57:20,exitPressureSense57:{start:.38,exact:.76,maxError:6,interval:2},losLostSummon57:{names:['금령','보주의 파수꾼'],normalCooldown:7,fullCooldown:4},roleDesc61:'현관이 열릴 때는 평소의 절반 속도로 움직이지만 출구에 가까워질수록 빨라져 마침내 1.5배 속도로 덮친다. 쓰러지면 시체가 먼 곳으로 옮겨져 아홉 번까지 다시 일어난다. 응시하던 대상이 시야에서 벗어나거나 자신이 쓰러지면 원혼을 불러들인다.',concept57:'황금빛 구미호의 형상을 한 괴물이다.'},
 
   {min:12,max:20,name:'대포',hp:42,atk:22,attackRevision:2,def:12,eva:0,xp:16,color:'#79766b',shape:'armor',kind:'construct',fixed:true,immobile105:true,ranged:true,range:9,artillery:true,crossfire:{range:9,bonus:8,cooldown:4},deathBlast:{radius:1,bonus:8},spawnWeightByFloor:{16:4,20:4},spawnCountByFloor:{16:2,20:2},concept57:'두꺼운 철갑과 화약통으로 무장한 고정 포대다. 십자로 드리운 사선에 침입자가 닿으면 곡사포를 쏘고, 파괴되면 남은 화약이 폭발한다.'},
 
   // 4구역 지하 장고 + 16층 성채.
+  {min:14,max:20,name:'흉조 까마귀',hp:56,atk:13,def:5,eva:4,xp:30,color:'#1f1e2a',shape:'angel',kind:'beast',flying:true,fast:true,diseaseBreath61:true,spawnWeight:.35,spriteScale:1.3,roleDesc61:'높은 행동 속도로 날아들어 거리를 좁힌다. 공격이 적중하면 병든 깃털 가루를 흩뿌려 중병 가스를 남긴다.',concept57:'울음소리가 들리면 누군가 죽는다는 흉조. 윤기 없는 검은 깃에서 병든 기운이 피어오른다.'},
+  {...LIGHTNING_PLATE,min:14,max:20},
+  {...BREACH_PLATE,min:19,max:25},
   {min:16,max:20,name:'지네',concept57:"장고의 틈새를 채운 마디들이 일제히 꿈틀거린다.",hp:26,atk:8,def:2,eva:5,xp:8,color:'#785b45',shape:'beast',kind:'beast',poison:true,ambush:true},
   {min:16,max:20,name:'강시',concept57:"굳은 관절을 억지로 움직이는 시체다.",hp:38,atk:10,def:5,eva:2,xp:12,color:'#6d7770',shape:'undead',kind:'undead',hook:true},
   {min:16,max:20,name:'식귀',sealSkill:true,concept57:"먹어도 채워지지 않는 배를 움켜쥔 망자다.",hp:34,atk:9,def:3,eva:4,xp:10,color:'#89695c',shape:'human',kind:'undead',hungerDrain:8},
@@ -58,7 +69,7 @@ const MONSTERS=[
   {min:16,max:16,name:'경비 인형 - 보병',concept57:"명령을 잊지 않은 인형이 긴 창을 들고 선다.",guardPost57:true,hp:38,atk:9,def:6,eva:1,xp:11,color:'#7e776a',shape:'guard',kind:'construct',reach:2},
   {min:16,max:16,name:'해자 잠복꾼',concept57:"뜨거운 해자 곁에 몸을 낮춘 갈고리 사냥꾼이다.",guardPost57:true,hp:36,atk:10,def:3,eva:2,xp:12,color:'#8f4e36',shape:'beast',kind:'beast',lava:true,hook:true},
   {min:16,max:16,name:'경비 인형 - 포병',concept57:"무거운 포신을 돌리며 성채의 통로를 겨누는 인형이다.",guardPost57:true,hp:32,atk:10,def:5,eva:0,xp:12,color:'#706a61',shape:'armor',kind:'construct',ranged:true,range:8,artillery:true},
-  {min:16,max:16,name:'성채 비행 감시자',concept57:"성벽 위를 맴도는 가벼운 감시 인형이다.",hp:22,atk:6,def:1,eva:8,xp:8,color:'#9b7958',shape:'angel',kind:'construct',support:true,flying:true},
+  {min:16,max:16,name:'성채 비행 감시자',concept57:"성벽 위를 맴도는 가벼운 감시 인형이다.",hp:22,atk:6,def:1,eva:8,xp:8,color:'#9b7958',shape:'angel',kind:'construct',support:true,flying:true,targetMark61:{turns:6,cooldown:14}},
 
   // 5구역 만루의 심장: 기획안의 비현실적 영물/신전 수호자 중심.
   {min:21,max:25,name:'공허 가오리',concept57:"바닥 없는 공간을 물처럼 가르는 영물이다.",hp:40,atk:13,def:3,eva:8,xp:14,color:'#695d79',shape:'angel',kind:'spirit',flying:true,fast:true,knockback:true},
@@ -98,7 +109,7 @@ const WEAPONS=[
   // 3티어 · 유혹의 내실
   {type:'weapon',name:'쌍날 단도',tier:3,rarity:'relic',atk:4,speed:2.5,range:1,kind:'blade',chain:.12,ability:'연격',desc:'양손에 쥐고 춤추듯 휘두를 수 있는 짧은 칼쌍입니다.'},
   {type:'weapon',name:'암살용 비수',tier:3,rarity:'relic',atk:5,speed:1.4,range:2,kind:'blade',crit:.10,ability:'치명 +10%',desc:'그림자 속에서 급소를 노리기 위해 제작된 비수입니다.'},
-  {type:'weapon',name:'편곤',tier:3,rarity:'relic',atk:6,speed:.8,range:2,kind:'blunt',armorPierce:true,cornerHit:true,ability:'방어무시 · 곡격',desc:'장애물 뒤에 숨은 적의 머리를 타격할 수 있는 기묘한 무기입니다. 곡격: 보는 방향이 아니어도 사거리 안의 적을 원거리 무기처럼 골라 친다.'},
+  {type:'weapon',name:'편곤',tier:3,rarity:'relic',atk:4,speed:.8,range:2,kind:'blunt',armorPierce:true,cornerHit:true,ability:'방어무시 · 곡격',desc:'장애물 뒤에 숨은 적의 머리를 타격할 수 있는 기묘한 무기입니다. 곡격: 보는 방향이 아니어도 사거리 안의 적을 원거리 무기처럼 골라 친다.'},
   {type:'weapon',name:'삼각창',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.61,range:4,kind:'spear',bleed:.25,ability:'파고들기',desc:'세 갈래 날이 살점을 파고들어 떼어내기 힘들게 만듭니다. 맞은 적이 일정 확률로 출혈에 빠져 몇 턴 동안 피를 흘립니다.'},
   {type:'weapon',name:'강화 각궁',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.4,range:8,kind:'bow',ranged:true,knockback:1,ability:'밀치기',desc:'짐승의 힘줄을 겹겹이 발라 탄성이 극대화된 각궁입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'무쇠 메',tier:3,rarity:'relic',heavyStrikeBalance105:3,atk:15,speed:.3,range:2,kind:'blunt',armorPierce:true,stun:.16,ability:'방어무시 · 균열',desc:'무거운 쇳덩이를 자루 끝에 매단 투박한 파괴 병기입니다.'},

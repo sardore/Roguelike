@@ -1278,12 +1278,13 @@ export const scenarios = {
         const ally = A.place('객잔 쥐', { x: 33, y: 32 });
         __MANRU_COMBATANTS57__.setFaction(caster, 'player');
         __MANRU_COMBATANTS57__.setFaction(ally, 'player');
+        caster.alerted = true; // specials only run for an alerted caster
         A.special(caster, null, bait);
         if (!A.move(bait, 36, 30)) throw Error('bait could not evade warning');
         st.turn++; A.intent(caster);
         const field = st.tempFields.find(f => f.kind === 'sealingWard');
-        if (field?.targetIds?.length !== 2 || A.move(first, 36, 29) || A.move(second, 36, 31) ||
-            !A.move(ally, 33, 33) || !A.move(bait, 37, 30)) throw Error('ward hostile area membership');
+        const membership = { targets: field?.targetIds?.length, firstBlocked: !A.move(first, 36, 29), secondBlocked: !A.move(second, 36, 31), allyFree: !!A.move(ally, 33, 33), baitFree: !!A.move(bait, 37, 30) };
+        if (membership.targets !== 2 || !membership.firstBlocked || !membership.secondBlocked || !membership.allyFree || !membership.baitFree) throw Error('ward hostile area membership ' + JSON.stringify(membership));
         A.force(first, { x: 33, y: 29 }, 2, { mode: 'push', hostile: true });
         if (first.x <= 35 || field.targetIds.length !== 1 || A.move(second, 36, 31))
           throw Error('escaping one target released the other');
@@ -1349,7 +1350,7 @@ export const scenarios = {
           const F=__MANRU_QA_FOOD__,st=__MANRU_QA_UI__.state(),recipe=F.recipes.find(r=>r.name===name);
           st.map[30][31]=station==='pot'?__MANRU_QA_BROOD__.TT.COOKPOT:__MANRU_QA_BROOD__.TT.BRAZIER;
           st.player.inventory=recipe.ingredients.map(n=>({...(n===F.berry.name?F.berry:F.prototype(n)),count:2,identified:true}));
-          F.open(station);for(let i=0;i<recipe.ingredients.length;i++)F.context.selected.add(i);
+          F.open(31,30);for(let i=0;i<recipe.ingredients.length;i++)F.context.selected.add(i);
           const ok=F.cook(),made=st.player.inventory.find(i=>i.name===name);
           return{station,name,ok,made:made?.count===1,ingredients:recipe.ingredients.every(n=>st.player.inventory.find(i=>i.name===n)?.count===1),learned:!!st.cookbook57[recipe.id]};
         },{station,name});
@@ -2768,7 +2769,10 @@ export const scenarios = {
       if (math.dies.join() !== 'true,true,false' || math.after.s !== 12 || math.after.d !== 4) throw Error('duelrules: dies ' + JSON.stringify([math.dies, math.after]));
       // a blow the other player lands reads like any monster's blow: the number over the target and the "피격 -N" popup, the log line, and the stand-in's lunge
       await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.stage(0)); await s.tick(300);
-      const taken = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, r = Q.takeHit(3); return { ...r, floats: Q.floatsNow(), feed: Q.hitFeedNow(), log: Q.logLines().filter((l) => /상대 망령 → .*: 3/.test(l)).length }; });
+      // the "피격 -N" row is drawn by the frame loop, so let one frame run before reading it
+      const taken = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, r = Q.takeHit(3); return { ...r, floats: Q.floatsNow(), log: Q.logLines().filter((l) => /상대 망령 → .*: 3/.test(l)).length }; });
+      await s.tick(100);
+      taken.feed = await s.page.evaluate(() => globalThis.__MANRU_QA_DUEL__.hitFeedNow());
       out['duelrules.blow'] = JSON.stringify(taken);
       if (taken.after !== taken.hp - 3 || !taken.floats.includes('-3') || !taken.feed.some((f) => /피격 -3/.test(f)) || !taken.log || !taken.stand) throw Error('duelrules: a blow taken does not read like a monster blow ' + JSON.stringify(taken));
       // the card that ends a duel is on the screen (a win ends no run, so nothing else brings the overlay up) with both ghosts and the new score

@@ -307,6 +307,32 @@ function drawCombatProjectile(q,pj,now){
   q.fillStyle='#f3ffc7';q.fillRect(-3,-1,6,1);
   q.restore();return;
  }
+ if(pj.kind==='lightning'){
+  // A jagged blue bolt drops from above onto the marked tile, then a ground flash and ring spread out.
+  const cx=pj.x1,cy=pj.y1,top=pj.y0-TILE*3,seed=Math.floor(pj.start)%997,flicker=t<.08?t/.08:t<.5?(t%.12<.06?1:.72):1-(t-.5)/.5,pts=[];
+  for(let i=0;i<=10;i++){const u=i/10;pts.push([cx+(i===0||i===10?0:(hash2(i,seed,7)-.5)*20*(1-u*.35)),top+(cy-top)*u])}
+  const trace=()=>{q.beginPath();pts.forEach(([px,py],i)=>i?q.lineTo(px,py):q.moveTo(px,py));q.stroke()};
+  q.lineCap='round';q.lineJoin='round';
+  q.globalAlpha=.28*flicker;q.strokeStyle='#4f86ff';q.lineWidth=15;trace();
+  q.globalAlpha=.62*flicker;q.strokeStyle='#8fc4ff';q.lineWidth=6.5;trace();
+  q.globalAlpha=flicker;q.strokeStyle='#f4fcff';q.lineWidth=2.2;trace();
+  for(let i=2;i<9;i+=3){const[px,py]=pts[i],dir=hash2(i,seed,11)>.5?1:-1;q.globalAlpha=.8*flicker;q.strokeStyle='#bfe0ff';q.lineWidth=1.6;q.beginPath();q.moveTo(px,py);q.lineTo(px+dir*14,py+10);q.lineTo(px+dir*8,py+22);q.stroke()}
+  const g=q.createRadialGradient(cx,cy,2,cx,cy,TILE*1.1);g.addColorStop(0,'#ffffffdd');g.addColorStop(.35,'#6aa8ffaa');g.addColorStop(1,'#2a4bd400');
+  q.globalAlpha=flicker;q.fillStyle=g;q.beginPath();q.arc(cx,cy,TILE*1.1,0,Math.PI*2);q.fill();
+  q.globalAlpha=(1-t)*.85;q.strokeStyle='#9ccbff';q.lineWidth=2.2;q.beginPath();q.ellipse(cx,cy+4,8+t*TILE,(8+t*TILE)*.5,0,0,Math.PI*2);q.stroke();
+  for(let i=0;i<7;i++){const a=hash2(i,seed,23)*Math.PI*2,r=t*TILE*(.6+hash2(i,seed,29)),sy=cy+Math.sin(a)*r*.5-Math.sin(t*Math.PI)*10;q.globalAlpha=1-t;q.fillStyle=i%2?'#e9f6ff':'#7db4ff';q.fillRect(cx+Math.cos(a)*r,sy,3-t*2,3-t*2)}
+  q.restore();return;
+ }
+ if(pj.kind==='slam'){
+  // Ground-shaking strike: a 3x3 flash, a double shock ring, cracks and flying chips of stone.
+  const cx=pj.x1,cy=pj.y1,seed=Math.floor(pj.start)%997;
+  q.globalAlpha=(1-t)*.38;q.fillStyle='#ecd7a4';q.fillRect(cx-TILE*1.5,cy-TILE*1.5,TILE*3,TILE*3);
+  for(let i=0;i<2;i++){const a=Math.max(0,Math.min(1,(t-i*.12)/(1-i*.12))),r=10+a*TILE*1.9;q.globalAlpha=(1-a)*.85;q.strokeStyle=i?'#8d7b59':'#fff0c8';q.lineWidth=4*(1-a)+1;q.beginPath();q.ellipse(cx,cy,r,r*.62,0,0,Math.PI*2);q.stroke()}
+  q.strokeStyle='#2a2118';q.lineWidth=2;q.globalAlpha=(1-t)*.9;
+  for(let i=0;i<8;i++){const ang=i*Math.PI/4+hash2(i,seed,5)*.5,len=TILE*(.7+hash2(i,seed,9)*.9)*Math.min(1,t*4);q.beginPath();q.moveTo(cx,cy);q.lineTo(cx+Math.cos(ang)*len*.55,cy+Math.sin(ang)*len*.4+3);q.lineTo(cx+Math.cos(ang+.25)*len,cy+Math.sin(ang+.25)*len*.7);q.stroke()}
+  for(let i=0;i<12;i++){const ang=i*.5236+hash2(i,seed,13),dist=t*TILE*(.9+hash2(i,seed,17)*1.3),yy=cy+Math.sin(ang)*dist*.5-Math.sin(t*Math.PI)*TILE*(.7+hash2(i,seed,19));q.globalAlpha=1-t;q.fillStyle=i%2?'#8a7a5c':'#cdb98e';q.fillRect(cx+Math.cos(ang)*dist,yy,5-t*3,5-t*3)}
+  q.restore();return;
+ }
  if(pj.kind==='shackle'){
   const age=now-pj.start,flight=SHACKLE_COUNTER.flightMs;
   if(age<flight){
@@ -553,18 +579,19 @@ function drawCombatStatusBadges(actor,cx,bottom){
  for(let i=0;i<rows.length;i++){const row=Math.floor(i/columns),count=Math.min(columns,rows.length-row*columns),width=count*size+(count-1)*gap,x=Math.round(cx-width/2+(i%columns)*(size+gap)),y=Math.round(bottom-(total-row)*line),mark=rows[i];X.fillStyle='#100a08';X.fillRect(x,y,size,size+1);X.strokeStyle=mark.color;X.globalAlpha=.75;X.strokeRect(x+.5,y+.5,size-1,size);X.globalAlpha=1;X.fillStyle=mark.color;for(let gy=0;gy<mark.glyph.length;gy++)for(let gx=0;gx<mark.glyph[gy].length;gx++)if(mark.glyph[gy][gx]==='1')X.fillRect(x+1+gx,y+2+gy,1,1);}
  X.restore();return rows.length;
 }
+const JAR_GAS_PALETTE57=Object.freeze({poison:{core:'#a6c76d',mid:'#628842',edge:'#2c482400',line:'#c5d991',mote:'#bed586'},drunk:{core:'#b982c3',mid:'#775381',edge:'#382a4100',line:'#deb5df',mote:'#d1a5d3'},illness:{core:'#c8648f',mid:'#5d2a4a',edge:'#22101e00',line:'#e8a2c4',mote:'#d98ab0'}});
 function drawJarGas(now,bounds=null,q=X){
   if(!state)return;const fields=jarGasState57();if(!fields.length)return;q.save();q.globalCompositeOperation='source-over';
   for(const f of fields)if(now>=(JAR_GAS_VISUAL_START57.get(f)||0))for(const c of f.cells||[]){
     if(c.c<=0||!state.visible.has(k(c.x,c.y))||bounds&&(c.x<bounds.x0-1||c.x>bounds.x1+1||c.y<bounds.y0-1||c.y>bounds.y1+1))continue;
-    const px=c.x*TILE,py=c.y*TILE,seed=c.x*17+c.y*31,phase=now/650+seed,fade=f.age>=(f.linger57?Math.max(5,(f.duration57||9)-2):5)?Math.max(.25,1-(f.age-(f.linger57?(f.duration57||9)-3:4))*.16):1,strength=(.13+c.c*.065)*fade,drunk=f.status57==='drunk';
+    const px=c.x*TILE,py=c.y*TILE,seed=c.x*17+c.y*31,phase=now/650+seed,fade=f.age>=(f.linger57?Math.max(5,(f.duration57||9)-2):5)?Math.max(.25,1-(f.age-(f.linger57?(f.duration57||9)-3:4))*.16):1,strength=(.13+c.c*.065)*fade,pal=JAR_GAS_PALETTE57[f.status57]||JAR_GAS_PALETTE57.poison;
     // Overlapping smoke lobes replace hard rectangular cell markers. Presentation consumes no combat RNG.
     for(let i=0;i<3;i++){
       const cx=px+16+Math.sin(phase*.61+i*2.1)*5,cy=py+15+Math.cos(phase*.47+i*1.7)*4,r=10+c.c+Math.sin(phase+i)*2,g=q.createRadialGradient(cx,cy,1,cx,cy,r);
-      g.addColorStop(0,drunk?'#b982c3':'#a6c76d');g.addColorStop(.55,drunk?'#775381':'#628842');g.addColorStop(1,drunk?'#382a4100':'#2c482400');q.globalAlpha=strength;q.fillStyle=g;q.beginPath();q.ellipse(cx,cy,r,r*.8,Math.sin(phase*.2)*.25,0,Math.PI*2);q.fill();
+      g.addColorStop(0,pal.core);g.addColorStop(.55,pal.mid);g.addColorStop(1,pal.edge);q.globalAlpha=strength;q.fillStyle=g;q.beginPath();q.ellipse(cx,cy,r,r*.8,Math.sin(phase*.2)*.25,0,Math.PI*2);q.fill();
     }
-    q.globalAlpha=strength*.65;q.strokeStyle=drunk?'#deb5df':'#c5d991';q.lineWidth=.8;q.beginPath();q.ellipse(px+16+Math.sin(phase)*3,py+14,8+Math.sin(phase*.5)*2,3.5,Math.sin(phase*.4)*.45,Math.PI*.16,Math.PI*1.35);q.stroke();
-    for(let i=0;i<3;i++){const u=(now/1800+i*.31+(seed%23)/23)%1;q.globalAlpha=(1-u)*strength;q.fillStyle=drunk?'#d1a5d3':'#bed586';q.fillRect(px+7+i*8+Math.sin(phase+i)*2,py+24-u*20,1.4,1.4)}
+    q.globalAlpha=strength*.65;q.strokeStyle=pal.line;q.lineWidth=.8;q.beginPath();q.ellipse(px+16+Math.sin(phase)*3,py+14,8+Math.sin(phase*.5)*2,3.5,Math.sin(phase*.4)*.45,Math.PI*.16,Math.PI*1.35);q.stroke();
+    for(let i=0;i<3;i++){const u=(now/1800+i*.31+(seed%23)/23)%1;q.globalAlpha=(1-u)*strength;q.fillStyle=pal.mote;q.fillRect(px+7+i*8+Math.sin(phase+i)*2,py+24-u*20,1.4,1.4)}
   }q.restore();
 }
 function visualPlayerPosition(){if(!state)return{x:0,y:0,worldX:TILE/2,worldY:TILE/2};const x=Number.isFinite(VIS.playerX)?VIS.playerX:state.player.x,y=Number.isFinite(VIS.playerY)?VIS.playerY:state.player.y;return{x,y,worldX:x*TILE+TILE/2,worldY:y*TILE+TILE/2}}
@@ -2547,6 +2574,11 @@ const ACTOR_SPEC={
   '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander"},
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
   '갈고리 죄수':{"a":"branch","c":"#5f4740","h":"#9c8170","ac":"#cdbf96","design":"hook_prisoner"},
+  '악몽 시녀':{"a":"branch","c":"#4b3466","h":"#8c70ab","ac":"#e08ae0","design":"nightmare_maid"},
+  '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
+  '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
+  '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
+  '흉조 까마귀':{"a":"branch","c":"#1f1e2c","h":"#5a5f82","ac":"#e24a4a","design":"ominous_crow"},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3022,6 +3054,87 @@ function drawBranchCreature(q,m,frame,sp){
   E(25,25+b,5,5,'#928978');E(25,25+b,3,3,'#292e30');R(24,23+b,2,1,'#131d23');
   P(h,[[2,20+b],[7,18+b],[8,27],[4,30],[1,27]]);L(3,22,5,26,a);bootR9(q,7,31,7);bootR9(q,20,31,7);R(10,28,4,3,h);R(21,29,3,2,h);break;
  }
+ case'nightmare_maid':{
+  // A legless maid: the skirt frays into smoke, a lace headband sits over a veil of hair and one pale eye burns through it.
+  P('#1b1326',[[7,21+b],[25,21+b],[28,30],[23,27],[21,34],[16,29],[11,35],[9,28],[4,31]]);
+  P(c,[[10,13+b],[22,13+b],[26,27],[21,25],[16,28],[11,25],[6,27]]);P(h,[[10,14+b],[15,15+b],[13,25],[8,26]],null);
+  P('#d9d1de',[[13,16+b],[19,16+b],[21,25],[16,23],[11,25]],null);R(15,18+b,2,3,'#7d2f55');L(13,23,19,23,a);
+  L(10,16+b,5,26+b,h,3);L(22,16+b,27,26+b,h,3);for(const x of[4,6,26,28])L(x,26+b,x+(x<16?-1:1),31+b,ivory,1);
+  P('#150f1d',[[9,7+b],[12,2+b],[20,2+b],[24,8+b],[25,18+b],[21,13+b],[11,13+b],[7,19+b]]);
+  E(16,8+b,5,5,'#b9aec4');P('#150f1d',[[10,5+b],[17,3+b],[22,6+b],[17,10+b],[13,11+b],[10,9+b]]);
+  R(17,7+b,3,2,a);R(18,7+b,1,2,'#fff2ff');
+  P('#e6e0ea',[[9,3+b],[12,0+b],[16,2+b],[20,0+b],[23,3+b],[20,5+b],[12,5+b]]);for(const x of[11,15,19])R(x,1+b,1,3,'#a89fb2');
+  for(const[x,y]of[[3,12],[27,10],[6,33],[26,32]])R(x,y+b,1,2,a);break;
+ }
+ case'stitched_dead':{
+  // A stooped corpse in a burial shroud, neck bent, mouth sewn shut with black thread, knuckles dragging.
+  P('#2c2a24',[[8,12+b],[23,12+b],[27,26],[23,32],[9,32],[5,26]]);P(c,[[9,14+b],[22,14+b],[24,27],[21,31],[10,31],[8,26]]);
+  P(h,[[9,15+b],[14,15+b],[13,30],[9,28]],null);L(12,20+b,20,26,'#4f4b3f');L(19,17+b,13,28,'#4f4b3f');
+  L(10,16+b,5,28+b,h,4);L(22,16+b,27,29+b,h,4);E(5,29+b,2,2,ivory);E(27,30+b,2,2,ivory);
+  P('#c4bfa6',[[10,4+b],[14,1+b],[21,2+b],[24,7+b],[22,13+b],[12,13+b],[9,9+b]]);
+  R(12,6+b,3,2,'#1d1a17');R(18,6+b,3,2,'#1d1a17');R(13,7+b,1,1,a);R(19,7+b,1,1,a);
+  R(12,11+b,10,2,'#2a2520');for(let x=12;x<22;x+=2)L(x,10+b,x+1,14+b,'#12100e');
+  P(ivory,[[8,8+b],[6,4+b],[10,6+b]],null);bootR9(q,10,31,5);bootR9(q,18,31,5);break;
+ }
+ case'crawling_hands':{
+  // A fist-sized heap of severed hands walking on its fingertips; wrist stumps drip.
+  for(const[x,y,sc]of[[5,24,.7],[21,26,.75]]){P(c,[[x,y+b],[x+8*sc,y-3+b],[x+10*sc,y+6],[x+2,y+8]]);for(let i=0;i<4;i++)L(x+i*2.4,y+2,x+i*2.4-1,y+9+(i%2),h,1.4)}
+  P('#4a2b2b',[[9,17+b],[23,17+b],[26,27],[16,30],[6,27]]);P(c,[[10,12+b],[22,12+b],[25,24],[16,27],[7,24]]);
+  P(h,[[11,13+b],[17,13+b],[14,22],[9,22]],null);
+  for(let i=0;i<5;i++){const x=8+i*4;L(x,22,x+(i-2)*1.5,31+(i%2),h,2);R(x+(i-2)*1.5-1,31+(i%2),3,2,ivory)}
+  for(const x of[11,16,21])L(x,13+b,x+(x-16)*.3,5+b,h,2.2);L(8,14+b,3,9+b,h,2.2);L(24,14+b,29,9+b,h,2.2);
+  for(const[x,y]of[[11,5],[16,3],[21,5],[3,9],[29,9]])R(x-1,y+b,3,2,ivory);
+  R(15,17+b,3,4,a);R(16,21+b,1,3,a);R(13,19+b,1,4,'#6a1d27');R(20,19+b,1,5,'#6a1d27');break;
+ }
+ case'eye_lantern':{
+  // A paper lantern for a shade: one bloodshot eye behind the paper, hanging tassels and a thin flame above.
+  L(16,0,16,5+b,'#3a2d28',1);P('#3a2b26',[[10,5+b],[22,5+b],[21,9+b],[11,9+b]]);R(11,5+b,10,1,h);
+  E(16,18+b,10,10,c);P(h,[[8,14+b],[12,10+b],[11,18+b],[8,22+b]],null);
+  for(const y of[12,18,24])L(7,y+b,25,y+b,'#5a2c29',1);
+  E(16,18+b,6,5,'#e8dcc0');E(16,18+b,2.6,2.6,'#6b1018');R(15,17+b,2,2,'#1a0709');
+  L(11,16+b,14,17+b,'#b2323b');L(21,20+b,18,19+b,'#b2323b');L(12,21+b,15,20+b,'#b2323b');
+  P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
+  P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
+ }
+ case'ominous_crow':{
+  // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
+  q.save();q.translate(1.5,.5);
+  const deep='#17161f',body='#262533',edge='#4f5478',sheen='#838bb4',beak='#b8a06a',beakD='#5a4a2b',gape='#6b1422',tongue='#d65a6e',wb=b?-1:0;
+  const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+  const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+   P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+  // omen: a blood-red crescent behind, drifting ash and falling feathers in the empty corners
+  q.save();q.beginPath();q.arc(6.5,7.5,6.2,0,Math.PI*2);q.arc(9.2,6.2,5.2,0,Math.PI*2);q.fillStyle='#b3283a';q.fill('evenodd');q.strokeStyle='#4a0d18';q.lineWidth=.8;q.stroke();q.restore();
+  P('#e5606a',[[2.2,10.6],[3.2,12.4],[4.6,13.2]],null);
+  for(const[x,y,d,sz]of[[22,27,.5,3.2],[27,31,-.4,3],[19,33,.9,2.6],[29,24,-.9,2.8],[24,21.5,.2,2.4]]){const a=d,dx=Math.cos(a)*sz,dy=Math.sin(a)*sz;P(edge,[[x,y],[x+dx*.5-dy*.5,y+dy*.5+dx*.5],[x+dx,y+dy],[x+dx*.5+dy*.5,y+dy*.5-dx*.5]],null);L(x,y,x+dx,y+dy,sheen,.5)}
+  for(const[x0,y0,cx,cy,x1,y1]of[[26,12,30,17,27,22],[23,19,27,24,24,29],[30,20,32,24,30,28]]){q.strokeStyle='#3b3652';q.lineWidth=.9;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
+  // tail streaming up and back
+  for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
+  // far wing (darker), then body, then near wing
+  for(const[deg,L]of[[62,12],[75,13.5],[88,13],[101,11.5],[114,9.5]])feather(15,11,deg,L,deep,edge,1.4);
+  rot(17,17,9.6,5.4,-.62,deep);rot(17,16.4,9,4.8,-.62,body);
+  rot(15.2,15.2,6,2,-.62,edge);
+  for(const[x,y]of[[10.5,19.5],[13,21],[16,21.6],[19,21]])P(deep,[[x-1.6,y],[x-.4,y+3.2],[x+1.4,y+.2]],null);
+  for(const[deg,L,hi]of[[58,14.5,sheen],[72,16,sheen],[86,15.5,sheen],[100,14,sheen],[114,11.5,sheen]])feather(16.5,12.6+wb*0,deg,L+(wb?-.8:0),body,hi,1.6);
+  P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
+  // talons reaching forward-down
+  for(const[x0,y0,x1,y1]of[[13.5,21.5,9,27.5],[17.5,22,13.5,29]]){L(x0,y0,x1,y1,beakD,1.6);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.1)}
+  // a skull clutched in the talons
+  E(16.4,32,2.9,2.6,'#e6ddc6');P('#e6ddc6',[[14.4,33.2],[18.4,33.2],[17.8,35.4],[15,35.4]]);R(14.6,31,1.7,1.7,'#1a1520');R(17.2,31,1.7,1.7,'#1a1520');R(16.1,33.2,.9,1.2,'#1a1520');for(const x of[15.2,16.6,18])L(x,34.6,x,35.4,'#1a1520',.5);
+  // neck ruff and head, lower left
+  for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
+  E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
+  P(deep,[[12.5,15],[16,12.8],[14,17.2]],null);P(deep,[[10.2,14.6],[12.4,11],[12.6,15.4]],null);
+  // eye and brow
+  R(7.5,17.4,3,2,a);R(7.5,17.4,1,1,'#ffd9d9');R(9.2,17.9,1,1,'#12101a');L(6.4,16.5,10.8,17.6,deep,1.4);
+  // beak gaping toward the lower left: red throat, hooked upper, lower, tongue
+  P(gape,[[8,21.5],[2.6,26.8],[5.8,29.6],[10.2,24.4]]);R(5.6,26.4,2,2,tongue);
+  P(beak,[[11,18.4],[6.4,20],[.8,27.4],[8.6,23]]);L(8.6,20,3.4,25.8,beakD,.7);P(beakD,[[1.2,26.6],[.8,27.4],[3.4,25.6]],null);
+  P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
+  // roar lines
+  for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
+  q.restore();break;
+  }
  }
 }
 function monsterCanvas(m,frame=0){

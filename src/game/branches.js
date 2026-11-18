@@ -2544,7 +2544,7 @@ const CITADEL_ENEMIES105=Object.freeze([
  {name:'흑철 창위병',kind:'human',hp:48,atk:12,def:7,eva:2,reach:2,formation:true,role61:'formation',citadelActor105:'lancer',color:'#8295a8',shape:'knight',xp:18,concept57:'검은 철갑을 두른 성채 창병.'},
  {name:'철쇄 집행관',passageSeal:{species:'철쇄 집행관',radius:8,range:8,duration:6,cooldown:12},kind:'human',hp:46,atk:13,def:5,eva:3,hook:true,role61:'hook',citadelActor105:'chain',color:'#b58966',shape:'knight',xp:20,concept57:'철쇄를 던져 적을 끌어당기는 집행관.'},
  {name:'흑성 노수',kind:'human',hp:30,atk:11,def:3,eva:4,ranged:true,range:7,role61:'skirmisher',citadelActor105:'crossbow',color:'#a39fba',shape:'archer',xp:17,concept57:'회랑과 사격실에서 쇠뇌를 겨누는 성채 사수.'},
- {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
+ {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',targetMark61:{turns:6,cooldown:14},citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
  {name:'납골 철갑시체',kind:'undead',hp:58,atk:13,def:8,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
  {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
