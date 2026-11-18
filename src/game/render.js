@@ -2578,7 +2578,7 @@ const ACTOR_SPEC={
   '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
   '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
-  '흑룡':{"a":"branch","c":"#2b2e3a","h":"#59607a","ac":"#c25bd0","design":"black_dragon"},
+  '흑룡':{"a":"branch","c":"#2b2e3a","h":"#59607a","ac":"#c25bd0","design":"black_dragon","resolution":3},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3097,31 +3097,34 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
  case'black_dragon':{
-  // A black dragon seen from the side: raised bat wing, arched neck, horned wedge head with the jaw open, ridged back, four clawed legs and a long spade-tipped tail.
-  const belly='#6d5a80',wing='#171a27',spine='#9a3f86';
-  // tail
-  P(c,[[11,24+b],[6,26+b],[2,30],[2,35],[6,35],[5,32],[9,30],[14,29]]);P(spine,[[1,34],[4,30],[7,36]]);
-  // wing behind the body
-  P(wing,[[14,17+b],[3,9+b],[5,4+b],[9,8+b],[11,1+b],[15,7+b],[19,4+b],[19,15+b]]);
-  for(const[x,y]of[[3,9],[5,4],[11,1],[19,4]])L(14,17+b,x,y+b,h,1.2);L(5,4+b,19,4+b,h,1);
-  // far legs
-  P('#1c1f2b',[[12,24],[16,25],[16,31],[11,31]]);P('#1c1f2b',[[21,24],[24,25],[25,31],[20,31]]);
-  // torso, belly plates, back ridge
-  P(c,[[9,20+b],[15,15+b],[22,16+b],[25,22+b],[23,28],[14,30],[8,26]]);
-  P(h,[[11,19+b],[16,16+b],[21,17+b],[15,20+b]],null);
-  P(belly,[[11,27],[23,27],[22,29.5],[14,30]],null);for(const x of[13,16,19])L(x,27,x,30,'#3d3149',1);
-  for(const[x,y]of[[10,18],[13,16],[16,15],[19,15],[22,16]])P(spine,[[x-1.5,y+b],[x+.5,y-3.5+b],[x+2,y+.5+b]],null);
-  // near legs with claws
-  P(c,[[9,24],[14,25],[14,31],[7,31]]);P(c,[[19,24],[24,25],[25,31],[18,31]]);
-  for(const x of[7,9,11])R(x,31,1,2,ivory);for(const x of[18,20,22])R(x,31,1,2,ivory);R(7,30,8,1,h);R(18,30,8,1,h);
-  // neck and head
-  P(c,[[20,18+b],[22,11+b],[22,6+b],[27,6+b],[27,12+b],[25,19+b]]);P(h,[[21,13+b],[22,8+b],[24,8+b],[23,14+b]],null);
-  for(const y of[9,12,15])P(spine,[[20,y+b],[18,y-2+b],[21,y+2+b]],null);
-  P(c,[[22,2+b],[28,0+b],[32,4+b],[32,7+b],[26,8+b],[22,7+b]]);P(h,[[23,3+b],[28,1+b],[28,3+b],[24,5+b]],null);
-  P('#1a0c1c',[[24,8+b],[32,7+b],[31,12+b],[25,11+b]]);for(const x of[26,28,30])R(x,8+b,1,2,ivory);for(const x of[27,29])R(x,10+b,1,2,ivory);
-  P(ivory,[[23,2+b],[17,-1+b],[21,5+b]],null);P(ivory,[[25,1+b],[21,-3+b],[26,4+b]],null);
-  R(26,3+b,3,2,a);R(27,3+b,1,2,'#fff0ff');R(31,5+b,1,1,'#12100e');
-  P('#93d36a',[[27,12+b],[31,12+b],[32,15+b],[29,17+b],[26,15+b]],null);R(28,15+b,2,2,'#6aa84a');
+  // A long black wyrm coiled around its own base like the 이무기, but spined and antlered: tapered ink-black body, violet ridge, mane, whiskers and a gas-dripping jaw.
+  // Drawn at 3x (ACTOR_SPEC resolution), so curves and fractional coordinates stay smooth.
+  const N=52,pts=[],bodyW=(u)=>u<.1?1.1+u/.1*2.6:u<.7?3.7+Math.sin((u-.1)/.6*Math.PI)*3.4:7.1-(u-.7)/.3*1.6;
+  for(let i=0;i<=N;i++){const u=i/N;let x,y;
+   if(u<.82){const t=u/.82,th=-.6+t*Math.PI*4.3,rx=12.5-t*3.5;x=17+Math.cos(th)*rx;y=30.5-t*15+Math.sin(th)*3.4}
+   else{const t=(u-.82)/.18,th=-.6+Math.PI*4.3,x0=17+Math.cos(th)*9,y0=15.5+Math.sin(th)*3.4;x=x0+(18-x0)*t+Math.sin(t*Math.PI)*2.5;y=y0+(14-y0)*t}
+   pts.push({x,y,w:bodyW(u),u})}
+  const order=pts.slice(0,-1).map((p,i)=>i).sort((i,j)=>pts[i].y-pts[j].y);
+  for(const pass of[0,1,2]){for(const i of order){const p0=pts[i],p1=pts[i+1],w=p0.w;q.lineCap='round';
+   if(pass===0){q.strokeStyle=d;q.lineWidth=w+1.6}
+   else if(pass===1){q.strokeStyle=c;q.lineWidth=w}
+   else{q.strokeStyle=h;q.lineWidth=Math.max(.5,w*.2)}
+   const off=pass===2?w*.26:0;q.beginPath();q.moveTo(p0.x,p0.y-off);q.lineTo(p1.x,p1.y-off);q.stroke()}}
+  for(let i=1;i<N;i+=2){const p0=pts[i],p1=pts[i+1];if(p0.u<.12)continue;const dx=p1.x-p0.x,dy=p1.y-p0.y,l=Math.hypot(dx,dy)||1,nx=dy/l,ny=-dx/l;
+   if(p0.u>.8||Math.sin(-.6+p0.u/.82*Math.PI*4.3)<-.2)P('#a145a0',[[p0.x-nx*p0.w*.45,p0.y-ny*p0.w*.45],[p0.x-nx*(p0.w*.45+2.6),p0.y-ny*(p0.w*.45+2.6)],[p1.x-nx*p1.w*.45,p1.y-ny*p1.w*.45]],null)}
+  const hx=18,hy=7+b*.8;
+  for(const[dx,dy,l]of[[-5,2,6],[-6,5,6],[-4,8,5]])P('#8a2f78',[[hx-2,hy+dy-1],[hx+dx-l*.5,hy+dy-2],[hx+dx,hy+dy+2],[hx-2,hy+dy+2]],'#1b0c1c',.5);
+  L(hx-3,hy-4,hx-7,hy-10,ivory,1.5);L(hx-5,hy-7,hx-9.5,hy-7,ivory,1);L(hx-6,hy-8.5,hx-8,hy-12.5,ivory,1);
+  L(hx+3,hy-4,hx+7,hy-10,ivory,1.5);L(hx+5,hy-7,hx+9.5,hy-7,ivory,1);L(hx+6,hy-8.5,hx+8,hy-12.5,ivory,1);
+  P(c,[[hx-7,hy+1],[hx-4,hy-4.5],[hx+4,hy-4.5],[hx+8,hy-.5],[hx+9,hy+3],[hx+4,hy+5],[hx-5,hy+5]]);
+  P(h,[[hx-4.5,hy-3.5],[hx+2,hy-3.8],[hx-1,hy+.2],[hx-5.5,hy+.5]],null);
+  P('#1a0c1c',[[hx-3,hy+3.5],[hx+8.5,hy+3.5],[hx+7.5,hy+8],[hx-1,hy+8]]);
+  for(const x of[-2,.5,3,5.5])P(ivory,[[hx+x,hy+3.5],[hx+x+1,hy+3.5],[hx+x+.5,hy+5.8]],null);
+  for(const x of[0,3,6])P(ivory,[[hx+x,hy+8],[hx+x+1,hy+8],[hx+x+.5,hy+6]],null);
+  P(a,[[hx-4,hy-.6],[hx-.8,hy-1.4],[hx-1,hy+1.1],[hx-4,hy+1.2]],null);P(a,[[hx+1.6,hy-1.4],[hx+4.8,hy-.6],[hx+4.6,hy+1.2],[hx+1.4,hy+1.1]],null);
+  R(hx-3.2,hy-.4,1,1,'#fff0ff');R(hx+3.4,hy-.4,1,1,'#fff0ff');R(hx+6.5,hy+.8,.9,.9,'#12100e');
+  q.strokeStyle='#d6b45e';q.lineWidth=.7;q.lineCap='round';for(const[x1,y1,x2,y2,x3,y3]of[[9,2.5,13,3+b,11,9.5],[-7,2.5,-12,5,-9,11]]){q.beginPath();q.moveTo(hx+x1,hy+y1);q.quadraticCurveTo(hx+x2,hy+y2,hx+x3,hy+y3);q.stroke()}
+  P('#93d36a',[[hx+.5,hy+8],[hx+5.5,hy+8],[hx+7.5,hy+11],[hx+3,hy+13.5],[hx-1.5,hy+11]],null);E(hx+3,hy+11,1.4,1.4,'#6aa84a',null);
   break;
   }
  }

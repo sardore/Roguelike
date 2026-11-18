@@ -50,7 +50,7 @@ const MONSTERS=[
   {min:12,max:20,name:'대포',hp:42,atk:22,attackRevision:2,def:12,eva:0,xp:16,color:'#79766b',shape:'armor',kind:'construct',fixed:true,immobile105:true,ranged:true,range:9,artillery:true,crossfire:{range:9,bonus:8,cooldown:4},deathBlast:{radius:1,bonus:8},spawnWeightByFloor:{16:4,20:4},spawnCountByFloor:{16:2,20:2},concept57:'두꺼운 철갑과 화약통으로 무장한 고정 포대다. 십자로 드리운 사선에 침입자가 닿으면 곡사포를 쏘고, 파괴되면 남은 화약이 폭발한다.'},
 
   // 4구역 지하 장고 + 16층 성채.
-  {min:14,max:20,name:'흑룡',hp:56,atk:13,def:5,eva:4,xp:30,color:'#2d303b',shape:'serpent',kind:'beast',fast:true,diseaseBreath61:true,spawnWeight:.35,spriteScale:1.35,roleDesc61:'높은 행동 속도로 거리를 좁힌다. 공격이 적중하면 중병 가스를 뿜어 주변을 오염시킨다.',concept57:'먹빛 비늘을 두른 흑룡. 숨결이 닿은 곳에는 썩은 병이 번진다.'},
+  {min:14,max:20,name:'흑룡',hp:56,atk:13,def:5,eva:4,xp:30,color:'#2d303b',shape:'serpent',kind:'beast',fast:true,diseaseBreath61:true,spawnWeight:.35,spriteScale:1.5,roleDesc61:'높은 행동 속도로 거리를 좁힌다. 공격이 적중하면 중병 가스를 뿜어 주변을 오염시킨다.',concept57:'먹빛 비늘을 두른 흑룡. 숨결이 닿은 곳에는 썩은 병이 번진다.'},
   {...LIGHTNING_PLATE,min:14,max:20},
   {...BREACH_PLATE,min:19,max:25},
   {min:16,max:20,name:'지네',concept57:"장고의 틈새를 채운 마디들이 일제히 꿈틀거린다.",hp:26,atk:8,def:2,eva:5,xp:8,color:'#785b45',shape:'beast',kind:'beast',poison:true,ambush:true},
