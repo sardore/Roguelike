@@ -2578,6 +2578,7 @@ const ACTOR_SPEC={
   '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
   '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
+  '흑룡':{"a":"branch","c":"#2c3042","h":"#6b7499","ac":"#d86ce0","design":"black_dragon"},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3095,11 +3096,45 @@ function drawBranchCreature(q,m,frame,sp){
   P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
+ case'black_dragon':{
+  // A black wyrm with folded bat wings: a coiled base, an S-curved beaded neck, swept horns, a mane of violet spikes and a gas-dripping jaw.
+  const body='#2c3042',deep='#191c2a',light='#6b7499',belly='#7a6292',bellyD='#4d3b63',wing='#262a42',vio='#a145a0',gold='#d6b45e',gas='#93d36a',wb=b?-1:0;
+  // tail tip and coil
+  pR9(q,body,[[8,31],[3,30],[1,26],[3,21-b],[5,26],[8,28],[14,28]]);pR9(q,vio,[[2,23-b],[4,19-b],[6,25]],null);
+  eR9(q,17,28,13,5.8,deep);eR9(q,17,26.5,12,5,body);eR9(q,17,26,6.5,2.4,'#10111b');
+  pR9(q,light,[[7,25],[10,22],[20,21],[26,23],[20,22.4],[12,24]],null);
+  pR9(q,belly,[[7,29],[13,31],[24,30],[28,28],[27,31],[22,33],[12,33],[7,31]],null);
+  for(const x of[11,15,19,23])lR9(q,x,31,x-.4,32.8,bellyD,.7);
+  // wings, folded behind the neck
+  for(const sx of[-1,1]){const w=(n)=>16+sx*n;
+   pR9(q,wing,[[w(2),17],[w(14),8+wb],[w(12),12],[w(15),14+wb],[w(11),17],[w(14),21],[w(5),22]]);
+   for(const[tx,ty]of[[14,8],[15,14],[14,21]])lR9(q,w(2),17,w(tx),ty+(ty<15?wb:0),light,.9);lR9(q,w(14),8+wb,w(15),14+wb,light,.7)}
+  // neck: outlined beads along an S curve
+  const bez=(t)=>{const u=1-t,P=[[22,24],[6,24],[8,14],[15,12]];return[0,1].map(k=>u*u*u*P[0][k]+3*u*u*t*P[1][k]+3*u*t*t*P[2][k]+t*t*t*P[3][k])};
+  for(const pass of[0,1,2,3]){for(let i=0;i<=16;i++){const t=i/16,[x,y]=bez(t),r=4.4-t*1.5;
+   if(pass===0)eR9(q,x,y+(t>.7?b:0),r+1,r+1,ACTOR_OUTLINE,null);
+   else if(pass===1)eR9(q,x,y+(t>.7?b:0),r,r,body,null);
+   else if(pass===2&&i%2===0)eR9(q,x-r*.28,y-r*.3+(t>.7?b:0),r*.45,r*.38,light,null);
+   else if(pass===3&&i%2===1)eR9(q,x+r*.35,y+r*.42+(t>.7?b:0),r*.4,r*.28,belly,null)}}
+  for(const t of[.2,.4,.6]){const[x,y]=bez(t);pR9(q,vio,[[x-4.6,y-1],[x-7.4,y-3],[x-4,y+2]],null)}
+  // head
+  pR9(q,vio,[[13,6+b],[7,3+b],[10,8+b]]);pR9(q,vio,[[13,9+b],[6,8+b],[11,11+b]]);pR9(q,vio,[[14,11+b],[8,13+b],[12,13+b]]);
+  pR9(q,ivory,[[15,5+b],[10,0+b],[12,-1+b],[17,3+b]]);pR9(q,ivory,[[18,4+b],[16,-1+b],[19,-1+b],[21,3+b]]);
+  pR9(q,body,[[12,8+b],[16,5+b],[23,5+b],[29,8+b],[32,10+b],[26,12+b],[14,12+b]]);
+  pR9(q,light,[[14,6+b],[20,5+b],[24,6+b],[17,8+b]],null);
+  pR9(q,'#2a0e22',[[18,11+b],[31,11+b],[29,14.5+b],[20,14+b]]);
+  for(const x of[21,25,29])pR9(q,ivory,[[x,11+b],[x+1.6,11+b],[x+.8,13+b]],null);
+  for(const x of[23,27])pR9(q,ivory,[[x,14.4+b],[x+1.5,14.3+b],[x+.8,12.6+b]],null);
+  R(19,7+b,4,2,'#d86ce0');R(20,7+b,1,1,'#fff0ff');R(29,8+b,1,1,ACTOR_OUTLINE);
+  lR9(q,30,10+b,32,13+b,gold,.8);lR9(q,13,10+b,10,15+b,gold,.8);
+  pR9(q,gas,[[23,15+b],[27,15+b],[28,18+b],[25,20+b],[22,18+b]],null);R(24,17+b,2,2,'#5f9a45');
+  break;
+ }
  }
 }
 function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
- if(m?.palaceActor105||m?.wyrmArt61||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||m.wyrmArt61||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(null,m.branchBoss105?2:1);if(!m.branchBoss105)q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.combatFixture54==='slime-shell'?{a:'slime_shell_empty'}:shellSlimeProtected(m)?{a:'slime_shell'}:m?.shellSlime?{a:'slime_shell_exposed'}:m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?[m.shackleStyle??0,m.intent61?.type==='shackleCounter'].join(':'):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
@@ -4335,16 +4370,16 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
- if(m.palaceActor105==='imugi'||m.wyrmArt61){
-  // Use the canonical creature outline, shaded polygons and curved body at native 32x36. The black wyrm is the same body in another palette.
-  const black=m.wyrmArt61==='black',deep=black?'#1a1d2b':'#203f52',jade=black?'#2e3244':'#3c7d7b',light=black?'#68719a':'#74ad98',bone=black?'#e2d8bc':'#d3c69a',gold=black?'#9a3f86':'#a68c58',pit=black?'#0f1019':'#172e3b',eye=black?'#e07ae8':'#efd27b';
+ if(m.palaceActor105==='imugi'){
+  // Use the canonical creature outline, shaded polygons and curved body at native 32x36.
+  const deep='#203f52',jade='#3c7d7b',light='#74ad98',bone='#d3c69a',gold='#a68c58';
   shadow1012(q,16,33,26);
   // Rear tail and coil stay behind the rising neck, with an open centre.
   pR9(q,jade,[[10,31],[5,31],[2,28],[3,24],[6,21-b],[5,26],[7,28],[13,28]]);
   pR9(q,light,[[3,26],[5,23-b],[5,27],[8,29],[5,29]],null);
   eR9(q,18,27,11.5,6,deep);
   eR9(q,18,25.5,10.5,5,jade);
-  eR9(q,17,25,6,2.5,pit);
+  eR9(q,17,25,6,2.5,'#172e3b');
   pR9(q,light,[[8,25],[11,22],[20,21],[25,23],[19,22.5],[12,24]],null);
   pR9(q,gold,[[8,28],[13,30],[24,29],[27,27],[26,30],[21,32],[12,32],[8,30]],null);
   for(const x of[12,16,20,24])lR9(q,x,30,x-.5,31.5,deep,.6);
@@ -4364,7 +4399,7 @@ function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,
   pR9(q,deep,[[9,11+b],[14,12+b],[18,14+b],[27,14+b],[26,16+b],[19,16+b],[15,14+b],[10,14+b]],null);
   pR9(q,gold,[[17,10+b],[21,9+b],[24,11+b],[20,12+b]],null);
   lR9(q,17,10+b,23,10+b,ACTOR_OUTLINE,1);
-  eye1012(q,21,11+b,eye);r(ACTOR_OUTLINE,22,11+b,1,1);
+  eye1012(q,21,11+b,'#efd27b');r(ACTOR_OUTLINE,22,11+b,1,1);
   lR9(q,23,14+b,29,14+b,ACTOR_OUTLINE,.8);
   pR9(q,bone,[[24,14+b],[25.5,14+b],[24.5,17+b]],null);
   eR9(q,28,12+b,.7,.5,ACTOR_OUTLINE,null);
