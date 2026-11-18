@@ -2578,7 +2578,6 @@ const ACTOR_SPEC={
   '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
   '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
-  '흑룡':{"a":"branch","c":"#2b2e3a","h":"#59607a","ac":"#c25bd0","design":"black_dragon","resolution":2},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3096,63 +3095,11 @@ function drawBranchCreature(q,m,frame,sp){
   P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
- case'black_dragon':{
-  // True pixel art on a 64x72 grid (ACTOR_SPEC resolution 2): every pixel is placed by integer rasterising, with hand-rolled outline, rim light, scale dither and belly plates.
-  // A long black wyrm coiled upward like the 이무기, antlered, maned and whiskered, with a sickly gas dripping from its jaw.
-  const W=64,H=72,G=new Uint8Array(W*H),OWN=new Int16Array(W*H).fill(-1);
-  const PAL=[null,'#0d0b10','#2a2d3c','#1b1e2d','#6a7396','#7a6290','#4c3a60','#a145a0','#e08ad8','#e8dec2','#d86ce0','#fff0ff','#2a0e22','#f1e8d0','#d6b45e','#93d36a','#5f9a45','#7e2a72','#b44fa8'];
-  const OL=1,BODY=2,BODYD=3,HI=4,BELLY=5,BELLYD=6,SPINE=7,SPINEH=8,IVORY=9,EYE=10,EYEH=11,MOUTH=12,TOOTH=13,GOLD=14,GAS=15,GASD=16,MANE=17,MANEH=18;
-  const inb=(x,y)=>x>=0&&y>=0&&x<W&&y<H,put=(x,y,col)=>{if(inb(x,y))G[y*W+x]=col};
-  const disc=(m,cx,cy,r)=>{for(let y=Math.floor(cy-r);y<=Math.ceil(cy+r);y++)for(let x=Math.floor(cx-r);x<=Math.ceil(cx+r);x++)if(inb(x,y)&&(x+.5-cx)**2+(y+.5-cy)**2<=r*r)m.add(y*W+x)};
-  const line=(m,x0,y0,x1,y1,r0,r1=r0)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)*1.6));for(let i=0;i<=n;i++){const t=i/n;disc(m,x0+(x1-x0)*t,y0+(y1-y0)*t,r0+(r1-r0)*t)}};
-  const poly=(m,pts)=>{let y0=Infinity,y1=-Infinity;for(const[,y]of pts){y0=Math.min(y0,y);y1=Math.max(y1,y)}
-   for(let y=Math.max(0,Math.floor(y0));y<=Math.min(H-1,Math.ceil(y1));y++){const xs=[];for(let i=0;i<pts.length;i++){const[ax,ay]=pts[i],[bx,by]=pts[(i+1)%pts.length];if((ay<=y+.5&&by>y+.5)||(by<=y+.5&&ay>y+.5))xs.push(ax+(y+.5-ay)/(by-ay)*(bx-ax))}
-    xs.sort((u,v)=>u-v);for(let k=0;k+1<xs.length;k+=2)for(let x=Math.ceil(xs[k]-.5);x<=Math.floor(xs[k+1]-.5);x++)if(inb(x,y))m.add(y*W+x)}};
-  // Paint a mask with a 1px outline; outlines never cut into the neighbouring pieces of the same limb (owner ids differing by <=1).
-  const layer=(m,col,id)=>{for(const i of m){const x=i%W,y=(i/W)|0;for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(!inb(nx,ny))continue;const n=ny*W+nx;if(m.has(n))continue;if(G[n]===0||(OWN[n]>=0&&Math.abs(OWN[n]-id)>1)){G[n]=OL;OWN[n]=-2}}}
-   for(const i of m){G[i]=col;OWN[i]=id}};
-  // --- body path: two clear coils rising from the base, then a long S-curved neck ---
-  const N=72,pts=[],rad=(u)=>u<.1?1.3+u/.1*3.2:u<.66?4.5+Math.sin((u-.1)/.56*Math.PI)*2.1:6.2-(u-.66)/.34*1.9;
-  for(let i=0;i<=N;i++){const u=i/N;let x,y,th=0;
-   if(u<.7){const t=u/.7;th=-.7+t*Math.PI*4.1;x=33+Math.cos(th)*(24-t*8);y=66-t*26+Math.sin(th)*7.5}
-   else{const t=(u-.7)/.3,t0=-.7+Math.PI*4.1,x0=33+Math.cos(t0)*16,y0=40+Math.sin(t0)*7.5;x=x0+(34-x0)*t+Math.sin(t*Math.PI*1.6)*6;y=y0+(24-y0)*t}
-   pts.push({x,y,r:rad(u),u,back:u<.7&&Math.sin(th)<-.2})}
-  const CH=4,chunks=[];for(let i=0;i<N;i+=CH)chunks.push({a:i,b:Math.min(N,i+CH+1),id:i/CH|0});
-  chunks.sort((p,q)=>pts[(p.a+p.b)>>1].y-pts[(q.a+q.b)>>1].y);
-  const scaleDot=(x,y)=>(x%4===0&&y%4===0)||(x%4===2&&y%4===2);
-  for(const ck of chunks){
-   for(let i=ck.a;i<ck.b-1;i+=3){const p0=pts[i],p1=pts[i+1];if(p0.u<.16)continue;if(!(p0.back||p0.u>.72))continue;const dx=p1.x-p0.x,dy=p1.y-p0.y,l=Math.hypot(dx,dy)||1,nx=dy/l,ny=-dx/l,o=p0.u>.72?(nx<0?1:-1):1,sx=p0.x+nx*o*p0.r*.6,sy=p0.y+ny*o*p0.r*.6,m=new Set();poly(m,[[sx-dx/l*2,sy-dy/l*2],[sx+dx/l*2,sy+dy/l*2],[sx+nx*o*6.5-dx/l,sy+ny*o*6.5-dy/l-1]]);layer(m,SPINE,ck.id);for(const i2 of m)if(G[i2]===SPINE&&(i2%W)%2===0)G[i2]=SPINEH}
-   const m=new Set();for(let i=ck.a;i<ck.b;i++)line(m,pts[i].x,pts[i].y,pts[Math.min(N,i+1)].x,pts[Math.min(N,i+1)].y,pts[i].r,pts[Math.min(N,i+1)].r);
-   layer(m,BODY,ck.id);
-   for(const i of m){const x=i%W,y=(i/W)|0;if(G[i]!==BODY)continue;
-    const up=inb(x-1,y-1)?G[(y-1)*W+x-1]:0,low=inb(x+1,y+1)?G[(y+1)*W+x+1]:0;
-    if(up===0||up===OL)G[i]=HI;else if(low===0||low===OL)G[i]=BODYD;else if(scaleDot(x,y))G[i]=BODYD}
-   const bm=new Set();for(let i=ck.a;i<ck.b;i++){const p0=pts[i],p1=pts[Math.min(N,i+1)];line(bm,p0.x+p0.r*.1,p0.y+p0.r*.55,p1.x+p1.r*.1,p1.y+p1.r*.55,p0.r*.4,p1.r*.4)}
-   for(const i of bm){if(!m.has(i)||OWN[i]!==ck.id||G[i]===OL)continue;const x=i%W,y=(i/W)|0,up=inb(x,y-2)?G[(y-2)*W+x]:0;if(up===0||up===OL)continue;G[i]=((x+y)>>1)%3===0?BELLYD:BELLY}
-  }
-  // --- head: smaller, sitting on the neck ---
-  const hx=34,hy=12,HID=200,K=.78,hp=(dx,dy)=>[hx+dx*K,hy+dy*K];
-  const mane=(dy,len)=>{const m=new Set(),[x0,y0]=hp(-9,dy);line(m,x0,y0,x0-len*.5,y0-4,2.6,.4);layer(m,MANE,HID);for(const i of m)if(G[i]===MANE&&(((i%W)+((i/W)|0))%3===0))G[i]=MANEH};
-  mane(-6,11);mane(0,13);mane(6,11);mane(11,8);
-  const horn=(sx)=>{const m=new Set(),[ax,ay]=hp(sx*7,-8),[bx,by]=hp(sx*13,-21),[cx,cy]=hp(sx*10,-14),[dx2,dy2]=hp(sx*18,-16),[ex,ey]=hp(sx*12,-19),[fx,fy]=hp(sx*15,-27);line(m,ax,ay,bx,by,2,.7);line(m,cx,cy,dx2,dy2,1.3,.5);line(m,ex,ey,fx,fy,1.2,.4);layer(m,IVORY,HID+3)};
-  horn(-1);horn(1);
-  const sk=new Set();poly(sk,[hp(-14,1),hp(-9,-9),hp(6,-10),hp(16,-3),hp(18,5),hp(10,10),hp(-10,10)]);layer(sk,BODY,HID+6);
-  for(const i of sk){const x=i%W,y=(i/W)|0;if(G[i]!==BODY)continue;const up=inb(x-1,y-1)?G[(y-1)*W+x-1]:0;if(up===0||up===OL)G[i]=HI;else if(scaleDot(x,y))G[i]=BODYD}
-  const jaw=new Set();poly(jaw,[hp(-6,7),hp(16,7),hp(14,16),hp(-2,16)]);layer(jaw,MOUTH,HID+9);
-  for(let k=0;k<5;k++){const m=new Set(),tx=-4+k*4.4;poly(m,[hp(tx,7),hp(tx+2.6,7),hp(tx+1.3,11.5)]);for(const i of m)G[i]=TOOTH}
-  for(let k=0;k<3;k++){const m=new Set(),tx=-1+k*5.5;poly(m,[hp(tx,16),hp(tx+2.6,16),hp(tx+1.3,12.5)]);for(const i of m)G[i]=TOOTH}
-  for(const ex of[-8,4]){const m=new Set();poly(m,[hp(ex,-1),hp(ex+7,-3),hp(ex+7,2),hp(ex,3)]);for(const i of m)G[i]=EYE;const[px,py]=hp(ex+1,0);put(Math.round(px),Math.round(py),EYEH);put(Math.round(px)+1,Math.round(py),EYEH)}
-  for(const[ax,ay,bx,by]of[[16,3,26,6],[-14,3,-24,9]]){const m=new Set(),[x0,y0]=hp(ax,ay),[x1,y1]=hp(bx,by);line(m,x0,y0,x1,y1+(b?1:0),.7);for(const i of m)G[i]=GOLD}
-  const gas=new Set();poly(gas,[hp(1,16),hp(11,16),hp(15,22),hp(7,27),hp(-1,22)]);layer(gas,GAS,HID+12);for(const i of gas){const x=i%W,y=(i/W)|0;if(G[i]===GAS&&((x+y)%3===0))G[i]=GASD}
-  // blit: each grid cell is half a logical pixel
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=G[y*W+x];if(v){q.fillStyle=PAL[v];q.fillRect(x/2,y/2,.5,.5)}}
-  break;
-  }
  }
 }
 function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
- if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.palaceActor105||m?.wyrmArt61||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||m.wyrmArt61||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(null,m.branchBoss105?2:1);if(!m.branchBoss105)q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.combatFixture54==='slime-shell'?{a:'slime_shell_empty'}:shellSlimeProtected(m)?{a:'slime_shell'}:m?.shellSlime?{a:'slime_shell_exposed'}:m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?[m.shackleStyle??0,m.intent61?.type==='shackleCounter'].join(':'):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
@@ -4388,16 +4335,16 @@ function drawPalaceCell(t,px,py,x,y,foreground=null){const d=state.branchTerrain
 }
 const PALACE_KING_SPRITE=Object.freeze({width:80,height:88,frames:1,resolution:2,x:-4,y:-8,displayWidth:40,displayHeight:44});
 function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,w=1)=>{q.strokeStyle=c;q.lineWidth=w;q.beginPath();q.moveTo(x,y);q.lineTo(xx,yy);q.stroke();},b=frame?1:0;q.imageSmoothingEnabled=false;
- if(m.palaceActor105==='imugi'){
-  // Use the canonical creature outline, shaded polygons and curved body at native 32x36.
-  const deep='#203f52',jade='#3c7d7b',light='#74ad98',bone='#d3c69a',gold='#a68c58';
+ if(m.palaceActor105==='imugi'||m.wyrmArt61){
+  // Use the canonical creature outline, shaded polygons and curved body at native 32x36. The black wyrm is the same body in another palette.
+  const black=m.wyrmArt61==='black',deep=black?'#1a1d2b':'#203f52',jade=black?'#2e3244':'#3c7d7b',light=black?'#68719a':'#74ad98',bone=black?'#e2d8bc':'#d3c69a',gold=black?'#9a3f86':'#a68c58',pit=black?'#0f1019':'#172e3b',eye=black?'#e07ae8':'#efd27b';
   shadow1012(q,16,33,26);
   // Rear tail and coil stay behind the rising neck, with an open centre.
   pR9(q,jade,[[10,31],[5,31],[2,28],[3,24],[6,21-b],[5,26],[7,28],[13,28]]);
   pR9(q,light,[[3,26],[5,23-b],[5,27],[8,29],[5,29]],null);
   eR9(q,18,27,11.5,6,deep);
   eR9(q,18,25.5,10.5,5,jade);
-  eR9(q,17,25,6,2.5,'#172e3b');
+  eR9(q,17,25,6,2.5,pit);
   pR9(q,light,[[8,25],[11,22],[20,21],[25,23],[19,22.5],[12,24]],null);
   pR9(q,gold,[[8,28],[13,30],[24,29],[27,27],[26,30],[21,32],[12,32],[8,30]],null);
   for(const x of[12,16,20,24])lR9(q,x,30,x-.5,31.5,deep,.6);
@@ -4417,7 +4364,7 @@ function drawPalaceActor(q,m,frame){const {r,poly}=drawKit(q),line=(c,x,y,xx,yy,
   pR9(q,deep,[[9,11+b],[14,12+b],[18,14+b],[27,14+b],[26,16+b],[19,16+b],[15,14+b],[10,14+b]],null);
   pR9(q,gold,[[17,10+b],[21,9+b],[24,11+b],[20,12+b]],null);
   lR9(q,17,10+b,23,10+b,ACTOR_OUTLINE,1);
-  eye1012(q,21,11+b,'#efd27b');r(ACTOR_OUTLINE,22,11+b,1,1);
+  eye1012(q,21,11+b,eye);r(ACTOR_OUTLINE,22,11+b,1,1);
   lR9(q,23,14+b,29,14+b,ACTOR_OUTLINE,.8);
   pR9(q,bone,[[24,14+b],[25.5,14+b],[24.5,17+b]],null);
   eR9(q,28,12+b,.7,.5,ACTOR_OUTLINE,null);
