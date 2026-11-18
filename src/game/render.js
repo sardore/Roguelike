@@ -3097,20 +3097,28 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
  case'black_dragon':{
-  // A black wyrm with spread bat wings: horned head, glowing violet eyes, sickly breath leaking from the jaw and a tail curling underneath.
-  P('#101219',[[2,31],[7,27],[13,30],[18,34],[25,31],[30,34],[28,36],[18,36],[9,35]]);
-  for(const sx of[-1,1]){const w=(n)=>16+sx*n;
-   P('#161826',[[w(3),16+b],[w(14),5+b],[w(15),12+b],[w(15),19+b],[w(10),17+b],[w(9),25+b],[w(5),21+b]]);
-   for(const[tx,ty]of[[14,5],[15,19],[9,25]])L(w(3),16+b,w(tx),ty+b,h,1);L(w(14),5+b,w(15),12+b,h,1)}
-  P(c,[[10,17+b],[22,17+b],[24,27],[20,33],[12,33],[8,27]]);P(h,[[11,18+b],[15,18+b],[13,32],[9,27]],null);
-  for(let i=0;i<5;i++)L(13,21+i*2.4,19,21+i*2.4,'#454b60',1);
-  L(10,21+b,6,29+b,h,2.5);L(22,21+b,26,29+b,h,2.5);for(const x of[5,7,25,27])L(x,29+b,x+(x<16?-1:1),32+b,ivory,1.2);
-  P(c,[[10,4+b],[16,1+b],[22,4+b],[23,10+b],[19,16+b],[13,16+b],[9,10+b]]);P(h,[[11,4+b],[15,2+b],[15,9+b],[11,10+b]],null);
-  P(ivory,[[10,5+b],[4,0+b],[7,9+b]],null);P(ivory,[[22,5+b],[28,0+b],[25,9+b]],null);
-  for(const x of[16])for(const y of[3,7,11])P('#7a2f66',[[x-2,y+b],[x,y-3+b],[x+2,y+b]],null);
-  R(11,8+b,4,2,a);R(18,8+b,4,2,a);R(12,8+b,1,2,'#fff0ff');R(20,8+b,1,2,'#fff0ff');
-  P('#1a0c1c',[[12,12+b],[20,12+b],[19,17+b],[13,17+b]]);for(const x of[13,15,17,19])R(x,12+b,1,2,ivory);
-  P('#93d36a',[[14,17+b],[18,17+b],[19,20+b],[16,22+b],[13,20+b]],null);R(15,21+b,2,2,'#6aa84a');
+  // An eastern wyrm in ink-black scales: a long S-curved body with ridge spines and hooked claws, antlered horns, drifting whiskers and a jaw leaking sickly gas.
+  const path=[];for(let i=0;i<=26;i++){const t=i/26;path.push([17+Math.sin(t*Math.PI*2.5+.5)*(9-t*4.5),13+t*21])}
+  const seg=(i)=>[path[i],path[i+1],8.2*(1-i/26)+1.6];
+  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.lineCap='round';q.strokeStyle=d;q.lineWidth=w+2;q.beginPath();q.moveTo(...p0);q.lineTo(...p1);q.stroke()}
+  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.lineCap='round';q.strokeStyle=i%2?c:'#222532';q.lineWidth=w;q.beginPath();q.moveTo(...p0);q.lineTo(...p1);q.stroke()}
+  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.strokeStyle=i%2?'#7d849f':h;q.lineWidth=Math.max(.8,w*.28);q.beginPath();q.moveTo(p0[0]-w*.18,p0[1]-.5);q.lineTo(p1[0]-w*.18,p1[1]-.5);q.stroke()}
+  q.lineCap='butt';
+  for(let i=2;i<24;i+=2){const[x,y]=path[i],w=8.2*(1-i/26)+1.6,dir=Math.cos(i/26*Math.PI*2.5+.5)>=0?1:-1;P('#9a3f86',[[x+dir*w*.5,y-2],[x+dir*(w*.5+3.2),y-.5],[x+dir*w*.5,y+1.5]],null)}
+  for(const[i,sx]of[[6,-1],[13,1]]){const[x,y]=path[i];L(x+sx*3,y+1,x+sx*8,y+5,h,2.2);for(const k of[-1,0,1])L(x+sx*8,y+5,x+sx*(10.5+Math.abs(k)*.4),y+5+k*2.2+1,ivory,1)}
+  P('#3a2b45',[[path[25][0],path[25][1]],[path[25][0]-4,34],[path[25][0]+3,35]],null);
+  const hx=16,hy=9+b;
+  for(const[dx,dy]of[[-9,-1],[-8,3],[-7,7]])P('#8a2f78',[[hx-3,hy+dy],[hx+dx,hy+dy-3],[hx+dx+1,hy+dy+2]],null);
+  L(hx-3,hy-3,hx-8,hy-9,ivory,1.6);L(hx-6,hy-6,hx-10,hy-6,ivory,1.2);L(hx-6,hy-6,hx-8,hy-12,ivory,1.2);
+  L(hx+3,hy-3,hx+8,hy-9,ivory,1.6);L(hx+6,hy-6,hx+10,hy-6,ivory,1.2);L(hx+6,hy-6,hx+8,hy-12,ivory,1.2);
+  P(c,[[hx-8,hy+1],[hx-5,hy-4],[hx+4,hy-4],[hx+9,hy+0],[hx+10,hy+4],[hx+5,hy+6],[hx-6,hy+6]]);
+  P(h,[[hx-5,hy-3],[hx+2,hy-3],[hx-2,hy+1],[hx-6,hy+1]],null);
+  P('#1a0c1c',[[hx-3,hy+4],[hx+9,hy+4],[hx+8,hy+9],[hx-1,hy+9]]);
+  for(const x of[-1,2,5,8])R(hx+x,hy+4,1,2,ivory);for(const x of[0,4,8])R(hx+x,hy+8,1,-2,ivory);
+  R(hx-4,hy-1,3,2,a);R(hx+2,hy-1,3,2,a);R(hx-3,hy-1,1,2,'#fff0ff');R(hx+3,hy-1,1,2,'#fff0ff');
+  R(hx+7,hy+1,1,1,'#12100e');
+  L(hx+9,hy+2,hx+14,hy+5+b,'#d6b45e',1);L(hx+14,hy+5+b,hx+11,hy+11,'#d6b45e',1);L(hx-8,hy+2,hx-12,hy+6,'#d6b45e',1);
+  P('#93d36a',[[hx,hy+9],[hx+6,hy+9],[hx+8,hy+12],[hx+3,hy+14],[hx-2,hy+12]],null);R(hx+2,hy+12,3,2,'#6aa84a');
   break;
   }
  }
