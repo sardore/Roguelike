@@ -794,7 +794,7 @@ function applyMonsterAttackStatus57(mon,target,context={}){
  if(mon.slow)applyCombatStatus(target,'weaken',2,.35,{...opts,stagger:true});
  if(mon.blind)applyCombatStatus(target,'blind',4,.45,opts);
  if(mon.stomachHit)applyCombatStatus(target,'upset',4,.4,opts);
- if(mon.diseaseBreath61){spawnJarGasField57(target.x,target.y,{status:'illness',duration:4,maxRadius:3,burstRadius:1,linger:true,source:mon});floatText(target.x,target.y,'중병 가스','#c96fa8',11);addLog(`${mon.name}이 중병 가스를 뿜었다.`)}
+ if(mon.diseaseBreath61){spawnJarGasField57(target.x,target.y,{status:'illness',duration:4,maxRadius:3,burstRadius:1,linger:true,source:mon});floatText(target.x,target.y,'중병 가스','#c96fa8',11);addLog(`${mon.name}이 병든 깃털 가루를 흩뿌렸다.`)}
  if(mon.sealSkill)applyCombatStatus(target,'skillSeal',5,.42,opts);
  if(mon.focusDrain&&Number.isFinite(target.focus))target.focus=Math.max(0,target.focus-mon.focusDrain);
  if(mon.hungerDrain&&Number.isFinite(target.hunger))target.hunger=Math.max(0,target.hunger-mon.hungerDrain);

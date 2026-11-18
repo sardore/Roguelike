@@ -1390,7 +1390,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%']];
     for(const[key,name,seal,meta]of onHit)if(mon[key])add(key,name,seal,'공격 적중 시','기본 '+meta+' 확률. 의지·면역에 따라 감소.','brawl','지속');
     if(mon.summonsVanish)add('summons-vanish','시종의 연명','縛','사망 시','이 개체가 쓰러지면 불려 나온 소환수도 모두 사라진다.','constitution','조건');
-    if(mon.diseaseBreath61)add('disease-breath','중병 가스','疫','공격 적중 시 · 3×3 · 4턴','공격이 적중하면 중병 가스를 뿜는다. 가스 속에 머물면 중병(유예 27턴)에 걸릴 수 있다. 해독산이나 정화로 치료한다.','constitution','지속');
+    if(mon.diseaseBreath61)add('disease-breath','병든 깃털','疫','공격 적중 시 · 3×3 · 4턴','공격이 적중하면 병든 깃털 가루를 흩뿌려 중병 가스를 남긴다. 가스 속에 머물면 중병(유예 27턴)에 걸릴 수 있다. 해독산이나 정화로 치료한다.','constitution','지속');
     if(mon.terrainIgnore61)add('terrain-ignore','지형 무시','浮','이동','물·용암·구덩이·가구 따위를 무시하고 떠다닌다. 벽만은 넘지 못한다.','ghost','지속');
     if(mon.focusDrain)add('focus-drain','기력 흡수','氣','공격 적중 시',`기력 ${mon.focusDrain} 감소.`,'constitution','지속');
     if(mon.hungerDrain)add('hunger-drain','허기 약탈','飢','공격 적중 시',`허기 ${mon.hungerDrain} 감소.`,'constitution','지속');

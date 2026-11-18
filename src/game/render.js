@@ -2578,7 +2578,7 @@ const ACTOR_SPEC={
   '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
   '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
-  '흑룡':{"a":"branch","c":"#2c3042","h":"#6b7499","ac":"#d86ce0","design":"black_dragon"},
+  '흉조 까마귀':{"a":"branch","c":"#1f1e2c","h":"#5a5f82","ac":"#e24a4a","design":"ominous_crow"},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3096,38 +3096,25 @@ function drawBranchCreature(q,m,frame,sp){
   P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
- case'black_dragon':{
-  // A black wyrm with folded bat wings: a coiled base, an S-curved beaded neck, swept horns, a mane of violet spikes and a gas-dripping jaw.
-  const body='#2c3042',deep='#191c2a',light='#6b7499',belly='#7a6292',bellyD='#4d3b63',wing='#262a42',vio='#a145a0',gold='#d6b45e',gas='#93d36a',wb=b?-1:0;
-  // tail tip and coil
-  pR9(q,body,[[8,31],[3,30],[1,26],[3,21-b],[5,26],[8,28],[14,28]]);pR9(q,vio,[[2,23-b],[4,19-b],[6,25]],null);
-  eR9(q,17,28,13,5.8,deep);eR9(q,17,26.5,12,5,body);eR9(q,17,26,6.5,2.4,'#10111b');
-  pR9(q,light,[[7,25],[10,22],[20,21],[26,23],[20,22.4],[12,24]],null);
-  pR9(q,belly,[[7,29],[13,31],[24,30],[28,28],[27,31],[22,33],[12,33],[7,31]],null);
-  for(const x of[11,15,19,23])lR9(q,x,31,x-.4,32.8,bellyD,.7);
-  // wings, folded behind the neck
+ case'ominous_crow':{
+  // An ill-omen crow hovering with ragged wings spread, a hooked beak open on a sickly green mist and a single red eye.
+  const beak='#8a7a52',beakD='#4a402a',mist='#93d36a',wb=b?-1:0,fe='#12121c';
+  // tail feathers and talons
+  for(const[x0,x1,y1]of[[11,7,34],[14,12,35],[17,16,35],[20,22,34]])P(fe,[[x0,26+b],[x1,y1],[x1+2.5,y1-1],[x0+4,27+b]]);
+  L(13,28+b,11,32+b,beakD,1.2);L(19,28+b,21,32+b,beakD,1.2);for(const x of[9,11,12,20,22,23])L(x<16?11:21,32+b,x,34+b,beak,1);
+  // wings: ragged feather tips, bone edge in a lighter tone
   for(const sx of[-1,1]){const w=(n)=>16+sx*n;
-   pR9(q,wing,[[w(2),17],[w(14),8+wb],[w(12),12],[w(15),14+wb],[w(11),17],[w(14),21],[w(5),22]]);
-   for(const[tx,ty]of[[14,8],[15,14],[14,21]])lR9(q,w(2),17,w(tx),ty+(ty<15?wb:0),light,.9);lR9(q,w(14),8+wb,w(15),14+wb,light,.7)}
-  // neck: outlined beads along an S curve
-  const bez=(t)=>{const u=1-t,P=[[22,24],[6,24],[8,14],[15,12]];return[0,1].map(k=>u*u*u*P[0][k]+3*u*u*t*P[1][k]+3*u*t*t*P[2][k]+t*t*t*P[3][k])};
-  for(const pass of[0,1,2,3]){for(let i=0;i<=16;i++){const t=i/16,[x,y]=bez(t),r=4.4-t*1.5;
-   if(pass===0)eR9(q,x,y+(t>.7?b:0),r+1,r+1,ACTOR_OUTLINE,null);
-   else if(pass===1)eR9(q,x,y+(t>.7?b:0),r,r,body,null);
-   else if(pass===2&&i%2===0)eR9(q,x-r*.28,y-r*.3+(t>.7?b:0),r*.45,r*.38,light,null);
-   else if(pass===3&&i%2===1)eR9(q,x+r*.35,y+r*.42+(t>.7?b:0),r*.4,r*.28,belly,null)}}
-  for(const t of[.2,.4,.6]){const[x,y]=bez(t);pR9(q,vio,[[x-4.6,y-1],[x-7.4,y-3],[x-4,y+2]],null)}
-  // head
-  pR9(q,vio,[[13,6+b],[7,3+b],[10,8+b]]);pR9(q,vio,[[13,9+b],[6,8+b],[11,11+b]]);pR9(q,vio,[[14,11+b],[8,13+b],[12,13+b]]);
-  pR9(q,ivory,[[15,5+b],[10,0+b],[12,-1+b],[17,3+b]]);pR9(q,ivory,[[18,4+b],[16,-1+b],[19,-1+b],[21,3+b]]);
-  pR9(q,body,[[12,8+b],[16,5+b],[23,5+b],[29,8+b],[32,10+b],[26,12+b],[14,12+b]]);
-  pR9(q,light,[[14,6+b],[20,5+b],[24,6+b],[17,8+b]],null);
-  pR9(q,'#2a0e22',[[18,11+b],[31,11+b],[29,14.5+b],[20,14+b]]);
-  for(const x of[21,25,29])pR9(q,ivory,[[x,11+b],[x+1.6,11+b],[x+.8,13+b]],null);
-  for(const x of[23,27])pR9(q,ivory,[[x,14.4+b],[x+1.5,14.3+b],[x+.8,12.6+b]],null);
-  R(19,7+b,4,2,'#d86ce0');R(20,7+b,1,1,'#fff0ff');R(29,8+b,1,1,ACTOR_OUTLINE);
-  lR9(q,30,10+b,32,13+b,gold,.8);lR9(q,13,10+b,10,15+b,gold,.8);
-  pR9(q,gas,[[23,15+b],[27,15+b],[28,18+b],[25,20+b],[22,18+b]],null);R(24,17+b,2,2,'#5f9a45');
+   P(c,[[w(2),16+b],[w(13),6+wb],[w(15),11+wb],[w(12),12],[w(16),16],[w(11),17],[w(15),22],[w(9),20],[w(10),25],[w(4),22]]);
+   for(const[tx,ty]of[[13,6],[16,16],[15,22]])L(w(2),16+b,w(tx),ty+(ty<12?wb:0),h,.9);L(w(13),6+wb,w(10),14,h,.6)}
+  // body
+  E(16,21+b,6.4,8.4,c);P(h,[[12,16+b],[15,14+b],[14,22+b],[11,24+b]],null);
+  for(const[x,y]of[[12,26],[15,28],[18,27],[21,25]])P(fe,[[x,y+b],[x+2,y+3+b],[x+3,y-1+b]],null);
+  // head and beak
+  E(16,11+b,5.2,4.8,c);P(h,[[12,8+b],[16,6.5+b],[17,9+b],[13,10.5+b]],null);
+  P(beak,[[19,9+b],[28,12+b],[19,13+b]]);P(beakD,[[19,13+b],[26,15+b],[19,15.6+b]]);L(20,11.2+b,26,12.2+b,beakD,.6);
+  R(16,8+b,3,2,a);R(16,8+b,1,1,'#ffd9d9');
+  P(fe,[[12,7+b],[10,3+b],[14,6+b]],null);P(fe,[[15,6+b],[15,2+b],[18,6+b]],null);
+  P(mist,[[23,15+b],[27,16+b],[26,20+b],[22,19+b]],null);R(24,17+b,2,2,'#5f9a45');
   break;
  }
  }
