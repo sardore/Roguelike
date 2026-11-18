@@ -2574,10 +2574,10 @@ const ACTOR_SPEC={
   '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander"},
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
   '갈고리 죄수':{"a":"branch","c":"#5f4740","h":"#9c8170","ac":"#cdbf96","design":"hook_prisoner"},
-  '악몽 시녀':{"a":"branch","c":"#4b3466","h":"#8c70ab","ac":"#e08ae0","design":"nightmare_maid"},
-  '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
-  '기어 다니는 손':{"a":"branch","c":"#a89a8d","h":"#d6c9b8","ac":"#9b2f3a","design":"crawling_hands"},
-  '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
+  '악몽 시녀':{a:'nightmare_maid',c:'#44305f',h:'#8a6bb0',ac:'#f08ad8'},
+  '꿰맨 입 망자':{a:'stitched_dead',c:'#6e6a60',h:'#b0ac98',ac:'#d9a85c'},
+  '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
+  '눈알 등롱':{a:'eye_lantern',c:'#8b4a44',h:'#d49d8e',ac:'#f1d56a'},
   '흉조 까마귀':{"a":"branch","c":"#1f1e2c","h":"#5a5f82","ac":"#e24a4a","design":"ominous_crow"},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
@@ -3054,48 +3054,6 @@ function drawBranchCreature(q,m,frame,sp){
   E(25,25+b,5,5,'#928978');E(25,25+b,3,3,'#292e30');R(24,23+b,2,1,'#131d23');
   P(h,[[2,20+b],[7,18+b],[8,27],[4,30],[1,27]]);L(3,22,5,26,a);bootR9(q,7,31,7);bootR9(q,20,31,7);R(10,28,4,3,h);R(21,29,3,2,h);break;
  }
- case'nightmare_maid':{
-  // A legless maid: the skirt frays into smoke, a lace headband sits over a veil of hair and one pale eye burns through it.
-  P('#1b1326',[[7,21+b],[25,21+b],[28,30],[23,27],[21,34],[16,29],[11,35],[9,28],[4,31]]);
-  P(c,[[10,13+b],[22,13+b],[26,27],[21,25],[16,28],[11,25],[6,27]]);P(h,[[10,14+b],[15,15+b],[13,25],[8,26]],null);
-  P('#d9d1de',[[13,16+b],[19,16+b],[21,25],[16,23],[11,25]],null);R(15,18+b,2,3,'#7d2f55');L(13,23,19,23,a);
-  L(10,16+b,5,26+b,h,3);L(22,16+b,27,26+b,h,3);for(const x of[4,6,26,28])L(x,26+b,x+(x<16?-1:1),31+b,ivory,1);
-  P('#150f1d',[[9,7+b],[12,2+b],[20,2+b],[24,8+b],[25,18+b],[21,13+b],[11,13+b],[7,19+b]]);
-  E(16,8+b,5,5,'#b9aec4');P('#150f1d',[[10,5+b],[17,3+b],[22,6+b],[17,10+b],[13,11+b],[10,9+b]]);
-  R(17,7+b,3,2,a);R(18,7+b,1,2,'#fff2ff');
-  P('#e6e0ea',[[9,3+b],[12,0+b],[16,2+b],[20,0+b],[23,3+b],[20,5+b],[12,5+b]]);for(const x of[11,15,19])R(x,1+b,1,3,'#a89fb2');
-  for(const[x,y]of[[3,12],[27,10],[6,33],[26,32]])R(x,y+b,1,2,a);break;
- }
- case'stitched_dead':{
-  // A stooped corpse in a burial shroud, neck bent, mouth sewn shut with black thread, knuckles dragging.
-  P('#2c2a24',[[8,12+b],[23,12+b],[27,26],[23,32],[9,32],[5,26]]);P(c,[[9,14+b],[22,14+b],[24,27],[21,31],[10,31],[8,26]]);
-  P(h,[[9,15+b],[14,15+b],[13,30],[9,28]],null);L(12,20+b,20,26,'#4f4b3f');L(19,17+b,13,28,'#4f4b3f');
-  L(10,16+b,5,28+b,h,4);L(22,16+b,27,29+b,h,4);E(5,29+b,2,2,ivory);E(27,30+b,2,2,ivory);
-  P('#c4bfa6',[[10,4+b],[14,1+b],[21,2+b],[24,7+b],[22,13+b],[12,13+b],[9,9+b]]);
-  R(12,6+b,3,2,'#1d1a17');R(18,6+b,3,2,'#1d1a17');R(13,7+b,1,1,a);R(19,7+b,1,1,a);
-  R(12,11+b,10,2,'#2a2520');for(let x=12;x<22;x+=2)L(x,10+b,x+1,14+b,'#12100e');
-  P(ivory,[[8,8+b],[6,4+b],[10,6+b]],null);bootR9(q,10,31,5);bootR9(q,18,31,5);break;
- }
- case'crawling_hands':{
-  // A fist-sized heap of severed hands walking on its fingertips; wrist stumps drip.
-  for(const[x,y,sc]of[[5,24,.7],[21,26,.75]]){P(c,[[x,y+b],[x+8*sc,y-3+b],[x+10*sc,y+6],[x+2,y+8]]);for(let i=0;i<4;i++)L(x+i*2.4,y+2,x+i*2.4-1,y+9+(i%2),h,1.4)}
-  P('#4a2b2b',[[9,17+b],[23,17+b],[26,27],[16,30],[6,27]]);P(c,[[10,12+b],[22,12+b],[25,24],[16,27],[7,24]]);
-  P(h,[[11,13+b],[17,13+b],[14,22],[9,22]],null);
-  for(let i=0;i<5;i++){const x=8+i*4;L(x,22,x+(i-2)*1.5,31+(i%2),h,2);R(x+(i-2)*1.5-1,31+(i%2),3,2,ivory)}
-  for(const x of[11,16,21])L(x,13+b,x+(x-16)*.3,5+b,h,2.2);L(8,14+b,3,9+b,h,2.2);L(24,14+b,29,9+b,h,2.2);
-  for(const[x,y]of[[11,5],[16,3],[21,5],[3,9],[29,9]])R(x-1,y+b,3,2,ivory);
-  R(15,17+b,3,4,a);R(16,21+b,1,3,a);R(13,19+b,1,4,'#6a1d27');R(20,19+b,1,5,'#6a1d27');break;
- }
- case'eye_lantern':{
-  // A paper lantern for a shade: one bloodshot eye behind the paper, hanging tassels and a thin flame above.
-  L(16,0,16,5+b,'#3a2d28',1);P('#3a2b26',[[10,5+b],[22,5+b],[21,9+b],[11,9+b]]);R(11,5+b,10,1,h);
-  E(16,18+b,10,10,c);P(h,[[8,14+b],[12,10+b],[11,18+b],[8,22+b]],null);
-  for(const y of[12,18,24])L(7,y+b,25,y+b,'#5a2c29',1);
-  E(16,18+b,6,5,'#e8dcc0');E(16,18+b,2.6,2.6,'#6b1018');R(15,17+b,2,2,'#1a0709');
-  L(11,16+b,14,17+b,'#b2323b');L(21,20+b,18,19+b,'#b2323b');L(12,21+b,15,20+b,'#b2323b');
-  P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
-  P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
- }
  case'ominous_crow':{
   // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
   q.save();q.translate(1.5,.5);
@@ -3263,6 +3221,10 @@ break;}
  for(let y=21;y<27;y+=3)for(let x=12+(y%2);x<23;x+=4){lR9(q,x,y+b,x+1,y+1+b,mercury?'#d5e6e7':'#7aa6a5',.8)}lR9(q,23,21+b,23,27+b,base,1.4);
  pR9(q,'#1b2024',[[25,25+b],[32,22+b],[30,28+b],[25,28+b]],null);for(const x of[26,29])pR9(q,'#fff2d6',[[x,24+b],[x+1,27+b],[x+2,23+b]],null);eye1012(q,27,21+b,mercury?'#e8faff':'#ffc177');
 break;}
+  case'nightmare_maid':{shadow1012(q,16,33,20);pR9(q,'#1b1024',[[8,7+b],[13,2+b],[21,3+b],[25,8+b],[28,21+b],[25,31],[21,23+b],[11,23+b],[7,31],[4,21+b]]);pR9(q,base,[[11,15+b],[21,15+b],[27,31],[21,28],[16,34],[11,28],[5,31]]);pR9(q,hi,[[12,16+b],[16,17+b],[14,28],[8,30]],null);pR9(q,'#e9e2f1',[[13,17+b],[19,17+b],[21,28],[16,26],[11,28]],null);lR9(q,12,17+b,20,17+b,ac,2);lR9(q,10,17+b,13,24+b,hi,3);lR9(q,22,17+b,19,24+b,hi,3);eR9(q,16,24+b,3,2.2,'#dccfe0');eR9(q,16,10+b,5,5.2,'#dccce0');pR9(q,'#1b1024',[[10,5+b],[15,2.5+b],[22,5+b],[22,10+b],[18,8.5+b],[13,13+b],[10,11+b]],null);eR9(q,18.4,10.4+b,1.7,1.7,ac);q.fillStyle='#fff3ff';q.fillRect(18,10+b,1,1);pR9(q,'#efe8f4',[[10,4+b],[13,1.5+b],[19,1.5+b],[22,4+b],[19,5.2+b],[13,5.2+b]]);for(const x of[10,21])pR9(q,ac,[[x,3.4+b],[x+2.2,2+b],[x+2.2,4.8+b]],null);break;}
+  case'stitched_dead':{shadow1012(q,16,33,22);lR9(q,10,16+b,5,28+b,hi,4);lR9(q,22,16+b,27,29+b,hi,4);eR9(q,5,29+b,2.4,2.4,'#cfc9b4');eR9(q,27,30+b,2.4,2.4,'#cfc9b4');pR9(q,base,[[9,13+b],[23,13+b],[27,31],[21,29],[16,34],[11,29],[5,31]]);pR9(q,hi,[[10,14+b],[15,14+b],[13,30],[8,29]],null);lR9(q,12,20+b,20,27,'#3a362e',1.4);lR9(q,20,20+b,12,27,'#3a362e',1.4);eR9(q,16,9+b,5.4,5.4,'#cfc9b4');eR9(q,13.5,8.5+b,1.6,2.1,'#1c1a16');eR9(q,18.5,8.5+b,1.6,2.1,'#1c1a16');eR9(q,13.5,9+b,.6,.6,ac,null);eR9(q,18.5,9+b,.6,.6,ac,null);lR9(q,12,12.4+b,20,12.4+b,'#2a2620',1.6);for(const x of[13,15.4,17.8])lR9(q,x,11+b,x+.8,14+b,'#2a2620',1);break;}
+  case'crawling_hands':{shadow1012(q,16,33,24);for(const[x,y]of[[3,15],[1,23],[4,31],[29,15],[31,23],[28,31],[10,32],[22,32]]){lR9(q,16,22+b,x,y,hi,2.6);eR9(q,x,y,1.5,1.5,'#e9ddc8')}pR9(q,base,[[13,26+b],[19,26+b],[20,33],[12,33]]);lR9(q,14,32,14,35,ac,1.4);lR9(q,18,32,18,34.5,ac,1.4);eR9(q,16,22+b,8,6.5,base);eR9(q,14,20+b,4.5,3,hi,null);for(const x of[11,16,21])eR9(q,x,16.5+b,2.2,1.8,hi);eR9(q,16,23+b,1.6,1.6,ac);break;}
+  case'eye_lantern':{shadow1012(q,16,34,18);lR9(q,16,0,16,5+b,'#3a2d28',1);pR9(q,'#3a2b26',[[10,5+b],[22,5+b],[21,9+b],[11,9+b]]);eR9(q,16,18+b,10,10,base);pR9(q,hi,[[8,14+b],[12,10+b],[11,18+b],[8,22+b]],null);for(const y of[12,18,24])lR9(q,7,y+b,25,y+b,'#5a2c29',1);eR9(q,16,18+b,6,5,'#eadfc4');eR9(q,16,18+b,2.6,2.6,'#7a1218');eR9(q,16,18+b,1.1,1.1,'#1a0709',null);lR9(q,11,16+b,14,17+b,'#b2323b',1);lR9(q,21,20+b,18,19+b,'#b2323b',1);pR9(q,'#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])lR9(q,x,31+b,x+(x-16)*.4,35,ac,1.4);pR9(q,ac,[[16,0],[13,4],[16,3],[19,4]],null);break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
   case'censer':{
