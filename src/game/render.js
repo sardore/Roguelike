@@ -313,8 +313,7 @@ function drawCombatProjectile(q,pj,now){
   const inten=t<.07?0:t<.17?1:t<.23?.25:t<.33?.95:Math.max(0,.95*(1-(t-.33)/.27));
   const bolt=(x0,y0,x1,y1,depth,disp,k)=>{let pts=[[x0,y0],[x1,y1]];for(let l=0;l<depth;l++){const nx=[];for(let j=0;j<pts.length-1;j++){const[a0,b0]=[pts[j],pts[j+1]];nx.push(a0,[(a0[0]+b0[0])/2+(R(l*97+j,k)-.5)*disp,(a0[1]+b0[1])/2+(R(l*89+j,k+1)-.5)*disp*.35])}nx.push(pts[pts.length-1]);pts=nx;disp*=.55}return pts};
   const trace=(pts,upto=pts.length)=>{q.beginPath();for(let i=0;i<upto;i++)i?q.lineTo(pts[i][0],pts[i][1]):q.moveTo(pts[i][0],pts[i][1]);q.stroke()};
-  const main=bolt(cx+(R(1,5)-.5)*24,top,cx,cy,6,30,7),branches=[];
-  for(let i=0;i<5;i++){const idx=Math.floor(main.length*(.18+i*.13+R(i,11)*.06)),[bx,by]=main[idx],dir=R(i,13)>.5?1:-1;branches.push(bolt(bx,by,bx+dir*TILE*(.9+R(i,17)*1.3),by+TILE*(1.3+R(i,19)*1.6),4,14,23+i))}
+  const main=bolt(cx+(R(1,5)-.5)*24,top,cx,cy,6,30,7);
   q.lineCap='round';q.lineJoin='round';
   // sky flash behind the bolt
   if(inten>0){const g=q.createRadialGradient(cx,cy-TILE*2.5,4,cx,cy-TILE*2.5,TILE*6);g.addColorStop(0,'#cfe0ff');g.addColorStop(1,'#5a7cff00');q.globalAlpha=.3*inten;q.fillStyle=g;q.beginPath();q.arc(cx,cy-TILE*2.5,TILE*6,0,Math.PI*2);q.fill()}
@@ -322,7 +321,7 @@ function drawCombatProjectile(q,pj,now){
   if(t<.17){const prog=Math.min(1,t/.07);q.globalAlpha=.65;q.strokeStyle='#9fc4ff';q.lineWidth=2.2;trace(main,Math.max(2,Math.floor(main.length*prog)))}
   // return stroke and its forks
   if(inten>0){
-   for(const[pts,w]of[[main,1],...branches.map(b=>[b,.62])]){
+   for(const[pts,w]of[[main,1]]){
     q.globalAlpha=.24*inten;q.strokeStyle='#3f6bff';q.lineWidth=30*w;trace(pts);
     q.globalAlpha=.55*inten;q.strokeStyle='#86b6ff';q.lineWidth=14*w;trace(pts);
     q.globalAlpha=inten;q.strokeStyle='#f6fbff';q.lineWidth=5.2*w;trace(pts)}
