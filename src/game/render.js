@@ -3221,10 +3221,88 @@ break;}
  for(let y=21;y<27;y+=3)for(let x=12+(y%2);x<23;x+=4){lR9(q,x,y+b,x+1,y+1+b,mercury?'#d5e6e7':'#7aa6a5',.8)}lR9(q,23,21+b,23,27+b,base,1.4);
  pR9(q,'#1b2024',[[25,25+b],[32,22+b],[30,28+b],[25,28+b]],null);for(const x of[26,29])pR9(q,'#fff2d6',[[x,24+b],[x+1,27+b],[x+2,23+b]],null);eye1012(q,27,21+b,mercury?'#e8faff':'#ffc177');
 break;}
-  case'nightmare_maid':{shadow1012(q,16,33,20);pR9(q,'#1b1024',[[8,7+b],[13,2+b],[21,3+b],[25,8+b],[28,21+b],[25,31],[21,23+b],[11,23+b],[7,31],[4,21+b]]);pR9(q,base,[[11,15+b],[21,15+b],[27,31],[21,28],[16,34],[11,28],[5,31]]);pR9(q,hi,[[12,16+b],[16,17+b],[14,28],[8,30]],null);pR9(q,'#e9e2f1',[[13,17+b],[19,17+b],[21,28],[16,26],[11,28]],null);lR9(q,12,17+b,20,17+b,ac,2);lR9(q,10,17+b,13,24+b,hi,3);lR9(q,22,17+b,19,24+b,hi,3);eR9(q,16,24+b,3,2.2,'#dccfe0');eR9(q,16,10+b,5,5.2,'#dccce0');pR9(q,'#1b1024',[[10,5+b],[15,2.5+b],[22,5+b],[22,10+b],[18,8.5+b],[13,13+b],[10,11+b]],null);eR9(q,18.4,10.4+b,1.7,1.7,ac);q.fillStyle='#fff3ff';q.fillRect(18,10+b,1,1);pR9(q,'#efe8f4',[[10,4+b],[13,1.5+b],[19,1.5+b],[22,4+b],[19,5.2+b],[13,5.2+b]]);for(const x of[10,21])pR9(q,ac,[[x,3.4+b],[x+2.2,2+b],[x+2.2,4.8+b]],null);break;}
-  case'stitched_dead':{shadow1012(q,16,33,22);lR9(q,10,16+b,5,28+b,hi,4);lR9(q,22,16+b,27,29+b,hi,4);eR9(q,5,29+b,2.4,2.4,'#cfc9b4');eR9(q,27,30+b,2.4,2.4,'#cfc9b4');pR9(q,base,[[9,13+b],[23,13+b],[27,31],[21,29],[16,34],[11,29],[5,31]]);pR9(q,hi,[[10,14+b],[15,14+b],[13,30],[8,29]],null);lR9(q,12,20+b,20,27,'#3a362e',1.4);lR9(q,20,20+b,12,27,'#3a362e',1.4);eR9(q,16,9+b,5.4,5.4,'#cfc9b4');eR9(q,13.5,8.5+b,1.6,2.1,'#1c1a16');eR9(q,18.5,8.5+b,1.6,2.1,'#1c1a16');eR9(q,13.5,9+b,.6,.6,ac,null);eR9(q,18.5,9+b,.6,.6,ac,null);lR9(q,12,12.4+b,20,12.4+b,'#2a2620',1.6);for(const x of[13,15.4,17.8])lR9(q,x,11+b,x+.8,14+b,'#2a2620',1);break;}
-  case'crawling_hands':{shadow1012(q,16,33,24);for(const[x,y]of[[3,15],[1,23],[4,31],[29,15],[31,23],[28,31],[10,32],[22,32]]){lR9(q,16,22+b,x,y,hi,2.6);eR9(q,x,y,1.5,1.5,'#e9ddc8')}pR9(q,base,[[13,26+b],[19,26+b],[20,33],[12,33]]);lR9(q,14,32,14,35,ac,1.4);lR9(q,18,32,18,34.5,ac,1.4);eR9(q,16,22+b,8,6.5,base);eR9(q,14,20+b,4.5,3,hi,null);for(const x of[11,16,21])eR9(q,x,16.5+b,2.2,1.8,hi);eR9(q,16,23+b,1.6,1.6,ac);break;}
-  case'eye_lantern':{shadow1012(q,16,34,18);lR9(q,16,0,16,5+b,'#3a2d28',1);pR9(q,'#3a2b26',[[10,5+b],[22,5+b],[21,9+b],[11,9+b]]);eR9(q,16,18+b,10,10,base);pR9(q,hi,[[8,14+b],[12,10+b],[11,18+b],[8,22+b]],null);for(const y of[12,18,24])lR9(q,7,y+b,25,y+b,'#5a2c29',1);eR9(q,16,18+b,6,5,'#eadfc4');eR9(q,16,18+b,2.6,2.6,'#7a1218');eR9(q,16,18+b,1.1,1.1,'#1a0709',null);lR9(q,11,16+b,14,17+b,'#b2323b',1);lR9(q,21,20+b,18,19+b,'#b2323b',1);pR9(q,'#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])lR9(q,x,31+b,x+(x-16)*.4,35,ac,1.4);pR9(q,ac,[[16,0],[13,4],[16,3],[19,4]],null);break;}
+  case'nightmare_maid':{shadow1012(q,16,33,20);
+   const hair='#1c1127',hair2='#33204a',skin='#e0cfe2',skinD='#bda7c4',white='#f1eaf6',whiteD='#c9bdd6',deep='#2b1b40';
+   // long hair falling behind the shoulders
+   pR9(q,hair,[[8,8+b],[11,2.5+b],[21,2.5+b],[24,8+b],[26,16+b],[27,25],[23,28],[21,21+b],[11,21+b],[9,28],[5,25],[6,16+b]]);
+   pR9(q,hair2,[[9,9+b],[11,4+b],[13,6+b],[10,16+b],[8,24]],null);
+   // skirt with a ragged, drifting hem
+   pR9(q,base,[[12,22+b],[20,22+b],[27,31],[23,29],[20,34],[16,30],[12,34],[9,29],[5,31]]);
+   pR9(q,hi,[[12,23+b],[15,23+b],[12,30],[7,30]],null);
+   for(const[x0,x1]of[[14,12],[16,16],[18,20]])lR9(q,x0,24+b,x1,32,deep,1);
+   // bodice, collar, apron
+   pR9(q,base,[[11,15+b],[21,15+b],[22,18+b],[20,24+b],[12,24+b],[10,18+b]]);
+   pR9(q,hi,[[11.5,16+b],[14,16+b],[13,23+b],[11,20+b]],null);
+   pR9(q,white,[[13,22+b],[19,22+b],[21.5,30],[10.5,30]]);
+   pR9(q,whiteD,[[10.5,30],[21.5,30],[21,31.4],[11,31.4]],null);
+   pR9(q,white,[[12.5,15+b],[19.5,15+b],[16,20.5+b]]);
+   lR9(q,13,15.5+b,16,20+b,whiteD,.8);lR9(q,19,15.5+b,16,20+b,whiteD,.8);
+   pR9(q,ac,[[16,22.5+b],[12.6,21+b],[12.6,24+b]],null);pR9(q,ac,[[16,22.5+b],[19.4,21+b],[19.4,24+b]],null);eR9(q,16,22.5+b,1.1,1.1,'#ffd6f2',null);
+   // sleeves and hands folded in front
+   pR9(q,base,[[9.6,16+b],[12.4,15.5+b],[15,24+b],[12.6,26+b],[9.8,21+b]]);pR9(q,base,[[22.4,16+b],[19.6,15.5+b],[17,24+b],[19.4,26+b],[22.2,21+b]]);
+   eR9(q,16,26+b,2.9,2.1,skin);lR9(q,14.6,26+b,17.4,26+b,skinD,.6);
+   // neck, face, bangs, frilled headband
+   pR9(q,skinD,[[14.4,13+b],[17.6,13+b],[17.6,15.4+b],[14.4,15.4+b]],null);
+   eR9(q,16,9.6+b,5,5.4,skin);pR9(q,skinD,[[16,14.6+b],[20.2,11+b],[20.6,13+b],[16,15.4+b]],null);
+   pR9(q,hair,[[10.2,8+b],[11.5,4+b],[16,3+b],[20.5,4+b],[21.8,8+b],[19.4,8+b],[16.6,6.4+b],[13.6,9+b],[11.6,12.4+b]],null);
+   pR9(q,hair,[[10.2,9+b],[11.8,13+b],[10,16+b],[8.8,12+b]],null);pR9(q,hair,[[21.8,9+b],[20.2,13+b],[22,16+b],[23.2,12+b]],null);
+   eyePairR9(q,13.4,18.6,10.6+b,ac);eR9(q,13.4,10.2+b,.6,.6,'#fff3ff',null);eR9(q,18.6,10.2+b,.6,.6,'#fff3ff',null);
+   lR9(q,13.3,12.2+b,12.9,15.4+b,deep,.9);lR9(q,18.8,12.2+b,19.2,15.4+b,deep,.9);
+   lR9(q,15,13.4+b,17,13.4+b,'#c47aa6',.8);
+   pR9(q,white,[[10.6,5+b],[13,2+b],[19,2+b],[21.4,5+b],[19.6,6.2+b],[12.4,6.2+b]]);
+   for(const x of[12.2,14.4,16.6,18.8])eR9(q,x,2.4+b,1.05,1,white);
+   pR9(q,ac,[[21.2,3.6+b],[24.6,1.4+b],[24.6,5.8+b]]);pR9(q,ac,[[21.2,3.6+b],[18.6,1.6+b],[18.8,5.4+b]],null);eR9(q,21.2,3.6+b,1.2,1.2,'#ffd6f2',null);
+   break;}
+  case'stitched_dead':{shadow1012(q,16,33,21);
+   const skin='#b9b8a2',skinD='#8d8c78',cloth=base,thread='#1d1a16';
+   // bare feet
+   eR9(q,12,33,3,1.6,skinD);eR9(q,20,33,3,1.6,skinD);
+   // arms hanging, long and thin, hands trailing
+   pR9(q,skin,[[8.6,16+b],[11,15.6+b],[9.2,28+b],[6.6,28.6+b],[5.6,22+b]]);pR9(q,skin,[[23.4,16+b],[21,15.6+b],[22.8,28+b],[25.4,28.6+b],[26.4,22+b]]);
+   for(const x of[5.6,6.6,7.6,8.6])lR9(q,x,28.4+b,x-.3,31.4+b,skinD,1);for(const x of[23.4,24.4,25.4,26.4])lR9(q,x,28.6+b,x+.3,31.6+b,skinD,1);
+   // burial shroud, bound with rope, torn hem
+   pR9(q,cloth,[[9,13+b],[23,13+b],[26,24],[27,32],[22,30],[19,34],[16,31],[13,34],[10,30],[5,32],[6,24]]);
+   pR9(q,hi,[[10,14+b],[15,14+b],[12.5,30],[6.6,30.4],[7.4,23]],null);
+   for(const[x0,x1]of[[14,13],[18,19.4]])lR9(q,x0,17+b,x1,31,skinD,.9);
+   lR9(q,8.4,19.5+b,23.6,19.5+b,'#5b4b36',1.4);lR9(q,7.8,25+b,24.2,25+b,'#5b4b36',1.4);
+   for(const x of[11,15,19,22])lR9(q,x,18.6+b,x+.4,20.4+b,'#2d2418',.8);
+   // hunched head, hollow eyes, sewn-shut mouth
+   eR9(q,16,9+b,5.6,5.8,skin);pR9(q,skinD,[[16,14.4+b],[21,10+b],[21.4,13+b],[16,15.2+b]],null);
+   eR9(q,13.4,8.4+b,1.9,2.3,thread);eR9(q,18.6,8.4+b,1.9,2.3,thread);eR9(q,13.6,8.8+b,.7,.7,ac,null);eR9(q,18.8,8.8+b,.7,.7,ac,null);
+   lR9(q,14,6+b,12.6,4.6+b,skinD,.8);
+   lR9(q,11.6,12.6+b,20.4,12.6+b,thread,1.6);for(const x of[12.6,14.4,16.2,18,19.8])lR9(q,x,10.8+b,x+.4,14.6+b,thread,1);
+   break;}
+  case'crawling_hands':{shadow1012(q,16,33,24);
+   const nail='#efe4cc',bone='#efe6d2',blood='#a52a38',dark='#7c6a62';
+   // a severed hand walking on its fingertips, seen from the side: wrist stump behind, arched back, bent fingers, nails forward
+   const finger=(x0,y0,x1,y1,x2,y2,col,w)=>{lR9(q,x0,y0,x1,y1,col,w);lR9(q,x1,y1,x2,y2,col,w*.86);eR9(q,x1,y1,w*.62,w*.62,col);pR9(q,nail,[[x2-1.3,y2-1.4],[x2+1.6,y2-1.6],[x2+1.2,y2+1],[x2-1.6,y2+.8]],null)};
+   finger(10.4,18+b,8,25.6,9.4,32,dark,2.8);finger(12.6,18+b,12.2,26.4,14.4,33,dark,2.8);
+   // wrist stump with a ragged cut, bone and blood
+   pR9(q,base,[[20,15+b],[26,16+b],[27,24+b],[20,25+b]]);pR9(q,blood,[[25,14.6+b],[28.4,17+b],[28.4,24+b],[25.6,25.6+b]]);eR9(q,27,20.6+b,1.4,2.6,bone);eR9(q,27.2,20.6+b,.6,1.2,dark,null);
+   lR9(q,26,25+b,25.4,28,blood,1.3);lR9(q,28,24.4+b,28.6,27,blood,1.1);
+   // arched back of the hand and knuckles
+   pR9(q,base,[[21,17+b],[17,11.6+b],[11,12+b],[7.6,17+b],[8.6,22+b],[14,25+b],[21,25+b]]);
+   pR9(q,hi,[[18,12.6+b],[12,13+b],[9.4,17+b],[14,15.6+b]],null);
+   for(const[x,y]of[[8.8,17.4],[11.2,14],[14.6,12.4],[18,12.8]])eR9(q,x,y+b,1.5,1.3,hi);
+   lR9(q,13,19+b,18,23+b,'#6a5650',.8);lR9(q,16,17+b,20,21+b,'#6a5650',.8);
+   // front fingers and the thumb
+   finger(7.6,19+b,4.6,26,5,32,base,3.1);finger(9.6,21+b,6.6,27,7.6,33,base,3.1);
+   lR9(q,11.2,22+b,6.2,24.4+b,base,3.2);eR9(q,5.8,24.6+b,1.6,1.6,base);pR9(q,nail,[[3.2,24+b],[5.6,23+b],[5.6,26.2+b],[3.4,26.6+b]],null);
+   break;}
+  case'eye_lantern':{shadow1012(q,16,34,18);
+   const paper='#c7857a',paperD='#7d3d38',rib='#4a2523',iris='#8f2230';
+   // hanging cord and cap
+   lR9(q,16,0,16,5.4+b,'#3a2d28',1.2);pR9(q,'#3a2b26',[[10,5.4+b],[22,5.4+b],[21,9+b],[11,9+b]]);lR9(q,11.6,6.6+b,20.4,6.6+b,hi,.9);
+   // paper shell, shaded to the lower right, with bamboo ribs
+   eR9(q,16,18.6+b,10,10,paperD);eR9(q,15.2,17.8+b,9.2,9.2,paper);eR9(q,14.4,16.6+b,6.2,5.6,hi,null);
+   for(const y of[12.6,18.6,24.6])lR9(q,6.4,y+b,25.6,y+b,rib,1);lR9(q,16,10+b,16,28.4+b,rib,.8);
+   // glowing inside and the eye
+   eR9(q,16,18.6+b,6.6,5.4,'#f1e6c8');eR9(q,16,18.6+b,3.1,3.1,iris);eR9(q,16,18.6+b,1.3,1.3,'#1a0709',null);eR9(q,15.2,17.6+b,.7,.7,'#fff0f0',null);
+   for(const[x0,y0,x1,y1]of[[10.6,17.4,13,17.8],[11,20,13.2,19.4],[21.4,17.4,19,17.9],[20.8,20.4,18.8,19.6],[16,13.6,16,15.4]])lR9(q,x0,y0+b,x1,y1+b,'#b2323b',.8);
+   // base and tassels
+   pR9(q,'#3a2b26',[[11,28.4+b],[21,28.4+b],[20,31+b],[12,31+b]]);for(const x of[12.4,16,19.6])lR9(q,x,31+b,x+(x-16)*.3,35,ac,1.4);
+   pR9(q,ac,[[16,-.4],[13.4,3.6],[16,2.6],[18.6,3.6]],null);
+   break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
   case'censer':{
