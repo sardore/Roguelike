@@ -346,7 +346,7 @@ function combatStatusTurns(actor,key){
  const meta=STATUS_META57[key],fields=[meta?.monsterField57||key,meta?.legacyMonsterField57,...(meta?.legacyMonsterFields57||[])].filter(Boolean);return Math.max(0,...fields.map(field=>Number(actor[field])||0));
 }
 // Presentation reads the existing status owners without changing their clocks.
-const ACTOR_STATUS_MARKS=Object.freeze({combustion105:{key:'combustion',glyph57:["0001000","0011000","0011010","0111110","1101111","1111111","0111110"],label:'연소',color:'#ec8753',turnsField:'remaining'},sleeping105:{key:'sleep',glyph57:["1111111","0000010","0000100","0001000","0010000","0100000","1111111"],label:'잠듦',color:'#e5c996'}});
+const ACTOR_STATUS_MARKS=Object.freeze({combustion105:{key:'combustion',glyph57:["0001000","0011000","0011010","0111110","1101111","1111111","0111110"],label:'연소',color:'#ec8753',turnsField:'remaining'},power61:{key:'power',glyph57:["0010100","0111110","1111111","0111110","0101010","0101010","1101011"],label:'괴력',color:'#dfad51',turnsField:'turns'},sleeping105:{key:'sleep',glyph57:["1111111","0000010","0000100","0001000","0010000","0100000","1111111"],label:'잠듦',color:'#e5c996'}});
 function combatStatusRows(actor){
  if(!actor)return[];const rows=[];
  for(const [key,meta]of Object.entries(STATUS_META57)){if(!meta.harmful)continue;const turns=combatStatusTurns(actor,key);if(turns>0)rows.push({key,label:meta.label,color:meta.color57,glyph:meta.glyph57,turns});}
@@ -369,6 +369,7 @@ function playerDebuffRows(){
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 최소 ${STATUS_META57.blind.visionFloor57}칸 · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
+  if(state.targetMark61>0)rows.push({key:'targetMark',color:'#ff9a8a',label:'표적',turns:state.targetMark61,effect:'모든 적이 당신의 위치를 안다'});
   return rows.map(row=>({...row,color:row.color||STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
 }
 function cleanseStatuses(status=state?.status,limit=Infinity){const removed=[];for(const [name,meta]of Object.entries(STATUS_META57).sort((a,b)=>Number(!!b[1].lethal)-Number(!!a[1].lethal)))if(meta.harmful&&meta.cleanseable&&status?.[name]>0&&removed.length<limit){status[name]=0;removed.push(name)}return removed}
@@ -468,7 +469,7 @@ function runAttackStages(kind,args){
   return call(stages.length-1,args);
 }
 function attackPlayer(mon,bonusAtk=0,...args){const terrain=['jar','terrain'].includes(mon?.type);if(terrain?!combatTerrainTargetCheckR8(mon).ok:!isHostileTarget57(mon))return false;markCombatActivity57('player-attack');state.playerAttackOutcome57=null;presentPlayerAction58('attack',mon);const own=!RuntimeState.martialDamageBundle1005;if(own)RuntimeState.martialDamageBundle1005={id:++state.martialDamageSequence,revived:false,guardHit:false};try{const hp=mon.hp,result=terrain?attackPlayerCore54R(mon,bonusAtk,...args):runAttackStages('player',[mon,bonusAtk,...args]);ACTION_PRESENTATION58.hit=state.playerAttackOutcome57?.kind==='hit'||mon.hp<hp;ACTION_PRESENTATION58.crit=!!state.playerAttackOutcome57?.crit;return result}finally{if(own){if(RuntimeState.martialDamageBundle1005.guardHit)consumeMartialGuard(state.player);for(const guarded of RuntimeState.martialDamageBundle1005.guardTargets105||[])consumeMartialGuard(guarded);RuntimeState.martialDamageBundle1005=null}}}
-function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor))stats.def+=SHELL_SLIME.armorBonus;return applyCombatDebuffStats57(stats,actor)}
+function combatEntityStats(actor){if(actor===state.player)return getStats();const stats={...actor,vision:actor.vision||monsterSenseRadius(actor)};if(shellSlimeProtected(actor))stats.def+=SHELL_SLIME.armorBonus;if(actor.power61?.turns>0){stats.atk+=2;stats.def+=7}return applyCombatDebuffStats57(stats,actor)}
 function combatDefenseBonus(target){
  if(!target||target===state.player)return 0;let bonus=martialGuardHit(target),floor=combatDepth(target);
  if(target.shell61>0)bonus+=floor>=16?8:7;
@@ -726,7 +727,7 @@ function applyCombatDebuffStats57(stats,actor=state?.player){
 }
 function applyJarGasEffects57(){
   if(!state||state.dead||state.victory)return;
-  for(const target of [state.player,...state.monsters]){if(target.hp<=0)continue;const concentration=status=>{const gas=jarGasConcentrationMap57(status,target);return Math.max(0,...entityFootprintCells57(target).map(q=>gas.get(jarGasCellKey57(q.x,q.y))||0));};const drunk=concentration('drunk'),pc=concentration('poison');if(drunk)applyCombatStatus(target,'drunk',4);if(!pc||target!==state.player&&monsterPoisonImmune(target))continue;const source=jarGasState57().find(f=>(f.status57||'poison')==='poison'&&(!f.sourceFaction||effectCanAffect57(f,target))&&entityFootprintCells57(target).some(q=>(f.cells||[]).some(c=>c.x===q.x&&c.y===q.y&&c.c===pc)));applyCombatStatus(target,'poison',target===state.player?(pc>=3?4:pc===2?3:2):(pc>=3?5:pc===2?4:3),1,{source:source?.sourceFaction?source:null});}
+  for(const target of [state.player,...state.monsters]){if(target.hp<=0)continue;const concentration=status=>{const gas=jarGasConcentrationMap57(status,target);return Math.max(0,...entityFootprintCells57(target).map(q=>gas.get(jarGasCellKey57(q.x,q.y))||0));};const drunk=concentration('drunk'),pc=concentration('poison'),sick=concentration('illness');if(drunk)applyCombatStatus(target,'drunk',4);if(sick){const src=jarGasState57().find(f=>f.status57==='illness'&&effectCanAffect57(f,target)&&entityFootprintCells57(target).some(q=>(f.cells||[]).some(c=>c.x===q.x&&c.y===q.y)));if(src)applyCombatStatus(target,'illness',27,.35,{source:src})}if(!pc||target!==state.player&&monsterPoisonImmune(target))continue;const source=jarGasState57().find(f=>(f.status57||'poison')==='poison'&&(!f.sourceFaction||effectCanAffect57(f,target))&&entityFootprintCells57(target).some(q=>(f.cells||[]).some(c=>c.x===q.x&&c.y===q.y&&c.c===pc)));applyCombatStatus(target,'poison',target===state.player?(pc>=3?4:pc===2?3:2):(pc>=3?5:pc===2?4:3),1,{source:source?.sourceFaction?source:null});}
 }
 function combatTerrainTargetCheckR8(target,range=weaponRange()){
   if(!state||!target||!['jar','terrain'].includes(target.type)||!elementalWorldTarget105(target.x,target.y))return{ok:false,reason:'공격할 가구가 없다.'};if(!state.seen.has(k(target.x,target.y)))return{ok:false,reason:'확인하지 못한 가구다.'};return combatLineCheckR8(state.player.x,state.player.y,target.x,target.y,{range,units:!!(state.player.weapon?.ranged||state.player.weapon?.kind==='bow')})
@@ -792,6 +793,8 @@ function applyMonsterAttackStatus57(mon,target,context={}){
  if(mon.heavyHit57)applyCombatStatus(target,'weaken',3,.28,{...opts,stagger:true});
  if(mon.slow)applyCombatStatus(target,'weaken',2,.35,{...opts,stagger:true});
  if(mon.blind)applyCombatStatus(target,'blind',4,.45,opts);
+ if(mon.stomachHit)applyCombatStatus(target,'upset',4,.4,opts);
+ if(mon.diseaseBreath61){spawnJarGasField57(target.x,target.y,{status:'illness',duration:4,maxRadius:3,burstRadius:1,linger:true,source:mon});floatText(target.x,target.y,'중병 가스','#c96fa8',11);addLog(`${mon.name}이 중병 가스를 뿜었다.`)}
  if(mon.sealSkill)applyCombatStatus(target,'skillSeal',5,.42,opts);
  if(mon.focusDrain&&Number.isFinite(target.focus))target.focus=Math.max(0,target.focus-mon.focusDrain);
  if(mon.hungerDrain&&Number.isFinite(target.hunger))target.hunger=Math.max(0,target.hunger-mon.hungerDrain);
