@@ -319,25 +319,25 @@ function drawCombatProjectile(q,pj,now){
   // sky flash behind the bolt
   if(inten>0){const g=q.createRadialGradient(cx,cy-TILE*2.5,4,cx,cy-TILE*2.5,TILE*6);g.addColorStop(0,'#cfe0ff');g.addColorStop(1,'#5a7cff00');q.globalAlpha=.3*inten;q.fillStyle=g;q.beginPath();q.arc(cx,cy-TILE*2.5,TILE*6,0,Math.PI*2);q.fill()}
   // stepped leader: a thin, faint line that races down before the stroke
-  if(t<.17){const prog=Math.min(1,t/.07);q.globalAlpha=.65;q.strokeStyle='#9fc4ff';q.lineWidth=1.1;trace(main,Math.max(2,Math.floor(main.length*prog)))}
+  if(t<.17){const prog=Math.min(1,t/.07);q.globalAlpha=.65;q.strokeStyle='#9fc4ff';q.lineWidth=2.2;trace(main,Math.max(2,Math.floor(main.length*prog)))}
   // return stroke and its forks
   if(inten>0){
-   for(const[pts,w]of[[main,1],...branches.map(b=>[b,.55])]){
-    q.globalAlpha=.24*inten;q.strokeStyle='#3f6bff';q.lineWidth=17*w;trace(pts);
-    q.globalAlpha=.55*inten;q.strokeStyle='#86b6ff';q.lineWidth=7*w;trace(pts);
-    q.globalAlpha=inten;q.strokeStyle='#f6fbff';q.lineWidth=2.4*w;trace(pts)}
+   for(const[pts,w]of[[main,1],...branches.map(b=>[b,.62])]){
+    q.globalAlpha=.24*inten;q.strokeStyle='#3f6bff';q.lineWidth=30*w;trace(pts);
+    q.globalAlpha=.55*inten;q.strokeStyle='#86b6ff';q.lineWidth=14*w;trace(pts);
+    q.globalAlpha=inten;q.strokeStyle='#f6fbff';q.lineWidth=5.2*w;trace(pts)}
   }
   // afterglow: the ionised channel cools to violet
-  if(t>.3&&t<.7){q.globalAlpha=.4*(1-(t-.3)/.4);q.strokeStyle='#b49aff';q.lineWidth=1.6;trace(main)}
+  if(t>.3&&t<.7){q.globalAlpha=.4*(1-(t-.3)/.4);q.strokeStyle='#b49aff';q.lineWidth=3.2;trace(main)}
   // ground: flash, marked tile, crawling arcs, soot ring
   const gi=t<.07?0:inten;
   if(gi>0){const g=q.createRadialGradient(cx,cy,1,cx,cy,TILE*1.5);g.addColorStop(0,'#ffffff');g.addColorStop(.35,'#9cc4ffcc');g.addColorStop(1,'#3f6bff00');q.globalAlpha=gi;q.fillStyle=g;q.beginPath();q.arc(cx,cy,TILE*1.5,0,Math.PI*2);q.fill()}
   if(t>.07&&t<.4){q.globalAlpha=(1-(t-.07)/.33)*.9;q.strokeStyle='#cfe2ff';q.lineWidth=2;q.strokeRect(cx-TILE/2+2,cy-TILE/2+2,TILE-4,TILE-4)}
-  if(t>.07&&t<.55){for(let i=0;i<8;i++){if((Math.floor(t*38)+i)%3===0)continue;const ang=R(i,29)*Math.PI*2,len=TILE*(.55+R(i,31)*.8);let x=cx,y=cy+2;const arc=[[x,y]];for(let k=1;k<=4;k++){x+=Math.cos(ang+(R(i*5+k,37)-.5)*1.3)*len/4;y+=Math.sin(ang+(R(i*5+k,41)-.5)*1.3)*len/4*.55;arc.push([x,y])}
-   q.globalAlpha=.35;q.strokeStyle='#5f8cff';q.lineWidth=3.2;trace(arc);q.globalAlpha=.95;q.strokeStyle='#e6f1ff';q.lineWidth=1.2;trace(arc)}}
+  if(t>.07&&t<.55){for(let i=0;i<8;i++){if((Math.floor(t*38)+i)%3===0)continue;const ang=i/8*Math.PI*2+(R(i,29)-.5)*.7+R(99,29)*.4,len=TILE*(.55+R(i,31)*.8);let x=cx,y=cy+2;const arc=[[x,y]];for(let k=1;k<=4;k++){x+=Math.cos(ang+(R(i*5+k,37)-.5)*1.3)*len/4;y+=Math.sin(ang+(R(i*5+k,41)-.5)*1.3)*len/4*.55;arc.push([x,y])}
+   q.globalAlpha=.4;q.strokeStyle='#5f8cff';q.lineWidth=5;trace(arc);q.globalAlpha=.95;q.strokeStyle='#e6f1ff';q.lineWidth=2;trace(arc)}}
   if(t>.1){const f=Math.min(1,(t-.1)/.1)*Math.max(0,1-(t-.5)/.5);q.save();q.translate(cx,cy+3);q.scale(1,.6);q.globalAlpha=.5*f;q.fillStyle='#120e14';q.beginPath();for(let i=0;i<=12;i++){const a2=i/12*Math.PI*2,r=TILE*(.42+R(i,43)*.22);i?q.lineTo(Math.cos(a2)*r,Math.sin(a2)*r):q.moveTo(Math.cos(a2)*r,Math.sin(a2)*r)}q.closePath();q.fill();q.restore()}
   // sparks thrown off the impact
-  if(t>.07){for(let i=0;i<16;i++){const u=Math.min(1,(t-.07)/.5),a2=R(i,47)*Math.PI*2,sp=TILE*(.5+R(i,53)*1.1),vy=TILE*(.9+R(i,59)*1.3),px=cx+Math.cos(a2)*sp*u,py=cy+Math.sin(a2)*sp*.4*u-(vy*u-vy*1.25*u*u);
+  if(t>.07){for(let i=0;i<16;i++){const u=Math.min(1,(t-.07)/.5),a2=i/16*Math.PI*2+(R(i,47)-.5)*.5,sp=TILE*(.5+R(i,53)*1.1),vy=TILE*(.9+R(i,59)*1.3),px=cx+Math.cos(a2)*sp*u,py=cy+Math.sin(a2)*sp*.4*u-(vy*u-vy*1.25*u*u);
    q.globalAlpha=Math.max(0,1-u);q.fillStyle=i%2?'#eef6ff':'#8fbaff';q.fillRect(px,py,1.6+R(i,61)*1.4,1.6+R(i,67)*1.4)}}
   q.restore();return;
  }
