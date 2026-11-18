@@ -36,7 +36,10 @@ function floatText(x,y,text,color="#ffffff",size=13,element=null,delay=0){
   if(elementColor)color=elementColor;
   text=displayCombatText58(text);
   const dmg=/^-\d+/.test(text),n=dmg?Math.max(14,size):size;
-  FX.floats.push({x:x*TILE+TILE/2,y:y*TILE+8,text,color,size:n,damage57:dmg,start:performance.now()+delay,life:dmg?820:720,
+  // Several hits on one tile (multi-hit weapons, combos) used to stack at the same point. Each damage number still alive on that tile pushes the next one up and to alternating sides.
+  const bx=x*TILE+TILE/2,by=y*TILE+8,start=performance.now()+delay;let stack=0;
+  if(dmg)for(const f of FX.floats)if(f.damage57&&f.baseX===bx&&f.baseY===by&&Math.abs(f.start-start)<700)stack++;
+  FX.floats.push({x:bx+(stack%2?1:-1)*Math.ceil(stack/2)*7*(stack?1:0),y:by-stack*14,baseX:bx,baseY:by,text,color,size:n,damage57:dmg,start,life:dmg?820:720,
     ...(dmg&&state?{hitFeed:{id:++combatFloatSequence,hurt:x===state.player.x&&y===state.player.y,color:elementColor||null}}:{})});
 }
 function renderCombatHitFeed(now){
