@@ -1044,10 +1044,7 @@ function restoreRecoveredRun(ghost,floor=BRANCH_DEFS105.palace.parent){
   if(supply)state.coreLoot982=supply.coreLoot;
   NormalFloorGenerator.generate();
   if(floor===8){
-    const hotpot={...clone(itemPrototype('보신 전골')),count:6};
-    const upgrade={...clone(upgradeProto()),appearance56:state.knowledge56.talismanMap.upgrade,count:4};
-    addInventoryItem(hotpot);
-    addInventoryItem(upgrade);
+    for(const [name,count] of [['청심탕',1],['얼음 복숭아',1],['보신 전골',4],['말린 육포',12]])addInventoryItem({...clone(itemPrototype(name)),count});
     return;
   }
   const floorNineUpgrades=supply?countUpgradeTalismans(state.items):0;

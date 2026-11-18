@@ -507,7 +507,7 @@ const PlayStats={
    if(updatedSaveNotice)return updatedSaveNotice;
    newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}},floorEight?8:undefined);
    this.close();
-   toast(floorEight?'8층에서 보신 전골 6개와 강화부적 4개를 받고 되살아났다.':'창해 용궁 2층 입구에서 되살아났다.');
+   toast(floorEight?'8층에서 청심탕, 얼음 복숭아, 보신 전골 4개, 말린 육포 12개를 받고 되살아났다.':'창해 용궁 2층 입구에서 되살아났다.');
    return '';
   }catch(error){ignoreError('run recovery failed',error);return '탐사를 되살리지 못했다. 다시 시도하자.'}
  },
