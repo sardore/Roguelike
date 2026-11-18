@@ -91,7 +91,7 @@ function setMonsterAttackInvestigation(mon,source=state?.player){
   mon.lostSight=0;
   return true;
 }
-function monsterAttackLineR(mon,range,context={}){const target=context.target||state?.player;if(!combatTargetValid57(mon,target))return{ok:false,reason:'invalid-target'};const area=['area','hazard'].includes(context.delivery);if(target===state.player&&playerConcealed58()&&!context.fixedArea58&&!area)return{ok:false,reason:'concealed-target'};const origin=area&&Number.isInteger(context.origin57?.x)&&Number.isInteger(context.origin57?.y)?context.origin57:mon;return entityCombatLineCheckR(origin,target,{range,ignore:target,units:!area})}
+function monsterAttackLineR(mon,range,context={}){const target=context.target||state?.player;if(!combatTargetValid57(mon,target))return{ok:false,reason:'invalid-target'};const area=['area','hazard'].includes(context.delivery);if(target===state.player&&playerConcealed58()&&!playerTargetMarked()&&!context.fixedArea58&&!area)return{ok:false,reason:'concealed-target'};const origin=area&&Number.isInteger(context.origin57?.x)&&Number.isInteger(context.origin57?.y)?context.origin57:mon;return entityCombatLineCheckR(origin,target,{range,ignore:target,units:!area})}
 function monsterIsEvil(mon){
   return ["undead","eldritch","mutant"].includes(mon.kind);
 }
@@ -126,11 +126,15 @@ function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  const guard=target.guardReady1005||0;if(guard>0){if(player)RuntimeState.martialDamageBundle1005.guardHit=true;martialFx('guard',target)}
  const defenseBonus=player?guard:combatDefenseBonus(target),w=mon.weapon||{},holy=(w.holy||0)&&['spirit','undead'].includes(target.kind)?w.holy:0,holyBrand=w.elementBrand74==='holy'&&target.kind==='undead'?5:0,atk=(attackStats.atk||0)*Math.max(0,Number(ctx.atkScale)||1)+bonus+(mon.buff||0)+holy+holyBrand;
  let dmg=damageFormula(atk,st.def||0,globalThis.__MANRU_RANDOM57__()<(.05+(w.crit||0)),{defenseBonus,defenseScale:mon.armorPierce||w.armorPierce?.25:1});if(mon.kind==='undead'&&target.armor?.elementGuard74==='holy')dmg=Math.max(1,Math.round(dmg*.85));
- dmg=ctx.damageElement105?resolveElementDamage57(target,ctx.damageElement105,dmg,{effect:effectSource57(mon),ground:!!ctx.ground105,source:mon.name,color:ELEMENT_FX_COLORS105[ctx.damageElement105],impact:false,logDamage57:false}).damage:damageEntity(target,dmg,mon,null,{delivery:ctx.delivery});if(!player&&guard>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(target);else consumeMartialGuard(target);}
+ dmg=ctx.damageElement105?resolveElementDamage57(target,ctx.damageElement105,dmg,{effect:effectSource57(mon),ground:!!ctx.ground105,source:mon.name,isolatedContact:ctx.isolatedElement,color:ELEMENT_FX_COLORS105[ctx.damageElement105],impact:false,logDamage57:false}).damage:damageEntity(target,dmg,mon,null,{delivery:ctx.delivery});if(!player&&guard>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(target);else consumeMartialGuard(target);}
  if(state.floor>=11&&ctx.delivery!=='area'&&ctx.delivery!=='hazard')alertNearby(target.x,target.y,ctx.projectile?6:5,ctx.projectile?'projectile':'combat',dmg);
  presentMonsterHit(mon,target,dmg,!!ctx.damageElement105,ctx.impactDelay||0);
  if(!player&&target.martialActor105&&ctx.projectile)dojoRememberHit(target,'ranged');
  if(dmg>0)applyMonsterAttackStatus57(mon,target,{damage:dmg,delivery:ctx.delivery});
+ if(mon.illnessBreath57&&dmg>0&&ctx.delivery==='melee'){
+  spawnJarGasField57(target.x,target.y,{status:'illness',duration:4,maxRadius:2,burstRadius:2,source:mon});
+  addLog('흑룡이 중병 안개를 뿜었다.');
+ }
  if(dmg>0&&combatDepth(mon)>=16&&mon.kind==='undead'&&['melee','ranged'].includes(ctx.delivery))globalThis.__MANRU_ITEM_IDENTITY991__?.hostileHit?.(target);
  if(player&&target.hp<=0)die(mon.name);
  return monsterAttackResultR(mon,ctx,{hit:true,damage:dmg,attackerAlive:mon.hp>0});
@@ -222,20 +226,27 @@ function shellSlimeTurn(mon,target,opts){
 }
 function monsterActionSchedule(mon,opt={}){
   if(mon?.shellSlime)return shellSlimeSchedule(mon);
-  const cadence=Number.isFinite(mon?.actionSpeed)&&mon.actionSpeed>1?{actions:Math.floor(mon.actionSpeed)}:{};
+  const actionCount=Number.isFinite(mon?.actionSpeed)?Math.max(1,Math.floor(mon.actionSpeed)):1;
+  function cadence(){
+    if(!bodyPowerActive(mon))return actionCount>1?{actions:actionCount}:{};
+    const cs=mon.classState,extra=(cs.powerActionCarry57||0)+actionCount*.5;
+    cs.powerActionCarry57=extra%1;
+    return {actions:actionCount+Math.floor(extra)};
+  }
   if(mon?.exitPressureSpeed57){
     const progress=Number.isFinite(opt.pressureProgress57)?clamp(opt.pressureProgress57,0,1):floor24PressureProgress57(),speed=monsterExitPressureSpeed(mon,progress);
     mon.exitPressureSpeedCurrent57=speed;mon.exitPressureSpeedBudget57=(Number.isFinite(mon.exitPressureSpeedBudget57)?mon.exitPressureSpeedBudget57:0)+speed;
-    const steps=Math.min(2,Math.floor(mon.exitPressureSpeedBudget57+1e-9));if(steps<=0)return{...cadence,act:false,steps:0,mode:'pressure-slow',speed,progress};
-    mon.exitPressureSpeedBudget57=Math.max(0,mon.exitPressureSpeedBudget57-steps);return{...cadence,act:true,steps,mode:speed>=1.5-1e-9?'fast':speed>1?'pressure-fast':speed<1?'pressure-slow':'normal',speed,progress}
+    const steps=Math.min(2,Math.floor(mon.exitPressureSpeedBudget57+1e-9));if(steps<=0)return{act:false,steps:0,mode:'pressure-slow',speed,progress};
+    mon.exitPressureSpeedBudget57=Math.max(0,mon.exitPressureSpeedBudget57-steps);return{...cadence(),act:true,steps,mode:speed>=1.5-1e-9?'fast':speed>1?'pressure-fast':speed<1?'pressure-slow':'normal',speed,progress}
   }
   const fast=!!mon.fast,lag=mon.actionLag57;
-  if(fast&&lag)return{...cadence,act:true,steps:1,mode:'cancelled'};
-  if(fast)return{...cadence,act:true,steps:state.floorTurn%2===0?2:1,mode:'fast'};
-  if(!lag)return{...cadence,act:true,steps:1,mode:'normal'};
+  if(fast&&lag)return{...cadence(),act:true,steps:1,mode:'cancelled'};
+  if(fast)return{...cadence(),act:true,steps:state.floorTurn%2===0?2:1,mode:'fast'};
+  if(!lag)return{...cadence(),act:true,steps:1,mode:'normal'};
   const period=Math.max(2,Math.floor(lag.period||6)),skip=Math.max(1,Math.min(period-1,Math.floor(lag.skipTurns||1)));
   mon.actionLagTick57=((mon.actionLagTick57||0)+1)%period;
-  return{...cadence,act:mon.actionLagTick57!==0&&mon.actionLagTick57<=period-skip,steps:1,mode:'action-lag'};
+  const act=mon.actionLagTick57!==0&&mon.actionLagTick57<=period-skip;
+  return{...(act?cadence():{}),act,steps:1,mode:'action-lag'};
 }
 function applyMonsterRevivalStats(mon){
   if(!mon?.revivalLives57)return mon;
@@ -320,9 +331,11 @@ function monsterSenseRadius(mon){
   return mon.gaze||mon.losLostSummon57?Math.max(base,6):base
 }
 function playerDetectedBy(mon){
-  if(!mon||!state?.player||playerConcealed58())return false;
+  if(!mon||!state?.player)return false;
+  if(playerTargetMarked()&&isHostileTarget57(mon))return true;
+  if(playerConcealed58())return false;
   const d=entityDistance57(mon,state.player),sight=applyCombatDebuffStats57({vision:monsterSenseRadius(mon)},mon).vision,sense=Math.max(combatStatusTurns(mon,'blind')>0?STATUS_META57.blind.visionFloor57:2,sight-(playerCloak().senseReduce||0)+(monsterSenseRadius(mon)<99?Math.round(2*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clang')||0)):0));
-  if(d<=1||(d<=sense&&entityCombatLineCheckR(mon,state.player,{range:sense,units:false}).ok))return true;
+  if(d<=1||d<=4&&(mon.breachStrike57||mon.terrainPhase57)||(d<=sense&&entityCombatLineCheckR(mon,state.player,{range:sense,units:false}).ok))return true;
   const presence=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('presence')||0;if(!presence)return false;
   const cursedSense=sense+Math.round(2*presence);return d<=cursedSense&&entityCombatLineCheckR(mon,state.player,{range:cursedSense,units:false}).ok
 }
@@ -351,7 +364,7 @@ function tickNaturalPopulation(){
  const pop=state.naturalPopulation57;if(!pop||pop.initial<=0)return;const agency=state.playerAgencyTurns57||0,count=state.monsters.filter(isNaturalMonster).length;
  const deficit=Math.max(0,pop.initial-count-1);if(!deficit){pop.nextAgency=null;return}
  if(pop.nextAgency==null){pop.nextAgency=agency+rand(18,26);return}if(agency<pop.nextAgency)return;pop.nextAgency=agency+rand(18,26);
- const arrivals=Math.ceil(deficit*.10);
+ const arrivals=Math.ceil(deficit*(state.floor>=21?.40:state.floor>=16?.32:.15));
  const defs=floorEnemyDefinitions().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
  const walk=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}),ctx=PlacementService.generationContext(walk.dist,20,4),home=roomAt(state.player.x,state.player.y),roomUse=new Map();
  ctx.candidates=ctx.candidates.filter(q=>walk.dist.has(k(q.x,q.y))&&walk.dist.get(k(q.x,q.y))>=20&&!state.visible.has(k(q.x,q.y))&&Math.max(Math.abs(q.x-state.player.x),Math.abs(q.y-state.player.y))>=16&&(!home||q.x<home.x-5||q.y<home.y-5||q.x>=home.x+home.w+5||q.y>=home.y+home.h+5)&&!(state.recentPlayerCells57||[]).some(c=>agency-c.agency<26&&Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))<6));
@@ -412,7 +425,7 @@ function moveMonsterStep(mon,x,y,opts={}){
  if(mon.goldTrail&&state.map[oy][ox]===TT.FLOOR)RuntimeTerrainOwner.mutate(ox,oy,TT.GOLD,{source:'gold-trail'});
  if(mon.waterTrail&&terrainSurface58(state.map[oy][ox]))RuntimeTerrainOwner.temporary(ox,oy,TT.WATER,6,'water-trail',{allowedOld:[state.map[oy][ox]],source:'fragrance-fairy'});
  if(mon.lavaTrail57&&terrainSurface58(state.map[oy][ox]))RuntimeTerrainOwner.temporary(ox,oy,TT.LAVA,3,'lava-trail',{allowedOld:[state.map[oy][ox]],source:'molten-slime'});
- if(mon.hp>0&&state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}return true;
+ if(mon.hp>0&&!mon.terrainPhase57&&state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}return true;
 }
 const BOSS_ARENA_RULES={containment:{patterns:['needle','keeper'],radius:15,damageFraction:.10,minDamage:5,poisonTurns:6},silk:{weaveCooldown:7,repairCooldown:4,mirrorCap:24,mirrorSpacing:3,lineCap:3,gasDuration:24,blackThreshold:.70,blackChance:.50,blackCap:4,waveIntervals:[8,6,4,2],waveBatch:2,mirrorSummonCap:6,bossSummonCap:12,roster:['비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','윈도','향기요정','분홍거미']},keeper:{bindTurns:2,boundDef:2,chainCooldown:4,lavaThresholds:[.67,.33],lavaWarning:10,bridgeWidths:[5,7]},master:{maskAtk:14,shotCooldown:[5,4,3],shieldShotCooldown:6,thresholds:[.66,.33],range:4,shieldRange:3,sealAngle:90,cores:[{name:'제1사념 · 만루의 잔향',hp:45,def:3,interval:2,batch:3,cap:8,roster:['금령','금령','공허 가오리','공허 가오리','만루의 수호상']},{name:'제2사념 · 천실핵의 집념',hp:60,def:5,interval:3,batch:2,cap:6,roster:['신전 사제 망령','차원 포식자','보주의 파수꾼','천수 아수라']}]}};
 const AIM_GLYPHS={
@@ -885,7 +898,7 @@ function visibilityStackTarget(mon,target,rule,sees=actorDetectedTarget57(mon,ta
  return !!(combatTargetValid57(mon,target)&&sees&&distance>=(rule.minRange||0)&&distance<=rule.range&&(!rule.mutual||(target===state.player?isEntityObservableToPlayer57(mon):actorDetectedTarget57(target,mon)))&&monsterAttackLineR(mon,rule.range,{target}).ok);
 }
 function continuousEnemyTarget(mon,player,detectPlayer){
- if(combatTargetValid57(mon,player)&&(!playerConcealed58()||dojoMarkedPursuer(mon))&&(dojoMarkedPursuer(mon)||mon.persistentChase57&&(mon.hasSeenPlayer105||mon.alerted)&&!mon.gaze))return player;
+ if(combatTargetValid57(mon,player)&&(!playerConcealed58()||playerTargetMarked()||dojoMarkedPursuer(mon))&&(dojoMarkedPursuer(mon)||mon.persistentChase57&&(mon.hasSeenPlayer105||mon.alerted)&&!mon.gaze))return player;
  const rules=visibilityStackRules(mon);if(!rules.length)return null;
  const previous=mon.specialOpponent105==='player'?player:mon.specialOpponent105?state.monsters.find(t=>t.combatantId54===mon.specialOpponent105):null,targets=[previous,...(detectPlayer?[player]:[])];
  for(const target of targets)if(target&&rules.some(rule=>visibilityStackTarget(mon,target,rule)))return target;
@@ -916,6 +929,21 @@ function updateSummonerEngagement(mon,sees){
  const searching=!!(mon.summonActivated57&&mon.alerted&&(mon.searchTurns||0)>0&&mon.lastSeenPosition);if(searching)return true;mon.summonActivated57=false;delete mon.summonFirstSeenTurn57;delete mon.nextSummonTurn57;return false;
 }
 function tryMonsterSummon(mon){
+ if(mon.nightmareBrood57){
+  if(mon.skillSeal105>0||!mon.summonActivated57||state.floorTurn<(mon.nextSummonTurn57??Infinity))return false;
+  if(!state.debugBattle57&&!state.branchContext105&&!state.artifactDungeon46&&BOSS_FLOORS.has(state.floor))return false;
+  const owned=state.monsters.filter(child=>child.hp>0&&bossChildOf(child,mon)).length;
+  let born=0;
+  for(let i=0;i<Math.min(NIGHTMARE_BROOD.length,mon.summonCap-owned);i++){
+   const def=NIGHTMARE_BROOD[((mon.nightmareNextSpecies57||0)+i)%NIGHTMARE_BROOD.length];
+   const ghost=summonNear(mon,def.name,{radius:3});
+   if(ghost){born++;ghost.alerted=true;burst(ghost.x,ghost.y,'#8a619f',12,.7);}
+  }
+  if(!born)return false;
+  mon.nightmareNextSpecies57=((mon.nightmareNextSpecies57||0)+Math.min(NIGHTMARE_BROOD.length,mon.summonCap-owned))%NIGHTMARE_BROOD.length;
+  mon.nextSummonTurn57=state.floorTurn+mon.summonCooldown;
+  addLog(`악몽 시녀의 상복에서 망자 ${born}마리가 기어 나왔다.`);return true;
+ }
  if(mon.summoner&&!(mon.skillSeal105>0)&&mon.summonActivated57&&mon.summonName57&&state.floorTurn>=(mon.nextSummonTurn57??Infinity)){if(mon.summonCap&&state.monsters.filter(m=>m.hp>0&&bossChildOf(m,mon)).length>=mon.summonCap)return false;const summoned=summonNear(mon,mon.summonName57);if(summoned){mon.nextSummonTurn57=state.floorTurn+(mon.summonCooldown??Math.ceil(6/Math.max(1,mon.actionSpeed||1)));addLog(`${withJosa57(mon.name,'이/가')} 보조 개체를 불렀다.`);return true}}
  return false;
 }
@@ -1015,8 +1043,8 @@ function monsterTurn(){
     if(prisonContainedTurn(mon))continue;
     if(mountainMimicTurn(mon))continue;
     const observedOpponent=selectEnemyTarget(mon),opponentDetected=observedOpponent&&actorDetectedTarget57(mon,observedOpponent,monsterSenseRadius(mon));let d=entityDistance57(mon,p);
-    if(mon.sleeping105){if(mon.doorSleep105)continue;if(mon.hp<mon.maxHp||mon.alerted||(opponentDetected&&entityDistance57(mon,observedOpponent)<=1))branchWake(mon,'접근');else continue;}
-    if(playerConcealed58()&&(!observedOpponent||observedOpponent===p))clearPlayerTracking58(mon);
+    if(mon.sleeping105){if(mon.doorSleep105)continue;if(mon.hp<mon.maxHp||mon.alerted||playerTargetMarked()||(opponentDetected&&entityDistance57(mon,observedOpponent)<=1))branchWake(mon,'접근');else continue;}
+    if(playerConcealed58()&&!playerTargetMarked()&&(!observedOpponent||observedOpponent===p))clearPlayerTracking58(mon);
     if(dojoMarkedPursuer(mon)){mon.alerted=true;mon.lastSeenPosition={...state.branchTerrain105.dojo.escape105.mark};mon.searchTurns=12;mon.lostSight=0;}
     if(mon.ambush&&mon.hidden===undefined)mon.hidden=monsterAmbushCanHide(mon);if(mon.hidden&&!monsterAmbushCanHide(mon)){mon.hidden=false;mon.alerted=true;playAmbushReveal57(mon,'terrain')}if(mon.stunned>0){mon.stunned--;continue}if(mon.hidden&&(!opponentDetected||entityDistance57(mon,observedOpponent)>3))continue;if(mon.hidden&&opponentDetected&&entityDistance57(mon,observedOpponent)<=3){mon.hidden=false;mon.alerted=true;playAmbushReveal57(mon,'proximity')}
     let sees=playerDetectedBy(mon);mon.gumihoRetreated57=0;
@@ -1103,12 +1131,31 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     '금령':['artillery','4칸 안에서 폭발탄 착탄을 예고하고, 공격에 맞은 대상의 허기까지 갉아먹는 황금 영체']
   };
   const ROLE_RUNE={brood:'독',leaper:'약',gas:'연',hook:'갈',skirmisher:'활',controller:'봉',poison:'독',shell:'방패',artillery:'포',fireArtillery:'화',alarm:'경',swoop:'상',blinkPunisher:'식',asura:'수',formation:'진',ambush:'복',flanker:'사',webber:'망',gaze:'시'};
-  function configureMonsterTraits(m){if(!m||m.boss)return m;if(m.intent61?.type==='shackleCounter'&&!m.intent61.data?.targetId)m.intent61=null;const def=MONSTERS.find(d=>d.name===m.name)||(m.legendDungeon47?mobDefs47(m.legendDungeon47).find(d=>d.name===m.name):null)||CITADEL_ENEMIES105.find(d=>d.name===m.name);if(def?.losLostSummon57&&!def.gaze&&m.gaze){delete m.gaze;delete m.gazeCount;}if(def?.name===SHACKLE_DOLL.name){delete m.fixed;delete m.immobile105;}if(def)for(const field of ['blind','actionSpeed','gaze','crossfire','deathBlast','sealSkill','passageSeal','sealingWard','sting','deathBrood','leap','poisonImmune57','visStack57','guardPost57','infectionHitsRequired57','silkTrapCount57','gasStatus57','lavaTrail57','split','slow','actionLag57','exitPressureSpeed57','gumiBehaviorVersion57','corpseRelocateSpan57','corpseRelocateMinRadius57','floor24Chaser57','persistentChase57','revivalLives57','reviveWeakTurns57','reviveWeakAtkMul57','reviveWeakDefMul57','reviveWeakEvaDelta57','reviveFullAtkMul57','reviveFullDefMul57','reviveFullEvaDelta57','deathCountsAsLosBreak57','warningAura57','legion57','exitPressureSense57','losLostSummon57','legendSkill47'])if(def[field]!=null&&m[field]==null)m[field]=structuredClone(def[field]);if(def?.balanceVersion57&&(m.balanceVersion57||0)<def.balanceVersion57){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});for(const field of ['atk','def','eva','summonWarmup','summonCooldown','summonCap'])if(fresh[field]!=null)m[field]=structuredClone(fresh[field]);m.balanceVersion57=def.balanceVersion57;if(Number.isFinite(m.nextSummonTurn57))m.nextSummonTurn57=Math.max(m.nextSummonTurn57,state.floorTurn+(m.summonCooldown||0));}if(def?.attackRevision&&(m.attackRevision||0)<def.attackRevision){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});m.atk=fresh.atk;if(def.sting)m.sting=structuredClone(def.sting);m.attackRevision=def.attackRevision;}if(def?.sealingWard&&m.sealingWard?.species===def.name){m.sealingWard.duration=def.sealingWard.duration;m.sealingWard.cooldown=def.sealingWard.cooldown;}if(m.crossfire){if(def?.crossfire)m.crossfire.cooldown=def.crossfire.cooldown;delete m.crossfireContact;}if(def?.waterOnly57&&!m.combatFixture54)m.fixed=!!def.fixed;if(m.summonOwner105==='player')configureSummonBody105(m,def);if(m.gasStatus57)delete m.gas;if(m.floor24Chaser57&&def&&(m.gumiScaleVersion57||0)<3){const fresh=scaledMonster(def),wasCorpse=m.revivePhase57==='corpse'||m.hp<=0,ratio=(m.maxHp||0)>0?clamp((m.hp||0)/m.maxHp,0,1):1;delete m.fixedStats57;delete m.slow;delete m.reviveWeakAtk57;delete m.reviveWeakEva57;delete m.reviveFullAtk57;delete m.reviveFullEva57;m.maxHp=fresh.maxHp;m.hp=wasCorpse?0:Math.max(1,Math.round(fresh.maxHp*ratio));m.atk=fresh.atk;m.def=fresh.def;m.eva=fresh.eva;m.baseAtk57=fresh.atk;m.baseDef57=fresh.def;m.baseEva57=fresh.eva;m.miniBoss=true;m.reach=def.reach||1;delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57);m.exitPressureSpeedBudget57=0;m.gumiBehaviorVersion57=def.gumiBehaviorVersion57||4;m.reviveWeakAtkMul57=def.reviveWeakAtkMul57;m.reviveWeakDefMul57=def.reviveWeakDefMul57;m.reviveWeakEvaDelta57=def.reviveWeakEvaDelta57;m.reviveFullAtkMul57=def.reviveFullAtkMul57;m.reviveFullDefMul57=def.reviveFullDefMul57;m.reviveFullEvaDelta57=def.reviveFullEvaDelta57;m.deathCountsAsLosBreak57=true;m.losLostSummon57=structuredClone(def.losLostSummon57);m.gumiScaleVersion57=3}if(m.floor24Chaser57&&def&&(m.gumiBehaviorVersion57||0)<4){delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57||{min:.5,max:1.5});m.exitPressureSpeedBudget57=0;m.corpseRelocateSpan57=def.corpseRelocateSpan57||21;m.corpseRelocateMinRadius57=def.corpseRelocateMinRadius57||6;m.gumiBehaviorVersion57=4}if(m.revivalLives57){if(!Number.isFinite(m.livesRemaining57))m.livesRemaining57=m.revivalLives57;if(!m.revivePhase57)m.revivePhase57='normal';if(!Number.isFinite(m.baseAtk57))m.baseAtk57=Number.isFinite(m.atk)?m.atk:(def?.atk??1);if(!Number.isFinite(m.baseDef57))m.baseDef57=Number.isFinite(m.def)?m.def:(def?.def??0);if(!Number.isFinite(m.baseEva57))m.baseEva57=Number.isFinite(m.eva)?m.eva:(def?.eva??0);if(!Number.isFinite(m.losLostSummonCooldown57))m.losLostSummonCooldown57=0;applyMonsterRevivalStats(m)}const r=MONSTER_ROLE_TABLE[m.name];if(r){m.role61=r[0];m.roleDesc61=r[1]}if(m.role61==='shell'){if(!Number.isFinite(m.shell61))m.shell61=0;if(!Number.isFinite(m.shellCd61))m.shellCd61=0}if(m.name==='성채 비행 감시자')m.support=false;if(m.name==='해자 잠복꾼'){m.ambush=false;m.hidden=false}if(!m.summonOwner105&&!m.prisoner105?.released&&(m.guardPost57||m.rumorSpaceId1030||m.legendElite47||m.elite1023||m.miniVaultResident62)&&!m.guardHome57&&Number.isFinite(m.x)&&Number.isFinite(m.y)&&!state.generationInProgress57){let room=roomAt(m.x,m.y);const vault=state.miniVault62,rumor=(state.rumorSpaces1030||[]).find(q=>q.id===m.rumorSpaceId1030);if(m.miniVaultResident62&&vault&&m.x>=vault.x&&m.y>=vault.y&&m.x<vault.x+vault.w&&m.y<vault.y+vault.h)room=vault;if(rumor?.rect){const r=rumor.rect;room={x:r.x1,y:r.y1,w:r.x2-r.x1+1,h:r.y2-r.y1+1}}m.guardHome57={x:m.x,y:m.y,room:room?{x:room.x,y:room.y,w:room.w,h:room.h}:null}}return m}
+  function configureMonsterTraits(m){if(!m||m.boss)return m;if(m.intent61?.type==='shackleCounter'&&!m.intent61.data?.targetId)m.intent61=null;const def=MONSTERS.find(d=>d.name===m.name)||(m.legendDungeon47?mobDefs47(m.legendDungeon47).find(d=>d.name===m.name):null)||CITADEL_ENEMIES105.find(d=>d.name===m.name);if(def?.losLostSummon57&&!def.gaze&&m.gaze){delete m.gaze;delete m.gazeCount;}if(def?.name===SHACKLE_DOLL.name){delete m.fixed;delete m.immobile105;}if(def)for(const field of ['blind','bleed','powerAlarm57','targetMark57','guardMartial57','breachStrike57','thunderStrike57','actionSpeed','gaze','crossfire','deathBlast','sealSkill','passageSeal','sealingWard','sting','deathBrood','leap','poisonImmune57','visStack57','guardPost57','infectionHitsRequired57','silkTrapCount57','gasStatus57','lavaTrail57','split','slow','actionLag57','exitPressureSpeed57','gumiBehaviorVersion57','corpseRelocateSpan57','corpseRelocateMinRadius57','floor24Chaser57','persistentChase57','revivalLives57','reviveWeakTurns57','reviveWeakAtkMul57','reviveWeakDefMul57','reviveWeakEvaDelta57','reviveFullAtkMul57','reviveFullDefMul57','reviveFullEvaDelta57','deathCountsAsLosBreak57','warningAura57','legion57','exitPressureSense57','losLostSummon57','legendSkill47'])if(def[field]!=null&&m[field]==null)m[field]=structuredClone(def[field]);if(def?.balanceVersion57&&(m.balanceVersion57||0)<def.balanceVersion57){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});for(const field of ['atk','def','eva','summonWarmup','summonCooldown','summonCap'])if(fresh[field]!=null)m[field]=structuredClone(fresh[field]);m.balanceVersion57=def.balanceVersion57;if(Number.isFinite(m.nextSummonTurn57))m.nextSummonTurn57=Math.max(m.nextSummonTurn57,state.floorTurn+(m.summonCooldown||0));}if(def?.attackRevision&&(m.attackRevision||0)<def.attackRevision){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});m.atk=fresh.atk;if(def.sting)m.sting=structuredClone(def.sting);m.attackRevision=def.attackRevision;}if(def?.sealingWard&&m.sealingWard?.species===def.name){m.sealingWard.duration=def.sealingWard.duration;m.sealingWard.cooldown=def.sealingWard.cooldown;}if(m.crossfire){if(def?.crossfire)m.crossfire.cooldown=def.crossfire.cooldown;delete m.crossfireContact;}if(def?.waterOnly57&&!m.combatFixture54)m.fixed=!!def.fixed;if(m.summonOwner105==='player')configureSummonBody105(m,def);if(m.gasStatus57)delete m.gas;if(m.floor24Chaser57&&def&&(m.gumiScaleVersion57||0)<3){const fresh=scaledMonster(def),wasCorpse=m.revivePhase57==='corpse'||m.hp<=0,ratio=(m.maxHp||0)>0?clamp((m.hp||0)/m.maxHp,0,1):1;delete m.fixedStats57;delete m.slow;delete m.reviveWeakAtk57;delete m.reviveWeakEva57;delete m.reviveFullAtk57;delete m.reviveFullEva57;m.maxHp=fresh.maxHp;m.hp=wasCorpse?0:Math.max(1,Math.round(fresh.maxHp*ratio));m.atk=fresh.atk;m.def=fresh.def;m.eva=fresh.eva;m.baseAtk57=fresh.atk;m.baseDef57=fresh.def;m.baseEva57=fresh.eva;m.miniBoss=true;m.reach=def.reach||1;delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57);m.exitPressureSpeedBudget57=0;m.gumiBehaviorVersion57=def.gumiBehaviorVersion57||4;m.reviveWeakAtkMul57=def.reviveWeakAtkMul57;m.reviveWeakDefMul57=def.reviveWeakDefMul57;m.reviveWeakEvaDelta57=def.reviveWeakEvaDelta57;m.reviveFullAtkMul57=def.reviveFullAtkMul57;m.reviveFullDefMul57=def.reviveFullDefMul57;m.reviveFullEvaDelta57=def.reviveFullEvaDelta57;m.deathCountsAsLosBreak57=true;m.losLostSummon57=structuredClone(def.losLostSummon57);m.gumiScaleVersion57=3}if(m.floor24Chaser57&&def&&(m.gumiBehaviorVersion57||0)<4){delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57||{min:.5,max:1.5});m.exitPressureSpeedBudget57=0;m.corpseRelocateSpan57=def.corpseRelocateSpan57||21;m.corpseRelocateMinRadius57=def.corpseRelocateMinRadius57||6;m.gumiBehaviorVersion57=4}if(m.revivalLives57){if(!Number.isFinite(m.livesRemaining57))m.livesRemaining57=m.revivalLives57;if(!m.revivePhase57)m.revivePhase57='normal';if(!Number.isFinite(m.baseAtk57))m.baseAtk57=Number.isFinite(m.atk)?m.atk:(def?.atk??1);if(!Number.isFinite(m.baseDef57))m.baseDef57=Number.isFinite(m.def)?m.def:(def?.def??0);if(!Number.isFinite(m.baseEva57))m.baseEva57=Number.isFinite(m.eva)?m.eva:(def?.eva??0);if(!Number.isFinite(m.losLostSummonCooldown57))m.losLostSummonCooldown57=0;applyMonsterRevivalStats(m)}const r=MONSTER_ROLE_TABLE[m.name];if(r){m.role61=r[0];m.roleDesc61=r[1]}if(m.role61==='shell'){if(!Number.isFinite(m.shell61))m.shell61=0;if(!Number.isFinite(m.shellCd61))m.shellCd61=0}if(m.name==='성채 비행 감시자')m.support=false;if(m.name==='해자 잠복꾼'){m.ambush=false;m.hidden=false}if(!m.summonOwner105&&!m.prisoner105?.released&&(m.guardPost57||m.rumorSpaceId1030||m.legendElite47||m.elite1023||m.miniVaultResident62)&&!m.guardHome57&&Number.isFinite(m.x)&&Number.isFinite(m.y)&&!state.generationInProgress57){let room=roomAt(m.x,m.y);const vault=state.miniVault62,rumor=(state.rumorSpaces1030||[]).find(q=>q.id===m.rumorSpaceId1030);if(m.miniVaultResident62&&vault&&m.x>=vault.x&&m.y>=vault.y&&m.x<vault.x+vault.w&&m.y<vault.y+vault.h)room=vault;if(rumor?.rect){const r=rumor.rect;room={x:r.x1,y:r.y1,w:r.x2-r.x1+1,h:r.y2-r.y1+1}}m.guardHome57={x:m.x,y:m.y,room:room?{x:room.x,y:room.y,w:room.w,h:room.h}:null}}return m}
   function intentCells(cx,cy,r=1){const out=[];for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++)if(x>0&&y>0&&x<COLS-1&&y<ROWS-1)out.push({x,y});return out}
   function intentLineCells(a,b,range=8){if(!b){const cells=[];for(const[dx,dy]of DIRS4)for(let i=1;i<=range;i++){const x=a.x+dx*i,y=a.y+dy*i,t=state.map[y]?.[x];if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||t==null||t===TT.DOOR||tileBlocks(t))break;cells.push({x,y})}return cells}const out=[],dx=Math.sign(b.x-a.x),dy=Math.sign(b.y-a.y);let x=a.x,y=a.y;for(let i=0;i<range;i++){if(Math.abs(b.x-x)>=Math.abs(b.y-y))x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)break;out.push({x,y});if(x===b.x&&y===b.y)break}return out}
+  function breachStrikeCenter(mon,target){
+    const distance=entityDistance57(mon,target);
+    if(distance>4)return null;
+    const line=combatLineCellsR8(mon.x,mon.y,target.x,target.y);
+    return line.find(c=>state.map[c.y]?.[c.x]===TT.WALL)||(distance<=1?target:null);
+  }
   function setMonsterIntent(m,type,cells,label,data={}){if(Number.isFinite(state.intentBudget61)&&state.intentBudget61<=0&&!data.force61)return false;if(Number.isFinite(state.intentBudget61)&&!data.force61)state.intentBudget61--;m.intent61={type,cells,label,data,armedPlayerTurn:state.turn};floatText(m.x,m.y,'예고','#efb171',10);return true}
   function executeMonsterIntent(m,immediate=null){const I=immediate||m.intent61;if(!I)return false;if(!immediate&&!m.crossfire&&state.turn<=(I.armedPlayerTurn??state.turn))return true;const targets=bossAreaTargets(m,I.cells),target=targets[0]||selectCombatOpponent(m),hit=targets.length>0;
-    if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70()});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
+    if(I.type==='thunderStrike')return true;
+    if(I.type==='breachStrike'){
+      const {x,y}=I.data;
+      alertNearby(x,y,10,'explosion');impact(x,y,'#e5a96f',9);burst(x,y,'#ce956c',30,1.2);
+      for(const c of I.cells)if(state.map[c.y]?.[c.x]===TT.WALL&&!protectedProp105(c.x,c.y)&&!(state.floor23&&!state.floor23.centerUnlocked)&&!(state.floor24&&!state.floor24.chaseStarted)){
+        if(RuntimeTerrainOwner.mutate(c.x,c.y,TT.FLOOR,{source:'breach-strike'}).changed)burst(c.x,c.y,'#ba9a7d',8,.6);
+      }
+      VisibilityService.compute();
+      if(I.cells.some(c=>state.visible.has(k(c.x,c.y))))projectileFX(m.x,m.y,x,y,'#ffc780',{kind:'breach-shockwave',life:720});
+      for(const victim of targets){
+        const result=monsterAttacksTarget(m,strongBonus(3),{target:victim,delivery:'area',discoveryEvade57:true,reflectable:false,range:2,origin57:{x,y},impactDelay:110});
+        if(result.damage>0)applyCombatStatus(victim,'weaken',4,1,{source:m});
+      }
+    }else if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',discoveryEvade57:true,reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70()});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
     else if(I.type==='fire'){alertNearby(I.data.x,I.data.y,8,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#f0823c',{kind:'shell',element:'fire',cells:I.cells,life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,2,{target,delivery:'area',reflectable:false,range:10,impactDelay:720*.74/automationPresentationRate70()});addField('fire',I.data.x,I.data.y,4,I.cells||null,{...effectSource57(m),terrainAttack105:true});burst(I.data.x,I.data.y,'#f0823c',18,.9,720*.74/automationPresentationRate70())}
     else if(I.type==='shackleCounter'){
       m.shackleCounterTurn=state.turn;
@@ -1165,6 +1212,28 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     }
     m.intent61=null;return true
   }
+  function thunderStrikeTarget(intent){
+    const id=intent?.data?.targetId,target=id==='player'?state.player:state.monsters.find(actor=>actor.combatantId54===id);
+    return target?.hp>0?target:null;
+  }
+  function tickThunderStrikes(){
+    for(const caster of [...state.monsters]){
+      const intent=caster.intent61;
+      if(intent?.type==='thunderStrike'&&state.turn>intent.armedPlayerTurn)continueThunderStrike(caster,intent);
+      if(state.dead)break;
+    }
+  }
+  function continueThunderStrike(caster,intent){
+    const {data}=intent,target=thunderStrikeTarget(intent);
+    if(!combatTargetValid57(caster,target)||caster.skillSeal105>0||state.turn>data.endTurn){
+      caster.intent61=null;return false;
+    }
+    if(state.visible.has(k(target.x,target.y)))projectileFX(target.x,target.y,target.x,target.y,'#68bcff',{kind:'thunder-strike',life:620});
+    const result=monsterAttacksTarget(caster,8,{target,delivery:'area',discoveryEvade57:true,reflectable:false,range:0,origin57:{x:target.x,y:target.y},damageElement105:'shock',isolatedElement:true,atkScale:1.4});
+    if(result.damage>0)applyCombatStatus(target,'stun',3,1,{source:caster,stagger:true});
+    if(state.turn===data.endTurn||target.hp<=0)caster.intent61=null;
+    return true;
+  }
   function moveAway(m,target=state.player){if(state.floor>=11){const step=ReachabilityService.retreatStep(m,target);return !!step&&moveMonsterToward(m,step,step)}const p=target,opts=DIRS8.map(([dx,dy])=>({x:m.x+dx,y:m.y+dy})).filter(q=>PlacementService.monsterCanStand(m,q.x,q.y)).sort((a,b)=>entityDistance57(b,p)-entityDistance57(a,p));if(opts.length&&entityDistance57(opts[0],p)>entityDistance57(m,p)){OccupancyService.move(m,opts[0].x,opts[0].y);return true}return false}
   function monsterVolleyTarget(mon,target,range){
     return combatTargetValid57(mon,target)&&!entityConcealed(target)&&entityDistance57(mon,target)<=range&&monsterAttackLineR(mon,range,{target}).ok;
@@ -1209,10 +1278,40 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(entityDistance57(m,target)<=range&&monsterAttackLineR(m,range,{target}).ok&&state.floorTurn%period===phase%period){const x=target.x,y=target.y;return setMonsterIntent(m,m.role61==='fireArtillery'?'fire':'blast',intentCells(x,y,1),m.role61==='fireArtillery'?'화염 착탄 예고':'포탄 착탄 예고',{x,y})}
     return false;
   }
-  function specialTurn(m,ignoredDistance=null,target=state.player){const floor=combatDepth(m);if((target===state.player&&playerConcealed58())){if(m?.intent61)return executeMonsterIntent(m);if(m?.role61==='asura')return asuraTurn(m,entityDistance57(m,target));return false}if(globalThis.__MANRU_LEGEND47__?.enemySpecial?.(m,target))return true;if((!m?.role61&&!m?.passageSeal&&!m?.sealingWard)||m.boss||!m.alerted||!combatTargetValid57(m,target))return false;if(m.intent61)return executeMonsterIntent(m);if(m.skillSeal105>0)return false;if(!actorDetectedTarget57(m,target,monsterSenseRadius(m)))return false;const d=entityDistance57(m,target),phase=(m.x*3+m.y*5)%7;
+  function specialTurn(m,ignoredDistance=null,target=state.player){const floor=combatDepth(m);
+    if(!m.guardMartial57&&globalThis.__MANRU_LEGEND47__?.enemySpecial?.(m,target))return true;if(target===state.player&&playerConcealed58()&&!playerTargetMarked()){if(m?.intent61)return executeMonsterIntent(m);if(m?.role61==='asura')return asuraTurn(m,entityDistance57(m,target));return false}if((!m?.legendSkill47&&!m?.role61&&!m?.passageSeal&&!m?.sealingWard&&!m?.powerAlarm57&&!m?.targetMark57&&!m?.guardMartial57)||m.boss||!m.alerted||!combatTargetValid57(m,target))return false;if(m.intent61)return executeMonsterIntent(m);if(m.skillSeal105>0)return false;if(!actorDetectedTarget57(m,target,monsterSenseRadius(m)))return false;const d=entityDistance57(m,target),phase=(m.x*3+m.y*5)%7;
+    if(m.targetMark57&&target===state.player&&!playerTargetMarked()&&d<=8&&state.turn>=(m.nextTargetMark57||0)&&entityCombatLineCheckR(m,target,{range:8,units:false}).ok){
+      m.nextTargetMark57=state.turn+16;state.player.enemyTargetMark57={until:state.turn+6,floor:state.floor,branch:state.branchContext105?.id||null,level:state.branchContext105?.level||0,dungeon:state.artifactDungeon46?.id||null};
+      floatText(target.x,target.y,'목표 지정','#ff8e77',16);addLog(`${m.name}의 목표 지정 · 6턴 동안 적들이 위치를 안다.`);return true;
+    }
+    if(m.powerAlarm57&&d<=8&&state.turn>=(m.nextPowerAlarm57||0)){
+      const allies=state.monsters.filter(a=>a!==m&&a.hp>0&&!a.combatFixture54&&entitiesAllied57(a,m)&&entityDistance57(a,m)<=8&&!bodyPowerActive(a));
+      if(allies.length){
+        alertNearby(m.x,m.y,12);m.nextPowerAlarm57=state.turn+floor+6;
+        for(const ally of allies){startBodyPower(ally,floor,state.turn);floatText(ally.x,ally.y,`괴력 ${floor}턴`,'#ffdc8a',14);}
+        addLog(`${m.name}의 경종 · 아군 ${allies.length}명에게 괴력 ${floor}턴.`);return true;
+      }
+    }
+    if(m.breachStrike57&&state.turn>=(m.nextBreachStrike57||0)){
+      const center=breachStrikeCenter(m,target);
+      if(center){
+        const {x,y}=center;
+        m.nextBreachStrike57=state.turn+5;
+        return executeMonsterIntent(m,{type:'breachStrike',cells:intentCells(x,y),data:{x,y}});
+      }
+    }
+    if(m.thunderStrike57&&d<=7&&state.turn>=(m.nextThunderStrike57||0)&&entityCombatLineCheckR(m,target,{range:7,units:false}).ok){
+      const {x,y}=target;
+      if(setMonsterIntent(m,'thunderStrike',[{x,y}],'피뢰침 · 추적 낙뢰 예고',{targetId:target===state.player?'player':combatantId(target),endTurn:state.turn+3})){m.nextThunderStrike57=state.turn+8;return true;}
+    }
+    if(m.guardMartial57&&d<=3&&!m.guardReady1005&&state.turn>=(m.nextGuardMartial57||0)){
+      m.nextGuardMartial57=state.turn+7;prepareMartialStrong(m,m.guardMartial57,'guard');
+      floatText(m.x,m.y,'방어 무술','#d4e0eb',13);return true;
+    }
+    if(m.guardMartial57&&globalThis.__MANRU_LEGEND47__?.enemySpecial?.(m,target))return true;
     if(m.role61==='asura'&&asuraTurn(m,d,target))return true;
     if(m.intent61)return executeMonsterIntent(m);
-    
+
     if(target===state.player&&m.passageSeal?.species===m.name&&d<=m.passageSeal.range&&state.turn>=(m.nextPassageSealTurn||0)&&monsterAttackLineR(m,m.passageSeal.range,{target}).ok){
       const rule=m.passageSeal,cells=[];
       for(let y=Math.max(1,target.y-rule.radius);y<Math.min(ROWS-1,target.y+rule.radius+1);y++)for(let x=Math.max(1,target.x-rule.radius);x<Math.min(COLS-1,target.x+rule.radius+1);x++){
@@ -1253,7 +1352,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     }
     if(m.role61==='gas'&&d<=6&&(m.gasNextAgency57||0)<=state.floorTurn){const x=target.x,y=target.y;if(setMonsterIntent(m,'gas',intentCells(x,y,1),m.gasStatus57==='drunk'?'취기 가스 예고':'독가스 예고',{x,y})){m.gasNextAgency57=state.floorTurn+6;return true}}
     if(combatBlinkActive(target)&&m.role61==='blinkPunisher'&&d<=4&&monsterAttackLineR(m,4,{target}).ok){projectileFX(m.x,m.y,target.x,target.y,'#9566ac');const r=monsterAttacksTarget(m,2,{target,delivery:'ranged',projectile:true,reflectable:true,range:4});if(r.hit&&!state.dead){const drain=floor>=21?3:2;target.focus=Math.max(0,(target.focus||0)-drain);addLog(`${m.name}이 점멸 흔적을 물어뜯었다. 기 -${drain}.`)}setMonsterStatus(m,'stunned',1);return true}
-    if(m.role61==='alarm'&&d<=8&&(m.alarmCd61||0)<=0){alertNearby(m.x,m.y,12);for(const a of state.monsters)if(a!==m&&entitiesAllied57(a,m)&&a.hp>0&&entityDistance57(a,m)<=8&&!a.boss)setMonsterBuff(a,floor>=16?3:2,floor>=16?4:3);m.alarmCd61=floor>=16?7:8;addLog(`비행 감시자가 경종을 울렸다. 주변 수비대가 ${floor>=16?4:3}턴간 강화된다.`);setMonsterStatus(m,'stunned',1);return true}else if(m.alarmCd61>0)m.alarmCd61--;
+    if(!m.powerAlarm57&&m.role61==='alarm'&&d<=8&&(m.alarmCd61||0)<=0){alertNearby(m.x,m.y,12);for(const a of state.monsters)if(a!==m&&entitiesAllied57(a,m)&&a.hp>0&&entityDistance57(a,m)<=8&&!a.boss)setMonsterBuff(a,floor>=16?3:2,floor>=16?4:3);m.alarmCd61=floor>=16?7:8;addLog(`비행 감시자가 경종을 울렸다. 주변 수비대가 ${floor>=16?4:3}턴간 강화된다.`);setMonsterStatus(m,'stunned',1);return true}else if(m.alarmCd61>0)m.alarmCd61--;
     if(artilleryTurn(m,target))return true;
     if(m.role61==='poison'&&d<=6&&monsterAttackLineR(m,6,{target}).ok&&state.floorTurn%(floor>=11?4:5)===phase%(floor>=11?4:5)){const x=target.x,y=target.y;return setMonsterIntent(m,'poison',intentCells(x,y,1),'독 안개 예고',{x,y})}
     if(m.role61==='controller'&&d<=9&&monsterAttackLineR(m,9,{target}).ok&&state.floorTurn%(floor>=21?5:6)===phase%(floor>=21?5:6)){return setMonsterIntent(m,'seal',intentLineCells(m,target,8),'기 봉인 사선',{x:target.x,y:target.y})}
@@ -1317,6 +1416,14 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       add('blockade','정부 봉쇄부적','封','주기 6턴','대상 주변 빈 바닥 최대 2칸에 덫을 놓아 퇴로를 묶는다.');
     }
     if(mon.idlePotionKind105){const item=mon.inventory?.find(i=>i.potionKind===mon.idlePotionKind105);add('potion','중회복 비약','藥',item?'HP 50% 이하 · 소지품 소모':'소지 비약 없음',`기술·공격할 일이 없을 때 마신다. HP +${Math.max(18,Math.ceil(mon.maxHp*.6))}(최대 HP까지), 출혈을 50% 확률로 제거. 마신 약은 드롭되지 않는다.`,'constitution','조건');}
+    if(mon.powerAlarm57)add('power-alarm','경종','警','주변 8칸',`아군에게 ${floor}턴 동안 괴력. ATK +2 · DEF +7 · 매턴 HP 2% 회복 · 행동 1.5배. 종료 후 같은 시간 동안 실명과 배탈.`);
+    if(mon.targetMark57)add('target-mark','목표 지정','標','사거리 8칸 · 재사용 16턴','6턴 동안 적들이 플레이어의 현재 위치를 추적한다.');
+    if(mon.guardMartial57)add('mirror-guard','방어 무술','守','근거리 · 재사용 7턴',`다음 ${MARTIAL_RULES.guardActions}회 방어에 DEF +${strongBonus(mon.guardMartial57)}.`,'strong');
+    if(mon.nightmareBrood57)add('nightmare-brood','상복에서 나온 망자','召','한 번에 최대 3마리 · 최대 9마리','세 종류의 언데드를 부른다. 시녀가 쓰러지면 소환수도 사라진다.');
+    if(mon.illnessBreath57)add('black-dragon-breath','중병 안개','疫','근접 공격 적중','물린 자리를 중심으로 4턴 동안 중병 가스가 퍼진다.');
+    if(mon.breachStrike57)add('breach-strike','성벽 강타','破','즉시 3×3 폭발 · 재사용 5턴','강타 폭발로 벽을 부순다. 적중 시 약화 4턴. 4칸 안에서는 벽 너머를 감지한다.','strong');
+    if(mon.thunderStrike57)add('thunder-strike','피뢰침','雷','1×1 추적 낙뢰 · 재사용 8턴','같은 대상을 3턴 연속 추적한다. 낙뢰 적중 시 강한 전격 피해와 기절 3턴.');
+    if(mon.upsetHit57)add('upset-hit','배탈','病','공격 적중 시 38%','4턴 동안 배탈을 일으킨다.');
     if(mon.wallBreak)add('wall-break','구조물 파괴','破','이동 경로','길을 막은 부술 수 있는 벽·가구를 무너뜨리며 접근한다.','strong','지속');
     if(mon.martialActor105)return skills;
     if(mon.bossPattern||mon.palaceLotus105)return skills;
@@ -1347,7 +1454,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(role==='webber'&&floor>=11)add('web','비단·거미줄 포획','網','6칸 · 3×3 · 예고 1턴',`적중하면 기절 1턴.${mon.silkTrapCount57?` 비단 덫 최대 ${mon.silkTrapCount57}개: 현재 HP 절반 피해, 인접 상호작용으로 해제.`:' 일부 바닥에 덫이 남는다.'}`);
     if(role==='shell')add('shell','방어 자세','盾','4칸 안에서 사용',`DEF +${floor>=16?8:7}, ${floor>=16?MONSTER_GUARD_TURNS.late:MONSTER_GUARD_TURNS.early}턴.`,'strong');
     if(role==='blinkPunisher')add('blink-punish','점멸 흔적 포식','食','점멸 직후 · 사거리 4칸',`공격력 +2. 적중하면 기력 ${floor>=21?3:2} 감소.`);
-    if(role==='alarm')add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 공격력 +${floor>=16?3:2}, ${floor>=16?4:3}턴 강화.`);
+    if(role==='alarm'&&!mon.powerAlarm57)add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 공격력 +${floor>=16?3:2}, ${floor>=16?4:3}턴 강화.`);
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
     if(role==='asura'){add('domain','아수라장','界',`반경 ${mon.asuraRadius47||3}칸 · 지속 ${mon.asuraDuration47||5}턴`,'1턴 예고 후 영역 밖에서 시작된 직접 공격을 무효화.');add('volley','다완 투척','腕',`영역 밖 · 사거리 ${mon.asuraRange47||9}칸`,'1턴 예고 후 공격력 +4, +1로 연속 투척.');}
     const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%']];
@@ -1377,6 +1484,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   }
 function entityIsPlayer(e){return !!(state&&e===state.player)}
 function entityAdapted(e,kind,x=e?.x,y=e?.y){
+ if(e?.terrainPhase57)return true;
   if(entityIsPlayer(e)){
     if(kind==='water'&&remain('drown')>0)return true;
     if(kind==='void'&&remain('void')>0)return true;
@@ -1673,8 +1781,10 @@ function setEntityFaction57(entity,faction){
 }
 function inheritCombatFaction57(child,parent){child.faction57=entityFaction(parent);child.friendly47=child.faction57==='player';if(parent?.summonOwner105)summonInherit(child,parent);if(parent?.coreWave54){child.coreWave54=parent.coreWave54;child.bossOwnerId57=parent.bossOwnerId57;child.rewardPolicy57={xp:false,drops:false,kills:false}}if(parent?.silkSourceMirror54){child.silkSourceMirror54=parent.silkSourceMirror54;child.bossOwnerId57=parent.bossOwnerId57;child.rewardPolicy57={xp:false,drops:false,kills:false}}return child}
 function actorDetectedTarget57(actor,target,range=monsterSenseRadius(actor)){
- if(!combatTargetValid57(actor,target)||entityConcealed(target)||(target.treeMimic105&&target.mimicDormant105!==false))return false;
+ if(!combatTargetValid57(actor,target)||(target.treeMimic105&&target.mimicDormant105!==false))return false;
  if(target===state.player)return playerDetectedBy(actor);
+ if(entityConcealed(target))return false;
+ if((actor.breachStrike57||actor.terrainPhase57)&&entityDistance57(actor,target)<=4)return true;
  const curses=globalThis.__MANRU_ITEM_IDENTITY991__,sight=applyCombatDebuffStats57({vision:range},actor).vision,sense=Math.max(combatStatusTurns(actor,'blind')>0?STATUS_META57.blind.visionFloor57:2,sight-(target.cloak?.senseReduce||0)+Math.round(2*((curses?.cursePower?.('clang',target)||0)+(curses?.cursePower?.('presence',target)||0))));return entityDistance57(actor,target)<=sense&&entityCombatLineCheckR(actor,target,{range:sense,ignore:target,units:false}).ok;
 }
 function factionsHostile57(a,b){return a!==b&&a!=='neutral'&&b!=='neutral'}
@@ -1874,6 +1984,9 @@ function spawnPressureReinforcement57(mon,name,target=null){
 }
 function killMonster(mon){
   if(!state||!mon)return false;if(!state.debugBattle57&&factionsHostile57(entityFaction(state.player),entityFaction(mon))&&mon.boss&&mon.storyPhase992===1&&state.floor===25&&typeof globalThis.storyBreakFriendMask992==='function')return globalThis.storyBreakFriendMask992(mon);if(!(state.monsters||[]).includes(mon)||mon.deathProcessed57)return false;if(mon.revivalLives57){if(mon.revivePhase57==='corpse')return true;if(beginMonsterRevival(mon))return true;}mon.deathProcessed57=true;vfVibrate(mon.boss?HAPTIC_PATTERN57.bossKill:HAPTIC_PATTERN57.kill);const charred=mon.kind==='plant'&&mon.lastDamageElement105==='fire';if(!charred)globalThis.__MANRU_DEATH_FX54__?.record?.(mon);else{if(!mon.summonOwner105)dropBurntCharcoal105(mon.x,mon.y);elementBreakFx105(mon.x,mon.y,'fire')}delete mon.plantBurn105;
+  if(mon.nightmareBrood57)for(const child of [...state.monsters])if(bossChildOf(child,mon)){
+   OccupancyService.removeMonster(child);burst(child.x,child.y,'#74518a',10,.65);
+  }
   const reward=monsterRewardPolicy(mon);if(mon.boss){if(mon.bossPattern==='keeper'&&reward.kills&&!state.debugBattle57)releaseKeeperExit54(mon);for(const fixture of [...state.monsters])if(bossChildOf(fixture,mon)&&fixture.combatFixture54){OccupancyService.removeMonster(fixture)};releaseBossWave(child=>bossChildOf(child,mon)&&(child.coreWave54||child.silkSourceMirror54));delete mon.silk54;clearIntent(mon)}OccupancyService.removeMonster(mon);summonRecordKill(mon,reward);if(mon.duelOpponent)duelOpponentDown();if(mon.bossPattern==='palaceKing105')palaceKingDefeated(mon);if(mon.martialActor105&&reward.kills)dojoDefeated(mon);if(mon.combatFixture54==='silk')severSilk(mon);if(mon.combatFixture54==='core')releaseCorePhase(mon);if(reward.kills)state.player.kills++;if(reward.xp&&!mon.boss)state.player.xp+=mon.xp||0;
   if(!mon.combatFixture54&&!charred)state.decals.push({x:mon.x,y:mon.y,type:mon.kind==='undead'?'bones':'corpse',color:mon.color||'#d7dde6',t:performance.now()});
   if(mon.deathBlast){const r=mon.deathBlast,cells=intentCells(mon.x,mon.y,r.radius),keys=new Set(cells.map(c=>k(c.x,c.y)));impact(mon.x,mon.y,'#f1b36a',8);burst(mon.x,mon.y,'#d17b42',28,1.3);alertNearby(mon.x,mon.y,10,'explosion');addLog(`${mon.name}의 화약 자폭!`);for(const target of [state.player,...state.monsters]){if(target.hp<=0||!factionsHostile57(entityFaction(mon),entityFaction(target))||!entityFootprintCells57(target).some(c=>keys.has(k(c.x,c.y)))||!entityCombatLineCheckR(mon,target,{range:r.radius,units:false,ignore:target}).ok)continue;const damage=damageEntity(target,Math.max(1,Math.round(mon.atk+r.bonus)),mon,null,{delivery:'area'});if(damage>0)floatText(target.x,target.y,'-'+damage,'#ffb675',14);if(target.hp<=0){if(target===state.player)die(mon.name+'의 자폭');else killMonster(target)}}}
@@ -1898,7 +2011,8 @@ function finishMovementDiscovery105(before,voluntary){
   mon.hasSeenPlayer105=true;
   if(!voluntary||!moved||!before.unseen.has(mon))continue;
   const reach=mon.reach||1,range=mon.ranged?(mon.range||6):reach;
-  if(!monsterAttackLineR(mon,range).ok)continue;
+  const breach=mon.breachStrike57&&breachStrikeCenter(mon,state.player);
+  if(!monsterAttackLineR(mon,range).ok&&(!breach||entityDistance57(breach,state.player)>1))continue;
   let grace=state._movementDiscovery105;
   if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};
   grace.monsters.add(mon);
@@ -2031,7 +2145,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
  }
  if(!schedule.act)return false;
  if(actor.shellSlime)return shellSlimeTurn(actor,target,opts);
- const range=actor.ranged?(actor.range||6):(actor.reach||1),hostile=combatTargetValid57(actor,target),live=hostile&&!entityConcealed(target);
+ const range=actor.ranged?(actor.range||6):(actor.reach||1),hostile=combatTargetValid57(actor,target),live=hostile&&(!entityConcealed(target)||target===state.player&&playerTargetMarked());
  const sees=live&&actorDetectedTarget57(actor,target,monsterSenseRadius(actor));
  if(sees)actor.lastSeenPosition={x:target.x,y:target.y,bornTurn:state.floorTurn||0};
  // Locked warnings resolve on their original cells even after the target hides.
@@ -2053,7 +2167,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
  if(live)actor.alerted=true;
  if(live&&mountainMimicTurn(actor,target))return true;
  if(live&&actor.martialActor105&&dojoMartialTurn(actor,sees,entityDistance57(actor,target),target))return true;
- if(live&&globalThis.__MANRU_LEGEND47__?.enemySpecial?.(actor,target))return true;
+
  if(live){if(actor.summoner)updateSummonerEngagement(actor,sees);if(evaluateMonsterSpecials(actor,sees,entityDistance57(actor,target),target))return true;}
  if(actor.boss&&live&&handleBossPattern(actor,entityDistance57(actor,target),target))return true;
  if(live&&globalThis.__MANRU_AI61__?.artillery(actor,target))return true;
@@ -2069,7 +2183,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
 }
   const TurnEngine=Object.freeze({
     stages:[{id:'monster-durations57',pre:null,post:monsterDurationsPostTurn},{id:'temporary-terrain57',pre:null,post:temporaryTerrainPostTurn},{id:'jar-gas57',pre:null,post:jarGasPostTurn},{id:'food57',pre:foodPreTurn,post:foodPostTurn},{id:'runtime70',pre:markActionTime,post:runtimePostTurn},{id:'elements74',pre:elementsPreTurn,post:elementsPostTurn},{id:'natural-heal94',pre:null,post:naturalHealPostTurn},{id:'camera-save984',pre:null,post:cameraSavePostTurn},{id:'curse-story991',pre:curseStoryPreTurn,post:curseStoryPostTurn},{id:'permadeath-clean1003',pre:null,post:permadeathCleanPostTurn},{id:'autosave1004',pre:null,post:autosavePostTurn},{id:'hazard1005',pre:hazardPreTurn,post:hazardPostTurn},{id:'cloak-focus1006',pre:cloakFocusPreTurn,post:cloakFocusPostTurn},{id:'legendary47',pre:legendaryPreTurn,post:legendaryPostTurn},{id:'artifact-claim46',pre:null,post:claimAudit46}],
-    
+
     advance(action={}){
       const cost=action.timeCost,turnOpts=action,entry=state,before={turn:state?.turn||0,floorTurn:state?.floorTurn||0,agency:state?.playerAgencyTurns57||0,energy:state?.enemyEnergy||0,run:state?.runId984,dead:!!state?.dead};
       const result={id:++TURN_AUDIT5.serial,reason:action.reason||'action',committed:action.committed===true,requestedCost:cost,timeCost:0,energyAdded:0,enemyRounds:0,logicalTurns:0,agencyTurns:0,advancesWorld:false,playerAgency:action.playerAgency!==false,playerDied:false,aborted:false,abortStage:null,stageOrder:[],value:undefined};
@@ -2235,6 +2349,7 @@ function debugBattleRound57(){
  const b=DEBUG_BATTLE57;if(!b.open||b.winner)return;PresentationState.advance(performance.now());state.turn++;state.floorTurn++;b.round++;
  // Debug arena resolves damage-over-time before its actors' attacks, just like exploration.
  tickMonsterDurations();tickMonsterCombatStatuses();
+ for(const actor of state.monsters)advanceBodyPower(actor,state.turn);
  if(!tickCombatFields57()){debugBattlePause57();debugBattleMessage57('화염 피해로 전투가 종료되었다.');return}
  tickElementFields57();tickLegendFields();tickTerrainReactions105();
  const actors=[...state.monsters]; // Alternate the initiative advantage each round.
@@ -2253,7 +2368,7 @@ function debugBattleRound57(){
    resolveMonsterTargetTurn57(mon,target,schedule);
    }
   }
-  expireCombatFields();RuntimeTerrainOwner.tick();tickJarGasFields();updateRafts();palaceAdvance(1);
+  tickThunderStrikes();expireCombatFields();RuntimeTerrainOwner.tick();tickJarGasFields();updateRafts();palaceAdvance(1);
  }catch(error){debugBattlePause57();debugBattleMessage57('전투 오류: '+error.message);console.error(error);return}
  finally{OccupancyService.endShared()}
  const sides=['A','B'].map(side=>state.monsters.filter(m=>m.debugSide57===side&&!m.combatFixture54&&(m.hp>0||m.revivePhase57==='corpse')).length);
@@ -2413,8 +2528,8 @@ function silkConnectionCells54(a,b){
   /* ---------- custom population for rebuilt geometry ---------- */
   function spawnNear60(name,x,y,r=5){const d=MONSTERS.find(v=>v.name===name);if(!d)return null;const mon=scaledMonster(d),reach=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;for(let rad=0;rad<=r;rad++)for(let oy=-rad;oy<=rad;oy++)for(let ox=-rad;ox<=rad;ox++){const xx=x+ox,yy=y+oy;if(xx<=0||yy<=0||xx>=COLS-1||yy>=ROWS-1||(reach&&!reach.has(k(xx,yy))))continue;if(PlacementService.monsterCanStand(mon,xx,yy)){Object.assign(mon,{x:xx,y:yy});OccupancyService.addMonster(mon);return mon}}return null}
 function spawnAuthoredEncounters60(){
-    if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}return true}
-    if(state.floor===24){const q=state.floor24,g=spawnNear60('구미묘',q.gumimyoSpawn.x,q.gumimyoSpawn.y,5);if(!g)throw new Error('F24 gumimyo spawn failed');g.livesRemaining57=g.revivalLives57;g.revivePhase57='normal';g.dormant57=true;g.baseAtk57=g.atk;g.baseDef57=g.def;g.baseEva57=g.eva;applyMonsterRevivalStats(g);const guard=spawnNear60('보주의 파수꾼',q.entranceKey.x+3,q.entranceKey.y,4);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}return true}
+    if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}spawnNear60(SIEGE_SOLDIER.name,q.bossSpawn.x-5,q.bossSpawn.y,5);return true}
+    if(state.floor===24){const q=state.floor24,g=spawnNear60('구미묘',q.gumimyoSpawn.x,q.gumimyoSpawn.y,5);if(!g)throw new Error('F24 gumimyo spawn failed');g.livesRemaining57=g.revivalLives57;g.revivePhase57='normal';g.dormant57=true;g.baseAtk57=g.atk;g.baseDef57=g.def;g.baseEva57=g.eva;applyMonsterRevivalStats(g);const guard=spawnNear60('보주의 파수꾼',q.entranceKey.x+3,q.entranceKey.y,4);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}spawnNear60(SIEGE_SOLDIER.name,q.interiorAnchor.x,q.interiorAnchor.y,5);return true}
     return false;
   }
   function farEnough61(x,y){return Math.abs(x-state.player.x)+Math.abs(y-state.player.y)>=8&&!state.visible.has(k(x,y))}
@@ -2594,7 +2709,7 @@ function combatFieldBlocks57(x,y,opts={}){
 function resolveMonsterAttackCount57(mon){return mon?.multiAttack?(mon.enrage&&mon.hp<=mon.maxHp*.5?3:2):1}
 function movementDiscoveryEvades105(mon,ctx){
  const grace=state?._movementDiscovery105;
- return !!(grace&&grace.map===state.map&&grace.monsters.has(mon)&&['melee','ranged'].includes(ctx.delivery));
+ return !!(grace&&grace.map===state.map&&grace.monsters.has(mon)&&(['melee','ranged'].includes(ctx.delivery)||ctx.discoveryEvade57===true));
 }
 function playAmbushReveal57(mon,reason='proximity'){if(!mon)return;const grass=!!mon.grassHide57,color=grass?'#9fc77a':(mon.color||'#c6ad88'),terrainLost=reason==='terrain';if(!terrainLost)vfVibrate(HAPTIC_PATTERN57.ambush);burst(mon.x,mon.y,color,grass?28:22,grass?1.15:.95);impact(mon.x,mon.y,color,grass?6:5);floatText(mon.x,mon.y,terrainLost?'은신 해제':grass?'풀숲 기습!':'기습!',color,grass?13:12);mon.hitUntil=Math.max(mon.hitUntil||0,performance.now()+220);if(terrainLost)addLog(`${mon.name}의 은신처가 사라져 모습을 드러냈다.`);else addLog(`${mon.name}이 숨어 있던 곳에서 튀어나왔다.`)}
 function releaseKeeperExit54(mon){
@@ -2669,6 +2784,7 @@ function silkThreadAt54(x,y){
     turnResult.stageOrder.push('core:durations');for(const q of ['haste','weaken','evade','markCrit','poison','bleed','ward','upset','drunk','blind','skillSeal'])if(state.status[q]>0)state.status[q]--;
     turnResult.stageOrder.push('core:loot');pullNearbyLoot();turnResult.stageOrder.push('core:summon-escort');summonEscortTurn();turnResult.stageOrder.push('core:energy');turnResult.energyAdded=c;state.enemyEnergy=(state.enemyEnergy||0)+c;let acted=0;
     while(state.enemyEnergy>=1&&acted<3&&!state.dead&&!state.victory){state.enemyEnergy-=1;state.floorTurn++;turnResult.enemyRounds++;turnResult.stageOrder.push('core:rafts');updateRafts();turnResult.stageOrder.push('core:monsters');monsterTurn();if(!state.dead&&!state.victory){turnResult.stageOrder.push('core:allies');alliesTurn()}acted++}
+    if(!state.dead&&!state.victory)tickThunderStrikes();
     turnResult.stageOrder.push('core:stealth');if(playerAgency&&state.status.stealth>0&&(state.player.stealthBornAgency1005??-1)<state.playerAgencyTurns57)state.status.stealth--;
     turnResult.stageOrder.push('core:focus');recoverActorFocus105(state.player,state.turn);
     // Temporary potion buffs expire after the enemy phase.
@@ -2676,20 +2792,9 @@ function silkThreadAt54(x,y){
     turnResult.stageOrder.push('core:potion-buffs');for(const q of ['swift','fortify','willBoost'])if(state.status[q]>0)state.status[q]--;
     turnResult.stageOrder.push('core:field-expiry');expireCombatFields();
     if(playerAgency&&state.player.classState?.aimPower>0){const cs=state.player.classState,agency=state.playerAgencyTurns57;if(agency>cs.aimBornAgency&&agency!==cs.aimMoveAgency&&agency!==cs.aimAttackAgency)setAimPower(cs.aimPower+1)}
-    turnResult.stageOrder.push('core:body-power');if(playerAgency&&bodyPowerActive()){
-      const cs=state.player.classState,agency=state.playerAgencyTurns57;
-      if(agency>cs.powerBornAgencyTurn&&agency>cs.powerLastAgencyTurn){
-        cs.powerLastAgencyTurn=agency;
-        if(!state.dead)bodyPowerHeal(state.player);
-        cs.powerTurns--;
-        if(cs.powerTurns===0){
-          const duration=cs.powerExhaustion??cs.powerTotal;cs.powerTotal=0;cs.powerExhaustion=0;
-          applyHostileStatus('blind',duration,1);applyHostileStatus('upset',duration,1);
-          burst(state.player.x,state.player.y,'#b89870',12,.5);floatText(state.player.x,state.player.y,'탈진','#d7ab85',15);
-          addLog('괴력이 가셨다. 무리한 팽창의 반동으로 시야와 속이 무너진다.');
-        }
-      }
-    }
+    turnResult.stageOrder.push('core:body-power');
+    if(playerAgency)advanceBodyPower(state.player,state.playerAgencyTurns57);
+    for(const actor of state.monsters)advanceBodyPower(actor,state.turn);
     turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();
     turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
   }
@@ -2704,7 +2809,11 @@ function clearInvalidAim(){if((AIM_STATE.target||AIM_STATE.jar)&&!isAimTargetVal
 function alertOnDoorOpen(ctx){if(ctx.targetTile===TT.DOOR&&state?.map?.[ctx.targetY]?.[ctx.targetX]===TT.OPEN_DOOR)alertNearby(ctx.targetX,ctx.targetY,4)}
   function asuraDomainDist61(a,b){return Math.hypot((a?.x??0)-(b?.x??0),(a?.y??0)-(b?.y??0))}
 function mobDefs47(id){
- const defs=(DUNGEON_MOBS47[id]||[]).map(([name,hp,atk,def,eva,color,shape,kind,extra])=>({name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id}));
+ const defs=(DUNGEON_MOBS47[id]||[]).map(entry=>{
+  if(!Array.isArray(entry))return {...entry,legendMob47:true,legendDungeon47:id};
+  const [name,hp,atk,def,eva,color,shape,kind,extra]=entry;
+  return {name,hp,atk,def,eva,xp:Math.max(9,Math.round(hp*.34)),color,shape,kind,...extra,legendMob47:true,legendDungeon47:id};
+ });
  if(id==='chain_sickle')defs.splice(1,0,{...SHACKLE_DOLL,legendMob47:true,legendDungeon47:id});
  return defs;
 }
@@ -2717,14 +2826,14 @@ window.__MANRU_ASURA61__={
 const DUNGEON_MOBS47={
  ember_axe:[['용철 화로지기',34,9,5,2,'#a65d42','guard','construct',{concept57:"식지 않는 화로를 지키는 철갑 문지기다.",role61:'shell',legendSkill47:'forgeBurst'}],['불씨 식귀',24,10,2,5,'#b9694e','human','undead',{concept57:"재 속에서 타다 남은 굶주림이 일어섰다.",fast:true,fireTrail:true}],['제련 도깨비',38,11,4,2,'#8d654b','brute','spirit',{concept57:"광석 대신 침입자를 두드리려는 제련장의 도깨비다.",wallBreak:true,knockback:true}]],
  water_crossbow:[['침수 쇠뇌수',25,9,2,5,'#5e8ca1','human','spirit',{concept57:"물이 찬 사격장을 떠나지 않는 쇠뇌수의 영이다.",ranged:true,range:8,role61:'skirmisher',legendSkill47:'waterBurst'}],['수압 악어',39,11,5,1,'#52756c','beast','beast',{concept57:"수압에 짓눌린 수조에서 단단하게 자란 악어다.",aquatic:true,reach:2,heavyHit57:true,knockback:true}],['물살 시종',23,9,1,7,'#72a7b0','human','spirit',{concept57:"물길 사이를 분주하게 오가는 시종의 영이다.",fast:true,legendSkill47:'waterBurst'}]],
- thunder_spear:[['뇌우 사수',28,10,2,5,'#668fa6','human','spirit',{concept57:"천둥이 머무는 사격장의 영체다.",ranged:true,range:8,legendSkill47:'thunderPulse'}],['피뢰 갑병',38,10,7,1,'#75818a','guard','construct',{concept57:"벼락 자국이 남은 철갑 병사다.",role61:'formation'}],['전도 정령',24,9,2,7,'#76bfd1','void','spirit',{concept57:"공기 속 전하가 한데 엉긴 정령이다.",fast:true,legendSkill47:'thunderPulse'}]],
- curse_blade:[['주박 검객',38,12,4,5,'#86566e','human','undead',{concept57:"저주에 묶인 칼을 끝내 놓지 못한 검객이다.",fast:true,legendSkill47:'curseMark'}],['사당 주술시종',34,10,4,3,'#9a5d78','mage','spirit',{concept57:"사당의 금기를 돌보는 시종이다.",sealingWard:{species:'사당 주술시종',radius:2,duration:5,cooldown:11,range:7},ranged:true,range:7,role61:'controller'}],['혈인 원혼',30,12,2,7,'#74465f','void','spirit',{concept57:"핏빛 인장에 들러붙은 원혼이다.",ambush:true,multiAttack:true}]],
+ thunder_spear:[['뇌우 사수',28,10,2,5,'#668fa6','human','spirit',{concept57:"천둥이 머무는 사격장의 영체다.",ranged:true,range:8,legendSkill47:'thunderPulse'}],THUNDER_SOLDIER,['전도 정령',24,9,2,7,'#76bfd1','void','spirit',{concept57:"공기 속 전하가 한데 엉긴 정령이다.",fast:true,legendSkill47:'thunderPulse'}]],
+ curse_blade:[['주박 검객',38,12,4,5,'#86566e','human','undead',{concept57:"저주에 묶인 칼을 끝내 놓지 못한 검객이다.",fast:true,bleed:true,legendSkill47:'curseMark'}],['사당 주술시종',34,10,4,3,'#9a5d78','mage','spirit',{concept57:"사당의 금기를 돌보는 시종이다.",sealingWard:{species:'사당 주술시종',radius:2,duration:5,cooldown:11,range:7},ranged:true,range:7,role61:'controller'}],['혈인 원혼',30,12,2,7,'#74465f','void','spirit',{concept57:"핏빛 인장에 들러붙은 원혼이다.",ambush:true,multiAttack:true}]],
  earth_gauntlet:[['석분 권사',42,12,5,4,'#9b875d','human','construct',{concept57:"돌가루로 빚은 주먹이 멈추지 않는 권사다.",multiAttack:true,legendSkill47:'earthQuake'}],['붕락 갑병',51,13,8,1,'#817b68','brute','construct',{concept57:"무너진 성벽 같은 갑주를 걸친 병사다.",wallBreak:true,knockback:true,role61:'shell'}],['토맥 괴수',56,14,7,1,'#786c55','brute','beast',{concept57:"땅속의 맥을 따라 웅크리고 있던 거수다.",heavyHit57:true,legendSkill47:'earthQuake'}]],
- mirror_blade:[['반영 검객',38,13,4,7,'#879aa8','human','spirit',{concept57:"칼날보다 반사된 모습이 먼저 움직이는 검객이다.",fast:true,legendSkill47:'mirrorStep'}],['거울 시녀',33,11,3,5,'#b29aaf','mage','spirit',{sealSkill:true,concept57:"거울궁에 비친 손님을 오래 바라보는 시녀다.",ranged:true,range:7,gaze:true}],['파편 망령',31,12,3,6,'#91a6b0','angel','undead',{concept57:"깨진 거울의 날카로운 조각들이 망자의 윤곽을 이룬다.",ranged:true,range:7,multiAttack:true}]],
+ mirror_blade:[MIRROR_SWORDSMAN,['거울 시녀',33,11,3,5,'#b29aaf','mage','spirit',{sealSkill:true,concept57:"거울궁에 비친 손님을 오래 바라보는 시녀다.",ranged:true,range:7,gaze:true}],['파편 망령',31,12,3,6,'#91a6b0','angel','undead',{concept57:"깨진 거울의 날카로운 조각들이 망자의 윤곽을 이룬다.",ranged:true,range:7,multiAttack:true}]],
  curse_spear:[['부패 창병',49,14,6,3,'#725c69','guard','undead',{concept57:"썩은 갑옷 아래 창을 놓지 않은 병사다.",reach:3,role61:'formation'}],['묘문 사제',43,13,4,5,'#84687e','mage','undead',{concept57:"묘문에서 혼백을 거두는 사제다.",ranged:true,range:8,summoner:true,summonName57:'금령',legendSkill47:'graveDrain'}],['혼백 사냥꾼',39,15,3,7,'#5e526b','human','spirit',{concept57:"희미한 발소리로 사냥감을 따라붙는 영체다.",fast:true,ambush:true,focusDrain:2}]],
- lava_bow:[['월화 궁수',44,15,4,4,'#b54222','human','construct',{concept57:"붉은 두건과 주황빛 월화를 두른 수목 궁수의 이형이다.",ranged:true,range:9,lava:true,projectileImpact57:{element:'fire',radius:2,turns:3}}],['재의 감시자',37,13,2,8,'#8c756b','angel','spirit',{concept57:"재가 흩날리는 상공을 떠도는 감시령이다.",flying:true,ranged:true,range:8,role61:'alarm'}],['용암 살라맨더',54,16,5,4,'#c05d39','beast','beast',{concept57:"불길을 뒤집어쓴 날랜 살라맨더다.",lava:true,fast:true,fireTrail:true,legendSkill47:'fireWall'}]],
+ lava_bow:[['월화 궁수',44,15,4,4,'#b54222','human','construct',{concept57:"붉은 두건과 주황빛 월화를 두른 수목 궁수의 이형이다.",ranged:true,range:9,lava:true,projectileImpact57:{element:'fire',radius:2,turns:3}}],['재의 감시자',37,13,2,8,'#8c756b','angel','spirit',{concept57:"재가 흩날리는 상공을 떠도는 감시령이다.",flying:true,ranged:true,range:8,role61:'alarm',powerAlarm57:true}],['용암 살라맨더',54,16,5,4,'#c05d39','beast','beast',{concept57:"불길을 뒤집어쓴 날랜 살라맨더다.",lava:true,fast:true,fireTrail:true,legendSkill47:'fireWall'}]],
  chain_sickle:[['쇠사슬 간수',55,15,7,2,'#81705e','guard','human',{concept57:"쇠사슬 감옥의 길목을 지키는 간수다.",hook:true,role61:'formation'}],['갈고리 죄수',42,16,3,6,'#75564e','human','undead',{concept57:"죽어서도 갈고리를 놓지 못한 죄수다.",fast:true,hook:true,legendSkill47:'chainRush'}]],
- ward_hammer:[['파성 갑병',62,16,9,2,'#9a835d','guard','construct',{concept57:"성문을 허물 만큼 무거운 무장을 갖춘 병사다.",role61:'formation'}],['성벽 포수',49,16,6,2,'#7c7263','armor','construct',{concept57:"성벽과 한몸처럼 버티는 포격 인형이다.",ranged:true,range:9,role61:'artillery'}],['금단 수호상',74,17,11,0,'#b19a64','brute','construct',{concept57:"금지된 성소의 입구를 지키는 거대한 상이다.",heavyHit57:true,role61:'shell',legendSkill47:'wardPulse'}]]
+ ward_hammer:[SIEGE_SOLDIER,['성벽 포수',49,16,6,2,'#7c7263','armor','construct',{concept57:"성벽과 한몸처럼 버티는 포격 인형이다.",ranged:true,range:9,role61:'artillery'}],['금단 수호상',74,17,11,0,'#b19a64','brute','construct',{concept57:"금지된 성소의 입구를 지키는 거대한 상이다.",heavyHit57:true,role61:'shell',legendSkill47:'wardPulse'}]]
 };
   /* ===== MANRU v9.6.4: DOOR CLOSING + 1.30x ENEMY POPULATION ===== */
   const V964={version:'v9.6.4-close-door-enemy-130',density:1.30};

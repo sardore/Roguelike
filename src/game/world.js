@@ -18,7 +18,7 @@ flushPendingItems(){
   if(!state?.pendingGroundItems57?.length){PlacementService.reconcileBossDrop();return}const pending=state.pendingGroundItems57,reachable=ReachabilityService.lootCells();state.pendingGroundItems57=[];for(const q of pending)PlacementService.placeItem(q.item,q.origin,{reachable});PlacementService.reconcileBossDrop()
 },
 terrainStandable(entity,tile){
-  if(tile==null)return false;if(tile===TT.PALACE_ROCK)return false;if(entity?.waterOnly57)return tile===TT.WATER;if(state?.debugBattle57&&state.debugBattleIgnoreTerrain57&&terrainSurface58(tile))return true;if(tile===TT.RAFT)return true;
+  if(tile==null)return false;if(entity?.terrainPhase57)return true;if(tile===TT.PALACE_ROCK)return false;if(entity?.waterOnly57)return tile===TT.WATER;if(state?.debugBattle57&&state.debugBattleIgnoreTerrain57&&terrainSurface58(tile))return true;if(tile===TT.RAFT)return true;
   const hazardKind=globalThis.__MANRU_HAZARD_CORE__?.kind?.(tile);if(hazardKind)return !!globalThis.__MANRU_HAZARD_CORE__?.adapted?.(entity,hazardKind);
   if(tile>=500&&tile<660&&tileBlocks(tile))return false;
   return entity?.flying?!FLYING_BLOCKING_TILES57.has(tile):entity?.aquatic&&!entity.amphibious57?AQUATIC_STAND_TILES57.has(tile):entity?.lava?(tile===TT.LAVA||!tileBlocks(tile)):!tileBlocks(tile)

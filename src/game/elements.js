@@ -218,7 +218,7 @@ function entityElementMultiplier57(entity,elem){
 }
 function resolveElementDamage57(entity,elem,base,opts={}){
   if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity));
-  if(state&&entity&&!opts.contactHandled105)emitElementContact105(elem,entityFootprintCells57(entity),opts.effect||{},{baseDamage:base,directTarget:entity});
+  if(state&&entity&&!opts.contactHandled105&&!opts.isolatedContact)emitElementContact105(elem,entityFootprintCells57(entity),opts.effect||{},{baseDamage:base,directTarget:entity});
   if(!state||!entity||entity.hp<=0||!Number.isFinite(base)||base<=0)return{damage:0,guarded:false,adapted:false};
   if(opts.effect&&!effectCanAffect57(opts.effect,entity))return{damage:0,guarded:false,adapted:false};
   if(opts.ground&&entity.flying)return{damage:0,guarded:false,adapted:true};
