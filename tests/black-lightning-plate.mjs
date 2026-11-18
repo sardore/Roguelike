@@ -34,4 +34,4 @@ const migrated = await s.page.evaluate(() => {
 assert.equal(migrated.name, '피뢰 갑병'); assert.ok(migrated.rod); assert.ok(migrated.x);
 assert.ok(migrated.hp >= 1 && migrated.hp <= migrated.maxHp && migrated.hp < migrated.maxHp, JSON.stringify(migrated));
 console.log('black lightning plate ok', JSON.stringify({ fresh, migrated }));
-await browser.close();
+await browser.close(); process.exit(0);
