@@ -427,6 +427,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
     const SAVE1004='manru1004_active_run';
     const SHADOW='manru1004_active_run_shadow';
     const DEADRUNS='manru1004_dead_runs';
+    const DEADSAVE='manru1004_dead_run_save';
     const LEGACY_RUN='manru984_active_run';
     const BOOT_RECOVERY='manru1004_boot_recovery_raw';
     const PALACE_RECOVERY='manru1004_palace_recovery_raw';
@@ -478,6 +479,21 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       },
       serialize:GameState.project,
       deadRuns:deadRuns1004,death:deathMeta1004,purgeLegacy:purgeLegacy1004,
+      // Revive code: the run as of its last save, under a new run id (so the dead-run guards do not refuse it), at full health. It can be used once per death.
+      revive(){
+        let raw=null;try{raw=localStorage.getItem(DEADSAVE)}catch(error){ignoreError('dead run unreadable',error)}
+        if(!raw)return{ok:false,reason:'none'};
+        try{
+          const q=JSON.parse(raw),body=q?.format==='MANRU_SAVE'&&q.state?q.state:q;
+          if(!body?.player||!(body.player.maxHp>0))return{ok:false,reason:'corrupt'};
+          body.runId984=crypto?.randomUUID?.()||String(Date.now());body.player.hp=body.player.maxHp;body.status={};
+          body.saveSeq1004=(Number(body.saveSeq1004)||0)+1;body.saveWrittenAt1004=Date.now();
+          const revived=JSON.stringify(q===body?body:{...q,state:body}),result=SaveService.transact([[SAVE1004,revived],[SHADOW,null]],'revive');
+          if(!result.ok)return{ok:false,reason:'write'};
+          try{localStorage.removeItem(DEADSAVE)}catch(error){ignoreError('could not clear the revived dead run',error)}
+          return{ok:true};
+        }catch(_){return{ok:false,reason:'corrupt'}}
+      },
       record(result){const audit=RuntimeState.persistence;audit.last=result;audit.history.push(result);if(audit.history.length>100)audit.history.shift();return result},
       settle(record){
         const errors=[];
@@ -545,6 +561,8 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         if(runIsEphemeral())return{ok:true,committed:false,source:'ephemeral-run'};
         RuntimeState.persistence.pending=false;const entries=[];
         if(kind==='death'){
+          // recover() refuses a run that is already dead, so read the two alternating slots directly and keep the newer one.
+          try{let kept=null,keptSeq=-1;for(const slot of [SAVE1004,SHADOW]){const text=localStorage.getItem(slot);if(!text)continue;const q=JSON.parse(text),meta=q?.format==='MANRU_SAVE'&&q.state?q.state:q,seq=Number(meta?.saveSeq1004)||0;if(seq>keptSeq){kept=text;keptSeq=seq}}if(kept)localStorage.setItem(DEADSAVE,kept)}catch(error){ignoreError('could not keep the dead run for the revive code',error)}
           const rid=state?.runId984||null,ids=[...deadRuns1004()].filter(x=>x!==rid);if(rid)ids.push(rid);
           entries.push([DEATH1004,JSON.stringify({at:Date.now(),runId:rid,floor:state?.floor||0,turn:state?.turn||0,version:SAVE_RELEASE_TAG})],[DEADRUNS,JSON.stringify(ids.slice(-64))]);
         }
@@ -575,6 +593,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         }
       }
       if(result.ok&&reason==='new'){
+        try{localStorage.removeItem(DEADSAVE)}catch(error){ignoreError('could not clear the kept dead run',error)}
         // Keep a second copy in the current tab until normal saves take over.
         try{
           if(state.branchWorld105?.recoveryTalismans)sessionStorage.setItem(PALACE_RECOVERY,raw);
