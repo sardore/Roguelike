@@ -3097,28 +3097,31 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
  case'black_dragon':{
-  // An eastern wyrm in ink-black scales: a long S-curved body with ridge spines and hooked claws, antlered horns, drifting whiskers and a jaw leaking sickly gas.
-  const path=[];for(let i=0;i<=26;i++){const t=i/26;path.push([17+Math.sin(t*Math.PI*2.5+.5)*(9-t*4.5),13+t*21])}
-  const seg=(i)=>[path[i],path[i+1],8.2*(1-i/26)+1.6];
-  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.lineCap='round';q.strokeStyle=d;q.lineWidth=w+2;q.beginPath();q.moveTo(...p0);q.lineTo(...p1);q.stroke()}
-  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.lineCap='round';q.strokeStyle=i%2?c:'#222532';q.lineWidth=w;q.beginPath();q.moveTo(...p0);q.lineTo(...p1);q.stroke()}
-  for(let i=0;i<26;i++){const[p0,p1,w]=seg(i);q.strokeStyle=i%2?'#7d849f':h;q.lineWidth=Math.max(.8,w*.28);q.beginPath();q.moveTo(p0[0]-w*.18,p0[1]-.5);q.lineTo(p1[0]-w*.18,p1[1]-.5);q.stroke()}
-  q.lineCap='butt';
-  for(let i=2;i<24;i+=2){const[x,y]=path[i],w=8.2*(1-i/26)+1.6,dir=Math.cos(i/26*Math.PI*2.5+.5)>=0?1:-1;P('#9a3f86',[[x+dir*w*.5,y-2],[x+dir*(w*.5+3.2),y-.5],[x+dir*w*.5,y+1.5]],null)}
-  for(const[i,sx]of[[6,-1],[13,1]]){const[x,y]=path[i];L(x+sx*3,y+1,x+sx*8,y+5,h,2.2);for(const k of[-1,0,1])L(x+sx*8,y+5,x+sx*(10.5+Math.abs(k)*.4),y+5+k*2.2+1,ivory,1)}
-  P('#3a2b45',[[path[25][0],path[25][1]],[path[25][0]-4,34],[path[25][0]+3,35]],null);
-  const hx=16,hy=9+b;
-  for(const[dx,dy]of[[-9,-1],[-8,3],[-7,7]])P('#8a2f78',[[hx-3,hy+dy],[hx+dx,hy+dy-3],[hx+dx+1,hy+dy+2]],null);
-  L(hx-3,hy-3,hx-8,hy-9,ivory,1.6);L(hx-6,hy-6,hx-10,hy-6,ivory,1.2);L(hx-6,hy-6,hx-8,hy-12,ivory,1.2);
-  L(hx+3,hy-3,hx+8,hy-9,ivory,1.6);L(hx+6,hy-6,hx+10,hy-6,ivory,1.2);L(hx+6,hy-6,hx+8,hy-12,ivory,1.2);
-  P(c,[[hx-8,hy+1],[hx-5,hy-4],[hx+4,hy-4],[hx+9,hy+0],[hx+10,hy+4],[hx+5,hy+6],[hx-6,hy+6]]);
-  P(h,[[hx-5,hy-3],[hx+2,hy-3],[hx-2,hy+1],[hx-6,hy+1]],null);
-  P('#1a0c1c',[[hx-3,hy+4],[hx+9,hy+4],[hx+8,hy+9],[hx-1,hy+9]]);
-  for(const x of[-1,2,5,8])R(hx+x,hy+4,1,2,ivory);for(const x of[0,4,8])R(hx+x,hy+8,1,-2,ivory);
-  R(hx-4,hy-1,3,2,a);R(hx+2,hy-1,3,2,a);R(hx-3,hy-1,1,2,'#fff0ff');R(hx+3,hy-1,1,2,'#fff0ff');
-  R(hx+7,hy+1,1,1,'#12100e');
-  L(hx+9,hy+2,hx+14,hy+5+b,'#d6b45e',1);L(hx+14,hy+5+b,hx+11,hy+11,'#d6b45e',1);L(hx-8,hy+2,hx-12,hy+6,'#d6b45e',1);
-  P('#93d36a',[[hx,hy+9],[hx+6,hy+9],[hx+8,hy+12],[hx+3,hy+14],[hx-2,hy+12]],null);R(hx+2,hy+12,3,2,'#6aa84a');
+  // A black dragon seen from the side: raised bat wing, arched neck, horned wedge head with the jaw open, ridged back, four clawed legs and a long spade-tipped tail.
+  const belly='#6d5a80',wing='#171a27',spine='#9a3f86';
+  // tail
+  P(c,[[11,24+b],[6,26+b],[2,30],[2,35],[6,35],[5,32],[9,30],[14,29]]);P(spine,[[1,34],[4,30],[7,36]]);
+  // wing behind the body
+  P(wing,[[14,17+b],[3,9+b],[5,4+b],[9,8+b],[11,1+b],[15,7+b],[19,4+b],[19,15+b]]);
+  for(const[x,y]of[[3,9],[5,4],[11,1],[19,4]])L(14,17+b,x,y+b,h,1.2);L(5,4+b,19,4+b,h,1);
+  // far legs
+  P('#1c1f2b',[[12,24],[16,25],[16,31],[11,31]]);P('#1c1f2b',[[21,24],[24,25],[25,31],[20,31]]);
+  // torso, belly plates, back ridge
+  P(c,[[9,20+b],[15,15+b],[22,16+b],[25,22+b],[23,28],[14,30],[8,26]]);
+  P(h,[[11,19+b],[16,16+b],[21,17+b],[15,20+b]],null);
+  P(belly,[[11,27],[23,27],[22,29.5],[14,30]],null);for(const x of[13,16,19])L(x,27,x,30,'#3d3149',1);
+  for(const[x,y]of[[10,18],[13,16],[16,15],[19,15],[22,16]])P(spine,[[x-1.5,y+b],[x+.5,y-3.5+b],[x+2,y+.5+b]],null);
+  // near legs with claws
+  P(c,[[9,24],[14,25],[14,31],[7,31]]);P(c,[[19,24],[24,25],[25,31],[18,31]]);
+  for(const x of[7,9,11])R(x,31,1,2,ivory);for(const x of[18,20,22])R(x,31,1,2,ivory);R(7,30,8,1,h);R(18,30,8,1,h);
+  // neck and head
+  P(c,[[20,18+b],[22,11+b],[22,6+b],[27,6+b],[27,12+b],[25,19+b]]);P(h,[[21,13+b],[22,8+b],[24,8+b],[23,14+b]],null);
+  for(const y of[9,12,15])P(spine,[[20,y+b],[18,y-2+b],[21,y+2+b]],null);
+  P(c,[[22,2+b],[28,0+b],[32,4+b],[32,7+b],[26,8+b],[22,7+b]]);P(h,[[23,3+b],[28,1+b],[28,3+b],[24,5+b]],null);
+  P('#1a0c1c',[[24,8+b],[32,7+b],[31,12+b],[25,11+b]]);for(const x of[26,28,30])R(x,8+b,1,2,ivory);for(const x of[27,29])R(x,10+b,1,2,ivory);
+  P(ivory,[[23,2+b],[17,-1+b],[21,5+b]],null);P(ivory,[[25,1+b],[21,-3+b],[26,4+b]],null);
+  R(26,3+b,3,2,a);R(27,3+b,1,2,'#fff0ff');R(31,5+b,1,1,'#12100e');
+  P('#93d36a',[[27,12+b],[31,12+b],[32,15+b],[29,17+b],[26,15+b]],null);R(28,15+b,2,2,'#6aa84a');
   break;
   }
  }
