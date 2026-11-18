@@ -62,11 +62,18 @@ function buildMirrorTower(level){
  const link=(a,b)=>{
   let best=null;for(const p of ports(a))for(const q of ports(b)){const d=Math.abs(p.x+p.dx-q.x-q.dx)+Math.abs(p.y+p.dy-q.y-q.dy);if(!best||d<best.d)best={p,q,d}}
   const{p,q}=best;doors.add(k(p.x,p.y));doors.add(k(q.x,q.y));
-  const cells=walk(p.x+p.dx,p.y+p.dy,q.x+q.dx,q.y+q.dy,p.dx!==0);brush(cells,'b');return cells;
+  const sx=p.x+p.dx,sy=p.y+p.dy,tx=q.x+q.dx,ty=q.y+q.dy;let cells=walk(sx,sy,tx,ty,p.dx!==0);
+  if(level===3&&Math.abs(tx-sx)+Math.abs(ty-sy)>14){
+   // the summit bridges wind: a jog sideways at each third of the way
+   const jog=rand(0,1)?4:-4,horizontal=Math.abs(tx-sx)>=Math.abs(ty-sy),a={x:Math.round(sx+(tx-sx)/3)+(horizontal?0:jog),y:Math.round(sy+(ty-sy)/3)+(horizontal?jog:0)},b={x:Math.round(sx+2*(tx-sx)/3)-(horizontal?0:jog),y:Math.round(sy+2*(ty-sy)/3)-(horizontal?jog:0)};
+   const clamp=c=>({x:Math.max(3,Math.min(W-4,c.x)),y:Math.max(3,Math.min(H-4,c.y))}),A=clamp(a),B=clamp(b);
+   cells=[...walk(sx,sy,A.x,A.y,horizontal),...walk(A.x,A.y,B.x,B.y,!horizontal).slice(1),...walk(B.x,B.y,tx,ty,horizontal).slice(1)];
+  }
+  brush(cells,'b');return cells;
  };
  const edges=[],joined=[standing[0]],rest=standing.slice(1),dist=(a,b)=>Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);
  while(rest.length){let best=null;for(const a of joined)for(const b of rest)if(!best||dist(a,b)<best.d)best={a,b,d:dist(a,b)};edges.push([best.a,best.b]);joined.push(best.b);rest.splice(rest.indexOf(best.b),1)}
- const loops=level===2?2:1,extra=[];for(let i=0;i<standing.length;i++)for(let j=i+1;j<standing.length;j++){const a=standing[i],b=standing[j];if(!edges.some(e=>e.includes(a)&&e.includes(b)))extra.push({a,b,d:dist(a,b)})}
+ const loops=level===2?2:level===3?3:1,extra=[];for(let i=0;i<standing.length;i++)for(let j=i+1;j<standing.length;j++){const a=standing[i],b=standing[j];if(!edges.some(e=>e.includes(a)&&e.includes(b)))extra.push({a,b,d:dist(a,b)})}
  extra.sort((u,v)=>u.d-v.d);for(const e of extra.slice(0,standing.length>2?loops:0))edges.push([e.a,e.b]);
  const routes=edges.map(([a,b])=>link(a,b));
  // ---- arrival: the dock on floor 1, the stair tower above
@@ -105,9 +112,10 @@ function buildMirrorTower(level){
   }
  }
  // ---- tower interiors
- const rooms=[],halls=[];
+ const rooms=[],halls=[],mazes=[];
  for(const t of standing){
   const keeperTop=t.id===0&&summit,inner=(x,y)=>mirrorTowerContains(t,x,y,1)&&m[y][x]!==TT.WALL;
+  if(level===3&&!keeperTop){mazes.push(mirrorTowerMaze(t,m,zone,owner,doors,put));continue}
   const hx=Math.max(2,Math.round(t.rx*(keeperTop?.62:.42))),hy=Math.max(2,Math.round(t.ry*(keeperTop?.62:.42)));
   const inHall=(x,y)=>{const dx=Math.abs(x-t.cx),dy=Math.abs(y-t.cy);return t.shape==='rect'?dx<=hx&&dy<=hy:(dx/(hx+.5))**2+(dy/(hy+.5))**2<=1};
   const corridor=keeperTop?'a':'c';
@@ -188,9 +196,14 @@ function buildMirrorTower(level){
   scatter(r.cells,set.room[rand(0,set.room.length-1)],r.t,1);
  }
  for(const b of balconies){place(rand(0,1)?'telescope':'bench',b.x-1,b.y-1,null);place('lamp',b.x+2,b.y-2,null)}
+ for(const mz of mazes){
+  for(const[x,y]of mz.plaza)if(Math.abs(x-mz.t.cx)===1&&Math.abs(y-mz.t.cy)===1)place('column',x,y,mz.t);
+  mz.dead.forEach((d,i)=>{if(i%3===0)place('pedestal',d.x,d.y,mz.t);else if(i%3===1)place('lamp',d.x,d.y,mz.t)});
+  for(const c of mz.bends.filter((_,i)=>i%4===0))place('lamp',c.x,c.y,mz.t);
+ }
  // lamps along the way on, every few steps, beside the inlaid line
- for(let i=4;i<path.length;i+=6){const[x,y]=path[i].split(',').map(Number);for(const[dx,dy]of DIRS4){const lx=x+dx,ly=y+dy;if(onPath.has(k(lx,ly)))continue;if(place('lamp',lx,ly,mirrorTowerAt(lx,ly,standing))){lights.push({x:lx,y:ly,color:'#bff4ff',r:3.6,power:.26});break}}}
- for(const o of objects)if(o.kind==='lamp'&&!lights.some(l=>l.x===o.x&&l.y===o.y))lights.push({x:o.x,y:o.y,color:'#d9c8ff',r:3.2,power:.22});
+ for(let i=4;i<path.length;i+=6){const[x,y]=path[i].split(',').map(Number);for(const[dx,dy]of DIRS4){const lx=x+dx,ly=y+dy;if(onPath.has(k(lx,ly)))continue;if(place('lamp',lx,ly,mirrorTowerAt(lx,ly,standing))){lights.push({x:lx,y:ly,color:['#bff4ff','#ffd6ec','#ffe8a0'][level-1],r:3.6,power:.26});break}}}
+ for(const o of objects)if(o.kind==='lamp'&&!lights.some(l=>l.x===o.x&&l.y===o.y))lights.push({x:o.x,y:o.y,color:['#d9c8ff','#f4b4dc','#c8f0b0'][level-1],r:3.2,power:.22});
  // ---- everything that matters must still be reachable
  const reach=new Set([k(up.x,up.y)]),q2=[up];for(let i=0;i<q2.length;i++){const p=q2[i];for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(reach.has(k(x,y))||!pass(x,y))continue;reach.add(k(x,y));q2.push({x,y})}}
  if(!reach.has(k(target.x,target.y)))throw Error('Mirror tower: the way on is blocked');
@@ -203,11 +216,33 @@ function buildMirrorTower(level){
  const pool=['파편 망령','거울 시녀','반영 검객'],far=p=>Math.hypot(p.x-up.x,p.y-up.y)>8&&(!bossAt||Math.hypot(p.x-bossAt.x,p.y-bossAt.y)>5);
  const open=c=>m[c.y][c.x]===TT.FLOOR&&reach.has(k(c.x,c.y))&&far(c),take=list=>list.splice(rand(0,list.length-1),1)[0];
  for(const r of rooms){const cells=r.cells.filter(open);if(!cells.length)continue;const p=take(cells);if(onPath.has(k(p.x,p.y)))continue;if(rand(0,2))dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:1},p,{requireReachable:false});if(cells.length&&rand(0,1))spawn(pool[rand(0,2)],take(cells))}
+ for(const mz of mazes)for(const d of mz.dead.filter((_,i)=>i%3===2)){if(open(d)&&!onPath.has(k(d.x,d.y)))dropFloorLoot(d)}
+ for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<2&&cells.length;n++)spawn(pool[rand(0,2)],take(cells))}
  for(const b of balconies){const cells=[];for(let y=b.y-2;y<=b.y+2;y++)for(let x=b.x-2;x<=b.x+2;x++)if(open({x,y}))cells.push({x,y});if(cells.length)dropFloorLoot(take(cells))}
  for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<1+(t.rx>=9?1:0)&&ok.length;n++)spawn(pool[rand(0,2)],take(ok))}
  const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<2+level&&ob.length;n++)spawn(pool[rand(0,2)],take(ob));
  if(bossAt){const boss=scaledMonster(MIRROR_KEEPER,branchCombatFloor());Object.assign(boss,{x:bossAt.x,y:bossAt.y,guardHome57:{...bossAt},alerted:false});OccupancyService.addMonster(boss)}
  state.generationInProgress57=false;
+}
+// A floor-3 tower carved as a maze: one-cell glass corridors on a two-cell lattice (a few walls knocked through for loops),
+// a small plaza at the centre for the stairs, every entrance tunnelled in to the nearest corridor.
+function mirrorTowerMaze(t,m,zone,owner,doors,put){
+ const inner=(x,y)=>mirrorTowerContains(t,x,y,1),node=(x,y)=>mirrorTowerContains(t,x,y,2)&&(x-t.cx)%2===0&&(y-t.cy)%2===0,cells=[];
+ for(let y=t.cy-t.ry;y<=t.cy+t.ry;y++)for(let x=t.cx-t.rx;x<=t.cx+t.rx;x++)if(inner(x,y))put(x,y,TT.WALL,'i');
+ const carve=(x,y,z='a')=>{put(x,y,TT.FLOOR,z);cells.push({x,y})};
+ const start={x:t.cx,y:t.cy},seen=new Set([k(start.x,start.y)]),stack=[start];carve(start.x,start.y);
+ const links=[];
+ while(stack.length){const c=stack.at(-1),next=[[2,0],[-2,0],[0,2],[0,-2]].filter(([dx,dy])=>node(c.x+dx,c.y+dy)&&!seen.has(k(c.x+dx,c.y+dy)));
+  if(!next.length){stack.pop();continue}const[dx,dy]=next[rand(0,next.length-1)],n={x:c.x+dx,y:c.y+dy};carve(c.x+dx/2,c.y+dy/2);carve(n.x,n.y);seen.add(k(n.x,n.y));stack.push(n);links.push(k(c.x+dx/2,c.y+dy/2))}
+ // a few loops so the maze is not a single tree
+ for(const k0 of seen){const[x,y]=k0.split(',').map(Number);for(const[dx,dy]of[[2,0],[0,2]])if(seen.has(k(x+dx,y+dy))&&m[y+dy/2][x+dx/2]===TT.WALL&&rand(0,6)===0)carve(x+dx/2,y+dy/2)}
+ const plaza=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){carve(t.cx+dx,t.cy+dy,'h');plaza.push([t.cx+dx,t.cy+dy])}
+ for(const key of doors){const[x0,y0]=key.split(',').map(Number);if(owner[y0]?.[x0]!==String(t.id))continue;
+  const[dx,dy]=[[0,1],[0,-1],[1,0],[-1,0]].find(([dx,dy])=>inner(x0+dx,y0+dy))||[0,0];if(!dx&&!dy)continue;
+  let x=x0+dx,y=y0+dy;for(let n=0;n<30&&inner(x,y);n++){const was=m[y][x];if(was!==TT.WALL)break;carve(x,y);x+=dx;y+=dy}}
+ const open=(x,y)=>m[y]?.[x]!=null&&m[y][x]!==TT.WALL,deg=(x,y)=>DIRS4.filter(([dx,dy])=>open(x+dx,y+dy)).length;
+ const dead=cells.filter(c=>deg(c.x,c.y)===1&&!(Math.abs(c.x-t.cx)<=1&&Math.abs(c.y-t.cy)<=1)),bends=cells.filter(c=>deg(c.x,c.y)===2&&!(open(c.x-1,c.y)&&open(c.x+1,c.y))&&!(open(c.x,c.y-1)&&open(c.x,c.y+1)));
+ return{t,cells,dead,bends,plaza};
 }
 function mirrorTowerAt(x,y,list){return list.find(t=>mirrorTowerContains(t,x,y))||null}
 // Inspect text for the tower's own pieces.
