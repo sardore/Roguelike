@@ -319,7 +319,7 @@ function branchTransition(portal){
 }
 /* Every floor has an authored topology. Corridors are physical, not drawn lines. */
 function buildBranch(id,level){
- const transaction=captureGenerationSnapshot(),attempts=['mine','canal','granary'].includes(id)?16:1;let error;
+ const transaction=captureGenerationSnapshot(),attempts=['mine','canal','granary','mirror'].includes(id)?16:1;let error;
  for(let attempt=0;attempt<attempts;attempt++){
   if(attempt)restoreGenerationSnapshot(transaction);
   try{return buildBranchAttempt(id,level,attempt)}catch(e){error=e;}
@@ -782,6 +782,7 @@ function branchWake(m,cause){if(!m?.sleeping105||m.doorSleep105)return false;m.s
 function branchWarningDoor(x,y){const d=state?.branchTerrain105?.warningDoors?.find(v=>v.x===x&&v.y===y);if(!d||d.triggered)return false;for(const q of state.branchTerrain105.warningDoors)if(q.group===d.group)q.triggered=true;let n=0;for(const m of state.monsters)if(m.warningGroup105===d.group&&m.hp>0){m.doorSleep105=false;n+=Number(branchWake(m,'경고문 개방'));}alertNearby(x,y,7,'door');addLog(`녹슨 경고문이 울렸다. 굶주린 쥐 ${n}마리가 잠에서 깨어났다.`);return true}
 function branchRevealReward(r){BRANCH_TILE_CACHE.clear();if(!r.reward||r.rewardGranted)return;r.rewardGranted=true;PlacementService.placeItem({...clone(BRANCH_REWARDS.canal)},r.reward);addLog('솟아오른 미로의 끝에 수문지기의 행낭이 드러났다.')}
 function branchTerrainInfo(t,x,y){const palace=palaceInspect(t,x,y);if(palace)return palace;
+ const mirrorInfo=mirrorTerrainInfo(t,x,y);if(mirrorInfo)return mirrorInfo;
  const dojoInfo=dojoTerrainInfo(t,x,y);if(dojoInfo)return dojoInfo;
  if(!state?.branchContext105)return null;const ter=state.branchTerrain105,sw=state.switches?.find(s=>s.x===x&&s.y===y&&s.kind==='branch-reveal');
  if(sw){const r=ter.reveals.find(r=>r.switchId===sw.id),remaining=(r.cells||[]).filter(c=>branchLeafAt(c.x,c.y)&&state.map[c.y]?.[c.x]===TT.PAPER_BRIDGE).length;return{name:r.reward?'잎막이 수문 스위치':'침수 구획 인양 스위치',desc:sw.used?'물 아래의 지형을 모두 인양했다. 다시 작동하지 않는다.':'물 아래의 바닥·벽·가구가 솟아오르고 잠겨 있던 적들이 나타난다. 구조물 위에 사람이 있으면 작동하지 않는다.',hint:sw.used?'인양 완료. 처음 들어온 문을 통해 돌아갈 수 있다.':r.reward?`잎사귀가 인양 장치를 막고 있다. 남은 잎 ${remaining}칸. 모두 없앤 뒤 뭍으로 돌아와 작동하자.`:'스위치는 뭍에서 작동한다. 침수 구역에 먼저 들어갈 필요가 없다.'}}
@@ -867,42 +868,6 @@ function buildIndoorBranch(id,level){
  }
  const supplies=canal?6:8;for(let i=0;i<supplies;i++){const r=g.rooms[(i*3+1)%g.rooms.length],p={x:r.cx,y:r.cy},food=naturalFoodPick();PlacementService.placeItem({...clone(food),count:1},p,{requireReachable:false})}
  const audit=validateIndoorBranch();if(!audit.ok)throw Error('Indoor validation '+JSON.stringify(audit));ter.audit={...audit,layoutVersion:5,giants:ter.giantRooms105.map(r=>r.landmark105),districts:g.rooms.length,links:g.edges.length,monsters:state.monsters.length,ramps:0};state.layoutName=`${def.name} ${level}층 · ${canal?'석조 분수로와 침수 구획':'좁은 곡물고와 긴 운송로'}`;state.generationInProgress57=false;BRANCH_TILE_CACHE.clear();
-}
-function buildMirrorTower(level){
- // Mirror-symmetric tower about x=40. Walls are the unlit negative space of the main dungeon renderer.
- const ter=state.branchTerrain105,m=state.map,def=BRANCH_DEFS105.mirror,MID=40;
- state.keyPlan96=null;state.floor2Choice63=null;state.generationInProgress57=true;
- const put=(x,y)=>{if(x<1||y<1||x>=COLS-1||y>=ROWS-1)throw Error('Mirror tower bounds');setTerrainTile58(m,x,y,TT.FLOOR);ter.surfaces[k(x,y)]='stone';};
- const rect=(x,y,w,h)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy)};
- const room=(x,y,w,h)=>{rect(x,y,w,h);const r={x,y,w,h,cx:x+(w>>1),cy:y+(h>>1)};state.rooms.push(r);return r};
- const hall=(a,b)=>{let{x,y}=a;const wide=(px,py,horizontal)=>{for(let j=-1;j<=1;j++)if(horizontal)put(px,py+j);else put(px+j,py)};wide(x,y,true);while(x!==b.x){x+=Math.sign(b.x-x);wide(x,y,true)}while(y!==b.y){y+=Math.sign(b.y-y);wide(x,y,false)}};
- const mirrorX=x=>2*MID-x;
- const entry=room(MID-7,48,15,9),hub=room(MID-10,23,21,13),top=room(MID-7,4,15,11);
- const sides=[[6,42,14,11],[6,22,14,11],[6,4,14,11]].map(([x,y,w,h])=>room(x,y,w,h));
- const twins=sides.map(r=>room(mirrorX(r.x+r.w-1),r.y,r.w,r.h));
- hall({x:entry.cx,y:entry.y},{x:hub.cx,y:hub.y+hub.h-1});hall({x:hub.cx,y:hub.y},{x:top.cx,y:top.y+top.h-1});
- for(let i=0;i<3;i++){hall({x:sides[i].x+sides[i].w-1,y:sides[i].cy},{x:i===1?hub.x:sides[i].x+sides[i].w+6,y:sides[i].cy});hall({x:twins[i].x,y:twins[i].cy},{x:i===1?hub.x+hub.w-1:twins[i].x-6,y:twins[i].cy});}
- hall({x:sides[0].cx,y:sides[0].y},{x:sides[1].cx,y:sides[1].y+sides[1].h-1});hall({x:sides[1].cx,y:sides[1].y},{x:sides[2].cx,y:sides[2].y+sides[2].h-1});
- hall({x:twins[0].cx,y:twins[0].y},{x:twins[1].cx,y:twins[1].y+twins[1].h-1});hall({x:twins[1].cx,y:twins[1].y},{x:twins[2].cx,y:twins[2].y+twins[2].h-1});
- hall({x:sides[0].cx,y:sides[0].y+sides[0].h-1},{x:entry.x,y:entry.cy});hall({x:twins[0].cx,y:twins[0].y+twins[0].h-1},{x:entry.x+entry.w-1,y:entry.cy});
- hall({x:sides[2].cx,y:sides[2].y},{x:top.x,y:top.cy});hall({x:twins[2].cx,y:twins[2].y},{x:top.x+top.w-1,y:top.cy});
- ter.layoutVersion=1;ter.mirrorTower105={level,height:level+1};
- const up={x:entry.cx,y:entry.cy+1},down={x:top.cx,y:top.cy},reward={x:top.cx,y:top.cy};
- const portal=(pid,p,to,arrival,label)=>{setTerrainTile58(m,p.x,p.y,TT.PORTAL);state.branchPortals105.push({id:pid,kind:'branch',...p,to,arrival,label})};
- portal('up',up,level===1?`main:${def.parent}`:`mirror:${level-1}`,level===1?'mirror':'down',level===1?`만루 ${def.parent}층으로`:`${def.name} ${level-1}층으로`);
- if(level<def.count)portal('down',down,`mirror:${level+1}`,'up',`${def.name} ${level+1}층`);
- else{
-  const legend=globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='mirror_blade');
-  PlacementService.placeItem({...clone(legend),type:'weapon',artifactId46:'mirror_blade',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1},reward);
-  ter.finalReward={...reward};
- }
- Object.assign(state.player,up);state.fixedStart={...up};state.fixedExit=ter.finalReward||down;state.stairs={...state.fixedExit};
- const spawn=(name,p)=>{const mon=spawnNamed(name,p,{placementMode:'exact',provenance:'subbranch-random-v3',legendDungeon47:'mirror_blade'});if(!mon)throw Error('Mirror tower spawn rejected '+name);mon.branch105='mirror';return mon};
- const pool=['파편 망령','거울 시녀','반영 검객'],rooms=[...sides,...twins,hub];
- for(let i=0;i<rooms.length;i++){const r=rooms[i];for(let n=0;n<level+1;n++)spawn(pool[(i+n)%pool.length],{x:r.x+2+((n*5+i*3)%(r.w-4)),y:r.y+2+((n*3+i*2)%(r.h-4))})}
- const food=naturalFoodPick();for(const r of [hub,sides[1],twins[1]])PlacementService.placeItem({...clone(food),count:1},{x:r.cx,y:r.cy+2},{requireReachable:false});
- const reach=branchDrySearch(up);for(const r of state.rooms)if(!reach.has(k(r.cx,r.cy)))throw Error('Mirror tower room disconnected '+r.cx+','+r.cy);
- for(const p of state.branchPortals105)if(!reach.has(k(p.x,p.y)))throw Error('Mirror tower portal unreachable');
 }
 function validateIndoorBranch(){
  const ter=state.branchTerrain105,reach=branchDrySearch(state.fixedStart),out={reachable:reach.size,portals:state.branchPortals105.every(p=>reach.has(k(p.x,p.y))),actors:state.monsters.every(m=>reach.has(k(m.x,m.y))&&PlacementService.monsterCanStand(m,m.x,m.y)),puzzle:true,reveals:true,detours:[],sentinel:true};

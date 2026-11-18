@@ -1096,6 +1096,7 @@ function drawMainWall(px,py,x,y,palette=dojoFaceWall(x,y)?mainWallPalette():wall
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
+    if(state?.branchContext105?.id==='mirror')return drawMirrorAtmosphere(now);
     if(state?.branchContext105?.id==='mine')return;
     if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.68);g.addColorStop(0,'rgba(199,74,35,.055)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
   }
@@ -2000,6 +2001,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
 const SUBSTRATE_PAGE_TILES=8;
 const substrateCache={map:null,revision:-1,pages:new Map()};
 function drawSubstrate(px,py,x,y,colors,visible){
+  if(state.branchContext105?.id==='mirror'){drawMirrorFloor(px,py,x,y);return}
   const key=k(x,y),subtheme=state.subthemeFloors972?.[key]||state.subthemeWalls970?.[key];
   const style=state.floorStyle980?.[key]||subtheme||'';
   if(state.branchContext105||state.artifactDungeon46||state.spectator||state.debugBattle57
@@ -2596,6 +2598,7 @@ const ACTOR_SPEC={
   '석분 권사':{"a":"branch","c":"#786850","h":"#b3a17a","ac":"#ddc99e","design":"stone_boxer"},
   '붕락 갑병':{"a":"branch","c":"#68695b","h":"#a3a48b","ac":"#d4c497","design":"collapse_plate"},
   '토맥 괴수':{"a":"branch","c":"#605647","h":"#978b6b","ac":"#c9b588","design":"earth_beast"},
+  '거울지기':{"a":"branch","c":"#9fb2bd","h":"#eff1dc","ac":"#cfad8a","design":"reflection_duelist"},
   '반영 검객':{"a":"branch","c":"#577384","h":"#a4b4ba","ac":"#d7d3b7","design":"reflection_duelist"},
   '거울 시녀':{"a":"branch","c":"#80637b","h":"#b9a2b0","ac":"#d5b87f","design":"mirror_handmaid"},
   '파편 망령':{"a":"branch","c":"#607f8f","h":"#adc4ca","ac":"#dbcda8","design":"shard_wraith"},
@@ -4702,6 +4705,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
+ if(state.branchContext105.id==='mirror')return drawMirrorCell(t,px,py,x,y,FX.frameNow||performance.now());
  if(isWaterTile105(t)||t===TT.ICE){
   const drawn=drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
   const surfaces=state.branchTerrain105?.surfaces;
@@ -4734,7 +4738,6 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
   return drawn;
  }
  if(state.branchContext105.id==='dojo')return drawDojoCell(t,px,py,x,y);
- if(state.branchContext105.id==='mirror'&&t===TT.WALL){drawMainWall(px,py,x,y,MIRROR_WALL_PALETTE);return true}
  if(state.branchContext105.id==='citadel')return drawCitadelCell(t,px,py,x,y,foreground);
  if(state.branchContext105.id==='mine')return drawMineCell(t,px,py,x,y,foreground);
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear()}
@@ -5347,7 +5350,6 @@ function drawMineWorld(now,b){
  }
  X.restore();
 }
-const MIRROR_WALL_PALETTE=Object.freeze({wall:'#7a8388',cap:'#b4c1c7',beam:'#535e65',dark:'#30343a',grain:'#4a5354'});
 const DOJO_PALETTES=Object.freeze([
  {name:'적송 연무전',wall:'#b9a48a',cap:'#e0ccb0',beam:'#694333',floor:'#80604a',floor2:'#896952',grain:'#a38463',dark:'#402e28',stone:'#838477',stone2:'#919286',mat:'#b6a176',matLine:'#c7b58a',accent:'#904b38',metal:'#c9ae73'},
  {name:'청죽 회랑',wall:'#b8b6a0',cap:'#e0d9b8',beam:'#3f625e',floor:'#707a67',floor2:'#7b826e',grain:'#99a28a',dark:'#283e3d',stone:'#758889',stone2:'#829497',mat:'#91a48c',matLine:'#aabba0',accent:'#446c67',metal:'#bfbb8a'},
