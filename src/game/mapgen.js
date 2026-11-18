@@ -2478,6 +2478,7 @@ generate(...args){
     validateTerrainUnderlays();
     populateFloor2Branches();
     branchEntrance();
+    repairPortal();
 
     const exitMarker=ensureFinalExitMarker()||{ok:false,reason:'missing-exit-marker-audit'};
     if(!exitMarker.ok){lastFailure={attempt:finalAttempt,exitMarker};rejected.push({attempt:finalAttempt,exitMarker:true});continue}
@@ -3138,6 +3139,15 @@ function subdivideOpenBuildings1026(){
 }
 function key46(x,y){return `${x},${y}`}
 function maybePortal46(){if(!state||state.floor<6||state.floor>=25||state.artifactDungeon46||state.artifactPortal46||state.floor===13||[10,15,20,25].includes(state.floor)||state.monsters?.some(m=>m.boss))return;state.artifactHistory46=state.artifactHistory46||[];const pool=eligible46();if(!pool.length)return;const chance=state.floor>=21?.20:state.floor>=16?.18:state.floor>=11?.16:.14;if(globalThis.__MANRU_RANDOM57__()>=chance)return;const c=portalCandidate46();if(!c.length)return;const a=choice(pool),p=choice(c),oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};state.artifactHistory46.push({floor:state.floor,id:a.id,status:'spawned'});addLog('벽면에 전설무기의 봉인이 갈라지며 드문 금빛 포탈이 열렸다.')}
+// The portal is laid in the last pipeline stage, but later passes (special-floor quality redraw, architecture partitions) can overwrite its tile
+// while the marker coordinates stay. Run after the final terrain pass: put the portal back, or move it if the tile became unusable.
+function repairPortal(){
+  const p=state?.artifactPortal46;if(!p||state.artifactDungeon46||state.map[p.y]?.[p.x]===TT.PORTAL)return;
+  if(safe46(p.x,p.y)){p.oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);return}
+  const c=portalCandidate46();
+  if(!c.length){state.artifactPortal46=null;return}
+  const q=choice(c);p.x=q.x;p.y=q.y;p.oldTile=state.map[q.y][q.x];setTerrainTile58(state.map,q.x,q.y,TT.PORTAL);
+}
 function keyProgressAudit48(store=true){const a=keyProgressInternal48(),out={ok:a.ok,kind:a.kind,unlocked:[...(a.unlocked||[])],reachable:a.seen?.size||0,stages:a.stages||[],badKeys:a.badKeys||[],targetOk:a.targetOk!==false,exitOk:a.exitOk!==false,sequenceOk:a.sequenceOk!==false,sequence:a.sequence||null,ids:a.ids||[]};if(store&&state)state.keyIntegrity48=out;return out}
 function reachAudit46(){if(!state)return null;const a=keyProgressAudit48(false);return{cells:a.reachable,reward:a.targetOk,exit:a.exitOk,keys:a,rooms:state.rooms?.length||0,dims:[COLS,ROWS]}}
 const BLOCKING_TILES57=new Set([TT.WALL,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY,TT.DRAWBRIDGE_UP,TT.BAMBOO,TT.TABLE,TT.SCREEN,TT.HEDGE,TT.FAKE_DOOR,TT.LOCKED_GATE,TT.SECRET_DOOR,TT.PEACH_TREE]);
