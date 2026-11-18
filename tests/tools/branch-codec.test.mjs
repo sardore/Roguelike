@@ -40,9 +40,10 @@ test('compact summon saves retain book state, custom portraits and legacy aliase
  const save=fs.readFileSync(new URL('../../src/game/save.js',import.meta.url),'utf8');
  const catalog=fs.readFileSync(new URL('../../src/game/catalog.js',import.meta.url),'utf8');
  const pick=(s,name)=>parse(s,{ecmaVersion:'latest'}).body.find(n=>n.id?.name===name||n.declarations?.some(d=>d.id.name===name));
- const fn=pick(save,'compactSummonSave'),defs=pick(catalog,'MONSTERS');
+ const fn=pick(save,'compactSummonSave');
+ const defs=['SHACKLE_DOLL','MONSTERS'].map(name=>pick(catalog,name)).map(node=>catalog.slice(node.start,node.end)).join('\n');
  const scope=vm.createContext();
- vm.runInContext(catalog.slice(defs.start,defs.end)+'\nfunction summonDefinitions(){return MONSTERS}\n'+save.slice(fn.start,fn.end)+'\nglobalThis.compact=compactSummonSave;globalThis.defs=MONSTERS;',scope);
+ vm.runInContext(defs+'\nfunction summonDefinitions(){return MONSTERS}\n'+save.slice(fn.start,fn.end)+'\nglobalThis.compact=compactSummonSave;globalThis.defs=MONSTERS;',scope);
  const monster=plain(scope.defs.find(def=>def.name==='이무기'));
  const book={summonItem105:'book',summonSpeciesVersion105:1,summonBookId105:'book-4',summonElement105:'water',upgrade:2,summonRecoveryUntil105:2072,summonKillCounts105:{이무기:5},summonPictures105:{이무기:{count:3,portrait:monster},문하생:{count:1,portrait:{name:'문하생',martialActor105:true}}}};
  const picture={summonItem105:'picture',summonSpeciesVersion105:1,summonSpecies105:'이무기',summonPortrait105:monster};
