@@ -278,7 +278,7 @@ function branchSnapshot(){const raw=GameState.project({...state,branchWorld105:u
 function branchCarry(){return carryRunState57()}
 function branchEntrance({required=true}={}){
  if(!state||state.branchContext105)return false;state.branchPortals105=state.branchPortals105||[];
- const id={2:'canal',3:'granary',7:'stockade',9:'palace',12:'dojo',16:'citadel'}[state.floor];if(!id||state.artifactDungeon46||state.shopIntermission?.active)return false;if(state.branchPortals105.some(p=>p.id===id)){branchEntrancePending(id,false);return true;}
+ const id={2:'canal',3:'granary',7:'stockade',9:'palace',12:'dojo',14:'mirror',16:'citadel'}[state.floor];if(!id||state.artifactDungeon46||state.shopIntermission?.active)return false;if(state.branchPortals105.some(p=>p.id===id)){branchEntrancePending(id,false);return true;}
  const cells=ReachabilityService.playerSearch(state.player,{unlock:true,openBoss:true}).cells,candidates=[],waterCells=[];if(id==='canal')for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(terrainBaseTile58(x,y)===TT.WATER)waterCells.push({x,y});
  for(const key of cells){const[x,y]=key.split(',').map(Number);if((!terrainSurface58(state.map[y][x])||[TT.WATER,TT.VOID,TT.LAVA,TT.MERCURY].includes(state.map[y][x]))||OccupancyService.isOccupied(x,y)||state.items.some(i=>i.x===x&&i.y===y)||Math.max(Math.abs(x-state.stairs.x),Math.abs(y-state.stairs.y))<4)continue;
  const waterDist=id==='canal'?Math.min(...waterCells.map(q=>Math.max(Math.abs(q.x-x),Math.abs(q.y-y)))):0,walls=DIRS4.filter(([dx,dy])=>tileBlocksSight(state.map[y+dy]?.[x+dx])).length;
@@ -330,10 +330,10 @@ function buildBranchAttempt(id,level,attempt){
  const def=BRANCH_DEFS105[id];if(!def||level<1||level>def.count)throw Error('Invalid branch depth');
  const carry=branchCarry(),world=state.branchWorld105;state={...carry,branchWorld105:world,floor:def.parent};GameState.initialize(state);
  if(id==='canal')state.branchWorld105.canalRevision105=1;
- [COLS,ROWS]=id==='palace'?[level===1?123:131,level===1?123:131]:id==='citadel'?[241,241]:id==='dojo'?(level===2?[155,137]:[213,65]):id==='mine'?[91,95]:id==='canal'?[103,69]:id==='granary'?[73,level===2?126:101]:id==='stockade'?[111,85]:[105,87];const outdoor=['stockade','black','mine','citadel'].includes(id);
+ [COLS,ROWS]=id==='palace'?[level===1?123:131,level===1?123:131]:id==='citadel'?[241,241]:id==='dojo'?(level===2?[155,137]:[213,65]):id==='mine'?[91,95]:id==='canal'?[103,69]:id==='granary'?[73,level===2?126:101]:id==='stockade'?[111,85]:id==='mirror'?[81,61]:[105,87];const outdoor=['stockade','black','mine','citadel'].includes(id);
  Object.assign(state,{terrainReactions105:newTerrainReactions105(),branchContext105:{id,level},branchPortals105:[],branchTerrain105:{heights:Array.from({length:ROWS},()=>Array(COLS).fill(0)),ramps:{},surfaces:{},props:{},landmarks:[]},map:Array.from({length:ROWS},()=>Array(COLS).fill(outdoor?TT.VOID:TT.WALL)),rooms:[],monsters:[],items:[],decals:[],decor:[],featureRooms:[],vaults:[],switches:[],rafts:[],routeTags:[],neutralInteractables58:[],seen:new Set(),visible:new Set(),grassTufts1020:new Set(),terrainUnderlay58:{},terrainAttachment58:{},stairs:{x:0,y:0},floorKeys:0,floorKeysRequired:0,floorTurn:0,layoutName:`${def.name} ${level}층 · ${def.titles[level-1]}`,specialFloor:true,generatedBuild:'10.0.6-branches-v2',visionPenalty:0,tempFields:[],tempTerrain74:[],elementFields74:[],legendDecor47:[],legendFireFields47:[],legendTerrain47:[],legendSkyAxes47:[],artifactFields46:[],gazeBursts57:[],jarGasFields57:[],silkTraps57:{},hiddenGroups60:[],hiddenLookup60:{},hiddenBase60:{},hiddenReplacement60:{},portalLinks981:{},portalEdges981:{},portalRooms981:[],discoveredPortals981:{},rumorSpaces1030:[],crumbleBase60:{},hazard1005:{armed:{},collapsed:{},lastWarn:{}},naturalPopulation57:{initial:0},martialEcho:null,pendingGroundItems57:[]});
  const ter=state.branchTerrain105,m=state.map;
- const result=id==='palace'?buildPalace(level):id==='citadel'?buildCitadel(level):id==='dojo'?buildDojo(level,attempt):id==='mine'?buildMine(level,attempt):id==='canal'||id==='granary'?buildIndoorBranch(id,level):buildMountainBranch(id,level);
+ const result=id==='palace'?buildPalace(level):id==='citadel'?buildCitadel(level):id==='dojo'?buildDojo(level,attempt):id==='mine'?buildMine(level,attempt):id==='canal'||id==='granary'?buildIndoorBranch(id,level):id==='mirror'?buildMirrorTower(level):buildMountainBranch(id,level);
  produceWallMaterials105(state,true);
  // Geometry and surface labels are fixed after generation; hazards change the map and dynamic branch state.
  const geometry={heights:ter.heights,surfaces:ter.surfaces,ramps:ter.ramps};branchTerrainPack(geometry);
@@ -867,6 +867,42 @@ function buildIndoorBranch(id,level){
  }
  const supplies=canal?6:8;for(let i=0;i<supplies;i++){const r=g.rooms[(i*3+1)%g.rooms.length],p={x:r.cx,y:r.cy},food=naturalFoodPick();PlacementService.placeItem({...clone(food),count:1},p,{requireReachable:false})}
  const audit=validateIndoorBranch();if(!audit.ok)throw Error('Indoor validation '+JSON.stringify(audit));ter.audit={...audit,layoutVersion:5,giants:ter.giantRooms105.map(r=>r.landmark105),districts:g.rooms.length,links:g.edges.length,monsters:state.monsters.length,ramps:0};state.layoutName=`${def.name} ${level}층 · ${canal?'석조 분수로와 침수 구획':'좁은 곡물고와 긴 운송로'}`;state.generationInProgress57=false;BRANCH_TILE_CACHE.clear();
+}
+function buildMirrorTower(level){
+ // Mirror-symmetric tower about x=40. Walls are the unlit negative space of the main dungeon renderer.
+ const ter=state.branchTerrain105,m=state.map,def=BRANCH_DEFS105.mirror,MID=40;
+ state.keyPlan96=null;state.floor2Choice63=null;state.generationInProgress57=true;
+ const put=(x,y)=>{if(x<1||y<1||x>=COLS-1||y>=ROWS-1)throw Error('Mirror tower bounds');setTerrainTile58(m,x,y,TT.FLOOR);ter.surfaces[k(x,y)]='stone';};
+ const rect=(x,y,w,h)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy)};
+ const room=(x,y,w,h)=>{rect(x,y,w,h);const r={x,y,w,h,cx:x+(w>>1),cy:y+(h>>1)};state.rooms.push(r);return r};
+ const hall=(a,b)=>{let{x,y}=a;const wide=(px,py,horizontal)=>{for(let j=-1;j<=1;j++)if(horizontal)put(px,py+j);else put(px+j,py)};wide(x,y,true);while(x!==b.x){x+=Math.sign(b.x-x);wide(x,y,true)}while(y!==b.y){y+=Math.sign(b.y-y);wide(x,y,false)}};
+ const mirrorX=x=>2*MID-x;
+ const entry=room(MID-7,48,15,9),hub=room(MID-10,23,21,13),top=room(MID-7,4,15,11);
+ const sides=[[6,42,14,11],[6,22,14,11],[6,4,14,11]].map(([x,y,w,h])=>room(x,y,w,h));
+ const twins=sides.map(r=>room(mirrorX(r.x+r.w-1),r.y,r.w,r.h));
+ hall({x:entry.cx,y:entry.y},{x:hub.cx,y:hub.y+hub.h-1});hall({x:hub.cx,y:hub.y},{x:top.cx,y:top.y+top.h-1});
+ for(let i=0;i<3;i++){hall({x:sides[i].x+sides[i].w-1,y:sides[i].cy},{x:i===1?hub.x:sides[i].x+sides[i].w+6,y:sides[i].cy});hall({x:twins[i].x,y:twins[i].cy},{x:i===1?hub.x+hub.w-1:twins[i].x-6,y:twins[i].cy});}
+ hall({x:sides[0].cx,y:sides[0].y},{x:sides[1].cx,y:sides[1].y+sides[1].h-1});hall({x:sides[1].cx,y:sides[1].y},{x:sides[2].cx,y:sides[2].y+sides[2].h-1});
+ hall({x:twins[0].cx,y:twins[0].y},{x:twins[1].cx,y:twins[1].y+twins[1].h-1});hall({x:twins[1].cx,y:twins[1].y},{x:twins[2].cx,y:twins[2].y+twins[2].h-1});
+ hall({x:sides[0].cx,y:sides[0].y+sides[0].h-1},{x:entry.x,y:entry.cy});hall({x:twins[0].cx,y:twins[0].y+twins[0].h-1},{x:entry.x+entry.w-1,y:entry.cy});
+ hall({x:sides[2].cx,y:sides[2].y},{x:top.x,y:top.cy});hall({x:twins[2].cx,y:twins[2].y},{x:top.x+top.w-1,y:top.cy});
+ ter.layoutVersion=1;ter.mirrorTower105={level,height:level+1};
+ const up={x:entry.cx,y:entry.cy+1},down={x:top.cx,y:top.cy},reward={x:top.cx,y:top.cy};
+ const portal=(pid,p,to,arrival,label)=>{setTerrainTile58(m,p.x,p.y,TT.PORTAL);state.branchPortals105.push({id:pid,kind:'branch',...p,to,arrival,label})};
+ portal('up',up,level===1?`main:${def.parent}`:`mirror:${level-1}`,level===1?'mirror':'down',level===1?`만루 ${def.parent}층으로`:`${def.name} ${level-1}층으로`);
+ if(level<def.count)portal('down',down,`mirror:${level+1}`,'up',`${def.name} ${level+1}층`);
+ else{
+  const legend=globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='mirror_blade');
+  PlacementService.placeItem({...clone(legend),type:'weapon',artifactId46:'mirror_blade',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1},reward);
+  ter.finalReward={...reward};
+ }
+ Object.assign(state.player,up);state.fixedStart={...up};state.fixedExit=ter.finalReward||down;state.stairs={...state.fixedExit};
+ const spawn=(name,p)=>{const mon=spawnNamed(name,p,{placementMode:'exact',provenance:'subbranch-random-v3',legendDungeon47:'mirror_blade'});if(!mon)throw Error('Mirror tower spawn rejected '+name);mon.branch105='mirror';return mon};
+ const pool=['파편 망령','거울 시녀','반영 검객'],rooms=[...sides,...twins,hub];
+ for(let i=0;i<rooms.length;i++){const r=rooms[i];for(let n=0;n<level+1;n++)spawn(pool[(i+n)%pool.length],{x:r.x+2+((n*5+i*3)%(r.w-4)),y:r.y+2+((n*3+i*2)%(r.h-4))})}
+ const food=naturalFoodPick();for(const r of [hub,sides[1],twins[1]])PlacementService.placeItem({...clone(food),count:1},{x:r.cx,y:r.cy+2},{requireReachable:false});
+ const reach=branchDrySearch(up);for(const r of state.rooms)if(!reach.has(k(r.cx,r.cy)))throw Error('Mirror tower room disconnected '+r.cx+','+r.cy);
+ for(const p of state.branchPortals105)if(!reach.has(k(p.x,p.y)))throw Error('Mirror tower portal unreachable');
 }
 function validateIndoorBranch(){
  const ter=state.branchTerrain105,reach=branchDrySearch(state.fixedStart),out={reachable:reach.size,portals:state.branchPortals105.every(p=>reach.has(k(p.x,p.y))),actors:state.monsters.every(m=>reach.has(k(m.x,m.y))&&PlacementService.monsterCanStand(m,m.x,m.y)),puzzle:true,reveals:true,detours:[],sentinel:true};
@@ -2079,7 +2115,7 @@ function validateDojo(){
 }
 // Wall volume that is not a front face (a wall below it) is unlit negative space, outlined only at its exposed edges.
 // Floors of the main tower and the dojo draw walls this way; other branches and the legendary dungeons keep their own wall art.
-function wallsAreNegativeSpace(){return state?.branchContext105?state.branchContext105.id==='dojo':!state?.artifactDungeon46}
+function wallsAreNegativeSpace(){return state?.branchContext105?['dojo','mirror'].includes(state.branchContext105.id):!state?.artifactDungeon46}
 // A face of a wall cell is drawn only when the cell it looks onto is open and has been seen: what is behind an unseen cell stays hidden.
 function wallFaceOpen(x,y,dx,dy){const nx=x+dx,ny=y+dy,t=state.map[ny]?.[nx];return t!=null&&t!==TT.WALL&&state.seen.has(k(nx,ny))}
 function wallEdges(x,y){const wall=(xx,yy)=>state.map[yy]?.[xx]==null||state.map[yy][xx]===TT.WALL,mass=(xx,yy)=>wall(xx,yy)&&!wallFaceOpen(xx,yy,0,1),corner=(dx,dy)=>wall(x+dx,y)&&wall(x,y+dy)&&!wall(x+dx,y+dy)&&state.seen.has(k(x+dx,y+dy));return{north:wallFaceOpen(x,y,0,-1),south:wallFaceOpen(x,y,0,1),west:!mass(x-1,y)&&state.seen.has(k(x-1,y)),east:!mass(x+1,y)&&state.seen.has(k(x+1,y)),nw:corner(-1,-1),ne:corner(1,-1),sw:corner(-1,1),se:corner(1,1)}}
@@ -2698,13 +2734,13 @@ function armFragile(x,y,t,opts={}){
   return true
 }
 function adef46(id){return DEF47.get(id)||null}
-function eligible46(){const f=state?.floor||0;citadelEnsurePlan();return LEGENDS47.filter(a=>a.id!=='water_crossbow'&&!citadelReservedRelic(a.id)&&a.minFloor<=f&&f<=a.maxFloor&&!possesses47(a.id)&&!claimed47(a.id))}
+function eligible46(){const f=state?.floor||0;citadelEnsurePlan();return LEGENDS47.filter(a=>a.id!=='water_crossbow'&&a.id!=='mirror_blade'&&!citadelReservedRelic(a.id)&&a.minFloor<=f&&f<=a.maxFloor&&!possesses47(a.id)&&!claimed47(a.id))}
 function installLegendKeys47(a,rs){const t=LEGEND_TILES49[a.id],spec=LEGEND_DUNGEON_LAYOUTS[a.id],doors=[],keys=[],groups=[];state.legendSanctums47=[];
  for(const [idx,keyId]of [[rs.length-2,'iron'],[rs.length-1,'jade']]){const r=rs[idx],group=groups.length,gd=[];if(!r.ports.length)throw new Error('sealed wing without entrance');for(const p of r.ports){setTerrainTile58(state.map,p.x,p.y,TT.LOCKED_GATE);const d={x:p.x,y:p.y,keyId,group,open:false,sanctum47:true};doors.push(d);gd.push(d);addDecor47(p.x,p.y,'key_arch',keyId==='iron'?'철문':'청옥문')}groups.push({keyId,doors:gd});state.legendSanctums47.push({cx:r.cx,cy:r.cy,r:Math.floor(Math.min(r.w,r.h)/2),keyId,gate:r.ports[0],label:r===rs.at(-1)?'전설무기 성소':'청옥열쇠 별전'})}
  for(const[idx,keyId]of[[spec.keyRooms[0],'iron'],[rs.length-2,'jade']]){const r=rs[idx];let pos=null;for(let y=r.y+1;y<r.y+r.h-1&&!pos;y++)for(let x=r.x+1;x<r.x+r.w-1&&!pos;x++)if(!tileBlocks(state.map[y][x])&&state.map[y][x]!==TT.DOOR&&!state.legendDecorGrid47[key46(x,y)]?.object49)pos={x,y};if(!pos)throw new Error('no key niche');setTerrainTile58(state.map,pos.x,pos.y,TT.KEY_TILE);keys.push({...pos,keyId,active:true,floorTile49:t.base+1})}
  state.keyPlan96={doors,keys,ring:{iron:0,jade:0},groups,kind:'legendary-r48'};state.floorKeys=0;state.floorKeysRequired=0;globalThis.__MANRU_TYPED_KEYS__?.hydrate?.();return state.keyPlan96;
 }
-function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan();if(citadelReservedRelic(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
+function forcePortal47(id=LEGENDS47[0].id){if(id==='water_crossbow'){toast('창해 용궁은 본관 9층의 확정 입구를 이용한다.');return false;}if(id==='mirror_blade'){toast('천면경탑은 본관 14층의 확정 입구를 이용한다.');return false;}citadelEnsurePlan();if(citadelReservedRelic(id)||possesses47(id)||claimed47(id))return false;if(!state||state.artifactDungeon46)return false;const a=adef46(id);if(!a)return false;const c=portalCandidate46();if(!c.length)return false;const p=c[0],oldTile=state.map[p.y][p.x];setTerrainTile58(state.map,p.x,p.y,TT.PORTAL);state.artifactPortal46={x:p.x,y:p.y,id:a.id,name:a.dungeon,oldTile};VisibilityService.compute();updateAll();return{...state.artifactPortal46}}
 function carryRunState57(extra=[]){const o={};for(const f of new Set([...BRANCH_RUN_FIELDS105,...extra]))if(f in state)o[f]=structuredClone(state[f]);return o}
 function retryPendingBranchEntrance105(){const id=state?.branchWorld105?.pendingEntrances105?.[branchWorldKey()];if(!id)return false;if(id==='mine')return mineEnsureEntrance({required:false});return branchEntrance({required:false});}
 function migrateMineAppearance105(){
@@ -2723,7 +2759,8 @@ const BRANCH_DEFS105=Object.freeze({
  granary:{name:'식량창고',count:2,parent:3,titles:['하역장과 곡물고','지하 숙성고'],color:'#d5b473'},
  stockade:{name:'산채',count:2,parent:7,titles:['겹비탈 숲길','상봉 산성'],color:'#a6b482'},
  mine:{name:'광산',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['등롱 갱도','꺼져 가는 심부'],color:'#d3a46b'},
- black:{name:'흑산채',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['고목 능선','흑기 정상성'],color:'#ac8eae'}
+ black:{name:'흑산채',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['고목 능선','흑기 정상성'],color:'#ac8eae'},
+ mirror:{name:'천면경탑',count:3,parent:14,titles:['반영 회랑','어긋난 난간','파경대'],color:'#b4c1c7'}
 });
 function produceWallMaterials105(world=state,reset=false){
  if(!world?.map?.length)return;
@@ -3004,7 +3041,7 @@ restore(){
  summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();delete state.artifactReturn46;delete state.artifactDungeon46;delete state.artifactExit46;delete state.artifactReward46;state.legendDecor47=[];delete state.legendPalette47;normalizeRunState57();normalizeItemContainers57();WorldTransition57.complete();syncEquip47();resetVisualState();VisibilityService.compute();vfBuildDecor?.();updateAll();addLog('전용 문이 닫히며 원래 만루의 층으로 돌아왔다.');return true
 },
 build(a,options={}){
- if(a?.id==='water_crossbow'){toast('창해 수압노궁은 본관 9층의 창해 용궁으로 통합됐다.');return false;}if(!a||!state)return false;const seed=Number.isFinite(options.seed)?options.seed>>>0:(globalThis.__MANRU_RANDOM57__()*4294967296)>>>0,spec=LEGEND_DUNGEON_LAYOUTS[a.id],t=LEGEND_TILES49[a.id];let accepted=false,last;
+ if(a?.id==='water_crossbow'){toast('창해 수압노궁은 본관 9층의 창해 용궁으로 통합됐다.');return false;}if(a?.id==='mirror_blade'){toast('천면경 검은 본관 14층 천면경탑으로 옮겨졌다.');return false;}if(!a||!state)return false;const seed=Number.isFinite(options.seed)?options.seed>>>0:(globalThis.__MANRU_RANDOM57__()*4294967296)>>>0,spec=LEGEND_DUNGEON_LAYOUTS[a.id],t=LEGEND_TILES49[a.id];let accepted=false,last;
  const dungeonBase57=captureGenerationSnapshot();for(let attempt=0;attempt<16;attempt++){
  if(attempt>0)restoreGenerationSnapshot(dungeonBase57);state.generationInProgress57=true;rng49=RngService.legendary(seed+attempt*104729);COLS=93;ROWS=63;
  const background=['earth_gauntlet','chain_sickle','lava_bow','thunder_spear'].includes(a.id)?TT.VOID:t.walls[2];state.map=Array.from({length:ROWS},()=>Array(COLS).fill(background));
@@ -3040,7 +3077,7 @@ build(a,options={}){
  if(!options.quiet){startFloorTransition?.();addLog(`${a.dungeon}에 들어섰다.`);if(dungeonVisionScale50()<1)addLog(`이곳의 주박이 시야 반경을 ${Math.round((1-dungeonVisionScale50())*100)}% 제한한다.`);addLog(`철제 열쇠로 별전을 열고 청옥열쇠를 찾아 ${a.name}의 성소로 향하라.`);updateAll()}
  return state.legendIntegrity49;
 },
-enter(id){if(id==='water_crossbow'){toast('창해 수압연노는 본관 9층 창해 용궁에서 얻을 수 있다.');return false;}const a=adef46(id);citadelEnsurePlan();if(citadelReservedRelic(id)){toast('이번 전승은 본관 16층의 흑성채 성소에 깃들었다.');return false;}if(possesses47(id)||claimed47(id)){toast('이미 획득한 전승이다.');return false;}if(!WorldTransition57.allowed()||!a||state.artifactDungeon46)return false;const transition57=captureGenerationSnapshot(),followers=summonFollowers();for(const mon of followers)OccupancyService.removeMonster(mon);state.artifactReturn46=snapshot46();state.artifactPortal46=null;try{LegendaryDungeonBuilder.build(a);summonPlaceFollowers105(followers);return true}catch(e){restoreGenerationSnapshot(transition57);console.error('legend dungeon generation rejected',e);toast('전설무기 던전의 구조가 불안정해 포탈이 닫혔다.');return false}}
+enter(id){if(id==='water_crossbow'){toast('창해 수압연노는 본관 9층 창해 용궁에서 얻을 수 있다.');return false;}if(id==='mirror_blade'){toast('천면경 검은 본관 14층 천면경탑에서 얻을 수 있다.');return false;}const a=adef46(id);citadelEnsurePlan();if(citadelReservedRelic(id)){toast('이번 전승은 본관 16층의 흑성채 성소에 깃들었다.');return false;}if(possesses47(id)||claimed47(id)){toast('이미 획득한 전승이다.');return false;}if(!WorldTransition57.allowed()||!a||state.artifactDungeon46)return false;const transition57=captureGenerationSnapshot(),followers=summonFollowers();for(const mon of followers)OccupancyService.removeMonster(mon);state.artifactReturn46=snapshot46();state.artifactPortal46=null;try{LegendaryDungeonBuilder.build(a);summonPlaceFollowers105(followers);return true}catch(e){restoreGenerationSnapshot(transition57);console.error('legend dungeon generation rejected',e);toast('전설무기 던전의 구조가 불안정해 포탈이 닫혔다.');return false}}
 });
 function handlePortalAt46(x,y){if(!WorldTransition57.allowed({x,y}))return false;if(state.artifactDungeon46&&state.artifactExit46?.x===x&&state.artifactExit46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.restore()}if(state.artifactPortal46?.x===x&&state.artifactPortal46?.y===y){cancelAutoWalk?.();burst(x,y,'#f0cc84',18,.9);return LegendaryDungeonBuilder.enter(state.artifactPortal46.id)}return false}
 function atkBonus47(){return equipped47('curse_blade')?cursedEquipped47()*6:0}

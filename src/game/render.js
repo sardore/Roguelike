@@ -1001,6 +1001,7 @@ function branchWallColors(x,y){
   if(b.id==='mine'){const pal=MINE_WALL_PALETTES[ter.mine105.cellStyle?.[k(x,y)]??((x>>4)+(y>>4))%3];return{cap:pal[2],wall:pal[1]}}
   if(b.id==='citadel'){const P=citadelCellOwners(ter.citadel105,x,y,true).palette;return{cap:P.light,wall:P.stone}}
   if(b.id==='palace')return{cap:'#738575',wall:'#334d49'};
+  if(b.id==='mirror')return{cap:MIRROR_WALL_PALETTE.cap,wall:MIRROR_WALL_PALETTE.wall};
   if(b.id==='canal'||b.id==='granary'){const P=branchDistrictAt(x,y);return{cap:P.cap,wall:P.wall}}
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
@@ -4733,6 +4734,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
   return drawn;
  }
  if(state.branchContext105.id==='dojo')return drawDojoCell(t,px,py,x,y);
+ if(state.branchContext105.id==='mirror'&&t===TT.WALL){drawMainWall(px,py,x,y,MIRROR_WALL_PALETTE);return true}
  if(state.branchContext105.id==='citadel')return drawCitadelCell(t,px,py,x,y,foreground);
  if(state.branchContext105.id==='mine')return drawMineCell(t,px,py,x,y,foreground);
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear()}
@@ -5345,6 +5347,7 @@ function drawMineWorld(now,b){
  }
  X.restore();
 }
+const MIRROR_WALL_PALETTE=Object.freeze({wall:'#7a8388',cap:'#b4c1c7',beam:'#535e65',dark:'#30343a',grain:'#4a5354'});
 const DOJO_PALETTES=Object.freeze([
  {name:'적송 연무전',wall:'#b9a48a',cap:'#e0ccb0',beam:'#694333',floor:'#80604a',floor2:'#896952',grain:'#a38463',dark:'#402e28',stone:'#838477',stone2:'#919286',mat:'#b6a176',matLine:'#c7b58a',accent:'#904b38',metal:'#c9ae73'},
  {name:'청죽 회랑',wall:'#b8b6a0',cap:'#e0d9b8',beam:'#3f625e',floor:'#707a67',floor2:'#7b826e',grain:'#99a28a',dark:'#283e3d',stone:'#758889',stone2:'#829497',mat:'#91a48c',matLine:'#aabba0',accent:'#446c67',metal:'#bfbb8a'},
