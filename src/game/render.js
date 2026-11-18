@@ -3097,26 +3097,35 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
  case'ominous_crow':{
-  // An ill-omen crow hovering with ragged wings spread, a hooked beak open on a sickly green mist and a single red eye.
-  const beak='#8a7a52',beakD='#4a402a',mist='#93d36a',wb=b?-1:0,fe='#12121c';
-  // tail feathers and talons
-  for(const[x0,x1,y1]of[[11,7,34],[14,12,35],[17,16,35],[20,22,34]])P(fe,[[x0,26+b],[x1,y1],[x1+2.5,y1-1],[x0+4,27+b]]);
-  L(13,28+b,11,32+b,beakD,1.2);L(19,28+b,21,32+b,beakD,1.2);for(const x of[9,11,12,20,22,23])L(x<16?11:21,32+b,x,34+b,beak,1);
-  // wings: ragged feather tips, bone edge in a lighter tone
+  // A crow seen from the front, wings thrown wide and chest puffed, beak gaping in a roar; ragged feather tips, red eyes and pale sound lines.
+  const beak='#9a8658',beakD='#54472c',fe='#12121c',gape='#4a0d18',wb=b?-1:0,sound='#d8d0e6';
+  // tail feathers fanned below
+  for(const[x1,y1]of[[8,35],[12,36],[16,36],[20,36],[24,35]])P(fe,[[16,27],[x1,y1],[x1+3,y1-1],[18,28]]);
+  // wings thrown up and out, jagged feather tips
   for(const sx of[-1,1]){const w=(n)=>16+sx*n;
-   P(c,[[w(2),16+b],[w(13),6+wb],[w(15),11+wb],[w(12),12],[w(16),16],[w(11),17],[w(15),22],[w(9),20],[w(10),25],[w(4),22]]);
-   for(const[tx,ty]of[[13,6],[16,16],[15,22]])L(w(2),16+b,w(tx),ty+(ty<12?wb:0),h,.9);L(w(13),6+wb,w(10),14,h,.6)}
-  // body
-  E(16,21+b,6.4,8.4,c);P(h,[[12,16+b],[15,14+b],[14,22+b],[11,24+b]],null);
-  for(const[x,y]of[[12,26],[15,28],[18,27],[21,25]])P(fe,[[x,y+b],[x+2,y+3+b],[x+3,y-1+b]],null);
-  // head and beak
-  E(16,11+b,5.2,4.8,c);P(h,[[12,8+b],[16,6.5+b],[17,9+b],[13,10.5+b]],null);
-  P(beak,[[19,9+b],[28,12+b],[19,13+b]]);P(beakD,[[19,13+b],[26,15+b],[19,15.6+b]]);L(20,11.2+b,26,12.2+b,beakD,.6);
-  R(16,8+b,3,2,a);R(16,8+b,1,1,'#ffd9d9');
-  P(fe,[[12,7+b],[10,3+b],[14,6+b]],null);P(fe,[[15,6+b],[15,2+b],[18,6+b]],null);
-  P(mist,[[23,15+b],[27,16+b],[26,20+b],[22,19+b]],null);R(24,17+b,2,2,'#5f9a45');
+   P(c,[[w(3),14],[w(6),10+wb],[w(9),5+wb],[w(10),9+wb],[w(14),2+wb],[w(14),8+wb],[w(15),7+wb],[w(14),13],[w(16),13],[w(12),17],[w(15),19],[w(9),20],[w(10),24],[w(5),21],[w(3),21]]);
+   for(const[tx,ty]of[[14,2+wb],[15,7+wb],[16,13],[15,19],[10,24]])L(w(3),15,w(tx),ty,h,.8);
+   P(h,[[w(4),14],[w(8),11+wb],[w(7),15],[w(4),17]],null)}
+  // talons reaching forward
+  for(const sx of[-1,1]){const w=(n)=>16+sx*n;L(w(3),28,w(4),32,beakD,1.4);for(const k of[-2,0,2])L(w(4),32,w(4+k*.9),35,beak,1)}
+  // body, puffed ragged chest
+  E(16,22,6.6,8.4,c);
+  for(const[x,y]of[[12,20],[15,19],[18,20],[13,24],[17,24],[15,27]])P(h,[[x-2,y],[x,y+4],[x+2,y]],null);
+  for(const[x,y]of[[10,23],[22,23],[12,28],[20,28]])P(fe,[[x-1.5,y],[x,y+3.5],[x+1.5,y]],null);
+  // head with crest
+  P(fe,[[11,6],[9,1],[14,5]],null);P(fe,[[14.5,5],[16,0],[17.5,5]],null);P(fe,[[18,5],[23,1],[21,6]],null);
+  E(16,10.5,6,5.4,c);P(h,[[11,7],[16,5.4],[21,7],[16,8]],null);
+  // eyes and angry brows
+  R(11,8,3,2,a);R(18,8,3,2,a);R(11,8,1,1,'#ffd9d9');R(18,8,1,1,'#ffd9d9');
+  L(10,6.5,14.5,8,fe,1.2);L(21.5,6.5,17.5,8,fe,1.2);
+  // open beak: upper, dark throat with tongue, lower
+  P(beak,[[12.5,11],[19.5,11],[16,15.5]]);L(16,11,16,14.5,beakD,.6);
+  P(gape,[[13,14.2],[19,14.2],[16,20]]);R(15,16,2,2,'#c4475a');
+  P(beak,[[13.2,17.6],[18.8,17.6],[16,21.4]]);
+  // roar lines
+  for(const sx of[-1,1]){const w=(n)=>16+sx*n;L(w(9),9,w(12),7,sound,.8);L(w(10),12,w(13.5),12,sound,.8);L(w(9),15,w(12),17,sound,.8)}
   break;
- }
+  }
  }
 }
 function monsterCanvas(m,frame=0){
