@@ -417,6 +417,17 @@ const PlayStats={
    if(resume){this.close();toast(notice);return '';}
    return notice;
   }
+  if(entered==='1024'){
+   if(RunLifecycle.busy())return '탐사를 전환하는 중이다.';
+   if(state&&!state.dead&&!state.victory)return '진행 중인 탐사가 있다.';
+   const kept=SaveService.recover();
+   if(!kept.ok)return '이 기기의 저장 기록을 읽지 못했다.';
+   if(kept.candidate)return '이어갈 탐사가 남아 있다.';
+   const revived=SaveService.revive();
+   if(!revived.ok)return revived.reason==='none'?'되살릴 탐사가 없다.':'되살릴 기록을 읽지 못했다.';
+   if(!RunLifecycle.continueRun())return '되살린 탐사를 불러오지 못했다.';
+   this.close();toast('마지막 저장 지점에서 체력을 모두 되찾고 되살아났다.');return '';
+  }
   const floorEight=entered==='1734';
   if(!floorEight&&entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
   const checkSave=()=>{
