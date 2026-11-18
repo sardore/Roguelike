@@ -2574,7 +2574,7 @@ const ACTOR_SPEC={
   '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander"},
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
   '갈고리 죄수':{"a":"branch","c":"#5f4740","h":"#9c8170","ac":"#cdbf96","design":"hook_prisoner"},
-  '악몽 시녀':{a:'nightmare_maid',c:'#44305f',h:'#8a6bb0',ac:'#f08ad8'},
+  '어둑시니':{a:'dusk_shade',c:'#201b2e',h:'#4f4968',ac:'#e9e2ff'},
   '꿰맨 입 망자':{a:'stitched_dead',c:'#6e6a60',h:'#b0ac98',ac:'#d9a85c'},
   '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
   '눈알 등롱':{a:'eye_lantern',c:'#8b4a44',h:'#d49d8e',ac:'#f1d56a'},
@@ -3221,37 +3221,22 @@ break;}
  for(let y=21;y<27;y+=3)for(let x=12+(y%2);x<23;x+=4){lR9(q,x,y+b,x+1,y+1+b,mercury?'#d5e6e7':'#7aa6a5',.8)}lR9(q,23,21+b,23,27+b,base,1.4);
  pR9(q,'#1b2024',[[25,25+b],[32,22+b],[30,28+b],[25,28+b]],null);for(const x of[26,29])pR9(q,'#fff2d6',[[x,24+b],[x+1,27+b],[x+2,23+b]],null);eye1012(q,27,21+b,mercury?'#e8faff':'#ffc177');
 break;}
-  case'nightmare_maid':{shadow1012(q,16,33,20);
-   const hair='#1c1127',hair2='#33204a',skin='#e0cfe2',skinD='#bda7c4',white='#f1eaf6',whiteD='#c9bdd6',deep='#2b1b40';
-   // long hair falling behind the shoulders
-   pR9(q,hair,[[8,8+b],[11,2.5+b],[21,2.5+b],[24,8+b],[26,16+b],[27,25],[23,28],[21,21+b],[11,21+b],[9,28],[5,25],[6,16+b]]);
-   pR9(q,hair2,[[9,9+b],[11,4+b],[13,6+b],[10,16+b],[8,24]],null);
-   // skirt with a ragged, drifting hem
-   pR9(q,base,[[12,22+b],[20,22+b],[27,31],[23,29],[20,34],[16,30],[12,34],[9,29],[5,31]]);
-   pR9(q,hi,[[12,23+b],[15,23+b],[12,30],[7,30]],null);
-   for(const[x0,x1]of[[14,12],[16,16],[18,20]])lR9(q,x0,24+b,x1,32,deep,1);
-   // bodice, collar, apron
-   pR9(q,base,[[11,15+b],[21,15+b],[22,18+b],[20,24+b],[12,24+b],[10,18+b]]);
-   pR9(q,hi,[[11.5,16+b],[14,16+b],[13,23+b],[11,20+b]],null);
-   pR9(q,white,[[13,22+b],[19,22+b],[21.5,30],[10.5,30]]);
-   pR9(q,whiteD,[[10.5,30],[21.5,30],[21,31.4],[11,31.4]],null);
-   pR9(q,white,[[12.5,15+b],[19.5,15+b],[16,20.5+b]]);
-   lR9(q,13,15.5+b,16,20+b,whiteD,.8);lR9(q,19,15.5+b,16,20+b,whiteD,.8);
-   pR9(q,ac,[[16,22.5+b],[12.6,21+b],[12.6,24+b]],null);pR9(q,ac,[[16,22.5+b],[19.4,21+b],[19.4,24+b]],null);eR9(q,16,22.5+b,1.1,1.1,'#ffd6f2',null);
-   // sleeves and hands folded in front
-   pR9(q,base,[[9.6,16+b],[12.4,15.5+b],[15,24+b],[12.6,26+b],[9.8,21+b]]);pR9(q,base,[[22.4,16+b],[19.6,15.5+b],[17,24+b],[19.4,26+b],[22.2,21+b]]);
-   eR9(q,16,26+b,2.9,2.1,skin);lR9(q,14.6,26+b,17.4,26+b,skinD,.6);
-   // neck, face, bangs, frilled headband
-   pR9(q,skinD,[[14.4,13+b],[17.6,13+b],[17.6,15.4+b],[14.4,15.4+b]],null);
-   eR9(q,16,9.6+b,5,5.4,skin);pR9(q,skinD,[[16,14.6+b],[20.2,11+b],[20.6,13+b],[16,15.4+b]],null);
-   pR9(q,hair,[[10.2,8+b],[11.5,4+b],[16,3+b],[20.5,4+b],[21.8,8+b],[19.4,8+b],[16.6,6.4+b],[13.6,9+b],[11.6,12.4+b]],null);
-   pR9(q,hair,[[10.2,9+b],[11.8,13+b],[10,16+b],[8.8,12+b]],null);pR9(q,hair,[[21.8,9+b],[20.2,13+b],[22,16+b],[23.2,12+b]],null);
-   eyePairR9(q,13.4,18.6,10.6+b,ac);eR9(q,13.4,10.2+b,.6,.6,'#fff3ff',null);eR9(q,18.6,10.2+b,.6,.6,'#fff3ff',null);
-   lR9(q,13.3,12.2+b,12.9,15.4+b,deep,.9);lR9(q,18.8,12.2+b,19.2,15.4+b,deep,.9);
-   lR9(q,15,13.4+b,17,13.4+b,'#c47aa6',.8);
-   pR9(q,white,[[10.6,5+b],[13,2+b],[19,2+b],[21.4,5+b],[19.6,6.2+b],[12.4,6.2+b]]);
-   for(const x of[12.2,14.4,16.6,18.8])eR9(q,x,2.4+b,1.05,1,white);
-   pR9(q,ac,[[21.2,3.6+b],[24.6,1.4+b],[24.6,5.8+b]]);pR9(q,ac,[[21.2,3.6+b],[18.6,1.6+b],[18.8,5.4+b]],null);eR9(q,21.2,3.6+b,1.2,1.2,'#ffd6f2',null);
+  case'dusk_shade':{shadow1012(q,16,33,24);
+   const rim='#6a638a',deep='#120f1c';
+   // long arms trailing down on both sides, clawed
+   pR9(q,base,[[7,15+b],[4.6,22+b],[2.4,30],[1.6,34.4],[4.4,31.6],[5.6,26],[9,20+b]]);pR9(q,base,[[25,15+b],[27.4,22+b],[29.6,30],[30.4,34.4],[27.6,31.6],[26.4,26],[23,20+b]]);
+   for(const[x,y,dx]of[[2.4,31,-1],[3.6,31.6,0],[4.6,31,1],[29.6,31,1],[28.4,31.6,0],[27.4,31,-1]])lR9(q,x,y,x+dx*.5,y+3,hi,1.1);
+   // a tall, swelling body that frays into tatters
+   pR9(q,base,[[16,.6+b],[21.6,4+b],[25.4,11+b],[26.6,20+b],[26,28],[23,26.6],[21,32],[18.6,27.6],[16,33.4],[13.4,27.6],[11,32],[9,26.6],[6,28],[5.4,20+b],[6.6,11+b],[10.4,4+b]]);
+   pR9(q,hi,[[10.4,5+b],[16,1.8+b],[14,8.4+b],[8.6,13+b],[7.2,11+b]],null);
+   pR9(q,rim,[[7.6,13+b],[9.6,10+b],[8.6,22+b],[6.8,20+b]],null);
+   pR9(q,deep,[[11,16+b],[21,16+b],[22.6,24],[16,29],[9.4,24]],null);
+   // pale slanted eyes with slit pupils and a jagged, gaping maw
+   pR9(q,ac,[[8.6,9.4+b],[15,12.4+b],[14.2,15.4+b],[9.4,13.6+b]],null);pR9(q,ac,[[23.4,9.4+b],[17,12.4+b],[17.8,15.4+b],[22.6,13.6+b]],null);
+   eR9(q,12.4,13+b,.9,1.9,deep,null);eR9(q,19.6,13+b,.9,1.9,deep,null);
+   pR9(q,deep,[[10,19+b],[22,19+b],[20.4,24+b],[16,26+b],[11.6,24+b]],null);
+   for(let k=0;k<5;k++){const x=11.2+k*2.4;pR9(q,ac,[[x,19+b],[x+2.4,19+b],[x+1.2,21.6+b]],null)}
+   for(let k=0;k<4;k++){const x=12.4+k*2.4;pR9(q,ac,[[x,24.4+b],[x+2.2,24.2+b],[x+1.1,22.2+b]],null)}
    break;}
   case'stitched_dead':{shadow1012(q,16,33,21);
    const skin='#b9b8a2',skinD='#8d8c78',cloth=base,thread='#1d1a16';
