@@ -157,8 +157,9 @@ function movePlatform57(platform,dx,dy){
   if(!state||!platform||(!dx&&!dy))return{ok:false,reason:'inactive'};
   const oldCells=entityFootprintCells57(platform),newCells=entityFootprintCells57(platform,platform.x+dx,platform.y+dy),oldKeys=new Set(oldCells.map(q=>k(q.x,q.y))),newKeys=new Set(newCells.map(q=>k(q.x,q.y)));
   const riders=OccupancyService.occupants(oldCells),riderSet=new Set(riders),tiles=new Map();
-  for(const q of oldCells){if(state.map[q.y]?.[q.x]!==TT.RAFT)return{ok:false,reason:'missing-platform'};tiles.set(k(q.x,q.y),TT.WATER)}
-  for(const q of newCells){const tile=state.map[q.y]?.[q.x];if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||(!oldKeys.has(k(q.x,q.y))&&tile!==TT.WATER))return{ok:false,reason:'destination-terrain'};tiles.set(k(q.x,q.y),TT.RAFT)}
+  const under=platform.under??TT.WATER;
+  for(const q of oldCells){if(state.map[q.y]?.[q.x]!==TT.RAFT)return{ok:false,reason:'missing-platform'};tiles.set(k(q.x,q.y),under)}
+  for(const q of newCells){const tile=state.map[q.y]?.[q.x];if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||(!oldKeys.has(k(q.x,q.y))&&tile!==under))return{ok:false,reason:'destination-terrain'};tiles.set(k(q.x,q.y),TT.RAFT)}
   for(const entity of OccupancyService.occupants(newCells))if(!riderSet.has(entity))return{ok:false,reason:'destination-occupied'};
   for(const entity of riders){
     if(state.items.includes(entity)){for(const q of entityFootprintCells57(entity,entity.x+dx,entity.y+dy)){const tile=tiles.get(k(q.x,q.y))??state.map[q.y]?.[q.x];if(tile==null||dangerousLootTerrain42(tile)||tileBlocks(tile))return{ok:false,reason:'item-destination'}}}

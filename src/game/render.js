@@ -973,21 +973,11 @@ function drawRegionFloor(px,py,x,y,colors,vis,ctx=X){
   }
 function drawWallTexture(px,py,x,y,colors){
   if(!wallsAreNegativeSpace()||branchOwnArt()){drawWallFace(px,py,x,y,colors);return}
-  const stack=towerWallStack(x,y);if(stack){drawTowerWallBlock(px,py,x,y,colors,stack);return}
   // Every wall gets the dojo edge treatment: wall volume behind a face is unlit negative space outlined at its exposed edges.
   // Only the plain 청풍루 wall takes the dojo texture; other faces keep their own art and carry the exposed vertical edge down.
   if(!wallFaceOpen(x,y,0,1)||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
   drawWallFace(px,py,x,y,colors);
   carryWallEdges(px,py,x,y);
-}
-// A tower's back wall keeps rising above the room: the same wall face, darker with every block, a cornice on the top block,
-// and the exposed vertical edge wherever the block beside it does not rise.
-function drawTowerWallBlock(px,py,x,y,colors,stack){
-  const b=state.branchContext105,H=BRANCH_DEFS105[b.id].towerHeight[b.level-1],cap=wallLineColors(x,y).cap;
-  drawWallFace(px,py,x,y,colors);
-  X.fillStyle=`rgba(0,0,0,${.12+.13*stack})`;X.fillRect(px,py,32,32);
-  if(stack===H-1){X.fillStyle=cap;X.fillRect(px,py,32,3);X.fillStyle='rgba(0,0,0,.35)';X.fillRect(px,py+3,32,2)}
-  X.fillStyle=cap;if(!towerWallStack(x-1,y))X.fillRect(px,py,2,32);if(!towerWallStack(x+1,y))X.fillRect(px+30,py,2,32);
 }
 // A raised floor (branchTerrain105.heights) shows its south face; stairs where the plan puts them (towerStairs105).
 function drawTowerRiser(px,py,x,y){
@@ -1059,7 +1049,8 @@ function drawWallWithSubthemeOverlay(px,py,x,y,colors){
     }
     X.restore();
   }
-function drawWallWithSubthemePalette(px,py,x,y,colors){const s=state?.subthemeWalls970?.[`${x},${y}`];if(s){const P={r1_banquet:['#5f2c24','#26130f'],r1_service:['#4c3424','#20160f'],r2_indoor:['#9b7846','#4e3822'],r2_outdoor:['#4a5c50','#202b25'],r3_silk:['#5e3659','#281625'],r3_moon:['#4b5965','#202932'],r4_storage:['#554034','#211812'],r4_cellar:['#555d61','#22282b'],r5_sanctum:['#5d5130','#231f13'],r5_garden:['#5b6250','#252a20'],rumor_garden:['#52684d','#1e2820'],rumor_store:['#6b4a2f','#26180d'],rumor_archive:['#51443c','#1d1816'],rumor_moon:['#667582','#27313b'],rumor_silk:['#70405f','#281521'],rumor_shrine:['#7a6635','#2b2411'],rumor_flood:['#54727a','#1f2c31'],rumor_gas:['#5b6551','#20261c'],haz_water:['#4f6e77','#1d2a30'],haz_lava:['#7f4a2d','#2d140d'],haz_mercury:['#7e858d','#262a2f'],haz_void:['#5a4e78','#1c1829']}[s];if(P)colors={...colors,wall:P[0],wallDark:P[1]}}return drawWallWithOuterPalette(px,py,x,y,colors)}
+const SUBTHEME_WALL_COLORS=Object.freeze({r1_banquet:['#5f2c24','#26130f'],r1_service:['#4c3424','#20160f'],r2_indoor:['#9b7846','#4e3822'],r2_outdoor:['#4a5c50','#202b25'],r3_silk:['#5e3659','#281625'],r3_moon:['#4b5965','#202932'],r4_storage:['#554034','#211812'],r4_cellar:['#555d61','#22282b'],r5_sanctum:['#5d5130','#231f13'],r5_garden:['#5b6250','#252a20'],rumor_garden:['#52684d','#1e2820'],rumor_store:['#6b4a2f','#26180d'],rumor_archive:['#51443c','#1d1816'],rumor_moon:['#667582','#27313b'],rumor_silk:['#70405f','#281521'],rumor_shrine:['#7a6635','#2b2411'],rumor_flood:['#54727a','#1f2c31'],rumor_gas:['#5b6551','#20261c'],haz_water:['#4f6e77','#1d2a30'],haz_lava:['#7f4a2d','#2d140d'],haz_mercury:['#7e858d','#262a2f'],haz_void:['#5a4e78','#1c1829']});
+function drawWallWithSubthemePalette(px,py,x,y,colors){const s=state?.subthemeWalls970?.[`${x},${y}`];if(s){const P=SUBTHEME_WALL_COLORS[s];if(P)colors={...colors,wall:P[0],wallDark:P[1]}}return drawWallWithOuterPalette(px,py,x,y,colors)}
 const OUTER_WALL_COLORS=[['#4d3a33','#211a17'],['#4b5a54','#202925'],['#594353','#261e25'],['#4e5559','#202529'],['#5d5845','#27241c']];
 function drawWallWithOuterPalette(px,py,x,y,colors){
     if(state?.outerWall94?.[key85(x,y)]){
@@ -1092,6 +1083,7 @@ function specialWall(x,y){return !!(state.specialPlaces52?.floor===state.floor&&
 // Colours of the edge lines of a wall that keeps its own texture: the colours that wall is drawn with.
 function wallLineColors(x,y){
  if(branchOwnArt())return branchWallColors(x,y);
+ const sub=state.branchContext105&&SUBTHEME_WALL_COLORS[state.subthemeWalls970?.[k(x,y)]];if(sub)return{cap:colorShift(sub[0],60),wall:sub[0]};
  const z=regionIndex(),place=state.specialPlaces52?.floor===state.floor&&state.specialPlaces52.walls?.[K1020(x,y)]&&SPECIAL_PLACES52[state.floor];
  if(place)return{cap:place[2],wall:place[1]};
  if(state.outerWall94?.[key85(x,y)]){const c=OUTER_WALL_COLORS[z]?.[0]||OUTER_WALL_COLORS[4][0];return{cap:colorShift(c,70),wall:c}}
@@ -2061,7 +2053,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     const terrainProps63=[];
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const kk=k(x,y);if(!state.seen.has(kk)&&!(mine&&mineScenerySeen(x,y)))continue;const vis=state.visible.has(kk)||(mine&&mineSceneryVisible(x,y)),terrainTime=vis?now:0,px=x*TILE,py=y*TILE,t=mine&&mineHidden(x,y)?TT.VOID:state.map[y][x];
-      if(t===TT.WALL&&ordinaryWallMass&&enclosedWall(x,y)&&!towerWallStack(x,y))continue;
+      if(t===TT.WALL&&ordinaryWallMass&&enclosedWall(x,y))continue;
       X.save();
       const edged=t===TT.WALL&&(state.branchContext105||state.artifactDungeon46)&&!wallKeepsOwnArt(x,y);
       if(drawBranchCell(t,px,py,x,y,terrainProps63)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
@@ -2089,6 +2081,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of terrainProps63){X.save();X.lineWidth=1;X.setLineDash([]);const time=VisibilityService.isVisible(a.x,a.y)?now:0;if(!drawSpecialTerrain(a.t,a.px,a.py,a.x,a.y,time))drawInteractiveTerrain(a.t,a.px,a.py,a.x,a.y,time);X.restore()}
     for(const a of props)vfDrawDecor(a.o,true);
     drawStockadePines(b);
+    drawTowerStructures(b,now);
 
     if(!state.branchContext105)for(const p of state.branchPortals105||[])if(p.id!=='canal'&&inB58(p,b,1)&&state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
     for(const cell of canalWaterwayCells()){
