@@ -1381,7 +1381,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(role==='webber'&&floor>=11)add('web','비단·거미줄 포획','網','6칸 · 3×3 · 예고 1턴',`적중하면 기절 1턴.${mon.silkTrapCount57?` 비단 덫 최대 ${mon.silkTrapCount57}개: 현재 HP 절반 피해, 인접 상호작용으로 해제.`:' 일부 바닥에 덫이 남는다.'}`);
     if(role==='shell')add('shell','방어 자세','盾','4칸 안에서 사용',`DEF +${floor>=16?8:7}, ${floor>=16?MONSTER_GUARD_TURNS.late:MONSTER_GUARD_TURNS.early}턴.`,'strong');
     if(role==='blinkPunisher')add('blink-punish','점멸 흔적 포식','食','점멸 직후 · 사거리 4칸',`공격력 +2. 적중하면 기력 ${floor>=21?3:2} 감소.`);
-    if(mon.wallSlam61)add('wall-slam','성벽 강타','壁','2칸 안 · 재사용 3턴 · 예고 없음','강타와 같지만 추가 피해가 3×3 폭발로 들어간다. 폭발은 벽도 부수며 맞은 대상에게 쇠약 3턴을 건다. 벽 너머라도 3칸 안이면 상대를 감지해 벽을 부수고 다가온다. 처음 발견했을 때의 확정 회피 대상이다.','strong');
+    if(mon.wallSlam61)add('wall-slam','성벽 강타','壁','2칸 안 · 재사용 3턴','3×3 폭발로 피해를 준다. 폭발은 벽도 부수며 맞은 대상에게 쇠약 3턴을 건다. 벽 너머라도 3칸 안이면 상대를 감지해 벽을 부수고 다가온다.','strong');
     if(mon.lightningRod61)add('lightning-rod','피뢰침','雷','9칸 안 · 예고 1턴 · 3턴 연속 · 재사용 12턴','플레이어의 현재 칸을 겨눈 1×1 벼락을 3턴 연속 내리친다. 번개 속성 피해가 크고, 적중할 때마다 기절 2턴. 칸을 벗어나면 맞지 않는다.','ghost');
     if(role==='alarm'||mon.alarmSkill61)add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 ${floor}턴 동안 괴력을 부여한다. 괴력: ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복 · 행동력 ×1.5. 끝나면 같은 시간 실명·배탈에 빠진다. 괴력 중이거나 탈진 중인 아군은 대상에서 제외된다.`,'strong');
     if(mon.targetMark61)add('target-mark','목표 지정','標',`10칸 안 · 재사용 ${mon.targetMark61.cooldown}턴 · 지속 ${mon.targetMark61.turns}턴`,'지속시간 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.','ghost');
