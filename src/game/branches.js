@@ -250,6 +250,13 @@ function branchMigrateMonsters(page,world=page.branchWorld105||state?.branchWorl
  for(const mon of page.monsters||[])if(mon.palaceLotus105&&mon.fixedStats57){const hp=mon.hp,max=Math.max(1,mon.maxHp||hp),fresh=scaledMonster(PALACE_LOTUS105,mon.summonCombatFloor105||(page.branchContext105?branchCombatFloor(page.branchContext105):page.floor||9));delete mon.fixedStats57;mon.maxHp=fresh.maxHp;mon.hp=hp<=0?hp:Math.max(1,Math.round(hp/max*fresh.maxHp));mon.atk=fresh.atk;mon.def=fresh.def;mon.combatFloor105=fresh.combatFloor105;mon.combatScalingRevision105=1;}
 
  for(const mon of page.monsters||[])if(/^(?:화산|월화) 궁수(?: · 문지기)?$/.test(mon.name)){mon.name=mon.name.replace('화산 궁수','월화 궁수');mon.monsterSpecies105=monsterSpeciesName(mon.name);mon.color='#b54222';mon.projectileImpact57={element:'fire',radius:2,turns:3};delete mon.legendSkill47;}
+ if(page.branchContext105?.id==='black')for(const mon of page.monsters||[])if(mon.name==='파편 망령'&&mon.legendMob47&&!mon.summonOwner105){
+  // 흑산채 spawn table now uses 피뢰 갑병; rebuild saved shard wraiths once, keeping HP ratio and position.
+  const def=globalThis.__MANRU_LEGEND47__.enemyDefinitions('thunder_spear').find(d=>d.name==='피뢰 갑병'),hp=mon.hp,max=Math.max(1,mon.maxHp||hp),fresh=scaledMonster(def,branchCombatFloor(page.branchContext105)),runtime={...mon},keys=new Set([...MONSTERS.flatMap(d=>Object.keys(d)),...Object.keys(globalThis.__MANRU_LEGEND47__.enemyDefinitions('mirror_blade')[0]||{}),'monsterSpecies105','maxHp','fixedStats57']);
+  for(const key of keys){delete runtime[key];delete mon[key];}
+  delete runtime.intent54;delete mon.intent54;
+  Object.assign(mon,fresh,runtime,{hp:hp<=0?hp:Math.max(1,Math.min(fresh.maxHp,Math.ceil(fresh.maxHp*hp/max))),spawnProvenance57:'subbranch-canonical-migrated'});
+ }
  if(!page.branchContext105||page.branchContext105.id==='citadel')return;
  const aliases={'뿌리 팽후':'벌집나무','수로 잠복꾼':'떠돌이 도둑','수문 쇠뇌수':'시종','어린 수압 악어':'객잔 경비병','곡물 식귀':'취객','창고 파수꾼':'객잔 경비병','산채 도객':'떠돌이 도둑','산채 궁수':'수목 궁수','산채 창병':'객잔 경비병','산채 대두령':'정원 바위괴물','흑산채 도객':'윈도','흑산채 쇠뇌수':'비단 술래','쇠사슬 간수':'강시','흑기 두령':'구미호'};
  if(page.branchContext105.id==='mine')aliases['수목 궁수']='갱도 투석꾼';
@@ -1064,7 +1071,7 @@ function mountainRewardGear(black,rnd){
 }
 const BLACK_OUTDOOR={
  1:[{name:'벌집나무'},{name:'독꽃'},{name:'침수 쇠뇌수',legendDungeon47:'water_crossbow'},{name:'전도 정령',legendDungeon47:'thunder_spear'}],
- 2:[{name:'벌집나무'},{name:'독꽃'},{name:'주박 검객',legendDungeon47:'curse_blade'},{name:'파편 망령',legendDungeon47:'mirror_blade'}]
+ 2:[{name:'벌집나무'},{name:'독꽃'},{name:'주박 검객',legendDungeon47:'curse_blade'},{name:'피뢰 갑병',legendDungeon47:'thunder_spear'}]
 };
 function mountainFrostDamage(mon){return mon.atk+5+(mon.hp<=mon.maxHp*.5?3:0)}
 function mountainFrostPattern(mon,d,target=state.player){
