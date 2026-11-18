@@ -3097,35 +3097,36 @@ function drawBranchCreature(q,m,frame,sp){
   P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
  }
  case'ominous_crow':{
-  // A raven facing the viewer: wings flung up as fans of long primaries, ruffed throat, hooked beak gaping on a red throat, red eyes under heavy brows.
-  const deep='#17161f',body='#242331',edge='#4d5274',sheen='#8088b0',beak='#b8a06a',beakD='#5a4a2b',gape='#6b1422',tongue='#d65a6e',wb=b?-1:0;
-  // tail
-  for(const[x1,y1]of[[9,35],[13,36],[16,36.5],[19,36],[23,35]])P(deep,[[15,28],[x1,y1],[x1+3,y1-1.2],[17,28]]);
-  // wings: back row long primaries, front row shorter coverts
-  const fan=(sx,len,lift,col,hi)=>{const w=(n)=>16+sx*n;
-   for(let k=0;k<6;k++){const t=k/5,a0=(12+t*68+lift)*Math.PI/180,L0=len-Math.abs(t-.35)*5,ox=Math.cos(a0)*L0,oy=-Math.sin(a0)*L0,x2=w(4)+sx*ox,y2=16+oy+(k>2?wb:0),px=-Math.sin(a0)*sx*1.5,py=-Math.cos(a0)*1.5;
-    P(col,[[w(3),15+k*.4],[x2-px,y2-py],[x2+sx*.8,y2-.8],[x2+px,y2+py],[w(5),18.5]]);
-    L(w(4),16.2,x2,y2,hi,.8)}};
-  fan(-1,15.5,0,body,sheen);fan(1,15.5,-5,body,sheen);
-  // shoulders / coverts
-  for(const sx of[-1,1]){const w=(n)=>16+sx*n;P(edge,[[w(2),14],[w(7),13],[w(8),17],[w(5),19.5],[w(2),19]])}
-  // body and ragged breast
-  E(16,23,5.4,8,body);P(edge,[[12,18],[15.5,17],[14,25],[11,26]],null);
-  for(const[x,y,sz]of[[12,21,2],[16,20,2.4],[20,21,2],[13,25,2],[19,25,2],[16,27,2.2]])P(deep,[[x-sz,y],[x,y+sz*2],[x+sz,y]],null);
-  // legs and talons
-  for(const sx of[-1,1]){const w=(n)=>16+sx*n;L(w(2.6),29,w(3.4),32.5,beakD,1.5);for(const k of[-1.6,0,1.6])L(w(3.4),32.5,w(3.4+k*.9),35.4,beak,1.1)}
-  // throat ruff and head
-  for(const[x,dx]of[[10.5,-1],[12.5,-.5],[19.5,.5],[21.5,1]])P(body,[[x-1.6,12.5],[x+dx*1.5,17.5],[x+1.6,12.5]]);
-  E(16,10,6.4,5.8,body);P(edge,[[11,6.4],[16,4.8],[21,6.6],[16,8.2]],null);P(sheen,[[12.5,6.2],[16,5.2],[18,6],[14,7]],null);
-  P(deep,[[10.5,5.5],[8.5,1.2],[13,4.6]],null);P(deep,[[14,4.4],[16,.2],[18,4.4]],null);P(deep,[[19,4.6],[23.5,1.2],[21.6,5.6]],null);
-  // eyes under angry brows
-  R(10.5,8.2,3,2,a);R(18.5,8.2,3,2,a);R(11.5,8.6,1,1,'#12101a');R(19.5,8.6,1,1,'#12101a');R(10.5,8.2,1,1,'#ffd9d9');R(18.5,8.2,1,1,'#ffd9d9');
-  L(9.6,6.8,14.2,8.4,deep,1.4);L(22.4,6.8,17.8,8.4,deep,1.4);
-  // beak: hooked upper, red throat, lower, tongue
-  P(beak,[[12,10.6],[20,10.6],[17.6,15.2],[16,18.4],[14.4,15.2]]);L(16,10.8,16,16.5,beakD,.8);P(beakD,[[14.4,15.2],[17.6,15.2],[16,18.4]],null);
-  P(gape,[[13.2,15.6],[18.8,15.6],[16,21.2]]);R(15,17.4,2,2,tongue);
-  P(beak,[[13.6,19.2],[18.4,19.2],[16,23.4]]);L(16,19.4,16,22.4,beakD,.6);
-  break;
+  // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
+  q.save();q.translate(1.5,.5);
+  const deep='#17161f',body='#262533',edge='#4f5478',sheen='#838bb4',beak='#b8a06a',beakD='#5a4a2b',gape='#6b1422',tongue='#d65a6e',wb=b?-1:0;
+  const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+  const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+   P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+  // tail streaming up and back
+  for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
+  // far wing (darker), then body, then near wing
+  for(const[deg,L]of[[62,12],[75,13.5],[88,13],[101,11.5],[114,9.5]])feather(15,11,deg,L,deep,edge,1.4);
+  rot(17,17,9.6,5.4,-.62,deep);rot(17,16.4,9,4.8,-.62,body);
+  rot(15.2,15.2,6,2,-.62,edge);
+  for(const[x,y]of[[10.5,19.5],[13,21],[16,21.6],[19,21]])P(deep,[[x-1.6,y],[x-.4,y+3.2],[x+1.4,y+.2]],null);
+  for(const[deg,L,hi]of[[58,14.5,sheen],[72,16,sheen],[86,15.5,sheen],[100,14,sheen],[114,11.5,sheen]])feather(16.5,12.6+wb*0,deg,L+(wb?-.8:0),body,hi,1.6);
+  P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
+  // talons reaching forward-down
+  for(const[x0,y0,x1,y1]of[[13.5,21.5,9,27.5],[17.5,22,13.5,29]]){L(x0,y0,x1,y1,beakD,1.6);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.1)}
+  // neck ruff and head, lower left
+  for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
+  E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
+  P(deep,[[12.5,15],[16,12.8],[14,17.2]],null);P(deep,[[10.2,14.6],[12.4,11],[12.6,15.4]],null);
+  // eye and brow
+  R(7.5,17.4,3,2,a);R(7.5,17.4,1,1,'#ffd9d9');R(9.2,17.9,1,1,'#12101a');L(6.4,16.5,10.8,17.6,deep,1.4);
+  // beak gaping toward the lower left: red throat, hooked upper, lower, tongue
+  P(gape,[[8,21.5],[2.6,26.8],[5.8,29.6],[10.2,24.4]]);R(5.6,26.4,2,2,tongue);
+  P(beak,[[11,18.4],[6.4,20],[.8,27.4],[8.6,23]]);L(8.6,20,3.4,25.8,beakD,.7);P(beakD,[[1.2,26.6],[.8,27.4],[3.4,25.6]],null);
+  P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
+  // roar lines
+  for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
+  q.restore();break;
   }
  }
 }
