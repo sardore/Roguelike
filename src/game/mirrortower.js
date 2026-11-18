@@ -66,7 +66,7 @@ function mirrorStackDepth(x,y){
 }
 function drawMirrorWall(px,py,x,y){
  const T=mirrorTheme(),id=mirrorThemeId(),tower=state.branchTerrain105.mirrorTower105,H=tower.height,h=hash49(x,y);
- const front=wallFaceOpen(x,y,0,1),depth=front?0:mirrorStackDepth(x,y);
+ const front=wallFaceOpen(x,y,0,1),broad=state.map[y]?.[x-1]===TT.WALL&&state.map[y]?.[x+1]===TT.WALL,depth=front||!broad?0:mirrorStackDepth(x,y);
  if(front){
   X.drawImage(legendTexture(id,4+(h%2),h%4),px,py);
   const g=X.createLinearGradient(0,py,0,py+32);g.addColorStop(0,'rgba(0,0,0,.30)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(px,py,32,32);
