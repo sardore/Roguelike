@@ -1382,16 +1382,16 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(role==='shell')add('shell','방어 자세','盾','4칸 안에서 사용',`DEF +${floor>=16?8:7}, ${floor>=16?MONSTER_GUARD_TURNS.late:MONSTER_GUARD_TURNS.early}턴.`,'strong');
     if(role==='blinkPunisher')add('blink-punish','점멸 흔적 포식','食','점멸 직후 · 사거리 4칸',`공격력 +2. 적중하면 기력 ${floor>=21?3:2} 감소.`);
     if(mon.wallSlam61)add('wall-slam','성벽 강타','壁','2칸 안 · 재사용 3턴','3×3 폭발로 피해를 준다. 폭발은 벽도 부수며 맞은 대상에게 쇠약 3턴을 건다. 벽 너머라도 3칸 안이면 상대를 감지해 벽을 부수고 다가온다.','strong');
-    if(mon.lightningRod61)add('lightning-rod','피뢰침','雷','9칸 안 · 예고 1턴 · 3턴 연속 · 재사용 12턴','플레이어의 현재 칸을 겨눈 1×1 벼락을 3턴 연속 내리친다. 번개 속성 피해가 크고, 적중할 때마다 기절 2턴. 칸을 벗어나면 맞지 않는다.','ghost');
-    if(role==='alarm'||mon.alarmSkill61)add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 ${floor}턴 동안 괴력을 부여한다. 괴력: ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복 · 행동력 ×1.5. 끝나면 같은 시간 실명·배탈에 빠진다. 괴력 중이거나 탈진 중인 아군은 대상에서 제외된다.`,'strong');
+    if(mon.lightningRod61)add('lightning-rod','피뢰침','雷','9칸 안 · 예고 1턴 · 3턴 연속 · 재사용 12턴','플레이어의 현재 칸을 겨눈 1×1 벼락을 3턴 연속 내리친다. 번개 속성 피해가 크고, 적중할 때마다 기절 2턴.','ghost');
+    if(role==='alarm'||mon.alarmSkill61)add('alarm','경종','警',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 ${floor}턴 동안 괴력을 부여한다. 괴력: ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복 · 행동력 ×1.5. 끝나면 같은 시간 실명·배탈에 빠진다.`,'strong');
     if(mon.targetMark61)add('target-mark','목표 지정','標',`10칸 안 · 재사용 ${mon.targetMark61.cooldown}턴 · 지속 ${mon.targetMark61.turns}턴`,'지속시간 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.','ghost');
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
     if(role==='asura'){add('domain','아수라장','界',`반경 ${mon.asuraRadius47||3}칸 · 지속 ${mon.asuraDuration47||5}턴`,'1턴 예고 후 영역 밖에서 시작된 직접 공격을 무효화.');add('volley','다완 투척','腕',`영역 밖 · 사거리 ${mon.asuraRange47||9}칸`,'1턴 예고 후 공격력 +4, +1로 연속 투척.');}
     const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%']];
     for(const[key,name,seal,meta]of onHit)if(mon[key])add(key,name,seal,'공격 적중 시','기본 '+meta+' 확률. 의지·면역에 따라 감소.','brawl','지속');
     if(mon.summonsVanish)add('summons-vanish','시종의 연명','縛','사망 시','이 개체가 쓰러지면 불려 나온 소환수도 모두 사라진다.','constitution','조건');
-    if(mon.diseaseBreath61)add('disease-breath','병든 깃털','疫','공격 적중 시 · 3×3 · 4턴','공격이 적중하면 병든 깃털 가루를 흩뿌려 중병 가스를 남긴다. 가스 속에 머물면 중병(유예 27턴)에 걸릴 수 있다. 해독산이나 정화로 치료한다.','constitution','지속');
-    if(mon.terrainIgnore61)add('terrain-ignore','지형 무시','浮','이동','물·용암·구덩이·가구 따위를 무시하고 떠다닌다. 벽만은 넘지 못한다.','ghost','지속');
+    if(mon.diseaseBreath61)add('disease-breath','병든 깃털','疫','공격 적중 시 · 3×3 · 4턴','공격이 적중하면 병든 깃털 가루를 흩뿌려 중병 가스를 남긴다. 가스 속에 머물면 중병(유예 27턴)에 걸릴 수 있다.','constitution','지속');
+    if(mon.terrainIgnore61)add('terrain-ignore','지형 무시','浮','이동','물·용암·구덩이·가구 따위를 무시하고 떠다닌다.','ghost','지속');
     if(mon.focusDrain)add('focus-drain','기력 흡수','氣','공격 적중 시',`기력 ${mon.focusDrain} 감소.`,'constitution','지속');
     if(mon.hungerDrain)add('hunger-drain','허기 약탈','飢','공격 적중 시',`허기 ${mon.hungerDrain} 감소.`,'constitution','지속');
     if(mon.knockback)add('push','밀치기','推','공격 적중 시','대상을 1칸 밀친다.','brawl','지속');
