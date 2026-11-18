@@ -2575,9 +2575,9 @@ const ACTOR_SPEC={
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
   '갈고리 죄수':{"a":"branch","c":"#5f4740","h":"#9c8170","ac":"#cdbf96","design":"hook_prisoner"},
   '어둑시니':{a:'dusk_shade',c:'#201b2e',h:'#4f4968',ac:'#e9e2ff'},
-  '꿰맨 입 망자':{a:'stitched_dead',c:'#6e6a60',h:'#b0ac98',ac:'#d9a85c'},
+  '꿰맨 입 망자':{"a":"branch","c":"#7b7868","h":"#b4b09a","ac":"#bfb28a","design":"stitched_dead"},
   '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
-  '눈알 등롱':{a:'eye_lantern',c:'#8b4a44',h:'#d49d8e',ac:'#f1d56a'},
+  '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
   '흉조 까마귀':{"a":"branch","c":"#1f1e2c","h":"#5a5f82","ac":"#e24a4a","design":"ominous_crow"},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
@@ -3054,6 +3054,26 @@ function drawBranchCreature(q,m,frame,sp){
   E(25,25+b,5,5,'#928978');E(25,25+b,3,3,'#292e30');R(24,23+b,2,1,'#131d23');
   P(h,[[2,20+b],[7,18+b],[8,27],[4,30],[1,27]]);L(3,22,5,26,a);bootR9(q,7,31,7);bootR9(q,20,31,7);R(10,28,4,3,h);R(21,29,3,2,h);break;
  }
+ case'stitched_dead':{
+  // A stooped corpse in a burial shroud, neck bent, mouth sewn shut with black thread, knuckles dragging.
+  P('#2c2a24',[[8,12+b],[23,12+b],[27,26],[23,32],[9,32],[5,26]]);P(c,[[9,14+b],[22,14+b],[24,27],[21,31],[10,31],[8,26]]);
+  P(h,[[9,15+b],[14,15+b],[13,30],[9,28]],null);L(12,20+b,20,26,'#4f4b3f');L(19,17+b,13,28,'#4f4b3f');
+  L(10,16+b,5,28+b,h,4);L(22,16+b,27,29+b,h,4);E(5,29+b,2,2,ivory);E(27,30+b,2,2,ivory);
+  P('#c4bfa6',[[10,4+b],[14,1+b],[21,2+b],[24,7+b],[22,13+b],[12,13+b],[9,9+b]]);
+  R(12,6+b,3,2,'#1d1a17');R(18,6+b,3,2,'#1d1a17');R(13,7+b,1,1,a);R(19,7+b,1,1,a);
+  R(12,11+b,10,2,'#2a2520');for(let x=12;x<22;x+=2)L(x,10+b,x+1,14+b,'#12100e');
+  P(ivory,[[8,8+b],[6,4+b],[10,6+b]],null);bootR9(q,10,31,5);bootR9(q,18,31,5);break;
+ }
+ case'eye_lantern':{
+  // A paper lantern for a shade: one bloodshot eye behind the paper, hanging tassels and a thin flame above.
+  L(16,0,16,5+b,'#3a2d28',1);P('#3a2b26',[[10,5+b],[22,5+b],[21,9+b],[11,9+b]]);R(11,5+b,10,1,h);
+  E(16,18+b,10,10,c);P(h,[[8,14+b],[12,10+b],[11,18+b],[8,22+b]],null);
+  for(const y of[12,18,24])L(7,y+b,25,y+b,'#5a2c29',1);
+  E(16,18+b,6,5,'#e8dcc0');E(16,18+b,2.6,2.6,'#6b1018');R(15,17+b,2,2,'#1a0709');
+  L(11,16+b,14,17+b,'#b2323b');L(21,20+b,18,19+b,'#b2323b');L(12,21+b,15,20+b,'#b2323b');
+  P('#3a2b26',[[11,28+b],[21,28+b],[20,31+b],[12,31+b]]);for(const x of[12,16,20])L(x,31+b,x+(x-16)*.4,35,a,1.4);
+  P(a,[[16,0],[13,4],[16,3],[19,4]],null);break;
+ }
  case'ominous_crow':{
   // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
   q.save();q.translate(1.5,.5);
@@ -3238,25 +3258,6 @@ break;}
    for(let k=0;k<5;k++){const x=11.2+k*2.4;pR9(q,ac,[[x,19+b],[x+2.4,19+b],[x+1.2,21.6+b]],null)}
    for(let k=0;k<4;k++){const x=12.4+k*2.4;pR9(q,ac,[[x,24.4+b],[x+2.2,24.2+b],[x+1.1,22.2+b]],null)}
    break;}
-  case'stitched_dead':{shadow1012(q,16,33,21);
-   const skin='#b9b8a2',skinD='#8d8c78',cloth=base,thread='#1d1a16';
-   // bare feet
-   eR9(q,12,33,3,1.6,skinD);eR9(q,20,33,3,1.6,skinD);
-   // arms hanging, long and thin, hands trailing
-   pR9(q,skin,[[8.6,16+b],[11,15.6+b],[9.2,28+b],[6.6,28.6+b],[5.6,22+b]]);pR9(q,skin,[[23.4,16+b],[21,15.6+b],[22.8,28+b],[25.4,28.6+b],[26.4,22+b]]);
-   for(const x of[5.6,6.6,7.6,8.6])lR9(q,x,28.4+b,x-.3,31.4+b,skinD,1);for(const x of[23.4,24.4,25.4,26.4])lR9(q,x,28.6+b,x+.3,31.6+b,skinD,1);
-   // burial shroud, bound with rope, torn hem
-   pR9(q,cloth,[[9,13+b],[23,13+b],[26,24],[27,32],[22,30],[19,34],[16,31],[13,34],[10,30],[5,32],[6,24]]);
-   pR9(q,hi,[[10,14+b],[15,14+b],[12.5,30],[6.6,30.4],[7.4,23]],null);
-   for(const[x0,x1]of[[14,13],[18,19.4]])lR9(q,x0,17+b,x1,31,skinD,.9);
-   lR9(q,8.4,19.5+b,23.6,19.5+b,'#5b4b36',1.4);lR9(q,7.8,25+b,24.2,25+b,'#5b4b36',1.4);
-   for(const x of[11,15,19,22])lR9(q,x,18.6+b,x+.4,20.4+b,'#2d2418',.8);
-   // hunched head, hollow eyes, sewn-shut mouth
-   eR9(q,16,9+b,5.6,5.8,skin);pR9(q,skinD,[[16,14.4+b],[21,10+b],[21.4,13+b],[16,15.2+b]],null);
-   eR9(q,13.4,8.4+b,1.9,2.3,thread);eR9(q,18.6,8.4+b,1.9,2.3,thread);eR9(q,13.6,8.8+b,.7,.7,ac,null);eR9(q,18.8,8.8+b,.7,.7,ac,null);
-   lR9(q,14,6+b,12.6,4.6+b,skinD,.8);
-   lR9(q,11.6,12.6+b,20.4,12.6+b,thread,1.6);for(const x of[12.6,14.4,16.2,18,19.8])lR9(q,x,10.8+b,x+.4,14.6+b,thread,1);
-   break;}
   case'crawling_hands':{shadow1012(q,16,33,24);
    const nail='#efe4cc',bone='#efe6d2',blood='#a52a38',dark='#7c6a62';
    // a severed hand walking on its fingertips, seen from the side: wrist stump behind, arched back, bent fingers, nails forward
@@ -3273,20 +3274,6 @@ break;}
    // front fingers and the thumb
    finger(7.6,19+b,4.6,26,5,32,base,3.1);finger(9.6,21+b,6.6,27,7.6,33,base,3.1);
    lR9(q,11.2,22+b,6.2,24.4+b,base,3.2);eR9(q,5.8,24.6+b,1.6,1.6,base);pR9(q,nail,[[3.2,24+b],[5.6,23+b],[5.6,26.2+b],[3.4,26.6+b]],null);
-   break;}
-  case'eye_lantern':{shadow1012(q,16,34,18);
-   const paper='#c7857a',paperD='#7d3d38',rib='#4a2523',iris='#8f2230';
-   // hanging cord and cap
-   lR9(q,16,0,16,5.4+b,'#3a2d28',1.2);pR9(q,'#3a2b26',[[10,5.4+b],[22,5.4+b],[21,9+b],[11,9+b]]);lR9(q,11.6,6.6+b,20.4,6.6+b,hi,.9);
-   // paper shell, shaded to the lower right, with bamboo ribs
-   eR9(q,16,18.6+b,10,10,paperD);eR9(q,15.2,17.8+b,9.2,9.2,paper);eR9(q,14.4,16.6+b,6.2,5.6,hi,null);
-   for(const y of[12.6,18.6,24.6])lR9(q,6.4,y+b,25.6,y+b,rib,1);lR9(q,16,10+b,16,28.4+b,rib,.8);
-   // glowing inside and the eye
-   eR9(q,16,18.6+b,6.6,5.4,'#f1e6c8');eR9(q,16,18.6+b,3.1,3.1,iris);eR9(q,16,18.6+b,1.3,1.3,'#1a0709',null);eR9(q,15.2,17.6+b,.7,.7,'#fff0f0',null);
-   for(const[x0,y0,x1,y1]of[[10.6,17.4,13,17.8],[11,20,13.2,19.4],[21.4,17.4,19,17.9],[20.8,20.4,18.8,19.6],[16,13.6,16,15.4]])lR9(q,x0,y0+b,x1,y1+b,'#b2323b',.8);
-   // base and tassels
-   pR9(q,'#3a2b26',[[11,28.4+b],[21,28.4+b],[20,31+b],[12,31+b]]);for(const x of[12.4,16,19.6])lR9(q,x,31+b,x+(x-16)*.3,35,ac,1.4);
-   pR9(q,ac,[[16,-.4],[13.4,3.6],[16,2.6],[18.6,3.6]],null);
    break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
