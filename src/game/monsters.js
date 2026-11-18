@@ -321,7 +321,7 @@ function monsterSenseRadius(mon){
 }
 function playerDetectedBy(mon){
   if(!mon||!state?.player||playerConcealed58())return false;
-  const d=entityDistance57(mon,state.player),sight=applyCombatDebuffStats57({vision:monsterSenseRadius(mon)},mon).vision,sense=Math.max(2,sight-(playerCloak().senseReduce||0)+(monsterSenseRadius(mon)<99?Math.round(2*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clang')||0)):0));
+  const d=entityDistance57(mon,state.player),sight=applyCombatDebuffStats57({vision:monsterSenseRadius(mon)},mon).vision,sense=Math.max(combatStatusTurns(mon,'blind')>0?STATUS_META57.blind.visionFloor57:2,sight-(playerCloak().senseReduce||0)+(monsterSenseRadius(mon)<99?Math.round(2*(globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clang')||0)):0));
   if(d<=1||(d<=sense&&entityCombatLineCheckR(mon,state.player,{range:sense,units:false}).ok))return true;
   const presence=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('presence')||0;if(!presence)return false;
   const cursedSense=sense+Math.round(2*presence);return d<=cursedSense&&entityCombatLineCheckR(mon,state.player,{range:cursedSense,units:false}).ok
@@ -1675,7 +1675,7 @@ function inheritCombatFaction57(child,parent){child.faction57=entityFaction(pare
 function actorDetectedTarget57(actor,target,range=monsterSenseRadius(actor)){
  if(!combatTargetValid57(actor,target)||entityConcealed(target)||(target.treeMimic105&&target.mimicDormant105!==false))return false;
  if(target===state.player)return playerDetectedBy(actor);
- const curses=globalThis.__MANRU_ITEM_IDENTITY991__,sight=applyCombatDebuffStats57({vision:range},actor).vision,sense=Math.max(2,sight-(target.cloak?.senseReduce||0)+Math.round(2*((curses?.cursePower?.('clang',target)||0)+(curses?.cursePower?.('presence',target)||0))));return entityDistance57(actor,target)<=sense&&entityCombatLineCheckR(actor,target,{range:sense,ignore:target,units:false}).ok;
+ const curses=globalThis.__MANRU_ITEM_IDENTITY991__,sight=applyCombatDebuffStats57({vision:range},actor).vision,sense=Math.max(combatStatusTurns(actor,'blind')>0?STATUS_META57.blind.visionFloor57:2,sight-(target.cloak?.senseReduce||0)+Math.round(2*((curses?.cursePower?.('clang',target)||0)+(curses?.cursePower?.('presence',target)||0))));return entityDistance57(actor,target)<=sense&&entityCombatLineCheckR(actor,target,{range:sense,ignore:target,units:false}).ok;
 }
 function factionsHostile57(a,b){return a!==b&&a!=='neutral'&&b!=='neutral'}
 function occupancySwapAllowed57(actor,target,origin=actor){

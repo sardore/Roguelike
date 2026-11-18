@@ -233,6 +233,18 @@ function resolveElementDamage57(entity,elem,base,opts={}){
   if(entity.hp<=0){if(entity===state.player)die(opts.source||`${elem} 피해`);else killMonster(entity)}
   return{damage,guarded:false,adapted:mult<1,multiplier:mult};
 }
+function throwIceEssence(x,y,thrower){
+ const {radius,damage,stun}=ICE_ESSENCE_THROW,cells=elementCells105(x,y,radius);
+ const effect=effectSource57(thrower,{friendlyFire:true}),keys=new Set(cells.map(c=>k(c.x,c.y)));
+ const targets=[...state.monsters,state.player].filter(actor=>actor.hp>0&&entityFootprintCells57(actor).some(c=>keys.has(k(c.x,c.y))));
+ emitElementContact105('ice',cells,effect);
+ elementAttackFx105('ice',cells,{x,y});
+ for(const target of targets){
+  resolveElementDamage57(target,'ice',damage,{effect,contactHandled105:true,source:'빙결액',color:'#b0e8ef'});
+  applyCombatStatus(target,'stun',stun,1,{source:thrower,element:'ice',stagger:true});
+ }
+ addLog('빙결액의 냉기가 5×5에 퍼졌다.');
+}
 function tickElementFields57(){
  for(const f of state.elementFields74||[]){if(state.turn>f.bornTurn&&f.ttl>0&&f.kind==='fire'){applyElementField57(f,'fire',f.damage??3,{source:'원소 화염지대',color:'#ff9862',size:10});if(runState57()!=='playing')return;f.ttl--}}state.elementFields74=(state.elementFields74||[]).filter(f=>f.ttl>0);
 }

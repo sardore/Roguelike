@@ -232,9 +232,10 @@ function terrainUnderlayState58(){return state?.map?terrainMapLayers58(state.map
 function terrainUnderlayAt58(x,y){const v=terrainUnderlayState58()?.[k(x,y)];return Number.isInteger(v)?v:null}
 const FLYING_BLOCKING_TILES57=new Set([TT.WALL,TT.LOCKED_GATE,TT.SECRET_DOOR]);
 const AQUATIC_STAND_TILES57=new Set([TT.SHALLOW_WATER,TT.ICE,TT.PAPER_BRIDGE,TT.DRAWBRIDGE_DOWN,TT.RAFT]);
-function playerVisionRadius(){
+function playerVisionRadius(penalty=state.visionPenalty||0){
  const nightmare=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('nightmare')||0;
- return Math.max(nightmare>0?1:3,getStats().vision-(state.visionPenalty||0));
+ const minimum=state.status.blind>0?STATUS_META57.blind.visionFloor57:nightmare>0?1:3;
+ return Math.max(minimum,getStats().vision-penalty);
 }
 const VisibilityService=Object.freeze({
 isVisible(x,y){return state.visible.has(k(x,y))},
