@@ -3103,6 +3103,11 @@ function drawBranchCreature(q,m,frame,sp){
   const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
   const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
    P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+  // omen: a blood-red crescent behind, drifting ash and falling feathers in the empty corners
+  q.save();q.beginPath();q.arc(6.5,7.5,6.2,0,Math.PI*2);q.arc(9.2,6.2,5.2,0,Math.PI*2);q.fillStyle='#b3283a';q.fill('evenodd');q.strokeStyle='#4a0d18';q.lineWidth=.8;q.stroke();q.restore();
+  P('#e5606a',[[2.2,10.6],[3.2,12.4],[4.6,13.2]],null);
+  for(const[x,y,d,sz]of[[22,27,.5,3.2],[27,31,-.4,3],[19,33,.9,2.6],[29,24,-.9,2.8],[24,21.5,.2,2.4]]){const a=d,dx=Math.cos(a)*sz,dy=Math.sin(a)*sz;P(edge,[[x,y],[x+dx*.5-dy*.5,y+dy*.5+dx*.5],[x+dx,y+dy],[x+dx*.5+dy*.5,y+dy*.5-dx*.5]],null);L(x,y,x+dx,y+dy,sheen,.5)}
+  for(const[x0,y0,cx,cy,x1,y1]of[[26,12,30,17,27,22],[23,19,27,24,24,29],[30,20,32,24,30,28]]){q.strokeStyle='#3b3652';q.lineWidth=.9;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
   // tail streaming up and back
   for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
   // far wing (darker), then body, then near wing
@@ -3114,6 +3119,8 @@ function drawBranchCreature(q,m,frame,sp){
   P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
   // talons reaching forward-down
   for(const[x0,y0,x1,y1]of[[13.5,21.5,9,27.5],[17.5,22,13.5,29]]){L(x0,y0,x1,y1,beakD,1.6);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.1)}
+  // a skull clutched in the talons
+  E(16.4,32,2.9,2.6,'#e6ddc6');P('#e6ddc6',[[14.4,33.2],[18.4,33.2],[17.8,35.4],[15,35.4]]);R(14.6,31,1.7,1.7,'#1a1520');R(17.2,31,1.7,1.7,'#1a1520');R(16.1,33.2,.9,1.2,'#1a1520');for(const x of[15.2,16.6,18])L(x,34.6,x,35.4,'#1a1520',.5);
   // neck ruff and head, lower left
   for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
   E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
