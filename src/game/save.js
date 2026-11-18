@@ -562,7 +562,16 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         RuntimeState.persistence.pending=false;const entries=[];
         if(kind==='death'){
           // recover() refuses a run that is already dead, so read the two alternating slots directly and keep the newer one.
-          try{let kept=null,keptSeq=-1;for(const slot of [SAVE1004,SHADOW]){const text=localStorage.getItem(slot);if(!text)continue;const q=JSON.parse(text),meta=q?.format==='MANRU_SAVE'&&q.state?q.state:q,seq=Number(meta?.saveSeq1004)||0;if(seq>keptSeq){kept=text;keptSeq=seq}}if(kept)localStorage.setItem(DEADSAVE,kept)}catch(error){ignoreError('could not keep the dead run for the revive code',error)}
+          // Free the older slot first so the copy never needs three full saves at once (a deep run can fill the storage quota).
+          try{
+           let kept=null,keptSeq=-1,keptSlot=null;
+           for(const slot of [SAVE1004,SHADOW]){const text=localStorage.getItem(slot);if(!text)continue;const q=JSON.parse(text),meta=q?.format==='MANRU_SAVE'&&q.state?q.state:q,seq=Number(meta?.saveSeq1004)||0;if(seq>keptSeq){kept=text;keptSeq=seq;keptSlot=slot}}
+           if(kept){
+            for(const slot of [SAVE1004,SHADOW])if(slot!==keptSlot)localStorage.removeItem(slot);
+            localStorage.setItem(DEADSAVE,kept);
+            if(localStorage.getItem(DEADSAVE)!==kept)throw Error('dead run read-back mismatch');
+           }
+          }catch(error){ignoreError('could not keep the dead run for the revive code',error);toast('코드 1024용 저장본을 남기지 못했다(저장 공간 부족).')}
           const rid=state?.runId984||null,ids=[...deadRuns1004()].filter(x=>x!==rid);if(rid)ids.push(rid);
           entries.push([DEATH1004,JSON.stringify({at:Date.now(),runId:rid,floor:state?.floor||0,turn:state?.turn||0,version:SAVE_RELEASE_TAG})],[DEADRUNS,JSON.stringify(ids.slice(-64))]);
         }
