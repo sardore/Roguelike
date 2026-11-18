@@ -1006,7 +1006,7 @@ function installStockadeSummitPantry(page,summit){
   [0,-1,TT.LANTERN_POST],[0,8,TT.BRAZIER],
  ];
  for(const [dx,dy,tile] of fixtures)put(center+dx,north+dy,tile,dy===8?'wetSlate':'wood');
- for(const [dx,name] of [[-4,'주먹밥'],[-2,'말린 육포'],[-1,'엽전 엿'],[2,'말린 육포'],[4,'식어버린 국밥']]){
+ for(const [dx,name] of [[-4,'주먹밥'],[-2,'말린 육포'],[-1,'주먹밥'],[2,'말린 육포'],[4,'식어버린 국밥']]){
   const item={...clone(foodDef(name)),count:1};
   transferItemQuantity(item,null,page.items,1,{position:{x:center+dx,y:north}});
  }
@@ -1520,7 +1520,7 @@ function mineHidden(x,y){const m=mineState(),key=k(x,y);return !!(m?.luminous[ke
 function mineSceneryVisible(x,y){return !!mineState()?.concealedVisible105?.[k(x,y)];}
 function mineScenerySeen(x,y){return !!mineState()?.concealedSeen105?.[k(x,y)]&&mineHidden(x,y);}
 function mineVisibility(){
- const m=mineState();if(!m||m.palaceControls105||state.generationInProgress57)return;const p=state.player,nightmare=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('nightmare')||0,vision=Math.max(nightmare>0?1:3,getStats().vision);
+ const m=mineState();if(!m||m.palaceControls105||state.generationInProgress57)return;const p=state.player,vision=playerVisionRadius(0);
  m.concealedVisible105={};m.concealedSeen105||={};
  // A lamp removes the local darkness penalty; it never observes remote rooms for the player.
  for(const l of m.lanterns){if(!l.lit||Math.hypot(l.x-p.x,l.y-p.y)>vision+MINE_RULES.lightRadius+.55)continue;for(let y=Math.max(0,l.y-MINE_RULES.lightRadius);y<=Math.min(ROWS-1,l.y+MINE_RULES.lightRadius);y++)for(let x=Math.max(0,l.x-MINE_RULES.lightRadius);x<=Math.min(COLS-1,l.x+MINE_RULES.lightRadius);x++)if(Math.hypot(x-l.x,y-l.y)<=MINE_RULES.lightRadius+.2&&Math.hypot(x-p.x,y-p.y)<=vision+.35&&VisibilityService.lineClear(l.x,l.y,x,y)&&VisibilityService.lineClear(p.x,p.y,x,y)){VisibilityService.addVisibleKey(k(x,y));VisibilityService.rememberKey(k(x,y));}}

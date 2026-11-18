@@ -367,7 +367,7 @@ function playerDebuffRows(){
   if(s.upset>0)rows.push({key:'upset',label:'배탈',turns:s.upset,effect:`현재 이동비용 ×${UPSET_COST_MULTIPLIER.move.toFixed(2)} · 공격비용 ×${UPSET_COST_MULTIPLIER.attack.toFixed(2)}`});
   for(const f of state.tempFields||[])if(sealingWardAffects(f,state.player))rows.push({key:'sealingWard',color:'#c79ae4',label:'봉인진',turns:f.ttl,effect:'진 안 이동 가능 · 경계 밖 자발적 이동·점멸 불가 · 밀쳐져 나가면 해제'});
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
-  if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
+  if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 최소 ${STATUS_META57.blind.visionFloor57}칸 · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
   return rows.map(row=>({...row,color:row.color||STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
 }
@@ -721,7 +721,7 @@ function drunkMovementOutcome57(){if(globalThis.__MANRU_RANDOM57__()>=DRUNK_RULE
 function applyCombatDebuffStats57(stats,actor=state?.player){
  if(!stats||!actor)return stats;
  if(combatStatusTurns(actor,'weaken')>0){stats.atk=Math.max(1,Math.round(stats.atk*.80*100)/100);stats.def=Math.max(0,Math.round(stats.def*.75*100)/100);stats.eva=Math.max(0,Math.round(stats.eva*.80*100)/100)}
- if(combatStatusTurns(actor,'blind')>0){const rule=STATUS_META57.blind,nightmare=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('nightmare',actor)||0;stats.vision=Math.max(nightmare>0?rule.nightmareVisionFloor57:rule.visionFloor57,Math.floor(stats.vision*rule.visionScale57))}
+ if(combatStatusTurns(actor,'blind')>0){const rule=STATUS_META57.blind;stats.vision=Math.max(rule.visionFloor57,Math.floor(stats.vision*rule.visionScale57))}
  return stats
 }
 function applyJarGasEffects57(){
