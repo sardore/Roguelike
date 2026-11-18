@@ -1144,6 +1144,9 @@ function buildMountainBranch(id,level){
     stream.set(k(x,y),dy>=lip-1&&dy<=lip+1?'cascade':dy===lip+2?'plunge':'basin');
    }
   }
+  // The plunge pool widens beyond the gorge; keep the next trail anchor on its dry bank.
+  const landing=nodes[8],outward=mirror?-1:1;
+  while(gorge(landing.x,landing.y)||stream.has(k(landing.x,landing.y)))landing.x+=outward;
   t.ascentLines105=[];
  }else{
   // Keep the two upper approach nodes outside the declared 47-cell fortress.
