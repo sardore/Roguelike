@@ -1006,7 +1006,10 @@ function installStockadeSummitPantry(page,summit){
   [0,-1,TT.LANTERN_POST],[0,8,TT.BRAZIER],
  ];
  for(const [dx,dy,tile] of fixtures)put(center+dx,north+dy,tile,dy===8?'wetSlate':'wood');
- for(const [dx,name] of [[-4,'주먹밥'],[-2,'말린 육포'],[-1,'주먹밥'],[2,'말린 육포'],[4,'식어버린 국밥']]){
+ const runId=page.runId984||page.runId||state?.runId984||state?.runId;
+ const roll=RngService.shop(`${runId}|stockade-pantry:${center},${north}`)();
+ const spare=roll<.002?'빙결액':roll<.003?'신선도':'주먹밥';
+ for(const [dx,name] of [[-4,'주먹밥'],[-2,'말린 육포'],[-1,spare],[2,'말린 육포'],[4,'식어버린 국밥']]){
   const item={...clone(foodDef(name)),count:1};
   transferItemQuantity(item,null,page.items,1,{position:{x:center+dx,y:north}});
  }
