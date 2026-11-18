@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,vis:()=>VisibilityService.compute()};';
+const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,vis:()=>VisibilityService.compute()};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -34,8 +34,8 @@ for (const level of [1, 2, 3]) {
 const ride = await s.page.evaluate(() => {
   mirrorTest.go({ id: 'qa-mirror', to: 'mirror:2', arrival: 'up' });
   const st = mirrorTest.state(); st.monsters = []; st.player.hp = st.player.maxHp = 999;
-  const raft = st.rafts.find(r => r.axis === 'x' && r.y === 39 && r.min === 14);
-  st.player.x = raft.x; st.player.y = 40; mirrorTest.vis();
+  const raft = st.rafts.find(r => r.axis === 'x' && r.dir === 1 && r.x === r.min && !mirrorTest.blocks(st.map[r.y + 1][r.x]));
+  st.player.x = raft.x; st.player.y = raft.y + 1; mirrorTest.vis();
   mirrorTest.move(0, -1);
   const boarded = { x: st.player.x, y: st.player.y, raft: { x: raft.x, y: raft.y } };
   const track = [];
@@ -43,7 +43,7 @@ const ride = await s.page.evaluate(() => {
   return { boarded, track, dir: raft.dir, tile: st.map[raft.y][raft.x] };
 });
 console.log('ride', JSON.stringify(ride));
-assert.equal(ride.boarded.y, 39, '발판에 올라타지 못했다');
+assert.equal(ride.boarded.y, ride.boarded.raft.y, '발판에 올라타지 못했다');
 assert.deepEqual(ride.track.map(t => t[0]), ride.track.map(t => t[2]), '플레이어가 발판과 함께 움직이지 않는다');
 assert.ok(ride.track[2][0] !== ride.track[0][0], '발판이 움직이지 않는다');
 const boss = await s.page.evaluate(() => {
