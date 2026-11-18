@@ -30,22 +30,25 @@ for (const level of [1, 2, 3]) {
   assert.ok(info.mobs > 0, '몬스터가 없다');
   assert.equal(info.weapon, 0, '천면경 검은 거울지기를 쓰러뜨리기 전에는 없다');
 }
-// 1층: 거울 호수의 나룻배에 올라타면 배와 함께 한 칸씩 움직인다.
+// 1층: 끊긴 둑길의 유리 발판에 올라타면 발판과 함께 한 칸씩 움직인다.
 const ride = await s.page.evaluate(() => {
   mirrorTest.go({ id: 'qa-mirror', to: 'mirror:1', arrival: 'up' });
   const st = mirrorTest.state(); st.monsters = []; st.player.hp = st.player.maxHp = 999;
-  const raft = st.rafts.find(r => r.axis === 'y' && r.y === r.min);
-  st.player.x = raft.x; st.player.y = raft.y - 1; mirrorTest.vis();
-  mirrorTest.move(0, 1);
-  const boarded = { x: st.player.x, y: st.player.y, raft: { x: raft.x, y: raft.y } };
+  const raft = st.rafts[0], v = raft.axis === 'y', pos = () => (v ? raft.y : raft.x);
+  // park the raft at the start of its track and stand on the bank just before it
+  while (pos() !== raft.min) mirrorTest.wait();
+  raft.dir = 1;
+  st.player.x = v ? raft.x : raft.x - 1; st.player.y = v ? raft.y - 1 : raft.y; mirrorTest.vis();
+  mirrorTest.move(v ? 0 : 1, v ? 1 : 0);
+  const boarded = { on: st.player.x === raft.x && st.player.y === raft.y };
   const track = [];
-  for (let i = 0; i < 3; i++) { mirrorTest.wait(); track.push([st.player.x, st.player.y, raft.y]); }
-  return { boarded, track, towers: st.branchWorld105.mirror105.towers.length };
+  for (let i = 0; i < 3; i++) { mirrorTest.wait(); track.push([v ? st.player.y : st.player.x, pos()]); }
+  return { boarded, track, rafts: st.rafts.length, towers: st.branchWorld105.mirror105.towers.length };
 });
 console.log('ride', JSON.stringify(ride));
-assert.equal(ride.boarded.y, ride.boarded.raft.y, '배에 올라타지 못했다');
-assert.deepEqual(ride.track.map(t => t[1]), ride.track.map(t => t[2]), '플레이어가 배와 함께 움직이지 않는다');
-assert.ok(ride.track[2][1] !== ride.track[0][1] || ride.track[1][1] !== ride.track[0][1], '배가 움직이지 않는다');
+assert.ok(ride.boarded.on, '발판에 올라타지 못했다');
+assert.deepEqual(ride.track.map(t => t[0]), ride.track.map(t => t[1]), '플레이어가 발판과 함께 움직이지 않는다');
+assert.ok(ride.track[2][1] !== ride.track[0][1] || ride.track[1][1] !== ride.track[0][1], '발판이 움직이지 않는다');
 const boss = await s.page.evaluate(() => {
   mirrorTest.go({ id: 'qa-mirror', to: 'mirror:3', arrival: 'up' });
   const st = mirrorTest.state(), b = st.monsters.find(m => m.mirrorKeeper105);

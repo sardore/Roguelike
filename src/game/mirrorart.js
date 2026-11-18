@@ -1,0 +1,325 @@
+/* 천면경탑 art: everything the tower draws is its own. Sky-blue and lilac glass, silver structure, deep blue-violet shade.
+   Tiles are painted once into small canvases (GLASS_ART) keyed by everything they depend on, then stamped per cell.
+   - floors: wide glass panels with thin silver seams, a slanted gleam and the structure faintly seen under the glass;
+     the pattern density follows the zone (room, corridor, hall, antechamber, path, bridge, dock, balcony)
+   - walls: thick glass in section with a lit edge; outer walls carry deep windows and silver piers, inner walls are
+     lighter framed panes, bridges show a rail and the slab's thickness over the drop
+   - furniture: multi-tile sprites with a cast shadow and a faint reflection on the glass, drawn in one pass above the floor
+   - sky: clouds in three parallax layers under the upper floors, with the lower towers' roofs small and blue far below
+   - tower bodies: a roof and a long front face (sky blue fading to blue-violet) while the player is outside, faded on
+     entry; wall courses stacked above the back wall that remain inside. Heights come from mirrorTowerRise.
+   Drawing goes to the context it is given; callers on the screen pass X. */
+const GLASS_ART=new Map();
+const GLASS_PAL=Object.freeze({
+ sky:'#cfe8ff',skyMid:'#a9cdf4',skyLow:'#8fa9e6',lilac:'#c8b4f4',lilacDeep:'#9a86de',
+ glass:'#86bdf0',glassHi:'#e2f3ff',glassMid:'#6f9edf',glassDeep:'#4d68c2',
+ violet:'#3a2f7a',violetDeep:'#241c52',violetInk:'#16113a',
+ silver:'#e6edf6',silverMid:'#b3c0d6',silverDark:'#7482a3',white:'#ffffff'
+});
+function glassMix(a,b,t){const p=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),A=p(a),B=p(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
+function glassRGBA(hex,a){const n=parseInt(hex.slice(1),16);return`rgba(${n>>16},${n>>8&255},${n&255},${a})`}
+function glassCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;return[c,q]}
+function glassCached(key,w,h,paint){let c=GLASS_ART.get(key);if(!c){const[cv,q]=glassCanvas(w,h);paint(q);GLASS_ART.set(key,cv);c=cv}return c}
+// A tower's tint: how much lilac it carries, from its plan (0 = all sky blue).
+function glassTint(t){const m=t?.mix??.3;return{
+ glass:glassMix(GLASS_PAL.glass,GLASS_PAL.lilac,m),glassHi:glassMix(GLASS_PAL.glassHi,'#f1e8ff',m),glassMid:glassMix(GLASS_PAL.glassMid,GLASS_PAL.lilacDeep,m),
+ glassDeep:glassMix(GLASS_PAL.glassDeep,'#6650b8',m),floor:glassMix('#3e5aa4','#57479e',m),floorAlt:glassMix('#4865b0','#6252aa',m),seam:glassMix('#b9cbe8','#d3c6f2',m)}}
+function mirrorLayout(){return state?.branchTerrain105?.mirror105||null}
+function mirrorZone(x,y){return mirrorLayout()?.zones?.[y]?.[x]||'.'}
+function mirrorOwner(x,y){const c=mirrorLayout()?.owner?.[y]?.[x];return c&&c!=='.'?state.branchWorld105?.mirror105?.towers?.[+c]||null:null}
+/* ------------------------------------------------------------------ floors */
+// zones: r room · c corridor · h hall · a antechamber · P main path · b bridge/causeway · p balcony · d dock
+function glassFloorTile(zone,x,y,t){
+ const tint=glassTint(t),motif=t?.motif||'rings',px=x&1,py=y&1,v=hash2(x>>1,y>>1,733)>.62?1:0;
+ const key=`f|${zone}|${px}${py}|${v}|${t?.id??'-'}|${motif}`;
+ return glassCached(key,32,32,q=>{
+  const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
+  const bridge=zone==='b'||zone==='p'||zone==='d';
+  R(bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
+  // structure under the glass: dark beams every other panel, faint
+  q.fillStyle=glassRGBA(GLASS_PAL.violetInk,.22);if(px===0)q.fillRect(14,0,4,32);if(py===0)q.fillRect(0,14,32,4);
+  q.fillStyle=glassRGBA(GLASS_PAL.violetInk,.12);q.fillRect(0,30,32,2);
+  // panel seams: two-cell panels in rooms and halls, one-cell in corridors, long planks on bridges and the dock
+  const seam=(a,b,w,h)=>{q.fillStyle=glassRGBA(tint.seam,.55);q.fillRect(a,b,w,h);q.fillStyle=glassRGBA(GLASS_PAL.violetInk,.35);q.fillRect(a+(w===1?1:0),b+(h===1?1:0),w,h)};
+  if(bridge){seam(0,0,32,1);if(zone==='d'){seam(0,16,32,1);q.fillStyle=glassRGBA(GLASS_PAL.silverMid,.35);q.fillRect(3,6,2,2);q.fillRect(27,22,2,2)}}
+  else if(zone==='c'||zone==='P'){seam(0,0,32,1);seam(0,0,1,32)}
+  else{if(py===0)seam(0,0,32,1);if(px===0)seam(0,0,1,32)}
+  // the slanted gleam across each panel
+  q.fillStyle=glassRGBA(GLASS_PAL.glassHi,zone==='r'?.07:.10);
+  const off=(px*32+py*32)%64;for(let i=0;i<32;i++){const gx=(i+off)%64-16;if(gx>=0&&gx<32){q.fillRect(gx,31-i,2,1);if(gx+6<32)q.fillRect(gx+6,31-i,1,1)}}
+  // zone ornament
+  if(zone==='h'&&motif==='stars'&&v){q.fillStyle=glassRGBA(GLASS_PAL.glassHi,.35);q.fillRect(15,6,2,2);q.fillRect(6,20,1,1);q.fillRect(25,14,1,1)}
+  else if(zone==='a'){q.strokeStyle=glassRGBA(tint.seam,.30);q.lineWidth=1;q.beginPath();q.moveTo(0,16);q.lineTo(16,0);q.lineTo(32,16);q.lineTo(16,32);q.closePath();q.stroke();q.beginPath();q.moveTo(8,16);q.lineTo(16,8);q.lineTo(24,16);q.lineTo(16,24);q.closePath();q.stroke();q.fillStyle=glassRGBA(GLASS_PAL.lilac,.25);q.fillRect(15,15,2,2)}
+  else if(zone==='r'&&motif==='lattice'&&v){q.fillStyle=glassRGBA(tint.seam,.16);q.fillRect(8,8,16,1);q.fillRect(8,23,16,1);q.fillRect(8,8,1,16);q.fillRect(23,8,1,16)}
+  else if(zone==='r'&&motif==='waves'&&v){q.fillStyle=glassRGBA(tint.seam,.16);for(let i=0;i<32;i+=4)q.fillRect(i,18+((i>>2)%2),3,1)}
+  if(zone==='P'){q.fillStyle=glassRGBA('#bff4ff',.30);q.fillRect(14,0,4,32);q.fillRect(0,14,32,4);q.fillStyle=glassRGBA('#ffffff',.45);q.fillRect(15,14,2,4);q.fillRect(14,15,4,2)}
+ });
+}
+// The lake under floor 1: deep blue-violet water with the sky's light on it.
+function drawGlassLake(ctx,px,py,x,y,now){
+ // one flat body of water: colour drifts slowly over many cells, reflections run across cells instead of repeating per tile
+ const w=Math.sin(x*.21+y*.13)*.5+.5;ctx.fillStyle=glassMix('#2c3a8a','#3a3a8e',w);ctx.fillRect(px,py,32,32);
+ const t=(now||0)/1400;for(let i=0;i<2;i++){const band=((y*32+i*48+Math.floor(t*16))%96+96)%96;if(band<32){const len=10+((x*7+i*5)%14),off=(x*13+i*9)%22;ctx.fillStyle=glassRGBA(i?GLASS_PAL.lilac:GLASS_PAL.sky,.13);ctx.fillRect(px+off,py+band,len,1)}}
+ const shore=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WATER&&v!==TT.RAFT};
+ if(shore(0,-1)){const g=ctx.createLinearGradient(0,py,0,py+8);g.addColorStop(0,glassRGBA(GLASS_PAL.violetInk,.6));g.addColorStop(1,glassRGBA(GLASS_PAL.violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,8)}
+ if(shore(0,1)){ctx.fillStyle=glassRGBA(GLASS_PAL.sky,.18);ctx.fillRect(px,py+30,32,2)}
+}
+/* ------------------------------------------------------------------ walls */
+function glassWallFront(kind,x,t,win){
+ const tint=glassTint(t),window=t?.window||'arch',pier=kind==='o'&&x%3===0,hasWin=kind==='o'&&win&&x%3===1;
+ const key=`w|${kind}|${pier?1:0}|${hasWin?window:'-'}|${t?.id??'-'}`;
+ return glassCached(key,32,32,q=>{
+  const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
+  if(kind==='o'){
+   // thick glass in section: bright sky-blue at the cap, deepening to blue-violet at the foot
+   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,tint.glassHi);g.addColorStop(.35,tint.glass);g.addColorStop(1,GLASS_PAL.violet);R(g,0,0,32,32);
+   R(GLASS_PAL.silver,0,0,32,3);R(GLASS_PAL.silverDark,0,3,32,1);R(glassRGBA(GLASS_PAL.white,.35),0,4,32,1);
+   for(let i=8;i<30;i+=7){R(glassRGBA(GLASS_PAL.violetInk,.16),0,i,32,1)}
+   if(pier){R(GLASS_PAL.silverDark,11,3,10,29);R(GLASS_PAL.silverMid,12,3,7,29);R(GLASS_PAL.silver,12,3,2,29);R(GLASS_PAL.silver,9,4,14,2);R(glassRGBA(GLASS_PAL.violetInk,.35),19,6,2,26)}
+   if(hasWin){
+    R(GLASS_PAL.silverMid,8,7,16,20);
+    q.fillStyle=GLASS_PAL.violetInk;q.beginPath();
+    if(window==='arch'){q.moveTo(10,26);q.lineTo(10,15);q.arc(16,15,6,Math.PI,0);q.lineTo(22,26)}
+    else if(window==='round'){q.arc(16,17,7,0,Math.PI*2)}
+    else if(window==='diamond'){q.moveTo(16,8);q.lineTo(23,17);q.lineTo(16,26);q.lineTo(9,17)}
+    else{q.rect(13,8,6,18)}
+    q.closePath();q.fill();
+    q.fillStyle=glassRGBA(GLASS_PAL.sky,.55);q.fillRect(window==='slit'?14:12,12,2,9);q.fillStyle=glassRGBA(GLASS_PAL.lilac,.35);q.fillRect(window==='slit'?16:18,18,2,6);
+   }
+   R(glassRGBA(GLASS_PAL.violetInk,.6),0,29,32,3);
+  }else{
+   // an inner wall: lighter framed panes, a slim cap, no windows
+   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,glassMix(tint.glassMid,GLASS_PAL.lilac,.25));g.addColorStop(1,glassMix(tint.glassDeep,GLASS_PAL.violet,.45));R(g,0,0,32,32);
+   R(GLASS_PAL.silverMid,0,0,32,2);R(GLASS_PAL.silver,0,0,32,1);
+   R(glassRGBA(GLASS_PAL.silverMid,.8),0,14,32,1);R(glassRGBA(GLASS_PAL.silverMid,.8),x%2?31:0,2,1,28);
+   R(glassRGBA(GLASS_PAL.white,.18),3,4,2,8);R(glassRGBA(GLASS_PAL.white,.10),6,4,1,8);R(glassRGBA(GLASS_PAL.white,.10),4,17,2,8);
+   R(glassRGBA(GLASS_PAL.violetInk,.5),0,29,32,3);
+  }
+ });
+}
+// The top of a wall seen from above: a dark glass core with lit edges where it meets open floor.
+function drawGlassWallTop(ctx,px,py,x,y,kind,t){
+ const tint=glassTint(t),open=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WALL&&state.seen.has(k(x+dx,y+dy))};
+ ctx.fillStyle=kind==='o'?GLASS_PAL.violetDeep:glassMix(GLASS_PAL.violet,tint.glassDeep,.4);ctx.fillRect(px,py,32,32);
+ ctx.fillStyle=glassRGBA(tint.glass,kind==='o'?.10:.16);ctx.fillRect(px+4,py+4,24,24);
+ const e=kind==='o'?3:2;ctx.fillStyle=tint.glassHi;
+ if(open(0,-1))ctx.fillRect(px,py,32,e);if(open(-1,0))ctx.fillRect(px,py,e,32);if(open(1,0))ctx.fillRect(px+32-e,py,e,32);
+ ctx.fillStyle=GLASS_PAL.silverMid;if(open(-1,0))ctx.fillRect(px+e,py,1,32);if(open(1,0))ctx.fillRect(px+31-e,py,1,32);if(open(0,-1))ctx.fillRect(px,py+e,32,1);
+}
+function drawGlassDoor(ctx,px,py,x,y,open,t){
+ const tint=glassTint(t);
+ ctx.drawImage(glassFloorTile('c',x,y,t),px,py);
+ const vertical=state.map[y-1]?.[x]===TT.WALL&&state.map[y+1]?.[x]===TT.WALL;
+ ctx.fillStyle=GLASS_PAL.silverDark;
+ if(vertical){ctx.fillRect(px+13,py,6,32);if(!open){ctx.fillStyle=glassRGBA(tint.glass,.75);ctx.fillRect(px+14,py+2,4,28);ctx.fillStyle=GLASS_PAL.glassHi;ctx.fillRect(px+14,py+3,1,12)}else{ctx.fillStyle=GLASS_PAL.violetInk;ctx.fillRect(px+14,py+2,4,28)}return}
+ ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px+1,py+2,4,30);ctx.fillRect(px+27,py+2,4,30);ctx.fillRect(px+1,py,30,4);
+ if(open){ctx.fillStyle=glassRGBA(GLASS_PAL.violetInk,.75);ctx.fillRect(px+5,py+4,22,28)}
+ else{const g=ctx.createLinearGradient(px,py+4,px,py+32);g.addColorStop(0,tint.glassHi);g.addColorStop(1,tint.glassDeep);ctx.fillStyle=g;ctx.fillRect(px+5,py+4,22,28);ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(px+15,py+4,2,28);ctx.fillStyle=glassRGBA(GLASS_PAL.white,.45);ctx.fillRect(px+7,py+6,2,12);ctx.fillRect(px+19,py+6,2,12)}
+}
+// A bridge or balcony slab: rails along the drop and the slab's own thickness on its south edge.
+function drawGlassBridgeEdges(ctx,px,py,x,y){
+ const drop=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v===TT.VOID||v===TT.WATER};
+ if(drop(0,1)){const g=ctx.createLinearGradient(0,py+24,0,py+32);g.addColorStop(0,GLASS_PAL.silverMid);g.addColorStop(1,GLASS_PAL.violet);ctx.fillStyle=g;ctx.fillRect(px,py+25,32,7);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,py+24,32,1)}
+ for(const[dx,dy,side]of[[0,-1,'n'],[-1,0,'w'],[1,0,'e'],[0,1,'s']]){
+  if(!drop(dx,dy))continue;ctx.fillStyle=GLASS_PAL.silverDark;
+  if(side==='n'){ctx.fillRect(px,py+1,32,2);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,py,32,1);for(let i=4;i<32;i+=12){ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(px+i,py,3,6)}}
+  else if(side==='s'){ctx.fillStyle=GLASS_PAL.silverMid;for(let i=4;i<32;i+=12)ctx.fillRect(px+i,py+16,3,8);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,py+16,32,2)}
+  else{const a=side==='w'?px:px+29;ctx.fillRect(a,py,3,32);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(side==='w'?a:a+2,py,1,32);for(let i=6;i<32;i+=12){ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(a-1,py+i,5,3)}}
+ }
+}
+function drawGlassRaft(ctx,px,py){
+ ctx.fillStyle='rgba(16,12,40,.45)';ctx.fillRect(px+4,py+8,26,22);
+ ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px+2,py+4,28,24);ctx.fillStyle=GLASS_PAL.glass;ctx.fillRect(px+4,py+6,24,20);
+ const g=ctx.createLinearGradient(px,py+6,px+28,py+26);g.addColorStop(0,GLASS_PAL.glassHi);g.addColorStop(1,GLASS_PAL.lilacDeep);ctx.fillStyle=g;ctx.fillRect(px+5,py+7,22,18);
+ ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px+2,py+4,28,2);ctx.fillStyle=glassRGBA(GLASS_PAL.white,.55);ctx.fillRect(px+7,py+9,8,1);ctx.fillRect(px+7,py+10,3,1);
+ ctx.fillStyle=GLASS_PAL.silverMid;for(const[a,b]of[[3,5],[27,5],[3,25],[27,25]])ctx.fillRect(px+a,py+b,2,2);
+}
+// Cell painter, called for every seen cell of the tower floors.
+function drawGlassTowerCell(t,px,py,x,y){
+ const layout=mirrorLayout();if(!layout)return false;
+ const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
+ if(t===TT.VOID)return true;
+ if(t===TT.WATER){drawGlassLake(ctx,px,py,x,y,now);return true}
+ if(t===TT.RAFT){if((state.rafts||[]).find(r=>r.x===x&&r.y===y)?.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassRaft(ctx,px,py);return true}
+ if(t===TT.WALL){
+  const kind=zone==='i'?'i':'o',below=state.map[y+1]?.[x];
+  if(below!=null&&below!==TT.WALL&&state.seen.has(k(x,y+1))){ctx.drawImage(glassWallFront(kind,x,tower,true),px,py);const open=dx=>{const v=state.map[y]?.[x+dx];return v!=null&&v!==TT.WALL};ctx.fillStyle=GLASS_PAL.silver;if(open(-1))ctx.fillRect(px,py,2,32);if(open(1))ctx.fillRect(px+30,py,2,32)}
+  else drawGlassWallTop(ctx,px,py,x,y,kind,tower);
+  return true;
+ }
+ if(t===TT.DOOR||t===TT.OPEN_DOOR){drawGlassDoor(ctx,px,py,x,y,t===TT.OPEN_DOOR,tower);return true}
+ ctx.drawImage(glassFloorTile(zone==='.'?'r':zone,x,y,tower),px,py);
+ if((zone==='h'||zone==='P')&&tower&&mirrorTowerContains(tower,x,y,2))drawGlassMedallion(ctx,px,py,tower);
+ if(zone==='b'||zone==='p'||zone==='d')drawGlassBridgeEdges(ctx,px,py,x,y);
+ drawGlassRiser(ctx,px,py,x,y,tower);
+ // shadow cast by a wall standing to the north
+ if(state.map[y-1]?.[x]===TT.WALL){const g=ctx.createLinearGradient(0,py,0,py+10);g.addColorStop(0,glassRGBA(GLASS_PAL.violetInk,.45));g.addColorStop(1,glassRGBA(GLASS_PAL.violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,10)}
+ if(t===TT.FLOOR||t===TT.STONE_PILLAR)return true;
+ // portals and other interactive tiles keep their own drawing on the glass floor
+ drawSpecialTerrain(t,px,py,x,y,now);
+ return true;
+}
+// The hall medallion: concentric silver rings and rays centred on the tower, continuous across tiles.
+function drawGlassMedallion(ctx,px,py,t){
+ const cx=t.cx*32+16,cy=t.cy*32+16,tint=glassTint(t);
+ ctx.save();ctx.beginPath();ctx.rect(px,py,32,32);ctx.clip();ctx.lineWidth=1;
+ for(const[r,a]of[[40,.42],[72,.30],[104,.22]]){ctx.strokeStyle=glassRGBA(tint.seam,a);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke()}
+ ctx.strokeStyle=glassRGBA(tint.seam,.18);ctx.beginPath();for(let i=0;i<12;i++){const a=i*Math.PI/6;ctx.moveTo(cx+Math.cos(a)*40,cy+Math.sin(a)*40);ctx.lineTo(cx+Math.cos(a)*104,cy+Math.sin(a)*104)}ctx.stroke();
+ const g=ctx.createRadialGradient(cx,cy,4,cx,cy,40);g.addColorStop(0,glassRGBA(GLASS_PAL.glassHi,.22));g.addColorStop(1,glassRGBA(GLASS_PAL.glassHi,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ ctx.restore();
+}
+// A raised dais (branchTerrain105.heights): glass riser on its south face, silver-nosed steps where the plan puts stairs.
+function drawGlassRiser(ctx,px,py,x,y,t){
+ const ter=state.branchTerrain105,h=ter.heights?.[y]?.[x]??0,south=ter.heights?.[y+1]?.[x]??0;if(h<=south)return;
+ const tint=glassTint(t),rise=Math.min(22,(h-south)*12),top=py+32-rise;
+ if(ter.mirror105?.stairs?.[k(x,y)]){const n=Math.max(2,Math.round(rise/5));for(let i=0;i<n;i++){const a=top+Math.floor(i*rise/n),b=top+Math.floor((i+1)*rise/n);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,a,32,1);ctx.fillStyle=i%2?tint.glassMid:tint.glass;ctx.fillRect(px,a+1,32,b-a-1)}return}
+ const g=ctx.createLinearGradient(0,top,0,py+32);g.addColorStop(0,tint.glassHi);g.addColorStop(1,GLASS_PAL.violet);ctx.fillStyle=g;ctx.fillRect(px,top,32,rise);
+ ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,top,32,2);ctx.fillStyle=glassRGBA(GLASS_PAL.violetInk,.35);for(let i=7;i<32;i+=8)ctx.fillRect(px+i,top+3,1,rise-3);
+}
+/* ------------------------------------------------------------------ furniture */
+const GLASS_FURNITURE=Object.freeze({
+ orrery:{w:2,h:2,up:30,name:'회전 거울',desc:'은테 위에 큰 타원 거울이 천천히 돈다. 비친 하늘이 실제보다 한 박자 늦게 지나간다.'},
+ telescope:{w:2,h:2,up:22,name:'관측기',desc:'은빛 삼각대 위의 긴 망원 관. 경통 끝에 낀 렌즈가 구름 너머를 향해 있다.'},
+ star_table:{w:2,h:1,up:8,name:'성도 탁자',desc:'유리판 아래에 별자리 지도가 끼워져 있다. 탑의 위치가 은침으로 표시되어 있다.'},
+ cabinet:{w:1,h:1,up:34,name:'유리 장식장',desc:'은테 유리문 너머로 크고 작은 결정과 거울 조각이 진열되어 있다.'},
+ pedestal:{w:1,h:1,up:20,name:'진열 받침대',desc:'층층이 깎은 은 받침 위에 맑은 결정 하나가 떠 있다.'},
+ showcase:{w:2,h:1,up:12,name:'진열장',desc:'낮은 유리 상자 안에 깨진 거울 파편들이 이름표와 함께 놓여 있다.'},
+ shelf:{w:2,h:1,up:36,name:'은테 서가',desc:'은테를 두른 유리 선반에 푸른 표지의 책들이 빽빽이 꽂혀 있다.'},
+ lectern:{w:1,h:1,up:16,name:'열람대',desc:'펼쳐진 책 위에 빛이 고여 있다. 글자가 거울처럼 뒤집혀 있다.'},
+ reading_table:{w:2,h:1,up:10,name:'열람 탁자',desc:'유리 상판의 긴 탁자. 책 더미와 작은 등이 놓여 있다.'},
+ column:{w:1,h:1,up:30,name:'유리 기둥',desc:'은빛 주두와 받침 사이를 두꺼운 유리 원기둥이 잇는다. 안쪽으로 빛이 흐른다.'},
+ lamp:{w:1,h:1,up:24,name:'유리 등',desc:'은 기둥 끝의 유리 등. 길을 따라 하나씩 불이 켜져 있다.'},
+ bench:{w:2,h:1,up:6,name:'유리 벤치',desc:'구름을 내다보도록 놓인 긴 의자.'},
+ crown_mirror:{w:3,h:1,up:46,name:'천면경 틀',desc:'정상에 세운 거대한 거울 틀. 천 개의 조각이 저마다 다른 하늘을 비춘다.'}
+});
+function glassFurnitureSprite(kind,t,frame=0){
+ const spec=GLASS_FURNITURE[kind],W=spec.w*32,H=spec.h*32+spec.up,tint=glassTint(t);
+ return glassCached(`o|${kind}|${t?.id??'-'}|${frame}`,W,H+8,q=>{
+  const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)},base=H;
+  // cast shadow on the glass floor
+  q.fillStyle=glassRGBA(GLASS_PAL.violetInk,.38);q.beginPath();q.ellipse(W/2+3,base-5,W/2-3,6,0,0,Math.PI*2);q.fill();
+  const S=GLASS_PAL.silver,SM=GLASS_PAL.silverMid,SD=GLASS_PAL.silverDark,G=tint.glass,GH=tint.glassHi,GD=tint.glassDeep,I=GLASS_PAL.violetInk;
+  if(kind==='column'){R(SD,6,base-8,20,6);R(S,7,base-8,18,2);R(SD,9,6,14,base-14);const g=q.createLinearGradient(9,0,23,0);g.addColorStop(0,GH);g.addColorStop(.5,G);g.addColorStop(1,GD);R(g,10,8,12,base-16);R(glassRGBA(GLASS_PAL.white,.55),12,10,2,base-22);R(SD,6,2,20,6);R(S,7,2,18,2);R(SM,8,6,16,2)}
+  else if(kind==='lamp'){R(SD,14,10,4,base-14);R(S,14,10,1,base-14);R(SD,9,base-6,14,4);R(S,10,base-6,12,1);R(SM,8,8,16,3);q.fillStyle=glassRGBA('#bff4ff',.9);q.beginPath();q.moveTo(10,8);q.lineTo(16,0);q.lineTo(22,8);q.closePath();q.fill();R(GLASS_PAL.white,15,3,2,4)}
+  else if(kind==='cabinet'){R(SD,2,4,28,base-6);R(S,3,4,26,2);const g=q.createLinearGradient(0,6,0,base-4);g.addColorStop(0,GH);g.addColorStop(1,GD);R(g,4,7,24,base-12);for(const yy of[16,29,42,55].filter(v=>v<base-6)){R(SM,4,yy,24,2);R(['#f6c8ff','#bff4ff','#ffffff','#c8b4f4'][(yy>>3)%4],8+(yy%3)*5,yy-6,4,6);R(glassRGBA(GLASS_PAL.white,.6),18,yy-4,3,4)}R(SM,15,7,2,base-12);R(glassRGBA(GLASS_PAL.white,.35),6,9,2,base-18);R(S,0,1,32,4);R(SD,0,5,32,1)}
+  else if(kind==='pedestal'){R(SD,6,base-8,20,6);R(S,7,base-8,18,1);R(SM,9,base-16,14,8);R(S,9,base-16,14,1);R(SD,11,base-22,10,6);const glow=q.createRadialGradient(16,6,1,16,6,9);glow.addColorStop(0,glassRGBA('#ffffff',.9));glow.addColorStop(1,glassRGBA(GLASS_PAL.lilac,0));q.fillStyle=glow;q.fillRect(5,0,22,14);q.fillStyle='#e8d8ff';q.beginPath();q.moveTo(16,1+frame);q.lineTo(21,7+frame);q.lineTo(16,13+frame);q.lineTo(11,7+frame);q.closePath();q.fill();R(GLASS_PAL.white,14,4+frame,2,4)}
+  else if(kind==='showcase'){R(SD,2,base-22,W-4,20);R(S,2,base-22,W-4,2);const g=q.createLinearGradient(0,base-20,0,base-4);g.addColorStop(0,GH);g.addColorStop(1,G);R(g,4,base-19,W-8,14);for(let i=0;i<4;i++){R(['#ffffff','#c8b4f4','#bff4ff','#f6c8ff'][i],10+i*13,base-12,6,3);R(SD,9+i*13,base-9,8,1)}R(glassRGBA(GLASS_PAL.white,.45),6,base-18,W-14,1);R(SD,4,base-4,4,4);R(SD,W-8,base-4,4,4)}
+  else if(kind==='shelf'){R(SD,1,2,W-2,base-4);R(S,1,2,W-2,2);R(I,3,6,W-6,base-12);const cols=['#7fb8f0','#c8b4f4','#e6edf6','#6f9edf','#9a86de','#bff4ff'];for(const yy of[8,20,32].filter(v=>v<base-10)){let xx=4;let i=(yy+xx)%6;while(xx<W-6){const w=2+((xx*7+yy)%3);R(cols[i%6],xx,yy,w,10);R(glassRGBA(GLASS_PAL.white,.25),xx,yy+1,1,8);xx+=w+1;i++}R(SM,3,yy+10,W-6,2)}R(S,0,0,W,3);R(SD,0,3,W,1);R(SM,W/2-1,4,2,base-8)}
+  else if(kind==='lectern'){R(SD,14,base-18,4,14);R(SD,8,base-6,16,3);R(S,9,base-6,14,1);q.fillStyle=SM;q.beginPath();q.moveTo(4,base-16);q.lineTo(28,base-16);q.lineTo(25,base-24);q.lineTo(7,base-24);q.closePath();q.fill();R('#f3efff',7,base-23,8,6);R('#f3efff',17,base-23,8,6);R(SD,16,base-23,1,6);R(glassRGBA('#bff4ff',.65),9,base-21,5,1);R(glassRGBA('#bff4ff',.65),18,base-20,5,1)}
+  else if(kind==='reading_table'||kind==='star_table'||kind==='bench'){const top=kind==='bench'?base-12:base-18;R(SD,4,top+4,4,base-top-6);R(SD,W-8,top+4,4,base-top-6);const g=q.createLinearGradient(0,top-2,0,top+6);g.addColorStop(0,GH);g.addColorStop(1,G);R(S,1,top-2,W-2,2);R(g,1,top,W-2,6);R(SD,1,top+6,W-2,1);
+   if(kind==='star_table'){R(I,6,top+1,W-12,4);for(let i=0;i<9;i++)R(i%3?'#e8f4ff':'#f6c8ff',8+(i*11)%(W-16),top+1+(i%3),1,1);R(S,W/2,top+2,1,1)}
+   else if(kind==='reading_table'){R('#9a86de',8,top-6,8,4);R('#7fb8f0',9,top-9,7,3);R('#e6edf6',W-20,top-4,10,2);R(SD,W-14,top-12,2,8);q.fillStyle=glassRGBA('#bff4ff',.85);q.fillRect(W-17,top-15,8,4)}}
+  else if(kind==='telescope'){R(SD,10,base-28,3,24);R(SD,26,base-26,3,22);R(SD,40,base-28,3,24);R(SM,18,base-34,14,8);q.save();q.translate(25,base-32);q.rotate(-.55);R(SD,-6,-4,40,9);const g=q.createLinearGradient(0,-4,0,5);g.addColorStop(0,S);g.addColorStop(1,SM);R(g,-6,-3,40,7);R(GH,32,-3,5,7);R(SD,6,-5,3,11);R(SD,20,-5,3,11);q.restore();R('#bff4ff',47,base-56,3,3)}
+  else if(kind==='orrery'){R(SD,8,base-12,W-16,8);R(S,9,base-12,W-18,2);R(SM,14,base-20,W-28,8);R(SD,10,base-60,3,48);R(SD,W-13,base-60,3,48);R(S,10,base-60,1,48);const sw=Math.max(4,Math.round(Math.abs(Math.cos(frame*Math.PI/6))*20));q.fillStyle=SD;q.beginPath();q.ellipse(W/2,base-40,sw+3,20,0,0,Math.PI*2);q.fill();const g=q.createLinearGradient(W/2-sw,base-60,W/2+sw,base-20);g.addColorStop(0,GLASS_PAL.sky);g.addColorStop(.5,GH);g.addColorStop(1,GLASS_PAL.lilac);q.fillStyle=g;q.beginPath();q.ellipse(W/2,base-40,sw,17,0,0,Math.PI*2);q.fill();R(glassRGBA(GLASS_PAL.white,.7),W/2-Math.round(sw/2),base-52,2,10)}
+  else if(kind==='crown_mirror'){R(SD,4,6,W-8,base-10);R(S,4,6,W-8,3);const g=q.createLinearGradient(0,10,0,base-6);g.addColorStop(0,GLASS_PAL.sky);g.addColorStop(.6,GLASS_PAL.lilac);g.addColorStop(1,GD);R(g,8,10,W-16,base-18);q.strokeStyle=glassRGBA(GLASS_PAL.white,.7);q.lineWidth=1;q.beginPath();for(const[a,b,c,d]of[[30,12,46,40],[46,40,28,70],[46,40,70,30],[46,40,62,74],[20,40,46,40]]){q.moveTo(a,b);q.lineTo(c,d)}q.stroke();R(S,0,0,W,6);R(SM,W/2-6,0,12,10);R('#f6c8ff',W/2-2,1,4,4)}
+ });
+}
+function drawGlassFurniture(b,now){
+ const layout=mirrorLayout();if(!layout)return;
+ for(const o of layout.objects||[]){
+  if(o.x+o.w<b.x0-1||o.x>b.x1+1||o.y<b.y0-1||o.y-2>b.y1+1)continue;
+  let seen=false;for(let dy=0;dy<o.h&&!seen;dy++)for(let dx=0;dx<o.w;dx++)if(state.seen.has(k(o.x+dx,o.y+dy))){seen=true;break}if(!seen)continue;
+  const spec=GLASS_FURNITURE[o.kind],t=state.branchWorld105?.mirror105?.towers?.[o.tower]??null,frame=o.kind==='orrery'?Math.floor(now/180)%12:o.kind==='pedestal'?Math.floor(now/400)%2:0;
+  const art=glassFurnitureSprite(o.kind,t,frame),vis=state.visible.has(k(o.x,o.y+o.h-1));
+  const baseY=(o.y+o.h)*TILE,ox=o.x*TILE,sh=art.height-8;
+  X.save();if(!vis)X.globalAlpha=.55;X.drawImage(art,ox,baseY-sh);
+  // a faint reflection of the piece on the glass in front of it
+  X.globalAlpha*=.13;X.translate(0,baseY*2);X.scale(1,-1);X.drawImage(art,0,sh-16,art.width,16,ox,baseY-16,art.width,16);X.restore();
+ }
+}
+/* ------------------------------------------------------------------ sky */
+function glassCloudTile(layer){
+ return glassCached('sky|'+layer,512,256,q=>{
+  const tones=layer===0?['#dfeefe','#cddff8','#bccdee']:layer===1?['#f4f8ff','#d9e4fa','#b7c3ea']:['#ffffff','#e3e9fb','#a9b3e2'];
+  const n=layer===0?7:layer===1?5:3,size=layer===0?[22,40]:layer===1?[26,46]:[30,54];
+  for(let i=0;i<n;i++){
+   const cx=hash2(i,layer,511)*512,cy=40+hash2(layer,i,512)*170,r=size[0]+hash2(i,i+layer,513)*(size[1]-size[0]);
+   const puffs=[];for(let j=0;j<6;j++)puffs.push([cx+(j-2.5)*r*.55,cy+Math.sin(j*1.7+i)*r*.22,r*(.55+hash2(i,j,514)*.4)]);
+   for(const[dx,shade]of[[0,2],[0,1],[0,0]]){q.fillStyle=tones[shade];for(const[px,py,pr]of puffs)for(const wrap of[-512,0,512]){q.beginPath();q.arc(Math.round(px+wrap+dx),Math.round(py+(shade===2?pr*.35:shade===1?pr*.12:-pr*.08)),Math.round(pr*(shade===0?.82:1)),0,Math.PI*2);q.fill()}}
+  }
+ });
+}
+// The open sky under the upper floors, drawn in screen space before the map: gradient, far haze, the lower towers'
+// roofs far below, then two cloud layers moving at their own speeds against the camera.
+function drawGlassSky(cam,now){
+ const level=state?.branchContext105?.level||1;if(level<2)return;
+ const W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);g.addColorStop(0,'#bcdcff');g.addColorStop(.55,'#9fb8f0');g.addColorStop(1,'#8a8fdc');X.fillStyle=g;X.fillRect(0,0,W,H);
+ const layers=[[0,.18,.004,.55],[1,.38,.010,.62],[2,.62,.018,.72]];
+ const drawLayer=([layer,par,drift,alpha])=>{const tile=glassCloudTile(layer),ox=((cam.x*par+now*drift)%512+512)%512,oy=((cam.y*par)%256+256)%256;X.save();X.globalAlpha=alpha;for(let y=-oy-256;y<H;y+=256)for(let x=-ox-512;x<W;x+=512)X.drawImage(tile,Math.round(x),Math.round(y));X.restore()};
+ drawLayer(layers[0]);
+ // lower towers: smaller, bluer and softer the further below they stand
+ const plan=state.branchWorld105?.mirror105;
+ for(const t of plan?.towers||[]){if(t.height>=level)continue;const depth=level-t.height,scale=depth===1?.36:.24,par=depth===1?.55:.4,z=cam.zoom||1;
+  // a point far below drifts towards the screen centre: its offset from the centre shrinks with depth
+  const sx=W/2+(cam.x+(t.cx*TILE+16)*z-W/2)*par,sy=H/2+(cam.y+(t.cy*TILE+16)*z-H/2)*par,rw=t.rx*TILE*z*scale,rh=t.ry*TILE*z*scale;
+  X.save();X.globalAlpha=depth===1?.95:.75;const tint=glassTint(t),haze=.35+depth*.15;
+  // the body falling away below the roof, then the roof: rim, glass sectors, ribs and a silver crown
+  const body=X.createLinearGradient(0,sy,0,sy+rh*2.2);body.addColorStop(0,glassMix(tint.glassMid,'#8fa9e6',haze));body.addColorStop(1,'rgba(143,169,230,0)');X.fillStyle=body;X.fillRect(sx-rw,sy,rw*2,rh*2.2);
+  X.fillStyle=glassMix(GLASS_PAL.silverMid,'#b8c8f0',haze);X.beginPath();X.ellipse(sx,sy,rw+2,rh+2,0,0,Math.PI*2);X.fill();
+  for(let i=0;i<8;i++){X.fillStyle=glassMix(i%2?tint.glassHi:tint.glass,'#a9c4f0',haze);X.beginPath();X.moveTo(sx,sy);X.ellipse(sx,sy,rw,rh,0,i*Math.PI/4,(i+1)*Math.PI/4);X.closePath();X.fill()}
+  X.fillStyle=glassMix(GLASS_PAL.silver,'#c8d6f6',haze);X.fillRect(sx-2,sy-rh*.9,4,rh*.9);X.beginPath();X.arc(sx,sy-rh*.9,3,0,Math.PI*2);X.fill();
+  X.restore();
+}
+ drawLayer(layers[1]);drawLayer(layers[2]);
+}
+/* ------------------------------------------------------------------ tower bodies */
+function glassTowerColumns(t){const cols=[];for(let x=t.cx-t.rx;x<=t.cx+t.rx;x++){let top=null,bottom=null;for(let y=t.cy-t.ry;y<=t.cy+t.ry;y++)if(mirrorTowerContains(t,x,y)){top??=y;bottom=y}if(top!=null)cols.push({x,top,bottom})}return cols}
+// One course of a tower's outer face. The face is read as storeys: a window course and a band course alternate, silver
+// piers run down every fourth column, and the glass fades from sky blue at the top to blue-violet at the foot.
+function glassFaceColour(t,d){const tint=glassTint(t);return d<.5?glassMix(tint.glassHi,tint.glass,d*2):glassMix(tint.glass,GLASS_PAL.violet,(d-.5)*2*.9)}
+function drawGlassFaceCell(ctx,px,py,x,t,d0,d1,row,top,side,door){
+ const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassFaceColour(t,d0));g.addColorStop(1,glassFaceColour(t,d1));ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ // a long slanted reflection crossing the whole face
+ const diag=((x*32-row*32)%160+160)%160;if(diag<40){ctx.fillStyle=glassRGBA(GLASS_PAL.white,.07);ctx.beginPath();ctx.moveTo(px+diag-8,py+32);ctx.lineTo(px+diag+8,py);ctx.lineTo(px+diag+16,py);ctx.lineTo(px+diag,py+32);ctx.closePath();ctx.fill()}
+ const window=t.window,winRow=row%2===0&&!top&&!door,pier=x%4===0;
+ if(!winRow&&!top){ctx.fillStyle=glassRGBA(GLASS_PAL.silverMid,.75);ctx.fillRect(px,py+14,32,2);ctx.fillStyle=glassRGBA(GLASS_PAL.white,.35);ctx.fillRect(px,py+14,32,1);ctx.fillStyle=glassRGBA(GLASS_PAL.violetInk,.25);ctx.fillRect(px,py+16,32,1)}
+ if(winRow&&x%4===2){
+  ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px+6,py+3,20,27);ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(px+7,py+3,18,25);
+  ctx.fillStyle=GLASS_PAL.violetInk;ctx.beginPath();
+  if(window==='round')ctx.arc(px+16,py+15,8,0,Math.PI*2);else if(window==='diamond'){ctx.moveTo(px+16,py+5);ctx.lineTo(px+24,py+16);ctx.lineTo(px+16,py+27);ctx.lineTo(px+8,py+16)}else if(window==='slit')ctx.rect(px+13,py+5,6,22);else{ctx.moveTo(px+9,py+27);ctx.lineTo(px+9,py+13);ctx.arc(px+16,py+13,7,Math.PI,0);ctx.lineTo(px+23,py+27)}
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=glassRGBA(GLASS_PAL.sky,.55-d0*.3);ctx.fillRect(px+12,py+10,2,11);ctx.fillStyle=glassRGBA(GLASS_PAL.lilac,.35);ctx.fillRect(px+18,py+16,2,7);
+  ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px+6,py+28,20,2);
+ }
+ if(pier){ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px+12,py,8,32);ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(px+13,py,5,32);ctx.fillStyle=glassRGBA(GLASS_PAL.white,.65);ctx.fillRect(px+13,py,1,32);ctx.fillStyle=glassRGBA(GLASS_PAL.violetInk,.3);ctx.fillRect(px+18,py,2,32)}
+ if(side){ctx.fillStyle=glassRGBA(GLASS_PAL.violetInk,.30);ctx.fillRect(px,py,32,32);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(side<0?px:px+29,py,3,32);ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(side<0?px+3:px+28,py,1,32)}
+ if(top){ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,py,32,5);ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px,py+5,32,2);ctx.fillStyle=glassRGBA(GLASS_PAL.white,.6);ctx.fillRect(px,py,32,1);for(let i=2;i<32;i+=8){ctx.fillStyle=GLASS_PAL.silverMid;ctx.fillRect(px+i,py+7,3,3)}}
+ if(door){ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px+2,py+1,28,31);ctx.fillStyle=GLASS_PAL.violetInk;ctx.beginPath();ctx.moveTo(px+6,py+32);ctx.lineTo(px+6,py+14);ctx.arc(px+16,py+14,10,Math.PI,0);ctx.lineTo(px+26,py+32);ctx.closePath();ctx.fill();ctx.fillStyle=glassRGBA('#bff4ff',.4);ctx.fillRect(px+14,py+8,4,4)}
+}
+// The roof of a tower seen from above: bright glass reflecting the sky, ribs running to a silver crown, a lit rim.
+function drawGlassRoofCell(ctx,px,py,x,y,t,rim,cx,cy){
+ const tint=glassTint(t),a=Math.atan2(y-cy,x-cx),sector=Math.floor((a+Math.PI)/(Math.PI/4))%2,d=Math.hypot(x-cx,(y-cy)*1.2);
+ ctx.fillStyle=glassMix(sector?tint.glassHi:tint.glass,tint.glassMid,Math.min(.6,d/18));ctx.fillRect(px,py,32,32);
+ ctx.fillStyle=glassRGBA(GLASS_PAL.white,.10);ctx.fillRect(px+((x*5)%20),py+((y*7)%20),9,1);
+ if(Math.abs(x-cx)<=0||Math.abs(y-cy)<=0){ctx.fillStyle=GLASS_PAL.silverMid;if(x===cx)ctx.fillRect(px+15,py,2,32);if(y===cy)ctx.fillRect(px,py+15,32,2)}
+ if(Math.abs(Math.abs(x-cx)-Math.abs(y-cy))<=0){ctx.fillStyle=glassRGBA(GLASS_PAL.silverMid,.7);ctx.fillRect(px+14,py+14,4,4)}
+ if(rim){ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px,py,32,4);ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px,py+4,32,1)}
+ if(x===cx&&y===cy){ctx.fillStyle=GLASS_PAL.silverDark;ctx.fillRect(px+9,py+8,14,22);ctx.fillStyle=GLASS_PAL.silver;ctx.fillRect(px+11,py+6,10,22);ctx.fillStyle='#f6eaff';ctx.beginPath();ctx.moveTo(px+16,py-16);ctx.lineTo(px+23,py+6);ctx.lineTo(px+9,py+6);ctx.closePath();ctx.fill();ctx.fillStyle=GLASS_PAL.white;ctx.fillRect(px+15,py-8,2,9)}
+}
+const GLASS_FADE=new Map();
+// Drawn after the scenery fog: a building seen from outside is scenery the player knows, even though its rooms are unseen.
+function drawGlassTowerBodies(b,now){
+ const plan=state?.branchContext105?.id==='mirror'&&state.branchWorld105?.mirror105;if(!plan)return;
+ const level=state.branchContext105.level,p=state.player,dt=Math.min(100,now-(GLASS_FADE.get('t')??now));GLASS_FADE.set('t',now);
+ for(const t of plan.towers){
+  if(t.height<level)continue;const rise=mirrorTowerRise(t,level);
+  if(t.cx+t.rx<b.x0-2||t.cx-t.rx>b.x1+2||t.cy+t.ry<b.y0-2||t.cy-t.ry-rise-2>b.y1+2)continue;
+  const cols=glassTowerColumns(t),west=cols[0].x,east=cols.at(-1).x,seen=(x,y)=>state.seen.has(k(x,y));
+  const lit=cols.some(c=>state.visible.has(k(c.x,c.bottom))||state.visible.has(k(c.x,c.top))||state.visible.has(k(c.x,c.bottom+1)));
+  X.save();if(!lit)X.globalAlpha=.6;
+  // wall courses rising above the back wall: kept inside and out, so the room's ceiling reads high
+  for(const c of cols){if(!seen(c.x,c.top))continue;for(let j=1;j<=rise;j++){const row=rise-j;drawGlassFaceCell(X,c.x*TILE,(c.top-j)*TILE,c.x,t,row/(rise+1),(row+1)/(rise+1),row,j===rise,c.x===west?-1:c.x===east?1:0,false)}}
+  if(!t.closed){X.restore();continue}
+  const target=mirrorTowerContains(t,p.x,p.y)?0:1;let alpha=GLASS_FADE.get(t.id);alpha=alpha==null?target:alpha+(target-alpha)*Math.min(1,dt/120);GLASS_FADE.set(t.id,alpha);
+  if(alpha<=.02){X.restore();continue}
+  X.globalAlpha*=alpha;
+  const cy=t.cy-rise;
+  for(const c of cols){
+   if(!seen(c.x,c.bottom)&&!seen(c.x,c.top))continue;
+   const faceTop=Math.max(c.top,c.bottom-rise+1);
+   for(let y=c.top-rise;y<faceTop;y++)drawGlassRoofCell(X,c.x*TILE,y*TILE,c.x,y,t,y===c.top-rise,t.cx,cy);
+   const n=c.bottom-faceTop+1;for(let y=faceTop;y<=c.bottom;y++){const row=y-faceTop;drawGlassFaceCell(X,c.x*TILE,y*TILE,c.x,t,row/n,(row+1)/n,row,row===0,c.x===west?-1:c.x===east?1:0,y===c.bottom&&(state.map[y]?.[c.x]===TT.DOOR||state.map[y]?.[c.x]===TT.OPEN_DOOR))}
+  }
+  X.restore();
+ }
+}
