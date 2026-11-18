@@ -1001,7 +1001,7 @@ function branchWallColors(x,y){
   if(b.id==='mine'){const pal=MINE_WALL_PALETTES[ter.mine105.cellStyle?.[k(x,y)]??((x>>4)+(y>>4))%3];return{cap:pal[2],wall:pal[1]}}
   if(b.id==='citadel'){const P=citadelCellOwners(ter.citadel105,x,y,true).palette;return{cap:P.light,wall:P.stone}}
   if(b.id==='palace')return{cap:'#738575',wall:'#334d49'};
-  if(b.id==='mirror')return{cap:MIRROR_WALL_PALETTE.cap,wall:MIRROR_WALL_PALETTE.wall};
+  if(b.id==='mirror'){const T=mirrorTheme();return{cap:T.trim,wall:T.wall2}}
   if(b.id==='canal'||b.id==='granary'){const P=branchDistrictAt(x,y);return{cap:P.cap,wall:P.wall}}
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
@@ -1486,6 +1486,7 @@ function worldLightSources(){
  for(const l of mine?.lanterns||[])if(l.lit)add(l.x,l.y,l.color||WORLD_LIGHT_ART.lantern,l.radius??3.8,l.power??.24,'mine');
  const palace=state.branchContext105?.id==='palace'?state.branchTerrain105?.palace105:null;if(palace){for(const l of palace.lights||[]){if(l.wall){if(state.map[l.y]?.[l.x]!==TT.PALACE_WALL_LAMP||terrainUnlit105(l.x,l.y))continue;add(l.x+l.dx,l.y+l.dy,l.color||'#ecc17d',3.7,.22,'palace-wall-lamp');}else add(l.x,l.y,l.color||'#ecc17d',3.4,.21,'palace-lamp');}for(const key of Object.keys(palace.windows||{})){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]===TT.WALL)add(x,y,'#78bfc5',3.2,.10,'palace-window');}}
  for(const l of dojo?.lanterns||[])add(l.x,l.y,WORLD_LIGHT_ART.lantern,3.2,.19,'dojo');
+ for(const l of state.branchTerrain105?.mirrorTower105?.lights||[])add(l.x,l.y,l.color,l.r,l.power,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
   add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);
