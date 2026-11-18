@@ -598,7 +598,7 @@ function resolveWaterWeaponBlast(actor,pos){if(!pos)return;const cells=elementCe
 function martialTargets(actor){return[state.player,...state.monsters].filter(target=>combatTargetValid57(actor,target))}
 function martialCheckDeath(target,source){if(target.hp>0)return;if(target===state.player)die(source.name||'무술');else killMonster(target)}
 function executeMartialActor(actor,id,cell=null){
- const lv=actor.martial?.[id]||0,info=martialPresentation(id,MARTIAL_INFO[id],actor),form=martialFormOf(id,actor),player=actor===state.player,status=player?state.status:(actor.martialStatus105||(actor.martialStatus105={}));
+ const lv=actor.martial?.[id]||0,info=martialPresentation(id,MARTIAL_INFO[id],actor),form=martialFormOf(id,actor),player=actor===state.player;
  if(lv<1||info.type!=='active'||actor.focus<info.cost||(player?state.status.skillSeal:actor.skillSeal105)>0)return false;
  const family=martialFamily(id,actor);
  const cloud=family==='smoke'&&form==='cloud',path=cloud?yuunPath(actor,cell):null;
@@ -607,16 +607,17 @@ function executeMartialActor(actor,id,cell=null){
  if(family==='oddity'&&!oddityPlan(actor,cell,lv,form))return false;
  actor.focus-=info.cost;
  if(id==='strong'){actor.strongReady=form==='guard'?0:lv;actor.guardReady1005=form==='guard'?strongBonus(lv):0;actor.guardCharges1005=form==='guard'?MARTIAL_RULES.guardActions:0;martialFx(form==='guard'?'guard':'drive',actor)}
- else if(id==='ghost'){const duration=ghostDuration(lv)+(player?1:0);status.stealth=Math.max(status.stealth||0,duration);status.evade=Math.max(status.evade||0,duration);if(player)for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('assassin',actor)}
+ else if(id==='ghost'){const status=player?state.status:(actor.martialStatus105||={}),duration=ghostDuration(lv)+(player?1:0);status.stealth=Math.max(status.stealth||0,duration);status.evade=Math.max(status.evade||0,duration);if(player)for(const m of state.monsters)if(isHostileTarget57(m))clearPlayerTracking58(m);martialFx('assassin',actor)}
  else if(family==='oddity'){if(!oddityBegin(actor,lv,form,cell))return false}
  else if(family==='aim'){actor.classState.aimBornAgency=(state.playerAgencyTurns57||0)+1;actor.classState.aimMoveAgency=-1;setAimPower(5+lv)}
- else if(cloud){status.stealth=0;spawnYuun(actor,lv,path);markCombatActivity57('martial-smoke');}
+ // Smoke fields and timed concealment have independent lifetimes.
+ else if(cloud){spawnYuun(actor,lv,path);markCombatActivity57('martial-smoke');}
  else if(family==='smoke'){
   const {size,damage}=martialSmokePower(actor,lv);
-  const center=cell,cells=martialSmokeCells(center,size,form);status.stealth=0;projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
+  const center=cell,cells=martialSmokeCells(center,size,form);projectileFX(actor.x,actor.y,center.x,center.y,'#aab6ba');alertNearby(center.x,center.y,6,'projectile');markCombatActivity57('martial-smoke');
   for(const m of martialTargets(actor))if(cells.some(c=>monCovers(m,c.x,c.y))&&!globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,actor)){damageEntity(m,damage,actor);martialCheckDeath(m,actor)}
   const owner=player?'player':actor.dojoActorId105;
-  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:damage,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});if(player)syncSmokeEntry();martialFx('cloud',center);
+  addField('smoke',center.x,center.y,MARTIAL_RULES.smokeTurns+Number(player),cells,{martialSmoke:true,smokeForm:form,castDamage:damage,castLevel:lv,...effectSource57(actor),owner,sourceFaction:entityFaction(actor)});martialFx('cloud',center);
  }else performRoar(true,actor);
  installMartialJar(actor);floatText(actor.x,actor.y,info.name,lv===5?'#f5e9d0':'#d6b77d',12);addLog(`${actor.name} · ${info.name} ${lv}단 · 기 ${info.cost} 소모.`);if(lv===5)martialFx('transcend',actor);return true;
 }
@@ -775,7 +776,7 @@ function addField(kind,x,y,ttl,cells=null,metadata={}){
  Duel.sendField(kind,x,y,ttl,contactCells,metadata);
  if(kind==='fire'&&!cells.length)return;
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));
- state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...fieldMetadata});syncSmokeEntry();
+ state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...fieldMetadata});if(kind==='smoke')syncSmokeEntry();
 }
 function applyMonsterAttackStatus57(mon,target,context={}){
  if(!target||target.hp<=0)return;

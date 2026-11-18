@@ -94,6 +94,10 @@ function rebalanceCitadelEnemies(page){
 function branchRebalancePage(page){
  rebalanceCitadelEnemies(page);
  const context=page.branchContext105,terrain=page.branchTerrain105;if(!context||context.level!==2)return;
+ if(context.id==='stockade'&&terrain?.layoutVersion===12){
+  const summit=terrain.buildings.find(b=>b.summit);
+  if(summit&&!summit.pantry)installStockadeSummitPantry(page,summit);
+ }
  if(context.id==='black'&&terrain?.enemyBalanceRevision105!==1){
   for(const b of terrain?.buildings||[]){const guards=(page.monsters||[]).filter(m=>m.hp>0&&m.spawnProvenance57==='subbranch-canonical'&&['경비 인형 - 포병','경비 인형 - 보병'].includes(m.name)&&m.x>b.x&&m.x<b.x+b.w-1&&m.y>b.y&&m.y<b.y+b.h-1),keep=b.summit?3:1;
    for(const m of guards.slice(keep))if(!m.alerted&&m.hp===m.maxHp&&(!page.player||Math.max(Math.abs(page.player.x-m.x),Math.abs(page.player.y-m.y))>8))page.monsters.splice(page.monsters.indexOf(m),1);
@@ -978,6 +982,37 @@ function paintStockadeSummit(b,put,height){
  ])fill(x,y,x,y,tile,'rainPavilion');
  b.arena={x:b.x+9,y:b.y+12,w:9,h:6};
 }
+function installStockadeSummitPantry(page,summit){
+ const {map,branchTerrain105:terrain}=page;
+ const center=summit.gate.x,north=summit.y,height=terrain.heights[north][center];
+ // Bind edits to the decoded page's layers before it becomes active.
+ if(page!==state){
+  TERRAIN_MAP_LAYERS58.set(map,{underlay:page.terrainUnderlay58||={},attachment:page.terrainAttachment58||={}});
+  delete terrain.staticPacked105;
+ }
+ const put=(x,y,tile,surface)=>{
+  setTerrainTile58(map,x,y,tile,terrainLayerCatalog58().overlays.has(tile)?{base:TT.FLOOR}:{});
+  terrain.surfaces[k(x,y)]=surface;
+  terrain.heights[y][x]=height;
+ };
+ // The storeroom opens off the rear gallery, beyond the original north wall.
+ for(let dy=-2;dy<=1;dy++)for(let dx=-5;dx<=5;dx++){
+  const wall=dy===-2||dy===1||Math.abs(dx)===5;
+  put(center+dx,north+dy,wall?TT.WALL:TT.FLOOR,wall?'ruinMasonry':'wood');
+ }
+ put(center,north+1,TT.DOOR,'wetSlate');
+ const fixtures=[
+  [-4,-1,TT.RACK],[-2,-1,TT.CRATE],[2,-1,TT.CRATE],[4,-1,TT.JAR],
+  [0,-1,TT.LANTERN_POST],[0,8,TT.BRAZIER],
+ ];
+ for(const [dx,dy,tile] of fixtures)put(center+dx,north+dy,tile,dy===8?'wetSlate':'wood');
+ for(const [dx,name] of [[-4,'주먹밥'],[-2,'말린 육포'],[-1,'엽전 엿'],[2,'말린 육포'],[4,'식어버린 국밥']]){
+  const item={...clone(foodDef(name)),count:1};
+  transferItemQuantity(item,null,page.items,1,{position:{x:center+dx,y:north}});
+ }
+ terrain.landmarks.push({x:center,y:north,label:'정상 초소 식량 창고'});
+ summit.pantry=true;
+}
 function mountainFort(b,put,height,rnd,black){
  const level=state.branchContext105.level,profile=black?(level===1?'gunwings':'frostshrine'):(level===1?'courtyards':'barracks');
  const surface=black?'ironstone':'wood',nx=6+Math.floor(rnd()*2),ny=5+Math.floor(rnd()*2),rooms=[],edges=[],visited=new Set(),stack=[0];
@@ -1429,7 +1464,10 @@ const n=nodes[b.node],s=black&&b.summit?'ironstone':'wood';for(let y=b.y;y<b.y+b
   // Door approach is part of the initial declared endpoint, not an after-the-fact repair.
   put(b.gate.x,b.gate.y+1,TT.STONE_PATH,'stone',n.height);
   if(b.summit){
-   if(oldGrowth)paintStockadeSummit(b,put,n.height);
+   if(oldGrowth){
+    paintStockadeSummit(b,put,n.height);
+    installStockadeSummitPantry(state,b);
+   }
    else mountainFort(b,put,n.height,rnd,black);
   }
   if(!black&&level===2&&!b.summit)put(b.x+b.w-3,b.y+b.h-3,TT.COOKPOT,s,n.height);
