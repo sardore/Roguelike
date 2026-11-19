@@ -147,7 +147,7 @@ const encounter = () => {
   const boss = mirrorTest.prepare(), st = mirrorTest.state(), p = st.player;
   const advance = (turns = 1) => { st.turn += turns; st.floorTurn += turns; };
   const activate = b => mirrorTest.turn(b, Math.max(Math.abs(b.x-st.player.x),Math.abs(b.y-st.player.y)), st.player);
-  const skillNames = mirrorTest.skills(boss).map(s => s.name);
+  const maxHp = boss.maxHp, skillNames = mirrorTest.skills(boss).map(s => s.name);
   activate(boss);
   phases.push(boss.intent54?.type);
   activate(boss);
@@ -200,13 +200,14 @@ const encounter = () => {
   const blind = st.status.blind || 0;
   const releasedHeal = mirrorTest.recover(p, 5);
   mirrorTest.kill(boss);
-  return {phases,skillNames,waitsForTurn,singleStep,impact,shards,shardDamage,bell,copyInfo,strikes,
+  return {maxHp,phases,skillNames,waitsForTurn,singleStep,impact,shards,shardDamage,bell,copyInfo,strikes,
     sanctuaryWarning,blockedHeal,blockedStatus,sanctuaryHeal,blind,releasedHeal,
     weapon:st.items.filter(i=>i.artifactId46==='mirror_blade').length,
     leftover:st.monsters.filter(m=>m.bossOwnerId57&&m.hp>0).length};
 };
 const boss = await s.page.evaluate(encounter);
 console.log('boss', JSON.stringify(boss));
+assert.equal(boss.maxHp, 231);
 assert.deepEqual(boss.phases, ['mirrorOrb', 'mirrorCopy', 'rod']);
 assert.deepEqual(boss.skillNames, ['천명탄', '피뢰침', '경종', '거울 복사', '빛의 성역']);
 assert.ok(boss.waitsForTurn && boss.singleStep);

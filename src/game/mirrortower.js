@@ -7,7 +7,7 @@
    are detours. The way on is lit by lamps and an inlaid line; side rooms and balconies hold the loot.
    Layout data for the art (zones, owners, furniture, lights, stairs) is kept in branchTerrain105.mirror105;
    mirrorart.js draws all of it. */
-const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:135,atk:12,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',color:'#b4c1c7',bossPattern:'mirrorKeeper105',lightningRodProfile:{bonus:3,scale:1.15,stun:1,stunOnFinal:true},mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
+const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:231,fixedHp:true,balanceVersion57:1,atk:12,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',spriteScale:1.30,color:'#b4c1c7',bossPattern:'mirrorKeeper105',lightningRodProfile:{bonus:3,scale:1.15,stun:1,stunOnFinal:true},mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
 const MIRROR_TOWER_HEIGHTS=Object.freeze([3,3,3,2,2,1,1]);
 const MIRROR_TOWER_PURPOSES=Object.freeze(['observatory','display','library']);
 const MIRROR_TOWER_WINDOWS=Object.freeze(['arch','round','slit','diamond']);
