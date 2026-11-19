@@ -48,9 +48,10 @@ const CHARM_QUIRKS={
   airPurify:{name:'공기정화',desc:'가스에 처음 노출되는 턴의 효과를 확정으로 무시',prefix:'정화',w:.3,fx:'#bfeedd'},
   frostStep:{name:'차가운 걸음',desc:'걸을 때마다 인접 칸이 얼어붙음(물은 얼음이 됨)',prefix:'냉보',w:.3,fx:'#9fe3f2'}
 };
-function charmPickQuirk(rnd){
-  const keys=Object.keys(CHARM_QUIRKS),total=keys.reduce((n,key)=>n+CHARM_QUIRKS[key].w,0);let r=rnd()*total;
-  for(const key of keys){r-=CHARM_QUIRKS[key].w;if(r<=0)return key}return keys[0];
+function charmPickQuirk(rnd,premium=false){
+  // Premium pieces lean the other way: the newer, rarer effects are the ones they are made to carry.
+  const weight=q=>premium?(q.w<1?1.5:.4):q.w,keys=Object.keys(CHARM_QUIRKS),total=keys.reduce((n,key)=>n+weight(CHARM_QUIRKS[key]),0);let r=rnd()*total;
+  for(const key of keys){r-=weight(CHARM_QUIRKS[key]);if(r<=0)return key}return keys[0];
 }
 const CHARM_PREMIUM_PREFIX=['천면','명경','청명','월광','운무'];
 const CHARM_STATS=['atk','def','eva','will','vision','focus'];
@@ -308,7 +309,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   };
   for(const key of shuffle(Object.keys(specials)).slice(0,specialCount))it[key]=specials[key]();
   if(it.strike&&!it.strike.element)it.strike.element=pick(RESIST_ELEMENTS57);
-  if(premium||(tier>=2&&chance(.28+.12*points)))it.quirk=charmPickQuirk(rnd);
+  if(premium||(tier>=2&&chance(.28+.12*points)))it.quirk=charmPickQuirk(rnd,premium);
   const posResist=Object.keys(it.resist).filter(e=>it.resist[e]>0),dominant=posResist[0]||null;
   const specialKey=Object.keys(specials).find(k=>it[k]);
   const mat=premium?pick(['gold','silver','pearl','rosegold','amethyst','azure']):pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=premium?(slot==='relic'?'orb':'lotus'):charmPickShape(slot,Object.keys(it.resist||{}).length+specialCount*1.2+(it.quirk?2:0)+points*.5+tier*.4,rnd),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
