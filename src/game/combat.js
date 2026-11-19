@@ -650,7 +650,7 @@ function applyWeaponBrandHit(actor,target,damage,contact=entityFootprintCells57(
  if(damage<=0)return;if(actor.weapon?.artifactId46==='water_crossbow'&&context.delivery!=='area')resolveWaterWeaponBlast(actor,contact[0]||target);
  const elem=actor.weapon?.elementBrand74;if(!elem)return;
  const source=effectSource57(actor),hurt=(victim,base)=>resolveElementDamage57(victim,elem,base,{contactHandled105:true,effect:source,source:'무기각인',color:'#e5c080'}).damage;
- emitElementContact105(elem,contact,source,{baseDamage:Math.max(1,damage),directTarget:target});if(target.hp<=0)return;
+ emitElementContact105(elem,contact,source,{baseDamage:Math.max(1,damage),directTarget:target,weaponBrand105:true});if(target.hp<=0)return;
  if(elem==='fire')hurt(target,2);
  else if(elem==='shock'&&globalThis.__MANRU_RANDOM57__()<.22){const other=[state.player,...state.monsters].find(m=>m!==target&&combatTargetValid57(actor,m)&&entityDistance57(m,target)<=1);if(other)hurt(other,4)}
  else if(elem==='water'&&globalThis.__MANRU_RANDOM57__()<WATER_BRAND_WEAKEN.chance)applyCombatStatus(target,'weaken',WATER_BRAND_WEAKEN.turns,1,{source:actor});
