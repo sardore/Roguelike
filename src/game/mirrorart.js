@@ -191,15 +191,12 @@ function drawGlassLeaf(ctx,px,py,x,y,now){
 // Height: under every tower (never under a bridge, ledge or leaf) the sky thickens into a murky, fading haze that thins out with the drop.
 const GLASS_HAZE_DEPTH=14;
 function drawGlassAltitudeHaze(ctx,px,py,x,y){
- // how far below a tower this cell hangs; a few columns either side count too, so the haze spreads out softly instead of ending in a cliff
- let d=0,tower=null,straight=false;
- for(let dx=-8;dx<=8;dx++){
-  for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
-   const v=state.map[y-i]?.[x+dx];if(v==null)break;if(v===TT.VOID||v===TT.WATER)continue;
-   const t=mirrorOwner(x+dx,y-i);
-   if(t){const n=i+Math.abs(dx)*.8;if(!d||n<d){d=n;tower=t;straight=dx===0}}
-   break;
-  }
+ // how far this cell hangs below a tower, straight down its own column; bridges, ledges and leaves cut the column, and nothing spreads sideways
+ let d=0,tower=null;
+ for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
+  const v=state.map[y-i]?.[x];if(v==null)break;if(v===TT.VOID||v===TT.WATER)continue;
+  const t=mirrorOwner(x,y-i);if(t){d=i;tower=t}
+  break;
  }
  if(!d||d>GLASS_HAZE_DEPTH)return;
  // The tower's own glass carries on downward: the wall foot's deep violet, then the tower's tint, then the floor's low sky, thinning to nothing.
@@ -209,7 +206,7 @@ function drawGlassAltitudeHaze(ctx,px,py,x,y){
  const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));
  ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
  // the wall's piers and window glints continue as faint pale shafts straight below the tower
- if(straight&&x%3===0){ctx.fillStyle=glassRGBA(P.silverMid,.30*(1-t(d))**2);ctx.fillRect(px+12,py,7,32);ctx.fillStyle=glassRGBA(P.silver,.35*(1-t(d))**2);ctx.fillRect(px+12,py,2,32)}
+ if(x%3===0){ctx.fillStyle=glassRGBA(P.silverMid,.30*(1-t(d))**2);ctx.fillRect(px+12,py,7,32);ctx.fillStyle=glassRGBA(P.silver,.35*(1-t(d))**2);ctx.fillRect(px+12,py,2,32)}
  // thin streaks of mist, sparser the further down
  const h=hash2(x,y,913);if(h>.55){ctx.fillStyle=glassRGBA(P.glassHi,.22*(1-t(d)));ctx.fillRect(px+Math.floor(h*13),py+8+Math.floor(h*9),14+Math.floor(h*10),1)}
 }
@@ -331,8 +328,8 @@ function drawGlassFurniture(b,now){
 }
 /* ------------------------------------------------------------------ sky */
 function glassCloudTile(layer){
- return glassCached('sky|'+layer,512,256,q=>{
-  const P=GLASS_PALS[1],tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
+ return glassCached('sky|'+(state?.branchContext105?.level||1)+'|'+layer,512,256,q=>{
+  const P=glassPal(),tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
   const n=layer===0?7:layer===1?5:3,size=layer===0?[22,40]:layer===1?[26,46]:[30,54];
   for(let i=0;i<n;i++){
    const cx=hash2(i,layer,511)*512,cy=40+hash2(layer,i,512)*170,r=size[0]+hash2(i,i+layer,513)*(size[1]-size[0]);
@@ -344,7 +341,7 @@ function glassCloudTile(layer){
 // The common sky sits behind the terrain and fog on every floor.
 function drawGlassSky(cam,now){
  const level=state?.branchContext105?.level||1;
- const P=GLASS_PALS[1],W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);
+ const P=glassPal(),W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);
  g.addColorStop(0,P.sky);g.addColorStop(.55,P.skyMid);g.addColorStop(1,P.skyLow);X.fillStyle=g;X.fillRect(0,0,W,H);
  const layers=[[0,.18,.004,.55],[1,.38,.010,.62],[2,.62,.018,.72]];
  const drawLayer=([layer,par,drift,alpha])=>{const tile=glassCloudTile(layer),ox=((cam.x*par+now*drift)%512+512)%512,oy=((cam.y*par)%256+256)%256;X.save();X.globalAlpha=alpha;for(let y=-oy-256;y<H;y+=256)for(let x=-ox-512;x<W;x+=512)X.drawImage(tile,Math.round(x),Math.round(y));X.restore()};
