@@ -290,39 +290,6 @@ function drawGlassFurniture(b,now){
   X.globalAlpha*=.13;X.translate(0,baseY*2);X.scale(1,-1);X.drawImage(art,0,sh-16,art.width,16,ox,baseY-16,art.width,16);X.restore();
  }
 }
-// Fragments follow the blast direction, with linked fractures and embedded glass facets on the floor.
-function drawMirrorShardGround(q,field,x,y,now){
- const dx=Math.sign(x-field.x),dy=Math.sign(y-field.y),seed=hash2(x,y,317),pulse=.55+.45*Math.sin(now/320+seed*6.28);
- const facet=(color,points,stroke=null)=>pR9(q,color,points,stroke);
- q.save();q.beginPath();q.rect(x*TILE,y*TILE,TILE,TILE);q.clip();
- q.translate(x*TILE+16,y*TILE+16);q.rotate(Math.atan2(dy,dx)+Math.PI/2);
- const reach=dx&&dy?23:16;
- const spill=q.createRadialGradient(-1,2,1,0,0,16);
- spill.addColorStop(0,'rgba(80,109,230,.36)');spill.addColorStop(.59,'rgba(85,66,167,.24)');spill.addColorStop(1,'rgba(74,52,156,0)');
- q.fillStyle=spill;q.fillRect(-16,-16,32,32);
- const crack=[[-dx*.2,reach],[-1.5,9],[2,5],[-2.5,0],[1,-5],[-.5,-10],[1,-14]];
- const fracture=()=>{q.beginPath();q.moveTo(...crack[0]);for(const p of crack.slice(1))q.lineTo(...p);q.moveTo(-2.5,0);q.lineTo(-8,3);q.lineTo(-11,1);q.moveTo(2,5);q.lineTo(8,3);q.lineTo(10,-2);q.moveTo(1,-5);q.lineTo(5,-8);q.lineTo(8,-9);q.stroke();};
- q.strokeStyle='#253364';q.lineWidth=2.4;fracture();
- q.strokeStyle=`rgba(170,191,252,${.53+pulse*.25})`;q.lineWidth=.65;fracture();
- const pieces=seed<.5?[[-7,6,5,11,-.60],[4,-3,7,15,.49],[8,8,3,7,.36],[-6,-9,3,6,-.75]]:
-  [[-5,1,6,15,-.49],[6,5,5,9,.70],[-8,8,3,6,-.42],[4,-9,3,6,.76]];
- for(const [cx,cy,w,h,angled]of pieces){
-  q.save();q.translate(cx,cy);q.rotate(angled);
-  facet('rgba(16,23,60,.44)',[[-w*.8,3],[w*.65,-1],[w*.6,2.5],[0,5]]);
-  facet('#514a88',[[-w*.63,1],[w*.07,-h],[w*.58,-h*.43],[w*.38,.3],[-w*.24,2]],'#252549');
-  facet('#8c82cc',[[-w*.63,1],[w*.07,-h],[w*.13,-h*.32],[-w*.24,2]]);
-  facet('#ddf7ff',[[w*.07,-h],[-w*.63,1],[-w*.22,-h*.46]]);
-  facet('#a1d2fa',[[w*.07,-h],[w*.58,-h*.43],[w*.13,-h*.32]]);
-  lR9(q,-w*.24,2,w*.38,.3,'#a9a7e3',.75);
-  q.restore();
- }
- for(const [px,py,size]of [[-10,-3,.9],[9,1,1.3],[-9,10,1.2],[3,-10,.8],[8,-7,.9],[5,12,.65]]){
-  q.fillStyle='#9f98e0';q.fillRect(px,py,size,size);
-  q.fillStyle='#e8faff';q.fillRect(px,py-.4,size,.45);
- }
- const [gx,gy]=pieces[0];q.globalAlpha*=pulse*.8;q.fillStyle='#e8ffff';
- q.fillRect(gx-1.8,gy-6,4,.55);q.fillRect(gx-.1,gy-7.6,.6,3.6);q.restore();
-}
 /* ------------------------------------------------------------------ sky */
 function glassCloudTile(layer){
  return glassCached('sky|'+layer,512,256,q=>{
