@@ -188,10 +188,21 @@ function drawGlassLeaf(ctx,px,py,x,y,now){
  ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-4,-4,5,2.2,-.5,0,Math.PI*2);ctx.fill();
  ctx.restore();
 }
+// Height: under every tower, bridge and ledge the sky thickens into a murky, fading haze that thins out with the drop.
+const GLASS_HAZE_DEPTH=14;
+function drawGlassAltitudeHaze(ctx,px,py,x,y){
+ let d=0;for(let i=1;i<=GLASS_HAZE_DEPTH;i++){const v=state.map[y-i]?.[x];if(v==null)break;if(v!==TT.VOID&&v!==TT.WATER&&v!==TT.PAPER_BRIDGE){d=i;break}}
+ if(!d)return;
+ const f=n=>Math.pow(Math.max(0,1-n/GLASS_HAZE_DEPTH),1.15)*.86,tone=n=>glassMix('#5e5086','#8e8c9e',n/GLASS_HAZE_DEPTH);
+ const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));
+ ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ // thin streaks of mist, sparser the further down
+ const h=hash2(x,y,913);if(h>.55){ctx.fillStyle=glassRGBA('#f3eefa',.10*(1-d/GLASS_HAZE_DEPTH));ctx.fillRect(px+Math.floor(h*13),py+8+Math.floor(h*9),14+Math.floor(h*10),1)}
+}
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
- if(t===TT.VOID){if(state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);return true}
+ if(t===TT.VOID){if(state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);else drawGlassAltitudeHaze(ctx,px,py,x,y);return true}
  if(t===TT.WATER){drawGlassLake(ctx,px,py,x,y,now);return true}
  const deck=(t===TT.RAFT||t===MIRROR_CARGO_TILE)?glassPlatformAt(x,y):null;
  if(deck){if(deck.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassPlatformCell(ctx,px,py,x,y,deck);return true}
