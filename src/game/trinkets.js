@@ -17,9 +17,17 @@ const CHARM_MATERIALS={
 };
 const CHARM_ELEM_MATERIAL={fire:['ruby','copper','coral','amber'],water:['azure','turquoise','lapis'],ice:['silver','pearl','celadon','azure'],shock:['gold','amethyst','obsidian'],earth:['amber','bronze','ebony','rosegold'],grass:['jade','celadon','ebony'],holy:['silver','gold','pearl','rosegold']};
 const CHARM_ELEM_PREFIX={fire:'염화',water:'청류',ice:'한빙',shock:'뇌명',earth:'암맥',grass:'녹음',holy:'성광'};
-const CHARM_SHAPES_BY_SLOT={relic:['ring','beads','plaque','mirror','seal','bracelet'],trinket:['norigae','bell','gourd','coins','fan','hairpin']};
-const CHARM_SHAPE_NAME={ring:'반지',beads:'염주',plaque:'옥패',mirror:'거울',seal:'인장',bracelet:'팔찌',norigae:'노리개',bell:'방울',gourd:'호리병',coins:'엽전 꿰미',fan:'부채',hairpin:'비녀',orb:'보주',lotus:'연화'};
-const CHARM_FLAVOR={ring:'손가락에 맞춰 두면 은은한 기운이 돈다.',beads:'한 알씩 굴릴 때마다 호흡이 가라앉는다.',plaque:'뒷면에 닳은 주문이 새겨진 패.',mirror:'비추는 쪽의 기운을 되받는 작은 거울.',seal:'찍는 자의 뜻을 새기는 작은 도장.',bracelet:'팔목을 감싸는 얇은 고리.',norigae:'매듭마다 소원이 묶인 노리개.',bell:'소리가 닿는 곳까지 액을 쫓는다.',gourd:'마개를 열면 어디선가 약초 냄새가 난다.',coins:'꿰미째 들면 쨍그랑 소리가 난다.',fan:'펼칠 때마다 바람의 결이 달라진다.',hairpin:'머리에 꽂아 두는 가는 장식.',orb:'쥐고 있으면 손바닥이 따뜻해지는 구슬.',lotus:'꽃잎이 한 겹씩 천천히 열린다.'};
+// Designs come in three grades: plain ones are common, fine ones carry a soft halo, grand ones are intricate and glow. Better gear tends to the better designs.
+const CHARM_SHAPE_GRADE={ring:'simple',beads:'simple',bracelet:'simple',seal:'simple',coins:'simple',hairpin:'simple',gourd:'simple',plaque:'fine',mirror:'fine',norigae:'fine',bell:'fine',fan:'fine',crescent:'grand',crown:'grand',butterfly:'grand',phoenix:'grand',orb:'grand',lotus:'grand'};
+const CHARM_SHAPES_BY_SLOT={relic:['ring','beads','bracelet','seal','plaque','mirror','crescent','crown'],trinket:['coins','hairpin','gourd','norigae','bell','fan','butterfly','phoenix']};
+function charmPickShape(slot,score,rnd){
+  const pool=CHARM_SHAPES_BY_SLOT[slot],by=g=>pool.filter(x=>CHARM_SHAPE_GRADE[x]===g),r=rnd();
+  const grand=Math.max(0,Math.min(.5,(score-6)*.12)),fine=Math.max(.1,Math.min(.6,.2+(score-3)*.1));
+  const list=r<grand?by('grand'):r<grand+fine?by('fine'):by('simple');
+  return list[Math.floor(rnd()*list.length)];
+}
+const CHARM_SHAPE_NAME={ring:'반지',beads:'염주',plaque:'옥패',mirror:'거울',seal:'인장',bracelet:'팔찌',norigae:'노리개',bell:'방울',gourd:'호리병',coins:'엽전 꿰미',fan:'부채',hairpin:'비녀',orb:'보주',lotus:'연화',crescent:'월패',crown:'관식',butterfly:'나비 노리개',phoenix:'봉황 비녀'};
+const CHARM_FLAVOR={ring:'손가락에 맞춰 두면 은은한 기운이 돈다.',beads:'한 알씩 굴릴 때마다 호흡이 가라앉는다.',plaque:'뒷면에 닳은 주문이 새겨진 패.',mirror:'비추는 쪽의 기운을 되받는 작은 거울.',seal:'찍는 자의 뜻을 새기는 작은 도장.',bracelet:'팔목을 감싸는 얇은 고리.',norigae:'매듭마다 소원이 묶인 노리개.',bell:'소리가 닿는 곳까지 액을 쫓는다.',gourd:'마개를 열면 어디선가 약초 냄새가 난다.',coins:'꿰미째 들면 쨍그랑 소리가 난다.',fan:'펼칠 때마다 바람의 결이 달라진다.',hairpin:'머리에 꽂아 두는 가는 장식.',orb:'쥐고 있으면 손바닥이 따뜻해지는 구슬.',lotus:'꽃잎이 한 겹씩 천천히 열린다.',crescent:'달이 기울 때마다 빛의 결이 바뀌는 패.',crown:'작지만 무게가 있는 금빛 관 장식.',butterfly:'날개를 접었다 폈다 하는 듯한 노리개.',phoenix:'꼬리깃이 불빛에 따라 색을 바꾸는 비녀.'};
 const CHARM_PREFIX_SPECIAL={regenEvery:'생명',killHeal:'피빛',killFocus:'기맥',thorns:'가시',lowHpAtk:'배수',lowHpDef:'결사',critAdd:'쾌검',moveMul:'신속',atkCostMul:'속공',statusGuard:'불침',strike:'격발',atk:'맹호',def:'철벽',eva:'그림자',will:'명경',vision:'천리',focus:'기맥'};
 // Gear quirks. `w` is the pick weight: the five older ones are common, the newer ones deliberately rare so a drop never reads as a pile of effects.
 const CHARM_QUIRKS={
@@ -302,7 +310,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   if(premium||(tier>=2&&chance(.28+.12*points)))it.quirk=charmPickQuirk(rnd);
   const posResist=Object.keys(it.resist).filter(e=>it.resist[e]>0),dominant=posResist[0]||null;
   const specialKey=Object.keys(specials).find(k=>it[k]);
-  const mat=premium?pick(['gold','silver','pearl','rosegold','amethyst','azure']):pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=premium?(slot==='relic'?'orb':'lotus'):pick(CHARM_SHAPES_BY_SLOT[slot]),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
+  const mat=premium?pick(['gold','silver','pearl','rosegold','amethyst','azure']):pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=premium?(slot==='relic'?'orb':'lotus'):charmPickShape(slot,Object.keys(it.resist||{}).length+specialCount*1.2+(it.quirk?2:0)+points*.5+tier*.4,rnd),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
   const prefix=premium?pick(CHARM_PREMIUM_PREFIX):dominant?CHARM_ELEM_PREFIX[dominant]:(CHARM_PREFIX_SPECIAL[specialKey]||CHARM_PREFIX_SPECIAL[mainKey]||'무명');
   it.name=`${prefix} ${CHARM_MATERIALS[mat].name} ${CHARM_SHAPE_NAME[shape]}`;
   it.art={shape,mat,gem:gemKey,cord:cordKey,glyph:dominant?CHARM_GLYPH[dominant]:'',premium};
@@ -312,7 +320,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
 }
 function charmDrop(pool){
   const fixed=pool.filter(x=>!x.randart);
-  if(globalThis.__MANRU_RANDOM57__()<.55||!fixed.length){const slot=globalThis.__MANRU_RANDOM57__()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
+  if(globalThis.__MANRU_RANDOM57__()<.75||!fixed.length){const slot=globalThis.__MANRU_RANDOM57__()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
   return clone(choice(fixed));
 }
 
@@ -332,6 +340,8 @@ function drawCharmArt(q,it){
   const metal=(x0,y0,x1,y1)=>lg(x0,y0,x1,y1,[hi,c1,c2]);
   const tassel=(x,y,len,col=cordHex)=>{orb(x,y,2.2,col);for(const dx of[-3,-1.5,0,1.5,3]){thin(x+dx*.3,y+2,x+dx*1.25,y+len,dark,2.2);thin(x+dx*.3,y+2,x+dx*1.25,y+len,shade(col,Math.abs(dx)>2?-35:15),1.2)}thin(x-3.4,y+len-3,x+3.4,y+len-3,trim,1.2);fe(x,y+len+.5,0,0,col)};
   const ringStroke=(cx,cy,rx,ry,cols)=>{for(const[w,st]of cols)stroke(st,w,()=>q.ellipse(cx,cy,rx,ry,0,0,Math.PI*2))};
+  const grade=CHARM_SHAPE_GRADE[a.shape]||'simple';
+  if(grade!=='simple')fe(24,24,grade==='grand'?21:19,grade==='grand'?21:19,grade==='grand'?'rgba(255,240,200,.15)':'rgba(255,244,214,.09)');
   switch(a.shape){
   case'beads':{
     for(let i=0;i<14;i++){const t=(i/14)*Math.PI*2+Math.PI/2+.2,x=24+Math.cos(t)*14,y=21+Math.sin(t)*12.5;if(Math.sin(t)>.93)continue;if(i%4===3){fe(x,y,3.2,3.2,dark);fe(x,y,2.5,2.5,metal(x-2,y-2,x+2,y+2));continue}orb(x,y,3.6,i%2?c1:shade(c1,-18))}
@@ -409,11 +419,50 @@ function drawCharmArt(q,it){
     for(const[dx,dy,rot]of[[-11,8,-1.0],[11,8,1.0],[-7,3,-.55],[7,3,.55]]){q.save();q.translate(24+dx,26+dy);q.rotate(rot);fe(0,0,4.6,9.5,dark);fe(0,0,3.8,8.6,lg(-4,-9,4,9,[hi,c1,c2]));thin(0,-6,0,6,shade(c1,-30),.8);q.restore()}
     q.save();q.translate(24,22);fe(0,0,5.4,11.2,dark);fe(0,0,4.6,10.4,lg(-5,-10,5,10,[shade(c1,70),hi,c1]));thin(0,-7,0,7,shade(c1,-25),.8);q.restore();
     gem(24,28,4.6);for(const dx of[-9,9])orb(24+dx,40,1.8,trim);break}
+  case'crescent':{
+    stroke(dark,3.4,()=>{q.moveTo(7,3);q.quadraticCurveTo(24,22,41,3)});stroke(trim,1.4,()=>{q.moveTo(7,3);q.quadraticCurveTo(24,22,41,3)});
+    for(let i=1;i<6;i++){const t=i/6,x=(1-t)*(1-t)*7+2*t*(1-t)*24+t*t*41,y=(1-t)*(1-t)*3+2*t*(1-t)*22+t*t*3;orb(x,y,1.5,i%2?c1:g)}
+    const[cc,cq]=cv();cq.imageSmoothingEnabled=false;
+    const cg=cq.createLinearGradient(8,14,40,44);cg.addColorStop(0,hi);cg.addColorStop(.5,c1);cg.addColorStop(1,c2);
+    cq.fillStyle=dark;cq.beginPath();cq.arc(24,29,15.5,0,Math.PI*2);cq.fill();cq.fillStyle=cg;cq.beginPath();cq.arc(24,29,14.5,0,Math.PI*2);cq.fill();
+    cq.globalCompositeOperation='destination-out';cq.beginPath();cq.arc(31,24,12,0,Math.PI*2);cq.fill();cq.globalCompositeOperation='source-over';
+    q.drawImage(cc,0,0);
+    stroke(trim,1,()=>q.arc(24,29,12.6,Math.PI*.55,Math.PI*1.25));
+    gem(17,34,3.2);orb(13,25,1.8,trim);orb(21,40,1.6,trim);
+    for(const[x,y,r]of[[36,31,1.6],[40,37,1.1]]){thin(x-r*1.6,y,x+r*1.6,y,'#fff6d6',1);thin(x,y-r*1.6,x,y+r*1.6,'#fff6d6',1)}break}
+  case'crown':{
+    fp([[7,35],[41,35],[39,42],[9,42]],dark);fp([[8,36],[40,36],[38.5,41],[9.5,41]],lg(8,36,40,41,[hi,c1,c2]));
+    fp([[7,35],[8,17],[16,27],[20,10],[24,25],[28,10],[32,27],[40,17],[41,35]],dark);
+    fp([[9,34],[9.6,20],[16,28.5],[20.5,13],[24,27],[27.5,13],[32,28.5],[38.4,20],[39,34]],lg(8,12,40,36,[hi,c1,c2]));
+    stroke(trim,1.1,()=>{q.moveTo(10,33);q.lineTo(10.6,22);q.lineTo(16,29);q.lineTo(20.6,15);q.lineTo(24,28);q.lineTo(27.4,15);q.lineTo(32,29);q.lineTo(37.4,22);q.lineTo(38,33)});
+    for(const[x,y]of[[8.5,16],[20,9],[28,9],[39.5,16]])orb(x,y,2.1,g);
+    gem(24,31,3.6);for(const x of[14,34])orb(x,38.5,1.8,trim);for(const x of[18,30])orb(x,38.5,1.4,g);
+    stroke(trim,.9,()=>{q.moveTo(10,38.5);q.lineTo(38,38.5)});break}
+  case'butterfly':{
+    for(const side of[-1,1]){stroke(dark,4.4,()=>q.ellipse(24+side*6,5.5,5.2,3.4,side*.3,0,Math.PI*2));stroke(cordHex,2.4,()=>q.ellipse(24+side*6,5.5,5.2,3.4,side*.3,0,Math.PI*2))}
+    orb(24,6,3.2,cordHex);thin(24,9,24,14,cordHex,2.2);
+    const wing=(pts,side,st)=>{const m=pts.map(([x,y])=>[24+side*(x-24),y]);fp(m,dark);const inner=m.map(([x,y])=>[24+(x-24)*.86,y+(26-y)*.1]);fp(inner,st);stroke(trim,.9,()=>{inner.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath()})};
+    for(const side of[-1,1]){wing([[26,23],[41,9],[45,20],[36,31]],side,lg(24,8,46,32,[hi,c1,c2]));wing([[26,27],[37,33],[39,43],[29,37]],side,lg(26,26,40,44,[c1,shade(c1,-25),c2]));orb(24+side*13,18,2.2,g);orb(24+side*11,37,1.6,trim)}
+    fe(24,28,3.2,9.5,dark);fe(24,28,2.4,8.7,lg(21,18,27,38,[hi,c1,c2]));gem(24,24,3);
+    thin(23,19,19,13,dark,1.6);thin(25,19,29,13,dark,1.6);orb(19,12.5,1.2,trim);orb(29,12.5,1.2,trim);
+    tassel(24,38,7);break}
+  case'phoenix':{
+    thin(4,45,24,22,dark,5.4);thin(4,45,24,22,lg(4,45,24,22,[c2,c1,hi]),3.2);thin(5,44,23,23,trim,.8);
+    q.save();q.translate(27,20);
+    for(const[ang,len,col]of[[.35,17,cordHex],[.8,15,g],[1.25,13,c1]]){q.save();q.rotate(ang);fe(len/2+2,0,len/2,3.5,dark);fe(len/2+2,0,len/2-.8,2.7,lg(2,-3,len,3,[shade(col,45),col,shade(col,-45)]));thin(3,0,len,0,trim,.7);q.restore()}
+    q.restore();
+    orb(27,15,6,c1);orb(30,11,3.6,hi);
+    for(const[dx,dy]of[[-2,-7],[1,-8],[4,-7]])thin(30+dx*.3,10,30+dx,10+dy,trim,1.4);
+    fp([[33,11],[39,13],[33,15]],dark);fp([[33.6,11.8],[37.6,13],[33.6,14.4]],trim);
+    fe(30.5,10.4,1.3,1.3,dark);itemArtDot(q,30,10,'#ffffff');
+    for(const[x,len]of[[35,8],[37,11]]){thin(x,14,x+1,14+len,trim,.8);orb(x+1,15+len,1.7,g)}
+    orb(4,45,2.4,cordHex);break}
   default:{
     ringStroke(24,33,12.5,8,[[8,dark],[5,lg(12,26,36,41,[hi,c1,c2])]]);ringStroke(24,33,12.5,8,[[.9,hi]]);
     for(let i=0;i<8;i++){const t=Math.PI*(.15+i*.1);thin(24+Math.cos(t)*12.5-1.4,33+Math.sin(t)*8,24+Math.cos(t)*12.5+1.4,33+Math.sin(t)*8,shade(c2,-20),1)}
     fp([[14,24],[18,14],[30,14],[34,24],[24,29]],dark);fp([[15.6,24],[19,15.2],[29,15.2],[32.4,24],[24,27.6]],metal(14,14,34,29));gem(24,20.5,5);orb(12.5,31,2.2,shade(g,-10));orb(35.5,31,2.2,shade(g,-10))}
   }
+  if(grade==='grand'&&!a.premium)for(const[x,y,r]of[[6,9,2],[42,8,1.6],[7,40,1.4]]){thin(x-r*1.6,y,x+r*1.6,y,'#fff6d6',1);thin(x,y-r*1.6,x,y+r*1.6,'#fff6d6',1);itemArtDot(q,Math.round(x),Math.round(y),'#ffffff')}
   if(a.premium){stroke(trim,1,()=>q.rect(2.5,2.5,43,43));for(const[x,y,r]of[[7,8,2.4],[41,10,1.8],[8,38,1.6],[40,34,2.2]]){thin(x-r*1.6,y,x+r*1.6,y,'#fff6d6',1);thin(x,y-r*1.6,x,y+r*1.6,'#fff6d6',1);itemArtDot(q,Math.round(x),Math.round(y),'#ffffff')}}
   if(a.glyph&&a.shape!=='plaque'){fe(38,38,6.4,6.4,dark);fe(38,38,5.5,5.5,lg(32,32,44,44,[shade(g,-60),shade(g,-110)]));stroke(trim,.9,()=>q.arc(38,38,5.5,0,Math.PI*2));q.fillStyle='#fbf0d2';q.font='900 9px serif';q.textAlign='center';q.fillText(a.glyph,38,41);q.textAlign='start'}
 }

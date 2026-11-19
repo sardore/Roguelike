@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.charmTest={strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
+const bridge = 'globalThis.charmTest={grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -152,13 +152,27 @@ assert.deepEqual(dist.bad, []);
 assert.ok(dist.cursed > dist.n * .08 && dist.cursed < dist.n * .25, 'cursed share ' + dist.cursed);
 assert.ok(dist.oldShare > .45 && dist.oldShare < .85, 'old quirks stay the common ones ' + dist.oldShare);
 for (const q of ['echo', 'shadowStep', 'backlash', 'treasureSense', 'fullMoon', 'hungerSwap', 'fireKnot', 'twins', 'ghostStep', 'airPurify', 'frostStep']) assert.ok((dist.tally[q] || 0) > 0, 'quirk appears: ' + q);
+
+// better gear tends to better designs; fixed items are the minority of relic/trinket loot
+const grades = await s.page.evaluate(() => {
+  const T = charmTest, G = T.grade, out = { low: { simple: 0, fine: 0, grand: 0 }, high: { simple: 0, fine: 0, grand: 0 } };
+  for (let i = 0; i < 3000; i++) {
+    const it = T.make(i % 2 ? 'relic' : 'trinket', 1 + (i % 5)), score = Object.keys(it.resist || {}).length + ['regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length + (it.quirk ? 2 : 0);
+    out[score >= 5 ? 'high' : 'low'][G[it.art.shape]]++;
+  }
+  return out;
+});
+console.log('grades', JSON.stringify(grades));
+const share = (o, k) => o[k] / Math.max(1, o.simple + o.fine + o.grand);
+assert.ok(share(grades.high, 'grand') > share(grades.low, 'grand') * 2, 'high-score gear gets grand designs more often');
+assert.ok(share(grades.high, 'simple') < share(grades.low, 'simple'), 'high-score gear is less often plain');
 // 4. icon contact sheet: every shape × several materials, plus fixed items
 await s.page.evaluate(() => {
   const T = charmTest, host = document.createElement('div');
   host.id = 'charmSheet'; host.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#241d19;padding:8px;display:flex;flex-wrap:wrap;gap:2px;overflow:auto';
   const add = (it, label) => { const wrap = document.createElement('div'); wrap.style.cssText = 'width:96px;text-align:center;font:10px sans-serif;color:#e6d9bd'; const c = document.createElement('canvas'); const src = T.sprite(it); c.width = 96; c.height = 96; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.drawImage(src, 0, 0, 96, 96); wrap.append(c, label); host.append(wrap); };
   const mats = Object.keys(T.mats), gems = ['fire', 'water', 'ice', 'shock', 'earth', 'grass', 'holy', 'ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'pearl', 'onyx', 'turquoise'], cords = ['crimson', 'indigo', 'saffron', 'forest', 'violet', 'teal', 'ivory', 'black'];
-  let n = 0; for (const slot of ['relic', 'trinket']) for (const shape of T.shapes[slot]) for (let k = 0; k < 5; k++, n++) add({ type: slot, name: 'sheet-' + n, rarity: 'relic', art: { shape, mat: mats[(n * 5 + k * 3) % mats.length], gem: gems[(n * 7) % gems.length], cord: cords[(n * 3) % cords.length], glyph: k % 2 ? '火' : '' } }, shape + '/' + mats[(n * 5 + k * 3) % mats.length]);
+  let n = 0; for (const slot of ['relic', 'trinket']) for (const shape of T.shapes[slot]) for (let k = 0; k < 6; k++, n++) add({ type: slot, name: 'sheet-' + n, rarity: 'relic', art: { shape, mat: mats[(n * 5 + k * 3) % mats.length], gem: gems[(n * 7) % gems.length], cord: cords[(n * 3) % cords.length], glyph: k % 2 ? '火' : '' } }, shape + '/' + mats[(n * 5 + k * 3) % mats.length]);
   for (let i = 0; i < 6; i++) { const it = T.make(i % 2 ? 'relic' : 'trinket', 5, { premium: true }); add(it, it.name); }
   for (const it of [...T.RELICS, ...T.TRINKETS].filter(x => x.art)) add(it, it.name);
   document.body.append(host);
