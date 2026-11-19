@@ -2574,8 +2574,8 @@ function collapsePaperAfterAction1005(){
     // Old saves used world-turn deadlines. Migrate them conservatively: never collapse until the player gets one fresh real action.
     if(!Number.isFinite(a.collapseAgency57)){a.armedAgency57=agency;a.collapseAgency57=agency+1;a.migratedAgency57=true}
     if(agency<a.collapseAgency57)continue;
-    const rr=RuntimeTerrainOwner.mutate(a.x,a.y,TT.WATER,{source:'paper-collapse1005'});if(!rr.ok)continue;
-    if(branchLeafAt(a.x,a.y)){delete h.armed[kk];burst(a.x,a.y,'#8ead72',10,.6);addLog('잎이 물속으로 가라앉았다. 다시 떠오르지 않는다.');continue}
+    const leafBase=state.branchTerrain105?.leafBase?.[kk]??TT.WATER,rr=RuntimeTerrainOwner.mutate(a.x,a.y,leafBase,{source:'paper-collapse1005'});if(!rr.ok)continue;
+    if(branchLeafAt(a.x,a.y)){delete h.armed[kk];burst(a.x,a.y,'#8ead72',10,.6);addLog(leafBase===TT.VOID?'잎이 허공으로 떨어져 사라졌다. 다시 돌아오지 않는다.':'잎이 물속으로 가라앉았다. 다시 떠오르지 않는다.');continue}
     h.collapsed[kk]={x:a.x,y:a.y,restoreTile:TT.PAPER_BRIDGE,baseTile:TT.WATER,restoreTurn:turn+10,kind:'paper',mutationVersion57:rr.version57};
     delete h.armed[kk];burst(a.x,a.y,'#86cbd1',15,.75);addLog(`종이 다리가 물속으로 주저앉았다. 10턴 뒤 다시 이어진다.`)
   }

@@ -38,14 +38,14 @@ function mirrorLayout(){return state?.branchTerrain105?.mirror105||null}
 function mirrorZone(x,y){return mirrorLayout()?.zones?.[y]?.[x]||'.'}
 function mirrorOwner(x,y){const c=mirrorLayout()?.owner?.[y]?.[x];return c&&c!=='.'?state.branchWorld105?.mirror105?.towers?.[+c]||null:null}
 /* ------------------------------------------------------------------ floors */
-// zones: r room · c corridor · h hall · a antechamber · P main path · b bridge/causeway · p balcony · d dock
+// zones: r room · c corridor · h hall · a antechamber · P main path · b bridge/causeway · p balcony · d dock · v treasure vault
 function glassFloorTile(zone,x,y,t){
  const tint=glassTint(t),motif=t?.motif||'rings',px=x&1,py=y&1,v=hash2(x>>1,y>>1,733)>.62?1:0;
  const key=`f|${zone}|${px}${py}|${v}|${t?.id??'-'}|${motif}`;
  return glassCached(key,32,32,q=>{
   const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
   const bridge=zone==='b'||zone==='p'||zone==='d';
-  R(bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
+  R(zone==='v'?glassMix(v?tint.floorAlt:tint.floor,'#d8b865',.34):bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
   // structure under the glass: dark beams every other panel, faint
   q.fillStyle=glassRGBA(glassPal().violetInk,.22);if(px===0)q.fillRect(14,0,4,32);if(py===0)q.fillRect(0,14,32,4);
   q.fillStyle=glassRGBA(glassPal().violetInk,.12);q.fillRect(0,30,32,2);
@@ -62,6 +62,7 @@ function glassFloorTile(zone,x,y,t){
   else if(zone==='a'){q.strokeStyle=glassRGBA(tint.seam,.30);q.lineWidth=1;q.beginPath();q.moveTo(0,16);q.lineTo(16,0);q.lineTo(32,16);q.lineTo(16,32);q.closePath();q.stroke();q.beginPath();q.moveTo(8,16);q.lineTo(16,8);q.lineTo(24,16);q.lineTo(16,24);q.closePath();q.stroke();q.fillStyle=glassRGBA(glassPal().lilac,.25);q.fillRect(15,15,2,2)}
   else if(zone==='r'&&motif==='lattice'&&v){q.fillStyle=glassRGBA(tint.seam,.16);q.fillRect(8,8,16,1);q.fillRect(8,23,16,1);q.fillRect(8,8,1,16);q.fillRect(23,8,1,16)}
   else if(zone==='r'&&motif==='waves'&&v){q.fillStyle=glassRGBA(tint.seam,.16);for(let i=0;i<32;i+=4)q.fillRect(i,18+((i>>2)%2),3,1)}
+  if(zone==='v'){q.strokeStyle=glassRGBA('#f2dc9a',.50);q.lineWidth=1;q.strokeRect(5.5,5.5,21,21);q.beginPath();q.moveTo(16,6);q.lineTo(26,16);q.lineTo(16,26);q.lineTo(6,16);q.closePath();q.stroke();q.fillStyle=glassRGBA('#fff2c4',.55);q.fillRect(15,15,2,2)}
   if(zone==='P'){q.fillStyle=glassRGBA(glassPal().lamp,.30);q.fillRect(14,0,4,32);q.fillRect(0,14,32,4);q.fillStyle=glassRGBA('#ffffff',.45);q.fillRect(15,14,2,4);q.fillRect(14,15,4,2)}
  });
 }
@@ -175,6 +176,18 @@ function drawGlassPlatformCell(ctx,px,py,x,y,r){
  if(r.design==='barge'){const ends=r.axis==='x'?(!w||!e):(!n||!s);if(ends){ctx.fillStyle=glassRGBA(P.lamp,.6);ctx.beginPath();if(r.axis==='x'){ctx.moveTo(px+(!w?4:28),py+16);ctx.lineTo(px+(!w?12:20),py+10);ctx.lineTo(px+(!w?12:20),py+22)}else{ctx.moveTo(px+16,py+(!n?4:20));ctx.lineTo(px+10,py+(!n?12:12));ctx.lineTo(px+22,py+(!n?12:12))}ctx.closePath();ctx.fill()}}
 }
 // Cell painter, called for every seen cell of the tower floors.
+// A leaf over the void: lily-pad green against the pink sky, notched, veined, with a faint shadow far below it.
+function drawGlassLeaf(ctx,px,py,x,y,now){
+ const h=hash2(x,y,771),bob=Math.sin(now/700+x*1.7+y*.9)*1.1,armed=!!hz()?.armed?.[k(x,y)],rot=(h-.5)*1.2;
+ ctx.save();ctx.fillStyle=glassRGBA(glassPal().violetInk,.20);ctx.beginPath();ctx.ellipse(px+17,py+27,11,3,0,0,Math.PI*2);ctx.fill();
+ ctx.translate(px+16,py+16+bob);ctx.rotate(rot);
+ const g=ctx.createRadialGradient(-3,-3,2,0,0,14);g.addColorStop(0,armed?'#d9c27a':'#b4d28f');g.addColorStop(.55,armed?'#a89458':'#6f9e6a');g.addColorStop(1,armed?'#6b5a35':'#3d6149');
+ ctx.fillStyle='#233a31';ctx.beginPath();ctx.ellipse(0,0,14.5,11.5,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,13.2,10.3,0,.22,Math.PI*2-.22);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(222,240,186,.65)';ctx.lineWidth=1;for(let i=0;i<6;i++){const a=.6+i*1.0;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*11.5,Math.sin(a)*8.8);ctx.stroke()}
+ ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-4,-4,5,2.2,-.5,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
@@ -189,6 +202,7 @@ function drawGlassTowerCell(t,px,py,x,y){
   return true;
  }
  if(t===TT.DOOR||t===TT.OPEN_DOOR){drawGlassDoor(ctx,px,py,x,y,t===TT.OPEN_DOOR,tower);return true}
+ if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y)){drawGlassLeaf(ctx,px,py,x,y,now);return true}
  ctx.drawImage(glassFloorTile(zone==='.'?'r':zone,x,y,tower),px,py);
  if((zone==='h'||zone==='P')&&tower&&mirrorTowerContains(tower,x,y,2))drawGlassMedallion(ctx,px,py,tower);
  if(zone==='b'||zone==='p'||zone==='d')drawGlassBridgeEdges(ctx,px,py,x,y);

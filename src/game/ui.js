@@ -867,7 +867,8 @@ function pickupBaseR25(){
   const item=state.items.find(it=>it.x===state.player.x&&it.y===state.player.y);if(!item){toast('발밑에 아이템이 없다.');return false}
   if(item.type==='progress_key23'){state.items.splice(state.items.indexOf(item),1);if(state.floor23)state.floor23.keyAcquired=true;addLog('수은 심부 열쇠를 획득했다. 이제 계단의 봉인이 풀린다.');burst(state.player.x,state.player.y,'#d8f2ef',15,.8);updateAll();return true}
   if(item.type==='story_note'){state.items.splice(state.items.indexOf(item),1);globalThis.storyCollectNote992?.(item.storyId);return true}
-  const result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
+  const group=item.choiceGroup,result=transferItemQuantity(item,state.items,state.player.inventory,itemQuantity(item),{capacity:inventoryCapacity()});
+  if(result.moved&&group){for(const other of [...state.items])if(other.choiceGroup===group){state.items.splice(state.items.indexOf(other),1);burst(other.x,other.y,rarityColor(other.rarity),18,1);floatText(other.x,other.y,'흩어짐','#d8c08a',10)}for(const held of state.player.inventory)if(held.choiceGroup===group)delete held.choiceGroup;addLog('남은 보물이 빛 속으로 흩어졌다. 하나만 가질 수 있었다.')}
   if(result.moved){Duel.sendItem('take',item,state.player.x,state.player.y);if(item.ammoKind&&!state.player.loadedAmmoKind)state.player.loadedAmmoKind=item.ammoKind;addLog(`${item.name} ×${result.moved} 획득.`);burst(state.player.x,state.player.y,rarityColor(item.rarity),10,.75)}else toast('인벤토리가 가득 찼다.');renderInventory();updateAll();return result.moved>0
 }
 function sellShop58(item){

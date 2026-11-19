@@ -2871,7 +2871,7 @@ function queueBossDropTransaction55(plan,origin,floor){
 /* crumble + paper bridge: warn first; paper collapses on the next consumed action, crumble after leaving; rebuild exactly 10 turns later. */
 function collapseFragileAt105(x,y,kind='paper'){
  const tile=kind==='paper'?TT.PAPER_BRIDGE:TT.CRUMBLE;if(state.map[y]?.[x]!==tile)return false;
- const base=kind==='paper'?TT.WATER:(state.crumbleBase60?.[k(x,y)]??TT.VOID),result=RuntimeTerrainOwner.mutate(x,y,base,{source:kind+'-element-collapse'});if(!result.ok)return false;
+ const base=kind==='paper'?(state.branchTerrain105?.leafBase?.[k(x,y)]??TT.WATER):(state.crumbleBase60?.[k(x,y)]??TT.VOID),result=RuntimeTerrainOwner.mutate(x,y,base,{source:kind+'-element-collapse'});if(!result.ok)return false;
  const h=hz();delete h.armed[k(x,y)];if(!branchLeafAt(x,y))h.collapsed[k(x,y)]={x,y,restoreTile:tile,baseTile:base,restoreTurn:state.turn+10,kind,mutationVersion57:result.version57};burst(x,y,'#86cbd1',15,.75);return true;
 }
 function collapseCrumbleLeft1005(){const h=hz(),cur=state.player,prev=state._lastPlayerPos60;if(prev&&(prev.x!==cur.x||prev.y!==cur.y)&&state.map?.[prev.y]?.[prev.x]===TT.CRUMBLE){const kk=k(prev.x,prev.y),base=state.crumbleBase60?.[kk]??TT.VOID,rr=RuntimeTerrainOwner.mutate(prev.x,prev.y,base,{source:'crumble-collapse1005'});if(rr.ok){h.collapsed[kk]={x:prev.x,y:prev.y,restoreTile:TT.CRUMBLE,baseTile:base,restoreTurn:(state.turn||0)+11,kind:'crumble',mutationVersion57:rr.version57};delete h.armed[kk];burst(prev.x,prev.y,'#8870a8',10,.55);addLog('불안정한 발판이 아래로 무너졌다. 10턴 뒤 구조가 되돌아온다.')}}state._lastPlayerPos60={x:cur.x,y:cur.y}}
