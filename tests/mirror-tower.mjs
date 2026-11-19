@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,cargoTile:MIRROR_CARGO_TILE,raftTile:TT.RAFT,build:buildBranch,vis:()=>VisibilityService.compute()};';
+const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,detect:playerDetectedBy,cargoTile:MIRROR_CARGO_TILE,raftTile:TT.RAFT,build:buildBranch,vis:()=>VisibilityService.compute()};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -75,6 +75,40 @@ console.log('deck', JSON.stringify(deck));
 assert.ok(deck, '가구를 실은 큰 발판이 생성되지 않았다');
 assert.ok(deck.positions > 1, '큰 발판이 움직이지 않는다');
 assert.equal(deck.bad, 0, '발판 이동 중 가구 칸이나 갑판 칸이 어긋났다');
+// 층별 출현 적: 1층 윈도, 2층 공허 가오리·파편 망령, 3층 혼백 사냥꾼(1층엔 파편 망령이 없다).
+const roster = await s.page.evaluate(() => {
+  const out = {};
+  for (const L of [1, 2, 3]) {
+    const names = new Set();
+    for (let i = 0; i < 25; i++) {
+      const st = mirrorTest.state(); st.branchWorld105 = { version: 1, pages: {} }; st.runId984 = 'roster-' + L + '-' + i;
+      mirrorTest.build('mirror', L);
+      for (const m of mirrorTest.state().monsters) names.add(m.name);
+    }
+    out[L] = [...names].sort();
+  }
+  return out;
+});
+console.log('roster', JSON.stringify(roster));
+assert.ok(roster[1].includes('윈도') && !roster[1].includes('파편 망령') && !roster[1].includes('공허 가오리') && !roster[1].includes('혼백 사냥꾼'), '1층 적 구성이 다르다');
+assert.ok(roster[2].includes('공허 가오리') && roster[2].includes('파편 망령') && !roster[2].includes('윈도') && !roster[2].includes('혼백 사냥꾼'), '2층 적 구성이 다르다');
+assert.ok(roster[3].includes('혼백 사냥꾼') && roster[3].includes('파편 망령') && !roster[3].includes('공허 가오리'), '3층 적 구성이 다르다');
+// 혼백 사냥꾼은 은신한 플레이어도 감지하고, 반영 검객은 놓친다.
+const sense = await s.page.evaluate(() => {
+  for (let i = 0; i < 40; i++) {
+    const st = mirrorTest.state(); st.branchWorld105 = { version: 1, pages: {} }; st.runId984 = 'sense-' + i;
+    mirrorTest.build('mirror', 3);
+    const s2 = mirrorTest.state(), h = s2.monsters.find(m => m.name === '혼백 사냥꾼'), d = s2.monsters.find(m => m.name === '반영 검객');
+    if (!h || !d) continue;
+    s2.player.x = h.x + 1; s2.player.y = h.y; d.x = h.x + 1; d.y = h.y + 1; s2.status.stealth = 20;
+    return { hunter: mirrorTest.detect(h), duelist: mirrorTest.detect(d) };
+  }
+  return null;
+});
+console.log('sense', JSON.stringify(sense));
+assert.ok(sense, '3층에서 혼백 사냥꾼을 찾지 못했다');
+assert.equal(sense.hunter, true, '혼백 사냥꾼이 은신한 플레이어를 감지하지 못했다');
+assert.equal(sense.duelist, false, '반영 검객이 은신한 플레이어를 감지했다');
 const boss = await s.page.evaluate(() => {
   mirrorTest.go({ id: 'qa-mirror', to: 'mirror:3', arrival: 'up' });
   const st = mirrorTest.state(), b = st.monsters.find(m => m.mirrorKeeper105);

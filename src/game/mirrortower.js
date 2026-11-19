@@ -12,6 +12,13 @@ const MIRROR_TOWER_HEIGHTS=Object.freeze([3,3,3,2,2,1,1]);
 const MIRROR_TOWER_PURPOSES=Object.freeze(['observatory','display','library']);
 const MIRROR_TOWER_WINDOWS=Object.freeze(['arch','round','slit','diamond']);
 const MIRROR_TOWER_MOTIFS=Object.freeze(['rings','lattice','stars','waves']);
+// Enemies by floor. Names found in MIRROR_ROSTER_DUNGEON come from that legend dungeon's list, the rest from the main dungeon's.
+const MIRROR_ROSTERS=Object.freeze([
+ Object.freeze(['거울 시녀','반영 검객','윈도','윈도']),
+ Object.freeze(['거울 시녀','반영 검객','파편 망령','공허 가오리']),
+ Object.freeze(['거울 시녀','반영 검객','파편 망령','혼백 사냥꾼'])
+]);
+const MIRROR_ROSTER_DUNGEON=Object.freeze({'거울 시녀':'mirror_blade','반영 검객':'mirror_blade','파편 망령':'mirror_blade','혼백 사냥꾼':'curse_spear'});
 const MIRROR_TOWER_SIZE=Object.freeze([100,80]);
 function mirrorTowerPlan(){
  const world=state.branchWorld105||(state.branchWorld105={version:1,pages:{}});if(world.mirror105?.version===3)return world.mirror105;
@@ -270,15 +277,16 @@ function buildMirrorTower(level){
  ter.mirror105={version:1,zones:zone.map(r=>r.join('')),owner:owner.map(r=>r.join('')),objects,lights,stairs:standing.find(t=>t.stairsAtSummit)?.stairsAtSummit||{}};
  for(const t of standing)delete t.stairsAtSummit;
  // ---- population and loot: rooms and balconies off the way on carry the rewards
- const spawn=(name,p)=>{const mon=spawnNamed(name,p,{placementMode:'exact',provenance:'subbranch-random-v3',legendDungeon47:'mirror_blade'});if(mon)mon.branch105='mirror';return mon};
- const pool=['파편 망령','거울 시녀','반영 검객'],far=p=>Math.hypot(p.x-up.x,p.y-up.y)>8&&(!bossAt||Math.hypot(p.x-bossAt.x,p.y-bossAt.y)>5);
+ // Which enemies a floor brings: 윈도 haunts the lake floor, 파편 망령 and 공허 가오리 join above it, 혼백 사냥꾼 hunts the summit floor.
+ const spawn=(name,p)=>{const dungeon=MIRROR_ROSTER_DUNGEON[name],mon=spawnNamed(name,p,dungeon?{placementMode:'exact',provenance:'subbranch-random-v3',legendDungeon47:dungeon}:{placementMode:'exact',provenance:'subbranch-random-v3'});if(mon)mon.branch105='mirror';return mon};
+ const roster=MIRROR_ROSTERS[level-1],pickEnemy=()=>roster[rand(0,roster.length-1)],far=p=>Math.hypot(p.x-up.x,p.y-up.y)>8&&(!bossAt||Math.hypot(p.x-bossAt.x,p.y-bossAt.y)>5);
  const open=c=>m[c.y][c.x]===TT.FLOOR&&reach.has(k(c.x,c.y))&&far(c),take=list=>list.splice(rand(0,list.length-1),1)[0];
- for(const r of rooms){const cells=r.cells.filter(open);if(!cells.length)continue;const p=take(cells);if(onPath.has(k(p.x,p.y)))continue;if(rand(0,2))dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:1},p,{requireReachable:false});if(cells.length&&rand(0,1))spawn(pool[rand(0,2)],take(cells))}
+ for(const r of rooms){const cells=r.cells.filter(open);if(!cells.length)continue;const p=take(cells);if(onPath.has(k(p.x,p.y)))continue;if(rand(0,2))dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:1},p,{requireReachable:false});if(cells.length&&rand(0,1))spawn(pickEnemy(),take(cells))}
  for(const mz of mazes)for(const d of mz.dead.filter((_,i)=>i%3===2)){if(open(d)&&!onPath.has(k(d.x,d.y)))dropFloorLoot(d)}
- for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<2&&cells.length;n++)spawn(pool[rand(0,2)],take(cells))}
+ for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<2&&cells.length;n++)spawn(pickEnemy(),take(cells))}
  for(const b of balconies){const cells=[];for(let y=b.y-2;y<=b.y+2;y++)for(let x=b.x-2;x<=b.x+2;x++)if(open({x,y}))cells.push({x,y});if(cells.length)dropFloorLoot(take(cells))}
- for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<1+(t.rx>=9?1:0)&&ok.length;n++)spawn(pool[rand(0,2)],take(ok))}
- const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<2+level&&ob.length;n++)spawn(pool[rand(0,2)],take(ob));
+ for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<1+(t.rx>=9?1:0)&&ok.length;n++)spawn(pickEnemy(),take(ok))}
+ const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<2+level&&ob.length;n++)spawn(pickEnemy(),take(ob));
  if(bossAt){const boss=scaledMonster(MIRROR_KEEPER,branchCombatFloor());Object.assign(boss,{x:bossAt.x,y:bossAt.y,guardHome57:{...bossAt},alerted:false});OccupancyService.addMonster(boss)}
  state.generationInProgress57=false;
 }
