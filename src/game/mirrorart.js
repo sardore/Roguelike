@@ -402,7 +402,12 @@ const GLASS_FADE=new Map();
 // Drawn after the scenery fog: a building seen from outside is scenery the player knows, even though its rooms are unseen.
 // Parts of a tower's body fade out as the player comes within two or three cells of them, so a door, bridge or
 // stair under a roof or face is always readable when it matters: fully clear at two cells, solid again past three and a half.
-function glassNear(x,y){const p=state.player;return Math.min(1,Math.max(0,(Math.hypot(x-p.x,y-p.y)-2)/1.5))}
+// A tower's height goes see-through near anyone standing by it: the player, and every mob the player can see (so none hides behind a wall).
+function glassNear(x,y){
+ const p=state.player;let d=Math.hypot(x-p.x,y-p.y);
+ if(d>2)for(const m of state.monsters){if(m.hp<=0||!state.visible.has(k(m.x,m.y)))continue;const md=Math.hypot(x-m.x,y-m.y);if(md<d)d=md;if(d<=2)break}
+ return Math.min(1,Math.max(0,(d-2)/1.5));
+}
 function drawGlassTowerBodies(b,now){
  const plan=state?.branchContext105?.id==='mirror'&&state.branchWorld105?.mirror105;if(!plan)return;
  const level=state.branchContext105.level,p=state.player,dt=Math.min(100,now-(GLASS_FADE.get('t')??now));GLASS_FADE.set('t',now);
