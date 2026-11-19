@@ -2,13 +2,13 @@ const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#
  role61:'shell',actionLag57:{period:2,skipTurns:1},concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
 const SHACKLE_COUNTER={id:'shackle-counter',skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
 const MIRROR_DUELIST={name:'반영 검객',hp:38,atk:13,def:4,eva:7,xp:13,color:'#879aa8',shape:'human',kind:'spirit',fast:true,blind:true,role61:'shell',attackElement105:'holy',concept57:'칼날보다 반사된 모습이 먼저 움직이는 검객이다. 거울 같은 칼날에 맞으면 눈앞이 번쩍이며 시야를 잃는다. 칼날이 머금은 빛은 성광 속성이다.'};
-const LIGHTNING_PLATE={name:'피뢰 갑병',hp:38,atk:10,def:7,eva:1,xp:13,color:'#75818a',shape:'guard',kind:'construct',role61:'formation',lightningRod61:true,concept57:'벼락 자국이 남은 철갑 병사다. 등의 피뢰침으로 하늘의 벼락을 끌어내려 표적의 발밑에 꽂는다.'};
+const LIGHTNING_PLATE={name:'피뢰 갑병',resist:{shock:2},hp:38,atk:10,def:7,eva:1,xp:13,color:'#75818a',shape:'guard',kind:'construct',role61:'formation',lightningRod61:true,concept57:'벼락 자국이 남은 철갑 병사다. 등의 피뢰침으로 하늘의 벼락을 끌어내려 표적의 발밑에 꽂는다.'};
 const BREACH_PLATE={name:'파성 갑병',hp:62,atk:16,def:9,eva:2,xp:21,color:'#9a835d',shape:'guard',kind:'construct',role61:'formation',wallSlam61:true,concept57:'성문을 허물 만큼 무거운 무장을 갖춘 병사다. 벽 너머의 기척도 가까우면 알아채고, 벽째 내리치며 길을 낸다.'};
 const MONSTER_GUARD_TURNS={early:3,late:4,forbidden:4};
 const MONSTERS=[
  {name:'마을 군단장',min:99,max:99,hp:58,atk:8,def:4,eva:2,xp:36,color:'#c9a24a',shape:'guard',kind:'human',reach:2,legion57:{escort:['객잔 경비병','취객','시종'],escortMax:4,callEvery:5},concept57:'종소리에 깨어난 마을의 군단장이다. 병사를 불러 모으며 골목을 돌고, 어디에 있든 이따금 위치가 드러난다.'},
  {name:'갱도 투석꾼',min:99,max:99,nativeBranch105:{id:'mine',level:1},hp:17,atk:6,def:1,eva:3,xp:9,color:'#89908b',shape:'human',kind:'human',ranged:true,range:5,concept57:'무너진 갱도에 남아 돌을 움켜쥔 광부.'},
- {name:'흑산 설귀',min:99,max:99,nativeBranch105:{id:'black',level:2},hp:140,atk:14,def:4,eva:2,xp:150,color:'#b9dce5',shape:'ghost',kind:'spirit',boss:true,bossPattern:'blackFrost105',branchBoss105:true,fixedStats57:true,balanceRevision105:4,concept57:'흑산채 정상성을 지키는 얼어붙은 영물이다.'},
+ {name:'흑산 설귀',resist:{ice:1,fire:-2},min:99,max:99,nativeBranch105:{id:'black',level:2},hp:140,atk:14,def:4,eva:2,xp:150,color:'#b9dce5',shape:'ghost',kind:'spirit',boss:true,bossPattern:'blackFrost105',branchBoss105:true,fixedStats57:true,balanceRevision105:4,concept57:'흑산채 정상성을 지키는 얼어붙은 영물이다.'},
  {name:'고목 목매',min:99,max:99,nativeBranch105:{id:'stockade',level:1},hp:34,atk:6,def:3,eva:0,xp:10,color:'#95886f',shape:'tree',kind:'plant',fixed:true,treeMimic105:true,concept57:'메마른 고목인 척 숨어 있는 정괴다.'},
  {name:'벌집나무',min:99,max:99,nativeBranch105:{id:'stockade',level:1},hp:22,atk:7,def:1,eva:0,xp:9,color:'#ab8853',shape:'tree',kind:'plant',fixed:true,reach:3,hiveTree105:true,concept57:'벌집을 품은 오래된 나무.'},
  {name:'벌떼',min:1,max:25,hp:5,atk:3,def:0,eva:10,xp:0,color:'#d6b45f',shape:'swarm',kind:'beast',fast:true,flying:true,summonOnly57:true,beeSwarm105:true,concept57:'벌집나무가 피해를 받을 때 불러낸 벌 무리.'},
@@ -36,7 +36,7 @@ const MONSTERS=[
   // 3구역 유혹의 내실: 비단/거울/환각 중심.
   {min:11,max:15,name:'윈도',concept57:"문틈과 거울 뒤에 사람의 윤곽만 남기는 환영이다.",hp:19,atk:9,def:1,eva:5,xp:7,color:'#6f5e72',shape:'human',kind:'spirit',ambush:true},
   {min:11,max:15,name:'비단 술래',sealingWard:{species:'비단 술래',radius:2,duration:4,cooldown:9,range:6},concept57:"늘어진 비단을 끌며 내실을 떠도는 술래다.",silkTrapCount57:1,hp:20,atk:7,def:2,eva:4,xp:8,color:'#b17892',shape:'human',kind:'spirit',ranged:true,range:5,web:true},
-  {min:11,max:15,name:'환각의 향로',concept57:"불씨가 꺼지지 않는 향로 안에서 달큰한 연기가 샌다.",hp:23,atk:6,def:3,eva:0,xp:8,color:'#786377',shape:'mage',kind:'construct',fixed:true,gasStatus57:'drunk'},
+  {min:11,max:15,name:'환각의 향로',resist:{fire:1},concept57:"불씨가 꺼지지 않는 향로 안에서 달큰한 연기가 샌다.",hp:23,atk:6,def:3,eva:0,xp:8,color:'#786377',shape:'mage',kind:'construct',fixed:true,gasStatus57:'drunk'},
   {min:12,max:15,name:'향기요정',sealSkill:true,alarmSkill61:true,hp:18,atk:6,def:1,eva:7,xp:8,color:'#a989b5',shape:'angel',kind:'spirit',waterTrail:true,roleDesc61:'지나간 바닥을 잠시 물길로 바꿔 퇴로와 동선을 꼬이게 만든다.',concept57:'향기를 흩뿌리며 떠다니는 작은 요정이다.'},
   {min:12,max:15,name:'분홍거미',concept57:"비단빛 배를 끌고 좁은 내실을 비집는 거대한 거미다.",silkTrapCount57:2,hp:40,atk:8,def:6,eva:2,xp:12,color:'#a26784',shape:'beast',kind:'beast',footprint:'x3',web:true,wallBreak:true},
   {...MIRROR_DUELIST,min:13,max:15},
