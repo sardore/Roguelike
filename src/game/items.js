@@ -316,6 +316,14 @@ function naturalFoodPick(){const pool=[];const add=(n,w)=>{const d=foodDef(n);if
     return V62.beltOrder.slice(0,3).map(key=>groups.get(key));
   }
   function escBelt(text){return String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fusionRewardItems(baseKind,count){
+ const pool=globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates(baseKind),items=[];
+ while(items.length<count&&pool.length){
+  const [item]=pool.splice(rand(0,pool.length-1),1);
+  items.push({...item,count:1,identified:true});
+ }
+ return items;
+}
   function recipeItem(r){return{name:r.name,type:'talisman',talismanKind:r.kind,fusion74:true,element74:r.element||null,seal:r.seal,tier:3,rarity:r.kind.includes('upgrade')?'sealed':'rare',stackMax:2,count:1,targeted:r.mode==='target',targetRange:r.range||5,fusionMode74:r.mode,fusionEffect74:r.effect||null,ability:r.ability,desc:r.desc}}
   /* fusion UI */
   const fusion=document.createElement('div');
