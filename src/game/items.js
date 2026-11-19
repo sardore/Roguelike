@@ -145,7 +145,7 @@ function itemPrototype(name){if(name==='용궁 조수 안내서')return palaceGu
     for(const [pool,type] of pools){const it=pool?.find?.(x=>x.name===name);if(it)return {...it,type:it.type||type}}
     return null
   }
-  const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`기력 +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`기력 +${it.focusGain}`);if(it.hunger)a.push(`허기 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
+  const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL ${it.will>0?'+':''}${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`기력 +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`기력 +${it.focusGain}`);if(it.hunger)a.push(`허기 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
   const POTIONS=[
     {name:'소회복 비약',type:'potion',potionKind:'heal_small',tier:1,rarity:'common',stackMax:3,minFloor:1,color:'#c64f49',ability:'최대 HP의 32% 회복 (최소 10)',desc:'상처를 빠르게 봉합하는 붉은 비약. 최대 HP의 32%를 회복하며 최소 회복량은 10이다.',useCost:.8},
     {name:'중회복 비약',type:'potion',potionKind:'heal_medium',tier:2,rarity:'rare',stackMax:3,minFloor:4,color:'#d66b57',ability:'최대 HP의 60% 회복 (최소 18) · 출혈 완화',desc:'농축된 금창 약액. 최대 HP의 60%를 회복하며 최소 회복량은 18이고, 50% 확률로 출혈을 제거한다.',useCost:.8},
@@ -596,7 +596,7 @@ function prepareGearCurse(item,opt={}){
   }
   // Gear identity is public from the moment it appears. Identification hides only the rolled +n, curse and magic details.
   function baseGearDef(it){if(!isGearItem(it)||!it?.name)return null;const pool=it.type==='weapon'?WEAPONS:it.type==='armor'?ARMORS:it.type==='cloak'?CLOAKS:it.type==='relic'?RELICS:TRINKETS;return pool.find(v=>v.name===it.name)||null}
-  function publicGearStats(it){const b=baseGearDef(it)||it,out=[];if(b.atk)out.push(`ATK +${b.atk}`);if(b.def)out.push(`DEF ${b.def>0?'+':''}${displayDef42(b.def)}`);if(b.eva)out.push(`EVA ${b.eva>0?'+':''}${b.eva}`);if(b.speed)out.push(`속도 ${b.speed}×`);if(b.range)out.push(`사거리 ${b.range}`);if(b.vision)out.push(`VIS ${b.vision>0?'+':''}${b.vision}`);if(b.will)out.push(`WILL +${b.will}`);return out}
+  function publicGearStats(it){const b=baseGearDef(it)||it,out=[];if(b.atk)out.push(`ATK +${b.atk}`);if(b.def)out.push(`DEF ${b.def>0?'+':''}${displayDef42(b.def)}`);if(b.eva)out.push(`EVA ${b.eva>0?'+':''}${b.eva}`);if(b.speed)out.push(`속도 ${b.speed}×`);if(b.range)out.push(`사거리 ${b.range}`);if(b.vision)out.push(`VIS ${b.vision>0?'+':''}${b.vision}`);if(b.will)out.push(`WILL ${b.will>0?'+':''}${b.will}`);return out}
 function normalizeAllItems(){
   if(!state?.player)return;
   for(const slot of ['weapon','armor','cloak','relic','trinket'])normalizeSavedItem(state.player[slot]);
@@ -876,7 +876,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
   function uxType(item){return item?.mineItem105==='stone'?'투척 도구':item?.type==='potion'?'비약 / 약병':itemTypeLabel(item?.type||'')}
   function uxStats(item){
     const a=[];if(!item)return a;
-    if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL +${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.speed)a.push(`속도 ${item.speed}×`);if(item.range)a.push(`사거리 ${item.range}`);if(item.hunger)a.push(`허기 +${item.hunger}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`기력 +${item.focusGain}`);return a;
+    if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL ${item.will>0?'+':''}${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.speed)a.push(`속도 ${item.speed}×`);if(item.range)a.push(`사거리 ${item.range}`);if(item.hunger)a.push(`허기 +${item.hunger}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`기력 +${item.focusGain}`);a.push(...charmTraitLines(item));return a;
   }
   function uxIcon(item,cls=''){try{return vfIconHtml(item,cls)}catch(_){return `<span>${itemGlyph(item)}</span>`}}
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
@@ -892,7 +892,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
     if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);
     if(item.def)a.push(`DEF ${item.def>=0?'+':''}${displayDef42(item.def)}`);
     if(item.eva)a.push(`EVA ${item.eva>=0?'+':''}${item.eva}`);
-    if(item.will)a.push(`WILL +${item.will}`);
+    if(item.will)a.push(`WILL ${item.will>0?'+':''}${item.will}`);
     if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);
     if(item.focus)a.push(`기력 +${displayNumber53(item.focus)}`);
     if(item.speed)a.push(`공격 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);
