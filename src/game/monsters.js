@@ -133,6 +133,8 @@ function presentMonsterHit(mon,target,dmg,elemental=false,delay=0){
 function combatDepth(actor){return Math.max(1,Number(actor?.debugFloor57)||branchCombatFloor()||state?.floor||1)}
 function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  const ctx=monsterAttackContextR(context),target=ctx.target||state.player,player=target===state.player;
+ // a monster whose every blow carries an element (attackElement105) deals it unless the skill names its own
+ if(!ctx.damageElement105&&mon.attackElement105&&ctx.delivery!=='hazard'){ctx.damageElement105=mon.attackElement105;ctx.elementFx105=true}
  if(!combatTargetValid57(mon,target))return monsterAttackResultR(mon,ctx,{attempted:false,blocked:true,reason:'invalid-target'});
  mon.attackUntil=performance.now()+150;mon.attackTarget={x:target.x,y:target.y};const st=combatEntityStats(target),attackStats=combatEntityStats(mon),cloak=player?playerCloak():(target.cloak||{});
  if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(target,mon))return monsterAttackResultR(mon,ctx,{blocked:true,reason:'asura-domain'});
@@ -144,7 +146,7 @@ function attackMonsterInitialCoreR(mon,bonus=0,context={}){
  let dmg=damageFormula(atk,st.def||0,globalThis.__MANRU_RANDOM57__()<(.05+(w.crit||0)),{defenseBonus,defenseScale:mon.armorPierce||w.armorPierce?.25:1});if(mon.kind==='undead'&&target.armor?.elementGuard74==='holy')dmg=Math.max(1,Math.round(dmg*.85));
  dmg=ctx.damageElement105?resolveElementDamage57(target,ctx.damageElement105,dmg,{effect:effectSource57(mon),ground:!!ctx.ground105,source:mon.name,color:ELEMENT_FX_COLORS105[ctx.damageElement105],impact:false,logDamage57:false}).damage:damageEntity(target,dmg,mon,null,{delivery:ctx.delivery});if(!player&&guard>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(target);else consumeMartialGuard(target);}
  if(state.floor>=11&&ctx.delivery!=='area'&&ctx.delivery!=='hazard')alertNearby(target.x,target.y,ctx.projectile?6:5,ctx.projectile?'projectile':'combat',dmg);
- presentMonsterHit(mon,target,dmg,!!ctx.damageElement105,ctx.impactDelay||0);
+ presentMonsterHit(mon,target,dmg,!!ctx.damageElement105,ctx.impactDelay||0);if(ctx.elementFx105)elementAttackFx105(ctx.damageElement105,[{x:target.x,y:target.y}],mon);
  if(!player&&target.martialActor105&&ctx.projectile)dojoRememberHit(target,'ranged');
  if(dmg>0)applyMonsterAttackStatus57(mon,target,{damage:dmg,delivery:ctx.delivery});
  if(dmg>0&&combatDepth(mon)>=16&&mon.kind==='undead'&&['melee','ranged'].includes(ctx.delivery))globalThis.__MANRU_ITEM_IDENTITY991__?.hostileHit?.(target);
