@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.charmTest={grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
+const bridge = 'globalThis.charmTest={capacity:inventoryCapacity,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -76,7 +76,7 @@ const fx = await s.page.evaluate(() => {
   const T = charmTest, st = T.state(), p = st.player, r = {};
   st.tutorialEntry60 = { completed: true }; st.monsters = [];
   p.maxHp = 60; p.hp = 60; p.hunger = 100; p.relic = null; p.trinket = { name: 'q', quirk: 'echo' };
-  const mk = (x, y) => { const m = T.spawn({ x, y }, false, {}); m.hp = m.maxHp = 400; m.def = 0; return m };
+  const mk = (x, y) => { let m = T.spawn({ x, y }, false, {}); for (let n = 0; n < 40 && !m; n++) m = T.spawn(null, false, {}); Object.assign(m, { x, y, hp: 400, maxHp: 400, def: 0 }); return m };
   // 메아리: the same target builds, a new one resets
   const a = mk(p.x + 2, p.y), b = mk(p.x - 2, p.y), h0 = a.hp;
   T.strike(a, p, 5); T.strike(a, p, 5); T.strike(a, p, 5); r.echo = h0 - a.hp; T.strike(b, p, 5); r.echoReset = p.charmEcho;
@@ -142,7 +142,7 @@ const dist = await s.page.evaluate(() => {
     n++; if (it.quirk) { quirky++; tally[it.quirk] = (tally[it.quirk] || 0) + 1; if (old.includes(it.quirk)) oldQ++ }
     if (it.curse991) { cursed++; if (it.curseImmune991) bad.push('immune+curse') }
     else if (!it.curseImmune991) bad.push('plain not immune');
-    const sp = ['regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length;
+    const sp = ['bagSlots', 'regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length;
     if (sp > 4) bad.push('too many specials ' + sp);
   }
   return { n, quirky, cursed, oldShare: +(oldQ / Math.max(1, quirky)).toFixed(2), tally, bad: bad.slice(0, 3) };
@@ -157,7 +157,7 @@ for (const q of ['echo', 'shadowStep', 'backlash', 'treasureSense', 'fullMoon', 
 const grades = await s.page.evaluate(() => {
   const T = charmTest, G = T.grade, out = { low: { simple: 0, fine: 0, grand: 0 }, high: { simple: 0, fine: 0, grand: 0 } };
   for (let i = 0; i < 3000; i++) {
-    const it = T.make(i % 2 ? 'relic' : 'trinket', 1 + (i % 5)), score = Object.keys(it.resist || {}).length + ['regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length + (it.quirk ? 2 : 0);
+    const it = T.make(i % 2 ? 'relic' : 'trinket', 1 + (i % 5)), score = Object.keys(it.resist || {}).length + ['bagSlots', 'regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length + (it.quirk ? 2 : 0);
     out[score >= 5 ? 'high' : 'low'][G[it.art.shape]]++;
   }
   return out;
@@ -166,6 +166,19 @@ console.log('grades', JSON.stringify(grades));
 const share = (o, k) => o[k] / Math.max(1, o.simple + o.fine + o.grand);
 assert.ok(share(grades.high, 'grand') > share(grades.low, 'grand') * 2, 'high-score gear gets grand designs more often');
 assert.ok(share(grades.high, 'simple') < share(grades.low, 'simple'), 'high-score gear is less often plain');
+
+// fixed pieces each have a drawing of their own that no randart can produce; bag slots are an option on both kinds
+const own = await s.page.evaluate(() => {
+  const T = charmTest, st = T.state(), p = st.player, r = { fxOnRandart: 0, shapes: [], bagOnRandart: 0, bagFixed: [] };
+  for (let i = 0; i < 3000; i++) { const it = T.make(i % 2 ? 'relic' : 'trinket', 1 + (i % 5), { premium: i % 7 === 0 }); if (it.art.shape.startsWith('fx_')) r.fxOnRandart++; if (it.bagSlots) r.bagOnRandart++ }
+  const all = [...T.RELICS, ...T.TRINKETS].filter(x => x.art); r.fixed = all.length; r.shapes = all.filter(x => x.art.shape.startsWith('fx_')).map(x => x.art.shape);
+  r.distinct = new Set(r.shapes).size; r.bagFixed = all.filter(x => x.bagSlots).map(x => x.name + ':' + x.bagSlots);
+  p.relic = null; p.trinket = null; const base = T.capacity(); p.trinket = { name: 'q', bagSlots: 2 }; p.relic = { name: 'r', bagSlots: 3 }; r.cap = T.capacity() - base;
+  p.relic = null; p.trinket = null; return r;
+});
+console.log('own', JSON.stringify(own));
+assert.equal(own.fxOnRandart, 0); assert.equal(own.shapes.length, own.fixed, 'every fixed piece has its own design'); assert.equal(own.distinct, own.fixed, 'no two fixed pieces share a design');
+assert.ok(own.bagOnRandart > 0 && own.bagOnRandart < 600, 'bag slots roll on randarts sometimes: ' + own.bagOnRandart); assert.ok(own.bagFixed.length >= 3); assert.equal(own.cap, 5);
 // 4. icon contact sheet: every shape × several materials, plus fixed items
 await s.page.evaluate(() => {
   const T = charmTest, host = document.createElement('div');
@@ -178,5 +191,7 @@ await s.page.evaluate(() => {
   document.body.append(host);
 });
 await s.page.screenshot({ path: path.join(process.env.CHARM_SHOT_DIR || '/tmp', 'charm-sheet.png') });
+await s.page.evaluate(() => { const T = charmTest, host = document.getElementById('charmSheet'); host.innerHTML = ''; for (const it of [...T.RELICS, ...T.TRINKETS].filter(x => x.art)) { const wrap = document.createElement('div'); wrap.style.cssText = 'width:96px;text-align:center;font:10px sans-serif;color:#e6d9bd'; const c = document.createElement('canvas'); c.width = 96; c.height = 96; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.drawImage(T.sprite(it), 0, 0, 96, 96); wrap.append(c, it.name); host.append(wrap) } });
+await s.page.screenshot({ path: path.join(process.env.CHARM_SHOT_DIR || '/tmp', 'charm-fixed.png') });
 console.log('charms: ok');
 await browser.close(); process.exit(0);
