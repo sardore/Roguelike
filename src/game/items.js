@@ -467,15 +467,7 @@ const GEAR_SLOT_TYPES=new Set(['weapon','armor','cloak','relic','trinket']);
     {id:'blind_cycle',name:'암막',desc:'14턴마다 실명에 2턴 빠진다.',periodic:{period:14,status:'blind',turns:2}},
     {id:'seal_cycle',name:'기봉진',desc:'15턴마다 기봉인에 2턴 빠진다.',periodic:{period:15,status:'skillSeal',turns:2}},
     {id:'upset_cycle',name:'역위',desc:'17턴마다 배탈에 2턴 빠진다.',periodic:{period:17,status:'upset',turns:2}},
-    {id:'spasm_cycle',name:'경련',desc:'19턴마다 기절에 1턴 빠진다.',periodic:{period:19,status:'stun',turns:1}},
-    // Event curses. `pts` is what a cursed randart gets back in extra effects (see makeRandart); the old ones are worth 1.
-    {id:'roar',name:'굉음',desc:'14턴마다 맵 전체에 울릴 만큼 큰 소음을 낸다. 12칸 안의 적이 경계한다.',periodic:{period:14,effect:'roar'},pts:2},
-    {id:'summon',name:'불러냄',desc:'18턴마다 이 층의 몬스터 한 마리가 내 곁에 불려 나온다. 이미 불려 나온 것이 살아 있으면 부르지 않는다.',periodic:{period:18,effect:'summon'},pts:2},
-    {id:'selfblast',name:'자폭 천명탄',desc:'25턴마다, 또는 HP가 25% 아래로 떨어지면 내 자리에서 천명탄이 터져 5×5의 적과 나를 함께 맞힌다. 나는 죽지 않는다.',periodic:{period:25,effect:'selfblast'},pts:3},
-    {id:'wander',name:'방랑',desc:'20턴마다 시야 안 아무 곳으로 순간이동한다.',periodic:{period:20,effect:'blink'},pts:1},
-    {id:'glutton',name:'식탐귀',desc:'250턴마다 인벤토리의 음식 하나를 먹어 치운다. 음식이 없으면 HP 3를 잃는다.',periodic:{period:250,effect:'eatfood'},pts:2},
-    {id:'mirror_image',name:'거울상',desc:'적을 쓰러뜨릴 때마다 그 적의 반영이 일어나 4턴 동안 나를 쫓는다.',pts:2},
-    {id:'scream',name:'비명',desc:'HP가 절반 아래일 때 맞으면 소음을 낸다(6턴에 한 번). 9칸 안의 적이 경계한다.',pts:1}
+    {id:'spasm_cycle',name:'경련',desc:'19턴마다 기절에 1턴 빠진다.',periodic:{period:19,status:'stun',turns:1}}
   ];
   // Curse kind is not fixed to an equipment category. Every ordinary gear slot draws from
   // the same catalog, so the same curse can appear on different equipment and truly stack.
@@ -587,7 +579,7 @@ function prepareGearCurse(item,opt={}){
   function holyCell(){for(let n=0;n<80;n++){const q=PlacementService.randomFloor(0),t=state.map[q.y]?.[q.x];if(ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y)&&!state.items.some(i=>i.x===q.x&&i.y===q.y)&&![TT.STAIR,TT.TRAP,TT.SNARE,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(t))return q}return{x:state.player.x,y:state.player.y}}
   function ensureHolyDrop(){const h=holySchedule(),proto=holyProto();if(!h||!proto||h.floor!==state.floor||state.holy991.spawned[h.k])return false;const q=holyCell(),it=clone(proto);Object.assign(it,{x:q.x,y:q.y,count:1});PlacementService.placeItem(it);state.holy991.spawned[h.k]=true;return true}
   function applyCurseStats(stats,actor=state.player){const drainStacks=curseStackCount('drain',actor),nightmare=curseMultiplier('nightmare',actor),brittle=curseMultiplier('brittle',actor);if(drainStacks>0)stats.maxFocus+=2*drainStacks;if(nightmare>0){stats.will-=Math.round(2*nightmare);stats.vision-=Math.round(nightmare)}if(brittle>0){stats.def-=Math.round(brittle);stats.eva-=Math.round(brittle)}return stats}
-  function triggerPeriodicCurse(c,clocks=syncCurseClocks991(),actor=state.player){const power=curseMultiplier(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;if(p.effect)return runCurseEffect(p.effect,actor,power,c);const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
+  function triggerPeriodicCurse(c,clocks=syncCurseClocks991(),actor=state.player){const power=curseMultiplier(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
   function tickActorCurses(actor){
    if(!state||!actor||actor.hp<=0||actor.curseTick105===state.turn)return false;actor.curseTick105=state.turn;let dirty=false;const clocks=syncCurseClocks991(actor),blood=curseMultiplier('blood_hunger',actor),bloodClock=clocks.blood_hunger;
    if(blood>0&&bloodClock&&state.turn>=bloodClock.next){const loss=Math.max(1,Math.round(blood));if(Number.isFinite(actor.hunger))actor.hunger=Math.max(0,actor.hunger-loss);while(bloodClock.next<=state.turn)bloodClock.next+=3;dirty=true}
