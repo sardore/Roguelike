@@ -82,6 +82,7 @@ function charmTraitLines(item){
   if(item.statusGuard)out.push(`상태이상 ${charmPct(item.statusGuard)}% 무효`);
   if(item.quirk&&CHARM_QUIRKS[item.quirk])out.push(`✦ ${CHARM_QUIRKS[item.quirk].name}: ${CHARM_QUIRKS[item.quirk].desc}`);
   if(item.strike)out.push(`타격 시 ${RESIST_NAMES57[item.strike.element]||item.strike.element} 피해 +${item.strike.dmg}`);
+  if(item.bane&&CHARM_BANES[item.bane])out.push(`✖ ${CHARM_BANES[item.bane].name}: ${CHARM_BANES[item.bane].desc}`);
   return out;
 }
 
@@ -111,7 +112,7 @@ function charmMoveCost(c){
 function charmAttackCost(c){return c*charmMul('atkCostMul')}
 function charmPostTurn(){
   const p=state?.player;if(!p||state.dead||state.victory)return;
-  curseMirrorTick();
+  baneTick();baneMirrorTick();
   const every=charmBest('regenEvery');if(every&&state.turn%every===0&&p.hp<p.maxHp)recoverCombatHealth(p,1);
   const moved=p.charmLast&&(p.charmLast.x!==p.x||p.charmLast.y!==p.y);p.charmLast={x:p.x,y:p.y};
   if(charmQuirkOn('shadowStep')){
@@ -159,7 +160,7 @@ function charmOnKill(mon){
   }
   if(heal>0&&p.hp<p.maxHp){const g=recoverCombatHealth(p,heal);if(g>0)floatText(p.x,p.y,`+${g}`,'#e08a7a',9)}
   if(focus>0&&Number.isFinite(p.focus))p.focus=Math.min(getStats().maxFocus,p.focus+focus);
-  curseOnKill(mon);
+  baneOnKill(mon);
 }
 function charmOnHurt(source,amount){
   const p=state?.player;if(!p||amount<=0)return;
@@ -173,7 +174,7 @@ function charmOnHurt(source,amount){
   if(p&&thorns>0&&source&&source!==p&&source.hp>0&&entityDistance57(source,p)<=1&&factionsHostile57(entityFaction(p),entityFaction(source))){
     const dealt=damageEntity(source,thorns,p);if(dealt>0){floatText(source.x,source.y,`반격 -${dealt}`,'#d6b77d',9);if(source.hp<=0)killMonster(source)}
   }
-  curseOnHurt(source,amount);
+  baneOnHurt(source,amount);
 }
 function charmStatusGuard(){
   const chance=Math.min(.75,charmSum('statusGuard'));
@@ -216,18 +217,40 @@ function charmStrike(target,actor,damage=0){
   for(const g of charmGear())if(g.strike&&target.hp>0)resolveElementDamage57(target,g.strike.element,g.strike.dmg,{contactHandled105:true,effect:effectSource57(actor),source:g.name,color:CHARM_GEM[g.strike.element]});
 }
 
-/* ---- curses that are events, not statuses: the periodic ones are driven by the curse clock in items.js, the rest by the hooks above ---- */
-function runCurseEffect(effect,actor,power,c){
+/* ---- banes: a randart's negative trait. Not a curse: it is shown with the other traits from the start, works only while
+   the piece is worn, comes off with it, and two pieces with the same bane double it. A bane taken on pays for more elsewhere
+   (pts, see makeRandart). The periodic ones run on their own clock here, the rest from the hooks above. ---- */
+const CHARM_BANES=Object.freeze({
+  roar:{name:'굉음',desc:'14턴마다 맵 전체에 울릴 만큼 큰 소음을 낸다. 12칸 안의 적이 경계한다.',period:14,event:'roar',pts:2},
+  summon:{name:'불러냄',desc:'18턴마다 이 층의 몬스터 한 마리가 내 곁에 불려 나온다. 이미 불려 나온 것이 살아 있으면 부르지 않는다.',period:18,event:'summon',pts:2},
+  selfblast:{name:'자폭 천명탄',desc:'25턴마다, 또는 HP가 25% 아래로 떨어지면 내 자리에서 천명탄이 터져 5×5의 적과 나를 함께 맞힌다. 나는 죽지 않는다.',period:25,event:'selfblast',pts:3},
+  wander:{name:'방랑',desc:'20턴마다 시야 안 아무 곳으로 순간이동한다.',period:20,event:'blink',pts:1},
+  glutton:{name:'식탐귀',desc:'250턴마다 인벤토리의 음식 하나를 먹어 치운다. 음식이 없으면 HP 3를 잃는다.',period:250,event:'eatfood',pts:2},
+  mirror_image:{name:'거울상',desc:'적을 쓰러뜨릴 때마다 그 적의 반영이 일어나 4턴 동안 나를 쫓는다.',pts:2},
+  scream:{name:'비명',desc:'HP가 절반 아래일 때 맞으면 소음을 낸다(6턴에 한 번). 9칸 안의 적이 경계한다.',pts:1}
+});
+function baneCount(id){return charmGear().filter(g=>g.bane===id).length}
+function banePower(id){const n=baneCount(id);return n>0?Math.pow(2,n-1):0}
+function baneTick(){
+  const p=state.player,clocks=p.baneClock||(p.baneClock={});
+  for(const[id,b]of Object.entries(CHARM_BANES)){
+    if(!b.period)continue;const power=banePower(id);
+    if(!power){delete clocks[id];continue}
+    if(clocks[id]==null){clocks[id]=state.turn+b.period;continue}
+    if(state.turn<clocks[id])continue;clocks[id]=state.turn+b.period;runBaneEffect(b.event,p,power,b);
+  }
+}
+function runBaneEffect(effect,actor,power,c){
   const p=state.player,mark=(label,color,pw)=>charmFx(p.x,p.y,label,color,pw);
   if(effect==='roar'){
-    alertNearby(p.x,p.y,12+power*2,'explosion');bellFX(p.x,p.y,12,'#e0735f');flash('#e0735f',140);floatText(p.x,p.y,'굉음!','#ff9d80',14);addLog(`${c.name}: 저주받은 장비가 맵 전체에 울려 퍼졌다.`);return true;
+    alertNearby(p.x,p.y,12+power*2,'explosion');bellFX(p.x,p.y,12,'#e0735f');flash('#e0735f',140);floatText(p.x,p.y,'굉음!','#ff9d80',14);addLog(`${c.name}: 장비가 맵 전체에 울려 퍼졌다.`);return true;
   }
   if(effect==='summon'){
     if(state.monsters.some(m=>m.hp>0&&m.curseSummon991))return false;
     const m=spawnMonster({x:p.x,y:p.y},false,{provenance:'curse'});if(!m)return false;m.curseSummon991=true;m.alerted=true;
     charmFx(m.x,m.y,'불러냄',CURSE_FX.summon,2);addLog(`${c.name}: 어둠 속에서 ${m.name}이(가) 불려 나왔다.`);return true;
   }
-  if(effect==='selfblast'){curseSelfBlast(p,power,c);return true}
+  if(effect==='selfblast'){baneSelfBlast(p,power,c);return true}
   if(effect==='blink'){
     const cells=[];for(let dy=-8;dy<=8;dy++)for(let dx=-8;dx<=8;dx++){const x=p.x+dx,y=p.y+dy;if((dx||dy)&&state.visible.has(k(x,y))&&ReachabilityService.playerPassable(x,y)&&!OccupancyService.isOccupied(x,y)&&playerTransferLandingSafe57(x,y))cells.push({x,y})}
     if(!cells.length)return false;const to=choice(cells);mark(null,CURSE_FX.blink,1);
@@ -243,7 +266,7 @@ function runCurseEffect(effect,actor,power,c){
   return false;
 }
 const CURSE_FX={roar:'#e0735f',summon:'#9b6fc8',selfblast:'#a9b6ff',blink:'#8fd0e0',glutton:'#c9805a',mirror:'#c8bcff',scream:'#e6a0a0'};
-function curseSelfBlast(p,power,c){
+function baneSelfBlast(p,power,c){
   const cells=elementCells105(p.x,p.y,2),effect=effectSource57(null,{sourceFaction:'player',owner:'player',credit:null}),base=8+Math.floor(state.floor*1.2)+power*2;
   impact(p.x,p.y,CURSE_FX.selfblast,8);burst(p.x,p.y,'#e6fdff',26,1.2);flash('#c8bcff',160);bellFX(p.x,p.y,4,'#b6f3ff');
   for(const element of ['shock','ice'])elementAttackFx105(element,cells,p);
@@ -257,23 +280,23 @@ function curseSelfBlast(p,power,c){
   if(cap>0){resolveElementDamage57(p,'shock',Math.min(base,cap),{contactHandled105:true,source:'자폭 천명탄 전격',color:'#a9b6ff'});if(p.hp>1)resolveElementDamage57(p,'ice',Math.min(base,cap),{contactHandled105:true,source:'자폭 천명탄 빙결',color:'#b6f3ff'})}
   floatText(p.x,p.y,'자폭 천명탄!',CURSE_FX.selfblast,14);addLog(`${c.name}: 장비가 천명탄처럼 터져 나와 나도 함께 휘말렸다.`);
 }
-function curseOnHurt(source,amount){
+function baneOnHurt(source,amount){
   const p=state?.player;if(!p||p.hp<=0)return;
-  if(curseStackCount('scream')>0&&p.hp<=p.maxHp*.5&&state.turn>=(p.curseScreamCd??0)){
-    p.curseScreamCd=state.turn+6;alertNearby(p.x,p.y,9,'explosion');bellFX(p.x,p.y,8,CURSE_FX.scream);floatText(p.x,p.y,'비명!',CURSE_FX.scream,13);addLog('비명: 저주받은 장비가 고통에 찬 소리를 질렀다.');
+  if(baneCount('scream')>0&&p.hp<=p.maxHp*.5&&state.turn>=(p.curseScreamCd??0)){
+    p.curseScreamCd=state.turn+6;alertNearby(p.x,p.y,9,'explosion');bellFX(p.x,p.y,8,CURSE_FX.scream);floatText(p.x,p.y,'비명!',CURSE_FX.scream,13);addLog('비명: 장비가 고통에 찬 소리를 질렀다.');
   }
-  if(curseStackCount('selfblast')>0&&p.hp<=p.maxHp*.25&&state.turn>=(p.curseBlastCd??0)){
-    p.curseBlastCd=state.turn+10;curseSelfBlast(p,curseMultiplier('selfblast'),CURSE_BY_ID.get('selfblast'));
+  if(baneCount('selfblast')>0&&p.hp<=p.maxHp*.25&&state.turn>=(p.curseBlastCd??0)){
+    p.curseBlastCd=state.turn+10;baneSelfBlast(p,banePower('selfblast'),CHARM_BANES.selfblast);
   }
 }
-function curseOnKill(mon){
-  const p=state?.player;if(!p||p.hp<=0||!mon||mon.curseMirror991||curseStackCount('mirror_image')<=0)return;
+function baneOnKill(mon){
+  const p=state?.player;if(!p||p.hp<=0||!mon||mon.curseMirror991||baneCount('mirror_image')<=0)return;
   const echo=spawnMonster({x:mon.x,y:mon.y},false,{provenance:'curse'});if(!echo)return;
   Object.assign(echo,{name:`거울상 ${mon.name}`,curseMirror991:true,alerted:true,mirrorLife991:4,hp:Math.max(3,Math.round((mon.maxHp||10)*.6)),maxHp:Math.max(3,Math.round((mon.maxHp||10)*.6))});
   charmFx(echo.x,echo.y,'거울상',CURSE_FX.mirror,2);addLog('거울상: 쓰러진 적의 반영이 일어나 나를 쫓는다.');
 }
 // A mirror image fades after four turns.
-function curseMirrorTick(){
+function baneMirrorTick(){
   for(const m of [...state.monsters]){
     if(!m.curseMirror991||m.hp<=0)continue;m.mirrorLife991=(m.mirrorLife991??4)-1;
     if(m.mirrorLife991<=0){charmFx(m.x,m.y,'흩어짐',CURSE_FX.mirror,1);OccupancyService.removeMonster(m)}
@@ -301,8 +324,9 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   let budget=(premium?16:1.7+1.5*tier)*(.8+rnd()*.4),points=0;
   if(!premium)for(let n=chance(.35)?(chance(.25)?2:1):0;n>0;n--){
     const r=rnd();
-    if(r<.3&&!it.curse991){const c=pick(CURSE_CATALOG);it.curse991=c.id;it.curseRoll991=true;it.curseImmune991=false;revealItemCurse(it);points+=c.pts||1;budget+=1.5*(c.pts||1)}
-    else if(r<.72){const el=pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e]));if(el){it.resist[el]=-1;points++;budget+=1.6}}
+    if(r<.14&&!it.curse991){const c=pick(CURSE_CATALOG);it.curse991=c.id;it.curseRoll991=true;it.curseImmune991=false;revealItemCurse(it);points++;budget+=1.5}
+    else if(r<.34&&!it.bane){const id=pick(Object.keys(CHARM_BANES)),b=CHARM_BANES[id];it.bane=id;points+=b.pts;budget+=1.5*b.pts}
+    else if(r<.74){const el=pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e]));if(el){it.resist[el]=-1;points++;budget+=1.6}}
     else{const k=pick(['vision','eva','def','will'].filter(x=>!it[x]));if(k){it[k]=-1;points++;budget+=1.2}}
   }
   if(premium)it.quirk=charmPickQuirk(rnd,true);

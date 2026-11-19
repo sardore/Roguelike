@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.charmTest={capacity:inventoryCapacity,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
+const bridge = 'globalThis.charmTest={capacity:inventoryCapacity,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,baneEffect:runBaneEffect,baneHurt:baneOnHurt,baneKill:baneOnKill,banes:CHARM_BANES,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -128,9 +128,9 @@ assert.deepEqual(fx.gas, [true, false, true]); assert.equal(fx.twins, true);
 const cur = await s.page.evaluate(() => {
   const T = charmTest, st = T.state(), p = st.player, r = {};
   st.monsters = []; p.maxHp = 80; p.hp = 80; p.trinket = null; p.relic = null;
-  const c = id => T.curses.find(x => x.id === id), run = (e, id) => T.curseEffect(e, p, 1, c(id));
-  r.catalog = ['roar', 'summon', 'selfblast', 'wander', 'glutton', 'mirror_image', 'scream'].map(id => !!c(id));
-  r.glutton250 = c('glutton').periodic.period;
+  const c = id => T.banes[id], run = (e, id) => T.baneEffect(e, p, 1, c(id)), ids = ['roar', 'summon', 'selfblast', 'wander', 'glutton', 'mirror_image', 'scream'];
+  r.catalog = ids.map(id => !!c(id)); r.notCurses = ids.every(id => !T.curses.some(x => x.id === id));
+  r.glutton250 = c('glutton').period;
   r.roar = run('roar', 'roar');
   r.summon = run('summon', 'summon'); r.summoned = st.monsters.filter(m => m.curseSummon991).length; r.summon2 = run('summon', 'summon');
   for (const m of st.monsters) { m.hp = m.maxHp = 500; m.x = p.x + 1; m.y = p.y }
@@ -138,35 +138,41 @@ const cur = await s.page.evaluate(() => {
   p.hp = 2; run('selfblast', 'selfblast'); r.blastNoKill = p.hp >= 1; p.hp = 80;
   const food = { name: '주먹밥', type: 'food', count: 1 }; p.inventory.push(food); const n0 = p.inventory.length; run('eatfood', 'glutton'); r.ate = n0 - p.inventory.length;
   const hp0 = p.hp; p.inventory = p.inventory.filter(i => i.type !== 'food'); run('eatfood', 'glutton'); r.bite = hp0 - p.hp;
-  // event curses need an active curse on worn gear
-  p.armor = { ...p.armor, curse991: 'scream', curseActive991: true }; p.hp = 20; st.turn = 200; p.curseScreamCd = 0;
-  T.curseHurt(null, 5); r.screamCd = p.curseScreamCd > 200;
-  p.armor = { ...p.armor, curse991: 'mirror_image', curseActive991: true }; st.map[p.y][p.x + 2] = st.map[p.y][p.x]; st.monsters = st.monsters.filter(m => !(m.x === p.x + 2 && m.y === p.y)); const dead = { name: '시험체', x: p.x + 2, y: p.y, maxHp: 30 };
-  const before = st.monsters.length; T.curseKill(dead); r.mirror = st.monsters.length - before; r.mirrorTagged = st.monsters.some(m => m.curseMirror991);
-  return r;
+  // banes work while a relic or trinket carrying them is worn
+  p.trinket = { name: 'b1', bane: 'scream' }; p.hp = 20; st.turn = 200; p.curseScreamCd = 0;
+  T.baneHurt(null, 5); r.screamCd = p.curseScreamCd > 200;
+  p.trinket = { name: 'b2', bane: 'mirror_image' }; st.map[p.y][p.x + 2] = st.map[p.y][p.x]; st.monsters = st.monsters.filter(m => !(m.x === p.x + 2 && m.y === p.y)); const dead = { name: '시험체', x: p.x + 2, y: p.y, maxHp: 30 };
+  const before = st.monsters.length; T.baneKill(dead); r.mirror = st.monsters.length - before; r.mirrorTagged = st.monsters.some(m => m.curseMirror991);
+  // a worn bane fires on its own clock and stops when the piece comes off
+  st.monsters = []; p.trinket = { name: 'b3', bane: 'roar' }; p.baneClock = {}; const t0 = st.turn; let fired = 0;
+  for (let i = 0; i < 30; i++) { st.turn = t0 + i; const before = p.baneClock.roar; T.post(); if (before != null && p.baneClock.roar !== before) fired++ }
+  r.roarFired = fired; p.trinket = null; T.post(); r.clockCleared = p.baneClock.roar == null;
+  p.trinket = null; return r;
 });
 console.log('curses', JSON.stringify(cur));
-assert.deepEqual(cur.catalog, [true, true, true, true, true, true, true]); assert.equal(cur.glutton250, 250);
+assert.deepEqual(cur.catalog, [true, true, true, true, true, true, true]); assert.equal(cur.notCurses, true, 'banes are not curses'); assert.equal(cur.roarFired, 2, 'roar every 14 turns while worn'); assert.equal(cur.clockCleared, true); assert.equal(cur.glutton250, 250);
 assert.equal(cur.roar, true); assert.equal(cur.summon, true); assert.equal(cur.summoned, 1); assert.equal(cur.summon2, false);
 assert.equal(cur.blastHurt, true); assert.equal(cur.blastAlive, true); assert.equal(cur.blastNoKill, true);
 assert.equal(cur.ate, 1); assert.equal(cur.bite, 3); assert.equal(cur.screamCd, true); assert.equal(cur.mirror, 1); assert.equal(cur.mirrorTagged, true);
 
 const dist = await s.page.evaluate(() => {
   const T = charmTest, tally = {}, old = ['chainBurst', 'luckyMend', 'lastStand', 'feast', 'frostWard'];
-  let n = 0, quirky = 0, cursed = 0, oldQ = 0, bad = [];
+  let n = 0, quirky = 0, cursed = 0, baned = 0, oldQ = 0, bad = [];
   for (let i = 0; i < 3000; i++) {
     const it = T.make(i % 2 ? 'relic' : 'trinket', 2 + (i % 4));
     n++; if (it.quirk) { quirky++; tally[it.quirk] = (tally[it.quirk] || 0) + 1; if (old.includes(it.quirk)) oldQ++ }
-    if (it.curse991) { cursed++; if (it.curseImmune991) bad.push('immune+curse') }
+    if (it.bane) { baned++; if (T.curses.some(x => x.id === it.bane)) bad.push('bane is a curse') }
+    if (it.curse991) { cursed++; if (it.curseImmune991) bad.push('immune+curse'); if (T.banes[it.curse991]) bad.push('bane rolled as curse') }
     else if (!it.curseImmune991) bad.push('plain not immune');
     const sp = ['bagSlots', 'regenEvery', 'killHeal', 'killFocus', 'thorns', 'lowHpAtk', 'lowHpDef', 'critAdd', 'moveMul', 'atkCostMul', 'statusGuard', 'strike'].filter(k => it[k]).length;
     if (sp > 4) bad.push('too many specials ' + sp);
   }
-  return { n, quirky, cursed, oldShare: +(oldQ / Math.max(1, quirky)).toFixed(2), tally, bad: bad.slice(0, 3) };
+  return { n, quirky, cursed, baned, oldShare: +(oldQ / Math.max(1, quirky)).toFixed(2), tally, bad: bad.slice(0, 3) };
 });
 console.log('dist', JSON.stringify(dist));
 assert.deepEqual(dist.bad, []);
-assert.ok(dist.cursed > dist.n * .08 && dist.cursed < dist.n * .25, 'cursed share ' + dist.cursed);
+assert.ok(dist.cursed > dist.n * .02 && dist.cursed < dist.n * .12, 'cursed share ' + dist.cursed);
+assert.ok(dist.baned > dist.n * .04 && dist.baned < dist.n * .2, 'bane share ' + dist.baned);
 assert.ok(dist.oldShare > .45 && dist.oldShare < .85, 'old quirks stay the common ones ' + dist.oldShare);
 for (const q of ['echo', 'shadowStep', 'backlash', 'treasureSense', 'fullMoon', 'hungerSwap', 'fireKnot', 'twins', 'ghostStep', 'airPurify', 'frostStep']) assert.ok((dist.tally[q] || 0) > 0, 'quirk appears: ' + q);
 
