@@ -944,6 +944,13 @@
     #inspectBody .inspectStatuses57{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
     #inspectBody .inspectStatus57{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid var(--status-color);border-radius:2px;background:#100a08;color:var(--status-color);font:800 calc(11px * var(--ui-font-scale, 1))/1.2 system-ui,sans-serif}
     #inspectBody .inspectStatus57 b{display:grid;place-items:center;min-width:16px;font-size:calc(14px * var(--ui-font-scale, 1))}#inspectBody .inspectStatus57 small{font-size:inherit;color:inherit;opacity:.85}
+    #inspectBody .inspectElements105{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px;margin:0 0 10px}
+    #inspectBody .inspectElements105>b{grid-column:1/-1;color:#edc98d;font-size:calc(10px * var(--ui-font-scale, 1));letter-spacing:.08em}
+    #inspectBody .inspectElements105 span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 2px;border:1px solid #3d2c1f;background:#100a06;color:#9f8666;font:800 calc(11px * var(--ui-font-scale, 1))/1.2 system-ui,sans-serif}
+    #inspectBody .inspectElements105 small{font-size:calc(10px * var(--ui-font-scale, 1));color:#7d6a52}
+    #inspectBody .inspectElements105 span[data-level="-1"]{border-color:#9b4a35;color:#f0a070}#inspectBody .inspectElements105 span[data-level="-1"] small{color:#f0a070}
+    #inspectBody .inspectElements105 span[data-level="1"],#inspectBody .inspectElements105 span[data-level="2"]{border-color:#4f6a7a;color:#a9cbe0}#inspectBody .inspectElements105 span[data-level="1"] small,#inspectBody .inspectElements105 span[data-level="2"] small{color:#a9cbe0}
+    #inspectBody .inspectElements105 span[data-level="3"]{border-color:#c9a65a;color:#f3d995}#inspectBody .inspectElements105 span[data-level="3"] small{color:#f3d995}
     #inspectBody .inspectAbility986{margin:8px 0 10px;padding:9px 11px;border-left:3px solid #a46d3e;background:#1a100a;color:#d7bc91;font-size:calc(12px * var(--ui-font-scale, 1));line-height:1.55}.inspectAbility986 b{margin-right:7px;color:#edc98d}
     #mobileInspect .inspectFx,#mobileInspect .inspectDesc,#mobileInspect .lore984,#mobileInspect .clean53Hint{display:none!important}
     .deathSeal94{white-space:nowrap!important;word-break:keep-all!important;overflow:hidden!important;font-size:calc(32px * var(--ui-font-scale, 1))!important}

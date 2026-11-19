@@ -24,11 +24,22 @@ const out = await s.page.evaluate(() => {
     names.add(it.name);
     const res = Object.entries(it.resist || {});
     const pos = res.filter(([, v]) => v > 0), neg = res.filter(([, v]) => v < 0);
-    if (pos.length < 1 || pos.length > 3 || pos.some(([, v]) => v !== 1) || neg.length > 1) bad.push(['resist', it.name, JSON.stringify(it.resist)]);
+    if (pos.some(([, v]) => v > 3) || res.some(([, v]) => v < -1) || neg.length > 2 || (tier < 3 && pos.some(([, v]) => v > 2))) bad.push(['resist', it.name, JSON.stringify(it.resist)]);
     if (!it.art || !T.shapes[slot].includes(it.art.shape) || !T.mats[it.art.mat]) bad.push(['art', it.name]);
-    if (T.lines(it).length < 1) bad.push(['lines', it.name]);
+    if (T.lines(it).length < 1 && !['atk', 'def', 'eva', 'will', 'vision'].some(k => it[k] > 0)) bad.push(['lines', it.name]);
   }
   r.bad = bad.slice(0, 5); r.uniqueNames = names.size;
+  // budgets are not always spread: lopsided pieces and weaknesses show up now and then, and a weakness pays for more elsewhere
+  const shape = { high: 0, weak: 0, none: 0, wide: 0, bigStat: 0, weakBigStat: 0, allEffects: 0, sumWeak: 0, nWeak: 0, sumPlain: 0, nPlain: 0 };
+  for (let i = 0; i < 3000; i++) {
+    const tier = 1 + (i % 5), it = T.make(i % 2 ? 'relic' : 'trinket', tier), v = Object.values(it.resist || {});
+    const stats = ['atk', 'def', 'eva', 'will', 'vision'].map(k => it[k] || 0), big = Math.max(...stats) >= tier + 2, weak = v.some(x => x < 0);
+    const value = v.filter(x => x > 0).reduce((a, b) => a + b, 0) + stats.filter(x => x > 0).reduce((a, b) => a + b, 0);
+    if (v.some(x => x >= 2)) shape.high++; if (weak) shape.weak++; if (!v.some(x => x > 0)) shape.none++; if (v.filter(x => x > 0).length >= 4) shape.wide++;
+    if (big) shape.bigStat++; if (big && weak) shape.weakBigStat++; if (!stats.some(x => x > 0) && !v.some(x => x > 0)) shape.allEffects++;
+    if (weak && !it.curse991) { shape.sumWeak += value; shape.nWeak++ } else if (!it.curse991 && !stats.some(x => x < 0)) { shape.sumPlain += value; shape.nPlain++ }
+  }
+  r.shape = shape;
   // 2. fixed catalog
   r.fixed = [T.RELICS.length, T.TRINKETS.length];
   // 3. hooks
@@ -49,6 +60,11 @@ const out = await s.page.evaluate(() => {
 console.log('charms', JSON.stringify(out));
 assert.deepEqual(out.bad, []);
 assert.ok(out.uniqueNames >= 40, 'name variety ' + out.uniqueNames);
+console.log('shape', JSON.stringify(out.shape));
+for (const k of ['high', 'weak', 'none', 'wide', 'bigStat']) assert.ok(out.shape[k] > 60 && out.shape[k] < 1500, 'sometimes ' + k + ': ' + out.shape[k]);
+assert.ok(out.shape.weakBigStat > 10, 'a weakness traded for one big stat happens: ' + out.shape.weakBigStat);
+assert.ok(out.shape.allEffects > 5, 'some pieces are all effects: ' + out.shape.allEffects);
+assert.ok(out.shape.sumWeak / out.shape.nWeak > out.shape.sumPlain / out.shape.nPlain, 'a weakness buys more elsewhere');
 assert.deepEqual(out.fixed.map(n => n >= 14), [true, true]);
 assert.deepEqual(out.lowHp, [3, 2, 0]);
 assert.deepEqual([out.fireLevel, out.fireMult], [0, 1]);
@@ -124,7 +140,7 @@ const cur = await s.page.evaluate(() => {
   // event curses need an active curse on worn gear
   p.armor = { ...p.armor, curse991: 'scream', curseActive991: true }; p.hp = 20; st.turn = 200; p.curseScreamCd = 0;
   T.curseHurt(null, 5); r.screamCd = p.curseScreamCd > 200;
-  p.armor = { ...p.armor, curse991: 'mirror_image', curseActive991: true }; const dead = { name: '시험체', x: p.x + 2, y: p.y, maxHp: 30 };
+  p.armor = { ...p.armor, curse991: 'mirror_image', curseActive991: true }; st.map[p.y][p.x + 2] = st.map[p.y][p.x]; st.monsters = st.monsters.filter(m => !(m.x === p.x + 2 && m.y === p.y)); const dead = { name: '시험체', x: p.x + 2, y: p.y, maxHp: 30 };
   const before = st.monsters.length; T.curseKill(dead); r.mirror = st.monsters.length - before; r.mirrorTagged = st.monsters.some(m => m.curseMirror991);
   return r;
 });

@@ -1118,10 +1118,12 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
     if(mon.ranged)stats.push(`사거리 ${displayNumber53(mon.range||6)}`);else if((mon.reach||1)>1)stats.push(`공격거리 ${displayNumber53(mon.reach)}`);
     if(mon.boss)meta.push('보스');else if(mon.legendElite47||mon.miniBoss)meta.push('정예');else meta.push(isPlayerAlly57(mon)?'아군 개체':'적대 개체');
     if(mon.kind)meta.push(({human:'인간',beast:'야수',spirit:'영체',undead:'망자',plant:'식물',construct:'구조체',slime:'점액'})[mon.kind]||mon.kind);
-    if(mon.flying)meta.push('비행');if(mon.aquatic)meta.push('수생');if(monsterMovementLocked57(mon))meta.push('고정');
+    if(mon.flying)meta.push('비행');if(mon.aquatic)meta.push(mon.waterOnly57?'수생 · 물 밖 불가':'수생');if(mon.amphibious57)meta.push('수륙 양용');if(mon.mercuryAdapted57)meta.push('수은 적응');if(monsterMovementLocked57(mon))meta.push('고정');
+    if(mon.fast&&!mon.exitPressureSpeed57)meta.push('빠름');if(mon.footprint)meta.push('거대 체구');if(mon.poisonImmune57)meta.push('독 면역');if(mon.statusImmune)meta.push('상태이상 면역');
     if(aquaticStranded(mon)){meta.push('뭍에 남음');hints.push('물이 빠진 자리에서 몸을 뒤틀며 펄떡인다. 다시 물이 차면 헤엄치는 모습을 되찾는다.')}
     if(mon.legendElite47)meta.push('문지기 강화');
-    if(mon.palaceLotus105)hints.push(palaceWet(mon)?'개화 · 완전 견인 사용 가능':'닫힌 꽃봉오리 · 견인 불가');if(mon.equipmentActor105)hints.push('무기: '+(mon.weapon?.name||'없음'));if(mon.martialActor105){stats.push(`기 ${Math.floor(mon.focus)}/${mon.maxFocus}`);hints.push(dojoInspect(mon,{battle:!!state.debugBattle57}));}return{name:mon.name,meta,stats,statuses:combatStatusRows(mon),desc,skills:monsterSkills(mon),martialCards:mon.martialActor105?Object.keys(MARTIAL_INFO).filter(id=>mon.martial[id]>0).map(id=>({id,actor:mon})):null,blink:mon.martialActor105&&mon.dojoRank105>=3,hint:[...new Set(hints)].join(' ')};
+    if(mon.palaceLotus105)hints.push(palaceWet(mon)?'개화 · 완전 견인 사용 가능':'닫힌 꽃봉오리 · 견인 불가');if(mon.equipmentActor105)hints.push('무기: '+(mon.weapon?.name||'없음'));if(mon.martialActor105){stats.push(`기 ${Math.floor(mon.focus)}/${mon.maxFocus}`);hints.push(dojoInspect(mon,{battle:!!state.debugBattle57}));}const role=mon.role61&&MONSTER_ROLE_LABEL105[mon.role61],elements=RESIST_ELEMENTS57.map(e=>{const level=entityElementResist(mon,e);return{name:RESIST_NAMES57[e],level,label:['취약','보통','저항 Ⅰ','저항 Ⅱ','면역'][level+1]}});
+    return{name:mon.name,meta,stats,statuses:combatStatusRows(mon),desc,role:role?role+(mon.roleDesc61&&mon.roleDesc61!==desc?' · '+mon.roleDesc61:''):null,elements,skills:monsterSkills(mon),martialCards:mon.martialActor105?Object.keys(MARTIAL_INFO).filter(id=>mon.martial[id]>0).map(id=>({id,actor:mon})):null,blink:mon.martialActor105&&mon.dojoRank105>=3,hint:[...new Set(hints)].join(' ')};
   }
 /* R37 THEME-2 DESIGN — quiet ink/wood/stone materials, with deliberate indoor/outdoor room identities. */
 function refineTheme2Rooms1027(){

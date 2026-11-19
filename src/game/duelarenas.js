@@ -317,7 +317,7 @@ function placeDuelOpponent(at,ghost=null){
 }
 
 // ---- the rules of the duel (docs/GHOST_BATTLE.md) ----------------------------------------------------------------------------
-// Both ghosts take element damage as a boss does (entityElementMultiplier57 has .62 for a boss; the same number here), potions and talismans share
+// Both ghosts take element damage ×.62 (the old boss factor; bosses now get +1 resist on every element instead), potions and talismans share
 // a cooldown of five turns and martial arts have their own, and the lava talisman is not laid under the other player (RuntimeTerrainOwner).
 const DUEL_ELEMENT_RESIST=.62,DUEL_COOLDOWN_TURNS=5;
 // True (with a message) while `kind` ('item' for potions and talismans, 'martial') is cooling down.

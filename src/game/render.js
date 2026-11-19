@@ -315,6 +315,22 @@ function drawCombatProjectile(q,pj,now){
   q.fillStyle='#f3ffc7';q.fillRect(-3,-1,6,1);
   q.restore();return;
  }
+ if(pj.kind==='mirror-ray'){
+  // 반영검: the struck blade flashes like a mirror and throws a ray of holy light to the second foe.
+  const ang=Math.atan2(pj.y1-pj.y0,pj.x1-pj.x0),len=Math.hypot(pj.x1-pj.x0,pj.y1-pj.y0),grow=Math.min(1,t/.28),fade=t<.55?1:Math.max(0,1-(t-.55)/.45),seed=Math.floor(pj.start)%991;
+  q.translate(pj.x0,pj.y0);q.rotate(ang);q.lineCap='round';
+  const reach=len*grow;
+  q.globalAlpha=.32*fade;q.strokeStyle='#e6bd68';q.lineWidth=9;q.beginPath();q.moveTo(0,0);q.lineTo(reach,0);q.stroke();
+  q.globalAlpha=.85*fade;q.strokeStyle='#f6d88a';q.lineWidth=3.6;q.beginPath();q.moveTo(0,0);q.lineTo(reach,0);q.stroke();
+  q.globalAlpha=fade;q.strokeStyle='#fffbe8';q.lineWidth=1.3;q.beginPath();q.moveTo(0,0);q.lineTo(reach,0);q.stroke();
+  // prism motes drifting off the ray
+  for(let i=0;i<9;i++){const u=hash2(i,seed,77);if(u*len>reach)continue;const off=(hash2(i,seed,78)-.5)*10*(.4+t),s=1+hash2(i,seed,79)*1.6;q.globalAlpha=fade*(.5+hash2(i,seed,80)*.5);q.fillStyle=i%3?'#fff0b8':'#cfe3ff';q.beginPath();q.moveTo(u*len,off-s);q.lineTo(u*len+s*.6,off);q.lineTo(u*len,off+s);q.lineTo(u*len-s*.6,off);q.closePath();q.fill()}
+  // the mirror glint at the struck foe: a turning four-point star
+  const g=(1-t)*fade,r=6+t*9;q.rotate(t*1.6);q.globalAlpha=g;q.fillStyle='#fff6d2';
+  q.beginPath();q.moveTo(0,-r);q.lineTo(r*.18,-r*.18);q.lineTo(r,0);q.lineTo(r*.18,r*.18);q.lineTo(0,r);q.lineTo(-r*.18,r*.18);q.lineTo(-r,0);q.lineTo(-r*.18,-r*.18);q.closePath();q.fill();
+  q.globalAlpha=g*.6;q.strokeStyle='#e6bd68';q.lineWidth=1;q.beginPath();q.arc(0,0,r*.55,0,Math.PI*2);q.stroke();
+  q.restore();return;
+ }
  if(pj.kind==='lightning'){
   // A real-looking strike: a stepped leader, then a forked return stroke that flickers twice, with a ground arc web, soot and sparks.
   const cx=pj.x1,cy=pj.y1,top=pj.y0-TILE*2,seed=Math.floor(pj.start)%997,R=(i,k)=>hash2(i,seed,k);
