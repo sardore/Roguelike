@@ -16,6 +16,7 @@ globalThis.mirrorTest={
  vis:()=>VisibilityService.compute(),draw:drawFast,skyTile:glassCloudTile,skills:monsterSkills,
  damage:damageEntity,recover:recoverCombatHealth,status:applyCombatStatus,expire:expireCombatFields,
  fieldTick:tickCombatFields57,fixtureTick:tickBossFixture,turn:handleBossPattern,
+ iceFusions:()=>globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates('elem_ice').map(i=>i.talismanKind),
  prepare(){
    const boss=state.monsters.find(m=>m.mirrorKeeper105);
    for(const mon of [...state.monsters])if(mon!==boss)OccupancyService.removeMonster(mon);
@@ -147,7 +148,7 @@ const encounter = () => {
   const boss = mirrorTest.prepare(), st = mirrorTest.state(), p = st.player;
   const advance = (turns = 1) => { st.turn += turns; st.floorTurn += turns; };
   const activate = b => mirrorTest.turn(b, Math.max(Math.abs(b.x-st.player.x),Math.abs(b.y-st.player.y)), st.player);
-  const skillNames = mirrorTest.skills(boss).map(s => s.name);
+  const maxHp = boss.maxHp, skillNames = mirrorTest.skills(boss).map(s => s.name);
   activate(boss);
   phases.push(boss.intent54?.type);
   activate(boss);
@@ -192,21 +193,28 @@ const encounter = () => {
   advance(); activate(boss);
   const sanctuary = st.tempFields.find(f => f.kind === 'mirrorSanctuary');
   st.tempFields = st.tempFields.filter(f => f === sanctuary);
-  const blockedHeal = mirrorTest.recover(p, 5);
+  const duration = sanctuary.ttl, blockedHeal = mirrorTest.recover(p, 5);
   const blockedStatus = !mirrorTest.status(boss, 'blind', 2, 1, {source:p});
   const before = boss.hp;
-  for (let i = 0; i < 3; i++) { advance(); mirrorTest.fieldTick(); mirrorTest.expire(); }
+  for (let i = 0; i < 6; i++) { advance(); mirrorTest.fieldTick(); mirrorTest.expire(); }
   const sanctuaryHeal = boss.hp - before;
-  const blind = st.status.blind || 0;
+  const {blind,weaken} = st.status;
   const releasedHeal = mirrorTest.recover(p, 5);
+  const lootBefore = new Set(st.items), carried = boss.inventory.map(i=>i.name).sort();
   mirrorTest.kill(boss);
-  return {phases,skillNames,waitsForTurn,singleStep,impact,shards,shardDamage,bell,copyInfo,strikes,
-    sanctuaryWarning,blockedHeal,blockedStatus,sanctuaryHeal,blind,releasedHeal,
-    weapon:st.items.filter(i=>i.artifactId46==='mirror_blade').length,
+  mirrorTest.kill(boss);
+  const loot = st.items.filter(i=>!lootBefore.has(i));
+  return {maxHp,phases,skillNames,waitsForTurn,singleStep,impact,shards,shardDamage,bell,copyInfo,strikes,
+    sanctuaryWarning,duration,blockedHeal,blockedStatus,sanctuaryHeal,blind,weaken,releasedHeal,
+    weapon:loot.filter(i=>i.artifactId46==='mirror_blade').length,
+    small:loot.filter(i=>i.potionKind==='heal_small').reduce((sum,i)=>sum+i.count,0),
+    fusions:loot.filter(i=>i.fusion74&&mirrorTest.iceFusions().includes(i.talismanKind)).map(i=>i.talismanKind),
+    carried, dropped:loot.map(i=>i.name).sort(),
     leftover:st.monsters.filter(m=>m.bossOwnerId57&&m.hp>0).length};
 };
 const boss = await s.page.evaluate(encounter);
 console.log('boss', JSON.stringify(boss));
+assert.equal(boss.maxHp, 231);
 assert.deepEqual(boss.phases, ['mirrorOrb', 'mirrorCopy', 'rod']);
 assert.deepEqual(boss.skillNames, ['천명탄', '피뢰침', '경종', '거울 복사', '빛의 성역']);
 assert.ok(boss.waitsForTurn && boss.singleStep);
@@ -219,9 +227,14 @@ assert.deepEqual(boss.strikes, [2,1,0]);
 assert.equal(boss.sanctuaryWarning, 'mirrorSanctuary');
 assert.equal(boss.blockedHeal, 0);
 assert.ok(boss.blockedStatus);
-assert.equal(boss.sanctuaryHeal, 6);
-assert.ok(boss.blind > 0 && boss.releasedHeal === 5);
+assert.equal(boss.duration, 6);
+assert.equal(boss.sanctuaryHeal, 24);
+assert.ok(boss.blind > 0 && boss.weaken > 0 && boss.releasedHeal === 5);
 assert.equal(boss.weapon, 1, '거울지기를 쓰러뜨리면 천면경 검이 떨어져야 한다');
+assert.equal(boss.small, 1);
+assert.equal(new Set(boss.fusions).size, 3);
+assert.deepEqual(boss.dropped, boss.carried);
+assert.equal(boss.dropped.length, 5);
 assert.equal(boss.leftover, 0, '거울상이 흩어지지 않았다');
 assert.deepEqual(s.errors, []);
 console.log('mirror tower ok', JSON.stringify(floors));

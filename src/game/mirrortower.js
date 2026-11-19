@@ -7,7 +7,7 @@
    are detours. The way on is lit by lamps and an inlaid line; side rooms and balconies hold the loot.
    Layout data for the art (zones, owners, furniture, lights, stairs) is kept in branchTerrain105.mirror105;
    mirrorart.js draws all of it. */
-const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:135,atk:12,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',color:'#b4c1c7',bossPattern:'mirrorKeeper105',lightningRodProfile:{bonus:3,scale:1.15,stun:1,stunOnFinal:true},mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
+const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:231,fixedHp:true,balanceVersion57:1,atk:12,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',spriteScale:1.30,color:'#b4c1c7',bossPattern:'mirrorKeeper105',lightningRodProfile:{bonus:3,scale:1.15,stun:1,stunOnFinal:true},mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
 const MIRROR_TOWER_HEIGHTS=Object.freeze([3,3,3,2,2,1,1]);
 const MIRROR_TOWER_PURPOSES=Object.freeze(['observatory','display','library']);
 const MIRROR_TOWER_WINDOWS=Object.freeze(['arch','round','slit','diamond']);
@@ -224,11 +224,15 @@ function buildMirrorTower(level){
  if(down)portal('down',down,`mirror:${level+1}`,'up',`${def.name} ${level+1}층`);
  Object.assign(state.player,up);state.fixedStart={...up};state.fixedExit=down||bossAt;state.stairs={...state.fixedExit};
  // ---- the way on: shortest walk from arrival to the stairs or the Keeper, inlaid and lit
- const pass=(x,y)=>{const t=m[y]?.[x];return t!=null&&(tracks.has(k(x,y))||!tileBlocks(t)&&![TT.WATER,TT.VOID,TT.LAVA].includes(t))};
- const target=down||bossAt,prev=new Map([[k(up.x,up.y),null]]),queue=[up];
- for(let i=0;i<queue.length;i++){const p=queue[i];for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(prev.has(k(x,y))||!pass(x,y))continue;prev.set(k(x,y),k(p.x,p.y));queue.push({x,y})}}
- if(!prev.has(k(target.x,target.y)))throw Error('Mirror tower: the way on is cut');
- const path=[];for(let key=k(target.x,target.y);key;key=prev.get(key))path.unshift(key);
+ const walkOptions={directions:DIRS4,tileAt:(x,y)=>{
+  if(tracks.has(k(x,y)))return TT.RAFT;
+  const tile=m[y]?.[x];
+  return [TT.WATER,TT.VOID,TT.LAVA].includes(tile)?TT.WALL:tile;
+ }};
+ const target=down||bossAt;
+ const route=ReachabilityService.playerPath(ReachabilityService.playerSearch(up,{...walkOptions,goal:target}),target);
+ if(!route)throw Error('Mirror tower: the way on is cut');
+ const path=[up,...route].map(p=>k(p.x,p.y));
  const onPath=new Set(path);
  for(const key of path){const[x,y]=key.split(',').map(Number);if('chbda'.includes(zone[y][x])&&m[y][x]===TT.FLOOR)zone[y][x]='P'}
  // ---- furniture
@@ -270,7 +274,7 @@ function buildMirrorTower(level){
  for(let i=4;i<path.length;i+=6){const[x,y]=path[i].split(',').map(Number);for(const[dx,dy]of DIRS4){const lx=x+dx,ly=y+dy;if(onPath.has(k(lx,ly)))continue;if(place('lamp',lx,ly,mirrorTowerAt(lx,ly,standing))){lights.push({x:lx,y:ly,color:['#bff4ff','#ffd6ec','#ffe8a0'][level-1],r:3.6,power:.26});break}}}
  for(const o of objects)if(o.kind==='lamp'&&!lights.some(l=>l.x===o.x&&l.y===o.y))lights.push({x:o.x,y:o.y,color:['#d9c8ff','#f4b4dc','#c8f0b0'][level-1],r:3.2,power:.22});
  // ---- everything that matters must still be reachable
- const reach=new Set([k(up.x,up.y)]),q2=[up];for(let i=0;i<q2.length;i++){const p=q2[i];for(const[dx,dy]of DIRS4){const x=p.x+dx,y=p.y+dy;if(reach.has(k(x,y))||!pass(x,y))continue;reach.add(k(x,y));q2.push({x,y})}}
+ const reach=ReachabilityService.playerSearch(up,walkOptions).cells;
  if(!reach.has(k(target.x,target.y)))throw Error('Mirror tower: the way on is blocked');
  for(const r of rooms)if(!r.cells.some(c=>reach.has(k(c.x,c.y))))throw Error('Mirror tower: a side room is sealed');
  for(const b of balconies){let ok=false;for(let y=b.y-2;y<=b.y+2&&!ok;y++)for(let x=b.x-2;x<=b.x+2;x++)if(reach.has(k(x,y))){ok=true;break}if(!ok)throw Error('Mirror tower: a balcony is cut off')}
@@ -324,7 +328,7 @@ function mirrorTowerInfo(t,x,y){
 }
 const MIRROR_KEEPER_SKILLS=Object.freeze({
  orb:Object.freeze({range:8,hp:6,shock:9,ice:9,shardTurns:3,shardDamage:2,shardChance:.25}),
- sanctuary:Object.freeze({radius:2,turns:3,heal:2})
+ sanctuary:Object.freeze({radius:2,turns:6,heal:4,blind:2,weaken:2})
 });
 // Each entry is [skill, minimum enemy rounds before the next cast]. An unresolved intent always goes first.
 const MIRROR_KEEPER_CYCLES=Object.freeze([
@@ -368,8 +372,8 @@ function spawnMirrorKeeperCopy(mon){
  const pos=PlacementService.findMonster(copy,{placementMode:'local',origin:mon,radius:2,reachable:true});
  if(!pos)return false;
  Object.assign(copy,pos,{name:'거울지기의 복사본',hp:1,maxHp:1,mirrorCopy105:true,mirrorNextCast:state.floorTurn+3,
-  bossOwnerId57:combatantId(mon),rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'boss-add',alerted:true});
- inheritCombatFaction57(copy,mon);
+  spawnProvenance57:'boss-add',alerted:true});
+ adoptBossChild57(copy,mon);
  if(!OccupancyService.addMonster(copy))return false;
  playSummonArrival(mon,copy);addLog('거울지기가 거울에서 자신의 복사본을 불러냈다.');return true;
 }
@@ -377,14 +381,14 @@ function resolveMirrorKeeperIntent(mon,intent){
  if(intent.type==='mirrorSanctuary'){
   const {x,y}=intent.data,rule=MIRROR_KEEPER_SKILLS.sanctuary;
   addField('mirrorSanctuary',x,y,rule.turns,intent.cells,{...effectSource57(mon),bornTurn:state.turn});
-  impact(x,y,'#fff2c6',5);addLog('빛의 성역 · 적은 회복할 수 없고 눈이 멀며, 거울지기의 편은 보호받는다.');
+  impact(x,y,'#fff2c6',5);addLog(`빛의 성역 · ${rule.turns}턴. 적은 회복이 막히고 실명·쇠약에 걸린다.`);
   return;
  }
  const rule=MIRROR_KEEPER_SKILLS.orb,owner=mon.mirrorCopy105?bossOwner(mon,'mirrorKeeper105')||mon:mon;
  const orb={x:mon.x,y:mon.y,name:'천명탄',hp:rule.hp,maxHp:rule.hp,atk:0,def:0,eva:0,xp:0,color:'#b8bcff',
-  kind:'construct',shape:'orb',fixed:true,statusImmune:true,combatFixture54:'mirrorOrb',bossOwnerId57:combatantId(owner),
+  kind:'construct',shape:'orb',fixed:true,statusImmune:true,combatFixture54:'mirrorOrb',
   mirrorOrbPath:intent.data.path.slice(1),spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
- inheritCombatFaction57(orb,mon);
+ adoptBossChild57(orb,owner);
  const first=intent.data.path[0];
  if(!mirrorOrbCanEnter(orb,first)){explodeMirrorOrb(orb,owner);return;}
  Object.assign(orb,first);
@@ -421,26 +425,28 @@ function tickMirrorField(field){
  const owner=combatEffectActor(field);
  if(!(owner?.hp>0))return;
  if(field.kind==='mirrorSanctuary'){
+  const rule=MIRROR_KEEPER_SKILLS.sanctuary;
   for(const actor of [state.player,...state.monsters]){
    if(actor.hp<=0||actor.combatFixture54||!field.cells.some(c=>monCovers(actor,c.x,c.y)))continue;
    if(entitiesAllied57(actor,owner)){
-    const gain=recoverCombatHealth(actor,MIRROR_KEEPER_SKILLS.sanctuary.heal);
+    const gain=recoverCombatHealth(actor,rule.heal);
     if(gain)floatText(actor.x,actor.y,'+'+gain,'#f7eead',10);
-   }else if(combatTargetValid57(owner,actor))applyCombatStatus(actor,'blind',2,1,{source:owner});
+   }else if(combatTargetValid57(owner,actor)){
+    applyCombatStatus(actor,'blind',rule.blind,1,{source:owner});
+    applyCombatStatus(actor,'weaken',rule.weaken,1,{source:owner});
+   }
   }
   return;
  }
  const rule=MIRROR_KEEPER_SKILLS.orb;
- for(const actor of bossAreaTargets(owner,field.cells)){
-  if(actor.flying)continue;
-  const hit=resolveElementDamage57(actor,'holy',rule.shardDamage,{effect:field,ground:true,contactHandled105:true,source:'빛 파편',color:'#ddd2ff'});
-  if(hit.damage>0&&actor.hp>0)for(const [key,turns] of [['stun',1],['blind',2],['skillSeal',2]])applyCombatStatus(actor,key,turns,rule.shardChance,{source:owner});
-  if(state.dead)break;
- }
+ applyElementField57(field,'holy',rule.shardDamage,{source:'빛 파편',color:'#ddd2ff',onDamage:target=>{
+  if(target.hp<=0)return;
+  for(const [key,turns] of [['stun',1],['blind',2],['skillSeal',2]])applyCombatStatus(target,key,turns,rule.shardChance,{source:owner});
+ }});
 }
-function mirrorKeeperDefeated(mon,reward){
- if(!mon.mirrorKeeper105||!reward?.kills||state.branchContext105?.id!=='mirror')return;
- const legend=globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='mirror_blade');if(!legend||state.player.weapon?.artifactId46==='mirror_blade')return;
- PlacementService.placeItem({...clone(legend),type:'weapon',artifactId46:'mirror_blade',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1},{x:mon.x,y:mon.y});
- addLog('거울지기가 깨어지며 바닥에 천면경 검이 떨어졌다.');
+function mirrorKeeperInventory(mon){
+ if(Array.isArray(mon.inventory))return;
+ const weapon=adef46('mirror_blade');
+ mon.inventory=possesses47('mirror_blade')||claimed47('mirror_blade')?[]:[{...clone(weapon),count:1}];
+ mon.inventory.push(...fusionRewardItems('elem_ice',3),{...clone(POTION_BY_KIND.get('heal_small')),count:1});
 }

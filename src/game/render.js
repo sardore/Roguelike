@@ -484,6 +484,9 @@ function structureVisualPosition(key,x,y,now=performance.now()){
   const sample=structureMotionSample(m,now);if(!sample||sample.done){motions.delete(key);return{x,y}}
   return{x:sample.x,y:sample.y};
 }
+function iceChipPoints(x,y,size=1){
+ return [[x-size,y+size*2],[x+size,y-size*3],[x+size*2,y],[x,y+size*3]];
+}
 function drawElementAttacks(now){
  if(!state.spectator)FX.elementAttacks105=(FX.elementAttacks105||[]).filter(f=>f.map===state.map&&now-f.start<f.life);
  const attacks=combatPresentationEffects().elementAttacks105||[];if(!attacks.length)return;
@@ -532,7 +535,7 @@ function drawElementAttacks(now){
      poly('#a4e5ec',[[bx+lean-1,by-h],[bx+lean+1,by-h-2],[bx+w,by-3],[bx,by+1],[bx,by-h*.65]]);
      line('#d0eff0',.7,[[bx+lean,by-h],[bx,by-4]]);
     }
-    for(let i=0;i<(dense?5:9);i++){const a=rand(i+20)*Math.PI*2,r=5+u*16,x=16+Math.cos(a)*r,y=17+Math.sin(a)*r;X.globalAlpha=fade*.8;poly(i%2?'#5399bc':'#9bd9e7',[[x-1,y+2],[x+1,y-3],[x+2,y],[x,y+3]])}
+    for(let i=0;i<(dense?5:9);i++){const a=rand(i+20)*Math.PI*2,r=5+u*16,x=16+Math.cos(a)*r,y=17+Math.sin(a)*r;X.globalAlpha=fade*.8;poly(i%2?'#5399bc':'#9bd9e7',iceChipPoints(x,y))}
     X.globalAlpha=fade*.23;for(let i=0;i<3;i++)oval('#9bcdda',8+i*8,27,4+u*3,1.5+u);
    }else if(f.elem==='shock'){
     const phase=Math.floor(u*8),bolt=[];for(let i=0;i<7;i++)bolt.push([16+(rand(i+phase*7)-.5)*(i===0||i===6?4:19),2+i*4.5]);
@@ -1154,7 +1157,7 @@ function drawRegionalAtmosphereDesktop(now){
   }
   X.globalCompositeOperation='source-over';X.restore();
 }
-const LAVA_ART_CACHE=new Map(),FIRE_ART_CACHE=new Map(),KEEPER_BRIDGE_ART=new Map();
+const LAVA_ART_CACHE=new Map(),FLOOR_FIELD_ART_CACHE=new Map(),KEEPER_BRIDGE_ART=new Map();
 function lavaSprite(variant,frame,rowPhase=0){
  const key=[variant,rowPhase,frame].join(':');if(LAVA_ART_CACHE.has(key))return LAVA_ART_CACHE.get(key);
  const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),image=q.createImageData(48,48),phase=frame/24*Math.PI*2,ox=variant*48,oy=rowPhase*48,tau=Math.PI*2;
@@ -1189,23 +1192,46 @@ function drawLavaTerrain(q,px,py,x,y,now){
  }
  q.restore();return true;
 }
-function fireFloorSprite(variant,frame){
- const key=[variant,frame].join(':');if(FIRE_ART_CACHE.has(key))return FIRE_ART_CACHE.get(key);
- const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),phase=frame/24*Math.PI*2,{poly:polygon}=drawKit(q);
- const glow=q.createRadialGradient(24,31,2,24,30,25);glow.addColorStop(0,'#e478285a');glow.addColorStop(.65,'#bc4d2438');glow.addColorStop(1,'#b43a1700');q.fillStyle=glow;q.fillRect(0,0,48,48);
- for(let i=0;i<8;i++){const xx=8+hash2(variant,i,752)*31,yy=21+hash2(i,variant,753)*19;polygon('#422d2480',[[xx-4,yy],[xx-2,yy-3],[xx+4,yy-2],[xx+5,yy+2],[xx,yy+4]]);q.strokeStyle='#e77b3a60';q.lineWidth=.7;q.beginPath();q.moveTo(xx-3,yy);q.lineTo(xx,yy+1);q.lineTo(xx+2,yy-1);q.stroke();}
- // Licks rise from the ground perimeter, with dark outer flame, orange body and a pale core.
- for(let i=0;i<10;i++){
-  const angle=i/10*Math.PI*2,x=24+Math.cos(angle)*18,y=30+Math.sin(angle)*11,h=10+hash2(variant,i,754)*7+Math.sin(phase+i*1.73+variant)*5,sway=Math.sin(phase+i*2.2)*3.5,w=2.6+hash2(i,variant,755)*1.8;
-  const flame=(color,scale)=>{q.fillStyle=color;q.beginPath();q.moveTo(x-w*scale,y);q.bezierCurveTo(x-w*scale*1.5,y-h*.25,x+sway+3*scale,y-h*.5,x+sway,y-h*scale);q.bezierCurveTo(x+sway-2*scale,y-h*.55,x+w*scale*1.6,y-h*.3,x+w*scale,y);q.closePath();q.fill();};
-  flame('#a43425b8',1);flame('#e55d25df',.84);flame('#f6a33bec',.62);flame('#ffe2a1df',.35);
+const FLOOR_FIELD_COLORS=Object.freeze({
+ fire:{glow:['#e478285a','#bc4d2438','#b43a1700'],bed:'#422d2480',seam:'#e77b3a60',
+  layers:['#a43425b8','#e55d25df','#f6a33bec','#ffe2a1df'],spark:['#ffce79','#804331']},
+ mirrorShards:{glow:['#58acc85a','#2b698838','#245b7900'],bed:'#23465b80',seam:'#58acc860',
+  spark:['#d0eff0','#5399bc']}
+});
+function floorFieldSprite(variant,frame,kind){
+ const key=[kind,variant,frame].join(':');if(FLOOR_FIELD_ART_CACHE.has(key))return FLOOR_FIELD_ART_CACHE.get(key);
+ const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),phase=frame/24*Math.PI*2,{poly:polygon}=drawKit(q),colors=FLOOR_FIELD_COLORS[kind];
+ const glow=q.createRadialGradient(24,31,2,24,30,25);glow.addColorStop(0,colors.glow[0]);glow.addColorStop(.65,colors.glow[1]);glow.addColorStop(1,colors.glow[2]);q.fillStyle=glow;q.fillRect(0,0,48,48);
+ for(let i=0;i<8;i++){const xx=8+hash2(variant,i,752)*31,yy=21+hash2(i,variant,753)*19;polygon(colors.bed,[[xx-4,yy],[xx-2,yy-3],[xx+4,yy-2],[xx+5,yy+2],[xx,yy+4]]);q.strokeStyle=colors.seam;q.lineWidth=.7;q.beginPath();q.moveTo(xx-3,yy);q.lineTo(xx,yy+1);q.lineTo(xx+2,yy-1);q.stroke();}
+ if(kind==='mirrorShards'){
+  // The loose chips use the ice impact's facets. Each chip skitters sideways and settles on the floor.
+  for(let i=0;i<13;i++){
+   const u=(frame/24+hash2(i,variant,759))%1,arc=Math.sin(u*Math.PI),
+    x=9+hash2(variant,i,760)*29+(u-.5)*(i%2?10:-10),
+    ground=13+hash2(i,variant,761)*27+(u-.5)*3,y=ground-arc*(2+i%4),
+    scale=.8+hash2(variant,i,762)*.62,direction=(hash2(i,variant,763)-.5)*2.4+u*(i%2?1.35:-1.35);
+   q.save();q.translate(x,ground);
+   q.globalAlpha=.28;q.fillStyle='#1b3445';q.fillRect(-2,0,4,1);
+   q.translate(0,y-ground);q.rotate(direction);q.globalAlpha=.35+.55*arc;
+   polygon(colors.spark[1],iceChipPoints(0,0,scale));
+   polygon('#9bd9e7',[[-scale,scale*2],[scale,-scale*3],[0,0],[0,scale*3]]);
+   q.globalAlpha=.24+.65*arc*arc*arc;q.fillStyle=colors.spark[0];
+   q.fillRect(0,-scale,.75,.75);q.restore();
+  }
+ }else{
+  // Licks rise from the ground perimeter, with a dark edge and a pale core.
+  for(let i=0;i<10;i++){
+   const angle=i/10*Math.PI*2,x=24+Math.cos(angle)*18,y=30+Math.sin(angle)*11,h=10+hash2(variant,i,754)*7+Math.sin(phase+i*1.73+variant)*5,sway=Math.sin(phase+i*2.2)*3.5,w=2.6+hash2(i,variant,755)*1.8;
+   const flame=(color,scale)=>{q.fillStyle=color;q.beginPath();q.moveTo(x-w*scale,y);q.bezierCurveTo(x-w*scale*1.5,y-h*.25,x+sway+3*scale,y-h*.5,x+sway,y-h*scale);q.bezierCurveTo(x+sway-2*scale,y-h*.55,x+w*scale*1.6,y-h*.3,x+w*scale,y);q.closePath();q.fill();};
+   flame(colors.layers[0],1);flame(colors.layers[1],.84);flame(colors.layers[2],.62);flame(colors.layers[3],.35);
+  }
+  for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?colors.spark[0]:colors.spark[1];q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
  }
- for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?'#ffce79':'#804331';q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
- FIRE_ART_CACHE.set(key,c);return c;
+ FLOOR_FIELD_ART_CACHE.set(key,c);return c;
 }
-function drawFireFloor(q,px,py,size,x,y,now){
+function drawFloorField(q,px,py,size,x,y,now,kind='fire'){
  const visible=state?.visible?.has(k(x,y)),time=TERRAIN_MOTION54.matches||!visible?0:now,variant=Math.floor(hash2(x,y,757)*8),frame=Math.floor(time/80)%24;
- q.save();q.imageSmoothingEnabled=false;q.globalCompositeOperation='source-over';q.drawImage(fireFloorSprite(variant,frame),px,py,size,size);q.restore();return true;
+ q.save();q.imageSmoothingEnabled=false;q.globalCompositeOperation='source-over';q.drawImage(floorFieldSprite(variant,frame,kind),px,py,size,size);q.restore();return true;
 }
 function drawOxidizedChain(q,{links=5,start=-9,step=4.3,phase=0}={}){
  for(let i=0;i<links;i++){const n=i+phase,xx=start+i*step,yy=Math.sin(n*.8)*2,angle=n%2?.85:-.45;q.strokeStyle='#211c1b';q.lineWidth=2.8;q.beginPath();q.ellipse(xx+.7,yy+.8,3.7,2,angle,0,Math.PI*2);q.stroke();q.strokeStyle=n%2?'#985e41':'#c38755';q.lineWidth=1.6;q.beginPath();q.ellipse(xx,yy,3.7,2,angle,0,Math.PI*2);q.stroke();q.strokeStyle='#dcc0a0';q.lineWidth=.55;q.beginPath();q.ellipse(xx,yy-.35,3.5,1.8,angle,Math.PI,Math.PI*1.8);q.stroke();}
@@ -1999,14 +2025,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
       }
-      if(f.kind==='mirrorShards'){
-        X.fillStyle=`rgba(112,91,219,${a+.18})`;X.fillRect(px+2,py+2,28,28);
-        for(const [dx,dy,h] of [[9,21,7],[17,15,9],[24,24,5]]){
-          X.fillStyle='#7664af';X.fillRect(px+dx-3,py+dy,7,2);
-          pR9(X,'#b9b4f4',[[px+dx-2,py+dy],[px+dx+1,py+dy-h],[px+dx+3,py+dy-2]],'#8073b4');
-          lR9(X,px+dx+1,py+dy-h,px+dx+1,py+dy-4,'#eaffff',1);
-        }
-      }else if(f.kind==='mirrorSanctuary'){
+      if(f.kind==='mirrorSanctuary'){
         X.fillStyle=`rgba(217,188,114,${a+.12})`;X.fillRect(px,py,32,32);
         X.save();X.strokeStyle='#f7e1a9';X.lineWidth=1;X.beginPath();
         for(const [dx,dy] of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){
@@ -2017,7 +2036,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         X.translate(px+16,py+16);X.rotate(Math.PI/4);X.strokeRect(-5,-5,10,10);X.fillStyle='#fff8ce';X.fillRect(-1,-1,2,2);X.restore();
       }
       if(isOpaqueCloud(f))drawOpaqueCloud(f,x,y,px,py,now);
-      else if(f.kind==='fire')drawFireFloor(X,px,py,TILE,x,y,now);
+      else if(f.kind==='fire'||f.kind==='mirrorShards')drawFloorField(X,px,py,TILE,x,y,now,f.kind);
     }
   }
   function drawWallMass(b){
@@ -2269,7 +2288,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     }
     X.restore();
   }
-  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
+  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
   /* ---------------- camera: follow by default, drag to inspect, next movement resumes follow ---------------- */
   const CameraController={
     state(){return globalThis.__MANRU_CAMERA_STATE12__?.snapshot()||{mode:'follow',zoom:1,cx:0,cy:0,tx:0,ty:0}},
@@ -2851,37 +2870,60 @@ function drawBranchCreature(q,m,frame,sp){
  shadow1012(q,16,34,sp.design==='ash_watcher'?18:28);
  switch(sp.design){
  case'mirror_keeper':{
-  const shade='#302d54',silver='#a3abc9',frost='#def5ff',lilac='#b197e1';
-  // Trailing silk, a layered silver gorget and a face cut from one piece of mirrored glass.
-  P(shade,[[7,13+b],[13,11+b],[19,11+b],[25,13+b],[27,23],[29,32],[22,33],[16,31],[10,33],[3,32],[5,24]]);
-  P(c,[[9,16+b],[16,14+b],[23,16+b],[22,23],[26,31],[21,31],[17,29],[12,32],[6,31]],null);
-  P('#8178b7',[[12,19+b],[16,19+b],[15,25],[11,30],[8,31],[11,26]],null);
-  P('#4b437c',[[20,17+b],[22,22],[25,30],[22,31],[20,27],[18,26]],null);
-  P('#a89bd0',[[15,23],[18,23],[19,29],[16,31],[13,30]],null);
-  trim([[6,31],[9,30],[12,30],[15,27]],silver);trim([[20,26],[22,29],[26,31]],'#9690c7');
-  P('#aab2cc',[[5,15+b],[10,12+b],[14,14+b],[12,17+b],[7,20+b],[3,19+b]]);
-  P('#c6cce2',[[27,15+b],[22,12+b],[18,14+b],[20,17+b],[25,20+b],[29,18+b]]);
-  trim([[4,17+b],[9,14+b],[12,14+b]],frost);trim([[20,14+b],[23,14+b],[28,17+b]],frost);
-  P('#7772af',[[9,18+b],[13,16+b],[19,16+b],[23,18+b],[21,23+b],[16,26+b],[11,23+b]]);
-  P(silver,[[11,18+b],[16,17+b],[21,18+b],[19,22+b],[16,24+b],[13,22+b]],null);
-  P(frost,[[16,17+b],[19,20+b],[16,23+b],[14,20+b]],'#727aa9');
-  R(15.5,19+b,1.25,1.5,'#ffffff');
-  P('#7565a4',[[11,6+b],[16,3+b],[21,6+b],[22,11+b],[19,15+b],[13,15+b],[10,11+b]]);
-  P(h,[[12,7+b],[16,5+b],[20,7+b],[20,11+b],[17,14+b],[14,13+b],[12,11+b]],null);
-  P(frost,[[13,7+b],[16,6+b],[19,7+b],[16,10+b],[13,11+b]],null);
-  P(lilac,[[19,9+b],[20,11+b],[17,14+b],[15,13+b],[16,11+b]],null);
-  L(13,10+b,18,9+b,'#544779',1);R(14,9+b,1,1,'#ffffff');R(17.5,9+b,1.25,1,'#ffffff');
-  P(silver,[[10,7+b],[10,3+b],[13,5+b],[16,1+b],[19,5+b],[22,3+b],[22,7+b],[17,5+b],[15,5+b]]);
-  R(15.5,1.5+b,1,2,frost);
-  P('#756b9e',[[5,21+b],[8,20+b],[9,23+b],[7,26+b],[4,25+b]]);
-  P(silver,[[25,21+b],[28,20+b],[29,23+b],[28,25+b],[25,25+b]]);
-  // Two floating mirror shards orbit the hands, with a dark edge and a bright glass bevel.
-  for(const [x,y]of[[3,23-b],[28,9+b]]){
-   P(shade,[[x,y-5],[x+3,y-2],[x+3,y+2],[x,y+5],[x-3,y+1],[x-3,y-2]]);
-   P(lilac,[[x,y-4],[x+2,y-1],[x+1,y+3],[x-2,y+1],[x-2,y-1]],null);
-   L(x-2,y-1,x,y-3,frost,1);R(x,y,1,1,'#ffffff');
+  const y=b*.5,ink='#101c32',deep='#223152',shadow='#36456b',blue='#587698',slate='#8198b9',
+    platinum='#b7cde0',ice='#e5f9ff',teal='#91fff4',violet='#a38ce3';
+  q.save();
+  // The broken halo reads as a mirror frame even when the figure covers its middle.
+  for(const [start,end] of [[-.82,-.18],[.58,1.47],[1.91,2.51],[2.91,4.18],[4.40,5.19]]){
+   q.beginPath();q.ellipse(15.3,13.7+y,10.5,12.2,0,start,end);q.strokeStyle='#152840';q.lineWidth=2.3;q.stroke();
+   q.strokeStyle=slate;q.lineWidth=1.15;q.stroke();q.strokeStyle=teal;q.lineWidth=.45;q.stroke();
   }
-  break;
+  for(const [x,v] of [[6,7],[5.5,16],[11,3.3],[24.5,7.5],[24.5,19.3]]){
+   P(blue,[[x-1.8,v+y],[x+.3,v-2.5+y],[x+1.7,v+y],[x-.5,v+2+y]],ink);
+   L(x-1,v+y,x+.3,v-1.8+y,ice,.55);
+  }
+  // Deep folds split into a long train, with the brightest silk confined to its lit edges.
+  P(ink,[[12,12+y],[18.5,12+y],[22.3,16],[22.2,24],[25,29],[27.1,32.8],[23,32.8],[19.3,33.4],
+   [16.7,32],[13.4,34],[11.8,32.7],[6,34],[3.5,33],[8.3,28],[9.4,21],[8.4,17.5]]);
+  P(deep,[[12,14],[17,13],[20,15.5],[19.6,22.2],[22.3,27],[25.6,32],[22.2,31.5],
+   [20,32.2],[17,30.6],[14,33],[12.4,31.2],[5.4,33],[9.3,29.6],[11.2,24],[10.7,20]],null);
+  P(shadow,[[13.3,17],[16,17.2],[16.3,20.8],[14.4,25.4],[11.4,29.4],[6,32.6],[9.8,28],[10.8,23.5]],null);
+  P(blue,[[11.2,24],[13.6,21],[12.6,26.7],[10.7,29.4],[7.8,31.9],[10.1,27.5]],null);
+  P('#4c507c',[[17.8,21.5],[19.6,21.5],[20.4,25],[24.6,31.1],[22.6,31.3],[19.6,28.5],[18.1,31.4],[16.9,30.5]],null);
+  for(const [x,v,c] of [[9,31,teal],[10.5,30,slate],[12.5,29.8,blue],[14.6,28.6,violet],[14.5,31,platinum],[20.5,30.5,slate],[22.5,31.5,violet],[16,24,slate],[19,27,blue]]){
+   R(x,v,1.2,.55,c);R(x+.5,v-.5,.5,.45,c);
+  }
+  // Engraved silver mantle over articulated dark sleeves.
+  P(shadow,[[10.5,12.6],[13.5,12.3],[16,15],[19,13.1],[22.5,13.8],[23.8,16.1],[21,19.7],
+   [17,20.3],[15.4,22],[12.2,20.6],[9.7,18.6],[8.1,16.2]]);
+  P(platinum,[[8.9,15.4],[11.3,12.9],[13.5,13.5],[15.6,16.1],[13.3,17.8],[11.8,17.5],[10.2,16.3]],null);
+  P(slate,[[17.3,15.6],[19.8,13.6],[21.8,13.9],[23.2,15.8],[19.8,17.3],[17.3,18.2]],null);
+  trim([[9.3,15.4],[11.5,13.4],[13.9,14.5],[15.8,16.2],[20.1,14.3],[22.1,14.6]],ice);
+  P(ink,[[14,17.3],[16.2,16.5],[18.1,17.5],[17.4,20],[15.5,21],[14,19.1]],null);
+  P(teal,[[14.8,18],[16,17.1],[17.1,17.9],[16.5,19.3],[15.6,20]],null);R(15.55,18,.7,.8,ice);
+  P(ink,[[9.4,16.7],[12,18.2],[10.4,22.2],[7.9,24.4],[5.7,23.1],[7,20.8]]);
+  P(slate,[[8.8,18.6],[10.9,19.1],[9.9,21],[7.3,22.8],[6.6,22.6]],null);
+  P(shadow,[[21.5,17.5],[23,18.2],[23.7,20.4],[26,20.6],[26.4,22.7],[23.5,23.5],[21,21.6]]);
+  R(24.1,20.4,2.4,1.4,platinum);R(25.3,20.2,1.3,.6,ice);
+  // A narrow, cracked obsidian mask beneath a hood with no painted eyes or mouth.
+  P(ink,[[11.5,10+y],[11.3,7.4+y],[12.5,4.6+y],[15,2.6+y],[17.6,3.3+y],[19.4,5.6+y],
+   [20,8.1+y],[19.1,11.8+y],[17.3,14.4+y],[14.4,13.5+y]]);
+  P(slate,[[11.9,8.4+y],[12.8,5.5+y],[15,3.3+y],[17.4,3.9+y],[18.8,5.9+y],
+   [16.65,5.6+y],[14.4,6.3+y],[13.8,8.1+y],[13.7,11+y],[12.75,10.2+y]],null);
+  P('#294763',[[14.5,7+y],[16.8,6.1+y],[18.9,7+y],[18.7,10.6+y],[17.1,13.1+y],
+   [15.1,12.2+y],[14.1,10.5+y]],null);
+  P('#6b9ab3',[[14.5,7+y],[16.75,6.2+y],[18.4,6.8+y],[16.9,8+y],[15.2,9+y],[14.2,9.2+y]],null);
+  L(14.9,7.4+y,17.15,6.6+y,ice,.8);L(17.4,7.65+y,16.2,10.1+y,teal,.65);L(16.2,10.1+y,17.2,11.55+y,teal,.55);
+  R(17.9,9.2+y,1,.5,violet);R(14.6,10.8+y,1,.5,blue);
+  trim([[12,7.2+y],[13.3,4.6+y],[15,3.45+y]],platinum);
+  // An off-centre mirror glaive separates the silhouette from the halo and cloak.
+  L(26.6,10,24.7,32,ink,2.3);L(26.6,10,24.7,32,slate,1.2);L(26.15,14,25.4,21,ice,.55);
+  P(deep,[[26.5,1.9+y],[30.2,5.5+y],[29.6,9+y],[26.2,12.3+y],[24.1,8.2+y],[24.8,5+y]],ink);
+  P(blue,[[26.55,2.65+y],[29.4,5.8+y],[28.9,8.8+y],[26.4,11.15+y],[24.7,8+y]],null);
+  P(teal,[[26.5,3.1+y],[28.7,5.65+y],[27.8,8.7+y],[25.2,8+y]],null);
+  L(26.6,3.2+y,25.45,7.9+y,ice,.7);L(25.45,7.9+y,28.9,8.35+y,violet,.6);
+  R(27.35,5.35+y,.8,.65,ice);R(23.2,13.2+y,.75,.75,teal);R(7.1,11.1+y,.85,.85,violet);
+  q.restore();break;
  }
  case'mirror_orb':{
   const y=15-b;
@@ -4324,7 +4366,7 @@ function drawLegendCell(tile,px,py,x,y,now,vis){if(!state?.artifactDungeon46)ret
  X.restore();return true;
 }
 function drawLegendWorld(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),id=state.artifactDungeon46?.id;X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
- for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[]){const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(a.x,a.y,cam),cx=q.x,ground=q.y,t=Math.min(1,age/360),cy=ground-(1-t)*q.s*3.2;X.save();X.translate(cx,cy);X.rotate(-.7+t*3.5);X.fillStyle='#5f3522';X.fillRect(-2,-10,4,20);X.fillStyle='#ee7137';X.beginPath();X.moveTo(0,-6);X.lineTo(14,-2);X.lineTo(9,7);X.lineTo(0,5);X.closePath();X.fill();X.restore()}
+ for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[]){const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(a.x,a.y,cam),cx=q.x,ground=q.y,t=Math.min(1,age/360),cy=ground-(1-t)*q.s*3.2;X.save();X.translate(cx,cy);X.rotate(-.7+t*3.5);X.fillStyle='#5f3522';X.fillRect(-2,-10,4,20);X.fillStyle='#ee7137';X.beginPath();X.moveTo(0,-6);X.lineTo(14,-2);X.lineTo(9,7);X.lineTo(0,5);X.closePath();X.fill();X.restore()}
  const rw=state.artifactReward46;if(rw&&state.visible.has(k(rw.x,rw.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(rw.x,rw.y,cam),rx=q.x,ry=q.y,ss=q.s;X.fillStyle='rgba(224,177,75,.20)';X.fillRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30);X.strokeStyle='rgba(255,226,139,.75)';X.strokeRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30)}const pp=state.artifactPortal46||state.artifactExit46;if(pp&&state.map[pp.y]?.[pp.x]===TT.PORTAL&&state.visible.has(k(pp.x,pp.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(pp.x,pp.y,cam),cx=q.x,cy=q.y,r=q.s*.34;X.strokeStyle='#f1cf75';X.lineWidth=Math.max(2,2*cam.zoom);X.beginPath();X.arc(cx,cy,r,0,Math.PI*2);X.stroke();X.fillStyle='#f4df9b';X.font=`${Math.max(9,11*cam.zoom)}px sans-serif`;X.textAlign='center';X.fillText('傳',cx,cy+4*cam.zoom)}X.restore()}
 function drawPalaceSweepWarning(ctx,intent,project,now,visible=()=>true){
  const keys=new Set(intent.cells.map(c=>k(c.x,c.y))),pulse=.6+.2*Math.sin(now/150),origin=intent.data.origin57,radius=intent.data.radius105;
@@ -6538,7 +6580,7 @@ const GRAD_TERRAIN1025=new Set([TT.FLOOR,TT.GRASS,TT.CARPET,TT.STONE_PATH,TT.WOO
 function playerKey1012(id,p,dir,attack){const g=x=>x?`${x.name||''}:${x.tier||0}:${x.rarity||''}:${x.upgrade||0}`:'-';return`${id}|${dir}|${attack?1:0}|${heldWeaponKey1001(p?.weapon)}|${g(p?.weapon)}|${g(p?.armor)}|${g(p?.cloak)}|${g(p?.relic)}|${g(p?.trinket)}`}
 function debugBattleCatalog57(){
  const list=monsterSpeciesCatalog();
- list.push({def:storyInvestigatorDefinition(),group:'보스'},{def:PALACE_KING105,group:'보스'});
+ list.push({def:storyInvestigatorDefinition(),group:'보스'},{def:PALACE_KING105,group:'보스'},{def:MIRROR_KEEPER,group:'보스'});
  const martial=(rank,style,final=false,pursuer=false)=>{const spec={rank,style,final,pursuer,level:final||pursuer?2:1},def=dojoCreateMartialist(rank,-1,style*10+rank,final,style,{level:spec.level,pursuer});if(!final)def.name=DOJO_STYLE_WEIGHTS105[style].name.split(' · ')[0]+' '+def.name;list.push({def,group:'무도가',dojo:spec});};
  for(let style=0;style<DOJO_STYLE_WEIGHTS105.length;style++){for(let rank=1;rank<=4;rank++)martial(rank,style);martial(4,style,false,true);}martial(4,5,true);
  const seen=new Set();return list.filter(e=>{if(seen.has(e.def.name))return false;seen.add(e.def.name);return true}).sort((a,b)=>a.def.name.localeCompare(b.def.name,'ko'));
@@ -6561,7 +6603,7 @@ function burst(x,y,color="#ffffff",count=9,power=1,delay=0){
 function markMoveDirty(ctx){if(ctx.moved)RENDER_PERF_STATE.dirty=true}
 function footstepFeedback(ctx){if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}}
 window.__MANRU_CLEAR_HI_CACHE__=()=>{
-    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FIRE_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
+    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FLOOR_FIELD_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
   };
 globalThis.__MANRU_TRANSIENT47__=Object.freeze({trim:trimTransient});
 globalThis.__MANRU_RENDER47__=Object.freeze({invalidate:()=>{P47.force=true;P47.cullKey='';return true}});

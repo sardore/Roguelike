@@ -198,7 +198,8 @@ function applyElementField57(field,elem,damage,opts={}){
   const effect=fieldProvenance57(field);let hits=0;
   for(const target of [state.player,...state.monsters]){if(runState57()!=='playing')break;if(!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(q=>cells.some(c=>c.x===q.x&&c.y===q.y)))continue;
     const base=target===state.player?(opts.playerDamage??damage):damage;
-    const result=resolveElementDamage57(target,elem,base,{...opts,effect,ground:true,contactHandled105:true});if(result.damage)hits++;
+    const result=resolveElementDamage57(target,elem,base,{...opts,effect,ground:true,contactHandled105:true});
+    if(result.damage){hits++;opts.onDamage?.(target,result);}
   }return hits
 }
 function entityElementGuard57(entity,elem){
