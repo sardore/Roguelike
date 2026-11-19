@@ -34,6 +34,12 @@ function glassCached(key,w,h,paint){if(!key.startsWith('sky|'))key=(state?.branc
 function glassTint(t){const m=t?.mix??.3,P=glassPal();return{
  glass:glassMix(P.glass,P.lilac,m),glassHi:glassMix(P.glassHi,P.lilacHi,m),glassMid:glassMix(P.glassMid,P.lilacDeep,m),
  glassDeep:glassMix(P.glassDeep,P.lilacGlass,m),floor:glassMix(P.floor[0],P.floor[1],m),floorAlt:glassMix(P.floorAlt[0],P.floorAlt[1],m),seam:glassMix(P.seam[0],P.seam[1],m)}}
+// Fill a cell on the device pixel grid. At a fractional zoom an ordinary fillRect leaves anti-aliased edges, and the sky shows through
+// them as a faint grid; neighbouring cells snapped to the same rounded edges meet exactly.
+function glassFillCell(ctx,px,py,style){
+ const m=ctx.getTransform(),x0=Math.round(m.a*px+m.e),y0=Math.round(m.d*py+m.f),x1=Math.round(m.a*(px+32)+m.e),y1=Math.round(m.d*(py+32)+m.f);
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=typeof style==='function'?style(x0,y0,x1,y1):style;ctx.fillRect(x0,y0,x1-x0,y1-y0);ctx.restore();
+}
 function mirrorLayout(){return state?.branchTerrain105?.mirror105||null}
 function mirrorZone(x,y){return mirrorLayout()?.zones?.[y]?.[x]||'.'}
 function mirrorOwner(x,y){const c=mirrorLayout()?.owner?.[y]?.[x];return c&&c!=='.'?state.branchWorld105?.mirror105?.towers?.[+c]||null:null}
@@ -46,14 +52,7 @@ function glassFloorTile(zone,x,y,t){
   const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
   const bridge=zone==='b'||zone==='p'||zone==='d';
   R(zone==='v'?glassMix(v?tint.floorAlt:tint.floor,'#d8b865',.34):bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
-  // structure under the glass: dark beams every other panel, faint
-  q.fillStyle=glassRGBA(glassPal().violetInk,.22);if(px===0)q.fillRect(14,0,4,32);if(py===0)q.fillRect(0,14,32,4);
-  q.fillStyle=glassRGBA(glassPal().violetInk,.12);q.fillRect(0,30,32,2);
-  // panel seams: two-cell panels in rooms and halls, one-cell in corridors, long planks on bridges and the dock
-  const seam=(a,b,w,h)=>{q.fillStyle=glassRGBA(tint.seam,.55);q.fillRect(a,b,w,h);q.fillStyle=glassRGBA(glassPal().violetInk,.35);q.fillRect(a+(w===1?1:0),b+(h===1?1:0),w,h)};
-  if(bridge){seam(0,0,32,1);if(zone==='d'){seam(0,16,32,1);q.fillStyle=glassRGBA(glassPal().silverMid,.35);q.fillRect(3,6,2,2);q.fillRect(27,22,2,2)}}
-  else if(zone==='c'||zone==='P'){seam(0,0,32,1);seam(0,0,1,32)}
-  else{if(py===0)seam(0,0,32,1);if(px===0)seam(0,0,1,32)}
+  if(zone==='d'){q.fillStyle=glassRGBA(glassPal().silverMid,.35);q.fillRect(3,6,2,2);q.fillRect(27,22,2,2)}
   // the slanted gleam across each panel
   q.fillStyle=glassRGBA(glassPal().glassHi,zone==='r'?.07:.10);
   const off=(px*32+py*32)%64;for(let i=0;i<32;i++){const gx=(i+off)%64-16;if(gx>=0&&gx<32){q.fillRect(gx,31-i,2,1);if(gx+6<32)q.fillRect(gx+6,31-i,1,1)}}
@@ -69,6 +68,7 @@ function glassFloorTile(zone,x,y,t){
 // The lake under floor 1: deep blue-violet water with the sky's light on it.
 function drawGlassLake(ctx,px,py,x,y,now){
  // The lake is real water: the 창해용궁 water, with no tint laid over it.
+ glassFillCell(ctx,px,py,'#0d4d6b');
  drawPalaceWater(ctx,px,py,x,y,true,now);
  const shore=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WATER&&v!==TT.RAFT};
  if(shore(0,-1)){const g=ctx.createLinearGradient(0,py,0,py+8);g.addColorStop(0,glassRGBA(glassPal().violetInk,.6));g.addColorStop(1,glassRGBA(glassPal().violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,8)}
@@ -200,8 +200,7 @@ function drawGlassAltitudeHaze(ctx,px,py,x,y){
  const P=glassPal(),tint=glassTint(tower),t=n=>Math.max(0,Math.min(1,n/GLASS_HAZE_DEPTH));
  const tone=n=>{const u=t(n);return u<.3?glassMix(P.violet,tint.glassDeep,u/.3):u<.65?glassMix(tint.glassDeep,glassMix(tint.glassMid,P.skyLow,.5),(u-.3)/.35):glassMix(glassMix(tint.glassMid,P.skyLow,.5),P.sky,(u-.65)/.35)};
  const f=n=>Math.pow(1-t(n),1.2)*.88;
- const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));
- ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ glassFillCell(ctx,px,py,(x0,y0,x1,y1)=>{const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));return g});
  // the wall's piers and window glints continue as faint pale shafts straight below the tower
  if(x%3===0){ctx.fillStyle=glassRGBA(P.silverMid,.30*(1-t(d))**2);ctx.fillRect(px+12,py,7,32);ctx.fillStyle=glassRGBA(P.silver,.35*(1-t(d))**2);ctx.fillRect(px+12,py,2,32)}
  // thin streaks of mist, sparser the further down
