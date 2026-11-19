@@ -484,6 +484,9 @@ function structureVisualPosition(key,x,y,now=performance.now()){
   const sample=structureMotionSample(m,now);if(!sample||sample.done){motions.delete(key);return{x,y}}
   return{x:sample.x,y:sample.y};
 }
+function iceChipPoints(x,y,size=1){
+ return [[x-size,y+size*2],[x+size,y-size*3],[x+size*2,y],[x,y+size*3]];
+}
 function drawElementAttacks(now){
  if(!state.spectator)FX.elementAttacks105=(FX.elementAttacks105||[]).filter(f=>f.map===state.map&&now-f.start<f.life);
  const attacks=combatPresentationEffects().elementAttacks105||[];if(!attacks.length)return;
@@ -532,7 +535,7 @@ function drawElementAttacks(now){
      poly('#a4e5ec',[[bx+lean-1,by-h],[bx+lean+1,by-h-2],[bx+w,by-3],[bx,by+1],[bx,by-h*.65]]);
      line('#d0eff0',.7,[[bx+lean,by-h],[bx,by-4]]);
     }
-    for(let i=0;i<(dense?5:9);i++){const a=rand(i+20)*Math.PI*2,r=5+u*16,x=16+Math.cos(a)*r,y=17+Math.sin(a)*r;X.globalAlpha=fade*.8;poly(i%2?'#5399bc':'#9bd9e7',[[x-1,y+2],[x+1,y-3],[x+2,y],[x,y+3]])}
+    for(let i=0;i<(dense?5:9);i++){const a=rand(i+20)*Math.PI*2,r=5+u*16,x=16+Math.cos(a)*r,y=17+Math.sin(a)*r;X.globalAlpha=fade*.8;poly(i%2?'#5399bc':'#9bd9e7',iceChipPoints(x,y))}
     X.globalAlpha=fade*.23;for(let i=0;i<3;i++)oval('#9bcdda',8+i*8,27,4+u*3,1.5+u);
    }else if(f.elem==='shock'){
     const phase=Math.floor(u*8),bolt=[];for(let i=0;i<7;i++)bolt.push([16+(rand(i+phase*7)-.5)*(i===0||i===6?4:19),2+i*4.5]);
@@ -1164,20 +1167,37 @@ const FLOOR_FIELD_COLORS=Object.freeze({
  fire:{glow:['#e478285a','#bc4d2438','#b43a1700'],bed:'#422d2480',seam:'#e77b3a60',
   layers:['#a43425b8','#e55d25df','#f6a33bec','#ffe2a1df'],spark:['#ffce79','#804331']},
  mirrorShards:{glow:['#58acc85a','#2b698838','#245b7900'],bed:'#23465b80',seam:'#58acc860',
-  layers:['#2b6988b8','#5399bcdf','#a4e5ecec','#d0eff0df'],spark:['#d0eff0','#5399bc']}
+  spark:['#d0eff0','#5399bc']}
 });
 function floorFieldSprite(variant,frame,kind){
  const key=[kind,variant,frame].join(':');if(FLOOR_FIELD_ART_CACHE.has(key))return FLOOR_FIELD_ART_CACHE.get(key);
  const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),phase=frame/24*Math.PI*2,{poly:polygon}=drawKit(q),colors=FLOOR_FIELD_COLORS[kind];
  const glow=q.createRadialGradient(24,31,2,24,30,25);glow.addColorStop(0,colors.glow[0]);glow.addColorStop(.65,colors.glow[1]);glow.addColorStop(1,colors.glow[2]);q.fillStyle=glow;q.fillRect(0,0,48,48);
  for(let i=0;i<8;i++){const xx=8+hash2(variant,i,752)*31,yy=21+hash2(i,variant,753)*19;polygon(colors.bed,[[xx-4,yy],[xx-2,yy-3],[xx+4,yy-2],[xx+5,yy+2],[xx,yy+4]]);q.strokeStyle=colors.seam;q.lineWidth=.7;q.beginPath();q.moveTo(xx-3,yy);q.lineTo(xx,yy+1);q.lineTo(xx+2,yy-1);q.stroke();}
- // Licks rise from the ground perimeter, with a dark edge and a pale core.
- for(let i=0;i<10;i++){
-  const angle=i/10*Math.PI*2,x=24+Math.cos(angle)*18,y=30+Math.sin(angle)*11,h=10+hash2(variant,i,754)*7+Math.sin(phase+i*1.73+variant)*5,sway=Math.sin(phase+i*2.2)*3.5,w=2.6+hash2(i,variant,755)*1.8;
-  const flame=(color,scale)=>{q.fillStyle=color;q.beginPath();q.moveTo(x-w*scale,y);q.bezierCurveTo(x-w*scale*1.5,y-h*.25,x+sway+3*scale,y-h*.5,x+sway,y-h*scale);q.bezierCurveTo(x+sway-2*scale,y-h*.55,x+w*scale*1.6,y-h*.3,x+w*scale,y);q.closePath();q.fill();};
-  flame(colors.layers[0],1);flame(colors.layers[1],.84);flame(colors.layers[2],.62);flame(colors.layers[3],.35);
+ if(kind==='mirrorShards'){
+  // The loose chips use the ice impact's facets. Each chip skitters sideways and settles on the floor.
+  for(let i=0;i<13;i++){
+   const u=(frame/24+hash2(i,variant,759))%1,arc=Math.sin(u*Math.PI),
+    x=9+hash2(variant,i,760)*29+(u-.5)*(i%2?10:-10),
+    ground=13+hash2(i,variant,761)*27+(u-.5)*3,y=ground-arc*(2+i%4),
+    scale=.8+hash2(variant,i,762)*.62,direction=(hash2(i,variant,763)-.5)*2.4+u*(i%2?1.35:-1.35);
+   q.save();q.translate(x,ground);
+   q.globalAlpha=.28;q.fillStyle='#1b3445';q.fillRect(-2,0,4,1);
+   q.translate(0,y-ground);q.rotate(direction);q.globalAlpha=.35+.55*arc;
+   polygon(colors.spark[1],iceChipPoints(0,0,scale));
+   polygon('#9bd9e7',[[-scale,scale*2],[scale,-scale*3],[0,0],[0,scale*3]]);
+   q.globalAlpha=.24+.65*arc*arc*arc;q.fillStyle=colors.spark[0];
+   q.fillRect(0,-scale,.75,.75);q.restore();
+  }
+ }else{
+  // Licks rise from the ground perimeter, with a dark edge and a pale core.
+  for(let i=0;i<10;i++){
+   const angle=i/10*Math.PI*2,x=24+Math.cos(angle)*18,y=30+Math.sin(angle)*11,h=10+hash2(variant,i,754)*7+Math.sin(phase+i*1.73+variant)*5,sway=Math.sin(phase+i*2.2)*3.5,w=2.6+hash2(i,variant,755)*1.8;
+   const flame=(color,scale)=>{q.fillStyle=color;q.beginPath();q.moveTo(x-w*scale,y);q.bezierCurveTo(x-w*scale*1.5,y-h*.25,x+sway+3*scale,y-h*.5,x+sway,y-h*scale);q.bezierCurveTo(x+sway-2*scale,y-h*.55,x+w*scale*1.6,y-h*.3,x+w*scale,y);q.closePath();q.fill();};
+   flame(colors.layers[0],1);flame(colors.layers[1],.84);flame(colors.layers[2],.62);flame(colors.layers[3],.35);
+  }
+  for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?colors.spark[0]:colors.spark[1];q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
  }
- for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?colors.spark[0]:colors.spark[1];q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
  FLOOR_FIELD_ART_CACHE.set(key,c);return c;
 }
 function drawFloorField(q,px,py,size,x,y,now,kind='fire'){

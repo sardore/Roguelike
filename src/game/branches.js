@@ -490,9 +490,7 @@ function palaceLotusTurn(mon,target){mon.palaceBloom105=palaceWet(mon);if(mon.st
 function palaceKingInventory(mon){
  if(mon.inventoryRevision105===1){mon.idlePotionKind105='heal_medium';return;}
  const spear={...clone(WEAPONS.find(w=>w.name==='철두창')),type:'weapon',elementBrand74:'water',count:1},crossbow={...clone(globalThis.__MANRU_LEGEND47__.defs().find(w=>w.id==='water_crossbow')),type:'weapon',artifactId46:'water_crossbow',legendaryWeapon47:true,artifactWeapon46:true,identified:true,count:1};
- const fusionPool=globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates('elem_water'),fusion=[];
- for(let n=0;n<3;n++)fusion.push({...fusionPool.splice(rand(0,fusionPool.length-1),1)[0],count:1,identified:true});
- mon.inventory=[{...clone(MINE_ITEMS105.stone),count:1},spear,...fusion,crossbow,...['heal_small','heal_medium'].map(kind=>({...clone(window.MANRU_POTIONS.find(i=>i.potionKind===kind)),count:1}))];
+ mon.inventory=[{...clone(MINE_ITEMS105.stone),count:1},spear,...fusionRewardItems('elem_water',3),crossbow,...['heal_small','heal_medium'].map(kind=>({...clone(window.MANRU_POTIONS.find(i=>i.potionKind===kind)),count:1}))];
  mon.inventoryRevision105=1;mon.idlePotionKind105='heal_medium';
 }
 function palaceKingDefense(mon,tideLevel){return Math.max(0,mon.baseDef-(tideLevel===0?3:0));}

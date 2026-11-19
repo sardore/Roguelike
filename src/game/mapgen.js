@@ -305,7 +305,7 @@ playerStepAllowed(from,x,y,opts={}){
   return ReachabilityService.playerTerrainPassable(x,y,opts)&&(opts.ignoreOccupants!==false||!OccupancyService.isOccupied(x,y)||swap);
 },
 playerSearch(start,opts={}){
-  const cells=new Set(),prev=new Map(),dist=new Map(),q=[];
+  const cells=new Set(),prev=new Map(),dist=new Map(),q=[],directions=opts.directions??DIRS8;
   if(!start||!ReachabilityService.playerTerrainPassable(start.x,start.y,opts))return{cells,prev,dist};
   const occupiedCells=new Set();
   if(opts.ignoreOccupants===false)for(const mon of state.monsters||[])if(mon.hp>0&&!(opts.allowAllySwap&&!factionsHostile57(entityFaction(state.player),entityFaction(mon))&&!(mon.fixed&&mon.kind==='plant')&&entityFootprintCells57(mon).length===1))for(const [ox,oy]of footprintOffsets(mon))occupiedCells.add(k(mon.x+ox,mon.y+oy));
@@ -313,7 +313,7 @@ playerSearch(start,opts={}){
   const first=k(start.x,start.y);cells.add(first);prev.set(first,null);dist.set(first,0);q.push({x:start.x,y:start.y});
   for(let i=0;i<q.length;i++){
     const p=q[i],pk=k(p.x,p.y);if(opts.goal&&p.x===opts.goal.x&&p.y===opts.goal.y)break;
-    for(const[dx,dy]of DIRS8){const x=p.x+dx,y=p.y+dy,key=k(x,y);if(cells.has(key)||occupiedCells.has(key)||!ReachabilityService.playerStepAllowed(p,x,y,stepOpts))continue;cells.add(key);prev.set(key,pk);dist.set(key,dist.get(pk)+1);q.push({x,y})}
+    for(const[dx,dy]of directions){const x=p.x+dx,y=p.y+dy,key=k(x,y);if(cells.has(key)||occupiedCells.has(key)||!ReachabilityService.playerStepAllowed(p,x,y,stepOpts))continue;cells.add(key);prev.set(key,pk);dist.set(key,dist.get(pk)+1);q.push({x,y})}
   }
   return{cells,prev,dist};
 },
