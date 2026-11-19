@@ -155,7 +155,9 @@ body.title-class-mode #titleCorner{display:none}
 #itemCodexList{min-height:0;overflow:auto;overscroll-behavior:contain;list-style:none;padding:0;margin:0;display:grid;align-content:start;gap:6px}
 #itemCodexList li{display:flex;align-items:flex-start;gap:12px;padding:10px;border:1px solid #553b25;border-radius:6px;background:#1d130c;overflow-wrap:anywhere}
 #itemCodexList li[data-locked]{color:#b69c79;background:#17100b}
+#itemCodexList .itemCodexArt{width:38px;height:38px;flex:none;display:block;position:relative}
 #itemCodexList img{width:38px;height:38px;object-fit:contain;image-rendering:pixelated;flex:none}
+#itemCodexList .itemCodexArt .v56PotionIcon{width:38px;height:38px}
 #itemCodexList :is(small,strong){display:block}
 #itemCodexList small{color:#c0a37b;margin-bottom:2px}
 #itemCodexList p{margin:5px 0 0;color:#ceba9b;line-height:1.45}
