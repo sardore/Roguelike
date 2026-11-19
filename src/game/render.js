@@ -5009,6 +5009,8 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
   }
  }else if(prop){r('rgba(0,0,0,.35)',4,23,25,7);if(prop==='deadTree'){drawMountainTree(q,x,y,true,b.id,height);}
  else if(prop==='tree'){drawMountainTree(q,x,y,false,b.id,height);}
+ // The ancient pine is drawn whole by drawStockadePines; its tile keeps only the ground shadow (the generic fallback below is a crate).
+ else if(prop==='ancientPine'){}
  else if(prop==='jar'){r('#352b28',7,8,20,19);r('#805e47',8,10,17,16);r('#bb8e62',10,11,3,11);r('#3d3630',9,5,15,5);r('#ae8864',9,5,15,2);r('#493e36',10,24,13,3);}
  else if(prop==='sack'){r('#57442f',5,9,22,20);r('#baa074',6,11,20,15);r('#ddc394',7,12,15,2);r('#8b704c',19,12,6,14);r('#c9af80',10,6,12,8);r('#6e593b',9,8,14,2);line('#92794f',10,15,12,25);line('#e2c89a',14,17,14,25);}
  else if(prop==='banner'){r('#292629',15,3,3,28);r('#c7b78c',15,2,2,27);r(black?'#472d43':'#793f30',4,4,12,17);r(black?'#af7c8d':'#d4ad70',5,5,9,2);r('#ded0a6',9,9,3,8);r('#30242a',4,19,5,3);}
@@ -5106,9 +5108,13 @@ function stockadePineSprite(variant){
  };
  const shift=variant%3-1;
  const light=variant>=3?['#1a3937','#265045','#3a6456','#627e6c']:['#203e3a','#2b4d45','#406456','#6c806b'];
- polygon('#332c28',[[19,94],[32,86],[39,80],[40,41],[49,33],[51,81],[59,89],[70,93],[55,94],[49,91],[42,96],[37,92]]);
- polygon('#735740',[[31,91],[42,81],[44,54],[47,43],[47,85],[53,91],[45,87],[39,93]]);
- polygon('#b38c5c',[[40,86],[43,72],[46,74],[45,85],[42,89]]);
+ // The trunk shows only below the lowest skirt of needles, so it reads as one rooted column: a soft ground shadow, a dark bark body that flares into rounded roots, one thin lit edge and mossy knuckles.
+ ctx.fillStyle='rgba(6,14,14,.5)';ctx.beginPath();ctx.ellipse(44,94,22,4.5,0,0,Math.PI*2);ctx.fill();
+ polygon('#2b2522',[[27,96],[33,94],[37,90],[39,84],[39,41],[49,41],[49,84],[51,90],[55,94],[61,96],[52,97],[44,95],[36,97]]);
+ polygon('#4a3b30',[[33,96],[37,93],[40,88],[40,41],[45,41],[45,88],[47,93],[51,96],[44,95],[38,96]]);
+ polygon('#6b563f',[[40,90],[40,52],[42,52],[42,90]]);
+ ctx.strokeStyle='#1f1a18';ctx.lineWidth=1;for(const gx of [43.5,46.5]){ctx.beginPath();ctx.moveTo(gx,60);ctx.lineTo(gx+.5,92);ctx.stroke()}
+ polygon('#35563f',[[30,96],[34,93],[38,95],[35,97]]);polygon('#2f4d3a',[[50,95],[54,93],[59,96],[54,97]]);
  for(const tier of [3,2,1,0]){
   const y=5+tier*15,span=14+tier*6,center=43+shift*(5-tier);
   polygon('#172b27',[[center,y],[center+span*.44,y+15],[center+span,y+29],[center+span*.82,y+34],[center+4,y+30],[center-11,y+36],[center-span,y+32],[center-span*.62,y+23]]);
