@@ -4241,19 +4241,6 @@ function drawGeneric(q,it){
  const h=hash(it.name),c=rarityCol[it.rarity]||'#b9aa8d',d=shade(c,-45),hi=shade(c,45);
  outlineRect(q,12,10,24,30,d);rect(q,15,13,18,24,c);for(let i=0;i<5;i++){const x=16+((h>>(i*3))%15),y=16+((h>>(i*4+2))%17);rect(q,x,y,2+(i%2),2, i%2?hi:d)}
 }
-// A potion as one picture (the bag draws its bottle with CSS and the floor with rectangles): neck, glass, liquid and a shine.
-// The liquid is the potion's own colour, so a picture made outside a run, such as the item codex, shows the real potion.
-function drawPotion(q,it){
- const liquid=it.color||'#985744',glass='#d7c49f';
- outlineRect(q,19,7,10,13,'#573923');rect(q,20,8,8,3,'#bba782');rect(q,21,11,6,8,'#573923');
- poly(q,'#17110e',[[13,21],[19,19],[29,19],[35,21],[36,38],[33,42],[15,42],[12,38]]);
- poly(q,glass,[[14,22],[19,20.4],[29,20.4],[34,22],[35,37.4],[32.4,41],[15.6,41],[13,37.4]]);
- poly(q,shade(liquid,-35),[[15.5,24],[32.5,24],[33.2,37],[31.4,39.6],[16.6,39.6],[14.8,37]]);
- poly(q,liquid,[[15.5,24],[32.5,24],[33,31],[15,31]]);
- rect(q,15.5,24,17,2,'rgba(255,255,255,.28)');
- rect(q,17,27,3,10,'rgba(255,255,255,.36)');rect(q,17,27,3,2,'rgba(255,255,255,.6)');
- for(const[x,y]of[[27,33],[24,36],[29,29]])itemArtDot(q,x,y,shade(liquid,45));
-}
 function sprite(it){
  if(!it)return cv()[0];
  const key=KEY(it);if(CACHE.has(key))return CACHE.get(key);const[c,q]=cv();q.clearRect(0,0,W,H);shadow(q);
@@ -4262,7 +4249,6 @@ function sprite(it){
  else if(it.type==='cloak')drawCloak(q,it);
  else if(it.type==='relic')drawRelic(q,it);
  else if(it.type==='trinket')drawTrinket(q,it);
- else if(it.type==='potion')drawPotion(q,it);
  else if(it.mineItem105==='stone')drawMineStone(q);
  else if(it.type==='food'||it.type==='ingredient')drawFood(q,it);
  else if(it.type==='talisman')drawTalisman(q,it);
