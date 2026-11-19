@@ -205,9 +205,26 @@ function applyElementField57(field,elem,damage,opts={}){
 }
 /* DCSS-style resistance: 0..3 per element. Level 3 is immunity (the old boolean guard); gear and monsters add levels. */
 const RESIST_MULT57=[1,.55,.30,0],RESIST_WEAK57=1.4,RESIST_ELEMENTS57=['fire','water','ice','shock','earth','grass','holy'],RESIST_NAMES57={fire:'화염',water:'수류',ice:'빙결',shock:'전격',earth:'대지',grass:'초목',holy:'성광'};
+/* A monster's element table, one level per element (−1 취약, 0, Ⅰ, Ⅱ, Ⅲ 면역), read from what it is and what it carries:
+   its kind, a burning or watery body, flight, the element of its own blows (it shrugs that off by one level), boss
+   hardiness (+1 everywhere) and finally its definition's own resist. This replaced the old per-trait damage multipliers. */
+const MONSTER_KIND_RESIST105=Object.freeze({plant:{fire:-1,grass:2},undead:{grass:-1,holy:-1},construct:{shock:-1,earth:1}});
+function monsterElementTable(entity){
+  const t={};for(const e of RESIST_ELEMENTS57)t[e]=0;
+  const add=o=>{for(const[e,v]of Object.entries(o||{}))if(e in t)t[e]+=Number(v)||0};
+  add(MONSTER_KIND_RESIST105[entity?.kind]);
+  if(entity?.lava||entity?.fireTrail)add({fire:2,water:-1,ice:-1});
+  if(entity?.aquatic)add({water:2,shock:-1,ice:-1});
+  if(entity?.flying)add({earth:2});
+  if(entity?.attackElement105)add({[entity.attackElement105]:1});
+  if(entity?.boss)for(const e of RESIST_ELEMENTS57)t[e]++;
+  add(entity?.resist);
+  for(const e of RESIST_ELEMENTS57)t[e]=clamp(t[e],-1,3);
+  return t;
+}
 function gearResistLevel(entity,elem){let n=0;for(const key of['armor','cloak','relic','trinket'])n+=Number(entity?.[key]?.resist?.[elem])||0;return n}
 function entityElementResist(entity,elem){
-  if(!entity)return 0;let n=Math.max(0,entity.resist?.[elem]||0)+gearResistLevel(entity,elem);
+  if(!entity)return 0;let n=(entity===state?.player?Math.max(0,entity.resist?.[elem]||0):monsterElementTable(entity)[elem]||0)+gearResistLevel(entity,elem);
   n+=(entity.armor?.elementGuard74===elem?1:0)+(entity.weapon?.elementBrand74===elem?1:0);
   if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),-1,3);
   if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?3:2;
@@ -217,14 +234,10 @@ function entityElementResist(entity,elem){
 function resistMultiplier(level){return level<0?RESIST_WEAK57:RESIST_MULT57[level]}
 function entityElementMultiplier57(entity,elem){
   if(!entity||entity===state?.player)return resistMultiplier(entityElementResist(entity,elem))*(state?.duel?DUEL_ELEMENT_RESIST:1);
-  const tile=state?.map?.[entity.y]?.[entity.x];let m=1;
-  if(elem==='fire'){if(entity.lava||entity.fireTrail||/화염|살라맨더|녹아/.test(entity.name||''))m*=.25;if(entity.kind==='plant')m*=1.35}
-  else if(elem==='shock'){if(entity.aquatic||[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(tile))m*=1.50;if(entity.kind==='construct')m*=1.25}
-  else if(elem==='water'){if(entity.aquatic)m*=.35;if(entity.lava||entity.fireTrail)m*=1.45}
-  else if(elem==='ice'){if(entity.aquatic)m*=1.35;if(entity.lava||entity.fireTrail)m*=1.25}
-  else if(elem==='grass'){if(entity.kind==='plant')m*=.25;if(entity.kind==='undead')m*=1.30}
-  else if(elem==='earth'){if(entity.flying)m*=.25;if(entity.kind==='construct')m*=.60}
-  if(entity.boss)m*=.62;if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m*resistMultiplier(entityElementResist(entity,elem));
+  // Everything about the monster itself is in its element table; standing in water still conducts lightning, unless it is already weak to it.
+  const level=entityElementResist(entity,elem),tile=state?.map?.[entity.y]?.[entity.x];let m=1;
+  if(elem==='shock'&&level>=0&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(tile))m*=1.5;
+  if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m*resistMultiplier(level);
 }
 function resolveElementDamage57(entity,elem,base,opts={}){
   if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity));
@@ -237,7 +250,7 @@ function resolveElementDamage57(entity,elem,base,opts={}){
   }
   const mult=opts.conduction105?1:entity===state.player?(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(state.map[entity.y]?.[entity.x])?1.5:1)*resistMultiplier(entityElementResist(entity,elem)):entityElementMultiplier57(entity,elem),damage=damageEntity(entity,opts.damageParts105?.length?opts.damageParts105.reduce((n,part)=>n+Math.max(1,Math.round(part*mult)),0):Math.max(1,Math.round(base*mult)), opts.effect||(entity===state.player?null:state.player),elem);markCombatActivity57(entity===state.player?'hostile-element':'player-element');entity.hitUntil=performance.now()+120;
   if(damage>0&&entity.martialActor105){dojoRememberHit(entity,['ice','earth'].includes(elem)?'control':elem==='fire'||opts.ground?'area':'ranged');}
-  if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem);if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3);
+  if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem);if(damage>0&&entity!==state.player&&entityElementResist(entity,elem)<0)floatText(entity.x,entity.y,'취약','#ffd27a',9,null,90);if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3);
   if(damage>0&&opts.logDamage57!==false){const source=opts.source||(RESIST_NAMES57[elem]||elem)+' 피해',target=(state.debugBattle57&&entity.debugId57!=null?entity.debugSide57+entity.debugId57+' ':'')+(entity===state.player?'플레이어':entity.name);addLog(`${source} → ${target}: ${damage}`);}
   if(entity.hp<=0){if(entity===state.player)die(opts.source||`${elem} 피해`);else killMonster(entity)}
   return{damage,guarded:false,adapted:mult<1,multiplier:mult};

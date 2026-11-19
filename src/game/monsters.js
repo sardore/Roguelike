@@ -8,6 +8,8 @@ const BOSSES={
   25:{name:'객주 주인: 만루보주',concept57:"끝없이 이어진 객실을 다스리는 만루의 주인이다.",hp:240,atk:15,def:9,eva:5,xp:0,color:'#d5b56b',shape:'zero',kind:'spirit',ranged:false,range:4,bossPattern:'master'}
 };
 function monsterConcept(mon){const name=monsterSpeciesName(mon);return SPECIAL_MONSTER_CONCEPTS57[mon.name]||MONSTERS.find(d=>d.name===name)?.concept57||[...Object.values(BOSSES),PALACE_KING105].find(d=>d.name===name)?.concept57||((mon.legendMob47||mon.legendDungeon47)?globalThis.__MANRU_ARTIFACT46__?.enemyDefinitions?.(mon.legendDungeon47)?.find(d=>d.name===name)?.concept57:null)||mon.concept57||`${mon.name}. 정체를 알 수 없는 존재다.`}
+// The 역할군 names shown in the info window, one per role in MONSTER_ROLE_TABLE.
+const MONSTER_ROLE_LABEL105=Object.freeze({skirmisher:'유격형',controller:'통제형',poison:'독 포대',shell:'방패형',artillery:'포병',fireArtillery:'화염 포병',alarm:'경보형',swoop:'급강하형',blinkPunisher:'점멸 포식형',asura:'아수라',formation:'전열형',ambush:'매복형',flanker:'측면형',brood:'산란형',leaper:'도약형',webber:'포획형',gas:'가스형',hook:'갈고리형',gaze:'응시형'});
 let bossIntroTimer = null;
 function entityFaction(entity){if(!entity)return'neutral';if(entity===state?.player)return'player';return entity.faction57||(entity.friendly47?'player':entity.sourceFaction||'hostile')}
 function entityConcealed(entity){return !!(entity&&(entity.hidden||(entity===state?.player?playerConcealed58():entity.martialStatus105?.stealth>0)))}
@@ -1338,6 +1340,11 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 사거리 2칸',`껍질 안에서 매 턴 최대 체력의 ${SHELL_SLIME.healFraction*100}%를 회복하고 방어력 +${SHELL_SLIME.armorBonus}. 밖에서는 사거리 ${SHELL_SLIME.needleRange}칸의 침을 쏜다. 적중해 피해를 주면 중병·배탈·실명·출혈·독을 각각 기본 확률 ${SHELL_SLIME.ailmentChance*100}%로 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.`,'constitution','지속');
     if(mon.seesStealth105)add('sees-stealth','투명 감지','視','상시','은신·투명 상태의 대상도 감지한다. 모습을 감춰도 따돌릴 수 없다.','ghost','지속');
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
+    if(mon.fast&&!(mon.actionSpeed>1)&&!mon.exitPressureSpeed57)add('fast','빠름','疾','이동·행동 속도 ×1.5','두 턴에 세 번 움직인다. 등을 보이고 달아나기 어렵다.','ghost','지속');
+    if(mon.ambush)add('ambush','매복','伏',mon.grassHide57?'풀숲에서만':'발견 전','모습을 감추고 기다리다 먼저 공격한다. 드러나기 전에는 보이지 않는다.'+(mon.thiefRetreat57?' 공격한 뒤 한 칸 물러난다.':''),'ghost','지속');
+    if(mon.support)add('support','전열 지원','援','4칸 안 아군','시야가 트인 가까운 아군 하나에게 공격력 +2를 3턴 동안 불어넣는다.','constitution','지속');
+    if(mon.drunk57)add('drunk','취중','醉','이동·공격','비틀거려 엉뚱한 칸으로 가거나 헛손질하기도 한다.','ghost','지속');
+    if(mon.attackElement105){const share=Number(mon.attackElementShare105),name=RESIST_NAMES57[mon.attackElement105]||mon.attackElement105;add('attack-element',name+' 공격','屬',share>0&&share<1?`피해의 ${Math.round(share*100)}%`:'피해 전부',share>0&&share<1?`기본 공격 피해의 ${Math.round(share*100)}%가 ${name} 속성이다. 나머지는 물리 피해. ${name} 저항은 그 몫만 줄인다.`:`기본 공격이 ${name} 속성 피해다. ${name} 저항으로 줄이거나 막을 수 있다.`,'brawl','지속');}
     if(mon.bossPattern==='mirrorKeeper105'){
       const {orb,sanctuary}=MIRROR_KEEPER_SKILLS;
       add('mirror-orb','천명탄','彈',`사거리 ${orb.range}칸 · 예고 1턴 · 구체 HP ${orb.hp}`,`예고 경로를 한 턴에 한 칸씩 이동한다. 막히거나 경로 끝에 닿거나 부서지면 전격 ${orb.shock}과 빙결 ${orb.ice} 피해로 폭발한다. 주변 8칸에 ${orb.shardTurns}턴간 빛 파편이 남아 매 턴 피해 ${orb.shardDamage}와 확률로 마비·실명·기봉인을 준다.`);
@@ -1427,7 +1434,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.targetMark61)add('target-mark','목표 지정','標',`10칸 안 · 재사용 ${mon.targetMark61.cooldown}턴 · 지속 ${mon.targetMark61.turns}턴`,'지속시간 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.','ghost');
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
     if(role==='asura'){add('domain','아수라장','界',`반경 ${mon.asuraRadius47||3}칸 · 지속 ${mon.asuraDuration47||5}턴`,'1턴 예고 후 영역 밖에서 시작된 직접 공격을 무효화.');add('volley','다완 투척','腕',`영역 밖 · 사거리 ${mon.asuraRange47||9}칸`,'1턴 예고 후 공격력 +4, +1로 연속 투척.');}
-    const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%']];
+    const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%'],['slow','둔중한 일격','鈍','쇠약 2턴 · 35%']];
     for(const[key,name,seal,meta]of onHit)if(mon[key])add(key,name,seal,'공격 적중 시','기본 '+meta+' 확률. 의지·면역에 따라 감소.','brawl','지속');
     if(mon.summonsVanish)add('summons-vanish','시종의 연명','縛','사망 시','이 개체가 쓰러지면 불려 나온 소환수도 모두 사라진다.','constitution','조건');
     if(mon.diseaseBreath61)add('disease-breath','병든 깃털','疫','공격 적중 시 · 3×3 · 4턴','공격이 적중하면 병든 깃털 가루를 흩뿌려 중병 가스를 남긴다. 가스 속에 머물면 중병(유예 27턴)에 걸릴 수 있다.','constitution','지속');
@@ -1446,7 +1453,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.losLostSummon57)add('lost-summon','시야 밖 증원','召',`시야 단절 · 재사용 ${mon.losLostSummon57.normalCooldown}/${mon.losLostSummon57.fullCooldown}턴`,`${mon.losLostSummon57.names.join('·')} 소환. 처치 순간에도 발동 가능. 정상/완전 부활 단계 기준.`,'constitution','지속');
     if(mon.waterTrail)add('water-trail','물길 흔적','水','이동 경로','지나간 바닥을 6턴 동안 물길로 바꾼다.','ghost','지속');
     if(mon.lavaTrail57)add('lava-trail','용암 흔적','熔','이동 경로 · 3턴','지나간 바닥을 용암으로 바꾼다.','ghost','지속');
-    if(mon.fireTrail||mon.lava)add('fire-body','화염 체질','火','화염 저항 · 연소 면역','불 피해 ×0.25, 물 피해 ×1.45, 냉기 피해 ×1.25.','constitution','지속');
+    if(mon.fireTrail||mon.lava)add('fire-body','화염 체질','火','연소 면역','몸이 불타지 않는다. 화염에 강하고 수류·빙결에 약하다(속성표 참고).','constitution','지속');
     if(mon.projectileImpact57){const p=mon.projectileImpact57;add('projectile-impact','착탄 화염','火',`${p.radius*2+1}×${p.radius*2+1} · ${p.turns}턴`,'화살 착탄점에 화염을 남긴다. 물로 끌 수 있다.','brawl','지속');}
     if(role==='formation')add('formation','전열 방어','陣','동료 인접 시',`같은 전열의 아군이 인접하면 DEF +${floor>=21?5:floor>=16?4:floor>=11?3:2}.`,'strong','지속');
     if(mon.armorPierce)add('pierce','방어 관통','穿','공격 효과','공격이 대상의 방어를 관통한다.','brawl','지속');
