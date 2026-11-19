@@ -298,7 +298,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   // piece already has, and how strongly a piece piles into what it has is rolled per item. So most spread out, and now and
   // then one trades a weakness for one enormous stat, or stacks a single element to Ⅲ, or is all effects.
   const STAT_COST={atk:1.5,def:1.25,eva:.8,will:.8,vision:1.4,focus:.7},STAT_CAP={atk:tier+3,def:tier+3,eva:tier*2+2,will:tier+3,vision:2,focus:tier*3+3};
-  let budget=(premium?16:2.5+1.9*tier)*(.8+rnd()*.4),points=0;
+  let budget=(premium?16:1.7+1.5*tier)*(.8+rnd()*.4),points=0;
   if(!premium)for(let n=chance(.35)?(chance(.25)?2:1):0;n>0;n--){
     const r=rnd();
     if(r<.3&&!it.curse991){const c=pick(CURSE_CATALOG);it.curse991=c.id;it.curseRoll991=true;it.curseImmune991=false;revealItemCurse(it);points+=c.pts||1;budget+=1.5*(c.pts||1)}
@@ -307,6 +307,10 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   }
   if(premium)it.quirk=charmPickQuirk(rnd,true);
   const focus=premium?.35:Math.pow(rnd(),1.8)*.9;
+  // A low-tier piece has room for few things: at most 1 + tier distinct positive traits (a debuff taken on does not count),
+  // and opening a new one costs more than deepening one it already has, so cheap +1s do not pile up as separate lines.
+  const traitCap=premium?7:1+tier,openCost=premium?0:.6;
+  const traitCount=()=>CHARM_STATS.filter(k=>it[k]>0).length+Object.values(it.resist).filter(v=>v>0).length+Object.keys(specials).filter(k=>it[k]!=null).length+(it.quirk?1:0);
   const owned=()=>[...CHARM_STATS.filter(k=>it[k]>0).map(k=>['stat',k]),...Object.keys(it.resist).filter(e=>it.resist[e]>0).map(e=>['resist',e])];
   for(let guard=0;guard<60&&budget>=.5;guard++){
     let kind,key;const mine=owned();
@@ -316,7 +320,9 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
     if(kind==='special'&&(!key||Object.keys(specials).filter(k=>it[k]!=null).length>=4)||kind==='quirk'&&(it.quirk||tier<2))continue;
     if(kind==='stat'&&((it[key]||0)<0||(it[key]||0)>=STAT_CAP[key]))continue;
     if(kind==='resist'&&((it.resist[key]||0)<0||(it.resist[key]||0)>=(tier>=3?3:2)))continue;
-    const cost=kind==='stat'?STAT_COST[key]:kind==='resist'?[1,2.2,3.4][it.resist[key]||0]:kind==='special'?1.6:3;
+    const opening=kind==='special'||kind==='quirk'||(kind==='stat'?!(it[key]>0):!(it.resist[key]>0));
+    if(opening&&traitCount()>=traitCap){if(!mine.length)break;continue}
+    const cost=(kind==='stat'?STAT_COST[key]:kind==='resist'?[1,2.2,3.4][it.resist[key]||0]:kind==='special'?1.6:3)+(opening?openCost:0);
     if(cost>budget)continue;budget-=cost;
     if(kind==='stat')it[key]=(it[key]||0)+1;else if(kind==='resist')it.resist[key]=(it.resist[key]||0)+1;else if(kind==='special')it[key]=specials[key]();else it.quirk=charmPickQuirk(rnd,premium);
   }
