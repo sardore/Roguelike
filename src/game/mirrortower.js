@@ -59,6 +59,31 @@ function mirrorTowerHops(edges,fromId){
  for(let i=0;i<queue.length;i++)for(const[a,b]of edges){const other=a.id===queue[i]?b.id:b.id===queue[i]?a.id:null;if(other==null||hops.has(other))continue;hops.set(other,hops.get(queue[i])+1);queue.push(other)}
  return hops;
 }
+// Moving platforms are decks of one cell up to a dozen: each has a footprint, a design and furniture that rides on it.
+// `cargo` entries are [kind, along, across]: `across` names the outermost lane the piece stands in and it extends inwards;
+// the middle lane is always left clear so the deck can be boarded from the bridge.
+// Furniture on a moving deck stands as a standalone solid tile (a prop needs dry floor under it, a deck has none).
+const MIRROR_CARGO_TILE=LEGEND_TILES49.mirror_blade.solid;
+const MIRROR_PLATFORMS=Object.freeze([
+ Object.freeze({id:'slab',name:'유리 발판',across:3,len:2,shape:'rect',cargo:[]}),
+ Object.freeze({id:'slab3',name:'넓은 유리 발판',across:3,len:3,shape:'rect',cargo:[['pedestal',1,-1]]}),
+ Object.freeze({id:'barge',name:'유리 유람선',across:3,len:4,shape:'rect',cargo:[['lamp',0,-1],['lamp',0,1],['lamp',3,-1],['lamp',3,1]]}),
+ Object.freeze({id:'terrace',name:'유리 테라스',across:5,len:3,shape:'rect',cargo:[['bench',0,2],['lectern',2,-2],['pedestal',0,-2],['lamp',2,2]]}),
+ Object.freeze({id:'deck',name:'관측 갑판',across:5,len:4,shape:'rect',cargo:[['orrery',1,2],['column',0,-2],['column',3,-2],['lamp',1,-2]]}),
+ Object.freeze({id:'plus',name:'꽃잎 발판',across:3,len:3,shape:'plus',cargo:[]}),
+ Object.freeze({id:'wide',name:'진열 갑판',across:5,len:3,shape:'rect',cargo:[['cabinet',0,-2],['showcase',1,2],['pedestal',0,-1]]})
+]);
+function mirrorPlatform(design,axis,x,y,lo,hi,dir,under){
+ const half=(design.across-1)/2,cells=[];
+ for(let a=0;a<design.len;a++)for(let c=-half;c<=half;c++){if(design.shape==='plus'&&c!==0&&a!==design.len>>1)continue;cells.push(axis==='x'?[a,c]:[c,a])}
+ const has=(dx,dy)=>cells.some(o=>o[0]===dx&&o[1]===dy),cargo=[],objects=[];
+ for(const[kind,a,c]of design.cargo){
+  const s=GLASS_FURNITURE[kind],along=axis==='x'?s.w:s.h,across=axis==='x'?s.h:s.w,cmin=c>0?c-across+1:c,dx0=axis==='x'?a:cmin,dy0=axis==='x'?cmin:a,mine=[];
+  let ok=true;for(let i=0;i<s.w;i++)for(let j=0;j<s.h;j++){const cc=axis==='x'?dy0+j:dx0+i;if(!has(dx0+i,dy0+j)||cc===0||cargo.some(q=>q.dx===dx0+i&&q.dy===dy0+j))ok=false;mine.push({dx:dx0+i,dy:dy0+j,tile:MIRROR_CARGO_TILE})}
+  if(ok){cargo.push(...mine);objects.push({kind,dx:dx0,dy:dy0,w:s.w,h:s.h})}
+ }
+ return{x,y,min:lo,max:hi,dir,axis,under,mirrorRaft105:true,design:design.id,across:design.across,len:design.len,footprintCells57:cells,cargo,objects};
+}
 function mirrorTowerContains(t,x,y,inset=0){
  const dx=Math.abs(x-t.cx),dy=Math.abs(y-t.cy),rx=t.rx-inset,ry=t.ry-inset;if(dx>rx||dy>ry)return false;
  if(t.shape==='rect')return true;if(t.shape==='round')return (dx/(rx+.5))**2+(dy/(ry+.5))**2<=1;
@@ -116,11 +141,19 @@ function buildMirrorTower(level){
  const free=(x,y)=>m[y]?.[x]===ground&&!towerAt(x,y)&&zone[y][x]==='.';
  const breaks=level===1?2:1;let broken=0;
  for(const run of runs){
-  if(broken>=breaks||run.length<11)continue;const mid=run.length>>1,seg=run.slice(mid-2,mid+3),vertical=seg[0].x===seg[1].x;
-  for(const c of seg)for(let j=-1;j<=1;j++){const x=vertical?c.x+j:c.x,y=vertical?c.y:c.y+j;if(!towerAt(x,y))put(x,y,ground,'.')}
-  const a=seg[0],b=seg.at(-1),min=vertical?Math.min(a.y,b.y):Math.min(a.x,b.x),max=vertical?Math.max(a.y,b.y):Math.max(a.x,b.x);
-  put(a.x,a.y,TT.RAFT);state.rafts.push({x:a.x,y:a.y,min,max,dir:(vertical?a.y:a.x)===min?1:-1,axis:vertical?'y':'x',under:ground,mirrorRaft105:true});for(const c of seg)tracks.add(k(c.x,c.y));
-  run.broken=true;broken++;
+  if(broken>=breaks)continue;
+  const options=MIRROR_PLATFORMS.filter(d=>run.length>=d.len+10).sort(()=>rand(-1,1));
+  for(const design of options){
+   const G=design.len+4,half=(design.across-1)/2,m0=(run.length-G)>>1,seg=run.slice(m0,m0+G),vertical=seg[0].x===seg[1].x;
+   // every cell the platform will ever cover must be open sky or lake, or this very bridge
+   let ok=true;for(const c of seg)for(let j=-half;j<=half&&ok;j++){const x=vertical?c.x+j:c.x,y=vertical?c.y:c.y+j,mine=Math.abs(j)<=1&&zone[y][x]==='b';if(towerAt(x,y)||!(mine||(m[y][x]===ground&&zone[y][x]==='.')))ok=false}
+   if(!ok)continue;
+   for(const c of seg)for(let j=-half;j<=half;j++){const x=vertical?c.x+j:c.x,y=vertical?c.y:c.y+j;put(x,y,ground,'.');tracks.add(k(x,y))}
+   const coord=c=>vertical?c.y:c.x,lo=Math.min(...seg.map(coord)),hi=Math.max(...seg.map(coord)),lane=vertical?seg[0].x:seg[0].y,max=hi-(design.len-1),atMin=rand(0,1)===0;
+   state.rafts.push(mirrorPlatform(design,vertical?'y':'x',vertical?lane:atMin?lo:max,vertical?(atMin?lo:max):lane,lo,max,atMin?1:-1,ground));
+   const raft=state.rafts.at(-1);for(const o of raft.footprintCells57){const cargo=raft.cargo.find(c=>c.dx===o[0]&&c.dy===o[1]);setTerrainTile58(m,raft.x+o[0],raft.y+o[1],cargo?cargo.tile:TT.RAFT)}
+   run.broken=true;broken++;break;
+  }
  }
  const balconies=[],spurs=level===1?2:level===2?3:1;
  for(const run of runs){
@@ -274,7 +307,9 @@ function mirrorTowerAt(x,y,list){return list.find(t=>mirrorTowerContains(t,x,y))
 function mirrorTowerInfo(t,x,y){
  const layout=state?.branchTerrain105?.mirror105;if(!layout)return null;
  const o=layout.objects.find(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h);if(o){const s=GLASS_FURNITURE[o.kind];return{name:s.name,desc:s.desc,hint:''}}
- if(t===TT.RAFT)return{name:'유리 발판',desc:'은테를 두른 유리판이 정해진 길을 따라 한 칸씩 오간다. 위에 서 있으면 함께 실려 간다.',hint:'끊긴 다리나 물길을 건널 때 쓴다.'};
+ const deck=glassPlatformAt(x,y);
+ if(deck){const piece=(deck.objects||[]).find(o=>x>=deck.x+o.dx&&x<deck.x+o.dx+o.w&&y>=deck.y+o.dy&&y<deck.y+o.dy+o.h);if(piece){const s=GLASS_FURNITURE[piece.kind];return{name:s.name,desc:s.desc+' 발판 위에 놓여 함께 움직인다.',hint:''}}
+  const d=MIRROR_PLATFORMS.find(q=>q.id===deck.design);return{name:d?d.name:'유리 발판',desc:'은테를 두른 유리 갑판이 정해진 길을 따라 한 칸씩 오간다. 위에 서 있으면 함께 실려 간다.'+((deck.objects||[]).length?' 위에는 가구가 놓여 있다.':''),hint:'끊긴 다리나 물길을 건널 때 쓴다. 가운데 줄은 늘 비어 있다.'}}
  if(t===TT.WATER)return{name:'천면 호수',desc:'하늘빛을 그대로 비추는 깊은 호수. 빠지면 익사한다.',hint:'둑길과 발판으로만 건널 수 있다.'};
  if(t===TT.VOID)return{name:'구름 아래 허공',desc:'다리 난간 너머로 구름이 몇 겹이나 깔려 있다. 그 아래로 낮은 탑들의 지붕이 흐릿하게 보인다.',hint:'걸어서 건널 수 없다.'};
  return null;

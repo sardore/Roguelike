@@ -137,12 +137,41 @@ function drawGlassBridgeEdges(ctx,px,py,x,y){
   else{const a=side==='w'?px:px+29;ctx.fillRect(a,py,3,32);ctx.fillStyle=glassPal().silver;ctx.fillRect(side==='w'?a:a+2,py,1,32);for(let i=6;i<32;i+=12){ctx.fillStyle=glassPal().silverMid;ctx.fillRect(a-1,py+i,5,3)}}
  }
 }
-function drawGlassRaft(ctx,px,py){
- ctx.fillStyle='rgba(16,12,40,.45)';ctx.fillRect(px+4,py+8,26,22);
- ctx.fillStyle=glassPal().silverDark;ctx.fillRect(px+2,py+4,28,24);ctx.fillStyle=glassPal().glass;ctx.fillRect(px+4,py+6,24,20);
- const g=ctx.createLinearGradient(px,py+6,px+28,py+26);g.addColorStop(0,glassPal().glassHi);g.addColorStop(1,glassPal().lilacDeep);ctx.fillStyle=g;ctx.fillRect(px+5,py+7,22,18);
- ctx.fillStyle=glassPal().silver;ctx.fillRect(px+2,py+4,28,2);ctx.fillStyle=glassRGBA(glassPal().white,.55);ctx.fillRect(px+7,py+9,8,1);ctx.fillRect(px+7,py+10,3,1);
- ctx.fillStyle=glassPal().silverMid;for(const[a,b]of[[3,5],[27,5],[3,25],[27,25]])ctx.fillRect(px+a,py+b,2,2);
+// The moving platform (state.rafts entry) that covers a cell, if any. Its footprint cells are offsets from its anchor.
+function glassPlatformAt(x,y){
+ for(const r of state.rafts||[]){if(!r.mirrorRaft105||Math.abs(x-r.x)>6||Math.abs(y-r.y)>6)continue;const dx=x-r.x,dy=y-r.y;if(r.footprintCells57.some(o=>o[0]===dx&&o[1]===dy))return r}
+ return null;
+}
+// One cell of a moving platform. Its own edges get a rim, its south edge the deck's thickness, its inner seams stay thin, so
+// the cells read as one slab. The design sets the inlay: rings (slab), a runner and prows (barge), checkers (terrace),
+// a star disc (deck), petals (plus), panels (wide).
+function drawGlassPlatformCell(ctx,px,py,x,y,r){
+ const P=glassPal(),rx=x-r.x,ry=y-r.y,has=(dx,dy)=>r.footprintCells57.some(o=>o[0]===rx+dx&&o[1]===ry+dy);
+ const n=has(0,-1),s=has(0,1),w=has(-1,0),e=has(1,0),cells=r.footprintCells57,cx=cells.reduce((a,o)=>a+o[0],0)/cells.length,cy=cells.reduce((a,o)=>a+o[1],0)/cells.length;
+ const hue={slab:[P.glassHi,P.glass],slab3:[P.glassHi,P.glassMid],barge:[P.glassMid,P.glassDeep],terrace:[P.lilacHi,P.lilac],deck:[P.glass,P.glassDeep],plus:[P.lilacHi,P.lilacDeep],wide:[P.glassHi,P.lilac]}[r.design]||[P.glassHi,P.glass];
+ const g=ctx.createLinearGradient(px,py,px+32,py+32);g.addColorStop(0,hue[0]);g.addColorStop(1,hue[1]);ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ ctx.fillStyle=glassRGBA(P.white,.14);ctx.fillRect(px+((x*5)%18),py+3,9,1);
+ // inlay
+ ctx.save();ctx.beginPath();ctx.rect(px,py,32,32);ctx.clip();
+ const ox=(cx-rx)*32+16,oy=(cy-ry)*32+16;ctx.lineWidth=1;
+ if(r.design==='slab'||r.design==='slab3'||r.design==='deck'||r.design==='plus'){
+  for(const[rad,a]of[[30,.5],[20,.4],[10,.3]]){ctx.strokeStyle=glassRGBA(P.silver,a);ctx.beginPath();ctx.arc(px+ox,py+oy,rad,0,Math.PI*2);ctx.stroke()}
+  if(r.design==='deck'||r.design==='plus'){ctx.strokeStyle=glassRGBA(P.silver,.3);ctx.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.moveTo(px+ox+Math.cos(a)*10,py+oy+Math.sin(a)*10);ctx.lineTo(px+ox+Math.cos(a)*34,py+oy+Math.sin(a)*34)}ctx.stroke()}
+ }else if(r.design==='barge'){
+  const lane=r.axis==='x'?ry===0:rx===0;if(lane){ctx.fillStyle=glassRGBA(P.violet,.45);ctx.fillRect(px,py,32,32);ctx.fillStyle=glassRGBA(P.lamp,.5);if(r.axis==='x'){ctx.fillRect(px,py+14,32,2)}else ctx.fillRect(px+14,py,2,32)}
+ }else if(r.design==='terrace'||r.design==='wide'){
+  if((rx+ry)%2===0){ctx.fillStyle=glassRGBA(P.white,.18);ctx.fillRect(px,py,32,32)}ctx.strokeStyle=glassRGBA(P.silverMid,.5);ctx.strokeRect(px+.5,py+.5,31,31);
+ }
+ ctx.restore();
+ // thin seams towards neighbours of the same deck
+ ctx.fillStyle=glassRGBA(P.silverMid,.28);if(n)ctx.fillRect(px,py,32,1);if(w)ctx.fillRect(px,py,1,32);
+ // rim on every outer side, thickness under the south edge, rail posts on the barge and the terraces
+ ctx.fillStyle=P.silver;if(!n)ctx.fillRect(px,py,32,3);if(!w)ctx.fillRect(px,py,3,32);if(!e)ctx.fillRect(px+29,py,3,32);
+ ctx.fillStyle=glassRGBA(P.white,.6);if(!n)ctx.fillRect(px,py,32,1);
+ if(!s){const u=ctx.createLinearGradient(0,py+22,0,py+32);u.addColorStop(0,P.silverMid);u.addColorStop(1,P.violet);ctx.fillStyle=u;ctx.fillRect(px,py+22,32,10);ctx.fillStyle=P.silver;ctx.fillRect(px,py+22,32,2);ctx.fillStyle=glassRGBA(P.violetInk,.45);for(let i=4;i<32;i+=8)ctx.fillRect(px+i,py+25,2,5)}
+ if(r.design==='barge'||r.design==='terrace'||r.design==='deck'){ctx.fillStyle=P.silverDark;if(!n)for(let i=3;i<32;i+=10)ctx.fillRect(px+i,py+3,3,6);if(!w)for(let i=4;i<24;i+=10)ctx.fillRect(px+3,py+i,5,3);if(!e)for(let i=4;i<24;i+=10)ctx.fillRect(px+24,py+i,5,3)}
+ // prows: the ends of a barge along its travel come to a point
+ if(r.design==='barge'){const ends=r.axis==='x'?(!w||!e):(!n||!s);if(ends){ctx.fillStyle=glassRGBA(P.lamp,.6);ctx.beginPath();if(r.axis==='x'){ctx.moveTo(px+(!w?4:28),py+16);ctx.lineTo(px+(!w?12:20),py+10);ctx.lineTo(px+(!w?12:20),py+22)}else{ctx.moveTo(px+16,py+(!n?4:20));ctx.lineTo(px+10,py+(!n?12:12));ctx.lineTo(px+22,py+(!n?12:12))}ctx.closePath();ctx.fill()}}
 }
 // Cell painter, called for every seen cell of the tower floors.
 function drawGlassTowerCell(t,px,py,x,y){
@@ -150,7 +179,8 @@ function drawGlassTowerCell(t,px,py,x,y){
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
  if(t===TT.VOID)return true;
  if(t===TT.WATER){drawGlassLake(ctx,px,py,x,y,now);return true}
- if(t===TT.RAFT){if((state.rafts||[]).find(r=>r.x===x&&r.y===y)?.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassRaft(ctx,px,py);return true}
+ const deck=(t===TT.RAFT||t===MIRROR_CARGO_TILE)?glassPlatformAt(x,y):null;
+ if(deck){if(deck.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassPlatformCell(ctx,px,py,x,y,deck);return true}
  if(t===TT.WALL){
   const kind=zone==='i'?'i':'o',below=state.map[y+1]?.[x];
   if(below!=null&&below!==TT.WALL&&state.seen.has(k(x,y+1))){ctx.drawImage(glassWallFront(kind,x,tower,true),px,py);const open=dx=>{const v=state.map[y]?.[x+dx];return v!=null&&v!==TT.WALL};ctx.fillStyle=glassPal().silver;if(open(-1))ctx.fillRect(px,py,2,32);if(open(1))ctx.fillRect(px+30,py,2,32)}
@@ -247,7 +277,8 @@ function glassFurnitureSprite(kind,t,frame=0){
 }
 function drawGlassFurniture(b,now){
  const layout=mirrorLayout();if(!layout)return;
- for(const o of layout.objects||[]){
+ const carried=[];for(const r of state.rafts||[])for(const o of r.objects||[])carried.push({kind:o.kind,x:r.x+o.dx,y:r.y+o.dy,w:o.w,h:o.h,tower:null});
+ for(const o of [...(layout.objects||[]),...carried]){
   if(o.x+o.w<b.x0-1||o.x>b.x1+1||o.y<b.y0-1||o.y-2>b.y1+1)continue;
   let seen=false;for(let dy=0;dy<o.h&&!seen;dy++)for(let dx=0;dx<o.w;dx++)if(state.seen.has(k(o.x+dx,o.y+dy))){seen=true;break}if(!seen)continue;
   const spec=GLASS_FURNITURE[o.kind],t=state.branchWorld105?.mirror105?.towers?.[o.tower]??null,frame=o.kind==='orrery'?Math.floor(now/180)%12:o.kind==='pedestal'?Math.floor(now/400)%2:0;

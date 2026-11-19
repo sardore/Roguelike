@@ -1475,7 +1475,7 @@ function drawCoreInteractiveTerrain(tile,px,py,x,y,now){
 let LIGHT_CACHE={map:null,turn:-1,sources:[],geometry:new Map()};
 function lightRay(s,x,y){let dx=x-s.x,dy=y-s.y,n=Math.max(Math.abs(dx),Math.abs(dy))*2;if(!n)return true;let px=s.x,py=s.y;for(let i=1;i<n;i++){const xx=Math.round(s.x+dx*i/n),yy=Math.round(s.y+dy*i/n);if(xx===px&&yy===py)continue;if(xx===x&&yy===y)return true;if(xx!==px&&yy!==py&&tileBlocksSight(state.map[py]?.[xx])&&tileBlocksSight(state.map[yy]?.[px]))return false;if(tileBlocksSight(state.map[yy]?.[xx]))return false;px=xx;py=yy}return true}
 function worldLightSources(){
- const mine=state.branchTerrain105?.mine105,dojo=state.branchTerrain105?.dojo,lanternKey=(mine?.lanterns||[]).map(l=>`${l.x},${l.y}:${l.lit?1:0}:${l.color||''}:${l.radius||''}:${l.power||''}`).join(';')+'|'+[state.player,...state.monsters].filter(e=>e.hp>0&&e.combustion105).map(e=>e.x+','+e.y).join(';'),revision=(TERRAIN_RENDER_REV.get(state.map)||0)+':'+(state.terrainReactions105?.revision||0);
+ const mine=state.branchTerrain105?.mine105,dojo=state.branchTerrain105?.dojo,lanternKey=(mine?.lanterns||[]).map(l=>`${l.x},${l.y}:${l.lit?1:0}:${l.color||''}:${l.radius||''}:${l.power||''}`).join(';')+'|'+(state.branchContext105?.id==='mirror'?(state.rafts||[]).map(r=>r.x+','+r.y).join(';'):'')+'|'+[state.player,...state.monsters].filter(e=>e.hp>0&&e.combustion105).map(e=>e.x+','+e.y).join(';'),revision=(TERRAIN_RENDER_REV.get(state.map)||0)+':'+(state.terrainReactions105?.revision||0);
  if(LIGHT_CACHE.map===state.map&&LIGHT_CACHE.revision===revision&&LIGHT_CACHE.lanternKey===lanternKey&&LIGHT_CACHE.lights===state.legendLights49&&LIGHT_CACHE.decor===state.decor)return LIGHT_CACHE.sources;
  const sources=[],used=new Set(),add=(x,y,color,r,power,kind='lamp')=>{const kk=x+','+y;if(used.has(kk)||!Number.isFinite(x)||!Number.isFinite(y)||terrainUnlit105(x,y))return;used.add(kk);sources.push({x,y,color,r,power,kind})};
  for(const e of [state.player,...state.monsters])if(e.hp>0&&e.combustion105)add(e.x,e.y,'#ef872e',2.2,.22,'combustion');
@@ -1485,6 +1485,7 @@ function worldLightSources(){
  const palace=state.branchContext105?.id==='palace'?state.branchTerrain105?.palace105:null;if(palace){for(const l of palace.lights||[]){if(l.wall){if(state.map[l.y]?.[l.x]!==TT.PALACE_WALL_LAMP||terrainUnlit105(l.x,l.y))continue;add(l.x+l.dx,l.y+l.dy,l.color||'#ecc17d',3.7,.22,'palace-wall-lamp');}else add(l.x,l.y,l.color||'#ecc17d',3.4,.21,'palace-lamp');}for(const key of Object.keys(palace.windows||{})){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]===TT.WALL)add(x,y,'#78bfc5',3.2,.10,'palace-window');}}
  for(const l of dojo?.lanterns||[])add(l.x,l.y,WORLD_LIGHT_ART.lantern,3.2,.19,'dojo');
  for(const l of state.branchTerrain105?.mirror105?.lights||[])add(l.x,l.y,l.color,l.r,l.power,'mirror');
+ for(const r of state.branchContext105?.id==='mirror'?state.rafts||[]:[])for(const o of r.objects||[])if(o.kind==='lamp')add(r.x+o.dx,r.y+o.dy,'#d9c8ff',3.2,.22,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
   add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);

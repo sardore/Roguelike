@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,vis:()=>VisibilityService.compute()};';
+const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,cargoTile:MIRROR_CARGO_TILE,raftTile:TT.RAFT,build:buildBranch,vis:()=>VisibilityService.compute()};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -49,6 +49,32 @@ console.log('ride', JSON.stringify(ride));
 assert.ok(ride.boarded.on, '발판에 올라타지 못했다');
 assert.deepEqual(ride.track.map(t => t[0]), ride.track.map(t => t[1]), '플레이어가 발판과 함께 움직이지 않는다');
 assert.ok(ride.track[2][1] !== ride.track[0][1] || ride.track[1][1] !== ride.track[0][1], '발판이 움직이지 않는다');
+// 큰 발판과 그 위의 가구: 왕복 내내 가구 칸은 가구 타일, 나머지 갑판 칸은 발판 타일로 함께 움직인다.
+const deck = await s.page.evaluate(() => {
+  for (let i = 0; i < 60; i++) {
+    const st = mirrorTest.state(); st.branchWorld105 = { version: 1, pages: {} }; st.runId984 = 'deck-' + i;
+    for (const L of [1, 2, 3]) {
+      mirrorTest.go({ id: 'qa-mirror', to: 'mirror:' + L, arrival: 'up' });
+      const s2 = mirrorTest.state(), r = s2.rafts.find(q => q.cargo.length && q.footprintCells57.length >= 8);
+      if (!r) continue;
+      s2.monsters = [];
+      let bad = 0, moved = new Set();
+      for (let n = 0; n < 24; n++) {
+        mirrorTest.wait(); moved.add(r.x + ',' + r.y);
+        for (const o of r.footprintCells57) {
+          const isCargo = r.cargo.some(c => c.dx === o[0] && c.dy === o[1]), have = s2.map[r.y + o[1]][r.x + o[0]];
+          if (have !== (isCargo ? mirrorTest.cargoTile : mirrorTest.raftTile)) bad++;
+        }
+      }
+      return { design: r.design, cells: r.footprintCells57.length, cargo: r.cargo.length, positions: moved.size, bad };
+    }
+  }
+  return null;
+});
+console.log('deck', JSON.stringify(deck));
+assert.ok(deck, '가구를 실은 큰 발판이 생성되지 않았다');
+assert.ok(deck.positions > 1, '큰 발판이 움직이지 않는다');
+assert.equal(deck.bad, 0, '발판 이동 중 가구 칸이나 갑판 칸이 어긋났다');
 const boss = await s.page.evaluate(() => {
   mirrorTest.go({ id: 'qa-mirror', to: 'mirror:3', arrival: 'up' });
   const st = mirrorTest.state(), b = st.monsters.find(m => m.mirrorKeeper105);

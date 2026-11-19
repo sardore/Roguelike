@@ -1766,7 +1766,7 @@ const FOOTPRINT_OFFSETS57={
   hound:[[-1,-2],[1,-2],[0,-1],[0,0],[0,1],[-1,2],[1,2]],
   dragon:[[-1,-1],[0,-1],[1,-1],[0,0],[0,1],[-1,1],[1,1]]
 };
-function footprintOffsets(mon){return FOOTPRINT_OFFSETS57[mon?.footprint]||FOOTPRINT_OFFSETS57.one}
+function footprintOffsets(mon){return FOOTPRINT_OFFSETS57[mon?.footprint]||mon?.footprintCells57||FOOTPRINT_OFFSETS57.one}
 function roomAt(x,y){return state.rooms.find(r=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h)||null}
 function initialSpawnPosition(mon,dist,safe,roomUse,spawnCtx57=null){
   const pool=[],candidates=spawnCtx57?.candidates;
