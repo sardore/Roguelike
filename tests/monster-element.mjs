@@ -31,16 +31,16 @@ const out = await s.page.evaluate(() => {
   };
   probe('반영 검객', 'holy', 'melee'); probe('수목 궁수', 'grass', 'ranged');
   // 파편 망령: 피해의 절반만 냉기라 저항 Ⅲ이어도 물리 절반은 남는다
-  { const def = T.legend('mirror_blade').find(d => d.name === '파편 망령');
+  for (const [dungeon, name] of [['mirror_blade', '파편 망령'], ['curse_spear', '혼백 사냥꾼']]) { const def = T.legend(dungeon).find(d => d.name === name);
     const run = lvl => { p.baseMaxHpPermanent = 400; p.hp = p.maxHp = 400; p.armor = { name: 't', resist: lvl ? { ice: lvl } : {} };
       let total = 0; for (let i = 0; i < 8; i++) { const m = T.scaled(JSON.parse(JSON.stringify(def)), 14); Object.assign(m, { x: p.x + 1, y: p.y, hp: 999, maxHp: 999, alerted: true }); st.monsters = []; T.add(m); const b = p.hp; T.hit(m, { target: p, delivery: 'melee' }); total += b - p.hp; p.hp = p.maxHp = 400; } return total; };
-    r['파편 망령'] = { element: def.attackElement105, share: def.attackElementShare105, plain: run(0), r3: run(3) }; }
+    r[name] = { element: def.attackElement105, share: def.attackElementShare105, plain: run(0), r3: run(3) }; }
   // 천수 아수라: 영역 밖 대상에게 예고된 다완 투척 한 번
   const asura = lvl => {
     p.baseMaxHpPermanent = 400; p.hp = p.maxHp = 400; p.armor = { name: 't', resist: lvl ? { holy: lvl } : {} };
     const def = T.MONSTERS.find(m => m.name === '천수 아수라'), m = T.scaled(JSON.parse(JSON.stringify(def)), 14);
     Object.assign(m, { x: p.x + 7, y: p.y, hp: 999, maxHp: 999, alerted: true, asuraZone61: 3, asuraVolleyWarn61: 1, asuraVolleyTarget61: { x: p.x, y: p.y }, asuraDomainX61: p.x + 7, asuraDomainY61: p.y });
-    st.monsters = []; T.add(m); const b = p.hp; T.asura(m, 7, p); return b - p.hp;
+    st.monsters = []; T.add(m); let total = 0; for (let i = 0; i < 8; i++) { Object.assign(m, { asuraZone61: 3, asuraVolleyWarn61: 1, stunned: 0 }); p.hp = p.maxHp = 400; T.asura(m, 7, p); total += 400 - p.hp; } return total;
   };
   r['천수 아수라'] = { element: 'holy', plain: asura(0), r1: asura(1), r3: asura(3) };
   // 천면경 검: 첫 적을 베면 3칸 안의 두 번째 적에게 성광 반영
@@ -59,8 +59,8 @@ for (const [name, elem] of [['반영 검객', 'holy'], ['수목 궁수', 'grass'
   const o = out[name]; assert.equal(o.element, elem, name + ' element');
   assert.ok(o.plain > 0, name + ' hurts'); assert.ok(o.r1 < o.plain, name + ' resist I lowers: ' + o.r1 + ' < ' + o.plain); assert.equal(o.r3, 0, name + ' resist III blocks');
 }
-const shard = out['파편 망령'];
-assert.equal(shard.element, 'ice'); assert.equal(shard.share, .5);
-assert.ok(shard.r3 > 0 && shard.r3 < shard.plain, '냉기 저항 Ⅲ은 절반만 막는다: ' + shard.r3 + ' / ' + shard.plain);
+for (const name of ['파편 망령', '혼백 사냥꾼']) { const o = out[name];
+  assert.equal(o.element, 'ice', name); assert.equal(o.share, .5, name);
+  assert.ok(o.r3 > 0 && o.r3 < o.plain, name + ': 냉기 저항 Ⅲ은 절반만 막는다 ' + o.r3 + ' / ' + o.plain); }
 console.log('monster-element: ok');
 await browser.close(); process.exit(0);
