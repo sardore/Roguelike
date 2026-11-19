@@ -180,7 +180,7 @@ function buildMirrorTower(level){
     if(kind==='b'||kind==='p')put(x,y,TT.FLOOR,kind);else if(kind==='pillar')put(x,y,TT.WALL,'i');else{put(x,y,TT.PAPER_BRIDGE,'p');ter.leaves=ter.leaves||{};ter.leafBase=ter.leafBase||{};ter.leaves[key]=true;ter.leafBase[key]=TT.VOID}}
    for(const c of exit)put(c.x,c.y,TT.FLOOR,'b');
    if(p.door)doors.add(k(p.x,p.y));
-   return{reward:items.map(([u,v])=>at(p,u,v)),ledge:at(p,19,0)};
+   return{reward:items.map(([u,v])=>at(p,u,v)),ledges:[at(p,7,0),at(p,19,0)]};
   }
   return null;
  };
@@ -337,6 +337,8 @@ function buildMirrorTower(level){
  // ---- everything that matters must still be reachable
  const reach=ReachabilityService.playerSearch(up,walkOptions).cells;
  if(!reach.has(k(target.x,target.y)))throw Error('Mirror tower: the way on is blocked');
+ // the leaves are not part of any way: once they fall, both ledges of the pavilion must still be on the same network as the stairs
+ if(pavilion)for(const c of pavilion.ledges)if(!reach.has(k(c.x,c.y)))throw Error('Mirror tower: the leaf pavilion is cut off once its leaves fall');
  for(const r of rooms)if(!r.cells.some(c=>reach.has(k(c.x,c.y))))throw Error('Mirror tower: a side room is sealed');
  for(const b of balconies){let ok=false;for(let y=b.y-2;y<=b.y+2&&!ok;y++)for(let x=b.x-2;x<=b.x+2;x++)if(reach.has(k(x,y))){ok=true;break}if(!ok)throw Error('Mirror tower: a balcony is cut off')}
  ter.mirror105={version:1,zones:zone.map(r=>r.join('')),owner:owner.map(r=>r.join('')),objects,lights,stairs:standing.find(t=>t.stairsAtSummit)?.stairsAtSummit||{}};
