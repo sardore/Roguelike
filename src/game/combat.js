@@ -267,9 +267,9 @@ function bodyPowerHeal(p){
   if(p.hp>=p.maxHp){cs.powerHealHundredths=0;return 0}
   // Integer hundredths retain the exact 2% rate without putting fractions into HP.
   const units=(cs.powerHealHundredths||0)+p.maxHp*2;
-  const before=p.hp;p.hp=Math.min(p.maxHp,p.hp+Math.floor(units/100));
+  const gained=recoverCombatHealth(p,Math.floor(units/100));
   cs.powerHealHundredths=p.hp>=p.maxHp?0:units%100;
-  return p.hp-before;
+  return gained;
 }
 function statusSummary(){
   const s=state?.status||{},out=[];
@@ -315,7 +315,7 @@ function applyStatusTick(){
     else{
       const raw=Math.max(0,Math.floor(Number(state.makgeolliHealHundredths57)||0))+Math.round(state.player.maxHp*percent*100),finalTick=state.makgeolliRecoveryTurns57<=1;
       const whole=finalTick?Math.round(raw/100):Math.floor(raw/100),heal=Math.max(minimum,whole),remainder=finalTick?0:Math.max(0,raw-heal*100);
-      state.player.hp=Math.min(state.player.maxHp,state.player.hp+heal);const gained=state.player.hp-before;
+      const gained=recoverCombatHealth(state.player,heal);
       state.makgeolliHealHundredths57=state.player.hp>=state.player.maxHp?0:remainder;
       if(gained>0){floatText(state.player.x,state.player.y,`술기운 +${gained}`,'#ead9b6',11);addLog(`막걸리의 술기운이 상처를 덥힌다. +${gained} HP`)}
     }
@@ -476,6 +476,18 @@ function combatDefenseBonus(target){
  if(target.role61==='formation'&&state.monsters.some(a=>a!==target&&a.hp>0&&a.role61==='formation'&&entitiesAllied57(a,target)&&entityDistance57(a,target)<=1))bonus+=floor>=21?5:floor>=16?4:floor>=11?3:2;
  return bonus;
 }
+function mirrorSanctuaryAffects(actor,allied){
+ if(!actor||actor.hp<=0)return false;
+ const faction=entityFaction(actor);
+ return !!state?.tempFields?.some(f=>f.kind==='mirrorSanctuary'&&f.ttl>0&&combatEffectActor(f)?.hp>0&&
+  (allied?f.sourceFaction===faction:factionsHostile57(f.sourceFaction,faction))&&f.cells.some(c=>monCovers(actor,c.x,c.y)));
+}
+function recoverCombatHealth(actor,amount){
+ if(amount<=0||mirrorSanctuaryAffects(actor,false))return 0;
+ const before=actor.hp;
+ actor.hp=Math.min(actor.maxHp,actor.hp+amount);
+ return actor.hp-before;
+}
 function damageEntity(entity,amount,source=null,element=null,context={}){
  if(!entity||entity.hp<=0||!Number.isFinite(amount)||amount<=0)return 0;
  if(entity.duelOpponent||entity.duelProxy)Duel.sendHit(amount,element,source,entity.duelProxy||null);
@@ -516,7 +528,7 @@ function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
  if(!executeMartialActor(p,'roar',cell))return false;commitPlayerAction57(act,1);return true;
 }
 function setPlayerStatus(key,turns){
- if(!state?.status||turns<=0)return 0;
+ if(!state?.status||turns<=0||STATUS_META57[key]?.harmful&&mirrorSanctuaryAffects(state.player,true))return 0;
  state.status[key]=Math.max(state.status[key]||0,turns);
  if(STATUS_META57[key]?.harmful&&state.player.classState?.aimPower>0&&martialFormOf('roar')!=='focus')setAimPower(0);
  return state.status[key];
@@ -545,6 +557,10 @@ function expireCombatFields(opts={}){
     if(!hasHostileInside)f.ttl=0;
    }
    if(opts.movement||state.turn<=f.bornTurn)continue;
+  }
+  if(f.kind==='mirrorSanctuary'||f.kind==='mirrorShards'){
+   if(!(combatEffectActor(f)?.hp>0))f.ttl=0;
+   if(opts.movement||state.turn<=f.bornTurn||f.ttl<=0)continue;
   }
   if(opts.movement||f.yuun)continue;
   if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);if(!opts.movement)tickYuun();
@@ -650,6 +666,7 @@ function resolveCombatIllness(target){
 function applyCombatStatus(target,key,turns,chance=1,opts={}){
  if(!state||!target||target.hp<=0||turns<=0)return false;
  const kind=STATUS_META57[key]?key:Object.keys(STATUS_META57).find(k=>STATUS_META57[k].monsterField57===key)||key,meta=STATUS_META57[kind];
+ if(meta?.harmful&&mirrorSanctuaryAffects(target,true))return false;
  if(target.duelOpponent)Duel.sendStatus(kind,turns,chance);
  if(target===state.player)return applyHostileStatus(kind,turns,chance,opts);
  const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune(target)||(opts.element==='ice'||opts.cold)&&entityElementGuard57(target,'ice'))return false;
@@ -755,8 +772,8 @@ function hostileStatusChance(baseChance,willOverride=null){
   const w=Number(willOverride==null?getStats().will:willOverride)||0,den=Math.max(1,6+w);
   return clamp((Number(baseChance)||0)*(6/den),0,.95);
 }
-function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune)return false;if((opts.element==='ice'||opts.cold)&&entityElementGuard57(state.player,'ice'))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();return true}
-function checkLevel(){const p=state.player;normalizePlayerProgression57(p);while(p.level<BALANCE.maxLevel&&p.xp>=p.nextXp){p.xp-=p.nextXp;p.level++;branchLevelFood();const hpGain=p.level>=13?3:(p.level%4===0?2:1);let martialGain=p.level<=12||MARTIAL_RULES.latePoints.includes(p.level)?1:0;p.baseMaxHpPermanent+=hpGain;recomputeMaxHp(p);p.hp=Math.min(p.maxHp,p.hp+Math.max(2,Math.ceil(p.maxHp*.22)));if([4,7,10].includes(p.level))p.maxFocus+=1;p.focus=Math.min(getStats().maxFocus,p.focus+2);if(martialGain){if(p.level>=13&&(state.martialProgression1005?.legacyBossCredit||0)>0){state.martialProgression1005.legacyBossCredit--;martialGain=0}else p.skillPoints+=martialGain;}p.nextXp=p.level<BALANCE.maxLevel?xpRequirementForLevel57(p.level+1):xpRequirementForLevel57(BALANCE.maxLevel);addLog(`LEVEL ${p.level}. HP +${hpGain}${martialGain?` · 무술 포인트 +${martialGain}`:' · 무술 포인트 지급 없음'}.`)}}
+function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune||mirrorSanctuaryAffects(state.player,true))return false;if((opts.element==='ice'||opts.cold)&&entityElementGuard57(state.player,'ice'))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();return true}
+function checkLevel(){const p=state.player;normalizePlayerProgression57(p);while(p.level<BALANCE.maxLevel&&p.xp>=p.nextXp){p.xp-=p.nextXp;p.level++;branchLevelFood();const hpGain=p.level>=13?3:(p.level%4===0?2:1);let martialGain=p.level<=12||MARTIAL_RULES.latePoints.includes(p.level)?1:0;p.baseMaxHpPermanent+=hpGain;recomputeMaxHp(p);recoverCombatHealth(p,Math.max(2,Math.ceil(p.maxHp*.22)));if([4,7,10].includes(p.level))p.maxFocus+=1;p.focus=Math.min(getStats().maxFocus,p.focus+2);if(martialGain){if(p.level>=13&&(state.martialProgression1005?.legacyBossCredit||0)>0){state.martialProgression1005.legacyBossCredit--;martialGain=0}else p.skillPoints+=martialGain;}p.nextXp=p.level<BALANCE.maxLevel?xpRequirementForLevel57(p.level+1):xpRequirementForLevel57(BALANCE.maxLevel);addLog(`LEVEL ${p.level}. HP +${hpGain}${martialGain?` · 무술 포인트 +${martialGain}`:' · 무술 포인트 지급 없음'}.`)}}
 function hungerTick(){const p=state.player;if(state.turn%BALANCE.hungerTick===0)p.hunger=Math.max(0,p.hunger-1);if(p.hunger===0&&state.turn%5===0){damageEntity(p,1);addLog('굶주림으로 체력이 깎인다.');if(p.hp<=0)die('굶주림')}}
 function isOpaqueCloud(field){
  return field.kind==='smoke'||field.kind==='steam';
@@ -890,7 +907,7 @@ function naturalHealPostTurn(ctx){
     const elapsed=(state.playerAgencyTurns57||0)-(state.lastDamageAgencyTurn57||0);let heal=0;
     if(state.passiveRecoveryUnlocked57){if(p.hunger>0&&elapsed>=6){const ratio=p.hp/p.maxHp,spacing=ratio<.5?1:ratio<.75?2:ratio<.9?3:4,start=elapsed>=24?24:elapsed>=16?16:elapsed>=11?11:6,interval=(elapsed>=16?1:elapsed>=11?2:3)*spacing;if((elapsed-start)%interval===0)heal=elapsed>=24?2:1}}
     else if(safeForNatural94()){const iv=naturalInterval94();if(Number.isFinite(iv)){state.earlyRecoveryProgress58=(Number(state.earlyRecoveryProgress58)||0)+1/iv;if(state.earlyRecoveryProgress58>=1-1e-9){heal=Math.floor(state.earlyRecoveryProgress58+1e-9);state.earlyRecoveryProgress58=Math.max(0,state.earlyRecoveryProgress58-heal)}}}
-    if(heal){p.hp=Math.min(p.maxHp,p.hp+heal);updateAll()}
+    if(heal){recoverCombatHealth(p,heal);updateAll()}
   }
 function legendaryPreTurn(){syncEquip47()}
 function legendaryPostTurn(){if(!state)return;syncEquip47();const p=state.player;if(equipped47('earth_gauntlet')&&(p.legendEarthStacks47||0)>0&&p.legendEarthHitTurn47!==state.turn)p.legendEarthStacks47=Math.max(0,p.legendEarthStacks47-1);state.legendSkyAxes47=(state.legendSkyAxes47||[]).filter(a=>performance.now()-a.t<a.ttl)}

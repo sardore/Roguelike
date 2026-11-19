@@ -7,7 +7,7 @@
    are detours. The way on is lit by lamps and an inlaid line; side rooms and balconies hold the loot.
    Layout data for the art (zones, owners, furniture, lights, stairs) is kept in branchTerrain105.mirror105;
    mirrorart.js draws all of it. */
-const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:150,atk:13,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',color:'#b4c1c7',bossPattern:'mirrorKeeper105',mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
+const MIRROR_KEEPER=Object.freeze({name:'거울지기',concept57:'천 개의 거울 속에서 손님의 얼굴을 가장 먼저 훔쳐 가던 파경대의 문지기.',hp:135,atk:12,def:6,eva:6,xp:0,boss:true,kind:'spirit',shape:'human',color:'#b4c1c7',bossPattern:'mirrorKeeper105',lightningRodProfile:{bonus:3,scale:1.15,stun:1,stunOnFinal:true},mirrorKeeper105:true,summonsVanish:true,legendDungeon47:'mirror_blade',legendMob47:true});
 const MIRROR_TOWER_HEIGHTS=Object.freeze([3,3,3,2,2,1,1]);
 const MIRROR_TOWER_PURPOSES=Object.freeze(['observatory','display','library']);
 const MIRROR_TOWER_WINDOWS=Object.freeze(['arch','round','slit','diamond']);
@@ -322,18 +322,120 @@ function mirrorTowerInfo(t,x,y){
  if(t===TT.VOID)return{name:'구름 아래 허공',desc:'다리 난간 너머로 구름이 몇 겹이나 깔려 있다. 그 아래로 낮은 탑들의 지붕이 흐릿하게 보인다.',hint:'걸어서 건널 수 없다.'};
  return null;
 }
-function mirrorTowerTick(){
- if(state?.branchContext105?.id!=='mirror')return;
- const boss=(state.monsters||[]).find(mon=>mon.mirrorKeeper105&&mon.hp>0);if(!boss)return;
- const ratio=boss.hp/Math.max(1,boss.maxHp),phase=ratio<=.34?2:ratio<=.67?1:0;
- while((boss.mirrorPhase105||0)<phase){
-  boss.mirrorPhase105=(boss.mirrorPhase105||0)+1;let born=0;
-  for(let i=0;i<2;i++){
-   const child=scaledMonster(MIRROR_DUELIST,branchCombatFloor());child.hp=child.maxHp=Math.max(8,Math.round(child.maxHp*.6));
-   const q=PlacementService.findMonster(child,{placementMode:'local',origin:boss,radius:5});if(!q)continue;
-   Object.assign(child,{x:q.x,y:q.y,bossOwnerId57:combatantId(boss),spawnProvenance57:'summon',branch105:'mirror'});inheritCombatFaction57(child,boss);if(OccupancyService.addMonster(child))born++;
+const MIRROR_KEEPER_SKILLS=Object.freeze({
+ orb:Object.freeze({range:8,hp:6,shock:9,ice:9,shardTurns:3,shardDamage:2,shardChance:.25}),
+ sanctuary:Object.freeze({radius:2,turns:3,heal:2})
+});
+// Each entry is [skill, minimum enemy rounds before the next cast]. An unresolved intent always goes first.
+const MIRROR_KEEPER_CYCLES=Object.freeze([
+ [['orb',3],['bell',2],['copy',3],['rod',5],['sanctuary',4]],
+ [['copy',2],['orb',3],['rod',5],['bell',2],['orb',3],['sanctuary',4]],
+ [['rod',5],['orb',3],['sanctuary',4],['orb',3],['copy',2],['bell',2]],
+ [['orb',4],['bell',3],['rod',5],['sanctuary',4]]
+]);
+function mirrorKeeperTurn(mon,target,d){
+ if(d>MIRROR_KEEPER_SKILLS.orb.range||!actorDetectedTarget57(mon,target,MIRROR_KEEPER_SKILLS.orb.range))return false;
+ const ratio=mon.hp/mon.maxHp,phase=mon.mirrorCopy105?3:ratio<=.35?2:ratio<=.70?1:0;
+ const cycle=MIRROR_KEEPER_CYCLES[phase],turn=state.floorTurn;
+ if(turn<(mon.mirrorNextCast??0))return false;
+ if(mon.mirrorCyclePhase!==phase){mon.mirrorCyclePhase=phase;mon.mirrorCycleStep=0;}
+ const [skill,delay]=cycle[mon.mirrorCycleStep];
+ let cast=false;
+ if(skill==='orb'){
+  const aim=entityClosestCellTo57(target,mon)||target;
+  const path=combatLineCellsR8(mon.x,mon.y,aim.x,aim.y).map(({x,y})=>({x,y}));
+  if(path.length)cast=setBossIntent(mon,'mirrorOrb',path,'천명탄 · 구체의 진행 경로에서 벗어나라',{path});
+ }else if(skill==='rod'){
+  cast=startLightningRod(mon,target);
+  if(!cast)return false; // The shared warning budget can delay the cast without reordering the cycle.
+ }else if(skill==='bell'){
+  soundAlarmBell(mon,combatDepth(mon));cast=true;
+ }else if(skill==='copy'){
+  cast=spawnMirrorKeeperCopy(mon);
+ }else if(skill==='sanctuary'&&!state.tempFields.some(f=>f.kind==='mirrorSanctuary'&&f.ttl>0&&
+  f.sourceFaction===entityFaction(mon)&&combatEffectActor(f)?.hp>0)){
+  const cells=intentCells(mon.x,mon.y,MIRROR_KEEPER_SKILLS.sanctuary.radius).filter(c=>
+   !tileBlocks(state.map[c.y]?.[c.x])&&combatLineCheckR8(mon.x,mon.y,c.x,c.y,{units:false}).ok);
+  cast=setBossIntent(mon,'mirrorSanctuary',cells,'빛의 성역 · 빛의 경계 밖으로 이동하라',{x:mon.x,y:mon.y});
+ }
+ mon.mirrorCycleStep=(mon.mirrorCycleStep+1)%cycle.length;
+ if(cast)mon.mirrorNextCast=turn+delay;
+ return cast;
+}
+function spawnMirrorKeeperCopy(mon){
+ if(state.monsters.some(m=>m.mirrorCopy105&&m.hp>0&&bossChildOf(m,mon)))return false;
+ const copy=scaledMonster({...MIRROR_KEEPER,boss:false,mirrorKeeper105:false,summonsVanish:false},combatDepth(mon));
+ const pos=PlacementService.findMonster(copy,{placementMode:'local',origin:mon,radius:2,reachable:true});
+ if(!pos)return false;
+ Object.assign(copy,pos,{name:'거울지기의 복사본',hp:1,maxHp:1,mirrorCopy105:true,mirrorNextCast:state.floorTurn+3,
+  bossOwnerId57:combatantId(mon),rewardPolicy57:{xp:false,drops:false,kills:false},spawnProvenance57:'boss-add',alerted:true});
+ inheritCombatFaction57(copy,mon);
+ if(!OccupancyService.addMonster(copy))return false;
+ playSummonArrival(mon,copy);addLog('거울지기가 거울에서 자신의 복사본을 불러냈다.');return true;
+}
+function resolveMirrorKeeperIntent(mon,intent){
+ if(intent.type==='mirrorSanctuary'){
+  const {x,y}=intent.data,rule=MIRROR_KEEPER_SKILLS.sanctuary;
+  addField('mirrorSanctuary',x,y,rule.turns,intent.cells,{...effectSource57(mon),bornTurn:state.turn});
+  impact(x,y,'#fff2c6',5);addLog('빛의 성역 · 적은 회복할 수 없고 눈이 멀며, 거울지기의 편은 보호받는다.');
+  return;
+ }
+ const rule=MIRROR_KEEPER_SKILLS.orb,owner=mon.mirrorCopy105?bossOwner(mon,'mirrorKeeper105')||mon:mon;
+ const orb={x:mon.x,y:mon.y,name:'천명탄',hp:rule.hp,maxHp:rule.hp,atk:0,def:0,eva:0,xp:0,color:'#b8bcff',
+  kind:'construct',shape:'orb',fixed:true,statusImmune:true,combatFixture54:'mirrorOrb',bossOwnerId57:combatantId(owner),
+  mirrorOrbPath:intent.data.path.slice(1),spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
+ inheritCombatFaction57(orb,mon);
+ const first=intent.data.path[0];
+ if(!mirrorOrbCanEnter(orb,first)){explodeMirrorOrb(orb,owner);return;}
+ Object.assign(orb,first);
+ if(!OccupancyService.addMonster(orb)){explodeMirrorOrb(orb,owner);return;}
+ beginForcedMotion(orb,[{x:mon.x,y:mon.y},first]);
+}
+function mirrorOrbCanEnter(orb,point){
+ return !!(point&&cell54(point.x,point.y)&&combatLineCheckR8(orb.x,orb.y,point.x,point.y,{units:false}).ok
+  &&PlacementService.monsterCanStand(orb,point.x,point.y));
+}
+function tickMirrorOrb(orb){
+ const next=orb.mirrorOrbPath.shift();
+ if(!mirrorOrbCanEnter(orb,next)){orb.hp=0;killMonster(orb);return;}
+ const from={x:orb.x,y:orb.y};
+ beginForcedMotion(orb,[from,next]);
+ if(!OccupancyService.move(orb,next.x,next.y)){orb.hp=0;killMonster(orb);}
+}
+function explodeMirrorOrb(orb,owner){
+ if(!owner)return;
+ const {x,y}=orb,rule=MIRROR_KEEPER_SKILLS.orb,cells=[{x,y},...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy})).filter(c=>
+  cell54(c.x,c.y)&&!tileBlocks(state.map[c.y]?.[c.x])&&combatLineCheckR8(x,y,c.x,c.y,{units:false}).ok)];
+ const effect=effectSource57(owner);
+ impact(x,y,'#c8bcff',7);burst(x,y,'#e6fdff',22,1.1);
+ for(const element of ['shock','ice'])elementAttackFx105(element,cells,orb);
+ for(const target of bossAreaTargets(owner,cells)){
+  resolveElementDamage57(target,'shock',rule.shock,{effect,contactHandled105:true,source:'천명탄 전격',color:'#a9b6ff'});
+  if(target.hp>0)resolveElementDamage57(target,'ice',rule.ice,{effect,contactHandled105:true,source:'천명탄 빙결',color:'#b6f3ff'});
+  if(state.dead)break;
+ }
+ const shards=cells.slice(1);
+ if(shards.length)addField('mirrorShards',x,y,rule.shardTurns,shards,{...effect,bornTurn:state.turn});
+}
+function tickMirrorField(field){
+ const owner=combatEffectActor(field);
+ if(!(owner?.hp>0))return;
+ if(field.kind==='mirrorSanctuary'){
+  for(const actor of [state.player,...state.monsters]){
+   if(actor.hp<=0||actor.combatFixture54||!field.cells.some(c=>monCovers(actor,c.x,c.y)))continue;
+   if(entitiesAllied57(actor,owner)){
+    const gain=recoverCombatHealth(actor,MIRROR_KEEPER_SKILLS.sanctuary.heal);
+    if(gain)floatText(actor.x,actor.y,'+'+gain,'#f7eead',10);
+   }else if(combatTargetValid57(owner,actor))applyCombatStatus(actor,'blind',2,1,{source:owner});
   }
-  if(born)addLog(`거울지기의 거울상 ${born}이 거울 속에서 걸어 나왔다.`);
+  return;
+ }
+ const rule=MIRROR_KEEPER_SKILLS.orb;
+ for(const actor of bossAreaTargets(owner,field.cells)){
+  if(actor.flying)continue;
+  const hit=resolveElementDamage57(actor,'holy',rule.shardDamage,{effect:field,ground:true,contactHandled105:true,source:'빛 파편',color:'#ddd2ff'});
+  if(hit.damage>0&&actor.hp>0)for(const [key,turns] of [['stun',1],['blind',2],['skillSeal',2]])applyCombatStatus(actor,key,turns,rule.shardChance,{source:owner});
+  if(state.dead)break;
  }
 }
 function mirrorKeeperDefeated(mon,reward){

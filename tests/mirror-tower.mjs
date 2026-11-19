@@ -7,7 +7,25 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.mirrorTest={state:()=>state,go:branchTransition,blocks:tileBlocks,move:(dx,dy)=>ActionDispatcher.dispatch({type:"MOVE",args:[dx,dy]}),wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),kill:killMonster,detect:playerDetectedBy,cargoTile:MIRROR_CARGO_TILE,raftTile:TT.RAFT,build:buildBranch,vis:()=>VisibilityService.compute()};';
+const bridge = `
+globalThis.mirrorTest={
+ state:()=>state,go:branchTransition,blocks:tileBlocks,
+ move:(dx,dy)=>ActionDispatcher.dispatch({type:'MOVE',args:[dx,dy]}),
+ wait:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:'t'}),
+ kill:killMonster,detect:playerDetectedBy,cargoTile:MIRROR_CARGO_TILE,raftTile:TT.RAFT,build:buildBranch,
+ vis:()=>VisibilityService.compute(),draw:drawFast,skyTile:glassCloudTile,skills:monsterSkills,
+ damage:damageEntity,recover:recoverCombatHealth,status:applyCombatStatus,expire:expireCombatFields,
+ fieldTick:tickCombatFields57,fixtureTick:tickBossFixture,turn:handleBossPattern,
+ prepare(){
+   const boss=state.monsters.find(m=>m.mirrorKeeper105);
+   for(const mon of [...state.monsters])if(mon!==boss)OccupancyService.removeMonster(mon);
+   const {x,y}=boss;
+   for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++)setTerrainTile58(state.map,x+dx,y+dy,TT.FLOOR);
+   Object.assign(state.player,{x:x-3,y,hp:100,maxHp:120});
+   state.tempFields=[];state.status={};state.intentBudget61=10;state.player.stealthBornAgency1005=null;
+   resetVisualState();VisibilityService.compute();return boss;
+ }
+};`;
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -109,20 +127,102 @@ console.log('sense', JSON.stringify(sense));
 assert.ok(sense, '3층에서 혼백 사냥꾼을 찾지 못했다');
 assert.equal(sense.hunter, true, '혼백 사냥꾼이 은신한 플레이어를 감지하지 못했다');
 assert.equal(sense.duelist, false, '반영 검객이 은신한 플레이어를 감지했다');
-const boss = await s.page.evaluate(() => {
-  mirrorTest.go({ id: 'qa-mirror', to: 'mirror:3', arrival: 'up' });
-  const st = mirrorTest.state(), b = st.monsters.find(m => m.mirrorKeeper105);
-  const before = st.monsters.length;
-  b.hp = Math.floor(b.maxHp * .6); mirrorTest.wait();
-  const afterPhase1 = st.monsters.filter(m => m.bossOwnerId57).length;
-  b.hp = Math.floor(b.maxHp * .3); mirrorTest.wait();
-  const afterPhase2 = st.monsters.filter(m => m.bossOwnerId57).length;
-  mirrorTest.kill(b);
-  return { has: !!b, before, afterPhase1, afterPhase2, weapon: st.items.filter(i => i.artifactId46 === 'mirror_blade').length,
-    leftover: st.monsters.filter(m => m.bossOwnerId57 && m.hp > 0).length };
+const cloud = await s.page.evaluate(() => {
+  const tiles = [], fresh = [];
+  for (const level of [1, 2, 3]) {
+    mirrorTest.go({ id: 'qa-mirror', to: 'mirror:' + level, arrival: 'up' });
+    const st = mirrorTest.state();
+    st.seen.clear(); st.visible.clear();
+    tiles.push([0, 1, 2].map(mirrorTest.skyTile));
+    fresh.push(st.seen.size === 0 && mirrorTest.draw(true));
+  }
+  return { shared: tiles.every(t => t.every((tile, i) => tile === tiles[0][i])), fresh };
 });
+assert.equal(cloud.shared, true, '층마다 다른 구름 텍스처가 만들어졌다');
+assert.deepEqual(cloud.fresh, [true, true, true], '아무것도 발견하지 않은 층을 그리지 못했다');
+
+const encounter = () => {
+  const phases = [];
+  mirrorTest.go({ id: 'qa-mirror', to: 'mirror:3', arrival: 'up' });
+  const boss = mirrorTest.prepare(), st = mirrorTest.state(), p = st.player;
+  const advance = (turns = 1) => { st.turn += turns; st.floorTurn += turns; };
+  const activate = b => mirrorTest.turn(b, Math.max(Math.abs(b.x-st.player.x),Math.abs(b.y-st.player.y)), st.player);
+  const skillNames = mirrorTest.skills(boss).map(s => s.name);
+  activate(boss);
+  phases.push(boss.intent54?.type);
+  activate(boss);
+  const waitsForTurn = !st.monsters.some(m => m.combatFixture54 === 'mirrorOrb');
+  advance(); activate(boss);
+  const orb = st.monsters.find(m => m.combatFixture54 === 'mirrorOrb');
+  const first = orb.x;
+  mirrorTest.fixtureTick(orb);
+  const singleStep = orb.x === first - 1;
+  mirrorTest.damage(orb, orb.hp, p);
+  mirrorTest.kill(orb);
+  const impact = 100 - p.hp;
+  const shard = st.tempFields.find(f => f.kind === 'mirrorShards');
+  const shards = shard?.cells.length;
+  const beforeShard = p.hp; advance(); mirrorTest.fieldTick();
+  const shardDamage = beforeShard - p.hp;
+
+  advance(2); activate(boss);
+  const bell = st.log.some(row => JSON.stringify(row).includes('경종을 울렸다'));
+  boss.hp = Math.floor(boss.maxHp * .6);
+  advance(2); activate(boss);
+  const copy = st.monsters.find(m => m.mirrorCopy105);
+  phases.push(copy ? 'mirrorCopy' : '');
+  const copyInfo = copy && {hp:copy.hp, copiedSkill:mirrorTest.skills(copy).some(s => s.name === '거울 복사')};
+
+  boss.hp = Math.floor(boss.maxHp * .3);
+  advance(2); activate(boss);
+  phases.push(boss.intent61?.type);
+  const strikes = [];
+  for (let i = 0; i < 3; i++) {
+    advance();
+    p.y += i === 0 ? 1 : i === 1 ? -2 : 0;
+    activate(boss);
+    strikes.push(boss.rodLeft61);
+  }
+  // Late phase: rod -> orb -> sanctuary. The warning is fixed to the original coordinates.
+  advance(2); activate(boss);
+  advance(); activate(boss);
+  advance(2); activate(boss);
+  const sanctuaryWarning = boss.intent54?.type;
+  p.x = boss.x-1; p.y = boss.y;
+  advance(); activate(boss);
+  const sanctuary = st.tempFields.find(f => f.kind === 'mirrorSanctuary');
+  st.tempFields = st.tempFields.filter(f => f === sanctuary);
+  const blockedHeal = mirrorTest.recover(p, 5);
+  const blockedStatus = !mirrorTest.status(boss, 'blind', 2, 1, {source:p});
+  const before = boss.hp;
+  for (let i = 0; i < 3; i++) { advance(); mirrorTest.fieldTick(); mirrorTest.expire(); }
+  const sanctuaryHeal = boss.hp - before;
+  const blind = st.status.blind || 0;
+  const releasedHeal = mirrorTest.recover(p, 5);
+  mirrorTest.kill(boss);
+  return {phases,skillNames,waitsForTurn,singleStep,impact,shards,shardDamage,bell,copyInfo,strikes,
+    sanctuaryWarning,blockedHeal,blockedStatus,sanctuaryHeal,blind,releasedHeal,
+    weapon:st.items.filter(i=>i.artifactId46==='mirror_blade').length,
+    leftover:st.monsters.filter(m=>m.bossOwnerId57&&m.hp>0).length};
+};
+const boss = await s.page.evaluate(encounter);
 console.log('boss', JSON.stringify(boss));
-assert.ok(boss.has); assert.ok(boss.afterPhase1 >= 1, '1페이즈 거울상이 없다'); assert.ok(boss.afterPhase2 > boss.afterPhase1, '2페이즈 거울상이 없다');
-assert.equal(boss.weapon, 1, '거울지기를 쓰러뜨리면 천면경 검이 떨어져야 한다'); assert.equal(boss.leftover, 0, '거울상이 흩어지지 않았다');
+assert.deepEqual(boss.phases, ['mirrorOrb', 'mirrorCopy', 'rod']);
+assert.deepEqual(boss.skillNames, ['천명탄', '피뢰침', '경종', '거울 복사', '빛의 성역']);
+assert.ok(boss.waitsForTurn && boss.singleStep);
+assert.equal(boss.impact, 18);
+assert.equal(boss.shards, 8);
+assert.equal(boss.shardDamage, 2);
+assert.ok(boss.bell);
+assert.deepEqual(boss.copyInfo, {hp:1,copiedSkill:false});
+assert.deepEqual(boss.strikes, [2,1,0]);
+assert.equal(boss.sanctuaryWarning, 'mirrorSanctuary');
+assert.equal(boss.blockedHeal, 0);
+assert.ok(boss.blockedStatus);
+assert.equal(boss.sanctuaryHeal, 6);
+assert.ok(boss.blind > 0 && boss.releasedHeal === 5);
+assert.equal(boss.weapon, 1, '거울지기를 쓰러뜨리면 천면경 검이 떨어져야 한다');
+assert.equal(boss.leftover, 0, '거울상이 흩어지지 않았다');
+assert.deepEqual(s.errors, []);
 console.log('mirror tower ok', JSON.stringify(floors));
 await browser.close(); process.exit(0);
