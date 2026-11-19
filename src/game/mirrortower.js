@@ -143,10 +143,12 @@ function buildMirrorTower(level){
   const at=(p,u,v)=>p.dx?{x:p.x+p.dx*u,y:p.y+v}:{x:p.x+v,y:p.y+p.dy*u};
   const span=(a,b)=>{const out=[];for(let u=a;u<=b;u++)for(let v=-1;v<=1;v++)out.push([u,v]);return out};
   const leafCells=[];for(let u=9;u<=11;u++)leafCells.push([u,0]);
-  for(const col of[12,16])for(let v=-3;v<=3;v++)leafCells.push([col,v]);
+  for(let v=-3;v<=3;v++)leafCells.push([12,v]);
   for(const v of[-3,3])for(let u=13;u<=15;u++)leafCells.push([u,v]);
-  const items=[[17,-1],[17,1]],pillar=[];for(let u=13;u<=15;u++)for(let v=-2;v<=2;v++)pillar.push([u,v]);
-  leafCells.push(...items);
+  // behind the pillar the two arcs never meet: each ends in its own arm, with its prize at the corner and its own way out to the ledge
+  for(const v of[-3,-2,-1,1,2,3])leafCells.push([16,v]);
+  leafCells.push([17,-1],[17,1]);
+  const items=[[16,-3],[16,3]],pillar=[];for(let u=13;u<=15;u++)for(let v=-2;v<=2;v++)pillar.push([u,v]);
   const inside=(x,y)=>x>=3&&y>=3&&x<W-3&&y<H-3,free=(x,y)=>inside(x,y)&&m[y][x]===ground&&zone[y][x]==='.'&&!towerAt(x,y);
   const joins=(x,y)=>zone[y]?.[x]==='b'&&m[y]?.[x]===TT.FLOOR;
   for(const p of sources){

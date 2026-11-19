@@ -188,11 +188,19 @@ function drawGlassLeaf(ctx,px,py,x,y,now){
  ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-4,-4,5,2.2,-.5,0,Math.PI*2);ctx.fill();
  ctx.restore();
 }
-// Height: under every tower, bridge and ledge the sky thickens into a murky, fading haze that thins out with the drop.
+// Height: under every tower (never under a bridge, ledge or leaf) the sky thickens into a murky, fading haze that thins out with the drop.
 const GLASS_HAZE_DEPTH=14;
 function drawGlassAltitudeHaze(ctx,px,py,x,y){
- let d=0;for(let i=1;i<=GLASS_HAZE_DEPTH;i++){const v=state.map[y-i]?.[x];if(v==null)break;if(v!==TT.VOID&&v!==TT.WATER&&v!==TT.PAPER_BRIDGE){d=i;break}}
- if(!d)return;
+ // how far below a tower this cell hangs; a few columns either side count too, so the haze spreads out softly instead of ending in a cliff
+ let d=0;
+ for(let dx=-8;dx<=8;dx++){
+  for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
+   const v=state.map[y-i]?.[x+dx];if(v==null)break;if(v===TT.VOID||v===TT.WATER)continue;
+   if(mirrorOwner(x+dx,y-i)){const n=i+Math.abs(dx)*.8;if(!d||n<d)d=n}
+   break;
+  }
+ }
+ if(!d||d>GLASS_HAZE_DEPTH)return;
  const f=n=>Math.pow(Math.max(0,1-n/GLASS_HAZE_DEPTH),1.15)*.86,tone=n=>glassMix('#5e5086','#8e8c9e',n/GLASS_HAZE_DEPTH);
  const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));
  ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
