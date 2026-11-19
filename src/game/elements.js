@@ -127,7 +127,7 @@ function thawWater105(x,y){
  state.tempTerrain74=state.tempTerrain74.filter(t=>t!==record);if(record.waterRestore105)state.tempTerrain74.push({...record.waterRestore105,version57:result.version57});return true;
 }
 function emitElementContact105(elem,cells,source={},contact={}){
- if(!state?.map||!['fire','water','earth','ice','shock','grass','holy'].includes(elem))return 0;
+ if(!state?.map||!RESIST_ELEMENTS57.includes(elem))return 0;
  const footprint=elementCells105(0,0,0,cells),r=terrainReactions105(),keys=new Set(footprint.map(q=>k(q.x,q.y)));let changed=0,melted=0;
  const terrainAttack=contact.terrainAttack105===true;
  const terrainFire=elem==='fire'&&terrainAttack,terrainEarth=elem==='earth'&&terrainAttack;
@@ -238,7 +238,7 @@ function resolveElementDamage57(entity,elem,base,opts={}){
   const mult=opts.conduction105?1:entity===state.player?(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(state.map[entity.y]?.[entity.x])?1.5:1)*resistMultiplier(entityElementResist(entity,elem)):entityElementMultiplier57(entity,elem),damage=damageEntity(entity,opts.damageParts105?.length?opts.damageParts105.reduce((n,part)=>n+Math.max(1,Math.round(part*mult)),0):Math.max(1,Math.round(base*mult)), opts.effect||(entity===state.player?null:state.player),elem);markCombatActivity57(entity===state.player?'hostile-element':'player-element');entity.hitUntil=performance.now()+120;
   if(damage>0&&entity.martialActor105){dojoRememberHit(entity,['ice','earth'].includes(elem)?'control':elem==='fire'||opts.ground?'area':'ranged');}
   if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem);if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3);
-  if(damage>0&&opts.logDamage57!==false){const source=opts.source||({fire:'화염',water:'수류',earth:'대지',ice:'빙결',shock:'전격',grass:'초목',holy:'성광'}[elem]||elem)+' 피해',target=(state.debugBattle57&&entity.debugId57!=null?entity.debugSide57+entity.debugId57+' ':'')+(entity===state.player?'플레이어':entity.name);addLog(`${source} → ${target}: ${damage}`);}
+  if(damage>0&&opts.logDamage57!==false){const source=opts.source||(RESIST_NAMES57[elem]||elem)+' 피해',target=(state.debugBattle57&&entity.debugId57!=null?entity.debugSide57+entity.debugId57+' ':'')+(entity===state.player?'플레이어':entity.name);addLog(`${source} → ${target}: ${damage}`);}
   if(entity.hp<=0){if(entity===state.player)die(opts.source||`${elem} 피해`);else killMonster(entity)}
   return{damage,guarded:false,adapted:mult<1,multiplier:mult};
 }
