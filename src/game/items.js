@@ -47,6 +47,7 @@ function transferItemQuantity(item,source,target,quantity=itemQuantity(item),opt
   return{moved,remaining}
 }
 function consumeItemQuantity(item,quantity=1,container=state?.player?.inventory){
+  if(charmSaveConsumable(item,quantity,container))return true;
   if(!item||!container?.includes(item)||!Number.isSafeInteger(quantity)||quantity<1||itemQuantity(item)<quantity)return false;
   const remaining=itemQuantity(item)-quantity;if(remaining)item.count=remaining;else container.splice(container.indexOf(item),1);return true
 }
@@ -144,7 +145,7 @@ function itemPrototype(name){if(name==='용궁 조수 안내서')return palaceGu
     for(const [pool,type] of pools){const it=pool?.find?.(x=>x.name===name);if(it)return {...it,type:it.type||type}}
     return null
   }
-  const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`FOCUS +${it.focusGain}`);if(it.hunger)a.push(`허기력 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
+  const itemEffects=(it)=>{if(!it)return'';const a=[];if(it.atk)a.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)a.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)a.push(`EVA ${it.eva>0?'+':''}${it.eva}`);if(it.will)a.push(`WILL +${it.will}`);if(it.vision)a.push(`VIS ${it.vision>0?'+':''}${it.vision}`);if(it.focus)a.push(`기력 +${displayNumber53(it.focus)}`);if(it.speed)a.push(`공속 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)a.push(`사거리 ${it.range}`);if(it.heal)a.push(`HP +${it.heal}`);if(it.focusGain)a.push(`기력 +${it.focusGain}`);if(it.hunger)a.push(`허기 +${it.hunger}`);if(it.ability&&it.ability!=='없음')a.push(`[${it.ability}]`);if(it.curse)a.push(`저주: ${it.curse}`);return a.join(' · ')};
   const POTIONS=[
     {name:'소회복 비약',type:'potion',potionKind:'heal_small',tier:1,rarity:'common',stackMax:3,minFloor:1,color:'#c64f49',ability:'최대 HP의 32% 회복 (최소 10)',desc:'상처를 빠르게 봉합하는 붉은 비약. 최대 HP의 32%를 회복하며 최소 회복량은 10이다.',useCost:.8},
     {name:'중회복 비약',type:'potion',potionKind:'heal_medium',tier:2,rarity:'rare',stackMax:3,minFloor:4,color:'#d66b57',ability:'최대 HP의 60% 회복 (최소 18) · 출혈 완화',desc:'농축된 금창 약액. 최대 HP의 60%를 회복하며 최소 회복량은 18이고, 50% 확률로 출혈을 제거한다.',useCost:.8},
@@ -444,7 +445,7 @@ const AMMO_TYPES=[
     const classDesc=classItemDescription58(it);if(classDesc)return{name:itemPublicName(it),meta:[itemTypeLabel(it.type)],stats:[],ability:'괴력 · ATK +2 · DEF +7',desc:classDesc,hint:'장비 강화 불가 · 괴력 중 재사용 불가'};
     const hint=it?.branchGuide105?(it.guideHint105||'인벤토리에서 읽기를 눌러 안내 내용을 다시 확인할 수 있다.'):state?.artifactDungeon46&&it?.legendaryWeapon47?'전설무기를 확보했다면 입구 쪽 귀환문으로 돌아가 원래 만루 층에 복귀할 수 있다.':'',stats=[],meta=[];
     meta.push(it.legendaryWeapon47?'전설의 무기':itemTypeLabel(it.type));if(it.tier)meta.push(`TIER ${it.tier}`);if(it.rarity)meta.push(String(it.rarity).toUpperCase());if((it.upgrade||0)>0)meta.push(`강화 +${it.upgrade}`);if((it.count||1)>1)meta.push(`수량 ×${it.count}`);
-    if(it.atk)stats.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)stats.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)stats.push(`EVA ${it.eva>0?'+':''}${displayNumber53(it.eva)}`);if(it.will)stats.push(`WILL +${displayNumber53(it.will)}`);if(it.vision)stats.push(`VIS ${it.vision>0?'+':''}${displayNumber53(it.vision)}`);if(it.focus)stats.push(`FOCUS +${displayNumber53(it.focus)}`);if(it.speed)stats.push(`공격속도 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)stats.push(`사거리 ${displayNumber53(it.range)}`);if(it.heal)stats.push(`HP +${displayNumber53(it.heal)}`);if(it.focusGain)stats.push(`FOCUS +${displayNumber53(it.focusGain)}`);if(it.hunger)stats.push(`허기 +${displayNumber53(it.hunger)}`);if(it.curse991){const svc=globalThis.__MANRU_ITEM_IDENTITY991__,c=svc?.curseDef?.(it),stacks=it.curseActive991?(svc?.curseStacks?.(it.curse991)||1):0,power=stacks?svc?.cursePower?.(it.curse991)||1:1;stats.push(`저주 · ${c?.name||it.curse991}${stacks>1?` · 중첩 ${stacks} / 효과 ×${power}`:''}`)}else if(it.curse)stats.push(`저주 · ${it.curse}`);
+    if(it.atk)stats.push(`ATK +${displayNumber53(it.atk)}`);if(it.def)stats.push(`DEF ${it.def>0?'+':''}${displayDef42(it.def)}`);if(it.eva)stats.push(`EVA ${it.eva>0?'+':''}${displayNumber53(it.eva)}`);if(it.will)stats.push(`WILL +${displayNumber53(it.will)}`);if(it.vision)stats.push(`VIS ${it.vision>0?'+':''}${displayNumber53(it.vision)}`);if(it.focus)stats.push(`기력 +${displayNumber53(it.focus)}`);if(it.speed)stats.push(`공격속도 ${it.speed}× · ${attackTurnCost(it).toFixed(1)}턴`);if(it.range)stats.push(`사거리 ${displayNumber53(it.range)}`);if(it.heal)stats.push(`HP +${displayNumber53(it.heal)}`);if(it.focusGain)stats.push(`기력 +${displayNumber53(it.focusGain)}`);if(it.hunger)stats.push(`허기 +${displayNumber53(it.hunger)}`);if(it.curse991){const svc=globalThis.__MANRU_ITEM_IDENTITY991__,c=svc?.curseDef?.(it),stacks=it.curseActive991?(svc?.curseStacks?.(it.curse991)||1):0,power=stacks?svc?.cursePower?.(it.curse991)||1:1;stats.push(`저주 · ${c?.name||it.curse991}${stacks>1?` · 중첩 ${stacks} / 효과 ×${power}`:''}`)}else if(it.curse)stats.push(`저주 · ${it.curse}`);
     return{name:itemPublicName(it),meta,stats,ability:it.ability&&it.ability!=='없음'?it.ability:'',desc:dedupeProse986(String(it.desc||'누군가 남겨 둔 물건이다.').replace(/거리\s*\d+칸[^.。]*[.。]?/g,'')),hint};
   }
 /* ===== MANRU v9.9.1 CURSE / HOLY / IDENTIFY / SKILL UX ===== */
@@ -466,7 +467,15 @@ const GEAR_SLOT_TYPES=new Set(['weapon','armor','cloak','relic','trinket']);
     {id:'blind_cycle',name:'암막',desc:'14턴마다 실명에 2턴 빠진다.',periodic:{period:14,status:'blind',turns:2}},
     {id:'seal_cycle',name:'기봉진',desc:'15턴마다 기봉인에 2턴 빠진다.',periodic:{period:15,status:'skillSeal',turns:2}},
     {id:'upset_cycle',name:'역위',desc:'17턴마다 배탈에 2턴 빠진다.',periodic:{period:17,status:'upset',turns:2}},
-    {id:'spasm_cycle',name:'경련',desc:'19턴마다 기절에 1턴 빠진다.',periodic:{period:19,status:'stun',turns:1}}
+    {id:'spasm_cycle',name:'경련',desc:'19턴마다 기절에 1턴 빠진다.',periodic:{period:19,status:'stun',turns:1}},
+    // Event curses. `pts` is what a cursed randart gets back in extra effects (see makeRandart); the old ones are worth 1.
+    {id:'roar',name:'굉음',desc:'14턴마다 맵 전체에 울릴 만큼 큰 소음을 낸다. 12칸 안의 적이 경계한다.',periodic:{period:14,effect:'roar'},pts:2},
+    {id:'summon',name:'불러냄',desc:'18턴마다 이 층의 몬스터 한 마리가 내 곁에 불려 나온다. 이미 불려 나온 것이 살아 있으면 부르지 않는다.',periodic:{period:18,effect:'summon'},pts:2},
+    {id:'selfblast',name:'자폭 천명탄',desc:'25턴마다, 또는 HP가 25% 아래로 떨어지면 내 자리에서 천명탄이 터져 5×5의 적과 나를 함께 맞힌다. 나는 죽지 않는다.',periodic:{period:25,effect:'selfblast'},pts:3},
+    {id:'wander',name:'방랑',desc:'20턴마다 시야 안 아무 곳으로 순간이동한다.',periodic:{period:20,effect:'blink'},pts:1},
+    {id:'glutton',name:'식탐귀',desc:'250턴마다 인벤토리의 음식 하나를 먹어 치운다. 음식이 없으면 HP 3를 잃는다.',periodic:{period:250,effect:'eatfood'},pts:2},
+    {id:'mirror_image',name:'거울상',desc:'적을 쓰러뜨릴 때마다 그 적의 반영이 일어나 4턴 동안 나를 쫓는다.',pts:2},
+    {id:'scream',name:'비명',desc:'HP가 절반 아래일 때 맞으면 소음을 낸다(6턴에 한 번). 9칸 안의 적이 경계한다.',pts:1}
   ];
   // Curse kind is not fixed to an equipment category. Every ordinary gear slot draws from
   // the same catalog, so the same curse can appear on different equipment and truly stack.
@@ -578,7 +587,7 @@ function prepareGearCurse(item,opt={}){
   function holyCell(){for(let n=0;n<80;n++){const q=PlacementService.randomFloor(0),t=state.map[q.y]?.[q.x];if(ReachabilityService.playerPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y)&&!state.items.some(i=>i.x===q.x&&i.y===q.y)&&![TT.STAIR,TT.TRAP,TT.SNARE,TT.WATER,TT.LAVA,TT.VOID,TT.MERCURY].includes(t))return q}return{x:state.player.x,y:state.player.y}}
   function ensureHolyDrop(){const h=holySchedule(),proto=holyProto();if(!h||!proto||h.floor!==state.floor||state.holy991.spawned[h.k])return false;const q=holyCell(),it=clone(proto);Object.assign(it,{x:q.x,y:q.y,count:1});PlacementService.placeItem(it);state.holy991.spawned[h.k]=true;return true}
   function applyCurseStats(stats,actor=state.player){const drainStacks=curseStackCount('drain',actor),nightmare=curseMultiplier('nightmare',actor),brittle=curseMultiplier('brittle',actor);if(drainStacks>0)stats.maxFocus+=2*drainStacks;if(nightmare>0){stats.will-=Math.round(2*nightmare);stats.vision-=Math.round(nightmare)}if(brittle>0){stats.def-=Math.round(brittle);stats.eva-=Math.round(brittle)}return stats}
-  function triggerPeriodicCurse(c,clocks=syncCurseClocks991(),actor=state.player){const power=curseMultiplier(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
+  function triggerPeriodicCurse(c,clocks=syncCurseClocks991(),actor=state.player){const power=curseMultiplier(c.id,actor),p=c.periodic,clock=clocks[c.id];if(!power||!p||!clock||state.turn<clock.next)return false;while(clock.next<=state.turn)clock.next+=p.period;if(p.effect)return runCurseEffect(p.effect,actor,power,c);const turns=Math.max(1,Math.round(p.turns*power)),ok=applyCombatStatus(actor,p.status,turns,1,{log:`${c.name}의 저주가 발작했다.`});if(ok)floatText(actor.x,actor.y,`${c.name} ×${power}`,'#d67869',10);return ok}
   function tickActorCurses(actor){
    if(!state||!actor||actor.hp<=0||actor.curseTick105===state.turn)return false;actor.curseTick105=state.turn;let dirty=false;const clocks=syncCurseClocks991(actor),blood=curseMultiplier('blood_hunger',actor),bloodClock=clocks.blood_hunger;
    if(blood>0&&bloodClock&&state.turn>=bloodClock.next){const loss=Math.max(1,Math.round(blood));if(Number.isFinite(actor.hunger))actor.hunger=Math.max(0,actor.hunger-loss);while(bloodClock.next<=state.turn)bloodClock.next+=3;dirty=true}
@@ -844,7 +853,7 @@ function drinkFromFountain(x,y){
   state.player.focus = Math.min(getStats().maxFocus, state.player.focus + 4);
   cleanseStatuses();
   burst(x,y,"#8bd0f3",16,.9);
-  addLog("정화의 샘. HP/FOCUS 회복, 상태이상 정화.");
+  addLog("정화의 샘. HP/기력 회복, 상태이상 정화.");
   giveItem(foodDef('깨끗한 물'),x,y);
   addLog('정화의 샘에서 깨끗한 물을 한 병 길었다.');
 }
@@ -867,7 +876,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
   function uxType(item){return item?.mineItem105==='stone'?'투척 도구':item?.type==='potion'?'비약 / 약병':itemTypeLabel(item?.type||'')}
   function uxStats(item){
     const a=[];if(!item)return a;
-    if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL +${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.speed)a.push(`속도 ${item.speed}×`);if(item.range)a.push(`사거리 ${item.range}`);if(item.hunger)a.push(`허기력 +${item.hunger}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`기력 +${item.focusGain}`);return a;
+    if(item.atk)a.push(`ATK +${displayNumber53(item.atk)}`);if(item.def)a.push(`DEF ${item.def>0?'+':''}${displayDef42(item.def)}`);if(item.eva)a.push(`EVA ${item.eva>0?'+':''}${item.eva}`);if(item.will)a.push(`WILL +${item.will}`);if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);if(item.speed)a.push(`속도 ${item.speed}×`);if(item.range)a.push(`사거리 ${item.range}`);if(item.hunger)a.push(`허기 +${item.hunger}`);if(item.heal)a.push(`HP +${item.heal}`);if(item.focusGain)a.push(`기력 +${item.focusGain}`);return a;
   }
   function uxIcon(item,cls=''){try{return vfIconHtml(item,cls)}catch(_){return `<span>${itemGlyph(item)}</span>`}}
   function deckPick47(pool,key){if(!pool.length)return null;state.lootHistory47=state.lootHistory47||{};const h=state.lootHistory47[key]||[];let a=pool.filter(i=>!h.includes(i.name));if(!a.length)a=pool;const p=clone(foodOccurrencePick(a));h.push(p.name);while(h.length>Math.min(4,Math.max(2,pool.length-1)))h.shift();state.lootHistory47[key]=h;return p}
@@ -885,13 +894,13 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
     if(item.eva)a.push(`EVA ${item.eva>=0?'+':''}${item.eva}`);
     if(item.will)a.push(`WILL +${item.will}`);
     if(item.vision)a.push(`VIS ${item.vision>0?'+':''}${item.vision}`);
-    if(item.focus)a.push(`FOCUS +${displayNumber53(item.focus)}`);
+    if(item.focus)a.push(`기력 +${displayNumber53(item.focus)}`);
     if(item.speed)a.push(`공격 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);
     if(item.range)a.push(`사거리 ${item.range}`);
     if(isBrawlWeapon(item)){a.push(`강화 +${item.upgrade||0} · 실제 강화 ATK +${brawlUpgradeEffect42(item)}`);a.push('강화 효율 매우 낮음')}
     if(item.heal)a.push(`HP +${item.heal}`);
-    if(item.focusGain)a.push(`FOCUS +${item.focusGain}`);
-    if(item.hunger)a.push(`허기력 +${item.hunger}`);
+    if(item.focusGain)a.push(`기력 +${item.focusGain}`);
+    if(item.hunger)a.push(`허기 +${item.hunger}`);
     if((item.count||1)>1)a.push(`수량 ×${item.count||1}`);
     if(item.curse)a.push(`저주 · ${item.curse}`);
     return uniq53(a);
@@ -1129,7 +1138,7 @@ function weightedBossUtility55(entries){
   const total=pool.reduce((n,e)=>n+e.weight,0);let r=globalThis.__MANRU_RANDOM57__()*total;
   for(const e of pool){r-=e.weight;if(r<=0)return e}return pool.at(-1)
 }
-function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|FOCUS|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']}
+function cls(msg){if(/치명타|종결/.test(msg))return['crit','✦'];if(/→|격파|돌진|칼날|피했다|회피|끌어당/.test(msg))return['combat','칼'];if(/획득|전리품|금고|보급함|열쇠/.test(msg))return['loot','가방'];if(/중독|출혈|회복|기력|HP|허기|보호막|LEVEL/.test(msg))return['status','기'];return['system','기록']}
   const uniq53=a=>[...new Set(a.map(v=>String(v??'').trim()).filter(Boolean))];
   const RECOVERY_KINDS=new Set(['heal_small','heal_medium','makgeolli','focus','cleanse']);
   const IDENTIFY_TALISMAN_THEME56=Object.freeze({id:'identify',name:'감정부적',paper:'#dfc78e',paper2:'#b8955b',ink:'#9d3126',seal:'鑑'});
