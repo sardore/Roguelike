@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.elemTest={state:()=>state,MONSTERS,TT,scaled:scaledMonster,hit:(m,ctx)=>monsterAttacksTarget(m,0,ctx),asura:(m,d,t)=>asuraTurn(m,d,t),strike:m=>attackPlayer(m),blade:()=>({...adef46("mirror_blade"),legendaryWeapon47:true,artifactId46:"mirror_blade",identified:true}),add:m=>OccupancyService.addMonster(m)};';
+const bridge = 'globalThis.elemTest={state:()=>state,MONSTERS,TT,scaled:scaledMonster,hit:(m,ctx)=>monsterAttacksTarget(m,0,ctx),asura:(m,d,t)=>asuraTurn(m,d,t),legend:id=>globalThis.__MANRU_LEGEND47__.enemyDefinitions(id),strike:m=>attackPlayer(m),blade:()=>({...adef46("mirror_blade"),legendaryWeapon47:true,artifactId46:"mirror_blade",identified:true}),add:m=>OccupancyService.addMonster(m)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -30,6 +30,11 @@ const out = await s.page.evaluate(() => {
     r[name] = { element: def2.attackElement105, plain: run(0), r1: run(1), r3: run(3) };
   };
   probe('반영 검객', 'holy', 'melee'); probe('수목 궁수', 'grass', 'ranged');
+  // 파편 망령: 피해의 절반만 냉기라 저항 Ⅲ이어도 물리 절반은 남는다
+  { const def = T.legend('mirror_blade').find(d => d.name === '파편 망령');
+    const run = lvl => { p.baseMaxHpPermanent = 400; p.hp = p.maxHp = 400; p.armor = { name: 't', resist: lvl ? { ice: lvl } : {} };
+      let total = 0; for (let i = 0; i < 8; i++) { const m = T.scaled(JSON.parse(JSON.stringify(def)), 14); Object.assign(m, { x: p.x + 1, y: p.y, hp: 999, maxHp: 999, alerted: true }); st.monsters = []; T.add(m); const b = p.hp; T.hit(m, { target: p, delivery: 'melee' }); total += b - p.hp; p.hp = p.maxHp = 400; } return total; };
+    r['파편 망령'] = { element: def.attackElement105, share: def.attackElementShare105, plain: run(0), r3: run(3) }; }
   // 천수 아수라: 영역 밖 대상에게 예고된 다완 투척 한 번
   const asura = lvl => {
     p.baseMaxHpPermanent = 400; p.hp = p.maxHp = 400; p.armor = { name: 't', resist: lvl ? { holy: lvl } : {} };
@@ -54,5 +59,8 @@ for (const [name, elem] of [['반영 검객', 'holy'], ['수목 궁수', 'grass'
   const o = out[name]; assert.equal(o.element, elem, name + ' element');
   assert.ok(o.plain > 0, name + ' hurts'); assert.ok(o.r1 < o.plain, name + ' resist I lowers: ' + o.r1 + ' < ' + o.plain); assert.equal(o.r3, 0, name + ' resist III blocks');
 }
+const shard = out['파편 망령'];
+assert.equal(shard.element, 'ice'); assert.equal(shard.share, .5);
+assert.ok(shard.r3 > 0 && shard.r3 < shard.plain, '냉기 저항 Ⅲ은 절반만 막는다: ' + shard.r3 + ' / ' + shard.plain);
 console.log('monster-element: ok');
 await browser.close(); process.exit(0);
