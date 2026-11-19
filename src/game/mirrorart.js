@@ -195,12 +195,12 @@ function drawGlassLeaf(ctx,px,py,x,y,now){
 // Height: under every tower (never under a bridge, ledge or leaf) the sky thickens into a murky, fading haze that thins out with the drop.
 const GLASS_HAZE_DEPTH=14;
 function drawGlassAltitudeHaze(ctx,px,py,x,y){
- // how far this cell hangs below a tower, straight down its own column; bridges, ledges and leaves cut the column, and nothing spreads sideways
+ // how far this cell hangs below a tower, straight down its own column. A causeway or ledge crossing that column does not hide the haze
+ // beneath it, and nothing spreads sideways
  let d=0,tower=null;
  for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
-  const v=state.map[y-i]?.[x];if(v==null)break;if(v===TT.VOID||v===TT.WATER)continue;
-  const t=mirrorOwner(x,y-i);if(t){d=i;tower=t}
-  break;
+  if(state.map[y-i]==null)break;
+  const t=mirrorOwner(x,y-i);if(t){d=i;tower=t;break}
  }
  if(!d||d>GLASS_HAZE_DEPTH)return;
  // The tower's own glass carries on downward: the wall foot's deep violet, then the tower's tint, then the floor's low sky, thinning to nothing.
