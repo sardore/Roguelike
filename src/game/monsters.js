@@ -1097,7 +1097,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     '성채 비행 감시자':['alarm','주변 적을 깨우고 층수만큼의 턴 동안 괴력을 부여하며, 목표를 지정해 모든 적에게 플레이어의 위치를 알리는 경보기'],
     '공허 가오리':['swoop','직선으로 급강하해 밀쳐내는 공허 유격수'],
     '차원 포식자':['blinkPunisher','점멸 착지점을 감지해 기력을 뜯어먹는 매복자'],
-    '천수 아수라':['asura','여러 팔로 연타를 퍼붓고 아수라장을 펼쳐 영역 밖 직접 공격을 무효로 만든다'],
+    '천수 아수라':['asura','여러 팔로 연타를 퍼붓고 아수라장을 펼쳐 영역 밖 직접 공격을 무효로 만든다. 영역 밖의 적에게는 성광을 실은 다완 투척이 쏟아진다(피해 ×1.5, 성광 속성)'],
     '객잔 경비병':['formation','동료와 인접하면 정면 방어가 강해지는 창벽'],
     '경비 인형 - 보병':['formation','인접한 보병끼리 방어선이 단단해지는 성채 창벽'],
     '떠돌이 도둑':['ambush','선공 후 후퇴해 문과 시야를 다시 이용하는 약탈자'],
@@ -1227,14 +1227,16 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   function monsterVolleyTarget(mon,target,range){
     return combatTargetValid57(mon,target)&&!entityConcealed(target)&&entityDistance57(mon,target)<=range&&monsterAttackLineR(mon,range,{target}).ok;
   }
+  // The bowl volley outside the domain is holy light, and hits harder than a plain ranged attack.
+  const ASURA_VOLLEY_SCALE=1.5;
   function asuraTurn(m,d,target=state.player){
     const radius=m.asuraRadius47||3,duration=m.asuraDuration47||5,maxRange=m.asuraRange47||9;
     if((m.asuraZone61||0)>0){
       const outside=asuraDomainDist61(target,m)>radius+.28;let acted=false;
       if(outside&&monsterVolleyTarget(m,target,maxRange)){
         if(m.asuraVolleyWarn61){
-          m.asuraVolleyWarn61=0;projectileFX(m.x,m.y,target.x,target.y,'#d6b56b');
-          addLog(`${m.name}의 여섯 팔이 법구와 창을 동시에 투척했다.`);const first=monsterAttacksTarget(m,4,{target,delivery:'ranged',projectile:true,reflectable:true,range:maxRange});if(monsterAttackCanContinueR(first)){projectileFX(m.x,m.y,target.x,target.y,'#a988df');monsterAttacksTarget(m,1,{target,delivery:'ranged',projectile:true,reflectable:true,range:maxRange})}acted=true;
+          m.asuraVolleyWarn61=0;projectileFX(m.x,m.y,target.x,target.y,'#f2dc9a');elementAttackFx105('holy',[{x:target.x,y:target.y}],m);
+          addLog(`${m.name}의 여섯 팔이 법구와 창을 성광에 실어 동시에 투척했다.`);const volley={target,delivery:'ranged',projectile:true,reflectable:true,range:maxRange,damageElement105:'holy',atkScale:ASURA_VOLLEY_SCALE};const first=monsterAttacksTarget(m,4,volley);if(monsterAttackCanContinueR(first)){projectileFX(m.x,m.y,target.x,target.y,'#fff0b8');monsterAttacksTarget(m,1,volley)}acted=true;
         }else{
           m.asuraVolleyWarn61=1;m.asuraVolleyTarget61={x:target.x,y:target.y};floatText(target.x,target.y,'다완 투척 예고','#e9bd75',10);addLog(`${m.name}이 영역 밖의 침입자를 겨눈다. 다음 행동에 다완 투척이 쏟아진다.`);acted=true;
         }
