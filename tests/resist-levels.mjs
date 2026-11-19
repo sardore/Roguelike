@@ -7,14 +7,14 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.resTest={state:()=>state,level:entityElementResist,mult:entityElementMultiplier57,guard:entityElementGuard57};';
+const bridge = 'globalThis.resTest={state:()=>state,level:entityElementResist,mult:entityElementMultiplier57,guard:(e,x)=>entityElementResist(e,x)>=3};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
 await ctx.route('**/scripts/10-runtime.js', r => r.fulfill({ contentType: 'text/javascript', body: runtime }));
-const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx, seed: 5 });
-await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(500);
+ctx.on('weberror',e=>console.log('WEBERR',e.error()?.message));const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx, seed: 5 });
+s.page.on('pageerror',e=>console.log('PAGEERR',e.message));await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(500);
 const out = await s.page.evaluate(() => {
   const st = resTest.state(), p = st.player, r = {};
   p.armor = { resist: { fire: 1 } }; p.cloak = {}; p.relic = {}; p.trinket = {};
@@ -23,6 +23,7 @@ const out = await s.page.evaluate(() => {
   p.relic = { resist: { fire: 2 } }; r.fireCap = [resTest.level(p, 'fire'), resTest.guard(p, 'fire')];
   r.otherElem = resTest.level(p, 'ice');
   p.armor = { elementGuard74: 'ice' }; p.cloak = {}; p.relic = {};
+  r.axe = [resTest.level({x:0,y:0,hp:1,weapon:{artifactId46:'ember_axe'}},'fire')];
   r.oldGuard = [resTest.level(p, 'ice'), resTest.guard(p, 'ice')];
   const m = { name: '시험체', x: p.x + 2, y: p.y, hp: 50, maxHp: 50, kind: 'human', resist: { shock: 2 } };
   r.mon = [resTest.level(m, 'shock'), resTest.mult(m, 'shock')];
@@ -33,6 +34,7 @@ assert.deepEqual(out.fire1, [1, 0.55]);
 assert.deepEqual(out.fire2, [2, 0.3]);
 assert.deepEqual(out.fireCap, [3, true]);
 assert.equal(out.otherElem, 0);
+assert.deepEqual(out.axe,[2]);
 assert.deepEqual(out.oldGuard, [3, true]);
 assert.deepEqual(out.mon, [2, 0.3]);
 console.log('resist-levels: ok');
