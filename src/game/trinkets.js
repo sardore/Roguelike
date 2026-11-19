@@ -334,7 +334,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
 }
 function charmDrop(pool){
   const fixed=pool.filter(x=>!x.randart);
-  if(globalThis.__MANRU_RANDOM57__()<.75||!fixed.length){const slot=globalThis.__MANRU_RANDOM57__()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
+  if(globalThis.__MANRU_RANDOM57__()<.65||!fixed.length){const slot=globalThis.__MANRU_RANDOM57__()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
   return clone(choice(fixed));
 }
 
