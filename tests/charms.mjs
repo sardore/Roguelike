@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.charmTest={grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
+const bridge = 'globalThis.charmTest={looks:charmFixedLooks,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,curseEffect:runCurseEffect,curseHurt:curseOnHurt,curseKill:curseOnKill,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -166,6 +166,16 @@ console.log('grades', JSON.stringify(grades));
 const share = (o, k) => o[k] / Math.max(1, o.simple + o.fine + o.grand);
 assert.ok(share(grades.high, 'grand') > share(grades.low, 'grand') * 2, 'high-score gear gets grand designs more often');
 assert.ok(share(grades.high, 'simple') < share(grades.low, 'simple'), 'high-score gear is less often plain');
+
+// fixed pieces wear an emblem and a look no randart can share
+const own = await s.page.evaluate(() => {
+  const T = charmTest, taken = T.looks(), r = { clash: 0, emblemOnRandart: 0, fixedWithoutEmblem: [] };
+  for (let i = 0; i < 3000; i++) { const it = T.make(i % 2 ? 'relic' : 'trinket', 1 + (i % 5), { premium: i % 7 === 0 }); if (taken.has(it.art.shape + '|' + it.art.mat)) r.clash++; if (it.art.emblem) r.emblemOnRandart++ }
+  for (const it of [...T.RELICS, ...T.TRINKETS]) if (it.art && !it.art.emblem) r.fixedWithoutEmblem.push(it.name);
+  r.fixed = taken.size; return r;
+});
+console.log('own', JSON.stringify(own));
+assert.equal(own.clash, 0); assert.equal(own.emblemOnRandart, 0); assert.deepEqual(own.fixedWithoutEmblem, []);
 // 4. icon contact sheet: every shape × several materials, plus fixed items
 await s.page.evaluate(() => {
   const T = charmTest, host = document.createElement('div');
@@ -178,5 +188,7 @@ await s.page.evaluate(() => {
   document.body.append(host);
 });
 await s.page.screenshot({ path: path.join(process.env.CHARM_SHOT_DIR || '/tmp', 'charm-sheet.png') });
+await s.page.evaluate(() => { const T = charmTest, host = document.getElementById('charmSheet'); host.innerHTML = ''; for (const it of [...T.RELICS, ...T.TRINKETS].filter(x => x.art)) { const wrap = document.createElement('div'); wrap.style.cssText = 'width:96px;text-align:center;font:10px sans-serif;color:#e6d9bd'; const c = document.createElement('canvas'); c.width = 96; c.height = 96; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.drawImage(T.sprite(it), 0, 0, 96, 96); wrap.append(c, it.name); host.append(wrap) } });
+await s.page.screenshot({ path: path.join(process.env.CHARM_SHOT_DIR || '/tmp', 'charm-fixed.png') });
 console.log('charms: ok');
 await browser.close(); process.exit(0);

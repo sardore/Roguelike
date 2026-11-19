@@ -6357,7 +6357,7 @@ const KEY=(it)=>{
   // Talisman cache identity follows its assigned physical appearance, not known/unknown state.
   if(it.type==='talisman'){const pub=window.__MANRU_TALISMAN_PUBLIC__,a=pub?.app?.(it);extra=`:${a?.id||''}:${pub?.seal?.(it)||a?.seal||''}:${a?.paper||''}:${a?.paper2||''}:${a?.ink||''}`}
   if(it.type==='ammo')extra+=`:${it.ammoKind||''}`;
-  if(it.art)extra+=`:${it.art.shape}:${it.art.mat}:${it.art.gem}:${it.art.cord||''}`;
+  if(it.art)extra+=`:${it.art.shape}:${it.art.mat}:${it.art.gem}:${it.art.cord||''}:${it.art.emblem||''}`;
   if(it.summonItem105)extra+=`:${it.summonElement105||''}:${it.pictureCopies105||1}:${hash(JSON.stringify(it.summonPortrait105||null))}`;
   return`${it.name||''}:${it.type||''}:${it.kind||''}:${it.tier||0}:${it.rarity||''}:${it.artifactId46||''}:${it.artifactWeapon46?1:0}${extra}`;
 };
