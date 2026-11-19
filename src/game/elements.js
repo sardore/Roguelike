@@ -144,7 +144,8 @@ function emitElementContact105(elem,cells,source={},contact={}){
   if((terrainFire||terrainEarth)&&t===TT.ICE&&thawWater105(x,y)){changed++;melted++;if(state.visible?.has(key))burst(x,y,'#599ba7',8,.4)}
   if(terrainEarth&&t===TT.ICE){elementBreakFx105(x,y,'earth');alertNearby(x,y,3)}
   if(terrainFire||elem==='water')revealEnvironmentalClue105(x,y,elem);
-  if(elem==='water'&&t===TT.PAPER_BRIDGE)globalThis.__MANRU_HAZARD_CORE__?.armFragile(x,y,t,{cause:'water-contact'});
+  // A water-branded weapon only wets the body it strikes: it must not bring down the paper bridge that body happens to stand on.
+  if(elem==='water'&&t===TT.PAPER_BRIDGE&&!contact.weaponBrand105)globalThis.__MANRU_HAZARD_CORE__?.armFragile(x,y,t,{cause:'water-contact'});
   const spill=r.spills?.[key];if(elem==='water'&&spill&&spill.kind!=='water')delete r.spills[key];
   if(terrainFire&&spill&&['oil','wine'].includes(spill.kind)){delete r.spills[key];addField('fire',x,y,4,[{x,y}],{...source,friendlyFire:true})}
   const coals=(state.items||[]).filter(i=>i.x===x&&i.y===y&&(i.foodKind==='charcoal'||i.name==='검게 탄 숯'));
