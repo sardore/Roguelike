@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.brandTest={state:()=>state,TT,brand:applyWeaponBrandHit};';
+const bridge = 'globalThis.brandTest={state:()=>state,TT,brand:applyWeaponBrandHit,check:combatTerrainTargetCheckR8,attackTerrain:attackTerrainTargetR8,world:elementalWorldTarget105};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -26,11 +26,12 @@ const res = await s.page.evaluate(() => {
     st.player.weapon = { name: '철두창', type: 'weapon', kind: 'spear', range: 4, elementBrand74: elem, atk: 2 };
     st.hazard1005 = st.hazard1005 || { armed: {}, collapsed: {}, lastWarn: {} }; st.hazard1005.armed = {};
     brandTest.brand(st.player, mon, 5);
-    out[elem] = { armed: Object.keys(st.hazard1005.armed || {}).length, bridge: st.map[y][x] === T.PAPER_BRIDGE };
+    st.monsters = []; st.seen.add(x + ',' + y);
+    out[elem] = { armed: Object.keys(st.hazard1005.armed || {}).length, bridge: st.map[y][x] === T.PAPER_BRIDGE, targetable: brandTest.world(x, y), check: brandTest.check({ type: 'terrain', x, y }, 4).ok };
   }
   return out;
 });
 console.log('brand bridge', JSON.stringify(res));
-for (const [elem, r] of Object.entries(res)) { assert.equal(r.armed, 0, elem + ' 각인 무기가 종이다리를 붕괴 예고했다'); assert.ok(r.bridge, elem + ' 각인 무기가 종이다리를 없앴다'); }
+for (const [elem, r] of Object.entries(res)) { assert.equal(r.armed, 0, elem + ' 각인 무기가 종이다리를 붕괴 예고했다'); assert.ok(r.bridge, elem + ' 각인 무기가 종이다리를 없앴다'); assert.equal(r.targetable, false, elem + ' 각인 무기가 빈 종이다리 칸을 공격 대상으로 잡았다'); assert.equal(r.check, false, elem + ' 각인 무기가 빈 종이다리 칸을 공격할 수 있다'); }
 console.log('weapon-brand-bridge: ok');
 await browser.close(); process.exit(0);

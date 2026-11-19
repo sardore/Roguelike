@@ -188,7 +188,8 @@ function tickTerrainReactions105(){
  }
  for(const[key,spill]of Object.entries(r.spills||{}))if(state.turn>spill.born&&--spill.ttl<=0)delete r.spills[key];
 }
-function elementalWorldTarget105(x,y){const t=state?.map?.[y]?.[x],elem=weaponElement105(),structure=elementalStructureAt105(x,y);return !!(elem&&structure&&elementAffectsMaterial105(elem,structure.material))|| t===TT.JAR||(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t))||(elem==='ice'&&(isWaterTile105(t)||t===TT.ICE))||(elem==='fire'&&t===TT.ICE)||!!(elem&&(elementMaterial105(t,'wood',x,y)||elementMaterial105(t,'stone')||lightAt(x,y)||terrainReactions105().burning[k(x,y)]||(['fire','water'].includes(elem)&&((state.items||[]).some(i=>i.x===x&&i.y===y&&(i.foodKind==='charcoal'||i.name==='검게 탄 숯'))))))}
+// A paper bridge is a floor to walk on, not furniture to strike: an element-branded weapon may not target it (its cell is never an empty-cell attack).
+function elementalWorldTarget105(x,y){const t=state?.map?.[y]?.[x],elem=weaponElement105(),structure=elementalStructureAt105(x,y);if(t===TT.PAPER_BRIDGE)return false;return !!(elem&&structure&&elementAffectsMaterial105(elem,structure.material))|| t===TT.JAR||(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t))||(elem==='ice'&&(isWaterTile105(t)||t===TT.ICE))||(elem==='fire'&&t===TT.ICE)||!!(elem&&(elementMaterial105(t,'wood',x,y)||elementMaterial105(t,'stone')||lightAt(x,y)||terrainReactions105().burning[k(x,y)]||(['fire','water'].includes(elem)&&((state.items||[]).some(i=>i.x===x&&i.y===y&&(i.foodKind==='charcoal'||i.name==='검게 탄 숯'))))))}
 function applyElementField57(field,elem,damage,opts={}){
   const cells=field.cells??elementCells105(field.x,field.y,opts.radius??1);field.cells=cells;emitElementContact105(elem,cells,fieldProvenance57(field),{propagation:true,ground:true});
   if(elem==='fire'){
