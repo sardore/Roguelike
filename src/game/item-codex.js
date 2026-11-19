@@ -108,10 +108,10 @@ const ItemCodex=(()=>{
    for(const {item,found} of visible){
     const row=document.createElement('li');
     if(found){
-     const art=document.createElement('img');
-     art.alt='';
-     art.loading='lazy';
-     art.src=globalThis.__MANRU_ITEM_ART_R7__.dataItem(item);
+     // The same icon owner as the bag: potions draw their bottle, everything else its picture.
+     const art=document.createElement('span');
+     art.className='itemCodexArt';
+     art.innerHTML=globalThis.__MANRU_ITEM_ART_R7__.iconHtml(item);
      row.append(art);
     }else row.dataset.locked='true';
     const copy=document.createElement('div');

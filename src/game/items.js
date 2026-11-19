@@ -755,7 +755,7 @@ const esc53=v=>displayText53(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&l
     const knowledge=ensureKnowledge56();
     for(const {items,kindKey,mapKey} of carried)for(const item of items)item.appearance56=knowledge[mapKey][item[kindKey]];
   }
-  function app56(item){if(item?.mineItem105==='oil')return {...APPEARANCES[0],color:'#bc7135',glass:'#e3c791',name:item.name};const K=state?.knowledge56,id=item?.appearance56||K?.potionMap?.[item?.potionKind];return APP_BY_ID.get(id)||APPEARANCES[0]}
+  function app56(item){if(item?.mineItem105==='oil')return {...APPEARANCES[0],color:'#bc7135',glass:'#e3c791',name:item.name};const K=state?.knowledge56,id=item?.appearance56||K?.potionMap?.[item?.potionKind];if(!K&&!item?.appearance56&&item?.color)return {...APPEARANCES[0],color:item.color,name:item.name};return APP_BY_ID.get(id)||APPEARANCES[0]}
   function publicTalismanSeal56(item){if(item?.branchExclusive105||item?.fusion74)return item.seal||'合';return talismanApp56(item)?.seal||'符'}
   function decoratePotion56(item,x=item?.x,y=item?.y){if(!item||item.type!=='potion'||!item.potionKind)return item;const K=ensureKnowledge56();item.appearance56=item.appearance56||K.potionMap[item.potionKind];if(!item.origin56&&Number.isFinite(x)&&Number.isFinite(y))item.origin56=contextAt56(x,y,item.potionKind);return item}
   function candidateKinds56(item){

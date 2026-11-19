@@ -1967,7 +1967,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
  }
  X.restore();
 }
-  function potionIconHtml56R(item,cls=''){const a=app56(item),mark=isPotionKnownByPlayer(item)?'':'?';return `<span class="vfHiIcon ${cls} v56PotionIcon" style="--liquid:${a.color};--glass:${a.glass}"><i class="neck"></i><i class="bottle"></i><i class="shine"></i><b class="mark">${mark}</b></span>`}
+  function potionIconHtml56R(item,cls=''){const a=app56(item),mark=!state||isPotionKnownByPlayer(item)?'':'?';return `<span class="vfHiIcon ${cls} v56PotionIcon" style="--liquid:${a.color};--glass:${a.glass}"><i class="neck"></i><i class="bottle"></i><i class="shine"></i><b class="mark">${mark}</b></span>`}
   function drawPotionWorld56R(item){const px=item.x*TILE,py=item.y*TILE;X.save();X.fillStyle='rgba(0,0,0,.45)';X.fillRect(px+9,py+26,14,3);const a=app56(item);X.fillStyle='#5a3b27';X.fillRect(px+14,py+6,5,6);X.fillStyle='#bba782';X.fillRect(px+13,py+9,7,3);X.fillStyle='#4b2d20';X.fillRect(px+10,py+12,13,14);X.fillStyle=a.color;X.fillRect(px+12,py+14,9,10);X.fillStyle=a.glass;X.globalAlpha=.38;X.fillRect(px+13,py+15,2,7);X.globalAlpha=1;if(!isPotionKnownByPlayer(item)){X.fillStyle='#e3cfaa';X.font='900 8px ui-monospace,monospace';X.fillText('?',px+24,py+10)}X.restore()}
   // ---- fast renderer: bypass accumulated drawMap wrapper stack on mobile/desktop
   const FRAME_PERF_STATE={last:0,lastMini:0,lastHud:0,lastViewport:0,dirty:true,avg:0,lastCost:0,frames:0};
