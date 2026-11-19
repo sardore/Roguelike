@@ -269,6 +269,14 @@ function impact(x,y,color="#f0d6d6",power=3,delay=0){
   FX.rings.push({x:x*TILE+TILE/2,y:y*TILE+TILE/2,color,start:performance.now()+delay,life:270,power});
   if(!delay){FX.shakePower=Math.max(FX.shakePower,power);FX.shakeUntil=performance.now()+110;}
 }
+// A sounding bell: broad rings travelling outwards to `reach` tiles, a shiver of the screen and sparks of light.
+// The bell itself is struck: it rings a beat later than the first wave, so the sound seems to leave the bell.
+function bellFX(x,y,reach,color='#ffdc8a'){
+  const now=performance.now();
+  for(let i=0;i<3;i++)FX.rings.push({x:x*TILE+TILE/2,y:y*TILE+TILE/2,color:i===1?'#fff2c8':color,start:now+i*150,life:640,power:4,reach:reach*TILE,wide:true});
+  burst(x,y,color,16,1.2);burst(x,y,'#fff2c8',8,.7,120);
+  FX.shakePower=Math.max(FX.shakePower,5);FX.shakeUntil=now+300;flash('#ffe9b0',110);
+}
 function flash(color="#ffffff",ms=70){
   FX.flashColor=color;FX.flashUntil=performance.now()+ms;
 }
@@ -989,7 +997,7 @@ function carryWallEdges(px,py,x,y){
 // Skip the extra edge pass for dojo timber walls, stockade walls, palace facades and citadel gates.
 function wallKeepsOwnArt(x,y){
   const b=state.branchContext105,ter=state.branchTerrain105,key=k(x,y);
-  if(['dojo','stockade','black'].includes(b?.id))return true;
+  if(['dojo','stockade','black','mirror'].includes(b?.id))return true;
   if(b?.id==='palace'){const d=ter.palace105;return !!(d.facades?.[key]||d.windows?.[key])||DIRS8.some(([dx,dy])=>d.outdoors?.[k(x+dx,y+dy)])}
   if(b?.id==='citadel')return !!ter.mine105?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));
   return false;
@@ -1095,7 +1103,7 @@ function drawMainWall(px,py,x,y,palette=dojoFaceWall(x,y)?mainWallPalette():wall
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
 function drawRegionalAtmosphere(now){
-    if(state?.branchContext105?.id==='mine')return;
+    if(state?.branchContext105?.id==='mine'||state?.branchContext105?.id==='mirror')return;
     if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.68);g.addColorStop(0,'rgba(199,74,35,.055)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
   }
 function drawRegionalAtmosphereDesktop(now){
@@ -1475,7 +1483,7 @@ function drawCoreInteractiveTerrain(tile,px,py,x,y,now){
 let LIGHT_CACHE={map:null,turn:-1,sources:[],geometry:new Map()};
 function lightRay(s,x,y){let dx=x-s.x,dy=y-s.y,n=Math.max(Math.abs(dx),Math.abs(dy))*2;if(!n)return true;let px=s.x,py=s.y;for(let i=1;i<n;i++){const xx=Math.round(s.x+dx*i/n),yy=Math.round(s.y+dy*i/n);if(xx===px&&yy===py)continue;if(xx===x&&yy===y)return true;if(xx!==px&&yy!==py&&tileBlocksSight(state.map[py]?.[xx])&&tileBlocksSight(state.map[yy]?.[px]))return false;if(tileBlocksSight(state.map[yy]?.[xx]))return false;px=xx;py=yy}return true}
 function worldLightSources(){
- const mine=state.branchTerrain105?.mine105,dojo=state.branchTerrain105?.dojo,lanternKey=(mine?.lanterns||[]).map(l=>`${l.x},${l.y}:${l.lit?1:0}:${l.color||''}:${l.radius||''}:${l.power||''}`).join(';')+'|'+[state.player,...state.monsters].filter(e=>e.hp>0&&e.combustion105).map(e=>e.x+','+e.y).join(';'),revision=(TERRAIN_RENDER_REV.get(state.map)||0)+':'+(state.terrainReactions105?.revision||0);
+ const mine=state.branchTerrain105?.mine105,dojo=state.branchTerrain105?.dojo,lanternKey=(mine?.lanterns||[]).map(l=>`${l.x},${l.y}:${l.lit?1:0}:${l.color||''}:${l.radius||''}:${l.power||''}`).join(';')+'|'+(state.branchContext105?.id==='mirror'?(state.rafts||[]).map(r=>r.x+','+r.y).join(';'):'')+'|'+[state.player,...state.monsters].filter(e=>e.hp>0&&e.combustion105).map(e=>e.x+','+e.y).join(';'),revision=(TERRAIN_RENDER_REV.get(state.map)||0)+':'+(state.terrainReactions105?.revision||0);
  if(LIGHT_CACHE.map===state.map&&LIGHT_CACHE.revision===revision&&LIGHT_CACHE.lanternKey===lanternKey&&LIGHT_CACHE.lights===state.legendLights49&&LIGHT_CACHE.decor===state.decor)return LIGHT_CACHE.sources;
  const sources=[],used=new Set(),add=(x,y,color,r,power,kind='lamp')=>{const kk=x+','+y;if(used.has(kk)||!Number.isFinite(x)||!Number.isFinite(y)||terrainUnlit105(x,y))return;used.add(kk);sources.push({x,y,color,r,power,kind})};
  for(const e of [state.player,...state.monsters])if(e.hp>0&&e.combustion105)add(e.x,e.y,'#ef872e',2.2,.22,'combustion');
@@ -1484,6 +1492,8 @@ function worldLightSources(){
  for(const l of mine?.lanterns||[])if(l.lit)add(l.x,l.y,l.color||WORLD_LIGHT_ART.lantern,l.radius??3.8,l.power??.24,'mine');
  const palace=state.branchContext105?.id==='palace'?state.branchTerrain105?.palace105:null;if(palace){for(const l of palace.lights||[]){if(l.wall){if(state.map[l.y]?.[l.x]!==TT.PALACE_WALL_LAMP||terrainUnlit105(l.x,l.y))continue;add(l.x+l.dx,l.y+l.dy,l.color||'#ecc17d',3.7,.22,'palace-wall-lamp');}else add(l.x,l.y,l.color||'#ecc17d',3.4,.21,'palace-lamp');}for(const key of Object.keys(palace.windows||{})){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]===TT.WALL)add(x,y,'#78bfc5',3.2,.10,'palace-window');}}
  for(const l of dojo?.lanterns||[])add(l.x,l.y,WORLD_LIGHT_ART.lantern,3.2,.19,'dojo');
+ for(const l of state.branchTerrain105?.mirror105?.lights||[])add(l.x,l.y,l.color,l.r,l.power,'mirror');
+ for(const r of state.branchContext105?.id==='mirror'?state.rafts||[]:[])for(const o of r.objects||[])if(o.kind==='lamp')add(r.x+o.dx,r.y+o.dy,'#d9c8ff',3.2,.22,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
   add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);
@@ -1536,7 +1546,14 @@ function drawCreature(m){
 function drawCombatParticles(q,now){q.save();for(const p of combatPresentationEffects().particles||[]){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
 function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
   const combatFx=combatPresentationEffects();
-  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*.64;X.strokeStyle=r.color;X.lineWidth=Math.max(1,2.2*(1-t));X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
+  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=r.reach?4+t*r.reach:4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*(r.wide?.8:.64);X.strokeStyle=r.color;X.lineWidth=Math.max(1,(r.wide?4.2:2.2)*(1-t));if(r.wide){X.shadowColor=r.color;X.shadowBlur=10}X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();
+    if(r.wide){X.fillStyle=r.color;for(let i=0;i<5;i++){
+      const a=i*Math.PI*2/5+r.start*.001,toneRadius=radius*.62;
+      const x=r.x+Math.cos(a)*toneRadius,y=r.y+Math.sin(a)*toneRadius-t*22;
+      X.fillRect(x-2,y,5,3);X.fillRect(x+2,y-7,1.5,8);X.fillRect(x+3,y-7,3,2);
+    }}
+    X.restore()}
+
 
   for(const d of combatFx.doors||[]){
     const t=(now-d.start)/d.life;if(t<0||t>=1)continue;
@@ -1873,7 +1890,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
   function drawBossIntent(){
  if(!state)return;drawBossArena();
- const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72]};
+ const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72],mirrorOrb:[154,157,255],mirrorSanctuary:[247,221,139]};
  X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
  for(const mon of [...(state.monsters||[]),...(state.spectator?state.spectateWarnings||[]:[])]){const I=mon.intent54;if(!I)continue;const silkIntent=I.type==='weave'||I.type==='sew';
   if(I.type==='corebolt'){drawCoreSealWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
@@ -1953,6 +1970,23 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
       }
+      if(f.kind==='mirrorShards'){
+        X.fillStyle=`rgba(112,91,219,${a+.18})`;X.fillRect(px+2,py+2,28,28);
+        for(const [dx,dy,h] of [[9,21,7],[17,15,9],[24,24,5]]){
+          X.fillStyle='#7664af';X.fillRect(px+dx-3,py+dy,7,2);
+          pR9(X,'#b9b4f4',[[px+dx-2,py+dy],[px+dx+1,py+dy-h],[px+dx+3,py+dy-2]],'#8073b4');
+          lR9(X,px+dx+1,py+dy-h,px+dx+1,py+dy-4,'#eaffff',1);
+        }
+      }else if(f.kind==='mirrorSanctuary'){
+        X.fillStyle=`rgba(217,188,114,${a+.12})`;X.fillRect(px,py,32,32);
+        X.save();X.strokeStyle='#f7e1a9';X.lineWidth=1;X.beginPath();
+        for(const [dx,dy] of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){
+          const xx=px+(dx>0?31:1),yy=py+(dy>0?31:1);
+          if(dx){X.moveTo(xx,py+1);X.lineTo(xx,py+31);}else{X.moveTo(px+1,yy);X.lineTo(px+31,yy);}
+        }
+        X.stroke();X.globalAlpha=.34+Math.sin(now/260+x+y)*.13;
+        X.translate(px+16,py+16);X.rotate(Math.PI/4);X.strokeRect(-5,-5,10,10);X.fillStyle='#fff8ce';X.fillRect(-1,-1,2,2);X.restore();
+      }
       if(isOpaqueCloud(f))drawOpaqueCloud(f,x,y,px,py,now);
       else if(f.kind==='fire')drawFireFloor(X,px,py,TILE,x,y,now);
     }
@@ -1985,10 +2019,12 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     }
   }
   function drawSceneryFog(b,unknownColor,ctx=X){
-    const mine=mineState();
+    const mine=mineState(),openSky=state.branchContext105?.id==='mirror';
     ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const key=k(x,y);if(state.visible.has(key)||(mine&&mineSceneryVisible(x,y)))continue;
+      // the open sky under the tower bridges is never fogged, seen or not
+      if(openSky&&(state.map[y]?.[x]===TT.VOID||(state.branchContext105.level===1&&state.map[y]?.[x]===TT.WATER)))continue;
       ctx.fillStyle=state.seen.has(key)||(mine&&mineScenerySeen(x,y))?'rgba(3,4,5,.67)':unknownColor;
       ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
     }
@@ -2036,6 +2072,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     if(state.debugBattle57&&cam.zoom<.3)return drawDebugBattleOverview(cam,now);
     X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalAlpha=1;X.globalCompositeOperation='source-over';X.lineWidth=1;X.lineCap='butt';X.lineJoin='miter';X.setLineDash([]);X.lineDashOffset=0;X.filter='none';X.shadowBlur=0;X.shadowOffsetX=0;X.shadowOffsetY=0;X.shadowColor='rgba(0,0,0,0)';X.beginPath();
     X.fillStyle=colors.fog||'#080503';X.fillRect(0,0,VIEW.w,VIEW.h);
+    if(state.branchContext105?.id==='mirror')drawGlassSky(cam,now);
     X.save();X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.imageSmoothingEnabled=false;
     const mine=mineState(),ordinaryWallMass=wallsAreNegativeSpace();
     const terrainProps63=[];
@@ -2069,6 +2106,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of terrainProps63){X.save();X.lineWidth=1;X.setLineDash([]);const time=VisibilityService.isVisible(a.x,a.y)?now:0;if(!drawSpecialTerrain(a.t,a.px,a.py,a.x,a.y,time))drawInteractiveTerrain(a.t,a.px,a.py,a.x,a.y,time);X.restore()}
     for(const a of props)vfDrawDecor(a.o,true);
     drawStockadePines(b);
+    drawGlassFurniture(b,now);
 
     if(!state.branchContext105)for(const p of state.branchPortals105||[])if(p.id!=='canal'&&inB58(p,b,1)&&state.seen.has(k(p.x,p.y)))drawBranchDoor(p.x*TILE,p.y*TILE,p);
     for(const cell of canalWaterwayCells()){
@@ -2087,6 +2125,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     drawTerrainReactions(now,b);
     drawWorldLights(now,b);
     drawSceneryFog(b,colors.fog||'#080503');
+    drawGlassTowerBodies(b,now);
 
     const floorLoot=[];
     for(const it of state.items||[])if(inB58(it,b,1)&&VisibilityService.isVisible(it.x,it.y))floorLoot.push({y:it.y+.62,o:it});
@@ -2595,6 +2634,8 @@ const ACTOR_SPEC={
   '석분 권사':{"a":"branch","c":"#786850","h":"#b3a17a","ac":"#ddc99e","design":"stone_boxer"},
   '붕락 갑병':{"a":"branch","c":"#68695b","h":"#a3a48b","ac":"#d4c497","design":"collapse_plate"},
   '토맥 괴수':{"a":"branch","c":"#605647","h":"#978b6b","ac":"#c9b588","design":"earth_beast"},
+  '거울지기':{a:'branch',c:'#635b99',h:'#c6ccea',ac:'#f2e4ff',design:'mirror_keeper',resolution:2},
+  '천명탄':{a:'branch',c:'#6555a6',h:'#a1d7ff',ac:'#f5f4ff',design:'mirror_orb',resolution:2},
   '반영 검객':{"a":"branch","c":"#577384","h":"#a4b4ba","ac":"#d7d3b7","design":"reflection_duelist"},
   '거울 시녀':{"a":"branch","c":"#80637b","h":"#b9a2b0","ac":"#d5b87f","design":"mirror_handmaid"},
   '파편 망령':{"a":"branch","c":"#607f8f","h":"#adc4ca","ac":"#dbcda8","design":"shard_wraith"},
@@ -2780,6 +2821,51 @@ function drawBranchCreature(q,m,frame,sp){
  trim=(pts,col=a)=>{for(let i=1;i<pts.length;i++)L(...pts[i-1],...pts[i],col)};
  shadow1012(q,16,34,sp.design==='ash_watcher'?18:28);
  switch(sp.design){
+ case'mirror_keeper':{
+  const shade='#302d54',silver='#a3abc9',frost='#def5ff',lilac='#b197e1';
+  // Trailing silk, a layered silver gorget and a face cut from one piece of mirrored glass.
+  P(shade,[[7,13+b],[13,11+b],[19,11+b],[25,13+b],[27,23],[29,32],[22,33],[16,31],[10,33],[3,32],[5,24]]);
+  P(c,[[9,16+b],[16,14+b],[23,16+b],[22,23],[26,31],[21,31],[17,29],[12,32],[6,31]],null);
+  P('#8178b7',[[12,19+b],[16,19+b],[15,25],[11,30],[8,31],[11,26]],null);
+  P('#4b437c',[[20,17+b],[22,22],[25,30],[22,31],[20,27],[18,26]],null);
+  P('#a89bd0',[[15,23],[18,23],[19,29],[16,31],[13,30]],null);
+  trim([[6,31],[9,30],[12,30],[15,27]],silver);trim([[20,26],[22,29],[26,31]],'#9690c7');
+  P('#aab2cc',[[5,15+b],[10,12+b],[14,14+b],[12,17+b],[7,20+b],[3,19+b]]);
+  P('#c6cce2',[[27,15+b],[22,12+b],[18,14+b],[20,17+b],[25,20+b],[29,18+b]]);
+  trim([[4,17+b],[9,14+b],[12,14+b]],frost);trim([[20,14+b],[23,14+b],[28,17+b]],frost);
+  P('#7772af',[[9,18+b],[13,16+b],[19,16+b],[23,18+b],[21,23+b],[16,26+b],[11,23+b]]);
+  P(silver,[[11,18+b],[16,17+b],[21,18+b],[19,22+b],[16,24+b],[13,22+b]],null);
+  P(frost,[[16,17+b],[19,20+b],[16,23+b],[14,20+b]],'#727aa9');
+  R(15.5,19+b,1.25,1.5,'#ffffff');
+  P('#7565a4',[[11,6+b],[16,3+b],[21,6+b],[22,11+b],[19,15+b],[13,15+b],[10,11+b]]);
+  P(h,[[12,7+b],[16,5+b],[20,7+b],[20,11+b],[17,14+b],[14,13+b],[12,11+b]],null);
+  P(frost,[[13,7+b],[16,6+b],[19,7+b],[16,10+b],[13,11+b]],null);
+  P(lilac,[[19,9+b],[20,11+b],[17,14+b],[15,13+b],[16,11+b]],null);
+  L(13,10+b,18,9+b,'#544779',1);R(14,9+b,1,1,'#ffffff');R(17.5,9+b,1.25,1,'#ffffff');
+  P(silver,[[10,7+b],[10,3+b],[13,5+b],[16,1+b],[19,5+b],[22,3+b],[22,7+b],[17,5+b],[15,5+b]]);
+  R(15.5,1.5+b,1,2,frost);
+  P('#756b9e',[[5,21+b],[8,20+b],[9,23+b],[7,26+b],[4,25+b]]);
+  P(silver,[[25,21+b],[28,20+b],[29,23+b],[28,25+b],[25,25+b]]);
+  // Two floating mirror shards orbit the hands, with a dark edge and a bright glass bevel.
+  for(const [x,y]of[[3,23-b],[28,9+b]]){
+   P(shade,[[x,y-5],[x+3,y-2],[x+3,y+2],[x,y+5],[x-3,y+1],[x-3,y-2]]);
+   P(lilac,[[x,y-4],[x+2,y-1],[x+1,y+3],[x-2,y+1],[x-2,y-1]],null);
+   L(x-2,y-1,x,y-3,frost,1);R(x,y,1,1,'#ffffff');
+  }
+  break;
+ }
+ case'mirror_orb':{
+  const y=15-b;
+  glowR9(q,16,y,13,'rgba(164,150,255,.48)');
+  E(16,y,9,9,'#302458');E(16,y,8,8,'#7362bb');
+  P('#b6ddff',[[16,y-8],[22,y-5],[23,y],[20,y+6],[15,y+8],[10,y+4],[9,y-2]],null);
+  P('#b5a2f9',[[23,y],[20,y+6],[15,y+8],[16,y+2],[20,y-3]],null);
+  P('#f7ffff',[[15,y-6],[19,y-5],[17,y-1],[13,y+1],[11,y-1]],null);
+  trim([[9,y+2],[13,y+4],[21,y+1]],'#7565ba');
+  trim([[13,y-6],[17,y-7],[20,y-6]],'#ffffff');R(13,y-2,2,1,'#ffffff');
+  L(4,y+3,9,y+1,'#c4aefd',1);L(22,y-4,27,y-7,'#d0f5ff',1);R(26,y+4,2,1,'#a3dfff');
+  break;
+ }
  case'forge_keeper':{
   // An iron kiln carried on separated squat legs, with a chimney and hinged furnace door.
   P('#292b2c',[[8,10+b],[24,10+b],[28,17+b],[26,28],[6,28],[4,18+b]]);
@@ -3669,7 +3755,8 @@ function renderSprite(m,c,player=false){const now=FX.frameNow??performance.now()
   const fp=player?[[0,0]]:(typeof footprintOffsets==='function'?footprintOffsets(m):[[0,0]]);if(fp.length>1){X.fillStyle='rgba(0,0,0,.11)';for(const[ox,oy]of fp)X.fillRect((m.x+ox)*TILE+5,(m.y+oy)*TILE+20,22,8)}
   if(!player&&m.summonOwner105==='player'&&m.aquatic){X.fillStyle='rgba(66,143,177,.20)';X.beginPath();X.ellipse(px+16,py+31,13,4,0,0,Math.PI*2);X.fill();X.strokeStyle='rgba(126,207,224,.50)';X.lineWidth=1;X.beginPath();X.ellipse(px+16,py+31,10+Math.sin(now/420+m.x)*1.2,3,0,.2,Math.PI*1.75);X.stroke();}
   if(!dormantMimic){X.fillStyle='rgba(0,0,0,.35)';X.fillRect(px+8,py+28,16,3)}if(m.boss&&!player){X.globalCompositeOperation='screen';const g=X.createRadialGradient(px+16,py+15,4,px+16,py+15,26);g.addColorStop(0,'rgba(226,176,85,.14)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(px-10,py-12,52,55);X.globalCompositeOperation='source-over'}
-  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x+dw*(1-unfold)/2,spriteTop,dw*unfold,dh);if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
+  const spriteAlpha=X.globalAlpha;if(m.mirrorCopy105)X.globalAlpha*=.42;
+  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x+dw*(1-unfold)/2,spriteTop,dw*unfold,dh);X.globalAlpha=spriteAlpha;if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
 function drawWorldCreature(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite(m,c,false)}if(m.duelLook){const c=ACTOR_ART.player(m.duelLook.classId||'wanderer',m.duelLook,dir1012(m,true),(m.attackUntil||0)>performance.now());X.save();if(m.martialStatus105?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,false);X.restore();return r}const c=monsterCanvas(m,((performance.now()/430+m.x*3+m.y)|0)&1);return renderSprite(m,c,false)}
 const rarityCol={common:'#b9aa8d',uncommon:'#91b889',rare:'#7eb4d1',relic:'#c493dc',sealed:'#e7bc55',legendary:'#e8c75d',artifact:'#ef8b45'};
 const tierMetal=['#a99a82','#bdad8c','#c9b889','#d1b36e','#e3c66d'];
@@ -4701,6 +4788,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
+ if(state.branchContext105.id==='mirror')return drawGlassTowerCell(t,px,py,x,y);
  if(isWaterTile105(t)||t===TT.ICE){
   const drawn=drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
   const surfaces=state.branchTerrain105?.surfaces;

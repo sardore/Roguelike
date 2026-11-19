@@ -11,6 +11,8 @@
   "mapgen.js",
   "special.js",
   "branches.js",
+  "mirrortower.js",
+  "mirrorart.js",
   "elements.js",
   "world.js",
   "layout.js",
