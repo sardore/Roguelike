@@ -42,7 +42,7 @@ const setup = async (level = 3) => { await dismissModals(s); await s.tick(1000);
   };
   dummy('테두리 적', 17, 15); dummy('안쪽 적', 16, 15); dummy('아군', 15, 13, { faction57: 'player' });
   dummy('독 면역', 13, 15, { poisonImmune: true });
-  dummy('풀 저항', 15, 17, { armor: { elementGuard74: 'grass' } });
+  dummy('풀 저항', 15, 17, { armor: { resist: { grass: 3 } } });
   dummy('밖의 적', 19, 15);
   return Q.lotus.atk;
 }, level); };
@@ -150,7 +150,7 @@ try {
     const mon = st.monsters.find(m => m.name === '테두리 적');
     mon.atk = 9; mon.palaceLotus105 = true;
     st.player.weapon = { ...st.player.weapon, name: '철두창', elementBrand74: 'water' };
-    st.player.armor = { ...st.player.armor, name: '강화 가죽 갑옷', elementGuard74: 'earth' };
+    st.player.armor = { ...st.player.armor, name: '강화 가죽 갑옷', resist: { earth: 3 } };
     Q.resolve(mon, { type: 'palaceRoots105', data: { resolveTurn105: st.turn },
       cells: [{ x: 16, y: 15 }, { x: 15, y: 16 }], armedPlayerTurn: st.turn - 1 });
     const walls = st.tempTerrain74.filter(t => t.rootWall105).length;

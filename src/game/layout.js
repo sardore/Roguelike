@@ -678,7 +678,6 @@ function architecture47(a,rs){const t=LEGEND_TILES49[a.id],spec=LEGEND_DUNGEON_L
  for(const p of state.legendPaths49){for(let i=3;i<p.cells.length-3;i+=7){const q=p.cells[i];addDecor47(q.x,q.y,'route','회랑 인레이');}}
  for(const i of spec.bonus){const r=rs[i],x=r.x+2,y=r.y+r.h-2;PlacementService.placeItem({...clone(CONSUMABLES.find(v=>v.type==='potion')||CONSUMABLES[0]),x,y,count:1});}
 }
-function guard47(elem){return elem==='fire'&&possesses47('ember_axe')}
 function buildIndoorLandmark105(map,r,id){
  const w=r.w,h=r.h,cx=r.cx-r.x,cy=r.cy-r.y,kind=r.landmark105,flip=rand(0,1);r.landmarkFlip105=flip;
  const coord=(x,y)=>({x:r.x+(flip?w-1-x:x),y:r.y+y});

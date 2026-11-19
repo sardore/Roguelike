@@ -34,18 +34,24 @@ function glassCached(key,w,h,paint){if(!key.startsWith('sky|'))key=(state?.branc
 function glassTint(t){const m=t?.mix??.3,P=glassPal();return{
  glass:glassMix(P.glass,P.lilac,m),glassHi:glassMix(P.glassHi,P.lilacHi,m),glassMid:glassMix(P.glassMid,P.lilacDeep,m),
  glassDeep:glassMix(P.glassDeep,P.lilacGlass,m),floor:glassMix(P.floor[0],P.floor[1],m),floorAlt:glassMix(P.floorAlt[0],P.floorAlt[1],m),seam:glassMix(P.seam[0],P.seam[1],m)}}
+// Fill a cell on the device pixel grid. At a fractional zoom an ordinary fillRect leaves anti-aliased edges, and the sky shows through
+// them as a faint grid; neighbouring cells snapped to the same rounded edges meet exactly.
+function glassFillCell(ctx,px,py,style){
+ const m=ctx.getTransform(),x0=Math.round(m.a*px+m.e),y0=Math.round(m.d*py+m.f),x1=Math.round(m.a*(px+32)+m.e),y1=Math.round(m.d*(py+32)+m.f);
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=typeof style==='function'?style(x0,y0,x1,y1):style;ctx.fillRect(x0,y0,x1-x0,y1-y0);ctx.restore();
+}
 function mirrorLayout(){return state?.branchTerrain105?.mirror105||null}
 function mirrorZone(x,y){return mirrorLayout()?.zones?.[y]?.[x]||'.'}
 function mirrorOwner(x,y){const c=mirrorLayout()?.owner?.[y]?.[x];return c&&c!=='.'?state.branchWorld105?.mirror105?.towers?.[+c]||null:null}
 /* ------------------------------------------------------------------ floors */
-// zones: r room · c corridor · h hall · a antechamber · P main path · b bridge/causeway · p balcony · d dock
+// zones: r room · c corridor · h hall · a antechamber · P main path · b bridge/causeway · p balcony · d dock · v treasure vault
 function glassFloorTile(zone,x,y,t){
  const tint=glassTint(t),motif=t?.motif||'rings',px=x&1,py=y&1,v=hash2(x>>1,y>>1,733)>.62?1:0;
  const key=`f|${zone}|${px}${py}|${v}|${t?.id??'-'}|${motif}`;
  return glassCached(key,32,32,q=>{
   const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
   const bridge=zone==='b'||zone==='p'||zone==='d';
-  R(bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
+  R(zone==='v'?glassMix(v?tint.floorAlt:tint.floor,'#d8b865',.34):bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
   // structure under the glass: dark beams every other panel, faint
   q.fillStyle=glassRGBA(glassPal().violetInk,.22);if(px===0)q.fillRect(14,0,4,32);if(py===0)q.fillRect(0,14,32,4);
   q.fillStyle=glassRGBA(glassPal().violetInk,.12);q.fillRect(0,30,32,2);
@@ -62,18 +68,17 @@ function glassFloorTile(zone,x,y,t){
   else if(zone==='a'){q.strokeStyle=glassRGBA(tint.seam,.30);q.lineWidth=1;q.beginPath();q.moveTo(0,16);q.lineTo(16,0);q.lineTo(32,16);q.lineTo(16,32);q.closePath();q.stroke();q.beginPath();q.moveTo(8,16);q.lineTo(16,8);q.lineTo(24,16);q.lineTo(16,24);q.closePath();q.stroke();q.fillStyle=glassRGBA(glassPal().lilac,.25);q.fillRect(15,15,2,2)}
   else if(zone==='r'&&motif==='lattice'&&v){q.fillStyle=glassRGBA(tint.seam,.16);q.fillRect(8,8,16,1);q.fillRect(8,23,16,1);q.fillRect(8,8,1,16);q.fillRect(23,8,1,16)}
   else if(zone==='r'&&motif==='waves'&&v){q.fillStyle=glassRGBA(tint.seam,.16);for(let i=0;i<32;i+=4)q.fillRect(i,18+((i>>2)%2),3,1)}
+  if(zone==='v'){q.strokeStyle=glassRGBA('#f2dc9a',.50);q.lineWidth=1;q.strokeRect(5.5,5.5,21,21);q.beginPath();q.moveTo(16,6);q.lineTo(26,16);q.lineTo(16,26);q.lineTo(6,16);q.closePath();q.stroke();q.fillStyle=glassRGBA('#fff2c4',.55);q.fillRect(15,15,2,2)}
   if(zone==='P'){q.fillStyle=glassRGBA(glassPal().lamp,.30);q.fillRect(14,0,4,32);q.fillRect(0,14,32,4);q.fillStyle=glassRGBA('#ffffff',.45);q.fillRect(15,14,2,4);q.fillRect(14,15,4,2)}
  });
 }
 // The lake under floor 1: deep blue-violet water with the sky's light on it.
 function drawGlassLake(ctx,px,py,x,y,now){
- // Tint the shared clouds below the water surface; ripples identify the lake without replacing those clouds.
- const w=Math.sin(x*.21+y*.13)*.5+.5;
- ctx.fillStyle=glassRGBA(glassMix('#293981','#49419a',w),.52);ctx.fillRect(px,py,32,32);
- const t=(now||0)/1400;for(let i=0;i<2;i++){const band=((y*32+i*48+Math.floor(t*16))%96+96)%96;if(band<32){const len=10+((x*7+i*5)%14),off=(x*13+i*9)%22;ctx.fillStyle=glassRGBA(i?glassPal().lilac:glassPal().sky,.19);ctx.fillRect(px+off,py+band,len,1)}}
+ // The lake is real water: the 창해용궁 water, with no tint laid over it.
+ glassFillCell(ctx,px,py,'#0d4d6b');
+ drawPalaceWater(ctx,px,py,x,y,true,now);
  const shore=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WATER&&v!==TT.RAFT};
  if(shore(0,-1)){const g=ctx.createLinearGradient(0,py,0,py+8);g.addColorStop(0,glassRGBA(glassPal().violetInk,.6));g.addColorStop(1,glassRGBA(glassPal().violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,8)}
- if(shore(0,1)){ctx.fillStyle=glassRGBA(glassPal().sky,.18);ctx.fillRect(px,py+30,32,2)}
 }
 /* ------------------------------------------------------------------ walls */
 function glassWallFront(kind,x,t,win){
@@ -175,11 +180,44 @@ function drawGlassPlatformCell(ctx,px,py,x,y,r){
  if(r.design==='barge'){const ends=r.axis==='x'?(!w||!e):(!n||!s);if(ends){ctx.fillStyle=glassRGBA(P.lamp,.6);ctx.beginPath();if(r.axis==='x'){ctx.moveTo(px+(!w?4:28),py+16);ctx.lineTo(px+(!w?12:20),py+10);ctx.lineTo(px+(!w?12:20),py+22)}else{ctx.moveTo(px+16,py+(!n?4:20));ctx.lineTo(px+10,py+(!n?12:12));ctx.lineTo(px+22,py+(!n?12:12))}ctx.closePath();ctx.fill()}}
 }
 // Cell painter, called for every seen cell of the tower floors.
+// A leaf over the void: lily-pad green against the pink sky, notched, veined, with a faint shadow far below it.
+function drawGlassLeaf(ctx,px,py,x,y,now){
+ const h=hash2(x,y,771),bob=Math.sin(now/700+x*1.7+y*.9)*1.1,armed=!!hz()?.armed?.[k(x,y)],rot=(h-.5)*1.2;
+ ctx.save();ctx.fillStyle=glassRGBA(glassPal().violetInk,.20);ctx.beginPath();ctx.ellipse(px+17,py+27,11,3,0,0,Math.PI*2);ctx.fill();
+ ctx.translate(px+16,py+16+bob);ctx.rotate(rot);
+ const g=ctx.createRadialGradient(-3,-3,2,0,0,14);g.addColorStop(0,armed?'#d9c27a':'#b4d28f');g.addColorStop(.55,armed?'#a89458':'#6f9e6a');g.addColorStop(1,armed?'#6b5a35':'#3d6149');
+ ctx.fillStyle='#233a31';ctx.beginPath();ctx.ellipse(0,0,14.5,11.5,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,13.2,10.3,0,.22,Math.PI*2-.22);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(222,240,186,.65)';ctx.lineWidth=1;for(let i=0;i<6;i++){const a=.6+i*1.0;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*11.5,Math.sin(a)*8.8);ctx.stroke()}
+ ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-4,-4,5,2.2,-.5,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+// Height: under every tower (never under a bridge, ledge or leaf) the sky thickens into a murky, fading haze that thins out with the drop.
+const GLASS_HAZE_DEPTH=14;
+function drawGlassAltitudeHaze(ctx,px,py,x,y){
+ // how far this cell hangs below a tower, straight down its own column. A causeway or ledge crossing that column does not hide the haze
+ // beneath it, and nothing spreads sideways
+ let d=0,tower=null;
+ for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
+  if(state.map[y-i]==null)break;
+  const t=mirrorOwner(x,y-i);if(t){d=i;tower=t;break}
+ }
+ if(!d||d>GLASS_HAZE_DEPTH)return;
+ // The tower's own glass carries on downward: the wall foot's deep violet, then the tower's tint, then the floor's low sky, thinning to nothing.
+ const P=glassPal(),tint=glassTint(tower),t=n=>Math.max(0,Math.min(1,n/GLASS_HAZE_DEPTH));
+ const tone=n=>{const u=t(n);return u<.3?glassMix(P.violet,tint.glassDeep,u/.3):u<.65?glassMix(tint.glassDeep,glassMix(tint.glassMid,P.skyLow,.5),(u-.3)/.35):glassMix(glassMix(tint.glassMid,P.skyLow,.5),P.sky,(u-.65)/.35)};
+ const f=n=>Math.pow(1-t(n),1.2)*.88;
+ glassFillCell(ctx,px,py,(x0,y0,x1,y1)=>{const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));return g});
+ // the wall's piers and window glints continue as faint pale shafts straight below the tower
+ if(x%3===0){ctx.fillStyle=glassRGBA(P.silverMid,.30*(1-t(d))**2);ctx.fillRect(px+12,py,7,32);ctx.fillStyle=glassRGBA(P.silver,.35*(1-t(d))**2);ctx.fillRect(px+12,py,2,32)}
+ // thin streaks of mist, sparser the further down
+ const h=hash2(x,y,913);if(h>.55){ctx.fillStyle=glassRGBA(P.glassHi,.22*(1-t(d)));ctx.fillRect(px+Math.floor(h*13),py+8+Math.floor(h*9),14+Math.floor(h*10),1)}
+}
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
- if(t===TT.VOID){if(state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);return true}
- if(t===TT.WATER){drawGlassLake(ctx,px,py,x,y,now);return true}
+ // the lake carries the same altitude haze under a tower as the open sky does on the floors above
+ if(t===TT.VOID||t===TT.WATER){if(t===TT.WATER||state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);drawGlassAltitudeHaze(ctx,px,py,x,y);return true}
  const deck=(t===TT.RAFT||t===MIRROR_CARGO_TILE)?glassPlatformAt(x,y):null;
  if(deck){if(deck.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassPlatformCell(ctx,px,py,x,y,deck);return true}
  if(t===TT.WALL){
@@ -189,6 +227,7 @@ function drawGlassTowerCell(t,px,py,x,y){
   return true;
  }
  if(t===TT.DOOR||t===TT.OPEN_DOOR){drawGlassDoor(ctx,px,py,x,y,t===TT.OPEN_DOOR,tower);return true}
+ if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y)){drawGlassLeaf(ctx,px,py,x,y,now);return true}
  ctx.drawImage(glassFloorTile(zone==='.'?'r':zone,x,y,tower),px,py);
  if((zone==='h'||zone==='P')&&tower&&mirrorTowerContains(tower,x,y,2))drawGlassMedallion(ctx,px,py,tower);
  if(zone==='b'||zone==='p'||zone==='d')drawGlassBridgeEdges(ctx,px,py,x,y);
@@ -292,8 +331,8 @@ function drawGlassFurniture(b,now){
 }
 /* ------------------------------------------------------------------ sky */
 function glassCloudTile(layer){
- return glassCached('sky|'+layer,512,256,q=>{
-  const P=GLASS_PALS[1],tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
+ return glassCached('sky|'+(state?.branchContext105?.level||1)+'|'+layer,512,256,q=>{
+  const P=glassPal(),tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
   const n=layer===0?7:layer===1?5:3,size=layer===0?[22,40]:layer===1?[26,46]:[30,54];
   for(let i=0;i<n;i++){
    const cx=hash2(i,layer,511)*512,cy=40+hash2(layer,i,512)*170,r=size[0]+hash2(i,i+layer,513)*(size[1]-size[0]);
@@ -305,7 +344,7 @@ function glassCloudTile(layer){
 // The common sky sits behind the terrain and fog on every floor.
 function drawGlassSky(cam,now){
  const level=state?.branchContext105?.level||1;
- const P=GLASS_PALS[1],W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);
+ const P=glassPal(),W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);
  g.addColorStop(0,P.sky);g.addColorStop(.55,P.skyMid);g.addColorStop(1,P.skyLow);X.fillStyle=g;X.fillRect(0,0,W,H);
  const layers=[[0,.18,.004,.55],[1,.38,.010,.62],[2,.62,.018,.72]];
  const drawLayer=([layer,par,drift,alpha])=>{const tile=glassCloudTile(layer),ox=((cam.x*par+now*drift)%512+512)%512,oy=((cam.y*par)%256+256)%256;X.save();X.globalAlpha=alpha;for(let y=-oy-256;y<H;y+=256)for(let x=-ox-512;x<W;x+=512)X.drawImage(tile,Math.round(x),Math.round(y));X.restore()};
@@ -363,7 +402,12 @@ const GLASS_FADE=new Map();
 // Drawn after the scenery fog: a building seen from outside is scenery the player knows, even though its rooms are unseen.
 // Parts of a tower's body fade out as the player comes within two or three cells of them, so a door, bridge or
 // stair under a roof or face is always readable when it matters: fully clear at two cells, solid again past three and a half.
-function glassNear(x,y){const p=state.player;return Math.min(1,Math.max(0,(Math.hypot(x-p.x,y-p.y)-2)/1.5))}
+// A tower's height goes see-through near anyone standing by it: the player, and every mob the player can see (so none hides behind a wall).
+function glassNear(x,y){
+ const p=state.player;let d=Math.hypot(x-p.x,y-p.y);
+ if(d>2)for(const m of state.monsters){if(m.hp<=0||!state.visible.has(k(m.x,m.y)))continue;const md=Math.hypot(x-m.x,y-m.y);if(md<d)d=md;if(d<=2)break}
+ return Math.min(1,Math.max(0,(d-2)/1.5));
+}
 function drawGlassTowerBodies(b,now){
  const plan=state?.branchContext105?.id==='mirror'&&state.branchWorld105?.mirror105;if(!plan)return;
  const level=state.branchContext105.level,p=state.player,dt=Math.min(100,now-(GLASS_FADE.get('t')??now));GLASS_FADE.set('t',now);

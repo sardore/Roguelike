@@ -131,7 +131,62 @@ function buildMirrorTower(level){
   }
   brush(cells,'b');return cells;
  };
+
+ const planLeafPavilion=()=>{
+  // Starting points: a tower's spare doorway, or the edge of an existing causeway, each looking straight out into open void.
+  const cand=standing.filter(t=>t.id!==0),sources=[];
+  for(const t of cand)for(const p of ports(t))if(!doors.has(k(p.x,p.y)))sources.push({...p,door:true});
+  for(let y=4;y<H-4;y++)for(let x=4;x<W-4;x++)if(zone[y][x]==='b'&&m[y][x]===TT.FLOOR)for(const[dx,dy]of DIRS4){
+   const bx=x-dx,by=y-dy,ox=x+dx,oy=y+dy;if(zone[by]?.[bx]==='b'&&m[oy]?.[ox]===ground&&zone[oy][ox]==='.')sources.push({x,y,dx,dy,door:false});
+  }
+  sources.sort(()=>rand(-1,1));
+  const at=(p,u,v)=>p.dx?{x:p.x+p.dx*u,y:p.y+v}:{x:p.x+v,y:p.y+p.dy*u};
+  const span=(a,b)=>{const out=[];for(let u=a;u<=b;u++)for(let v=-1;v<=1;v++)out.push([u,v]);return out};
+  const leafCells=[];for(let u=9;u<=11;u++)leafCells.push([u,0]);
+  for(let v=-3;v<=3;v++)leafCells.push([12,v]);
+  for(const v of[-3,3])for(let u=13;u<=15;u++)leafCells.push([u,v]);
+  // behind the pillar the two arcs never meet: each ends in its own arm, with its prize at the corner and its own way out to the ledge
+  for(const v of[-3,-2,-1,1,2,3])leafCells.push([16,v]);
+  leafCells.push([17,-1],[17,1]);
+  const items=[[16,-3],[16,3]],pillar=[];for(let u=13;u<=15;u++)for(let v=-2;v<=2;v++)pillar.push([u,v]);
+  const inside=(x,y)=>x>=3&&y>=3&&x<W-3&&y<H-3,free=(x,y)=>inside(x,y)&&m[y][x]===ground&&zone[y][x]==='.'&&!towerAt(x,y);
+  const joins=(x,y)=>zone[y]?.[x]==='b'&&m[y]?.[x]===TT.FLOOR;
+  for(const p of sources){
+   const claim=new Map();let bad=false;
+   const add=(x,y,kind)=>{const key=k(x,y);if(bad)return;if(!free(x,y)||claim.has(key)){bad=true;return}claim.set(key,kind)};
+   for(const[u,v]of span(1,5)){const c=at(p,u,v);add(c.x,c.y,'b')}
+   for(const[u,v]of span(6,8)){const c=at(p,u,v);add(c.x,c.y,'p')}
+   for(const[u,v]of leafCells){const c=at(p,u,v);add(c.x,c.y,'leaf')}
+   for(const[u,v]of pillar){const c=at(p,u,v);add(c.x,c.y,'pillar')}
+   for(const[u,v]of span(18,20)){const c=at(p,u,v);add(c.x,c.y,'p')}
+   if(bad)continue;
+   // the way out: a three-wide causeway from the far ledge to the nearest existing causeway cell, straight then sideways
+   let exit=null;{
+    const starts=[at(p,21,0),at(p,19,2),at(p,19,-2)],bridges=[];for(let y=4;y<H-4;y++)for(let x=4;x<W-4;x++)if(joins(x,y))bridges.push({x,y});
+    search:for(const end of starts){
+     const near=bridges.map(b=>({...b,d:Math.abs(b.x-end.x)+Math.abs(b.y-end.y)})).sort((a,b)=>a.d-b.d).slice(0,120);
+     for(const target of near)for(const xFirst of[true,false]){
+      const cells=walk(end.x,end.y,target.x,target.y,xFirst),spur=[];let fail=false;
+      for(const c of cells){for(let dy=-1;dy<=1&&!fail;dy++)for(let dx=-1;dx<=1;dx++){const x=c.x+dx,y=c.y+dy;if(joins(x,y)||claim.get(k(x,y))==='p')continue;if(claim.has(k(x,y))||!free(x,y)){fail=true;break}spur.push({x,y})}if(fail)break}
+      if(!fail&&spur.length){exit=spur;break search}
+     }
+    }
+   }
+   if(!exit)continue;
+   // nothing else may brush against the leaves, or the fork would have a back door
+   const mine=new Set([...claim.keys(),...exit.map(c=>k(c.x,c.y))]);
+   const near=(x,y)=>{for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const key=k(x+dx,y+dy);if(!mine.has(key)&&(m[y+dy]?.[x+dx]!==ground||zone[y+dy]?.[x+dx]!=='.'))return true}return false};
+   if(leafCells.some(([u,v])=>{const c=at(p,u,v);return near(c.x,c.y)}))continue;
+   for(const[key,kind]of claim){const[x,y]=key.split(',').map(Number);
+    if(kind==='b'||kind==='p')put(x,y,TT.FLOOR,kind);else if(kind==='pillar')put(x,y,TT.WALL,'i');else{put(x,y,TT.PAPER_BRIDGE,'p');ter.leaves=ter.leaves||{};ter.leafBase=ter.leafBase||{};ter.leaves[key]=true;ter.leafBase[key]=TT.VOID}}
+   for(const c of exit)put(c.x,c.y,TT.FLOOR,'b');
+   if(p.door)doors.add(k(p.x,p.y));
+   return{reward:items.map(([u,v])=>at(p,u,v)),ledges:[at(p,7,0),at(p,19,0)]};
+  }
+  return null;
+ };
  const edges=mirrorTowerEdges(standing,level);
+
  const routes=edges.map(([a,b])=>link(a,b));
  // ---- arrival: the dock on floor 1, the stair tower above
  let up,down=null,bossAt=null;
@@ -176,6 +231,9 @@ function buildMirrorTower(level){
    balconies.push({x:bx,y:by});break;
   }
  }
+ // ---- floor 3: the leaf pavilion. A pillar stands between two sheets of void; leaf bridges wind round it and end in a fork, so the
+ // reward on one leaf is paid for with the other. Planned after the ferry gaps so it never joins a causeway that is about to be cut.
+ const pavilion=level===3?planLeafPavilion():null;
  // ---- tower interiors
  const rooms=[],halls=[],mazes=[];
  for(const t of standing){
@@ -217,6 +275,9 @@ function buildMirrorTower(level){
    t.stairsAtSummit=stairs;
   }
  }
+ // ---- floor 2: the treasure vault is the largest side room
+ let vault=null;
+ if(level===2){const big=rooms.filter(r=>r.cells.length>=14).sort((a,b)=>b.cells.length-a.cells.length)[0];if(big){vault=big;rooms.splice(rooms.indexOf(big),1);for(const c of big.cells)zone[c.y][c.x]='v'}}
  for(const key of doors){const[x,y]=key.split(',').map(Number);if(m[y][x]===TT.WALL)put(x,y,TT.DOOR,zone[y][x]==='i'?'c':zone[y][x])}
  // ---- portals
  const portal=(id,p,to,arrival,label)=>{setTerrainTile58(m,p.x,p.y,TT.PORTAL);state.branchPortals105.push({id,kind:'branch',...p,to,arrival,label})};
@@ -227,6 +288,7 @@ function buildMirrorTower(level){
  const walkOptions={directions:DIRS4,tileAt:(x,y)=>{
   if(tracks.has(k(x,y)))return TT.RAFT;
   const tile=m[y]?.[x];
+  if(tile===TT.PAPER_BRIDGE)return TT.WALL;
   return [TT.WATER,TT.VOID,TT.LAVA].includes(tile)?TT.WALL:tile;
  }};
  const target=down||bossAt;
@@ -240,7 +302,7 @@ function buildMirrorTower(level){
  const nearAny=(x,y,r,set)=>{for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(set.has(k(x+dx,y+dy)))return true;return false};
  const portalCells=new Set([up,down,bossAt].filter(Boolean).map(p=>k(p.x,p.y)));
  const fits=(kind,x,y,againstWall)=>{const s=GLASS_FURNITURE[kind];
-  for(let dy=0;dy<s.h;dy++)for(let dx=0;dx<s.w;dx++){const cx=x+dx,cy=y+dy;if(m[cy]?.[cx]!==TT.FLOOR||!'rhcpa'.includes(zone[cy][cx])||onPath.has(k(cx,cy))||tracks.has(k(cx,cy))||nearAny(cx,cy,2,doors)||nearAny(cx,cy,2,portalCells)||nearAny(cx,cy,1,taken))return false}
+  for(let dy=0;dy<s.h;dy++)for(let dx=0;dx<s.w;dx++){const cx=x+dx,cy=y+dy;if(m[cy]?.[cx]!==TT.FLOOR||!'rhcpav'.includes(zone[cy][cx])||onPath.has(k(cx,cy))||tracks.has(k(cx,cy))||nearAny(cx,cy,2,doors)||nearAny(cx,cy,2,portalCells)||nearAny(cx,cy,1,taken))return false}
   if(againstWall)for(let dx=0;dx<s.w;dx++)if(m[y-1]?.[x+dx]!==TT.WALL)return false;
   return true};
  const place=(kind,x,y,t,againstWall=false)=>{if(!fits(kind,x,y,againstWall))return false;const s=GLASS_FURNITURE[kind];for(let dy=0;dy<s.h;dy++)for(let dx=0;dx<s.w;dx++){setTerrainTile58(m,x+dx,y+dy,TT.STONE_PILLAR);taken.add(k(x+dx,y+dy))}objects.push({kind,x,y,w:s.w,h:s.h,tower:t?t.id:null});return true};
@@ -276,6 +338,8 @@ function buildMirrorTower(level){
  // ---- everything that matters must still be reachable
  const reach=ReachabilityService.playerSearch(up,walkOptions).cells;
  if(!reach.has(k(target.x,target.y)))throw Error('Mirror tower: the way on is blocked');
+ // the leaves are not part of any way: once they fall, both ledges of the pavilion must still be on the same network as the stairs
+ if(pavilion)for(const c of pavilion.ledges)if(!reach.has(k(c.x,c.y)))throw Error('Mirror tower: the leaf pavilion is cut off once its leaves fall');
  for(const r of rooms)if(!r.cells.some(c=>reach.has(k(c.x,c.y))))throw Error('Mirror tower: a side room is sealed');
  for(const b of balconies){let ok=false;for(let y=b.y-2;y<=b.y+2&&!ok;y++)for(let x=b.x-2;x<=b.x+2;x++)if(reach.has(k(x,y))){ok=true;break}if(!ok)throw Error('Mirror tower: a balcony is cut off')}
  ter.mirror105={version:1,zones:zone.map(r=>r.join('')),owner:owner.map(r=>r.join('')),objects,lights,stairs:standing.find(t=>t.stairsAtSummit)?.stairsAtSummit||{}};
@@ -285,10 +349,24 @@ function buildMirrorTower(level){
  const spawn=(name,p)=>{const dungeon=MIRROR_ROSTER_DUNGEON[name],mon=spawnNamed(name,p,dungeon?{placementMode:'exact',provenance:'subbranch-random-v3',legendDungeon47:dungeon}:{placementMode:'exact',provenance:'subbranch-random-v3'});if(mon)mon.branch105='mirror';return mon};
  const roster=MIRROR_ROSTERS[level-1],pickEnemy=()=>roster[rand(0,roster.length-1)],far=p=>Math.hypot(p.x-up.x,p.y-up.y)>8&&(!bossAt||Math.hypot(p.x-bossAt.x,p.y-bossAt.y)>5);
  const open=c=>m[c.y][c.x]===TT.FLOOR&&reach.has(k(c.x,c.y))&&far(c),take=list=>list.splice(rand(0,list.length-1),1)[0];
- for(const r of rooms){const cells=r.cells.filter(open);if(!cells.length)continue;const p=take(cells);if(onPath.has(k(p.x,p.y)))continue;if(rand(0,2))dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:1},p,{requireReachable:false});if(cells.length&&rand(0,1))spawn(pickEnemy(),take(cells))}
+ for(const r of rooms){const cells=r.cells.filter(open);if(!cells.length)continue;const p=take(cells);if(onPath.has(k(p.x,p.y)))continue;if(rand(0,1))dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:rand(1,2)},p,{requireReachable:false});if(cells.length&&rand(0,1))spawn(pickEnemy(),take(cells))}
+ // the treasure vault: one exclusive fixed piece and two premium randarts on the gilded floor, watched by two of the floor's own
+ if(vault){
+  const cells=vault.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y))),cx=vault.cells.reduce((n,c)=>n+c.x,0)/vault.cells.length,cy=vault.cells.reduce((n,c)=>n+c.y,0)/vault.cells.length;
+  const spots=[];for(const c of cells.slice().sort((a,b)=>Math.hypot(a.x-cx,a.y-cy)-Math.hypot(b.x-cx,b.y-cy)))if(spots.length<3&&spots.every(s=>Math.hypot(s.x-c.x,s.y-c.y)>=2.5))spots.push(c);
+  const owned=new Set([...state.player.inventory,state.player.relic,state.player.trinket].filter(Boolean).map(x=>x.name)),exclusive=[...RELICS,...TRINKETS].filter(x=>x.vaultOnly&&!owned.has(x.name)),prizes=[];
+  if(exclusive.length)prizes.push({...clone(exclusive[rand(0,exclusive.length-1)])});
+  while(prizes.length<3)prizes.push(makeRandart(prizes.length%2?'trinket':'relic',5,{premium:true}));
+  spots.forEach((c,i)=>{const item={...prizes[i],count:1,identified:true,curseImmune991:true};PlacementService.placeItem(item,c,{requireReachable:false})});
+  const guards=cells.filter(c=>!spots.some(s=>Math.hypot(s.x-c.x,s.y-c.y)<2));for(let n=0;n<2&&guards.length;n++)spawn(pickEnemy(),take(guards));
+ }
+ if(pavilion){
+  const prizes=[makeRandart('relic',5,{premium:true}),makeRandart('trinket',5,{premium:true})];
+  pavilion.reward.forEach((c,i)=>PlacementService.placeItem({...prizes[i],count:1,identified:true,curseImmune991:true,choiceGroup:'mirror-leaf'},c,{requireReachable:false}));
+ }
  for(const mz of mazes)for(const d of mz.dead.filter((_,i)=>i%3===2)){if(open(d)&&!onPath.has(k(d.x,d.y)))dropFloorLoot(d)}
  for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<2&&cells.length;n++)spawn(pickEnemy(),take(cells))}
- for(const b of balconies){const cells=[];for(let y=b.y-2;y<=b.y+2;y++)for(let x=b.x-2;x<=b.x+2;x++)if(open({x,y}))cells.push({x,y});if(cells.length)dropFloorLoot(take(cells))}
+ for(const b of balconies){const cells=[];for(let y=b.y-2;y<=b.y+2;y++)for(let x=b.x-2;x<=b.x+2;x++)if(open({x,y}))cells.push({x,y});if(cells.length){const p=take(cells);dropFloorLoot(p);if(cells.length)PlacementService.placeItem({...clone(naturalFoodPick()),count:1},take(cells),{requireReachable:false})}}
  for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<1+(t.rx>=9?1:0)&&ok.length;n++)spawn(pickEnemy(),take(ok))}
  const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<2+level&&ob.length;n++)spawn(pickEnemy(),take(ob));
  if(bossAt){const boss=scaledMonster(MIRROR_KEEPER,branchCombatFloor());Object.assign(boss,{x:bossAt.x,y:bossAt.y,guardHome57:{...bossAt},alerted:false});OccupancyService.addMonster(boss)}

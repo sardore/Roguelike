@@ -4072,6 +4072,7 @@ function drawCloak(q,it){
  else if(st==='seal'){outlineRect(q,18,17,12,15,'#c9b36d');rect(q,21,20,6,9,'#e0ce91');line(q,24,20,24,28,'#7a4736',1)}
 }
 function drawRelic(q,it){
+ if(it.art){drawCharmArt(q,it);return}
  const n=it.name||'',metal='#b99b5a',hi='#ead486';
  if(n==='장독 속 무언가'){
   q.save();q.lineWidth=7;q.strokeStyle='#302620';q.beginPath();q.ellipse(24,28,12,11,-.24,0,Math.PI*2);q.stroke();q.lineWidth=4;q.strokeStyle='#a88957';q.stroke();q.lineWidth=1;q.strokeStyle='#e4c78b';q.beginPath();q.ellipse(24,27,12,11,-.24,Math.PI*.94,Math.PI*1.82);q.stroke();poly(q,'#47352c',[[17,14],[23,9],[31,11],[34,18],[29,23],[21,22]]);poly(q,'#1e2021',[[20,15],[24,12],[29,14],[30,19],[25,21],[21,19]]);line(q,23,14,26,19,'#8a5c4e',1);line(q,22,17,28,16,'#bb8963',1);itemArtDot(q,22,14,'#e3bf83');itemArtDot(q,34,30,'#b88e57');q.restore();
@@ -4086,6 +4087,7 @@ function drawRelic(q,it){
  else {ell(q,metal,24,24,13,13);ell(q,hi,24,24,8,8);itemArtDot(q,24,24,'#fff3b2')}
 }
 function drawTrinket(q,it){
+ if(it.art){drawCharmArt(q,it);return}
  if(it.name==='방 번호패'){outlineRect(q,10,12,28,25,'#6c4b32');rect(q,12,14,24,21,'#c5aa7a');rect(q,16,17,16,4,'#ead7aa');q.fillStyle='#5b3827';q.font='900 12px serif';q.textAlign='center';q.fillText('客',24,31);q.textAlign='start'}
  else if(it.name==='비단 매듭'){for(const [x1,y1,x2,y2]of[[10,15,38,33],[38,15,10,33],[16,9,32,39],[32,9,16,39]])line(q,x1,y1,x2,y2,'#a85b78',4);ell(q,'#dd9bb4',24,24,6,6);itemArtDot(q,24,24,'#f4d1dc')}
  else if(it.name==='금박 부적'){outlineRect(q,13,6,22,35,'#9e7733');rect(q,15,8,18,31,'#d7bd66');rect(q,17,10,14,5,'#f1dd88');line(q,24,16,24,34,'#7d412c',2);line(q,19,22,29,22,'#7d412c',1);itemArtDot(q,24,28,'#fff0a2')}
@@ -4546,7 +4548,7 @@ function drawPalaceWater(q,px,py,x,y,deep,now){
  // Foam belongs to the shoreline, never to the seam between two water tiles.
  for(const[dx,dy]of DIRS4){
   const nx=x+dx,ny=y+dy,base=terrainBaseTile58(nx,ny);
-  if(isWaterTile105(base)||state.branchTerrain105.palace105.permanentWater[k(nx,ny)])continue;
+  if(isWaterTile105(base)||state.branchTerrain105?.palace105?.permanentWater?.[k(nx,ny)])continue;
   const edge=q.createLinearGradient(px+(dx>0?32:0),py+(dy>0?32:0),px+(dx?dx>0?26:6:0),py+(dy?dy>0?26:6:0));
   edge.addColorStop(0,'#a4d7c65c');edge.addColorStop(.35,'#69b4b32c');edge.addColorStop(1,'#529eab00');q.fillStyle=edge;
   q.fillRect(px+(dx>0?26:0),py+(dy>0?26:0),dx?6:32,dy?6:32);
@@ -6355,6 +6357,7 @@ const KEY=(it)=>{
   // Talisman cache identity follows its assigned physical appearance, not known/unknown state.
   if(it.type==='talisman'){const pub=window.__MANRU_TALISMAN_PUBLIC__,a=pub?.app?.(it);extra=`:${a?.id||''}:${pub?.seal?.(it)||a?.seal||''}:${a?.paper||''}:${a?.paper2||''}:${a?.ink||''}`}
   if(it.type==='ammo')extra+=`:${it.ammoKind||''}`;
+  if(it.art)extra+=`:${it.art.shape}:${it.art.mat}:${it.art.gem}:${it.art.cord||''}`;
   if(it.summonItem105)extra+=`:${it.summonElement105||''}:${it.pictureCopies105||1}:${hash(JSON.stringify(it.summonPortrait105||null))}`;
   return`${it.name||''}:${it.type||''}:${it.kind||''}:${it.tier||0}:${it.rarity||''}:${it.artifactId46||''}:${it.artifactWeapon46?1:0}${extra}`;
 };

@@ -88,7 +88,7 @@ const COMBUSTION_RULES105=Object.freeze({damage:3});
 function combustionContact105(entity,elem,source={}, {floorDamage=0}={}){
  if(!entity||entity.hp<=0)return false;
  if(elem==='water'||elem==='ice'){const hot=!!entity.combustion105||!!entity.plantBurn105||entity.burn74>0;delete entity.combustion105;delete entity.plantBurn105;entity.burn74=0;return hot}
- if(elem!=='fire'||entityElementGuard57(entity,'fire')||entity.lava||entity.fireTrail)return false;
+ if(elem!=='fire'||entityElementResist(entity,'fire')>=3||entity.lava||entity.fireTrail)return false;
  const old=entity.combustion105,oil=entityFootprintCells57(entity).some(q=>terrainReactions105().spills?.[k(q.x,q.y)]?.kind==='oil');
  entity.combustion105={remaining:Math.max(old?.remaining||0,oil?5:3),born:old?.born??state.turn,refreshed:state.turn,lastTick:old?.lastTick??null,floorDamage105:Math.max(floorDamage,old?.floorDamageTurn105===state.turn?old.floorDamage105||0:0),floorDamageTurn105:state.turn,source:source.sourceFaction?{sourceFaction:source.sourceFaction,credit:source.credit||null}:(old?.source||{sourceFaction:'neutral',credit:null})};entity.burn74=0;delete entity.plantBurn105;return !old;
 }
@@ -203,13 +203,20 @@ function applyElementField57(field,elem,damage,opts={}){
     if(result.damage){hits++;opts.onDamage?.(target,result);}
   }return hits
 }
-function entityElementGuard57(entity,elem){
-  if(!entity)return false;
-  if(entity!==state?.player)return entity.armor?.elementGuard74===elem||(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe');
-  return (elem==='fire'&&(state?.status?.fireResist57||0)>0)||(elem==='ice'&&(state?.status?.warm57||0)>0)||state?.player?.armor?.elementGuard74===elem||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0)||!!globalThis.__MANRU_LEGEND47__?.guard?.(elem);
+/* DCSS-style resistance: 0..3 per element. Level 3 is immunity (the old boolean guard); gear and monsters add levels. */
+const RESIST_MULT57=[1,.55,.30,0],RESIST_WEAK57=1.4,RESIST_ELEMENTS57=['fire','water','ice','shock','earth','grass','holy'],RESIST_NAMES57={fire:'화염',water:'수류',ice:'빙결',shock:'전격',earth:'대지',grass:'초목',holy:'성광'};
+function gearResistLevel(entity,elem){let n=0;for(const key of['armor','cloak','relic','trinket'])n+=Number(entity?.[key]?.resist?.[elem])||0;return n}
+function entityElementResist(entity,elem){
+  if(!entity)return 0;let n=Math.max(0,entity.resist?.[elem]||0)+gearResistLevel(entity,elem);
+  n+=(entity.armor?.elementGuard74===elem?1:0)+(entity.weapon?.elementBrand74===elem?1:0);
+  if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),-1,3);
+  if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?3:2;
+  if((elem==='ice'&&(state?.status?.warm57||0)>0)||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=3;
+  return clamp(n,-1,3);
 }
+function resistMultiplier(level){return level<0?RESIST_WEAK57:RESIST_MULT57[level]}
 function entityElementMultiplier57(entity,elem){
-  if(!entity||entity===state?.player)return entityElementGuard57(entity,elem)?0:state?.duel?DUEL_ELEMENT_RESIST:1;
+  if(!entity||entity===state?.player)return resistMultiplier(entityElementResist(entity,elem))*(state?.duel?DUEL_ELEMENT_RESIST:1);
   const tile=state?.map?.[entity.y]?.[entity.x];let m=1;
   if(elem==='fire'){if(entity.lava||entity.fireTrail||/화염|살라맨더|녹아/.test(entity.name||''))m*=.25;if(entity.kind==='plant')m*=1.35}
   else if(elem==='shock'){if(entity.aquatic||[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(tile))m*=1.50;if(entity.kind==='construct')m*=1.25}
@@ -217,7 +224,7 @@ function entityElementMultiplier57(entity,elem){
   else if(elem==='ice'){if(entity.aquatic)m*=1.35;if(entity.lava||entity.fireTrail)m*=1.25}
   else if(elem==='grass'){if(entity.kind==='plant')m*=.25;if(entity.kind==='undead')m*=1.30}
   else if(elem==='earth'){if(entity.flying)m*=.25;if(entity.kind==='construct')m*=.60}
-  if(entity.boss)m*=.62;if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m;
+  if(entity.boss)m*=.62;if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m*resistMultiplier(entityElementResist(entity,elem));
 }
 function resolveElementDamage57(entity,elem,base,opts={}){
   if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity));
@@ -225,11 +232,10 @@ function resolveElementDamage57(entity,elem,base,opts={}){
   if(!state||!entity||entity.hp<=0||!Number.isFinite(base)||base<=0)return{damage:0,guarded:false,adapted:false};
   if(opts.effect&&!effectCanAffect57(opts.effect,entity))return{damage:0,guarded:false,adapted:false};
   if(opts.ground&&entity.flying)return{damage:0,guarded:false,adapted:true};
-  if(entityElementGuard57(entity,elem)){
-    if(elem==='fire'&&opts.absorb!==false&&globalThis.__MANRU_LEGEND47__?.fireAbsorb?.())globalThis.__MANRU_LEGEND47__?.healFire?.(1);
+  if((entityElementResist(entity,elem)>=3)){
     floatText(entity.x,entity.y,'저항',opts.color||'#e5c080',10);return{damage:0,guarded:true,adapted:true};
   }
-  const mult=opts.conduction105?1:entity===state.player?(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(state.map[entity.y]?.[entity.x])?1.5:1):entityElementMultiplier57(entity,elem),damage=damageEntity(entity,opts.damageParts105?.length?opts.damageParts105.reduce((n,part)=>n+Math.max(1,Math.round(part*mult)),0):Math.max(1,Math.round(base*mult)), opts.effect||(entity===state.player?null:state.player),elem);markCombatActivity57(entity===state.player?'hostile-element':'player-element');entity.hitUntil=performance.now()+120;
+  const mult=opts.conduction105?1:entity===state.player?(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(state.map[entity.y]?.[entity.x])?1.5:1)*resistMultiplier(entityElementResist(entity,elem)):entityElementMultiplier57(entity,elem),damage=damageEntity(entity,opts.damageParts105?.length?opts.damageParts105.reduce((n,part)=>n+Math.max(1,Math.round(part*mult)),0):Math.max(1,Math.round(base*mult)), opts.effect||(entity===state.player?null:state.player),elem);markCombatActivity57(entity===state.player?'hostile-element':'player-element');entity.hitUntil=performance.now()+120;
   if(damage>0&&entity.martialActor105){dojoRememberHit(entity,['ice','earth'].includes(elem)?'control':elem==='fire'||opts.ground?'area':'ranged');}
   if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem);if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3);
   if(damage>0&&opts.logDamage57!==false){const source=opts.source||({fire:'화염',water:'수류',earth:'대지',ice:'빙결',shock:'전격',grass:'초목',holy:'성광'}[elem]||elem)+' 피해',target=(state.debugBattle57&&entity.debugId57!=null?entity.debugSide57+entity.debugId57+' ':'')+(entity===state.player?'플레이어':entity.name);addLog(`${source} → ${target}: ${damage}`);}
@@ -253,7 +259,7 @@ function tickElementFields57(){
 }
   const ELEMENT_KIND74={elem_fire:'fire',elem_shock:'shock',elem_water:'water',elem_ice:'ice',elem_grass:'grass',elem_earth:'earth'};
   function baseElem74(item){return item?.element74||ELEMENT_KIND74[item?.talismanKind]||null}
-  function guard74(elem){return entityElementGuard57(state?.player,elem)}
+  function guard74(elem){return (entityElementResist(state?.player,elem)>=3)}
   function hurtSelf74(elem,dmg,status){
     dmg=Math.max(0,Math.round(Number(dmg)||0));
     if(guard74(elem)){floatText(state.player.x,state.player.y,'저항',E74[elem].soft,10);return 0}

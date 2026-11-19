@@ -133,22 +133,22 @@ const ARMORS=[
   {type:'armor',name:'경량복',tier:1,rarity:'common',def:1,eva:1,desc:'정부 요원들이 평시 활동을 위해 입는 가볍고 활동성 좋은 제식 복장.'},
   {type:'armor',name:'강화 가죽 갑옷',tier:2,rarity:'rare',def:3,eva:0,desc:'경량복 위에 질긴 가죽판을 덧대어 실전 대응력을 높였습니다.'},
   {type:'armor',name:'철제 흉갑',tier:3,rarity:'relic',def:5,eva:-1,desc:'주요 장기를 보호하기 위해 정교하게 제련된 철판을 부착했습니다.'},
-  {type:'armor',name:'관원용 두정갑',tier:4,rarity:'sealed',def:9,eva:-2,desc:'정부 고위직에게 지급되는 제식 갑옷이다. 옷 안에 촘촘한 철갑을 숨겼으며, 방어력이 높아 강화부적을 쓰면 더 단단해진다.'},
-  {type:'armor',name:'총사령관 황금갑',tier:5,rarity:'sealed',def:12,eva:-2,will:1,desc:'정부 최고위 무관에게만 하사되는 황금 비늘 갑옷이다. 본래 방어력이 가장 높아 강화부적의 효과도 크다.'}
+  {type:'armor',name:'관원용 두정갑',tier:4,rarity:'sealed',def:9,eva:-2,resist:{earth:1},desc:'정부 고위직에게 지급되는 제식 갑옷이다. 옷 안에 촘촘한 철갑을 숨겼으며, 방어력이 높아 강화부적을 쓰면 더 단단해진다.'},
+  {type:'armor',name:'총사령관 황금갑',tier:5,rarity:'sealed',def:12,eva:-2,will:1,resist:{holy:1,fire:1},desc:'정부 최고위 무관에게만 하사되는 황금 비늘 갑옷이다. 본래 방어력이 가장 높아 강화부적의 효과도 크다.'}
 ];
 const CLOAKS=[
   {type:'cloak',name:'질긴 가죽망토',tier:1,rarity:'common',staggerResist:.30,desc:'피격 시 30% 확률로 밀치기·속박·둔화를 버텨 자세가 흐트러지지 않습니다.'},
   {type:'cloak',name:'바람막이망토',tier:1,rarity:'common',focusRegen:1.35,desc:'기본 기력 자연회복에 약 35%의 추가 회복을 누적합니다.'},
   {type:'cloak',name:'여행자망토',tier:1,rarity:'common',eatSpeed:1.35,desc:'음식 사용 행동비용을 약 26% 줄여 전투 중 보급이 훨씬 안전해집니다.'},
-  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.',trapGuard:.35},
+  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',resist:{fire:1},desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.',trapGuard:.35},
   {type:'cloak',name:'암영망토',tier:3,rarity:'relic',senseReduce:1,desc:'어둠 속에서 몸을 숨기기 좋게 제작되어 적의 인식 거리를 줄입니다.'},
   {type:'cloak',name:'축지망토',tier:3,rarity:'relic',moveSpeed:1.15,desc:'깃털처럼 가벼워 발걸음을 빠르게 만듭니다.'},
   {type:'cloak',name:'자력망토',tier:3,rarity:'relic',magnet:2,desc:'주변의 전리품을 몸 쪽으로 끌어당기는 기묘한 외투입니다.'},
   {type:'cloak',name:'무술망토',tier:4,rarity:'sealed',focusRegen:2,desc:'무술의 흐름을 돕는 문양이 새겨져 기 회복 주기가 크게 빨라집니다.'},
-  {type:'cloak',name:'보호망토',tier:4,rarity:'sealed',def:3,desc:'겉감 사이에 얇은 사슬이 박혀 있어 방어력이 크게 오릅니다.'},
-  {type:'cloak',name:'반사망토',tier:4,rarity:'sealed',reflect:.25,desc:'거울처럼 매끄러운 비단이 원거리 공격을 일정 확률로 되돌립니다.'},
-  {type:'cloak',name:'용암망토',tier:5,rarity:'sealed',lavaWalk:true,desc:'화신석 실로 짠 도포. 용암을 밟고 지나갈 수 있습니다.'},
-  {type:'cloak',name:'면역망토',tier:5,rarity:'sealed',statusImmune:true,desc:'신성한 비단이 독·출혈·혼란과 같은 상태이상을 막아냅니다.'}
+  {type:'cloak',name:'보호망토',tier:4,rarity:'sealed',def:3,resist:{earth:1},desc:'겉감 사이에 얇은 사슬이 박혀 있어 방어력이 크게 오릅니다.'},
+  {type:'cloak',name:'반사망토',tier:4,rarity:'sealed',reflect:.25,resist:{shock:1},desc:'거울처럼 매끄러운 비단이 원거리 공격을 일정 확률로 되돌립니다.'},
+  {type:'cloak',name:'용암망토',tier:5,rarity:'sealed',lavaWalk:true,resist:{fire:2},desc:'화신석 실로 짠 도포. 용암을 밟고 지나갈 수 있습니다.'},
+  {type:'cloak',name:'면역망토',tier:5,rarity:'sealed',statusImmune:true,resist:{water:1,grass:1},desc:'신성한 비단이 독·출혈·혼란과 같은 상태이상을 막아냅니다.'}
 ];
 const RELICS=[
   {type:'relic',name:'장독 속 무언가',rarity:'relic',def:1,vision:-1,jarOnly57:true,jarOnMartial57:true,desc:'장독 바닥에서 건져 올린 오래된 반지. DEF +1, VIS -1. 무술을 사용할 때마다 주변의 안전하고 넓은 빈 바닥에 장독 하나를 설치한다. 놓을 자리가 없으면 설치하지 않는다.'},
@@ -156,12 +156,42 @@ const RELICS=[
   {type:'relic',name:'먹빛 벼루 조각',rarity:'relic',will:2,focus:2,desc:'WILL +2, 기력 +2. 적의 상태이상에 더 잘 저항합니다.'},
   {type:'relic',name:'깨진 천면경',rarity:'relic',eva:3,desc:'EVA +3'},
   {type:'relic',name:'장고의 쇠갈고리',rarity:'relic',atk:2,desc:'ATK +2'},
-  {type:'relic',name:'용의 여의주 파편',rarity:'sealed',atk:2,def:2,focus:3,desc:'ATK/DEF +2, 기력 +3'}
+  {type:'relic',name:'용의 여의주 파편',rarity:'sealed',atk:2,def:2,focus:3,desc:'ATK/DEF +2, 기력 +3'},
+  {type:'relic',name:'부싯돌 가락지',rarity:'relic',minFloor:4,art:{shape:'ring',mat:'ruby',gem:'fire',glyph:'火'},atk:1,resist:{fire:1},desc:'불씨를 품은 붉은 가락지. 화염 저항 Ⅰ.'},
+  {type:'relic',name:'푸른 물결 염주',rarity:'relic',minFloor:5,art:{shape:'beads',mat:'azure',gem:'water',glyph:'水'},will:1,resist:{water:1},regenEvery:10,desc:'굴릴수록 숨이 고르다. 수류 저항 Ⅰ.'},
+  {type:'relic',name:'서릿발 옥패',rarity:'relic',minFloor:6,art:{shape:'plaque',mat:'silver',gem:'ice',glyph:'氷'},def:1,resist:{ice:1},desc:'손끝이 시리다. 빙결 저항 Ⅰ.'},
+  {type:'relic',name:'뇌문 구리 거울',rarity:'relic',minFloor:7,art:{shape:'mirror',mat:'bronze',gem:'shock',glyph:'雷'},eva:2,resist:{shock:1},desc:'번개의 결을 비추는 거울. 전격 저항 Ⅰ.'},
+  {type:'relic',name:'호박 암맥 인장',rarity:'relic',minFloor:8,art:{shape:'seal',mat:'amber',gem:'earth',glyph:'土'},def:1,resist:{earth:1},thorns:1,desc:'단단한 인장. 대지 저항 Ⅰ.'},
+  {type:'relic',name:'푸른 잎 팔찌',rarity:'relic',minFloor:6,art:{shape:'bracelet',mat:'jade',gem:'grass',glyph:'木'},resist:{grass:1},regenEvery:8,desc:'살아 있는 가지를 엮은 팔찌. 초목 저항 Ⅰ.'},
+  {type:'relic',name:'백은 성광 염주',rarity:'relic',minFloor:9,art:{shape:'beads',mat:'silver',gem:'holy',glyph:'聖'},resist:{holy:1},killHeal:1,desc:'성광이 스민 은 염주. 성광 저항 Ⅰ.'},
+  {type:'relic',name:'사계 오행환',rarity:'sealed',minFloor:16,art:{shape:'ring',mat:'gold',gem:'holy',glyph:'聖'},focus:1,resist:{fire:1,water:1,ice:1,shock:1,earth:1,grass:1},desc:'여섯 원소를 한 고리에 가둔 반지. 모든 원소 저항 Ⅰ.'},
+  {type:'relic',name:'불사조 깃 비녀',rarity:'sealed',minFloor:12,art:{shape:'hairpin',mat:'ruby',gem:'fire',glyph:'火'},resist:{fire:2,water:-1},regenEvery:6,desc:'재 속에서 다시 일어나는 깃. 물에 약하다.'},
+  {type:'relic',name:'서리 여왕의 가락지',rarity:'sealed',minFloor:12,art:{shape:'ring',mat:'silver',gem:'ice',glyph:'氷'},def:2,resist:{ice:2,shock:-1},desc:'번개가 닿으면 금이 간다.'},
+  {type:'relic',name:'뇌공의 인장',rarity:'sealed',minFloor:13,art:{shape:'seal',mat:'gold',gem:'shock',glyph:'雷'},atk:2,eva:-1,resist:{shock:2},strike:{element:'shock',dmg:3},desc:'휘두를 때 불꽃이 튄다. 전격 저항 Ⅱ.'},
+  {type:'relic',name:'역린 비늘 패',rarity:'sealed',minFloor:14,art:{shape:'plaque',mat:'jade',gem:'water',glyph:'水'},atk:2,resist:{water:1,fire:-1},killFocus:1,desc:'건드리면 화를 입는 비늘.'},
+  {type:'relic',name:'천면 거울 보주',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'orb',mat:'silver',gem:'sapphire',cord:'indigo',glyph:'氷',premium:true},eva:3,will:2,resist:{shock:1,ice:1,holy:1},quirk:'frostWard',desc:'천 개의 거울이 모여 하나의 구슬이 되었다.'},
+  {type:'relic',name:'공허 비취 보주',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'orb',mat:'jade',gem:'emerald',cord:'forest',glyph:'土',premium:true},atk:3,resist:{fire:1,earth:1,shock:1},killHeal:2,quirk:'chainBurst',desc:'공허 위에 떠 있던 잎사귀의 결을 품은 구슬.'}
 ];
 const TRINKETS=[
   {type:'trinket',name:'방 번호패',rarity:'common',vision:1,desc:'길을 기억하기 쉬워진다. VIS +1'},
   {type:'trinket',name:'비단 매듭',rarity:'rare',eva:2,desc:'EVA +2'},
-  {type:'trinket',name:'금박 부적',rarity:'relic',will:2,desc:'WILL +2. 적의 상태이상에 더 잘 저항합니다.'}
+  {type:'trinket',name:'금박 부적',rarity:'relic',will:2,desc:'WILL +2. 적의 상태이상에 더 잘 저항합니다.'},
+  {type:'trinket',name:'붉은 매듭 노리개',rarity:'common',minFloor:2,art:{shape:'norigae',mat:'ruby',gem:'fire',glyph:'火'},resist:{fire:1},desc:'액을 막는 붉은 매듭. 화염 저항 Ⅰ.'},
+  {type:'trinket',name:'푸른 방울',rarity:'rare',minFloor:3,art:{shape:'bell',mat:'azure',gem:'water',glyph:'水'},resist:{water:1},statusGuard:.15,desc:'울릴 때마다 탁기가 가신다. 수류 저항 Ⅰ.'},
+  {type:'trinket',name:'서리 호리병',rarity:'rare',minFloor:5,art:{shape:'gourd',mat:'silver',gem:'ice',glyph:'氷'},resist:{ice:1},desc:'마개 틈으로 찬 김이 샌다. 빙결 저항 Ⅰ.'},
+  {type:'trinket',name:'번개 살부채',rarity:'rare',minFloor:6,art:{shape:'fan',mat:'gold',gem:'shock',glyph:'雷'},resist:{shock:1},moveMul:.97,desc:'펼치면 머리카락이 곤두선다. 전격 저항 Ⅰ.'},
+  {type:'trinket',name:'흙 인형 노리개',rarity:'common',minFloor:4,art:{shape:'norigae',mat:'amber',gem:'earth',glyph:'土'},def:1,resist:{earth:1},desc:'투박한 흙 인형. 대지 저항 Ⅰ.'},
+  {type:'trinket',name:'약초 엽전 꿰미',rarity:'rare',minFloor:3,art:{shape:'coins',mat:'jade',gem:'grass',glyph:'木'},resist:{grass:1},killFocus:1,desc:'약초 냄새가 밴 엽전. 초목 저항 Ⅰ.'},
+  {type:'trinket',name:'은 성광 비녀',rarity:'rare',minFloor:7,art:{shape:'hairpin',mat:'silver',gem:'holy',glyph:'聖'},will:1,resist:{holy:1},desc:'가는 은빛 비녀. 성광 저항 Ⅰ.'},
+  {type:'trinket',name:'도깨비 방울',rarity:'relic',minFloor:8,art:{shape:'bell',mat:'ebony',gem:'',glyph:''},critAdd:.05,moveMul:.96,desc:'소리 없이 흔들리는 방울.'},
+  {type:'trinket',name:'행운 엽전 꿰미',rarity:'rare',minFloor:2,art:{shape:'coins',mat:'gold',gem:'',glyph:''},vision:1,eva:1,desc:'세어 볼수록 하나가 더 있다.'},
+  {type:'trinket',name:'호신 호리병',rarity:'relic',minFloor:9,art:{shape:'gourd',mat:'amber',gem:'',glyph:''},statusGuard:.25,def:1,desc:'독과 저주를 한 모금에 삼킨다.'},
+  {type:'trinket',name:'가시 노리개',rarity:'rare',minFloor:5,art:{shape:'norigae',mat:'ebony',gem:'',glyph:''},def:1,thorns:2,desc:'만지면 손이 찔린다.'},
+  {type:'trinket',name:'피빛 방울',rarity:'relic',minFloor:10,art:{shape:'bell',mat:'ruby',gem:'',glyph:''},killHeal:2,lowHpAtk:2,desc:'피 냄새를 맡으면 운다.'},
+  {type:'trinket',name:'수정 얼음 부채',rarity:'relic',minFloor:11,art:{shape:'fan',mat:'azure',gem:'ice',glyph:'氷'},resist:{ice:1,water:1},atkCostMul:.96,desc:'서늘한 바람이 인다.'},
+  {type:'trinket',name:'화약 호리병',rarity:'relic',minFloor:11,art:{shape:'gourd',mat:'bronze',gem:'fire',glyph:'火'},resist:{fire:1,earth:1},strike:{element:'fire',dmg:2},desc:'마개를 열면 불티가 튄다.'},
+  {type:'trinket',name:'백면 연화 노리개',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'lotus',mat:'pearl',gem:'pearl',cord:'ivory',glyph:'聖',premium:true},will:2,def:1,resist:{water:1,grass:1,holy:1},regenEvery:6,quirk:'luckyMend',desc:'꽃잎이 닫힐 때마다 상처가 아문다.'},
+  {type:'trinket',name:'옥루 연화 비녀',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'lotus',mat:'azure',gem:'topaz',cord:'saffron',glyph:'',premium:true},vision:2,focus:2,critAdd:.06,statusGuard:.25,quirk:'lastStand',desc:'가장 높은 누각의 이슬을 머금은 비녀.'}
 ];
 const ICE_ESSENCE_THROW=Object.freeze({radius:2,damage:1,stun:2});
 const CONSUMABLES=[
