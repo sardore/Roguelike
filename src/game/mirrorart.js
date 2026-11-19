@@ -209,8 +209,8 @@ function drawGlassAltitudeHaze(ctx,px,py,x,y){
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
- if(t===TT.VOID){if(state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);else drawGlassAltitudeHaze(ctx,px,py,x,y);return true}
- if(t===TT.WATER){drawGlassLake(ctx,px,py,x,y,now);return true}
+ // the lake carries the same altitude haze under a tower as the open sky does on the floors above
+ if(t===TT.VOID||t===TT.WATER){if(t===TT.WATER||state.branchContext105.level===1)drawGlassLake(ctx,px,py,x,y,now);drawGlassAltitudeHaze(ctx,px,py,x,y);return true}
  const deck=(t===TT.RAFT||t===MIRROR_CARGO_TILE)?glassPlatformAt(x,y):null;
  if(deck){if(deck.under!==TT.VOID)drawGlassLake(ctx,px,py,x,y,now);drawGlassPlatformCell(ctx,px,py,x,y,deck);return true}
  if(t===TT.WALL){
