@@ -207,12 +207,12 @@ function applyElementField57(field,elem,damage,opts={}){
 const RESIST_MULT57=[1,.55,.30,0],RESIST_ELEMENTS57=['fire','water','ice','shock','earth','grass','holy'],RESIST_NAMES57={fire:'화염',water:'수류',ice:'빙결',shock:'전격',earth:'대지',grass:'초목',holy:'성광'};
 function gearResistLevel(entity,elem){let n=0;for(const key of['armor','cloak','relic','trinket'])n+=Math.max(0,entity?.[key]?.resist?.[elem]||0);return n}
 function entityElementResist(entity,elem){
-  if(!entity)return 0;let n=Math.max(0,entity.resist?.[elem]||0);
+  if(!entity)return 0;let n=Math.max(0,entity.resist?.[elem]||0)+gearResistLevel(entity,elem);
   n+=(entity.armor?.elementGuard74===elem?1:0)+(entity.weapon?.elementBrand74===elem?1:0);
   if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),0,3);
   if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?3:2;
   if((elem==='ice'&&(state?.status?.warm57||0)>0)||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=3;
-  return clamp(n+gearResistLevel(entity,elem),0,3);
+  return clamp(n,0,3);
 }
 function entityElementMultiplier57(entity,elem){
   if(!entity||entity===state?.player)return RESIST_MULT57[entityElementResist(entity,elem)]*(state?.duel?DUEL_ELEMENT_RESIST:1);
