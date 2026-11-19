@@ -137,9 +137,10 @@ const cloud = await s.page.evaluate(() => {
     tiles.push([0, 1, 2].map(mirrorTest.skyTile));
     fresh.push(st.seen.size === 0 && mirrorTest.draw(true));
   }
-  return { shared: tiles.every(t => t.every((tile, i) => tile === tiles[0][i])), fresh };
+  const again = [1, 2, 3].map(level => { mirrorTest.go({ id: 'qa-mirror', to: 'mirror:' + level, arrival: 'up' }); return [0, 1, 2].map(mirrorTest.skyTile); });
+  return { shared: tiles.every((t, li) => t.every((tile, i) => tile === again[li][i])) && tiles[0][0] !== tiles[1][0] && tiles[1][0] !== tiles[2][0] && tiles[0][0] !== tiles[2][0], fresh };
 });
-assert.equal(cloud.shared, true, '층마다 다른 구름 텍스처가 만들어졌다');
+assert.equal(cloud.shared, true, '구름 텍스처는 층마다 팔레트가 다르고 같은 층에서는 재사용되어야 한다');
 assert.deepEqual(cloud.fresh, [true, true, true], '아무것도 발견하지 않은 층을 그리지 못했다');
 
 const encounter = () => {
