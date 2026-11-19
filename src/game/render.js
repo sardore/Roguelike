@@ -269,6 +269,14 @@ function impact(x,y,color="#f0d6d6",power=3,delay=0){
   FX.rings.push({x:x*TILE+TILE/2,y:y*TILE+TILE/2,color,start:performance.now()+delay,life:270,power});
   if(!delay){FX.shakePower=Math.max(FX.shakePower,power);FX.shakeUntil=performance.now()+110;}
 }
+// A sounding bell: broad rings travelling outwards to `reach` tiles, a shiver of the screen and sparks of light.
+// The bell itself is struck: it rings a beat later than the first wave, so the sound seems to leave the bell.
+function bellFX(x,y,reach,color='#ffdc8a'){
+  const now=performance.now();
+  for(let i=0;i<3;i++)FX.rings.push({x:x*TILE+TILE/2,y:y*TILE+TILE/2,color:i===1?'#fff2c8':color,start:now+i*150,life:640,power:4,reach:reach*TILE,wide:true});
+  burst(x,y,color,16,1.2);burst(x,y,'#fff2c8',8,.7,120);
+  FX.shakePower=Math.max(FX.shakePower,5);FX.shakeUntil=now+300;flash('#ffe9b0',110);
+}
 function flash(color="#ffffff",ms=70){
   FX.flashColor=color;FX.flashUntil=performance.now()+ms;
 }
@@ -1538,7 +1546,7 @@ function drawCreature(m){
 function drawCombatParticles(q,now){q.save();for(const p of combatPresentationEffects().particles||[]){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
 function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
   const combatFx=combatPresentationEffects();
-  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*.64;X.strokeStyle=r.color;X.lineWidth=Math.max(1,2.2*(1-t));X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
+  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=r.reach?4+t*r.reach:4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*(r.wide?.8:.64);X.strokeStyle=r.color;X.lineWidth=Math.max(1,(r.wide?4.2:2.2)*(1-t));if(r.wide){X.shadowColor=r.color;X.shadowBlur=10}X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
 
   for(const d of combatFx.doors||[]){
     const t=(now-d.start)/d.life;if(t<0||t>=1)continue;
@@ -1987,12 +1995,12 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     }
   }
   function drawSceneryFog(b,unknownColor,ctx=X){
-    const mine=mineState(),openSky=state.branchContext105?.id==='mirror'&&state.branchContext105.level>1;
+    const mine=mineState(),openSky=state.branchContext105?.id==='mirror';
     ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const key=k(x,y);if(state.visible.has(key)||(mine&&mineSceneryVisible(x,y)))continue;
-      // the open sky under the tower bridges is never hidden: only dimmed where it is out of sight
-      if(openSky&&state.map[y]?.[x]===TT.VOID){ctx.fillStyle='rgba(30,26,80,.22)';ctx.fillRect(x*TILE,y*TILE,TILE,TILE);continue}
+      // the open sky under the tower bridges is never fogged, seen or not
+      if(openSky&&(state.map[y]?.[x]===TT.VOID||(state.branchContext105.level===1&&state.map[y]?.[x]===TT.WATER)))continue;
       ctx.fillStyle=state.seen.has(key)||(mine&&mineScenerySeen(x,y))?'rgba(3,4,5,.67)':unknownColor;
       ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
     }

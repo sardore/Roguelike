@@ -1185,6 +1185,19 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(I.type==='rod'&&m.rodLeft61>0&&m.hp>0&&!state.dead){const prey=I.data.targetId==='player'?state.player:state.monsters.find(t=>t.combatantId54===I.data.targetId);if(prey&&combatTargetValid57(m,prey))setMonsterIntent(m,'rod',[{x:prey.x,y:prey.y}],'피뢰침 예고',{x:prey.x,y:prey.y,left:m.rodLeft61,targetId:I.data.targetId,force61:true})}
     return true
   }
+  // The alarm bell: wakes everything within twelve cells and gives the caster's allies within eight cells brute strength.
+  // Each ally is marked with a ringing mark of its own so the player can see who was strengthened.
+  function soundAlarmBell(m,floor){
+    alertNearby(m.x,m.y,12);const turns=Math.max(1,floor);let boosted=0;
+    bellFX(m.x,m.y,8);floatText(m.x,m.y,'警','#ffe29a',16);
+    for(const a of state.monsters)if(a!==m&&entitiesAllied57(a,m)&&a.hp>0&&entityDistance57(a,m)<=8&&!a.boss&&grantMonsterPower(a,turns)){boosted++;floatText(a.x,a.y,'괴력','#ffdc8a',10);impact(a.x,a.y,'#ffdc8a',3,80+entityDistance57(a,m)*70)}
+    addLog(boosted?`${m.name}이 경종을 울렸다. 주변 ${boosted}기가 ${turns}턴간 괴력을 얻는다.`:`${m.name}이 경종을 울렸다.`);
+    return boosted;
+  }
+  // The lightning rod: a 1x1 bolt aimed at the target's cell, repeated for three turns (see the 'rod' intent).
+  function startLightningRod(m,target){
+    return setMonsterIntent(m,'rod',[{x:target.x,y:target.y}],'피뢰침 예고',{x:target.x,y:target.y,left:3,targetId:target===state.player?'player':combatantId(target)});
+  }
   // Wall slam: a strike whose bonus damage lands as a 3x3 blast. The blast breaks plain walls and has no warning.
   function wallSlamTurn(m,target){
     const wall=combatLineCellsR8(m.x,m.y,target.x,target.y).filter(c=>!(c.x===m.x&&c.y===m.y)).slice(0,2).find(c=>state.map[c.y]?.[c.x]===TT.WALL&&insideMapInterior(c.x,c.y)),center=wall||(entityDistance57(m,target)<=1&&monsterAttackLineR(m,1,{target}).ok?{x:target.x,y:target.y}:null);
@@ -1285,9 +1298,9 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(m.role61==='gas'&&d<=6&&(m.gasNextAgency57||0)<=state.floorTurn){const x=target.x,y=target.y;if(setMonsterIntent(m,'gas',intentCells(x,y,1),m.gasStatus57==='drunk'?'취기 가스 예고':'독가스 예고',{x,y})){m.gasNextAgency57=state.floorTurn+6;return true}}
     if(combatBlinkActive(target)&&m.role61==='blinkPunisher'&&d<=4&&monsterAttackLineR(m,4,{target}).ok){projectileFX(m.x,m.y,target.x,target.y,'#9566ac');const r=monsterAttacksTarget(m,2,{target,delivery:'ranged',projectile:true,reflectable:true,range:4});if(r.hit&&!state.dead){const drain=floor>=21?3:2;target.focus=Math.max(0,(target.focus||0)-drain);addLog(`${m.name}이 점멸 흔적을 물어뜯었다. 기 -${drain}.`)}setMonsterStatus(m,'stunned',1);return true}
     if(m.targetMark61&&d<=10&&(m.markCd61||0)<=0){state.targetMark61=Math.max(state.targetMark61||0,m.targetMark61.turns);m.markCd61=m.targetMark61.cooldown;floatText(m.x,m.y,'목표 지정','#ff9a8a',10);addLog(`${m.name}이 목표를 지정했다. ${m.targetMark61.turns}턴 동안 모든 적이 당신의 위치를 안다.`);setMonsterStatus(m,'stunned',1);return true}else if(m.markCd61>0)m.markCd61--;
-    if((m.role61==='alarm'||m.alarmSkill61)&&d<=8&&(m.alarmCd61||0)<=0){alertNearby(m.x,m.y,12);const turns=Math.max(1,floor);let boosted=0;for(const a of state.monsters)if(a!==m&&entitiesAllied57(a,m)&&a.hp>0&&entityDistance57(a,m)<=8&&!a.boss&&grantMonsterPower(a,turns)){boosted++;floatText(a.x,a.y,'괴력','#ffdc8a',10)}m.alarmCd61=floor>=16?7:8;addLog(boosted?`${m.name}이 경종을 울렸다. 주변 ${boosted}기가 ${turns}턴간 괴력을 얻는다.`:`${m.name}이 경종을 울렸다.`);setMonsterStatus(m,'stunned',1);return true}else if(m.alarmCd61>0)m.alarmCd61--;
+    if((m.role61==='alarm'||m.alarmSkill61)&&d<=8&&(m.alarmCd61||0)<=0){soundAlarmBell(m,floor);m.alarmCd61=floor>=16?7:8;setMonsterStatus(m,'stunned',1);return true}else if(m.alarmCd61>0)m.alarmCd61--;
     if(m.wallSlam61&&(m.slamCd61||0)<=0&&d<=2&&wallSlamTurn(m,target))return true;else if(m.slamCd61>0)m.slamCd61--;
-    if(m.lightningRod61&&(m.rodCd61||0)<=0&&d<=9&&setMonsterIntent(m,'rod',[{x:target.x,y:target.y}],'피뢰침 예고',{x:target.x,y:target.y,left:3,targetId:target===state.player?'player':combatantId(target)})){m.rodCd61=12;return true}else if(m.rodCd61>0)m.rodCd61--;
+    if(m.lightningRod61&&(m.rodCd61||0)<=0&&d<=9&&startLightningRod(m,target)){m.rodCd61=12;return true}else if(m.rodCd61>0)m.rodCd61--;
     if(artilleryTurn(m,target))return true;
     if(m.role61==='poison'&&d<=6&&monsterAttackLineR(m,6,{target}).ok&&state.floorTurn%(floor>=11?4:5)===phase%(floor>=11?4:5)){const x=target.x,y=target.y;return setMonsterIntent(m,'poison',intentCells(x,y,1),'독 안개 예고',{x,y})}
     if(m.role61==='controller'&&d<=9&&monsterAttackLineR(m,9,{target}).ok&&state.floorTurn%(floor>=21?5:6)===phase%(floor>=21?5:6)){return setMonsterIntent(m,'seal',intentLineCells(m,target,8),'기 봉인 사선',{x:target.x,y:target.y})}
