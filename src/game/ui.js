@@ -977,7 +977,8 @@ const RC={
 /* R7 refactor: library scroll visuals are part of canonical exact-item art. */
 function consumeLibraryScroll1022(index,item){if(!item?.libraryScroll1022)return false;const kind=item.libraryKind1022;if(kind==='mapping'){let secret=0;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){VisibilityService.rememberKey(K1020(x,y));if(state.map[y][x]===TT.SECRET_DOOR)secret++}VisibilityService.compute();addLog(`도서관 지도첩: 전체 지도와 숨은 문 ${secret}개를 확인했다.`);toast('층 전체 구조가 드러났다.')}else if(kind==='identify'){const count=identifyInventory(item.name,{limit:3,exclude:item});addLog(`도서관 감식록: 미감정 물품 ${count}개 감정.`);toast(`감정 ${count}개`)}else{cleanseStatuses();state.status.ward=Math.max(state.status.ward||0,11);addLog('도서관 수호장: 해로운 상태 정화 · 수호막 10턴.');toast('수호막 10턴')}consumeItemQuantity(item);renderInventory?.();updateAll();globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"consumeLibraryScroll1022"}).value;return true}
 let ANVIL_SESSION105=null;
-function inventoryCapacity(){return 25+(state?.player?.trinket?.branchEffect105==='capacity'?5:0)}
+const INVENTORY_BASE=25,SATCHEL_SLOTS=3;
+function inventoryCapacity(){return INVENTORY_BASE+(state?.player?.trinket?.branchEffect105==='capacity'?SATCHEL_SLOTS:0)+martialPassiveSlots()}
 function clearTalismanInput57(){globalThis.__MANRU_CONSUMABLE56_ACTIONS__?.cancelTarget?.();globalThis.__MANRU_TALISMAN74_ACTIONS__?.cancelTarget?.()}
 function cipherResult(secret,guess){return guess.map((v,i)=>v===secret[i]?'O':secret.includes(v)?'P':'X')}
   /* ===== v10.0.1: class selection / player sprite / desktop right-click inspect ===== */

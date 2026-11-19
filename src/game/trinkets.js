@@ -18,9 +18,17 @@ const CHARM_MATERIALS={
 const CHARM_ELEM_MATERIAL={fire:['ruby','copper','coral','amber'],water:['azure','turquoise','lapis'],ice:['silver','pearl','celadon','azure'],shock:['gold','amethyst','obsidian'],earth:['amber','bronze','ebony','rosegold'],grass:['jade','celadon','ebony'],holy:['silver','gold','pearl','rosegold']};
 const CHARM_ELEM_PREFIX={fire:'염화',water:'청류',ice:'한빙',shock:'뇌명',earth:'암맥',grass:'녹음',holy:'성광'};
 const CHARM_SHAPES_BY_SLOT={relic:['ring','beads','plaque','mirror','seal','bracelet'],trinket:['norigae','bell','gourd','coins','fan','hairpin']};
-const CHARM_SHAPE_NAME={ring:'반지',beads:'염주',plaque:'옥패',mirror:'거울',seal:'인장',bracelet:'팔찌',norigae:'노리개',bell:'방울',gourd:'호리병',coins:'엽전 꿰미',fan:'부채',hairpin:'비녀'};
-const CHARM_FLAVOR={ring:'손가락에 맞춰 두면 은은한 기운이 돈다.',beads:'한 알씩 굴릴 때마다 호흡이 가라앉는다.',plaque:'뒷면에 닳은 주문이 새겨진 패.',mirror:'비추는 쪽의 기운을 되받는 작은 거울.',seal:'찍는 자의 뜻을 새기는 작은 도장.',bracelet:'팔목을 감싸는 얇은 고리.',norigae:'매듭마다 소원이 묶인 노리개.',bell:'소리가 닿는 곳까지 액을 쫓는다.',gourd:'마개를 열면 어디선가 약초 냄새가 난다.',coins:'꿰미째 들면 쨍그랑 소리가 난다.',fan:'펼칠 때마다 바람의 결이 달라진다.',hairpin:'머리에 꽂아 두는 가는 장식.'};
+const CHARM_SHAPE_NAME={ring:'반지',beads:'염주',plaque:'옥패',mirror:'거울',seal:'인장',bracelet:'팔찌',norigae:'노리개',bell:'방울',gourd:'호리병',coins:'엽전 꿰미',fan:'부채',hairpin:'비녀',orb:'보주',lotus:'연화'};
+const CHARM_FLAVOR={ring:'손가락에 맞춰 두면 은은한 기운이 돈다.',beads:'한 알씩 굴릴 때마다 호흡이 가라앉는다.',plaque:'뒷면에 닳은 주문이 새겨진 패.',mirror:'비추는 쪽의 기운을 되받는 작은 거울.',seal:'찍는 자의 뜻을 새기는 작은 도장.',bracelet:'팔목을 감싸는 얇은 고리.',norigae:'매듭마다 소원이 묶인 노리개.',bell:'소리가 닿는 곳까지 액을 쫓는다.',gourd:'마개를 열면 어디선가 약초 냄새가 난다.',coins:'꿰미째 들면 쨍그랑 소리가 난다.',fan:'펼칠 때마다 바람의 결이 달라진다.',hairpin:'머리에 꽂아 두는 가는 장식.',orb:'쥐고 있으면 손바닥이 따뜻해지는 구슬.',lotus:'꽃잎이 한 겹씩 천천히 열린다.'};
 const CHARM_PREFIX_SPECIAL={regenEvery:'생명',killHeal:'피빛',killFocus:'기맥',thorns:'가시',lowHpAtk:'배수',lowHpDef:'결사',critAdd:'쾌검',moveMul:'신속',atkCostMul:'속공',statusGuard:'불침',strike:'격발',atk:'맹호',def:'철벽',eva:'그림자',will:'명경',vision:'천리',focus:'기맥'};
+const CHARM_QUIRKS={
+  chainBurst:{name:'연쇄 폭죽',desc:'격파 시 인접한 적에게 화염 3',prefix:'폭죽'},
+  luckyMend:{name:'요행',desc:'피격 시 12% 확률로 받은 피해를 전부 회복',prefix:'요행'},
+  lastStand:{name:'불굴',desc:'층마다 한 번, HP 20% 이하가 되면 HP 30% 회복',prefix:'불굴'},
+  feast:{name:'탐식',desc:'격파 시 8% 확률로 말린 육포를 떨어뜨림',prefix:'탐식'},
+  frostWard:{name:'서리 방벽',desc:'근접 피격 시 15% 확률로 공격자 기절 1턴',prefix:'서리'}
+};
+const CHARM_PREMIUM_PREFIX=['천면','명경','청명','월광','운무'];
 const CHARM_STATS=['atk','def','eva','will','vision','focus'];
 const CHARM_STAT_LABEL={focus:'기력'};
 
@@ -46,6 +54,7 @@ function charmTraitLines(item){
   if(item.moveMul)out.push(`이동 비용 ${item.moveMul<1?'-':'+'}${Math.abs(charmPct(1-item.moveMul))}%`);
   if(item.atkCostMul)out.push(`공격 비용 ${item.atkCostMul<1?'-':'+'}${Math.abs(charmPct(1-item.atkCostMul))}%`);
   if(item.statusGuard)out.push(`상태이상 ${charmPct(item.statusGuard)}% 무효`);
+  if(item.quirk&&CHARM_QUIRKS[item.quirk])out.push(`✦ ${CHARM_QUIRKS[item.quirk].name}: ${CHARM_QUIRKS[item.quirk].desc}`);
   if(item.strike)out.push(`타격 시 ${RESIST_NAMES57[item.strike.element]||item.strike.element} 피해 +${item.strike.dmg}`);
   return out;
 }
@@ -66,11 +75,21 @@ function charmPostTurn(){
 function charmOnKill(mon){
   const p=state?.player;if(!p||p.hp<=0||mon?.lastDamageOpponent57!=='player')return;
   const heal=charmSum('killHeal'),focus=charmSum('killFocus');
+  for(const g of charmGear()){
+    if(g.quirk==='chainBurst')for(const n of [...state.monsters])if(n!==mon&&n.hp>0&&entityDistance57(n,mon)<=1&&factionsHostile57(entityFaction(p),entityFaction(n)))resolveElementDamage57(n,'fire',3,{effect:effectSource57(p),source:g.name,color:CHARM_GEM.fire});
+    if(g.quirk==='feast'&&globalThis.__MANRU_RANDOM57__()<.08){const food=foodDef('말린 육포');if(food)PlacementService.placeItem({...clone(food),count:1},{x:mon.x,y:mon.y})}
+  }
   if(heal>0&&p.hp<p.maxHp){const g=recoverCombatHealth(p,heal);if(g>0)floatText(p.x,p.y,`+${g}`,'#e08a7a',9)}
   if(focus>0&&Number.isFinite(p.focus))p.focus=Math.min(getStats().maxFocus,p.focus+focus);
 }
 function charmOnHurt(source,amount){
-  const p=state?.player,thorns=charmSum('thorns');
+  const p=state?.player;if(!p||amount<=0)return;
+  for(const g of charmGear()){
+    if(g.quirk==='luckyMend'&&p.hp>0&&globalThis.__MANRU_RANDOM57__()<.12){const back=recoverCombatHealth(p,amount);if(back>0)floatText(p.x,p.y,'요행','#e6d49a',10)}
+    if(g.quirk==='lastStand'&&p.hp>0&&p.hp<=p.maxHp*.2&&p.lastStandFloor!==state.floor){p.lastStandFloor=state.floor;recoverCombatHealth(p,Math.ceil(p.maxHp*.3));floatText(p.x,p.y,'불굴','#e6d49a',12);addLog(`${g.name}이 몸을 일으켜 세웠다.`)}
+    if(g.quirk==='frostWard'&&source&&source!==p&&source.hp>0&&entityDistance57(source,p)<=1&&!source.boss&&globalThis.__MANRU_RANDOM57__()<.15)applyCombatStatus(source,'stun',1,1,{source:p,element:'ice',stagger:true});
+  }
+  const thorns=charmSum('thorns');
   if(!p||!(thorns>0)||!source||source===p||source.hp<=0||amount<=0||entityDistance57(source,p)>1||!factionsHostile57(entityFaction(p),entityFaction(source)))return;
   const dealt=damageEntity(source,thorns,p);if(dealt>0){floatText(source.x,source.y,`반격 -${dealt}`,'#d6b77d',9);if(source.hp<=0)killMonster(source)}
 }
@@ -85,22 +104,23 @@ function charmStrike(target,actor){
 }
 
 /* ---- randart roller ---- */
-function makeRandart(slot,tier=3,rnd=()=>globalThis.__MANRU_RANDOM57__()){
+function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()){
   const pick=a=>a[Math.floor(rnd()*a.length)],chance=p=>rnd()<p,shuffle=a=>a.map(v=>[rnd(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
   tier=Math.max(1,Math.min(5,Math.round(tier)));
   const it={type:slot,randart:true,tier,rarity:tier>=5?'sealed':tier>=3?'relic':'rare',identified:true,curseImmune991:true,count:1,resist:{}};
-  const elems=shuffle(RESIST_ELEMENTS57),resistCount=2+(chance(.35)?1:0);
+  const premium=!!opts.premium,elems=shuffle(RESIST_ELEMENTS57),roll=rnd(),resistCount=premium?3:roll<.3?1:roll<.75?2:3;
   for(const el of elems.slice(0,resistCount))it.resist[el]=1;
+  if(premium){it.resist[elems[0]]=2;it.premium=true;it.rarity='sealed';it.tier=5}
   const mainKey=pick(CHARM_STATS),statValue={atk:1+(tier>=3?1:0)+(tier>=5?1:0),def:1+(tier>=3?1:0),eva:1+(tier>=2?1:0)+(tier>=4?1:0),will:1+(tier>=3?1:0),vision:1+(tier>=4?1:0),focus:tier>=3?3:2};
   it[mainKey]=statValue[mainKey];
   if(chance(.5)){const k=pick(CHARM_STATS.filter(x=>x!==mainKey));it[k]=Math.max(1,statValue[k]-1)}
-  const drawback=chance(.3);
+  const drawback=!premium&&chance(.3);
   if(drawback){
     const rest=elems.slice(resistCount);
     if(rest.length&&chance(.6))it.resist[rest[0]]=-1;
     else{const k=pick(['vision','eva','def'].filter(x=>!it[x]));if(k)it[k]=-1}
   }
-  let specialCount=(tier>=3?(chance(.5)?2:1):(chance(.6)?1:0))+(drawback?1:0);specialCount=Math.min(3,specialCount);
+  let specialCount=premium?2:(tier>=3?(chance(.5)?2:1):(chance(.6)?1:0))+(drawback?1:0);specialCount=Math.min(3,specialCount);
   const specials={
     regenEvery:()=>Math.max(5,11-tier),killHeal:()=>1+(tier>=4?1:0),killFocus:()=>1+(tier>=3?1:0),thorns:()=>1+(tier>=3?1:0),
     lowHpAtk:()=>2+(tier>=4?1:0),lowHpDef:()=>2,critAdd:()=>.03+.01*(tier-1),moveMul:()=>+(1-(.03+.01*(tier-1))).toFixed(2),
@@ -109,12 +129,13 @@ function makeRandart(slot,tier=3,rnd=()=>globalThis.__MANRU_RANDOM57__()){
   };
   for(const key of shuffle(Object.keys(specials)).slice(0,specialCount))it[key]=specials[key]();
   if(it.strike&&!it.strike.element)it.strike.element=pick(RESIST_ELEMENTS57);
+  if(premium||(tier>=2&&chance(.28)))it.quirk=pick(Object.keys(CHARM_QUIRKS));
   const posResist=Object.keys(it.resist).filter(e=>it.resist[e]>0),dominant=posResist[0]||null;
   const specialKey=Object.keys(specials).find(k=>it[k]);
-  const mat=pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=pick(CHARM_SHAPES_BY_SLOT[slot]),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
-  const prefix=dominant?CHARM_ELEM_PREFIX[dominant]:(CHARM_PREFIX_SPECIAL[specialKey]||CHARM_PREFIX_SPECIAL[mainKey]||'무명');
+  const mat=premium?pick(['gold','silver','pearl','rosegold','amethyst','azure']):pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=premium?(slot==='relic'?'orb':'lotus'):pick(CHARM_SHAPES_BY_SLOT[slot]),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
+  const prefix=premium?pick(CHARM_PREMIUM_PREFIX):dominant?CHARM_ELEM_PREFIX[dominant]:(CHARM_PREFIX_SPECIAL[specialKey]||CHARM_PREFIX_SPECIAL[mainKey]||'무명');
   it.name=`${prefix} ${CHARM_MATERIALS[mat].name} ${CHARM_SHAPE_NAME[shape]}`;
-  it.art={shape,mat,gem:gemKey,cord:cordKey,glyph:dominant?CHARM_GLYPH[dominant]:''};
+  it.art={shape,mat,gem:gemKey,cord:cordKey,glyph:dominant?CHARM_GLYPH[dominant]:'',premium};
   it.desc=`${CHARM_MATERIALS[mat].name}으로 빚은 ${CHARM_SHAPE_NAME[shape]}. ${CHARM_FLAVOR[shape]}`;
   if(!Object.keys(it.resist).length)delete it.resist;
   return it;
@@ -204,10 +225,25 @@ function drawCharmArt(q,it){
     gem(37,10,4.2);
     for(const[x,y,len]of[[31,17,8],[34,16,10]]){thin(x,y,x-2,y+len,trim,.9);orb(x-2,y+len+1,1.9,g)}
     orb(7,43,2.4,cordHex);break}
+  case'orb':{
+    fe(24,23,19,19,'rgba(255,240,200,.10)');
+    fp([[13,40],[35,40],[32,44],[16,44]],dark);fp([[14,40.5],[34,40.5],[31.4,43.2],[16.6,43.2]],metal(13,40,35,44));
+    for(const sx of[-1,1]){fp([[24+sx*9,41],[24+sx*14,30],[24+sx*12,27],[24+sx*6,36]],dark);fp([[24+sx*9,40],[24+sx*12.8,31],[24+sx*11.6,29],[24+sx*7,36]],metal(14,28,34,42))}
+    fe(24,23,13.5,13.5,dark);fe(24,23,12.5,12.5,rg(24,23,12.5,[shade(g,95),g,shade(g,-75)]));
+    stroke('rgba(255,255,255,.55)',1.4,()=>q.arc(24,23,9,Math.PI*1.1,Math.PI*1.55));fe(19,17,2.4,2.4,'rgba(255,255,255,.7)');
+    for(let i=0;i<3;i++){const t=i/3*Math.PI*2+.6;stroke(trim,.9,()=>{q.moveTo(24,23);q.quadraticCurveTo(24+Math.cos(t)*5,23+Math.sin(t)*5,24+Math.cos(t)*9,23+Math.sin(t)*9)})}
+    orb(24,5.5,2.6,cordHex);thin(24,8,24,10,cordHex,1.6);break}
+  case'lotus':{
+    fe(24,26,19,19,'rgba(255,240,200,.10)');
+    thin(24,46,24,34,dark,4);thin(24,46,24,34,c2,2);
+    for(const[dx,dy,rot]of[[-11,8,-1.0],[11,8,1.0],[-7,3,-.55],[7,3,.55]]){q.save();q.translate(24+dx,26+dy);q.rotate(rot);fe(0,0,4.6,9.5,dark);fe(0,0,3.8,8.6,lg(-4,-9,4,9,[hi,c1,c2]));thin(0,-6,0,6,shade(c1,-30),.8);q.restore()}
+    q.save();q.translate(24,22);fe(0,0,5.4,11.2,dark);fe(0,0,4.6,10.4,lg(-5,-10,5,10,[shade(c1,70),hi,c1]));thin(0,-7,0,7,shade(c1,-25),.8);q.restore();
+    gem(24,28,4.6);for(const dx of[-9,9])orb(24+dx,40,1.8,trim);break}
   default:{
     ringStroke(24,33,12.5,8,[[8,dark],[5,lg(12,26,36,41,[hi,c1,c2])]]);ringStroke(24,33,12.5,8,[[.9,hi]]);
     for(let i=0;i<8;i++){const t=Math.PI*(.15+i*.1);thin(24+Math.cos(t)*12.5-1.4,33+Math.sin(t)*8,24+Math.cos(t)*12.5+1.4,33+Math.sin(t)*8,shade(c2,-20),1)}
     fp([[14,24],[18,14],[30,14],[34,24],[24,29]],dark);fp([[15.6,24],[19,15.2],[29,15.2],[32.4,24],[24,27.6]],metal(14,14,34,29));gem(24,20.5,5);orb(12.5,31,2.2,shade(g,-10));orb(35.5,31,2.2,shade(g,-10))}
   }
+  if(a.premium){stroke(trim,1,()=>q.rect(2.5,2.5,43,43));for(const[x,y,r]of[[7,8,2.4],[41,10,1.8],[8,38,1.6],[40,34,2.2]]){thin(x-r*1.6,y,x+r*1.6,y,'#fff6d6',1);thin(x,y-r*1.6,x,y+r*1.6,'#fff6d6',1);itemArtDot(q,Math.round(x),Math.round(y),'#ffffff')}}
   if(a.glyph&&a.shape!=='plaque'){fe(38,38,6.4,6.4,dark);fe(38,38,5.5,5.5,lg(32,32,44,44,[shade(g,-60),shade(g,-110)]));stroke(trim,.9,()=>q.arc(38,38,5.5,0,Math.PI*2));q.fillStyle='#fbf0d2';q.font='900 9px serif';q.textAlign='center';q.fillText(a.glyph,38,41);q.textAlign='start'}
 }

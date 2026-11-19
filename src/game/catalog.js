@@ -168,7 +168,9 @@ const RELICS=[
   {type:'relic',name:'불사조 깃 비녀',rarity:'sealed',minFloor:12,art:{shape:'hairpin',mat:'ruby',gem:'fire',glyph:'火'},resist:{fire:2,water:-1},regenEvery:6,desc:'재 속에서 다시 일어나는 깃. 물에 약하다.'},
   {type:'relic',name:'서리 여왕의 가락지',rarity:'sealed',minFloor:12,art:{shape:'ring',mat:'silver',gem:'ice',glyph:'氷'},def:2,resist:{ice:2,shock:-1},desc:'번개가 닿으면 금이 간다.'},
   {type:'relic',name:'뇌공의 인장',rarity:'sealed',minFloor:13,art:{shape:'seal',mat:'gold',gem:'shock',glyph:'雷'},atk:2,eva:-1,resist:{shock:2},strike:{element:'shock',dmg:3},desc:'휘두를 때 불꽃이 튄다. 전격 저항 Ⅱ.'},
-  {type:'relic',name:'역린 비늘 패',rarity:'sealed',minFloor:14,art:{shape:'plaque',mat:'jade',gem:'water',glyph:'水'},atk:2,resist:{water:1,fire:-1},killFocus:1,desc:'건드리면 화를 입는 비늘.'}
+  {type:'relic',name:'역린 비늘 패',rarity:'sealed',minFloor:14,art:{shape:'plaque',mat:'jade',gem:'water',glyph:'水'},atk:2,resist:{water:1,fire:-1},killFocus:1,desc:'건드리면 화를 입는 비늘.'},
+  {type:'relic',name:'천면 거울 보주',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'orb',mat:'silver',gem:'sapphire',cord:'indigo',glyph:'氷',premium:true},eva:3,will:2,resist:{shock:1,ice:1,holy:1},quirk:'frostWard',desc:'천 개의 거울이 모여 하나의 구슬이 되었다.'},
+  {type:'relic',name:'공허 비취 보주',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'orb',mat:'jade',gem:'emerald',cord:'forest',glyph:'土',premium:true},atk:3,resist:{fire:1,earth:1,shock:1},killHeal:2,quirk:'chainBurst',desc:'공허 위에 떠 있던 잎사귀의 결을 품은 구슬.'}
 ];
 const TRINKETS=[
   {type:'trinket',name:'방 번호패',rarity:'common',vision:1,desc:'길을 기억하기 쉬워진다. VIS +1'},
@@ -187,7 +189,9 @@ const TRINKETS=[
   {type:'trinket',name:'가시 노리개',rarity:'rare',minFloor:5,art:{shape:'norigae',mat:'ebony',gem:'',glyph:''},def:1,thorns:2,desc:'만지면 손이 찔린다.'},
   {type:'trinket',name:'피빛 방울',rarity:'relic',minFloor:10,art:{shape:'bell',mat:'ruby',gem:'',glyph:''},killHeal:2,lowHpAtk:2,desc:'피 냄새를 맡으면 운다.'},
   {type:'trinket',name:'수정 얼음 부채',rarity:'relic',minFloor:11,art:{shape:'fan',mat:'azure',gem:'ice',glyph:'氷'},resist:{ice:1,water:1},atkCostMul:.96,desc:'서늘한 바람이 인다.'},
-  {type:'trinket',name:'화약 호리병',rarity:'relic',minFloor:11,art:{shape:'gourd',mat:'bronze',gem:'fire',glyph:'火'},resist:{fire:1,earth:1},strike:{element:'fire',dmg:2},desc:'마개를 열면 불티가 튄다.'}
+  {type:'trinket',name:'화약 호리병',rarity:'relic',minFloor:11,art:{shape:'gourd',mat:'bronze',gem:'fire',glyph:'火'},resist:{fire:1,earth:1},strike:{element:'fire',dmg:2},desc:'마개를 열면 불티가 튄다.'},
+  {type:'trinket',name:'백면 연화 노리개',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'lotus',mat:'pearl',gem:'pearl',cord:'ivory',glyph:'聖',premium:true},will:2,def:1,resist:{water:1,grass:1,holy:1},regenEvery:6,quirk:'luckyMend',desc:'꽃잎이 닫힐 때마다 상처가 아문다.'},
+  {type:'trinket',name:'옥루 연화 비녀',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{shape:'lotus',mat:'azure',gem:'topaz',cord:'saffron',glyph:'',premium:true},vision:2,focus:2,critAdd:.06,statusGuard:.25,quirk:'lastStand',desc:'가장 높은 누각의 이슬을 머금은 비녀.'}
 ];
 const ICE_ESSENCE_THROW=Object.freeze({radius:2,damage:1,stun:2});
 const CONSUMABLES=[

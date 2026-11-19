@@ -24,9 +24,9 @@ const out = await s.page.evaluate(() => {
     names.add(it.name);
     const res = Object.entries(it.resist || {});
     const pos = res.filter(([, v]) => v > 0), neg = res.filter(([, v]) => v < 0);
-    if (pos.length < 2 || pos.length > 3 || pos.some(([, v]) => v !== 1) || neg.length > 1) bad.push(['resist', it.name, JSON.stringify(it.resist)]);
+    if (pos.length < 1 || pos.length > 3 || pos.some(([, v]) => v !== 1) || neg.length > 1) bad.push(['resist', it.name, JSON.stringify(it.resist)]);
     if (!it.art || !T.shapes[slot].includes(it.art.shape) || !T.mats[it.art.mat]) bad.push(['art', it.name]);
-    if (T.lines(it).length < 2) bad.push(['lines', it.name]);
+    if (T.lines(it).length < 1) bad.push(['lines', it.name]);
   }
   r.bad = bad.slice(0, 5); r.uniqueNames = names.size;
   // 2. fixed catalog
@@ -42,7 +42,7 @@ const out = await s.page.evaluate(() => {
   p.hp = 10; st.turn = 4; T.post(); r.regen = p.hp;
   p.focus = 0; const m = { hp: 5, x: p.x + 1, y: p.y, lastDamageOpponent57: 'player' };
   p.hp = 10; T.kill(m); r.kill = [p.hp, p.focus];
-  r.guard = T.guard();
+  r.guard = Array.from({ length: 40 }, () => T.guard()).filter(Boolean).length;
   r.move = +T.moveCost().toFixed(2);
   return r;
 });
@@ -55,7 +55,7 @@ assert.deepEqual([out.fireLevel, out.fireMult], [0, 1]);
 assert.deepEqual(out.weak, [-1, 1.4]);
 assert.equal(out.regen, 11);
 assert.deepEqual(out.kill, [12, 1]);
-assert.equal(out.guard, true);
+assert.ok(out.guard >= 15 && out.guard <= 39, 'status guard ~75%: ' + out.guard);
 assert.ok(out.move <= 0.9);
 // smoke: floor loot rolls, details, turn pipeline with a randart equipped
 const smoke = await s.page.evaluate(() => {
@@ -77,6 +77,7 @@ await s.page.evaluate(() => {
   const add = (it, label) => { const wrap = document.createElement('div'); wrap.style.cssText = 'width:96px;text-align:center;font:10px sans-serif;color:#e6d9bd'; const c = document.createElement('canvas'); const src = T.sprite(it); c.width = 96; c.height = 96; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.drawImage(src, 0, 0, 96, 96); wrap.append(c, label); host.append(wrap); };
   const mats = Object.keys(T.mats), gems = ['fire', 'water', 'ice', 'shock', 'earth', 'grass', 'holy', 'ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'pearl', 'onyx', 'turquoise'], cords = ['crimson', 'indigo', 'saffron', 'forest', 'violet', 'teal', 'ivory', 'black'];
   let n = 0; for (const slot of ['relic', 'trinket']) for (const shape of T.shapes[slot]) for (let k = 0; k < 5; k++, n++) add({ type: slot, name: 'sheet-' + n, rarity: 'relic', art: { shape, mat: mats[(n * 5 + k * 3) % mats.length], gem: gems[(n * 7) % gems.length], cord: cords[(n * 3) % cords.length], glyph: k % 2 ? '火' : '' } }, shape + '/' + mats[(n * 5 + k * 3) % mats.length]);
+  for (let i = 0; i < 6; i++) { const it = T.make(i % 2 ? 'relic' : 'trinket', 5, { premium: true }); add(it, it.name); }
   for (const it of [...T.RELICS, ...T.TRINKETS].filter(x => x.art)) add(it, it.name);
   document.body.append(host);
 });

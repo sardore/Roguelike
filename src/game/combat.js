@@ -30,6 +30,7 @@ function martialIds(p=state.player){
 }
 function martialUnlocked(id,p=state.player){return id!==RAPID_FIRE_ID||p.martial?.[id]>0}
 function martialFamily(id,p=state.player){return id==='roar'||id==='brawl'?playerClassRules58(p)[id]:id}
+function martialPassiveSlots(p=state?.player){if(!p?.martial)return 0;let n=0;for(const id of martialIds(p))if((p.martial[id]||0)>0&&martialPresentation(id,MARTIAL_INFO[id],p).type==='passive')n++;return n}
 function martialFormOf(id,p=state?.player){return p?.martialForm?.[id]||null}
 function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
 function strongBonus(lv){return lv>=5?14:2+lv*2}
