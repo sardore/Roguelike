@@ -620,18 +620,22 @@ function drawCombatStatusBadges(actor,cx,bottom){
  X.restore();return rows.length;
 }
 const JAR_GAS_PALETTE57=Object.freeze({poison:{core:'#a6c76d',mid:'#628842',edge:'#2c482400',line:'#c5d991',mote:'#bed586'},drunk:{core:'#b982c3',mid:'#775381',edge:'#382a4100',line:'#deb5df',mote:'#d1a5d3'},illness:{core:'#c8648f',mid:'#5d2a4a',edge:'#22101e00',line:'#e8a2c4',mote:'#d98ab0'}});
+// One cell of drifting gas: overlapping smoke lobes (not a hard cell marker), a curling wisp and rising motes.
+// `density` widens the lobes. Presentation consumes no combat RNG. Shared by jar gas and the boss arena's outer mist.
+function paintGasCell(q,px,py,seed,phase,now,strength,pal,density){
+    for(let i=0;i<3;i++){
+      const cx=px+16+Math.sin(phase*.61+i*2.1)*5,cy=py+15+Math.cos(phase*.47+i*1.7)*4,r=10+density+Math.sin(phase+i)*2,g=q.createRadialGradient(cx,cy,1,cx,cy,r);
+      g.addColorStop(0,pal.core);g.addColorStop(.55,pal.mid);g.addColorStop(1,pal.edge);q.globalAlpha=strength;q.fillStyle=g;q.beginPath();q.ellipse(cx,cy,r,r*.8,Math.sin(phase*.2)*.25,0,Math.PI*2);q.fill();
+    }
+    q.globalAlpha=strength*.65;q.strokeStyle=pal.line;q.lineWidth=.8;q.beginPath();q.ellipse(px+16+Math.sin(phase)*3,py+14,8+Math.sin(phase*.5)*2,3.5,Math.sin(phase*.4)*.45,Math.PI*.16,Math.PI*1.35);q.stroke();
+    for(let i=0;i<3;i++){const u=(now/1800+i*.31+(seed%23)/23)%1;q.globalAlpha=(1-u)*strength;q.fillStyle=pal.mote;q.fillRect(px+7+i*8+Math.sin(phase+i)*2,py+24-u*20,1.4,1.4)}
+}
 function drawJarGas(now,bounds=null,q=X){
   if(!state)return;const fields=jarGasState57();if(!fields.length)return;q.save();q.globalCompositeOperation='source-over';
   for(const f of fields)if(now>=(JAR_GAS_VISUAL_START57.get(f)||0))for(const c of f.cells||[]){
     if(c.c<=0||!state.visible.has(k(c.x,c.y))||bounds&&(c.x<bounds.x0-1||c.x>bounds.x1+1||c.y<bounds.y0-1||c.y>bounds.y1+1))continue;
     const px=c.x*TILE,py=c.y*TILE,seed=c.x*17+c.y*31,phase=now/650+seed,fade=f.age>=(f.linger57?Math.max(5,(f.duration57||9)-2):5)?Math.max(.25,1-(f.age-(f.linger57?(f.duration57||9)-3:4))*.16):1,strength=(.13+c.c*.065)*fade,pal=JAR_GAS_PALETTE57[f.status57]||JAR_GAS_PALETTE57.poison;
-    // Overlapping smoke lobes replace hard rectangular cell markers. Presentation consumes no combat RNG.
-    for(let i=0;i<3;i++){
-      const cx=px+16+Math.sin(phase*.61+i*2.1)*5,cy=py+15+Math.cos(phase*.47+i*1.7)*4,r=10+c.c+Math.sin(phase+i)*2,g=q.createRadialGradient(cx,cy,1,cx,cy,r);
-      g.addColorStop(0,pal.core);g.addColorStop(.55,pal.mid);g.addColorStop(1,pal.edge);q.globalAlpha=strength;q.fillStyle=g;q.beginPath();q.ellipse(cx,cy,r,r*.8,Math.sin(phase*.2)*.25,0,Math.PI*2);q.fill();
-    }
-    q.globalAlpha=strength*.65;q.strokeStyle=pal.line;q.lineWidth=.8;q.beginPath();q.ellipse(px+16+Math.sin(phase)*3,py+14,8+Math.sin(phase*.5)*2,3.5,Math.sin(phase*.4)*.45,Math.PI*.16,Math.PI*1.35);q.stroke();
-    for(let i=0;i<3;i++){const u=(now/1800+i*.31+(seed%23)/23)%1;q.globalAlpha=(1-u)*strength;q.fillStyle=pal.mote;q.fillRect(px+7+i*8+Math.sin(phase+i)*2,py+24-u*20,1.4,1.4)}
+    paintGasCell(q,px,py,seed,phase,now,strength,pal,c.c);
   }q.restore();
 }
 function visualPlayerPosition(){if(!state)return{x:0,y:0,worldX:TILE/2,worldY:TILE/2};const x=Number.isFinite(VIS.playerX)?VIS.playerX:state.player.x,y=Number.isFinite(VIS.playerY)?VIS.playerY:state.player.y;return{x,y,worldX:x*TILE+TILE/2,worldY:y*TILE+TILE/2}}
@@ -770,12 +774,37 @@ function drawSilkThread(ctx,a,b,now,phase=0,preview=false){
  ctx.strokeStyle=preview?'#e09a9f':'#e9a9b1';ctx.lineWidth=1.2;ctx.stroke(strand);
  ctx.strokeStyle='#ffe3d7';ctx.lineWidth=.35;ctx.stroke(strand);ctx.restore();
 }
+// The boss arena's outer mist: a poison fog rolling in from the rim. Every cell past the arena radius is smoke (the jar gas's
+// own lobes, thicker towards the outside), the cells along the rim form a heaving wall with a bright edge, and spores drift
+// inwards from it; the closer a cell is to the rim, the denser it looks, so the way back into the arena reads at a glance.
+function drawArenaMist(mon,a,now){
+ const radius=a.radius??BOSS_ARENA_RULES.containment.radius,pal=JAR_GAS_PALETTE57.poison;
+ X.save();
+ for(const key of state.visible){
+  const[x,y]=key.split(',').map(Number);if(!bossArenaMist(mon,x,y)||tileBlocks(state.map[y]?.[x]))continue;
+  const px=x*TILE,py=y*TILE,dist=Math.max(Math.abs(x-a.cx),Math.abs(y-a.cy)),depth=dist-radius,seed=x*17+y*31,phase=now/650+seed,rim=depth===1,near=Math.max(0,1-(depth-1)/6);
+  // a sickly tint under the smoke, heavier the deeper into the mist
+  X.globalAlpha=.16+Math.min(.22,depth*.03);X.fillStyle='#34521f';X.fillRect(px,py,TILE,TILE);
+  paintGasCell(X,px,py,seed,phase,now,.26+Math.min(.3,depth*.04)+(rim?.1:0),pal,rim?4:1+Math.min(4,depth));
+  if(rim){
+   // the heaving wall: a lit crest and a dark undertow, side by side along the whole rim
+   const swell=Math.sin(now/520+x*.9+y*.9);X.globalAlpha=.55+.15*swell;
+   const g=X.createLinearGradient(px,py,px,py+TILE);g.addColorStop(0,'rgba(214,236,128,0)');g.addColorStop(.5,'rgba(214,236,128,.55)');g.addColorStop(1,'rgba(214,236,128,0)');X.fillStyle=g;X.fillRect(px,py+8+swell*3,TILE,12);
+   X.globalAlpha=.7;X.strokeStyle='#e2f09a';X.lineWidth=1.2;X.beginPath();for(let i=0;i<=TILE;i+=4){const yy=py+16+Math.sin(now/380+(px+i)*.35)*3;i?X.lineTo(px+i,yy):X.moveTo(px+i,yy)}X.stroke();
+   // spores blown inwards across the rim
+   for(let i=0;i<4;i++){const u=(now/1400+i*.27+(seed%19)/19)%1,dx=Math.sign(a.cx-x),dy=Math.sign(a.cy-y);X.globalAlpha=(1-u)*.7;X.fillStyle='#d7ea8e';X.fillRect(px+8+i*5+dx*u*26,py+10+i*3+dy*u*26,2,2)}
+  }
+  // thin veins of acid green crawling through the thick of it
+  if(depth>2&&(seed%5===0)){X.globalAlpha=.18*near+.1;X.strokeStyle='#9fc24a';X.lineWidth=1;X.beginPath();X.moveTo(px+4,py+24);X.bezierCurveTo(px+10,py+8+Math.sin(phase)*4,px+20,py+26,px+28,py+10+Math.cos(phase)*4);X.stroke()}
+ }
+ X.restore();
+}
 function drawBossArena(){
  if(!state)return;const now=performance.now(),cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);
  for(const mon of state.monsters||[]){
   if(mon.combatFixture54==='core'&&state.visible.has(k(mon.x,mon.y))){const x=mon.x*TILE+16,y=mon.y*TILE+18;X.strokeStyle=mon.color;X.lineWidth=1.5;for(let i=0;i<3;i++){const r=19+(now/45+i*11)%32;X.globalAlpha=1-(r-19)/32;X.beginPath();X.ellipse(x,y+10,r,r*.34,0,0,Math.PI*2);X.stroke()}X.globalAlpha=1;X.fillStyle='rgba(226,204,255,.18)';X.fillRect(x-2,y-72,4,60)}
   if(!mon.boss&&!mon.duelOpponent)continue;const a=mon.arena54;if(mon.hp>0&&mon.bossPattern==='keeper')drawKeeperLavaWarning(mon,now);
-  if(mon.hp>0&&a?.mistActive57)for(const key of state.visible){const [x,y]=key.split(',').map(Number);if(!bossArenaMist(mon,x,y)||tileBlocks(state.map[y]?.[x]))continue;const px=x*TILE,py=y*TILE,pulse=.30+.05*Math.sin(now/360+x*.6+y*.4);X.fillStyle=`rgba(93,132,37,${pulse})`;X.fillRect(px,py,TILE,TILE);X.fillStyle='rgba(190,218,99,.25)';X.fillRect(px+3,py+9,25,10);if(Math.max(Math.abs(x-a.cx),Math.abs(y-a.cy))===(a.radius??BOSS_ARENA_RULES.containment.radius)+1){X.strokeStyle='#cce575';X.lineWidth=2;X.strokeRect(px+1,py+1,TILE-2,TILE-2)}}
+  if(mon.hp>0&&a?.mistActive57)drawArenaMist(mon,a,now);
   if(mon.bossPattern==='master'&&activeCore(mon)&&state.visible.has(k(mon.x,mon.y))){const x=mon.x*TILE+16,y=mon.y*TILE+12;X.strokeStyle='#f5d699';X.lineWidth=2;X.beginPath();X.ellipse(x,y,23,30,Math.sin(now/900)*.12,0,Math.PI*2);X.stroke();X.fillStyle='rgba(219,187,115,.12)';X.fill();}
 
   if(mon.hp>0&&mon.silk54)for(const link of mon.silk54.links){
