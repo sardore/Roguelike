@@ -68,13 +68,10 @@ function glassFloorTile(zone,x,y,t){
 }
 // The lake under floor 1: deep blue-violet water with the sky's light on it.
 function drawGlassLake(ctx,px,py,x,y,now){
- // Tint the shared clouds below the water surface; ripples identify the lake without replacing those clouds.
- const w=Math.sin(x*.21+y*.13)*.5+.5;
- ctx.fillStyle=glassRGBA(glassMix('#293981','#49419a',w),.52);ctx.fillRect(px,py,32,32);
- const t=(now||0)/1400;for(let i=0;i<2;i++){const band=((y*32+i*48+Math.floor(t*16))%96+96)%96;if(band<32){const len=10+((x*7+i*5)%14),off=(x*13+i*9)%22;ctx.fillStyle=glassRGBA(i?glassPal().lilac:glassPal().sky,.19);ctx.fillRect(px+off,py+band,len,1)}}
+ // The lake is real water: the 창해용궁 water, with no tint laid over it.
+ drawPalaceWater(ctx,px,py,x,y,true,now);
  const shore=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WATER&&v!==TT.RAFT};
  if(shore(0,-1)){const g=ctx.createLinearGradient(0,py,0,py+8);g.addColorStop(0,glassRGBA(glassPal().violetInk,.6));g.addColorStop(1,glassRGBA(glassPal().violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,8)}
- if(shore(0,1)){ctx.fillStyle=glassRGBA(glassPal().sky,.18);ctx.fillRect(px,py+30,32,2)}
 }
 /* ------------------------------------------------------------------ walls */
 function glassWallFront(kind,x,t,win){

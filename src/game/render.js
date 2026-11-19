@@ -4548,7 +4548,7 @@ function drawPalaceWater(q,px,py,x,y,deep,now){
  // Foam belongs to the shoreline, never to the seam between two water tiles.
  for(const[dx,dy]of DIRS4){
   const nx=x+dx,ny=y+dy,base=terrainBaseTile58(nx,ny);
-  if(isWaterTile105(base)||state.branchTerrain105.palace105.permanentWater[k(nx,ny)])continue;
+  if(isWaterTile105(base)||state.branchTerrain105?.palace105?.permanentWater?.[k(nx,ny)])continue;
   const edge=q.createLinearGradient(px+(dx>0?32:0),py+(dy>0?32:0),px+(dx?dx>0?26:6:0),py+(dy?dy>0?26:6:0));
   edge.addColorStop(0,'#a4d7c65c');edge.addColorStop(.35,'#69b4b32c');edge.addColorStop(1,'#529eab00');q.fillStyle=edge;
   q.fillRect(px+(dx>0?26:0),py+(dy>0?26:0),dx?6:32,dy?6:32);
