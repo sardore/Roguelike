@@ -207,7 +207,7 @@ function applyElementField57(field,elem,damage,opts={}){
 const RESIST_MULT57=[1,.55,.30,0],RESIST_WEAK57=1.4,RESIST_ELEMENTS57=['fire','water','ice','shock','earth','grass','holy'],RESIST_NAMES57={fire:'화염',water:'수류',ice:'빙결',shock:'전격',earth:'대지',grass:'초목',holy:'성광'};
 /* A monster's element table, one level per element (−1 취약, 0, Ⅰ, Ⅱ, Ⅲ 면역), read from what it is and what it carries:
    its kind, a burning or watery body, flight, the element of its own blows (it shrugs that off by one level), boss
-   hardiness (+1 everywhere) and finally its definition's own resist. This replaced the old per-trait damage multipliers. */
+   hardiness (+1 everywhere), capped at Ⅱ, and finally its definition's own resist, the only way to Ⅲ. This replaced the old per-trait damage multipliers. */
 const MONSTER_KIND_RESIST105=Object.freeze({plant:{fire:-1,grass:2},undead:{grass:-1,holy:-1},construct:{shock:-1,earth:1}});
 function monsterElementTable(entity){
   const t={};for(const e of RESIST_ELEMENTS57)t[e]=0;
@@ -218,6 +218,8 @@ function monsterElementTable(entity){
   if(entity?.flying)add({earth:2});
   if(entity?.attackElement105)add({[entity.attackElement105]:1});
   if(entity?.boss)for(const e of RESIST_ELEMENTS57)t[e]++;
+  // what a monster is never makes it immune on its own (a water dragon king still takes water at Ⅱ); only its definition can grant Ⅲ
+  for(const e of RESIST_ELEMENTS57)t[e]=clamp(t[e],-1,2);
   add(entity?.resist);
   for(const e of RESIST_ELEMENTS57)t[e]=clamp(t[e],-1,3);
   return t;

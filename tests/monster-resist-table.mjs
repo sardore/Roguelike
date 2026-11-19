@@ -25,6 +25,7 @@ const out = await s.page.evaluate(() => {
     r[name] = { table: T.table(m), fire: T.mult(m, 'fire'), holy: T.mult(m, 'holy'), meta: info.meta, role: info.role, elements: info.elements.length };
   }
   const boss = mk('객잔 쥐'); boss.boss = true; r.boss = T.table(boss);
+  const king = mk('식인 물고기'); king.boss = true; r.aquaticBoss = T.table(king).water;
   const extra = mk('객잔 쥐'); extra.resist = { fire: 3 }; r.defined = T.table(extra);
   // a fish already weak to lightning does not also take the water-conduction bonus
   const fish = mk('식인 물고기'); st.map[fish.y][fish.x] = T.TT.WATER; r.fishShockInWater = T.mult(fish, 'shock');
@@ -40,6 +41,7 @@ assert.equal(out['수목 궁수'].table.grass, 1, 'own attack element');
 assert.equal(out['파편 망령'].table.ice, 1); assert.equal(out['파편 망령'].table.holy, -1);
 assert.ok(Object.values(out.boss).every(v => v === 1), 'boss +1 everywhere');
 assert.equal(out.defined.fire, 3, 'definition resist adds on top');
+assert.equal(out.aquaticBoss, 2, 'traits alone never reach immunity');
 near(out.fishShockInWater, 1.4, 'weakness and conduction do not stack'); near(out.ratShockInWater, 1.5, 'water conducts');
 assert.ok(out['객잔 쥐'].meta.includes('빠름'), '객잔 쥐 shows 빠름');
 assert.ok(out['독꽃'].role?.startsWith('독 포대'), '독꽃 shows its role');
