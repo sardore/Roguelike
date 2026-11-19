@@ -192,20 +192,26 @@ function drawGlassLeaf(ctx,px,py,x,y,now){
 const GLASS_HAZE_DEPTH=14;
 function drawGlassAltitudeHaze(ctx,px,py,x,y){
  // how far below a tower this cell hangs; a few columns either side count too, so the haze spreads out softly instead of ending in a cliff
- let d=0;
+ let d=0,tower=null,straight=false;
  for(let dx=-8;dx<=8;dx++){
   for(let i=1;i<=GLASS_HAZE_DEPTH;i++){
    const v=state.map[y-i]?.[x+dx];if(v==null)break;if(v===TT.VOID||v===TT.WATER)continue;
-   if(mirrorOwner(x+dx,y-i)){const n=i+Math.abs(dx)*.8;if(!d||n<d)d=n}
+   const t=mirrorOwner(x+dx,y-i);
+   if(t){const n=i+Math.abs(dx)*.8;if(!d||n<d){d=n;tower=t;straight=dx===0}}
    break;
   }
  }
  if(!d||d>GLASS_HAZE_DEPTH)return;
- const f=n=>Math.pow(Math.max(0,1-n/GLASS_HAZE_DEPTH),1.15)*.86,tone=n=>glassMix('#5e5086','#8e8c9e',n/GLASS_HAZE_DEPTH);
+ // The tower's own glass carries on downward: the wall foot's deep violet, then the tower's tint, then the floor's low sky, thinning to nothing.
+ const P=glassPal(),tint=glassTint(tower),t=n=>Math.max(0,Math.min(1,n/GLASS_HAZE_DEPTH));
+ const tone=n=>{const u=t(n);return u<.3?glassMix(P.violet,tint.glassDeep,u/.3):u<.65?glassMix(tint.glassDeep,glassMix(tint.glassMid,P.skyLow,.5),(u-.3)/.35):glassMix(glassMix(tint.glassMid,P.skyLow,.5),P.sky,(u-.65)/.35)};
+ const f=n=>Math.pow(1-t(n),1.2)*.88;
  const g=ctx.createLinearGradient(0,py,0,py+32);g.addColorStop(0,glassRGBA(tone(d-1),f(d-1)));g.addColorStop(1,glassRGBA(tone(d),f(d)));
  ctx.fillStyle=g;ctx.fillRect(px,py,32,32);
+ // the wall's piers and window glints continue as faint pale shafts straight below the tower
+ if(straight&&x%3===0){ctx.fillStyle=glassRGBA(P.silverMid,.30*(1-t(d))**2);ctx.fillRect(px+12,py,7,32);ctx.fillStyle=glassRGBA(P.silver,.35*(1-t(d))**2);ctx.fillRect(px+12,py,2,32)}
  // thin streaks of mist, sparser the further down
- const h=hash2(x,y,913);if(h>.55){ctx.fillStyle=glassRGBA('#f3eefa',.10*(1-d/GLASS_HAZE_DEPTH));ctx.fillRect(px+Math.floor(h*13),py+8+Math.floor(h*9),14+Math.floor(h*10),1)}
+ const h=hash2(x,y,913);if(h>.55){ctx.fillStyle=glassRGBA(P.glassHi,.22*(1-t(d)));ctx.fillRect(px+Math.floor(h*13),py+8+Math.floor(h*9),14+Math.floor(h*10),1)}
 }
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
