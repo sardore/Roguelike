@@ -133,22 +133,22 @@ const ARMORS=[
   {type:'armor',name:'경량복',tier:1,rarity:'common',def:1,eva:1,desc:'정부 요원들이 평시 활동을 위해 입는 가볍고 활동성 좋은 제식 복장.'},
   {type:'armor',name:'강화 가죽 갑옷',tier:2,rarity:'rare',def:3,eva:0,desc:'경량복 위에 질긴 가죽판을 덧대어 실전 대응력을 높였습니다.'},
   {type:'armor',name:'철제 흉갑',tier:3,rarity:'relic',def:5,eva:-1,desc:'주요 장기를 보호하기 위해 정교하게 제련된 철판을 부착했습니다.'},
-  {type:'armor',name:'관원용 두정갑',tier:4,rarity:'sealed',def:9,eva:-2,desc:'정부 고위직에게 지급되는 제식 갑옷이다. 옷 안에 촘촘한 철갑을 숨겼으며, 방어력이 높아 강화부적을 쓰면 더 단단해진다.'},
-  {type:'armor',name:'총사령관 황금갑',tier:5,rarity:'sealed',def:12,eva:-2,will:1,desc:'정부 최고위 무관에게만 하사되는 황금 비늘 갑옷이다. 본래 방어력이 가장 높아 강화부적의 효과도 크다.'}
+  {type:'armor',name:'관원용 두정갑',tier:4,rarity:'sealed',def:9,eva:-2,resist:{earth:1},desc:'정부 고위직에게 지급되는 제식 갑옷이다. 옷 안에 촘촘한 철갑을 숨겼으며, 방어력이 높아 강화부적을 쓰면 더 단단해진다.'},
+  {type:'armor',name:'총사령관 황금갑',tier:5,rarity:'sealed',def:12,eva:-2,will:1,resist:{holy:1,fire:1},desc:'정부 최고위 무관에게만 하사되는 황금 비늘 갑옷이다. 본래 방어력이 가장 높아 강화부적의 효과도 크다.'}
 ];
 const CLOAKS=[
   {type:'cloak',name:'질긴 가죽망토',tier:1,rarity:'common',staggerResist:.30,desc:'피격 시 30% 확률로 밀치기·속박·둔화를 버텨 자세가 흐트러지지 않습니다.'},
   {type:'cloak',name:'바람막이망토',tier:1,rarity:'common',focusRegen:1.35,desc:'기본 기력 자연회복에 약 35%의 추가 회복을 누적합니다.'},
   {type:'cloak',name:'여행자망토',tier:1,rarity:'common',eatSpeed:1.35,desc:'음식 사용 행동비용을 약 26% 줄여 전투 중 보급이 훨씬 안전해집니다.'},
-  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.',trapGuard:.35},
+  {type:'cloak',name:'두꺼운 면망토',tier:1,rarity:'common',resist:{fire:1},desc:'철침·독침 같은 일반 함정을 35% 확률로 완전히 받아내 무효화합니다. 물·용암·공허의 치명 판정은 막지 못합니다.',trapGuard:.35},
   {type:'cloak',name:'암영망토',tier:3,rarity:'relic',senseReduce:1,desc:'어둠 속에서 몸을 숨기기 좋게 제작되어 적의 인식 거리를 줄입니다.'},
   {type:'cloak',name:'축지망토',tier:3,rarity:'relic',moveSpeed:1.15,desc:'깃털처럼 가벼워 발걸음을 빠르게 만듭니다.'},
   {type:'cloak',name:'자력망토',tier:3,rarity:'relic',magnet:2,desc:'주변의 전리품을 몸 쪽으로 끌어당기는 기묘한 외투입니다.'},
   {type:'cloak',name:'무술망토',tier:4,rarity:'sealed',focusRegen:2,desc:'무술의 흐름을 돕는 문양이 새겨져 기 회복 주기가 크게 빨라집니다.'},
-  {type:'cloak',name:'보호망토',tier:4,rarity:'sealed',def:3,desc:'겉감 사이에 얇은 사슬이 박혀 있어 방어력이 크게 오릅니다.'},
-  {type:'cloak',name:'반사망토',tier:4,rarity:'sealed',reflect:.25,desc:'거울처럼 매끄러운 비단이 원거리 공격을 일정 확률로 되돌립니다.'},
-  {type:'cloak',name:'용암망토',tier:5,rarity:'sealed',lavaWalk:true,desc:'화신석 실로 짠 도포. 용암을 밟고 지나갈 수 있습니다.'},
-  {type:'cloak',name:'면역망토',tier:5,rarity:'sealed',statusImmune:true,desc:'신성한 비단이 독·출혈·혼란과 같은 상태이상을 막아냅니다.'}
+  {type:'cloak',name:'보호망토',tier:4,rarity:'sealed',def:3,resist:{earth:1},desc:'겉감 사이에 얇은 사슬이 박혀 있어 방어력이 크게 오릅니다.'},
+  {type:'cloak',name:'반사망토',tier:4,rarity:'sealed',reflect:.25,resist:{shock:1},desc:'거울처럼 매끄러운 비단이 원거리 공격을 일정 확률로 되돌립니다.'},
+  {type:'cloak',name:'용암망토',tier:5,rarity:'sealed',lavaWalk:true,resist:{fire:2},desc:'화신석 실로 짠 도포. 용암을 밟고 지나갈 수 있습니다.'},
+  {type:'cloak',name:'면역망토',tier:5,rarity:'sealed',statusImmune:true,resist:{water:1,grass:1},desc:'신성한 비단이 독·출혈·혼란과 같은 상태이상을 막아냅니다.'}
 ];
 const RELICS=[
   {type:'relic',name:'장독 속 무언가',rarity:'relic',def:1,vision:-1,jarOnly57:true,jarOnMartial57:true,desc:'장독 바닥에서 건져 올린 오래된 반지. DEF +1, VIS -1. 무술을 사용할 때마다 주변의 안전하고 넓은 빈 바닥에 장독 하나를 설치한다. 놓을 자리가 없으면 설치하지 않는다.'},
