@@ -91,13 +91,15 @@ const inv = await s.page.evaluate(() => {
   st.monsters = []; p.martial = { ...p.martial, constitution: 0, brawl: 0 }; p.trinket = null; r.base = T.capacity();
   p.martial.constitution = 1; p.martial.brawl = 2; r.passive = [T.passive(), T.capacity()];
   p.trinket = { name: '수문지기의 접힌 행낭', type: 'trinket', branchEffect105: 'capacity' }; r.satchel = T.capacity();
+  // an acquired form that makes an art passive counts: 귀영 becomes 흑운 (passive), level 3 adds a slot and a half
+  p.martial.ghost = 3; p.martialForm = { ...(p.martialForm || {}), ghost: 'darkcloud' }; r.darkcloud = T.capacity(); p.martial.ghost = 0; p.martialForm.ghost = null;
   while (p.inventory.length < T.capacity()) p.inventory.push({ name: '주먹밥', type: 'food', foodKind: 'riceball', count: 1, stackMax: 1 });
-  const floorBefore = st.items.length; p.trinket = null; p.martial.constitution = 0; T.wait(); T.wait();
-  r.after = [p.inventory.length, T.capacity(), T.state().items.length - floorBefore];
+  const floorBefore = st.items.length, lenBefore = p.inventory.length; p.trinket = null; p.martial.constitution = 0; T.wait(); T.wait();
+  r.after = [p.inventory.length, T.capacity(), lenBefore - p.inventory.length];
   return r;
 });
 console.log('inventory', JSON.stringify(inv));
-assert.equal(inv.base, 25); assert.deepEqual(inv.passive, [2, 27]); assert.equal(inv.satchel, 30);
+assert.equal(inv.base, 25); assert.deepEqual(inv.passive, [1, 26]); assert.equal(inv.satchel, 29); assert.equal(inv.darkcloud, 31);
 assert.ok(inv.after[0] <= inv.after[1] && inv.after[2] >= 3, 'overflow dropped to the floor');
 console.log('mirror-rooms: ok');
 await browser.close(); process.exit(0);
