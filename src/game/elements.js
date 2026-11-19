@@ -208,9 +208,10 @@ const RESIST_MULT57=[1,.55,.30,0],RESIST_ELEMENTS57=['fire','water','ice','shock
 function gearResistLevel(entity,elem){let n=0;for(const key of['armor','cloak','relic','trinket'])n+=Math.max(0,entity?.[key]?.resist?.[elem]||0);return n}
 function entityElementResist(entity,elem){
   if(!entity)return 0;let n=Math.max(0,entity.resist?.[elem]||0);
-  if(entity!==state?.player)return clamp(n+(entity.armor?.elementGuard74===elem?3:0)+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),0,3);
+  n+=(entity.armor?.elementGuard74===elem?1:0)+(entity.weapon?.elementBrand74===elem?1:0);
+  if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),0,3);
   if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?3:2;
-  if((elem==='ice'&&(state?.status?.warm57||0)>0)||state?.player?.armor?.elementGuard74===elem||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=3;
+  if((elem==='ice'&&(state?.status?.warm57||0)>0)||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=3;
   return clamp(n+gearResistLevel(entity,elem),0,3);
 }
 function entityElementMultiplier57(entity,elem){

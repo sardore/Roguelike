@@ -73,7 +73,7 @@ function itemSummary(item){if(item?.type==='ammo'){const d=ammoDef(item.ammoKind
 function enchantColor(item){const element=item?.elementBrand74||item?.elementGuard74;return element?ELEMENT_FX_COLORS105[element]||null:null}
 // The picture of an enchanted item shines in the colour of its enchantment.
 function glowIcon(img,item){if(!img)return;const glow=enchantColor(item);img.style.filter=glow?`drop-shadow(0 0 6px ${glow}) drop-shadow(0 0 2px ${glow})`:''}
-function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
+function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인 · 저항 Ⅰ${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인 · 저항 Ⅰ${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
 function describeIdentifiedItem(item){if(item?.type==='potion'&&!isPotionKnownByPlayer(item))return `${POTION_META[item.potionKind]?.family||'미확인 약성'} · ${item.origin56?.label||'출처 불명'}`;if(item?.type==='talisman'&&!knownTalisman56(item))return '미확인 부적 · 술법 불명';if(item?.type==='talisman')return item.ability||item.desc||'';return describeItemStats(item)}
 function describeItemStats(item){return displayText53(stats53(item).join(' · '))}
 function consumeOne(idx){return consumeItemQuantity(state?.player?.inventory?.[idx])}
@@ -1031,12 +1031,12 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
   const WATER_BRAND_WEAKEN=Object.freeze({chance:.60,turns:4});
   const FUSION_RECIPES=[
   // 원소 + 강화 : +1을 같이 주지 않는다. 일반 강화 대신 속성 각인을 선택하는 거래다.
-  {a:'elem_fire',b:'upgrade',kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염면역',desc:'무기는 추가 화염 피해와 연소를 얻고, 방어구는 화염 역류를 막는다.'},
-  {a:'elem_shock',b:'upgrade',kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8%',desc:'전류를 장비의 움직임에 맞춰 흘린다.'},
-  {a:'elem_water',b:'upgrade',kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 적중 시 쇠약 '+WATER_BRAND_WEAKEN.turns+'턴 · 기본 '+Math.round(WATER_BRAND_WEAKEN.chance*100)+'% / 방어구 독·출혈 세척',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'},
-  {a:'elem_ice',b:'upgrade',kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1',desc:'차가운 기운을 장비에 고정한다.'},
-  {a:'elem_grass',b:'upgrade',kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'},
-  {a:'elem_earth',b:'upgrade',kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역',desc:'장비의 무게와 지지력을 대지에 맞춘다.'},
+  {a:'elem_fire',b:'upgrade',kind:'f_fire_upgrade',name:'화강부적',seal:'炎',element:'fire',mode:'gear',ability:'무기 화염각인 / 방어구 화염 저항 Ⅰ',desc:'무기는 추가 화염 피해와 연소를 얻고, 무기·방어구 각각 장착자에게 화염 저항 Ⅰ을 준다.'},
+  {a:'elem_shock',b:'upgrade',kind:'f_shock_upgrade',name:'뇌강부적',seal:'淨',element:'shock',mode:'gear',ability:'무기 공속 +10% / 방어구 이동비용 -8% / 전격 저항 Ⅰ',desc:'전류를 장비의 움직임에 맞춰 흘린다.'},
+  {a:'elem_water',b:'upgrade',kind:'f_water_upgrade',name:'수강부적',seal:'流',element:'water',mode:'gear',ability:'무기 적중 시 쇠약 '+WATER_BRAND_WEAKEN.turns+'턴 · 기본 '+Math.round(WATER_BRAND_WEAKEN.chance*100)+'% / 방어구 독·출혈 세척 / 수류 저항 Ⅰ',desc:'수기를 장비에 순환시켜 적의 자세를 무너뜨리거나 상처를 씻는다.'},
+  {a:'elem_ice',b:'upgrade',kind:'f_ice_upgrade',name:'빙강부적',seal:'凍',element:'ice',mode:'gear',ability:'무기 냉각 경직 / 방어구 EVA +1 / 빙결 저항 Ⅰ',desc:'차가운 기운을 장비에 고정한다.'},
+  {a:'elem_grass',b:'upgrade',kind:'f_grass_upgrade',name:'목강부적',seal:'芽',element:'grass',mode:'gear',ability:'무기 독분 각인 / 방어구 독 면역 / 초목 저항 Ⅰ',desc:'살아 있는 기운을 장비 표면에 뿌리내린다.'},
+  {a:'elem_earth',b:'upgrade',kind:'f_earth_upgrade',name:'지강부적',seal:'岩',element:'earth',mode:'gear',ability:'무기 중량타 / 방어구 DEF +1·밀치기 면역 / 대지 저항 Ⅰ',desc:'장비의 무게와 지지력을 대지에 맞춘다.'},
   // 원소 + 폭발 : 생원소의 자기역류를 없애고 목표 지점에 집중한다.
   {a:'elem_fire',b:'blast',kind:'f_fire_blast',name:'화폭부적',seal:'炎',element:'fire',mode:'target',effect:'bomb_fire',range:5,ability:'3×3 강화 화염폭발 42~74 + 화염지대 6턴',desc:'원소 역류 없이 목표 지점에 층이 깊어질수록 강해지는 화염을 집중한다.'},
   {a:'elem_shock',b:'blast',kind:'f_shock_blast',name:'뇌폭부적',seal:'電',element:'shock',mode:'target',effect:'bomb_shock',range:6,ability:'강화 연쇄뇌격 40~72 · 최대 7체 · 물/금속 특효',desc:'목표 주변의 생체와 금속을 층이 깊어질수록 강해지는 전류가 연쇄적으로 잇는다.'},
@@ -1088,7 +1088,7 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
   {a:'holy',b:'elem_grass',kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'},
   {a:'holy',b:'elem_earth',kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'},
   {a:'holy',b:'identify',kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'},
-  {a:'holy',b:'upgrade',kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'},
+  {a:'holy',b:'upgrade',kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소 / 성광 저항 Ⅰ',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'},
   {a:'holy',b:'blast',kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'반경 3칸 강화 성광폭발 40~56 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'},
   {a:'holy',b:'mapping',kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'},
   {a:'holy',b:'ward',kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ward:{"turns":18,"fortify":8,"regen":4},ability:"전체 정화·보호막 18턴·추가 DEF +3 8턴 + 성광 격퇴·재생",desc:"성광으로 몸을 정화하고 주변 사기를 태우며 4턴 재생한다."},

@@ -25,6 +25,7 @@ const out = await s.page.evaluate(() => {
   p.armor = { elementGuard74: 'ice' }; p.cloak = {}; p.relic = {};
   r.axe = [resTest.level({x:0,y:0,hp:1,weapon:{artifactId46:'ember_axe'}},'fire')];
   r.oldGuard = [resTest.level(p, 'ice'), resTest.guard(p, 'ice')];
+  p.armor = { elementGuard74: 'ice' }; p.weapon = { elementBrand74: 'ice' }; r.both = [resTest.level(p, 'ice'), resTest.mult(p, 'ice')];
   const m = { name: '시험체', x: p.x + 2, y: p.y, hp: 50, maxHp: 50, kind: 'human', resist: { shock: 2 } };
   r.mon = [resTest.level(m, 'shock'), resTest.mult(m, 'shock')];
   return r;
@@ -35,7 +36,8 @@ assert.deepEqual(out.fire2, [2, 0.3]);
 assert.deepEqual(out.fireCap, [3, true]);
 assert.equal(out.otherElem, 0);
 assert.deepEqual(out.axe,[2]);
-assert.deepEqual(out.oldGuard, [3, true]);
+assert.deepEqual(out.oldGuard, [1, false]);
+assert.deepEqual(out.both, [2, 0.3]);
 assert.deepEqual(out.mon, [2, 0.3]);
 console.log('resist-levels: ok');
 await browser.close(); process.exit(0);
