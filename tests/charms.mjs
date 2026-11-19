@@ -75,7 +75,8 @@ await s.page.evaluate(() => {
   const T = charmTest, host = document.createElement('div');
   host.id = 'charmSheet'; host.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#241d19;padding:8px;display:flex;flex-wrap:wrap;gap:2px;overflow:auto';
   const add = (it, label) => { const wrap = document.createElement('div'); wrap.style.cssText = 'width:96px;text-align:center;font:10px sans-serif;color:#e6d9bd'; const c = document.createElement('canvas'); const src = T.sprite(it); c.width = 96; c.height = 96; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.drawImage(src, 0, 0, 96, 96); wrap.append(c, label); host.append(wrap); };
-  for (const slot of ['relic', 'trinket']) for (const shape of T.shapes[slot]) for (const mat of ['jade', 'ruby', 'azure', 'gold']) add({ type: slot, name: 'sheet-' + shape + mat, rarity: 'relic', art: { shape, mat, gem: ['fire', 'water', 'ice', 'shock', 'earth', 'grass', 'holy'][(shape.length + mat.length) % 7], glyph: '火' } }, shape + '/' + mat);
+  const mats = Object.keys(T.mats), gems = ['fire', 'water', 'ice', 'shock', 'earth', 'grass', 'holy', 'ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'pearl', 'onyx', 'turquoise'], cords = ['crimson', 'indigo', 'saffron', 'forest', 'violet', 'teal', 'ivory', 'black'];
+  let n = 0; for (const slot of ['relic', 'trinket']) for (const shape of T.shapes[slot]) for (let k = 0; k < 5; k++, n++) add({ type: slot, name: 'sheet-' + n, rarity: 'relic', art: { shape, mat: mats[(n * 5 + k * 3) % mats.length], gem: gems[(n * 7) % gems.length], cord: cords[(n * 3) % cords.length], glyph: k % 2 ? '火' : '' } }, shape + '/' + mats[(n * 5 + k * 3) % mats.length]);
   for (const it of [...T.RELICS, ...T.TRINKETS].filter(x => x.art)) add(it, it.name);
   document.body.append(host);
 });

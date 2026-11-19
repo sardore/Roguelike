@@ -3,13 +3,19 @@
    randarts share the same fields, so every hook below reads one shape. Resistance itself is owned by
    elements.js (gearResistLevel); this file owns the specials, the randart roller and the charm icons. */
 const CHARM_GLYPH={fire:'火',water:'水',ice:'氷',shock:'雷',earth:'土',grass:'木',holy:'聖'};
-const CHARM_GEM={fire:'#d0613c',water:'#4a9fbd',ice:'#a6cbdc',shock:'#d4b648',earth:'#b48850',grass:'#76ad58',holy:'#e3d198'};
+const CHARM_GEM={fire:'#d9623a',water:'#3fa3cc',ice:'#9fd0e6',shock:'#e2bd3c',earth:'#b98b4e',grass:'#58b25e',holy:'#f0dc9a',
+  ruby:'#c33a4a',sapphire:'#3f6fc4',emerald:'#2f9e6c',topaz:'#e0b040',amethyst:'#9a63c8',pearl:'#efe7dc',onyx:'#34303c',turquoise:'#35b5b0'};
+const CHARM_JEWELS=['ruby','sapphire','emerald','topaz','amethyst','pearl','onyx','turquoise'];
+const CHARM_CORDS={crimson:'#a83240',indigo:'#3a4f9a',saffron:'#d19a30',forest:'#3f7a52',violet:'#7a52a0',teal:'#2f8a8a',ivory:'#e0d6b8',black:'#352d3a'};
 const CHARM_MATERIALS={
-  jade:{name:'비취',c1:'#5f9d89',c2:'#244a3f'},gold:{name:'황금',c1:'#c9a24f',c2:'#5e4719'},silver:{name:'백은',c1:'#b9c1c4',c2:'#4b545a'},
-  bronze:{name:'청동',c1:'#9a6a42',c2:'#41271a'},ebony:{name:'흑단',c1:'#4e4254',c2:'#1a141d'},ruby:{name:'적옥',c1:'#a8453f',c2:'#4a1714'},
-  azure:{name:'청금석',c1:'#4f7fae',c2:'#1c3452'},amber:{name:'호박',c1:'#c58a3b',c2:'#5e3a12'},amethyst:{name:'자수정',c1:'#85689f',c2:'#35204f'}
+  jade:{name:'비취',c1:'#58b08f',c2:'#1f5a49'},celadon:{name:'청자',c1:'#9cc8b0',c2:'#35604f'},gold:{name:'황금',c1:'#e0b64a',c2:'#6e5018'},
+  rosegold:{name:'홍금',c1:'#d99a82',c2:'#6a3426'},silver:{name:'백은',c1:'#c9d3d8',c2:'#525e66'},bronze:{name:'청동',c1:'#b07440',c2:'#4a2c17'},
+  copper:{name:'적동',c1:'#c8643a',c2:'#53230f'},ebony:{name:'흑단',c1:'#5e4a66',c2:'#1d1522'},ruby:{name:'적옥',c1:'#c04840',c2:'#541814'},
+  coral:{name:'산호',c1:'#e07a68',c2:'#722a24'},azure:{name:'청금석',c1:'#4f86c2',c2:'#1c3a64'},lapis:{name:'감청',c1:'#3a58a0',c2:'#141f48'},
+  amber:{name:'호박',c1:'#dc9a34',c2:'#6a3e0c'},amethyst:{name:'자수정',c1:'#9068b4',c2:'#3a2258'},pearl:{name:'진주',c1:'#ece3d4',c2:'#756a5c'},
+  turquoise:{name:'옥청',c1:'#3fb4b0',c2:'#134c4c'},obsidian:{name:'흑요석',c1:'#46465a',c2:'#12121c'}
 };
-const CHARM_ELEM_MATERIAL={fire:['ruby','bronze','amber'],water:['azure','jade'],ice:['silver','azure'],shock:['gold','amethyst'],earth:['amber','bronze','ebony'],grass:['jade','ebony'],holy:['silver','gold']};
+const CHARM_ELEM_MATERIAL={fire:['ruby','copper','coral','amber'],water:['azure','turquoise','lapis'],ice:['silver','pearl','celadon','azure'],shock:['gold','amethyst','obsidian'],earth:['amber','bronze','ebony','rosegold'],grass:['jade','celadon','ebony'],holy:['silver','gold','pearl','rosegold']};
 const CHARM_ELEM_PREFIX={fire:'염화',water:'청류',ice:'한빙',shock:'뇌명',earth:'암맥',grass:'녹음',holy:'성광'};
 const CHARM_SHAPES_BY_SLOT={relic:['ring','beads','plaque','mirror','seal','bracelet'],trinket:['norigae','bell','gourd','coins','fan','hairpin']};
 const CHARM_SHAPE_NAME={ring:'반지',beads:'염주',plaque:'옥패',mirror:'거울',seal:'인장',bracelet:'팔찌',norigae:'노리개',bell:'방울',gourd:'호리병',coins:'엽전 꿰미',fan:'부채',hairpin:'비녀'};
@@ -105,10 +111,10 @@ function makeRandart(slot,tier=3,rnd=()=>globalThis.__MANRU_RANDOM57__()){
   if(it.strike&&!it.strike.element)it.strike.element=pick(RESIST_ELEMENTS57);
   const posResist=Object.keys(it.resist).filter(e=>it.resist[e]>0),dominant=posResist[0]||null;
   const specialKey=Object.keys(specials).find(k=>it[k]);
-  const mat=pick(dominant?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=pick(CHARM_SHAPES_BY_SLOT[slot]);
+  const mat=pick(dominant&&chance(.65)?CHARM_ELEM_MATERIAL[dominant]:Object.keys(CHARM_MATERIALS)),shape=pick(CHARM_SHAPES_BY_SLOT[slot]),gemKey=dominant&&chance(.6)?dominant:pick(CHARM_JEWELS),cordKey=pick(Object.keys(CHARM_CORDS));
   const prefix=dominant?CHARM_ELEM_PREFIX[dominant]:(CHARM_PREFIX_SPECIAL[specialKey]||CHARM_PREFIX_SPECIAL[mainKey]||'무명');
   it.name=`${prefix} ${CHARM_MATERIALS[mat].name} ${CHARM_SHAPE_NAME[shape]}`;
-  it.art={shape,mat,gem:dominant||'',glyph:dominant?CHARM_GLYPH[dominant]:''};
+  it.art={shape,mat,gem:gemKey,cord:cordKey,glyph:dominant?CHARM_GLYPH[dominant]:''};
   it.desc=`${CHARM_MATERIALS[mat].name}으로 빚은 ${CHARM_SHAPE_NAME[shape]}. ${CHARM_FLAVOR[shape]}`;
   if(!Object.keys(it.resist).length)delete it.resist;
   return it;
@@ -119,54 +125,89 @@ function charmDrop(pool){
   return clone(choice(fixed));
 }
 
-/* ---- icons: twelve silhouettes × nine materials × gem/element glyph ---- */
+
+/* ---- icons: twelve silhouettes; material, gem, cord and trim colours vary independently ---- */
 function drawCharmArt(q,it){
-  const a=it.art||{},m=CHARM_MATERIALS[a.mat]||CHARM_MATERIALS.gold,c1=m.c1,c2=m.c2,g=CHARM_GEM[a.gem]||'#d9c58a',hi=shade(c1,42),dark='#17110e',gold='#d6b872';
-  const gemAt=(x,y,r)=>{ell(q,dark,x,y,r+1.3,r+1.3);ell(q,shade(g,-38),x,y,r,r);ell(q,g,x-.4,y-.4,r*.74,r*.74);ell(q,shade(g,72),x-r*.32,y-r*.32,r*.3,r*.3)};
-  const ring=(cx,cy,rx,ry,cols)=>{q.save();for(const[lw,col]of cols){q.lineWidth=lw;q.strokeStyle=col;q.beginPath();q.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);q.stroke()}q.restore()};
+  const a=it.art||{},m=CHARM_MATERIALS[a.mat]||CHARM_MATERIALS.gold,c1=m.c1,c2=m.c2,g=CHARM_GEM[a.gem]||CHARM_GEM.ruby,hi=shade(c1,55),dark='#17110e';
+  const cordHex=CHARM_CORDS[a.cord]||Object.values(CHARM_CORDS)[hash(it.name)%8],trim=['gold','rosegold','bronze','copper','amber','coral'].includes(a.mat)?'#f3e7c4':'#e2c47a';
+  const lg=(x0,y0,x1,y1,cols)=>{const gr=q.createLinearGradient(x0,y0,x1,y1);cols.forEach((c,i)=>gr.addColorStop(i/(cols.length-1),c));return gr};
+  const rg=(x,y,r,cols)=>{const gr=q.createRadialGradient(x-r*.35,y-r*.4,r*.08,x,y,r);cols.forEach((c,i)=>gr.addColorStop(i/(cols.length-1),c));return gr};
+  const fp=(pts,st)=>{q.fillStyle=st;q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill()};
+  const fe=(x,y,rx,ry,st)=>{q.fillStyle=st;q.beginPath();q.ellipse(x,y,rx,ry,0,0,Math.PI*2);q.fill()};
+  const stroke=(st,w,fn)=>{q.save();q.strokeStyle=st;q.lineWidth=w;q.lineCap='round';q.beginPath();fn();q.stroke();q.restore()};
+  const thin=(x1,y1,x2,y2,col,w=1)=>stroke(col,w,()=>{q.moveTo(x1,y1);q.lineTo(x2,y2)});
+  const orb=(x,y,r,base)=>{fe(x,y,r+1,r+1,dark);fe(x,y,r,r,rg(x,y,r,[shade(base,70),base,shade(base,-60)]))};
+  const gem=(x,y,r,col=g)=>{fe(x,y,r+1.4,r+1.4,dark);fe(x,y,r+.6,r+.6,lg(x-r,y-r,x+r,y+r,[trim,shade(trim,-70)]));fe(x,y,r,r,rg(x,y,r,[shade(col,85),col,shade(col,-70)]));fp([[x-r*.7,y-r*.1],[x-r*.1,y-r*.8],[x+r*.5,y-r*.5],[x,y]],shade(col,95));itemArtDot(q,Math.round(x-r*.4),Math.round(y-r*.5),'#ffffff')};
+  const metal=(x0,y0,x1,y1)=>lg(x0,y0,x1,y1,[hi,c1,c2]);
+  const tassel=(x,y,len,col=cordHex)=>{orb(x,y,2.2,col);for(const dx of[-3,-1.5,0,1.5,3]){thin(x+dx*.3,y+2,x+dx*1.25,y+len,dark,2.2);thin(x+dx*.3,y+2,x+dx*1.25,y+len,shade(col,Math.abs(dx)>2?-35:15),1.2)}thin(x-3.4,y+len-3,x+3.4,y+len-3,trim,1.2);fe(x,y+len+.5,0,0,col)};
+  const ringStroke=(cx,cy,rx,ry,cols)=>{for(const[w,st]of cols)stroke(st,w,()=>q.ellipse(cx,cy,rx,ry,0,0,Math.PI*2))};
   switch(a.shape){
   case'beads':{
-    for(let i=1;i<12;i++){const t=i/12*Math.PI*2+Math.PI/2,x=24+Math.cos(t)*13,y=21+Math.sin(t)*12;ell(q,dark,x,y,4.6,4.6);ell(q,i%3===0?g:c1,x,y,3.5,3.5);itemArtDot(q,x-1,y-1,hi)}
-    ell(q,dark,24,33,6.5,6.5);ell(q,c2,24,33,5.5,5.5);gemAt(24,33,4);itemArtDot(q,22,31,'#ffffff');line(q,24,39,24,45,c2,2);break}
-  case'plaque':
-    line(q,24,2,24,10,g,2);poly(q,dark,[[13,10],[35,10],[38,16],[38,33],[24,43],[10,33],[10,16]]);poly(q,c2,[[14,11],[34,11],[37,17],[37,32],[24,41],[11,32],[11,17]]);poly(q,c1,[[16,14],[32,14],[34,18],[34,30],[24,38],[14,30],[14,18]]);
-    line(q,19,22,29,22,gold,1);line(q,24,17,24,31,gold,1);gemAt(24,26,3.5);itemArtDot(q,23,25,'#ffffff');break;
-  case'mirror':
-    poly(q,dark,[[20,33],[28,33],[29,44],[19,44]]);rect(q,21,34,6,9,c1);ell(q,dark,24,20,15,15);ell(q,c1,24,20,14,14);ell(q,c2,24,20,11,11);ell(q,'#cfe6ea',24,20,10,10);
-    poly(q,'rgba(255,255,255,.6)',[[16,15],[22,10],[27,11],[18,25]]);gemAt(24,34,3.2);break;
-  case'seal':
-    poly(q,dark,[[10,26],[38,26],[38,41],[10,41]]);rect(q,11,27,26,13,c1);rect(q,11,27,26,3,hi);rect(q,11,37,26,3,c2);rect(q,14,32,20,2,gold);
-    poly(q,dark,[[16,27],[18,14],[24,8],[30,14],[32,27]]);poly(q,c1,[[17,27],[19,15],[24,10],[29,15],[31,27]]);poly(q,c2,[[24,10],[29,15],[31,27],[24,27]]);gemAt(24,18,3.2);itemArtDot(q,23,17,'#ffffff');break;
-  case'bracelet':
-    ring(24,26,14,11,[[10,dark],[7,c2],[5,c1]]);
-    for(let i=0;i<9;i++){const t=i/9*Math.PI*2,x=24+Math.cos(t)*14,y=26+Math.sin(t)*11;ell(q,c2,x,y,1.4,1.4)}
-    ring(24,26,14,11,[[1,hi]]);ell(q,dark,24,37,5,4.2);ell(q,g,24,37,3.6,3.2);itemArtDot(q,23,36,'#ffffff');break;
-  case'norigae':
-    line(q,24,14,24,23,c2,2);ell(q,dark,24,9,6.5,6.5);gemAt(24,9,5.5);ell(q,c1,24,9,3.2,3.2);itemArtDot(q,22,7,'#ffffff');
-    poly(q,dark,[[17,22],[31,22],[34,28],[24,35],[14,28]]);poly(q,c1,[[18,23],[30,23],[32,28],[24,33],[16,28]]);gemAt(24,28,2.8);
-    for(const[x1,x2,col]of[[20,15,c2],[24,24,g],[28,33,c2]]){line(q,x1,34,x2,44,col,2);ell(q,c1,x2,44,2.2,2.2)}break;
-  case'bell':
-    q.save();q.strokeStyle=dark;q.lineWidth=3.4;q.beginPath();q.arc(24,8,4,0,Math.PI*2);q.stroke();q.strokeStyle=c2;q.lineWidth=1.6;q.stroke();q.restore();
-    poly(q,dark,[[12,35],[15,20],[24,12],[33,20],[36,35]]);poly(q,c1,[[15,34],[17,21],[24,14],[31,21],[33,34]]);poly(q,c2,[[24,14],[31,21],[33,34],[24,34]]);
-    rect(q,12,34,24,3,dark);rect(q,13,35,22,2,c1);line(q,24,27,24,35,dark,2);line(q,19,21,18,31,hi,1);gemAt(24,40,3.2);break;
-  case'gourd':
-    ell(q,dark,24,31,12.5,11.5);ell(q,dark,24,15,8.5,8.5);ell(q,c1,24,31,11.5,10.5);ell(q,c1,24,15,7.5,7.5);ell(q,c2,29,35,6,5);ell(q,hi,19,28,2.6,4);
-    rect(q,21,3,6,5,dark);rect(q,22,4,4,3,c2);rect(q,16,21,16,3,dark);rect(q,17,22,14,1,g);line(q,31,23,35,35,g,1);break;
-  case'coins':
-    line(q,24,3,24,45,c2,2);ell(q,dark,24,6,4,4);gemAt(24,6,3);
-    for(let i=0;i<4;i++){const y=15+i*8;ell(q,dark,24,y,7.5,7.5);ell(q,c1,24,y,6.5,6.5);ell(q,c2,24,y,5,5);ell(q,c1,24,y,4.2,4.2);rect(q,22,y-2,4,4,dark);itemArtDot(q,20,y-4,hi)}break;
+    for(let i=0;i<14;i++){const t=(i/14)*Math.PI*2+Math.PI/2+.2,x=24+Math.cos(t)*14,y=21+Math.sin(t)*12.5;if(Math.sin(t)>.93)continue;if(i%4===3){fe(x,y,3.2,3.2,dark);fe(x,y,2.5,2.5,metal(x-2,y-2,x+2,y+2));continue}orb(x,y,3.6,i%2?c1:shade(c1,-18))}
+    thin(24,33,24,36,cordHex,2);orb(24,38,5.2,g);gem(24,38,2.4,shade(g,40));tassel(24,43,3);break}
+  case'plaque':{
+    const out=[[13,10],[35,10],[38,15],[38,32],[24,43],[10,32],[10,15]];
+    thin(24,3,24,10,cordHex,2.2);stroke(trim,1.4,()=>q.arc(24,5,2.6,0,Math.PI*2));
+    fp(out,dark);fp([[14,11],[34,11],[37,16],[37,31],[24,41.5],[11,31],[11,16]],lg(10,10,38,43,[hi,c1,c2]));
+    fp([[17,14],[31,14],[34,18],[34,30],[24,38],[14,30],[14,18]],lg(14,14,34,38,[shade(c2,10),shade(c2,-30)]));
+    stroke(trim,1,()=>{q.moveTo(17,14);q.lineTo(31,14);q.lineTo(34,18);q.lineTo(34,30);q.lineTo(24,38);q.lineTo(14,30);q.lineTo(14,18);q.closePath()});
+    if(a.glyph){q.fillStyle=trim;q.font='900 15px serif';q.textAlign='center';q.fillText(a.glyph,24,31);q.textAlign='start'}
+    else{stroke(trim,1.2,()=>{q.arc(20,26,4,Math.PI,Math.PI*2);q.arc(28,26,4,Math.PI,Math.PI*2)});thin(24,20,24,32,trim,1)}
+    gem(24,16,2.3);break}
+  case'mirror':{
+    thin(24,40,24,45,dark,5);fp([[21,33],[27,33],[28,41],[20,41]],dark);fp([[22,33.5],[26,33.5],[26.6,40],[21.4,40]],metal(21,33,27,40));tassel(24,41,4);
+    fe(24,20,15.5,15.5,dark);fe(24,20,14.5,14.5,metal(10,6,38,34));fe(24,20,11.3,11.3,dark);fe(24,20,10.4,10.4,rg(24,20,10.4,[shade(c1,25),c2,shade(c2,-25)]));
+    stroke(trim,1,()=>q.arc(24,20,8.2,0,Math.PI*2));
+    for(let i=0;i<8;i++){const t=i/8*Math.PI*2;fe(24+Math.cos(t)*6,20+Math.sin(t)*6,1.5,1.5,trim)}
+    gem(24,20,3);break}
+  case'seal':{
+    thin(36,30,41,36,cordHex,2);tassel(41,37,6);
+    fp([[10,29],[38,29],[38,41],[10,41]],dark);fp([[11,30],[37,30],[37,40],[11,40]],lg(11,30,37,40,[hi,c1,c2]));fp([[11,30],[16,25],[32,25],[37,30]],dark);fp([[12,29.5],[16.5,26],[31.5,26],[36,29.5]],shade(c1,60));
+    stroke(trim,1,()=>{q.moveTo(13,33);q.lineTo(35,33);q.moveTo(13,37);q.lineTo(35,37)});
+    fe(24,17,8,7,dark);fe(24,17,7,6,rg(24,17,7,[hi,c1,c2]));fe(24,11,5,4.6,dark);fe(24,11,4.2,3.9,rg(24,11,4.4,[hi,c1,c2]));fp([[19.5,8],[21,4.5],[22.8,8]],dark);fp([[25.2,8],[27,4.5],[28.5,8]],dark);gem(24,17,2.2);itemArtDot(q,22,10,dark);itemArtDot(q,26,10,dark);break}
+  case'bracelet':{
+    ringStroke(24,26,14,11,[[12,dark],[9,lg(10,10,38,40,[hi,c1,c2])]]);
+    ringStroke(24,26,14,11,[[1,hi]]);
+    for(let i=0;i<10;i++){const t=i/10*Math.PI*2,x=24+Math.cos(t)*14,y=26+Math.sin(t)*11,nx=Math.cos(t),ny=Math.sin(t)*.8;thin(x-nx*3.6,y-ny*3.6,x+nx*3.6,y+ny*3.6,i%2?trim:shade(c2,-10),1.2)}
+    orb(14,37,2.2,trim);orb(34,37,2.2,trim);gem(24,37.5,4);break}
+  case'norigae':{
+    for(const side of[-1,1]){const cx=24+side*7.5;stroke(dark,5,()=>q.ellipse(cx,9,6,4.2,side*.35,0,Math.PI*2));stroke(cordHex,3,()=>q.ellipse(cx,9,6,4.2,side*.35,0,Math.PI*2));stroke(shade(cordHex,60),.8,()=>q.ellipse(cx,8.5,5.2,3.4,side*.35,Math.PI,Math.PI*1.8))}
+    orb(24,9,3.8,cordHex);thin(24,13,24,19,cordHex,2.4);
+    fe(24,26,8.4,8.4,dark);fe(24,26,7.6,7.6,metal(17,19,31,33));gem(24,26,5);
+    for(const[dx,col]of[[-4,cordHex],[0,shade(cordHex,25)],[4,cordHex]])thin(24+dx*.9,32,24+dx*1.7,41,dark,2.6),thin(24+dx*.9,32,24+dx*1.7,41,col,1.4);
+    thin(19,40,29,40,trim,1.4);orb(24,35.5,1.9,trim);orb(18,43,1.8,g);orb(30,43,1.8,g);break}
+  case'bell':{
+    thin(24,2,24,8,cordHex,2.2);stroke(dark,3.6,()=>q.arc(24,8.5,3.6,0,Math.PI*2));stroke(trim,1.6,()=>q.arc(24,8.5,3.6,0,Math.PI*2));
+    q.save();q.fillStyle=dark;q.beginPath();q.moveTo(10.5,36);q.quadraticCurveTo(11,13.5,24,11.5);q.quadraticCurveTo(37,13.5,37.5,36);q.closePath();q.fill();q.fillStyle=lg(11,12,37,36,[hi,c1,c2]);q.beginPath();q.moveTo(12,35);q.quadraticCurveTo(12.5,14.8,24,13);q.quadraticCurveTo(35.5,14.8,36,35);q.closePath();q.fill();q.restore();
+    fp([[10.5,34],[37.5,34],[38,37.5],[10,37.5]],dark);fp([[11.5,35],[36.5,35],[36.6,36.6],[11.4,36.6]],trim);
+    stroke(trim,1.2,()=>{q.moveTo(13,27);q.quadraticCurveTo(24,30,35,27)});stroke(shade(c2,-20),1.4,()=>{q.moveTo(17,20);q.quadraticCurveTo(24,23,31,20)});
+    thin(19,17,17.5,30,shade(hi,30),1.2);fe(24,37.6,3.4,1.5,dark);gem(24,41,2.4);break}
+  case'gourd':{
+    fe(24,31,12.8,12,dark);fe(24,15,8.8,8.6,dark);fe(24,31,11.8,11,rg(24,31,11.8,[hi,c1,c2]));fe(24,15,7.8,7.6,rg(24,15,7.8,[hi,c1,c2]));
+    stroke(shade(c2,-10),1,()=>{q.arc(24,31,8,Math.PI*.15,Math.PI*.85);q.moveTo(31,33);q.arc(24,31,8,Math.PI*.15,Math.PI*.4)});stroke(shade(hi,25),1.2,()=>q.arc(24,31,9,Math.PI*1.05,Math.PI*1.35));
+    fp([[20,3],[28,3],[29,8],[19,8]],dark);fp([[21,4],[27,4],[27.6,7],[20.4,7]],metal(20,3,28,8));
+    stroke(dark,4.2,()=>{q.moveTo(15.5,22);q.quadraticCurveTo(24,25,32.5,22)});stroke(cordHex,2.4,()=>{q.moveTo(15.5,22);q.quadraticCurveTo(24,25,32.5,22)});
+    thin(31,23.5,35,26,cordHex,2);tassel(35,27,9);gem(24,31,3);break}
+  case'coins':{
+    thin(24,2,24,40,dark,3.4);thin(24,2,24,40,cordHex,1.6);orb(24,5,3,cordHex);
+    for(let i=0;i<4;i++){const y=14+i*7.4;fe(24,y,7.6,7.6,dark);fe(24,y,6.7,6.7,rg(24,y,6.7,[hi,c1,c2]));stroke(trim,.9,()=>q.arc(24,y,5.3,0,Math.PI*2));fp([[21.6,y-2.4],[26.4,y-2.4],[26.4,y+2.4],[21.6,y+2.4]],dark)}
+    tassel(24,41,5);break}
   case'fan':{
-    const R=25,pts=[[24,41]];for(let d=-152;d<=-28;d+=12)pts.push([24+(R+2)*Math.cos(d*Math.PI/180),41+(R+2)*Math.sin(d*Math.PI/180)]);poly(q,dark,pts);
-    for(let i=0;i<6;i++){const a0=(-150+i*20.5)*Math.PI/180,a1=(-150+(i+1)*20.5)*Math.PI/180;poly(q,i%2?c1:hi,[[24,41],[24+R*Math.cos(a0),41+R*Math.sin(a0)],[24+R*Math.cos(a1),41+R*Math.sin(a1)]])}
-    for(let i=0;i<=6;i++){const a=(-150+i*20.5)*Math.PI/180;line(q,24,41,24+R*Math.cos(a),41+R*Math.sin(a),c2,1)}
-    gemAt(24,43,3);itemArtDot(q,23,42,'#ffffff');break}
-  case'hairpin':
-    line(q,8,42,33,14,c1,3);line(q,9,41,32,15,hi,1);
-    for(let i=0;i<6;i++){const t=i/6*Math.PI*2;ell(q,c1,36+Math.cos(t)*5.5,11+Math.sin(t)*5.5,3.2,3.2)}
-    ell(q,dark,36,11,4.6,4.6);gemAt(36,11,3.8);itemArtDot(q,35,9,'#ffffff');gemAt(8,42,2.6);break;
-  default:
-    ring(24,29,12,10,[[9,dark],[6,c2],[4,c1]]);ring(24,29,12,10,[[1,hi]]);
-    poly(q,dark,[[16,19],[24,10],[32,19],[24,26]]);poly(q,c2,[[17,19],[24,11],[31,19],[24,25]]);poly(q,g,[[19,19],[24,13],[29,19],[24,23]]);itemArtDot(q,22,17,'#ffffff');
+    const R=26,pts=[[24,42]];for(let d=-155;d<=-25;d+=10)pts.push([24+(R+2)*Math.cos(d*Math.PI/180),42+(R+2)*Math.sin(d*Math.PI/180)]);fp(pts,dark);
+    for(let i=0;i<7;i++){const a0=(-152+i*17.4)*Math.PI/180,a1=(-152+(i+1)*17.4)*Math.PI/180;fp([[24,42],[24+R*Math.cos(a0),42+R*Math.sin(a0)],[24+R*Math.cos(a1),42+R*Math.sin(a1)]],i%2?lg(12,10,36,40,[hi,c1]):lg(12,10,36,40,[c1,shade(c1,-30)]))}
+    for(let i=0;i<=7;i++){const t=(-152+i*17.4)*Math.PI/180;thin(24,42,24+R*Math.cos(t),42+R*Math.sin(t),shade(c2,-15),.9)}
+    stroke(trim,1.2,()=>q.arc(24,42,R-1.5,-152*Math.PI/180,-28*Math.PI/180));for(let i=0;i<7;i++){const t=(-143+i*17.4)*Math.PI/180;fe(24+(R-8)*Math.cos(t),42+(R-8)*Math.sin(t),1.6,1.6,i%2?g:trim)}
+    orb(24,43.5,2.4,trim);thin(24,43,24,47,cordHex,2);break}
+  case'hairpin':{
+    thin(7,43,31,17,dark,5);thin(7,43,31,17,lg(7,43,31,17,[c2,c1,hi]),3);thin(8,42,30,18,trim,.8);
+    for(let i=0;i<6;i++){const t=i/6*Math.PI*2;orb(37+Math.cos(t)*5.2,10+Math.sin(t)*5.2,3.3,i%2?c1:hi)}
+    gem(37,10,4.2);
+    for(const[x,y,len]of[[31,17,8],[34,16,10]]){thin(x,y,x-2,y+len,trim,.9);orb(x-2,y+len+1,1.9,g)}
+    orb(7,43,2.4,cordHex);break}
+  default:{
+    ringStroke(24,33,12.5,8,[[8,dark],[5,lg(12,26,36,41,[hi,c1,c2])]]);ringStroke(24,33,12.5,8,[[.9,hi]]);
+    for(let i=0;i<8;i++){const t=Math.PI*(.15+i*.1);thin(24+Math.cos(t)*12.5-1.4,33+Math.sin(t)*8,24+Math.cos(t)*12.5+1.4,33+Math.sin(t)*8,shade(c2,-20),1)}
+    fp([[14,24],[18,14],[30,14],[34,24],[24,29]],dark);fp([[15.6,24],[19,15.2],[29,15.2],[32.4,24],[24,27.6]],metal(14,14,34,29));gem(24,20.5,5);orb(12.5,31,2.2,shade(g,-10));orb(35.5,31,2.2,shade(g,-10))}
   }
-  if(a.glyph){ell(q,dark,38,38,6.6,6.6);ell(q,shade(g,-70),38,38,5.6,5.6);q.save();q.strokeStyle=gold;q.lineWidth=1;q.beginPath();q.arc(38,38,5.6,0,Math.PI*2);q.stroke();q.restore();q.fillStyle='#f3e6c4';q.font='900 8px serif';q.textAlign='center';q.fillText(a.glyph,38,41);q.textAlign='start'}
+  if(a.glyph&&a.shape!=='plaque'){fe(38,38,6.4,6.4,dark);fe(38,38,5.5,5.5,lg(32,32,44,44,[shade(g,-60),shade(g,-110)]));stroke(trim,.9,()=>q.arc(38,38,5.5,0,Math.PI*2));q.fillStyle='#fbf0d2';q.font='900 9px serif';q.textAlign='center';q.fillText(a.glyph,38,41);q.textAlign='start'}
 }
