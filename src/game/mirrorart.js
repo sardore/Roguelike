@@ -176,6 +176,18 @@ function drawGlassPlatformCell(ctx,px,py,x,y,r){
  if(r.design==='barge'){const ends=r.axis==='x'?(!w||!e):(!n||!s);if(ends){ctx.fillStyle=glassRGBA(P.lamp,.6);ctx.beginPath();if(r.axis==='x'){ctx.moveTo(px+(!w?4:28),py+16);ctx.lineTo(px+(!w?12:20),py+10);ctx.lineTo(px+(!w?12:20),py+22)}else{ctx.moveTo(px+16,py+(!n?4:20));ctx.lineTo(px+10,py+(!n?12:12));ctx.lineTo(px+22,py+(!n?12:12))}ctx.closePath();ctx.fill()}}
 }
 // Cell painter, called for every seen cell of the tower floors.
+// A leaf over the void: lily-pad green against the pink sky, notched, veined, with a faint shadow far below it.
+function drawGlassLeaf(ctx,px,py,x,y,now){
+ const h=hash2(x,y,771),bob=Math.sin(now/700+x*1.7+y*.9)*1.1,armed=!!hz()?.armed?.[k(x,y)],rot=(h-.5)*1.2;
+ ctx.save();ctx.fillStyle=glassRGBA(glassPal().violetInk,.20);ctx.beginPath();ctx.ellipse(px+17,py+27,11,3,0,0,Math.PI*2);ctx.fill();
+ ctx.translate(px+16,py+16+bob);ctx.rotate(rot);
+ const g=ctx.createRadialGradient(-3,-3,2,0,0,14);g.addColorStop(0,armed?'#d9c27a':'#b4d28f');g.addColorStop(.55,armed?'#a89458':'#6f9e6a');g.addColorStop(1,armed?'#6b5a35':'#3d6149');
+ ctx.fillStyle='#233a31';ctx.beginPath();ctx.ellipse(0,0,14.5,11.5,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,13.2,10.3,0,.22,Math.PI*2-.22);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(222,240,186,.65)';ctx.lineWidth=1;for(let i=0;i<6;i++){const a=.6+i*1.0;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*11.5,Math.sin(a)*8.8);ctx.stroke()}
+ ctx.fillStyle='rgba(255,255,255,.30)';ctx.beginPath();ctx.ellipse(-4,-4,5,2.2,-.5,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
 function drawGlassTowerCell(t,px,py,x,y){
  const layout=mirrorLayout();if(!layout)return false;
  const ctx=X,tower=mirrorOwner(x,y),zone=mirrorZone(x,y),now=FX.frameNow||performance.now();
@@ -190,7 +202,7 @@ function drawGlassTowerCell(t,px,py,x,y){
   return true;
  }
  if(t===TT.DOOR||t===TT.OPEN_DOOR){drawGlassDoor(ctx,px,py,x,y,t===TT.OPEN_DOOR,tower);return true}
- if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y)){ctx.drawImage(glassCached(`leaf|${hash2(x,y,state.branchContext105.level*107)>.5?1:0}`,32,32,q=>paintBranchLeaf(q,hash2(x,y,state.branchContext105.level*107))),px,py);return true}
+ if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y)){drawGlassLeaf(ctx,px,py,x,y,now);return true}
  ctx.drawImage(glassFloorTile(zone==='.'?'r':zone,x,y,tower),px,py);
  if((zone==='h'||zone==='P')&&tower&&mirrorTowerContains(tower,x,y,2))drawGlassMedallion(ctx,px,py,tower);
  if(zone==='b'||zone==='p'||zone==='d')drawGlassBridgeEdges(ctx,px,py,x,y);

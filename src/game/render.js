@@ -1356,14 +1356,6 @@ if([23,24].includes(state?.floor)&&drawAuthoredTerrain(tile,px,py,x,y,now))retur
     let r;if(tile===TT.PORTAL){if(state.branchContext105||!state.branchPortals105?.some(p=>p.id==='canal'&&p.x===x&&p.y===y))drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
     r41?.specialKeyAfter?.(tile,px,py,x,y,now,r);r41?.specialAfter?.(tile,px,py,x,y,now,r);return r;
   }
-// The leaf bridge's art, shared by every branch that floats leaves: two leaves on a clear 32×32 cell, laid out by the cell's hash.
-function paintBranchLeaf(q,h){
- q.clearRect(0,0,32,32);
- for(const[a,d]of(h>.5?[[4,5],[14,17]]:[[13,4],[3,18]])){
-  q.fillStyle='#758b53';q.beginPath();q.ellipse(a+6,d+5,8,5,-.5,0,Math.PI*2);q.fill();
-  for(const[col,x1,y1,x2,y2]of[['#b2b884',a,d+8,a+11,d+2],['#344f40',a+3,d+4,a+7,d+5]]){q.strokeStyle=col;q.lineWidth=1;q.beginPath();q.moveTo(x1,y1);q.lineTo(x2,y2);q.stroke()}
- }
-}
 function drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now){
     const r=drawFloorMaterialSpecialTerrain(tile,px,py,x,y,now);if(!r)return r;const z=region980(),h=hash980(x,y,83),pulse=.5+.5*Math.sin(now/260+x+y);X.save();
     if(tile===TT.PAPER_BRIDGE){const horizontal=[state.map[y]?.[x-1],state.map[y]?.[x+1]].some(t=>t===TT.PAPER_BRIDGE||t===TT.DRAWBRIDGE_DOWN);X.strokeStyle=z===1?'rgba(246,222,172,.30)':'rgba(236,198,133,.20)';X.lineWidth=1;if(horizontal){for(let yy=7;yy<28;yy+=6){X.beginPath();X.moveTo(px+3,py+yy);X.lineTo(px+29,py+yy);X.stroke()}}else{for(let xx=7;xx<28;xx+=6){X.beginPath();X.moveTo(px+xx,py+3);X.lineTo(px+xx,py+29);X.stroke()}}}
@@ -5025,7 +5017,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  else if(prop==='wheel'){r('#293c3b',13,1,6,30);q.strokeStyle='#af9170';q.lineWidth=3;q.beginPath();q.arc(16,16,11,0,Math.PI*2);q.stroke();for(let a=0;a<4;a++)line('#d1b38a',16,16,16+Math.cos(a*Math.PI/2)*11,16+Math.sin(a*Math.PI/2)*11);r('#b6a07d',14,14,4,4);}
  else{r('#342d28',4,6,25,24);r('#8c6748',5,7,22,20);r('#bb9669',5,7,22,2);r('#503d2e',8,9,2,18);r('#503d2e',22,9,2,18);line('#c7a272',7,10,24,24);line('#b49263',24,10,7,24);if(prop==='rack'){r('#27292c',7,7,19,20);for(let a=9;a<25;a+=6){r('#b9c2bb',a,8,2,13);r('#ae8357',a,20,2,7);}}}
  }
- if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y))paintBranchLeaf(q,h);
+ if(t===TT.PAPER_BRIDGE&&branchLeafAt(x,y)){q.clearRect(0,0,32,32);for(const[a,d]of(h>.5?[[4,5],[14,17]]:[[13,4],[3,18]])){q.fillStyle='#758b53';q.beginPath();q.ellipse(a+6,d+5,8,5,-.5,0,Math.PI*2);q.fill();line('#b2b884',a,d+8,a+11,d+2);line('#344f40',a+3,d+4,a+7,d+5);}}
  if(ter.warningTiles?.[k(x,y)]){r('#4b3021',1,1,30,30);r('#d99044',2,2,28,2);r('#b2672c',2,28,28,2);for(const a of[3,26])r('#b77838',a,5,3,21);q.fillStyle='#edb467';q.beginPath();q.moveTo(16,6);q.lineTo(24,23);q.lineTo(8,23);q.closePath();q.fill();r('#49321e',15,11,2,7);r('#49321e',15,20,2,2);}
  let blend=null;
  if([TT.GRASS,TT.LIGHT_GRASS,TT.BAMBOO].includes(t)){
