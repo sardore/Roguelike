@@ -306,6 +306,9 @@ function branchTransition(portal){
  world.pages[oldKey]=branchSnapshot();const [id,lv]=portal.to.split(':'),level=Number(lv);
  if(world.pages[portal.to]){state={...branchUnpackPage(structuredClone(world.pages[portal.to])),...carry,branchWorld105:world};state.seen=new Set(state.seen||[]);state.visible=new Set();state.grassTufts1020=new Set(state.grassTufts1020||[]);COLS=state.map[0].length;ROWS=state.map.length;}
  else{if(id==='main')throw Error('Missing return map');state={...carry,branchWorld105:world,floor:BRANCH_DEFS105[id].parent};GameState.initialize(state);buildBranch(id,level);}
+ if(state.branchContext105?.id==='mirror'){
+  for(const mon of state.monsters||[])if(mon.mirrorKeeper105)normalizeBoss(mon,{loading:true});
+ }
  if(state.branchContext105?.id==='palace')palaceApplyTide({deferHazard:true});
  if(state.branchContext105?.id==='mine'){mineEnsureEntrance();migrateMineAppearance105();}
  const anchor=state.branchPortals105.find(p=>p.id===portal.arrival);if(!anchor)throw Error('Missing arrival anchor '+portal.arrival);

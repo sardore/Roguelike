@@ -367,7 +367,7 @@ export const scenarios = {
         const keeper=await s.page.evaluate(()=>{
           const snapshot=__MANRU_DEBUG_BATTLE57__.snapshot();
           return snapshot.catalog.some(e=>e.name==='거울지기'&&e.group==='보스')&&
-            snapshot.units.some(u=>u.name==='거울지기'&&u.side==='A'&&u.hp>0);
+            snapshot.units.some(u=>u.name==='거울지기'&&u.side==='A'&&u.hp===231&&u.maxHp===231);
         });
         if(!keeper)throw Error('거울지기를 디버그 전장에 편성할 수 없다');
         await tap('#battleExit57');await s.tick(100);

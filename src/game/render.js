@@ -1970,14 +1970,8 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
       }
-      if(f.kind==='mirrorShards'){
-        X.fillStyle=`rgba(112,91,219,${a+.18})`;X.fillRect(px+2,py+2,28,28);
-        for(const [dx,dy,h] of [[9,21,7],[17,15,9],[24,24,5]]){
-          X.fillStyle='#7664af';X.fillRect(px+dx-3,py+dy,7,2);
-          pR9(X,'#b9b4f4',[[px+dx-2,py+dy],[px+dx+1,py+dy-h],[px+dx+3,py+dy-2]],'#8073b4');
-          lR9(X,px+dx+1,py+dy-h,px+dx+1,py+dy-4,'#eaffff',1);
-        }
-      }else if(f.kind==='mirrorSanctuary'){
+      if(f.kind==='mirrorShards')drawMirrorShardGround(X,f,x,y,now);
+      else if(f.kind==='mirrorSanctuary'){
         X.fillStyle=`rgba(217,188,114,${a+.12})`;X.fillRect(px,py,32,32);
         X.save();X.strokeStyle='#f7e1a9';X.lineWidth=1;X.beginPath();
         for(const [dx,dy] of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){
@@ -2132,6 +2126,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     floorLoot.sort((a,b)=>a.y-b.y);
     for(const a of floorLoot)drawItem(a.o);
 
+    for(const f of state.tempFields||[])if(f.kind==='mirrorShards'&&f.ttl>0&&inB58(f,b,6))drawField(f,now);
     const living=[];
     for(const m of state.monsters||[])if(inB58(m,b,2)&&isEntityObservableToPlayer57(m))living.push({y:m.y+.70,o:m});
     if(!state.debugBattle57)living.push({y:VIS.playerY+.72,o:{x:VIS.playerX,y:VIS.playerY,color:state.player.color,shape:'player',name:'player'}});
@@ -2139,7 +2134,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of living){drawCreature(a.o);if(state.debugBattle57){const m=a.o,p=v8CreatureCoords(m),color=entityFaction(m)==='player'?'#78c8ff':'#ff9d8e';X.save();X.strokeStyle=color;X.lineWidth=1.5;for(const c of entityFootprintCells57(m))X.strokeRect((c.x-m.x+p.x)*TILE+1,(c.y-m.y+p.y)*TILE+1,TILE-2,TILE-2);X.font='bold 9px system-ui';X.fillStyle=color;X.fillText((m.debugSide57||'')+(m.debugId57||''),p.x*TILE+2,p.y*TILE+TILE-2);X.restore();}}
     for(const n of state.neutralInteractables58||[])drawNeutralInteractable(n);
 
-    for(const f of state.tempFields||[])if(f.ttl>0&&inB58(f,b,6))drawField(f,now);
+    for(const f of state.tempFields||[])if(f.kind!=='mirrorShards'&&f.ttl>0&&inB58(f,b,6))drawField(f,now);
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
@@ -2822,37 +2817,60 @@ function drawBranchCreature(q,m,frame,sp){
  shadow1012(q,16,34,sp.design==='ash_watcher'?18:28);
  switch(sp.design){
  case'mirror_keeper':{
-  const shade='#302d54',silver='#a3abc9',frost='#def5ff',lilac='#b197e1';
-  // Trailing silk, a layered silver gorget and a face cut from one piece of mirrored glass.
-  P(shade,[[7,13+b],[13,11+b],[19,11+b],[25,13+b],[27,23],[29,32],[22,33],[16,31],[10,33],[3,32],[5,24]]);
-  P(c,[[9,16+b],[16,14+b],[23,16+b],[22,23],[26,31],[21,31],[17,29],[12,32],[6,31]],null);
-  P('#8178b7',[[12,19+b],[16,19+b],[15,25],[11,30],[8,31],[11,26]],null);
-  P('#4b437c',[[20,17+b],[22,22],[25,30],[22,31],[20,27],[18,26]],null);
-  P('#a89bd0',[[15,23],[18,23],[19,29],[16,31],[13,30]],null);
-  trim([[6,31],[9,30],[12,30],[15,27]],silver);trim([[20,26],[22,29],[26,31]],'#9690c7');
-  P('#aab2cc',[[5,15+b],[10,12+b],[14,14+b],[12,17+b],[7,20+b],[3,19+b]]);
-  P('#c6cce2',[[27,15+b],[22,12+b],[18,14+b],[20,17+b],[25,20+b],[29,18+b]]);
-  trim([[4,17+b],[9,14+b],[12,14+b]],frost);trim([[20,14+b],[23,14+b],[28,17+b]],frost);
-  P('#7772af',[[9,18+b],[13,16+b],[19,16+b],[23,18+b],[21,23+b],[16,26+b],[11,23+b]]);
-  P(silver,[[11,18+b],[16,17+b],[21,18+b],[19,22+b],[16,24+b],[13,22+b]],null);
-  P(frost,[[16,17+b],[19,20+b],[16,23+b],[14,20+b]],'#727aa9');
-  R(15.5,19+b,1.25,1.5,'#ffffff');
-  P('#7565a4',[[11,6+b],[16,3+b],[21,6+b],[22,11+b],[19,15+b],[13,15+b],[10,11+b]]);
-  P(h,[[12,7+b],[16,5+b],[20,7+b],[20,11+b],[17,14+b],[14,13+b],[12,11+b]],null);
-  P(frost,[[13,7+b],[16,6+b],[19,7+b],[16,10+b],[13,11+b]],null);
-  P(lilac,[[19,9+b],[20,11+b],[17,14+b],[15,13+b],[16,11+b]],null);
-  L(13,10+b,18,9+b,'#544779',1);R(14,9+b,1,1,'#ffffff');R(17.5,9+b,1.25,1,'#ffffff');
-  P(silver,[[10,7+b],[10,3+b],[13,5+b],[16,1+b],[19,5+b],[22,3+b],[22,7+b],[17,5+b],[15,5+b]]);
-  R(15.5,1.5+b,1,2,frost);
-  P('#756b9e',[[5,21+b],[8,20+b],[9,23+b],[7,26+b],[4,25+b]]);
-  P(silver,[[25,21+b],[28,20+b],[29,23+b],[28,25+b],[25,25+b]]);
-  // Two floating mirror shards orbit the hands, with a dark edge and a bright glass bevel.
-  for(const [x,y]of[[3,23-b],[28,9+b]]){
-   P(shade,[[x,y-5],[x+3,y-2],[x+3,y+2],[x,y+5],[x-3,y+1],[x-3,y-2]]);
-   P(lilac,[[x,y-4],[x+2,y-1],[x+1,y+3],[x-2,y+1],[x-2,y-1]],null);
-   L(x-2,y-1,x,y-3,frost,1);R(x,y,1,1,'#ffffff');
+  const y=b*.5,ink='#101c32',deep='#223152',shadow='#36456b',blue='#587698',slate='#8198b9',
+    platinum='#b7cde0',ice='#e5f9ff',teal='#91fff4',violet='#a38ce3';
+  q.save();
+  // The broken halo reads as a mirror frame even when the figure covers its middle.
+  for(const [start,end] of [[-.82,-.18],[.58,1.47],[1.91,2.51],[2.91,4.18],[4.40,5.19]]){
+   q.beginPath();q.ellipse(15.3,13.7+y,10.5,12.2,0,start,end);q.strokeStyle='#152840';q.lineWidth=2.3;q.stroke();
+   q.strokeStyle=slate;q.lineWidth=1.15;q.stroke();q.strokeStyle=teal;q.lineWidth=.45;q.stroke();
   }
-  break;
+  for(const [x,v] of [[6,7],[5.5,16],[11,3.3],[24.5,7.5],[24.5,19.3]]){
+   P(blue,[[x-1.8,v+y],[x+.3,v-2.5+y],[x+1.7,v+y],[x-.5,v+2+y]],ink);
+   L(x-1,v+y,x+.3,v-1.8+y,ice,.55);
+  }
+  // Deep folds split into a long train, with the brightest silk confined to its lit edges.
+  P(ink,[[12,12+y],[18.5,12+y],[22.3,16],[22.2,24],[25,29],[27.1,32.8],[23,32.8],[19.3,33.4],
+   [16.7,32],[13.4,34],[11.8,32.7],[6,34],[3.5,33],[8.3,28],[9.4,21],[8.4,17.5]]);
+  P(deep,[[12,14],[17,13],[20,15.5],[19.6,22.2],[22.3,27],[25.6,32],[22.2,31.5],
+   [20,32.2],[17,30.6],[14,33],[12.4,31.2],[5.4,33],[9.3,29.6],[11.2,24],[10.7,20]],null);
+  P(shadow,[[13.3,17],[16,17.2],[16.3,20.8],[14.4,25.4],[11.4,29.4],[6,32.6],[9.8,28],[10.8,23.5]],null);
+  P(blue,[[11.2,24],[13.6,21],[12.6,26.7],[10.7,29.4],[7.8,31.9],[10.1,27.5]],null);
+  P('#4c507c',[[17.8,21.5],[19.6,21.5],[20.4,25],[24.6,31.1],[22.6,31.3],[19.6,28.5],[18.1,31.4],[16.9,30.5]],null);
+  for(const [x,v,c] of [[9,31,teal],[10.5,30,slate],[12.5,29.8,blue],[14.6,28.6,violet],[14.5,31,platinum],[20.5,30.5,slate],[22.5,31.5,violet],[16,24,slate],[19,27,blue]]){
+   R(x,v,1.2,.55,c);R(x+.5,v-.5,.5,.45,c);
+  }
+  // Engraved silver mantle over articulated dark sleeves.
+  P(shadow,[[10.5,12.6],[13.5,12.3],[16,15],[19,13.1],[22.5,13.8],[23.8,16.1],[21,19.7],
+   [17,20.3],[15.4,22],[12.2,20.6],[9.7,18.6],[8.1,16.2]]);
+  P(platinum,[[8.9,15.4],[11.3,12.9],[13.5,13.5],[15.6,16.1],[13.3,17.8],[11.8,17.5],[10.2,16.3]],null);
+  P(slate,[[17.3,15.6],[19.8,13.6],[21.8,13.9],[23.2,15.8],[19.8,17.3],[17.3,18.2]],null);
+  trim([[9.3,15.4],[11.5,13.4],[13.9,14.5],[15.8,16.2],[20.1,14.3],[22.1,14.6]],ice);
+  P(ink,[[14,17.3],[16.2,16.5],[18.1,17.5],[17.4,20],[15.5,21],[14,19.1]],null);
+  P(teal,[[14.8,18],[16,17.1],[17.1,17.9],[16.5,19.3],[15.6,20]],null);R(15.55,18,.7,.8,ice);
+  P(ink,[[9.4,16.7],[12,18.2],[10.4,22.2],[7.9,24.4],[5.7,23.1],[7,20.8]]);
+  P(slate,[[8.8,18.6],[10.9,19.1],[9.9,21],[7.3,22.8],[6.6,22.6]],null);
+  P(shadow,[[21.5,17.5],[23,18.2],[23.7,20.4],[26,20.6],[26.4,22.7],[23.5,23.5],[21,21.6]]);
+  R(24.1,20.4,2.4,1.4,platinum);R(25.3,20.2,1.3,.6,ice);
+  // A narrow, cracked obsidian mask beneath a hood with no painted eyes or mouth.
+  P(ink,[[11.5,10+y],[11.3,7.4+y],[12.5,4.6+y],[15,2.6+y],[17.6,3.3+y],[19.4,5.6+y],
+   [20,8.1+y],[19.1,11.8+y],[17.3,14.4+y],[14.4,13.5+y]]);
+  P(slate,[[11.9,8.4+y],[12.8,5.5+y],[15,3.3+y],[17.4,3.9+y],[18.8,5.9+y],
+   [16.65,5.6+y],[14.4,6.3+y],[13.8,8.1+y],[13.7,11+y],[12.75,10.2+y]],null);
+  P('#294763',[[14.5,7+y],[16.8,6.1+y],[18.9,7+y],[18.7,10.6+y],[17.1,13.1+y],
+   [15.1,12.2+y],[14.1,10.5+y]],null);
+  P('#6b9ab3',[[14.5,7+y],[16.75,6.2+y],[18.4,6.8+y],[16.9,8+y],[15.2,9+y],[14.2,9.2+y]],null);
+  L(14.9,7.4+y,17.15,6.6+y,ice,.8);L(17.4,7.65+y,16.2,10.1+y,teal,.65);L(16.2,10.1+y,17.2,11.55+y,teal,.55);
+  R(17.9,9.2+y,1,.5,violet);R(14.6,10.8+y,1,.5,blue);
+  trim([[12,7.2+y],[13.3,4.6+y],[15,3.45+y]],platinum);
+  // An off-centre mirror glaive separates the silhouette from the halo and cloak.
+  L(26.6,10,24.7,32,ink,2.3);L(26.6,10,24.7,32,slate,1.2);L(26.15,14,25.4,21,ice,.55);
+  P(deep,[[26.5,1.9+y],[30.2,5.5+y],[29.6,9+y],[26.2,12.3+y],[24.1,8.2+y],[24.8,5+y]],ink);
+  P(blue,[[26.55,2.65+y],[29.4,5.8+y],[28.9,8.8+y],[26.4,11.15+y],[24.7,8+y]],null);
+  P(teal,[[26.5,3.1+y],[28.7,5.65+y],[27.8,8.7+y],[25.2,8+y]],null);
+  L(26.6,3.2+y,25.45,7.9+y,ice,.7);L(25.45,7.9+y,28.9,8.35+y,violet,.6);
+  R(27.35,5.35+y,.8,.65,ice);R(23.2,13.2+y,.75,.75,teal);R(7.1,11.1+y,.85,.85,violet);
+  q.restore();break;
  }
  case'mirror_orb':{
   const y=15-b;
