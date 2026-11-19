@@ -600,8 +600,6 @@ function drawTerrainReactions(now,b){
   X.globalAlpha=1;
  }
  for(const q of Object.values(r.clues||{}))if(visible(q)){X.strokeStyle=q.elem==='water'?'#669eae':'#ae936d';X.lineWidth=1;X.beginPath();X.moveTo(q.x*TILE+11,q.y*TILE+5);X.lineTo(q.x*TILE+12,q.y*TILE+27);X.stroke()}
- drawElementAttacks(now);
-
  if(!state.spectator)FX.terrainReactions105=(FX.terrainReactions105||[]).filter(f=>f.map===state.map&&now-f.start<f.life);
  for(const f of combatPresentationEffects().terrainReactions105||[]){if(!visible(f)||now<f.start||now-f.start>=f.life)continue;const t=Math.max(0,(now-f.start)/f.life),cx=(f.x+.5)*TILE,cy=(f.y+.6)*TILE,earth=f.kind==='earth',wood=f.kind==='wood',grass=f.kind==='grass';
   if(f.kind==='jar'){
@@ -2186,6 +2184,8 @@ function drawSubstrate(px,py,x,y,colors,visible){
     living.sort((a,b)=>a.y-b.y);
     for(const a of living){drawCreature(a.o);if(state.debugBattle57){const m=a.o,p=v8CreatureCoords(m),color=entityFaction(m)==='player'?'#78c8ff':'#ff9d8e';X.save();X.strokeStyle=color;X.lineWidth=1.5;for(const c of entityFootprintCells57(m))X.strokeRect((c.x-m.x+p.x)*TILE+1,(c.y-m.y+p.y)*TILE+1,TILE-2,TILE-2);X.font='bold 9px system-ui';X.fillStyle=color;X.fillText((m.debugSide57||'')+(m.debugId57||''),p.x*TILE+2,p.y*TILE+TILE-2);X.restore();}}
     for(const n of state.neutralInteractables58||[])drawNeutralInteractable(n);
+    // Element strikes are drawn over the actors for every element, so a low effect such as the holy lotus is not hidden behind the sprite it hits.
+    drawElementAttacks(now);
 
     for(const f of state.tempFields||[])if(f.ttl>0&&inB58(f,b,6))drawField(f,now);
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
