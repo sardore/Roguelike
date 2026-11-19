@@ -179,6 +179,15 @@ const own = await s.page.evaluate(() => {
 console.log('own', JSON.stringify(own));
 assert.equal(own.fxOnRandart, 0); assert.equal(own.shapes.length, own.fixed, 'every fixed piece has its own design'); assert.equal(own.distinct, own.fixed, 'no two fixed pieces share a design');
 assert.ok(own.bagOnRandart > 0 && own.bagOnRandart < 600, 'bag slots roll on randarts sometimes: ' + own.bagOnRandart); assert.ok(own.bagFixed.length >= 3); assert.equal(own.cap, 5);
+
+// premium pieces carry the rarer new effects far more often than ordinary randarts do
+const prem = await s.page.evaluate(() => {
+  const T = charmTest, old = ['chainBurst', 'luckyMend', 'lastStand', 'feast', 'frostWard']; let n = 0, fresh = 0;
+  for (let i = 0; i < 2000; i++) { const it = T.make(i % 2 ? 'relic' : 'trinket', 5, { premium: true }); n++; if (!old.includes(it.quirk)) fresh++ }
+  return { n, share: +(fresh / n).toFixed(2) };
+});
+console.log('premium', JSON.stringify(prem));
+assert.ok(prem.share > .8, 'premium favours the new effects: ' + prem.share);
 // 4. icon contact sheet: every shape × several materials, plus fixed items
 await s.page.evaluate(() => {
   const T = charmTest, host = document.createElement('div');
