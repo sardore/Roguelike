@@ -229,12 +229,13 @@ function detonateYuun(field,impact=field){
   }
  }else if(state.monsters.includes(actor)&&PlacementService.monsterCanStand(actor,x,y)&&!combatFieldBlocks57(x,y,{passage:'door',actor})&&OccupancyService.move(actor,x,y))markCombatBlink57(actor);
 }
-function tickYuun(){
+// A cloud moves in its owner's phase: the player's before the enemies act, a monster's after the monsters have acted.
+function tickYuun(side){
  const run=state;
  for(const field of [...state.tempFields]){
   if(state!==run||state.dead||state.victory)return;
   const data=field.yuun;
-  if(!data||data.remote||!state.tempFields.includes(field))continue;
+  if(!data||data.remote||!state.tempFields.includes(field)||(data.ownerId==='player')!==(side==='player'))continue;
   const actor=yuunOwner(field);
   if(!(actor?.hp>0)||actor.deathProcessed57){detonateYuun(field);continue;}
   if(data.lastTurn>=state.turn){syncYuunSmoke(field,actor);continue;}
@@ -563,7 +564,7 @@ function expireCombatFields(opts={}){
    if(opts.movement||state.turn<=f.bornTurn||f.ttl<=0)continue;
   }
   if(opts.movement||f.yuun)continue;
-  if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);if(!opts.movement)tickYuun();
+  if(f.kind==='steam'&&state.turn<=f.bornTurn)continue;f.ttl--;if(f.ttl===1&&f.martialSmoke&&f.smokeForm==='burst'){martialFx('warning',f);addLog('폭연이 붉게 물들었다. 다음 턴 폭발!')}if(f.ttl<=0)expireMartialSmoke(f)}state.tempFields=state.tempFields.filter(f=>f.ttl>0);syncSmokeEntry(false);if(!opts.movement)tickYuun('monster');
 }
 function entityAttackMissChance(attacker,target,{base=.06,max=.42,evaScale=1,evaIgnore=0}={}){const blinded=combatStatusTurns(attacker,'blind')>0,eva=Math.max(0,Number(target?combatEntityStats(target).eva:0)||0),minChance=target===state?.player?0:base;return clamp(base+Math.max(0,eva-evaIgnore)*evaScale*.022+(blinded?STATUS_META57.blind.missPenalty57:0),minChance,max)}
 const MARTIAL_INFO={rapidFire:{name:'연사',type:'passive',cost:0,seal:'連',visual:'aim'},strong:{name:'강타',type:'active',cost:3,desc:'기를 응축해 다음 유효 근접 공격을 크게 강화. 준비 중 황금 기운이 유지된다.'},roar:{name:'호효',type:'active',cost:5,desc:'충격파로 주변 적에게 피해와 경직. 레벨 1/2/3/4의 반경은 각각 1/2/3/4칸. 벽 너머에는 닿지 않는다.'},ghost:{name:'귀영',type:'active',cost:4,desc:'형체와 기척을 흐려 비보스 적의 추적을 끊는다. 공격하면 즉시 해제.'},brawl:{name:'격투',type:'passive',cost:0,desc:'맨손과 권갑의 공격력을 단계당 +1 높인다. 권갑은 기본 성능이 높지만 강화 효율이 매우 낮다.'},constitution:{name:'체력 단련',type:'passive',cost:0,desc:'강화할 때마다 최대 HP 약 8% 증가.'}};

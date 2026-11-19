@@ -2741,6 +2741,8 @@ function silkThreadAt54(x,y){
     turnResult.stageOrder.push('core:fields');state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];
     if(!tickCombatFields57()){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
     tickElementFields57();tickLegendFields();tickTerrainReactions105();
+    // The player's cloud (유운) flies before the enemies move, so the enemies answer the cloud, not the other way round.
+    turnResult.stageOrder.push('core:yuun');tickYuun('player');
     if(state.dead||state.victory){turnResult.aborted=true;turnResult.abortStage='core:fields';return}
     turnResult.stageOrder.push('core:durations');for(const q of ['haste','weaken','evade','markCrit','poison','bleed','ward','upset','drunk','blind','skillSeal'])if(state.status[q]>0)state.status[q]--;
     turnResult.stageOrder.push('core:loot');pullNearbyLoot();turnResult.stageOrder.push('core:summon-escort');summonEscortTurn();turnResult.stageOrder.push('core:energy');turnResult.energyAdded=c;state.enemyEnergy=(state.enemyEnergy||0)+c;let acted=0;
