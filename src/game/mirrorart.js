@@ -329,6 +329,8 @@ function drawGlassRoofCell(ctx,px,py,x,y,t,rim,cx,cy){
 }
 const GLASS_FADE=new Map();
 // Drawn after the scenery fog: a building seen from outside is scenery the player knows, even though its rooms are unseen.
+// A bridge or door cell is never covered by a tower's body: the way in stays readable from any side.
+function glassCovered(t,x,y){const v=state.map[y]?.[x];return v===TT.VOID||v===TT.WATER||mirrorTowerContains(t,x,y)}
 function drawGlassTowerBodies(b,now){
  const plan=state?.branchContext105?.id==='mirror'&&state.branchWorld105?.mirror105;if(!plan)return;
  const level=state.branchContext105.level,p=state.player,dt=Math.min(100,now-(GLASS_FADE.get('t')??now));GLASS_FADE.set('t',now);
@@ -339,7 +341,7 @@ function drawGlassTowerBodies(b,now){
   const lit=cols.some(c=>state.visible.has(k(c.x,c.bottom))||state.visible.has(k(c.x,c.top))||state.visible.has(k(c.x,c.bottom+1)));
   X.save();if(!lit)X.globalAlpha=.6;
   // wall courses rising above the back wall: kept inside and out, so the room's ceiling reads high
-  for(const c of cols){if(!seen(c.x,c.top))continue;for(let j=1;j<=rise;j++){const row=rise-j;drawGlassFaceCell(X,c.x*TILE,(c.top-j)*TILE,c.x,t,row/(rise+1),(row+1)/(rise+1),row,j===rise,c.x===west?-1:c.x===east?1:0,false)}}
+  for(const c of cols){if(!seen(c.x,c.top))continue;for(let j=1;j<=rise;j++){const row=rise-j;if(!glassCovered(t,c.x,c.top-j))continue;drawGlassFaceCell(X,c.x*TILE,(c.top-j)*TILE,c.x,t,row/(rise+1),(row+1)/(rise+1),row,j===rise,c.x===west?-1:c.x===east?1:0,false)}}
   if(!t.closed){X.restore();continue}
   const target=mirrorTowerContains(t,p.x,p.y)?0:1;let alpha=GLASS_FADE.get(t.id);alpha=alpha==null?target:alpha+(target-alpha)*Math.min(1,dt/120);GLASS_FADE.set(t.id,alpha);
   if(alpha<=.02){X.restore();continue}
@@ -348,7 +350,7 @@ function drawGlassTowerBodies(b,now){
   for(const c of cols){
    if(!seen(c.x,c.bottom)&&!seen(c.x,c.top))continue;
    const faceTop=Math.max(c.top,c.bottom-rise+1);
-   for(let y=c.top-rise;y<faceTop;y++)drawGlassRoofCell(X,c.x*TILE,y*TILE,c.x,y,t,y===c.top-rise,t.cx,cy);
+   for(let y=c.top-rise;y<faceTop;y++)if(glassCovered(t,c.x,y))drawGlassRoofCell(X,c.x*TILE,y*TILE,c.x,y,t,y===c.top-rise,t.cx,cy);
    const n=c.bottom-faceTop+1;for(let y=faceTop;y<=c.bottom;y++){const row=y-faceTop;drawGlassFaceCell(X,c.x*TILE,y*TILE,c.x,t,row/n,(row+1)/n,row,row===0,c.x===west?-1:c.x===east?1:0,y===c.bottom&&(state.map[y]?.[c.x]===TT.DOOR||state.map[y]?.[c.x]===TT.OPEN_DOOR))}
   }
   X.restore();

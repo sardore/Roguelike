@@ -15,7 +15,16 @@ const MIRROR_TOWER_MOTIFS=Object.freeze(['rings','lattice','stars','waves']);
 const MIRROR_TOWER_SIZE=Object.freeze([100,80]);
 function mirrorTowerPlan(){
  const world=state.branchWorld105||(state.branchWorld105={version:1,pages:{}});if(world.mirror105?.version===3)return world.mirror105;
- const rng=RngService.shop(`${state.runId984||state.runId}|mirror-tower-v3`),ri=(a,b)=>a+Math.floor(rng()*(b-a+1)),pick=list=>list[ri(0,list.length-1)],[W,H]=MIRROR_TOWER_SIZE;
+ // Lay the towers out again until both flights of stairs are at least two towers from where the climber arrives.
+ let best=null;
+ for(let attempt=0;attempt<120;attempt++){
+  const plan=mirrorTowerLayout(attempt);if(!best||Math.min(plan.hops[1],plan.hops[2])>Math.min(best.hops[1],best.hops[2]))best=plan;
+  if(Math.min(plan.hops[1],plan.hops[2])>=2)break;
+ }
+ world.mirror105=best;return best;
+}
+function mirrorTowerLayout(attempt){
+ const rng=RngService.shop(`${state.runId984||state.runId}|mirror-tower-v3|${attempt}`),ri=(a,b)=>a+Math.floor(rng()*(b-a+1)),pick=list=>list[ri(0,list.length-1)],[W,H]=MIRROR_TOWER_SIZE;
  let towers=[];
  for(let layout=0;layout<400&&towers.length<MIRROR_TOWER_HEIGHTS.length;layout++){
   towers=[];
@@ -27,9 +36,28 @@ function mirrorTowerPlan(){
   }
  }
  if(towers.length<MIRROR_TOWER_HEIGHTS.length)throw Error('Mirror tower plan could not place every tower');
- const reach=h=>towers.filter(t=>t.height>=h&&t.id!==0);
- world.mirror105={version:3,size:[W,H],towers,stairs:{1:pick(reach(2)).id,2:pick(reach(3)).id}};
- return world.mirror105;
+ // The stairs stand as many towers away from where the climber arrives as the bridges allow, so the way up is a journey.
+ const farthest=(candidates,hops)=>{const best=Math.max(...candidates.map(t=>hops.get(t.id)??0)),far=candidates.filter(t=>(hops.get(t.id)??0)===best);return far[ri(0,far.length-1)]};
+ const dock={x:W>>1,y:H-10},arrival=towers.reduce((a,b)=>Math.abs(a.cx-dock.x)+Math.abs(a.cy+a.ry-dock.y)<=Math.abs(b.cx-dock.x)+Math.abs(b.cy+b.ry-dock.y)?a:b);
+ const low=towers.filter(t=>t.height>=1),mid=towers.filter(t=>t.height>=2);
+ const first=farthest(mid.filter(t=>t.id!==0&&t.id!==arrival.id),mirrorTowerHops(mirrorTowerEdges(low,1),arrival.id));
+ const second=farthest(towers.filter(t=>t.height>=3&&t.id!==0&&t.id!==first.id),mirrorTowerHops(mirrorTowerEdges(mid,2),first.id));
+ return {version:3,size:[W,H],towers,stairs:{1:first.id,2:second.id},hops:{1:mirrorTowerHops(mirrorTowerEdges(low,1),arrival.id).get(first.id),2:mirrorTowerHops(mirrorTowerEdges(mid,2),first.id).get(second.id)}};
+}
+// The bridge graph of the towers standing on a floor: nearest-first spanning tree, then the shortest unlinked pairs as loops.
+// Pure geometry, so the plan can ask the same question the builder answers.
+function mirrorTowerEdges(standing,level){
+ const edges=[],joined=[standing[0]],rest=standing.slice(1),dist=(a,b)=>Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);
+ while(rest.length){let best=null;for(const a of joined)for(const b of rest)if(!best||dist(a,b)<best.d)best={a,b,d:dist(a,b)};edges.push([best.a,best.b]);joined.push(best.b);rest.splice(rest.indexOf(best.b),1)}
+ const loops=level===3?3:1,extra=[];for(let i=0;i<standing.length;i++)for(let j=i+1;j<standing.length;j++){const a=standing[i],b=standing[j];if(!edges.some(e=>e.includes(a)&&e.includes(b)))extra.push({a,b,d:dist(a,b)})}
+ extra.sort((u,v)=>u.d-v.d);for(const e of extra.slice(0,standing.length>2?loops:0))edges.push([e.a,e.b]);
+ return edges;
+}
+// Towers crossed to get from one tower to another along those bridges.
+function mirrorTowerHops(edges,fromId){
+ const hops=new Map([[fromId,0]]),queue=[fromId];
+ for(let i=0;i<queue.length;i++)for(const[a,b]of edges){const other=a.id===queue[i]?b.id:b.id===queue[i]?a.id:null;if(other==null||hops.has(other))continue;hops.set(other,hops.get(queue[i])+1);queue.push(other)}
+ return hops;
 }
 function mirrorTowerContains(t,x,y,inset=0){
  const dx=Math.abs(x-t.cx),dy=Math.abs(y-t.cy),rx=t.rx-inset,ry=t.ry-inset;if(dx>rx||dy>ry)return false;
@@ -71,10 +99,7 @@ function buildMirrorTower(level){
   }
   brush(cells,'b');return cells;
  };
- const edges=[],joined=[standing[0]],rest=standing.slice(1),dist=(a,b)=>Math.abs(a.cx-b.cx)+Math.abs(a.cy-b.cy);
- while(rest.length){let best=null;for(const a of joined)for(const b of rest)if(!best||dist(a,b)<best.d)best={a,b,d:dist(a,b)};edges.push([best.a,best.b]);joined.push(best.b);rest.splice(rest.indexOf(best.b),1)}
- const loops=level===2?2:level===3?3:1,extra=[];for(let i=0;i<standing.length;i++)for(let j=i+1;j<standing.length;j++){const a=standing[i],b=standing[j];if(!edges.some(e=>e.includes(a)&&e.includes(b)))extra.push({a,b,d:dist(a,b)})}
- extra.sort((u,v)=>u.d-v.d);for(const e of extra.slice(0,standing.length>2?loops:0))edges.push([e.a,e.b]);
+ const edges=mirrorTowerEdges(standing,level);
  const routes=edges.map(([a,b])=>link(a,b));
  // ---- arrival: the dock on floor 1, the stair tower above
  let up,down=null,bossAt=null;
