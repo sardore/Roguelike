@@ -99,7 +99,7 @@ const inv = await s.page.evaluate(() => {
   return r;
 });
 console.log('inventory', JSON.stringify(inv));
-assert.equal(inv.base, 25); assert.deepEqual(inv.passive, [1, 26]); assert.equal(inv.satchel, 29); assert.equal(inv.darkcloud, 31);
+assert.equal(inv.base, 25); assert.deepEqual(inv.passive, [2, 27]); assert.equal(inv.satchel, 31); assert.equal(inv.darkcloud, 33);
 assert.ok(inv.after[0] <= inv.after[1] && inv.after[2] >= 3, 'overflow dropped to the floor');
 console.log('mirror-rooms: ok');
 await browser.close(); process.exit(0);

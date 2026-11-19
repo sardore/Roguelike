@@ -773,7 +773,7 @@ const INDOOR_LANDMARKS=Object.freeze({
 });
 /* Indoor branch content. Geometry is produced by the canonical v93 room graph. */
 const BRANCH_REWARDS=Object.freeze({
- canal:{name:'수문지기의 접힌 행낭',type:'trinket',branchEffect105:'capacity',identified:true,curseImmune991:true,desc:'수로 깊은 곳에서 건진 장신구. 착용하면 인벤토리가 3칸 늘어난다. 다른 능력은 없다. 벗거나 다른 장신구로 교체하면 넘친 물품은 주변의 빈 바닥에 내려놓는다.'},
+ canal:{name:'수문지기의 접힌 행낭',type:'trinket',branchEffect105:'capacity',identified:true,curseImmune991:true,desc:'수로 깊은 곳에서 건진 장신구. 착용하면 인벤토리가 4칸 늘어난다. 다른 능력은 없다. 벗거나 다른 장신구로 교체하면 넘친 물품은 주변의 빈 바닥에 내려놓는다.'},
  granary:{name:'창고지기의 밥주머니',type:'trinket',branchEffect105:'levelFood',eva:-1,identified:true,curseImmune991:true,desc:'식량창고의 전용 장신구. 착용 중 레벨이 오를 때마다 일반 음식 하나를 주변의 빈 바닥에 떨어뜨린다. 회피 -1. 착용 전에 오른 레벨에는 적용되지 않는다.'}
 });
 function branchInventoryOverflow(){const p=state?.player;if(!p)return 0;let n=0;while(p.inventory.length>inventoryCapacity()){const it=p.inventory.at(-1),q=splitItemQuantity(it,itemQuantity(it),p.inventory);if(q){PlacementService.placeItem(q,p);n++}else break}if(n)addLog(`행낭이 줄어 넘친 물품 ${n}묶음을 주변 안전 바닥에 내려놓았다.`);return n}
