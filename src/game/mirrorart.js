@@ -52,7 +52,14 @@ function glassFloorTile(zone,x,y,t){
   const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
   const bridge=zone==='b'||zone==='p'||zone==='d';
   R(zone==='v'?glassMix(v?tint.floorAlt:tint.floor,'#d8b865',.34):bridge?glassMix(tint.floor,'#6c7fb8',.35):v?tint.floorAlt:tint.floor,0,0,32,32);
-  if(zone==='d'){q.fillStyle=glassRGBA(glassPal().silverMid,.35);q.fillRect(3,6,2,2);q.fillRect(27,22,2,2)}
+  // structure under the glass: dark beams every other panel, faint
+  q.fillStyle=glassRGBA(glassPal().violetInk,.22);if(px===0)q.fillRect(14,0,4,32);if(py===0)q.fillRect(0,14,32,4);
+  q.fillStyle=glassRGBA(glassPal().violetInk,.12);q.fillRect(0,30,32,2);
+  // panel seams: two-cell panels in rooms and halls, one-cell in corridors, long planks on bridges and the dock
+  const seam=(a,b,w,h)=>{q.fillStyle=glassRGBA(tint.seam,.55);q.fillRect(a,b,w,h);q.fillStyle=glassRGBA(glassPal().violetInk,.35);q.fillRect(a+(w===1?1:0),b+(h===1?1:0),w,h)};
+  if(bridge){seam(0,0,32,1);if(zone==='d'){seam(0,16,32,1);q.fillStyle=glassRGBA(glassPal().silverMid,.35);q.fillRect(3,6,2,2);q.fillRect(27,22,2,2)}}
+  else if(zone==='c'||zone==='P'){seam(0,0,32,1);seam(0,0,1,32)}
+  else{if(py===0)seam(0,0,32,1);if(px===0)seam(0,0,1,32)}
   // the slanted gleam across each panel
   q.fillStyle=glassRGBA(glassPal().glassHi,zone==='r'?.07:.10);
   const off=(px*32+py*32)%64;for(let i=0;i<32;i++){const gx=(i+off)%64-16;if(gx>=0&&gx<32){q.fillRect(gx,31-i,2,1);if(gx+6<32)q.fillRect(gx+6,31-i,1,1)}}
