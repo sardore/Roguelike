@@ -1,7 +1,7 @@
 const SHACKLE_DOLL={name:'족쇄 인형',hp:58,atk:14,def:9,eva:1,xp:20,color:'#706b64',shape:'armor',kind:'construct',
  role61:'shell',actionLag57:{period:2,skipTurns:1},concept57:'접히는 철판과 끊어진 족쇄로 엮은 감옥의 인형이다. 사라진 자리 대신 시야 끝에서 사슬을 겨눈다.'};
 const SHACKLE_COUNTER={id:'shackle-counter',skillSeal:6,styles:3,bleed:4,foldMs:210,unfoldMs:270,flightMs:300};
-const MIRROR_DUELIST={name:'반영 검객',hp:38,atk:13,def:4,eva:7,xp:13,color:'#879aa8',shape:'human',kind:'spirit',fast:true,blind:true,role61:'shell',concept57:'칼날보다 반사된 모습이 먼저 움직이는 검객이다. 거울 같은 칼날에 맞으면 눈앞이 번쩍이며 시야를 잃는다.'};
+const MIRROR_DUELIST={name:'반영 검객',hp:38,atk:13,def:4,eva:7,xp:13,color:'#879aa8',shape:'human',kind:'spirit',fast:true,blind:true,role61:'shell',attackElement105:'holy',concept57:'칼날보다 반사된 모습이 먼저 움직이는 검객이다. 거울 같은 칼날에 맞으면 눈앞이 번쩍이며 시야를 잃는다. 칼날이 머금은 빛은 성광 속성이다.'};
 const LIGHTNING_PLATE={name:'피뢰 갑병',hp:38,atk:10,def:7,eva:1,xp:13,color:'#75818a',shape:'guard',kind:'construct',role61:'formation',lightningRod61:true,concept57:'벼락 자국이 남은 철갑 병사다. 등의 피뢰침으로 하늘의 벼락을 끌어내려 표적의 발밑에 꽂는다.'};
 const BREACH_PLATE={name:'파성 갑병',hp:62,atk:16,def:9,eva:2,xp:21,color:'#9a835d',shape:'guard',kind:'construct',role61:'formation',wallSlam61:true,concept57:'성문을 허물 만큼 무거운 무장을 갖춘 병사다. 벽 너머의 기척도 가까우면 알아채고, 벽째 내리치며 길을 낸다.'};
 const MONSTER_GUARD_TURNS={early:3,late:4,forbidden:4};
@@ -25,7 +25,7 @@ const MONSTERS=[
   {min:6,max:10,name:'독꽃',hp:14,atk:5,def:1,eva:0,xp:7,color:'#7c8f58',shape:'mage',kind:'plant',fixed:true,ranged:true,range:3,poison:true,concept57:'수묵원의 그늘에서 자라는 독을 품은 꽃이다.'},
   {min:6,max:10,name:'검은 뱀',hp:15,atk:6,def:1,eva:7,xp:8,color:'#3f4b43',shape:'beast',kind:'beast',fast:true,poison:true,concept57:'빠르게 달라붙어 독니를 박는 검은 뱀이다.'},
   {min:6,max:10,name:'먹물 정령',hp:17,atk:5,def:2,eva:4,xp:8,color:'#46515a',shape:'void',kind:'spirit',split:true,concept57:'살아 움직이는 먹이 사람의 윤곽을 이룬 정령이다.'},
-  {min:7,max:10,name:'수목 궁수',hp:16,atk:7,def:1,eva:4,xp:9,color:'#6f805e',shape:'human',kind:'spirit',ranged:true,range:7,concept57:'트인 정원에서 나무 화살로 먼 곳의 침입자를 노린다.'},
+  {min:7,max:10,name:'수목 궁수',hp:16,atk:7,def:1,eva:4,xp:9,color:'#6f805e',shape:'human',kind:'spirit',ranged:true,range:7,attackElement105:'grass',concept57:'트인 정원에서 나무 화살로 먼 곳의 침입자를 노린다. 화살에는 목령이 깃들어 초목 속성이다.'},
   {min:7,max:10,name:'정원 바위괴물',hp:42,atk:8,def:9,eva:0,xp:13,color:'#74796d',shape:'brute',kind:'construct',heavyHit57:true,knockback:true,concept57:'느리지만 단단한 바위괴물이다.'},
   {min:6,max:10,name:'식인 물고기',hp:13,atk:10,def:0,eva:5,xp:7,color:'#688b91',shape:'beast',kind:'beast',aquatic:true,fixed:false,waterOnly57:true,fishDrop:true,concept57:'물을 벗어나지 못하는 식인 물고기다.'},
   {min:99,max:99,name:'이무기',pictureKills:6,nativeBranch105:{id:'palace',level:2},hp:64,atk:7,def:3,eva:5,xp:28,balanceVersion57:1,color:'#738cb8',shape:'serpent',kind:'beast',aquatic:true,amphibious57:true,reach:2,actionSpeed:2,summoner:true,summonName57:'식인 물고기',summonRadius:4,summonCap:3,summonWarmup:6,summonCooldown:8,sealingWard:{species:'이무기',radius:2,duration:9,cooldown:12,range:8},palaceActor105:'imugi',spriteScale:1.08,concept57:'내궁의 물길을 지키는 거대한 이무기. 한 턴에 두 번 행동하며 식인 물고기와 봉인진으로 퇴로를 조인다.'},
