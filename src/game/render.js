@@ -1125,7 +1125,7 @@ function drawRegionalAtmosphereDesktop(now){
   }
   X.globalCompositeOperation='source-over';X.restore();
 }
-const LAVA_ART_CACHE=new Map(),FIRE_ART_CACHE=new Map(),KEEPER_BRIDGE_ART=new Map();
+const LAVA_ART_CACHE=new Map(),FLOOR_FIELD_ART_CACHE=new Map(),KEEPER_BRIDGE_ART=new Map();
 function lavaSprite(variant,frame,rowPhase=0){
  const key=[variant,rowPhase,frame].join(':');if(LAVA_ART_CACHE.has(key))return LAVA_ART_CACHE.get(key);
  const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),image=q.createImageData(48,48),phase=frame/24*Math.PI*2,ox=variant*48,oy=rowPhase*48,tau=Math.PI*2;
@@ -1160,23 +1160,29 @@ function drawLavaTerrain(q,px,py,x,y,now){
  }
  q.restore();return true;
 }
-function fireFloorSprite(variant,frame){
- const key=[variant,frame].join(':');if(FIRE_ART_CACHE.has(key))return FIRE_ART_CACHE.get(key);
- const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),phase=frame/24*Math.PI*2,{poly:polygon}=drawKit(q);
- const glow=q.createRadialGradient(24,31,2,24,30,25);glow.addColorStop(0,'#e478285a');glow.addColorStop(.65,'#bc4d2438');glow.addColorStop(1,'#b43a1700');q.fillStyle=glow;q.fillRect(0,0,48,48);
- for(let i=0;i<8;i++){const xx=8+hash2(variant,i,752)*31,yy=21+hash2(i,variant,753)*19;polygon('#422d2480',[[xx-4,yy],[xx-2,yy-3],[xx+4,yy-2],[xx+5,yy+2],[xx,yy+4]]);q.strokeStyle='#e77b3a60';q.lineWidth=.7;q.beginPath();q.moveTo(xx-3,yy);q.lineTo(xx,yy+1);q.lineTo(xx+2,yy-1);q.stroke();}
- // Licks rise from the ground perimeter, with dark outer flame, orange body and a pale core.
+const FLOOR_FIELD_COLORS=Object.freeze({
+ fire:{glow:['#e478285a','#bc4d2438','#b43a1700'],bed:'#422d2480',seam:'#e77b3a60',
+  layers:['#a43425b8','#e55d25df','#f6a33bec','#ffe2a1df'],spark:['#ffce79','#804331']},
+ mirrorShards:{glow:['#58acc85a','#2b698838','#245b7900'],bed:'#23465b80',seam:'#58acc860',
+  layers:['#2b6988b8','#5399bcdf','#a4e5ecec','#d0eff0df'],spark:['#d0eff0','#5399bc']}
+});
+function floorFieldSprite(variant,frame,kind){
+ const key=[kind,variant,frame].join(':');if(FLOOR_FIELD_ART_CACHE.has(key))return FLOOR_FIELD_ART_CACHE.get(key);
+ const c=document.createElement('canvas');c.width=c.height=48;const q=c.getContext('2d'),phase=frame/24*Math.PI*2,{poly:polygon}=drawKit(q),colors=FLOOR_FIELD_COLORS[kind];
+ const glow=q.createRadialGradient(24,31,2,24,30,25);glow.addColorStop(0,colors.glow[0]);glow.addColorStop(.65,colors.glow[1]);glow.addColorStop(1,colors.glow[2]);q.fillStyle=glow;q.fillRect(0,0,48,48);
+ for(let i=0;i<8;i++){const xx=8+hash2(variant,i,752)*31,yy=21+hash2(i,variant,753)*19;polygon(colors.bed,[[xx-4,yy],[xx-2,yy-3],[xx+4,yy-2],[xx+5,yy+2],[xx,yy+4]]);q.strokeStyle=colors.seam;q.lineWidth=.7;q.beginPath();q.moveTo(xx-3,yy);q.lineTo(xx,yy+1);q.lineTo(xx+2,yy-1);q.stroke();}
+ // Licks rise from the ground perimeter, with a dark edge and a pale core.
  for(let i=0;i<10;i++){
   const angle=i/10*Math.PI*2,x=24+Math.cos(angle)*18,y=30+Math.sin(angle)*11,h=10+hash2(variant,i,754)*7+Math.sin(phase+i*1.73+variant)*5,sway=Math.sin(phase+i*2.2)*3.5,w=2.6+hash2(i,variant,755)*1.8;
   const flame=(color,scale)=>{q.fillStyle=color;q.beginPath();q.moveTo(x-w*scale,y);q.bezierCurveTo(x-w*scale*1.5,y-h*.25,x+sway+3*scale,y-h*.5,x+sway,y-h*scale);q.bezierCurveTo(x+sway-2*scale,y-h*.55,x+w*scale*1.6,y-h*.3,x+w*scale,y);q.closePath();q.fill();};
-  flame('#a43425b8',1);flame('#e55d25df',.84);flame('#f6a33bec',.62);flame('#ffe2a1df',.35);
+  flame(colors.layers[0],1);flame(colors.layers[1],.84);flame(colors.layers[2],.62);flame(colors.layers[3],.35);
  }
- for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?'#ffce79':'#804331';q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
- FIRE_ART_CACHE.set(key,c);return c;
+ for(let i=0;i<6;i++){const t=(frame/24+hash2(variant,i,756))%1,x=8+i*6+Math.sin(phase+i)*2,y=27-t*23;q.globalAlpha=(1-t)*.8;q.fillStyle=i%3?colors.spark[0]:colors.spark[1];q.fillRect(x,y,i%2?1:1.7,1.5);}q.globalAlpha=1;
+ FLOOR_FIELD_ART_CACHE.set(key,c);return c;
 }
-function drawFireFloor(q,px,py,size,x,y,now){
+function drawFloorField(q,px,py,size,x,y,now,kind='fire'){
  const visible=state?.visible?.has(k(x,y)),time=TERRAIN_MOTION54.matches||!visible?0:now,variant=Math.floor(hash2(x,y,757)*8),frame=Math.floor(time/80)%24;
- q.save();q.imageSmoothingEnabled=false;q.globalCompositeOperation='source-over';q.drawImage(fireFloorSprite(variant,frame),px,py,size,size);q.restore();return true;
+ q.save();q.imageSmoothingEnabled=false;q.globalCompositeOperation='source-over';q.drawImage(floorFieldSprite(variant,frame,kind),px,py,size,size);q.restore();return true;
 }
 function drawOxidizedChain(q,{links=5,start=-9,step=4.3,phase=0}={}){
  for(let i=0;i<links;i++){const n=i+phase,xx=start+i*step,yy=Math.sin(n*.8)*2,angle=n%2?.85:-.45;q.strokeStyle='#211c1b';q.lineWidth=2.8;q.beginPath();q.ellipse(xx+.7,yy+.8,3.7,2,angle,0,Math.PI*2);q.stroke();q.strokeStyle=n%2?'#985e41':'#c38755';q.lineWidth=1.6;q.beginPath();q.ellipse(xx,yy,3.7,2,angle,0,Math.PI*2);q.stroke();q.strokeStyle='#dcc0a0';q.lineWidth=.55;q.beginPath();q.ellipse(xx,yy-.35,3.5,1.8,angle,Math.PI,Math.PI*1.8);q.stroke();}
@@ -1970,8 +1976,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
       }
-      if(f.kind==='mirrorShards')drawMirrorShardGround(X,f,x,y,now);
-      else if(f.kind==='mirrorSanctuary'){
+      if(f.kind==='mirrorSanctuary'){
         X.fillStyle=`rgba(217,188,114,${a+.12})`;X.fillRect(px,py,32,32);
         X.save();X.strokeStyle='#f7e1a9';X.lineWidth=1;X.beginPath();
         for(const [dx,dy] of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){
@@ -1982,7 +1987,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         X.translate(px+16,py+16);X.rotate(Math.PI/4);X.strokeRect(-5,-5,10,10);X.fillStyle='#fff8ce';X.fillRect(-1,-1,2,2);X.restore();
       }
       if(isOpaqueCloud(f))drawOpaqueCloud(f,x,y,px,py,now);
-      else if(f.kind==='fire')drawFireFloor(X,px,py,TILE,x,y,now);
+      else if(f.kind==='fire'||f.kind==='mirrorShards')drawFloorField(X,px,py,TILE,x,y,now,f.kind);
     }
   }
   function drawWallMass(b){
@@ -2126,7 +2131,6 @@ function drawSubstrate(px,py,x,y,colors,visible){
     floorLoot.sort((a,b)=>a.y-b.y);
     for(const a of floorLoot)drawItem(a.o);
 
-    for(const f of state.tempFields||[])if(f.kind==='mirrorShards'&&f.ttl>0&&inB58(f,b,6))drawField(f,now);
     const living=[];
     for(const m of state.monsters||[])if(inB58(m,b,2)&&isEntityObservableToPlayer57(m))living.push({y:m.y+.70,o:m});
     if(!state.debugBattle57)living.push({y:VIS.playerY+.72,o:{x:VIS.playerX,y:VIS.playerY,color:state.player.color,shape:'player',name:'player'}});
@@ -2134,7 +2138,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const a of living){drawCreature(a.o);if(state.debugBattle57){const m=a.o,p=v8CreatureCoords(m),color=entityFaction(m)==='player'?'#78c8ff':'#ff9d8e';X.save();X.strokeStyle=color;X.lineWidth=1.5;for(const c of entityFootprintCells57(m))X.strokeRect((c.x-m.x+p.x)*TILE+1,(c.y-m.y+p.y)*TILE+1,TILE-2,TILE-2);X.font='bold 9px system-ui';X.fillStyle=color;X.fillText((m.debugSide57||'')+(m.debugId57||''),p.x*TILE+2,p.y*TILE+TILE-2);X.restore();}}
     for(const n of state.neutralInteractables58||[])drawNeutralInteractable(n);
 
-    for(const f of state.tempFields||[])if(f.kind!=='mirrorShards'&&f.ttl>0&&inB58(f,b,6))drawField(f,now);
+    for(const f of state.tempFields||[])if(f.ttl>0&&inB58(f,b,6))drawField(f,now);
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
@@ -2235,7 +2239,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     }
     X.restore();
   }
-  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
+  function drawElementOverlay(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);for(const f of state.elementFields74||[]){if(f.kind!=='fire')continue;for(const c of f.cells??elementCells105(f.x,f.y,1)){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}}for(const t of state.tempTerrain74||[]){if(!state.visible.has(k(t.x,t.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(t.x,t.y,cam),sx=q.x,sy=q.y,s=q.s,a=.18+.06*Math.sin(now/180+t.x+t.y);X.strokeStyle=t.kind==='lava'?`rgba(255,120,50,${a+.2})`:`rgba(208,176,121,${a+.12})`;X.lineWidth=2;X.strokeRect(sx+2,sy+2,s-4,s-4)}if(V74.target){const rr=V74.target.range;for(let y=Math.max(0,state.player.y-rr);y<=Math.min(ROWS-1,state.player.y+rr);y++)for(let x=Math.max(0,state.player.x-rr);x<=Math.min(COLS-1,state.player.x+rr);x++)if(entityDistance57({x,y},state.player)<=rr&&state.seen.has(k(x,y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(x,y,cam),sx=q.x,sy=q.y,s=q.s;X.strokeStyle='rgba(226,190,111,.28)';X.strokeRect(sx+3,sy+3,s-6,s-6)}}X.restore()}
   /* ---------------- camera: follow by default, drag to inspect, next movement resumes follow ---------------- */
   const CameraController={
     state(){return globalThis.__MANRU_CAMERA_STATE12__?.snapshot()||{mode:'follow',zoom:1,cx:0,cy:0,tx:0,ty:0}},
@@ -4313,7 +4317,7 @@ function drawLegendCell(tile,px,py,x,y,now,vis){if(!state?.artifactDungeon46)ret
  X.restore();return true;
 }
 function drawLegendWorld(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),id=state.artifactDungeon46?.id;X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
- for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFireFloor(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[]){const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(a.x,a.y,cam),cx=q.x,ground=q.y,t=Math.min(1,age/360),cy=ground-(1-t)*q.s*3.2;X.save();X.translate(cx,cy);X.rotate(-.7+t*3.5);X.fillStyle='#5f3522';X.fillRect(-2,-10,4,20);X.fillStyle='#ee7137';X.beginPath();X.moveTo(0,-6);X.lineTo(14,-2);X.lineTo(9,7);X.lineTo(0,5);X.closePath();X.fill();X.restore()}
+ for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[]){const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(a.x,a.y,cam),cx=q.x,ground=q.y,t=Math.min(1,age/360),cy=ground-(1-t)*q.s*3.2;X.save();X.translate(cx,cy);X.rotate(-.7+t*3.5);X.fillStyle='#5f3522';X.fillRect(-2,-10,4,20);X.fillStyle='#ee7137';X.beginPath();X.moveTo(0,-6);X.lineTo(14,-2);X.lineTo(9,7);X.lineTo(0,5);X.closePath();X.fill();X.restore()}
  const rw=state.artifactReward46;if(rw&&state.visible.has(k(rw.x,rw.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(rw.x,rw.y,cam),rx=q.x,ry=q.y,ss=q.s;X.fillStyle='rgba(224,177,75,.20)';X.fillRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30);X.strokeStyle='rgba(255,226,139,.75)';X.strokeRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30)}const pp=state.artifactPortal46||state.artifactExit46;if(pp&&state.map[pp.y]?.[pp.x]===TT.PORTAL&&state.visible.has(k(pp.x,pp.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(pp.x,pp.y,cam),cx=q.x,cy=q.y,r=q.s*.34;X.strokeStyle='#f1cf75';X.lineWidth=Math.max(2,2*cam.zoom);X.beginPath();X.arc(cx,cy,r,0,Math.PI*2);X.stroke();X.fillStyle='#f4df9b';X.font=`${Math.max(9,11*cam.zoom)}px sans-serif`;X.textAlign='center';X.fillText('傳',cx,cy+4*cam.zoom)}X.restore()}
 function drawPalaceSweepWarning(ctx,intent,project,now,visible=()=>true){
  const keys=new Set(intent.cells.map(c=>k(c.x,c.y))),pulse=.6+.2*Math.sin(now/150),origin=intent.data.origin57,radius=intent.data.radius105;
@@ -6550,7 +6554,7 @@ function burst(x,y,color="#ffffff",count=9,power=1,delay=0){
 function markMoveDirty(ctx){if(ctx.moved)RENDER_PERF_STATE.dirty=true}
 function footstepFeedback(ctx){if(state&&ctx.moved){const terrain=state.map[state.player.y]?.[state.player.x],now=performance.now();if(now-V54.lastFoot>55){V54.lastFoot=now;sfx54([TT.WATER,TT.RAFT].includes(terrain)?'stepWater':regionIndex()===3?'stepMetal':regionIndex()===0?'stepWood':'stepStone')}if(ctx.targetTile===TT.DOOR)sfx54('door')}}
 window.__MANRU_CLEAR_HI_CACHE__=()=>{
-    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FIRE_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
+    for(const m of [...Object.values(HI_CACHE),SHARED_PROP_ART,LAVA_ART_CACHE,FLOOR_FIELD_ART_CACHE,KEEPER_BRIDGE_ART])m.clear();
   };
 globalThis.__MANRU_TRANSIENT47__=Object.freeze({trim:trimTransient});
 globalThis.__MANRU_RENDER47__=Object.freeze({invalidate:()=>{P47.force=true;P47.cullKey='';return true}});
