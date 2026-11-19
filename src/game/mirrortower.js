@@ -160,15 +160,14 @@ function buildMirrorTower(level){
    if(bad)continue;
    // the way out: a three-wide causeway from the far ledge to the nearest existing causeway cell, straight then sideways
    let exit=null;{
-    const end=at(p,21,0),bridges=[];for(let y=4;y<H-4;y++)for(let x=4;x<W-4;x++)if(joins(x,y))bridges.push({x,y,d:Math.abs(x-end.x)+Math.abs(y-end.y)});
-    bridges.sort((a,b)=>a.d-b.d);
-    for(const target of bridges.slice(0,12)){
-     for(const xFirst of[true,false]){
+    const starts=[at(p,21,0),at(p,19,2),at(p,19,-2)],bridges=[];for(let y=4;y<H-4;y++)for(let x=4;x<W-4;x++)if(joins(x,y))bridges.push({x,y});
+    search:for(const end of starts){
+     const near=bridges.map(b=>({...b,d:Math.abs(b.x-end.x)+Math.abs(b.y-end.y)})).sort((a,b)=>a.d-b.d).slice(0,120);
+     for(const target of near)for(const xFirst of[true,false]){
       const cells=walk(end.x,end.y,target.x,target.y,xFirst),spur=[];let fail=false;
-      for(const c of cells){for(let dy=-1;dy<=1&&!fail;dy++)for(let dx=-1;dx<=1;dx++){const x=c.x+dx,y=c.y+dy;if(joins(x,y)||claim.has(k(x,y)))continue;if(!free(x,y)){fail=true;break}spur.push({x,y})}if(fail)break}
-      if(!fail&&spur.length){exit=spur;break}
+      for(const c of cells){for(let dy=-1;dy<=1&&!fail;dy++)for(let dx=-1;dx<=1;dx++){const x=c.x+dx,y=c.y+dy;if(joins(x,y)||claim.get(k(x,y))==='p')continue;if(claim.has(k(x,y))||!free(x,y)){fail=true;break}spur.push({x,y})}if(fail)break}
+      if(!fail&&spur.length){exit=spur;break search}
      }
-     if(exit)break;
     }
    }
    if(!exit)continue;
@@ -187,9 +186,6 @@ function buildMirrorTower(level){
  const edges=mirrorTowerEdges(standing,level);
 
  const routes=edges.map(([a,b])=>link(a,b));
- // ---- floor 3: the leaf pavilion. A pillar stands between two sheets of void; leaf bridges wind round it and end in a fork, so the
- // reward on one leaf is paid for with the other. It is bridged to one tower and leaves by another, so nobody is stranded.
- const pavilion=level===3?planLeafPavilion():null;
  // ---- arrival: the dock on floor 1, the stair tower above
  let up,down=null,bossAt=null;
  if(level===1){
@@ -233,6 +229,9 @@ function buildMirrorTower(level){
    balconies.push({x:bx,y:by});break;
   }
  }
+ // ---- floor 3: the leaf pavilion. A pillar stands between two sheets of void; leaf bridges wind round it and end in a fork, so the
+ // reward on one leaf is paid for with the other. Planned after the ferry gaps so it never joins a causeway that is about to be cut.
+ const pavilion=level===3?planLeafPavilion():null;
  // ---- tower interiors
  const rooms=[],halls=[],mazes=[];
  for(const t of standing){

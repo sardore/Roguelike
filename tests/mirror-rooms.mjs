@@ -20,7 +20,7 @@ await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(1000);
 const out = await s.page.evaluate(() => {
   const T = roomTest, st = T.state(), r = { vault: [], pav: [], errors: [] };
   st.tutorialEntry60 = { completed: true };
-  for (let i = 0; i < 14; i++) for (const level of [2, 3]) {
+  for (let i = 0; i < 40; i++) for (const level of [2, 3]) {
     try {
       st.branchWorld105 = { version: 1, pages: {} }; st.runId984 = 'rooms-' + level + '-' + i;
       T.build('mirror', level);
