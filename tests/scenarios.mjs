@@ -360,6 +360,16 @@ export const scenarios = {
         for(let i=0;i<3;i++){await tap('#battleStep57');await s.tick(200);}
         const battle=await s.page.evaluate(()=>{const q=__MANRU_DEBUG_BATTLE57__.snapshot();return{round:q.round,names:q.units.map(u=>u.name).sort(),rendered:!!document.querySelector('#battleViewport57 canvas'),open:!!q.debug}});
         if(battle.round<1||battle.names.length<2||!battle.rendered||!battle.open)throw Error('actual arena battle '+JSON.stringify(battle));out['hiddenBattle.'+label+'.battle']=JSON.stringify(battle);
+        await tap('#battleClear57');
+        await s.page.fill('#battleSearch57','거울지기');
+        await s.page.getByRole('button',{name:'거울지기 선택',exact:true}).click();
+        await tap('#battleAddA57');
+        const keeper=await s.page.evaluate(()=>{
+          const snapshot=__MANRU_DEBUG_BATTLE57__.snapshot();
+          return snapshot.catalog.some(e=>e.name==='거울지기'&&e.group==='보스')&&
+            snapshot.units.some(u=>u.name==='거울지기'&&u.side==='A'&&u.hp>0);
+        });
+        if(!keeper)throw Error('거울지기를 디버그 전장에 편성할 수 없다');
         await tap('#battleExit57');await s.tick(100);
         const restored=await s.page.evaluate(()=>({screen:document.body.dataset.manruScreen,closed:document.getElementById('debugBattle57').hidden,canvasRestored:!document.querySelector('#battleViewport57 canvas')}));
         if(restored.screen!=='title'||!restored.closed||!restored.canvasRestored)throw Error('arena return '+JSON.stringify(restored));
