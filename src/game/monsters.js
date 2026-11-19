@@ -50,7 +50,7 @@ function aquaticStranded(mon){const tile=state?.map?.[mon?.y]?.[mon?.x];return !
 function setMonsterStatus(mon,key,value,source=null,opts={}){
  // A stun put on the other player's stand-in (weapon, ice, martial control: they all end here) is the other player's to take; applyCombatStatus sends its own.
  if(mon?.duelOpponent&&key==='stunned'&&value>0&&!opts.resistanceHandled105)Duel.sendStatus('stun',value,1);
- if(!mon||mon.statusImmune||mon.cloak?.statusImmune)return 0;if(!opts.resistanceHandled105&&mon.martialActor105&&key==='stunned'&&mon.cloak?.staggerResist&&globalThis.__MANRU_RANDOM57__()<mon.cloak.staggerResist)return 0;
+ if(!mon||mon.statusImmune||mon.cloak?.statusImmune||value>0&&mirrorSanctuaryAffects(mon,true)&&Object.values(STATUS_META57).some(meta=>meta.harmful&&meta.monsterField57===key))return 0;if(!opts.resistanceHandled105&&mon.martialActor105&&key==='stunned'&&mon.cloak?.staggerResist&&globalThis.__MANRU_RANDOM57__()<mon.cloak.staggerResist)return 0;
  if(!opts.resistanceHandled105&&mon.martialActor105&&key==='stunned'&&value>0&&combatTargetValid57(source,mon)&&globalThis.__MANRU_RANDOM57__()>=hostileStatusChance(1,mon.will||0))return 0;
  if(key==='poisoned57')mon.poisonSource57=source&&value>0?effectSource57(source):null;
  if(key==='bleeding55')mon.bleedSource57=source&&value>0?effectSource57(source):null;
@@ -58,14 +58,14 @@ function setMonsterStatus(mon,key,value,source=null,opts={}){
  if(mon.martialActor105&&key==='stunned'&&value>0)dojoRememberHit(mon,'control');mon[key]=value;return value;
 }
 // `sent` is true when the caller has already told the other player (applyCombatStatus does).
-function setMonsterWeakened(mon,turns,sent=false){if(!mon||mon.statusImmune||mon.cloak?.statusImmune||turns<=0)return false;if(mon.duelOpponent&&!sent)Duel.sendStatus('weaken',turns,1);if(mon.martialActor105)dojoRememberHit(mon,'control');mon.weakened=Math.max(mon.weakened||0,turns);mon.weakenedTurn57=state?.turn??0;return true}
+function setMonsterWeakened(mon,turns,sent=false){if(!mon||mon.statusImmune||mon.cloak?.statusImmune||turns<=0||mirrorSanctuaryAffects(mon,true))return false;if(mon.duelOpponent&&!sent)Duel.sendStatus('weaken',turns,1);if(mon.martialActor105)dojoRememberHit(mon,'control');mon.weakened=Math.max(mon.weakened||0,turns);mon.weakenedTurn57=state?.turn??0;return true}
 // Same rules as the strongman's body power: ATK +2, DEF +7, 2% max HP per turn, then the same number of turns blind and upset.
 // A monster already powered or still exhausted is skipped so the skill never chains.
 function grantMonsterPower(mon,turns){if(!mon||mon.hp<=0||turns<=0||mon.power61?.turns>0||(mon.powerRest61||0)>0||mon.statusImmune||mon.cloak?.statusImmune)return false;mon.power61={turns,total:turns,exhaust:turns,heal:0};return true}
 function tickMonsterPower(mon){
   if((mon.powerRest61||0)>0)mon.powerRest61--;
   const power=mon.power61;if(!power||power.turns<=0)return;
-  if(mon.hp<mon.maxHp){const units=(power.heal||0)+mon.maxHp*2;mon.hp=Math.min(mon.maxHp,mon.hp+Math.floor(units/100));power.heal=mon.hp>=mon.maxHp?0:units%100}else power.heal=0;
+  if(mon.hp<mon.maxHp){const units=(power.heal||0)+mon.maxHp*2;recoverCombatHealth(mon,Math.floor(units/100));power.heal=mon.hp>=mon.maxHp?0:units%100}else power.heal=0;
   if(--power.turns>0)return;
   setMonsterStatus(mon,STATUS_META57.blind.monsterField57,power.exhaust);mon.upset=power.exhaust;mon.powerRest61=power.exhaust;mon.power61=null;
   floatText(mon.x,mon.y,'탈진','#d7ab85',11);
@@ -170,7 +170,7 @@ function shellSlimeFixture(mon){
 function healShellSlime(mon){
  if(!shellSlimeProtected(mon)||mon.hp<=0||mon.hp>=mon.maxHp)return;
  const data=mon.shellSlimeState??={next:0};
- mon.hp=Math.min(mon.maxHp,mon.hp+Math.ceil(mon.maxHp*SHELL_SLIME.healFraction));
+ recoverCombatHealth(mon,Math.ceil(mon.maxHp*SHELL_SLIME.healFraction));
  if(mon.hp===mon.maxHp)data.next=Math.min(data.next,state.floorTurn+SHELL_SLIME.fullHealthDelay);
 }
 function shellSlimeSchedule(mon){
@@ -325,7 +325,7 @@ function combatInvulnerability(entity){
  if(entity?.intent54?.data?.invulnerable57)return '용미 쓸기 중인 용왕은 무적이다.';
  return null;
 }
-function updateRafts(){mirrorTowerTick();if(!state?.rafts?.length)return;for(const raft of state.rafts){const horizontal=raft.axis==='x',next=(horizontal?raft.x:raft.y)+raft.dir;if(next<raft.min||next>raft.max){raft.dir*=-1;continue}movePlatform57(raft,horizontal?raft.dir:0,horizontal?0:raft.dir)}}
+function updateRafts(){if(!state?.rafts?.length)return;for(const raft of state.rafts){const horizontal=raft.axis==='x',next=(horizontal?raft.x:raft.y)+raft.dir;if(next<raft.min||next>raft.max){raft.dir*=-1;continue}movePlatform57(raft,horizontal?raft.dir:0,horizontal?0:raft.dir)}}
 function monsterSenseRadius(mon){
   let base=mon.crossfire?.range||(mon.boss?99:(mon.ranged||mon.support?7:mon.fast?6:5));
   return mon.gaze||mon.losLostSummon57?Math.max(base,6):base
@@ -490,7 +490,7 @@ function releaseBossWave(predicate,color='#c8b4da'){
  for(const child of summons){child.hp=0;child.deathProcessed57=true;clearIntent(child);burst(child.x,child.y,color,12,.65);OccupancyService.removeMonster(child)}
  return summons.size;
 }
-function tickBossFixture(fixture){if(fixture.combatFixture54==='core')summonCoreWave(fixture);else if(fixture.combatFixture54==='silk')summonSilkWave(fixture);}
+function tickBossFixture(fixture){if(fixture.combatFixture54==='core')summonCoreWave(fixture);else if(fixture.combatFixture54==='silk')summonSilkWave(fixture);else if(fixture.combatFixture54==='mirrorOrb')tickMirrorOrb(fixture);}
 function summonSilkWave(mirror){
  if(mirror.silkMirrorColor54!=='black'||!mirror.silkWave54||mirror.hp<=0)return;
  const clock=mirror.silkWave54,boss=bossOwner(mirror,'needle'),rule=BOSS_ARENA_RULES.silk;if(!boss||clock.lastTurn===state.floorTurn)return;clock.lastTurn=state.floorTurn;
@@ -607,6 +607,7 @@ function bossCharge(mon,target,telegraphed){
 }
 function executeBossIntent(mon){
  const I=mon.intent54;if(!I)return false;
+ if(I.type==='mirrorOrb'||I.type==='mirrorSanctuary'){resolveMirrorKeeperIntent(mon,I);clearIntent(mon);return true}
  if(I.type.startsWith('palace'))return palaceResolveIntent(mon,I);
  if(I.type==='blackFrost105'){mountainFrostResolve(mon,I);clearIntent(mon);return true}
  if(I.type==='charge'){bossCharge(mon,I.data.target||selectCombatOpponent(mon),I.cells);clearIntent(mon);return true}
@@ -790,9 +791,11 @@ function handleBossPattern(mon,d,target=state.player){
     if(mon.bound54){if(state.turn<mon.bound54.until)return true;mon.def=mon.bound54.def;delete mon.bound54;floatText(mon.x,mon.y,'철쇄 해방','#d6a97d',12)}
     if(mon.bossPattern==='needle'&&mon.needleGasShotReady54&&mon.intent54?.type==='sew')clearIntent(mon);
     if(mon.bossPattern==='palaceKing105')return palaceKingTurn(mon,p);
+    if(mon.bossPattern==='mirrorKeeper105'&&mon.intent61?.type==='rod')return executeMonsterIntent(mon);
     if(mon.intent54){if(state.turn<=(mon.intent54.armedPlayerTurn??state.turn))return true;return executeBossIntent(mon)}
     if(mon.skillSeal105>0)return false;
     if(p===state.player&&playerConcealed58())return mon.bossPattern==='blackFrost105';
+    if(mon.bossPattern==='mirrorKeeper105')return mirrorKeeperTurn(mon,p,d);
     if(mon.bossPattern==='blackFrost105'){mountainFrostPattern(mon,d,p);return true}
     if(mon?.storyPhase992===1&&typeof globalThis.storyFriendBossPattern992==='function')return globalThis.storyFriendBossPattern992(mon,d,p);
     if(mon.bossPattern==='houndboss'){
@@ -1050,7 +1053,7 @@ function monsterTurn(){
     handleLosLostSummon(mon,sees,{target:p});
     if(!mon.martialActor105&&mon.weaponRecovery105>0&&!mon.intent54){mon.weaponRecovery105--;continue}
     if(mon.guardTerritory105&&!mon.alerted&&!sees){monsterIdleRecovery105(mon,null);continue;}
-    if(mon.boss){if(handleBossPattern(mon,d))continue;d=entityDistance57(mon,p)}
+    if(mon.boss||mon.mirrorCopy105){if(handleBossPattern(mon,d))continue;d=entityDistance57(mon,p)}
     if(mon.martialActor105&&dojoMartialTurn(mon,sees,d))continue;
     if(evaluateMonsterSpecials(mon,sees,d))continue;
     if(state!==phaseState||state.map!==phaseMap)break;
@@ -1171,7 +1174,13 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     }
     else if(I.type==='rod'){
       const{x,y}=I.data;projectileFX(x,y-7,x,y,'#8fc4ff',{kind:'lightning',life:900});flash('#bcd8ff',90);alertNearby(x,y,8,'explosion');
-      for(const t of targets){const r=monsterAttacksTarget(m,6,{target:t,delivery:'area',reflectable:false,range:3,origin57:{x,y},skillId:'lightning-rod',damageElement105:'shock',atkScale:1.55});if(r.hit&&r.damage>0&&t.hp>0)applyCombatStatus(t,'stun',2,1,{source:m,stagger:true})}
+      const profile=m.lightningRodProfile||(m.bossPattern==='mirrorKeeper105'?MIRROR_KEEPER.lightningRodProfile:null);
+      const bonus=profile?.bonus??6,scale=profile?.scale??1.55;
+      const stun=profile?.stunOnFinal&&(I.data.left||1)>1?0:profile?.stun??2;
+      for(const t of targets){
+        const r=monsterAttacksTarget(m,bonus,{target:t,delivery:'area',reflectable:false,range:3,origin57:{x,y},skillId:'lightning-rod',damageElement105:'shock',atkScale:scale});
+        if(stun&&r.hit&&r.damage>0&&t.hp>0)applyCombatStatus(t,'stun',stun,1,{source:m,stagger:true});
+      }
       m.rodLeft61=(I.data.left||1)-1;
     }
     else if(I.type==='leap'){
@@ -1319,7 +1328,14 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 사거리 2칸',`껍질 안에서 매 턴 최대 체력의 ${SHELL_SLIME.healFraction*100}%를 회복하고 방어력 +${SHELL_SLIME.armorBonus}. 밖에서는 사거리 ${SHELL_SLIME.needleRange}칸의 침을 쏜다. 적중해 피해를 주면 중병·배탈·실명·출혈·독을 각각 기본 확률 ${SHELL_SLIME.ailmentChance*100}%로 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.`,'constitution','지속');
     if(mon.seesStealth105)add('sees-stealth','투명 감지','視','상시','은신·투명 상태의 대상도 감지한다. 모습을 감춰도 따돌릴 수 없다.','ghost','지속');
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
-    if(mon.bossPattern==='palaceKing105'){
+    if(mon.bossPattern==='mirrorKeeper105'){
+      const {orb,sanctuary}=MIRROR_KEEPER_SKILLS;
+      add('mirror-orb','천명탄','彈',`사거리 ${orb.range}칸 · 예고 1턴 · 구체 HP ${orb.hp}`,`예고 경로를 한 턴에 한 칸씩 이동한다. 막히거나 경로 끝에 닿거나 부서지면 전격 ${orb.shock}과 빙결 ${orb.ice} 피해로 폭발한다. 주변 8칸에 ${orb.shardTurns}턴간 빛 파편이 남아 매 턴 피해 ${orb.shardDamage}와 확률로 마비·실명·기봉인을 준다.`);
+      add('lightning-rod','피뢰침','雷','예고 1턴 · 낙뢰 3회','대상의 위치를 한 칸씩 예고하고 3턴 연속 전격을 떨어뜨린다. 마지막 낙뢰에 맞으면 1턴 기절한다.');
+      add('alarm-bell','경종','鐘','주변 8칸 아군','주변 적들이 깨어나고, 범위 안의 보스 이외 아군이 층수만큼 괴력을 얻는다.');
+      if(!mon.mirrorCopy105)add('mirror-copy','거울 복사','鏡','HP 1 · 최대 1개','다른 기술을 쓸 수 있는 반투명 복사본을 소환한다. 복사본은 자신을 다시 복사할 수 없다.');
+      add('mirror-sanctuary','빛의 성역','光',`예고 1턴 · 지속 ${sanctuary.turns}턴`,`성역 안의 자신과 아군은 매 턴 HP ${sanctuary.heal}을 회복하고 새 디버프를 받지 않는다. 적은 회복이 막히고 매 턴 실명한다.`);
+    }else if(mon.bossPattern==='palaceKing105'){
       add('cannon','수압포','水','직선 7칸 · 예고 2턴','수속성 공격력 ×1.6. 발사 후 1턴 회복. 예고 사선에서 벗어나거나 기둥 뒤로 피한다.');
       add('sweep','용미 쓸기','尾',`전방위 ${PALACE_SWEEP_RULES105.maxRadius}칸 · 재사용 ${PALACE_SWEEP_RULES105.cooldownTurns}/${PALACE_SWEEP_RULES105.highTideCooldownTurns}턴`,`적이 4칸 이내일 때 시작. 반경이 매 행동 1칸씩 커진 뒤 쓸기. 준비부터 종료까지 무적. 공격력 ×1.2, 1칸 밀침. 중병을 뺀 해로운 상태 ${PALACE_SWEEP_RULES105.statusTurns}턴. 재사용은 평소/최고 수위 기준.`);
       add('wave','창해의 삼중 파도','浪','세 겹 · 예고 2턴','벽에서 매턴 한 겹씩 전진. 물리 공격력 ×1.15, 최대 4칸 밀침. 높은 바닥도 맞는다. 석벽·기둥·가구가 파도를 막는다.');
@@ -1930,7 +1946,8 @@ function spawnPressureReinforcement57(mon,name,target=null){
 }
 function killMonster(mon){
   if(!state||!mon)return false;if(!state.debugBattle57&&factionsHostile57(entityFaction(state.player),entityFaction(mon))&&mon.boss&&mon.storyPhase992===1&&state.floor===25&&typeof globalThis.storyBreakFriendMask992==='function')return globalThis.storyBreakFriendMask992(mon);if(!(state.monsters||[]).includes(mon)||mon.deathProcessed57)return false;if(mon.revivalLives57){if(mon.revivePhase57==='corpse')return true;if(beginMonsterRevival(mon))return true;}mon.deathProcessed57=true;vfVibrate(mon.boss?HAPTIC_PATTERN57.bossKill:HAPTIC_PATTERN57.kill);const charred=mon.kind==='plant'&&mon.lastDamageElement105==='fire';if(!charred)globalThis.__MANRU_DEATH_FX54__?.record?.(mon);else{if(!mon.summonOwner105)dropBurntCharcoal105(mon.x,mon.y);elementBreakFx105(mon.x,mon.y,'fire')}delete mon.plantBurn105;
-  const reward=monsterRewardPolicy(mon);mirrorKeeperDefeated(mon,reward);if(mon.summonsVanish&&releaseBossWave(child=>bossChildOf(child,mon),'#6d4b8f'))addLog(`${mon.name}이 쓰러지자 불려 나온 것들이 흩어졌다.`);if(mon.boss){if(mon.bossPattern==='keeper'&&reward.kills&&!state.debugBattle57)releaseKeeperExit54(mon);for(const fixture of [...state.monsters])if(bossChildOf(fixture,mon)&&fixture.combatFixture54){OccupancyService.removeMonster(fixture)};releaseBossWave(child=>bossChildOf(child,mon)&&(child.coreWave54||child.silkSourceMirror54));delete mon.silk54;clearIntent(mon)}OccupancyService.removeMonster(mon);summonRecordKill(mon,reward);if(mon.duelOpponent)duelOpponentDown();if(mon.bossPattern==='palaceKing105')palaceKingDefeated(mon);if(mon.martialActor105&&reward.kills)dojoDefeated(mon);if(mon.combatFixture54==='silk')severSilk(mon);if(mon.combatFixture54==='core')releaseCorePhase(mon);if(reward.kills)state.player.kills++;if(reward.xp&&!mon.boss)state.player.xp+=mon.xp||0;
+  if(mon.combatFixture54==='mirrorOrb')explodeMirrorOrb(mon,bossOwner(mon,'mirrorKeeper105'));
+  const reward=monsterRewardPolicy(mon);mirrorKeeperDefeated(mon,reward);if(mon.summonsVanish&&releaseBossWave(child=>bossChildOf(child,mon),'#6d4b8f'))addLog(`${mon.name}이 쓰러지자 불려 나온 것들이 흩어졌다.`);if(mon.boss){if(mon.bossPattern==='keeper'&&reward.kills&&!state.debugBattle57)releaseKeeperExit54(mon);for(const fixture of [...state.monsters])if(bossChildOf(fixture,mon)&&fixture.combatFixture54){OccupancyService.removeMonster(fixture)};releaseBossWave(child=>bossChildOf(child,mon)&&(child.coreWave54||child.silkSourceMirror54));delete mon.silk54;clearIntent(mon)}OccupancyService.removeMonster(mon);if(mon.mirrorKeeper105||mon.mirrorCopy105)expireCombatFields({movement:true});summonRecordKill(mon,reward);if(mon.duelOpponent)duelOpponentDown();if(mon.bossPattern==='palaceKing105')palaceKingDefeated(mon);if(mon.martialActor105&&reward.kills)dojoDefeated(mon);if(mon.combatFixture54==='silk')severSilk(mon);if(mon.combatFixture54==='core')releaseCorePhase(mon);if(reward.kills)state.player.kills++;if(reward.xp&&!mon.boss)state.player.xp+=mon.xp||0;
   if(!mon.combatFixture54&&!charred)state.decals.push({x:mon.x,y:mon.y,type:mon.kind==='undead'?'bones':'corpse',color:mon.color||'#d7dde6',t:performance.now()});
   if(mon.deathBlast){const r=mon.deathBlast,cells=intentCells(mon.x,mon.y,r.radius),keys=new Set(cells.map(c=>k(c.x,c.y)));impact(mon.x,mon.y,'#f1b36a',8);burst(mon.x,mon.y,'#d17b42',28,1.3);alertNearby(mon.x,mon.y,10,'explosion');addLog(`${mon.name}의 화약 자폭!`);for(const target of [state.player,...state.monsters]){if(target.hp<=0||!factionsHostile57(entityFaction(mon),entityFaction(target))||!entityFootprintCells57(target).some(c=>keys.has(k(c.x,c.y)))||!entityCombatLineCheckR(mon,target,{range:r.radius,units:false,ignore:target}).ok)continue;const damage=damageEntity(target,Math.max(1,Math.round(mon.atk+r.bonus)),mon,null,{delivery:'area'});if(damage>0)floatText(target.x,target.y,'-'+damage,'#ffb675',14);if(target.hp<=0){if(target===state.player)die(mon.name+'의 자폭');else killMonster(target)}}}
   if(mon.deathBrood){const r=mon.deathBrood;spawnJarGasField57(mon.x,mon.y,{status:'poison',duration:r.gasTurns,maxRadius:r.gasRadius,burstRadius:r.gasRadius,source:mon});let born=0;for(let i=0;i<r.count;i++)if(summonNear(mon,r.species,{vacatedOrigin:true}))born++;addLog(`${mon.name}의 배가 터져 독가스와 ${r.species} ${born}마리가 쏟아졌다.`)}
@@ -2111,7 +2128,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
  if(live&&actor.martialActor105&&dojoMartialTurn(actor,sees,entityDistance57(actor,target),target))return true;
  if(live&&globalThis.__MANRU_LEGEND47__?.enemySpecial?.(actor,target))return true;
  if(live){if(actor.summoner)updateSummonerEngagement(actor,sees);if(evaluateMonsterSpecials(actor,sees,entityDistance57(actor,target),target))return true;}
- if(actor.boss&&live&&handleBossPattern(actor,entityDistance57(actor,target),target))return true;
+ if((actor.boss||actor.mirrorCopy105)&&live&&handleBossPattern(actor,entityDistance57(actor,target),target))return true;
  if(live&&globalThis.__MANRU_AI61__?.artillery(actor,target))return true;
  const reach=actor.reach||1;
  if(live&&entityDistance57(actor,target)<=reach&&monsterAttackLineR(actor,reach,{target}).ok){executeMonsterAttackBundle57(actor,target,{context:{delivery:'melee',projectile:false,reflectable:false,range:reach}});return true;}

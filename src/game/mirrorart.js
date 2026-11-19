@@ -5,7 +5,7 @@
    - walls: thick glass in section with a lit edge; outer walls carry deep windows and silver piers, inner walls are
      lighter framed panes, bridges show a rail and the slab's thickness over the drop
    - furniture: multi-tile sprites with a cast shadow and a faint reflection on the glass, drawn in one pass above the floor
-   - sky: clouds in three parallax layers under the upper floors, with the lower towers' roofs small and blue far below
+   - sky: the same three parallax cloud layers on every floor, with the lower towers' roofs visible from above
    - tower bodies: a roof and a long front face (sky blue fading to blue-violet) while the player is outside, faded on
      entry; wall courses stacked above the back wall that remain inside. Heights come from mirrorTowerRise.
    Drawing goes to the context it is given; callers on the screen pass X. */
@@ -29,7 +29,7 @@ function glassPal(){return GLASS_PALS[Math.max(0,Math.min(2,(state?.branchContex
 function glassMix(a,b,t){const p=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),A=p(a),B=p(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
 function glassRGBA(hex,a){const n=parseInt(hex.slice(1),16);return`rgba(${n>>16},${n>>8&255},${n&255},${a})`}
 function glassCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;return[c,q]}
-function glassCached(key,w,h,paint){key=(state?.branchContext105?.level||1)+'|'+key;let c=GLASS_ART.get(key);if(!c){const[cv,q]=glassCanvas(w,h);paint(q);GLASS_ART.set(key,cv);c=cv}return c}
+function glassCached(key,w,h,paint){if(!key.startsWith('sky|'))key=(state?.branchContext105?.level||1)+'|'+key;let c=GLASS_ART.get(key);if(!c){const[cv,q]=glassCanvas(w,h);paint(q);GLASS_ART.set(key,cv);c=cv}return c}
 // A tower's tint: how much lilac it carries, from its plan (0 = all sky blue).
 function glassTint(t){const m=t?.mix??.3,P=glassPal();return{
  glass:glassMix(P.glass,P.lilac,m),glassHi:glassMix(P.glassHi,P.lilacHi,m),glassMid:glassMix(P.glassMid,P.lilacDeep,m),
@@ -67,15 +67,10 @@ function glassFloorTile(zone,x,y,t){
 }
 // The lake under floor 1: deep blue-violet water with the sky's light on it.
 function drawGlassLake(ctx,px,py,x,y,now){
- // one flat body of water: colour drifts slowly over many cells, reflections run across cells instead of repeating per tile
- const w=Math.sin(x*.21+y*.13)*.5+.5;ctx.fillStyle=glassMix('#2c3a8a','#3a3a8e',w);ctx.fillRect(px,py,32,32);
- const t=(now||0)/1400;for(let i=0;i<2;i++){const band=((y*32+i*48+Math.floor(t*16))%96+96)%96;if(band<32){const len=10+((x*7+i*5)%14),off=(x*13+i*9)%22;ctx.fillStyle=glassRGBA(i?glassPal().lilac:glassPal().sky,.13);ctx.fillRect(px+off,py+band,len,1)}}
- // the sky's clouds lie on the water: soft white banks, one per six-cell block, continuous across tiles and drifting slowly
- const drift=(now||0)/2600,bx=Math.floor((x+drift)/6),by=Math.floor(y/6),cl=hash2(bx,by,5511);
- if(cl>.45){const cxp=((bx*6-drift)-x)*32+16+(hash2(bx,by,5512)-.5)*60,cyp=(by*6-y)*32+16+(hash2(bx,by,5513)-.5)*60;
-  ctx.save();ctx.beginPath();ctx.rect(px,py,32,32);ctx.clip();ctx.fillStyle=glassRGBA(glassPal().sky,.16);
-  for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(px+cxp+i*26-40,py+cyp+(i%2?7:-5),38,15,0,0,Math.PI*2);ctx.fill()}
-  ctx.fillStyle=glassRGBA('#ffffff',.10);for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(px+cxp+i*30-30,py+cyp-3,26,8,0,0,Math.PI*2);ctx.fill()}ctx.restore()}
+ // Tint the shared clouds below the water surface; ripples identify the lake without replacing those clouds.
+ const w=Math.sin(x*.21+y*.13)*.5+.5;
+ ctx.fillStyle=glassRGBA(glassMix('#293981','#49419a',w),.52);ctx.fillRect(px,py,32,32);
+ const t=(now||0)/1400;for(let i=0;i<2;i++){const band=((y*32+i*48+Math.floor(t*16))%96+96)%96;if(band<32){const len=10+((x*7+i*5)%14),off=(x*13+i*9)%22;ctx.fillStyle=glassRGBA(i?glassPal().lilac:glassPal().sky,.19);ctx.fillRect(px+off,py+band,len,1)}}
  const shore=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WATER&&v!==TT.RAFT};
  if(shore(0,-1)){const g=ctx.createLinearGradient(0,py,0,py+8);g.addColorStop(0,glassRGBA(glassPal().violetInk,.6));g.addColorStop(1,glassRGBA(glassPal().violetInk,0));ctx.fillStyle=g;ctx.fillRect(px,py,32,8)}
  if(shore(0,1)){ctx.fillStyle=glassRGBA(glassPal().sky,.18);ctx.fillRect(px,py+30,32,2)}
@@ -298,7 +293,7 @@ function drawGlassFurniture(b,now){
 /* ------------------------------------------------------------------ sky */
 function glassCloudTile(layer){
  return glassCached('sky|'+layer,512,256,q=>{
-  const P=glassPal(),tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
+  const P=GLASS_PALS[1],tones=layer===0?[glassMix(P.sky,'#ffffff',.3),P.sky,P.skyMid]:layer===1?[glassMix(P.sky,'#ffffff',.7),glassMix(P.sky,'#ffffff',.2),glassMix(P.skyMid,P.skyLow,.4)]:['#ffffff',glassMix(P.sky,'#ffffff',.5),P.skyLow];
   const n=layer===0?7:layer===1?5:3,size=layer===0?[22,40]:layer===1?[26,46]:[30,54];
   for(let i=0;i<n;i++){
    const cx=hash2(i,layer,511)*512,cy=40+hash2(layer,i,512)*170,r=size[0]+hash2(i,i+layer,513)*(size[1]-size[0]);
@@ -307,17 +302,11 @@ function glassCloudTile(layer){
   }
  });
 }
-// The open sky under the upper floors, drawn in screen space before the map: gradient, far haze, the lower towers'
-// roofs far below, then two cloud layers moving at their own speeds against the camera.
+// The common sky sits behind the terrain and fog on every floor.
 function drawGlassSky(cam,now){
  const level=state?.branchContext105?.level||1;
- if(level<2){
-  // floor 1: the lake runs on past what has been seen, the sky's clouds lying on it
-  const P0=glassPal(),W0=VIEW.w,H0=VIEW.h,g0=X.createLinearGradient(0,0,0,H0);g0.addColorStop(0,'#33449a');g0.addColorStop(1,'#26286e');X.fillStyle=g0;X.fillRect(0,0,W0,H0);
-  for(const[layer,par,drift,alpha]of[[0,.12,.003,.16],[1,.26,.007,.2]]){const tile=glassCloudTile(layer),ox=((cam.x*par+now*drift)%512+512)%512,oy=((cam.y*par)%256+256)%256;X.save();X.globalAlpha=alpha;for(let y=-oy-256;y<H0;y+=256)for(let x=-ox-512;x<W0;x+=512)X.drawImage(tile,Math.round(x),Math.round(y));X.restore()}
-  return;
- }
- const P=glassPal(),W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);g.addColorStop(0,P.sky);g.addColorStop(.55,P.skyMid);g.addColorStop(1,P.skyLow);X.fillStyle=g;X.fillRect(0,0,W,H);
+ const P=GLASS_PALS[1],W=VIEW.w,H=VIEW.h,g=X.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,P.sky);g.addColorStop(.55,P.skyMid);g.addColorStop(1,P.skyLow);X.fillStyle=g;X.fillRect(0,0,W,H);
  const layers=[[0,.18,.004,.55],[1,.38,.010,.62],[2,.62,.018,.72]];
  const drawLayer=([layer,par,drift,alpha])=>{const tile=glassCloudTile(layer),ox=((cam.x*par+now*drift)%512+512)%512,oy=((cam.y*par)%256+256)%256;X.save();X.globalAlpha=alpha;for(let y=-oy-256;y<H;y+=256)for(let x=-ox-512;x<W;x+=512)X.drawImage(tile,Math.round(x),Math.round(y));X.restore()};
  drawLayer(layers[0]);

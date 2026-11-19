@@ -1546,7 +1546,14 @@ function drawCreature(m){
 function drawCombatParticles(q,now){q.save();for(const p of combatPresentationEffects().particles||[]){const t=(now-p.start)/p.life;if(t<0||t>=1)continue;q.globalAlpha=1-t;q.fillStyle=p.color;q.fillRect(p.x,p.y,p.size,p.size);}q.restore();}
 function drawFX(now){drawActionPresentation(now);drawPalaceWaves(X,now);
   const combatFx=combatPresentationEffects();
-  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=r.reach?4+t*r.reach:4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*(r.wide?.8:.64);X.strokeStyle=r.color;X.lineWidth=Math.max(1,(r.wide?4.2:2.2)*(1-t));if(r.wide){X.shadowColor=r.color;X.shadowBlur=10}X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();X.restore()}
+  for(const r of combatFx.rings||[]){const t=(now-r.start)/r.life;if(t<0||t>=1)continue;const radius=r.reach?4+t*r.reach:4+t*(9+r.power*2);X.save();X.globalAlpha=(1-t)*(r.wide?.8:.64);X.strokeStyle=r.color;X.lineWidth=Math.max(1,(r.wide?4.2:2.2)*(1-t));if(r.wide){X.shadowColor=r.color;X.shadowBlur=10}X.beginPath();X.arc(r.x,r.y,radius,0,Math.PI*2);X.stroke();
+    if(r.wide){X.fillStyle=r.color;for(let i=0;i<5;i++){
+      const a=i*Math.PI*2/5+r.start*.001,toneRadius=radius*.62;
+      const x=r.x+Math.cos(a)*toneRadius,y=r.y+Math.sin(a)*toneRadius-t*22;
+      X.fillRect(x-2,y,5,3);X.fillRect(x+2,y-7,1.5,8);X.fillRect(x+3,y-7,3,2);
+    }}
+    X.restore()}
+
 
   for(const d of combatFx.doors||[]){
     const t=(now-d.start)/d.life;if(t<0||t>=1)continue;
@@ -1883,7 +1890,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
   function drawBossIntent(){
  if(!state)return;drawBossArena();
- const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72]};
+ const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72],mirrorOrb:[154,157,255],mirrorSanctuary:[247,221,139]};
  X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
  for(const mon of [...(state.monsters||[]),...(state.spectator?state.spectateWarnings||[]:[])]){const I=mon.intent54;if(!I)continue;const silkIntent=I.type==='weave'||I.type==='sew';
   if(I.type==='corebolt'){drawCoreSealWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
@@ -1962,6 +1969,23 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         X.strokeStyle='#d2a9f0';X.lineWidth=2;
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
+      }
+      if(f.kind==='mirrorShards'){
+        X.fillStyle=`rgba(112,91,219,${a+.18})`;X.fillRect(px+2,py+2,28,28);
+        for(const [dx,dy,h] of [[9,21,7],[17,15,9],[24,24,5]]){
+          X.fillStyle='#7664af';X.fillRect(px+dx-3,py+dy,7,2);
+          pR9(X,'#b9b4f4',[[px+dx-2,py+dy],[px+dx+1,py+dy-h],[px+dx+3,py+dy-2]],'#8073b4');
+          lR9(X,px+dx+1,py+dy-h,px+dx+1,py+dy-4,'#eaffff',1);
+        }
+      }else if(f.kind==='mirrorSanctuary'){
+        X.fillStyle=`rgba(217,188,114,${a+.12})`;X.fillRect(px,py,32,32);
+        X.save();X.strokeStyle='#f7e1a9';X.lineWidth=1;X.beginPath();
+        for(const [dx,dy] of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){
+          const xx=px+(dx>0?31:1),yy=py+(dy>0?31:1);
+          if(dx){X.moveTo(xx,py+1);X.lineTo(xx,py+31);}else{X.moveTo(px+1,yy);X.lineTo(px+31,yy);}
+        }
+        X.stroke();X.globalAlpha=.34+Math.sin(now/260+x+y)*.13;
+        X.translate(px+16,py+16);X.rotate(Math.PI/4);X.strokeRect(-5,-5,10,10);X.fillStyle='#fff8ce';X.fillRect(-1,-1,2,2);X.restore();
       }
       if(isOpaqueCloud(f))drawOpaqueCloud(f,x,y,px,py,now);
       else if(f.kind==='fire')drawFireFloor(X,px,py,TILE,x,y,now);
@@ -2610,7 +2634,8 @@ const ACTOR_SPEC={
   '석분 권사':{"a":"branch","c":"#786850","h":"#b3a17a","ac":"#ddc99e","design":"stone_boxer"},
   '붕락 갑병':{"a":"branch","c":"#68695b","h":"#a3a48b","ac":"#d4c497","design":"collapse_plate"},
   '토맥 괴수':{"a":"branch","c":"#605647","h":"#978b6b","ac":"#c9b588","design":"earth_beast"},
-  '거울지기':{"a":"branch","c":"#9fb2bd","h":"#eff1dc","ac":"#cfad8a","design":"reflection_duelist"},
+  '거울지기':{a:'branch',c:'#635b99',h:'#c6ccea',ac:'#f2e4ff',design:'mirror_keeper',resolution:2},
+  '천명탄':{a:'branch',c:'#6555a6',h:'#a1d7ff',ac:'#f5f4ff',design:'mirror_orb',resolution:2},
   '반영 검객':{"a":"branch","c":"#577384","h":"#a4b4ba","ac":"#d7d3b7","design":"reflection_duelist"},
   '거울 시녀':{"a":"branch","c":"#80637b","h":"#b9a2b0","ac":"#d5b87f","design":"mirror_handmaid"},
   '파편 망령':{"a":"branch","c":"#607f8f","h":"#adc4ca","ac":"#dbcda8","design":"shard_wraith"},
@@ -2796,6 +2821,51 @@ function drawBranchCreature(q,m,frame,sp){
  trim=(pts,col=a)=>{for(let i=1;i<pts.length;i++)L(...pts[i-1],...pts[i],col)};
  shadow1012(q,16,34,sp.design==='ash_watcher'?18:28);
  switch(sp.design){
+ case'mirror_keeper':{
+  const shade='#302d54',silver='#a3abc9',frost='#def5ff',lilac='#b197e1';
+  // Trailing silk, a layered silver gorget and a face cut from one piece of mirrored glass.
+  P(shade,[[7,13+b],[13,11+b],[19,11+b],[25,13+b],[27,23],[29,32],[22,33],[16,31],[10,33],[3,32],[5,24]]);
+  P(c,[[9,16+b],[16,14+b],[23,16+b],[22,23],[26,31],[21,31],[17,29],[12,32],[6,31]],null);
+  P('#8178b7',[[12,19+b],[16,19+b],[15,25],[11,30],[8,31],[11,26]],null);
+  P('#4b437c',[[20,17+b],[22,22],[25,30],[22,31],[20,27],[18,26]],null);
+  P('#a89bd0',[[15,23],[18,23],[19,29],[16,31],[13,30]],null);
+  trim([[6,31],[9,30],[12,30],[15,27]],silver);trim([[20,26],[22,29],[26,31]],'#9690c7');
+  P('#aab2cc',[[5,15+b],[10,12+b],[14,14+b],[12,17+b],[7,20+b],[3,19+b]]);
+  P('#c6cce2',[[27,15+b],[22,12+b],[18,14+b],[20,17+b],[25,20+b],[29,18+b]]);
+  trim([[4,17+b],[9,14+b],[12,14+b]],frost);trim([[20,14+b],[23,14+b],[28,17+b]],frost);
+  P('#7772af',[[9,18+b],[13,16+b],[19,16+b],[23,18+b],[21,23+b],[16,26+b],[11,23+b]]);
+  P(silver,[[11,18+b],[16,17+b],[21,18+b],[19,22+b],[16,24+b],[13,22+b]],null);
+  P(frost,[[16,17+b],[19,20+b],[16,23+b],[14,20+b]],'#727aa9');
+  R(15.5,19+b,1.25,1.5,'#ffffff');
+  P('#7565a4',[[11,6+b],[16,3+b],[21,6+b],[22,11+b],[19,15+b],[13,15+b],[10,11+b]]);
+  P(h,[[12,7+b],[16,5+b],[20,7+b],[20,11+b],[17,14+b],[14,13+b],[12,11+b]],null);
+  P(frost,[[13,7+b],[16,6+b],[19,7+b],[16,10+b],[13,11+b]],null);
+  P(lilac,[[19,9+b],[20,11+b],[17,14+b],[15,13+b],[16,11+b]],null);
+  L(13,10+b,18,9+b,'#544779',1);R(14,9+b,1,1,'#ffffff');R(17.5,9+b,1.25,1,'#ffffff');
+  P(silver,[[10,7+b],[10,3+b],[13,5+b],[16,1+b],[19,5+b],[22,3+b],[22,7+b],[17,5+b],[15,5+b]]);
+  R(15.5,1.5+b,1,2,frost);
+  P('#756b9e',[[5,21+b],[8,20+b],[9,23+b],[7,26+b],[4,25+b]]);
+  P(silver,[[25,21+b],[28,20+b],[29,23+b],[28,25+b],[25,25+b]]);
+  // Two floating mirror shards orbit the hands, with a dark edge and a bright glass bevel.
+  for(const [x,y]of[[3,23-b],[28,9+b]]){
+   P(shade,[[x,y-5],[x+3,y-2],[x+3,y+2],[x,y+5],[x-3,y+1],[x-3,y-2]]);
+   P(lilac,[[x,y-4],[x+2,y-1],[x+1,y+3],[x-2,y+1],[x-2,y-1]],null);
+   L(x-2,y-1,x,y-3,frost,1);R(x,y,1,1,'#ffffff');
+  }
+  break;
+ }
+ case'mirror_orb':{
+  const y=15-b;
+  glowR9(q,16,y,13,'rgba(164,150,255,.48)');
+  E(16,y,9,9,'#302458');E(16,y,8,8,'#7362bb');
+  P('#b6ddff',[[16,y-8],[22,y-5],[23,y],[20,y+6],[15,y+8],[10,y+4],[9,y-2]],null);
+  P('#b5a2f9',[[23,y],[20,y+6],[15,y+8],[16,y+2],[20,y-3]],null);
+  P('#f7ffff',[[15,y-6],[19,y-5],[17,y-1],[13,y+1],[11,y-1]],null);
+  trim([[9,y+2],[13,y+4],[21,y+1]],'#7565ba');
+  trim([[13,y-6],[17,y-7],[20,y-6]],'#ffffff');R(13,y-2,2,1,'#ffffff');
+  L(4,y+3,9,y+1,'#c4aefd',1);L(22,y-4,27,y-7,'#d0f5ff',1);R(26,y+4,2,1,'#a3dfff');
+  break;
+ }
  case'forge_keeper':{
   // An iron kiln carried on separated squat legs, with a chimney and hinged furnace door.
   P('#292b2c',[[8,10+b],[24,10+b],[28,17+b],[26,28],[6,28],[4,18+b]]);
@@ -3685,7 +3755,8 @@ function renderSprite(m,c,player=false){const now=FX.frameNow??performance.now()
   const fp=player?[[0,0]]:(typeof footprintOffsets==='function'?footprintOffsets(m):[[0,0]]);if(fp.length>1){X.fillStyle='rgba(0,0,0,.11)';for(const[ox,oy]of fp)X.fillRect((m.x+ox)*TILE+5,(m.y+oy)*TILE+20,22,8)}
   if(!player&&m.summonOwner105==='player'&&m.aquatic){X.fillStyle='rgba(66,143,177,.20)';X.beginPath();X.ellipse(px+16,py+31,13,4,0,0,Math.PI*2);X.fill();X.strokeStyle='rgba(126,207,224,.50)';X.lineWidth=1;X.beginPath();X.ellipse(px+16,py+31,10+Math.sin(now/420+m.x)*1.2,3,0,.2,Math.PI*1.75);X.stroke();}
   if(!dormantMimic){X.fillStyle='rgba(0,0,0,.35)';X.fillRect(px+8,py+28,16,3)}if(m.boss&&!player){X.globalCompositeOperation='screen';const g=X.createRadialGradient(px+16,py+15,4,px+16,py+15,26);g.addColorStop(0,'rgba(226,176,85,.14)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(px-10,py-12,52,55);X.globalCompositeOperation='source-over'}
-  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x+dw*(1-unfold)/2,spriteTop,dw*unfold,dh);if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
+  const spriteAlpha=X.globalAlpha;if(m.mirrorCopy105)X.globalAlpha*=.42;
+  X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x+dw*(1-unfold)/2,spriteTop,dw*unfold,dh);X.globalAlpha=spriteAlpha;if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
 function drawWorldCreature(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite(m,c,false)}if(m.duelLook){const c=ACTOR_ART.player(m.duelLook.classId||'wanderer',m.duelLook,dir1012(m,true),(m.attackUntil||0)>performance.now());X.save();if(m.martialStatus105?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,false);X.restore();return r}const c=monsterCanvas(m,((performance.now()/430+m.x*3+m.y)|0)&1);return renderSprite(m,c,false)}
 const rarityCol={common:'#b9aa8d',uncommon:'#91b889',rare:'#7eb4d1',relic:'#c493dc',sealed:'#e7bc55',legendary:'#e8c75d',artifact:'#ef8b45'};
 const tierMetal=['#a99a82','#bdad8c','#c9b889','#d1b36e','#e3c66d'];
