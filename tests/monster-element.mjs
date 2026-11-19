@@ -1,4 +1,4 @@
-// Run after npm run build:qa. 반영 검객은 성광, 수목 궁수는 초목 속성으로 공격하고, 천수 아수라의 다완 투척은 성광이다. 저항 Ⅲ이면 막힌다.
+// Run after npm run build:qa. 반영 검객은 성광, 수목 궁수는 초목 속성으로 공격하고, 천수 아수라의 다완 투척과 천면경 검의 반영검은 성광이다. 저항 Ⅲ이면 막힌다.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.elemTest={state:()=>state,MONSTERS,TT,scaled:scaledMonster,hit:(m,ctx)=>monsterAttacksTarget(m,0,ctx),asura:(m,d,t)=>asuraTurn(m,d,t),add:m=>OccupancyService.addMonster(m)};';
+const bridge = 'globalThis.elemTest={state:()=>state,MONSTERS,TT,scaled:scaledMonster,hit:(m,ctx)=>monsterAttacksTarget(m,0,ctx),asura:(m,d,t)=>asuraTurn(m,d,t),strike:m=>attackPlayer(m),blade:()=>({...adef46("mirror_blade"),legendaryWeapon47:true,artifactId46:"mirror_blade",identified:true}),add:m=>OccupancyService.addMonster(m)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -38,10 +38,19 @@ const out = await s.page.evaluate(() => {
     st.monsters = []; T.add(m); const b = p.hp; T.asura(m, 7, p); return b - p.hp;
   };
   r['천수 아수라'] = { element: 'holy', plain: asura(0), r1: asura(1), r3: asura(3) };
+  // 천면경 검: 첫 적을 베면 3칸 안의 두 번째 적에게 성광 반영
+  const reflect = lvl => {
+    p.weapon = T.blade(); p.armor = null; st.status = st.status || {};
+    const def = T.MONSTERS.find(m => m.name === '수목 궁수');
+    const a = T.scaled(JSON.parse(JSON.stringify(def)), 14), b = T.scaled(JSON.parse(JSON.stringify(def)), 14);
+    Object.assign(a, { x: p.x + 1, y: p.y, hp: 999, maxHp: 999, eva: 0, alerted: true }); Object.assign(b, { x: p.x + 3, y: p.y, hp: 999, maxHp: 999, alerted: true, resist: lvl ? { holy: lvl } : {} });
+    st.monsters = []; T.add(a); T.add(b); let total = 0; for (let i = 0; i < 6; i++) { a.hp = 999; const hb = b.hp; T.strike(a); total += hb - b.hp; } return total;
+  };
+  r['반영검'] = { element: 'holy', plain: reflect(0), r1: reflect(1), r3: reflect(3), log: st.log.slice(-3).map(l => l.text || l) };
   return r;
 });
 console.log('monster-element', JSON.stringify(out));
-for (const [name, elem] of [['반영 검객', 'holy'], ['수목 궁수', 'grass'], ['천수 아수라', 'holy']]) {
+for (const [name, elem] of [['반영 검객', 'holy'], ['수목 궁수', 'grass'], ['천수 아수라', 'holy'], ['반영검', 'holy']]) {
   const o = out[name]; assert.equal(o.element, elem, name + ' element');
   assert.ok(o.plain > 0, name + ' hurts'); assert.ok(o.r1 < o.plain, name + ' resist I lowers: ' + o.r1 + ' < ' + o.plain); assert.equal(o.r3, 0, name + ' resist III blocks');
 }
