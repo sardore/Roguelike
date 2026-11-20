@@ -358,7 +358,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   for(let guard=0;guard<60&&budget>=.5;guard++){
     let kind,key;const mine=owned();
     if(mine.length&&chance(focus))[kind,key]=pick(mine);
-    else{const r=rnd(),pr=Object.values(it.resist).some(v=>v>0)?.42:.2;kind=r<.47-(pr-.2)?'stat':r<.47-(pr-.2)+pr?'resist':r<.95?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
+    else{const r=rnd(),pr=Object.values(it.resist).some(v=>v>0)?.3:.2;kind=r<.47-(pr-.2)?'stat':r<.47-(pr-.2)+pr?'resist':r<.95?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
     if(kind==='resist'&&!key)continue;
     if(kind==='special'&&(!key||Object.keys(specials).filter(k=>it[k]!=null).length>=4)||kind==='quirk'&&(it.quirk||tier<2))continue;
     if(kind==='stat'&&((it[key]||0)<0||(it[key]||0)>=STAT_CAP[key]))continue;
