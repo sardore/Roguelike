@@ -125,7 +125,7 @@ const WEAPONS=[
   {type:'weapon',name:'별운검',tier:5,rarity:'sealed',atk:9,speed:1.8,range:2,kind:'blade',crit:.14,ability:'치명 +14%',desc:'구름 문양이 새겨진 왕실의 검으로, 바람보다 빠르게 적을 벱니다.'},
   {type:'weapon',name:'태도',tier:5,rarity:'sealed',atk:12,speed:.9,range:3,kind:'blade',edgeBonus:true,ability:'밀치기 · 일섬',desc:'긴 날로 거리를 지배합니다. 체력이 75% 이상 남은 적에게 첫 일격 보너스 피해를 주고 한 칸 밀어냅니다.',knockback:1},
   {type:'weapon',name:'당파',balance52:true,tier:5,rarity:'sealed',atk:8,speed:0.53,range:5,kind:'spear',knockback:1,parry:.12,ability:'방어 · 얽기',desc:'근접 공격을 12% 확률로 흘려내고 공격자를 잠깐 경직시킵니다.'},
-  {type:'weapon',name:'금강령 퇴',tier:5,rarity:'sealed',atk:11,speed:.8,range:2,kind:'blunt',armorPierce:true,stun:.22,holy:2,ability:'방어무시 · 정화',desc:'법구의 형상을 한 둔기로, 타격 시 사악한 기운을 쫓아냅니다.'},
+  {type:'weapon',name:'금강령 퇴',tier:5,rarity:'sealed',atk:11,speed:.8,range:2,kind:'blunt',armorPierce:true,stun:.22,holy:2,ability:'방어무시 · 성광 추가피해 +2',desc:'법구의 형상을 한 둔기로, 타격할 때마다 성광이 번져 사악한 기운을 쫓아냅니다.'},
   {type:'weapon',name:'단단한 철궁',balance52:true,tier:5,rarity:'sealed',atk:7,speed:0.4,range:10,kind:'bow',ranged:true,tracking:true,ability:'추적',desc:'조준 보정으로 원거리 공격 시 대상 EVA를 크게 무시합니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'대장간 망치',tier:5,rarity:'sealed',heavyStrikeBalance105:2,atk:21,speed:.2,range:2,kind:'blunt',armorPierce:true,knockback:2,execute:.20,ability:'방어무시 · 종결',desc:'만루를 지은 장인의 혼이 깃든, 세상의 모든 것을 부술 수 있는 망치입니다.'}
 ];
