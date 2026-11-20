@@ -110,3 +110,53 @@ function drawInnWallFace(q,r,x,y,west,east){
  const postAt=xx=>{r(postDk,xx,7,4,21);r(post,xx,7,3,21);r(postHi,xx,7,1,21);r(postDk,xx-1,26,6,2)};
  if(x%3===0||!west)postAt(0);if(!east)postAt(28);
 }
+/* Overhead: strings slung across the larger rooms at head height, above the actors. Lanterns on most floors (red-orange
+   on 1, red with gold caps on 2, pink paper on 3, large red with gold tassels on 5), drying chillies and garlic in the
+   kitchens of floor 4. Each lantern also lights the floor under it (worldLightSources). Strings are fixed per map. */
+const INN_CANOPY=new WeakMap();
+function innCanopy(){
+ if(!innFloorArt())return[];let list=INN_CANOPY.get(state.map);if(list)return list;list=[];
+ const open=(x,y)=>{const t=state.map[y]?.[x];return t!=null&&t!==TT.WALL};
+ for(const r of state.rooms||[]){
+  if(r.w<7||r.h<5||hash2(r.x,r.y,7201)<.22)continue;
+  const rows=r.h>=10?[r.y+2,r.y+r.h-3]:[r.y+Math.floor(r.h/2)];
+  for(const y of rows){
+   // one string per unbroken run of open floor along the row; a wall inside the room splits it
+   for(let x=r.x;x<r.x+r.w;){if(!open(x,y)){x++;continue}let x1=x;while(x1+1<r.x+r.w&&open(x1+1,y))x1++;
+    if(x1-x>=5){const lamps=[];for(let lx=x+1;lx<x1;lx+=3)lamps.push(lx);list.push({y,x0:x,x1,lamps,seed:hash2(x,y,7202)})}x=x1+1}
+  }
+ }
+ INN_CANOPY.set(state.map,list);return list;
+}
+function drawInnCanopy(b,now){
+ const list=innCanopy();if(!list.length)return;const f=state.floor,lamp=innFloorArt().lamp;
+ const pal={1:['#c4452a','#7a2416','#f6b25c'],2:['#b8261a','#e6b45a','#ffd27a'],3:['#e9a3ae','#9a4f60','#ffe2d2'],5:['#c22618','#f0c058','#ffd88a']}[f];
+ for(const s of list){
+  if(s.y<b.y0-1||s.y>b.y1+1||s.x1<b.x0-1||s.x0>b.x1+1)continue;
+  const mid=k(Math.round((s.x0+s.x1)/2),s.y);if(!state.seen.has(mid))continue;
+  const vis=state.visible.has(mid);X.save();X.globalAlpha=vis?1:.5;
+  const ax=s.x0*TILE+3,bx=(s.x1+1)*TILE-3,ay=s.y*TILE-6,sag=8+(s.x1-s.x0)*1.1,cy=ay+sag*2;
+  const at=px=>{const t=(px-ax)/(bx-ax);return(1-t)*(1-t)*ay+2*(1-t)*t*cy+t*t*ay};
+  X.strokeStyle='rgba(32,20,14,.9)';X.lineWidth=1.3;X.beginPath();X.moveTo(ax,ay);X.quadraticCurveTo((ax+bx)/2,cy,bx,ay);X.stroke();
+  X.strokeStyle='rgba(255,230,190,.12)';X.lineWidth=.6;X.beginPath();X.moveTo(ax,ay-1);X.quadraticCurveTo((ax+bx)/2,cy-1,bx,ay-1);X.stroke();
+  for(const [i,lx] of s.lamps.entries()){
+   const px=(lx+.5)*TILE,py=at(px),sway=vis?Math.sin(now/1100+s.seed*9+i*1.7)*.12:0;
+   X.save();X.translate(px,py);X.rotate(sway);X.strokeStyle='rgba(32,20,14,.9)';X.lineWidth=1;X.beginPath();X.moveTo(0,0);X.lineTo(0,4);X.stroke();
+   if(f===4){
+    // a bundle of chillies or a braid of garlic
+    if((i+Math.floor(s.seed*7))%2){for(let j=0;j<4;j++){X.fillStyle=j%2?'#b4281c':'#d6402a';X.beginPath();X.ellipse(-3+j*2,9+(j%2)*2,1.4,4,(j-1.5)*.25,0,Math.PI*2);X.fill()}X.fillStyle='#4f6b2c';X.fillRect(-3,4,6,2)}
+    else{for(let j=0;j<3;j++){X.fillStyle='#e9e2cf';X.beginPath();X.arc(0,7+j*4,2.6,0,Math.PI*2);X.fill();X.fillStyle='rgba(120,96,70,.6)';X.fillRect(-.5,5+j*4,1,4)}}
+   }else{
+    const big=f===5,w=big?7:5,h=big?9:7,[body,cap,glowc]=pal;
+    const g=X.createRadialGradient(0,4+h,1,0,4+h,h*2.6);g.addColorStop(0,glowc+'66');g.addColorStop(1,glowc+'00');X.fillStyle=g;X.fillRect(-h*2.6,4+h-h*2.6,h*5.2,h*5.2);
+    X.fillStyle=cap;X.fillRect(-w*.55,4,w*1.1,2);X.fillRect(-w*.55,4+h*2-1,w*1.1,2);
+    X.fillStyle=body;X.beginPath();X.ellipse(0,4+h,w,h-1,0,0,Math.PI*2);X.fill();
+    X.fillStyle='rgba(255,236,190,.35)';X.beginPath();X.ellipse(-w*.35,3+h,w*.35,h*.6,0,0,Math.PI*2);X.fill();
+    X.strokeStyle='rgba(60,18,12,.45)';X.lineWidth=.7;for(const dx of[-w*.45,w*.45]){X.beginPath();X.ellipse(dx*.5,4+h,Math.abs(dx)*.6,h-1.5,0,0,Math.PI*2);X.stroke()}
+    if(big){X.strokeStyle=cap;X.lineWidth=1;X.beginPath();X.moveTo(0,4+h*2+1);X.lineTo(0,4+h*2+7);X.stroke();X.fillStyle=cap;X.fillRect(-1.5,4+h*2+6,3,3)}
+   }
+   X.restore();
+  }
+  X.restore();
+ }
+}

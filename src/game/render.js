@@ -1572,6 +1572,7 @@ function worldLightSources(){
   const storm=state.branchTerrain105?.layoutVersion===12;
   add(x,y,storm?'#ffc170':(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),storm?4.15:3.5,storm?.43:.23);
  }else if(t===TT.GOLD_LAMP)add(x,y,WORLD_LIGHT_ART.gold,3.5,.22);else if(t===TT.FOUNTAIN)add(x,y,WORLD_LIGHT_ART.water,2.3,.12);else if(t===TT.LAVA&&(x+y)%5===0)add(x,y,WORLD_LIGHT_ART.lava,2.3,.15,'lava');else if(t===TT.PORTAL)add(x,y,state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__.theme(state.artifactDungeon46.id).glow:WORLD_LIGHT_ART.portal,2.2,.13,'portal')}
+ if(state.floor!==4)for(const s of innCanopy())for(const lx of s.lamps)add(lx,s.y,innFloorArt().lamp,2.5,.15,'inn');
  for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),2.8,.17,'decor');
  LIGHT_CACHE={map:state.map,revision,lanternKey,lights:state.legendLights49,decor:state.decor,sources,geometry:new Map()};return sources;
 }
@@ -2212,6 +2213,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
+    drawInnCanopy(b,now);
     drawMineWorld(now,b);
 
     // Gameplay glows follow actors; physical lights are applied to scenery before fog.
