@@ -22,8 +22,8 @@ function innRoomCell(x,y){
  return grid[y*COLS+x]===1;
 }
 function innWallAt(x,y){return state.map[y]?.[x]===TT.WALL}
-function drawInnFloor(q,px,py,x,y,colors,art){
- const kind=INN_MATERIALS[state.floor]?.[innRoomCell(x,y)?0:1]||'planks',base=colors.floor,alt=colors.floorAlt;
+function drawInnFloor(q,px,py,x,y,colors,art,kind=INN_MATERIALS[state.floor]?.[innRoomCell(x,y)?0:1]||'planks'){
+ const base=colors.floor,alt=colors.floorAlt;
  const R=(c,xx,yy,w,hh)=>{q.fillStyle=c;q.fillRect(px+xx,py+yy,w,hh)},H=(i,s)=>hash2(x*7+i,y*13+i*3,s);
  const lo=colorShift(base,-12),lo2=colorShift(base,-24),hi=colorShift(base,12),hi2=colorShift(base,24),acc=art.accent;
  const accA=a=>{const n=parseInt(acc.slice(1),16);return`rgba(${n>>16},${n>>8&255},${n&255},${a})`};
@@ -199,3 +199,6 @@ function drawInnColumn(q,px,py,x,y){
  R(colorShift(post,-10),6,1,20,3);R('#2b1810',6,3.5,20,.8);R('#c9973f',6,1,3,3);R('#c9973f',23,1,3,3);
  return true;
 }
+// Stone lanes (a market street, a garden walk) on the inn floors: the flagstone drawing in a warm weathered grey.
+const INN_STONE=Object.freeze({floor:'#5a5047',floorAlt:'#62574c'});
+function drawInnStonePath(q,px,py,x,y,art){drawInnFloor(q,px,py,x,y,INN_STONE,art,'flags');return true}
