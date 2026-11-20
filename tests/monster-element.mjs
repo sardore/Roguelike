@@ -60,7 +60,7 @@ for (const [name, elem] of [['반영 검객', 'holy'], ['수목 궁수', 'grass'
   const o = out[name]; assert.equal(o.element, elem, name + ' element');
   assert.ok(o.plain > 0, name + ' hurts'); assert.ok(o.r1 < o.plain, name + ' resist I lowers: ' + o.r1 + ' < ' + o.plain); assert.equal(o.r4, 0, name + ' resist IV (immune) blocks');
 }
-for (const [name, share] of [['파편 망령', .75], ['혼백 사냥꾼', .5]]) { const o = out[name];
+for (const [name, share] of [['파편 망령', .75], ['혼백 사냥꾼', .75]]) { const o = out[name];
   assert.equal(o.element, 'ice', name); assert.equal(o.share, share, name);
   assert.ok(o.r4 > 0 && o.r4 < o.plain, name + ': 냉기 면역(Ⅳ)은 냉기 몫만 막는다 ' + o.r4 + ' / ' + o.plain); }
 console.log('monster-element: ok');

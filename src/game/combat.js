@@ -300,6 +300,11 @@ function statusSummary(){
   if((state?.visionPenalty||0)>0)out.push(`환경시야 -${state.visionPenalty}`);
   return out.length?out.join(' · '):'상태 이상 없음.';
 }
+// A hazard that hits with an element (a wave of water): the target's resistance for that element applies; immunity stops it.
+function elementHazardHit(target,elem,base,source,ctx={}){
+  if(entityElementResist(target,elem)>=RESIST_IMMUNE57){floatText(target.x,target.y,'저항','#e5c080',10);return 0}
+  return damageEntity(target,Math.max(1,Math.round(base*entityElementMultiplier57(target,elem))),source,elem,ctx);
+}
 // Poison is wood-spirit (목령, grass) damage: a creature's resistance or weakness to that element applies to every tick.
 function poisonTickDamage(entity,source=null){
   const base=combatDebuffDamage(entity,'poison');
