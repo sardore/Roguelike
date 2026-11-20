@@ -6,7 +6,7 @@
    - the inn's timber on the wall faces: a row of roof tiles along the top with the eave's shadow under it, lacquered
      posts and lintels, and paper lattice windows lit from behind.
    Floors are painted into the cached substrate pages (drawRegionFloor); wall fittings are drawn with the wall (drawDojoWall). */
-const INN_MATERIALS=Object.freeze({1:['planks','flags'],2:['lacquer','runner'],3:['mats','boards'],4:['tiles','earth'],5:['slabs','lacquer']});
+const INN_MATERIALS=Object.freeze({1:['planks','flags'],2:['lacquer','boards'],3:['mats','boards'],4:['tiles','earth'],5:['slabs','lacquer']});
 // Timber and roof tile per floor: post, roof, paper (lit window) and how many wall cells carry a window.
 const INN_TIMBER=Object.freeze({
  1:{post:'#6b4426',roof:'#3b4046',paper:'255,214,150',windows:.45},
@@ -44,14 +44,6 @@ function drawInnFloor(q,px,py,x,y,colors,art,kind=INN_MATERIALS[state.floor]?.[i
    if(hash2(x*4+i,Math.floor(y/3),4432)>.8){const jy=Math.floor(hash2(x*4+i,y,4433)*28)+2;R(lo2,xx+1,jy,7,1)}}
   const sheen=((x+y)%7)/7;R(`rgba(255,232,190,${(.02+.03*Math.sin(sheen*Math.PI)).toFixed(3)})`,0,0,32,32);
   if(innRoomCell(x,y)){if(innWallAt(x,y-1)){R(accA(.55),2,3,28,1);R(accA(.25),2,5,28,1)}if(innWallAt(x-1,y)){R(accA(.55),3,2,1,28);R(accA(.25),5,2,1,28)}if(innWallAt(x+1,y)){R(accA(.55),28,2,1,28);R(accA(.25),26,2,1,28)}if(innWallAt(x,y+1)){R(accA(.55),2,28,28,1);R(accA(.25),2,26,28,1)}}
- }else if(kind==='runner'){
-  // passages carry a crimson runner with a gold border, laid along the passage
-  for(let i=0;i<4;i++)R(i%2?alt:base,i*8,0,8,32);
-  const open=(dx,dy)=>{const t=state.map[y+dy]?.[x+dx];return t!=null&&t!==TT.WALL},horiz=(open(-1,0)||open(1,0))&&!(open(0,-1)&&open(0,1)&&!open(-1,0));
-  q.save();q.translate(px+16,py+16);if(!horiz)q.rotate(Math.PI/2);q.translate(-16,-16);
-  const C=(c,xx,yy,w,hh)=>{q.fillStyle=c;q.fillRect(xx,yy,w,hh)};
-  C('#5c1c16',0,5,32,22);C('#7a2519',0,7,32,18);C(accA(.7),0,8,32,1);C(accA(.7),0,23,32,1);C(accA(.35),0,10,32,1);C(accA(.35),0,21,32,1);
-  C(accA(.55),15,14,2,4);C(accA(.55),13,15,6,2);C('rgba(0,0,0,.25)',0,27,32,1);q.restore();
  }else if(kind==='mats'){
   // guest-room mats: two cells long, laid in a pinwheel; woven lines and a dark cloth border on the edges of each mat
   const vertical=((x>>1)+(y>>1))%2===1;R(colorShift(base,14),0,0,32,32);
@@ -117,9 +109,11 @@ const INN_CANOPY=new WeakMap();
 function innCanopy(){
  if(!innFloorArt())return[];let list=INN_CANOPY.get(state.map);if(list)return list;list=[];
  const open=(x,y)=>{const t=state.map[y]?.[x];return t!=null&&t!==TT.WALL};
- for(const r of state.rooms||[]){
-  if(r.w<7||r.h<5||hash2(r.x,r.y,7201)<.22)continue;
-  const rows=r.h>=10?[r.y+2,r.y+r.h-3]:[r.y+Math.floor(r.h/2)];
+ // strings hang only in the floor's two largest halls (the 5th floor's banquet hall among them), so they mark the great
+ // rooms instead of papering every chamber; one string per hall, across its middle
+ const halls=(state.rooms||[]).filter(r=>r.w>=10&&r.h>=6).sort((a,b)=>b.w*b.h-a.w*a.h).slice(0,2);
+ for(const r of halls){
+  const rows=[r.y+Math.floor(r.h/2)];
   for(const y of rows){
    // one string per unbroken run of open floor along the row; a wall inside the room splits it
    for(let x=r.x;x<r.x+r.w;){if(!open(x,y)){x++;continue}let x1=x;while(x1+1<r.x+r.w&&open(x1+1,y))x1++;
@@ -202,3 +196,22 @@ function drawInnColumn(q,px,py,x,y){
 // Stone lanes (a market street, a garden walk) on the inn floors: the flagstone drawing in a warm weathered grey.
 const INN_STONE=Object.freeze({floor:'#5a5047',floorAlt:'#62574c'});
 function drawInnStonePath(q,px,py,x,y,art){drawInnFloor(q,px,py,x,y,INN_STONE,art,'flags');return true}
+// A clipped boxwood hedge for the inn's gardens. Neighbouring hedge cells join into one trimmed mass: a leafy top, a
+// darker front face where the hedge meets open ground to the south, rounded ends, and now and then a few blossoms.
+function drawInnHedge(q,px,py,x,y){
+ const R=(c,xx,yy,w,h)=>{q.fillStyle=c;q.fillRect(px+xx,py+yy,w,h)},on=(dx,dy)=>state.map[y+dy]?.[x+dx]===TT.HEDGE,H=(i,s)=>hash2(x*5+i,y*7+i*3,s);
+ const front=!on(0,1),top=front?22:32,west=!on(-1,0),east=!on(1,0),north=!on(0,-1);
+ R('#1d2a17',0,0,32,32);
+ R('#33502a',0,0,32,top);
+ // leaf clusters: round clumps lit from the upper left, so the mass reads as shrubbery rather than a flat block
+ const C=(cx,cy,r,c)=>{q.fillStyle=c;q.beginPath();q.arc(px+cx,py+cy,r,0,Math.PI*2);q.fill()};
+ for(let i=0;i<7;i++){const cx=2+Math.floor(H(i,8101)*28),cy=3+Math.floor(H(i,8102)*Math.max(4,top-6)),r=4+Math.floor(H(i,8103)*3);C(cx+1,cy+1,r,'#24391d');C(cx,cy,r,H(i,8104)>.5?'#4f7139':'#456634');C(cx-1.5,cy-1.5,r*.45,'rgba(150,190,100,.45)')}
+ for(let i=0;i<8;i++)R('rgba(190,220,140,.35)',1+Math.floor(H(i,8105)*30),1+Math.floor(H(i,8106)*Math.max(2,top-3)),1,1);
+ R('rgba(255,240,190,.05)',0,0,32,Math.min(top,12));
+ if(north){R('#5f7e48',0,0,32,2);R('rgba(200,226,150,.28)',0,0,32,1)}
+ if(front){R('#2b4022',0,top,32,10-2);for(let i=0;i<6;i++){const xx=Math.floor(H(i,8111)*30);R('#36502b',xx,top+1+Math.floor(H(i,8112)*5),3,2)}R('#557446',0,top,32,1);R('rgba(6,10,4,.55)',0,30,32,2)}
+ if(west){R('rgba(10,16,8,.35)',0,0,3,32);q.fillStyle='#1d2a17';q.fillRect(px,py,2,2);if(front)q.fillRect(px,py+30,2,2)}
+ if(east){R('rgba(10,16,8,.45)',29,0,3,32);q.fillStyle='#1d2a17';q.fillRect(px+30,py,2,2);if(front)q.fillRect(px+30,py+30,2,2)}
+ if(H(0,8121)>.86)for(let i=0;i<4;i++){const xx=3+Math.floor(H(i+3,8122)*24),yy=3+Math.floor(H(i+3,8123)*(top-8));R(i%2?'#e7b9c4':'#f3e6d0',xx,yy,2,2)}
+ return true;
+}

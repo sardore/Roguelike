@@ -58,6 +58,21 @@ function buildTutorialEntry(m,rooms){
     if(v===1)return buildGardenStart(m,rooms);
     return buildDrawnStart(m,rooms,FLOOR1_STARTS[v-2]);
 }
+// The starting places fill everything round their paths with rock, hedge, bamboo or trees. In the new 청풍루 only the
+// planting that lines a path stays (a rock border is broken up with flowerbeds and trees); the mass behind it becomes the
+// inn's own wall, so the start reads as buildings and garden beds instead of a field of boulders. All of these block, so
+// no path changes. It runs as the place is finished, before the entry is sealed against later generation passes.
+const START_GARDEN_FILL=new Set([TT.ROCK,TT.HEDGE,TT.BAMBOO,TT.GARDEN_TREE]);
+function trimStartGarden(m){
+    const Z=tutorialZone(),open=(x,y)=>{const t=m[y]?.[x];return t!=null&&t!==TT.WALL&&!START_GARDEN_FILL.has(t)&&!tileBlocks(t)},cut=[];
+    for(let y=Z.y;y<=Z.bottom;y++)for(let x=Z.x;x<=Z.right;x++){
+      const t=m[y][x];if(!START_GARDEN_FILL.has(t))continue;
+      let edge=false;for(let dy=-1;dy<=1&&!edge;dy++)for(let dx=-1;dx<=1;dx++)if((dx||dy)&&open(x+dx,y+dy)){edge=true;break}
+      if(!edge)cut.push([x,y]);
+      else if(t===TT.ROCK){const h=hash2(x,y,9311);if(h<.3)setTerrainTile58(m,x,y,TT.FLOWERBED);else if(h<.48)setTerrainTile58(m,x,y,TT.GARDEN_TREE)}
+    }
+    for(const [x,y] of cut)setTerrainTile58(m,x,y,TT.WALL);
+}
 const TUTORIAL_HOUSES=Object.freeze([
   {name:'등불 열람실',x:2,dy:-8,floor:'WOOD_FLOOR',props:[[1,0,'LANTERN_POST'],[7,0,'LANTERN_POST'],[3,0,'TABLE'],[4,0,'TABLE'],[1,3,'BOOK_STACK'],[7,3,'BOOK_STACK'],[4,3,'BENCH']],pond:null},
   {name:'조사관 준비실',x:12,dy:-11,floor:'WOOD_FLOOR',props:[[1,0,'RACK'],[2,0,'RACK'],[6,0,'CRATE'],[7,0,'JAR'],[1,3,'BENCH'],[7,3,'LANTERN_POST']],pond:null},
@@ -97,6 +112,7 @@ function buildGardenStart(m,rooms){
   }
 // the tail every starting place has in common: the way on from its door to the nearest room, where the player starts and where the stairs are, the chest
 function finishStart(m,rooms,Z,o){
+    if(state.tutorialVariant!==0&&!state.legacyInn)trimStartGarden(state.map);
     const {start,gx,doorY,chest,suite,stations}=o,exitY=Z.y-1;
     setTerrainTile58(m,gx,doorY-1,TT.STONE_PATH);
     // the way on: from the door north to the nearest room, then along it

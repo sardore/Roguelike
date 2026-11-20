@@ -141,7 +141,10 @@ function sculptGrandTerrain(m,room,rooms){
   const kind=GRAND_TERRAINS.find(t=>t.id===room.terrain93),z=grandTerrainZone(room),brush=grandTerrainBrush(z,m);
   const ground=GRAND_TERRAIN_GROUND[z.region],liquid=z.region<=2?TT.WATER:TT.LAVA;
   kind.paint(brush);
-  const filler=brush.filler??(kind.id==='pond'?TT.WATER:kind.id==='ravine'?liquid:TT.ROCK);
+  // cells the landmark leaves cut off are filled in; on the inn's floors they become wall (the building's own negative
+  // space) rather than a field of boulders round a lantern courtyard
+  const inn=!state.legacyInn&&INN_GRAND_TERRAINS[state.floor];
+  const filler=brush.filler??(kind.id==='pond'?TT.WATER:kind.id==='ravine'?liquid:inn?TT.WALL:TT.ROCK);
   linkGrandTerrain(z,m,tile=>tile===TT.WATER?TT.STEPPING_STONE:tile===TT.LAVA||tile===TT.VOID?TT.STONE_PATH:ground,()=>filler);
   // retire the room: ordinary-room passes must not furnish a landscape
   const same=r=>r&&r.x===room.x&&r.y===room.y&&r.w===room.w&&r.h===room.h;
