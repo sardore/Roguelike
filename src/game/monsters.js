@@ -2545,9 +2545,9 @@ function resolveEntityHazard1005(e,t,nx,ny,origin,opt={}){
   if(kind==='water'){
     const ax=standing?e.x:nx,ay=standing?e.y:ny,land=nearestLandFor1005(e,ax,ay,standing?null:origin);
     if(land){
-      const before=Math.max(1,e.hp||1);e.hp=Math.max(1,Math.floor(before*.5));
-      if(player){burst(nx,ny,'#79cbd2',24,1.1);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',11);addLog(standing?'발밑이 물로 변했지만 가까운 뭍을 붙잡았다. 체력이 절반으로 깎였다.':'물에 빠졌지만 바로 붙잡을 뭍이 있었다. 체력이 절반으로 깎이고 간신히 기어올랐다.')}
-      else if(state?.visible?.has?.(k(nx,ny))){burst(nx,ny,'#79cbd2',16,.8);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',10);addLog(`${e.name}이 물에 빠졌다가 가까운 뭍을 붙잡았다. 체력이 절반으로 줄었다.`)}
+      const before=Math.max(1,e.hp||1);e.hp=Math.max(1,before-Math.floor(before*.5*entityElementMultiplier57(e,'water')));
+      if(player){burst(nx,ny,'#79cbd2',24,1.1);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',11);addLog(standing?'발밑이 물로 변했지만 가까운 뭍을 붙잡았다. 수속성 피해로 체력이 깎였다.':'물에 빠졌지만 바로 붙잡을 뭍이 있었다. 수속성 피해로 체력이 깎이고 간신히 기어올랐다.')}
+      else if(state?.visible?.has?.(k(nx,ny))){burst(nx,ny,'#79cbd2',16,.8);floatText(nx,ny,`HP ${displayHealth(before)}→${displayHealth(e.hp)}`,'#9de1e5',10);addLog(`${e.name}이 물에 빠졌다가 가까운 뭍을 붙잡았다. 수속성 피해로 체력이 줄었다.`)}
       if(player){resolvePlayerLanding57(land.x,land.y,{cause:'water-rescue',hazard:false,resetVisual:true,forced:true});if(consumeTurn&&!state.dead)globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:"resolveEntityHazard1005"}).value}else{OccupancyService.move(e,land.x,land.y,{forced:true})}
       return'rescued'
     }
