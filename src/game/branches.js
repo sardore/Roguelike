@@ -1548,9 +1548,12 @@ function minePress(x,y,source='stone'){
  if(button.activation105&&!button.activation105.includes(q.source))continue;
  if(button.remote105)citadelOpen(button.remote105.key);
  button.pressedTurn=state.floorTurn;mineFx('button',button);alertNearby(q.x,q.y,9,'impact');
+ // Carts move first, with the walls still shut: a cart waiting behind a wall this button opens stops against it instead of
+ // rolling out of the dark the moment it is open.
+ const rolling=mineRunCarts(q);
  for(const w of m.walls.filter(w=>w.buttonId===button.id||w.buttonIds?.includes(button.id))){w.until=mineClock()+MINE_RULES.wallTurns+Number(!state._turnPipelineActive57);w.open=true;for(const c of w.cells)if(state.map[c.y][c.x]===TT.WALL){setTerrainTile58(state.map,c.x,c.y,w.floorTile105??TT.STONE_PATH);burst(c.x,c.y,'#9c947f',6,.4);}}
  if(button.prisonCell105)for(const mon of state.monsters)if(mon.hp>0&&mon.prisoner105?.cell===button.prisonCell105&&!mon.prisoner105.released&&m.walls.some(w=>w.prisonCell105===button.prisonCell105&&w.open)){mon.prisoner105.released=true;mon.prisoner105.pendingExit=true;mon.alerted=true;mon.searchTurns=12;delete mon.guardHome57;addLog(mon.name+'의 감방 철창이 열렸다. 수감자가 출구로 달려든다.');}
- const rolling=mineRunCarts(q);citadelTrialPress(button,q.source,rolling);addLog(state.branchContext105.id==='palace'?'청동 압력판이 내려앉으며 조정의 승강 석벽이 잠겼다.':state.branchContext105.id==='citadel'?'성채 스위치가 내려앉으며 철창과 바위 걸쇠가 움직였다.':button.gateOnly?'광산버튼이 내려앉으며 돌벽이 바닥으로 가라앉았다.':'광산버튼이 내려앉으며 동차의 걸쇠가 풀렸다.');}
+ citadelTrialPress(button,q.source,rolling);addLog(state.branchContext105.id==='palace'?'청동 압력판이 내려앉으며 조정의 승강 석벽이 잠겼다.':state.branchContext105.id==='citadel'?'성채 스위치가 내려앉으며 철창과 바위 걸쇠가 움직였다.':button.gateOnly?'광산버튼이 내려앉으며 돌벽이 바닥으로 가라앉았다.':'광산버튼이 내려앉으며 동차의 걸쇠가 풀렸다.');}
  }finally{MINE_PRESS_QUEUE=[];MINE_PRESS_RUNNING=false;}return true;
 }
 function destroyMineStructure(object,reason,path=null){
@@ -1566,7 +1569,7 @@ function mineRunCarts(button){
  for(let step=0;step<MINE_RULES.cartRange;step++){
   const moving=active.filter(a=>a.c.alive);if(!moving.length)break;
   const next=new Map(moving.map(a=>[a,{x:a.c.x+a.dx,y:a.c.y+a.dy}])),byCart=new Map(moving.map(a=>[a.c,a])),blocked=new Set(),crash=new Set(),stationaryCrash=new Set(),hits=new Map();
-  for(const a of moving){const q=next.get(a),tile=state.map[q.y]?.[q.x];if(tile==null||runtimeTerrainSolid57(tile)||tile===TT.DOOR)blocked.add(a);else if(tile!==TT.VOID)hits.set(a,runtimeTerrainOccupants57(q.x,q.y));}
+  for(const a of moving){const q=next.get(a),tile=state.map[q.y]?.[q.x],here=state.map[a.c.y]?.[a.c.x];if(tile==null||runtimeTerrainSolid57(tile)||tile===TT.DOOR||runtimeTerrainSolid57(here))blocked.add(a);else if(tile!==TT.VOID)hits.set(a,runtimeTerrainOccupants57(q.x,q.y));}
   for(const a of moving){if(blocked.has(a))continue;const q=next.get(a);for(const other of m.carts){if(!other.alive||other===a.c)continue;const o=byCart.get(other),to=o&&!blocked.has(o)?next.get(o):other;if(q.x===to.x&&q.y===to.y||o&&!blocked.has(o)&&q.x===other.x&&q.y===other.y&&to.x===a.c.x&&to.y===a.c.y){crash.add(a);if(o)crash.add(o);else stationaryCrash.add(other);}}}
   for(const a of moving){if(blocked.has(a))continue;const q=next.get(a);a.c.x=q.x;a.c.y=q.y;a.path.push({...q});}
   // Every arriving cart delivers its hit, including carts that shatter together on an occupied cell.
