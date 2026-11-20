@@ -1370,6 +1370,7 @@ function drawSpecialTerrain(tile,px,py,x,y,now){
    X.fillStyle='#a2d0d7';X.fillRect(px+4,py+5,7,1);X.fillRect(px+21,py+26,5,1);X.fillStyle='#649eac';X.fillRect(px+5,py+23,3,1);if(state.duel){X.fillStyle='rgba(28,34,112,.5)';X.fillRect(px,py,32,32)}X.restore();return true;
   }
   if(tile===TT.SHALLOW_WATER){drawShallowWater(px,py,x,y,now);return true}
+  if(tile===TT.HEDGE&&innFloorArt())return drawInnHedge(X,px,py,x,y);
 if([23,24].includes(state?.floor)&&drawAuthoredTerrain(tile,px,py,x,y,now))return true;
     const r41=globalThis.__MANRU_TERRAIN_R41__;if(r41?.libraryDesk52?.(tile,px,py,x,y,now)||r41?.specialBefore?.(tile,px,py,x,y,now)){r41?.specialAfter?.(tile,px,py,x,y,now,true);return true}
     let r;if(tile===TT.PORTAL){if(state.branchContext105||!state.branchPortals105?.some(p=>p.id==='canal'&&p.x===x&&p.y===y))drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
