@@ -1341,7 +1341,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.shellSlime)add('shell-slime','껍질 탈주','殼',shellSlimeProtected(mon)?'껍질 안 · 행동 속도 ×0.5':'껍질 밖 · 사거리 2칸',`껍질 안에서 매 턴 최대 체력의 ${SHELL_SLIME.healFraction*100}%를 회복하고 방어력 +${SHELL_SLIME.armorBonus}. 밖에서는 사거리 ${SHELL_SLIME.needleRange}칸의 침을 쏜다. 적중해 피해를 주면 중병·배탈·실명·출혈·독을 각각 기본 확률 ${SHELL_SLIME.ailmentChance*100}%로 굴린다. 빈 껍질이 부서지면 다시 들어갈 수 없다.`,'constitution','지속');
     if(mon.seesStealth105)add('sees-stealth','투명 감지','視','상시','은신·투명 상태의 대상도 감지한다. 모습을 감춰도 따돌릴 수 없다.','ghost','지속');
     if(mon.actionSpeed>1)add('action-speed','연속 행동','迅',`행동 속도 ×${mon.actionSpeed}`,`한 턴에 최대 ${mon.actionSpeed}번 행동한다.`,'ghost','지속');
-    if(mon.fast&&!(mon.actionSpeed>1)&&!mon.exitPressureSpeed57)add('fast','빠름','疾','이동·행동 속도 ×1.5','두 턴에 세 번 움직인다. 등을 보이고 달아나기 어렵다.','ghost','지속');
+    if(mon.fast&&!(mon.actionSpeed>1)&&!mon.exitPressureSpeed57)add('fast','빠름','疾','이동 속도 ×1.5','두 턴에 세 칸을 움직인다. 공격과 행동 횟수는 늘지 않지만, 등을 보이고 달아나기 어렵다.','ghost','지속');
     if(mon.ambush)add('ambush','매복','伏',mon.grassHide57?'풀숲에서만':'발견 전','모습을 감추고 기다리다 먼저 공격한다. 드러나기 전에는 보이지 않는다.'+(mon.thiefRetreat57?' 공격한 뒤 한 칸 물러난다.':''),'ghost','지속');
     if(mon.support)add('support','전열 지원','援','4칸 안 아군','시야가 트인 가까운 아군 하나에게 공격력 +2를 3턴 동안 불어넣는다.','constitution','지속');
     if(mon.drunk57)add('drunk','취중','醉','이동·공격','비틀거려 엉뚱한 칸으로 가거나 헛손질하기도 한다.','ghost','지속');
