@@ -41,7 +41,7 @@ const GRAND_TERRAINS=[
 ];
 
 function reserveGrandTerrain(m,rooms){
-  state.grandTerrain93=null;const inn=INN_GRAND_TERRAINS[state.floor];
+  state.grandTerrain93=null;const inn=state.legacyInn?null:INN_GRAND_TERRAINS[state.floor];
   if(state.specialFloor||(inn?false:(state.floor===1||!GRAND_TERRAIN_FLOORS.has(state.floor)||globalThis.__MANRU_RANDOM57__()>.88)))return null;
   // kinds the earlier floors of the run had; the floor's own earlier tries do not count, so a retry keeps its kind
   const region=regionIndex(),seen=(state.grandTerrainLog93||[]).filter(e=>e.floor!==state.floor).map(e=>e.kind),pool=GRAND_TERRAINS.filter(t=>inn?inn.includes(t.id):region>=t.minRegion&&region<=(t.maxRegion??9)),fresh=pool.filter(t=>!seen.includes(t.id)),first=choice(fresh.length?fresh:pool);

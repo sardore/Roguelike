@@ -680,7 +680,7 @@ function buildBossMazeCommon(style){
 }
 function build5_(){
   const hall=buildBossMazeCommon(5);
-  dressInnBanquetHall(hall);
+  if(!state.legacyInn)dressInnBanquetHall(hall);
   const cx=Math.floor(COLS/2),top=Math.round(ROWS*.34),bottom=ROWS-7;
   // The inn boss floor needs a genuine front labyrinth, not a big empty hall with decorative room outlines.
   // Three symmetric cross-walls have alternating paired gates; the player must weave left/right while retaining loops.

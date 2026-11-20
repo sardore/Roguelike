@@ -5704,9 +5704,9 @@ function triggerGazeBurst57(mon,target=state.player){
  if(!state?.player||!mon)return;const now=performance.now();state.gazeBursts57=(state.gazeBursts57||[]).filter(b=>now-b.t<(b.ttl||460));state.gazeBursts57.push({x0:mon.x,y0:mon.y,x1:target.x,y1:target.y,t:now,ttl:460});burst(mon.x,mon.y,'#df8fce',18,.75);burst(target.x,target.y,'#f1b3df',28,1.0);impact(target.x,target.y,'#f0a9d9',6)
 }
 function regionColorsWithFloor11(){const c=regionColorsWithPalette();if(state?.floor===11)return{...c,wall:'#696f73',wallDark:'#303537',accent:'#959da1',light:'#c9ccca',fog:'#111416'};return c}
-function currentFloorArt(){const a=state?ART60[state.duel?'duel':state.floor]:undefined;return a?.mainOnly&&state.branchContext105?undefined:a}
+function currentFloorArt(){const a=state?(state.legacyInn&&!state.duel&&state.floor<=5?LEGACY_INN_ART[state.floor]:ART60[state.duel?'duel':state.floor]):undefined;return a?.mainOnly&&state.branchContext105?undefined:a}
 // The five floors of the inn (main dungeon only) read their floor, fog, lamp and atmosphere from this entry; every other floor keeps the region's.
-function innFloorArt(){const a=currentFloorArt();return a&&state.floor<=5&&!state.branchContext105&&!state.duel?a:null}
+function innFloorArt(){const a=currentFloorArt();return a&&!state.legacyInn&&state.floor<=5&&!state.branchContext105&&!state.duel?a:null}
 function floorArtRegionColors(){return currentFloorArt()?{...currentFloorArt()}:liftedRegionColors()}
 const TERRAIN_MOTION54=matchMedia('(prefers-reduced-motion:reduce)');
 function liquidNeighborSame(tile,x,y){
@@ -6100,6 +6100,12 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
     }
     cancelAutoWalk();
   }
+  // The 청풍루 floors as they were before the inn art (a legacy-map run): floors 1 and 3 used the region palette.
+  const LEGACY_INN_ART=Object.freeze({
+    2:{floor:'#4b1715',floorAlt:'#62201b',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0d0203',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)'},
+    4:{floor:'#302034',floorAlt:'#402847',wall:'#71436f',wallDark:'#1b111f',accent:'#d7a3e1',light:'#f4d7ff',fog:'#09050d',tint:'rgba(95,48,112,.30)',glow:'rgba(230,171,244,.09)'},
+    5:{floor:'#481411',floorAlt:'#5e1d17',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0d0202',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)'}
+  });
   const ART60={
     1:{mainOnly:true,floor:'#3a281b',floorAlt:'#412e1f',wall:'#7b5236',wallDark:'#2d1a11',accent:'#f0a352',light:'#ffd08a',fog:'#0e0805',tint:'rgba(150,92,42,.26)',glow:'rgba(255,178,98,.08)',lamp:'#f3a23f',atmos:{rgb:'214,120,44',a:.09,at:[.80,.18],r:.80,lamp:'226,128,48',lampA:.05,lampN:6,mote:{rgb:'246,186,106',a:.07,n:8}}},
     2:{floor:'#3a2219',floorAlt:'#43281e',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0f0504',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)',lamp:'#f5a23c',atmos:{rgb:'226,150,58',a:.085,at:[.50,.28],r:.74,lamp:'232,160,60',lampA:.055,lampN:7,mote:{rgb:'255,214,140',a:.08,n:16}}},

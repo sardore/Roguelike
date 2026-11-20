@@ -1200,6 +1200,7 @@ function bindTitleButtons(){
   ItemCodex.bind();
     enterBtn.onclick=showClassPick;
   classBackBtn.onclick=showStartGate;
+  const legacyMap=document.getElementById('legacyMapToggle');legacyMap.checked=legacyMapPreference();legacyMap.onchange=()=>setLegacyMapPreference(legacyMap.checked);
   document.getElementById('rankBtn').onclick=()=>PlayStats.open('rank');
   document.getElementById('duelBtn').onclick=()=>Duel.openPicker();
   document.getElementById('card').onpointerdown=event=>event.button===0&&document.body.dataset.manruScreen==='title'&&event.target.closest('.titleCrown,.brand,h1,.titleRule')&&PlayStats.tapTitle(event);
