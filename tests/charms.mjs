@@ -80,7 +80,8 @@ const smoke = await s.page.evaluate(() => {
   const before = st.items.length; for (let i = 0; i < 120; i++) T.drop({ x: p.x + 1 + (i % 5), y: p.y + 1 + (i % 4) });
   const gear = st.items.filter(i => ['relic', 'trinket'].includes(i.type)), arts = gear.filter(i => i.randart);
   const sample = arts[0] || T.make('relic', 3);
-  p.relic = T.make('relic', 4); p.trinket = T.make('trinket', 4);
+  // not every randart rolls a resist; take one that did so the detail check has something to show
+  do p.relic = T.make('relic', 4); while (!Object.values(p.relic.resist || {}).some(v => v > 0)); p.trinket = T.make('trinket', 4);
   const html = T.detail(p.relic, 0); st.monsters = []; T.advance(); T.advance();
   return { placed: st.items.length - before, gear: gear.length, arts: arts.length, hasRes: /저항/.test(html), name: p.relic.name };
 });
