@@ -306,6 +306,14 @@ function poisonTickDamage(entity,source=null){
   if(entityElementResist(entity,'grass')>=3){floatText(entity.x,entity.y,'저항','#e5c080',10);return 0}
   return damageEntity(entity,Math.max(1,Math.round(base*entityElementMultiplier57(entity,'grass'))),source,'grass');
 }
+// A holy weapon (금강령 퇴) or a 성광 brand adds a little holy damage to every blow it lands; the target's holy resistance applies,
+// and what it is (undead or not) does not matter.
+const HOLY_BRAND_STRIKE=3;
+function holyStrikeBase(weapon){return(weapon?.holy||0)+(weapon?.elementBrand74==='holy'?HOLY_BRAND_STRIKE:0)}
+function holyStrikeBonus(target,base,source=null){
+  if(!(base>0)||!target||target.hp<=0||entityElementResist(target,'holy')>=3)return 0;
+  return damageEntity(target,Math.max(1,Math.round(base*entityElementMultiplier57(target,'holy'))),source,'holy');
+}
 function applyStatusTick(){
   if(!state||state.dead)return;ensureFoodState();
   if(state.status.poisonResist57>0)state.status.poison=0;
@@ -605,9 +613,9 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     const missChance=entityAttackMissChance(p,mon,{base:.05,max:mon.boss?.26:.34,evaScale:aim?.5:1,evaIgnore:ranged&&w.tracking?6:0});
     if(globalThis.__MANRU_RANDOM57__()<missChance){alertNearby(mon.x,mon.y,noiseRadius,ranged?'projectile':'combat');setPlayerAttackOutcome('miss',mon,{reason:'evasion'});mon.evadeUntil=performance.now()+220;floatText(mon.x,mon.y,'회피','#b7c8d4',11);addLog(mon.name+'이 공격을 피했다.');sfx54('miss');return false}
     const ready=!ranged?p.strongReady:0;let bonus=bonusAtk+(ammo?.atkBonus||0);if(ready>0){bonus+=strongBonus(ready)-(martialFormOf('strong')==='drive'?2:0);addLog(`${martialPresentation('strong',MARTIAL_INFO.strong,p).name} ${ready}단계 발동.`);p.strongReady=0}
-    const nativeHoly=(w.holy||0)&&['spirit','undead'].includes(mon.kind)?w.holy:0,holyBrand=w.elementBrand74==='holy'&&mon.kind==='undead'?5:0,holy=nativeHoly+holyBrand;
     const defenseBonus=combatDefenseBonus(mon);
-    const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus),dmg=damageEntity(mon,damageFormula(st.atk+bonus+holy,combatEntityStats(mon).def,crit,{defenseBonus,defenseIgnore:ammo?.pierce||0,defenseScale:(w.armorPierce?.25:1)*(aim?.5:1),damageScale:aim?aim/4:1}), state.player,null,{delivery:ranged?'ranged':'melee'});
+    const crit=globalThis.__MANRU_RANDOM57__()<(.07+st.critBonus);let dmg=damageEntity(mon,damageFormula(st.atk+bonus,combatEntityStats(mon).def,crit,{defenseBonus,defenseIgnore:ammo?.pierce||0,defenseScale:(w.armorPierce?.25:1)*(aim?.5:1),damageScale:aim?aim/4:1}), state.player,null,{delivery:ranged?'ranged':'melee'});
+    dmg+=holyStrikeBonus(mon,holyStrikeBase(w),state.player);
     alertNearby(mon.x,mon.y,noiseRadius,ranged?'projectile':'combat',dmg);
     setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});mon.hitUntil=performance.now()+170;mon.hitDir={x:Math.sign(mon.x-p.x),y:Math.sign(mon.y-p.y)};slashFX(p.x,p.y,mon.x,mon.y,crit?'#ffe8a2':'#e7d4d4');impact(mon.x,mon.y,crit?'#ffe09a':'#e7c8c8',crit?5:3);if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?16:13);addLog(`${p.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}${w.armorPierce?' · 방어관통':''}`);sfx54(crit?'crit':'hit');
     if(context.wasStealthed&&martialFormOf('ghost')==='assassin'&&mon.hp>0){setMonsterWeakened(mon,MARTIAL_RULES.assassinTurns);martialFx('assassin',mon)}if(ready>0&&martialFormOf('strong')==='drive'&&mon.hp>0)resolveDrive(mon,ready,p);

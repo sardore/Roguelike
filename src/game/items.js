@@ -74,7 +74,7 @@ function itemSummary(item){if(item?.type==='ammo'){const d=ammoDef(item.ammoKind
 function enchantColor(item){const element=item?.elementBrand74||item?.elementGuard74;return element?ELEMENT_FX_COLORS105[element]||null:null}
 // The picture of an enchanted item shines in the colour of its enchantment.
 function glowIcon(img,item){if(!img)return;const glow=enchantColor(item);img.style.filter=glow?`drop-shadow(0 0 6px ${glow}) drop-shadow(0 0 2px ${glow})`:''}
-function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 언데드 추가피해 +5':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인 · 저항 Ⅰ${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
+function describeItemWithBrands(item){const s=describeIdentifiedItem(item);if(item?.type==='weapon'&&item.elementBrand74)return `${s} · ${E74[item.elementBrand74].name} 무기각인${item.elementBrand74==='holy'?' · 성광 추가피해 +3':''}`;if(item?.type==='armor'&&item.elementGuard74)return `${s} · ${E74[item.elementGuard74].name} 방어각인 · 저항 Ⅰ${item.elementGuard74==='holy'?' · 언데드 피해 -15%':''}`;return s}
 function describeIdentifiedItem(item){if(item?.type==='potion'&&!isPotionKnownByPlayer(item))return `${POTION_META[item.potionKind]?.family||'미확인 약성'} · ${item.origin56?.label||'출처 불명'}`;if(item?.type==='talisman'&&!knownTalisman56(item))return '미확인 부적 · 술법 불명';if(item?.type==='talisman')return item.ability||item.desc||'';return describeItemStats(item)}
 function describeItemStats(item){return displayText53(stats53(item).join(' · '))}
 function consumeOne(idx){return consumeItemQuantity(state?.player?.inventory?.[idx])}
@@ -1092,7 +1092,7 @@ const INVENTORY_RENDER={core:{id:'ux45-core',fn:renderInventoryCore},pre:[{id:'r
   {a:'holy',b:'elem_grass',kind:'f_holy_grass',name:'성목부적',seal:'生',mode:'instant',effect:'holy_elem_grass991',ability:'성광 정화 + 목령 가호',desc:'살아 있는 기운에 성광을 섞어 탁기를 밀어내고 독분의 역류를 막는다.'},
   {a:'holy',b:'elem_earth',kind:'f_holy_earth',name:'성토부적',seal:'震',mode:'instant',effect:'holy_elem_earth991',ability:'성광 정화 + 대지 가호',desc:'성광을 대지에 내려앉혀 사기를 누르고 충격의 역류를 막는다.'},
   {a:'holy',b:'identify',kind:'f_holy_identify',name:'성감부적',seal:'明',mode:'instant',effect:'holy_identify991',ability:'모든 미감정 장비 감정 + 저주 드러냄',desc:'성광으로 장비의 숨은 결을 드러내 저주까지 함께 판별한다.'},
-  {a:'holy',b:'upgrade',kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 언데드 추가피해 +5 / 방어구 언데드 피해 15% 감소 · 성광 저항 Ⅰ',desc:'성광을 장비에 각인한다. 무기는 기존 금강령 퇴와 같은 성속성 추가피해 계통을 사용하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'},
+  {a:'holy',b:'upgrade',kind:'f_holy_upgrade',name:'성강부적',seal:'鍊',element:'holy',mode:'gear',ability:'무기 성광 추가피해 +3 / 방어구 언데드 피해 15% 감소 · 성광 저항 Ⅰ',desc:'성광을 장비에 각인한다. 무기는 타격마다 성광 피해를 조금 더하고, 방어구는 언데드에게 받는 직접 피해를 소폭 줄인다.'},
   {a:'holy',b:'blast',kind:'f_holy_blast',name:'성폭부적',seal:'光',mode:'instant',effect:'holy_blast991',ability:'반경 3칸 강화 성광폭발 40~56 · 원혼/언데드 특효',desc:'성광을 폭발시켜 가까운 사악한 존재를 강하게 태운다.'},
   {a:'holy',b:'mapping',kind:'f_holy_mapping',name:'성안부적',seal:'眼',mode:'instant',effect:'holy_mapping991',ability:'전체 지도 + 숨은 문 + 해로운 상태 정화',desc:'성광이 벽과 몸의 탁한 결을 함께 훑는다.'},
   {a:'holy',b:'ward',kind:'f_holy_ward',name:'성호부적',seal:'護',mode:'instant',effect:'holy_ward991',ward:{"turns":18,"fortify":8,"regen":4},ability:"전체 정화·보호막 18턴·추가 DEF +3 8턴 + 성광 격퇴·재생",desc:"성광으로 몸을 정화하고 주변 사기를 태우며 4턴 재생한다."},
