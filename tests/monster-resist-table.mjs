@@ -26,7 +26,7 @@ const out = await s.page.evaluate(() => {
   }
   const boss = mk('객잔 쥐'); boss.boss = true; r.boss = T.table(boss);
   const king = mk('식인 물고기'); king.boss = true; r.aquaticBoss = T.table(king).water;
-  const extra = mk('객잔 쥐'); extra.resist = { fire: 3 }; r.defined = T.table(extra);
+  const extra = mk('객잔 쥐'); extra.resist = { fire: 4 }; r.defined = T.table(extra);
   // a fish already weak to lightning does not also take the water-conduction bonus
   const fish = mk('식인 물고기'); st.map[fish.y][fish.x] = T.TT.WATER; r.fishShockInWater = T.mult(fish, 'shock');
   const rat = mk('객잔 쥐'); st.map[rat.y][rat.x] = T.TT.WATER; r.ratShockInWater = T.mult(rat, 'shock');
@@ -36,11 +36,11 @@ const near = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, msg + ': ' + a + '
 assert.equal(out['독꽃'].table.fire, -1); assert.equal(out['독꽃'].table.grass, 2); near(out['독꽃'].fire, 1.4, 'plant burns');
 assert.equal(out['강시'].table.holy, -1); assert.equal(out['강시'].table.grass, -1); near(out['강시'].holy, 1.4, 'undead fears light');
 assert.equal(out['식인 물고기'].table.water, 2); assert.equal(out['식인 물고기'].table.shock, -1); assert.equal(out['식인 물고기'].table.ice, -1);
-assert.equal(out['살라맨더'].table.fire, 2); assert.equal(out['살라맨더'].table.water, -1); near(out['살라맨더'].fire, .30, 'fire body');
+assert.equal(out['살라맨더'].table.fire, 2); assert.equal(out['살라맨더'].table.water, -1); near(out['살라맨더'].fire, .50, 'fire body (resist II = 50% off)');
 assert.equal(out['수목 궁수'].table.grass, 1, 'own attack element');
 assert.equal(out['파편 망령'].table.ice, 1); assert.equal(out['파편 망령'].table.holy, -1);
 assert.ok(Object.values(out.boss).every(v => v === 1), 'boss +1 everywhere');
-assert.equal(out.defined.fire, 3, 'definition resist adds on top');
+assert.equal(out.defined.fire, 4, 'definition resist adds on top, up to immunity');
 assert.equal(out.aquaticBoss, 2, 'traits alone never reach immunity');
 near(out.fishShockInWater, 1.4, 'weakness and conduction do not stack'); near(out.ratShockInWater, 1.5, 'water conducts');
 assert.ok(out['객잔 쥐'].meta.includes('빠름'), '객잔 쥐 shows 빠름');

@@ -303,7 +303,7 @@ function statusSummary(){
 // Poison is wood-spirit (목령, grass) damage: a creature's resistance or weakness to that element applies to every tick.
 function poisonTickDamage(entity,source=null){
   const base=combatDebuffDamage(entity,'poison');
-  if(entityElementResist(entity,'grass')>=3){floatText(entity.x,entity.y,'저항','#e5c080',10);return 0}
+  if(entityElementResist(entity,'grass')>=RESIST_IMMUNE57){floatText(entity.x,entity.y,'저항','#e5c080',10);return 0}
   return damageEntity(entity,Math.max(1,Math.round(base*entityElementMultiplier57(entity,'grass'))),source,'grass');
 }
 // A holy weapon (금강령 퇴) or a 성광 brand adds a little holy damage to every blow it lands; the target's holy resistance applies,
@@ -311,7 +311,7 @@ function poisonTickDamage(entity,source=null){
 const HOLY_BRAND_STRIKE=3;
 function holyStrikeBase(weapon){return(weapon?.holy||0)+(weapon?.elementBrand74==='holy'?HOLY_BRAND_STRIKE:0)}
 function holyStrikeBonus(target,base,source=null){
-  if(!(base>0)||!target||target.hp<=0||entityElementResist(target,'holy')>=3)return 0;
+  if(!(base>0)||!target||target.hp<=0||entityElementResist(target,'holy')>=RESIST_IMMUNE57)return 0;
   return damageEntity(target,Math.max(1,Math.round(base*entityElementMultiplier57(target,'holy'))),source,'holy');
 }
 function applyStatusTick(){
@@ -548,6 +548,7 @@ function castMartialSmoke(cell,inputSource='pointer',existingAction=null){
 }
 function setPlayerStatus(key,turns){
  if(!state?.status||turns<=0||STATUS_META57[key]?.harmful&&mirrorSanctuaryAffects(state.player,true))return 0;
+ if(key==='stun'){const trimmed=shockStunTrim(state.player,turns);if(trimmed<turns){floatText(state.player.x,state.player.y,trimmed>0?'기절 단축':'기절 저항','#b9d7cd',9);if(trimmed<=0)return 0;turns=trimmed}}
  state.status[key]=Math.max(state.status[key]||0,turns);
  if(STATUS_META57[key]?.harmful&&state.player.classState?.aimPower>0&&martialFormOf('roar')!=='focus')setAimPower(0);
  return state.status[key];
@@ -688,7 +689,7 @@ function applyCombatStatus(target,key,turns,chance=1,opts={}){
  if(meta?.harmful&&mirrorSanctuaryAffects(target,true))return false;
  if(target.duelOpponent)Duel.sendStatus(kind,turns,chance);
  if(target===state.player)return applyHostileStatus(kind,turns,chance,opts);
- const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune(target)||(opts.element==='ice'||opts.cold)&&(entityElementResist(target,'ice')>=3))return false;
+ const cloak=target.cloak||{};if(target.statusImmune||cloak.statusImmune||kind==='poison'&&monsterPoisonImmune(target)||(opts.element==='ice'||opts.cold)&&(entityElementResist(target,'ice')>=RESIST_IMMUNE57))return false;
  if(opts.stagger||kind==='stun'){const resist=clamp(Number(cloak.staggerResist)||0,0,.95);if(resist&&globalThis.__MANRU_RANDOM57__()<resist){floatText(target.x,target.y,'경직 저항','#b9d7cd',9);return false}}
  if(chance<1&&globalThis.__MANRU_RANDOM57__()>=hostileStatusChance(chance,target.will||0))return false;
  const field=meta?.monsterField57||kind;
@@ -791,7 +792,7 @@ function hostileStatusChance(baseChance,willOverride=null){
   const w=Number(willOverride==null?getStats().will:willOverride)||0,den=Math.max(1,6+w);
   return clamp((Number(baseChance)||0)*(6/den),0,.95);
 }
-function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune||mirrorSanctuaryAffects(state.player,true)||charmStatusGuard())return false;if((opts.element==='ice'||opts.cold)&&(entityElementResist(state.player,'ice')>=3))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();charmOnStatus(key,turns);return true}
+function applyHostileStatus(key,turns,baseChance=1,opts={}){if(!state||state.dead||turns<=0)return false;const cloak=playerCloak();if(cloak.statusImmune||mirrorSanctuaryAffects(state.player,true)||charmStatusGuard())return false;if((opts.element==='ice'||opts.cold)&&(entityElementResist(state.player,'ice')>=RESIST_IMMUNE57))return false;if(key==='poison'&&(state.status?.poisonResist57||0)>0)return false;if(opts.stagger){const r=Math.max(0,Math.min(.95,Number(cloak.staggerResist)||0));if(r>0&&globalThis.__MANRU_RANDOM57__()<r){floatText(state.player.x,state.player.y,'경직 저항','#b9d7cd',9);return false}}if(baseChance<1&&!rollHostileStatus(baseChance))return false;const before=state.status[key]||0;if(key==='illness'&&(state.status.illness||0)>0){state.status.illness=Math.max(0,state.status.illness-6);if(state.status.illness===0){addLog('중병이 악화되어 유예가 끝났다.');die('중병 재감염');return true}}else setPlayerStatus(key,turns);if(STATUS_META57[key]?.screen&&(before===0||key==='illness'))flash(STATUS_META57[key].screen.color,420);if(opts.log)addLog(opts.log);updateDebuffHud();charmOnStatus(key,turns);return true}
 function checkLevel(){const p=state.player;normalizePlayerProgression57(p);while(p.level<BALANCE.maxLevel&&p.xp>=p.nextXp){p.xp-=p.nextXp;p.level++;branchLevelFood();const hpGain=p.level>=13?3:(p.level%4===0?2:1);let martialGain=p.level<=12||MARTIAL_RULES.latePoints.includes(p.level)?1:0;p.baseMaxHpPermanent+=hpGain;recomputeMaxHp(p);recoverCombatHealth(p,Math.max(2,Math.ceil(p.maxHp*.22)));if([4,7,10].includes(p.level))p.maxFocus+=1;p.focus=Math.min(getStats().maxFocus,p.focus+2);if(martialGain){if(p.level>=13&&(state.martialProgression1005?.legacyBossCredit||0)>0){state.martialProgression1005.legacyBossCredit--;martialGain=0}else p.skillPoints+=martialGain;}p.nextXp=p.level<BALANCE.maxLevel?xpRequirementForLevel57(p.level+1):xpRequirementForLevel57(BALANCE.maxLevel);addLog(`LEVEL ${p.level}. HP +${hpGain}${martialGain?` · 무술 포인트 +${martialGain}`:' · 무술 포인트 지급 없음'}.`)}}
 function hungerTick(){const p=state.player;if(state.turn%BALANCE.hungerTick===0)p.hunger=Math.max(0,p.hunger-1);if(p.hunger===0&&state.turn%5===0){damageEntity(p,1);addLog('굶주림으로 체력이 깎인다.');if(p.hp<=0)die('굶주림')}}
 function isOpaqueCloud(field){
