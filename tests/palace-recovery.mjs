@@ -358,7 +358,8 @@ try {
     for(const generated of [false,true]){
       await oldChest.page.evaluate(generated=>{
         const st=__MANRU_QA_UI__.state(),chest=st.branchTerrain105.palace105.starterChest;
-        if(!st.coreLoot982?.spawned?.upgrade?.[9])throw Error('expected a floor 9 upgrade');
+        // whether floor 9 gets a core upgrade is a seeded draw (any change to how often the random stream is used moves it), so the fixture states it
+        (st.coreLoot982||={spawned:{upgrade:{},heal:{}}}).spawned.upgrade[9]=true;
         chest.generatedSupply=generated;
         if(generated)chest.items.find(i=>i.talismanKind==='upgrade'&&!i.coreDrop982).count++;
         if(!__MANRU_RELEASE__.save().ok)throw Error('fixture save failed');
