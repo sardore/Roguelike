@@ -130,10 +130,10 @@ assert.deepEqual(fx.gas, [true, false, true]); assert.equal(fx.twins, true);
 // 요행: a blow about to land sometimes makes the wearer step back; out of reach it misses, never onto a dangerous cell
 const lucky = await s.page.evaluate(() => {
   const T = charmTest, st = T.state(), p = st.player, r = {}, real = globalThis.__MANRU_RANDOM57__;
-  const floor = st.map[p.y][p.x], lava = T.TT.LAVA;
+  const floor = T.TT.FLOOR, lava = T.TT.LAVA; // the start cell can be a garden tile, so the arena is plain floor, not a copy of it
   const reset = () => { st.monsters = []; p.hp = p.maxHp = 200; p.trinket = { name: 'l', quirk: 'luckyMend' }; for (let dy = -2; dy <= 2; dy++) for (let dx = -6; dx <= 6; dx++) if (st.map[p.y + dy]?.[p.x + dx] != null) st.map[p.y + dy][p.x + dx] = floor; };
   const hit = (m, ctx) => { globalThis.__MANRU_RANDOM57__ = () => (new Error().stack || '').includes('charmLuckyStep') ? .01 : .99; try { return T.mhit(m, ctx) } finally { globalThis.__MANRU_RANDOM57__ = real } };
-  const foe = (x, y, extra = {}) => { const m = T.spawn({ x, y }, false, {}); Object.assign(m, { x, y, hp: 99, maxHp: 99, atk: 20, alerted: true, ranged: false, reach: 1 }, extra); return m };
+  const foe = (x, y, extra = {}) => { let m = T.spawn({ x, y }, false, {}); for (let n = 0; n < 40 && !m; n++) m = T.spawn(null, false, {}); Object.assign(m, { x, y, hp: 99, maxHp: 99, atk: 20, alerted: true, ranged: false, reach: 1 }, extra); return m };
   // melee from the east: steps west and the blow misses
   reset(); let x0 = p.x, m = foe(p.x + 1, p.y), res = hit(m, { target: p, delivery: 'melee' });
   r.meleeMoved = x0 - p.x; r.meleeMissed = !!res.evaded && p.hp === 200;
