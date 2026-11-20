@@ -885,9 +885,9 @@ function drawDecal(d){
 function isMobileViewport(){return window.matchMedia('(max-width:1080px)').matches}
 function syncViewportOnWindowResize(){ClientEnvironment.refresh('viewport');const observing=!!state?.debugBattle57,w=document.getElementById(observing?(DEBUG_BATTLE57.watching?'battleWatchViewport57':'battleViewport57'):'canvasWrap'),cs=getComputedStyle(w),cw=Math.max(observing?1:300,Math.floor((w.clientWidth||(observing?innerWidth:0))-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))),ch=Math.max(observing?1:280,Math.floor((w.clientHeight||(observing?innerHeight-130:0))-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0))),dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));if(VIEW.w!==cw||VIEW.h!==ch||VIEW.dpr!==dpr){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false}}
 /* ===== MANRU rendering override ===== */
-function regionColors(){const c=regionColorsWithFloor11(),p=FLOOR91[regionIndex()]||FLOOR91[0];return{...c,floor:p.floor,floorAlt:p.alt,fog:p.fog}}
+function regionColors(){const c=regionColorsWithFloor11(),art=innFloorArt(),p=art||FLOOR91[regionIndex()]||FLOOR91[0];return{...c,floor:p.floor,floorAlt:p.floorAlt||p.alt,fog:p.fog}}
 function regionColorsWithPalette(){
-    const c=floorArtRegionColors();if(!state||state.specialFloor||state.monsters?.some(m=>m.boss))return c;
+    const c=floorArtRegionColors();if(!state||state.specialFloor||innFloorArt()||state.monsters?.some(m=>m.boss))return c;
     return {...c,...PALETTE71[regionIndex()]};
   }
 function liftedRegionColors(){const c=regionBasePalette(),z=regionIndex(),lift=[13,10,11,10,12][z]||9;return{...c,floor:colorShift(c.floor,lift),floorAlt:colorShift(c.floorAlt,lift),wall:colorShift(c.wall,lift+5),wallDark:colorShift(c.wallDark,lift+1)}}
@@ -1021,6 +1021,7 @@ function drawFloorWithSubtheme(px,py,x,y,colors,vis,ctx=X){
     ctx.restore();
   }
 function drawRegionFloor(px,py,x,y,colors,vis,ctx=X){
+    const inn=innFloorArt();if(inn)return drawInnFloor(ctx,px,py,x,y,colors,inn);
     const h=hash2(x>>1,y>>1,91001+state.floor*13),base=h>.72?colors.floorAlt:colors.floor;ctx.fillStyle=base;ctx.fillRect(px,py,32,32);
     ctx.fillStyle='rgba(255,255,255,.018)';if((x+y)%5===0)ctx.fillRect(px+2,py+2,28,1);
     ctx.fillStyle='rgba(0,0,0,.035)';ctx.fillRect(px,py+30,32,2);
@@ -1127,7 +1128,7 @@ function specialWall(x,y){return !!(state.specialPlaces52?.floor===state.floor&&
 function wallLineColors(x,y){
  if(state.branchContext105)return branchWallColors(x,y);
  const z=regionIndex(),place=state.specialPlaces52?.floor===state.floor&&state.specialPlaces52.walls?.[K1020(x,y)]&&SPECIAL_PLACES52[state.floor];
- if(place)return{cap:place[2],wall:place[1]};
+ if(place){const d=placeTones(place);return{cap:d[2],wall:d[1]}}
  if(state.outerWall94?.[key85(x,y)]){const c=OUTER_WALL_COLORS[z]?.[0]||OUTER_WALL_COLORS[4][0];return{cap:colorShift(c,70),wall:c}}
  if(z===1)return{cap:'#75806c',wall:'#42574b'};
  return{cap:wallPalette[z].edge,wall:wallPalette[z].top};
@@ -1148,15 +1149,19 @@ function enclosedWall(x,y){
 function drawMainWall(px,py,x,y,palette=dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y)){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,palette,x,y);X.restore()}
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
+// What region 0 paints over the world: the old red dusk glow unless the floor is one of the inn's five.
+const INN_ATMOS_DEFAULT=Object.freeze({rgb:'199,74,35',a:.075,at:[.52,.30],r:.72,lamp:'203,71,38',lampA:.045,lampN:5,mote:null});
+function innAtmosphere(){return innFloorArt()?.atmos||INN_ATMOS_DEFAULT}
 function drawRegionalAtmosphere(now){
     if(state?.branchContext105?.id==='mine'||state?.branchContext105?.id==='mirror')return;
-    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.68);g.addColorStop(0,'rgba(199,74,35,.055)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
+    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r*.94);g.addColorStop(0,`rgba(${A.rgb},${+(A.a*.73).toFixed(3)})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
   }
 function drawRegionalAtmosphereDesktop(now){
   const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalCompositeOperation='screen';
   if(z===0){
-    const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.72);g.addColorStop(0,'rgba(199,74,35,.075)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
-    for(let i=0;i<5;i++){const x=VIEW.w*(.10+i*.22),y=28+Math.sin(now/850+i)*4;X.fillStyle='rgba(203,71,38,.045)';X.fillRect(x-12,y-6,24,16)}
+    const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r);g.addColorStop(0,`rgba(${A.rgb},${A.a})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
+    for(let i=0;i<A.lampN;i++){const x=VIEW.w*(.10+i*(.80/Math.max(1,A.lampN-1))),y=28+Math.sin(now/850+i)*4;X.fillStyle=`rgba(${A.lamp},${A.lampA})`;X.fillRect(x-12,y-6,24,16)}
+    if(A.mote)for(let i=0;i<A.mote.n;i++){const x=hash2(i,7,19)*VIEW.w+Math.sin(now/700+i)*12,y=(hash2(i,11,17)*VIEW.h-(now*.011*(1+i%3))+VIEW.h+30)%(VIEW.h+30);X.fillStyle=`rgba(${A.mote.rgb},${A.mote.a})`;X.fillRect(x,y,2+(i%2),2+(i%2))}
   }else if(z===1){
     X.strokeStyle='rgba(190,210,199,.10)';for(let i=0;i<22;i++){const x=(i*67+(now*.045))%(VIEW.w+80)-40,y=(i*43+(now*.13))%(VIEW.h+80)-40;X.beginPath();X.moveTo(x,y);X.lineTo(x-8,y+18);X.stroke()}
     const g=X.createLinearGradient(0,VIEW.h*.35,0,VIEW.h);g.addColorStop(0,'rgba(184,204,191,0)');g.addColorStop(1,'rgba(165,192,177,.065)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
@@ -1401,6 +1406,7 @@ function drawFloorMaterialSpecialTerrain(tile,px,py,x,y,now){
       for(const[ox,oy]of cs){X.fillStyle='rgba(183,207,207,.09)';X.fillRect(px+ox+1,py+oy+1,12,.6);X.fillStyle='rgba(13,23,27,.16)';X.fillRect(px+ox+13,py+oy+2,1,12);X.fillRect(px+ox+1,py+oy+13,12,1)}if(hash2(x,y,619)>.78){X.strokeStyle='rgba(26,38,43,.28)';X.lineWidth=.6;X.beginPath();X.moveTo(px+20,py+20);X.lineTo(px+24,py+24);X.lineTo(px+23,py+28);X.stroke()}
       return true;
     }
+    if(tile===TT.GILDED_FLOOR&&innFloorArt())return drawInnDais(X,px,py,x,y);
     if(tile===TT.GILDED_FLOOR){
       X.fillStyle=regionIndex()===4?'#3b3c30':'#17130f'; X.fillRect(px,py,32,32);if(regionIndex()===4){X.fillStyle='#51513e';X.fillRect(px+3,py+3,26,1);X.fillStyle='#2d3229';X.fillRect(px+3,py+27,26,2);}
       X.strokeStyle='#8e7638'; X.strokeRect(px+2.5,py+2.5,27,27);
@@ -1412,6 +1418,7 @@ function drawFloorMaterialSpecialTerrain(tile,px,py,x,y,now){
     return drawCarpetSpecialTerrain(tile,px,py,x,y,now);
   }
 function drawCarpetSpecialTerrain(tile,px,py,x,y,now){
+    if(tile===TT.CARPET&&innFloorArt())return drawInnRunner(X,px,py,x,y);
     if(tile===TT.CARPET){const z=regionIndex(),base=state.duel?'#2a2560':z===2?'#695064':z===4?'#776c45':'#796447',edge=state.duel?'#6f86d8':z===2?'#b99ab0':'#c6aa70',line=state.duel?'rgba(140,185,255,.20)':z===2?'rgba(231,202,224,.18)':'rgba(243,222,170,.18)';X.fillStyle=base;X.fillRect(px,py,32,32);X.fillStyle='rgba(25,18,12,.16)';for(let q=0;q<32;q+=8)X.fillRect(px+q,py,1,32);X.strokeStyle=line;X.beginPath();X.moveTo(px,py+8.5);X.lineTo(px+32,py+8.5);X.moveTo(px,py+23.5);X.lineTo(px+32,py+23.5);X.stroke();X.strokeStyle=edge;X.lineWidth=1;if(state.map[y-1]?.[x]!==TT.CARPET){X.beginPath();X.moveTo(px,py+.5);X.lineTo(px+32,py+.5);X.stroke()}if(state.map[y+1]?.[x]!==TT.CARPET){X.beginPath();X.moveTo(px,py+31.5);X.lineTo(px+32,py+31.5);X.stroke()}if(state.map[y]?.[x-1]!==TT.CARPET){X.beginPath();X.moveTo(px+.5,py);X.lineTo(px+.5,py+32);X.stroke()}if(state.map[y]?.[x+1]!==TT.CARPET){X.beginPath();X.moveTo(px+31.5,py);X.lineTo(px+31.5,py+32);X.stroke()}return true}
     if(tile===TT.KEY_TILE&&state?.keyPlan96){const km=keyPos96(x,y),meta=keyMeta96(km?.keyId);X.fillStyle='rgba(15,12,8,.55)';X.fillRect(px+6,py+9,20,15);X.fillStyle=meta.dark;X.fillRect(px+8,py+11,16,11);X.fillStyle=meta.color;X.fillRect(px+8,py+14,13,4);X.fillRect(px+18,py+11,4,10);X.fillRect(px+21,py+17,4,3);X.fillStyle='rgba(255,255,225,.45)';X.fillRect(px+9,py+14,7,1);return true}
     const r=drawStructureSpecialTerrain(tile,px,py,x,y,now,X);if(r&&tile===TT.LOCKED_GATE){const d=doorPos96(x,y);if(d){const meta=keyMeta96(d.keyId);X.fillStyle=meta.color;X.fillRect(px+13,py+13,7,3);X.fillRect(px+15,py+16,3,6)}}return r
@@ -1426,6 +1433,7 @@ function drawStructureSpecialTerrain(tile,px,py,x,y,now,X){
       X.fillStyle='rgba(240,238,210,.12)';X.fillRect(px+8,py+7,6,2);return true
     }
     if(tile===TT.CARPET){if(regionIndex()===1){X.fillStyle='#8a6a3a';X.fillRect(px+2,py+4,28,24);for(let yy=7;yy<28;yy+=5){X.fillStyle=yy%10===7?'#b78e57':'#9a7546';X.fillRect(px+4,py+yy,24,3)}X.fillStyle='rgba(248,220,162,.10)';X.fillRect(px+5,py+6,22,2);X.fillRect(px+5,py+21,22,1);X.strokeStyle='#d8b16c';X.strokeRect(px+3.5,py+5.5,25,21);return true}X.fillStyle=regionIndex()===2?'#5c2d50':'#6b3023';X.fillRect(px+2,py+4,28,24);X.strokeStyle=regionIndex()===2?'#c487aa':'#c88654';X.strokeRect(px+3.5,py+5.5,25,21);if((x+y)%2===0){X.fillStyle='rgba(238,210,158,.18)';X.fillRect(px+8,py+15,16,2)}return true}
+    if(tile===TT.STONE_PATH&&innFloorArt())return drawInnStonePath(X,px,py,x,y,innFloorArt());
     if(tile===TT.STONE_PATH){X.lineWidth=1;X.fillStyle=state.duel?'#222a52':regionIndex()===1?'#626a4f':state.floor===11?'#676d70':'#55585a';X.fillRect(px,py,32,32);X.strokeStyle=state.duel?'rgba(120,170,255,.22)':'rgba(225,226,218,.18)';X.strokeRect(px+2.5,py+3.5,27,25);X.strokeStyle='rgba(25,27,28,.28)';X.beginPath();X.moveTo(px+3,py+16);X.lineTo(px+29,py+16);X.moveTo(px+16,py+3);X.lineTo(px+16,py+29);X.stroke();return true}
     if(tile===TT.WOOD_FLOOR){X.fillStyle='#8b693a';X.fillRect(px,py,32,32);for(let yy=0;yy<32;yy+=7){X.fillStyle=(yy/7)%2?'#a87f48':'#987140';X.fillRect(px,py+yy,32,5);X.fillStyle='rgba(248,223,174,.10)';X.fillRect(px,py+yy,32,1)}X.strokeStyle='rgba(57,35,18,.22)';for(let xx=8;xx<32;xx+=8){X.beginPath();X.moveTo(px+xx,py);X.lineTo(px+xx,py+32);X.stroke()}return true}
     if(tile===TT.MOON_STONE){const garden=regionIndex()===1;X.fillStyle=garden?'#4d5c46':'#46525a';X.fillRect(px,py,32,32);X.fillStyle=garden?'#788064':'#56646c';X.fillRect(px+1,py+1,14,14);X.fillRect(px+17,py+17,14,14);X.fillStyle=garden?'#46543e':'#3b464c';X.fillRect(px+17,py+1,14,14);X.fillRect(px+1,py+17,14,14);X.strokeStyle='rgba(221,231,226,.11)';X.strokeRect(px+.5,py+.5,31,31);return true}
@@ -1438,7 +1446,7 @@ function drawStructureSpecialTerrain(tile,px,py,x,y,now,X){
     if(tile===TT.IRON_HOOK){X.strokeStyle='#8a8d8b';X.lineWidth=3;X.beginPath();X.moveTo(px+11,py+6);X.lineTo(px+11,py+21);X.quadraticCurveTo(px+12,py+27,px+18,py+24);X.moveTo(px+21,py+7);X.lineTo(px+21,py+17);X.quadraticCurveTo(px+21,py+23,px+16,py+23);X.stroke();return true}
     if(tile===TT.GOLD_LAMP){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.PETAL_MAT){for(let i=0;i<10;i++){const xx=5+((x*11+y*7+i*9)%22),yy=5+((x*3+y*13+i*5)%21);X.fillStyle=i%3===0?'#df9ea4':i%3===1?'#d3aa6d':'#b47e96';X.fillRect(px+xx,py+yy,3,2)}return true}
-    if(tile===TT.STONE_PILLAR){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
+    if(tile===TT.STONE_PILLAR){if(innFloorArt())return drawInnColumn(X,px,py,x,y);return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.LANTERN_POST){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.WALL_BANNER){const c=['#9e4230','#416c55','#8e4e7c','#6b4937','#a98c32'][regionIndex()];X.fillStyle='#231b16';X.fillRect(px+5,py+4,22,3);X.fillStyle='#c0a16a';X.fillRect(px+5,py+3,22,2);X.fillStyle=c;X.beginPath();X.moveTo(px+8,py+6);X.lineTo(px+24,py+6);X.lineTo(px+24,py+28);X.lineTo(px+16,py+25);X.lineTo(px+8,py+28);X.closePath();X.fill();X.strokeStyle='#c6a367';X.lineWidth=1;X.stroke();X.fillStyle='#efcb8230';X.fillRect(px+10,py+7,2,17);X.fillStyle='#160b1240';X.fillRect(px+21,py+7,2,17);X.strokeStyle='#dfbb79';X.beginPath();X.moveTo(px+16,py+11);X.lineTo(px+20,py+16);X.lineTo(px+16,py+21);X.lineTo(px+12,py+16);X.closePath();X.stroke();return true}
     // TT.CRATE uses the existing b1ca0 X-braced crate in every region.
@@ -1565,9 +1573,10 @@ function worldLightSources(){
  for(const r of state.branchContext105?.id==='mirror'?state.rafts||[]:[])for(const o of r.objects||[])if(o.kind==='lamp')add(r.x+o.dx,r.y+o.dy,'#d9c8ff',3.2,.22,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
-  add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);
+  add(x,y,storm?'#ffc170':(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),storm?4.15:3.5,storm?.43:.23);
  }else if(t===TT.GOLD_LAMP)add(x,y,WORLD_LIGHT_ART.gold,3.5,.22);else if(t===TT.FOUNTAIN)add(x,y,WORLD_LIGHT_ART.water,2.3,.12);else if(t===TT.LAVA&&(x+y)%5===0)add(x,y,WORLD_LIGHT_ART.lava,2.3,.15,'lava');else if(t===TT.PORTAL)add(x,y,state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__.theme(state.artifactDungeon46.id).glow:WORLD_LIGHT_ART.portal,2.2,.13,'portal')}
- for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:WORLD_LIGHT_ART.lantern,2.8,.17,'decor');
+ if(state.floor!==4)for(const s of innCanopy())for(const lx of s.lamps)add(lx,s.y,innFloorArt().lamp,2.5,.15,'inn');
+ for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),2.8,.17,'decor');
  LIGHT_CACHE={map:state.map,revision,lanternKey,lights:state.legendLights49,decor:state.decor,sources,geometry:new Map()};return sources;
 }
 function drawWorldLights(now=performance.now(),bounds=null){if(!state?.map||!state.visible)return;const sources=worldLightSources(),b=bounds||{x0:0,y0:0,x1:COLS-1,y1:ROWS-1};let rendered=0;X.save();X.globalCompositeOperation='source-over';X.globalAlpha=1;
@@ -2207,6 +2216,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     for(const f of state.tempTerrain74||[])if(f.kind==='passageSeal'&&f.ttl>0&&f.expiresTurn105>state.turn&&state.map[f.y]?.[f.x]===f.tile&&inB58(f,b,1))drawField({...f,cells:[f]},now);
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
+    drawInnCanopy(b,now);
     drawMineWorld(now,b);
 
     // Gameplay glows follow actors; physical lights are applied to scenery before fog.
@@ -2633,7 +2643,7 @@ function paintRestaurantFinal(fr){
 const HERO_SPRITE_W=32,HERO_SPRITE_H=36,HERO_SPRITE_CACHE=new Map();
 const EXEMPT=new Set(['취객','떠돌이 도둑','객잔 경비병']);
 function drawSpecialMaterial(px,py,x,y,wall=false,ctx=X){
- if(!state||state.artifactDungeon46)return;const g=state.specialPlaces52;if(!g||g.floor!==state.floor)return;const q=(wall?g.walls:g.cells)?.[K1020(x,y)];let d=SPECIAL_PLACES52[state.floor];if(!q||!d)return;if(state.floor===6){const name=g.zones[q.zone]?.name||'';if(/대열람|집무/.test(name))d=[d[0],'#51493c','#8f7e60','#ddc99d',d[4]];else if(/기록|고문서/.test(name))d=[d[0],'#42484a','#7c8784','#cbd6c5',d[4]];}
+ if(!state||state.artifactDungeon46)return;const g=state.specialPlaces52;if(!g||g.floor!==state.floor)return;const q=(wall?g.walls:g.cells)?.[K1020(x,y)];let d=SPECIAL_PLACES52[state.floor];if(!q||!d)return;d=placeTones(d);if(state.floor===6){const name=g.zones[q.zone]?.name||'';if(/대열람|집무/.test(name))d=[d[0],'#51493c','#8f7e60','#ddc99d',d[4]];else if(/기록|고문서/.test(name))d=[d[0],'#42484a','#7c8784','#cbd6c5',d[4]];}
  ctx.save();const h=hash1022(`${state.floor}:${x}:${y}:place52`);
  if(wall){ctx.fillStyle=d[1];ctx.fillRect(px,py,32,32);ctx.fillStyle='#20272a';ctx.fillRect(px,py+29,32,3);ctx.fillStyle=d[2];ctx.fillRect(px+2,py+2,28,3);ctx.fillRect(px+3,py+6,2,22);ctx.fillRect(px+27,py+6,2,22);ctx.strokeStyle=d[2];ctx.strokeRect(px+8.5,py+9.5,15,14);ctx.fillStyle='#292c2b';ctx.fillRect(px+10,py+11,12,10);ctx.fillStyle=d[2];for(let i=0;i<3;i++)ctx.fillRect(px+12+i*3,py+13+(i%2)*2,1,6);if(q.fixture){ctx.fillStyle=d[3];ctx.fillRect(px+12,py+10,8,3);ctx.fillStyle='#f4deac';ctx.fillRect(px+14,py+11,4,5);ctx.globalAlpha=.16;ctx.fillStyle=d[3];ctx.fillRect(px+7,py+7,18,13);ctx.globalAlpha=1;ctx.fillStyle='#292c28';ctx.fillRect(px+13,py+17,6,2)}}
  else{const t=terrainBaseTile58(x,y);if(!basicFloor1022(t)){ctx.restore();return}ctx.fillStyle=d[1];ctx.fillRect(px,py,32,32);ctx.fillStyle='#252d2c';ctx.fillRect(px,py+31,32,1);ctx.fillRect(px+31,py,1,32);ctx.strokeStyle=d[2];ctx.globalAlpha=.42;
@@ -5557,6 +5567,7 @@ function drawDojoWall(q,r,P,x,y){
 r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addColorStop(0,'rgba(255,238,198,.13)');plaster.addColorStop(1,'rgba(37,29,22,.18)');q.fillStyle=plaster;q.fillRect(0,7,32,21);texture(819,7,'rgba(77,58,37,.12)');for(let j=0;j<2;j++){const yy=20+j*4;r(P.beam,0,yy,32,1);r(P.grain,0,yy+1,32,1);}if(x%3===0){r(P.dark,0,6,4,23);r(P.beam,1,6,3,22);r(P.grain,1,7,1,20);r(P.metal,0,8,4,2);}r(P.cap,0,0,32,3);r(P.metal,0,4,32,1);r(P.dark,0,5,32,2);r(P.grain,0,6,32,1);if(x%3===0){r(P.beam,2,3,5,6);r(P.metal,3,3,3,1);r(P.dark,3,8,5,2);}r(P.dark,0,28,32,4);r(P.beam,0,24,32,2);if(!west){r(P.beam,0,7,3,21);r(P.metal,3,7,1,20);}if(!east){r(P.beam,29,7,3,21);r(P.dark,28,7,1,21);}
  // Return the exposed vertical edge through the front-face corner too.
  if(wallFaceOpen(x,y,-1,0))r(P.cap,0,0,2,30);if(wallFaceOpen(x,y,1,0))r(P.cap,30,0,2,30);
+ if(innFloorArt())drawInnWallFace(q,r,x,y,west,east);
 }
 function drawDojoCell(t,px,py,x,y){
  const key=k(x,y),art=state.branchTerrain105.dojo,ornament=art.ornaments?.[key],P=dojoPalette(x,y),wall=t===TT.WALL;
@@ -5693,7 +5704,9 @@ function triggerGazeBurst57(mon,target=state.player){
  if(!state?.player||!mon)return;const now=performance.now();state.gazeBursts57=(state.gazeBursts57||[]).filter(b=>now-b.t<(b.ttl||460));state.gazeBursts57.push({x0:mon.x,y0:mon.y,x1:target.x,y1:target.y,t:now,ttl:460});burst(mon.x,mon.y,'#df8fce',18,.75);burst(target.x,target.y,'#f1b3df',28,1.0);impact(target.x,target.y,'#f0a9d9',6)
 }
 function regionColorsWithFloor11(){const c=regionColorsWithPalette();if(state?.floor===11)return{...c,wall:'#696f73',wallDark:'#303537',accent:'#959da1',light:'#c9ccca',fog:'#111416'};return c}
-function currentFloorArt(){return state?ART60[state.duel?'duel':state.floor]:undefined}
+function currentFloorArt(){const a=state?(state.legacyInn&&!state.duel&&state.floor<=5?LEGACY_INN_ART[state.floor]:ART60[state.duel?'duel':state.floor]):undefined;return a?.mainOnly&&state.branchContext105?undefined:a}
+// The five floors of the inn (main dungeon only) read their floor, fog, lamp and atmosphere from this entry; every other floor keeps the region's.
+function innFloorArt(){const a=currentFloorArt();return a&&!state.legacyInn&&state.floor<=5&&!state.branchContext105&&!state.duel?a:null}
 function floorArtRegionColors(){return currentFloorArt()?{...currentFloorArt()}:liftedRegionColors()}
 const TERRAIN_MOTION54=matchMedia('(prefers-reduced-motion:reduce)');
 function liquidNeighborSame(tile,x,y){
@@ -5946,6 +5959,8 @@ function floorThemeOverlay1022(px,py,x,y,colors,vis,ctx=X){if(!state||!inside102
   if(rug){const z=regionOfFloor(),pal=[['#5e261f','#c68c50'],['#314735','#879766'],['#542845','#bd789d'],['#383431','#9b6749'],['#302a1e','#c6a347']][z];ctx.globalAlpha=.52;ctx.fillStyle=pal[0];ctx.fillRect(px+1,py+1,30,30);ctx.strokeStyle=pal[1];ctx.lineWidth=1;if(rug.kind==='garden'){ctx.beginPath();ctx.arc(px+16,py+16,8,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(px+4,py+16);ctx.lineTo(px+28,py+16);ctx.stroke()}else if(rug.kind==='silk'||rug.kind==='gold'){ctx.beginPath();ctx.moveTo(px+16,py+5);ctx.lineTo(px+27,py+16);ctx.lineTo(px+16,py+27);ctx.lineTo(px+5,py+16);ctx.closePath();ctx.stroke()}else if(rug.kind==='store'){for(let yy=7;yy<28;yy+=6){ctx.beginPath();ctx.moveTo(px+5,py+yy);ctx.lineTo(px+27,py+yy);ctx.stroke()}for(let xx=7;xx<28;xx+=7){ctx.beginPath();ctx.moveTo(px+xx,py+5);ctx.lineTo(px+xx,py+27);ctx.stroke()}}else{ctx.strokeRect(px+5.5,py+5.5,21,21);ctx.strokeRect(px+9.5,py+9.5,13,13)}ctx.globalAlpha=1}
   ctx.restore();}
 /* r52 authored room plans and local material detail; never a screen lighting filter. */
+// On the inn's floors a special place takes the inn's own timber tones, not the stone greys of the later halls.
+function placeTones(d){const inn=innFloorArt();return inn?[d[0],colorShift(inn.wallDark,22),colorShift(inn.accent,-46),inn.light,d[4]]:d}
 const SPECIAL_PLACES52={
  2:['문서 검문소','#454138','#74634a','#bd9e67',0],4:['삼중 병기고','#3d4448','#626d71','#bda276',1],5:['청풍 수문장 전당','#40484a','#6f7771','#c6b68b',2],6:['수중 대도서관','#34463f','#68755d','#d4bc81',3],8:['곡수원 다실','#3e5043','#697963','#d3b18b',4],10:['수묵 관측정','#34494b','#758380','#b1d2c8',5],11:['비단 접견각','#453b43','#7b6467','#d2ac91',6],13:['밀약 기록실','#3d3540','#6c5a71','#c6a3b7',7],15:['몽유 제례실','#493d47','#7e6378','#dab8bc',8],16:['전선 공병창','#3d4548','#6b7679','#c9b27e',9],18:['철쇄 배급소','#3f4145','#6d6964','#c29d77',10],20:['지하 지휘소','#403d38','#74695b','#dfb278',11],21:['공허 측량소','#383f49','#737c8b','#c0c9dd',12],22:['황금 성문 회당','#46443b','#7e7861','#d6c08c',13],23:['금맥 세공실','#454139','#7b7060','#d6b880',14],24:['왕실 원예당','#3c4b3d','#76866b','#dfc99c',15],25:['만루 심장 제의랑','#3d4045','#767776','#dacba7',16]
 };
@@ -6085,10 +6100,18 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
     }
     cancelAutoWalk();
   }
-  const ART60={
+  // The 청풍루 floors as they were before the inn art (a legacy-map run): floors 1 and 3 used the region palette.
+  const LEGACY_INN_ART=Object.freeze({
     2:{floor:'#4b1715',floorAlt:'#62201b',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0d0203',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)'},
     4:{floor:'#302034',floorAlt:'#402847',wall:'#71436f',wallDark:'#1b111f',accent:'#d7a3e1',light:'#f4d7ff',fog:'#09050d',tint:'rgba(95,48,112,.30)',glow:'rgba(230,171,244,.09)'},
-    5:{floor:'#481411',floorAlt:'#5e1d17',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0d0202',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)'},
+    5:{floor:'#481411',floorAlt:'#5e1d17',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0d0202',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)'}
+  });
+  const ART60={
+    1:{mainOnly:true,floor:'#3a281b',floorAlt:'#412e1f',wall:'#7b5236',wallDark:'#2d1a11',accent:'#f0a352',light:'#ffd08a',fog:'#0e0805',tint:'rgba(150,92,42,.26)',glow:'rgba(255,178,98,.08)',lamp:'#f3a23f',atmos:{rgb:'214,120,44',a:.09,at:[.80,.18],r:.80,lamp:'226,128,48',lampA:.05,lampN:6,mote:{rgb:'246,186,106',a:.07,n:8}}},
+    2:{floor:'#3a2219',floorAlt:'#43281e',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0f0504',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)',lamp:'#f5a23c',atmos:{rgb:'226,150,58',a:.085,at:[.50,.28],r:.74,lamp:'232,160,60',lampA:.055,lampN:7,mote:{rgb:'255,214,140',a:.08,n:16}}},
+    3:{mainOnly:true,floor:'#33262b',floorAlt:'#3a2b31',wall:'#7b4b53',wallDark:'#2b1519',accent:'#e5a79c',light:'#ffd9c6',fog:'#0c0709',tint:'rgba(128,62,78,.26)',glow:'rgba(244,176,170,.08)',lamp:'#eeb07f',atmos:{rgb:'188,84,110',a:.065,at:[.35,.30],r:.78,lamp:'210,110,120',lampA:.04,lampN:4,mote:null}},
+    4:{floor:'#2e2c26',floorAlt:'#35332b',wall:'#6f6652',wallDark:'#231f18',accent:'#bfae76',light:'#eedaa0',fog:'#0a0a07',tint:'rgba(104,96,64,.26)',glow:'rgba(224,208,152,.07)',lamp:'#e6c27a',atmos:{rgb:'150,150,126',a:.06,at:[.50,.75],r:.90,lamp:'180,160,100',lampA:.03,lampN:3,mote:{rgb:'196,196,176',a:.06,n:14}}},
+    5:{floor:'#3a1813',floorAlt:'#45201a',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0e0403',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)',lamp:'#f0a640',atmos:{rgb:'214,56,34',a:.10,at:[.50,.22],r:.80,lamp:'232,150,52',lampA:.06,lampN:7,mote:{rgb:'255,176,84',a:.09,n:18}}},
     6:{floor:'#26383a',floorAlt:'#304847',wall:'#52645d',wallDark:'#182522',accent:'#8da78d',light:'#d4d0ae',fog:'#0a1110',tint:'rgba(45,72,67,.20)',glow:'rgba(177,194,166,.055)'},
     8:{floor:'#293729',floorAlt:'#344630',wall:'#53644d',wallDark:'#172119',accent:'#91a56f',light:'#d8d2a7',fog:'#0a0f0a',tint:'rgba(58,78,55,.18)',glow:'rgba(185,194,151,.05)'},
     10:{floor:'#24363b',floorAlt:'#2d4548',wall:'#4c625f',wallDark:'#162528',accent:'#88a8a0',light:'#d0d3b8',fog:'#091114',tint:'rgba(44,70,73,.20)',glow:'rgba(171,193,185,.05)'},
