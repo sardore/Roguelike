@@ -885,9 +885,9 @@ function drawDecal(d){
 function isMobileViewport(){return window.matchMedia('(max-width:1080px)').matches}
 function syncViewportOnWindowResize(){ClientEnvironment.refresh('viewport');const observing=!!state?.debugBattle57,w=document.getElementById(observing?(DEBUG_BATTLE57.watching?'battleWatchViewport57':'battleViewport57'):'canvasWrap'),cs=getComputedStyle(w),cw=Math.max(observing?1:300,Math.floor((w.clientWidth||(observing?innerWidth:0))-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))),ch=Math.max(observing?1:280,Math.floor((w.clientHeight||(observing?innerHeight-130:0))-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0))),dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));if(VIEW.w!==cw||VIEW.h!==ch||VIEW.dpr!==dpr){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false}}
 /* ===== MANRU rendering override ===== */
-function regionColors(){const c=regionColorsWithFloor11(),p=FLOOR91[regionIndex()]||FLOOR91[0];return{...c,floor:p.floor,floorAlt:p.alt,fog:p.fog}}
+function regionColors(){const c=regionColorsWithFloor11(),art=innFloorArt(),p=art||FLOOR91[regionIndex()]||FLOOR91[0];return{...c,floor:p.floor,floorAlt:p.floorAlt||p.alt,fog:p.fog}}
 function regionColorsWithPalette(){
-    const c=floorArtRegionColors();if(!state||state.specialFloor||state.monsters?.some(m=>m.boss))return c;
+    const c=floorArtRegionColors();if(!state||state.specialFloor||innFloorArt()||state.monsters?.some(m=>m.boss))return c;
     return {...c,...PALETTE71[regionIndex()]};
   }
 function liftedRegionColors(){const c=regionBasePalette(),z=regionIndex(),lift=[13,10,11,10,12][z]||9;return{...c,floor:colorShift(c.floor,lift),floorAlt:colorShift(c.floorAlt,lift),wall:colorShift(c.wall,lift+5),wallDark:colorShift(c.wallDark,lift+1)}}
@@ -1148,15 +1148,19 @@ function enclosedWall(x,y){
 function drawMainWall(px,py,x,y,palette=dojoFaceWall(x,y)?mainWallPalette():wallLineColors(x,y)){X.save();X.translate(px,py);drawDojoWall(X,drawKit(X).r,palette,x,y);X.restore()}
 function drawRegionWall(px,py,x,y,colors){const z=regionIndex(),p=wallPalette[z],L=isWall(x-1,y),R=isWall(x+1,y),U=isWall(x,y-1);
 X.fillStyle=p.dark;X.fillRect(px,py,32,32);X.fillStyle=p.face;X.fillRect(px,py+5,32,27);if(z===0){X.fillStyle='rgba(76,40,30,.5)';for(let i=8;i<32;i+=8)X.fillRect(px+i,py+9,1,23);X.fillStyle='rgba(255,236,200,.22)';X.fillRect(px,py+9,32,1);X.fillStyle='#5e2b22';X.fillRect(px,py+17,32,2);X.fillStyle='#c98d62';X.fillRect(px,py+19,32,1);X.fillStyle='rgba(40,18,14,.35)';X.fillRect(px,py+29,32,3)}else if(z===1){X.fillStyle='rgba(186,207,188,.06)';X.fillRect(px,py+13,32,1);X.fillRect(px,py+25,32,1)}else if(z===2){X.fillStyle='rgba(235,185,218,.055)';X.fillRect(px,py+11,32,1);X.fillRect(px,py+24,32,1)}else if(z===3){X.fillStyle='rgba(199,158,119,.08)';X.fillRect(px+5,py+8,2,2);X.fillRect(px+25,py+23,2,2)}else{X.strokeStyle='rgba(235,201,107,.08)';X.strokeRect(px+6.5,py+9.5,19,16)}if(!U){X.fillStyle=p.top;X.fillRect(px,py,32,8);X.fillStyle=p.edge;X.fillRect(px,py+7,32,2)}if(!L){X.fillStyle='rgba(255,230,188,.10)';X.fillRect(px,py+5,2,27)}if(!R){X.fillStyle='rgba(0,0,0,.32)';X.fillRect(px+29,py+5,3,27)}}
+// What region 0 paints over the world: the old red dusk glow unless the floor is one of the inn's five.
+const INN_ATMOS_DEFAULT=Object.freeze({rgb:'199,74,35',a:.075,at:[.52,.30],r:.72,lamp:'203,71,38',lampA:.045,lampN:5,mote:null});
+function innAtmosphere(){return innFloorArt()?.atmos||INN_ATMOS_DEFAULT}
 function drawRegionalAtmosphere(now){
     if(state?.branchContext105?.id==='mine'||state?.branchContext105?.id==='mirror')return;
-    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.68);g.addColorStop(0,'rgba(199,74,35,.055)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
+    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r*.94);g.addColorStop(0,`rgba(${A.rgb},${+(A.a*.73).toFixed(3)})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
   }
 function drawRegionalAtmosphereDesktop(now){
   const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalCompositeOperation='screen';
   if(z===0){
-    const g=X.createRadialGradient(VIEW.w*.52,VIEW.h*.30,12,VIEW.w*.52,VIEW.h*.30,VIEW.h*.72);g.addColorStop(0,'rgba(199,74,35,.075)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
-    for(let i=0;i<5;i++){const x=VIEW.w*(.10+i*.22),y=28+Math.sin(now/850+i)*4;X.fillStyle='rgba(203,71,38,.045)';X.fillRect(x-12,y-6,24,16)}
+    const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r);g.addColorStop(0,`rgba(${A.rgb},${A.a})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
+    for(let i=0;i<A.lampN;i++){const x=VIEW.w*(.10+i*(.80/Math.max(1,A.lampN-1))),y=28+Math.sin(now/850+i)*4;X.fillStyle=`rgba(${A.lamp},${A.lampA})`;X.fillRect(x-12,y-6,24,16)}
+    if(A.mote)for(let i=0;i<A.mote.n;i++){const x=hash2(i,7,19)*VIEW.w+Math.sin(now/700+i)*12,y=(hash2(i,11,17)*VIEW.h-(now*.011*(1+i%3))+VIEW.h+30)%(VIEW.h+30);X.fillStyle=`rgba(${A.mote.rgb},${A.mote.a})`;X.fillRect(x,y,2+(i%2),2+(i%2))}
   }else if(z===1){
     X.strokeStyle='rgba(190,210,199,.10)';for(let i=0;i<22;i++){const x=(i*67+(now*.045))%(VIEW.w+80)-40,y=(i*43+(now*.13))%(VIEW.h+80)-40;X.beginPath();X.moveTo(x,y);X.lineTo(x-8,y+18);X.stroke()}
     const g=X.createLinearGradient(0,VIEW.h*.35,0,VIEW.h);g.addColorStop(0,'rgba(184,204,191,0)');g.addColorStop(1,'rgba(165,192,177,.065)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
@@ -1565,9 +1569,9 @@ function worldLightSources(){
  for(const r of state.branchContext105?.id==='mirror'?state.rafts||[]:[])for(const o of r.objects||[])if(o.kind==='lamp')add(r.x+o.dx,r.y+o.dy,'#d9c8ff',3.2,.22,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
-  add(x,y,storm?'#ffc170':WORLD_LIGHT_ART.lantern,storm?4.15:3.5,storm?.43:.23);
+  add(x,y,storm?'#ffc170':(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),storm?4.15:3.5,storm?.43:.23);
  }else if(t===TT.GOLD_LAMP)add(x,y,WORLD_LIGHT_ART.gold,3.5,.22);else if(t===TT.FOUNTAIN)add(x,y,WORLD_LIGHT_ART.water,2.3,.12);else if(t===TT.LAVA&&(x+y)%5===0)add(x,y,WORLD_LIGHT_ART.lava,2.3,.15,'lava');else if(t===TT.PORTAL)add(x,y,state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__.theme(state.artifactDungeon46.id).glow:WORLD_LIGHT_ART.portal,2.2,.13,'portal')}
- for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:WORLD_LIGHT_ART.lantern,2.8,.17,'decor');
+ for(const d of state.decor||[])if(['lantern','brazier','lampstand'].includes(d.kind))add(d.x,d.y,d.kind==='brazier'?WORLD_LIGHT_ART.fire:d.kind==='lampstand'?WORLD_LIGHT_ART.gold:(innFloorArt()?.lamp||WORLD_LIGHT_ART.lantern),2.8,.17,'decor');
  LIGHT_CACHE={map:state.map,revision,lanternKey,lights:state.legendLights49,decor:state.decor,sources,geometry:new Map()};return sources;
 }
 function drawWorldLights(now=performance.now(),bounds=null){if(!state?.map||!state.visible)return;const sources=worldLightSources(),b=bounds||{x0:0,y0:0,x1:COLS-1,y1:ROWS-1};let rendered=0;X.save();X.globalCompositeOperation='source-over';X.globalAlpha=1;
@@ -5693,7 +5697,9 @@ function triggerGazeBurst57(mon,target=state.player){
  if(!state?.player||!mon)return;const now=performance.now();state.gazeBursts57=(state.gazeBursts57||[]).filter(b=>now-b.t<(b.ttl||460));state.gazeBursts57.push({x0:mon.x,y0:mon.y,x1:target.x,y1:target.y,t:now,ttl:460});burst(mon.x,mon.y,'#df8fce',18,.75);burst(target.x,target.y,'#f1b3df',28,1.0);impact(target.x,target.y,'#f0a9d9',6)
 }
 function regionColorsWithFloor11(){const c=regionColorsWithPalette();if(state?.floor===11)return{...c,wall:'#696f73',wallDark:'#303537',accent:'#959da1',light:'#c9ccca',fog:'#111416'};return c}
-function currentFloorArt(){return state?ART60[state.duel?'duel':state.floor]:undefined}
+function currentFloorArt(){const a=state?ART60[state.duel?'duel':state.floor]:undefined;return a?.mainOnly&&state.branchContext105?undefined:a}
+// The five floors of the inn (main dungeon only) read their floor, fog, lamp and atmosphere from this entry; every other floor keeps the region's.
+function innFloorArt(){const a=currentFloorArt();return a&&state.floor<=5&&!state.branchContext105&&!state.duel?a:null}
 function floorArtRegionColors(){return currentFloorArt()?{...currentFloorArt()}:liftedRegionColors()}
 const TERRAIN_MOTION54=matchMedia('(prefers-reduced-motion:reduce)');
 function liquidNeighborSame(tile,x,y){
@@ -6086,9 +6092,11 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
     cancelAutoWalk();
   }
   const ART60={
-    2:{floor:'#4b1715',floorAlt:'#62201b',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0d0203',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)'},
-    4:{floor:'#302034',floorAlt:'#402847',wall:'#71436f',wallDark:'#1b111f',accent:'#d7a3e1',light:'#f4d7ff',fog:'#09050d',tint:'rgba(95,48,112,.30)',glow:'rgba(230,171,244,.09)'},
-    5:{floor:'#481411',floorAlt:'#5e1d17',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0d0202',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)'},
+    1:{mainOnly:true,floor:'#3a281b',floorAlt:'#412e1f',wall:'#7b5236',wallDark:'#2d1a11',accent:'#f0a352',light:'#ffd08a',fog:'#0e0805',tint:'rgba(150,92,42,.26)',glow:'rgba(255,178,98,.08)',lamp:'#f3a23f',atmos:{rgb:'214,120,44',a:.09,at:[.80,.18],r:.80,lamp:'226,128,48',lampA:.05,lampN:6,mote:{rgb:'246,186,106',a:.07,n:8}}},
+    2:{floor:'#3a2219',floorAlt:'#43281e',wall:'#8a382a',wallDark:'#2a0908',accent:'#f0a05c',light:'#ffd58a',fog:'#0f0504',tint:'rgba(148,38,27,.32)',glow:'rgba(255,171,92,.10)',lamp:'#f5a23c',atmos:{rgb:'226,150,58',a:.085,at:[.50,.28],r:.74,lamp:'232,160,60',lampA:.055,lampN:7,mote:{rgb:'255,214,140',a:.08,n:16}}},
+    3:{mainOnly:true,floor:'#33262b',floorAlt:'#3a2b31',wall:'#7b4b53',wallDark:'#2b1519',accent:'#e5a79c',light:'#ffd9c6',fog:'#0c0709',tint:'rgba(128,62,78,.26)',glow:'rgba(244,176,170,.08)',lamp:'#eeb07f',atmos:{rgb:'188,84,110',a:.065,at:[.35,.30],r:.78,lamp:'210,110,120',lampA:.04,lampN:4,mote:null}},
+    4:{floor:'#2e2c26',floorAlt:'#35332b',wall:'#6f6652',wallDark:'#231f18',accent:'#bfae76',light:'#eedaa0',fog:'#0a0a07',tint:'rgba(104,96,64,.26)',glow:'rgba(224,208,152,.07)',lamp:'#e6c27a',atmos:{rgb:'150,150,126',a:.06,at:[.50,.75],r:.90,lamp:'180,160,100',lampA:.03,lampN:3,mote:{rgb:'196,196,176',a:.06,n:14}}},
+    5:{floor:'#3a1813',floorAlt:'#45201a',wall:'#873225',wallDark:'#260806',accent:'#ef8e51',light:'#ffd28b',fog:'#0e0403',tint:'rgba(140,32,22,.33)',glow:'rgba(255,154,73,.10)',lamp:'#f0a640',atmos:{rgb:'214,56,34',a:.10,at:[.50,.22],r:.80,lamp:'232,150,52',lampA:.06,lampN:7,mote:{rgb:'255,176,84',a:.09,n:18}}},
     6:{floor:'#26383a',floorAlt:'#304847',wall:'#52645d',wallDark:'#182522',accent:'#8da78d',light:'#d4d0ae',fog:'#0a1110',tint:'rgba(45,72,67,.20)',glow:'rgba(177,194,166,.055)'},
     8:{floor:'#293729',floorAlt:'#344630',wall:'#53644d',wallDark:'#172119',accent:'#91a56f',light:'#d8d2a7',fog:'#0a0f0a',tint:'rgba(58,78,55,.18)',glow:'rgba(185,194,151,.05)'},
     10:{floor:'#24363b',floorAlt:'#2d4548',wall:'#4c625f',wallDark:'#162528',accent:'#88a8a0',light:'#d0d3b8',fog:'#091114',tint:'rgba(44,70,73,.20)',glow:'rgba(171,193,185,.05)'},
