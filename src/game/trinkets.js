@@ -32,7 +32,7 @@ const CHARM_PREFIX_SPECIAL={regenEvery:'생명',killHeal:'피빛',killFocus:'기
 // Gear quirks. `w` is the pick weight: the five older ones are common, the newer ones deliberately rare so a drop never reads as a pile of effects.
 const CHARM_QUIRKS={
   chainBurst:{name:'연쇄 폭죽',desc:'격파 시 인접한 적에게 화염 3',prefix:'폭죽',w:1,fx:'#ff9a5a'},
-  luckyMend:{name:'요행',desc:'피격 시 12% 확률로 받은 피해를 전부 회복',prefix:'요행',w:1,fx:'#f3dc8e'},
+  luckyMend:{name:'요행',desc:'적의 공격이 닿기 직전 12% 확률로 한 칸 물러선다. 물러선 자리까지 공격이 닿지 않으면 빗나간다(위험한 칸으로는 물러서지 않음)',prefix:'요행',w:1,fx:'#f3dc8e'},
   lastStand:{name:'불굴',desc:'층마다 한 번, HP 20% 이하가 되면 HP 30% 회복',prefix:'불굴',w:1,fx:'#ffe9a8'},
   feast:{name:'탐식',desc:'격파 시 8% 확률로 말린 육포를 떨어뜨림',prefix:'탐식',w:1,fx:'#e2b977'},
   frostWard:{name:'서리 방벽',desc:'근접 피격 시 15% 확률로 공격자 기절 1턴',prefix:'서리',w:1,fx:'#a6e6f2'},
@@ -162,10 +162,28 @@ function charmOnKill(mon){
   if(focus>0&&Number.isFinite(p.focus))p.focus=Math.min(getStats().maxFocus,p.focus+focus);
   baneOnKill(mon);
 }
+// 요행: as a monster's direct blow is about to land, the wearer sometimes stumbles one step back from the attacker. If the blow
+// can no longer reach from there it misses; if it still reaches it lands as usual. Area blasts and hazards are not dodged
+// this way, and the step is never taken onto a door, trap, liquid, void, a burning or gassed cell, or a cell an enemy has marked.
+function charmLuckyStep(mon,target,ctx){
+  const p=state?.player;if(!p||target!==p||!mon||!charmQuirkOn('luckyMend')||['area','hazard'].includes(ctx.delivery))return false;
+  if(globalThis.__MANRU_RANDOM57__()>=.12)return false;
+  const sx=Math.sign(p.x-mon.x),sy=Math.sign(p.y-mon.y),marked=new Set();
+  for(const m of state.monsters||[])for(const c of m.intent61?.cells||[])marked.add(k(c.x,c.y));
+  const hazard=(x,y)=>marked.has(k(x,y))||(state.tempFields||[]).some(f=>f.ttl>0&&f.kind!=='smoke'&&(f.cells||[f]).some(c=>c.x===x&&c.y===y));
+  const steps=[[sx,sy],[sx,0],[0,sy]].filter(([a,b])=>a||b).filter((v,i,a)=>a.findIndex(w=>w[0]===v[0]&&w[1]===v[1])===i);
+  for(const[a,b]of steps){
+    const x=p.x+a,y=p.y+b;if(!playerTransferLandingSafe57(x,y)||hazard(x,y))continue;
+    if(!resolvePlayerLanding57(x,y,{cause:'lucky-step',resetVisual:true}).moved)continue;
+    const reaches=ctx.delivery==='melee'?entityDistance57(mon,p)<=(mon.reach||1):monsterAttackLineR(mon,ctx.range,{...ctx,target:p}).ok;
+    charmQuirkFx('luckyMend',p.x,p.y,2,reaches?'요행 · 물러섬':'요행 · 빗나감');
+    return{moved:true,dodged:!reaches};
+  }
+  return false;
+}
 function charmOnHurt(source,amount){
   const p=state?.player;if(!p||amount<=0)return;
   for(const g of charmGear()){
-    if(g.quirk==='luckyMend'&&p.hp>0&&globalThis.__MANRU_RANDOM57__()<.12){const back=recoverCombatHealth(p,amount);if(back>0)charmQuirkFx('luckyMend',p.x,p.y,2)}
     if(g.quirk==='lastStand'&&p.hp>0&&p.hp<=p.maxHp*.2&&p.lastStandFloor!==state.floor){p.lastStandFloor=state.floor;recoverCombatHealth(p,Math.ceil(p.maxHp*.3));charmQuirkFx('lastStand',p.x,p.y,3);addLog(`${g.name}이 몸을 일으켜 세웠다.`)}
     if(g.quirk==='frostWard'&&source&&source!==p&&source.hp>0&&entityDistance57(source,p)<=1&&!source.boss&&globalThis.__MANRU_RANDOM57__()<.15){applyCombatStatus(source,'stun',1,1,{source:p,element:'ice',stagger:true});charmQuirkFx('frostWard',source.x,source.y,2)}
     if(g.quirk==='ghostStep'){p.charmGhostUntil=state.turn+1;charmQuirkFx('ghostStep',p.x,p.y,1)}
@@ -222,7 +240,7 @@ function charmStrike(target,actor,damage=0){
    (pts, see makeRandart). The periodic ones run on their own clock here, the rest from the hooks above. ---- */
 const CHARM_BANES=Object.freeze({
   roar:{name:'굉음',desc:'14턴마다 맵 전체에 울릴 만큼 큰 소음을 낸다. 12칸 안의 적이 경계한다.',period:14,event:'roar',pts:2},
-  summon:{name:'불러냄',desc:'18턴마다 이 층의 몬스터 한 마리가 내 곁에 불려 나온다. 이미 불려 나온 것이 살아 있으면 부르지 않는다.',period:18,event:'summon',pts:2},
+  summon:{name:'불러냄',desc:'100턴마다 이 층의 몬스터 한 마리가 내 곁에 불려 나온다. 이미 불려 나온 것이 살아 있으면 부르지 않는다.',period:100,event:'summon',pts:1},
   selfblast:{name:'자폭 천명탄',desc:'25턴마다, 또는 HP가 25% 아래로 떨어지면 내 자리에서 천명탄이 터져 5×5의 적과 나를 함께 맞힌다. 나는 죽지 않는다.',period:25,event:'selfblast',pts:3},
   wander:{name:'방랑',desc:'20턴마다 시야 안 아무 곳으로 순간이동한다.',period:20,event:'blink',pts:1},
   glutton:{name:'식탐귀',desc:'250턴마다 인벤토리의 음식 하나를 먹어 치운다. 음식이 없으면 HP 3를 잃는다.',period:250,event:'eatfood',pts:2},

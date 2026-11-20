@@ -7,7 +7,7 @@ import { assembleGame, QA_MARKER } from '../tools/lib/game.mjs';
 import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bridge = 'globalThis.charmTest={capacity:inventoryCapacity,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,baneEffect:runBaneEffect,baneHurt:baneOnHurt,baneKill:baneOnKill,banes:CHARM_BANES,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
+const bridge = 'globalThis.charmTest={mhit:(m,ctx)=>monsterAttacksTarget(m,0,ctx),TT,capacity:inventoryCapacity,grade:CHARM_SHAPE_GRADE,strike:charmStrike,onStatus:charmOnStatus,gasFirst:charmGasFirstTurn,save:charmSaveConsumable,baneEffect:runBaneEffect,baneHurt:baneOnHurt,baneKill:baneOnKill,banes:CHARM_BANES,spawn:spawnMonster,quirks:CHARM_QUIRKS,curses:CURSE_CATALOG,cstat:charmStats,cmove:charmMoveCost,cpost:charmPostTurn,stack:curseStackCount,state:()=>state,make:makeRandart,sprite,lines:charmTraitLines,level:entityElementResist,mult:entityElementMultiplier57,stats:getStats,kill:charmOnKill,hurt:charmOnHurt,post:charmPostTurn,RELICS,TRINKETS,shapes:CHARM_SHAPES_BY_SLOT,mats:CHARM_MATERIALS,guard:charmStatusGuard,drop:dropFloorLoot,detail:inventoryDetailHtml,advance:()=>TurnEngine.advance({handled:true,committed:true,timeCost:1,reason:"t"}),moveCost:()=>MOVE_COST_STAGES.reduce((c,s)=>s.run(c)??c,1)};';
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER,
   fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -125,6 +125,29 @@ assert.equal(fx.shadowReady, true); assert.ok(fx.shadowHit >= 9, 'shadow double 
 assert.ok(fx.hungerAtk >= 2 && fx.hungerAtk <= 3, 'hunger swap ' + fx.hungerAtk);
 assert.ok(fx.ghostAfter <= .71 && fx.ghostBefore === 1, 'ghost step ' + fx.ghostBefore + '/' + fx.ghostAfter);
 assert.deepEqual(fx.gas, [true, false, true]); assert.equal(fx.twins, true);
+
+// 요행: a blow about to land sometimes makes the wearer step back; out of reach it misses, never onto a dangerous cell
+const lucky = await s.page.evaluate(() => {
+  const T = charmTest, st = T.state(), p = st.player, r = {}, real = globalThis.__MANRU_RANDOM57__;
+  const floor = st.map[p.y][p.x], lava = T.TT.LAVA;
+  const reset = () => { st.monsters = []; p.hp = p.maxHp = 200; p.trinket = { name: 'l', quirk: 'luckyMend' }; for (let dy = -2; dy <= 2; dy++) for (let dx = -6; dx <= 6; dx++) if (st.map[p.y + dy]?.[p.x + dx] != null) st.map[p.y + dy][p.x + dx] = floor; };
+  const hit = (m, ctx) => { globalThis.__MANRU_RANDOM57__ = () => (new Error().stack || '').includes('charmLuckyStep') ? .01 : .99; try { return T.mhit(m, ctx) } finally { globalThis.__MANRU_RANDOM57__ = real } };
+  const foe = (x, y, extra = {}) => { const m = T.spawn({ x, y }, false, {}); Object.assign(m, { x, y, hp: 99, maxHp: 99, atk: 20, alerted: true, ranged: false, reach: 1 }, extra); return m };
+  // melee from the east: steps west and the blow misses
+  reset(); let x0 = p.x, m = foe(p.x + 1, p.y), res = hit(m, { target: p, delivery: 'melee' });
+  r.meleeMoved = x0 - p.x; r.meleeMissed = !!res.evaded && p.hp === 200;
+  // every way back is lava: no step, the blow lands
+  reset(); x0 = p.x; for (const [dx, dy] of [[-1, 0], [-1, -1], [-1, 1]]) st.map[p.y + dy][p.x + dx] = lava; m = foe(p.x + 1, p.y); hit(m, { target: p, delivery: 'melee' });
+  r.lavaStayed = p.x === x0; r.lavaHurt = p.hp < 200;
+  // a shot down a straight line still reaches after the step
+  reset(); m = foe(p.x + 4, p.y, { ranged: true, range: 7 }); x0 = p.x; hit(m, { target: p, delivery: 'ranged', projectile: true, range: 7 });
+  r.rangedMoved = x0 - p.x; r.rangedHurt = p.hp < 200;
+  p.trinket = null; st.monsters = []; return r;
+});
+console.log('lucky', JSON.stringify(lucky));
+assert.equal(lucky.meleeMoved, 1); assert.equal(lucky.meleeMissed, true, 'out of melee reach after the step');
+assert.equal(lucky.lavaStayed, true, 'never steps onto lava'); assert.equal(lucky.lavaHurt, true);
+assert.equal(lucky.rangedMoved, 1); assert.equal(lucky.rangedHurt, true, 'a straight shot still lands');
 
 const cur = await s.page.evaluate(() => {
   const T = charmTest, st = T.state(), p = st.player, r = {};
