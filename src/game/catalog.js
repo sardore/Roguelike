@@ -114,7 +114,7 @@ const WEAPONS=[
   {type:'weapon',name:'강화 각궁',balance52:true,tier:3,rarity:'relic',atk:4,speed:0.4,range:8,kind:'bow',ranged:true,knockback:1,ability:'밀치기',desc:'짐승의 힘줄을 겹겹이 발라 탄성이 극대화된 각궁입니다.',ammoFamily:'arrow'},
   {type:'weapon',name:'무쇠 메',tier:3,rarity:'relic',heavyStrikeBalance105:3,atk:15,speed:.3,range:2,kind:'blunt',armorPierce:true,stun:.16,ability:'방어무시 · 균열',desc:'무거운 쇳덩이를 자루 끝에 매단 투박한 파괴 병기입니다.'},
   // 4티어 · 지하 장고
-  {type:'weapon',name:'연철 권갑',tier:4,rarity:'sealed',atk:3,speed:2.2,range:1,kind:'brawl',brawlWeapon:true,lowUpgrade42:true,ability:'연타 · 격투 연계',desc:'손등과 팔뚝을 연철 판으로 감싼 권갑이다. 맨손 격투의 이점을 그대로 얻고, 주먹이 쉴 틈 없이 나간다. 강화부적 두 장마다 공격력이 1 오른다.'},
+  {type:'weapon',name:'연철 권갑',tier:4,rarity:'sealed',atk:3,speed:2.2,range:1,kind:'brawl',brawlWeapon:true,lowUpgrade42:true,ability:'연타 · 격투 연계',desc:'손등과 팔뚝을 연철 판으로 감싼 권갑이다. 맨손 격투의 이점을 그대로 얻고, 주먹이 쉴 틈 없이 나간다. 강화부적 세 장마다 공격력이 1 오른다.'},
   {type:'weapon',name:'육각 철봉',tier:4,rarity:'sealed',atk:7,speed:1.2,range:2,kind:'blunt',armorPierce:true,stun:.12,ability:'방어무시 · 진동',desc:'속이 꽉 찬 육각 쇳덩이 봉으로, 뼈를 부수기에 알맞습니다.'},
   {type:'weapon',name:'장갑 도끼',tier:4,rarity:'sealed',atk:8,speed:.9,range:2,kind:'blunt',armorPierce:true,shred:true,ability:'방어무시 · 파갑',desc:'방패나 두꺼운 갑옷을 찢어버리기 위해 설계된 전투 도끼입니다.'},
   {type:'weapon',name:'협도',tier:4,rarity:'sealed',atk:7,speed:.8,range:3,kind:'blade',wide:true,ability:'휩쓸기',desc:'긴 자루와 넓은 칼날로 다수의 적을 한 번에 베어 넘깁니다.'},

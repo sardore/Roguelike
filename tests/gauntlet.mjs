@@ -1,4 +1,4 @@
-// Run after npm run build:qa. 권갑: 연철 권갑과 지맥 대지수갑은 공격 비용이 낮고(공속 상향), 연철 권갑은 강화 2회마다 ATK +1.
+// Run after npm run build:qa. 권갑: 연철 권갑과 지맥 대지수갑은 공격 비용이 낮고(공속 상향), 연철 권갑은 강화 3회마다 ATK +1.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,8 +28,8 @@ const out = await s.page.evaluate(() => {
 console.log('gauntlet', JSON.stringify(out));
 assert.ok(out.cost < out.cost16 - .1, '연철 권갑이 예전보다 확실히 빠르다');
 assert.ok(out.legendCost < out.legendOld - .15, '지맥 대지수갑이 예전보다 확실히 빠르다');
-assert.deepEqual(out.atk, [3, 3, 4, 4, 5, 5, 6], '강화 2회마다 ATK +1');
-assert.equal(out.effect, 3);
+assert.deepEqual(out.atk, [3, 3, 3, 4, 4, 4, 5], '강화 3회마다 ATK +1');
+assert.equal(out.effect, 2);
 assert.equal(out.normal, 6, '일반 무기는 강화마다 ATK +1');
 assert.deepEqual(errors, []);
 console.log('gauntlet: ok');
