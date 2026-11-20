@@ -368,22 +368,19 @@ const PlayStats={
   const form=this.el('form','giftBox'),input=this.el('input'),button=this.el('button',null,'확인'),note=this.el('span','giftNote');
   input.placeholder='코드 입력';input.setAttribute('aria-label','코드 입력');input.autocomplete='off';input.inputMode='numeric';
   button.type='submit';note.setAttribute('role','status');
-  let pending=null;
-  input.oninput=()=>{pending=null;note.textContent=''};
+  input.oninput=()=>{note.textContent=''};
   form.onsubmit=async event=>{
    event.preventDefault();
    if(button.disabled)return;
    button.disabled=true;
    try{
-    const result=await this.redeemRecoveryCode(input.value,pending);
-    pending=typeof result==='object'?result:null;
-    note.textContent=pending?.notice??result;
+    note.textContent=await this.redeemRecoveryCode(input.value);
    }
    finally{button.disabled=false}
   };
   form.append(input,button,note);return form;
  },
- async redeemRecoveryCode(code,pending=null){
+ async redeemRecoveryCode(code){
   const entered=String(code).trim();
   if(entered==='10002'){
    lsSet(AUTO_FULLSCREEN_DISABLED_KEY,'1');
@@ -394,28 +391,6 @@ const PlayStats={
     catch(error){ignoreError('could not exit fullscreen',error)}
    }
    return '강제 전체화면을 끄고 이 기기에 저장했다.';
-  }
-  if(entered==='19232'){
-   if(RunLifecycle.busy())return '탐사를 전환하는 중이다.';
-   const resume=!state||state.dead||state.victory;
-   if(resume){
-    const saved=SaveService.recover();
-    if(!saved.ok)return '이 기기의 저장 기록을 읽지 못했다.';
-    if(!saved.candidate)return '진행 중인 탐사가 없다.';
-    if(!RunLifecycle.continueRun())return '저장된 탐사를 불러오지 못했다.';
-   }
-   const item={...makeMartialManual({kind:'gift-code',code:entered},`${state.runId984||state.runId||'run'}:19232:${crypto.randomUUID()}`),
-    name:'이변 무술비급',desc:'펼치면 선택 가능한 후천무술에 이변이 반드시 포함되는 비급.',guaranteedMartialForm19232:'anomaly'};
-   addInventoryItem(item);
-   const inventory=state.player.inventory.some(i=>i.manualId===item.manualId);
-   const ground=state.items.some(i=>i.manualId===item.manualId)||
-     (state.pendingGroundItems57||[]).some(i=>i.item?.manualId===item.manualId);
-   if(!inventory&&!ground)return '비급을 배치하지 못했다.';
-   updateAll();
-   const saved=SaveService.commit('gift-code-19232');
-   const notice=saved.ok?`이변 무술비급 1개를 ${inventory?'행낭':'바닥'}에 지급했다.`:'비급은 지급했지만 저장에 실패했다.';
-   if(resume){this.close();toast(notice);return '';}
-   return notice;
   }
   if(entered==='1024'){
    if(RunLifecycle.busy())return '탐사를 전환하는 중이다.';
@@ -428,88 +403,7 @@ const PlayStats={
    if(!RunLifecycle.continueRun())return '되살린 탐사를 불러오지 못했다.';
    this.close();toast('마지막 저장 지점에서 체력을 모두 되찾고 되살아났다.');return '';
   }
-  const floorEight=entered==='1734';
-  if(!floorEight&&entered!=='19721'&&entered!=='19722')return '알 수 없는 코드다.';
-  const checkSave=()=>{
-   const saved=SaveService.recover();
-   if(!saved.ok)return '이 기기의 저장 기록을 읽지 못했다.';
-   if(saved.candidate||state&&!state.dead&&!state.victory)return '이어갈 탐사가 남아 있다.';
-   return '';
-  };
-  const saveNotice=checkSave();
-  if(saveNotice)return saveNotice;
-  const scene=document.getElementById('statsScene'),generation=RunLifecycle.generation();
-  try{
-   if(entered==='19721'){
-    const cls=CLASSES.find(c=>c.id==='summoner');
-    newGame(cls,null,createPalaceReplacement(cls));
-    this.close();
-    toast('창해 용궁 2층 입구에서 탐사를 시작한다.');
-    return '';
-   }
-   const parseGhost=raw=>{
-    try{
-     const body=JSON.parse(raw||'null');
-     return Array.isArray(body?.inventory)&&body.maxHp>0&&CLASSES.some(cls=>cls.id===body.classId)?body:null;
-    }catch(error){ignoreError('unreadable recovery ghost',error);return null}
-   };
-   let {ghost,turns}=floorEight?{}:(pending||{});
-   if(!ghost){
-    let backup=null;
-    try{backup=sessionStorage.getItem('manruLatestDeath')}catch(error){ignoreError('death snapshot backup unreadable',error)}
-    const localSnapshots=[];
-    for(const raw of [backup,lsGet('manruLatestDeath')]){
-     try{if(raw)localSnapshots.push(JSON.parse(raw))}catch(error){ignoreError('death snapshot unreadable',error)}
-    }
-    const mine=this.mine().filter(row=>row.cause&&row.cause!==this.END_CAUSE);
-    const death=SaveService.death(),deathId=death?.runId;
-    const id=deathId?this.deviceTag()+'-'+deathId:localSnapshots[0]?.id||mine.at(-1)?.id;
-    const queued=this.queue().find(row=>row.id===id);
-    turns=deathId?death.turn:mine.find(row=>row.id===id)?.turns??queued?.turns;
-    for(const local of localSnapshots){
-     if(local?.id===id||deathId&&local?.id===deathId)ghost??=parseGhost(local?.ghost);
-    }
-    ghost??=parseGhost(queued?.ghost);
-    if(!ghost&&deathId&&state?.dead&&state.runId984===deathId)ghost=parseGhost(this.ghostBody());
-
-    const endpoint=this.endpoint();
-    if(!ghost&&endpoint){
-     const owner=this.ownerQuery();
-     const fetchGhost=row=>this.fetchView(endpoint,'ghost&'+owner+'&id='+encodeURIComponent(row.id));
-     if(id){
-      const archived=await fetchGhost({id});
-      if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
-      ghost=parseGhost(archived?.body);
-      turns??=archived?.turns;
-     }
-     if(!ghost&&(!floorEight||!id)){
-      const archive=await this.fetchView(endpoint,'ghosts&'+owner);
-      if(archive?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
-      if(!Array.isArray(archive?.list))return '서버에서 망령 목록을 읽지 못했다.';
-      for(const row of floorEight?archive.list.slice(0,1):archive.list){
-       if(!row?.id||row.id===id)continue;
-       const archived=await fetchGhost(row);
-       if(archived?.error==='auth')return '이 기기의 망령 기록에 접근하지 못했다.';
-       ghost=parseGhost(archived?.body);
-       if(!ghost)continue;
-       turns=mine.find(record=>record.id===row.id)?.turns??archived?.turns;
-       if(id)return {ghost,turns,notice:`최근 판을 찾지 못했다. 확인을 다시 누르면 이전 판(${row.floor}층 · Lv ${row.level})을 되살린다.`};
-       break;
-      }
-     }
-    }
-   }
-   if(!ghost)return floorEight?'이 기기의 가장 최근 사망 기록을 찾지 못했다.':'이 기기와 서버에서 복구할 망령 본문을 찾지 못했다.';
-   if(floorEight&&!RunLifecycle.isCurrent(generation))return '탐사 기록이 바뀌었다. 코드를 다시 입력하자.';
-   const cls=CLASSES.find(cls=>cls.id===ghost.classId);
-   if(!scene?.isConnected)return '';
-   const updatedSaveNotice=checkSave();
-   if(updatedSaveNotice)return updatedSaveNotice;
-   newGame(cls,null,{...ghost,recovery:{turns,...ghost.recovery}},floorEight?8:undefined);
-   this.close();
-   toast(floorEight?'8층에서 청심탕, 얼음 복숭아, 보신 전골 4개, 말린 육포 12개를 받고 되살아났다.':'창해 용궁 2층 입구에서 되살아났다.');
-   return '';
-  }catch(error){ignoreError('run recovery failed',error);return '탐사를 되살리지 못했다. 다시 시도하자.'}
+  return '알 수 없는 코드다.';
  },
  // The ranking board: the player's own best, the three boards, a podium for the first three and a list for the rest.
  rankView(status){

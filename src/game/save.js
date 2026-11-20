@@ -911,43 +911,6 @@ function palaceStarterArmor(){
   applyArmorUpgrade(armor);
   return armor;
 }
-function createPalaceReplacement(cls){
-  const p=createRunState57(cls).player;
-  const book={...summonBookItem(),summonElement105:'grass',summonSpeciesVersion105:1,
-    extraGrassSpecies105:['어미거미'],summonPictures105:{}};
-  for(const name of ['어미거미','용궁 해련']){
-    const picture=summonPictureItem(name);
-    if(!picture.summonPortrait105)throw Error('Missing starter summon picture: '+name);
-    book.summonPictures105[name]={count:1,portrait:picture.summonPortrait105};
-  }
-  p.inventory=[book];
-  for(const [name,count] of [['축지부',2],['대지부적',2],['화염부적',3],['수류부적',2],['목령부적',1],['빙폭부적',2],['엽전 엿',7],['보신 전골',4]]){
-    const item=itemPrototype(name)||recipeItem(FUSION_RECIPES.find(r=>r.name===name));
-    for(let remaining=count;remaining>0;){
-      const stack=Math.min(remaining,item.stackMax||1);
-      p.inventory.push({...clone(item),count:stack,identified:true});
-      remaining-=stack;
-    }
-  }
-  p.trinket=clone(BRANCH_REWARDS.canal);
-  p.weapon={...clone(WEAPONS.find(w=>w.name===cls.startWeapon)),type:'weapon',identified:true,curseImmune991:true};
-  p.armor=palaceStarterArmor();
-  for(let level=2;level<=18;level++){
-    p.baseMaxHpPermanent+=level>=13?3:level%4===0?2:1;
-    if([4,7,10].includes(level))p.maxFocus++;
-    if(level<=12||MARTIAL_RULES.latePoints.includes(level))p.skillPoints++;
-  }
-  p.level=18;
-  p.kills=430;
-  normalizePlayerProgression57(p);
-  p.blinkLevel=2;
-  return {...p,recovery:{
-    turns:20000,
-    starterSupply:true,
-    potionKnown:Object.fromEntries(POTION_LIST.map(item=>[item.potionKind,true])),
-    talismanKnown:Object.fromEntries(TALISMANS.map(item=>[item.talismanKind,true]))
-  }};
-}
 function generatePalaceSupply(){
   const original={state,cols:COLS,rows:ROWS};
   const loot=[];
@@ -1039,42 +1002,7 @@ function migratePalaceSupply(){
     }
   }catch(error){console.warn('Could not regenerate the unopened palace supply chest',error)}
 }
-function restoreRecoveredRun(ghost,floor=BRANCH_DEFS105.palace.parent){
-  const p=state.player,{recovery,...body}=structuredClone(ghost);
-  for(const key of ['x','y','facing','busyUntil','nextAttackAt','strongReady','guardReady1005','guardCharges1005','foodVital57','temporaryMaxHpBonus'])delete body[key];
-  Object.assign(p,body);
-  state.floor=floor;
-  if(Number.isSafeInteger(recovery?.turns)&&recovery.turns>=0)state.turn=recovery.turns;
-  if(Number.isSafeInteger(recovery?.agency)&&recovery.agency>=0)state.playerAgencyTurns57=recovery.agency;
-  initializeMartial(state);
-  normalizeClassState58(p,state.playerAgencyTurns57);
-  restoreConsumableKnowledge(p.inventory,recovery);
-  p.hp=p.maxHp;
-  p.focus=p.maxFocus;
-  p.hunger=Math.max(70,Number(p.hunger)||0);
-  globalThis.storyInitNewRun992?.();
-  if(state.story992)state.story992.dispatchPending60=false;
-  const supply=floor===BRANCH_DEFS105.palace.parent&&recovery?.starterSupply?generatePalaceSupply():null;
-  if(supply)state.coreLoot982=supply.coreLoot;
-  NormalFloorGenerator.generate();
-  if(floor===8){
-    for(const [name,count] of [['청심탕',1],['얼음 복숭아',1],['보신 전골',4],['말린 육포',12]])addInventoryItem({...clone(itemPrototype(name)),count});
-    return;
-  }
-  const floorNineUpgrades=supply?countUpgradeTalismans(state.items):0;
-  for(const target of ['palace:1','palace:2']){
-    const portal=state.branchPortals105.find(candidate=>candidate.to===target);
-    if(!branchTransition(portal))throw Error('Palace recovery route unavailable: '+target);
-    delete state._worldTransition57;
-  }
-  state.branchWorld105.recoveryTalismans=true;
-  if(supply){
-    state.branchWorld105.starterArmorGranted=true;
-    placePalaceStarterChest(finishPalaceSupply(supply.loot,floorNineUpgrades));
-    addLog('입구의 보급 상자를 열고 가져갈 물품을 고를 수 있다.');
-  }
-}
-function newGameCoreLifecycle(cls,duel=null,ghost=null,recoveryFloor){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();if(ghost)restoreRecoveredRun(ghost,recoveryFloor);else if(duel)buildDuelArena(duel);else{globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate()}resetVisualState();resetTurnState();startFloorTransition();if(duel)addLog(`망령전 · ${DUEL_ARENAS[duel.arena].name}. 상대 망령을 쓰러뜨리면 위쪽 문이 열린다.`);else{addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.')}addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
+function newGameCoreLifecycle(cls,duel=null){state=createRunState57(cls);citadelEnsurePlan();GameState.initialize(state);globalThis.__MANRU_CONSUMABLE56_ACTIONS__.initializeKnowledge();normalizeClassState58(state.player,0);const sw=WEAPONS.find(w=>w.name===cls.startWeapon);if(sw)state.player.weapon={...clone(sw),type:'weapon',identified:true,curseImmune991:true};for(const [name,count] of (cls.startItems||[])){const src=itemPrototype(name);if(!src)continue;const it=clone(src);it.count=count||1;if(['weapon','armor','cloak','relic','trinket'].includes(it.type)){it.identified=true;it.curseImmune991=true}addInventoryItem(it)}identifyStartingItems58();state.player.armor.identified=true;state.player.armor.curseImmune991=true;clearHeldInput53();if(duel)buildDuelArena(duel);else{globalThis.storyInitNewRun992?.();NormalFloorGenerator.generate()}resetVisualState();resetTurnState();startFloorTransition();if(duel)addLog(`망령전 · ${DUEL_ARENAS[duel.arena].name}. 상대 망령을 쓰러뜨리면 위쪽 문이 열린다.`);else{addLog('정부 특별조사 임무: 허가도면과 현장 객실 수가 일치하지 않는 대규모 무허가 증축 의심 건을 확인한다.');addLog('선행 파견된 고위 조사관이 연락 두절됐다. 현장 조사와 생존 여부 확인을 병행한다.');addLog('특수층은 방 자체가 기믹이다. 지형을 읽고 무술과 장비를 써라.')}addLog('턴제 규칙: 당신이 행동할 때만 만루도 움직인다.');projectRunningScreen();updateAll()}
 function useClassSkill(){return globalThis.__MANRU_SKILL991_INPUT__?.toggle()}
 function autoExplore(resume=false){return Auto81.explore(resume)}
 function restoreLibraryVisual1022(){state.bookWalls1022=Array.isArray(state.bookWalls1022)?state.bookWalls1022:[];state.libraryZones1022=Array.isArray(state.libraryZones1022)?state.libraryZones1022:[];state.libraryScrolls1022=Array.isArray(state.libraryScrolls1022)?state.libraryScrolls1022:[]}
