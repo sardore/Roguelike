@@ -8,6 +8,10 @@
    filled in, so the floor stays one connected map. The room is then retired from the room lists: the passes that furnish
    ordinary rooms (feature rooms, modules, vault rewards, decor) leave a landscape alone. */
 const GRAND_TERRAIN_FLOORS=new Set([3,7,9,12,14,17,19]);
+// 청풍루 floors take their landmark from the inn's own set: on floor 1 a lantern courtyard, a colonnade or a pond (the
+// start garden leaves no room for a compound), on floor 3 one of those or a guest-house compound, a cloister garden or a
+// market lane. Both always try; floor 1 goes without when nothing fits round the start garden.
+const INN_GRAND_TERRAINS=Object.freeze({1:Object.freeze(['courtyard','colonnade','pond']),3:Object.freeze(['lodge','cloister','bazaar','courtyard','colonnade','pond'])});
 const GRAND_TERRAIN_WALK=new Set([TT.FLOOR,TT.GRASS,TT.LIGHT_GRASS,TT.STONE_PATH,TT.CARPET,TT.WOOD_FLOOR,TT.MOON_STONE,TT.DARK_WOOD,TT.GILDED_FLOOR,TT.PETAL_MAT,TT.SHALLOW_WATER,TT.PAPER_BRIDGE,TT.LOTUS_FLOWER,TT.ICE,TT.STEPPING_STONE,TT.REED,TT.MOON_GATE,TT.DOOR,TT.OPEN_DOOR]);
 const GRAND_TERRAIN_ROOM_FLOOR=[TT.WOOD_FLOOR,TT.WOOD_FLOOR,TT.CARPET,TT.DARK_WOOD,TT.GILDED_FLOOR];
 // The ground of each region (inn, garden, inner chambers, storage, heart).
@@ -37,10 +41,10 @@ const GRAND_TERRAINS=[
 ];
 
 function reserveGrandTerrain(m,rooms){
-  state.grandTerrain93=null;
-  if(state.floor===1||state.specialFloor||!GRAND_TERRAIN_FLOORS.has(state.floor)||globalThis.__MANRU_RANDOM57__()>.88)return null;
+  state.grandTerrain93=null;const inn=INN_GRAND_TERRAINS[state.floor];
+  if(state.specialFloor||(inn?false:(state.floor===1||!GRAND_TERRAIN_FLOORS.has(state.floor)||globalThis.__MANRU_RANDOM57__()>.88)))return null;
   // kinds the earlier floors of the run had; the floor's own earlier tries do not count, so a retry keeps its kind
-  const region=regionIndex(),seen=(state.grandTerrainLog93||[]).filter(e=>e.floor!==state.floor).map(e=>e.kind),pool=GRAND_TERRAINS.filter(t=>region>=t.minRegion&&region<=(t.maxRegion??9)),fresh=pool.filter(t=>!seen.includes(t.id)),first=choice(fresh.length?fresh:pool);
+  const region=regionIndex(),seen=(state.grandTerrainLog93||[]).filter(e=>e.floor!==state.floor).map(e=>e.kind),pool=GRAND_TERRAINS.filter(t=>inn?inn.includes(t.id):region>=t.minRegion&&region<=(t.maxRegion??9)),fresh=pool.filter(t=>!seen.includes(t.id)),first=choice(fresh.length?fresh:pool);
   // a compound that does not fit is replaced by a landscape, which is smaller
   for(const kind of [first,...pool.filter(t=>!t.compound&&t!==first)]){
     for(let t=0;t<(kind===first?90:40);t++){
