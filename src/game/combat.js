@@ -403,7 +403,7 @@ function installMartialJar(actor){
  if(!cells.length)return null;const q=choice(cells.filter(c=>![state.stairs,state.fixedExit,...(state.branchPortals105||[]),...(state.switches||[])].some(p=>p&&entityDistance57(p,c)<=2)));if(!q)return null;setTerrainTile58(state.map,q.x,q.y,TT.JAR);burst(q.x,q.y,'#b18b60',8,.4);VisibilityService.compute();return q;
 }
 function isBrawlWeapon(it){return !!(it&&it.type==='weapon'&&(it.brawlWeapon||it.kind==='brawl'))}
-function applyWeaponUpgrade(it){if(!it||it.type!=='weapon')return{delta:0,effective:0};if(it.artifactWeapon46){toast('전설의 무기는 강화할 수 없다.');return{delta:0,effective:it.upgrade||0,blocked:true}}const before=it.upgrade||0;it.upgrade=before+1;if(isBrawlWeapon(it)){const prev=Math.floor(before/3),next=Math.floor(it.upgrade/3),delta=next-prev;if(delta>0)it.atk=(it.atk||0)+delta;return{delta,effective:next}}it.atk=(it.atk||0)+1;return{delta:1,effective:it.upgrade}}
+function applyWeaponUpgrade(it){if(!it||it.type!=='weapon')return{delta:0,effective:0};if(it.artifactWeapon46){toast('전설의 무기는 강화할 수 없다.');return{delta:0,effective:it.upgrade||0,blocked:true}}const before=it.upgrade||0;it.upgrade=before+1;if(isBrawlWeapon(it)){const prev=Math.floor(before/BRAWL_UPGRADES_PER_ATK),next=Math.floor(it.upgrade/BRAWL_UPGRADES_PER_ATK),delta=next-prev;if(delta>0)it.atk=(it.atk||0)+delta;return{delta,effective:next}}it.atk=(it.atk||0)+1;return{delta:1,effective:it.upgrade}}
 function armorBaseDef(it){if(!it)return null;const d=(ARMORS||[]).find(a=>a.name===it.name);if(d&&Number.isFinite(+d.def))return +d.def;if(Number.isFinite(+it.baseDef42))return +it.baseDef42;return null}
 const ARMOR_DIM_BASE_GAIN=1.75,ARMOR_DIM_BASE_WEIGHT=.02,ARMOR_DIM_DECAY=.14;
 function armorEffectiveDef(it,level=it?.upgrade||0){if(!it)return 0;const base=armorBaseDef(it);if(base==null)return Math.max(0,+it.def||0);const value=base+armorUpgradeGain42(base,level);return Math.round(value*1000)/1000}
@@ -891,7 +891,9 @@ function recordPlayerSight105(){
   }
   function safeForNatural94(){if(!state||state.status.poison>0||state.status.bleed>0)return false;return !state.monsters.some(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,state.player)<=4)}
 function syncEquip47(){const p=state?.player;if(!p)return;for(const it of [p.weapon,...(p.inventory||[]),...(state.items||[])]){if(!it?.legendaryWeapon47)continue;const d=adef46(it.artifactId46);if(d)for(const key of ['atk','speed','range','desc','armorPierce']){if(Object.prototype.hasOwnProperty.call(d,key))it[key]=d[key];else if(key==='armorPierce')delete it[key]}}const on=equipped47('curse_blade'),changed=on!==!!p.legendCurseActive47;p.legendCurseActive47=on;recomputeMaxHp(p);if(changed&&on)floatText(p.x,p.y,'최대 HP -30%','#b95c7c',10);if(!on){delete p.legendCurseBaseMax47;delete p.legendCurseCut47}if(!equipped47('earth_gauntlet'))p.legendEarthStacks47=0;p.focus=Math.max(0,Math.min(Number(p.focus)||0,getStats().maxFocus))}
-function brawlUpgradeEffect42(it){return isBrawlWeapon(it)?Math.floor((it.upgrade||0)/3):(it?.upgrade||0)}
+// A gauntlet gains 1 ATK for every two enhancements (other weapons gain 1 for each).
+const BRAWL_UPGRADES_PER_ATK=2;
+function brawlUpgradeEffect42(it){return isBrawlWeapon(it)?Math.floor((it.upgrade||0)/BRAWL_UPGRADES_PER_ATK):(it?.upgrade||0)}
 function hungerMods(){return{atk:0,eva:0}}
 function combatGuardBlocks57(attacker,target){
  if(!target?.guardChance57||target.hp<=0||globalThis.__MANRU_RANDOM57__()>=target.guardChance57)return false;
