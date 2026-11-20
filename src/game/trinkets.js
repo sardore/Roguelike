@@ -64,7 +64,7 @@ function charmMul(key){let n=1;for(const g of charmGear())if(Number.isFinite(g[k
 function charmBest(key){let n=0;for(const g of charmGear()){const v=Number(g[key])||0;if(v>0&&(!n||v<n))n=v}return n}
 
 /* ---- trait text: shared by item details, randart flavor and the codex ---- */
-function resistChipText(element,level){return`${RESIST_NAMES57[element]||element} ${level<0?'취약':'저항'} ${level<0?'Ⅰ':'Ⅰ Ⅱ Ⅲ'.split(' ')[Math.min(3,level)-1]}`}
+function resistChipText(element,level){return`${RESIST_NAMES57[element]||element} ${level<0?'취약':'저항'} ${level<0?'Ⅰ':'Ⅰ Ⅱ Ⅲ Ⅳ'.split(' ')[Math.min(4,level)-1]}`}
 function charmTraitLines(item){
   const out=[];if(!item)return out;
   if(item.focus)out.push(`기력 ${item.focus>0?'+':''}${item.focus}`);
