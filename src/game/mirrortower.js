@@ -406,7 +406,8 @@ function mirrorTowerInfo(t,x,y){
 }
 const MIRROR_KEEPER_SKILLS=Object.freeze({
  orb:Object.freeze({range:8,hp:6,shock:9,ice:9,shardTurns:3,shardDamage:2,shardChance:.25}),
- sanctuary:Object.freeze({radius:2,turns:6,heal:4,blind:2,weaken:2})
+ sanctuary:Object.freeze({radius:2,turns:6,heal:4,blind:2,weaken:2}),
+ blink:Object.freeze({distance:30,cooldown:14})
 });
 // Each entry is [skill, minimum enemy rounds before the next cast]. An unresolved intent always goes first.
 const MIRROR_KEEPER_CYCLES=Object.freeze([
@@ -415,8 +416,19 @@ const MIRROR_KEEPER_CYCLES=Object.freeze([
  [['rod',5],['orb',3],['sanctuary',4],['orb',3],['copy',2],['bell',2]],
  [['orb',4],['bell',3],['rod',5],['sanctuary',4]]
 ]);
+// The keeper marks the one it has found, and the mark holds until the keeper falls. A marked target that runs thirty cells
+// or more away is followed: the keeper shows where it will appear next to them, then goes there.
+function mirrorKeeperBlink(mon,target){
+ const turn=state.floorTurn;if(turn<(mon.mirrorBlinkNext??0))return false;
+ const pos=PlacementService.findMonster(mon,{placementMode:'local',origin:target,radius:5,reachable:true,restrict:c=>Math.max(Math.abs(c.x-target.x),Math.abs(c.y-target.y))>=2});
+ if(!pos||!setBossIntent(mon,'mirrorBlink',intentCells(pos.x,pos.y,1),'추적 순간이동 · 표식을 쫓아 거울지기가 이곳에 나타난다',{x:pos.x,y:pos.y}))return false;
+ mon.mirrorBlinkNext=turn+MIRROR_KEEPER_SKILLS.blink.cooldown;return true;
+}
 function mirrorKeeperTurn(mon,target,d){
+ const real=!mon.mirrorCopy105&&target===state.player;
+ if(real&&targetMarkHeldBy(mon)&&d>=MIRROR_KEEPER_SKILLS.blink.distance&&mirrorKeeperBlink(mon,target))return true;
  if(d>MIRROR_KEEPER_SKILLS.orb.range||!actorDetectedTarget57(mon,target,MIRROR_KEEPER_SKILLS.orb.range))return false;
+ if(real&&!targetMarkHeld()){holdTargetMark(mon);floatText(target.x,target.y,'표식','#ff9a8a',12);addLog('거울지기가 당신에게 표식을 새겼다. 거울지기가 쓰러질 때까지 풀리지 않는다.')}
  const ratio=mon.hp/mon.maxHp,phase=mon.mirrorCopy105?3:ratio<=.35?2:ratio<=.70?1:0;
  const cycle=MIRROR_KEEPER_CYCLES[phase],turn=state.floorTurn;
  if(turn<(mon.mirrorNextCast??0))return false;
@@ -456,6 +468,12 @@ function spawnMirrorKeeperCopy(mon){
  playSummonArrival(mon,copy);addLog('거울지기가 거울에서 자신의 복사본을 불러냈다.');return true;
 }
 function resolveMirrorKeeperIntent(mon,intent){
+ if(intent.type==='mirrorBlink'){
+  let {x,y}=intent.data;
+  if(!PlacementService.canPlaceEntity(mon,x,y)||OccupancyService.isOccupied(x,y)){const q=PlacementService.findMonster(mon,{placementMode:'local',origin:{x,y},radius:3,reachable:true});if(!q)return;x=q.x;y=q.y}
+  impact(mon.x,mon.y,'#fff2c6',5);OccupancyService.move(mon,x,y);impact(x,y,'#fff2c6',6);addLog('거울지기가 표식을 쫓아 순간이동했다.');
+  return;
+ }
  if(intent.type==='mirrorSanctuary'){
   const {x,y}=intent.data,rule=MIRROR_KEEPER_SKILLS.sanctuary;
   addField('mirrorSanctuary',x,y,rule.turns,intent.cells,{...effectSource57(mon),bornTurn:state.turn});

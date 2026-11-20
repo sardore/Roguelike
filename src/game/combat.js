@@ -300,11 +300,17 @@ function statusSummary(){
   if((state?.visionPenalty||0)>0)out.push(`환경시야 -${state.visionPenalty}`);
   return out.length?out.join(' · '):'상태 이상 없음.';
 }
+// Poison is wood-spirit (목령, grass) damage: a creature's resistance or weakness to that element applies to every tick.
+function poisonTickDamage(entity,source=null){
+  const base=combatDebuffDamage(entity,'poison');
+  if(entityElementResist(entity,'grass')>=3){floatText(entity.x,entity.y,'저항','#e5c080',10);return 0}
+  return damageEntity(entity,Math.max(1,Math.round(base*entityElementMultiplier57(entity,'grass'))),source,'grass');
+}
 function applyStatusTick(){
   if(!state||state.dead)return;ensureFoodState();
   if(state.status.poisonResist57>0)state.status.poison=0;
   if(state.status.poison>0){
-    const dmg=damageEntity(state.player,combatDebuffDamage(state.player,'poison'));
+    const dmg=poisonTickDamage(state.player);
     if(dmg>0){floatText(state.player.x,state.player.y,`독 -${dmg}`,'#8bd96d',12);addLog(`독이 현재 체력을 갉아먹는다. -${dmg} HP`);}
     if(state.player.hp<=0){die('중독');return}
   }
@@ -364,7 +370,7 @@ function applyPlayerDebuffActionCost(kind,cost){
 function playerDebuffRows(){
   if(!state?.status)return[];const s=state.status,rows=[];
   if(s.illness>0)rows.push({key:'illness',label:'중병',turns:s.illness,effect:'유예가 끝나면 사망 · 해독산이나 정화로 치료'});
-  if(s.poison>0)rows.push({key:'poison',label:'중독',turns:s.poison,effect:`현재 HP 5.5% · 다음 피해 ${combatDebuffDamage(state.player,'poison')}`});
+  if(s.poison>0)rows.push({key:'poison',label:'중독',turns:s.poison,effect:`목령속성 · 현재 HP 5.5% · 다음 피해 ${Math.max(1,Math.round(combatDebuffDamage(state.player,'poison')*entityElementMultiplier57(state.player,'grass')))}`});
   if(s.bleed>0)rows.push({key:'bleed',label:'출혈',turns:s.bleed,effect:`최대·손실 HP 비례 · 다음 피해 ${combatDebuffDamage(state.player,'bleed')}`});
   if(s.weaken>0)rows.push({key:'weaken',label:'쇠약',turns:s.weaken,effect:'현재 ATK ×0.80 · DEF ×0.75 · EVA ×0.80'});
   if(s.stun>0)rows.push({key:'stun',label:'기절',turns:s.stun,effect:'다음 입력 행동권 상실 · 적 턴은 정상 진행'});
@@ -373,7 +379,8 @@ function playerDebuffRows(){
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 최소 ${STATUS_META57.blind.visionFloor57}칸 · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
-  if(state.targetMark61>0)rows.push({key:'targetMark',color:'#ff9a8a',label:'표적',turns:state.targetMark61,effect:'모든 적이 당신의 위치를 안다'});
+  if(targetMarkHeld())rows.push({key:'targetMark',color:'#ff9a8a',label:'표식',turns:'∞',effect:'거울지기가 쓰러질 때까지 풀리지 않는다 · 모든 적이 당신의 위치를 안다'});
+  else if(state.targetMark61>0)rows.push({key:'targetMark',color:'#ff9a8a',label:'표적',turns:state.targetMark61,effect:'모든 적이 당신의 위치를 안다'});
   return rows.map(row=>({...row,color:row.color||STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
 }
 function cleanseStatuses(status=state?.status,limit=Infinity){const removed=[];for(const [name,meta]of Object.entries(STATUS_META57).sort((a,b)=>Number(!!b[1].lethal)-Number(!!a[1].lethal)))if(meta.harmful&&meta.cleanseable&&status?.[name]>0&&removed.length<limit){status[name]=0;removed.push(name)}return removed}

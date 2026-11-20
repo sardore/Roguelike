@@ -61,8 +61,9 @@ console.log('charms', JSON.stringify(out));
 assert.deepEqual(out.bad, []);
 assert.ok(out.uniqueNames >= 40, 'name variety ' + out.uniqueNames);
 console.log('shape', JSON.stringify(out.shape));
-for (const k of ['high', 'weak', 'none', 'bigStat']) assert.ok(out.shape[k] > 60 && out.shape[k] < 1500, 'sometimes ' + k + ': ' + out.shape[k]);
-assert.ok(out.shape.wide > 15 && out.shape.wide < 400, 'wide wards are rare but happen: ' + out.shape.wide);
+// resists are rolled less often now, so a piece with none is the majority (about 60%), and four or more are rare
+for (const k of ['high', 'weak', 'none', 'bigStat']) assert.ok(out.shape[k] > 60 && out.shape[k] < (k === 'none' ? 2100 : 1500), 'sometimes ' + k + ': ' + out.shape[k]);
+assert.ok(out.shape.wide >= 1 && out.shape.wide < 400, 'wide wards are rare but happen: ' + out.shape.wide);
 assert.ok(out.shape.weakBigStat > 10, 'a weakness traded for one big stat happens: ' + out.shape.weakBigStat);
 assert.ok(out.shape.allEffects > 5, 'some pieces are all effects: ' + out.shape.allEffects);
 assert.ok(out.shape.sumWeak / out.shape.nWeak > out.shape.sumPlain / out.shape.nPlain, 'a weakness buys more elsewhere');

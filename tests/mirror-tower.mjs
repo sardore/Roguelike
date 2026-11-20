@@ -217,7 +217,7 @@ const boss = await s.page.evaluate(encounter);
 console.log('boss', JSON.stringify(boss));
 assert.equal(boss.maxHp, 231);
 assert.deepEqual(boss.phases, ['mirrorOrb', 'mirrorCopy', 'rod']);
-assert.deepEqual(boss.skillNames, ['천명탄', '피뢰침', '경종', '거울 복사', '빛의 성역']);
+assert.deepEqual(boss.skillNames, ['천명탄', '피뢰침', '경종', '거울 표식', '추적 순간이동', '거울 복사', '빛의 성역']);
 assert.ok(boss.waitsForTurn && boss.singleStep);
 assert.equal(boss.impact, 18);
 assert.equal(boss.shards, 8);

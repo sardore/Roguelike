@@ -339,7 +339,8 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   // piece already has, and how strongly a piece piles into what it has is rolled per item. So most spread out, and now and
   // then one trades a weakness for one enormous stat, or stacks a single element to Ⅲ, or is all effects.
   const STAT_COST={atk:1.5,def:1.25,eva:.8,will:.8,vision:1.4,focus:.7},STAT_CAP={atk:tier+3,def:tier+3,eva:tier*2+2,will:tier+3,vision:2,focus:tier*3+3};
-  let budget=(premium?16:1.7+1.5*tier)*(.8+rnd()*.4),points=0;
+  // Resists were the commonest line on a randart; they are rolled less often (below) and the budget is cut by what that took.
+  let budget=(premium?16:(1.7+1.5*tier)*.9)*(.8+rnd()*.4),points=0;
   if(!premium)for(let n=chance(.35)?(chance(.25)?2:1):0;n>0;n--){
     const r=rnd();
     if(r<.14&&!it.curse991){const c=pick(CURSE_CATALOG);it.curse991=c.id;it.curseRoll991=true;it.curseImmune991=false;revealItemCurse(it);points++;budget+=1.5}
@@ -357,7 +358,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   for(let guard=0;guard<60&&budget>=.5;guard++){
     let kind,key;const mine=owned();
     if(mine.length&&chance(focus))[kind,key]=pick(mine);
-    else{const r=rnd();kind=r<.42?'stat':r<.72?'resist':r<.94?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
+    else{const r=rnd();kind=r<.49?'stat':r<.67?'resist':r<.93?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
     if(kind==='resist'&&!key)continue;
     if(kind==='special'&&(!key||Object.keys(specials).filter(k=>it[k]!=null).length>=4)||kind==='quirk'&&(it.quirk||tier<2))continue;
     if(kind==='stat'&&((it[key]||0)<0||(it[key]||0)>=STAT_CAP[key]))continue;
