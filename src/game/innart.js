@@ -160,3 +160,42 @@ function drawInnCanopy(b,now){
   X.restore();
  }
 }
+// The great hall's dressing on the inn floors: a crimson runner with a gold border and medallions, and a raised dais of
+// lacquered boards whose front edge shows its riser, so the stage reads as a step up from the hall.
+function drawInnRunner(q,px,py,x,y){
+ const R=(c,xx,yy,w,h)=>{q.fillStyle=c;q.fillRect(px+xx,py+yy,w,h)},on=(dx,dy)=>state.map[y+dy]?.[x+dx]===TT.CARPET;
+ R('#5e1913',0,0,32,32);R('#74221a',2,0,28,32);
+ for(let yy=1;yy<32;yy+=4)R('rgba(24,6,4,.16)',0,yy,32,1);
+ R('rgba(255,214,160,.05)',4,0,10,32);
+ if(!on(-1,0)){R('rgba(10,3,2,.45)',0,0,2,32);R('#b8873e',2,0,2,32);R('rgba(255,230,170,.35)',2,0,1,32)}
+ if(!on(1,0)){R('#b8873e',28,0,2,32);R('rgba(10,3,2,.5)',30,0,2,32)}
+ if(!on(0,-1)){R('#b8873e',0,0,32,2);R('rgba(255,230,170,.3)',0,0,32,1)}
+ if(!on(0,1)){R('#9a6d30',0,29,32,2);R('rgba(10,3,2,.45)',0,31,32,1)}
+ if(on(-1,0)&&on(1,0)&&(y&1)===0){q.fillStyle='#c99a48';q.beginPath();q.moveTo(px+16,py+8);q.lineTo(px+24,py+16);q.lineTo(px+16,py+24);q.lineTo(px+8,py+16);q.closePath();q.fill();
+  q.fillStyle='#74221a';q.beginPath();q.moveTo(px+16,py+11);q.lineTo(px+21,py+16);q.lineTo(px+16,py+21);q.lineTo(px+11,py+16);q.closePath();q.fill();R('#e2bb68',15,15,2,2)}
+ return true;
+}
+function drawInnDais(q,px,py,x,y){
+ const R=(c,xx,yy,w,h)=>{q.fillStyle=c;q.fillRect(px+xx,py+yy,w,h)},on=(dx,dy)=>{const t=state.map[y+dy]?.[x+dx];return t===TT.GILDED_FLOOR||t===TT.STAIR};
+ const front=!on(0,1),top=front?24:32;
+ for(let i=0;i<4;i++){const yy=i*8;if(yy>=top)break;R(i%2?'#6a3a1f':'#74412a',0,yy,32,Math.min(8,top-yy));R('rgba(255,220,170,.10)',0,yy,32,1);R('rgba(20,8,4,.25)',0,yy+7,32,1)}
+ R('rgba(255,226,170,.06)',0,0,32,10);
+ if(!on(-1,0)){R('#c9973f',0,0,2,top);R('rgba(10,4,2,.35)',2,0,1,top)}
+ if(!on(1,0)){R('#c9973f',30,0,2,top);R('rgba(10,4,2,.35)',29,0,1,top)}
+ if(!on(0,-1)){R('#d7a84b',0,0,32,2);R('rgba(255,240,190,.4)',0,0,32,1)}
+ if(front){R('#d7a84b',0,24,32,2);R('#3b1a10',0,26,32,6);R('#5a2416',0,26,32,2);for(let xx=(x&1)?4:12;xx<32;xx+=16){R('#c9973f',xx,27,4,4);R('#3b1a10',xx+1,28,2,2)}R('rgba(8,3,1,.5)',0,31,32,1)}
+ return true;
+}
+// A lacquered round column for the inn's halls: a stone plinth, a shaded shaft in the floor's post colour so it reads as
+// round, a gold band and a bracket capital, and its shadow falling to the lower right.
+function drawInnColumn(q,px,py,x,y){
+ const post=INN_TIMBER[state.floor]?.post||'#7c2619',R=(c,xx,yy,w,h)=>{q.fillStyle=c;q.fillRect(px+xx,py+yy,w,h)};
+ q.fillStyle='rgba(6,3,2,.32)';q.beginPath();q.ellipse(px+19,py+29,12,3.2,0,0,Math.PI*2);q.fill();
+ R('#5c5650',6,25,20,5);R('#8a837a',6,25,20,1.5);R('#3a3531',6,29,20,1);R('#6f6962',8,23,16,3);R('#9c958b',8,23,16,1);
+ const g=q.createLinearGradient(px+10,0,px+22,0);g.addColorStop(0,colorShift(post,-28));g.addColorStop(.3,colorShift(post,26));g.addColorStop(.55,post);g.addColorStop(1,colorShift(post,-40));
+ q.fillStyle=g;q.fillRect(px+10,py+6,12,17);
+ R('rgba(255,236,206,.28)',13,7,1.5,15);R('#c9973f',10,18,12,2);R('rgba(255,230,160,.45)',12,18,3,1);
+ R('#c9973f',8,4,16,3);R('#7a5320',8,6.5,16,1);R('#d9ac52',8,4,16,1);
+ R(colorShift(post,-10),6,1,20,3);R('#2b1810',6,3.5,20,.8);R('#c9973f',6,1,3,3);R('#c9973f',23,1,3,3);
+ return true;
+}

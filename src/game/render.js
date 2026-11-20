@@ -1406,6 +1406,7 @@ function drawFloorMaterialSpecialTerrain(tile,px,py,x,y,now){
       for(const[ox,oy]of cs){X.fillStyle='rgba(183,207,207,.09)';X.fillRect(px+ox+1,py+oy+1,12,.6);X.fillStyle='rgba(13,23,27,.16)';X.fillRect(px+ox+13,py+oy+2,1,12);X.fillRect(px+ox+1,py+oy+13,12,1)}if(hash2(x,y,619)>.78){X.strokeStyle='rgba(26,38,43,.28)';X.lineWidth=.6;X.beginPath();X.moveTo(px+20,py+20);X.lineTo(px+24,py+24);X.lineTo(px+23,py+28);X.stroke()}
       return true;
     }
+    if(tile===TT.GILDED_FLOOR&&innFloorArt())return drawInnDais(X,px,py,x,y);
     if(tile===TT.GILDED_FLOOR){
       X.fillStyle=regionIndex()===4?'#3b3c30':'#17130f'; X.fillRect(px,py,32,32);if(regionIndex()===4){X.fillStyle='#51513e';X.fillRect(px+3,py+3,26,1);X.fillStyle='#2d3229';X.fillRect(px+3,py+27,26,2);}
       X.strokeStyle='#8e7638'; X.strokeRect(px+2.5,py+2.5,27,27);
@@ -1417,6 +1418,7 @@ function drawFloorMaterialSpecialTerrain(tile,px,py,x,y,now){
     return drawCarpetSpecialTerrain(tile,px,py,x,y,now);
   }
 function drawCarpetSpecialTerrain(tile,px,py,x,y,now){
+    if(tile===TT.CARPET&&innFloorArt())return drawInnRunner(X,px,py,x,y);
     if(tile===TT.CARPET){const z=regionIndex(),base=state.duel?'#2a2560':z===2?'#695064':z===4?'#776c45':'#796447',edge=state.duel?'#6f86d8':z===2?'#b99ab0':'#c6aa70',line=state.duel?'rgba(140,185,255,.20)':z===2?'rgba(231,202,224,.18)':'rgba(243,222,170,.18)';X.fillStyle=base;X.fillRect(px,py,32,32);X.fillStyle='rgba(25,18,12,.16)';for(let q=0;q<32;q+=8)X.fillRect(px+q,py,1,32);X.strokeStyle=line;X.beginPath();X.moveTo(px,py+8.5);X.lineTo(px+32,py+8.5);X.moveTo(px,py+23.5);X.lineTo(px+32,py+23.5);X.stroke();X.strokeStyle=edge;X.lineWidth=1;if(state.map[y-1]?.[x]!==TT.CARPET){X.beginPath();X.moveTo(px,py+.5);X.lineTo(px+32,py+.5);X.stroke()}if(state.map[y+1]?.[x]!==TT.CARPET){X.beginPath();X.moveTo(px,py+31.5);X.lineTo(px+32,py+31.5);X.stroke()}if(state.map[y]?.[x-1]!==TT.CARPET){X.beginPath();X.moveTo(px+.5,py);X.lineTo(px+.5,py+32);X.stroke()}if(state.map[y]?.[x+1]!==TT.CARPET){X.beginPath();X.moveTo(px+31.5,py);X.lineTo(px+31.5,py+32);X.stroke()}return true}
     if(tile===TT.KEY_TILE&&state?.keyPlan96){const km=keyPos96(x,y),meta=keyMeta96(km?.keyId);X.fillStyle='rgba(15,12,8,.55)';X.fillRect(px+6,py+9,20,15);X.fillStyle=meta.dark;X.fillRect(px+8,py+11,16,11);X.fillStyle=meta.color;X.fillRect(px+8,py+14,13,4);X.fillRect(px+18,py+11,4,10);X.fillRect(px+21,py+17,4,3);X.fillStyle='rgba(255,255,225,.45)';X.fillRect(px+9,py+14,7,1);return true}
     const r=drawStructureSpecialTerrain(tile,px,py,x,y,now,X);if(r&&tile===TT.LOCKED_GATE){const d=doorPos96(x,y);if(d){const meta=keyMeta96(d.keyId);X.fillStyle=meta.color;X.fillRect(px+13,py+13,7,3);X.fillRect(px+15,py+16,3,6)}}return r
@@ -1443,7 +1445,7 @@ function drawStructureSpecialTerrain(tile,px,py,x,y,now,X){
     if(tile===TT.IRON_HOOK){X.strokeStyle='#8a8d8b';X.lineWidth=3;X.beginPath();X.moveTo(px+11,py+6);X.lineTo(px+11,py+21);X.quadraticCurveTo(px+12,py+27,px+18,py+24);X.moveTo(px+21,py+7);X.lineTo(px+21,py+17);X.quadraticCurveTo(px+21,py+23,px+16,py+23);X.stroke();return true}
     if(tile===TT.GOLD_LAMP){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.PETAL_MAT){for(let i=0;i<10;i++){const xx=5+((x*11+y*7+i*9)%22),yy=5+((x*3+y*13+i*5)%21);X.fillStyle=i%3===0?'#df9ea4':i%3===1?'#d3aa6d':'#b47e96';X.fillRect(px+xx,py+yy,3,2)}return true}
-    if(tile===TT.STONE_PILLAR){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
+    if(tile===TT.STONE_PILLAR){if(innFloorArt())return drawInnColumn(X,px,py,x,y);return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.LANTERN_POST){return drawSharedProp(X,tile,px,py,regionIndex(),0,now,!terrainUnlit105(x,y))}
     if(tile===TT.WALL_BANNER){const c=['#9e4230','#416c55','#8e4e7c','#6b4937','#a98c32'][regionIndex()];X.fillStyle='#231b16';X.fillRect(px+5,py+4,22,3);X.fillStyle='#c0a16a';X.fillRect(px+5,py+3,22,2);X.fillStyle=c;X.beginPath();X.moveTo(px+8,py+6);X.lineTo(px+24,py+6);X.lineTo(px+24,py+28);X.lineTo(px+16,py+25);X.lineTo(px+8,py+28);X.closePath();X.fill();X.strokeStyle='#c6a367';X.lineWidth=1;X.stroke();X.fillStyle='#efcb8230';X.fillRect(px+10,py+7,2,17);X.fillStyle='#160b1240';X.fillRect(px+21,py+7,2,17);X.strokeStyle='#dfbb79';X.beginPath();X.moveTo(px+16,py+11);X.lineTo(px+20,py+16);X.lineTo(px+16,py+21);X.lineTo(px+12,py+16);X.closePath();X.stroke();return true}
     // TT.CRATE uses the existing b1ca0 X-braced crate in every region.

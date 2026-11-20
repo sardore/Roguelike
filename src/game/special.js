@@ -676,9 +676,11 @@ function buildBossMazeCommon(style){
   if(boss){boss.x=cx;boss.y=by+Math.floor(bh*.58)}
   state.layoutName=(state.layoutName||`F${style} 보스층`)+` · 전미궁 ${style===5?'회랑연회관':style===15?'거울비단원':'봉쇄감방군'} / 후면 보스실`;
   archRouteTag(cx,bands[1],`보스 전미궁 · 제2 회랑`);archRouteTag(cx,by+bh-3,'후면 독립 보스실');
+  return{x:bx,y:by,w:bw,h:bh};
 }
 function build5_(){
-  buildBossMazeCommon(5);
+  const hall=buildBossMazeCommon(5);
+  dressInnBanquetHall(hall);
   const cx=Math.floor(COLS/2),top=Math.round(ROWS*.34),bottom=ROWS-7;
   // The inn boss floor needs a genuine front labyrinth, not a big empty hall with decorative room outlines.
   // Three symmetric cross-walls have alternating paired gates; the player must weave left/right while retaining loops.
@@ -689,6 +691,16 @@ function build5_(){
   // guarantee a 2-wide central start approach, but it terminates at the first band rather than becoming an answer corridor.
   archLine(cx,ROWS-5,cx,bands[0]+2,TT.FLOOR,2,true);
   state.layoutName=(state.layoutName||'청풍루 보스층')+' · 대칭 객실미궁 / 교대문 회랑 / 후면 보스실';
+}
+// 청풍루 대연회장: a gilded stage around the down stair with statues at its wings, a red runner from the door to the
+// stage, two colonnades of pillars to fight around, and lantern posts in the four corners.
+function dressInnBanquetHall(h){
+  const cx=Math.floor(COLS/2),set=(x,y,t)=>{if(state.map[y]?.[x]!==TT.STAIR&&x>h.x&&y>h.y&&x<h.x+h.w-1&&y<h.y+h.h-1)setTerrainTile58(state.map,x,y,t)};
+  for(let y=h.y+1;y<=h.y+2;y++)for(let x=cx-5;x<=cx+5;x++)set(x,y,TT.GILDED_FLOOR);
+  set(cx-6,h.y+1,TT.STATUE);set(cx+6,h.y+1,TT.STATUE);
+  for(let y=h.y+3;y<h.y+h.h-1;y++)for(let x=cx-1;x<=cx+1;x++)set(x,y,TT.CARPET);
+  for(const x of [h.x+5,h.x+h.w-6])for(const y of [h.y+3,h.y+6,h.y+9])set(x,y,TT.STONE_PILLAR);
+  for(const [x,y] of [[h.x+1,h.y+1],[h.x+h.w-2,h.y+1],[h.x+1,h.y+h.h-2],[h.x+h.w-2,h.y+h.h-2]])set(x,y,TT.LANTERN_POST);
 }
 function build15_(){
   buildBossMazeCommon(15);
