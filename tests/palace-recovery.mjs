@@ -361,7 +361,12 @@ try {
         // whether floor 9 gets a core upgrade is a seeded draw (any change to how often the random stream is used moves it), so the fixture states it
         (st.coreLoot982||={spawned:{upgrade:{},heal:{}}}).spawned.upgrade[9]=true;
         chest.generatedSupply=generated;
-        if(generated)chest.items.find(i=>i.talismanKind==='upgrade'&&!i.coreDrop982).count++;
+        if(generated){
+          // one upgrade over the share: add to the plain stack, or make one when the repair above has already given it back
+          const plain=chest.items.find(i=>i.talismanKind==='upgrade'&&!i.coreDrop982);
+          if(plain)plain.count++;
+          else{const extra=structuredClone(chest.items.find(i=>i.talismanKind==='upgrade'));delete extra.coreDrop982;extra.count=1;chest.items.push(extra)}
+        }
         if(!__MANRU_RELEASE__.save().ok)throw Error('fixture save failed');
       },generated);
       await oldChest.page.reload();
