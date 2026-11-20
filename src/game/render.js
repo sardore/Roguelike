@@ -1021,6 +1021,7 @@ function drawFloorWithSubtheme(px,py,x,y,colors,vis,ctx=X){
     ctx.restore();
   }
 function drawRegionFloor(px,py,x,y,colors,vis,ctx=X){
+    const inn=innFloorArt();if(inn)return drawInnFloor(ctx,px,py,x,y,colors,inn);
     const h=hash2(x>>1,y>>1,91001+state.floor*13),base=h>.72?colors.floorAlt:colors.floor;ctx.fillStyle=base;ctx.fillRect(px,py,32,32);
     ctx.fillStyle='rgba(255,255,255,.018)';if((x+y)%5===0)ctx.fillRect(px+2,py+2,28,1);
     ctx.fillStyle='rgba(0,0,0,.035)';ctx.fillRect(px,py+30,32,2);
@@ -5561,6 +5562,7 @@ function drawDojoWall(q,r,P,x,y){
 r(P.wall,0,7,32,21);const plaster=q.createLinearGradient(0,7,0,28);plaster.addColorStop(0,'rgba(255,238,198,.13)');plaster.addColorStop(1,'rgba(37,29,22,.18)');q.fillStyle=plaster;q.fillRect(0,7,32,21);texture(819,7,'rgba(77,58,37,.12)');for(let j=0;j<2;j++){const yy=20+j*4;r(P.beam,0,yy,32,1);r(P.grain,0,yy+1,32,1);}if(x%3===0){r(P.dark,0,6,4,23);r(P.beam,1,6,3,22);r(P.grain,1,7,1,20);r(P.metal,0,8,4,2);}r(P.cap,0,0,32,3);r(P.metal,0,4,32,1);r(P.dark,0,5,32,2);r(P.grain,0,6,32,1);if(x%3===0){r(P.beam,2,3,5,6);r(P.metal,3,3,3,1);r(P.dark,3,8,5,2);}r(P.dark,0,28,32,4);r(P.beam,0,24,32,2);if(!west){r(P.beam,0,7,3,21);r(P.metal,3,7,1,20);}if(!east){r(P.beam,29,7,3,21);r(P.dark,28,7,1,21);}
  // Return the exposed vertical edge through the front-face corner too.
  if(wallFaceOpen(x,y,-1,0))r(P.cap,0,0,2,30);if(wallFaceOpen(x,y,1,0))r(P.cap,30,0,2,30);
+ if(innFloorArt())drawInnWallFace(q,r,x,y,west,east);
 }
 function drawDojoCell(t,px,py,x,y){
  const key=k(x,y),art=state.branchTerrain105.dojo,ornament=art.ornaments?.[key],P=dojoPalette(x,y),wall=t===TT.WALL;
