@@ -892,7 +892,7 @@ function rewardRooms(){for(const fr of state?.featureRooms||[]){if(fr.name==='�
     if(item.focus)a.push(`기력 +${displayNumber53(item.focus)}`);
     if(item.speed)a.push(`공격 ${item.speed}× · ${attackTurnCost(item).toFixed(1)}턴`);
     if(item.range)a.push(`사거리 ${item.range}`);
-    if(isBrawlWeapon(item)){a.push(`강화 +${item.upgrade||0} · 실제 강화 ATK +${brawlUpgradeEffect42(item)}`);a.push('강화 효율 매우 낮음')}
+    if(isBrawlWeapon(item)){a.push(`강화 +${item.upgrade||0} · 실제 강화 ATK +${brawlUpgradeEffect42(item)}`);a.push(`강화 ${BRAWL_UPGRADES_PER_ATK}회마다 ATK +1`)}
     if(item.heal)a.push(`HP +${item.heal}`);
     if(item.focusGain)a.push(`기력 +${item.focusGain}`);
     if(item.hunger)a.push(`허기 +${item.hunger}`);
