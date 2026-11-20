@@ -227,7 +227,7 @@ function monsterElementTable(entity){
 function gearResistLevel(entity,elem){let n=0;for(const key of['armor','cloak','relic','trinket'])n+=Number(entity?.[key]?.resist?.[elem])||0;return n}
 function entityElementResist(entity,elem){
   if(!entity)return 0;let n=(entity===state?.player?Math.max(0,entity.resist?.[elem]||0):monsterElementTable(entity)[elem]||0)+gearResistLevel(entity,elem);
-  n+=(entity.armor?.elementGuard74===elem?1:0)+(entity.weapon?.elementBrand74===elem?1:0);
+  n+=entity.armor?.elementGuard74===elem?1:0;
   if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?2:0),-1,3);
   if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?3:2;
   if((elem==='ice'&&(state?.status?.warm57||0)>0)||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=3;

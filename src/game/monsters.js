@@ -88,7 +88,7 @@ function tickMonsterCombatStatuses(){
     }
     if(m.hp<=0)killMonster(m)
   }}
-  for(const m of [...state.monsters])if(m.hp>0&&(m.poisoned57||0)>0){const damage=damageEntity(m,combatDebuffDamage(m,'poison'),m.poisonSource57);m.poisoned57--;if(m.poisoned57<=0)m.poisonSource57=null;if(damage>0){floatText(m.x,m.y,`독 -${damage}`,'#94c779',10);if(state.debugBattle57)addLog(`${m.name} · 중독 -${damage} HP`);}if(m.hp<=0)killMonster(m)}
+  for(const m of [...state.monsters])if(m.hp>0&&(m.poisoned57||0)>0){const damage=poisonTickDamage(m,m.poisonSource57);m.poisoned57--;if(m.poisoned57<=0)m.poisonSource57=null;if(damage>0){floatText(m.x,m.y,`독 -${damage}`,'#94c779',10);if(state.debugBattle57)addLog(`${m.name} · 중독 -${damage} HP`);}if(m.hp<=0)killMonster(m)}
 }
 // The 표적 mark (the flying watcher's 목표 지정) normally runs out; one placed by the Mirror Keeper is held until that keeper dies.
 function holdTargetMark(mon){state.targetMarkBy105=combatantId(mon);state.targetMark61=Math.max(state.targetMark61||0,1)}
