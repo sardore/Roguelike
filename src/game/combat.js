@@ -373,7 +373,8 @@ function playerDebuffRows(){
   if(s.drunk>0)rows.push({key:'drunk',label:'취함',turns:s.drunk,effect:'이동 30% 불안정(그중 68% 방향 오판) · 공격 20% 헛침 / 16% 강타 · 부적 읽기 불가'});
   if(s.blind>0)rows.push({key:'blind',label:'실명',turns:s.blind,effect:`현재 VIS ×${STATUS_META57.blind.visionScale57} · 최소 ${STATUS_META57.blind.visionFloor57}칸 · 빗나감 +${Math.round(STATUS_META57.blind.missPenalty57*100)}%p`});
   if(s.skillSeal>0)rows.push({key:'skillSeal',label:'기봉인',turns:s.skillSeal,effect:'점멸·무술 봉쇄'});
-  if(state.targetMark61>0)rows.push({key:'targetMark',color:'#ff9a8a',label:'표적',turns:state.targetMark61,effect:'모든 적이 당신의 위치를 안다'});
+  if(targetMarkHeld())rows.push({key:'targetMark',color:'#ff9a8a',label:'표식',turns:'∞',effect:'거울지기가 쓰러질 때까지 풀리지 않는다 · 모든 적이 당신의 위치를 안다'});
+  else if(state.targetMark61>0)rows.push({key:'targetMark',color:'#ff9a8a',label:'표적',turns:state.targetMark61,effect:'모든 적이 당신의 위치를 안다'});
   return rows.map(row=>({...row,color:row.color||STATUS_META57[row.key]?.color57,glyph:STATUS_META57[row.key]?.glyph57}))
 }
 function cleanseStatuses(status=state?.status,limit=Infinity){const removed=[];for(const [name,meta]of Object.entries(STATUS_META57).sort((a,b)=>Number(!!b[1].lethal)-Number(!!a[1].lethal)))if(meta.harmful&&meta.cleanseable&&status?.[name]>0&&removed.length<limit){status[name]=0;removed.push(name)}return removed}

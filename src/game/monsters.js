@@ -90,7 +90,11 @@ function tickMonsterCombatStatuses(){
   }}
   for(const m of [...state.monsters])if(m.hp>0&&(m.poisoned57||0)>0){const damage=damageEntity(m,combatDebuffDamage(m,'poison'),m.poisonSource57);m.poisoned57--;if(m.poisoned57<=0)m.poisonSource57=null;if(damage>0){floatText(m.x,m.y,`독 -${damage}`,'#94c779',10);if(state.debugBattle57)addLog(`${m.name} · 중독 -${damage} HP`);}if(m.hp<=0)killMonster(m)}
 }
-function tickMonsterDurations(){if(!state)return;if(state.targetMark61>0)state.targetMark61--;for(const m of [...(state.monsters||[])]){tickKeeperLava54(m);if(m.shellSlime)healShellSlime(m);if(m.shell61>0)m.shell61--;if(m.shellCd61>0)m.shellCd61--;tickMonsterPower(m);globalThis.__MANRU_ITEM_IDENTITY991__?.tickCurses?.(m);if(m.upset>0)m.upset--;if(m.drunk>0)m.drunk--;if(m.skillSeal105>0)m.skillSeal105--;if((m.weakened||0)>0){if(!Number.isFinite(m.weakenedTurn57))m.weakenedTurn57=state.turn;else if(m.weakenedTurn57<state.turn){m.weakened=Math.max(0,m.weakened-1);m.weakenedTurn57=state.turn}}if((m.buffTurns61||0)>0){if(!Number.isFinite(m.buffTurn57))m.buffTurn57=state.turn;else if(m.buffTurn57<state.turn){m.buffTurns61=Math.max(0,m.buffTurns61-1);m.buffTurn57=state.turn;if(m.buffTurns61<=0)m.buff=0}}else if((m.buff||0)>0&&Number.isFinite(m.buffTurn57)&&m.buffTurn57<state.turn)m.buff=0}}
+// The 표적 mark (the flying watcher's 목표 지정) normally runs out; one placed by the Mirror Keeper is held until that keeper dies.
+function holdTargetMark(mon){state.targetMarkBy105=combatantId(mon);state.targetMark61=Math.max(state.targetMark61||0,1)}
+function targetMarkHeldBy(mon){return !!mon&&!!state.targetMarkBy105&&state.targetMarkBy105===mon.combatantId54&&mon.hp>0}
+function targetMarkHeld(){const id=state.targetMarkBy105;if(!id)return false;if(state.monsters.some(m=>m.combatantId54===id&&m.hp>0))return true;state.targetMarkBy105=null;state.targetMark61=0;return false}
+function tickMonsterDurations(){if(!state)return;if(targetMarkHeld())state.targetMark61=Math.max(state.targetMark61||0,1);else if(state.targetMark61>0)state.targetMark61--;for(const m of [...(state.monsters||[])]){tickKeeperLava54(m);if(m.shellSlime)healShellSlime(m);if(m.shell61>0)m.shell61--;if(m.shellCd61>0)m.shellCd61--;tickMonsterPower(m);globalThis.__MANRU_ITEM_IDENTITY991__?.tickCurses?.(m);if(m.upset>0)m.upset--;if(m.drunk>0)m.drunk--;if(m.skillSeal105>0)m.skillSeal105--;if((m.weakened||0)>0){if(!Number.isFinite(m.weakenedTurn57))m.weakenedTurn57=state.turn;else if(m.weakenedTurn57<state.turn){m.weakened=Math.max(0,m.weakened-1);m.weakenedTurn57=state.turn}}if((m.buffTurns61||0)>0){if(!Number.isFinite(m.buffTurn57))m.buffTurn57=state.turn;else if(m.buffTurn57<state.turn){m.buffTurns61=Math.max(0,m.buffTurns61-1);m.buffTurn57=state.turn;if(m.buffTurns61<=0)m.buff=0}}else if((m.buff||0)>0&&Number.isFinite(m.buffTurn57)&&m.buffTurn57<state.turn)m.buff=0}}
 function monsterRewardPolicy(mon){if(state?.debugBattle57)return{xp:false,drops:false,kills:false};if(!mon||!factionsHostile57(entityFaction(state?.player),entityFaction(mon)))return{xp:false,drops:false,kills:false};const p=mon?.rewardPolicy57;if(p)return{xp:p.xp!==false,drops:p.drops!==false,kills:p.kills!==false};const deny=NON_REWARDING_SPAWN_PROVENANCE57.has(mon?.spawnProvenance57);return{xp:!deny,drops:!deny,kills:!deny}}
 function knockMonster(mon,steps=1){if(!state||!mon||mon.hp<=0)return false;steps=mon.boss?Math.min(1,steps):steps;const f=state.player.facing||{x:0,y:-1},source={x:mon.x-f.x,y:mon.y-f.y};return resolveForcedMovement57(mon,source,steps,{mode:'push',hostile:true,creditPlayer:true}).moved>0}
 function entityCombatLineCheckR(attacker,target,opts={}){
@@ -618,7 +622,7 @@ function bossCharge(mon,target,telegraphed){
 }
 function executeBossIntent(mon){
  const I=mon.intent54;if(!I)return false;
- if(I.type==='mirrorOrb'||I.type==='mirrorSanctuary'){resolveMirrorKeeperIntent(mon,I);clearIntent(mon);return true}
+ if(I.type==='mirrorOrb'||I.type==='mirrorSanctuary'||I.type==='mirrorBlink'){resolveMirrorKeeperIntent(mon,I);clearIntent(mon);return true}
  if(I.type.startsWith('palace'))return palaceResolveIntent(mon,I);
  if(I.type==='blackFrost105'){mountainFrostResolve(mon,I);clearIntent(mon);return true}
  if(I.type==='charge'){bossCharge(mon,I.data.target||selectCombatOpponent(mon),I.cells);clearIntent(mon);return true}
@@ -1351,6 +1355,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
       add('mirror-orb','천명탄','彈',`사거리 ${orb.range}칸 · 예고 1턴 · 구체 HP ${orb.hp}`,`예고 경로를 한 턴에 한 칸씩 이동한다. 막히거나 경로 끝에 닿거나 부서지면 전격 ${orb.shock}과 빙결 ${orb.ice} 피해로 폭발한다. 주변 8칸에 ${orb.shardTurns}턴간 빛 파편이 남아 매 턴 피해 ${orb.shardDamage}와 확률로 마비·실명·기봉인을 준다.`);
       add('lightning-rod','피뢰침','雷','예고 1턴 · 낙뢰 3회','대상의 위치를 한 칸씩 예고하고 3턴 연속 전격을 떨어뜨린다. 마지막 낙뢰에 맞으면 1턴 기절한다.');
       add('alarm-bell','경종','♪','주변 8칸 아군','주변 적들이 깨어나고, 범위 안의 보스 이외 아군이 층수만큼 괴력을 얻는다.');
+      if(!mon.mirrorCopy105)add('mirror-mark','거울 표식','標','처음 발견한 뒤 영구','거울지기가 쓰러질 때까지 풀리지 않는다. 표식이 걸린 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.');
+      if(!mon.mirrorCopy105)add('mirror-blink','추적 순간이동',"瞬",`${MIRROR_KEEPER_SKILLS.blink.distance}칸 이상 · 예고 1턴 · 재사용 ${MIRROR_KEEPER_SKILLS.blink.cooldown}턴`,'표식이 걸린 대상이 멀리 떨어지면 그 곁에 나타날 자리를 예고한 뒤 순간이동한다.');
       if(!mon.mirrorCopy105)add('mirror-copy','거울 복사','鏡','HP 1 · 최대 1개','다른 기술을 쓸 수 있는 반투명 복사본을 소환한다. 복사본은 자신을 다시 복사할 수 없다.');
       add('mirror-sanctuary','빛의 성역','光',`예고 1턴 · 지속 ${sanctuary.turns}턴`,`성역 안의 자신과 아군은 매 턴 HP ${sanctuary.heal}을 회복하고 새 디버프를 받지 않는다. 적은 회복이 막히고 매 턴 실명과 쇠약이 갱신된다.`);
     }else if(mon.bossPattern==='palaceKing105'){
