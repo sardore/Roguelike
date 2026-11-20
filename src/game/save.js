@@ -991,8 +991,15 @@ function countUpgradeTalismans(items){
   return (items||[]).filter(item=>item.talismanKind==='upgrade').reduce((count,item)=>count+itemQuantity(item),0);
 }
 function finishPalaceSupply(loot,floorNineUpgrades){
+  // The run holds seven upgrade talismans in all (floor 9's included). A chest short of its share is topped up; one that the
+  // floors' loose loot has already filled past it gives the excess back, from the plain stacks and never the core drops.
   const extra=7-floorNineUpgrades-countUpgradeTalismans(loot);
   if(extra>0)loot.push({...clone(upgradeProto()),count:extra});
+  else if(extra<0){
+    let excess=-extra;
+    for(const item of loot){if(excess<=0)break;if(item.talismanKind!=='upgrade'||item.coreDrop982)continue;const take=Math.min(excess,itemQuantity(item));item.count=itemQuantity(item)-take;excess-=take}
+    return loot.filter(item=>item.talismanKind!=='upgrade'||itemQuantity(item)>0);
+  }
   return loot;
 }
 function migratePalaceSupply(){
