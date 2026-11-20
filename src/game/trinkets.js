@@ -358,7 +358,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   for(let guard=0;guard<60&&budget>=.5;guard++){
     let kind,key;const mine=owned();
     if(mine.length&&chance(focus))[kind,key]=pick(mine);
-    else{const r=rnd();kind=r<.49?'stat':r<.67?'resist':r<.93?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
+    else{const r=rnd(),pr=Object.values(it.resist).some(v=>v>0)?.42:.2;kind=r<.47-(pr-.2)?'stat':r<.47-(pr-.2)+pr?'resist':r<.95?'special':'quirk';key=kind==='stat'?pick(CHARM_STATS):kind==='resist'?pick(RESIST_ELEMENTS57.filter(e=>!it.resist[e])):kind==='special'?pick(Object.keys(specials).filter(k=>it[k]==null)):null}
     if(kind==='resist'&&!key)continue;
     if(kind==='special'&&(!key||Object.keys(specials).filter(k=>it[k]!=null).length>=4)||kind==='quirk'&&(it.quirk||tier<2))continue;
     if(kind==='stat'&&((it[key]||0)<0||(it[key]||0)>=STAT_CAP[key]))continue;
@@ -381,9 +381,9 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   if(!Object.keys(it.resist).length)delete it.resist;
   return it;
 }
-// The new relics and trinkets are the rarer finds: a randart 40% of the time, and among fixed pieces the newly designed ones
+// The new relics and trinkets are the rarer finds: a randart 45% of the time, and among fixed pieces the newly designed ones
 // (they carry their own art) weigh 0.4 against 1 for the classic ones.
-const CHARM_DROP_RULES=Object.freeze({randart:.4,newFixedWeight:.4});
+const CHARM_DROP_RULES=Object.freeze({randart:.45,newFixedWeight:.4});
 function charmDrop(pool){
   const fixed=pool.filter(x=>!x.randart),rnd=globalThis.__MANRU_RANDOM57__;
   if(rnd()<CHARM_DROP_RULES.randart||!fixed.length){const slot=rnd()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
