@@ -362,10 +362,15 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   if(!Object.keys(it.resist).length)delete it.resist;
   return it;
 }
+// The new relics and trinkets are the rarer finds: a randart 40% of the time, and among fixed pieces the newly designed ones
+// (they carry their own art) weigh 0.4 against 1 for the classic ones.
+const CHARM_DROP_RULES=Object.freeze({randart:.4,newFixedWeight:.4});
 function charmDrop(pool){
-  const fixed=pool.filter(x=>!x.randart);
-  if(globalThis.__MANRU_RANDOM57__()<.65||!fixed.length){const slot=globalThis.__MANRU_RANDOM57__()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
-  return clone(choice(fixed));
+  const fixed=pool.filter(x=>!x.randart),rnd=globalThis.__MANRU_RANDOM57__;
+  if(rnd()<CHARM_DROP_RULES.randart||!fixed.length){const slot=rnd()<.5?'relic':'trinket';return makeRandart(slot,Math.max(1,Math.min(5,tierForFloor())))}
+  const weight=x=>x.art?CHARM_DROP_RULES.newFixedWeight:1,total=fixed.reduce((n,x)=>n+weight(x),0);
+  let r=rnd()*total;for(const x of fixed){r-=weight(x);if(r<=0)return clone(x)}
+  return clone(fixed[fixed.length-1]);
 }
 
 
