@@ -2218,6 +2218,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     const echo=state.martialEcho;if(echo?.floor===state.floor&&state.visible.has(k(echo.x,echo.y))){X.save();X.strokeStyle='#c4b980';X.lineWidth=1;for(let i=0;i<3;i++){X.globalAlpha=.7-i*.15;X.beginPath();X.ellipse(echo.x*32+16,echo.y*32+21,5+i*4,3+i*2,0,0,Math.PI*2);X.stroke()}X.restore()}
     drawJarGas(now,b);
     drawInnCanopy(b,now);
+    drawFeedRange(b,now);
     drawMineWorld(now,b);
 
     // Gameplay glows follow actors; physical lights are applied to scenery before fog.
