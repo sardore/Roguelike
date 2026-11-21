@@ -58,7 +58,7 @@ registerGenerationMonster(ctx,mon){
 generationContext(dist,safe,groupSize=1){
   const size=COLS*ROWS,ctx={groupSize,occupied:new Set(),local:new Uint16Array(size),wide:new Uint16Array(size),candidates:[]},roomMeta=new Array(size);
   for(const r of state.rooms||[]){
-    const key=`${r.x},${r.y},${r.w},${r.h}`,area=r.w*r.h,cap=(state.floor===20&&state.specialFloor)?12:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?2:1));
+    const key=`${r.x},${r.y},${r.w},${r.h}`,area=r.w*r.h,cap=(state.floor===20&&state.specialFloor)?30:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?(state.floor>=11&&state.floor<=19?3:2):1));
     const y0=Math.max(1,r.y),y1=Math.min(ROWS-1,r.y+r.h),x0=Math.max(1,r.x),x1=Math.min(COLS-1,r.x+r.w);
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const idx=y*COLS+x;if(roomMeta[idx]===undefined)roomMeta[idx]={key,cap}}
   }

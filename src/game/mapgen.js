@@ -2100,8 +2100,8 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     state.items=oldItems;let ri=1;for(const it of state.items){let p=null;for(let tries=0;tries<n*2&&!p;tries++){const r=state.rooms[(ri++*5+tries*3)%n];if(r===startRoom)continue;p=nearestFreeInRoom(r,avoid)}if(!p)p=nearestFreeInRoom(exitRoom,avoid);if(p){it.x=p.x;it.y=p.y;avoid.add(key980(p.x,p.y))}}
     // Portal rooms have explicit occupancy caps. The old modulo walk could revisit a short room cycle and pile a whole floor's roster into one chamber.
     const denseIds981=new Set([2,6,10,14]),roomLoad981=Array(n).fill(0),placed981=[];let mi=0;
-    for(const m of oldMonsters){let placed=false;const ids=Array.from({length:n},(_,i)=>i).filter(i=>state.rooms[i]!==startRoom).sort((a,b)=>{const ca=denseIds981.has(a)?3:2,cb=denseIds981.has(b)?3:2,ra=roomLoad981[a]/ca,rb=roomLoad981[b]/cb;return ra-rb||hash980(a,mi,9847)-hash980(b,mi,9847)});
-      for(const rid of ids){const r=state.rooms[rid],cap=r===exitRoom?1:(denseIds981.has(rid)?3:2);if(roomLoad981[rid]>=cap)continue;const cells=[...(r.cells981||[])].sort((a,b)=>hash980(a.x,a.y,9841+mi)-hash980(b.x,b.y,9841+mi));for(const p of cells){const kk=key980(p.x,p.y);if(avoid.has(kk)||state.map[p.y][p.x]===TT.PORTAL)continue;if(PlacementService.monsterCanStand(m,p.x,p.y)){m.x=p.x;m.y=p.y;avoid.add(kk);roomLoad981[rid]++;placed981.push(m);placed=true;break}}if(placed)break}
+    for(const m of oldMonsters){let placed=false;const ids=Array.from({length:n},(_,i)=>i).filter(i=>state.rooms[i]!==startRoom).sort((a,b)=>{const ca=denseIds981.has(a)?5:3,cb=denseIds981.has(b)?5:3,ra=roomLoad981[a]/ca,rb=roomLoad981[b]/cb;return ra-rb||hash980(a,mi,9847)-hash980(b,mi,9847)});
+      for(const rid of ids){const r=state.rooms[rid],cap=r===exitRoom?1:(denseIds981.has(rid)?5:3);if(roomLoad981[rid]>=cap)continue;const cells=[...(r.cells981||[])].sort((a,b)=>hash980(a.x,a.y,9841+mi)-hash980(b.x,b.y,9841+mi));for(const p of cells){const kk=key980(p.x,p.y);if(avoid.has(kk)||state.map[p.y][p.x]===TT.PORTAL)continue;if(PlacementService.monsterCanStand(m,p.x,p.y)){m.x=p.x;m.y=p.y;avoid.add(kk);roomLoad981[rid]++;placed981.push(m);placed=true;break}}if(placed)break}
       mi++;
     }
     state.monsters=placed981;state.portalMonsterLoad981=roomLoad981;
@@ -2336,7 +2336,7 @@ function auditFloor20Content(){
   const area=Math.max(1,(COLS-2)*(ROWS-2)),openRatio=walk/area,connections=state.architectureConnections51?.carved??null;
   const contracts={
     grandSize:COLS>=111&&ROWS>=85,
-    population:residents.length===12&&names.every(n=>counts[n]>=1),
+    population:residents.length>=12&&names.every(n=>counts[n]>=1),
     rewards:rewards.length===3&&rewards.every(q=>q.reachable),
     loose:loose.length>=7&&loose.length<=11,
     tripleKeys:keys.length===3&&gates.length===3&&['iron','jade','brass'].every((id,i)=>keys[i]?.keyId===id&&gates[i]?.keyId===id),
