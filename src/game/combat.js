@@ -38,7 +38,7 @@ function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
 function strongBonus(lv){return lv>=5?14:2+lv*2}
 function ghostDuration(lv){return lv>=5?8:2+lv}
 function martialHpMultiplier(p){return martialFormOf('constitution',p)?1:1+.08*(p.martial?.constitution||0)}
-const CURSE_BLADE_HP_CUT=.50;
+const CURSE_BLADE_HP_CUT=.20;
 function recomputeMaxHp(p=state.player,grow=false){
  const before=p.maxHp||1,raw=Math.round(p.baseMaxHpPermanent*martialHpMultiplier(p))+(p.temporaryMaxHpBonus||0);
  p.maxHp=Math.max(1,p.legendCurseActive47?raw-Math.max(1,Math.ceil(raw*CURSE_BLADE_HP_CUT)):raw);
