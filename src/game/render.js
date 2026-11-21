@@ -901,7 +901,7 @@ function colorShift(hex,amt){
   return '#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
 }
 function drawAuthoredWall(px,py,x,y){
-  if(state.floor===23){const rawStyle=state.floor23?.wallStyleByCell?.[k(x,y)],style=rawStyle==='timber'&&wallMaterial105(x,y)==='stone'?'stone':rawStyle;if(style){const top=!((state.map[y-1]?.[x]??TT.WALL)===TT.WALL);X.fillStyle=style==='timber'?'#26170f':style==='plaster'?'#392e27':style==='depot'?'#252b2e':style==='ruin'?'#35393a':'#2d3940';X.fillRect(px,py,32,32);if(style==='timber'){X.fillStyle='#6d4528';X.fillRect(px+3,py+4,26,27);for(let yy=7;yy<30;yy+=7){X.fillStyle='#9a6437';X.fillRect(px+4,py+yy,24,3)}X.fillStyle='#321d12';X.fillRect(px+4,py+4,4,27);X.fillRect(px+24,py+4,4,27)}else if(style==='plaster'){X.fillStyle='#c6c0ad';X.fillRect(px+4,py+5,24,25);X.fillStyle='#4b3020';X.fillRect(px+3,py+4,5,28);X.fillRect(px+24,py+4,5,28);X.fillRect(px+4,py+14,24,3);X.fillStyle='rgba(255,249,224,.20)';X.fillRect(px+9,py+7,13,5)}else if(style==='depot'){X.fillStyle='#4b565b';X.fillRect(px+3,py+5,26,26);X.strokeStyle='#89959b';X.strokeRect(px+5.5,py+7.5,21,19);for(const [ox,oy]of[[7,9],[24,9],[7,24],[24,24]])X.fillRect(px+ox,py+oy,2,2)}else if(style==='ruin'){X.fillStyle='#797b73';X.fillRect(px+3,py+5,26,26);X.fillStyle='#525b5f';X.fillRect(px+4,py+6,11,9);X.fillRect(px+17,py+17,10,12);X.strokeStyle='#34393a';X.beginPath();X.moveTo(px+18,py+5);X.lineTo(px+13,py+17);X.lineTo(px+20,py+26);X.stroke()}else{X.fillStyle='#667a84';X.fillRect(px+3,py+5,26,26);X.strokeStyle='#9fb0b6';for(let yy=9;yy<28;yy+=8){X.beginPath();X.moveTo(px+4,py+yy);X.lineTo(px+28,py+yy);X.stroke()}}if(top){X.fillStyle=style==='timber'?'#a26d3f':style==='plaster'?'#76503a':style==='depot'?'#79848a':'#8fa0a7';X.fillRect(px+2,py+1,28,6)}X.fillStyle='rgba(0,0,0,.30)';X.fillRect(px+2,py+28,28,4);return true}}
+  if(state.floor===23){const rawStyle=state.floor23?.wallStyleByCell?.[k(x,y)],style=rawStyle==='timber'&&wallMaterial105(x,y)==='stone'?'stone':rawStyle;if(style)return drawCityWall(px,py,x,y,style)}
   if(state.floor===24){const style=state.floor24?.wallStyleByCell?.[k(x,y)]||'estate-mass';drawEstateWall(px,py,x,y,style);return true}
 
 return false;}
@@ -1028,6 +1028,7 @@ function drawRegionFloor(px,py,x,y,colors,vis,ctx=X){
   }
 function drawWallTexture(px,py,x,y,colors){
   if(!wallsAreNegativeSpace()||state.branchContext105){drawWallFace(px,py,x,y,colors);return}
+  if(cityOn()&&drawCityRoof(px,py,x,y))return;
   // Every wall gets the dojo edge treatment: wall volume behind a face is unlit negative space outlined at its exposed edges.
   // Only the plain 청풍루 wall takes the dojo texture; other faces keep their own art and carry the exposed vertical edge down.
   if(!wallFaceOpen(x,y,0,1)||dojoFaceWall(x,y)){drawMainWall(px,py,x,y);return}
@@ -1280,6 +1281,7 @@ function drawShallowWater(px,py,x,y,now){
   X.fillStyle='rgba(255,255,255,.10)';X.fillRect(px+5,py+9,3,1);
 }
 function drawLiquidTerrain(tile,px,py,x,y,now){
+  if((tile===TT.MERCURY||tile===TT.WATER)&&cityOn())return drawCityWater(tile,px,py,x,y,now);
   const mercury=tile===TT.MERCURY,base=mercury?'#667270':'#264c50',lo=mercury?'#3a4141':'#143237',hi=mercury?'#c2cbc5':'#619399',wave=((now/250+x*2+y)%9)|0;
   X.fillStyle=base;X.fillRect(px,py,32,32);X.fillStyle=lo;X.fillRect(px,py+26,32,6);
   X.fillStyle=hi;X.fillRect(px+3+wave,py+7,11,2);X.fillRect(px+18-(wave>>1),py+18,10,2);X.fillStyle='rgba(255,255,255,.15)';X.fillRect(px+6,py+8,4,1);if(mercury&&state.floor===23){const hm=state.floor23?.hydraulicCellMeta?.[k(x,y)];if(hm){const dir=hm.type==='diversion'||hm.type==='spillway'?1:-1,shift=((now/180+x+y)%12)|0;X.strokeStyle='rgba(235,252,250,.34)';X.beginPath();X.moveTo(px+(dir>0?3+shift:29-shift),py+13);X.lineTo(px+(dir>0?10+shift:22-shift),py+13);X.stroke();X.fillStyle='rgba(55,79,78,.25)';X.fillRect(px+2,py+27,28,2)}}
@@ -1371,6 +1373,7 @@ function drawSpecialTerrain(tile,px,py,x,y,now){
   }
   if(tile===TT.SHALLOW_WATER){drawShallowWater(px,py,x,y,now);return true}
   if(tile===TT.HEDGE&&innFloorArt())return drawInnHedge(X,px,py,x,y);
+if(tile===TT.DRAWBRIDGE_DOWN&&cityOn()){drawCityBridge(px,py,x,y,now);return true}
 if([23,24].includes(state?.floor)&&drawAuthoredTerrain(tile,px,py,x,y,now))return true;
     const r41=globalThis.__MANRU_TERRAIN_R41__;if(r41?.libraryDesk52?.(tile,px,py,x,y,now)||r41?.specialBefore?.(tile,px,py,x,y,now)){r41?.specialAfter?.(tile,px,py,x,y,now,true);return true}
     let r;if(tile===TT.PORTAL){if(state.branchContext105||!state.branchPortals105?.some(p=>p.id==='canal'&&p.x===x&&p.y===y))drawPortalVortex(px,py,x,y,now);r=true}else r=drawPaperBridgeSpecialTerrain(tile,px,py,x,y,now);
@@ -2663,7 +2666,7 @@ function drawLibraryDesk(tile,px,py,x,y){
  if(d.v!==1){X.fillStyle='#273d39';X.fillRect(px+7,py+8,18,13);X.fillStyle='#c1b897';X.fillRect(px+9,py+7,14,12);X.fillStyle='#5b5a48';for(let i=0;i<4;i++)X.fillRect(px+11,py+9+i*2,10-(i%2)*3,1);X.fillStyle='#293b3d';X.fillRect(px+24,py+22,4,4)}else{X.fillStyle='#443426';X.fillRect(px+11,py+9,10,14);X.fillStyle='#dfc993';X.fillRect(px+14,py+7,4,8);X.fillStyle='#ffebbd';X.fillRect(px+15,py+5,2,5)}X.restore();return true
 }
 globalThis.__MANRU_TERRAIN_R41__={specialBefore:drawKeyTile,specialKeyAfter:drawKeyGateOverlay,
-floor:(px,py,x,y,colors,vis,ctx)=>{floorOverlay1020(px,py,x,y,colors,vis,ctx);floorThemeOverlay1022(px,py,x,y,colors,vis,ctx);drawSpecialMaterial(px,py,x,y,false,ctx)},
+floor:(px,py,x,y,colors,vis,ctx)=>{if(cityOn()&&drawCityPaving(px,py,x,y))return;floorOverlay1020(px,py,x,y,colors,vis,ctx);floorThemeOverlay1022(px,py,x,y,colors,vis,ctx);drawSpecialMaterial(px,py,x,y,false,ctx)},
 surfaceBlend:floorSurfaceBlend1025,
 libraryDesk52:drawLibraryDesk,
 wall:(px,py,x,y,colors)=>wallLibraryOverlay1022(px,py,x,y,colors),
