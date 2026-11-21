@@ -699,7 +699,7 @@ globalThis.__MANRU_QA_TERRAIN__={
   info:()=>{
     const g=state.grandTerrain93;if(!g)return null;let walk=0,block=0;
     for(let y=g.y+1;y<g.y+g.h-1;y++)for(let x=g.x+1;x<g.x+g.w-1;x++){if(tileBlocks(state.map[y][x]))block++;else walk++}
-    return{...g,walk,block,rooms:state.rooms.length,retired:!state.rooms.some(r=>r.terrain93),centre:!tileBlocks(state.map[Math.floor(g.y+g.h/2)][Math.floor(g.x+g.w/2)])};
+    return{...g,walk,block,rooms:state.rooms.length,retired:!state.rooms.some(r=>r.terrain93),centre:(t=>!tileBlocks(t)||t===TT.STAIR||t===TT.WATER)(state.map[Math.floor(g.y+g.h/2)][Math.floor(g.x+g.w/2)])};
   },
   look:()=>{
     const g=state.grandTerrain93;if(!g)return false;const p=state.player;p.x=g.x+Math.floor(g.w/2);p.y=g.y+Math.floor(g.h/2);
