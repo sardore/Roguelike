@@ -386,8 +386,8 @@ function tickNaturalPopulation(){
  if(reinforced&&!state.naturalPopulation57?.initial)state.naturalPopulation57={initial:state.monsters.filter(isNaturalMonster).length,generation:0,nextAgency:null};
  const pop=state.naturalPopulation57;if(!pop||pop.initial<=0)return;const agency=state.playerAgencyTurns57||0,count=state.monsters.filter(isNaturalMonster).length;
  const deficit=Math.max(0,pop.initial-count-1);if(!deficit){pop.nextAgency=null;return}
- if(pop.nextAgency==null){pop.nextAgency=agency+rand(18,26);return}if(agency<pop.nextAgency)return;pop.nextAgency=agency+rand(18,26);
- const arrivals=Math.ceil(deficit*.10);
+ if(pop.nextAgency==null){pop.nextAgency=agency+rand(90,130);return}if(agency<pop.nextAgency)return;pop.nextAgency=agency+rand(90,130);
+ const arrivals=1;
  const defs=branchReinforcementDefs().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
  const walk=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}),ctx=PlacementService.generationContext(walk.dist,20,4),home=roomAt(state.player.x,state.player.y),roomUse=new Map();
  ctx.candidates=ctx.candidates.filter(q=>walk.dist.has(k(q.x,q.y))&&walk.dist.get(k(q.x,q.y))>=20&&!state.visible.has(k(q.x,q.y))&&Math.max(Math.abs(q.x-state.player.x),Math.abs(q.y-state.player.y))>=16&&(!home||q.x<home.x-5||q.y<home.y-5||q.x>=home.x+home.w+5||q.y>=home.y+home.h+5)&&!(state.recentPlayerCells57||[]).some(c=>agency-c.agency<26&&Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))<6));
@@ -693,7 +693,7 @@ function alertNearby(x,y,radius=5,kind='impact',damage=0){
   radius*=2*multiplier;
  }
  radius=Math.ceil(radius);
- const cap=modern?(state.floor<16?4:5)+(kind==='roar'?1:0):Infinity,key=k(x,y);
+ const cap=modern?(state.floor<16?6:7)+(kind==='roar'?1:0):Infinity,key=k(x,y);
  let field=noiseBudget.fields.get(key);
  if(!field){field={dist:new Map([[key,0]]),buckets:[[{x,y}]],nextCost:0};noiseBudget.fields.set(key,field)}
  const {dist,buckets}=field;
@@ -709,7 +709,7 @@ function alertNearby(x,y,radius=5,kind='impact',damage=0){
  }
  let threat=0;
  if(modern)for(const m of state.monsters)if(isThreatVisibleToPlayer(m)){const d=entityDistance57(m,state.player);if(d<=8)threat+=Math.min(1,(10-d)/8)}
- const sensitivity=modern?Math.max(.3,1/(1+.04*threat+.2*Math.pow(Math.max(0,threat-1),2))):1,hearingCost=Math.floor(radius*2*sensitivity),contacts=[];
+ const sensitivity=modern?Math.max(.55,1/(1+.025*threat+.12*Math.pow(Math.max(0,threat-1),2))):1,hearingCost=Math.floor(radius*2*sensitivity),contacts=[];
  for(const m of state.monsters){const cost=dist.get(k(m.x,m.y));if(isHostileTarget57(m)&&cost!==undefined&&cost<=hearingCost)(contacts[cost]||(contacts[cost]=[])).push(m)}
  let count=0;
  for(let cost=0;cost<=hearingCost;cost++)for(const m of contacts[cost]||[]){if(m.sleeping105&&m.doorSleep105)continue;if(modern&&m.guardHome57&&!monsterPatrolAllows(m,x,y,'patrol'))continue;if(!m.alerted){if(noiseBudget.newlyAlerted>=cap)continue;noiseBudget.newlyAlerted++;m.alerted=true}branchWake(m,'소음');m.heardPosition={x,y,bornTurn:(state.floorTurn||0)+.5,intensity:Math.max(0,radius*sensitivity-cost/2)};m.searchTurns=Math.max(m.searchTurns||0,modern?Math.ceil(radius*2*sensitivity)+8:5);m.lostSight=0;count++}return count;
@@ -2523,7 +2523,7 @@ function silkConnectionCells54(a,b){
   /* ---------- custom population for rebuilt geometry ---------- */
   function spawnNear60(name,x,y,r=5){const d=MONSTERS.find(v=>v.name===name);if(!d)return null;const mon=scaledMonster(d),reach=state.floor===24?reach24State60({entranceOpen:true,allowBlink:false,ignoreOccupants:true}).cells:null;for(let rad=0;rad<=r;rad++)for(let oy=-rad;oy<=rad;oy++)for(let ox=-rad;ox<=rad;ox++){const xx=x+ox,yy=y+oy;if(xx<=0||yy<=0||xx>=COLS-1||yy>=ROWS-1||(reach&&!reach.has(k(xx,yy))))continue;if(PlacementService.monsterCanStand(mon,xx,yy)){Object.assign(mon,{x:xx,y:yy});OccupancyService.addMonster(mon);return mon}}return null}
 function spawnAuthoredEncounters60(){
-    if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}return true}
+    if(state.floor===23){const q=state.floor23,dragon=spawnNear60('여의 수룡',q.bossSpawn.x,q.bossSpawn.y,4);if(!dragon)throw new Error('F23 dragon spawn failed');dragon.hpThreshold57={ratio:.5,event:'f23-progress-key'};dragon.guardPost57=true;dragon.guardHome57={x:q.bossSpawn.x,y:q.bossSpawn.y};for(const id of q.switchIds){const sw=state.switches.find(v=>v.id===id);if(!sw)throw new Error(`F23 missing switch ${id}`);const guard=spawnNear60('보주의 파수꾼',sw.x+2,sw.y,3);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}}for(const e of q.city?.encounters||[]){const mon=spawnNear60(e.name,e.x,e.y,e.r||2);if(mon){mon.guardPost57=true;mon.guardHome57={x:mon.x,y:mon.y}}}return true}
     if(state.floor===24){const q=state.floor24,g=spawnNear60('구미묘',q.gumimyoSpawn.x,q.gumimyoSpawn.y,5);if(!g)throw new Error('F24 gumimyo spawn failed');g.livesRemaining57=g.revivalLives57;g.revivePhase57='normal';g.dormant57=true;g.baseAtk57=g.atk;g.baseDef57=g.def;g.baseEva57=g.eva;applyMonsterRevivalStats(g);const guard=spawnNear60('보주의 파수꾼',q.entranceKey.x+3,q.entranceKey.y,4);if(guard){guard.guardPost57=true;guard.guardHome57={x:guard.x,y:guard.y}}return true}
     return false;
   }
@@ -2726,7 +2726,7 @@ function releaseKeeperExit54(mon){
   const modal52=()=>!gameplayInputAllowed57();
   function onTypedGateOpened60(plan,keyId){if(state.floor!==24||keyId!=='brass'||plan?.kind!=='f24-grand-entrance'||!state.floor24)return false;state.floor24.chaseStarted=true;const g=(state.monsters||[]).find(m=>m.floor24Chaser57);if(g){g.dormant57=false;g.alerted=true;g.exitPressureSpeedBudget57=0;g.searchTurns=Math.max(g.searchTurns||0,18);g.lastSeenPosition={x:state.player.x,y:state.player.y,bornTurn:state.floorTurn||0}}addLog('대형 현관이 열리자 건물 깊숙한 곳에서 구미묘의 울음이 울렸다.');return true}
   const TARGET61={2:13,4:16,6:25,8:24,11:35,13:39,16:55,18:55,21:40,22:58,23:16,24:13};
-function latePackCaps1027(){const f=state?.floor||1;if(f>=24)return{normal:4,dense:5,context:6,local:4,denseLocal:5,contextLocal:6,wide:7,denseWide:8,contextWide:9};if(f===23)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:5,wide:6,denseWide:7,contextWide:8};if(f===22)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:4,wide:5,denseWide:6,contextWide:7};if(f===21)return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6};return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6}}
+function latePackCaps1027(){const f=state?.floor||1;if(f>=24)return{normal:4,dense:5,context:6,local:5,denseLocal:6,contextLocal:7,wide:8,denseWide:9,contextWide:10};if(f===23)return{normal:3,dense:4,context:5,local:4,denseLocal:5,contextLocal:6,wide:7,denseWide:8,contextWide:9};if(f===22)return{normal:3,dense:4,context:5,local:4,denseLocal:5,contextLocal:5,wide:6,denseWide:7,contextWide:8};if(f<11)return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6};return{normal:2,dense:3,context:4,local:3,denseLocal:4,contextLocal:5,wide:5,denseWide:6,contextWide:7}}
 function fixedEncounterMonster1027(m){return !!(m?.boss||m?.elite1023||m?.storyPhase992||m?.name==='여의 수룡'||m?.fixedEncounter1027)}
 function equipmentOpeningBonus105(actor,target){const w=actor?.weapon||{};return (w.edgeBonus&&target?.maxHp>0&&target.hp/target.maxHp>=.75?4:0)+(w.breakPower&&target?.kind==='construct'?Math.max(1,w.breakPower):0)}
 function routeTagAt(x,y){return(state.routeTags||[]).find(v=>v.x===x&&v.y===y)}

@@ -901,7 +901,6 @@ function colorShift(hex,amt){
   return '#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
 }
 function drawAuthoredWall(px,py,x,y){
-  if(state.floor===23){const rawStyle=state.floor23?.wallStyleByCell?.[k(x,y)],style=rawStyle==='timber'&&wallMaterial105(x,y)==='stone'?'stone':rawStyle;if(style){const top=!((state.map[y-1]?.[x]??TT.WALL)===TT.WALL);X.fillStyle=style==='timber'?'#26170f':style==='plaster'?'#392e27':style==='depot'?'#252b2e':style==='ruin'?'#35393a':'#2d3940';X.fillRect(px,py,32,32);if(style==='timber'){X.fillStyle='#6d4528';X.fillRect(px+3,py+4,26,27);for(let yy=7;yy<30;yy+=7){X.fillStyle='#9a6437';X.fillRect(px+4,py+yy,24,3)}X.fillStyle='#321d12';X.fillRect(px+4,py+4,4,27);X.fillRect(px+24,py+4,4,27)}else if(style==='plaster'){X.fillStyle='#c6c0ad';X.fillRect(px+4,py+5,24,25);X.fillStyle='#4b3020';X.fillRect(px+3,py+4,5,28);X.fillRect(px+24,py+4,5,28);X.fillRect(px+4,py+14,24,3);X.fillStyle='rgba(255,249,224,.20)';X.fillRect(px+9,py+7,13,5)}else if(style==='depot'){X.fillStyle='#4b565b';X.fillRect(px+3,py+5,26,26);X.strokeStyle='#89959b';X.strokeRect(px+5.5,py+7.5,21,19);for(const [ox,oy]of[[7,9],[24,9],[7,24],[24,24]])X.fillRect(px+ox,py+oy,2,2)}else if(style==='ruin'){X.fillStyle='#797b73';X.fillRect(px+3,py+5,26,26);X.fillStyle='#525b5f';X.fillRect(px+4,py+6,11,9);X.fillRect(px+17,py+17,10,12);X.strokeStyle='#34393a';X.beginPath();X.moveTo(px+18,py+5);X.lineTo(px+13,py+17);X.lineTo(px+20,py+26);X.stroke()}else{X.fillStyle='#667a84';X.fillRect(px+3,py+5,26,26);X.strokeStyle='#9fb0b6';for(let yy=9;yy<28;yy+=8){X.beginPath();X.moveTo(px+4,py+yy);X.lineTo(px+28,py+yy);X.stroke()}}if(top){X.fillStyle=style==='timber'?'#a26d3f':style==='plaster'?'#76503a':style==='depot'?'#79848a':'#8fa0a7';X.fillRect(px+2,py+1,28,6)}X.fillStyle='rgba(0,0,0,.30)';X.fillRect(px+2,py+28,28,4);return true}}
   if(state.floor===24){const style=state.floor24?.wallStyleByCell?.[k(x,y)]||'estate-mass';drawEstateWall(px,py,x,y,style);return true}
 
 return false;}
@@ -1282,7 +1281,7 @@ function drawShallowWater(px,py,x,y,now){
 function drawLiquidTerrain(tile,px,py,x,y,now){
   const mercury=tile===TT.MERCURY,base=mercury?'#667270':'#264c50',lo=mercury?'#3a4141':'#143237',hi=mercury?'#c2cbc5':'#619399',wave=((now/250+x*2+y)%9)|0;
   X.fillStyle=base;X.fillRect(px,py,32,32);X.fillStyle=lo;X.fillRect(px,py+26,32,6);
-  X.fillStyle=hi;X.fillRect(px+3+wave,py+7,11,2);X.fillRect(px+18-(wave>>1),py+18,10,2);X.fillStyle='rgba(255,255,255,.15)';X.fillRect(px+6,py+8,4,1);if(mercury&&state.floor===23){const hm=state.floor23?.hydraulicCellMeta?.[k(x,y)];if(hm){const dir=hm.type==='diversion'||hm.type==='spillway'?1:-1,shift=((now/180+x+y)%12)|0;X.strokeStyle='rgba(235,252,250,.34)';X.beginPath();X.moveTo(px+(dir>0?3+shift:29-shift),py+13);X.lineTo(px+(dir>0?10+shift:22-shift),py+13);X.stroke();X.fillStyle='rgba(55,79,78,.25)';X.fillRect(px+2,py+27,28,2)}}
+  X.fillStyle=hi;X.fillRect(px+3+wave,py+7,11,2);X.fillRect(px+18-(wave>>1),py+18,10,2);X.fillStyle='rgba(255,255,255,.15)';X.fillRect(px+6,py+8,4,1);
   // stitched shoreline: visual continuity matters more than per-tile decoration.
   X.fillStyle=mercury?'rgba(224,228,220,.28)':'rgba(134,171,157,.20)';
   if(!liquidNeighborSame(tile,x,y-1))X.fillRect(px,py,32,2);if(!liquidNeighborSame(tile,x+1,y))X.fillRect(px+30,py,2,32);if(!liquidNeighborSame(tile,x,y+1))X.fillRect(px,py+30,32,2);if(!liquidNeighborSame(tile,x-1,y))X.fillRect(px,py,2,32);
@@ -2151,12 +2150,13 @@ function drawSubstrate(px,py,x,y,colors,visible){
     const terrainProps63=[];
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const kk=k(x,y);if(!state.seen.has(kk)&&!(mine&&mineScenerySeen(x,y)))continue;const vis=state.visible.has(kk)||(mine&&mineSceneryVisible(x,y)),terrainTime=vis?now:0,px=x*TILE,py=y*TILE,t=mine&&mineHidden(x,y)?TT.VOID:state.map[y][x];
-      if(t===TT.WALL&&ordinaryWallMass&&enclosedWall(x,y))continue;
+      if(t===TT.WALL&&ordinaryWallMass&&!cityOn()&&enclosedWall(x,y))continue;
       X.save();
       const edged=t===TT.WALL&&(state.branchContext105||state.artifactDungeon46)&&!wallKeepsOwnArt(x,y);
       if(drawBranchCell(t,px,py,x,y,terrainProps63)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
       if(state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(t,px,py,x,y,now,true)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
       X.globalAlpha=1;const base=terrainBaseTile58(x,y,t);
+      if(cityOn()&&drawCityTile(base,t,px,py,x,y,terrainTime,terrainProps63)){X.restore();continue}
       if(base===TT.WALL)drawWallTexture(px,py,x,y,colors);else{drawSubstrate(px,py,x,y,colors,vis);if(base!==TT.FLOOR&&base!==TT.GRASS){if(!drawSpecialTerrain(base,px,py,x,y,terrainTime))drawInteractiveTerrain(base,px,py,x,y,terrainTime)}}
       if(t!==base&&t!==TT.FLOOR&&t!==TT.GRASS&&t!==TT.WALL)terrainProps63.push({t,px,py,x,y});
       X.restore();
@@ -2172,7 +2172,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     const props=[];
     for(const d of state.decor||[])if(d.layer==='object'&&inB58(d,b,1)&&state.seen.has(k(d.x,d.y)))props.push({y:d.y+.78,o:d});
     props.sort((a,b)=>a.y-b.y);
-    if(!state.artifactDungeon46&&(!state.branchContext105||['canal','granary'].includes(state.branchContext105.id)))drawWallMass(b);
+    if(!state.artifactDungeon46&&!cityOn()&&(!state.branchContext105||['canal','granary'].includes(state.branchContext105.id)))drawWallMass(b);
     drawDepthOcclusion(now,b);
     for(const l of state.branchTerrain105?.mine105?.lanterns||[])if(l.x>=b.x0&&l.x<=b.x1&&l.y>=b.y0&&l.y<=b.y1&&state.seen.has(k(l.x,l.y)))terrainProps63.push({t:TT.LANTERN_POST,px:l.x*TILE,py:l.y*TILE,x:l.x,y:l.y});
     // All physical props share one foreground pass above projected architecture, below FOV and actors.
@@ -2199,6 +2199,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     drawWorldLights(now,b);
     drawSceneryFog(b,colors.fog||'#080503');
     drawGlassTowerBodies(b,now);
+    drawCityBodies(b,now);
 
     const floorLoot=[];
     for(const it of state.items||[])if(inB58(it,b,1)&&VisibilityService.isVisible(it.x,it.y))floorLoot.push({y:it.y+.62,o:it});
@@ -6147,7 +6148,7 @@ function v10DrawPath(path,strong=false){if(!path?.length)return;const cam=global
     if(state.floor!==23)return{ok:false,reason:'not-f23'};if(qaSnapshot60&&!qaRestore60())return{ok:false,reason:'restore-failed'};
     const q=state.floor23,ids=[...(q.switchIds||[])],reveal=q.reveal?.switchId,seq=Array.isArray(order)&&order.length===ids.length?order:ids;
     const steps=[];for(let i=0;i<=seq.length;i++){if(i===timing&&reveal)steps.push({reveal:qaActivate23ById60(reveal)});if(i<seq.length)steps.push({normal:seq[i],out:qaActivate23ById60(seq[i])})}
-    const v=validate23Progress60(),normalUsed=ids.every(id=>(state.switches||[]).find(sw=>sw.id===id)?.used),revealState=q.reveal?{materialized:!!q.reveal.materialized,spawnBatches:q.reveal.spawnBatches||0,disabled:!!(state.switches||[]).find(sw=>sw.id===q.reveal.switchId)?.disabled}:null;
+    const v=validateDrownedCity(),normalUsed=ids.every(id=>(state.switches||[]).find(sw=>sw.id===id)?.used),revealState=q.reveal?{materialized:!!q.reveal.materialized,spawnBatches:q.reveal.spawnBatches||0,disabled:!!(state.switches||[]).find(sw=>sw.id===q.reveal.switchId)?.disabled}:null;
     return{ok:normalUsed&&q.centerUnlocked&&v.ok,order:seq,timing,normalUsed,centerUnlocked:!!q.centerUnlocked,revealState,hash:qaHash60(),validation:v,steps};
   }
   function qaRevealSaveLoad60(){

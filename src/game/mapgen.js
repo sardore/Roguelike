@@ -971,44 +971,6 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     state.featureRooms=[{name:'남문 외정',x:south.x,y:south.y,w:south.w,h:south.h},{name:'중앙 신랑',x:nave.x,y:nave.y,w:nave.w,h:nave.h},{name:'대제단 성소',x:north.x,y:north.y,w:north.w,h:north.h},{name:'잠긴 비밀 성소',x:secret.x,y:secret.y,w:secret.w,h:secret.h}];
     state.layoutName='거대 신전 · 남문 외정 / 기둥 신랑 / 육감실 / 이중 수로 / 비밀 성소';setEnds({x:south.cx,y:south.y+south.h-2},{x:north.cx,y:north.y+2});
   }
-  function registerBuilding(r,name,shape,material){state.featureRooms.push({name,x:r.x,y:r.y,w:r.w,h:r.h,kind60:'f23-building',shape23:shape,material23:material});return r}
-  function rectBuilding(m,styleMap,x,y,w,h,side,floor,name,material='stone'){
-    if(w<5||h<5)return null;const r=walledBox(m,x,y,w,h,floor,true);markWallMaterial23(m,styleMap,r,material);let dx=r.cx,dy=r.y+r.h-1,ox=dx,oy=dy+1;
-    if(side==='north'){dy=r.y;oy=dy-1}else if(side==='west'){dx=r.x;dy=r.cy;ox=dx-1;oy=dy}else if(side==='east'){dx=r.x+r.w-1;dy=r.cy;ox=dx+1;oy=dy}
-    setTerrainTile58(m,dx,dy,TT.DOOR);if(in60(ox,oy)&&m[oy][ox]===TT.WALL)setTerrainTile58(m,ox,oy,TT.MOON_STONE);
-    if(w>=7&&h>=6){const t=material==='depot'?TT.RACK:material==='timber'?TT.CRATE:material==='plaster'?TT.SCREEN:TT.CACHE,ix=clamp(r.cx+((x+y)&1?2:-2),r.x+1,r.x+r.w-2),iy=clamp(r.cy,r.y+1,r.y+r.h-2);if(!tileBlocks(m[iy][ix]))setTerrainTile58(m,ix,iy,t)}
-    registerBuilding(r,name,'rect',material);return{...r,door:{x:dx,y:dy},approach:{x:ox,y:oy}}
-  }
-  function lBuilding(m,styleMap,x,y,w,h,side,floor,name,material='timber'){
-    if(w<9||h<8)return rectBuilding(m,styleMap,x,y,w,h,side,floor,name,material);const bw=Math.max(5,Math.floor(w*.48)),bh=Math.max(5,Math.floor(h*.52)),a=walledBox(m,x,y,bw,h,floor,true),b=walledBox(m,x+bw-1,y+h-bh,w-bw+1,bh,floor,true);markWallMaterial23(m,styleMap,a,material);markWallMaterial23(m,styleMap,b,material);const dx=side==='west'?a.x:a.x+a.w-1,dy=a.cy,ox=dx+(side==='west'?-1:1),oy=dy;setTerrainTile58(m,dx,dy,TT.DOOR);if(in60(ox,oy)&&m[oy][ox]===TT.WALL)setTerrainTile58(m,ox,oy,TT.MOON_STONE);const r={x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)};registerBuilding(r,name,'L',material);return{...r,door:{x:dx,y:dy},approach:{x:ox,y:oy}}
-  }
-  function uCompound(m,styleMap,x,y,w,h,opening,floor,name,material='plaster'){
-    if(w<12||h<9)return rectBuilding(m,styleMap,x,y,w,h,opening,floor,name,material);const thick=5,parts=[];
-    if(opening==='south'||opening==='north'){parts.push(walledBox(m,x,y,thick,h,floor,true),walledBox(m,x+w-thick,y,thick,h,floor,true),walledBox(m,x,y+(opening==='south'?0:h-thick),w,thick,floor,true))}
-    else{parts.push(walledBox(m,x,y,w,thick,floor,true),walledBox(m,x,y+h-thick,w,thick,floor,true),walledBox(m,x+(opening==='east'?0:w-thick),y,thick,h,floor,true))}
-    for(const p of parts)markWallMaterial23(m,styleMap,p,material);const r={x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)};const dx=opening==='west'?x:opening==='east'?x+w-1:r.cx,dy=opening==='north'?y:opening==='south'?y+h-1:r.cy,ox=dx+(opening==='west'?-1:opening==='east'?1:0),oy=dy+(opening==='north'?-1:opening==='south'?1:0);setTerrainTile58(m,dx,dy,TT.DOOR);if(in60(ox,oy)&&m[oy][ox]===TT.WALL)setTerrainTile58(m,ox,oy,TT.MOON_STONE);registerBuilding(r,name,'U',material);return{...r,door:{x:dx,y:dy},approach:{x:ox,y:oy}}
-  }
-  function ruinBuilding(m,styleMap,x,y,w,h,side,name){const b=rectBuilding(m,styleMap,x,y,w,h,side,TT.FLOOR,name,'ruin');if(!b)return null;const cuts=[[b.x+2,b.y],[b.x+b.w-3,b.y+b.h-1],[b.x,b.cy-2]];for(const [xx,yy]of cuts)if(m[yy]?.[xx]===TT.WALL)setTerrainTile58(m,xx,yy,TT.MOON_STONE);for(const [xx,yy,t]of[[b.cx-2,b.cy,TT.ROCK],[b.cx+2,b.cy+1,TT.CRATE],[b.cx,b.cy-2,TT.BENCH]])if(in60(xx,yy)&&!tileBlocks(m[yy][xx]))setTerrainTile58(m,xx,yy,t);const f=state.featureRooms[state.featureRooms.length-1];if(f){f.shape23='ruin';f.material23='ruin'}return b}
-  function clusterBuildings(m,styleMap,x,y,w,h,side,name,material='stone'){
-    const gap=1,aW=Math.max(5,Math.floor((w-gap)/2)),bW=w-gap-aW,out=[];out.push(rectBuilding(m,styleMap,x,y,aW,Math.max(5,h-2),side,TT.FLOOR,`${name} 가`,material));out.push(rectBuilding(m,styleMap,x+aW+gap,y+2,bW,Math.max(5,h-2),side,TT.FLOOR,`${name} 나`,material==='stone'?'timber':material));return out.filter(Boolean)
-  }
-  function buildUrbanDistrict(m,d,styleMap){
-    openRect(m,d.x,d.y,d.w,d.h,TT.MOON_STONE);const B=[],X=d.x,Y=d.y,W=d.w,H=d.h,cx=d.cx,cy=d.cy,add=v=>{if(Array.isArray(v))B.push(...v.filter(Boolean));else if(v)B.push(v)};
-    const P={1:()=>{add(clusterBuildings(m,styleMap,X+1,Y+1,10,11,'east','초입 상점군','stone'));add(lBuilding(m,styleMap,X+13,Y+1,W-14,12,'west',TT.FLOOR,'초입 장방형 객사','timber'))},
-      4:()=>{add(rectBuilding(m,styleMap,X+1,Y+1,8,H-2,'east',TT.DARK_WOOD,'장축 보급창','depot'));add(lBuilding(m,styleMap,X+11,Y+1,W-12,9,'west',TT.FLOOR,'수문 관리동','plaster'));add(rectBuilding(m,styleMap,X+12,Y+11,W-13,H-12,'west',TT.WOOD_FLOOR,'목조 공방','timber'))},
-      7:()=>{add(uCompound(m,styleMap,X+1,Y+1,15,12,'east',TT.FLOOR,'범람 관리원','plaster'));add(clusterBuildings(m,styleMap,X+17,Y+2,W-18,15,'west','하층 가옥군','timber'));add(ruinBuilding(m,styleMap,X+3,Y+14,10,H-15,'east','침수 폐가'))},
-      8:()=>{add(lBuilding(m,styleMap,X+1,Y+1,10,12,'east',TT.WOOD_FLOOR,'골목 장인동','timber'));add(rectBuilding(m,styleMap,X+12,Y+1,W-13,8,'west',TT.FLOOR,'회벽 관사','plaster'));add(rectBuilding(m,styleMap,X+10,Y+11,W-11,H-12,'west',TT.DARK_WOOD,'저지대 창고','depot'))},
-      9:()=>{add(ruinBuilding(m,styleMap,X+1,Y+1,12,10,'east','붕괴 장옥'));add(rectBuilding(m,styleMap,X+15,Y+1,18,7,'south',TT.DARK_WOOD,'대형 물자창고','depot'));add(uCompound(m,styleMap,X+14,Y+10,17,9,'north',TT.FLOOR,'중앙 수문청','plaster'));add(clusterBuildings(m,styleMap,X+32,Y+2,W-33,H-3,'west','침수 상가군','timber'))},
-      6:()=>{add(rectBuilding(m,styleMap,X+1,Y+1,8,H-2,'east',TT.DARK_WOOD,'수은 적재고','depot'));add(uCompound(m,styleMap,X+11,Y+1,W-12,11,'west',TT.FLOOR,'동측 관제원','plaster'));add(rectBuilding(m,styleMap,X+12,Y+13,W-13,H-14,'west',TT.WOOD_FLOOR,'목조 선착장 사무소','timber'))},
-      3:()=>{add(uCompound(m,styleMap,X+1,Y+1,13,H-2,'east',TT.FLOOR,'회벽 행정청','plaster'));add(rectBuilding(m,styleMap,X+16,Y+1,W-17,7,'west',TT.GILDED_FLOOR,'세공 기록고','stone'));add(ruinBuilding(m,styleMap,X+15,Y+9,W-16,H-10,'west','침식된 관사'))},
-      2:()=>{add(rectBuilding(m,styleMap,X+1,Y+1,12,7,'east',TT.WOOD_FLOOR,'북측 장방가옥','timber'));add(lBuilding(m,styleMap,X+15,Y+1,15,12,'west',TT.FLOOR,'최종 수문청','plaster'));add(ruinBuilding(m,styleMap,X+31,Y+2,W-32,H-3,'west','중앙 인접 폐가'))}}
-    ;(P[d.id]||P[1])();
-    // One broad arterial and several offset alleys; no district shares the same cross-shaped circulation.
-    const horizY=clamp(cy+((d.id%3)-1)*2,Y+2,Y+H-3),vertX=clamp(cx+((d.id&1)?2:-2),X+2,X+W-3);carveLine(m,X+1,horizY,X+W-2,horizY,TT.STONE_PATH,1);carveLine(m,vertX,Y+1,vertX,Y+H-2,TT.MOON_STONE,1);
-    const deadY=clamp(cy+(d.id%2?4:-4),Y+2,Y+H-3);carveLine(m,cx,deadY,clamp(cx+(d.id%2?6:-6),X+2,X+W-3),deadY,TT.MOON_STONE,1);
-    for(const [ox,oy,t]of[[-3,0,TT.LANTERN_POST],[3,0,TT.LANTERN_POST],[0,3,TT.BENCH]]){const xx=clamp(cx+ox,X+1,X+W-2),yy=clamp(horizY+oy,Y+1,Y+H-2);if(!tileBlocks(m[yy][xx]))setTerrainTile58(m,xx,yy,t)}
-    state.featureRooms.push({name:`수은도시 제 ${d.id}구역`,x:X,y:Y,w:W,h:H,kind60:'f23-district',seepStage23:d.seep});return B
-  }
   function vaultEnemies(r,wanted){
     const cap=Math.max(1,Math.min(3,Math.floor(((r.w-2)*(r.h-2))/18))),need=Math.min(wanted,cap),out=existingEnemies62(r).slice(0,need),defs=floorEnemyDefinitions().filter(d=>!d.boss&&!d.miniBoss&&!d.fixed&&!d.aquatic&&!d.ranged);let guard=0;
     while(out.length<need&&defs.length&&guard++<24){const m=scaledMonster(choice(defs));m.miniVaultSpawn62=true;if(!moveEnemyTo(m,r,out.length))continue;OccupancyService.addMonster(m);out.push(m)}
@@ -2576,11 +2538,6 @@ function selectCoreDestination54(owner=null,target=state.player){
     if(!state)return;for(const fr of state.featureRooms||[]){const cfg=ROOM_CONTEXT[fr.name],inside=i=>i.x>=fr.x&&i.y>=fr.y&&i.x<fr.x+fr.w&&i.y<fr.y+fr.h;if(fr.name==='연금술방'){let n=state.items.filter(i=>i.type==='potion'&&inside(i)).length;while(n<2&&state.items.length<13){if(!addRoomPotion(fr,cfg.kinds))break;n++}}else if(fr.name==='서고'){if(!state.items.some(i=>i.type==='talisman'&&inside(i))&&state.items.length<13)addRoomTalisman(fr)}else if(cfg&&globalThis.__MANRU_RANDOM57__()<.45&&state.items.length<13&&!state.items.some(i=>i.type==='potion'&&inside(i)))addRoomPotion(fr,cfg.kinds);if(['사당','무기고','감방'].includes(fr.name)&&globalThis.__MANRU_RANDOM57__()<.34&&state.items.length<13&&!state.items.some(i=>i.type==='talisman'&&inside(i)))addRoomTalisman(fr)}
     if([2,7,12,17,22].includes(state.floor)&&!state.items.some(i=>i.type==='talisman')&&state.items.length<13){const p=PlacementService.randomFloor(0),t=talismanPick56();if(t)PlacementService.placeItem({...t,x:p.x,y:p.y,count:1})}
   }
-  /* ---------- 23F: mercury archipelago with ring bridges and submerged causeway ---------- */
-  function markWallMaterial23(m,styleMap,r,style){
-    if(!r)return;for(let x=r.x;x<r.x+r.w;x++)for(const y of [r.y,r.y+r.h-1])if(m[y]?.[x]===TT.WALL)styleMap[k(x,y)]=style;
-    for(let y=r.y+1;y<r.y+r.h-1;y++)for(const x of [r.x,r.x+r.w-1])if(m[y]?.[x]===TT.WALL)styleMap[k(x,y)]=style;
-  }
   function enrichSpecial94(f){
     state.outerWall94=state.outerWall94||{};state.itemBiasZones94=state.itemBiasZones94||[];
     if([4,13,16,18,22,24].includes(f)){
@@ -2631,7 +2588,7 @@ function selectCoreDestination54(owner=null,target=state.player){
   }
   function rebuildSpecial60(f){
     const authored=[23,24].includes(f),savedMonsters=authored?[]:[...(state.monsters||[])],savedItems=[...(state.items||[])],boss=savedMonsters.find(m=>m.boss)||null;[COLS,ROWS]=SIZE60[f]||[COLS,ROWS];state.map=makeEmptyMap();state.rooms=[];state.decals=[];state.decor=[];state.rafts=[];state.routeTags=[];state.switches=[];state.vaults=[];state.featureRooms=[];state.guardRooms59=[];state.secretTreasure=null;state.specialFloor=true;state.fixedStart=null;state.fixedExit=null;state.visionPenalty=0;state.requiresBlink=false;initHidden60();state.floorSeed60=Math.floor(globalThis.__MANRU_RANDOM57__()*1000000);
-    const builders={2:buildFloor2Maze,4:buildChoice,6:buildPavilion,8:buildBamboo,11:buildRiver,13:buildFloor13RoomMaze,16:buildFloor16Fortress,18:buildWarehouse,21:buildFloor21VoidSea,22:buildTemple,23:buildMercury,24:buildPeach};
+    const builders={2:buildFloor2Maze,4:buildChoice,6:buildPavilion,8:buildBamboo,11:buildRiver,13:buildFloor13RoomMaze,16:buildFloor16Fortress,18:buildWarehouse,21:buildFloor21VoidSea,22:buildTemple,23:buildDrownedCity,24:buildPeach};
     if(BOSS_FLOORS.has(f)){if(!boss)return;buildBossArena(f,state.map,boss)}else builders[f](state.map);
     if([4,6,8,13,22].includes(f))repairRequired60();
     if(!BOSS_FLOORS.has(f)&&![23,24].includes(f))enrichSpecial94(f);
@@ -3194,7 +3151,7 @@ function movePlayer(dx,dy,{automatic=false}={}){
 }
   const SIZE60={
     2:[87,57],4:[85,55],5:[73,51],6:[89,59],8:[87,57],10:[75,53],11:[93,63],13:[89,59],15:[75,53],
-    16:[95,63],18:[93,61],20:[111,85],21:[99,67],22:[95,65],23:[95,65],24:[95,63],25:[89,59]
+    16:[95,63],18:[93,61],20:[111,85],21:[99,67],22:[95,65],23:[139,99],24:[95,63],25:[89,59]
   };
   function qaClearHostiles60(){const n=(state.monsters||[]).filter(m=>m.hp>0).length;state.monsters=[];return n}
   function qaF24VisualTargets60(){

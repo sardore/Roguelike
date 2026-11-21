@@ -613,7 +613,7 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     if(['jar','terrain'].includes(mon.type))return attackTerrainTargetR8(mon);
     if(combatGuardBlocks57(state.player,mon)){setPlayerAttackOutcome('blocked',mon,{reason:'guard'});return false}
     const p=state.player,st=getStats(),w=p.weapon||{},ranged=!!(w.ranged||w.kind==='bow');
-    state.playerAttackUntil=performance.now()+150;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;const noiseRadius=state.floor<11?4:ranged?6:state.player.strongReady>0?7:5;
+    state.playerAttackUntil=performance.now()+150;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;const noiseRadius=state.floor<11?4:ranged?8:state.player.strongReady>0?9:7;
     const aim=ranged?(context.aimPower??p.classState?.aimPower??0):0,ammo=ranged?(globalThis.MANRU_AMMO||[]).find(a=>a.ammoKind===state._activeAmmo967?.ammoKind):null;
     if(aim>0&&!context.shotBundle)setAimPower(aim-1,'attack');
     const missChance=entityAttackMissChance(p,mon,{base:.05,max:mon.boss?.26:.34,evaScale:aim?.5:1,evaIgnore:ranged&&w.tracking?6:0});
