@@ -1846,7 +1846,7 @@ function initialSpawnPosition(mon,dist,safe,roomUse,spawnCtx57=null){
       if(state.visible.has(k(x,y)))continue;
       const d=dist.get(k(x,y));if(Number.isFinite(d)&&d<safe)continue;
       const r=roomAt(x,y),key=r?`${r.x},${r.y},${r.w},${r.h}`:null,area=r?r.w*r.h:0;
-      const roomCap=!key?Infinity:((state.floor===20&&state.specialFloor)?12:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?(state.floor>=11&&state.floor<=19?3:2):1)));
+      const roomCap=!key?Infinity:((state.floor===20&&state.specialFloor)?30:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?(state.floor>=11&&state.floor<=19?3:2):1)));
       if(key&&(roomUse.get(key)||0)>=roomCap)continue;
       let local=0,wide=0;for(const n of state.monsters||[]){if(!n||n.hp<=0)continue;const d0=Math.max(Math.abs(n.x-x),Math.abs(n.y-y));if(d0<=4)local++;if(d0<=8)wide++}
       if(local>=2||wide>=4)continue;
@@ -2672,7 +2672,7 @@ function nearestLandFor1005(e,x,y,prefer=null){
   return a[0]||null
 }
 function consumeWard(kind){const p=state.player,r=p.relic;if(!r)return false;const ok=kind==='drown'?r.drownWard1005:r.voidWard1005;if(!ok)return false;const nm=r.name;p.relic=null;addLog(`${nm}이 치명적인 ${kind==='drown'?'익사':'공허 추락'}를 대신 받아냈다.`);wardPulse(kind,10);return true}
-const SPECIAL_BASE_COUNTS={2:10,4:11,6:12,8:12,11:18,13:19,16:24,18:25,21:19,22:22,23:20,24:17,20:16};
+const SPECIAL_BASE_COUNTS={2:10,4:11,6:12,8:12,11:18,13:19,16:24,18:25,21:19,22:22,23:20,24:17,20:20};
 function moveGroundItemStep57(it,toward){
   if(!state||!it||!toward)return false;
   const before=Math.abs(toward.x-it.x)+Math.abs(toward.y-it.y),candidates=[];

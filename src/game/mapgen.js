@@ -2336,7 +2336,7 @@ function auditFloor20Content(){
   const area=Math.max(1,(COLS-2)*(ROWS-2)),openRatio=walk/area,connections=state.architectureConnections51?.carved??null;
   const contracts={
     grandSize:COLS>=111&&ROWS>=85,
-    population:residents.length===12&&names.every(n=>counts[n]>=1),
+    population:residents.length>=12&&names.every(n=>counts[n]>=1),
     rewards:rewards.length===3&&rewards.every(q=>q.reachable),
     loose:loose.length>=7&&loose.length<=11,
     tripleKeys:keys.length===3&&gates.length===3&&['iron','jade','brass'].every((id,i)=>keys[i]?.keyId===id&&gates[i]?.keyId===id),
