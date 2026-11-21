@@ -215,7 +215,7 @@ const CONSUMABLES=[
   {name:'원력 숭늉',type:'food',foodKind:'talisman_sungnyung',rarity:'rare',hunger:18,eatCost57:.75,craftedOnly57:true,focusPercent57:.30,stackMax:3,desc:'식은 국밥에 깨끗한 물을 부어 끓였습니다. 허기를 조금 채우고 최대 기력의 30%를 회복합니다.'},
   {name:'보신 전골',type:'food',foodKind:'vital_hotpot',rarity:'relic',hungerFull57:true,eatCost57:1.25,craftedOnly57:true,vitalityTurns57:100,stackMax:2,desc:'육지와 바다의 재료를 푹 고았습니다. 허기를 완전히 채우고 100턴 동안 최대 HP가 10 증가합니다.'},
   {name:'얼음 복숭아',type:'food',foodKind:'ice_peach',rarity:'sealed',hunger:42,eatCost57:.75,craftedOnly57:true,freeStaminaTurns57:6,stackMax:2,desc:'차가운 기운이 속까지 밴 복숭아다. 6턴 동안 이동과 공격에 드는 시간이 절반으로 줄어든다.'},
-  {name:'창해말이',type:'food',foodKind:'palace_roll',rarity:'rare',hunger:14,eatCost57:.5,regenTurns:4,craftedOnly57:true,recipeResult57:true,cookingOnly57:true,branchExclusive105:true,stackMax:99,ability:'허기 +14 · 재생 4턴',desc:'약초실의 해초에 밥과 구운 생선, 매콤한 육포를 말아 한입 크기로 썬 용궁 요리. 솥·화로에서 한 번에 10개 만든다. 하나마다 허기 14를 채우고 4턴 동안 체력이 재생된다. 최대 99개까지 겹쳐 담는다.'},
+  {name:'창해말이',type:'food',foodKind:'palace_roll',rarity:'rare',hunger:20,eatCost57:.5,regenTurns:4,craftedOnly57:true,recipeResult57:true,cookingOnly57:true,branchExclusive105:true,stackMax:99,ability:'허기 +20 · 재생 4턴',desc:'약초실의 해초에 밥과 구운 생선, 매콤한 육포를 말아 한입 크기로 썬 용궁 요리. 솥·화로에서 한 번에 10개 만든다. 하나마다 허기 14를 채우고 4턴 동안 체력이 재생된다. 최대 99개까지 겹쳐 담는다.'},
   {name:'검게 탄 숯',type:'food',foodKind:'charcoal',rarity:'common',hunger:0,eatCost57:.75,craftedOnly57:true,charcoalDamage57:5,stackMax:4,desc:'목재·식물이 타거나 조리에 실패해 남은 숯. 주변 불길로는 점화되지 않는다. 직접 불속성이 닿으면 2턴간 불씨를 옮기다 소모된다. 물로 끄거나 주워 보관할 수 있다. 먹으면 몸만 상한다.'},
 
   // PDF 레시피에서 요구하지만 획득법이 비어 있어 지형 맥락에 맞춰 배치한 재료
