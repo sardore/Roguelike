@@ -2202,7 +2202,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     drawCityBodies(b,now);
 
     const floorLoot=[];
-    for(const it of state.items||[])if(inB58(it,b,1)&&VisibilityService.isVisible(it.x,it.y))floorLoot.push({y:it.y+.62,o:it});
+    for(const it of state.items||[])if(inB58(it,b,1)&&VisibilityService.isVisible(it.x,it.y)&&!cityHidesItem(it.x,it.y))floorLoot.push({y:it.y+.62,o:it});
     floorLoot.sort((a,b)=>a.y-b.y);
     for(const a of floorLoot)drawItem(a.o);
 

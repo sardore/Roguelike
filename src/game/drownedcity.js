@@ -14,7 +14,7 @@ const CITY23=Object.freeze({
   majors:[[19,78,14,'harbour'],[14,47,12,'sluice'],[21,15,14,'market'],[68,12,14,'shrine'],[114,15,16,'office'],[123,48,12,'watch'],[116,79,13,'ruins'],[69,79,13,'avenue']],
   minors:[[97,62,6],[42,24,6],[88,36,5]],
   chain:[['M',0],['M',1],['M',2],['M',3],['M',4],['M',5],['M',6],['M',7]],
-  satellites:[{at:[39,40,8],kind:'pagoda'},{at:[103,40,10],kind:'granary'},{at:[40,66,8],kind:'belltower'}],
+  satellites:[{at:[[39,40,8],[42,30,7],[38,52,7]],kind:'pagoda'},{at:[[103,40,10],[94,88,9],[100,66,8],[96,24,8]],kind:'granary'},{at:[[40,66,8],[44,88,8],[30,62,7]],kind:'belltower'}],
   names:['포구','서수문','저잣거리','사당 언덕','관아','망루 수문','무너진 골목','대로 수문']
 });
 const CITY23_HEIGHT=Object.freeze({X:0,w:0,m:0,r:1,q:1,a:1,p:1,k:1,g:1,u:1,t:2,H:1,i:1,W:1,b:1,d:1,s:1,c:3});
@@ -112,7 +112,8 @@ function buildDrownedCity(m){
   // dead-end islands are set down after the chain, clear of its bridges, and hang off whichever neighbour a straight bridge reaches;
   // then rocky outcrops are scattered over the open water, bridged where a span reaches and left as bare rock where it does not
   const minors=CITY23.minors.map(([x,y,r],i)=>island(x,y,r,'stepping',{index:i,extra:true})).filter(Boolean);
-  const sats=CITY23.satellites.map(s=>island(s.at[0],s.at[1],s.at[2],s.kind,{satellite:true})).filter(Boolean);
+  // each giant-building island has a few places it may stand; the first one with open water round it is taken, and a map without all three is built again
+  const sats=CITY23.satellites.map(s=>{for(const [x,y,r] of s.at){const isl=island(x,y,r,s.kind,{satellite:true});if(isl)return isl}throw new Error(`F23 no room for the ${s.kind} island`)});
   const scatter=[];
   for(let n=0;n<900&&scatter.length<26;n++){
     const x=ri(8,W-9),y=ri(8,H-9);if(x>=L.x-6&&x<L.x+L.w+6&&y>=L.y-6&&y<L.y+L.h+6)continue;
@@ -142,7 +143,7 @@ function buildDrownedCity(m){
       const hasLanding=list.some(c=>landingKeys.has(k(c.x,c.y)));if(!best||(hasLanding&&!best.hasLanding)||(hasLanding===best.hasLanding&&list.length>best.list.length))best={list,hasLanding,id}}
     if(best)for(const c of walk)if(comp.get(k(c.x,c.y))!==best.id){put(c.x,c.y,'r',TT.WALL);wallStyleByCell[k(c.x,c.y)]='stone'}
     // lanterns on the quay ring
-    let n=0;for(const c of isl.cells)if(zone[c.y][c.x]==='q'&&(c.x*7+c.y*3)%11===0&&n++<12)put(c.x,c.y,'q',TT.LANTERN_POST);
+    let n=0;for(const c of isl.cells)if(zone[c.y][c.x]==='q'&&(c.x*7+c.y*3)%11===0&&n++<12)put(c.x,c.y,'q',TT.GOLD_LAMP);
   }
   // ---- helpers for filling an island
   const walkable=(x,y)=>CITY23_WALK.has(zone[y]?.[x]);
@@ -197,7 +198,7 @@ function buildDrownedCity(m){
   const plazaAt=(isl,w,h,near,feature)=>{
     const spot=findSpot(isl,w,h,near,{allow:['a'],margin:0});if(!spot)return null;rect(spot.x,spot.y,w,h,'p',TT.FLOOR);
     const cx=spot.x+Math.floor(w/2),cy=spot.y+Math.floor(h/2);if(feature!==null)put(cx,cy,'p',feature||TT.FOUNTAIN);
-    for(const [dx,dy] of [[-2,-1],[2,-1],[-2,1],[2,1]])if(R()<.55&&zone[cy+dy]?.[cx+dx]==='p')put(cx+dx,cy+dy,'p',pick([TT.BENCH,TT.GARDEN_TREE,TT.LANTERN_POST,TT.JAR]));
+    for(const [dx,dy] of [[-2,-1],[2,-1],[-2,1],[2,1]])if(R()<.55&&zone[cy+dy]?.[cx+dx]==='p')put(cx+dx,cy+dy,'p',pick([TT.BENCH,TT.GARDEN_TREE,TT.GOLD_LAMP,TT.STATUE]));
     return spot;
   };
   const gardenAt=(isl,w,h,near)=>{const spot=findSpot(isl,w,h,near,{allow:['a'],margin:0});if(!spot)return null;rect(spot.x,spot.y,w,h,'g',TT.GRASS);for(let i=0;i<Math.floor(w*h/7);i++)put(spot.x+ri(0,w-1),spot.y+ri(0,h-1),'g',pick([TT.GARDEN_TREE,TT.GARDEN_TREE,TT.BENCH]));return spot};
@@ -260,7 +261,7 @@ function buildDrownedCity(m){
     else if(isl.kind==='avenue'){
       // a broad avenue north through the middle to the causeway, lanterns down both sides
       const ave={x:Math.floor(c.x)-4,y:isl.cy-11,w:9,h:22};for(let yy=ave.y;yy<ave.y+ave.h;yy++)for(let xx=ave.x;xx<ave.x+ave.w;xx++)if(isle[yy]?.[xx]===isl.id&&zone[yy][xx]==='a')put(xx,yy,'p',TT.STONE_PATH);
-      for(let yy=ave.y+1;yy<ave.y+ave.h;yy+=4)for(const xx of [ave.x,ave.x+ave.w-1])if(zone[yy]?.[xx]==='p')put(xx,yy,'p',TT.LANTERN_POST);
+      for(let yy=ave.y+1;yy<ave.y+ave.h;yy+=4)for(const xx of [ave.x,ave.x+ave.w-1])if(zone[yy]?.[xx]==='p')put(xx,yy,'p',TT.GOLD_LAMP);
       sluice(isl,{x:c.x-8,y:c.y});
     }
   }
@@ -272,6 +273,7 @@ function buildDrownedCity(m){
     else if(isl.kind==='granary'){const b=hall(isl,10,6,c,'granary',{rise:3})||hall(isl,8,5,c,'granary',{rise:3});if(b){for(let i=0;i<10;i++)put(b.x+1+ri(0,b.w-3),b.y+1+ri(0,b.h-3),'i',pick([TT.CRATE,TT.JAR,TT.CRATE]));for(let i=0;i<3;i++)encounters.push({name:pick(['차원 포식자','공허 가오리']),x:b.x+2+i*3,y:b.y+2,r:2});loot.push({x:b.x+5,y:b.y+2,kind:'potion'},{x:b.x+7,y:b.y+3,kind:'food'})}}
     else{const b=hall(isl,7,7,c,'belltower',{rise:4})||hall(isl,6,6,c,'belltower',{rise:4})||hall(isl,5,5,c,'belltower',{rise:4});if(b){encounters.push({name:'보주의 파수꾼',x:b.x+4,y:b.y+4,r:2});loot.push({x:b.x+3,y:b.y+3,kind:'gear'})}}
   }
+  for(const kind of ['pagoda','granary','belltower'])if(!buildings.some(b=>b.kind===kind))throw new Error(`F23 the ${kind} did not fit its island`);
 
   // ---- pack the rest: crowded houses, some of them enterable shops, some with a second storey; leftovers become yards and ponds
   for(const isl of islands){
@@ -303,9 +305,11 @@ function buildDrownedCity(m){
   // ---- the palace island: marble three steps up, the throne hall behind a forecourt holds the stairs
   rect(C.x,C.y,C.w,C.h,'c',TT.MOON_STONE);
   const palace=building(C.x+3,C.y+1,C.w-6,7,'palace',{closed:true,rise:4,floor:TT.GILDED_FLOOR,timber:false});
-  for(const [dx,dy] of [[1,9],[C.w-2,9],[1,C.h-2],[C.w-2,C.h-2],[4,12],[C.w-5,12]])put(C.x+dx,C.y+dy,'c',TT.STONE_PILLAR);
+  for(const [dx,dy] of [[1,9],[C.w-2,9],[1,C.h-2],[C.w-2,C.h-2]])put(C.x+dx,C.y+dy,'c',TT.GOLD_LAMP);for(const [dx,dy] of [[4,12],[C.w-5,12],[1,1],[C.w-2,1]])put(C.x+dx,C.y+dy,'c',TT.STONE_PILLAR);
   for(const dx of [-2,2])put(palace.door.x+dx,palace.door.y+1,'c',TT.GOLD_LAMP);
   const exit={x:palace.door.x,y:palace.y+2};
+  // a red runner with gold borders from the causeway gate to the throne
+  for(let y=palace.y+1;y<C.y+C.h-1;y++)for(let dx=-1;dx<=1;dx++){const x=palace.door.x+dx;if((x===exit.x&&y===exit.y)||(y===palace.door.y))continue;if(zone[y][x]==='c'||(zone[y][x]==='i'&&y>exit.y))setTerrainTile58(m,x,y,TT.CARPET)}
   const centerEntry={x:cx0+1,y:C.y+C.h-1},bossSpawn={x:C.x-3,y:C.y+Math.floor(C.h/2)};
 
   // ---- sluices: each lowers the drawbridge leaving its island and drains the canal beside its house
@@ -330,12 +334,37 @@ function buildDrownedCity(m){
   for(const isl of islands)state.rooms.push(roomRect(Math.max(1,isl.cx-isl.r),Math.max(1,isl.cy-isl.r),Math.floor(isl.r*2),Math.floor(isl.r*2)));
   for(const isl of majors)state.featureRooms.push({name:`수몰 도성 · ${isl.name}`,x:isl.cx-isl.r,y:isl.cy-isl.r,w:isl.r*2,h:isl.r*2,kind60:'f23-district'});
   state.featureRooms.push({name:'중앙 수은호',x:L.x,y:L.y,w:L.w,h:L.h,kind60:'mercury-core'},{name:'수몰 왕궁',x:C.x,y:C.y,w:C.w,h:C.h,kind60:'mercury-platform'});
+  // ---- the water between the islands is a working harbour: mooring piles along the quays, sampans tied up beside them,
+  // nets hung out on poles, reed beds along the wild shores, lotus rafts and floating gold lanterns out on the open water.
+  // These are drawn only (city.decor); the cells stay canal for movement and for the sluices, which never touch them.
+  const decor=[],used=new Set(),drainable=new Set(Object.keys(hydraulicCellMeta));
+  const openWater=(x,y)=>zone[y]?.[x]==='w'&&m[y][x]===TT.WATER&&owner[y][x]===0&&!drainable.has(k(x,y))&&!used.has(k(x,y))&&!DIRS8.some(([dx,dy])=>'bdsH'.includes(zone[y+dy]?.[x+dx]));
+  const shore=new Map(),shoreCells=[];
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='w'&&DIRS4.some(([dx,dy])=>!'wmX'.includes(zone[y+dy]?.[x+dx]))){shore.set(k(x,y),1);shoreCells.push({x,y})}
+  for(let i=0;i<shoreCells.length;i++){const c=shoreCells[i],d=shore.get(k(c.x,c.y));if(d>=7)continue;for(const [dx,dy] of DIRS4){const x=c.x+dx,y=c.y+dy;if(zone[y]?.[x]!=='w'||shore.has(k(x,y)))continue;shore.set(k(x,y),d+1);shoreCells.push({x,y})}}
+  const dist=(x,y)=>shore.get(k(x,y))??9,add=(x,y,kind,extra={})=>{used.add(k(x,y));decor.push({x,y,kind,...extra})};
+  const quaySide=(x,y)=>DIRS4.some(([dx,dy])=>zone[y+dy]?.[x+dx]==='r'&&DIRS4.some(([ex,ey])=>zone[y+dy+ey]?.[x+dx+ex]==='q'));
+  // piles every few cells along the quays, a sampan moored beside some of them
+  for(const c of shoreCells)if(dist(c.x,c.y)===1&&quaySide(c.x,c.y)&&hash2(c.x,c.y,2301)<.16&&openWater(c.x,c.y)&&![...used].some(u=>{const [ux,uy]=u.split(',').map(Number);return Math.abs(ux-c.x)+Math.abs(uy-c.y)<3})){
+    add(c.x,c.y,'pile');
+    if(R()<.55)for(const [ax,ay,axis] of [[1,0,'ew'],[-1,0,'ew'],[0,1,'ns'],[0,-1,'ns']]){
+      const bx=c.x+ax,by=c.y+ay,cx=bx+(axis==='ew'?ax:0),cy=by+(axis==='ns'?ay:0);
+      if(openWater(bx,by)&&openWater(cx,cy)&&dist(bx,by)<=2&&dist(cx,cy)<=3){const lo={x:Math.min(bx,cx),y:Math.min(by,cy)};add(lo.x,lo.y,'boat',{axis,part:0,tone:ri(0,2)});add(lo.x+(axis==='ew'?1:0),lo.y+(axis==='ns'?1:0),'boat',{axis,part:1});break}}
+  }
+  // nets on poles off a few open shores
+  for(const c of shoreCells)if(dist(c.x,c.y)===2&&hash2(c.x,c.y,2302)<.025&&openWater(c.x,c.y)&&!quaySide(c.x,c.y))add(c.x,c.y,'net',{axis:hash2(c.x,c.y,2303)<.5?'ew':'ns'});
+  // reeds along the shores that carry no quay
+  for(const c of shoreCells)if(dist(c.x,c.y)<=2&&!quaySide(c.x,c.y)&&hash2(Math.floor(c.x/4),Math.floor(c.y/4),2304)<.3&&hash2(c.x,c.y,2305)<.55&&openWater(c.x,c.y))add(c.x,c.y,'reed');
+  // lotus beds and floating lanterns out on the open water
+  for(let n=0;n<26;n++){const c=pick(shoreCells);if(dist(c.x,c.y)<3)continue;const q=[c];for(let i=0;i<q.length&&i<ri(5,11);i++){const a=q[i];if(openWater(a.x,a.y)&&dist(a.x,a.y)>=2)add(a.x,a.y,'lotus');for(const [dx,dy] of DIRS4)if(R()<.5)q.push({x:a.x+dx,y:a.y+dy})}}
+  for(const c of shoreCells)if(dist(c.x,c.y)>=2&&hash2(c.x,c.y,2306)<.03&&openWater(c.x,c.y))add(c.x,c.y,'lantern');
+
   const height=zone.map(r=>r.map(z=>CITY23_HEIGHT[z]??0));
   state.floor23={version:22,artVersion:22,preserveAuthoredGeometry:true,centerUnlocked:false,thresholdTriggered:false,keyAcquired:false,
     routeCheckpoints:[start,...sluices.map(s=>({x:s.x,y:s.y})),centerEntry].map(q=>({...q})),
     gateCells,centerEntry,bossSpawn,centerBounds:{...L},switchIds,controls,hydraulicCellMeta,reveal:null,wallStyleByCell,
     districts:majors.map(d=>({id:d.id+1,x:d.cx-d.r,y:d.cy-d.r,w:d.r*2,h:d.r*2,theme:d.kind,name:d.name})),innerDistrictBounds:[],transitBuildings:[],
-    city:{zone:zone.map(r=>r.join('')),height,owner,buildings,bridges,causeway,encounters,islands:islands.map(i=>({kind:i.kind,cx:i.cx,cy:i.cy,r:i.r,cells:i.cells.length})),lake:{...L},core:{...C}}};
+    city:{zone:zone.map(r=>r.join('')),height,owner,buildings,bridges,causeway,encounters,decor,islands:islands.map(i=>({kind:i.kind,cx:i.cx,cy:i.cy,r:i.r,cells:i.cells.length})),lake:{...L},core:{...C}}};
   state.layoutName='수몰 회색 도성 · 불규칙한 섬들과 운하 미로 / 다리집과 수문 가동교 / 거대 건물 외딴섬 / 수은호 둑길 / 수몰 왕궁';
 }
 
