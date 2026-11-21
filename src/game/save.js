@@ -206,7 +206,7 @@ const RunLifecycle={
       if(ctx.aborted)throw Error('Lifecycle rejected at '+ctx.abortStage);
       ctx.result=core(...ctx.args);if(ctx.result===false)throw Error('Load initialization rejected');
       steps.after(ctx);
-      if(ctx.result===false||!state||state.dead||state.victory)throw Error('Candidate is not a playable run');RuntimeState.lifecycle.validate(state);
+      if(ctx.result===false||!state||state.dead||state.victory)throw Error('Candidate is not a playable run');RuntimeState.lifecycle.validate(state);PlayStats.grantPendingGift();
       const persistence=save.commit(kind);if(!persistence.ok)throw Error('Run persistence failed: '+persistence.failure);
       RuntimeState.lifecycle.phase='playing';RuntimeState.lifecycle.last={ok:true,kind,persistence};globalThis.__MANRU_STORY992__?.resume?.();return ctx.result;
     }catch(e){
@@ -781,7 +781,7 @@ function legacyMapPreference(){try{return localStorage.getItem(LEGACY_MAP_KEY)==
 function setLegacyMapPreference(on){try{localStorage.setItem(LEGACY_MAP_KEY,on?'1':'0')}catch(error){console.warn('[manru] legacy map setting not stored',error)}return !!on}
 function createRunState57(cls){return {legacyInn:legacyMapPreference(),floor:1,turn:0,lastDamageAgencyTurn57:0,passiveRecoveryUnlocked57:false,playerAgencyTurns57:0,floorTurn:0,alert:0,map:[],rooms:[],items:[],monsters:[],decals:[],switches:[],rafts:[],routeTags:[],stairs:{x:0,y:0},seen:new Set(),visible:new Set(),uniqueKilled:{},log:[],dead:false,victory:false,runState57:'playing',bossDefeated:false,layoutName:'',specialFloor:false,visionPenalty:0,fixedStart:null,fixedExit:null,floorKeys:0,floorKeysRequired:0,cipher:null,harvested:{},enemyEnergy:0,makgeolliHealHundredths57:0,status:{haste:0,weaken:0,evade:0,markCrit:0,poison:0,bleed:0,ward:0,stun:0,stealth:0,regen:0,upset:0,drunk:0,blind:0,skillSeal:0},player:{classId:cls.id,name:cls.name,gender:cls.gender||'male',color:cls.color,x:2,y:2,level:1,xp:0,nextXp:xpRequirementForLevel57(2),baseMaxHpPermanent:cls.hp,temporaryMaxHpBonus:0,martialRules1005:1,maxHp:cls.hp,hp:cls.hp,maxFocus:cls.focus,focus:cls.focus,baseAtk:cls.atk,bloodAltarGains105:0,baseDef:cls.def,baseEva:cls.eva,baseWill:cls.will,baseVision:cls.vision,weapon:null,armor:{...ARMORS[0],type:'armor'},cloak:null,relic:null,trinket:null,inventory:[],kills:0,hunger:100,skillPoints:1,blinkLevel:0,facing:{x:0,y:1},martial:{strong:0,roar:0,ghost:0,brawl:0,constitution:0},strongReady:0,nextAttackAt:0,busyUntil:0}}}
 // Fullscreen belongs to entering/resuming the game, with no floating HUD control.
-const AUTO_FULLSCREEN_DISABLED_KEY='manruAutoFullscreenDisabled';
+const AUTO_FULLSCREEN_DISABLED_KEY='manruAutoFullscreenDisabled',LAVA_GIFT_KEY='manruPendingLavaGift';
 let fullscreenPending65=false,fullscreenWanted66=false,fullscreenResume66=false;
   function pstate(){if(!state)return;state.tempFields=Array.isArray(state.tempFields)?state.tempFields:[];state.status=state.status||{};for(const q of['swift','fortify','willBoost'])if(!Number.isFinite(state.status[q]))state.status[q]=0}
   /* ---------- deterministic F23/F24 runtime QA hooks ---------- */

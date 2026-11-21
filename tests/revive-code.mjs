@@ -14,7 +14,9 @@ const bridge=`globalThis.probeRevive=async()=>{
  state.player.hp=0;die('시험');
  out.dead={dead:state.dead,kept:!!ls('manru1004_dead_run_save'),activeCleared:!ls('manru1004_active_run')&&!ls('manru1004_active_run_shadow'),canContinue:!!SaveService.recover().candidate};
  out.wrong=await PlayStats.redeemRecoveryCode('1025');
+ out.lavaPending=await PlayStats.redeemRecoveryCode('2888');
  out.revive=await PlayStats.redeemRecoveryCode('1024');
+ out.lavaAfterRevive=state.player.inventory.reduce((n,i)=>n+(i.talismanKind==='f_lava'?(i.count||1):0),0);
  out.after={dead:state.dead,hp:state.player.hp,max:state.player.maxHp===max,freshRunId:state.runId984!==rid,floor:state.floor===floor,turn:state.turn===turn,keptLeft:!!ls('manru1004_dead_run_save')};
  out.whileAlive=await PlayStats.redeemRecoveryCode('1024');
  state.player.hp=0;die('시험2');out.deadAgain={kept:!!ls('manru1004_dead_run_save')};
@@ -33,6 +35,8 @@ try{
   assert.equal(out.wrong,'알 수 없는 코드다.');
   assert.equal(out.lavaCode,'','2888 is accepted during a run');
   assert.equal(out.lavaGain,2,'2888 adds two lava talismans');
+  assert.match(out.lavaPending,/다음에/,'2888 with no run waits for the next run');
+  assert.equal(out.lavaAfterRevive,2,'the waiting gift lands in the continued run');
   assert.equal(out.revive,'','1024 revives');
   assert.deepEqual(out.after,{dead:false,hp:max,max:true,freshRunId:true,floor:true,turn:true,keptLeft:false},'revived at full health, same floor and turn, new run id, record consumed');
   assert.equal(out.whileAlive,'진행 중인 탐사가 있다.');
