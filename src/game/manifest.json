@@ -10,6 +10,7 @@
   "render.js",
   "mapgen.js",
   "special.js",
+  "drownedcity.js",
   "branches.js",
   "mirrortower.js",
   "mirrorart.js",
