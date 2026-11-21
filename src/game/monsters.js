@@ -1996,18 +1996,20 @@ function observePlayerDiscovery105(){
  if(!state?.player)return;
  for(const mon of state.monsters||[])if(!monsterHasSeenPlayer(mon)&&monsterCanDiscoverPlayer(mon))mon.hasSeenPlayer105=true
 }
+function crossfireHolds(mon,x,y){return intentLineCells(mon,null,mon.crossfire.range).some(c=>c.x===x&&c.y===y)}
 function finishMovementDiscovery105(before,voluntary){
  if(!before||state!==before.run||state.map!==before.map)return;
  const moved=state.player.x!==before.x||state.player.y!==before.y;
+ const addGrace=mon=>{let grace=state._movementDiscovery105;if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};grace.monsters.add(mon)};
  for(const mon of state.monsters||[]){
+  // A crossfire cannon fires the moment someone steps onto its sight lines, however long it has already seen them: stepping onto the line is the discovery.
+  if(mon.crossfire&&voluntary&&moved&&mon.hp>0&&!before.lined?.has(mon)&&crossfireHolds(mon,state.player.x,state.player.y))addGrace(mon);
   if(monsterDiscoverySpent(mon)||!monsterCanDiscoverPlayer(mon))continue;
   mon.hasSeenPlayer105=true;
   if(!voluntary||!moved||!before.unseen.has(mon))continue;
   const reach=mon.reach||1,range=mon.ranged?(mon.range||6):reach;
   if(!monsterAttackLineR(mon,range).ok)continue;
-  let grace=state._movementDiscovery105;
-  if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};
-  grace.monsters.add(mon);
+  addGrace(mon);
  }
 }
 // The debug option changes voluntary movement only; species/body flags stay authored.
@@ -2494,7 +2496,8 @@ function monsterIdleRecovery105(mon,target){
 }
 function captureMovementDiscovery105(){
  recordPlayerSight105();observePlayerDiscovery105();
- return{run:state,map:state.map,x:state.player.x,y:state.player.y,unseen:new Set((state.monsters||[]).filter(mon=>!monsterDiscoverySpent(mon)))};
+ // lined: crossfire cannons whose sight lines already held the player before this move (a door may close the line, so it has to be recorded now)
+ return{run:state,map:state.map,x:state.player.x,y:state.player.y,unseen:new Set((state.monsters||[]).filter(mon=>!monsterDiscoverySpent(mon))),lined:new Set((state.monsters||[]).filter(mon=>mon.hp>0&&mon.crossfire&&crossfireHolds(mon,state.player.x,state.player.y)))};
 }
 function updateKeeperLavaOrigin54(mon,phase,target=null){
  phase.origin={x:mon.x,y:mon.y};if(phase.stage!==1)return;
