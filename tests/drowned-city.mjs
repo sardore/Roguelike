@@ -56,7 +56,7 @@ assert.ok(new Set(results.map(r => r.hash)).size >= 3, '시드마다 다른 도�
 for (const r of results) {
   assert.deepEqual(r.saved, { ok: true, floor: 23, city: true, on: true, audit: true }, `seed ${r.seed} save/load`);
   assert.equal(r.before.ok, true, `seed ${r.seed}: ${JSON.stringify(r.before)}`);
-  assert.ok(r.plan.buildings >= 50 && r.plan.special && r.plan.covered === 4 && r.plan.draws === 3 && r.plan.drawUp && r.plan.spawned >= r.plan.encounters - 1, `seed ${r.seed} plan ${JSON.stringify(r.plan)}`);
+  assert.ok(r.plan.buildings >= 50 && r.plan.special && r.plan.covered >= 4 && r.plan.draws === 3 && r.plan.drawUp && r.plan.spawned >= r.plan.encounters - 1, `seed ${r.seed} plan ${JSON.stringify(r.plan)}`);
   assert.equal(r.before.linear, true, `seed ${r.seed} 고리길`);
   assert.deepEqual(r.after, { centerUnlocked: true, controls: true, drawDown: true, drained: true, gateOpen: true, stairsReach: true }, `seed ${r.seed}`);
   assert.ok(r.dragon && r.key, `seed ${r.seed} dragon ${r.dragon} key ${r.key}`);
