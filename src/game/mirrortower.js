@@ -365,10 +365,10 @@ function buildMirrorTower(level){
   pavilion.reward.forEach((c,i)=>PlacementService.placeItem({...prizes[i],count:1,identified:true,curseImmune991:true,choiceGroup:'mirror-leaf'},c,{requireReachable:false}));
  }
  for(const mz of mazes)for(const d of mz.dead.filter((_,i)=>i%3===2)){if(open(d)&&!onPath.has(k(d.x,d.y)))dropFloorLoot(d)}
- for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<2&&cells.length;n++)spawn(pickEnemy(),take(cells))}
+ for(const mz of mazes){const cells=mz.cells.filter(c=>open(c)&&!onPath.has(k(c.x,c.y)));for(let n=0;n<3&&cells.length;n++)spawn(pickEnemy(),take(cells))}
  for(const b of balconies){const cells=[];for(let y=b.y-2;y<=b.y+2;y++)for(let x=b.x-2;x<=b.x+2;x++)if(open({x,y}))cells.push({x,y});if(cells.length){const p=take(cells);dropFloorLoot(p);if(cells.length)PlacementService.placeItem({...clone(naturalFoodPick()),count:1},take(cells),{requireReachable:false})}}
- for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<1+(t.rx>=9?1:0)&&ok.length;n++)spawn(pickEnemy(),take(ok))}
- const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<2+level&&ob.length;n++)spawn(pickEnemy(),take(ob));
+ for(const{t,hx,hy}of halls){if(t.id===0&&summit)continue;const cells=[];for(let y=t.cy-hy;y<=t.cy+hy;y++)for(let x=t.cx-hx;x<=t.cx+hx;x++)if(zone[y]?.[x]==='h'||zone[y]?.[x]==='P')cells.push({x,y});const ok=cells.filter(open);for(let n=0;n<2+(t.rx>=9?1:0)&&ok.length;n++)spawn(pickEnemy(),take(ok))}
+ const bridge=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(zone[y][x]==='b'||zone[y][x]==='P'&&owner[y][x]==='.')bridge.push({x,y});const ob=bridge.filter(open);for(let n=0;n<3+level&&ob.length;n++)spawn(pickEnemy(),take(ob));
  if(bossAt){const boss=scaledMonster(MIRROR_KEEPER,branchCombatFloor());Object.assign(boss,{x:bossAt.x,y:bossAt.y,guardHome57:{...bossAt},alerted:false});OccupancyService.addMonster(boss)}
  state.generationInProgress57=false;
 }
