@@ -1999,15 +1999,16 @@ function observePlayerDiscovery105(){
 function finishMovementDiscovery105(before,voluntary){
  if(!before||state!==before.run||state.map!==before.map)return;
  const moved=state.player.x!==before.x||state.player.y!==before.y;
+ const addGrace=mon=>{let grace=state._movementDiscovery105;if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};grace.monsters.add(mon)};
  for(const mon of state.monsters||[]){
+  // A crossfire cannon fires the moment someone steps onto its sight lines, however long it has already seen them: stepping onto the line is the discovery.
+  if(mon.crossfire&&voluntary&&moved&&mon.hp>0){const line=intentLineCells(mon,null,mon.crossfire.range),onLine=(x,y)=>line.some(c=>c.x===x&&c.y===y);if(onLine(state.player.x,state.player.y)&&!onLine(before.x,before.y))addGrace(mon)}
   if(monsterDiscoverySpent(mon)||!monsterCanDiscoverPlayer(mon))continue;
   mon.hasSeenPlayer105=true;
   if(!voluntary||!moved||!before.unseen.has(mon))continue;
   const reach=mon.reach||1,range=mon.ranged?(mon.range||6):reach;
   if(!monsterAttackLineR(mon,range).ok)continue;
-  let grace=state._movementDiscovery105;
-  if(!grace||grace.map!==state.map)grace=state._movementDiscovery105={map:state.map,monsters:new Set()};
-  grace.monsters.add(mon);
+  addGrace(mon);
  }
 }
 // The debug option changes voluntary movement only; species/body flags stay authored.
