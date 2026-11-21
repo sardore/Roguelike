@@ -10,8 +10,9 @@ import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bridge = `globalThis.cg={state:()=>state,TT,drop:m=>OccupancyService.removeMonster(m),vis:()=>VisibilityService.compute(),
  cannon:(x,y)=>{const m=scaledMonster(MONSTERS.find(d=>d.name==='대포'),14);m.x=x;m.y=y;configureMonsterTraits(m);m.hasSeenPlayer105=true;OccupancyService.addMonster(m);return m},
- // a move from (bx,by) to the player's current cell, finished as the engine does
- finish:(m,bx,by,voluntary)=>{delete state._movementDiscovery105;finishMovementDiscovery105({run:state,map:state.map,x:bx,y:by,unseen:new Set()},voluntary);return movementDiscoveryEvades105(m,{delivery:'area',discoveryEvade:true})}};`;
+ blocker:(x,y)=>{const m=scaledMonster(MONSTERS.find(d=>d.name==='객잔 쥐'),14);m.x=x;m.y=y;OccupancyService.addMonster(m);return m},
+ // one walk from (bx,by) to (nx,ny) as the engine does it: capture, optionally open a door, land, finish
+ step:(m,bx,by,nx,ny,voluntary,door)=>{const p=state.player;p.x=bx;p.y=by;delete state._movementDiscovery105;const d=captureMovementDiscovery105();if(door)setTerrainTile58(state.map,door.x,door.y,TT.OPEN_DOOR);p.x=nx;p.y=ny;finishMovementDiscovery105(d,voluntary);return movementDiscoveryEvades105(m,{delivery:'area',discoveryEvade:true})}};`;
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER, fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
 const ctx = await browser.newContext();
@@ -20,21 +21,27 @@ const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx,
 const errors = []; s.page.on('pageerror', e => errors.push(e.message));
 await startRun(s, 'swordsman'); await dismissModals(s);
 const out = await s.page.evaluate(() => {
-  const st = cg.state(), p = st.player, { x: cx, y: cy } = p;
-  for (let y = cy - 8; y <= cy + 8; y++) for (let x = cx - 8; x <= cx + 8; x++) if (st.map[y]?.[x] != null) st.map[y][x] = cg.TT.FLOOR;
-  for (const m of [...st.monsters]) cg.drop(m);
-  const m = cg.cannon(cx + 4, cy), r = {};
-  p.x = cx + 3; p.y = cy; cg.vis();
-  r.stepIn = cg.finish(m, cx + 3, cy - 1, true);       // from off the line onto the row
-  r.alreadyOnLine = cg.finish(m, cx + 2, cy, true);     // slid along the row it was already on
-  r.stayed = cg.finish(m, cx + 3, cy, true);            // did not move
-  r.forced = cg.finish(m, cx + 3, cy - 1, false);       // pushed, not a walk
-  p.x = cx + 3; p.y = cy - 1; cg.vis();
-  r.offLine = cg.finish(m, cx + 2, cy - 1, true);       // stayed off the line
+  const st = cg.state(), p = st.player, { x: cx, y: cy } = p, T = cg.TT, r = {};
+  const arena = () => { for (let y = cy - 8; y <= cy + 8; y++) for (let x = cx - 8; x <= cx + 10; x++) if (st.map[y]?.[x] != null) st.map[y][x] = T.FLOOR; for (const m of [...st.monsters]) cg.drop(m) };
+  arena();
+  let m = cg.cannon(cx + 4, cy);
+  r.stepIn = cg.step(m, cx + 3, cy - 1, cx + 3, cy, true);        // from off the line onto the row
+  r.alreadyOnLine = cg.step(m, cx + 2, cy, cx + 3, cy, true);     // slid along the row it was already on
+  r.stayed = cg.step(m, cx + 3, cy, cx + 3, cy, true);            // did not move
+  r.forced = cg.step(m, cx + 3, cy - 1, cx + 3, cy, false);       // pushed, not a walk
+  r.offLine = cg.step(m, cx + 2, cy - 1, cx + 3, cy - 1, true);   // stayed off the line
+  // a closed door shuts the line; opening it by walking in is the discovery, even with another monster standing in the way
+  arena();
+  for (let y = cy - 3; y <= cy + 3; y++) st.map[y][cx + 1] = y === cy ? T.DOOR : T.WALL;
+  m = cg.cannon(cx + 6, cy); cg.blocker(cx + 3, cy);
+  r.doorOpen = cg.step(m, cx, cy, cx + 1, cy, true, { x: cx + 1, y: cy });
+  arena(); for (let y = cy - 3; y <= cy + 3; y++) st.map[y][cx + 1] = y === cy ? T.OPEN_DOOR : T.WALL;
+  m = cg.cannon(cx + 6, cy);
+  r.doorAlreadyOpen = cg.step(m, cx, cy, cx + 1, cy, true);        // the door was open and the player already stood on the line
   return r;
 });
 console.log(JSON.stringify(out));
-assert.deepEqual(out, { stepIn: true, alreadyOnLine: false, stayed: false, forced: false, offLine: false });
+assert.deepEqual(out, { stepIn: true, alreadyOnLine: false, stayed: false, forced: false, offLine: false, doorOpen: true, doorAlreadyOpen: false });
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('cannon-grace: ok');
