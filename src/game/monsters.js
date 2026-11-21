@@ -373,22 +373,30 @@ function setAimPower(power,source=null){
  if((before>0||power>4)&&!cs.aimPower){globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);addLog(martialPresentation('roar',MARTIAL_INFO.roar,state.player).name+'의 축적이 흩어졌다.')}
  return cs.aimPower;
 }
-function isNaturalMonster(m){return !!(isHostileTarget57(m)&&!m.boss&&!m.friendly47&&!m.friendly&&!m.combatFixture54&&!m.npc&&!m.storyId&&!m.eventOnly&&!NON_REWARDING_SPAWN_PROVENANCE57.has(m.spawnProvenance57)&&!['boss-fixture','event','rumor-space'].includes(m.spawnProvenance57))}
+function isNaturalMonster(m){return !!(isHostileTarget57(m)&&!m.boss&&!m.friendly47&&!m.friendly&&!m.combatFixture54&&!m.npc&&!m.storyId&&!m.eventOnly&&!m.citadelTrialGuard105&&!NON_REWARDING_SPAWN_PROVENANCE57.has(m.spawnProvenance57)&&!['boss-fixture','event','rumor-space'].includes(m.spawnProvenance57))}
+function branchReinforcementDefs(){
+ const ctx=state.branchContext105;if(ctx?.id==='citadel')return CITADEL_ENEMIES105;
+ if(ctx?.id==='mirror')return MIRROR_ROSTERS[Math.max(0,Math.min(MIRROR_ROSTERS.length-1,(ctx.level||1)-1))].map(name=>{const dungeon=MIRROR_ROSTER_DUNGEON[name];return dungeon?globalThis.__MANRU_LEGEND47__.enemyDefinitions(dungeon).find(d=>d.name===name):MONSTERS.find(d=>d.name===name)}).filter(Boolean);
+ return floorEnemyDefinitions();
+}
 function tickNaturalPopulation(){
- if(!state||state.branchContext105||state.floor<11||state.shopIntermission?.active||state.artifactDungeon46||state.monsters.some(m=>m.boss&&m.hp>0))return;
+ const branch=state?.branchContext105?.id,reinforced=branch==='citadel'||branch==='mirror';
+ if(!state||(state.branchContext105&&!reinforced)||state.floor<11||state.shopIntermission?.active||state.artifactDungeon46||(!reinforced&&state.monsters.some(m=>m.boss&&m.hp>0)))return;
+ // The black citadel and the mirror tower keep their own rosters; their population is counted on the first turn after the floor is built.
+ if(reinforced&&!state.naturalPopulation57?.initial)state.naturalPopulation57={initial:state.monsters.filter(isNaturalMonster).length,generation:0,nextAgency:null};
  const pop=state.naturalPopulation57;if(!pop||pop.initial<=0)return;const agency=state.playerAgencyTurns57||0,count=state.monsters.filter(isNaturalMonster).length;
  const deficit=Math.max(0,pop.initial-count-1);if(!deficit){pop.nextAgency=null;return}
  if(pop.nextAgency==null){pop.nextAgency=agency+rand(18,26);return}if(agency<pop.nextAgency)return;pop.nextAgency=agency+rand(18,26);
  const arrivals=Math.ceil(deficit*.10);
- const defs=floorEnemyDefinitions().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
+ const defs=branchReinforcementDefs().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
  const walk=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}),ctx=PlacementService.generationContext(walk.dist,20,4),home=roomAt(state.player.x,state.player.y),roomUse=new Map();
  ctx.candidates=ctx.candidates.filter(q=>walk.dist.has(k(q.x,q.y))&&walk.dist.get(k(q.x,q.y))>=20&&!state.visible.has(k(q.x,q.y))&&Math.max(Math.abs(q.x-state.player.x),Math.abs(q.y-state.player.y))>=16&&(!home||q.x<home.x-5||q.y<home.y-5||q.x>=home.x+home.w+5||q.y>=home.y+home.h+5)&&!(state.recentPlayerCells57||[]).some(c=>agency-c.agency<26&&Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))<6));
  const candidates=ctx.candidates,groupCenters=[];let groupCells=null;
  for(let i=0;i<arrivals;i++){
  if(i%4===0)groupCells=null;
  ctx.candidates=groupCells?candidates.filter(q=>groupCells.has(k(q.x,q.y))):candidates.filter(q=>groupCenters.every(c=>Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))>8));
- const m=scaledMonster(ordinaryEnemyPick(defs)),pos=initialSpawnPosition(m,walk.dist,20,roomUse,ctx);if(!pos)continue;
- m.x=pos.x;m.y=pos.y;m.spawnProvenance57='natural-reentry';m.respawnGeneration57=++pop.generation;m.xp=Math.floor(m.xp*Math.pow(.30,m.respawnGeneration57));m.rewardPolicy57={xp:true,drops:false,kills:true};m.alerted=false;m.lastSeenPosition=null;m.heardPosition=null;
+ const m=scaledMonster(ordinaryEnemyPick(defs),reinforced?branchCombatFloor():undefined),pos=initialSpawnPosition(m,walk.dist,20,roomUse,ctx);if(!pos)continue;
+ m.x=pos.x;m.y=pos.y;m.spawnProvenance57='natural-reentry';if(reinforced)m.branch105=branch;m.respawnGeneration57=++pop.generation;m.xp=Math.floor(m.xp*Math.pow(.30,m.respawnGeneration57));m.rewardPolicy57={xp:true,drops:false,kills:true};m.alerted=false;m.lastSeenPosition=null;m.heardPosition=null;
  const rooms=(state.rooms||[]).filter(r=>r!==home&&Math.max(Math.abs(r.cx-pos.x),Math.abs(r.cy-pos.y))>=3&&walk.dist.has(k(r.cx,r.cy))&&walk.dist.get(k(r.cx,r.cy))<walk.dist.get(k(pos.x,pos.y))).sort((a,b)=>Math.abs(a.cx-pos.x)+Math.abs(a.cy-pos.y)-Math.abs(b.cx-pos.x)-Math.abs(b.cy-pos.y));
  if(rooms.length)m.migrationTarget57={x:rooms[0].cx,y:rooms[0].cy};OccupancyService.addMonster(m);PlacementService.registerGenerationMonster(ctx,m);
  if(!groupCells){
@@ -1838,7 +1846,7 @@ function initialSpawnPosition(mon,dist,safe,roomUse,spawnCtx57=null){
       if(state.visible.has(k(x,y)))continue;
       const d=dist.get(k(x,y));if(Number.isFinite(d)&&d<safe)continue;
       const r=roomAt(x,y),key=r?`${r.x},${r.y},${r.w},${r.h}`:null,area=r?r.w*r.h:0;
-      const roomCap=!key?Infinity:((state.floor===20&&state.specialFloor)?12:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?2:1)));
+      const roomCap=!key?Infinity:((state.floor===20&&state.specialFloor)?12:(area>320?Math.max(2,Math.min(5,Math.floor(area/260))):(state.specialFloor?(state.floor>=11&&state.floor<=19?3:2):1)));
       if(key&&(roomUse.get(key)||0)>=roomCap)continue;
       let local=0,wide=0;for(const n of state.monsters||[]){if(!n||n.hp<=0)continue;const d0=Math.max(Math.abs(n.x-x),Math.abs(n.y-y));if(d0<=4)local++;if(d0<=8)wide++}
       if(local>=2||wide>=4)continue;
@@ -1856,7 +1864,7 @@ function spawnLayoutExtras(){
     if(!SPECIAL60.has(state.floor)&&!BOSS_FLOORS.has(state.floor))return spawnNormalLayoutExtras();
     if(state.floor===8){spawnNear60('독꽃',Math.floor(COLS*.35),Math.floor(ROWS*.35));spawnNear60('검은 뱀',Math.floor(COLS*.62),Math.floor(ROWS*.55));spawnNear60('정원 바위괴물',Math.floor(COLS*.78),Math.floor(ROWS*.28))}
     else if(state.floor===11){spawnNear60('비단 술래',Math.floor(COLS*.25),Math.floor(ROWS*.60));spawnNear60('향기요정',Math.floor(COLS*.55),Math.floor(ROWS*.35));spawnNear60('윈도',Math.floor(COLS*.80),Math.floor(ROWS*.65))}
-    else if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=3)continue;const d=choice(floorEnemyDefinitions()),m=scaledMonster(d);if(PlacementService.monsterCanStand(m,r.cx,r.cy)){Object.assign(m,{x:r.cx,y:r.cy});OccupancyService.addMonster(m)}}}
+    else if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=4)continue;const d=choice(floorEnemyDefinitions()),m=scaledMonster(d);if(PlacementService.monsterCanStand(m,r.cx,r.cy)){Object.assign(m,{x:r.cx,y:r.cy});OccupancyService.addMonster(m)}}}
     else if(state.floor===16){spawnNear60('성채 비행 감시자',9,7);spawnNear60('경비 인형 - 보병',42,11);spawnNear60('경비 인형 - 보병',58,31);spawnNear60('경비 인형 - 포병',COLS-8,15);spawnNear60('화염 가고일',COLS-10,6);spawnNear60('해자 잠복꾼',29,Math.floor(ROWS/2))}
     else if(state.floor===18){spawnNear60('강시',12,10);spawnNear60('식귀',Math.floor(COLS*.48),9);spawnNear60('산성 슬라임',Math.floor(COLS*.70),ROWS-10);spawnNear60('굶주린 창고 쥐',COLS-8,Math.floor(ROWS/2))}
     else if(state.floor===21){for(const [n,x,y] of [['공허 가오리',23,35],['공허 가오리',50,35],['차원 포식자',32,8],['신전 사제 망령',59,17],['천수 아수라',68,35]])spawnNear60(n,x,y,3)}
@@ -1868,7 +1876,7 @@ function spawnNormalLayoutExtras(){
   // F2 encounter packs are placed on finalized branch geometry by populateFloor2Branches66.
   if(state.floor===4){spawnNamed('목재 좀벌레',{x:16,y:16});spawnNamed('그림자 살모사',{x:35,y:16});spawnNamed('취한 경비견',{x:39,y:26})}
   if(state.floor===6){for(let i=0;i<5;i++)spawnNamed('피라냐')}
-  if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=3)continue;const defs=MONSTERS.filter(d=>d.min<=13&&d.max>=13&&!d.miniBoss),mon=scaledMonster(choice(defs)),p={x:r.cx,y:r.cy};if(PlacementService.monsterCanStand(mon,p.x,p.y)){Object.assign(mon,p);OccupancyService.addMonster(mon)}}}
+  if(state.floor===13){for(const r of state.monsterDenseRooms||[]){const crowd=(state.monsters||[]).filter(m=>m.hp>0&&m.x>=r.x&&m.x<r.x+r.w&&m.y>=r.y&&m.y<r.y+r.h).length;if(crowd>=4)continue;const defs=MONSTERS.filter(d=>d.min<=13&&d.max>=13&&!d.miniBoss),mon=scaledMonster(choice(defs)),p={x:r.cx,y:r.cy};if(PlacementService.monsterCanStand(mon,p.x,p.y)){Object.assign(mon,p);OccupancyService.addMonster(mon)}}}
   if(state.floor===16){const y=Math.floor(ROWS/2);spawnNamed('성채 비행 감시자',{x:10,y:6});spawnNamed('경비 인형 - 보병',{x:31,y:26});spawnNamed('경비 인형 - 보병',{x:35,y:10});spawnNamed('경비 인형 - 포병',{x:43,y:21});spawnNamed('화염 가고일',{x:45,y:6});spawnNamed('해자 잠복꾼',{x:21,y:y-5});}
   if(state.floor===23){const d=MONSTERS.find(x=>x.name==='여의 수룡'),mon=scaledMonster(d);for(const p of [{x:24,y:9},{x:15,y:16},{x:33,y:21}])if(PlacementService.monsterCanStand(mon,p.x,p.y)){Object.assign(mon,p);OccupancyService.addMonster(mon);addLog('수은 아래에서 긴 목이 천천히 방향을 튼다.');break}}
 }
@@ -2441,8 +2449,8 @@ const SPAWN_RULES=[
   {from:1,to:1,count:[9,9],safe:10},
   {from:2,to:5,count:[8,11],safe:10},
   {from:6,to:10,count:[10,13],safe:10},
-  {from:11,to:15,count:[12,15],safe:9},
-  {from:16,to:20,count:[18,22],safe:9},
+  {from:11,to:15,count:[15,19],safe:9},
+  {from:16,to:20,count:[22,27],safe:9},
   {from:21,to:24,count:[20,26],safe:8}
 ];
 function effectSource57(source,opts={}){if(source?.sourceFaction&&source!==state?.player&&!(state?.monsters||[]).includes(source))return{sourceFaction:opts.sourceFaction||source.sourceFaction,owner:opts.owner??source.owner??null,credit:opts.credit??source.credit??null,friendlyFire:opts.friendlyFire??!!source.friendlyFire};const owner=opts.owner??source??null;return{sourceFaction:opts.sourceFaction||entityFaction(owner),owner:owner===state?.player?'player':(state?.monsters||[]).includes(owner)?combatantId(owner):owner?.id57??owner?.name??owner,credit:opts.credit??(entityFaction(owner)==='player'?'player':null),friendlyFire:!!opts.friendlyFire}}
@@ -2664,7 +2672,7 @@ function nearestLandFor1005(e,x,y,prefer=null){
   return a[0]||null
 }
 function consumeWard(kind){const p=state.player,r=p.relic;if(!r)return false;const ok=kind==='drown'?r.drownWard1005:r.voidWard1005;if(!ok)return false;const nm=r.name;p.relic=null;addLog(`${nm}이 치명적인 ${kind==='drown'?'익사':'공허 추락'}를 대신 받아냈다.`);wardPulse(kind,10);return true}
-const SPECIAL_BASE_COUNTS={2:10,4:11,6:12,8:12,11:14,13:15,16:19,18:20,21:19,22:22,23:20,24:17,20:13};
+const SPECIAL_BASE_COUNTS={2:10,4:11,6:12,8:12,11:18,13:19,16:24,18:25,21:19,22:22,23:20,24:17,20:16};
 function moveGroundItemStep57(it,toward){
   if(!state||!it||!toward)return false;
   const before=Math.abs(toward.x-it.x)+Math.abs(toward.y-it.y),candidates=[];
@@ -2716,7 +2724,7 @@ function releaseKeeperExit54(mon){
   const MANRU_TURN_ABORT=Symbol('MANRU_TURN_ABORT');
   const modal52=()=>!gameplayInputAllowed57();
   function onTypedGateOpened60(plan,keyId){if(state.floor!==24||keyId!=='brass'||plan?.kind!=='f24-grand-entrance'||!state.floor24)return false;state.floor24.chaseStarted=true;const g=(state.monsters||[]).find(m=>m.floor24Chaser57);if(g){g.dormant57=false;g.alerted=true;g.exitPressureSpeedBudget57=0;g.searchTurns=Math.max(g.searchTurns||0,18);g.lastSeenPosition={x:state.player.x,y:state.player.y,bornTurn:state.floorTurn||0}}addLog('대형 현관이 열리자 건물 깊숙한 곳에서 구미묘의 울음이 울렸다.');return true}
-  const TARGET61={2:13,4:16,6:25,8:24,11:28,13:31,16:44,18:44,21:40,22:58,23:16,24:13};
+  const TARGET61={2:13,4:16,6:25,8:24,11:35,13:39,16:55,18:55,21:40,22:58,23:16,24:13};
 function latePackCaps1027(){const f=state?.floor||1;if(f>=24)return{normal:4,dense:5,context:6,local:4,denseLocal:5,contextLocal:6,wide:7,denseWide:8,contextWide:9};if(f===23)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:5,wide:6,denseWide:7,contextWide:8};if(f===22)return{normal:3,dense:4,context:5,local:3,denseLocal:4,contextLocal:4,wide:5,denseWide:6,contextWide:7};if(f===21)return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6};return{normal:2,dense:3,context:4,local:2,denseLocal:3,contextLocal:4,wide:4,denseWide:5,contextWide:6}}
 function fixedEncounterMonster1027(m){return !!(m?.boss||m?.elite1023||m?.storyPhase992||m?.name==='여의 수룡'||m?.fixedEncounter1027)}
 function equipmentOpeningBonus105(actor,target){const w=actor?.weapon||{};return (w.edgeBonus&&target?.maxHp>0&&target.hp/target.maxHp>=.75?4:0)+(w.breakPower&&target?.kind==='construct'?Math.max(1,w.breakPower):0)}
