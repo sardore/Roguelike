@@ -2157,6 +2157,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
       if(drawBranchCell(t,px,py,x,y,terrainProps63)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
       if(state.artifactDungeon46&&globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(t,px,py,x,y,now,true)){if(edged)carryWallEdges(px,py,x,y);X.restore();continue}
       X.globalAlpha=1;const base=terrainBaseTile58(x,y,t);
+      if(cityOn()&&drawCityTile(base,t,px,py,x,y,terrainTime,terrainProps63)){X.restore();continue}
       if(base===TT.WALL)drawWallTexture(px,py,x,y,colors);else{drawSubstrate(px,py,x,y,colors,vis);if(base!==TT.FLOOR&&base!==TT.GRASS){if(!drawSpecialTerrain(base,px,py,x,y,terrainTime))drawInteractiveTerrain(base,px,py,x,y,terrainTime)}}
       if(t!==base&&t!==TT.FLOOR&&t!==TT.GRASS&&t!==TT.WALL)terrainProps63.push({t,px,py,x,y});
       X.restore();
