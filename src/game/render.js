@@ -1154,7 +1154,7 @@ const INN_ATMOS_DEFAULT=Object.freeze({rgb:'199,74,35',a:.075,at:[.52,.30],r:.72
 function innAtmosphere(){return innFloorArt()?.atmos||INN_ATMOS_DEFAULT}
 function drawRegionalAtmosphere(now){
     if(state?.branchContext105?.id==='mine'||state?.branchContext105?.id==='mirror')return;
-    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r*.94);g.addColorStop(0,`rgba(${A.rgb},${+(A.a*.73).toFixed(3)})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else{for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
+    if(!isMobileViewport())return drawRegionalAtmosphereDesktop(now);const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);if(z===0){const A=innAtmosphere(),cx=VIEW.w*A.at[0],cy=VIEW.h*A.at[1],g=X.createRadialGradient(cx,cy,12,cx,cy,VIEW.h*A.r*.94);g.addColorStop(0,`rgba(${A.rgb},${+(A.a*.73).toFixed(3)})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===1){X.strokeStyle='rgba(190,210,199,.07)';for(let i=0;i<8;i++){const x=(i*91+now*.035)%(VIEW.w+60)-30,y=(i*71+now*.09)%(VIEW.h+60)-30;X.beginPath();X.moveTo(x,y);X.lineTo(x-5,y+13);X.stroke()}}else if(z===2){X.fillStyle='rgba(195,92,166,.025)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(z===3){X.fillStyle=state.floor===16?'rgba(224,73,29,.035)':'rgba(115,68,39,.02)';X.fillRect(0,0,VIEW.w,VIEW.h)}else if(!drawTheme5Air(now,true)){for(let i=0;i<6;i++){const x=hash2(i,7,19)*VIEW.w,y=(hash2(i,11,17)*VIEW.h-now*.008+VIEW.h)%VIEW.h;X.fillStyle='rgba(237,201,98,.05)';X.fillRect(x,y,2,2)}}X.restore()
   }
 function drawRegionalAtmosphereDesktop(now){
   const z=regionIndex();X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalCompositeOperation='screen';
@@ -1170,7 +1170,7 @@ function drawRegionalAtmosphereDesktop(now){
   }else if(z===3){
     const g=X.createLinearGradient(0,0,0,VIEW.h);g.addColorStop(0,'rgba(115,129,126,.025)');g.addColorStop(1,state.floor===16?'rgba(224,73,29,.085)':'rgba(115,68,39,.045)');X.fillStyle=g;X.fillRect(0,0,VIEW.w,VIEW.h);
     if(state.floor===16){for(let i=0;i<9;i++){const x=(i*79+now*.018)%VIEW.w,y=VIEW.h*.75+(i%3)*18;X.fillStyle='rgba(222,85,30,.055)';X.fillRect(x,y,3,2)}}
-  }else{
+  }else if(!drawTheme5Air(now,false)){
     for(let i=0;i<18;i++){const x=hash2(i,7,19)*VIEW.w+Math.sin(now/700+i)*12,y=(hash2(i,11,17)*VIEW.h-(now*.011*(1+i%3))+VIEW.h+30)%(VIEW.h+30);X.fillStyle='rgba(237,201,98,.075)';X.fillRect(x,y,2+(i%2),2+(i%2))}
     for(let i=0;i<4;i++){const x=VIEW.w*(.15+i*.24),y=VIEW.h*.7+Math.sin(now/800+i)*25;X.strokeStyle='rgba(97,55,110,.06)';X.lineWidth=7;X.beginPath();X.moveTo(x,VIEW.h+20);X.quadraticCurveTo(x+35,y,x-10,y-80);X.stroke()}X.lineWidth=1;
   }
