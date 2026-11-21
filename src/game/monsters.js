@@ -373,22 +373,30 @@ function setAimPower(power,source=null){
  if((before>0||power>4)&&!cs.aimPower){globalThis.__MANRU_MARTIAL_FX965__?.pulse?.('aimBreak',680);addLog(martialPresentation('roar',MARTIAL_INFO.roar,state.player).name+'의 축적이 흩어졌다.')}
  return cs.aimPower;
 }
-function isNaturalMonster(m){return !!(isHostileTarget57(m)&&!m.boss&&!m.friendly47&&!m.friendly&&!m.combatFixture54&&!m.npc&&!m.storyId&&!m.eventOnly&&!NON_REWARDING_SPAWN_PROVENANCE57.has(m.spawnProvenance57)&&!['boss-fixture','event','rumor-space'].includes(m.spawnProvenance57))}
+function isNaturalMonster(m){return !!(isHostileTarget57(m)&&!m.boss&&!m.friendly47&&!m.friendly&&!m.combatFixture54&&!m.npc&&!m.storyId&&!m.eventOnly&&!m.citadelTrialGuard105&&!NON_REWARDING_SPAWN_PROVENANCE57.has(m.spawnProvenance57)&&!['boss-fixture','event','rumor-space'].includes(m.spawnProvenance57))}
+function branchReinforcementDefs(){
+ const ctx=state.branchContext105;if(ctx?.id==='citadel')return CITADEL_ENEMIES105;
+ if(ctx?.id==='mirror')return MIRROR_ROSTERS[Math.max(0,Math.min(MIRROR_ROSTERS.length-1,(ctx.level||1)-1))].map(name=>{const dungeon=MIRROR_ROSTER_DUNGEON[name];return dungeon?globalThis.__MANRU_LEGEND47__.enemyDefinitions(dungeon).find(d=>d.name===name):MONSTERS.find(d=>d.name===name)}).filter(Boolean);
+ return floorEnemyDefinitions();
+}
 function tickNaturalPopulation(){
- if(!state||state.branchContext105||state.floor<11||state.shopIntermission?.active||state.artifactDungeon46||state.monsters.some(m=>m.boss&&m.hp>0))return;
+ const branch=state?.branchContext105?.id,reinforced=branch==='citadel'||branch==='mirror';
+ if(!state||(state.branchContext105&&!reinforced)||state.floor<11||state.shopIntermission?.active||state.artifactDungeon46||(!reinforced&&state.monsters.some(m=>m.boss&&m.hp>0)))return;
+ // The black citadel and the mirror tower keep their own rosters; their population is counted on the first turn after the floor is built.
+ if(reinforced&&!state.naturalPopulation57?.initial)state.naturalPopulation57={initial:state.monsters.filter(isNaturalMonster).length,generation:0,nextAgency:null};
  const pop=state.naturalPopulation57;if(!pop||pop.initial<=0)return;const agency=state.playerAgencyTurns57||0,count=state.monsters.filter(isNaturalMonster).length;
  const deficit=Math.max(0,pop.initial-count-1);if(!deficit){pop.nextAgency=null;return}
  if(pop.nextAgency==null){pop.nextAgency=agency+rand(18,26);return}if(agency<pop.nextAgency)return;pop.nextAgency=agency+rand(18,26);
  const arrivals=Math.ceil(deficit*.10);
- const defs=floorEnemyDefinitions().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
+ const defs=branchReinforcementDefs().filter(d=>!d.fixed&&!d.boss&&!d.miniBoss&&!d.guardPost57);if(!defs.length)return;
  const walk=ReachabilityService.playerSearch(state.player,{ignoreOccupants:true}),ctx=PlacementService.generationContext(walk.dist,20,4),home=roomAt(state.player.x,state.player.y),roomUse=new Map();
  ctx.candidates=ctx.candidates.filter(q=>walk.dist.has(k(q.x,q.y))&&walk.dist.get(k(q.x,q.y))>=20&&!state.visible.has(k(q.x,q.y))&&Math.max(Math.abs(q.x-state.player.x),Math.abs(q.y-state.player.y))>=16&&(!home||q.x<home.x-5||q.y<home.y-5||q.x>=home.x+home.w+5||q.y>=home.y+home.h+5)&&!(state.recentPlayerCells57||[]).some(c=>agency-c.agency<26&&Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))<6));
  const candidates=ctx.candidates,groupCenters=[];let groupCells=null;
  for(let i=0;i<arrivals;i++){
  if(i%4===0)groupCells=null;
  ctx.candidates=groupCells?candidates.filter(q=>groupCells.has(k(q.x,q.y))):candidates.filter(q=>groupCenters.every(c=>Math.max(Math.abs(q.x-c.x),Math.abs(q.y-c.y))>8));
- const m=scaledMonster(ordinaryEnemyPick(defs)),pos=initialSpawnPosition(m,walk.dist,20,roomUse,ctx);if(!pos)continue;
- m.x=pos.x;m.y=pos.y;m.spawnProvenance57='natural-reentry';m.respawnGeneration57=++pop.generation;m.xp=Math.floor(m.xp*Math.pow(.30,m.respawnGeneration57));m.rewardPolicy57={xp:true,drops:false,kills:true};m.alerted=false;m.lastSeenPosition=null;m.heardPosition=null;
+ const m=scaledMonster(ordinaryEnemyPick(defs),reinforced?branchCombatFloor():undefined),pos=initialSpawnPosition(m,walk.dist,20,roomUse,ctx);if(!pos)continue;
+ m.x=pos.x;m.y=pos.y;m.spawnProvenance57='natural-reentry';if(reinforced)m.branch105=branch;m.respawnGeneration57=++pop.generation;m.xp=Math.floor(m.xp*Math.pow(.30,m.respawnGeneration57));m.rewardPolicy57={xp:true,drops:false,kills:true};m.alerted=false;m.lastSeenPosition=null;m.heardPosition=null;
  const rooms=(state.rooms||[]).filter(r=>r!==home&&Math.max(Math.abs(r.cx-pos.x),Math.abs(r.cy-pos.y))>=3&&walk.dist.has(k(r.cx,r.cy))&&walk.dist.get(k(r.cx,r.cy))<walk.dist.get(k(pos.x,pos.y))).sort((a,b)=>Math.abs(a.cx-pos.x)+Math.abs(a.cy-pos.y)-Math.abs(b.cx-pos.x)-Math.abs(b.cy-pos.y));
  if(rooms.length)m.migrationTarget57={x:rooms[0].cx,y:rooms[0].cy};OccupancyService.addMonster(m);PlacementService.registerGenerationMonster(ctx,m);
  if(!groupCells){
