@@ -2199,6 +2199,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     drawWorldLights(now,b);
     drawSceneryFog(b,colors.fog||'#080503');
     drawGlassTowerBodies(b,now);
+    drawCityBodies(b,now);
 
     const floorLoot=[];
     for(const it of state.items||[])if(inB58(it,b,1)&&VisibilityService.isVisible(it.x,it.y))floorLoot.push({y:it.y+.62,o:it});

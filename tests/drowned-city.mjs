@@ -1,5 +1,6 @@
-// Run after npm run build:qa. 23층 수몰 회색 도성: 여러 시드에서 생성·감사가 통과하고, 네 수문을 돌리면 가동교가 내려오고 수로가 마르며
-// 중앙 둑길 문이 열린다. 수룡의 체력이 절반 아래로 떨어지면 왕궁 섬에 열쇠가 떨어지고, 계단까지 걸어갈 수 있다.
+// Run after npm run build:qa. 23층 수몰 회색 도성: 여덟 구역이 고리 하나로 이어진다(감사: 수문 n개를 돌리면 n+1번째 수문까지만 닿는다).
+// 네 수문을 돌리면 가동교가 내려오고 수로가 마르며 둑길 문이 열린다. 수룡의 체력이 절반 아래로 떨어지면 열쇠가 떨어지고, 계단까지 걸어갈 수 있다.
+// 특수 건물(창고·사당·관아·망루·폐허)에는 지정한 몬스터가 들어 있다.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,8 +27,10 @@ for (const seed of [5, 11, 23, 42]) {
     const saved = dc.reload();
     const st = dc.state(), q = st.floor23, T = dc.TT, city = q.city, z = (x, y) => city.zone[y][x];
     const out = { saved, ms: Math.round(ms), hash: dc.api().qa.hash(), layout: st.layoutName, before: dc.val() };
-    out.plan = { buildings: city.buildings.length, houses: city.buildings.filter(b => b.kind === 'house').length, halls: city.buildings.filter(b => b.kind !== 'house').length,
-      arches: city.bridges.filter(b => b.kind === 'arch').length, draws: city.bridges.filter(b => b.kind === 'draw').length,
+    const kinds = new Set(city.buildings.map(b => b.kind));
+    out.plan = { buildings: city.buildings.length, kinds: kinds.size, special: ['warehouse', 'sluice', 'marketHall', 'shrine', 'office', 'tower', 'palace', 'bridgehouse'].every(k => kinds.has(k)),
+      covered: city.bridges.filter(b => b.kind === 'covered').length, draws: city.bridges.filter(b => b.kind === 'draw').length,
+      encounters: city.encounters.length, spawned: city.encounters.filter(e => st.monsters.some(m => m.name === e.name && Math.max(Math.abs(m.x - e.x), Math.abs(m.y - e.y)) <= (e.r || 2) + 1)).length,
       drawUp: city.bridges.filter(b => b.kind === 'draw').every(b => b.cells.every(c => st.map[c.y][c.x] === T.DRAWBRIDGE_UP)) };
     // turn the four sluices
     for (const id of q.switchIds) dc.api().activateSwitch(st.switches.find(v => v.id === id));
@@ -53,7 +56,8 @@ assert.ok(new Set(results.map(r => r.hash)).size >= 3, '시드마다 다른 도�
 for (const r of results) {
   assert.deepEqual(r.saved, { ok: true, floor: 23, city: true, on: true, audit: true }, `seed ${r.seed} save/load`);
   assert.equal(r.before.ok, true, `seed ${r.seed}: ${JSON.stringify(r.before)}`);
-  assert.ok(r.plan.buildings >= 40 && r.plan.halls >= 5 && r.plan.arches >= 18 && r.plan.draws === 4 && r.plan.drawUp, `seed ${r.seed} plan ${JSON.stringify(r.plan)}`);
+  assert.ok(r.plan.buildings >= 50 && r.plan.special && r.plan.covered === 4 && r.plan.draws === 3 && r.plan.drawUp && r.plan.spawned >= r.plan.encounters - 1, `seed ${r.seed} plan ${JSON.stringify(r.plan)}`);
+  assert.equal(r.before.linear, true, `seed ${r.seed} 고리길`);
   assert.deepEqual(r.after, { centerUnlocked: true, controls: true, drawDown: true, drained: true, gateOpen: true, stairsReach: true }, `seed ${r.seed}`);
   assert.ok(r.dragon && r.key, `seed ${r.seed} dragon ${r.dragon} key ${r.key}`);
   assert.deepEqual(r.errors, []);
