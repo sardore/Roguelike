@@ -1,5 +1,5 @@
-// Run after npm run build:qa. 대포(십자 감시 포대)의 사선에 걸어 들어가는 첫 걸음은 확정 회피다(이미 그 대포가 나를 본 적이 있어도).
-// 사선 밖에서 걸어 들어오지 않았거나(제자리·이미 사선 안), 자발적 이동이 아니면 확정 회피가 없다.
+// Run after npm run build:qa. 확정 회피(처음 나를 발견하는 적의 첫 공격 회피): 문을 열고 들어서 대포가 처음 나를 보게 되는 걸음에 걸린다.
+// 그 사이에 다른 몬스터가 서 있어도 시야는 막히지 않는다(벽과 문만 막는다). 이미 나를 본 적이 있는 대포나 비자발 이동에는 걸리지 않는다.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,7 @@ import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bridge = `globalThis.cg={state:()=>state,TT,drop:m=>OccupancyService.removeMonster(m),vis:()=>VisibilityService.compute(),
- cannon:(x,y)=>{const m=scaledMonster(MONSTERS.find(d=>d.name==='대포'),14);m.x=x;m.y=y;configureMonsterTraits(m);m.hasSeenPlayer105=true;OccupancyService.addMonster(m);return m},
+ cannon:(x,y,seen)=>{const m=scaledMonster(MONSTERS.find(d=>d.name==='대포'),14);m.x=x;m.y=y;configureMonsterTraits(m);m.hasSeenPlayer105=!!seen;OccupancyService.addMonster(m);return m},
  blocker:(x,y)=>{const m=scaledMonster(MONSTERS.find(d=>d.name==='객잔 쥐'),14);m.x=x;m.y=y;OccupancyService.addMonster(m);return m},
  // one walk from (bx,by) to (nx,ny) as the engine does it: capture, optionally open a door, land, finish
  step:(m,bx,by,nx,ny,voluntary,door)=>{const p=state.player;p.x=bx;p.y=by;delete state._movementDiscovery105;const d=captureMovementDiscovery105();if(door)setTerrainTile58(state.map,door.x,door.y,TT.OPEN_DOOR);p.x=nx;p.y=ny;finishMovementDiscovery105(d,voluntary);return movementDiscoveryEvades105(m,{delivery:'area',discoveryEvade:true})}};`;
@@ -23,25 +23,26 @@ await startRun(s, 'swordsman'); await dismissModals(s);
 const out = await s.page.evaluate(() => {
   const st = cg.state(), p = st.player, { x: cx, y: cy } = p, T = cg.TT, r = {};
   const arena = () => { for (let y = cy - 8; y <= cy + 8; y++) for (let x = cx - 8; x <= cx + 10; x++) if (st.map[y]?.[x] != null) st.map[y][x] = T.FLOOR; for (const m of [...st.monsters]) cg.drop(m) };
-  arena();
-  let m = cg.cannon(cx + 4, cy);
-  r.stepIn = cg.step(m, cx + 3, cy - 1, cx + 3, cy, true);        // from off the line onto the row
-  r.alreadyOnLine = cg.step(m, cx + 2, cy, cx + 3, cy, true);     // slid along the row it was already on
-  r.stayed = cg.step(m, cx + 3, cy, cx + 3, cy, true);            // did not move
-  r.forced = cg.step(m, cx + 3, cy - 1, cx + 3, cy, false);       // pushed, not a walk
-  r.offLine = cg.step(m, cx + 2, cy - 1, cx + 3, cy - 1, true);   // stayed off the line
-  // a closed door shuts the line; opening it by walking in is the discovery, even with another monster standing in the way
-  arena();
-  for (let y = cy - 3; y <= cy + 3; y++) st.map[y][cx + 1] = y === cy ? T.DOOR : T.WALL;
+  const wall = open => { for (let y = cy - 3; y <= cy + 3; y++) st.map[y][cx + 1] = y === cy ? (open ? T.OPEN_DOOR : T.DOOR) : T.WALL };
+  // a closed door shuts the sight line: opening it by walking in is the discovery
+  arena(); wall(false);
+  let m = cg.cannon(cx + 6, cy);
+  r.door = cg.step(m, cx, cy, cx + 1, cy, true, { x: cx + 1, y: cy });
+  // another monster standing in the line does not hide the player
+  arena(); wall(false);
   m = cg.cannon(cx + 6, cy); cg.blocker(cx + 3, cy);
-  r.doorOpen = cg.step(m, cx, cy, cx + 1, cy, true, { x: cx + 1, y: cy });
-  arena(); for (let y = cy - 3; y <= cy + 3; y++) st.map[y][cx + 1] = y === cy ? T.OPEN_DOOR : T.WALL;
+  r.doorWithMonsterBetween = cg.step(m, cx, cy, cx + 1, cy, true, { x: cx + 1, y: cy });
+  // not a walk, or a cannon that has already seen the player
+  arena(); wall(false);
   m = cg.cannon(cx + 6, cy);
-  r.doorAlreadyOpen = cg.step(m, cx, cy, cx + 1, cy, true);        // the door was open and the player already stood on the line
+  r.forced = cg.step(m, cx, cy, cx + 1, cy, false, { x: cx + 1, y: cy });
+  arena(); wall(false);
+  m = cg.cannon(cx + 6, cy, true);
+  r.alreadySeen = cg.step(m, cx, cy, cx + 1, cy, true, { x: cx + 1, y: cy });
   return r;
 });
 console.log(JSON.stringify(out));
-assert.deepEqual(out, { stepIn: true, alreadyOnLine: false, stayed: false, forced: false, offLine: false, doorOpen: true, doorAlreadyOpen: false });
+assert.deepEqual(out, { door: true, doorWithMonsterBetween: true, forced: false, alreadySeen: false });
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('cannon-grace: ok');
