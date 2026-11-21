@@ -8,6 +8,9 @@ const bridge=`globalThis.probeRevive=async()=>{
  const out={},ls=k=>localStorage.getItem(k);
  SaveService.commit('probe');
  const rid=state.runId984,turn=state.turn,floor=state.floor,max=state.player.maxHp;
+ const lavaBefore=state.player.inventory.reduce((n,i)=>n+(i.talismanKind==='f_lava'?(i.count||1):0),0);
+ out.lavaCode=await PlayStats.redeemRecoveryCode('2888');
+ out.lavaGain=state.player.inventory.reduce((n,i)=>n+(i.talismanKind==='f_lava'?(i.count||1):0),0)-lavaBefore;
  state.player.hp=0;die('시험');
  out.dead={dead:state.dead,kept:!!ls('manru1004_dead_run_save'),activeCleared:!ls('manru1004_active_run')&&!ls('manru1004_active_run_shadow'),canContinue:!!SaveService.recover().candidate};
  out.wrong=await PlayStats.redeemRecoveryCode('1025');
@@ -28,6 +31,8 @@ try{
   const {out,max}=await s.page.evaluate(()=>probeRevive());
   assert.deepEqual(out.dead,{dead:true,kept:true,activeCleared:true,canContinue:false},'death keeps the run but keeps 이어하기 closed');
   assert.equal(out.wrong,'알 수 없는 코드다.');
+  assert.equal(out.lavaCode,'','2888 is accepted during a run');
+  assert.equal(out.lavaGain,2,'2888 adds two lava talismans');
   assert.equal(out.revive,'','1024 revives');
   assert.deepEqual(out.after,{dead:false,hp:max,max:true,freshRunId:true,floor:true,turn:true,keptLeft:false},'revived at full health, same floor and turn, new run id, record consumed');
   assert.equal(out.whileAlive,'진행 중인 탐사가 있다.');
