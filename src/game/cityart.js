@@ -29,7 +29,7 @@ function cityPaveSprite(kind,x,y){
         q.fillStyle='rgba(255,255,255,.07)';q.fillRect(sx+1,yy+1,len-1,1);q.fillStyle='rgba(0,0,0,.16)';q.fillRect(sx+1,yy+course-1,len-1,1);
         if(kind!=='core'&&h>.86){q.fillStyle='rgba(28,32,34,.45)';q.fillRect(sx+4+Math.floor(h*9),yy+3,1,Math.min(course-5,6))}
         if(kind==='alley'&&h<.08){q.fillStyle='rgba(74,104,80,.5)';q.fillRect(sx+2,yy+course-3,4,2)}}
-      q.fillStyle=kind==='core'?'rgba(210,168,74,.8)':(kind==='quay'||kind==='plaza'||kind==='terrace')&&row%3===0?'rgba(210,168,74,.55)':'rgba(24,28,31,.55)';q.fillRect(0,yy,32,1)}
+      q.fillStyle=kind==='core'?'rgba(210,168,74,.8)':(kind==='plaza'||kind==='terrace')&&row%4===0?'rgba(210,168,74,.4)':'rgba(24,28,31,.55)';q.fillRect(0,yy,32,1)}
     if(kind==='core'){q.fillStyle='rgba(255,255,240,.05)';q.fillRect(0,0,32,32)}
   });
 }
@@ -157,15 +157,8 @@ function cityBodySprite(b){
 }
 
 // ---------------- ground for the building footprint, parapets and compound walls ----------------
-function cityWallInside(x,y,b){
-  // from inside a closed building: the back wall shows its timber face, the side and front walls show their top
-  const southInside=cityZone(x,y+1)==='i'&&cityBuilding(x,y+1)===b;
-  return cityCanvas(`wallin|${b.kind}|${southInside?1:0}`,32,32,q=>{
-    const S=CITY_STYLE[b.kind]||CITY_STYLE.house;q.fillStyle='#1c2124';q.fillRect(0,0,32,32);
-    if(southInside){q.fillStyle=S.wall;q.fillRect(0,8,32,22);q.fillStyle=S.post;q.fillRect(0,8,32,3);q.fillRect(0,8,3,22);q.fillStyle='rgba(0,0,0,.3)';q.fillRect(0,28,32,4)}
-    else{q.fillStyle=cityShade(S.post,10);q.fillRect(6,0,20,32);q.fillStyle='rgba(255,255,255,.08)';q.fillRect(6,0,2,32)}
-  });
-}
+// the walls of a closed building are the shared timber-and-plaster wall; red beams, gold fittings
+const CITY_WALL=Object.freeze({...DOJO_PALETTES[2],metal:CITY_GOLD});
 function cityParapet(x,y,compound){
   const eq=(dx,dy)=>cityZone(x+dx,y+dy)===(compound?'W':'r');
   const mask=(eq(0,-1)?1:0)|(eq(1,0)?2:0)|(eq(0,1)?4:0)|(eq(-1,0)?8:0);
@@ -216,7 +209,7 @@ function drawCityTile(base,t,px,py,x,y,time,props){
   if(zone==='H'){
     const b=cityBuilding(x,y);
     if(b?.kind==='bridgehouse'){const br=cityIndex().bridges.get(b.bridge);X.drawImage(cityWaterBase(x,y,false),px,py);X.fillStyle='#3a2a1c';if(b.axis==='ns')X.fillRect(px+10,py,12,32);else X.fillRect(px,py+10,32,12);X.fillStyle='#6a523a';if(b.axis==='ns')X.fillRect(px+12,py,3,32);else X.fillRect(px,py+12,32,3);return true}
-    if(b?.closed){X.drawImage(cityWallInside(x,y,b),px,py);if(tile===TT.DOOR||tile===TT.OPEN_DOOR)drawSpecialTerrain(tile,px,py,x,y,time);return true}
+    if(b?.closed){drawMainWall(px,py,x,y,CITY_WALL);if(tile===TT.DOOR||tile===TT.OPEN_DOOR)drawSpecialTerrain(tile,px,py,x,y,time);return true}
     // a solid building's base, seen only where its body turns see-through, or a ruin's broken stub
     X.drawImage(cityPaveSprite(b?.kind==='stub'?'ruin':'alley',x,y),px,py);X.fillStyle=b?.kind==='stub'?'#555c5e':'#3b4246';X.fillRect(px+3,py+(b?.kind==='stub'?10:3),26,b?.kind==='stub'?18:26);
     if(b?.kind==='stub'){X.fillStyle='#737a7c';X.fillRect(px+3,py+10,26,3);X.fillStyle='#2b3133';X.fillRect(px+3,py+26,26,2)}return true;
