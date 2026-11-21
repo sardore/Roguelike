@@ -2044,8 +2044,9 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
         X.beginPath();X.moveTo(px+5,py+5);X.lineTo(px+27,py+27);X.moveTo(px+27,py+5);X.lineTo(px+5,py+27);X.stroke();X.fillStyle='#b7493d';X.fillRect(px+12,py+10,8,12);
       }
       if(f.kind==='sealingWard'){
-        X.fillStyle=`rgba(133,71,179,${a+.10})`;X.fillRect(px+1,py+1,30,30);
-        X.strokeStyle='#d2a9f0';X.lineWidth=2;
+        const pal={bind:['201,170,92','#f0d88c'],icebind:['86,160,214','#b7e4ff'],bindblast:['212,112,52','#ffc890'],bindingward:['96,176,128','#bff0cf'],holybind:['226,206,128','#fff2c0']}[f.talismanSeal74]||['133,71,179','#d2a9f0'];
+        X.fillStyle=`rgba(${pal[0]},${a+.10})`;X.fillRect(px+1,py+1,30,30);
+        X.strokeStyle=pal[1];X.lineWidth=2;
         for(const[dx,dy]of DIRS4)if(!f.cells.some(c=>c.x===x+dx&&c.y===y+dy)){X.beginPath();if(dx){X.moveTo(px+(dx>0?31:1),py+1);X.lineTo(px+(dx>0?31:1),py+31)}else{X.moveTo(px+1,py+(dy>0?31:1));X.lineTo(px+31,py+(dy>0?31:1))}X.stroke()}
         X.strokeStyle='rgba(231,199,255,.65)';X.lineWidth=1;X.strokeRect(px+11,py+11,10,10);
       }

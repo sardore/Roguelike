@@ -112,7 +112,8 @@ try {
   const bombs = { f_fire_blast: ['화염 피해', 42, 8], f_shock_blast: ['뇌전 피해', 40, 8], f_water_blast: ['수류 피해', 36, 7], f_ice_blast: ['빙결 피해', 34, 7], f_grass_blast: ['목령 피해', 32, 7], f_earth_blast: ['대지 피해', 38, 8], f_bindblast: [null, 34, 7] };
   for (const floor of [1, 21]) for (const [kind, [source, power, scale]] of Object.entries(bombs)) {
     await setup(floor); await dummy(); const out = await cast(kind); assert.equal(out.ok, true);
-    const expected = power + scale * Math.floor((floor - 1) / 5);
+    // 봉폭부적의 봉인진은 시전한 턴에도 한 번 폭열 피해를 더한다
+    const expected = power + scale * Math.floor((floor - 1) / 5) + (kind === 'f_bindblast' ? 9 + 3 * Math.floor((floor - 1) / 5) : 0);
     if (source) assert.ok(out.log.some(l => l.includes(source + ' → 시험 적: ' + expected)), `${kind}: ${JSON.stringify(out.log)}`);
     else assert.equal(1000 - out.monsters[0].hp, expected);
     if (kind === 'f_ice_blast' || kind === 'f_earth_blast') assert.ok(out.monsters[0].stun >= 1);
