@@ -380,6 +380,13 @@ const PlayStats={
   };
   form.append(input,button,note);return form;
  },
+ grantLavaTalismans(){
+  const proto=globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates().find(i=>i.talismanKind==='f_lava');
+  if(proto){giveItem(proto);giveItem(proto)}
+  lsRemove(LAVA_GIFT_KEY);return !!proto;
+ },
+ // Code 2888 entered with no run open waits here until a run starts or is continued.
+ grantPendingGift(){if(lsGet(LAVA_GIFT_KEY)==='1'&&this.grantLavaTalismans())toast('용암부적 2장을 받았다.')},
  async redeemRecoveryCode(code){
   const entered=String(code).trim();
   if(entered==='10002'){
@@ -404,11 +411,9 @@ const PlayStats={
    this.close();toast('마지막 저장 지점에서 체력을 모두 되찾고 되살아났다.');return '';
   }
   if(entered==='2888'){
-   if(!state||state.dead||state.victory)return '진행 중인 탐사가 없다.';
-   const proto=globalThis.__MANRU_TALISMAN74_ACTIONS__.shopCandidates().find(i=>i.talismanKind==='f_lava');
-   if(!proto)return '용암부적을 만들지 못했다.';
-   giveItem(proto);giveItem(proto);
-   this.close();toast('용암부적 2장을 받았다.');return '';
+   if(state&&!state.dead&&!state.victory){this.grantLavaTalismans();this.close();toast('용암부적 2장을 받았다.');return ''}
+   lsSet(LAVA_GIFT_KEY,'1');
+   return '다음에 시작하거나 이어가는 탐사에 용암부적 2장을 넣는다.';
   }
   return '알 수 없는 코드다.';
  },
