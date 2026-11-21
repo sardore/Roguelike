@@ -1328,7 +1328,7 @@ const HIDDEN_ROUTE_STATE={revision:3,hiddenSeq:0,lastFloor:0};
     decorBoost();
     // Floor-start ammunition is a dedicated run/floor stream: equipment can neither increase nor decrease it.
     if(state.ammoGeneration972===state.floor)return;state.ammoGeneration972=state.floor;
-    const rolls=[.72,.24,...(state.player?.classId==='archer'?[1,1,1,.9,.8,.7,.6]:[])];let made=0;
+    const rolls=[.72,.24,...(state.player?.classId==='archer'?[1,1,1,.9,.8]:[])];let made=0;
     for(let i=0;i<rolls.length;i++)if(ammoUnit(i)<rolls[i]&&controlledAmmo(i))made++;
     state.ammoSpawn967={bowBoost:false,bundles:made,rolls:[...rolls],equipmentIndependent:true};
     VisibilityService.compute();
