@@ -38,9 +38,10 @@ function martialCap(id,p=state.player){return p.martialBreakthrough?.[id]?5:4}
 function strongBonus(lv){return lv>=5?14:2+lv*2}
 function ghostDuration(lv){return lv>=5?8:2+lv}
 function martialHpMultiplier(p){return martialFormOf('constitution',p)?1:1+.08*(p.martial?.constitution||0)}
+const CURSE_BLADE_HP_CUT=.50;
 function recomputeMaxHp(p=state.player,grow=false){
  const before=p.maxHp||1,raw=Math.round(p.baseMaxHpPermanent*martialHpMultiplier(p))+(p.temporaryMaxHpBonus||0);
- p.maxHp=Math.max(1,p.legendCurseActive47?raw-Math.max(1,Math.ceil(raw*.30)):raw);
+ p.maxHp=Math.max(1,p.legendCurseActive47?raw-Math.max(1,Math.ceil(raw*CURSE_BLADE_HP_CUT)):raw);
  if(p.legendCurseActive47){p.legendCurseBaseMax47=raw;p.legendCurseCut47=raw-p.maxHp}
  p.hp=Math.min(p.maxHp,(p.hp||0)+(grow?Math.max(0,p.maxHp-before):0));return p.maxHp;
 }
@@ -896,7 +897,7 @@ function recordPlayerSight105(){
     return{ok:!!state.floor23?.thresholdTriggered&&!!item,before,after:dragon.hp,maxHp:dragon.maxHp,item:item?{x:item.x,y:item.y,name:item.name}:null,thresholdTriggered:!!state.floor23?.thresholdTriggered};
   }
   function safeForNatural94(){if(!state||state.status.poison>0||state.status.bleed>0)return false;return !state.monsters.some(m=>isThreatVisibleToPlayer(m)&&entityDistance57(m,state.player)<=4)}
-function syncEquip47(){const p=state?.player;if(!p)return;for(const it of [p.weapon,...(p.inventory||[]),...(state.items||[])]){if(!it?.legendaryWeapon47)continue;const d=adef46(it.artifactId46);if(d)for(const key of ['atk','speed','range','desc','armorPierce']){if(Object.prototype.hasOwnProperty.call(d,key))it[key]=d[key];else if(key==='armorPierce')delete it[key]}}const on=equipped47('curse_blade'),changed=on!==!!p.legendCurseActive47;p.legendCurseActive47=on;recomputeMaxHp(p);if(changed&&on)floatText(p.x,p.y,'최대 HP -30%','#b95c7c',10);if(!on){delete p.legendCurseBaseMax47;delete p.legendCurseCut47}if(!equipped47('earth_gauntlet'))p.legendEarthStacks47=0;p.focus=Math.max(0,Math.min(Number(p.focus)||0,getStats().maxFocus))}
+function syncEquip47(){const p=state?.player;if(!p)return;for(const it of [p.weapon,...(p.inventory||[]),...(state.items||[])]){if(!it?.legendaryWeapon47)continue;const d=adef46(it.artifactId46);if(d)for(const key of ['atk','speed','range','desc','armorPierce']){if(Object.prototype.hasOwnProperty.call(d,key))it[key]=d[key];else if(key==='armorPierce')delete it[key]}}const on=equipped47('curse_blade'),changed=on!==!!p.legendCurseActive47;p.legendCurseActive47=on;recomputeMaxHp(p);if(changed&&on)floatText(p.x,p.y,`최대 HP -${Math.round(CURSE_BLADE_HP_CUT*100)}%`,'#b95c7c',10);if(!on){delete p.legendCurseBaseMax47;delete p.legendCurseCut47}if(!equipped47('earth_gauntlet'))p.legendEarthStacks47=0;p.focus=Math.max(0,Math.min(Number(p.focus)||0,getStats().maxFocus))}
 // A gauntlet gains 1 ATK for every three enhancements (other weapons gain 1 for each).
 const BRAWL_UPGRADES_PER_ATK=3;
 function brawlUpgradeEffect42(it){return isBrawlWeapon(it)?Math.floor((it.upgrade||0)/BRAWL_UPGRADES_PER_ATK):(it?.upgrade||0)}
