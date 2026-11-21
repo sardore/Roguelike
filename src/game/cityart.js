@@ -16,14 +16,23 @@ function cityBridge(x,y){const id=cityPlan().owner[y]?.[x];return id<0?cityIndex
 function cityMix(a,b,u){const p=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),A=p(a),B=p(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*u).toString(16).padStart(2,'0')).join('')}
 function cityShade(hex,amt){const n=parseInt(hex.slice(1),16),c=v=>Math.max(0,Math.min(255,Math.round(v+amt)));return'#'+[n>>16,n>>8&255,n&255].map(v=>c(v).toString(16).padStart(2,'0')).join('')}
 
+// ---------------- island colours: each island's stone is tinted toward its scheme; its houses take the scheme's roofs ----------------
+const CITY_PALETTES=Object.freeze({
+  grey:{tint:null,u:0,roofs:[['#3d474d','#4a555c','#2b3337'],['#44474c','#53565b','#2f3236'],['#3b4a47','#475752','#29332f']]},
+  gold:{tint:'#a88a48',u:.42,parapet:['#8f7a46','#b49a58','#e0c27a'],roofs:[['#7a5f26','#a7842f','#553f18'],['#8a6a2c','#b8913a','#5e4719'],['#94742e','#c49c40','#64491a']]},
+  jade:{tint:'#5d7a6c',u:.34,parapet:['#55695f','#71877b','#a4b8a8'],roofs:[['#2f514c','#3c645d','#213a36'],['#35574f','#43695f','#25403a']]},
+  vermilion:{tint:'#7c4a3e',u:.3,parapet:['#6a4038','#865246','#b98870'],roofs:[['#44474c','#53565b','#2f3236'],['#3d3436','#4b4043','#2b2426']]},
+  marble:{tint:'#b5b2a8',u:.4,parapet:['#8e8c86','#aeaca4','#d6d3c8'],roofs:[['#3b4a57','#475a68','#2a353f'],['#3d474d','#4a555c','#2b3337']]}
+});
+function cityPaletteAt(x,y){const id=cityPlan().isle?.[y]?.[x];return id>=0?cityPlan().islands[id]?.palette||'grey':'grey'}
 // ---------------- ground ----------------
 const CITY_STONE=Object.freeze({quay:['#5d666b','#646d72','#565f64','#6a7378'],alley:['#4b5257','#51585d','#464d52','#555c61'],plaza:['#6b7175','#72787c','#666c70'],terrace:['#8a8f8c','#939893','#848985'],core:['#b9b8ae','#c3c1b6','#b1b0a6'],market:['#6e5b4c','#77634f','#665446','#7d6a58'],ruin:['#4a4f50','#3f4546','#555a5a','#45494a']});
-function cityPaveSprite(kind,x,y){
+function cityPaveSprite(kind,x,y,pal='grey'){
   // world-aligned slab courses: each course is 16px tall, joints stagger by course, so slabs run across cell borders
   const course={quay:16,alley:8,core:16,terrace:16,market:8,ruin:8}[kind]??10,len={quay:40,alley:12,core:32,terrace:24,market:16,ruin:10}[kind]??20;
   const gx=(x*32)%(len*course),gy=(y*32)%(course*4);
-  return cityCanvas(`pave|${kind}|${gx}|${gy}`,32,32,q=>{
-    const tones=CITY_STONE[kind];q.fillStyle=tones[0];q.fillRect(0,0,32,32);
+  return cityCanvas(`pave|${kind}|${gx}|${gy}|${pal}`,32,32,q=>{
+    const P=CITY_PALETTES[pal]||CITY_PALETTES.grey,tones=P.tint?CITY_STONE[kind].map(c=>cityMix(c,P.tint,P.u)):CITY_STONE[kind];q.fillStyle=tones[0];q.fillRect(0,0,32,32);
     for(let yy=-course;yy<32+course;yy+=course){const row=Math.floor((gy+yy)/course),off=(row*len*.5)%len;
       for(let xx=-len;xx<32+len;xx+=len){const sx=xx-((gx+off)%len),col=Math.floor((gx+off+sx)/len),h=hash2(col,row,733+kind.length);
         q.fillStyle=tones[Math.floor(h*tones.length)];q.fillRect(sx+1,yy+1,len-1,course-1);
@@ -148,7 +157,7 @@ function cityStorey(q,y0,W,b,S,ground,storey){
   else{q.fillStyle='#262b2e';q.fillRect(0,y0+28,W,4);q.fillStyle=CITY_GOLD;q.fillRect(0,y0+28,W,1);for(let xx=2;xx<W;xx+=5){q.fillStyle='#a98a45';q.fillRect(xx,y0+29,3,2)}} // a small eave between storeys
 }
 function cityBodySprite(b){
-  const S=CITY_STYLE[b.kind]||CITY_STYLE.house,R=S.roof||CITY_ROOF[b.tone%CITY_ROOF.length],W=b.w*32,F=b.rise*32,Rh=b.h*32;
+  const S=CITY_STYLE[b.kind]||CITY_STYLE.house,PR=CITY_PALETTES[b.palette]?.roofs,R=S.roof||(PR?PR[b.tone%PR.length]:CITY_ROOF[b.tone%CITY_ROOF.length]),W=b.w*32,F=b.rise*32,Rh=b.h*32;
   return cityCanvas(`body|${b.id}|${b.x},${b.y},${b.w},${b.h},${b.rise}`,W,Rh+F,q=>{
     if(b.kind==='bridgehouse'&&b.axis==='ns'){
       // seen from the south the bridge-house is a gable end over the deck: a dark archway between timber posts
@@ -169,12 +178,13 @@ function cityBodySprite(b){
 // the walls of a closed building are the shared timber-and-plaster wall; red beams, gold fittings
 const CITY_WALL=Object.freeze({...DOJO_PALETTES[2],metal:CITY_GOLD});
 const CITY_PALACE_WALL=Object.freeze({...DOJO_PALETTES[2],wall:'#9a4a36',cap:'#e6bf62',beam:'#5e2018',dark:'#2a1410',grain:'#b8873e',metal:'#ffe08a'});
-function cityParapet(x,y,compound){
+function cityParapet(x,y,compound,pal='grey'){
   const eq=(dx,dy)=>cityZone(x+dx,y+dy)===(compound?'W':'r');
   const mask=(eq(0,-1)?1:0)|(eq(1,0)?2:0)|(eq(0,1)?4:0)|(eq(-1,0)?8:0);
-  return cityCanvas(`par|${compound?1:0}|${mask}|${(x+y)%2}`,32,32,q=>{
-    q.fillStyle=compound?'#6e2a20':'#59626a';q.fillRect(0,0,32,32);
-    const band=compound?14:10,c0=16-band/2,col=compound?'#2e3437':'#7c858b',hi=compound?CITY_GOLD:'#a0a8ac';
+  return cityCanvas(`par|${compound?1:0}|${mask}|${(x+y)%2}|${pal}`,32,32,q=>{
+    const PP=CITY_PALETTES[pal]?.parapet||['#59626a','#7c858b','#a0a8ac'];
+    q.fillStyle=compound?'#6e2a20':PP[0];q.fillRect(0,0,32,32);
+    const band=compound?14:10,c0=16-band/2,col=compound?'#2e3437':PP[1],hi=compound?CITY_GOLD:PP[2];
     q.fillStyle=col;q.fillRect(c0,c0,band,band);
     if(mask&1)q.fillRect(c0,0,band,c0);if(mask&4)q.fillRect(c0,c0+band,band,32-c0-band);if(mask&8)q.fillRect(0,c0,c0,band);if(mask&2)q.fillRect(c0+band,c0,32-c0-band,band);
     q.fillStyle=hi;if(mask&10||!(mask&5))q.fillRect(mask&8?0:c0,c0,(mask&2?32:c0+band)-(mask&8?0:c0),1);else q.fillRect(c0,mask&1?0:c0,1,(mask&4?32:c0+band)-(mask&1?0:c0));
@@ -283,13 +293,13 @@ const CITY_GROUND=Object.freeze({q:'quay',a:'alley',p:'plaza',k:'market',t:'terr
 function drawCityTile(base,t,px,py,x,y,time,props){
   const zone=cityZone(x,y),now=FX.frameNow||performance.now(),tile=state.map[y][x];
   if(zone==='X'){X.fillStyle='#0b1013';X.fillRect(px,py,32,32);return true}
-  if(zone==='r'||zone==='W'){X.drawImage(cityParapet(x,y,zone==='W'),px,py);drawCityRelief(px,py,x,y);return true}
+  if(zone==='r'||zone==='W'){X.drawImage(cityParapet(x,y,zone==='W',cityPaletteAt(x,y)),px,py);drawCityRelief(px,py,x,y);return true}
   if(zone==='H'){
     const b=cityBuilding(x,y);
     if(b?.kind==='bridgehouse'){X.drawImage(cityWaterBase(x,y,false),px,py);drawCityWaterSurface(px,py,x,y,now,false);X.drawImage(cityBalustrade(b.axis),px,py);return true}
     if(b?.closed){drawMainWall(px,py,x,y,b.kind==='palace'?CITY_PALACE_WALL:CITY_WALL);if(tile===TT.DOOR||tile===TT.OPEN_DOOR)drawSpecialTerrain(tile,px,py,x,y,time);return true}
     // a solid building's base, seen only where its body turns see-through, or a ruin's broken stub
-    if(b?.kind==='stub'){X.drawImage(cityPaveSprite('ruin',x,y),px,py);X.drawImage(cityRubble(x,y),px,py);drawSharedProp(X,TT.ROCK,px,py,regionIndex(),(x+y)&3,now,true);return true}
+    if(b?.kind==='stub'){X.drawImage(cityPaveSprite('ruin',x,y,cityPaletteAt(x,y)),px,py);X.drawImage(cityRubble(x,y),px,py);drawSharedProp(X,TT.ROCK,px,py,regionIndex(),(x+y)&3,now,true);return true}
     X.drawImage(cityPlinth(x,y,b),px,py);return true;
   }
   if(zone==='w'||zone==='m'||zone==='b'||zone==='d'||zone==='s'){
@@ -305,7 +315,7 @@ function drawCityTile(base,t,px,py,x,y,time,props){
   }
   if(zone==='i'){const b=cityBuilding(x,y);if(b?.kind==='palace')drawInnFloor(X,px,py,x,y,{floor:'#6a5222',floorAlt:'#5e481c'},{accent:'#f0cf7a'},'slabs');else X.drawImage(tile===TT.MOON_STONE?cityPaveSprite('terrace',x,y):cityPlanks(x,y,tile===TT.GILDED_FLOOR),px,py)}
   else if(zone==='g')X.drawImage(cityGrass(x,y),px,py);
-  else{X.drawImage(cityPaveSprite(CITY_GROUND[zone]||'quay',x,y),px,py);if(zone==='u')X.drawImage(cityRubble(x,y),px,py)}
+  else{X.drawImage(cityPaveSprite(CITY_GROUND[zone]||'quay',x,y,zone==='c'?'grey':cityPaletteAt(x,y)),px,py);if(zone==='u')X.drawImage(cityRubble(x,y),px,py)}
   drawCityRelief(px,py,x,y);
   if(base===TT.CARPET)drawInnRunner(X,px,py,x,y);
   if(![TT.FLOOR,TT.CARPET,TT.STONE_PATH,TT.MOON_STONE,TT.WOOD_FLOOR,TT.GILDED_FLOOR,TT.GRASS].includes(base)){if(!drawSpecialTerrain(base,px,py,x,y,time))drawInteractiveTerrain(base,px,py,x,y,time)}

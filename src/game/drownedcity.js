@@ -359,12 +359,16 @@ function buildDrownedCity(m){
   for(let n=0;n<26;n++){const c=pick(shoreCells);if(dist(c.x,c.y)<3)continue;const q=[c];for(let i=0;i<q.length&&i<ri(5,11);i++){const a=q[i];if(openWater(a.x,a.y)&&dist(a.x,a.y)>=2)add(a.x,a.y,'lotus');for(const [dx,dy] of DIRS4)if(R()<.5)q.push({x:a.x+dx,y:a.y+dy})}}
   for(const c of shoreCells)if(dist(c.x,c.y)>=2&&hash2(c.x,c.y,2306)<.03&&openWater(c.x,c.y))add(c.x,c.y,'lantern');
 
+  // ---- every island has its own stone and roof colours: gold, jade, vermilion, white marble or the city's grey
+  const THEMED={market:'gold',pagoda:'gold',shrine:'jade',office:'vermilion',watch:'marble',granary:'gold',belltower:'jade'};
+  for(const isl of islands)isl.palette=THEMED[isl.kind]||(R()<.34?'gold':pick(['jade','vermilion','marble','grey','grey']));
+  for(const b of buildings){const id=isle[b.y+Math.floor(b.h/2)]?.[b.x+Math.floor(b.w/2)];if(id>=0)b.palette=islands[id].palette}
   const height=zone.map(r=>r.map(z=>CITY23_HEIGHT[z]??0));
   state.floor23={version:22,artVersion:22,preserveAuthoredGeometry:true,centerUnlocked:false,thresholdTriggered:false,keyAcquired:false,
     routeCheckpoints:[start,...sluices.map(s=>({x:s.x,y:s.y})),centerEntry].map(q=>({...q})),
     gateCells,centerEntry,bossSpawn,centerBounds:{...L},switchIds,controls,hydraulicCellMeta,reveal:null,wallStyleByCell,
     districts:majors.map(d=>({id:d.id+1,x:d.cx-d.r,y:d.cy-d.r,w:d.r*2,h:d.r*2,theme:d.kind,name:d.name})),innerDistrictBounds:[],transitBuildings:[],
-    city:{zone:zone.map(r=>r.join('')),height,owner,buildings,bridges,causeway,encounters,decor,islands:islands.map(i=>({kind:i.kind,cx:i.cx,cy:i.cy,r:i.r,cells:i.cells.length})),lake:{...L},core:{...C}}};
+    city:{zone:zone.map(r=>r.join('')),height,owner,buildings,bridges,causeway,encounters,decor,islands:islands.map(i=>({kind:i.kind,cx:i.cx,cy:i.cy,r:i.r,cells:i.cells.length,palette:i.palette})),isle:isle.map(r=>r.slice()),lake:{...L},core:{...C}}};
   state.layoutName='수몰 회색 도성 · 불규칙한 섬들과 운하 미로 / 다리집과 수문 가동교 / 거대 건물 외딴섬 / 수은호 둑길 / 수몰 왕궁';
 }
 
