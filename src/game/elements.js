@@ -276,7 +276,38 @@ function throwIceEssence(x,y,thrower){
  }
  addLog('빙결액의 냉기가 5×5에 퍼졌다.');
 }
+// 봉박부와 그 합성부적(빙쇄·봉폭·봉호·성봉)은 같은 봉인진(진 안의 적이 밖으로 나가지 못한다)을 깔고, 크기·지속·진 안 효과가 각기 다르다.
+const TALISMAN_SEAL_CIRCLES=Object.freeze({
+ bind:{name:'봉박진',radius:1,ttl:4,inner:null},
+ icebind:{name:'빙쇄진',radius:1,ttl:6,inner:'frost'},
+ bindblast:{name:'봉폭진',radius:1,ttl:3,inner:'burst'},
+ bindingward:{name:'봉호진',radius:2,ttl:14,inner:'guard'},
+ holybind:{name:'성봉진',radius:2,ttl:8,inner:'smite'}
+});
+function addTalismanSealCircle(kind,x,y,power=0){
+ const rule=TALISMAN_SEAL_CIRCLES[kind],cells=elementCells105(x,y,rule.radius),
+  victims=state.monsters.filter(m=>m.hp>0&&isHostileTarget57(m)&&!m.hidden&&!m.boss&&entityFootprintCells57(m).some(c=>cells.some(q=>q.x===c.x&&q.y===c.y)));
+ addField('sealingWard',x,y,rule.ttl,cells,{talismanSeal74:kind,power74:power,targetIds:victims.map(m=>combatantId(m)),bornTurn:state.turn});
+ if(victims.length)addLog(`${rule.name} · ${rule.ttl}턴 동안 진 안의 적 ${victims.length}체가 경계를 넘지 못한다.`);
+ return victims;
+}
+function tickTalismanSealCircles(){
+ for(const f of state.tempFields||[]){
+  if(f.kind!=='sealingWard'||!f.talismanSeal74||f.ttl<=0||state.turn<=f.bornTurn)continue;
+  const rule=TALISMAN_SEAL_CIRCLES[f.talismanSeal74],power=f.power74||0,p=state.player,
+   inside=state.monsters.filter(m=>m.hp>0&&f.targetIds?.includes(m.combatantId54)&&f.cells.some(c=>c.x===m.x&&c.y===m.y));
+  for(const m of inside){
+   if(m.hp<=0)continue;
+   if(rule.inner==='frost')resolveElementDamage57(m,'ice',3+power*2,{contactHandled105:true,source:'빙쇄진',color:'#9fdcff',size:12});
+   else if(rule.inner==='burst'){const dealt=damageEntity(m,9+power*3,p);if(dealt>0)floatText(m.x,m.y,`-${dealt}`,'#e7c17b',12);if(m.hp<=0)killMonster(m)}
+   else if(rule.inner==='guard')applyCombatStatus(m,'skillSeal',2,1,{source:p});
+   else if(rule.inner==='smite'&&(['undead','spirit'].includes(m.kind)||monsterIsEvil(m)))resolveElementDamage57(m,'holy',6+power*2,{contactHandled105:true,source:'성봉진',color:'#f4e3a0',size:12});
+  }
+  if(rule.inner==='guard'&&state.turn%2===0&&p.hp>0&&p.hp<p.maxHp&&f.cells.some(c=>c.x===p.x&&c.y===p.y)){recoverCombatHealth(p,1);floatText(p.x,p.y,'+1','#9fe0a8',11)}
+ }
+}
 function tickElementFields57(){
+ tickTalismanSealCircles();
  for(const f of state.elementFields74||[]){if(state.turn>f.bornTurn&&f.ttl>0&&f.kind==='fire'){applyElementField57(f,'fire',f.damage??3,{source:'원소 화염지대',color:'#ff9862',size:10});if(runState57()!=='playing')return;f.ttl--}}state.elementFields74=(state.elementFields74||[]).filter(f=>f.ttl>0);
 }
   const ELEMENT_KIND74={elem_fire:'fire',elem_shock:'shock',elem_water:'water',elem_ice:'ice',elem_grass:'grass',elem_earth:'earth'};
