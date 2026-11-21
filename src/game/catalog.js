@@ -188,7 +188,7 @@ const TRINKETS=[
   {type:'trinket',name:'호신 호리병',rarity:'relic',minFloor:9,art:{grade:'fine',shape:'fx_charmgourd',mat:'amber',gem:'',glyph:''},statusGuard:.25,def:1,bagSlots:2,desc:'독과 저주를 한 모금에 삼킨다.'},
   {type:'trinket',name:'가시 노리개',rarity:'rare',minFloor:5,art:{grade:'simple',shape:'fx_thornball',mat:'ebony',gem:'',glyph:''},def:1,thorns:2,desc:'만지면 손이 찔린다.'},
   {type:'trinket',name:'피빛 방울',rarity:'relic',minFloor:10,art:{grade:'fine',shape:'fx_bloodbell',mat:'ruby',gem:'',glyph:''},killHeal:2,lowHpAtk:2,desc:'피 냄새를 맡으면 운다.'},
-  {type:'trinket',name:'수정 얼음 부채',rarity:'relic',minFloor:11,art:{grade:'grand',shape:'fx_crystalfan',mat:'azure',gem:'ice',glyph:'氷'},resist:{ice:1,water:1},atkCostMul:.96,desc:'서늘한 바람이 인다.'},
+  {type:'trinket',name:'수정 얼음 부채',rarity:'relic',minFloor:11,art:{grade:'grand',shape:'fx_crystalfan',mat:'azure',gem:'ice',glyph:'氷'},resist:{ice:1,water:1},atkCostMul:.9,desc:'서늘한 바람이 인다.'},
   {type:'trinket',name:'화약 호리병',rarity:'relic',minFloor:11,art:{grade:'fine',shape:'fx_powdergourd',mat:'bronze',gem:'fire',glyph:'火'},resist:{fire:1,earth:1},strike:{element:'fire',dmg:2},desc:'마개를 열면 불티가 튄다.'},
   {type:'trinket',name:'백면 연화 노리개',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{grade:'grand',shape:'fx_whitelotus',mat:'pearl',gem:'pearl',cord:'ivory',glyph:'聖',premium:true},will:2,def:1,resist:{water:1,grass:1,holy:1},regenEvery:6,quirk:'luckyMend',desc:'꽃잎이 닫힐 때마다 상처가 아문다.'},
   {type:'trinket',name:'옥루 연화 비녀',rarity:'sealed',tier:5,minFloor:1,vaultOnly:true,premium:true,art:{grade:'grand',shape:'fx_dewpin',mat:'azure',gem:'topaz',cord:'saffron',glyph:'',premium:true},vision:2,focus:2,critAdd:.06,statusGuard:.25,quirk:'lastStand',desc:'가장 높은 누각의 이슬을 머금은 비녀.'}

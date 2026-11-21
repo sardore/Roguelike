@@ -331,7 +331,7 @@ function makeRandart(slot,tier=3,opts={},rnd=()=>globalThis.__MANRU_RANDOM57__()
   const specials={
     bagSlots:()=>tier>=5?3:tier>=3?2:1,regenEvery:()=>Math.max(5,11-tier),killHeal:()=>1+(tier>=4?1:0),killFocus:()=>1+(tier>=3?1:0),thorns:()=>1+(tier>=3?1:0),
     lowHpAtk:()=>2+(tier>=4?1:0),lowHpDef:()=>2,critAdd:()=>.03+.01*(tier-1),moveMul:()=>+(1-(.03+.01*(tier-1))).toFixed(2),
-    atkCostMul:()=>+(1-(.03+.01*(tier-1))).toFixed(2),statusGuard:()=>+(.15+.03*tier).toFixed(2),
+    atkCostMul:()=>+(1-(.07+.02*(tier-1))).toFixed(2),statusGuard:()=>+(.15+.03*tier).toFixed(2),
     strike:()=>({element:null,dmg:2+(tier>=4?1:0)})
   };
   // No recipe: a randart is bought with points. The tier sets the budget; a weakness, a lowered stat or a curse taken on
