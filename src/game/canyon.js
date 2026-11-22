@@ -207,29 +207,61 @@ function canyonDepths(m,W,H,put,fill,deadEnds,yards){
 // value noise for mesa rims
 function vnoise(x,y){const h=(a,b)=>{let n=(a*374761393+b*668265263)|0;n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296};const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,s=t=>t*t*(3-2*t);const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1);return a+(b-a)*s(fx)+(c-a)*s(fy)+(a-b-c+d)*s(fx)*s(fy)}
 /* ---------------------------------------------------------------- the view down: drawn under every VOID cell */
-let CANYON_DEPTH_TILE=null;
-function canyonDepthTile(){
- if(CANYON_DEPTH_TILE)return CANYON_DEPTH_TILE;const S=512,c=document.createElement('canvas');c.width=c.height=S;const q=c.getContext('2d');
- const g=q.createLinearGradient(0,0,0,S);g.addColorStop(0,'#2a0d09');g.addColorStop(1,'#1a0806');q.fillStyle=g;q.fillRect(0,0,S,S);
- // terraces of rock falling away: dark bands with lit lips
- for(let i=0;i<14;i++){const y=(i*37+((i*53)%19))%S,h=10+(i*7)%14;q.fillStyle=i%2?'rgba(70,34,26,.55)':'rgba(40,18,14,.6)';q.beginPath();q.moveTo(0,y);for(let x=0;x<=S;x+=16)q.lineTo(x,y+Math.sin(x/S*Math.PI*2*3+i)*6);q.lineTo(S,y+h);q.lineTo(0,y+h);q.closePath();q.fill();q.strokeStyle='rgba(220,120,70,.18)';q.lineWidth=1;q.beginPath();q.moveTo(0,y);for(let x=0;x<=S;x+=16)q.lineTo(x,y+Math.sin(x/S*Math.PI*2*3+i)*6);q.stroke()}
- // the lava river winding through the bottom, with a glow
- q.save();q.globalCompositeOperation='lighter';q.lineCap='round';for(const[w,col]of[[34,'rgba(255,90,30,.07)'],[14,'rgba(255,110,40,.22)'],[5,'rgba(255,190,110,.45)']]){q.strokeStyle=col;q.lineWidth=w;q.beginPath();for(let y=-20;y<=S+20;y+=8){const a=y/S*Math.PI*2,x=S*.5+Math.sin(a*2)*110+Math.sin(a*6)*20;y<0?q.moveTo(x,y):q.lineTo(x,y)}q.stroke()}q.restore();
- // basalt specks
- for(let i=0;i<260;i++){const x=(i*97)%S,y=(i*61+((i*i)%37))%S;q.fillStyle=i%3?'rgba(20,10,8,.5)':'rgba(140,70,40,.35)';q.fillRect(x,y,2+(i%3),2)}
- CANYON_DEPTH_TILE=c;return c;
-}
+let CANYON_BG_IMG=null;
+function canyonBg(){if(!CANYON_BG_IMG){CANYON_BG_IMG=new Image();CANYON_BG_IMG.src=CANYON_BG_URL}return CANYON_BG_IMG}
+// The canyon far below: the draft's cliffs, lava river and the fortress city on its rim, drifting slower than the bridges (parallax).
 function drawCanyonDepths(cam,now){
- const tile=canyonDepthTile(),W=VIEW.w,H=VIEW.h,z=cam.zoom||1;
- // far below: the canyon floor drifts slowly against the bridges (parallax), then red haze between
- X.save();const s=.7,ox=((cam.x*.35)%(512*s)+512*s)%(512*s),oy=((cam.y*.35)%(512*s)+512*s)%(512*s);
- for(let y=-oy-512*s;y<H;y+=512*s)for(let x=-ox-512*s;x<W;x+=512*s)X.drawImage(tile,Math.round(x),Math.round(y),Math.round(512*s)+1,Math.round(512*s)+1);
- const g=X.createRadialGradient(W/2,H/2,H*.1,W/2,H/2,H*.9);g.addColorStop(0,'rgba(120,30,18,.18)');g.addColorStop(1,'rgba(10,3,2,.55)');X.fillStyle=g;X.fillRect(0,0,W,H);
- X.globalCompositeOperation='lighter';for(let i=0;i<60;i++){const x=((i*131+now*.02*(1+i%3))%W+W)%W,y=H-((i*71+now*.03*(1+i%2))%H);X.fillStyle=`rgba(255,${140+(i*7)%90},60,${.25+(i%4)*.1})`;X.fillRect(x,y,2,i%3?2:3)}
- X.restore();
+ const img=canyonBg(),W=VIEW.w,H=VIEW.h,z=cam.zoom||1;
+ X.fillStyle='#1a0806';X.fillRect(0,0,W,H);
+ if(img.complete&&img.naturalWidth){
+  const par=.32,mapW=COLS*TILE*z,mapH=ROWS*TILE*z,cx=W/2+(cam.x+mapW/2-W/2)*par,cy=H/2+(cam.y+mapH/2-H/2)*par;
+  const need=Math.max((mapW*par+W)/img.naturalWidth,(mapH*par+H)/img.naturalHeight)*1.05,w=img.naturalWidth*need,h=img.naturalHeight*need;
+  X.save();X.imageSmoothingEnabled=false;X.drawImage(img,Math.round(cx-w/2),Math.round(cy-h/2),Math.round(w),Math.round(h));X.restore();
+  // depth: the whole picture sinks into red haze, darker towards the screen edge
+  const g=X.createRadialGradient(W/2,H/2,H*.15,W/2,H/2,H*.95);g.addColorStop(0,'rgba(60,12,8,.38)');g.addColorStop(1,'rgba(8,2,2,.72)');X.fillStyle=g;X.fillRect(0,0,W,H);
+ }
+ X.save();X.globalCompositeOperation='lighter';for(let i=0;i<50;i++){const x=((i*131+now*.02*(1+i%3))%W+W)%W,y=H-((i*71+now*.03*(1+i%2))%H);X.fillStyle=`rgba(255,${140+(i*7)%90},60,${.2+(i%4)*.08})`;X.fillRect(x,y,2,i%3?2:3)}X.restore();
 }
-// The rim of a ledge over the drop: a lit lip on the edge and a short dark face falling into the canyon.
+// Red basalt walls with strata, plank bridges with posts and rails, and a shadowed lip on every ledge over the drop.
 function drawCanyonCell(t,px,py,x,y){
- if(t===TT.VOID){const above=state.map[y-1]?.[x];if(above!=null&&above!==TT.VOID&&above!==TT.RAFT){const g=X.createLinearGradient(0,py,0,py+22);g.addColorStop(0,'rgba(60,30,22,.95)');g.addColorStop(1,'rgba(20,8,6,0)');X.fillStyle=g;X.fillRect(px,py,32,22)}return true}
+ const map=state.map;
+ if(t===TT.VOID){const above=map[y-1]?.[x];if(above!=null&&above!==TT.VOID&&above!==TT.RAFT){const g=X.createLinearGradient(0,py,0,py+26);g.addColorStop(0,'rgba(40,16,10,.92)');g.addColorStop(1,'rgba(20,8,6,0)');X.fillStyle=g;X.fillRect(px,py,32,26)}return true}
+ if(t===TT.WALL){
+  const below=map[y+1]?.[x],front=below!=null&&below!==TT.WALL&&state.seen.has(k(x,y+1));
+  const R=(c,a,b,w,h)=>{X.fillStyle=c;X.fillRect(px+a,py+b,w,h)},v=hash2(x*3+1,y*5+2,64);
+  if(front){
+   // the cliff face: bands of red and cream sandstone over a dark foot
+   const bands=['#a85c3e','#8e4a34','#c27a52','#7a3c2c'],b0=Math.floor(y*1.7+v*2);
+   for(let i=0;i<4;i++)R(bands[(b0+i)%4],0,i*8,32,8);
+   R('rgba(255,226,190,.22)',0,0,32,2);R('rgba(255,226,190,.10)',0,16,32,1);for(let i=8;i<32;i+=8)R('rgba(30,12,8,.35)',0,i,32,1);
+   for(let i=0;i<5;i++)R('rgba(30,12,8,.28)',Math.floor(hash2(x+i,y,65)*28),Math.floor(hash2(x,y+i,66)*28),2+(i%3),1);
+   const g=X.createLinearGradient(0,py+14,0,py+32);g.addColorStop(0,'rgba(20,8,6,0)');g.addColorStop(1,'rgba(20,8,6,.78)');X.fillStyle=g;X.fillRect(px,py+14,32,18);
+   const open=dx=>{const n=map[y]?.[x+dx];return n!=null&&n!==TT.WALL};if(open(-1))R('#e8b88e',0,0,2,32);if(open(1))R('#e8b88e',30,0,2,32);
+  }else{
+   // the top of the wall: dark basalt with a cracked sheen and lit lips towards open ground
+   R('#2a1612',0,0,32,32);R('#3a1e18',3,3,26,26);R('rgba(200,100,60,.14)',5,5,10,3);for(let i=0;i<3;i++)R('rgba(10,4,3,.5)',Math.floor(hash2(x,y+i,67)*24)+2,Math.floor(hash2(x+i,y,68)*24)+2,5,1);
+   const open=(dx,dy)=>{const n=map[y+dy]?.[x+dx];return n!=null&&n!==TT.WALL&&state.seen.has(k(x+dx,y+dy))};if(open(0,-1))R('#c27a52',0,0,32,2);if(open(-1,0))R('#c27a52',0,0,2,32);if(open(1,0))R('#c27a52',30,0,2,32);
+  }
+  return true;
+ }
+ if(t===TT.FLOOR){
+  // warm basalt flagstones: two tones, seams, specks, ember cracks near the walls
+  const v=hash2(x*7+3,y*5+1,70),lit=(x+y)%2;X.fillStyle=lit?'#58372b':'#4e3027';X.fillRect(px,py,32,32);X.fillStyle=lit?'#62402f':'#573629';X.fillRect(px+2,py+2,28,28);
+  X.fillStyle='rgba(255,220,180,.10)';X.fillRect(px+2,py+2,28,2);X.fillRect(px+2,py+2,2,28);X.fillStyle='rgba(12,5,3,.45)';X.fillRect(px,py+31,32,1);X.fillRect(px+31,py,1,32);
+  for(let i=0;i<4;i++){X.fillStyle=i%2?'rgba(255,214,170,.14)':'rgba(10,4,3,.32)';X.fillRect(px+Math.floor(hash2(x+i,y,71)*26)+2,py+Math.floor(hash2(x,y+i,72)*26)+2,2,i%3?1:2)}
+  if(v>.93){X.strokeStyle='rgba(255,120,50,.55)';X.lineWidth=1;X.beginPath();X.moveTo(px+4,py+8+v*8);X.lineTo(px+14,py+16);X.lineTo(px+26,py+12+v*6);X.stroke()}
+  if(map[y-1]?.[x]===TT.WALL){const g=X.createLinearGradient(0,py,0,py+10);g.addColorStop(0,'rgba(8,3,2,.55)');g.addColorStop(1,'rgba(8,3,2,0)');X.fillStyle=g;X.fillRect(px,py,32,10)}
+  return true;
+ }
+ if(t===TT.WOOD_FLOOR){
+  // a plank bridge: boards across, dark gaps, rope posts on the open edges, the underside seen on the south side
+  const open=(dx,dy)=>{const n=map[y+dy]?.[x+dx];return n===TT.VOID||n===TT.LAVA};
+  X.fillStyle='#8a5a34';X.fillRect(px,py,32,32);for(let i=0;i<4;i++){X.fillStyle=(i+x+y)%2?'#9a6840':'#7c4e2c';X.fillRect(px,py+i*8,32,7);X.fillStyle='rgba(20,8,4,.55)';X.fillRect(px,py+i*8+7,32,1)}
+  X.fillStyle='rgba(255,226,170,.14)';X.fillRect(px,py,32,1);for(let i=0;i<4;i++)if(hash2(x+i,y,69)>.7){X.fillStyle='rgba(20,8,4,.6)';X.fillRect(px+3+i*7,py+i*8+2,2,3)}
+  if(open(0,-1)){X.fillStyle='#4a2c1a';X.fillRect(px,py,32,5);X.fillStyle='#d9b45a';X.fillRect(px,py+4,32,1);for(const a of[3,26]){X.fillStyle='#2e1a10';X.fillRect(px+a,py-5,3,12);X.fillStyle='#d9b45a';X.fillRect(px+a,py-5,3,2)}X.strokeStyle='#e0c07a';X.lineWidth=1.2;X.beginPath();X.moveTo(px,py-1);X.lineTo(px+32,py-1);X.stroke()}
+  if(open(0,1)){X.fillStyle='#3a2216';X.fillRect(px,py+26,32,6);X.fillStyle='#1a0e08';X.fillRect(px,py+30,32,2);for(const a of[3,26]){X.fillStyle='#2e1a10';X.fillRect(px+a,py+22,3,10)}X.strokeStyle='#e0c07a';X.lineWidth=1.2;X.beginPath();X.moveTo(px,py+25);X.lineTo(px+32,py+25);X.stroke()}
+  if(open(-1,0)){X.fillStyle='rgba(20,8,4,.55)';X.fillRect(px,py,3,32)}if(open(1,0)){X.fillStyle='rgba(20,8,4,.55)';X.fillRect(px+29,py,3,32)}
+  return true;
+ }
  return false;
 }
