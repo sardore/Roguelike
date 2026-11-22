@@ -2197,7 +2197,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
       }finally{
         // Match the old pipeline's finally boundary; shops never set these flags.
         if(!['shop:no-time','tutorial:no-time'].includes(result.stageOrder[0])&&action.handled!==false&&result.committed){if(state){state._turnPipelineActive57=false;state._turnAgencyWillCount57=false;state._turnAgencyCounted57=false}result.stageOrder.push('clear-transients')}
-        // A move cheaper than one turn (a blink costs .85) can leave the enemy round for the next action, so the first-sight evasion
+        // A move cheaper than one turn can leave the enemy round for the next action, so the first-sight evasion
         // outlives the action until an enemy round has actually run.
         if(result.enemyRounds>0||!result.committed){if(entry)delete entry._movementDiscovery105;if(state)delete state._movementDiscovery105}
         if(state)observePlayerDiscovery105();
