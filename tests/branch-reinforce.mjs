@@ -1,4 +1,4 @@
-// Run after npm run build:qa. 흑성채와 천면경탑도 자연 증원을 받는다: 몹이 줄어들면 시간이 지나 그 던전의 몹이 멀리서 다시 나타난다.
+// Run after npm run build:qa. 자연 증원은 꺼져 있다(도착 수 0): 몹이 줄어도 다시 나타나지 않는다.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,8 +40,7 @@ for (const id of ['citadel', 'mirror']) {
   const o = out[id];
   assert.equal(o.ctx, id, JSON.stringify(o));
   assert.ok(o.initial > 0, id + ' 증원 기준 인원이 없다 ' + JSON.stringify(o));
-  assert.ok(o.back > 0, id + ' 증원이 오지 않았다 ' + JSON.stringify(o));
-  assert.ok(o.branch, id + ' 증원이 그 던전 몹이 아니다');
+  assert.equal(o.back, 0, id + ' 증원은 꺼져 있어야 한다 ' + JSON.stringify(o));
 }
 assert.deepEqual(errors, []);
 await browser.close();
