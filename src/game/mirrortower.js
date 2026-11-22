@@ -517,6 +517,20 @@ function explodeMirrorOrb(orb,owner){
  const shards=cells.slice(1);
  if(shards.length)addField('mirrorShards',x,y,rule.shardTurns,shards,{...effect,bornTurn:state.turn});
 }
+// 천면경 검의 천명탄: a swing at the weapon's longest reach bursts the orb on the target's cell at once. The blast is holy;
+// the shards it leaves lie in all eight directions out to five cells (stopped by walls) and use the same field as the Keeper's.
+function mirrorBladeOrb(pos){
+ const w=state.player.weapon,effect=effectSource57(state.player),rule=MIRROR_KEEPER_SKILLS.orb;
+ const blast=[{x:pos.x,y:pos.y},...DIRS8.map(([dx,dy])=>({x:pos.x+dx,y:pos.y+dy})).filter(c=>cell54(c.x,c.y)&&!tileBlocks(state.map[c.y]?.[c.x]))];
+ const shards=[];for(const[dx,dy]of DIRS8)for(let i=1;i<=5;i++){const x=pos.x+dx*i,y=pos.y+dy*i;if(!cell54(x,y)||tileBlocks(state.map[y]?.[x])||!combatLineCheckR8(pos.x,pos.y,x,y,{units:false}).ok)break;shards.push({x,y})}
+ impact(pos.x,pos.y,'#fff2c2',7);burst(pos.x,pos.y,'#fff6d8',22,1.1);floatText(pos.x,pos.y,'천명탄','#f3dc9a',10);
+ elementAttackFx105('holy',blast,state.player);
+ for(const target of [...state.monsters].filter(t=>t.hp>0&&effectCanAffect57(effect,t)&&entityFootprintCells57(t).some(c=>blast.some(b=>b.x===c.x&&b.y===c.y)))){
+  resolveElementDamage57(target,'holy',Math.max(6,Math.round((w?.atk||9)*1.1)),{effect,contactHandled105:true,source:'천명탄',color:ELEMENT_FX_COLORS105.holy});
+  if(state.dead)break;
+ }
+ if(shards.length)addField('mirrorShards',pos.x,pos.y,rule.shardTurns,shards,{...effect,bornTurn:state.turn});
+}
 function tickMirrorField(field){
  const owner=combatEffectActor(field);
  if(!(owner?.hp>0))return;
