@@ -4158,6 +4158,7 @@ function drawAmmo(q,it){
  for(let i=0;i<3;i++){const y=36-i*6,x=9+i*5;line(q,x,y,x+22,9+i*2,col,2);poly(q,shade(col,28),[[x+24,6+i*2],[x+20,11+i*2],[x+25,13+i*2]]);line(q,x,y,x-4,y-5,'#7d5032',1);line(q,x,y,x+4,y+2,'#7d5032',1)}
  if(k==='iron_arrow')for(const x of[27,32,37])rect(q,x,8+(x-27),3,5,'#c6d0d3');
  if(k==='piercing_arrow'){poly(q,'#8fa4b0',[[41,5],[44,11],[37,11]]);line(q,40,12,35,22,'#d6e1e2',1)}
+ if(k==='poison_arrow'){for(const x of[27,32,37])rect(q,x,9+(x-27),3,4,'#3f6a34');for(const [x,y] of[[30,22],[36,25],[26,28]])ell(q,'#8bc45a',x,y,2,3)}
 }
 function drawUpgrade(q,it){
  const brass='#b78a43',hi='#efd179',dark='#4f3523';

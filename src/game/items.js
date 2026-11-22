@@ -210,6 +210,7 @@ const FOOD_RECIPES=[
   {id:'talisman_sungnyung',name:'원력 숭늉',ingredients:['식어버린 국밥','깨끗한 물'],hint:'식은 국물에 맑은 물을 붓는다.'},
   {id:'vital_hotpot',name:'보신 전골',ingredients:['말린 육포','신선한 생선 살','깨끗한 물'],hint:'육지와 바다의 재료를 물에 고아낸다.'},
   {id:'ice_peach',name:'얼음 복숭아',ingredients:['신선도','빙결액'],hint:'영험한 복숭아를 차가운 액체에 담근다.'},
+  {id:'venom_flask',name:'맹독 물약',ingredients:['떫은 산열매','소회복 비약'],hint:'떫은 열매의 독기를 회복 비약에 녹여 맹독을 만든다.'},
   {id:'seaweed_recovery',name:'중회복 비약',ingredients:['해초','소회복 비약'],stations:['pot'],hint:'솥에서 바다 약초로 작은 회복 비약을 농축한다.'},
   {id:'palace_roll',name:'창해말이',ingredients:['해초','주먹밥','구운 생선 살','매콤한 육포'],stations:['pot','brazier'],yield:10,hint:'해초로 밥과 익힌 생선, 매콤한 고기를 말아 열 조각으로 썬다.'}
 ];
@@ -258,6 +259,8 @@ function throwFood(tx,ty){
  const a=V57.foodTarget;if(!a||!state)return false;const p=state.player,item=a.item,proto=foodDef(item.name),status=item.throwStatus57||proto?.throwStatus57,feeding=item.throwFeeding57??proto?.throwFeeding57;
  if(tx<0||ty<0||tx>=COLS||ty>=ROWS||entityDistance57({x:tx,y:ty},p)>a.range){toast(`사거리 ${a.range}칸 밖이다.`);return false}
  if(!state.seen.has(k(tx,ty))||!lineClear(p.x,p.y,tx,ty)){toast('음식을 던질 길이 막혔다.');return false}
+ const puddle=item.throwPuddle57??proto?.throwPuddle57;
+ if(puddle){if(tileBlocks(state.map[ty][tx])){toast('웅덩이가 고일 수 없는 곳이다.');return false}markCombatActivity57('food-throw');if(state.floor>=11)alertNearby(tx,ty,6,'projectile');projectileFX(p.x,p.y,tx,ty,item.throwColor57||'#7fae5a');spillPuddle(tx,ty,'poison',puddle.ttl);addLog('독웅덩이가 고였다.');consumeStack(item);cancelFoodTarget(true);globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'food-throw'});return true}
  const m=findMonsterAt(tx,ty);if(!isThreatVisibleToPlayer(m)){toast('투척할 적대 요괴가 없다.');return false}
  markCombatActivity57('food-throw');if(state.floor>=11)alertNearby(tx,ty,6,'projectile');projectileFX(p.x,p.y,tx,ty,item.throwColor57||'#9bb061');
  if(globalThis.__MANRU_ASURA61__?.blocksDirect?.(m,p)){floatText(tx,ty,'영역 밖 무효','#d7b16e',10);addLog(`${m.name}의 아수라장이 투척물을 튕겨냈다.`)}
@@ -392,14 +395,15 @@ function fusionRewardItems(baseKind,count){
 const AMMO_TYPES=[
     {name:'목제 화살',type:'ammo',ammoKind:'wood_arrow',ammoFamily:'arrow',rarity:'common',stackMax:50,minFloor:1,weight:55,spawnMin:5,spawnMax:9,atkBonus:0,pierce:0,color:'#d7c092',desc:'가볍고 값싼 표준 화살. 바닥에서는 작은 화살 묶음으로 발견된다.'},
     {name:'철촉 화살',type:'ammo',ammoKind:'iron_arrow',ammoFamily:'arrow',rarity:'common',stackMax:50,minFloor:2,weight:32,spawnMin:4,spawnMax:7,atkBonus:1,pierce:0,color:'#bcc3c7',desc:'철제 화살촉을 단 보급용 화살. 목제 화살보다 묵직한 충격을 준다.'},
-    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:50,minFloor:7,weight:13,spawnMin:3,spawnMax:5,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 단단한 방어를 꿰뚫는 데 알맞다.'}
+    {name:'관통 화살',type:'ammo',ammoKind:'piercing_arrow',ammoFamily:'arrow',rarity:'common',stackMax:50,minFloor:7,weight:13,spawnMin:3,spawnMax:5,atkBonus:0,pierce:2,color:'#8fa4b0',desc:'가늘고 단단한 촉으로 갑옷 틈을 노리는 화살. 단단한 방어를 꿰뚫는 데 알맞다.'},
+    {name:'독화살',type:'ammo',ammoKind:'poison_arrow',ammoFamily:'arrow',rarity:'rare',stackMax:50,minFloor:1,weight:0,puddleOnly:true,spawnMin:1,spawnMax:1,atkBonus:0,pierce:0,poison:{turns:5},missPenalty:.12,color:'#7fae5a',desc:'독웅덩이에 젖은 화살. 맞힌 적을 5턴 중독시키고, 명중률이 12%p 낮다.'}
   ];
   const ammoStacks=()=>state?.player?.inventory?.filter(i=>i?.type==='ammo'&&(i.count||0)>0)||[];
   const totalAmmo=()=>ammoStacks().reduce((n,i)=>n+(i.count||1),0);
   function ammoDef(kind){return AMMO_TYPES.find(a=>a.ammoKind===kind)||null}
-  function weightedAmmo(){const pool=AMMO_TYPES.filter(a=>(a.minFloor||1)<=Math.max(1,state?.floor||1));let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=globalThis.__MANRU_RANDOM57__()*Math.max(1,sum);for(const a of pool){r-=a.weight||1;if(r<=0)return a}return pool[0]||AMMO_TYPES[0]}
+  function weightedAmmo(){const pool=AMMO_TYPES.filter(a=>!a.puddleOnly&&(a.minFloor||1)<=Math.max(1,state?.floor||1));let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=globalThis.__MANRU_RANDOM57__()*Math.max(1,sum);for(const a of pool){r-=a.weight||1;if(r<=0)return a}return pool[0]||AMMO_TYPES[0]}
   function makeAmmo(def=weightedAmmo(),boost=false){const q=clone(def);q.count=randInt967(q.spawnMin||6,q.spawnMax||12);if(boost)q.count+=randInt967(2,5);return q}
-  function selectedAmmo(){if(!state?.player)return null;const stacks=ammoStacks();if(!stacks.length)return null;let a=stacks.find(i=>i.ammoKind===state.player.loadedAmmoKind);if(!a){const order=['wood_arrow','iron_arrow','piercing_arrow'];a=[...stacks].sort((x,y)=>order.indexOf(x.ammoKind)-order.indexOf(y.ammoKind))[0];state.player.loadedAmmoKind=a.ammoKind}return a}
+  function selectedAmmo(){if(!state?.player)return null;const stacks=ammoStacks();if(!stacks.length)return null;let a=stacks.find(i=>i.ammoKind===state.player.loadedAmmoKind);if(!a){const order=['wood_arrow','iron_arrow','piercing_arrow','poison_arrow'];a=[...stacks].sort((x,y)=>order.indexOf(x.ammoKind)-order.indexOf(y.ammoKind))[0];state.player.loadedAmmoKind=a.ammoKind}return a}
   function consumeAmmo(stack){
     const p=state.player;
     if(!stack||!p.inventory.includes(stack)||itemQuantity(stack)<1)return false;
@@ -414,7 +418,7 @@ const AMMO_TYPES=[
     for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619)>>>0}h^=h>>>16;h=Math.imul(h,2246822507)>>>0;h^=h>>>13;return(h>>>0)/4294967296;
   }
   function controlledAmmo(index=0){
-    const pool=AMMO_TYPES.filter(a=>(a.minFloor||1)<=Math.max(1,state?.floor||1));if(!pool.length)return null;
+    const pool=AMMO_TYPES.filter(a=>!a.puddleOnly&&(a.minFloor||1)<=Math.max(1,state?.floor||1));if(!pool.length)return null;
     let sum=pool.reduce((n,a)=>n+(a.weight||1),0),r=ammoUnit(100+index)*Math.max(1,sum),def=pool[0];for(const a of pool){r-=a.weight||1;if(r<=0){def=a;break}}
     const item=clone(def),lo=def.spawnMin||1,hi=def.spawnMax||lo;item.count=lo+Math.floor(ammoUnit(200+index)*(hi-lo+1));
     const ok=(x,y)=>x>0&&y>0&&x<COLS-1&&y<ROWS-1&&ReachabilityService.playerPassable(x,y)&&state.map[y][x]!==TT.STAIR&&!(state.player.x===x&&state.player.y===y)&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y);
