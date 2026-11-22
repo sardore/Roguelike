@@ -2975,7 +2975,7 @@ function randomPlayerTransferDestination57(cause,opts={}){
 function executeBlinkTarget57(cell,ctx){
   if(!state||!cell||!ctx?.act?.ok)return false;const p=state.player,ox=p.x,oy=p.y,live=blinkTargetCells57(p,ctx.range).find(q=>q.x===cell.x&&q.y===cell.y);if(!live){toast('그 칸은 더 이상 점멸할 수 없다.');return false}
   if((p.focus||0)<2){toast('점멸에는 기력 2가 필요하다.');return false}
-  try{p.focus-=2;state.blinkSpent52=(state.blinkSpent52||0)+2;burst(ox,oy,'#c9d4e5',10,.7);const landing=resolvePlayerLanding57(live.x,live.y,{cause:'blink'});if(!landing.ok){p.focus+=2;state.blinkSpent52=Math.max(0,(state.blinkSpent52||0)-2);toast('점멸할 수 없는 칸이다.');return false}burst(p.x,p.y,'#c9d4e5',12,.9);addLog(`점멸 ${live.dist}칸 · 기력 -2.`);if(!state.dead)commitPlayerAction57(ctx.act,.85);return true}finally{if(state&&(p.x!==ox||p.y!==oy))window.__MANRU_RUNTIME81__?.Automation81?.pickup?.()}
+  try{p.focus-=2;state.blinkSpent52=(state.blinkSpent52||0)+2;burst(ox,oy,'#c9d4e5',10,.7);const landing=resolvePlayerLanding57(live.x,live.y,{cause:'blink'});if(!landing.ok){p.focus+=2;state.blinkSpent52=Math.max(0,(state.blinkSpent52||0)-2);toast('점멸할 수 없는 칸이다.');return false}burst(p.x,p.y,'#c9d4e5',12,.9);addLog(`점멸 ${live.dist}칸 · 기력 -2.`);if(!state.dead)commitPlayerAction57(ctx.act,1);return true}finally{if(state&&(p.x!==ox||p.y!==oy))window.__MANRU_RUNTIME81__?.Automation81?.pickup?.()}
 }
 function useBlink(){
   if(typeof V57!=='undefined'&&V57.cookOpen)return false;const rt=window.__MANRU_RUNTIME81__;if(rt?.state?.cameraInspecting)rt.Camera81?.resume?.(false);const p=state?.player;if(!p)return false;
