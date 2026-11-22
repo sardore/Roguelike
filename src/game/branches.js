@@ -2538,7 +2538,7 @@ const MINE_ITEMS105=Object.freeze({
   });
 /* ===== MANRU r48: LEGENDARY WEAPONS / GRAND PORTAL DUNGEONS ===== */
 const LEGENDS47=[
- {id:'ember_axe',name:'적련 불꽃도끼',kind:'blunt',atk:6,speed:0.86,range:2,armorPierce:true,ability:'화신 · 낙화',dungeon:'구천낙화 제련성',hudName:'구천낙화',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 소유 중 화염 저항 Ⅲ(화염 피해 75% 감소). 화염 방어각인이 있으면 화염 저항 Ⅳ로 화염에 면역이다. 이 무기로 적중할 때마다 낙화 스택이 쌓이고, 10스택에서 9칸 안의 가장 가까운 적에게 하늘의 도끼가 떨어져 고정 피해 7을 주고 주변 3×3에 3턴 화염지대를 만든다. 방어 75% 무시.'},
+ {id:'ember_axe',name:'적련 불꽃도끼',kind:'blunt',atk:6,speed:0.86,range:2,armorPierce:true,ability:'화신 · 낙화',dungeon:'구천낙화 제련성',hudName:'구천낙화',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 소유 중 화염 저항 Ⅲ. 적중마다 낙화 1스택, 10스택이면 가까운 적에게 하늘의 도끼가 떨어져 고정 피해 7과 3×3 화염지대 3턴. 방어 75% 무시.'},
  {id:'water_crossbow',name:'창해 수압연노',kind:'bow',crossbow47:true,tier:2,ranged:true,atk:1,speed:0.82,range:6,ability:'해압 폭쇄',dungeon:'창해 용궁 · 잠긴 조정',hudName:'창해 용궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'창해 용궁 보상 · T2 · 강화 불가. ATK 1 · 속도 0.54 · 사거리 6. 적중점 주변 3×3에 물 접촉과 적에게 고정 추가 피해 5. 직접 맞은 대상도 폭쇄를 맞는다. 폭쇄는 다시 폭쇄를 일으키지 않으며 물 타일을 생성하지 않는다.'},
  {id:'thunder_spear',name:'청뢰 장창',kind:'spear',atk:7,speed:0.76,range:4,knockback:1,ability:'낙뢰 연쇄',dungeon:'뇌정 칠주 수문궁',hudName:'뇌정 수문궁',minFloor:6,maxFloor:14,stage:'2~3테마',desc:'전설의 무기 · 강화 불가. 적중하면 가까운 적 둘에게 청뢰가 연쇄되어 추가 피해를 준다.'},
  {id:'curse_blade',name:'주박 저주칼',kind:'blade',atk:8,speed:1.04,range:2,crit:.07,ability:'혈명 주박',dungeon:'혈문 주박사당',hudName:'혈문 사당',minFloor:11,maxFloor:19,stage:'3~4테마',desc:'전설의 무기 · 강화 불가. 장착 중 최대 HP가 20% 감소한다. 대신 현재 착용한 저주받은 다른 장비 1개마다 ATK +6, 치명타율 +8%p가 추가되어 저주 장비를 감수할수록 폭발적으로 강해진다.'},

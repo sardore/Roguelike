@@ -4398,8 +4398,31 @@ function drawLegendCell(tile,px,py,x,y,now,vis){if(!state?.artifactDungeon46)ret
  drawLegendDecorCell(state.legendDecorGrid47?.[key46(x,y)],px,py,T);}
  X.restore();return true;
 }
+// 낙화: the weapon's own sprite falls end over end from high above, buries itself, and a spiral of fire bursts out of the impact
+function drawSkyAxe(a,cam,now){
+ const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))return;
+ const P=globalThis.__MANRU_CAMERA_PROJECTION12__,q=P.tileCenter(a.x,a.y,cam),s=q.s,fall=380,art=globalThis.__MANRU_ITEM_ART_R7__,asset=art?.weaponAsset?.(a.item||state.player.weapon||{name:'적련 불꽃도끼',kind:'blunt',artifactId46:'ember_axe',artifactWeapon46:true,legendaryWeapon47:true});
+ const t=Math.min(1,age/fall),ease=t*t,cx=q.x,ground=q.y,down=Math.PI/2-(asset?.axis??-Math.PI/2),bury=s*.8,cy=ground-bury-(1-ease)*s*4.2,spin=(1-ease)*Math.PI*3.2+down,scale=s/32*1.6;
+ X.save();X.globalCompositeOperation='lighter';
+ if(t<1){ // the falling axe and its flaming trail
+  for(let i=1;i<=6;i++){const u=Math.max(0,ease-i*.05),ty=ground-(1-u)*s*4.2;X.globalAlpha=.16*(1-i/7);X.fillStyle=i<3?'#ffd27a':'#f2632a';X.beginPath();X.ellipse(cx,ty,s*(.22-i*.02),s*(.38-i*.03),0,0,Math.PI*2);X.fill()}
+ }else{
+  const u=(age-fall)/(a.ttl-fall),fade=Math.max(0,1-u);
+  // the flash and the shock ring
+  const g=X.createRadialGradient(cx,ground,0,cx,ground,s*(.6+u*2.2));g.addColorStop(0,`rgba(255,246,206,${.85*fade})`);g.addColorStop(.35,`rgba(255,168,72,${.55*fade})`);g.addColorStop(1,'rgba(200,40,10,0)');X.globalAlpha=1;X.fillStyle=g;X.beginPath();X.arc(cx,ground,s*(.6+u*2.2),0,Math.PI*2);X.fill();
+  X.strokeStyle=`rgba(255,196,110,${.8*fade})`;X.lineWidth=Math.max(1,s*.12*fade);X.beginPath();X.ellipse(cx,ground,s*(.4+u*2.8),s*(.22+u*1.5),0,0,Math.PI*2);X.stroke();if(u>.18){const w=(u-.18)/.82;X.strokeStyle=`rgba(255,120,50,${.6*(1-w)})`;X.lineWidth=Math.max(1,s*.08*(1-w));X.beginPath();X.ellipse(cx,ground,s*(.3+w*2.2),s*(.16+w*1.2),0,0,Math.PI*2);X.stroke()}
+  // three spiral arms of flame wheeling outward
+  for(let arm=0;arm<4;arm++)for(let j=0;j<22;j++){const v=j/22,r=s*(.12+v*(1+u*2.4)),th=arm*Math.PI/2+v*Math.PI*2.8+u*6.4,px=cx+Math.cos(th)*r,py=ground+Math.sin(th)*r*.62,size=s*(.26-v*.14)*(1-u*.55);
+   if(size<=0)continue;X.globalAlpha=Math.min(1,fade*1.3)*(1-v*.45);X.fillStyle=v<.3?'#fff1b8':v<.6?'#ffa040':'#e3461f';X.beginPath();X.arc(px,py-size*.4,size,0,Math.PI*2);X.fill()}
+  // embers flung up
+  for(let i=0;i<14;i++){const th=i*2.399,d=s*(.3+u*1.6)*(.6+(i%4)*.15),px=cx+Math.cos(th)*d,py=ground+Math.sin(th)*d*.55-u*s*(1.2+(i%3)*.4);X.globalAlpha=fade*.9;X.fillStyle=i%2?'#ffd27a':'#ff7a33';X.fillRect(px,py,Math.max(1,s*.05),Math.max(1,s*.05))}
+ }
+ X.restore();
+ // the axe itself: its own sprite, spinning down, then buried at a slant while the fire rolls out
+ if(asset?.canvas){const buried=t>=1,u=buried?(age-fall)/(a.ttl-fall):0;X.save();X.globalAlpha=buried?Math.max(0,1-u*1.4):1;X.translate(cx,buried?ground-bury+s*.12*Math.min(1,u*6):cy);X.rotate(buried?down:spin);X.scale(scale,scale);X.drawImage(asset.canvas,-asset.grip.x,-asset.grip.y);X.restore()}
+}
 function drawLegendWorld(){if(!state)return;const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),id=state.artifactDungeon46?.id;X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
- for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[]){const age=now-a.t;if(age<0||age>a.ttl||!state.visible.has(k(a.x,a.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(a.x,a.y,cam),cx=q.x,ground=q.y,t=Math.min(1,age/360),cy=ground-(1-t)*q.s*3.2;X.save();X.translate(cx,cy);X.rotate(-.7+t*3.5);X.fillStyle='#5f3522';X.fillRect(-2,-10,4,20);X.fillStyle='#ee7137';X.beginPath();X.moveTo(0,-6);X.lineTo(14,-2);X.lineTo(9,7);X.lineTo(0,5);X.closePath();X.fill();X.restore()}
+ for(const f of state.legendFireFields47||[])for(const c of f.cells??[{x:f.x,y:f.y}]){if(!state.visible.has(k(c.x,c.y)))continue;const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(c.x,c.y,cam);drawFloorField(X,q.x,q.y,q.s,c.x,c.y,now);}for(const a of state.legendSkyAxes47||[])drawSkyAxe(a,cam,now);
  const rw=state.artifactReward46;if(rw&&state.visible.has(k(rw.x,rw.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileTopLeft(rw.x,rw.y,cam),rx=q.x,ry=q.y,ss=q.s;X.fillStyle='rgba(224,177,75,.20)';X.fillRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30);X.strokeStyle='rgba(255,226,139,.75)';X.strokeRect(rx+ss*.12,ry+ss*.55,ss*.76,ss*.30)}const pp=state.artifactPortal46||state.artifactExit46;if(pp&&state.map[pp.y]?.[pp.x]===TT.PORTAL&&state.visible.has(k(pp.x,pp.y))){const q=globalThis.__MANRU_CAMERA_PROJECTION12__.tileCenter(pp.x,pp.y,cam),cx=q.x,cy=q.y,r=q.s*.34;X.strokeStyle='#f1cf75';X.lineWidth=Math.max(2,2*cam.zoom);X.beginPath();X.arc(cx,cy,r,0,Math.PI*2);X.stroke();X.fillStyle='#f4df9b';X.font=`${Math.max(9,11*cam.zoom)}px sans-serif`;X.textAlign='center';X.fillText('傳',cx,cy+4*cam.zoom)}X.restore()}
 function drawPalaceSweepWarning(ctx,intent,project,now,visible=()=>true){
  const keys=new Set(intent.cells.map(c=>k(c.x,c.y))),pulse=.6+.2*Math.sin(now/150),origin=intent.data.origin57,radius=intent.data.radius105;
