@@ -186,7 +186,7 @@ function tickTerrainReactions105(){
  for(const e of [state.player,...state.monsters]){const b=e.combustion105;if(e.hp<=0||!b||state.turn<=b.born||b.lastTick===state.turn)continue;b.lastTick=state.turn;
   const floorDamage=b.floorDamageTurn105===state.turn?b.floorDamage105||0:0;resolveElementDamage57(e,'fire',floorDamage||COMBUSTION_RULES105.damage,{contactHandled105:true,effect:{...b.source,friendlyFire:true},source:floorDamage?'불바닥':'연소',color:'#ee812b'});if(b.refreshed!==state.turn&&--b.remaining<=0)delete e.combustion105;
  }
- for(const[key,spill]of Object.entries(r.spills||{}))if(state.turn>spill.born&&--spill.ttl<=0)delete r.spills[key];
+ for(const[key,spill]of Object.entries(r.spills||{})){if(spill.kind==='poison')soakArrowsInPuddle([spill]);if(state.turn>spill.born&&--spill.ttl<=0)delete r.spills[key]}
 }
 // A paper bridge is a floor to walk on, not furniture to strike: an element-branded weapon may not target it (its cell is never an empty-cell attack).
 function elementalWorldTarget105(x,y){const t=state?.map?.[y]?.[x],elem=weaponElement105(),structure=elementalStructureAt105(x,y);if(t===TT.PAPER_BRIDGE)return false;return !!(elem&&structure&&elementAffectsMaterial105(elem,structure.material))|| t===TT.JAR||(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(t))||(elem==='ice'&&(isWaterTile105(t)||t===TT.ICE))||(elem==='fire'&&t===TT.ICE)||!!(elem&&(elementMaterial105(t,'wood',x,y)||elementMaterial105(t,'stone')||lightAt(x,y)||terrainReactions105().burning[k(x,y)]||(['fire','water'].includes(elem)&&((state.items||[]).some(i=>i.x===x&&i.y===y&&(i.foodKind==='charcoal'||i.name==='검게 탄 숯'))))))}

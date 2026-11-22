@@ -619,7 +619,7 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     state.playerAttackUntil=performance.now()+150;state.playerAttackTarget={x:mon.x,y:mon.y};setPlayerAttackOutcome('attempt',mon);mon.alerted=true;const noiseRadius=state.floor<11?4:ranged?8:state.player.strongReady>0?9:7;
     const aim=ranged?(context.aimPower??p.classState?.aimPower??0):0,ammo=ranged?(globalThis.MANRU_AMMO||[]).find(a=>a.ammoKind===state._activeAmmo967?.ammoKind):null;
     if(aim>0&&!context.shotBundle)setAimPower(aim-1,'attack');
-    const missChance=entityAttackMissChance(p,mon,{base:.05,max:mon.boss?.26:.34,evaScale:aim?.5:1,evaIgnore:ranged&&w.tracking?6:0});
+    const missChance=entityAttackMissChance(p,mon,{base:.05,max:mon.boss?.26:.34,evaScale:aim?.5:1,evaIgnore:ranged&&w.tracking?6:0})+(ammo?.missPenalty||0);
     if(globalThis.__MANRU_RANDOM57__()<missChance){alertNearby(mon.x,mon.y,noiseRadius,ranged?'projectile':'combat');setPlayerAttackOutcome('miss',mon,{reason:'evasion'});mon.evadeUntil=performance.now()+220;floatText(mon.x,mon.y,'회피','#b7c8d4',11);addLog(mon.name+'이 공격을 피했다.');sfx54('miss');return false}
     const ready=!ranged?p.strongReady:0;let bonus=bonusAtk+(ammo?.atkBonus||0);if(ready>0){bonus+=strongBonus(ready)-(martialFormOf('strong')==='drive'?2:0);addLog(`${martialPresentation('strong',MARTIAL_INFO.strong,p).name} ${ready}단계 발동.`);p.strongReady=0}
     const defenseBonus=combatDefenseBonus(mon);
@@ -629,6 +629,7 @@ function die(by){if(!RunLifecycle.terminate('death'))return false;RuntimeState.u
     setPlayerAttackOutcome('hit',mon,{damage:dmg,crit});mon.hitUntil=performance.now()+170;mon.hitDir={x:Math.sign(mon.x-p.x),y:Math.sign(mon.y-p.y)};slashFX(p.x,p.y,mon.x,mon.y,crit?'#ffe8a2':'#e7d4d4');impact(mon.x,mon.y,crit?'#ffe09a':'#e7c8c8',crit?5:3);if(dmg>0)floatText(mon.x,mon.y,'-'+dmg,crit?'#ffe09a':'#f0b7b7',crit?16:13);addLog(`${p.name} → ${mon.name}: ${dmg}${crit?' 치명타':''}${w.armorPierce?' · 방어관통':''}`);sfx54(crit?'crit':'hit');
     if(context.wasStealthed&&martialFormOf('ghost')==='assassin'&&mon.hp>0){setMonsterWeakened(mon,MARTIAL_RULES.assassinTurns);martialFx('assassin',mon)}if(ready>0&&martialFormOf('strong')==='drive'&&mon.hp>0)resolveDrive(mon,ready,p);
     // A bleeding weapon opens a real wound: the foe bleeds for 4 turns (a share of its health each turn, see tickMonsterCombatStatuses), not a one-off 3.
+    if(dmg>0&&ammo?.poison&&mon.hp>0&&applyCombatStatus(mon,'poison',ammo.poison.turns,1,{source:state.player}))floatText(mon.x,mon.y,'중독','#8bc45a',10);
     if(dmg>0&&!mon.statusImmune&&w.bleed&&globalThis.__MANRU_RANDOM57__()<w.bleed&&mon.hp>0&&applyCombatStatus(mon,'bleed',4,1,{source:state.player}))floatText(mon.x,mon.y,'출혈','#d86a7a',10);
     if(dmg>0&&w.stun&&mon.hp>0){if(mon.boss){mon.controlCd54=Math.max(0,mon.controlCd54||0);if(mon.controlCd54<=0&&globalThis.__MANRU_RANDOM57__()<w.stun*.45){setMonsterStatus(mon,'stunned',1);mon.controlCd54=4;mon.controlCdTurn54=state.turn;floatText(mon.x,mon.y,'경직','#d5c58e',10)}}else if(globalThis.__MANRU_RANDOM57__()<w.stun)setMonsterStatus(mon,'stunned',Math.max(mon.stunned||0,1))}
     if(mon.guardReady1005>0){const bundle=RuntimeState.martialDamageBundle1005;if(bundle)(bundle.guardTargets105||(bundle.guardTargets105=new Set())).add(mon);else consumeMartialGuard(mon);}if(mon.hp<=0)killMonster(mon);else vfVibrate(crit?HAPTIC_PATTERN57.crit:HAPTIC_PATTERN57.hit);return true;
@@ -823,6 +824,12 @@ function addField(kind,x,y,ttl,cells=null,metadata={}){
  if(kind==='fire'&&!cells.length)return;
  state.tempFields=(state.tempFields||[]).filter(f=>!(f.kind===kind&&f.x===x&&f.y===y&&!f.martialSmoke&&!metadata.martialSmoke&&!metadata.rootWall105));
  state.tempFields.push({kind,x,y,ttl,bornTurn:state.turn+1,...(cells?{cells}:{}),...effectSource57(state.player),...fieldMetadata});if(kind==='smoke')syncSmokeEntry();
+}
+// Arrows lying in a poison puddle are soaked into poison arrows (a puddle spilled over them, or arrows that land in it later)
+function soakArrowsInPuddle(cells){
+ const poison=(globalThis.MANRU_AMMO||[]).find(a=>a.ammoKind==='poison_arrow');if(!poison)return 0;let n=0;
+ for(const it of state.items||[]){if(it.type!=='ammo'||it.puddleOnly||!cells.some(c=>c.x===it.x&&c.y===it.y))continue;for(const key of ['name','ammoKind','rarity','color','desc','atkBonus','pierce','poison','missPenalty','puddleOnly'])it[key]=clone(poison[key]);n++}
+ if(n)addLog('웅덩이에 젖은 화살이 독화살로 변했다.');return n;
 }
 function applyMonsterAttackStatus57(mon,target,context={}){
  if(!target||target.hp<=0)return;

@@ -2954,10 +2954,13 @@ const REGIONS=[
   [21,25,'만루의 심장','황금 기와와 원혼, 수은 연못과 거대한 공동.','#5a4930','#211a12','#d1b25f']
 ];
 function choice(arr){ return arr[Math.floor(globalThis.__MANRU_RANDOM57__()*arr.length)]; }
-function spillJar105(x,y,kind){
+// A puddle on the floor (oil, wine, water, poison): the one maker for every spill, a broken jar's and a thrown flask's alike.
+// Standing in it has the kind's effect (environmentStanding105); poison also soaks the arrows lying in it.
+function spillPuddle(x,y,kind,ttl=5){
  const r=terrainReactions105();r.spills||={};
  const cells=elementCells105(x,y,1).filter(q=>!tileBlocks(state.map[q.y]?.[q.x])&&!globalThis.__MANRU_HAZARD_CORE__?.kind(state.map[q.y]?.[q.x]));
- for(const q of cells)r.spills[k(q.x,q.y)]={...q,kind,ttl:5,born:state.turn};
+ for(const q of cells)r.spills[k(q.x,q.y)]={...q,kind,ttl,born:state.turn};
+ if(kind==='poison')soakArrowsInPuddle(cells);
  if(kind==='water')emitElementContact105('water',cells);for(const e of [state.player,...state.monsters])if(e.hp>0&&cells.some(q=>monCovers(e,q.x,q.y)))environmentStanding105(e);
  if(kind==='water')elementAttackFx105('water',cells,{x,y});return cells;
 }
