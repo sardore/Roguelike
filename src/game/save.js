@@ -619,7 +619,7 @@ function normalizeSavedItem(it){
   // these seven used to be curses; they are a relic's or trinket's negative trait now
   if(it.curse991&&CHARM_BANES[it.curse991]){it.bane=it.curse991;for(const k of ['curse991','curse','curseActive991','curseActivatedTurn991','curseRoll991'])delete it[k];it.curseImmune991=true}
   const d=defBy(it.name);if(!d)return it;
-  const old52={'대나무창':0,'철두창':3,'삼각창':5,'당파':10,'사냥용 목궁':0,'병사용 반궁':3,'강화 각궁':6,'정량궁':8,'단단한 철궁':10};if(Object.prototype.hasOwnProperty.call(old52,it.name)&&!it.balance52){it.atk=(it.atk||0)+(d.atk-old52[it.name]);it.balance52=true;}
+  const old52={'대나무창':0,'철두창':3,'삼각창':5,'당파':10,'사냥용 목궁':0,'병사용 반궁':3,'강화 각궁':6,'정량궁':8,'단단한 철궁':10},spearBefore={'대나무창':0,'철두창':2,'삼각창':4,'당파':8},ran52=Object.prototype.hasOwnProperty.call(old52,it.name)&&!it.balance52;if(ran52){it.atk=(it.atk||0)+(d.atk-old52[it.name]);it.balance52=true;}if(Object.prototype.hasOwnProperty.call(spearBefore,it.name)&&!it.spearPeriodBalance){if(!ran52)it.atk=(it.atk||0)+(d.atk-spearBefore[it.name]);it.spearPeriodBalance=true}
   // only sync audited mechanics/text; preserve upgrades, curses, coordinates and instance state
   for(const k of ['speed','range','focusChain','edgeBonus','chain','knockback','parry','tracking','staggerResist','focusRegen','eatSpeed','trapGuard','ability','desc']){
     if(Object.prototype.hasOwnProperty.call(d,k))it[k]=d[k];else if(['focusChain','edgeBonus','chain','parry','tracking','staggerResist','focusRegen','eatSpeed','trapGuard'].includes(k))delete it[k];
