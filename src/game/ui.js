@@ -409,7 +409,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     ROWS=state.map?.length||ROWS;COLS=state.map?.[0]?.length||COLS;for(const wall of state.tempTerrain74||[])if(wall.rootWall105)delete wall.riseStarted105;
     state.seen=state.seen instanceof Set?state.seen:new Set(state.seen||[]);state.visible=new Set();state.grassTufts1020=state.grassTufts1020 instanceof Set?state.grassTufts1020:new Set(Array.isArray(state.grassTufts1020)?state.grassTufts1020:[]);
     if(state.branchWorld105?.canalFollowers105){summonPlaceFollowers105(state.branchWorld105.canalFollowers105);delete state.branchWorld105.canalFollowers105;}
-    if(!state.branchContext105&&!state.artifactDungeon46&&!state.shopIntermission?.active&&[2,3,7,9,12,16,22].includes(state.floor)&&!state.branchPortals105.length)branchEntrance({required:false});
+    if(!state.branchContext105&&!state.artifactDungeon46&&!state.shopIntermission?.active&&[2,3,7,9,12,16].includes(state.floor)&&!state.branchPortals105.length)branchEntrance({required:false});
     if(state.branchContext105?.id==='palace')palaceApplyTide();
  if(state.branchContext105?.id==='mine'){mineEnsureEntrance();migrateMineAppearance105();}
     BRANCH_TILE_CACHE.clear();
