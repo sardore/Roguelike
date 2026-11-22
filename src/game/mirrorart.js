@@ -88,7 +88,7 @@ function glassWallFront(kind,x,t,win){
   const R=(c,a,b,w,h)=>{q.fillStyle=c;q.fillRect(a,b,w,h)};
   if(kind==='o'){
    // thick glass in section: bright sky-blue at the cap, deepening to blue-violet at the foot
-   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,tint.glassHi);g.addColorStop(.35,tint.glass);g.addColorStop(1,glassPal().violet);R(g,0,0,32,32);
+   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,tint.glass);g.addColorStop(.45,tint.glassDeep);g.addColorStop(1,glassPal().violetInk);R(g,0,0,32,32);
    R(glassPal().silver,0,0,32,3);R(glassPal().silverDark,0,3,32,1);R(glassRGBA(glassPal().white,.35),0,4,32,1);
    for(let i=8;i<30;i+=7){R(glassRGBA(glassPal().violetInk,.16),0,i,32,1)}
    if(pier){R(glassPal().silverDark,11,3,10,29);R(glassPal().silverMid,12,3,7,29);R(glassPal().silver,12,3,2,29);R(glassPal().silver,9,4,14,2);R(glassRGBA(glassPal().violetInk,.35),19,6,2,26)}
@@ -105,7 +105,7 @@ function glassWallFront(kind,x,t,win){
    R(glassRGBA(glassPal().violetInk,.6),0,29,32,3);
   }else{
    // an inner wall: lighter framed panes, a slim cap, no windows
-   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,glassMix(tint.glassMid,glassPal().lilac,.25));g.addColorStop(1,glassMix(tint.glassDeep,glassPal().violet,.45));R(g,0,0,32,32);
+   const g=q.createLinearGradient(0,0,0,32);g.addColorStop(0,tint.glassMid);g.addColorStop(.5,tint.glassDeep);g.addColorStop(1,glassPal().violetDeep);R(g,0,0,32,32);
    R(glassPal().silverMid,0,0,32,2);R(glassPal().silver,0,0,32,1);
    R(glassRGBA(glassPal().silverMid,.8),0,14,32,1);R(glassRGBA(glassPal().silverMid,.8),x%2?31:0,2,1,28);
    R(glassRGBA(glassPal().white,.18),3,4,2,8);R(glassRGBA(glassPal().white,.10),6,4,1,8);R(glassRGBA(glassPal().white,.10),4,17,2,8);
@@ -116,9 +116,9 @@ function glassWallFront(kind,x,t,win){
 // The top of a wall seen from above: a dark glass core with lit edges where it meets open floor.
 function drawGlassWallTop(ctx,px,py,x,y,kind,t){
  const tint=glassTint(t),open=(dx,dy)=>{const v=state.map[y+dy]?.[x+dx];return v!=null&&v!==TT.WALL&&state.seen.has(k(x+dx,y+dy))};
- ctx.fillStyle=kind==='o'?glassPal().violetDeep:glassMix(glassPal().violet,tint.glassDeep,.4);ctx.fillRect(px,py,32,32);
- ctx.fillStyle=glassRGBA(tint.glass,kind==='o'?.10:.16);ctx.fillRect(px+4,py+4,24,24);
- const e=kind==='o'?3:2;ctx.fillStyle=tint.glassHi;
+ ctx.fillStyle=glassPal().violetInk;ctx.fillRect(px,py,32,32);
+ ctx.fillStyle=glassRGBA(kind==='o'?glassPal().violetDeep:tint.glassDeep,kind==='o'?.9:.55);ctx.fillRect(px+6,py+6,20,20);ctx.fillStyle=glassRGBA(glassPal().violetInk,.6);ctx.fillRect(px+10,py+10,12,12);
+ const e=3;ctx.fillStyle=tint.glassHi;
  if(open(0,-1))ctx.fillRect(px,py,32,e);if(open(-1,0))ctx.fillRect(px,py,e,32);if(open(1,0))ctx.fillRect(px+32-e,py,e,32);
  ctx.fillStyle=glassPal().silverMid;if(open(-1,0))ctx.fillRect(px+e,py,1,32);if(open(1,0))ctx.fillRect(px+31-e,py,1,32);if(open(0,-1))ctx.fillRect(px,py+e,32,1);
 }
