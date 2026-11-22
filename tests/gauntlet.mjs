@@ -18,7 +18,7 @@ await startRun(s, 'swordsman'); await dismissModals(s);
 const out = await s.page.evaluate(() => {
   const g = gt.clone(gt.weapons.find(w => w.name === '연철 권갑')), legend = gt.legends().find(d => d.id === 'earth_gauntlet'), r = {};
   r.speed = g.speed; r.cost = gt.cost(g); r.legendSpeed = legend.speed; r.legendCost = gt.cost(legend);
-  r.cost16 = gt.cost({ speed: 1.6 }); r.legendOld = gt.cost({ speed: 1.35 });
+  r.cost16 = gt.cost({ speed: 1 }); r.legendOld = gt.cost({ speed: 1 }); r.cost2 = gt.cost({ speed: 2 }); r.costHalf = gt.cost({ speed: .5 });
   r.atk = [g.atk]; g.upgrade = 0;
   for (let i = 0; i < 6; i++) { gt.up(g); r.atk.push(g.atk) }
   r.effect = gt.effect(g);
@@ -26,8 +26,10 @@ const out = await s.page.evaluate(() => {
   return r;
 });
 console.log('gauntlet', JSON.stringify(out));
-assert.ok(out.cost < out.cost16 - .1, '연철 권갑이 예전보다 확실히 빠르다');
-assert.ok(out.legendCost < out.legendOld - .15, '지맥 대지수갑이 예전보다 확실히 빠르다');
+assert.equal(out.cost16, 1, '속도 1.0 무기는 한 번 공격에 정확히 1턴');
+assert.equal(out.cost2, .5); assert.equal(out.costHalf, 2);
+assert.ok(out.cost < out.cost16 - .1, '연철 권갑이 속도 1.0 무기보다 확실히 빠르다');
+assert.ok(out.legendCost < out.legendOld - .15, '지맥 대지수갑이 속도 1.0 무기보다 확실히 빠르다');
 assert.deepEqual(out.atk, [3, 3, 3, 4, 4, 4, 5], '강화 3회마다 ATK +1');
 assert.equal(out.effect, 2);
 assert.equal(out.normal, 6, '일반 무기는 강화마다 ATK +1');

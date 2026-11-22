@@ -353,7 +353,8 @@ function applyStatusTick(){
 
 }
 function weaponRange(actor=state?.player){const w=actor?.weapon;if(martialFormOf('brawl',actor)==='reach'&&(!w||isBrawlWeapon(w)))return Math.max(1,actor.martial.brawl||0);if(w?.kind==='spear'){if(w.legendaryWeapon47||w.artifactWeapon46)return Math.max(1,w.range||1);const tier=w.tier||1;return tier===1?3:tier>=4?5:4}return Math.max(1,w?.range||1)}
-function weaponActionCost(item){return clamp(1.15-Math.log2(Math.max(.18,item?.speed||1.35))*.28,.58,1.85)}
+// a weapon's speed is its attacks per turn: one attack takes 1/speed turns (bare hands count as 1.12)
+function weaponActionCost(item){return 1/Math.max(.25,item?.speed||1.12)}
 function attackTurnCost(item=state?.player?.weapon){
  const p=state?.player,bonus=item?.kind==='bow'&&p&&playerClassRules58(p).rapidFire?rapidFireSpeedBonus(p.martial?.rapidFire||0):0;
  let cost=weaponActionCost(item)/(1+bonus/100);for(const stage of ATTACK_COST_STAGES)cost=stage.run(cost,item);const cursed=globalThis.__MANRU_ITEM_IDENTITY991__?.cursePower?.('clumsy')||0;return clamp(applyPlayerDebuffActionCost('attack',cost),.25,cursed>0?6:2.6)}
