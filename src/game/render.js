@@ -1055,6 +1055,7 @@ function branchWallColors(x,y){
   if(b.id==='mine'){const pal=MINE_WALL_PALETTES[ter.mine105.cellStyle?.[k(x,y)]??((x>>4)+(y>>4))%3];return{cap:pal[2],wall:pal[1]}}
   if(b.id==='citadel'){const P=citadelCellOwners(ter.citadel105,x,y,true).palette;return{cap:P.light,wall:P.stone}}
   if(b.id==='palace')return{cap:'#738575',wall:'#334d49'};
+  if(b.id==='canyon')return{cap:'#a8664a',wall:'#4a2a22'};
   if(b.id==='canal'||b.id==='granary'){const P=branchDistrictAt(x,y);return{cap:P.cap,wall:P.wall}}
 }
 function drawWallFace(px,py,x,y,colors){if(drawAuthoredWall(px,py,x,y))return;
@@ -2091,7 +2092,7 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     }
   }
   function drawSceneryFog(b,unknownColor,ctx=X){
-    const mine=mineState(),openSky=state.branchContext105?.id==='mirror';
+    const mine=mineState(),openSky=state.branchContext105?.id==='mirror'||state.branchContext105?.id==='canyon';
     ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
     for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){
       const key=k(x,y);if(state.visible.has(key)||(mine&&mineSceneryVisible(x,y)))continue;
@@ -2144,7 +2145,7 @@ function drawSubstrate(px,py,x,y,colors,visible){
     if(state.debugBattle57&&cam.zoom<.3)return drawDebugBattleOverview(cam,now);
     X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);X.globalAlpha=1;X.globalCompositeOperation='source-over';X.lineWidth=1;X.lineCap='butt';X.lineJoin='miter';X.setLineDash([]);X.lineDashOffset=0;X.filter='none';X.shadowBlur=0;X.shadowOffsetX=0;X.shadowOffsetY=0;X.shadowColor='rgba(0,0,0,0)';X.beginPath();
     X.fillStyle=colors.fog||'#080503';X.fillRect(0,0,VIEW.w,VIEW.h);
-    if(state.branchContext105?.id==='mirror')drawGlassSky(cam,now);
+    if(state.branchContext105?.id==='mirror')drawGlassSky(cam,now);else if(state.branchContext105?.id==='canyon')drawCanyonDepths(cam,now);
     X.save();X.translate(cam.x,cam.y);X.scale(cam.zoom,cam.zoom);X.imageSmoothingEnabled=false;
     const mine=mineState(),ordinaryWallMass=wallsAreNegativeSpace();
     const terrainProps63=[];
@@ -2730,6 +2731,10 @@ const ACTOR_SPEC={
   '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
   '흉조 까마귀':{a:'ominous_crow',c:'#1f1e2c',h:'#5a5f82',ac:'#e24a4a'},
+  '삼족오':{a:'samjogo',c:'#1d1410',h:'#7a4a1e',ac:'#ffcf5a'},
+  '불씨 망령':{"a":"branch","c":"#8a3a20","h":"#e08848","ac":"#ffd27a","design":"shard_wraith"},
+  '흑요 수호상':{"a":"branch","c":"#2a2530","h":"#6d6178","ac":"#ff8a3a","design":"breach_plate"},
+  '적연 지룡':{a:'dragon',c:'#6e2416',h:'#c8583a',ac:'#ffcf6a'},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3493,6 +3498,45 @@ break;}
   P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
   // roar lines
   for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
+  q.restore();break;}
+  case'samjogo':{shadow1012(q,16,34,26);
+   const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},c=base,h=hi,a=ac,ivory='#e4d7b5';
+  // 삼족오: the crow's dive, but a sun behind it instead of the red crescent, gold on black feathers, three legs and embers instead of a skull.
+  q.save();q.translate(1.5,.5);
+  const deep='#140d08',body='#22160e',edge='#7a4a1e',sheen='#e0a64a',beak='#e8b85a',beakD='#7a4a1a',gape='#8a2a12',tongue='#ff8a4a',wb=b?-1:0;
+  const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+  const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+   P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+  // omen: a blood-red crescent behind, drifting ash and falling feathers in the empty corners
+  q.save();const sun=q.createRadialGradient(7,7.5,0,7,7.5,8.5);sun.addColorStop(0,'#fff2b0');sun.addColorStop(.45,'#ffb43a');sun.addColorStop(1,'rgba(255,90,20,0)');q.fillStyle=sun;q.beginPath();q.arc(7,7.5,8.5,0,Math.PI*2);q.fill();q.beginPath();q.arc(7,7.5,5.4,0,Math.PI*2);q.fillStyle='#ffcf5a';q.fill();q.strokeStyle='#b8601a';q.lineWidth=.8;q.stroke();q.restore();
+  
+  for(const[x,y,d,sz]of[[22,27,.5,3.2],[27,31,-.4,3],[19,33,.9,2.6],[29,24,-.9,2.8],[24,21.5,.2,2.4]]){const a=d,dx=Math.cos(a)*sz,dy=Math.sin(a)*sz;P(edge,[[x,y],[x+dx*.5-dy*.5,y+dy*.5+dx*.5],[x+dx,y+dy],[x+dx*.5+dy*.5,y+dy*.5-dx*.5]],null);L(x,y,x+dx,y+dy,sheen,.5)}
+  for(const[x0,y0,cx,cy,x1,y1]of[[26,12,30,17,27,22],[23,19,27,24,24,29],[30,20,32,24,30,28]]){q.strokeStyle='#ff9a3a';q.lineWidth=.9;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
+  // tail streaming up and back
+  for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
+  // far wing (darker), then body, then near wing
+  for(const[deg,L]of[[62,12],[75,13.5],[88,13],[101,11.5],[114,9.5]])feather(15,11,deg,L,deep,edge,1.4);
+  rot(17,17,9.6,5.4,-.62,deep);rot(17,16.4,9,4.8,-.62,body);
+  rot(15.2,15.2,6,2,-.62,edge);
+  for(const[x,y]of[[10.5,19.5],[13,21],[16,21.6],[19,21]])P(deep,[[x-1.6,y],[x-.4,y+3.2],[x+1.4,y+.2]],null);
+  for(const[deg,L,hi]of[[58,14.5,sheen],[72,16,sheen],[86,15.5,sheen],[100,14,sheen],[114,11.5,sheen]])feather(16.5,12.6+wb*0,deg,L+(wb?-.8:0),body,hi,1.6);
+  P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
+  // talons reaching forward-down
+  for(const[x0,y0,x1,y1]of[[12.5,21.5,8,27.5],[15.5,22,12,29],[18.5,22,16,29.5]]){L(x0,y0,x1,y1,beakD,1.6);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.1)}
+  // a skull clutched in the talons
+  for(const[x,y,rr]of[[12,32,2.2],[15.5,33,1.8],[18.5,32.5,1.6]]){const g=q.createRadialGradient(x,y,0,x,y,rr*1.6);g.addColorStop(0,'#fff0b0');g.addColorStop(.5,'#ff8a2a');g.addColorStop(1,'rgba(255,60,20,0)');q.fillStyle=g;q.beginPath();q.arc(x,y,rr*1.6,0,Math.PI*2);q.fill()}
+  // neck ruff and head, lower left
+  for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
+  E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
+  P(deep,[[12.5,15],[16,12.8],[14,17.2]],null);P(deep,[[10.2,14.6],[12.4,11],[12.6,15.4]],null);
+  // eye and brow
+  R(7.5,17.4,3,2,a);R(7.5,17.4,1,1,'#ffd9d9');R(9.2,17.9,1,1,'#12101a');L(6.4,16.5,10.8,17.6,deep,1.4);
+  // beak gaping toward the lower left: red throat, hooked upper, lower, tongue
+  P(gape,[[8,21.5],[2.6,26.8],[5.8,29.6],[10.2,24.4]]);R(5.6,26.4,2,2,tongue);
+  P(beak,[[11,18.4],[6.4,20],[.8,27.4],[8.6,23]]);L(8.6,20,3.4,25.8,beakD,.7);P(beakD,[[1.2,26.6],[.8,27.4],[3.4,25.6]],null);
+  P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
+  // roar lines
+  for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#ffd27a',.8);
   q.restore();break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
@@ -4916,6 +4960,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
  if(state.branchContext105.id==='mirror')return drawGlassTowerCell(t,px,py,x,y);
+ if(state.branchContext105.id==='canyon'&&drawCanyonCell(t,px,py,x,y))return true;
  if(isWaterTile105(t)||t===TT.ICE){
   const drawn=drawSpecialTerrain(t,px,py,x,y,FX.frameNow||performance.now());
   const surfaces=state.branchTerrain105?.surfaces;
