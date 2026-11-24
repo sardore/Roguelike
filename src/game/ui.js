@@ -22,7 +22,7 @@ function finishWorldTarget(cell,source='pointer'){
 }
 function heldInputBlocked(){return !gameplayInputAllowed57()||document.hidden||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)}
 // Holding the wait key goes on while health is missing, there is hunger left and no enemy is in sight.
-function restHoldContinues(){const p=state?.player;return !!p&&!state.dead&&p.hp<p.maxHp&&p.hunger>0&&!state.monsters.some(m=>m.hp>0&&isThreatVisibleToPlayer(m))}
+function restHoldContinues(){const p=state?.player;return !!p&&!state.dead&&(p.hp<p.maxHp||p.focus<getStats().maxFocus)&&p.hunger>0&&!state.monsters.some(m=>m.hp>0&&isThreatVisibleToPlayer(m))}
 function advanceHeldInput(now=performance.now()){
  if(heldInputBlocked()){clearHeldInput53();return false}
  const key=[...INPUT.held].pop(),d=MOVE_KEYS[key];
