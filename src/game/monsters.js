@@ -1083,8 +1083,6 @@ function monsterTurn(){
     if(state!==phaseState||state.map!==phaseMap)break;
     d=entityDistance57(mon,p);sees=playerDetectedBy(mon);
     if(!mon.alerted&&mon.guardHome57&&!mon.fixed&&(mon.x!==mon.guardHome57.x||mon.y!==mon.guardHome57.y)){moveMonsterToward(mon,mon.guardHome57);continue}
-    // 귀영: a hidden player is not followed, not even to where the last sound or sighting came from; the chase simply ends
-    if(!sees&&!mon.boss&&mon.alerted&&playerConcealedFrom(mon)){clearPlayerTracking58(mon);continue}
     if(!sees&&!mon.boss&&mon.alerted){if(mon.gumihoRetreated57){mon.gumihoRetreated57=0;continue}const last=monsterInvestigationTarget(mon);if(last&&!mon.fixed){if(state.floor>=11){if(entityDistance57(mon,last)<=1)last.arrived=true;if(last.arrived){if(globalThis.__MANRU_RANDOM57__()<Math.min(.9,.2+(last.intensity??6)/40))wanderMonster(mon,last)}else moveMonsterToward(mon,last)}else if(entityDistance57(mon,last)<=1){if(state.floorTurn%2===0)wanderMonster(mon)}else moveMonsterToward(mon,last)}continue}
     if(!mon.alerted&&!mon.boss){if(state.floor>=11&&mon.migrationTarget57&&!mon.fixed){if(entityDistance57(mon,mon.migrationTarget57)>1)moveMonsterToward(mon,mon.migrationTarget57);else mon.migrationTarget57=null;continue}if(!mon.fixed&&state.floorTurn%2===0&&globalThis.__MANRU_RANDOM57__()<.16)wanderMonster(mon);continue}
     if(mon.gumihoRetreated57){mon.gumihoRetreated57=0;continue}
