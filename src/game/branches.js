@@ -317,7 +317,7 @@ function branchTransition(portal){
  state.hazard1005={...(state.hazard1005||{armed:{},collapsed:{},lastWarn:{}}),...ward};
  if(state.branchContext105?.id==='palace')globalThis.__MANRU_HAZARD_CORE__?.revalidateAll('palace-arrival');WorldTransition57.complete();cancelAutoWalk();clearHeldInput53();normalizeRunState57();normalizeItemContainers57();resetVisualState();resetTurnState();VisibilityService.compute();BRANCH_TILE_CACHE.clear();updateAll();
  addLog(`${hudLocation58().full}에 들어섰다. 돌아가는 문은 항상 열려 있다.`);if(id==='stockade'&&level===1&&!world.elevationHint){world.elevationHint=true;addLog('절벽벽과 나무 사이의 산길을 따라 오른다. 절벽벽은 이동과 시야를 막고, 검은 낭떠러지는 추락 위험이다. 보급품은 초소와 정상 건물에 모여 있다.');}
- globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
+ globalThis.__MANRU_SAVE_SERVICE__?.request?.('floor');return true;
  }catch(e){restoreGenerationSnapshot(transaction);console.error('branch transition rollback',e);toast('분기 이동을 복구했다.');return false}
 }
 /* Every floor has an authored topology. Corridors are physical, not drawn lines. */
@@ -2500,7 +2500,7 @@ function citadelOpen(key){
  BRANCH_TILE_CACHE.clear();MINE_CANVAS.clear();if(fresh)addLog('성채의 쇠사슬이 울리며 연결된 철창이 열렸다.');return true;
 }
 function citadelTrialState(){const world=citadelWorld();return world.trial105||(world.trial105={status:'ready',deadline:0,seals:[],boulder:false,attempt:0});}
-function citadelTrialTick(){const t=state?.branchWorld105?.citadel105?.trial105;if(!t||t.status!=='active')return;if(state.turn>=t.deadline){t.status='expired';t.seals=[];t.boulder=false;addLog('흑성 미궁의 종이 울렸다. 시험에 실패했다. 입구 제단에서 다시 시작할 수 있다.');closeSummonPanel();globalThis.__MANRU_SAVE_SERVICE__?.request?.();}else if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1&&[30,10].includes(t.deadline-state.turn))addLog(`흑성 미궁: 남은 ${t.deadline-state.turn}턴.`);}
+function citadelTrialTick(){const t=state?.branchWorld105?.citadel105?.trial105;if(!t||t.status!=='active')return;if(state.turn>=t.deadline){t.status='expired';t.seals=[];t.boulder=false;addLog('흑성 미궁의 종이 울렸다. 시험에 실패했다. 입구 제단에서 다시 시작할 수 있다.');closeSummonPanel();globalThis.__MANRU_SAVE_SERVICE__?.request?.('floor');}else if(state.branchContext105?.id==='citadel'&&state.branchContext105.level===1&&[30,10].includes(t.deadline-state.turn))addLog(`흑성 미궁: 남은 ${t.deadline-state.turn}턴.`);}
 function citadelTrialPress(button,source,rolling=[]){const data=state.branchTerrain105?.citadel105?.trial105;if(!data||!['player','stone'].includes(source))return;const t=citadelTrialState();if(t.status!=='active'||state.turn>=t.deadline)return;
  if(button.trialBoulder105&&rolling.includes('trial-boulder')){t.boulder=true;addLog('공성 바위의 걸쇠가 풀렸다.');}
  if(button.trialSeal105==null)return;const index=button.trialSeal105,lamp=mineState().lanterns.find(l=>l.trialLamp105===index);if(!lamp?.lit){toast('옆의 꺼진 등불에 먼저 불을 붙여야 한다.');return;}if(index===1&&!t.boulder){toast('공성 바위의 걸쇠를 먼저 풀어야 한다.');return;}if(!t.seals.includes(index)){t.seals.push(index);addLog(`흑성 미궁: ${index+1}번째 걸쇠 해제 (${t.seals.length}/3).`);}}
