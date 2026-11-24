@@ -73,12 +73,12 @@ const MONSTERS=[
 
   // 5구역 만루의 심장: 기획안의 비현실적 영물/신전 수호자 중심.
   {min:21,max:25,name:'공허 가오리',concept57:"바닥 없는 공간을 물처럼 가르는 영물이다.",hp:40,atk:13,def:3,eva:8,xp:14,color:'#695d79',shape:'angel',kind:'spirit',flying:true,fast:true,knockback:true},
-  {min:21,max:25,name:'만루의 수호상',concept57:"수없이 드나든 발자국을 내려다보던 돌 수호상이다.",guardPost57:true,hp:70,atk:14,def:10,eva:0,xp:18,color:'#aa9569',shape:'brute',kind:'construct',armorPierce:false,heavyHit57:true},
+  {min:21,max:25,name:'만루의 수호상',passageSeal:{species:'만루의 수호상',radius:6,range:8,duration:4,cooldown:10},concept57:"수없이 드나든 발자국을 내려다보던 돌 수호상이다. 눈길이 닿는 문과 계단을 돌로 잠근다.",guardPost57:true,hp:70,atk:14,def:10,eva:0,xp:18,color:'#aa9569',shape:'brute',kind:'construct',armorPierce:false,heavyHit57:true},
   {min:21,max:25,name:'천수 아수라',concept57:"겹겹의 팔이 서로 다른 박자로 움직이는 전투의 영체다.",hp:58,atk:14,def:6,eva:5,xp:18,color:'#8f7ab0',shape:'angel',kind:'spirit',multiAttack:true,asura47:true,asuraRadius47:3,asuraDuration47:5,asuraCooldown47:6,asuraRange47:9,enrage:true},
   {min:22,max:25,name:'신전 사제 망령',sealingWard:{species:'신전 사제 망령',radius:2,duration:9,cooldown:12,range:8},concept57:"주인을 잃은 신전에서도 의식을 멈추지 않는 사제다.",hp:40,atk:12,def:4,eva:5,xp:16,color:'#8c7895',shape:'mage',kind:'undead',ranged:true,range:8,sealSkill:true},
   {min:22,max:25,name:'차원 포식자',concept57:"공간의 어두운 틈에서 몸을 드러내는 포식자다.",hp:50,atk:16,def:5,eva:6,xp:18,color:'#6a445f',shape:'void',kind:'spirit',ambush:true,focusDrain:3},
-  {min:23,max:25,name:'보주의 파수꾼',concept57:"황금빛 무장을 두른 만루보주의 최후 전열이다.",guardPost57:true,hp:76,atk:16,def:8,eva:3,xp:22,color:'#b19055',shape:'knight',kind:'spirit',knockback:true,enrage:true},
-  {min:21,max:25,name:'금령',hp:32,atk:10,def:4,eva:3,xp:12,color:'#c6a85f',shape:'spirit',kind:'spirit',ranged:true,range:4,artillery:true,artilleryRange61:4,hungerDrain:8,flying:true,summonOnly57:true,concept57:'황금 제단의 기운이 뭉친 영체다.',roleDesc61:'4칸 안에서 3×3 폭발탄을 예고한다. 폭발이나 직접 공격에 맞으면 허기가 8 감소한다.'},
+  {min:23,max:25,name:'보주의 파수꾼',concept57:"황금빛 무장을 두른 만루보주의 최후 전열이다. 보주의 빛이 스며 피해의 4분의 3은 성광이다.",attackElement105:'holy',attackElementShare105:.75,guardPost57:true,hp:76,atk:16,def:8,eva:3,xp:22,color:'#b19055',shape:'knight',kind:'spirit',knockback:true,enrage:true},
+  {min:21,max:25,name:'금령',hp:32,atk:10,def:4,eva:3,xp:12,color:'#c6a85f',shape:'spirit',kind:'spirit',ranged:true,range:4,artillery:true,artilleryRange61:4,hungerDrain:8,flying:true,summonOnly57:true,concept57:'황금 제단의 기운이 뭉친 영체다. 제단의 빛이 스며 피해의 4분의 3은 성광이다.',attackElement105:'holy',attackElementShare105:.75,roleDesc61:'4칸 안에서 3×3 폭발탄을 예고한다. 폭발이나 직접 공격에 맞으면 허기가 8 감소한다.'},
   {min:23,max:24,name:'여의 수룡',concept57:"수은호 아래 거대한 몸을 감춘 수룡이다.",hp:96,atk:17,def:7,eva:3,xp:32,color:'#8e9fa0',shape:'void',kind:'beast',footprint:'dragon',aquatic:true,mercuryAdapted57:true,reach:3,summoner:true,summonName57:'금령',miniBoss:true},
   {min:23,max:23,name:'수은 물고기',hp:22,atk:9,def:1,eva:6,xp:9,color:'#8fa09f',shape:'beast',kind:'beast',aquatic:true,mercuryAdapted57:true,fixed:true,concept57:'수은 연못에서 살아남은 식인 물고기다.'}
 ];
