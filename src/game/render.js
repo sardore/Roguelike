@@ -2897,59 +2897,6 @@ function drawMasterBoss(q,frame,trueForm=false){
 }
 // Regional silhouettes use the same 32×36 frame, outline and shaded polygons as main creatures.
 // Species identity, not floor or faction, selects art; no combat flags are changed here.
-// Shape-to-pixel conversion: a design is drawn as smooth vector shapes on an 8x canvas, then every output pixel takes the most common colour of its block
-// (transparent when under half covered) and the silhouette gets the same one-pixel ink outline as the hand-placed sprites.
-function pixelizeVector(q,draw,k=8,w=32,h=36){
- const big=document.createElement('canvas');big.width=w*k;big.height=h*k;const g=big.getContext('2d');g.scale(k,k);draw(g);
- const src=g.getImageData(0,0,w*k,h*k).data,out=q.createImageData(w,h),opaque=new Uint8Array(w*h);
- for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-  const bins=new Map();let solid=0;
-  for(let v=0;v<k;v++)for(let u=0;u<k;u++){const i=((y*k+v)*w*k+x*k+u)*4;if(src[i+3]<128)continue;solid++;const key=((src[i]>>4)<<8)|((src[i+1]>>4)<<4)|(src[i+2]>>4),e=bins.get(key);if(e)e.n++;else bins.set(key,{n:1,r:src[i],g:src[i+1],b:src[i+2]})}
-  if(solid<k*k*.5)continue;
-  let best=null;for(const e of bins.values())if(!best||e.n>best.n)best=e;
-  const o=(y*w+x)*4;out.data[o]=best.r;out.data[o+1]=best.g;out.data[o+2]=best.b;out.data[o+3]=255;opaque[y*w+x]=1;
- }
- const ink=[18,15,18];
- for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-  if(opaque[y*w+x])continue;
-  if((x>0&&opaque[y*w+x-1])||(x<w-1&&opaque[y*w+x+1])||(y>0&&opaque[(y-1)*w+x])||(y<h-1&&opaque[(y+1)*w+x])){const o=(y*w+x)*4;out.data[o]=ink[0];out.data[o+1]=ink[1];out.data[o+2]=ink[2];out.data[o+3]=255}
- }
- const res=document.createElement('canvas');res.width=w;res.height=h;res.getContext('2d').putImageData(out,0,0);q.drawImage(res,0,0);
-}
-function drawBierGhostVector(g,b){
- const grad=(x0,y0,x1,y1,stops)=>{const gr=g.createLinearGradient(x0,y0,x1,y1);for(const[t,c]of stops)gr.addColorStop(t,c);return gr},
- shape=(fill,fn)=>{g.beginPath();fn();g.closePath();g.fillStyle=fill;g.fill()},
- stroke=(col,w,fn)=>{g.beginPath();fn();g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.stroke()},
- ell=(x,y,rx,ry,fill,rot=0)=>{g.beginPath();g.ellipse(x,y,rx,ry,rot,0,Math.PI*2);g.fillStyle=fill;g.fill()},
- camellia=(x,y,r,rot=0)=>{for(let i=0;i<6;i++){const a=rot+i*Math.PI/3;ell(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55,r*.55,r*.45,i%2?'#b84d5f':'#c9606f',a)}ell(x,y,r*.5,r*.5,'#e0a3ab');ell(x,y,r*.22,r*.22,'#d9b45a')};
- g.save();g.translate(0,b*.5-.4);
- // long hair, wide at the shoulders and falling past the waist
- shape(grad(0,2,0,30,[[0,'#2a2434'],[1,'#15111d']]),()=>{g.moveTo(16,1.4);g.bezierCurveTo(8.4,1.4,5,6.4,5.6,13.6);g.bezierCurveTo(6.2,20,5,25,7.4,30.4);g.bezierCurveTo(10.6,28.6,11.4,24,11,18);g.lineTo(21,18);g.bezierCurveTo(20.6,24,21.4,28.6,24.6,30.4);g.bezierCurveTo(27,25,25.8,20,26.4,13.6);g.bezierCurveTo(27,6.4,23.6,1.4,16,1.4)});
- stroke('rgba(124,110,160,.5)',.5,()=>{g.moveTo(8,8);g.bezierCurveTo(6.6,14,8.4,22,7.8,27)});stroke('rgba(124,110,160,.5)',.5,()=>{g.moveTo(24,8);g.bezierCurveTo(25.4,14,23.6,22,24.2,27)});
- // skirt: a bell that thins into mist
- shape(grad(0,18,0,35,[[0,'#e4e1d6'],[.65,'#c3cbcc'],[1,'rgba(150,172,176,.65)']]),()=>{g.moveTo(11.4,18);g.bezierCurveTo(9.6,24,6,29,4.4,34.6);g.bezierCurveTo(9,36.4,12.6,34.8,16,35.8);g.bezierCurveTo(19.4,34.8,23,36.4,27.6,34.6);g.bezierCurveTo(26,29,22.4,24,20.6,18)});
- stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(13.4,22);g.quadraticCurveTo(11.6,28,10,34)});stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(16,22);g.lineTo(16,35)});stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(18.6,22);g.quadraticCurveTo(20.4,28,22,34)});
- // jeogori with a dusty-red collar and a long ribbon
- shape('#ece9de',()=>{g.moveTo(10.6,13.4);g.lineTo(21.4,13.4);g.lineTo(22.4,19.2);g.quadraticCurveTo(16,20.6,9.6,19.2)});shape('#ffffff',()=>{g.moveTo(10.8,13.8);g.lineTo(14,13.8);g.lineTo(13,19.2);g.lineTo(9.8,18.8)});
- shape('#a8404f',()=>{g.moveTo(13.2,13.4);g.lineTo(16,18.4);g.lineTo(18.8,13.4);g.lineTo(17.9,13.4);g.lineTo(16,16.8);g.lineTo(14.1,13.4)});
- shape('#8e2f3d',()=>{g.moveTo(16,17.6);g.lineTo(14.6,23.6);g.lineTo(15.8,22.8);g.lineTo(16,19);g.lineTo(16.2,22.8);g.lineTo(17.4,23.6)});
- // sleeves meeting in front
- shape(grad(5,14,15,23,[[0,'#ffffff'],[1,'#d6d3c8']]),()=>{g.moveTo(10,14.2);g.bezierCurveTo(7,16.2,5.6,20,6.4,23.4);g.bezierCurveTo(9.6,25,13.2,24,15.6,22);g.bezierCurveTo(14.4,19.6,12.6,17,11.6,15.4)});
- shape(grad(27,14,17,23,[[0,'#f4f1e6'],[1,'#cdcabe']]),()=>{g.moveTo(22,14.2);g.bezierCurveTo(25,16.2,26.4,20,25.6,23.4);g.bezierCurveTo(22.4,25,18.8,24,16.4,22);g.bezierCurveTo(17.6,19.6,19.4,17,20.4,15.4)});
- stroke('rgba(150,168,172,.8)',.5,()=>{g.moveTo(8,20);g.quadraticCurveTo(11,22.6,14.6,22.4)});stroke('rgba(150,168,172,.8)',.5,()=>{g.moveTo(24,20);g.quadraticCurveTo(21,22.6,17.4,22.4)});
- // petals drifting off the hem
- for(const[x,y,c,r,rot]of[[8,32.6,'#e0a3ab',.8,.4],[24.2,32,'#c9606f',.75,-.5],[12,35.4,'#efd6d9',.6,.2],[20.6,35.2,'#e0a3ab',.55,.6]])ell(x,y,r,r*.6,c,rot);
- // face: pale and calm
- ell(16,8.4,4.8,5.4,'#efe9e1');shape(grad(0,4,0,14,[[0,'rgba(255,255,255,.4)'],[1,'rgba(168,150,170,.3)']]),()=>{g.ellipse(16,8.4,4.8,5.4,0,0,Math.PI*2)});
- shape('#18121f',()=>{g.moveTo(11,8.4);g.bezierCurveTo(10.4,3.2,21.6,3.2,21,8.4);g.bezierCurveTo(19.8,6.2,17.8,6,16,7.2);g.bezierCurveTo(14.2,6,12.2,6.2,11,8.4)});
- shape('#18121f',()=>{g.moveTo(11,8);g.lineTo(12,8);g.lineTo(11.8,13);g.lineTo(10.8,12.2)});shape('#18121f',()=>{g.moveTo(21,8);g.lineTo(20,8);g.lineTo(20.2,13);g.lineTo(21.2,12.2)});
- ell(13.8,10.2,1.15,.7,'#1c2630');ell(18.2,10.2,1.15,.7,'#1c2630');ell(14,10,.55,.35,'#6fcfc0');ell(18.4,10,.55,.35,'#6fcfc0');
- ell(16,12.6,.8,.42,'#b4545f');
- // crown of camellias and a gold hairpin
- camellia(11.2,4.2,2.3,.2);camellia(16,2.2,2.7,0);camellia(20.8,4.2,2.3,.5);
- stroke('#d9b45a',.7,()=>{g.moveTo(22.8,7);g.lineTo(26,10.6)});ell(26.2,10.8,.9,.9,'#d9b45a');
- g.restore();
-}
 function drawBranchCreature(q,m,frame,sp){
  const b=frame?1:0,c=sp.c,h=sp.h,a=sp.ac,d=ACTOR_OUTLINE,skin='#b99a78',ivory='#e4d7b5',
  R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},
@@ -3146,8 +3093,20 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'citadel_bier':{
-  // Drawn as smooth shapes at 8x and converted to pixels: see pixelizeVector.
-  pixelizeVector(q,g=>drawBierGhostVector(g,b));break;
+  // A pale funeral-bier ghost in a lavender-white hanbok: long dark hair framing the face, three camellias for a crown, a rose-red ribbon at the chest, sleeves folded in front, a skirt that frays into mist.
+  const hair='#2a2438',dress='#cfcbdc',shade='#8f8aab',rose='#d9707f',gold='#e0b95c';
+  P(hair,[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,16+b],[27,28],[22,29],[22,17+b],[10,17+b],[10,29],[5,28],[6,16+b]]);
+  P(shade,[[10,18+b],[22,18+b],[28,32],[24,30],[22,35],[19,31],[16,35],[13,31],[10,35],[8,30],[4,32]]);
+  P(dress,[[11,18+b],[21,18+b],[26,31],[19,32],[16,33],[13,32],[6,31]]);P('#e9e6f0',[[11,19+b],[15,19+b],[12,31],[7,30]],null);
+  R(11,23+b,10,1,shade);
+  P(dress,[[10,13+b],[22,13+b],[23,19+b],[9,19+b]]);P('#e9e6f0',[[10,14+b],[14,14+b],[13,19+b],[9,19+b]],null);
+  P('#b8586a',[[13,13+b],[19,13+b],[16,18+b]]);R(15,17+b,2,4,'#9a3f52');
+  P(dress,[[5,15+b],[10,14+b],[11,23+b],[5,24+b]]);P(shade,[[5,22+b],[11,22+b],[11,24+b],[5,24+b]],null);
+  P(dress,[[22,14+b],[27,15+b],[27,24+b],[21,23+b]]);P(shade,[[21,22+b],[27,22+b],[27,24+b],[21,24+b]],null);
+  E(16,9+b,5,5.5,'#e4dde6');P(hair,[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[19,6+b],[16,7+b],[13,6+b]]);
+  R(13,10+b,2,1,'#1c1626');R(18,10+b,2,1,'#1c1626');R(14,10+b,1,1,'#6fcfc0');R(19,10+b,1,1,'#6fcfc0');R(15,13+b,2,1,'#b4545f');
+  E(11,4+b,2.5,2.5,rose);E(16,2+b,2.5,2.5,'#e8a9b2');E(21,4+b,2.5,2.5,rose);R(11,4+b,1,1,gold);R(16,2+b,1,1,gold);R(21,4+b,1,1,gold);
+  R(7,33,1,1,'#e8a9b2');R(25,34,1,1,rose);break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
