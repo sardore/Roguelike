@@ -2037,6 +2037,9 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
       if(f.kind==='rootWall'&&f.rootWall105?.element==='fire'){
         X.fillStyle='rgba(242,71,24,.34)';X.fillRect(px+2,py+2,28,28);X.strokeStyle='#ffc265';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);
         X.beginPath();X.moveTo(px+9,py+23);X.lineTo(px+16,py+8);X.lineTo(px+23,py+23);X.lineTo(px+16,py+19);X.closePath();X.stroke();
+      }else if(f.kind==='rootWall'&&f.rootWall105?.element==='coffin'){
+        X.fillStyle='rgba(131,215,235,.30)';X.fillRect(px+2,py+2,28,28);X.strokeStyle='#cfeff7';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);
+        X.beginPath();X.moveTo(px+16,py+7);X.lineTo(px+16,py+25);X.moveTo(px+11,py+12);X.lineTo(px+21,py+12);X.stroke();
       }else if(f.kind==='rootWall'){X.fillStyle=`rgba(157,192,54,${a+.10})`;X.fillRect(px+2,py+2,28,28);X.strokeStyle='#dbdf69';X.lineWidth=2;X.strokeRect(px+4,py+4,24,24);X.strokeStyle='#75a641';X.beginPath();X.moveTo(px+7,py+25);X.lineTo(px+13,py+17);X.lineTo(px+11,py+10);X.moveTo(px+13,py+17);X.lineTo(px+23,py+9);X.stroke();}
       if(f.kind==='passageSeal'){
         X.fillStyle=`rgba(113,35,31,${a+.16})`;X.fillRect(px+1,py+1,30,30);X.strokeStyle='#e2b46c';X.lineWidth=2;X.strokeRect(px+3,py+3,26,26);
@@ -2704,6 +2707,12 @@ const ACTOR_SPEC={
   '수압 악어':{"a":"branch","c":"#355c58","h":"#7f9c88","ac":"#e4c482","design":"pressure_croc"},
   '물살 시종':{"a":"servant","c":"#80654c","h":"#c9ad82","ac":"#d6bd7e","waterServant1012":true},
   '뇌우 사수':{"a":"branch","c":"#3f5d70","h":"#95adb7","ac":"#d6cf97","design":"storm_shooter"},
+  '철쇄 집행관':{"a":"branch","c":"#6e5a45","h":"#b58966","ac":"#e3b777","design":"citadel_chain"},
+  '흑성 노수':{"a":"branch","c":"#4a4a5c","h":"#a39fba","ac":"#d9c88a","design":"citadel_crossbow"},
+  '종루 파수령':{"a":"branch","c":"#8a7640","h":"#d3b96c","ac":"#fff0b0","design":"citadel_bell"},
+  '납골 철갑시체':{"a":"branch","c":"#6f7a7d","h":"#a8b6b8","ac":"#7fe0d0","design":"citadel_tomb"},
+  '흑요 날개상':{"a":"branch","c":"#5a4f6e","h":"#9586a8","ac":"#d6a8ff","design":"citadel_wing"},
+  '흑관 장의사':{"a":"branch","c":"#4a3a52","h":"#8c779a","ac":"#c9b36e","design":"citadel_undertaker"},
   '피뢰 갑병':{"a":"branch","c":"#4f5e68","h":"#a0a9ac","ac":"#c3dcda","design":"lightning_plate"},
   '전도 정령':{"a":"branch","c":"#457f93","h":"#90bcbf","ac":"#d9ecc1","design":"conduction_spirit"},
   '주박 검객':{"a":"branch","c":"#563d50","h":"#98818b","ac":"#c77d91","design":"bound_swordsman"},
@@ -3034,6 +3043,92 @@ function drawBranchCreature(q,m,frame,sp){
   P('#253340',[[13,17+b],[29,13+b],[31,17+b],[15,22+b]]);L(16,18+b,30,15+b,h,2);R(27,14+b,3,5,a);R(29,15+b,2,2,d);
   L(11,21+b,9,26,a);L(9,26,11,30,a);bootR9(q,10,31,5);bootR9(q,19,31,5);break;
  }
+ case'citadel_chain':{
+  // An executioner: black cowl over an iron half-mask, studded leather coat with one heavy pauldron, a chain looped over the chest and a hook on a short haft.
+  L(4,16+b,2,30,'#6b6a66',1);for(const y of[18,22,26])R(2,y+b,3,2,'#8d8a82');
+  P('#251d1c',[[6,14+b],[13,11+b],[22,12+b],[27,17+b],[28,30],[23,29],[20,33],[15,29],[10,33],[6,29],[3,31],[4,20+b]]);
+  P(c,[[9,15+b],[22,15+b],[24,29],[16,31],[8,29]]);P(h,[[9,16+b],[13,16+b],[11,29],[8,28]],null);
+  for(const x of[11,15,19])R(x,20+b,1,1,'#d8c9a0');
+  R(8,24+b,16,2,'#3a2b24');R(15,24+b,3,2,a);
+  P('#59544f',[[3,14+b],[11,11+b],[13,17+b],[7,20+b],[2,18+b]]);P('#8a857c',[[4,14+b],[10,12+b],[11,15+b],[5,17+b]],null);R(3,18+b,2,1,'#b5afa3');
+  link(11,15+b);link(14,17+b);link(17,19+b);link(20,21+b);
+  P('#1b1615',[[8,9+b],[9,3+b],[15,0+b],[21,2+b],[24,7+b],[23,13+b],[16,14+b],[9,13+b]]);
+  P('#a39d90',[[12,6+b],[20,6+b],[21,10+b],[16,14+b],[11,10+b]]);P('#7d776d',[[16,6+b],[20,6+b],[21,10+b],[16,14+b]],null);
+  R(13,8+b,2,1,a);R(18,8+b,2,1,a);L(16,9+b,16,13+b,d);L(12,10+b,20,10+b,d);
+  P(c,[[22,16+b],[28,19+b],[29,26],[25,27],[22,22+b]]);R(25,26,4,3,'#d2b48c');
+  L(27,27,27,33,'#6a5442',2);P('#c9c4b4',[[24,31],[27,28],[30,31],[29,35],[27,34],[28,32],[26,31]],'#1e1816');
+  bootR9(q,8,31,6);bootR9(q,17,31,6);break;
+ }
+ case'citadel_crossbow':{
+  // A gatehouse marksman: wide kettle helm with a veil, padded gambeson, quiver at the back and a heavy crossbow braced across the body with a bolt nocked.
+  P('#2b2431',[[24,10+b],[28,13+b],[28,23],[24,24]]);for(const x of[25,27])L(x,9+b,x,13+b,'#d7cfaa');
+  P('#262a36',[[8,14+b],[24,14+b],[27,30],[22,32],[16,29],[10,32],[5,30]]);
+  P(c,[[10,15+b],[22,15+b],[23,28],[16,30],[9,28]]);P(h,[[10,16+b],[14,16+b],[12,28],[9,27]],null);
+  for(const y of[18,22,26])L(10,y+b,22,y+b,'#2c3040');
+  R(9,24+b,14,2,'#4a3b2e');R(15,24+b,3,2,a);
+  P('#34303d',[[8,7+b],[11,3+b],[21,3+b],[24,7+b],[27,9+b],[24,10+b],[8,10+b],[5,9+b]]);P('#5c566a',[[11,4+b],[21,4+b],[22,7+b],[10,7+b]],null);
+  P('#c9b995',[[12,10+b],[20,10+b],[19,14+b],[13,14+b]]);R(13,11+b,2,1,'#1a1618');R(17,11+b,2,1,'#1a1618');R(12,9+b,8,1,'#1c1a24');
+  L(3,19+b,29,19+b,'#4e3c2d',3);L(3,19+b,3,24,'#4e3c2d',2);L(29,19+b,29,24,'#4e3c2d',2);L(4,16+b,16,19+b,a);L(28,16+b,16,19+b,a);L(5,22+b,16,19+b,'#1a1618');L(27,22+b,16,19+b,'#1a1618');
+  P('#a8a79d',[[9,18+b],[24,18+b],[26,19+b],[24,20+b],[9,20+b]]);P('#ece4b8',[[22,18+b],[30,19+b],[22,20+b]],null);
+  P(c,[[8,16+b],[13,16+b],[14,21+b],[9,22+b]]);P('#d2b48c',[[13,18+b],[16,18+b],[16,21+b],[13,21+b]]);
+  bootR9(q,9,31,6);bootR9(q,17,31,6);break;
+ }
+ case'citadel_bell':{
+  // A bronze bell warden: a hanging bell with a split lip, two yellow eyes in the dark mouth, rope and chain, verdigris streaks and a loose clapper.
+  L(16,0,16,5+b,'#403626',2);P('#4a3a22',[[13,3+b],[19,3+b],[19,6+b],[13,6+b]]);
+  P('#3e3220',[[8,6+b],[24,6+b],[28,13+b],[29,27+b],[3,27+b],[4,13+b]]);
+  P(c,[[9,7+b],[23,7+b],[26,14+b],[27,26+b],[5,26+b],[6,14+b]]);
+  P(h,[[10,8+b],[15,8+b],[13,26+b],[7,26+b],[7,15+b]],null);
+  P('#a58d4c',[[10,10+b],[13,9+b],[12,18+b],[9,17+b]],null);
+  P('#6d9c8a',[[22,9+b],[24,13+b],[23,21+b],[21,14+b]],null);L(23,10+b,22,18+b,'#8fc2ac');
+  for(const y of[12,19])P('#4f4020',[[7,y+b],[25,y+b],[26,y+2+b],[6,y+2+b]],null);
+  P(a,[[3,27+b],[29,27+b],[31,30+b],[1,30+b]]);P('#fff4c6',[[4,27+b],[28,27+b],[29,28+b],[3,28+b]],null);
+  P('#15110c',[[8,22+b],[24,22+b],[26,27+b],[6,27+b]],null);
+  R(11,23+b,3,2,'#ffe58a');R(18,23+b,3,2,'#ffe58a');R(12,23+b,1,1,'#fff');R(19,23+b,1,1,'#fff');
+  L(21,8+b,18,16+b,'#1b140c',1);L(18,16+b,20,20+b,'#1b140c',1);
+  E(16,32+b,3,3,'#5a4a2c');L(16,29+b,16,31+b,'#403626',1);
+  for(const x of[5,27])L(x,30+b,x,34,a,1);break;
+ }
+ case'citadel_tomb':{
+  // A buried guardian in rust-red plate: ridged helm split down the middle, sunken teal eyes, tattered burial wraps at the neck and joints, a broken sword dragging low.
+  L(27,18+b,29,34,'#6b6a66',3);P('#b9b7ab',[[27,28],[30,28],[31,34],[28,35]]);R(26,26+b,5,2,'#4a4038');
+  P('#2c3233',[[3,14+b],[29,14+b],[30,29],[26,32],[22,31],[16,33],[10,31],[6,32],[2,29]]);
+  P(c,[[6,16+b],[26,16+b],[27,29],[16,31],[5,29]]);P(h,[[7,17+b],[13,17+b],[11,30],[6,28]],null);
+  P('#4c5456',[[10,17+b],[22,17+b],[21,26],[16,28],[11,26]]);P('#5f696b',[[11,18+b],[16,18+b],[16,27],[12,25]],null);
+  L(16,17+b,16,28,d);for(const y of[20,23])L(11,y+b,21,y+b,d);
+  P('#6e3f33',[[2,13+b],[11,11+b],[13,17+b],[6,20+b],[1,18+b]]);P('#97604d',[[3,13+b],[10,12+b],[11,15+b],[4,17+b]],null);
+  P('#6e3f33',[[21,11+b],[30,13+b],[31,18+b],[26,20+b],[19,17+b]]);P('#97604d',[[22,12+b],[29,14+b],[29,16+b],[23,15+b]],null);
+  for(const[x,y]of[[8,22],[22,22],[6,26]])P('#d5cdb2',[[x,y+b],[x+4,y-1+b],[x+5,y+2+b],[x+1,y+3+b]],null);
+  P('#3b4244',[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[24,12+b],[16,14+b],[8,12+b]]);P('#5b666a',[[10,5+b],[13,2+b],[16,2+b],[16,13+b],[10,11+b]],null);
+  L(16,2+b,16,13+b,d);R(11,7+b,10,3,'#0b1011');R(12,8+b,3,2,a);R(18,8+b,3,2,a);R(13,8+b,1,1,'#e8fff8');R(19,8+b,1,1,'#e8fff8');
+  P('#d5cdb2',[[8,12+b],[24,12+b],[22,15+b],[10,15+b]]);
+  L(4,20+b,1,31,'#6e3f33',4);L(28,20+b,31,31,'#6e3f33',2);bootR9(q,5,31,8);bootR9(q,19,31,8);break;
+ }
+ case'citadel_wing':{
+  // A cut-stone gargoyle crouched mid-flight: broad leathery wings with bone struts, horned brow, glowing violet eyes, clawed feet gripping a plinth.
+  P('#241d2c',[[0,12+b],[6,6+b],[12,12+b],[10,24+b],[5,20+b],[0,24+b]]);P('#46395a',[[1,12+b],[6,7+b],[11,12+b],[9,22+b],[5,19+b],[2,22+b]],null);
+  P('#241d2c',[[32,12+b],[26,6+b],[20,12+b],[22,24+b],[27,20+b],[32,24+b]]);P('#46395a',[[31,12+b],[26,7+b],[21,12+b],[23,22+b],[27,19+b],[30,22+b]],null);
+  L(11,13+b,6,7+b,'#8a78a8',1);L(11,16+b,2,13+b,'#8a78a8',1);L(11,19+b,3,23+b,'#8a78a8',1);L(21,13+b,26,7+b,'#8a78a8',1);L(21,16+b,30,13+b,'#8a78a8',1);L(21,19+b,29,23+b,'#8a78a8',1);
+  P('#2a2432',[[9,12+b],[23,12+b],[25,26],[21,30],[11,30],[7,26]]);P(c,[[10,13+b],[22,13+b],[23,26],[20,29],[12,29],[9,26]]);
+  P(h,[[10,14+b],[14,14+b],[12,28],[9,25]],null);for(const y of[17,21,25])L(12,y+b,20,y+b,'#41365a');
+  P('#2a2432',[[9,3+b],[11,6+b],[21,6+b],[23,3+b],[23,12+b],[9,12+b]]);P(c,[[11,6+b],[21,6+b],[22,11+b],[10,11+b]]);
+  P(h,[[7,0+b],[11,2+b],[11,7+b],[9,5+b]],null);P(h,[[25,0+b],[21,2+b],[21,7+b],[23,5+b]],null);
+  R(11,8+b,3,2,a);R(18,8+b,3,2,a);R(12,8+b,1,1,'#fff');R(19,8+b,1,1,'#fff');R(14,11+b,4,1,'#15101c');for(const x of[14,16,18])R(x,11+b,1,1,'#e9e0f5');
+  P('#241d2c',[[7,28],[12,28],[12,33],[9,34],[7,32]]);P('#241d2c',[[20,28],[25,28],[25,32],[23,34],[20,33]]);L(8,33,8,35,'#cfc4e0',1);L(11,33,11,35,'#cfc4e0',1);L(21,33,21,35,'#cfc4e0',1);L(24,33,24,35,'#cfc4e0',1);break;
+ }
+ case'citadel_undertaker':{
+  // An undertaker: tall black hat with a violet band, pale narrow face and a long coat with a bronze button line; a hammer and a coffin board over the shoulder, a lamp at the hip.
+  P('#4a3a2c',[[22,6+b],[28,8+b],[27,28],[21,26]]);P('#6e5a44',[[23,7+b],[27,9+b],[26,26],[22,25]],null);for(const y of[12,18,23])L(22,y+b,27,y+b,'#2b2018');R(24,14+b,2,2,a);
+  P('#201a26',[[8,13+b],[22,13+b],[28,31],[22,30],[18,34],[14,30],[10,34],[4,31]]);
+  P(c,[[9,14+b],[21,14+b],[24,30],[16,32],[7,30]]);P(h,[[9,15+b],[13,15+b],[11,30],[7,29]],null);
+  P('#2d2433',[[15,14+b],[17,14+b],[18,31],[14,31]]);for(const y of[17,21,25])R(15,y+b,2,2,a);
+  P('#3a2d44',[[8,14+b],[14,13+b],[14,20+b],[9,22+b]]);P('#6b5a7c',[[9,15+b],[13,14+b],[13,18+b],[9,19+b]],null);
+  P('#d8cbb4',[[11,8+b],[21,8+b],[20,13+b],[16,14+b],[12,13+b]]);P('#b7a891',[[17,8+b],[21,8+b],[20,13+b],[17,14+b]],null);
+  R(12,10+b,2,1,'#1a1618');R(18,10+b,2,1,'#1a1618');R(14,12+b,4,1,'#8d6d63');L(13,8+b,19,8+b,'#2a2020');
+  P('#171219',[[5,8+b],[27,8+b],[23,6+b],[9,6+b]]);P('#221b27',[[11,0+b],[21,0+b],[22,6+b],[10,6+b]]);R(10,5+b,12,2,'#5b4a72');R(11,5+b,10,1,a);
+  P(c,[[3,16+b],[8,15+b],[9,22+b],[4,24+b],[2,20+b]]);R(2,23+b,5,4,'#d2b48c');L(5,6+b,5,23+b,'#6a5442',2);P('#8f8a7d',[[1,4+b],[9,4+b],[9,9+b],[1,9+b]]);R(2,5+b,7,1,'#b7b2a3');
+  R(10,27+b,4,5,d);R(11,28+b,2,3,'#ffcf6a');bootR9(q,8,32,6);bootR9(q,17,32,6);break;
+ }
  case'lightning_plate':{
   // Narrow cage armour and an unmistakable lightning rod instead of a spear or hat.
   L(25,2,25,32,h,2);P(a,[[25,1],[21,7],[25,6],[22,12],[29,5],[25,6]],null);
@@ -3298,7 +3393,7 @@ function drawBranchCreature(q,m,frame,sp){
 function monsterCanvas(m,frame=0){
  if(m?.storyPhase992===1)return friendCanvas(true,false,frame);
  if(m?.palaceActor105||monsterSpeciesName(m)==='용궁 정원사'){const key='palace:'+(m.palaceActor105||'gardener')+':'+!!(m.palaceLotus105&&palaceWet(m))+':'+heldWeaponKey1001(m.weapon)+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,m.palaceActor105==='king'?PALACE_KING_SPRITE.resolution:1);drawPalaceActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
- if(m?.citadelActor105){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
+ if(m?.citadelActor105&&(m.citadelActor105==='lancer'||!ACTOR_SPEC[monsterSpeciesName(m)])){const key='citadel:'+m.name+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas();drawCitadelActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  if(m?.branchBoss105||m?.treeMimic105||m?.hiveTree105||m?.beeSwarm105){const dormant=m.treeMimic105&&m.mimicDormant105!==false,disguise=dormant?[state?.branchContext105?.id||'stockade',m.x,m.y,branchHeight(m.x,m.y)].join(':'):'awake',key='mountain:'+m.name+':'+dormant+':'+disguise+':'+frame;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(null,m.branchBoss105?2:1);if(!m.branchBoss105)q.translate(0,4);drawMountainActor(q,m,frame);ACTOR_CACHE.set(key,c);return c;}
  const source=m?.combatFixture54==='slime-shell'?{a:'slime_shell_empty'}:shellSlimeProtected(m)?{a:'slime_shell'}:m?.shellSlime?{a:'slime_shell_exposed'}:m?.martialActor105?ACTOR_SPEC['문하생']:m?.combatFixture54==='core'?{a:'thought_core',c:'#382840',h:m.color,ac:'#fff1ce'}:m?.combatFixture54==='silk'?{a:'silk_mirror'}:ACTOR_SPEC[m?.name]||ACTOR_SPEC[m?.spriteSpecies105]||ACTOR_SPEC[monsterSpeciesName(m)]||genericSpec(m),sp=m?.shopPortrait58===2?{...ACTOR_SPEC['구미호'],c:'#305879',h:'#8bc6e0',ac:'#dbf3fa'}:source,a=sp.a,revivePhase=m?.revivePhase57||'normal',key=`r9|${m?.name||a}|${a}|${m?.shopPortrait58??''}|${m?.silkMirrorColor54||''}|${revivePhase}|${sp.design==='shackle_doll'?[m.shackleStyle??0,m.intent61?.type==='shackleCounter'].join(':'):''}|${m.martialActor105?[m.dojoRank105,m.dojoStyle105,JSON.stringify(m.dojoLook105||{}),m.weapon?.name||'fist',m.armor?.name||'',m.cloak?.name||''].join(':'):''}|${frame}`;if(ACTOR_CACHE.has(key))return ACTOR_CACHE.get(key);const[c,q]=actorSpriteCanvas(m,sp.resolution||1),b=frame?1:0;q.clearRect(0,0,32,36);
  const hi=sp.h, base=sp.c, ac=sp.ac;
@@ -4521,6 +4616,15 @@ function drawPalaceRock(q,rise=1,element='earth',visible=true){
  }
 q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
  poly(fire?'#36130f':element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
+ if(element==='coffin'){
+  poly('#1a1f26',[[9,2],[23,2],[28,9],[23,30],[9,30],[4,9]]);
+  poly('#3b2f2a',[[10,3],[22,3],[26,9],[22,28],[10,28],[6,9]]);
+  poly('#5d4a3d',[[11,4],[21,4],[24,9],[21,12],[11,12],[8,9]]);
+  poly('#6f5a4a',[[12,13],[20,13],[21,26],[11,26]]);
+  q.fillStyle='#a8b6b8';q.fillRect(15,5,2,22);q.fillRect(11,12,10,2);q.fillStyle='#83d7eb';q.fillRect(15,7,2,2);
+  q.strokeStyle='#cfeff7';q.lineWidth=1;q.beginPath();q.moveTo(7,10);q.lineTo(9,8);q.moveTo(24,22);q.lineTo(26,20);q.stroke();
+  q.restore();return;
+ }
  poly(fire?'#651d14':element==='grass'?'#3d5c23':'#3d302b',[[2,27],[7,5],[22,3],[26,8],[30,27],[27,30],[5,30]]);
  poly(fire?'#ff692c':element==='grass'?'#80a844':'#946843',[[4,26],[9,8],[22,6],[25,10],[27,26],[23,28],[6,28]]);
  poly(fire?'#ffbd45':element==='grass'?'#c6d963':'#c29b68',[[7,10],[9,6],[22,4],[25,8],[22,12],[10,13]]);

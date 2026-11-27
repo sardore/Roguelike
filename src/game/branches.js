@@ -197,11 +197,11 @@ function branchPruneWorld(run){
 function branchPortalInfo(p){
  const [target,depth]=String(p.to||'').split(':'),def=BRANCH_DEFS105[target]||BRANCH_DEFS105[state?.branchContext105?.id],name=p.label||'계단문';
  if(p.kind==='palace-return')return{name,desc:'용왕이 쓰러진 왕좌전에 열린 귀환 포탈. 만루 본관 9층 용궁 입구로 바로 돌아간다.',hint:'포탈 위나 옆에서 F키 또는 상호작용 버튼을 누른다.'};
- if(target==='main')return{name,desc:'만루 본관으로 올라가는 돌계단. 문 옆에서 상호작용하면 떠나온 층으로 돌아간다.',hint:'문은 걸어서 지나갈 수 있다. F키·상호작용 버튼로 출입한다. 다시 내려오면 탐사 상태가 이어진다.'};
+ if(target==='main')return{name,desc:`만루 본관으로 ${def.climbs105?'내려가는':'올라가는'} 돌계단. 문 옆에서 상호작용하면 떠나온 층으로 돌아간다.`,hint:'문은 걸어서 지나갈 수 있다. F키·상호작용 버튼로 출입한다. 다시 내려오면 탐사 상태가 이어진다.'};
  if(p.kind==='dojo-local')return{name,desc:p.id.startsWith('in')?'도장 안의 이전 구획으로 돌아가는 계단문.':'도장 안의 다음 구획으로 이어지는 계단문. 곁길을 거쳐 이전 구획으로 돌아갈 수도 있다.',hint:p.requireSector!=null?'무도가를 모두 쓰러뜨린 뒤 문 옆에서 상호작용한다.':'문 옆에서 F키·상호작용 버튼로 이동한다.'};
- if(p.id==='up')return{name,desc:`${def.name}의 이전 층으로 올라가는 계단. 되돌아가도 탐사한 곳은 그대로 남는다.`,hint:`문 옆에서 상호작용 · 목적지: ${def.name} ${depth||1}층.`};
+ if(p.id==='up')return{name,desc:`${def.name}의 이전 층으로 ${def.climbs105?'내려가는':'올라가는'} 계단. 되돌아가도 탐사한 곳은 그대로 남는다.`,hint:`문 옆에서 상호작용 · 목적지: ${def.name} ${depth||1}층.`};
  const first=Number(depth)===1&&state?.branchContext105?.id!==target;
- return{name,desc:first?`이곳은 ${def.count}층으로 이루어진 ${def.name}이다. ${BRANCH_LORE[target]}`:`${def.name} ${depth||'?'}층으로 내려가는 계단. ${BRANCH_LORE[target]}`,hint:(first?(def.parentBranch?`${BRANCH_DEFS105[def.parentBranch].name} ${def.parentLevel}층으로 돌아올 수 있다.`:'출입구를 통해 본관으로 돌아올 수 있다.'):`목적지: ${def.name} ${depth||'?'}층. 돌아오는 문은 열려 있다.`)+' 문 옆에서 F키·상호작용 버튼로 출입한다.'};
+ return{name,desc:first?`이곳은 ${def.count}층으로 이루어진 ${def.name}이다. ${BRANCH_LORE[target]}`:`${def.name} ${depth||'?'}층으로 ${def.climbs105?'올라가는':'내려가는'} 계단. ${BRANCH_LORE[target]}`,hint:(first?(def.parentBranch?`${BRANCH_DEFS105[def.parentBranch].name} ${def.parentLevel}층으로 돌아올 수 있다.`:'출입구를 통해 본관으로 돌아올 수 있다.'):`목적지: ${def.name} ${depth||'?'}층. 돌아오는 문은 열려 있다.`)+' 문 옆에서 F키·상호작용 버튼로 출입한다.'};
 }
 function branchCombatFloor(context=state?.branchContext105){
  if(!context)return state.floor;
@@ -438,13 +438,13 @@ function palaceRootWallsRise(cells,root,expiresTurn=state.turn+1){
  for(const c of cells){const old=state.map[c.y]?.[c.x];if(!palaceRootFloor(c.x,c.y))continue;
   if(!RuntimeTerrainOwner.temporary(c.x,c.y,TT.PALACE_ROCK,expiresTurn-state.turn,'palace-root-wall105',{allowedOld:[old],source:root.element==='fire'?'salamander-fire-wall':grass?'wood-spirit-roots':'palace-roots',overlapSolid:true}))continue;
   const t=state.tempTerrain74.find(t=>t.x===c.x&&t.y===c.y);t.bornTurn105=state.turn;t.expiresTurn105=expiresTurn;t.rootWall105={...root};
-  Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,root.element||'earth');
+  Object.defineProperty(t,'riseStarted105',{value:performance.now(),writable:true,configurable:true});elementBreakFx105(c.x,c.y,root.element==='coffin'?'ice':root.element||'earth');
   const effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};for(const target of runtimeTerrainOccupants57(t.x,t.y))if(effectCanAffect57(effect,target)&&applyCombatStatus(target,'stun',root.stunTurns,1,{source:effect})&&root.element==='fire')floatText(target.x,target.y,'기절','#fff1ad',13);raised++;
  }return raised;
 }
 function palaceRootWallExplode(records){
  const walls=Array.isArray(records)?records:[records],hits=new Map(),footprints=new Map(),targets=[state.player,...state.monsters];
- for(const wall of walls){const root=wall.rootWall105,elem=root.element||'earth',cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};
+ for(const wall of walls){const root=wall.rootWall105,elem=root.element==='coffin'?'ice':root.element||'earth',cells=elementCells105(wall.x,wall.y,1),effect={sourceFaction:root.faction,owner:root.id,credit:root.credit};
   elementAttackFx105(elem,cells,{x:wall.x,y:wall.y});
   let patch=footprints.get(root.id);
   if(!patch){patch={x:wall.x,y:wall.y,cells:new Map(),elem,turns:root.fireTurns,effect};footprints.set(root.id,patch);}
@@ -454,7 +454,7 @@ function palaceRootWallExplode(records){
    hit.parts.push(root.damage??root.atk*1.4);hit.poison=Math.max(hit.poison,root.poison||0);hit.drunk=Math.max(hit.drunk,root.drunk||0);if(effect.credit==='player')hit.effect=effect;
   }elementBreakFx105(wall.x,wall.y,elem);
  }
- let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:elem==='fire'?'화염벽 폭발':grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:elem==='earth',color:elem==='fire'?'#ff9652':grass?'#b7d85d':'#bf8b59',contactHandled105:true});
+ let damaged=0;for(const[target,groups]of hits)for(const[elem,hit]of groups){const grass=elem==='grass',result=resolveElementDamage57(target,elem,hit.parts[0],{effect:hit.effect,damageParts105:hit.parts,source:elem==='fire'?'화염벽 폭발':elem==='ice'?'관 폭발':grass?'목령벽 폭발':'해련 바위벽 붕괴',ground:elem==='earth',color:elem==='fire'?'#ff9652':grass?'#b7d85d':'#bf8b59',contactHandled105:true});
   if(result.damage>0){damaged++;if(grass&&target.hp>0){applyCombatStatus(target,'poison',hit.poison,1,{source:hit.effect,element:elem});applyCombatStatus(target,'drunk',hit.drunk,1,{source:hit.effect,element:elem});}}
  }
  for(const patch of footprints.values()){
@@ -462,7 +462,24 @@ function palaceRootWallExplode(records){
   if(patch.elem==='fire')addField('fire',patch.x,patch.y,patch.turns,cells,{...patch.effect,terrainAttack105:true});
   else emitElementContact105(patch.elem,cells,patch.effect,{terrainAttack105:true});
  }
- if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
+ for(const wall of walls)if(wall.rootWall105.summon105)citadelRaiseCorpse(wall.rootWall105,wall.x,wall.y);
+ if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='coffin')?'관 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
+}
+// A coffin that has burst wakes one armoured corpse, weakened and worth little. The caster must still be alive and below its limit.
+function citadelRaiseCorpse(root,x,y){
+ const owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner)return null;
+ if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=COFFIN_WALL.maxAlive)return null;
+ const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105==='tomb');if(!def)return null;
+ const spots=[{x,y},...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy}))];
+ for(const q of spots){
+  if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||OccupancyService.isOccupied(q.x,q.y))continue;
+  const m=scaledMonster(clone(def),owner.citadelDepth105||combatDepth(owner));
+  m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*.75));m.xp=Math.floor((m.xp||0)/3);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
+  adoptBossChild57(m,owner);
+  if(!PlacementService.monsterCanStand(m,q.x,q.y)||!OccupancyService.addMonster(m))continue;
+  setMonsterWeakened(m,4);playSummonArrival(owner,m);return m;
+ }
+ return null;
 }
 function palaceRootFloor(x,y){const top=state.map[y]?.[x],base=terrainBaseTile58(x,y);return x>0&&y>0&&x<COLS-1&&y<ROWS-1&&top!=null&&!TEMP_TERRAIN_IMMUTABLE57.has(top)&&!runtimeTerrainSolid57(base)&&state.terrainAttachment58?.[k(x,y)]!=='wall'&&!tileBlocksSight(base)&&!mineState()?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));}
 function palaceResolveIntent(mon,I){
@@ -2464,13 +2481,13 @@ function buildCitadel(level){
  for(const tower of data.towers){const cells=[];for(let y=tower.y-tower.r;y<=tower.y+tower.r;y++)for(let x=tower.x-tower.r;x<=tower.x+tower.r;x++)if(citadelInside(tower,x,y,1)&&m[y][x]===TT.STONE_PATH&&!reserved({x,y}))cells.push({x,y});
   if(['siege','forge','gatehouse'].includes(tower.concept105)){const lanes=[];for(const q of cells){let n=0;while(n<12&&m[q.y]?.[q.x+n]===TT.STONE_PATH&&!reserved({x:q.x+n,y:q.y}))n++;if(n>=6)lanes.push({...q,n});}lanes.sort((a,b)=>b.n-a.n);const q=lanes[0];if(q){const id=`boulder-${tower.id}`,home={id,x:q.x,y:q.y,nextAt:25,structureKind105:'boulder',material105:'stone'},button={id:id+':release',x:q.x+q.n-1,y:q.y,gateOnly:true};mine.sources.push(home);mine.carts.push({...home,home:home.id,alive:true});put(button.x,button.y,TT.SWITCH);mine.buttons.push(button);}}
   if(level===1&&tower.id===12)continue;
-  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).map(g=>g.role),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles];const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
+  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).map(g=>g.role),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles],corners=citadelCorners(tower),danger=citadelDangerDelta(level,corners);const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
   const rooms=data.rooms.filter(r=>r.citadelTower105===tower.id&&r.theme105!=='stair').sort((a,b)=>Number(!!b.function105)-Number(!!a.function105)||Math.abs(b.cx-tower.x)+Math.abs(b.cy-tower.y)-Math.abs(a.cx-tower.x)-Math.abs(a.cy-tower.y));
   const captiveRooms=rooms.filter(r=>r.prison105?.captive105),formation=[...captiveRooms,...(tower.enemyPlan105||[]).map(index=>rooms.find(r=>r.authoredIndex105===index)).filter(r=>r&&!r.prison105?.captive105)],count=Math.max(baseCount,formation.length);
    for(let n=0;n<count;n++){
     const stage=influence?.stage||0,predator=stage&&n<count-1&&n%Math.max(2,6-stage)===0,legacy=stage? n===count-1||n%5<stage:n===count-1;
     const freeRooms=rooms.filter(r=>!r.prison105?.captive105),preferred=formation[n]||freeRooms[Math.floor(n/3)%freeRooms.length]||rooms[Math.floor(n/3)%rooms.length],captive=n<captiveRooms.length,roomRoles=preferred.enemyRoles105?[...preferred.enemyRoles105,...guestRoles]:roles;
-    const def=captive?CITADEL_ENEMIES105.find(d=>d.citadelActor105===(n%2?'tomb':'chain')):predator?MONSTERS.find(d=>d.name==='차원 포식자'):legacy?defs[(tower.id+level+n)%defs.length]:(CITADEL_ENEMIES105.find(d=>d.citadelActor105===roomRoles[n%roomRoles.length])||citadelGuestDef(roomRoles[n%roomRoles.length])),depth=citadelCombatDepth(tower.x,tower.y,level),mon=scaledMonster(def,depth);if(CITADEL_GUESTS105.some(g=>g.legend&&g.name===def.name))mon.legendDungeon47=CITADEL_GUESTS105.find(g=>g.name===def.name).legend;
+    const role=preferred.enemyRoles105?roomRoles[n%roomRoles.length]:citadelPickRole([...CITADEL_BASE_ROLES105,...guestRoles],roles,corners,level,danger,hash2(tower.id*31+n,level,7)),def=captive?CITADEL_ENEMIES105.find(d=>d.citadelActor105===(n%2?'tomb':'chain')):predator?MONSTERS.find(d=>d.name==='차원 포식자'):legacy?defs[(tower.id+level+n)%defs.length]:(CITADEL_ENEMIES105.find(d=>d.citadelActor105===role)||citadelGuestDef(role)),depth=citadelCombatDepth(tower.x,tower.y,level)+danger,mon=scaledMonster(def,depth);if(CITADEL_GUESTS105.some(g=>g.legend&&g.name===def.name))mon.legendDungeon47=CITADEL_GUESTS105.find(g=>g.name===def.name).legend;
     if(captive&&preferred.prison105.elite105)applyLegendGatekeeper47(mon,depth);
     mon.citadelBalanceRevision=CITADEL_BALANCE_REVISION;
     const options=[];
@@ -2631,9 +2648,27 @@ const CITADEL_ENEMIES105=Object.freeze([
  {name:'철쇄 집행관',passageSeal:{species:'철쇄 집행관',radius:8,range:8,duration:6,cooldown:12},kind:'human',hp:46,atk:13,def:5,eva:3,hook:true,role61:'hook',citadelActor105:'chain',color:'#b58966',shape:'knight',xp:20,concept57:'철쇄를 던져 적을 끌어당기는 집행관.'},
  {name:'흑성 노수',kind:'human',hp:30,atk:11,def:3,eva:4,ranged:true,range:7,role61:'skirmisher',citadelActor105:'crossbow',color:'#a39fba',shape:'archer',xp:17,concept57:'회랑과 사격실에서 쇠뇌를 겨누는 성채 사수.'},
  {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',targetMark61:{turns:6,cooldown:14},citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
- {name:'납골 철갑시체',kind:'undead',hp:58,atk:13,def:8,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
- {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'}
+ {name:'납골 철갑시체',kind:'undead',hp:52,atk:12,def:7,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
+ {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'},
+ {name:'흑관 장의사',kind:'human',hp:34,atk:10,def:4,eva:3,ranged:true,range:6,role61:'coffin',citadelActor105:'coffin',color:'#6b5a6e',shape:'mage',xp:22,concept57:'관을 세워 납골 철갑시체를 깨우는 흑성채의 장의사.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
+// Where a tower stands decides who guards it: each quarter of the map favours some roles, and each floor makes one or two directions more dangerous
+// (the monsters there fight as if they were that many floors deeper and the heavy roles turn up more often).
+const CITADEL_BASE_ROLES105=Object.freeze(['lancer','chain','crossbow','bell','tomb','wing','coffin']);
+const CITADEL_ROLE_WEIGHTS105=Object.freeze({
+ NW:{lancer:4,crossbow:3,chain:1,bell:1,tomb:1,wing:1,coffin:1},
+ NE:{wing:4,bell:3,crossbow:2,lancer:1,chain:1,tomb:1,coffin:1},
+ SW:{chain:4,tomb:3,lancer:2,crossbow:1,bell:1,wing:1,coffin:2},
+ SE:{coffin:4,tomb:3,lancer:3,chain:2,crossbow:1,bell:1,wing:1}
+});
+const CITADEL_DANGER105=Object.freeze({1:{NE:4,NW:1},2:{NW:4,SE:2},3:{SE:4,NE:2},4:{NE:4,NW:3,SE:3}});
+const CITADEL_HEAVY_ROLES105=Object.freeze(['tomb','chain','wing','coffin']);
+function citadelCorners(tower){const sx=Math.sign(tower.x-120),sy=Math.sign(tower.y-120);if(!sx&&!sy)return[];const xs=sx?[sx<0?'W':'E']:['W','E'],ys=sy?[sy<0?'N':'S']:['N','S'];return ys.flatMap(y=>xs.map(x=>y+x))}
+function citadelDangerDelta(level,corners){return corners.length?Math.round(corners.reduce((n,c)=>n+(CITADEL_DANGER105[level]?.[c]||0),0)/corners.length):0}
+function citadelPickRole(candidates,affinity,corners,level,delta,roll){
+ const list=candidates.map(r=>{let w=(corners.length?corners.reduce((n,c)=>n+(CITADEL_ROLE_WEIGHTS105[c][r]??1),0)/corners.length:1)*(affinity.includes(r)?3:1);if(delta>0&&CITADEL_HEAVY_ROLES105.includes(r))w*=1+delta/2;if(r==='coffin'&&level<2)w=0;return{r,w}}),total=list.reduce((n,o)=>n+o.w,0);
+ let at=roll*total;for(const o of list){if(at<o.w)return o.r;at-=o.w}return list.find(o=>o.w>0).r;
+}
 const CITADEL_MOVED105=Object.freeze(['chain_sickle','curse_spear','ward_hammer']);
 function pressureSwitchVariant105(button){
  const m=mineState(),trial=state.branchWorld105?.citadel105?.trial105;
@@ -2809,7 +2844,7 @@ const BRANCH_DEFS105=Object.freeze({
  stockade:{name:'산채',count:2,parent:7,titles:['겹비탈 숲길','상봉 산성'],color:'#a6b482'},
  mine:{name:'광산',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['등롱 갱도','꺼져 가는 심부'],color:'#d3a46b'},
  black:{name:'흑산채',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['고목 능선','흑기 정상성'],color:'#ac8eae'},
- mirror:{name:'천면경탑',count:3,parent:14,titles:['반영 회랑','어긋난 난간','파경대'],color:'#b4c1c7'}
+ mirror:{name:'천면경탑',count:3,parent:14,climbs105:true,titles:['반영 회랑','어긋난 난간','파경대'],color:'#b4c1c7'}
 });
 function produceWallMaterials105(world=state,reset=false){
  if(!world?.map?.length)return;
