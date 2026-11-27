@@ -465,11 +465,11 @@ function palaceRootWallExplode(records){
  for(const wall of walls)if(wall.rootWall105.summon105)citadelRaiseCorpse(wall.rootWall105,wall.x,wall.y);
  if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='coffin')?'관 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
-// A coffin that has burst wakes one armoured corpse, weakened, through the common summon rule. The caster must still be alive and below its limit.
+// A coffin that has burst wakes one 강시 (jiangshi), weakened, through the common summon rule. The caster must still be alive and below its limit.
 function citadelRaiseCorpse(root,x,y){
  const rule=root.summon105,owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner||!rule)return null;
  if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=(rule.maxAlive||COFFIN_WALL.maxAlive))return null;
- const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105==='tomb');if(!def)return null;
+ const def=MONSTERS.find(d=>d.name==='강시');if(!def)return null;
  const spots=[{x,y},...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy}))];
  for(const q of spots){
   if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||OccupancyService.isOccupied(q.x,q.y))continue;

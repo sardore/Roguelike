@@ -74,8 +74,8 @@ assert.ok(c.specOk, '장의사 시체에 공통 소환 규칙(체력 65%, 공격
 assert.ok(c.weakLeft>=90, '약화가 100턴이 아니다 '+c.weakLeft);
 assert.ok(c.midOk, '관이 장의사와 목표 사이에 서지 않는다');
 assert.equal(c.walls, c.planned, '관이 한꺼번에 솟지 않았다');
-assert.ok(c.corpses >= 1 && c.corpses <= 3, '철갑시체 수 ' + c.corpses);
-assert.deepEqual(c.names, ['납골 철갑시체']);
+assert.ok(c.corpses >= 1 && c.corpses <= 3, '강시 수 ' + c.corpses);
+assert.deepEqual(c.names, ['강시']);
 assert.equal(c.again, false, '재사용 대기를 무시했다');
 assert.ok(c.vsMonster, '상대가 몬스터일 때 장의사가 관을 못 부른다');
 assert.ok(c.emptyWhenKilled, '장의사가 죽었는데 시체가 깨어났다');
