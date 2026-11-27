@@ -2711,6 +2711,7 @@ const ACTOR_SPEC={
   '흑성 노수':{"a":"branch","c":"#4a4a5c","h":"#a39fba","ac":"#d9c88a","design":"citadel_crossbow"},
   '납골 철갑시체':{"a":"branch","c":"#6f7a7d","h":"#a8b6b8","ac":"#7fe0d0","design":"citadel_tomb"},
   '흑요 날개상':{"a":"branch","c":"#5a4f6e","h":"#9586a8","ac":"#d6a8ff","design":"citadel_wing"},
+  '상여 귀신':{"a":"branch","c":"#d8d2bd","h":"#f2eedf","ac":"#7fe0c0","design":"citadel_bier"},
   '흑관 장의사':{"a":"branch","c":"#4a3a52","h":"#8c779a","ac":"#c9b36e","design":"citadel_undertaker"},
   '피뢰 갑병':{"a":"branch","c":"#4f5e68","h":"#a0a9ac","ac":"#c3dcda","design":"lightning_plate"},
   '전도 정령':{"a":"branch","c":"#457f93","h":"#90bcbf","ac":"#d9ecc1","design":"conduction_spirit"},
@@ -2896,6 +2897,58 @@ function drawMasterBoss(q,frame,trueForm=false){
 }
 // Regional silhouettes use the same 32×36 frame, outline and shaded polygons as main creatures.
 // Species identity, not floor or faction, selects art; no combat flags are changed here.
+// Shape-to-pixel conversion: a design is drawn as smooth vector shapes on an 8x canvas, then every output pixel takes the most common colour of its block
+// (transparent when under half covered) and the silhouette gets the same one-pixel ink outline as the hand-placed sprites.
+function pixelizeVector(q,draw,k=8,w=32,h=36){
+ const big=document.createElement('canvas');big.width=w*k;big.height=h*k;const g=big.getContext('2d');g.scale(k,k);draw(g);
+ const src=g.getImageData(0,0,w*k,h*k).data,out=q.createImageData(w,h),opaque=new Uint8Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const bins=new Map();let solid=0;
+  for(let v=0;v<k;v++)for(let u=0;u<k;u++){const i=((y*k+v)*w*k+x*k+u)*4;if(src[i+3]<128)continue;solid++;const key=((src[i]>>4)<<8)|((src[i+1]>>4)<<4)|(src[i+2]>>4),e=bins.get(key);if(e)e.n++;else bins.set(key,{n:1,r:src[i],g:src[i+1],b:src[i+2]})}
+  if(solid<k*k*.5)continue;
+  let best=null;for(const e of bins.values())if(!best||e.n>best.n)best=e;
+  const o=(y*w+x)*4;out.data[o]=best.r;out.data[o+1]=best.g;out.data[o+2]=best.b;out.data[o+3]=255;opaque[y*w+x]=1;
+ }
+ const ink=[18,15,18];
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  if(opaque[y*w+x])continue;
+  if((x>0&&opaque[y*w+x-1])||(x<w-1&&opaque[y*w+x+1])||(y>0&&opaque[(y-1)*w+x])||(y<h-1&&opaque[(y+1)*w+x])){const o=(y*w+x)*4;out.data[o]=ink[0];out.data[o+1]=ink[1];out.data[o+2]=ink[2];out.data[o+3]=255}
+ }
+ const res=document.createElement('canvas');res.width=w;res.height=h;res.getContext('2d').putImageData(out,0,0);q.drawImage(res,0,0);
+}
+function drawBierGhostVector(g,b){
+ const grad=(x0,y0,x1,y1,stops)=>{const gr=g.createLinearGradient(x0,y0,x1,y1);for(const[t,c]of stops)gr.addColorStop(t,c);return gr},
+ shape=(fill,fn)=>{g.beginPath();fn();g.closePath();g.fillStyle=fill;g.fill()},
+ stroke=(col,w,fn)=>{g.beginPath();fn();g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.stroke()},
+ ell=(x,y,rx,ry,fill,rot=0)=>{g.beginPath();g.ellipse(x,y,rx,ry,rot,0,Math.PI*2);g.fillStyle=fill;g.fill()},
+ flower=(x,y,r,outer,inner,rot=0)=>{for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5-Math.PI/2;ell(x+Math.cos(a)*r*.62,y+Math.sin(a)*r*.62,r*.58,r*.4,outer,a)}for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5-Math.PI/2+.31;ell(x+Math.cos(a)*r*.3,y+Math.sin(a)*r*.3,r*.34,r*.24,inner,a)}ell(x,y,r*.24,r*.24,'#f4d675')};
+ g.save();g.translate(0,b*.5-.4);
+ // floating celestial ribbons swept up and out from the shoulders
+ stroke(grad(2,16,12,6,[[0,'#f7b8c4'],[1,'rgba(247,184,196,.35)']]),2.8,()=>{g.moveTo(12.6,16);g.bezierCurveTo(6,18.4,1.4,14.4,3.2,9.2);g.bezierCurveTo(4.2,6.4,6.6,6,7.6,7.6)});
+ stroke(grad(30,16,20,6,[[0,'#cfe9e6'],[1,'rgba(207,233,230,.35)']]),2.8,()=>{g.moveTo(19.4,16);g.bezierCurveTo(26,18.4,30.6,14.4,28.8,9.2);g.bezierCurveTo(27.8,6.4,25.4,6,24.4,7.6)});
+ stroke('rgba(255,255,255,.8)',.5,()=>{g.moveTo(12.4,15.4);g.bezierCurveTo(6.4,17.4,2.4,14,3.8,9.6)});stroke('rgba(255,255,255,.8)',.5,()=>{g.moveTo(19.6,15.4);g.bezierCurveTo(25.6,17.4,29.6,14,28.2,9.6)});
+ // long indigo hair
+ shape(grad(0,3,0,28,[[0,'#2b2442'],[1,'#17122a']]),()=>{g.moveTo(16,1.6);g.bezierCurveTo(9,1.4,7,6,7.4,12);g.bezierCurveTo(7.8,18,9.6,22,8.4,27.5);g.bezierCurveTo(11.4,25.5,12.4,21,12,15.5);g.lineTo(20,15.5);g.bezierCurveTo(19.6,21,20.6,25.5,23.6,27.5);g.bezierCurveTo(22.4,22,24.2,18,24.6,12);g.bezierCurveTo(25,6,23,1.4,16,1.6)});
+ stroke('rgba(120,104,170,.55)',.45,()=>{g.moveTo(9.4,7);g.bezierCurveTo(8.4,13,10,20,9.2,25)});stroke('rgba(120,104,170,.55)',.45,()=>{g.moveTo(22.6,7);g.bezierCurveTo(23.6,13,22,20,22.8,25)});
+ // gown: slim, pale, dissolving into petals
+ shape(grad(0,14,0,33,[[0,'#ffffff'],[.6,'#e3eeee'],[1,'rgba(190,214,216,.0)']]),()=>{g.moveTo(12.6,14.2);g.lineTo(19.4,14.2);g.bezierCurveTo(20.6,19,22.8,24,21.6,29.5);g.bezierCurveTo(19,32.5,13,32.5,10.4,29.5);g.bezierCurveTo(9.2,24,11.4,19,12.6,14.2)});
+ shape('#e4a24c',()=>{g.moveTo(11.6,20);g.quadraticCurveTo(16,22.6,20.4,20);g.lineTo(20.2,21.4);g.quadraticCurveTo(16,24,11.8,21.4)});
+ shape('#e8566c',()=>{g.moveTo(14.2,14.2);g.lineTo(16,17.4);g.lineTo(17.8,14.2);g.lineTo(17,14.2);g.lineTo(16,16);g.lineTo(15,14.2)});
+ // arms folded at the chest around a lotus
+ shape('#f2e8dc',()=>{g.ellipse(13.6,19,1.5,1.1,.6,0,Math.PI*2)});shape('#f2e8dc',()=>{g.ellipse(18.4,19,1.5,1.1,-.6,0,Math.PI*2)});
+ flower(16,18.6,2.4,'#f7b8c4','#fde2e8');
+ // drifting petals where the body ends
+ for(const[x,y,c,r,rot]of[[11,31,'#f7b8c4',.9,.4],[17,33.2,'#fde2e8',.95,-.3],[21.4,31.6,'#e8566c',.8,.7],[14,34.6,'#fde2e8',.7,0],[19,35.4,'#f7b8c4',.6,.5],[8.6,33.2,'#fde2e8',.6,.2],[24.6,34,'#f7b8c4',.55,-.4]])ell(x,y,r,r*.6,c,rot);
+ // face
+ ell(16,8.6,4.9,5.5,'#f4f0ea');shape(grad(0,4,0,14,[[0,'rgba(255,255,255,.5)'],[1,'rgba(190,176,190,.28)']]),()=>{g.ellipse(16,8.6,4.9,5.5,0,0,Math.PI*2)});
+ shape('#1b1530',()=>{g.moveTo(11.2,8.6);g.bezierCurveTo(10.6,3.4,21.4,3.4,20.8,8.6);g.bezierCurveTo(19.6,6.4,17.6,6.2,16,7.4);g.bezierCurveTo(14.4,6.2,12.4,6.4,11.2,8.6)});
+ stroke('#2a2438',.6,()=>{g.moveTo(12.4,9.8);g.quadraticCurveTo(13.9,11.1,15.4,9.8)});stroke('#2a2438',.6,()=>{g.moveTo(16.6,9.8);g.quadraticCurveTo(18.1,11.1,19.6,9.8)});
+ ell(13.9,11.2,.9,.4,'rgba(127,224,192,.7)');ell(18.1,11.2,.9,.4,'rgba(127,224,192,.7)');ell(12.2,12,1,.55,'rgba(240,150,160,.4)');ell(19.8,12,1,.55,'rgba(240,150,160,.4)');ell(16,12.7,.85,.45,'#d0606f');
+ // flower crown
+ flower(10.2,5.8,2.2,'#f7b8c4','#fde2e8',.3);flower(12.6,2.9,2.4,'#e8566c','#f7b8c4',.9);flower(16,1.6,2.6,'#fff1f3','#f7b8c4');flower(19.4,2.9,2.4,'#e8566c','#f7b8c4',1.4);flower(21.8,5.8,2.2,'#f7b8c4','#fde2e8',.1);
+ ell(8.4,9,.9,.55,'#f4d675',.5);ell(23.6,9,.9,.55,'#f4d675',-.5);
+ g.restore();
+}
 function drawBranchCreature(q,m,frame,sp){
  const b=frame?1:0,c=sp.c,h=sp.h,a=sp.ac,d=ACTOR_OUTLINE,skin='#b99a78',ivory='#e4d7b5',
  R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},
@@ -3090,6 +3143,10 @@ function drawBranchCreature(q,m,frame,sp){
   P('#17111f',[[12,5+b],[15,6+b],[15,8+b],[12,8+b]],null);P('#17111f',[[20,5+b],[17,6+b],[17,8+b],[20,8+b]],null);R(13,6+b,2,2,a);R(18,6+b,2,2,a);
   P('#241c34',[[11,9+b],[21,9+b],[19,14+b],[13,14+b]]);R(12,10+b,8,2,'#17111f');for(const x of[12,14,17,19])P('#f2ecfa',[[x,10+b],[x+1,10+b],[x+1,12+b]],null);
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
+ }
+ case'citadel_bier':{
+  // Drawn as smooth shapes at 8x and converted to pixels: see pixelizeVector.
+  pixelizeVector(q,g=>drawBierGhostVector(g,b));break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
@@ -4588,6 +4645,17 @@ function drawPalaceRock(q,rise=1,element='earth',visible=true){
  }
 q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
  poly(fire?'#36130f':element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
+ if(element==='bier'){
+  poly('#241a18',[[3,29],[29,29],[29,32],[3,32]]);
+  poly('#3a2b26',[[6,12],[26,12],[26,29],[6,29]]);poly('#e9e3d2',[[7,13],[25,13],[25,28],[7,28]]);poly('#fffaf0',[[7,13],[11,13],[11,28],[7,28]]);
+  poly('#241a18',[[13,17],[19,17],[19,28],[13,28]]);poly('#cfc8b4',[[14,18],[18,18],[18,27],[14,27]]);
+  q.fillStyle='#b3a98f';for(const x of[7,12,20,24])q.fillRect(x,13,1,15);
+  poly('#5a1f1c',[[1,11],[16,2],[31,11],[27,14],[5,14]]);poly('#a33a33',[[3,11],[16,3],[29,11],[26,13],[6,13]]);poly('#d8a548',[[4,11],[16,4],[28,11]]);
+  poly('#5a1f1c',[[0,10],[3,8],[4,12]]);poly('#5a1f1c',[[32,10],[29,8],[28,12]]);
+  const fl=['#e86a7a','#f4b6c0','#f2d675'];for(let i=0;i<6;i++){q.fillStyle=fl[i%3];q.fillRect(5+i*4,13,3,3)}
+  q.fillStyle='#d8a548';q.fillRect(15,1,2,3);
+  q.restore();return;
+ }
  if(element==='coffin'){
   poly('#1a1f26',[[9,2],[23,2],[28,9],[23,30],[9,30],[4,9]]);
   poly('#3b2f2a',[[10,3],[22,3],[26,9],[22,28],[10,28],[6,9]]);
@@ -4988,7 +5056,7 @@ function drawStockadeFallsDeck(q,x,y){
 }
 
 function drawBranchCell(t,px,py,x,y,foreground=null){
- if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
+ if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.look==='bier'?'bier':record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
  if(state.branchContext105.id==='mirror')return drawGlassTowerCell(t,px,py,x,y);

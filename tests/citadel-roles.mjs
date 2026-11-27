@@ -9,6 +9,26 @@ import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bridge = `globalThis.cr={state:()=>state,TT,go:l=>{state.branchWorld105={version:1,pages:{}};state.branchContext105={id:'citadel',level:l};buildBranch('citadel',l)},
  corners:t=>citadelCorners(t),
+ bier:()=>{
+  state.debugBattle57=true;state.monsters=[];state.tempFields=[];state.tempTerrain74=[];state.items=[];
+  for(let y=4;y<25;y++)for(let x=4;x<35;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);
+  OccupancyService.move(state.player,10,14);state.player.hp=state.player.maxHp=9999;
+  const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105==='bier');
+  const mon={...scaledMonster(clone(def),20),x:18,y:14,alerted:true,citadelDepth105:20};OccupancyService.addMonster(mon);
+  const out={hp:mon.maxHp,gate:!!mon.bierGate105};
+  out.wail=!!startBierWail(mon,state.player,entityDistance57(mon,state.player))&&mon.intent61?.type==='bierWail';
+  const dmgNear=(()=>{const r=BIER_WAIL.base+BIER_WAIL.perCell*4,f=BIER_WAIL.base+BIER_WAIL.perCell*9;return[r,f]})();out.scale=dmgNear;
+  state.turn++;executeMonsterIntent(mon);out.wailHit=state.player.hp<state.player.maxHp;state.player.hp=state.player.maxHp;mon.intent61=null;
+  const started=startCoffinWall(mon,state.player),field=state.tempFields.find(f=>f.rootWall105?.element==='coffin');out.planned=field?.cells.length||0;
+  const advance=()=>{state.turn++;tickCombatFields57();expireCombatFields();RuntimeTerrainOwner.tick()};
+  advance();advance();advance();
+  const corpses=state.monsters.filter(m=>m.coffinOwner105);out.corpses=corpses.length;out.undead=corpses.every(m=>m.kind==='undead'&&!m.boss);out.weak=corpses.map(m=>combatStatusTurns(m,'weaken'));
+  state.monsters=state.monsters.filter(m=>m===mon);
+  const foe={name:'시험 대상',x:20,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);
+  mon.hp=Math.floor(mon.maxHp*.4);const from={x:mon.x,y:mon.y};bierBurst(mon,foe);
+  out.burstHit=foe.hp<999;out.moved=Math.max(Math.abs(mon.x-from.x),Math.abs(mon.y-from.y))>=5;out.once=(bierBurst(mon,foe),mon.bierBurstUsed105===true);
+  return out;
+ },
  coffin:()=>{
   state.debugBattle57=true;state.monsters=[];state.tempFields=[];state.tempTerrain74=[];state.items=[];
   for(let y=4;y<25;y++)for(let x=4;x<35;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);
@@ -55,6 +75,7 @@ const out = await s.page.evaluate(() => {
     r.levels[lv] = { byCorner, depth: Object.fromEntries(Object.entries(depthByCorner).map(([c, a]) => [c, Math.round(a.reduce((x, y) => x + y, 0) / a.length * 10) / 10])) };
   }
   r.coffin = cr.coffin();
+  r.bier = cr.bier();
   return r;
 });
 console.log(JSON.stringify(out));
@@ -77,6 +98,16 @@ assert.deepEqual(c.names, ['납골 철갑시체']);
 assert.equal(c.again, false, '재사용 대기를 무시했다');
 assert.ok(c.vsMonster, '상대가 몬스터일 때 장의사가 관을 못 부른다');
 assert.ok(c.emptyWhenKilled, '장의사가 죽었는데 시체가 깨어났다');
+const bi = out.bier;
+assert.ok(bi.gate && bi.hp >= 150, '상여 귀신 체력/기믹 ' + bi.hp);
+assert.ok(bi.wail, '곡소리 예고가 안 선다');
+assert.ok(bi.wailHit, '곡소리가 맞지 않는다');
+assert.ok(bi.scale[1] > bi.scale[0] * 1.5, '멀수록 세지지 않는다');
+assert.equal(bi.planned, 1, '관이 한 번에 하나가 아니다');
+assert.equal(bi.corpses, 1);
+assert.ok(bi.undead, '깨어난 것이 보스이거나 망자가 아니다');
+assert.deepEqual(bi.weak, [0], '약화가 걸렸다 ' + bi.weak);
+assert.ok(bi.burstHit && bi.moved && bi.once, '체력 50% 초목 폭발과 순간이동 ' + JSON.stringify(bi));
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('citadel-roles: ok');

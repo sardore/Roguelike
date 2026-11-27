@@ -465,19 +465,20 @@ function palaceRootWallExplode(records){
  for(const wall of walls)if(wall.rootWall105.summon105)citadelRaiseCorpse(wall.rootWall105,wall.x,wall.y);
  if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='coffin')?'관 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
-// A coffin that has burst wakes one armoured corpse, weakened and worth little. The caster must still be alive and below its limit.
+// A coffin that has burst wakes one corpse: the undertaker's armoured one, or (for the bier ghost) a random undead that is not a boss. The caster must still be alive and below its limit.
 function citadelRaiseCorpse(root,x,y){
- const owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner)return null;
- if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=COFFIN_WALL.maxAlive)return null;
- const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105==='tomb');if(!def)return null;
+ const rule=root.summon105,owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner||!rule)return null;
+ if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=(rule.maxAlive||COFFIN_WALL.maxAlive))return null;
+ const pool=rule.random?[...MONSTERS.filter(d=>d.kind==='undead'&&!d.boss&&!d.miniBoss),...CITADEL_ENEMIES105.filter(d=>d.kind==='undead')]:CITADEL_ENEMIES105.filter(d=>d.citadelActor105==='tomb'),def=pool.length?choice(pool):null;if(!def)return null;
  const spots=[{x,y},...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy}))];
  for(const q of spots){
   if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||OccupancyService.isOccupied(q.x,q.y))continue;
   const m=scaledMonster(clone(def),owner.citadelDepth105||combatDepth(owner));
-  m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*.75));m.xp=Math.floor((m.xp||0)/3);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
+  m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*(rule.hpScale??1)));m.xp=Math.floor((m.xp||0)*(rule.xpScale??1));Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
   adoptBossChild57(m,owner);
   if(!PlacementService.monsterCanStand(m,q.x,q.y)||!OccupancyService.addMonster(m))continue;
-  setMonsterWeakened(m,COFFIN_WALL.weakenTurns);playSummonArrival(owner,m);return m;
+  if(rule.weakenTurns>0)setMonsterWeakened(m,rule.weakenTurns);
+  playSummonArrival(owner,m);return m;
  }
  return null;
 }
@@ -2481,13 +2482,14 @@ function buildCitadel(level){
  for(const tower of data.towers){const cells=[];for(let y=tower.y-tower.r;y<=tower.y+tower.r;y++)for(let x=tower.x-tower.r;x<=tower.x+tower.r;x++)if(citadelInside(tower,x,y,1)&&m[y][x]===TT.STONE_PATH&&!reserved({x,y}))cells.push({x,y});
   if(['siege','forge','gatehouse'].includes(tower.concept105)){const lanes=[];for(const q of cells){let n=0;while(n<12&&m[q.y]?.[q.x+n]===TT.STONE_PATH&&!reserved({x:q.x+n,y:q.y}))n++;if(n>=6)lanes.push({...q,n});}lanes.sort((a,b)=>b.n-a.n);const q=lanes[0];if(q){const id=`boulder-${tower.id}`,home={id,x:q.x,y:q.y,nextAt:25,structureKind105:'boulder',material105:'stone'},button={id:id+':release',x:q.x+q.n-1,y:q.y,gateOnly:true};mine.sources.push(home);mine.carts.push({...home,home:home.id,alive:true});put(button.x,button.y,TT.SWITCH);mine.buttons.push(button);}}
   if(level===1&&tower.id===12)continue;
-  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).map(g=>g.role),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles],corners=citadelCorners(tower),danger=citadelDangerDelta(level,corners);const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
+  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).map(g=>g.role),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles],corners=citadelCorners(tower),danger=citadelDangerDelta(level,corners);let towerBier=false;const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
   const rooms=data.rooms.filter(r=>r.citadelTower105===tower.id&&r.theme105!=='stair').sort((a,b)=>Number(!!b.function105)-Number(!!a.function105)||Math.abs(b.cx-tower.x)+Math.abs(b.cy-tower.y)-Math.abs(a.cx-tower.x)-Math.abs(a.cy-tower.y));
   const captiveRooms=rooms.filter(r=>r.prison105?.captive105),formation=[...captiveRooms,...(tower.enemyPlan105||[]).map(index=>rooms.find(r=>r.authoredIndex105===index)).filter(r=>r&&!r.prison105?.captive105)],count=Math.max(baseCount,formation.length);
    for(let n=0;n<count;n++){
     const stage=influence?.stage||0,predator=stage&&n<count-1&&n%Math.max(2,6-stage)===0,legacy=stage? n===count-1||n%5<stage:n===count-1;
     const freeRooms=rooms.filter(r=>!r.prison105?.captive105),preferred=formation[n]||freeRooms[Math.floor(n/3)%freeRooms.length]||rooms[Math.floor(n/3)%rooms.length],captive=n<captiveRooms.length,roomRoles=preferred.enemyRoles105?[...preferred.enemyRoles105,...guestRoles]:roles;
-    const role=preferred.enemyRoles105?roomRoles[n%roomRoles.length]:citadelPickRole([...CITADEL_BASE_ROLES105,...guestRoles],roles,corners,level,danger,hash2(tower.id*31+n,level,7)),def=captive?CITADEL_ENEMIES105.find(d=>d.citadelActor105===(n%2?'tomb':'chain')):predator?MONSTERS.find(d=>d.name==='차원 포식자'):legacy?defs[(tower.id+level+n)%defs.length]:(CITADEL_ENEMIES105.find(d=>d.citadelActor105===role)||citadelGuestDef(role)),depth=citadelCombatDepth(tower.x,tower.y,level)+danger,mon=scaledMonster(def,depth);if(CITADEL_GUESTS105.some(g=>g.legend&&g.name===def.name))mon.legendDungeon47=CITADEL_GUESTS105.find(g=>g.name===def.name).legend;
+    let role=preferred.enemyRoles105?roomRoles[n%roomRoles.length]:citadelPickRole([...CITADEL_BASE_ROLES105,...guestRoles],roles,corners,level,danger,hash2(tower.id*31+n,level,7));if(role==='bier'){if(towerBier)role='tomb';else towerBier=true}
+    const def=captive?CITADEL_ENEMIES105.find(d=>d.citadelActor105===(n%2?'tomb':'chain')):predator?MONSTERS.find(d=>d.name==='차원 포식자'):legacy?defs[(tower.id+level+n)%defs.length]:(CITADEL_ENEMIES105.find(d=>d.citadelActor105===role)||citadelGuestDef(role)),depth=citadelCombatDepth(tower.x,tower.y,level)+danger,mon=scaledMonster(def,depth);if(CITADEL_GUESTS105.some(g=>g.legend&&g.name===def.name))mon.legendDungeon47=CITADEL_GUESTS105.find(g=>g.name===def.name).legend;
     if(captive&&preferred.prison105.elite105)applyLegendGatekeeper47(mon,depth);
     mon.citadelBalanceRevision=CITADEL_BALANCE_REVISION;
     const options=[];
@@ -2650,23 +2652,24 @@ const CITADEL_ENEMIES105=Object.freeze([
  {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',targetMark61:{turns:6,cooldown:14},citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
  {name:'납골 철갑시체',kind:'undead',hp:52,atk:12,def:7,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
  {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'},
+ {name:'상여 귀신',kind:'undead',hp:160,atk:14,def:7,eva:2,ranged:true,range:9,role61:'bier',citadelActor105:'bier',bierGate105:true,coffinRule:{count:1,maxAlive:2,cooldown:10,random:true,weakenTurns:0,hpScale:1,look:'bier'},color:'#cfc8b4',shape:'ghost',xp:46,concept57:'상여를 지고 곡소리를 내며 떠도는 장례 행렬의 귀신.'},
  {name:'흑관 장의사',kind:'human',hp:34,atk:10,def:4,eva:3,ranged:true,range:6,role61:'coffin',citadelActor105:'coffin',color:'#6b5a6e',shape:'mage',xp:22,concept57:'관을 세워 납골 철갑시체를 깨우는 흑성채의 장의사.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
 // Where a tower stands decides who guards it: each quarter of the map favours some roles, and each floor makes one or two directions more dangerous
 // (the monsters there fight as if they were that many floors deeper and the heavy roles turn up more often).
-const CITADEL_BASE_ROLES105=Object.freeze(['lancer','chain','crossbow','bell','tomb','wing','coffin']);
+const CITADEL_BASE_ROLES105=Object.freeze(['lancer','chain','crossbow','bell','tomb','wing','coffin','bier']);
 const CITADEL_ROLE_WEIGHTS105=Object.freeze({
- NW:{lancer:4,crossbow:3,chain:1,bell:1,tomb:1,wing:1,coffin:1},
- NE:{wing:4,bell:3,crossbow:2,lancer:1,chain:1,tomb:1,coffin:1},
- SW:{chain:4,tomb:3,lancer:2,crossbow:1,bell:1,wing:1,coffin:2},
- SE:{coffin:4,tomb:3,lancer:3,chain:2,crossbow:1,bell:1,wing:1}
+ NW:{lancer:4,crossbow:3,chain:1,bell:1,tomb:1,wing:1,coffin:1,bier:.5},
+ NE:{wing:4,bell:3,crossbow:2,lancer:1,chain:1,tomb:1,coffin:1,bier:1},
+ SW:{chain:4,tomb:3,lancer:2,crossbow:1,bell:1,wing:1,coffin:2,bier:2},
+ SE:{coffin:4,tomb:3,lancer:3,chain:2,crossbow:1,bell:1,wing:1,bier:3}
 });
 const CITADEL_DANGER105=Object.freeze({1:{NE:4,NW:1},2:{NW:4,SE:2},3:{SE:4,NE:2},4:{NE:4,NW:3,SE:3}});
-const CITADEL_HEAVY_ROLES105=Object.freeze(['tomb','chain','wing','coffin']);
+const CITADEL_HEAVY_ROLES105=Object.freeze(['tomb','chain','wing','coffin','bier']);
 function citadelCorners(tower){const sx=Math.sign(tower.x-120),sy=Math.sign(tower.y-120);if(!sx&&!sy)return[];const xs=sx?[sx<0?'W':'E']:['W','E'],ys=sy?[sy<0?'N':'S']:['N','S'];return ys.flatMap(y=>xs.map(x=>y+x))}
 function citadelDangerDelta(level,corners){return corners.length?Math.round(corners.reduce((n,c)=>n+(CITADEL_DANGER105[level]?.[c]||0),0)/corners.length):0}
 function citadelPickRole(candidates,affinity,corners,level,delta,roll){
- const list=candidates.map(r=>{let w=(corners.length?corners.reduce((n,c)=>n+(CITADEL_ROLE_WEIGHTS105[c][r]??1),0)/corners.length:1)*(affinity.includes(r)?3:1);if(delta>0&&CITADEL_HEAVY_ROLES105.includes(r))w*=1+delta/2;if(r==='coffin'&&level<2)w=0;return{r,w}}),total=list.reduce((n,o)=>n+o.w,0);
+ const list=candidates.map(r=>{let w=(corners.length?corners.reduce((n,c)=>n+(CITADEL_ROLE_WEIGHTS105[c][r]??1),0)/corners.length:1)*(affinity.includes(r)?3:1);if(delta>0&&CITADEL_HEAVY_ROLES105.includes(r))w*=1+delta/2;if(r==='coffin'&&level<2||r==='bier'&&level<3)w=0;return{r,w}}),total=list.reduce((n,o)=>n+o.w,0);
  let at=roll*total;for(const o of list){if(at<o.w)return o.r;at-=o.w}return list.find(o=>o.w>0).r;
 }
 const CITADEL_MOVED105=Object.freeze(['chain_sickle','curse_spear','ward_hammer']);

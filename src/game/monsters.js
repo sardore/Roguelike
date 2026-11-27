@@ -9,7 +9,7 @@ const BOSSES={
 };
 function monsterConcept(mon){const name=monsterSpeciesName(mon);return SPECIAL_MONSTER_CONCEPTS57[mon.name]||MONSTERS.find(d=>d.name===name)?.concept57||[...Object.values(BOSSES),PALACE_KING105].find(d=>d.name===name)?.concept57||((mon.legendMob47||mon.legendDungeon47)?globalThis.__MANRU_ARTIFACT46__?.enemyDefinitions?.(mon.legendDungeon47)?.find(d=>d.name===name)?.concept57:null)||mon.concept57||`${mon.name}. 정체를 알 수 없는 존재다.`}
 // The 역할군 names shown in the info window, one per role in MONSTER_ROLE_TABLE.
-const MONSTER_ROLE_LABEL105=Object.freeze({skirmisher:'유격형',controller:'통제형',poison:'독 포대',shell:'방패형',artillery:'포병',fireArtillery:'화염 포병',alarm:'경보형',swoop:'급강하형',blinkPunisher:'점멸 포식형',asura:'아수라',formation:'전열형',ambush:'매복형',flanker:'측면형',brood:'산란형',leaper:'도약형',webber:'포획형',gas:'가스형',hook:'갈고리형',gaze:'응시형',coffin:'관 소환형'});
+const MONSTER_ROLE_LABEL105=Object.freeze({skirmisher:'유격형',controller:'통제형',poison:'독 포대',shell:'방패형',artillery:'포병',fireArtillery:'화염 포병',alarm:'경보형',swoop:'급강하형',blinkPunisher:'점멸 포식형',asura:'아수라',formation:'전열형',ambush:'매복형',flanker:'측면형',brood:'산란형',leaper:'도약형',webber:'포획형',gas:'가스형',hook:'갈고리형',gaze:'응시형',coffin:'관 소환형',bier:'상여형'});
 let bossIntroTimer = null;
 function entityFaction(entity){if(!entity)return'neutral';if(entity===state?.player)return'player';return entity.faction57||(entity.friendly47?'player':entity.sourceFaction||'hostile')}
 function entityConcealed(entity){return !!(entity&&(entity.hidden||(entity===state?.player?playerConcealed58():entity.martialStatus105?.stealth>0)))}
@@ -1142,13 +1142,14 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     '보주의 파수꾼':['formation','신전 수호자와 전열을 만들고 밀치기에 버티는 정예'],
     '금령':['artillery','4칸 안에서 폭발탄 착탄을 예고하고, 공격에 맞은 대상의 허기까지 갉아먹는 황금 영체']
   };
-  const ROLE_RUNE={brood:'독',leaper:'약',gas:'연',hook:'갈',skirmisher:'활',controller:'봉',poison:'독',shell:'방패',artillery:'포',fireArtillery:'화',alarm:'경',swoop:'상',blinkPunisher:'식',asura:'수',formation:'진',ambush:'복',flanker:'사',webber:'망',gaze:'시',coffin:'관'};
+  const ROLE_RUNE={brood:'독',leaper:'약',gas:'연',hook:'갈',skirmisher:'활',controller:'봉',poison:'독',shell:'방패',artillery:'포',fireArtillery:'화',alarm:'경',swoop:'상',blinkPunisher:'식',asura:'수',formation:'진',ambush:'복',flanker:'사',webber:'망',gaze:'시',coffin:'관',bier:'곡'};
   function configureMonsterTraits(m){if(!m||m.boss)return m;if(m.intent61?.type==='shackleCounter'&&!m.intent61.data?.targetId)m.intent61=null;const def=MONSTERS.find(d=>d.name===m.name)||(m.legendDungeon47?mobDefs47(m.legendDungeon47).find(d=>d.name===m.name):null)||CITADEL_ENEMIES105.find(d=>d.name===m.name);if(def?.losLostSummon57&&!def.gaze&&m.gaze){delete m.gaze;delete m.gazeCount;}if(def?.name===SHACKLE_DOLL.name){delete m.fixed;delete m.immobile105;}if(def)for(const field of ['resist','attackElement105','attackElementShare105','seesStealth105','blind','actionSpeed','gaze','crossfire','deathBlast','sealSkill','passageSeal','sealingWard','sting','deathBrood','leap','poisonImmune57','visStack57','guardPost57','infectionHitsRequired57','silkTrapCount57','gasStatus57','lavaTrail57','split','slow','actionLag57','exitPressureSpeed57','gumiBehaviorVersion57','corpseRelocateSpan57','corpseRelocateMinRadius57','floor24Chaser57','persistentChase57','revivalLives57','reviveWeakTurns57','reviveWeakAtkMul57','reviveWeakDefMul57','reviveWeakEvaDelta57','reviveFullAtkMul57','reviveFullDefMul57','reviveFullEvaDelta57','deathCountsAsLosBreak57','warningAura57','legion57','exitPressureSense57','losLostSummon57','legendSkill47','alarmSkill61','targetMark61','wallSlam61','lightningRod61'])if(def[field]!=null&&m[field]==null)m[field]=structuredClone(def[field]);if(def?.balanceVersion57&&(m.balanceVersion57||0)<def.balanceVersion57){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});for(const field of ['atk','def','eva','summonWarmup','summonCooldown','summonCap'])if(fresh[field]!=null)m[field]=structuredClone(fresh[field]);m.balanceVersion57=def.balanceVersion57;if(Number.isFinite(m.nextSummonTurn57))m.nextSummonTurn57=Math.max(m.nextSummonTurn57,state.floorTurn+(m.summonCooldown||0));}if(def?.attackRevision&&(m.attackRevision||0)<def.attackRevision){const fresh=scaledMonster(def,m.summonCombatFloor105||m.combatFloor105||combatDepth(m),{inventory:false,configure:false});m.atk=fresh.atk;if(def.sting)m.sting=structuredClone(def.sting);m.attackRevision=def.attackRevision;}if(def?.sealingWard&&m.sealingWard?.species===def.name){m.sealingWard.duration=def.sealingWard.duration;m.sealingWard.cooldown=def.sealingWard.cooldown;}if(m.crossfire){if(def?.crossfire)m.crossfire.cooldown=def.crossfire.cooldown;delete m.crossfireContact;}if(def?.waterOnly57&&!m.combatFixture54)m.fixed=!!def.fixed;if(m.summonOwner105==='player')configureSummonBody105(m,def);if(m.gasStatus57)delete m.gas;if(m.floor24Chaser57&&def&&(m.gumiScaleVersion57||0)<3){const fresh=scaledMonster(def),wasCorpse=m.revivePhase57==='corpse'||m.hp<=0,ratio=(m.maxHp||0)>0?clamp((m.hp||0)/m.maxHp,0,1):1;delete m.fixedStats57;delete m.slow;delete m.reviveWeakAtk57;delete m.reviveWeakEva57;delete m.reviveFullAtk57;delete m.reviveFullEva57;m.maxHp=fresh.maxHp;m.hp=wasCorpse?0:Math.max(1,Math.round(fresh.maxHp*ratio));m.atk=fresh.atk;m.def=fresh.def;m.eva=fresh.eva;m.baseAtk57=fresh.atk;m.baseDef57=fresh.def;m.baseEva57=fresh.eva;m.miniBoss=true;m.reach=def.reach||1;delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57);m.exitPressureSpeedBudget57=0;m.gumiBehaviorVersion57=def.gumiBehaviorVersion57||4;m.reviveWeakAtkMul57=def.reviveWeakAtkMul57;m.reviveWeakDefMul57=def.reviveWeakDefMul57;m.reviveWeakEvaDelta57=def.reviveWeakEvaDelta57;m.reviveFullAtkMul57=def.reviveFullAtkMul57;m.reviveFullDefMul57=def.reviveFullDefMul57;m.reviveFullEvaDelta57=def.reviveFullEvaDelta57;m.deathCountsAsLosBreak57=true;m.losLostSummon57=structuredClone(def.losLostSummon57);m.gumiScaleVersion57=3}if(m.floor24Chaser57&&def&&(m.gumiBehaviorVersion57||0)<4){delete m.actionLag57;delete m.actionLagTick57;delete m.fast;m.exitPressureSpeed57=structuredClone(def.exitPressureSpeed57||{min:.5,max:1.5});m.exitPressureSpeedBudget57=0;m.corpseRelocateSpan57=def.corpseRelocateSpan57||21;m.corpseRelocateMinRadius57=def.corpseRelocateMinRadius57||6;m.gumiBehaviorVersion57=4}if(m.revivalLives57){if(!Number.isFinite(m.livesRemaining57))m.livesRemaining57=m.revivalLives57;if(!m.revivePhase57)m.revivePhase57='normal';if(!Number.isFinite(m.baseAtk57))m.baseAtk57=Number.isFinite(m.atk)?m.atk:(def?.atk??1);if(!Number.isFinite(m.baseDef57))m.baseDef57=Number.isFinite(m.def)?m.def:(def?.def??0);if(!Number.isFinite(m.baseEva57))m.baseEva57=Number.isFinite(m.eva)?m.eva:(def?.eva??0);if(!Number.isFinite(m.losLostSummonCooldown57))m.losLostSummonCooldown57=0;applyMonsterRevivalStats(m)}const r=MONSTER_ROLE_TABLE[m.name];if(r){m.role61=r[0];m.roleDesc61=r[1]}if(m.role61==='shell'){if(!Number.isFinite(m.shell61))m.shell61=0;if(!Number.isFinite(m.shellCd61))m.shellCd61=0}if(m.name==='성채 비행 감시자')m.support=false;if(m.name==='해자 잠복꾼'){m.ambush=false;m.hidden=false}if(!m.summonOwner105&&!m.prisoner105?.released&&(m.guardPost57||m.rumorSpaceId1030||m.legendElite47||m.elite1023||m.miniVaultResident62)&&!m.guardHome57&&Number.isFinite(m.x)&&Number.isFinite(m.y)&&!state.generationInProgress57){let room=roomAt(m.x,m.y);const vault=state.miniVault62,rumor=(state.rumorSpaces1030||[]).find(q=>q.id===m.rumorSpaceId1030);if(m.miniVaultResident62&&vault&&m.x>=vault.x&&m.y>=vault.y&&m.x<vault.x+vault.w&&m.y<vault.y+vault.h)room=vault;if(rumor?.rect){const r=rumor.rect;room={x:r.x1,y:r.y1,w:r.x2-r.x1+1,h:r.y2-r.y1+1}}m.guardHome57={x:m.x,y:m.y,room:room?{x:room.x,y:room.y,w:room.w,h:room.h}:null}}return m}
   function intentCells(cx,cy,r=1){const out=[];for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++)if(x>0&&y>0&&x<COLS-1&&y<ROWS-1)out.push({x,y});return out}
   function intentLineCells(a,b,range=8){if(!b){const cells=[];for(const[dx,dy]of DIRS4)for(let i=1;i<=range;i++){const x=a.x+dx*i,y=a.y+dy*i,t=state.map[y]?.[x];if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1||t==null||t===TT.DOOR||tileBlocks(t))break;cells.push({x,y})}return cells}const out=[],dx=Math.sign(b.x-a.x),dy=Math.sign(b.y-a.y);let x=a.x,y=a.y;for(let i=0;i<range;i++){if(Math.abs(b.x-x)>=Math.abs(b.y-y))x+=Math.sign(b.x-x);else y+=Math.sign(b.y-y);if(x<=0||y<=0||x>=COLS-1||y>=ROWS-1)break;out.push({x,y});if(x===b.x&&y===b.y)break}return out}
   function setMonsterIntent(m,type,cells,label,data={}){if(Number.isFinite(state.intentBudget61)&&state.intentBudget61<=0&&!data.force61)return false;if(Number.isFinite(state.intentBudget61)&&!data.force61)state.intentBudget61--;m.intent61={type,cells,label,data,armedPlayerTurn:state.turn};floatText(m.x,m.y,'예고','#efb171',10);return true}
   function executeMonsterIntent(m,immediate=null){const I=immediate||m.intent61;if(!I)return false;if(!immediate&&!m.crossfire&&state.turn<=(I.armedPlayerTurn??state.turn))return true;const targets=bossAreaTargets(m,I.cells),target=targets[0]||selectCombatOpponent(m),hit=targets.length>0;
     if(I.type==='blast'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d7a36c',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,I.data.bonus??3,{target,delivery:'area',reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},impactDelay:720*.74/automationPresentationRate70(),discoveryEvade:!!m.crossfire});if(m.crossfire)m.nextArtilleryTurn=state.turn+m.crossfire.cooldown;}
+    else if(I.type==='bierWail'){alertNearby(I.data.x,I.data.y,9,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#d8d2bd',{kind:'shell',life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,0,{target,delivery:'area',reflectable:false,range:10,origin57:{x:I.data.x,y:I.data.y},atkScale:BIER_WAIL.base+BIER_WAIL.perCell*I.data.dist,impactDelay:720*.74/automationPresentationRate70(),discoveryEvade:true});burst(I.data.x,I.data.y,'#d8d2bd',18,.9,720*.74/automationPresentationRate70())}
     else if(I.type==='fire'){alertNearby(I.data.x,I.data.y,8,'explosion');projectileFX(m.x,m.y,I.data.x,I.data.y,'#f0823c',{kind:'shell',element:'fire',cells:I.cells,life:720/automationPresentationRate70()});for(const target of bossAreaTargets(m,I.cells))monsterAttacksTarget(m,2,{target,delivery:'area',reflectable:false,range:10,impactDelay:720*.74/automationPresentationRate70()});addField('fire',I.data.x,I.data.y,4,I.cells||null,{...effectSource57(m),terrainAttack105:true});burst(I.data.x,I.data.y,'#f0823c',18,.9,720*.74/automationPresentationRate70())}
     else if(I.type==='shackleCounter'){
       m.shackleCounterTurn=state.turn;
@@ -1290,7 +1291,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   }
   function specialTurn(m,ignoredDistance=null,target=state.player){const floor=combatDepth(m);if((target===state.player&&playerConcealedFrom(m))){if(m?.intent61)return executeMonsterIntent(m);if(m?.role61==='asura')return asuraTurn(m,entityDistance57(m,target));return false}if(globalThis.__MANRU_LEGEND47__?.enemySpecial?.(m,target))return true;if((!m?.role61&&!m?.passageSeal&&!m?.sealingWard)||m.boss||!m.alerted||!combatTargetValid57(m,target))return false;if(m.intent61)return executeMonsterIntent(m);if(m.skillSeal105>0)return false;if(!actorDetectedTarget57(m,target,monsterSenseRadius(m)))return false;const d=entityDistance57(m,target),phase=(m.x*3+m.y*5)%7;
     if(m.role61==='asura'&&asuraTurn(m,d,target))return true;
-    if(m.role61==='coffin'&&d<=COFFIN_WALL.range&&monsterAttackLineR(m,COFFIN_WALL.range,{target}).ok&&startCoffinWall(m,target))return true;
+    if(m.role61==='bier'&&startBierWail(m,target,d))return true;
+    if(['coffin','bier'].includes(m.role61)&&d<=COFFIN_WALL.range&&monsterAttackLineR(m,COFFIN_WALL.range,{target}).ok&&startCoffinWall(m,target))return true;
     if(m.intent61)return executeMonsterIntent(m);
     
     if(target===state.player&&m.passageSeal?.species===m.name&&d<=m.passageSeal.range&&state.turn>=(m.nextPassageSealTurn||0)&&monsterAttackLineR(m,m.passageSeal.range,{target}).ok){
@@ -1449,7 +1451,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.lightningRod61)add('lightning-rod','피뢰침','雷','9칸 안 · 예고 1턴 · 3턴 연속 · 재사용 12턴','플레이어의 현재 칸을 겨눈 1×1 벼락을 3턴 연속 내리친다. 번개 속성 피해가 크고, 적중할 때마다 기절 2턴.','ghost');
     if(role==='alarm'||mon.alarmSkill61)add('alarm','경종','♪',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 ${floor}턴 동안 괴력을 부여한다. 괴력: ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복 · 행동력 ×1.5. 끝나면 같은 시간 실명·배탈에 빠진다.`,'strong');
     if(mon.targetMark61)add('target-mark','목표 지정','標',`10칸 안 · 재사용 ${mon.targetMark61.cooldown}턴 · 지속 ${mon.targetMark61.turns}턴`,'지속시간 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.','ghost');
-    if(role==='coffin')add('coffin-wall','흑관 융기','棺',`${COFFIN_WALL.range}칸 안 · 직선 시야 · 예고 1턴 · 재사용 ${COFFIN_WALL.cooldown}턴`,`자신과 대상 사이에 관 ${COFFIN_WALL.count}개가 가로로 솟아 겹친 적을 1턴 기절시키고, 2턴 뒤 냉기 폭발과 함께 ${COFFIN_WALL.weakenTurns}턴간 약해진 납골 철갑시체를 깨운다. 한 번에 최대 ${COFFIN_WALL.maxAlive}마리까지만 거느린다.`);
+    if(role==='coffin'||role==='bier'){const rule={...COFFIN_WALL,...mon.coffinRule};add('coffin-wall',role==='bier'?'상여 관':'흑관 융기','棺',`${rule.range}칸 안 · 직선 시야 · 예고 1턴 · 재사용 ${rule.cooldown}턴`,role==='bier'?`자신과 대상 사이에 관이 솟아 겹친 적을 1턴 기절시키고, 2턴 뒤 냉기 폭발과 함께 보스가 아닌 망자 하나를 약화 없이 깨운다. 한 번에 최대 ${rule.maxAlive}마리까지만 거느린다.`:`자신과 대상 사이에 관 ${rule.count}개가 가로로 솟아 겹친 적을 1턴 기절시키고, 2턴 뒤 냉기 폭발과 함께 ${rule.weakenTurns}턴간 약해진 납골 철갑시체를 깨운다. 한 번에 최대 ${rule.maxAlive}마리까지만 거느린다.`)}
+    if(role==='bier'){add('bier-wail','곡소리','哭',`${BIER_WAIL.minRange}~${BIER_WAIL.range}칸 · 직선 시야 · 예고 1턴 · 재사용 ${BIER_WAIL.cooldown}턴`,'목표 칸 3×3에 곡소리를 내려친다. 멀리서 쏠수록 피해가 커지며, 처음 마주친 순간에는 맞지 않는다.');add('bier-gate','초목 폭발','木','체력 50% 이하 · 1회','주변 5×5에 큰 초목 피해를 주고 먼 곳으로 순간이동한다.')}
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
     if(role==='asura'){add('domain','아수라장','界',`반경 ${mon.asuraRadius47||3}칸 · 지속 ${mon.asuraDuration47||5}턴`,'1턴 예고 후 영역 밖에서 시작된 직접 공격을 무효화.');add('volley','다완 투척','腕',`영역 밖 · 사거리 ${mon.asuraRange47||9}칸`,'1턴 예고 후 공격력 +4, +1로 연속 투척.');}
     const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%'],['slow','둔중한 일격','鈍','쇠약 2턴 · 35%']];
@@ -2325,12 +2328,13 @@ function startSalamanderFireWall(mon){
  addLog(mon.name+'의 화염벽 예고.');
  return true;
 }
-const COFFIN_WALL=Object.freeze({range:9,cooldown:12,count:2,maxAlive:3,weakenTurns:100,damageFraction:.5});
+const COFFIN_WALL=Object.freeze({range:9,cooldown:12,count:2,maxAlive:3,weakenTurns:100,hpScale:.75,xpScale:1/3,random:false,damageFraction:.5});
+const BIER_WAIL=Object.freeze({minRange:4,range:9,cooldown:9,base:.6,perCell:.2});
 // The undertaker raises coffins between itself and its target. They go off two turns after they rise in a frost burst and each wakes one weakened armoured corpse;
 // it never keeps more than maxAlive of them, and killing it before the burst leaves the coffins empty.
 function startCoffinWall(mon,target){
  if(state.turn<(mon.nextCoffinTurn||0))return false;
- const id=combatantId(mon),alive=state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===id).length,count=Math.min(COFFIN_WALL.count,COFFIN_WALL.maxAlive-alive);
+ const rule={...COFFIN_WALL,...mon.coffinRule},id=combatantId(mon),alive=state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===id).length,count=Math.min(rule.count,rule.maxAlive-alive);
  if(count<=0)return false;
  // The coffins close the way between the undertaker and its target: one in the middle of the line, the rest beside it across the path.
  const dx=target.x-mon.x,dy=target.y-mon.y,dist=Math.max(Math.abs(dx),Math.abs(dy)),along=dist>=2?{x:Math.round(mon.x+dx/2),y:Math.round(mon.y+dy/2)}:{x:mon.x,y:mon.y},px=Math.abs(dx)>=Math.abs(dy)?0:1,py=1-px,cells=[];
@@ -2338,12 +2342,38 @@ function startCoffinWall(mon,target){
  tryAdd(along);for(let w=1;w<=2;w++){tryAdd({x:along.x+px*w,y:along.y+py*w});tryAdd({x:along.x-px*w,y:along.y-py*w})}
  if(!cells.length)return false;
  const effect=effectSource57(mon),raiseTurn=state.turn+1;
- mon.nextCoffinTurn=state.turn+COFFIN_WALL.cooldown;
- const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'coffin',damage:Math.max(1,Math.floor(mon.atk*COFFIN_WALL.damageFraction)),stunTurns:1,fireTurns:0,summon105:true};
+ mon.nextCoffinTurn=state.turn+rule.cooldown;
+ const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'coffin',look:rule.look||'coffin',damage:Math.max(1,Math.floor(mon.atk*COFFIN_WALL.damageFraction)),stunTurns:1,fireTurns:0,summon105:{random:!!rule.random,weakenTurns:rule.weakenTurns,hpScale:rule.hpScale,xpScale:rule.xpScale,maxAlive:rule.maxAlive}};
  addField('rootWall',mon.x,mon.y,4,cells,{rootWall105,raiseTurn,detonateTurn:raiseTurn+2});
  elementBreakFx105(mon.x,mon.y,'ice');
  addLog(mon.name+'이 관을 불러냈다.');
  return true;
+}
+// The bier ghost's wail: one turn of warning on the 3x3 around the target, then a blow that grows with how far away it was cast.
+function startBierWail(mon,target,d){
+ if(state.turn<(mon.nextBierWailTurn||0)||d<BIER_WAIL.minRange||d>BIER_WAIL.range||!monsterAttackLineR(mon,BIER_WAIL.range,{target}).ok)return false;
+ const cells=elementCells105(target.x,target.y,1);
+ if(!setMonsterIntent(mon,'bierWail',cells,'곡소리 예고',{x:target.x,y:target.y,dist:d,force61:true}))return false;
+ mon.nextBierWailTurn=state.turn+BIER_WAIL.cooldown;return true;
+}
+// Below half health the bier ghost, once, bursts in a 5x5 of grass and then slips away to a far spot, the way the needle boss does.
+function bierBurst(mon,source){
+ if(mon.bierBurstUsed105||mon.hp>mon.maxHp*.5)return;
+ mon.bierBurstUsed105=true;
+ const cells=[];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)cells.push({x:mon.x+dx,y:mon.y+dy});
+ const effect=effectSource57(mon),dmg=Math.max(1,Math.round(mon.atk*2.6));
+ impact(mon.x,mon.y,'#b7d85d',8);burst(mon.x,mon.y,'#9fc77a',40,1.8);floatText(mon.x,mon.y,'초목 폭발','#d5eea0',16);elementAttackFx105('grass',cells,{x:mon.x,y:mon.y});
+ for(const target of [state.player,...state.monsters]){if(target===mon||target.hp<=0||!effectCanAffect57(effect,target)||!entityFootprintCells57(target).some(c=>cells.some(p=>p.x===c.x&&p.y===c.y)))continue;resolveElementDamage57(target,'grass',dmg,{effect,source:'상여 초목 폭발',color:'#b7d85d'})}
+ const foe=combatTargetValid57(mon,source)?source:selectCombatOpponent(mon),spots=[];
+ for(let dy=-10;dy<=10;dy++)for(let dx=-10;dx<=10;dx++){
+  const x=mon.x+dx,y=mon.y+dy,dist=Math.max(Math.abs(dx),Math.abs(dy));
+  if(dist<5||x<1||y<1||x>=COLS-1||y>=ROWS-1||!terrainSurface58(state.map[y][x])||!PlacementService.monsterCanStand(mon,x,y)||OccupancyService.isOccupied(x,y))continue;
+  const far=foe?entityDistance57(foe,{x,y}):8;if(far<4||far>9)continue;
+  spots.push({x,y,score:dist*2-Math.abs(far-7)});
+ }
+ const top=spots.length?Math.max(...spots.map(q=>q.score)):0,q=spots.length?choice(spots.filter(o=>o.score>=top-2)):null;
+ if(!q){addLog(mon.name+'이 초목을 터뜨렸다.');return}
+ const from={x:mon.x,y:mon.y};OccupancyService.move(mon,q.x,q.y);clearIntent(mon);projectileFX(from.x,from.y,q.x,q.y,'#b7d85d');burst(q.x,q.y,'#9fc77a',18,.8);addLog(mon.name+'이 초목을 터뜨리고 먼 곳으로 사라졌다.');
 }
 function enemySpecial47(m,target=state.player){
  if((target===state.player&&playerConcealedFrom(m))||!m?.legendMob47||!m.alerted||!combatTargetValid57(m,target)||m.stunned>0||m.skillSeal105>0)return false;const d=entityDistance57(m,target),phase=(m.x*5+m.y*3)%6,skill=m.legendSkill47;
