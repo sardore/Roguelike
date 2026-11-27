@@ -5491,7 +5491,7 @@ function drawCitadelCell(t,px,py,x,y,foreground=null){
 
  else floor();if(relic&&t!==TT.WALL&&t!==TT.VOID&&t!==TT.WATER&&t!==TT.LAVA&&t!==TT.MERCURY)drawCitadelRelic(q,relic,x,y);if(search&&![TT.WALL,TT.VOID,TT.WATER,TT.LAVA,TT.MERCURY].includes(t))drawCitadelSearch(q,search,x,y);BRANCH_TILE_CACHE.set(key,{stamp,canvas:c});}
  X.drawImage(c,px,py,32,32);if(t===TT.DOOR||t===TT.OPEN_DOOR)drawDoor(px,py,t===TT.OPEN_DOOR);const prop=ter.props[k(x,y)];if(prop&&foreground){const tile=CITADEL_PROP_TILES[prop];if(tile==null)throw Error('Unknown citadel furnishing '+prop);foreground.push({t:tile,px,py,x,y});}
- if(t===TT.PORTAL){const p=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(p)drawBranchDoor(px,py,p);}else if(t===TT.SWITCH&&foreground){foreground.push({t,px,py,x,y});}else if(![TT.VOID,TT.WALL,TT.DRAWBRIDGE_DOWN,TT.STONE_PATH,TT.FLOOR,TT.DOOR,TT.OPEN_DOOR].includes(t)){X.save();if(!drawSpecialTerrain(t,px,py,x,y,performance.now()))drawInteractiveTerrain(t,px,py,x,y,performance.now());X.restore();}return true;
+ if(t===TT.PORTAL){const p=state.branchPortals105.find(p=>p.x===x&&p.y===y);if(p)drawBranchDoor(px,py,p);}else if(t===TT.SWITCH&&foreground){foreground.push({t,px,py,x,y});}else if(![TT.VOID,TT.WALL,TT.DRAWBRIDGE_DOWN,TT.STONE_PATH,TT.FLOOR,TT.DOOR,TT.OPEN_DOOR].includes(t)&&!(prop&&foreground)){X.save();if(!drawSpecialTerrain(t,px,py,x,y,performance.now()))drawInteractiveTerrain(t,px,py,x,y,performance.now());X.restore();}return true;
 }
 function drawCitadelActor(q,m,frame){const b=frame?1:0,{r}=drawKit(q),type=m.citadelActor105,pR9=(_,color,points)=>{q.fillStyle=color;q.beginPath();points.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();};q.fillStyle='#0c122480';q.beginPath();q.ellipse(16,33,12,2,0,0,Math.PI*2);q.fill();if(type==='wing'){pR9(q,'#51465f',[[14,15],[1,6+b],[3,23],[11,26],[16,20],[22,26],[31,23],[30,6-b],[18,15]]);r('#aaa0bb',5,13,2,9);r('#aaa0bb',26,13,2,9);}if(type==='bell'){pR9(q,'#9a845e',[[12,3+b],[20,3+b],[23,19+b],[27,23+b],[5,23+b],[9,19+b]]);r('#d2bd89',9,20+b,15,3);r('#152335',13,11+b,7,6);r('#9ed3df',14,13+b,2,2);r('#9ed3df',18,13+b,2,2);r('#728ba3',14,24,4,7);return;}pR9(q,type==='tomb'?'#535f68':'#38465d',[[9,14+b],[23,14+b],[27,28],[22,32],[8,32],[5,27]]);r('#879ab0',10,16+b,12,3);r('#667b94',12,19+b,9,8);r('#b59b70',15,18+b,2,11);r('#222d42',11,4+b,11,10);r('#9aabc0',10,5+b,13,3);r('#879aaf',9,8+b,15,2);r('#c5a278',13,10+b,7,1);r('#633b56',21,11+b,3,17);r('#131c2b',8,31,6,3);r('#131c2b',20,31,6,3);if(type==='lancer'||type==='tomb'){r('#ab9170',27,7,2,25);pR9(q,'#d2dce4',[[28,1],[24,9],[31,9]]);}else if(type==='crossbow'){r('#ab9170',2,19,13,3);r('#d6dce1',7,14,2,16);r('#2d384c',1,21,2,6);}else if(type==='chain'){q.strokeStyle='#b7c5d1';q.beginPath();q.moveTo(7,20);q.lineTo(2,25);q.lineTo(3,32);q.lineTo(7,30);q.stroke();r('#b3bdc8',2,30,6,2);}}
 // Wall colours of the three mine zones: base, block and edge.
@@ -6851,6 +6851,7 @@ function visualLoop(now=performance.now()){
         }
         if(now-RC.lastHud>120){updateAttackButton();RC.lastHud=now}
       }
+      globalThis.__MANRU_SAVE_SERVICE__?.flushIdle?.();
     }
     }catch(error){
       if(!RC.renderRecoveryAt||now-RC.renderRecoveryAt>1000){

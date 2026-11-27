@@ -296,7 +296,7 @@ playerTerrainPassable(x,y,opts={}){
   return !tileBlocks(t);
 },
 pressureTrapAt(x,y){
-  const tile=state?.map?.[y]?.[x];return tile===TT.TRAP||tile===TT.SNARE;
+  const tile=state?.map?.[y]?.[x];return tile===TT.TRAP||tile===TT.SNARE||tile===TT.SWITCH&&!!mineButton(x,y);
 },
 playerStepAllowed(from,x,y,opts={}){
   if(!from||Math.max(Math.abs(x-from.x),Math.abs(y-from.y))!==1)return false;

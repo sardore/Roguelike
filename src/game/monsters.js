@@ -97,7 +97,7 @@ function targetMarkHeldBy(mon){return !!mon&&!!state.targetMarkBy105&&state.targ
 function targetMarkHeld(){const id=state.targetMarkBy105;if(!id)return false;if(state.monsters.some(m=>m.combatantId54===id&&m.hp>0))return true;state.targetMarkBy105=null;state.targetMark61=0;return false}
 function tickMonsterDurations(){if(!state)return;if(targetMarkHeld())state.targetMark61=Math.max(state.targetMark61||0,1);else if(state.targetMark61>0)state.targetMark61--;for(const m of [...(state.monsters||[])]){tickKeeperLava54(m);if(m.shellSlime)healShellSlime(m);if(m.shell61>0)m.shell61--;if(m.shellCd61>0)m.shellCd61--;tickMonsterPower(m);globalThis.__MANRU_ITEM_IDENTITY991__?.tickCurses?.(m);if(m.upset>0)m.upset--;if(m.drunk>0)m.drunk--;if(m.skillSeal105>0)m.skillSeal105--;if((m.weakened||0)>0){if(!Number.isFinite(m.weakenedTurn57))m.weakenedTurn57=state.turn;else if(m.weakenedTurn57<state.turn){m.weakened=Math.max(0,m.weakened-1);m.weakenedTurn57=state.turn}}if((m.buffTurns61||0)>0){if(!Number.isFinite(m.buffTurn57))m.buffTurn57=state.turn;else if(m.buffTurn57<state.turn){m.buffTurns61=Math.max(0,m.buffTurns61-1);m.buffTurn57=state.turn;if(m.buffTurns61<=0)m.buff=0}}else if((m.buff||0)>0&&Number.isFinite(m.buffTurn57)&&m.buffTurn57<state.turn)m.buff=0}}
 function monsterRewardPolicy(mon){if(state?.debugBattle57)return{xp:false,drops:false,kills:false};if(!mon||!factionsHostile57(entityFaction(state?.player),entityFaction(mon)))return{xp:false,drops:false,kills:false};const p=mon?.rewardPolicy57;if(p)return{xp:p.xp!==false,drops:p.drops!==false,kills:p.kills!==false};const deny=NON_REWARDING_SPAWN_PROVENANCE57.has(mon?.spawnProvenance57);return{xp:!deny,drops:!deny,kills:!deny}}
-function knockMonster(mon,steps=1){if(!state||!mon||mon.hp<=0)return false;steps=mon.boss?Math.min(1,steps):steps;const f=state.player.facing||{x:0,y:-1},source={x:mon.x-f.x,y:mon.y-f.y};return resolveForcedMovement57(mon,source,steps,{mode:'push',hostile:true,creditPlayer:true}).moved>0}
+function knockMonster(mon,steps=1){if(!state||!mon||mon.hp<=0)return false;const f=state.player.facing||{x:0,y:-1},source={x:mon.x-f.x,y:mon.y-f.y};return resolveForcedMovement57(mon,source,steps,{mode:'push',hostile:true,creditPlayer:true}).moved>0}
 function entityCombatLineCheckR(attacker,target,opts={}){
   const starts=entityFootprintCells57(attacker),ends=entityFootprintCells57(target),pairs=[];for(const a of starts)for(const b of ends)pairs.push({a,b,d:Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))});pairs.sort((u,v)=>u.d-v.d);let best={ok:false,reason:'유효한 공격 사선이 없다.',dist:pairs[0]?.d??Infinity};
   for(const q of pairs){const r=combatLineCheckR8(q.a.x,q.a.y,q.b.x,q.b.y,{...opts,attacker,ignore:opts.ignore||target});if(r.ok)return{...r,fromX:q.a.x,fromY:q.a.y,toX:q.b.x,toY:q.b.y};if(r.dist<=best.dist)best={...r,fromX:q.a.x,fromY:q.a.y,toX:q.b.x,toY:q.b.y}}
@@ -1465,7 +1465,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.exitPressureSpeed57){const r=mon.exitPressureSpeed57;add('exit-speed','출구 추격','追',`행동 속도 ${Math.round(r.min*100)}~${Math.round(r.max*100)}%`,'플레이어가 24층 출구에 가까워질수록 행동 속도가 올라간다.','ghost','지속');}
     if(mon.exitPressureSense57)add('exit-sense','탈출자 추적','察','본관 24층 · 현관 개방 후','출구로 다가가는 상대의 위치를 시야 밖에서도 추정한다. 출구에 아주 가까워지면 위치를 정확히 짚는다.','ghost','지속');
     if(mon.revivalLives57)add('revive','아홉 목숨','命',`남은 목숨 ${mon.livesRemaining57??mon.revivalLives57}`,'쓰러지면 시체가 먼 곳으로 옮겨져 다시 일어난다. 부활 직후 잠시 약해지고 완전히 깨어나면 강화된다.','constitution','지속');
-    if(mon.legendSkill47==='fireWall')add('fire-wall','화염벽','炎','사거리 3칸 · 재사용 12턴','화염벽 융기를 예고한다. 주변 3×3의 안쪽 벽과 모서리를 뺀 5×5의 바깥 벽이 차례로 솟는다. 벽 칸의 적을 1턴 기절시킨다. 각 벽은 주변 3×3에 공격력의 45%만큼 화염 피해를 주며 불바닥을 남긴다.');
+    if(mon.legendSkill47==='fireWall')add('fire-wall','화염벽','炎','사거리 3칸 · 재사용 12턴','화염벽 융기를 예고한다. 모서리를 뺀 5×5의 벽이 한꺼번에 솟고 2턴 뒤 터진다. 벽 칸의 적을 2턴 기절시킨다. 각 벽은 주변 3×3에 공격력의 45%만큼 화염 피해를 주며 불바닥을 남긴다.');
     if(mon.losLostSummon57)add('lost-summon','시야 밖 증원','召',`시야 단절 · 재사용 ${mon.losLostSummon57.normalCooldown}/${mon.losLostSummon57.fullCooldown}턴`,`${mon.losLostSummon57.names.join('·')} 소환. 처치 순간에도 발동 가능. 정상/완전 부활 단계 기준.`,'constitution','지속');
     if(mon.waterTrail)add('water-trail','물길 흔적','水','이동 경로','지나간 바닥을 6턴 동안 물길로 바꾼다.','ghost','지속');
     if(mon.lavaTrail57)add('lava-trail','용암 흔적','熔','이동 경로 · 3턴','지나간 바닥을 용암으로 바꾼다.','ghost','지속');
@@ -1939,6 +1939,7 @@ tick(opts={}){
   for(const field of state.tempFields||[]){
     if(field.kind!=='rootWall'||field.rootWall105?.element!=='fire'||field.ttl<=0||state.turn<field.raiseTurn)continue;
     raised+=palaceRootWallsRise(field.cells,field.rootWall105,field.detonateTurn);
+    {const owner=state.monsters.find(o=>o.hp>0&&o.combatantId54===field.rootWall105.id);if(owner&&field.rootWall105.stunTurns>1)setMonsterStatus(owner,'stunned',1)}
     field.ttl=0;
   }
   if(raised&&!state.debugBattle57)VisibilityService.compute();
@@ -2302,24 +2303,22 @@ function spawnDungeon46(id,rs){
  const goal=rs[rs.length-1],eliteDef=defs[(id.length+f)%defs.length];if(eliteDef){const eDef={...eliteDef};const e=scaledMonster(eDef);applyLegendGatekeeper47(e,f);let placed=false;for(let rr=4;rr<=7&&!placed;rr++)for(const[dx,dy]of DIRS8){const x=goal.cx+dx*rr,y=goal.cy+dy*rr;if(Math.abs(x-state.player.x)+Math.abs(y-state.player.y)<9)continue;if(PlacementService.monsterCanStand(e,x,y)){Object.assign(e,{x,y,alerted:true,hidden:false});OccupancyService.addMonster(e);placed=true;break}}if(!placed){const q=place(eliteDef,goal,true);if(q){applyLegendGatekeeper47(q,f);q.alerted=true}}}
 }
 function pull47(mon){const dx=Math.sign(state.player.x-mon.x),dy=Math.sign(state.player.y-mon.y),x=mon.x+dx,y=mon.y+dy;if(resolveForcedMovement57(mon,state.player,1,{mode:'pull',hostile:true,creditPlayer:true}).moved){setMonsterWeakened(mon,2);floatText(mon.x,mon.y,'견인 · 방어저하','#d6bd9a',9)}}
-const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.40,fireTurns:3});
+const SALAMANDER_FIRE_WALL=Object.freeze({range:3,cooldown:12,damageFraction:.40,fireTurns:3,stunTurns:2});
 function startSalamanderFireWall(mon){
  if(state.turn<(mon.nextFireWallTurn||0))return false;
- const inner=[],outer=[];
+ const cells=[];
  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
-  const distance=Math.max(Math.abs(dx),Math.abs(dy));
-  if(!distance||Math.abs(dx)+Math.abs(dy)===4)continue;
+  if(!dx&&!dy||Math.abs(dx)+Math.abs(dy)===4)continue;
   const x=mon.x+dx,y=mon.y+dy;
-  if(palaceRootFloor(x,y))(distance===1?inner:outer).push({x,y});
+  if(palaceRootFloor(x,y))cells.push({x,y});
  }
- if(!inner.length)return false;
- const effect=effectSource57(mon);
+ if(!cells.some(c=>Math.max(Math.abs(c.x-mon.x),Math.abs(c.y-mon.y))===1))return false;
+ const effect=effectSource57(mon),raiseTurn=state.turn+1;
  mon.nextFireWallTurn=state.turn+SALAMANDER_FIRE_WALL.cooldown;
+ // Walls rise all at once and go off two turns later, stunning for two turns. The extra stun turn is paid for by the salamander stunning itself for a turn as the walls rise (like forgeBurst), so it never gets more attacks in than before.
  const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'fire',
-  damage:Math.max(1,Math.floor(mon.atk*SALAMANDER_FIRE_WALL.damageFraction)),stunTurns:1,fireTurns:SALAMANDER_FIRE_WALL.fireTurns};
- const detonateTurn=state.turn+3;
- addField('rootWall',mon.x,mon.y,4,inner,{rootWall105,raiseTurn:state.turn+1,detonateTurn});
- if(outer.length)addField('rootWall',mon.x,mon.y,4,outer,{rootWall105,raiseTurn:state.turn+2,detonateTurn});
+  damage:Math.max(1,Math.floor(mon.atk*SALAMANDER_FIRE_WALL.damageFraction)),stunTurns:SALAMANDER_FIRE_WALL.stunTurns,fireTurns:SALAMANDER_FIRE_WALL.fireTurns};
+ addField('rootWall',mon.x,mon.y,4,cells,{rootWall105,raiseTurn,detonateTurn:raiseTurn+SALAMANDER_FIRE_WALL.stunTurns});
  elementBreakFx105(mon.x,mon.y,'fire');
  addLog(mon.name+'의 화염벽 예고.');
  return true;

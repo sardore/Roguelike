@@ -2489,7 +2489,30 @@ function buildCitadel(level){
   (data.supplyRooms105||=[]).push({tower105:tower.id,x:q.x,y:q.y,room:chamber.name,item:item.name});
  }
  if(level===1&&!world.bookPlaced){world.bookPlaced=true;const t=CITADEL_TOWERS[20];PlacementService.placeItem(summonBookItem(),{x:t.x+1,y:t.y+2},{requireReachable:false});}
+ citadelSolidifyFurnishings(data,mine);
  VisibilityService.compute();return true;
+}
+// Furnishings used to be pictures: the floor under them was plain stone, so every bed, shelf and stove could be walked through and did nothing.
+// Each one now stands on the tile that gives it its role (solid furniture, a stove that cooks, a jar that breaks). The picture is still drawn from the prop name.
+const CITADEL_FURNISH_TILES105=Object.freeze({bed:TT.BED,'white-bed':TT.RUMOR_BED,'prison-bed':TT.RUMOR_BED,bench:TT.BENCH,shelf:TT.RACK,desk:TT.TABLE,mapdesk:TT.TABLE,table:TT.TABLE,supplies:TT.CRATE,coal:TT.CRATE,stove:TT.COOKPOT,medicine:TT.RUMOR_MED_CABINET,sarcophagus:TT.BENCH,tomb:TT.BENCH,urns:TT.JAR,chains:TT.RUMOR_WEAPON_RACK,crossbow:TT.RUMOR_WEAPON_RACK,rack:TT.RUMOR_WEAPON_RACK,'iron-mask':TT.RUMOR_WEAPON_RACK,shield:TT.RUMOR_WEAPON_RACK,ritual:TT.BENCH,sigil:TT.BENCH,candles:TT.INCENSE_STAND,bell:TT.INCENSE_STAND,incense:TT.INCENSE_STAND,treasure:TT.CRATE,furnace:TT.BRAZIER,books:TT.BOOK_STACK,statue:TT.STATUE,screen:TT.SCREEN});
+function citadelSolidifyFurnishings(data,mine){
+ const m=state.map,ter=state.branchTerrain105,open=(x,y)=>{const t=m[y]?.[x];return t!=null&&t!==TT.WALL&&t!==TT.VOID&&t!==TT.WATER&&t!==TT.LAVA&&t!==TT.MERCURY&&!tileBlocks(t)},
+  occupied=new Set([...state.items,...state.monsters,...state.branchPortals105,...mine.buttons,...mine.lanterns,...(data.features105||[]),...(data.roomDoors||[])].map(q=>k(q.x,q.y)));
+ let solid=0;
+ for(const key of Object.keys(ter.props)){
+  const tile=CITADEL_FURNISH_TILES105[ter.props[key]];if(tile==null)continue;
+  const[x,y]=key.split(',').map(Number);
+  if(m[y][x]!==TT.STONE_PATH||occupied.has(key)||DIRS8.some(([dx,dy])=>occupied.has(k(x+dx,y+dy))&&(state.branchPortals105.some(p=>p.x===x+dx&&p.y===y+dy)||(data.roomDoors||[]).some(d=>d.x===x+dx&&d.y===y+dy))))continue;
+  // Never close a passage: the open cells around it must stay joined within the 7x7 around it once this cell is filled.
+  const around=DIRS4.map(([dx,dy])=>({x:x+dx,y:y+dy})).filter(q=>open(q.x,q.y));
+  if(around.length>1){
+   const seen=new Set([key,k(around[0].x,around[0].y)]),queue=[around[0]];
+   while(queue.length){const c=queue.pop();for(const[dx,dy]of DIRS4){const nx=c.x+dx,ny=c.y+dy,nk=k(nx,ny);if(seen.has(nk)||Math.abs(nx-x)>3||Math.abs(ny-y)>3||!open(nx,ny))continue;seen.add(nk);queue.push({x:nx,y:ny})}}
+   if(!around.every(q=>seen.has(k(q.x,q.y))))continue;
+  }
+  setTerrainTile58(m,x,y,tile);solid++;
+ }
+ data.solidFurnishings105=solid;
 }
 function citadelOpen(key){
  const world=citadelWorld(),fresh=!world.opened[key],release=CITADEL_RELEASES.find(r=>r.key===key),pages=Object.entries(state.branchWorld105.pages||{}).filter(([id])=>id.startsWith('citadel:')).map(([id,raw])=>[id,branchUnpackPage(structuredClone(raw),state.branchWorld105)]);
