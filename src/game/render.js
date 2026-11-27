@@ -3093,20 +3093,23 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'citadel_bier':{
-  // A pale funeral-bier ghost in a lavender-white hanbok: long dark hair framing the face, three camellias for a crown, a rose-red ribbon at the chest, sleeves folded in front, a skirt that frays into mist.
-  const hair='#2a2438',dress='#cfcbdc',shade='#8f8aab',rose='#d9707f',gold='#e0b95c';
-  P(hair,[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,16+b],[27,28],[22,29],[22,17+b],[10,17+b],[10,29],[5,28],[6,16+b]]);
-  P(shade,[[10,18+b],[22,18+b],[28,32],[24,30],[22,35],[19,31],[16,35],[13,31],[10,35],[8,30],[4,32]]);
-  P(dress,[[11,18+b],[21,18+b],[26,31],[19,32],[16,33],[13,32],[6,31]]);P('#e9e6f0',[[11,19+b],[15,19+b],[12,31],[7,30]],null);
-  R(11,23+b,10,1,shade);
-  P(dress,[[10,13+b],[22,13+b],[23,19+b],[9,19+b]]);P('#e9e6f0',[[10,14+b],[14,14+b],[13,19+b],[9,19+b]],null);
-  P('#b8586a',[[13,13+b],[19,13+b],[16,18+b]]);R(15,17+b,2,4,'#9a3f52');
-  P(dress,[[5,15+b],[10,14+b],[11,23+b],[5,24+b]]);P(shade,[[5,22+b],[11,22+b],[11,24+b],[5,24+b]],null);
-  P(dress,[[22,14+b],[27,15+b],[27,24+b],[21,23+b]]);P(shade,[[21,22+b],[27,22+b],[27,24+b],[21,24+b]],null);
-  E(16,9+b,5,5.5,'#e4dde6');P(hair,[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[19,6+b],[16,7+b],[13,6+b]]);
-  R(13,10+b,2,1,'#1c1626');R(18,10+b,2,1,'#1c1626');R(14,10+b,1,1,'#6fcfc0');R(19,10+b,1,1,'#6fcfc0');R(15,13+b,2,1,'#b4545f');
-  E(11,4+b,2.5,2.5,rose);E(16,2+b,2.5,2.5,'#e8a9b2');E(21,4+b,2.5,2.5,rose);R(11,4+b,1,1,gold);R(16,2+b,1,1,gold);R(21,4+b,1,1,gold);
-  R(7,33,1,1,'#e8a9b2');R(25,34,1,1,rose);break;
+  // A pale funeral-bier ghost: silhouette first (long hair, bell skirt fraying into mist), then three-tone ramps per material, a two-dot face, camellias drawn as small crosses.
+  const ink='#17121f',rose='#d9707f',roseLight='#f0b0b8',roseDark='#9a3f52',gold='#e0b95c';
+  const flower=(x,y)=>{R(x-2,y-3,5,7,ink);R(x-3,y-2,7,5,ink);R(x-1,y-2,3,5,rose);R(x-2,y-1,5,3,rose);R(x-1,y-1,1,1,roseLight);R(x+1,y+1,1,1,roseDark);R(x,y,1,1,gold)};
+  P(ink,[[7,4+b],[12,0+b],[20,0+b],[25,4+b],[27,17+b],[28,29],[22,30],[22,18+b],[10,18+b],[10,30],[4,29],[5,17+b]],null);
+  P(ink,[[9,17+b],[23,17+b],[29,32],[23,31],[21,35],[18,32],[16,35],[13,32],[11,35],[9,31],[3,32]],null);
+  P('#2e2840',[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,17+b],[27,28],[23,29],[23,18+b],[9,18+b],[9,29],[5,28],[6,17+b]],null);
+  P('#463d5e',[[8,6+b],[10,6+b],[9,17+b],[8,26],[6,26],[7,17+b]],null);P('#1f1a2c',[[23,8+b],[25,8+b],[26,17+b],[26,28],[24,28],[24,17+b]],null);
+  P('#bdb8d0',[[10,18+b],[22,18+b],[27,31],[22,30],[20,34],[18,31],[16,34],[14,31],[12,34],[10,30],[5,31]],null);
+  P('#e4e0ee',[[10,19+b],[16,19+b],[16,32],[13,31],[11,31],[7,30]],null);P('#8f8aab',[[19,19+b],[22,19+b],[27,31],[22,30],[20,33],[19,31]],null);R(16,24,1,8,'#8f8aab');R(13,26,1,5,'#bdb8d0');
+  P('#ece9f4',[[10,13+b],[22,13+b],[23,19+b],[9,19+b]],null);P('#cfcade',[[16,13+b],[22,13+b],[23,19+b],[16,19+b]],null);
+  P('#c8606f',[[13,13+b],[19,13+b],[16,18+b]],null);L(13,13+b,16,18+b,roseDark,1);L(19,13+b,16,18+b,roseDark,1);R(15,18+b,2,4,roseDark);
+  P('#ece9f4',[[5,15+b],[10,14+b],[11,23+b],[5,24+b]],null);R(5,22+b,6,2,'#bdb8d0');P('#cfcade',[[22,14+b],[27,15+b],[27,24+b],[21,23+b]],null);R(21,22+b,6,2,'#8f8aab');
+  E(16,9+b,5,5.5,'#eee6ea');P('#d8cdd6',[[18,5+b],[21,8+b],[20,13+b],[17,14+b],[18,10+b]],null);
+  P('#2e2840',[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[19,6+b],[16,7+b],[13,6+b]],null);
+  R(13,10+b,2,2,'#2a2234');R(18,10+b,2,2,'#2a2234');R(16,13+b,1,1,'#b4545f');
+  flower(11,4+b);flower(16,2+b);flower(21,4+b);
+  R(6,33,1,1,roseLight);R(26,34,1,1,rose);break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
