@@ -1290,7 +1290,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
   }
   function specialTurn(m,ignoredDistance=null,target=state.player){const floor=combatDepth(m);if((target===state.player&&playerConcealedFrom(m))){if(m?.intent61)return executeMonsterIntent(m);if(m?.role61==='asura')return asuraTurn(m,entityDistance57(m,target));return false}if(globalThis.__MANRU_LEGEND47__?.enemySpecial?.(m,target))return true;if((!m?.role61&&!m?.passageSeal&&!m?.sealingWard)||m.boss||!m.alerted||!combatTargetValid57(m,target))return false;if(m.intent61)return executeMonsterIntent(m);if(m.skillSeal105>0)return false;if(!actorDetectedTarget57(m,target,monsterSenseRadius(m)))return false;const d=entityDistance57(m,target),phase=(m.x*3+m.y*5)%7;
     if(m.role61==='asura'&&asuraTurn(m,d,target))return true;
-    if(m.role61==='coffin'&&target===state.player&&d<=COFFIN_WALL.range&&monsterAttackLineR(m,COFFIN_WALL.range,{target}).ok&&startCoffinWall(m,target))return true;
+    if(m.role61==='coffin'&&d<=COFFIN_WALL.range&&monsterAttackLineR(m,COFFIN_WALL.range,{target}).ok&&startCoffinWall(m,target))return true;
     if(m.intent61)return executeMonsterIntent(m);
     
     if(target===state.player&&m.passageSeal?.species===m.name&&d<=m.passageSeal.range&&state.turn>=(m.nextPassageSealTurn||0)&&monsterAttackLineR(m,m.passageSeal.range,{target}).ok){
