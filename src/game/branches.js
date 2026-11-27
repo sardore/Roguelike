@@ -227,7 +227,7 @@ function branchMigrateMonsters(page,world=page.branchWorld105||state?.branchWorl
   const def=mon.palaceActor105==='king'?PALACE_KING105:mon.palaceLotus105?PALACE_LOTUS105:mon.palaceActor105==='gardener'?PALACE_GARDENER105:mon.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(mon.legendDungeon47).find(d=>d.name===mon.name):MONSTERS.find(d=>d.name===mon.name);
   if(!def||mon.martialActor105)continue;
   const floor=branchCombatFloor(branch.id==='canal'?{id:'canal',level:1}:branch),fresh=scaledMonster(def,floor,{inventory:false,debugBattle:!!page.debugBattle57}),hp=mon.hp,max=Math.max(1,mon.maxHp||hp);
-  if(mon.palaceLotus105&&mon.spawnProvenance57==='summon'){fresh.hp=fresh.maxHp=Math.round(fresh.maxHp*.65);fresh.atk=Math.max(2,fresh.atk-2);}
+  if(mon.palaceLotus105&&mon.spawnProvenance57==='summon'){applySummonSpec(fresh);}
   Object.assign(mon,{maxHp:fresh.maxHp,hp:hp<=0?hp:Math.max(1,Math.round(hp/max*fresh.maxHp)),atk:fresh.atk,def:fresh.def,combatFloor105:floor,combatScalingRevision105:1});
   if(!def.fixedStats57)delete mon.fixedStats57;
   if(def.equipmentActor105){mon.baseAtk=fresh.baseAtk;mon.baseDef=fresh.baseDef;}
@@ -474,7 +474,7 @@ function citadelRaiseCorpse(root,x,y){
  for(const q of spots){
   if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||OccupancyService.isOccupied(q.x,q.y))continue;
   const m=scaledMonster(clone(def),owner.citadelDepth105||combatDepth(owner));
-  m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*(rule.hpScale??1)));m.xp=Math.floor((m.xp||0)*(rule.xpScale??1));Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
+  applySummonSpec(m);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
   adoptBossChild57(m,owner);
   if(!PlacementService.monsterCanStand(m,q.x,q.y)||!OccupancyService.addMonster(m))continue;
   if(rule.weakenTurns>0)setMonsterWeakened(m,rule.weakenTurns);
@@ -2652,7 +2652,7 @@ const CITADEL_ENEMIES105=Object.freeze([
  {name:'종루 파수령',passageSeal:{species:'종루 파수령',radius:8,range:8,duration:6,cooldown:12},kind:'spirit',hp:38,atk:10,def:3,eva:5,ranged:true,range:6,gaze:true,role61:'gaze',targetMark61:{turns:6,cooldown:14},citadelActor105:'bell',color:'#bda672',shape:'ghost',xp:20,concept57:'부서진 종 속에 깃든 파수령.'},
  {name:'납골 철갑시체',kind:'undead',hp:52,atk:12,def:7,eva:0,slow:true,reach:2,citadelActor105:'tomb',color:'#86969b',shape:'zombie',xp:21,concept57:'갑옷째 묻힌 수호자의 시체.'},
  {name:'흑요 날개상',kind:'construct',hp:35,atk:12,def:5,eva:5,flying:true,role61:'swoop',citadelActor105:'wing',color:'#9586a8',shape:'gargoyle',xp:21,concept57:'검은 석재로 만든 날개 수호상.'},
- {name:'상여 귀신',kind:'undead',hp:160,atk:14,def:7,eva:2,ranged:true,range:9,role61:'bier',citadelActor105:'bier',bierGate105:true,coffinRule:{count:1,maxAlive:2,cooldown:10,random:true,weakenTurns:0,hpScale:1,look:'bier'},color:'#cfc8b4',shape:'ghost',xp:46,concept57:'상여를 지고 곡소리를 내며 떠도는 장례 행렬의 귀신.'},
+ {name:'상여 귀신',kind:'undead',hp:160,atk:14,def:7,eva:2,ranged:true,range:9,role61:'bier',citadelActor105:'bier',bierGate105:true,coffinRule:{count:1,maxAlive:2,cooldown:10,random:true,weakenTurns:0,look:'bier'},color:'#cfc8b4',shape:'ghost',xp:46,concept57:'상여를 지고 곡소리를 내며 떠도는 장례 행렬의 귀신.'},
  {name:'흑관 장의사',kind:'human',hp:34,atk:10,def:4,eva:3,ranged:true,range:6,role61:'coffin',citadelActor105:'coffin',color:'#6b5a6e',shape:'mage',xp:22,concept57:'관을 세워 납골 철갑시체를 깨우는 흑성채의 장의사.'}
 ].map(d=>({...d,nativeBranch105:{id:'citadel',level:1},roleDesc61:d.concept57})));
 // Where a tower stands decides who guards it: each quarter of the map favours some roles, and each floor makes one or two directions more dangerous
