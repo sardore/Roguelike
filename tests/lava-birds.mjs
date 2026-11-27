@@ -18,6 +18,11 @@ const bridge = `globalThis.lb={
  revive:()=>{lb.arena();const m=lb.spawn('불사조',20,14);const out={lives:m.livesRemaining57,baseAtk:m.atk,baseDef:m.def};
   m.hp=0;out.began=beginMonsterRevival(m);out.phase=m.revivePhase57;state.floorTurn=1000;for(let i=0;i<6;i++){state.floorTurn+=3;advanceMonsterRevival(m)}
   Object.assign(out,{phaseAfter:m.revivePhase57,atkAfter:m.atk,defAfter:m.def,hp:m.hp,max:m.maxHp,livesAfter:m.livesRemaining57,again:beginMonsterRevival(m)});return out},
+ // 디버그 전장(debugBattleRound57)은 자기 라운드 루프를 쓰므로 삼족오의 20턴 판정도 그 루프에서 돌아야 한다.
+ debugCrow:()=>{lb.arena();DEBUG_BATTLE57.open=true;DEBUG_BATTLE57.winner=null;DEBUG_BATTLE57.round=0;state.monsters=[];
+  const crow=lb.spawn('삼족오',8,14),foe={name:'시험 대상',x:36,y:14,hp:99999,maxHp:99999,atk:0,def:99,faction57:'player',kind:'human',alerted:true,debugSide57:'A',fixed:true};crow.debugSide57='B';OccupancyService.addMonster(foe);
+  const out={before:false,at:null};for(let i=1;i<=40;i++){debugBattleRound57();if(!crow.furyStarted105)continue;out.at=i;break}
+  Object.assign(out,{started:!!crow.furyStarted105,power:crow.power61?.turns,kite:!!crow.kite105});return out},
  dash:()=>{lb.arena();const m=lb.spawn('불사조',10,14),foe={name:'시험 대상',x:14,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);
   const started=startPhoenixDash(m,foe,4),I=m.intent61;const out={started,type:I?.type,cells:I?.cells?.length};state.turn+=1;executeMonsterIntent(m);
   Object.assign(out,{foeHurt:foe.hp<999,moved:m.x>14,fire:(state.tempFields||[]).filter(f=>f.kind==='fire').length,cooling:m.nextPhoenixDashTurn>state.turn});return out}};`;
@@ -28,7 +33,7 @@ await ctx.route('**/scripts/10-runtime.js', r => r.fulfill({ contentType: 'text/
 const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx, seed: 9 });
 const errors = []; s.page.on('pageerror', e => errors.push(e.message));
 await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(300);
-const out = await s.page.evaluate(() => ({ names: lb.names(), crow: lb.crow(), revive: lb.revive(), dash: lb.dash() }));
+const out = await s.page.evaluate(() => ({ names: lb.names(), crow: lb.crow(), revive: lb.revive(), dash: lb.dash(), debugCrow: lb.debugCrow() }));
 console.log(JSON.stringify(out));
 assert.ok(out.names.includes('삼족오') && out.names.includes('불사조'), '용암궁 몹 목록에 없다');
 const c = out.crow;
@@ -45,6 +50,8 @@ assert.equal(r.livesAfter, 1); assert.equal(r.again, false, '두 번 부활한�
 const d = out.dash;
 assert.ok(d.started && d.type === 'phoenixDash' && d.cells >= 4, '돌진 예고가 안 선다');
 assert.ok(d.foeHurt && d.moved && d.fire >= 1 && d.cooling, `관통 돌진 결과 ${JSON.stringify(d)}`);
+const dc = out.debugCrow;
+assert.ok(dc.started && dc.at >= 20 && dc.at <= 22 && dc.power === 99 && !dc.kite, `디버그 전장에서 삼족오 20턴 발동 ${JSON.stringify(dc)}`);
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('lava-birds: ok');

@@ -3300,12 +3300,17 @@ function drawBranchCreature(q,m,frame,sp){
   // A rising crimson firebird: raised gold wings tipped with flame, a flame crest, a long tail of plumes with burning eyes. Its fall leaves only embers in ash.
   const phase=m?.revivePhase57||'normal',full=phase==='full',y=b*.6,f=b?1.2:0,
    deep=full?'#7a1410':'#5c1410',body=full?'#d43420':'#b2261c',warm=full?'#f47a32':'#e0582a',gold=full?'#ffe27a':'#f6bf48',goldD='#a8661c',flame=full?'#fff0b0':'#ffd36a',ash='#5a524e',ashD='#3a3432',ashL='#8c827a';
+  // Ash is drawn grain by grain (a fixed hash picks each grain's shade) so it reads as loose powder with embers in it, not as a smooth dome.
+  const grain=(i,j)=>{const t=Math.sin(i*127.1+j*311.7)*43758.5453;return t-Math.floor(t)},
+   ashPile=(cx,base,hw,ht)=>{for(let x=Math.round(cx-hw);x<=Math.round(cx+hw);x++){const u=(x-cx)/hw,h=Math.max(1,Math.round(ht*(1-u*u)*(.8+grain(x,3)*.4)));
+     for(let k=0;k<h;k++){const v=base-k,r=grain(x,v);R(x,v,1,1,k===h-1?(r<.5?ashL:ash):r<.2?ashD:r<.62?ash:r<.88?ashL:'#b9ae9f')}R(x,base+1,1,1,ashD)}},
+   embers=(cx,base,n,pulse)=>{for(let i=0;i<n;i++){const x=Math.round(cx-5+grain(i,9)*10),v=base-Math.round(grain(i,5)*3);R(x,v,1,1,(i+pulse)%2?warm:gold);if(!((i+pulse)%3))R(x,v-1,1,1,flame)}},
+   dust=(n,lift)=>{for(let i=0;i<n;i++){const x=Math.round(5+grain(i,21)*22),v=Math.round(27-grain(i,17)*16-b*(1+i%2));R(x,v-lift,1,1,i%3?ashL:ash)}};
   if(phase==='corpse'){
-   // a mound of ash with an ember still glowing and a single feather
-   P(ashD,[[3,33],[6,28],[11,26],[17,25.4],[23,26.6],[28,29],[30,33]]);P(ash,[[6,32],[9,28.6],[15,27.2],[21,27.6],[26,30],[27,32.6]],null);P(ashL,[[10,29],[15,28],[19,28.6],[14,29.8]],null);
-   plume(21,31,25,27.4,28,24.6,1.2,deep);
-   q.save();q.globalAlpha=.5;E(14.6,29.6,4,2.4,'#e0582a');q.restore();E(14.6,29.6,1.8,1.2,gold);R(14.2,29+(b?-.4:0),.8,.8,'#fff3c8');
-   for(const[x,v]of[[9,24],[18,22],[13,20.6]])R(x,v-b*2,.8,.8,b?gold:warm);break;
+   // loose ash with a half-buried scorched feather, embers still glowing inside and flecks drifting up
+   ashPile(16,33,12,7);ashPile(8,33,5,3);ashPile(24,33,6,4);
+   plume(21,30,24,27,27.4,25,1.1,deep,ashD);R(27,24,1,1,gold);
+   embers(15,31,6,b);dust(8,0);break;
   }
   const rise=phase==='reviving';
   q.save();if(rise){q.beginPath();q.rect(0,0,32,28.4);q.clip();q.translate(0,4);q.globalAlpha=.85}
@@ -3335,7 +3340,7 @@ function drawBranchCreature(q,m,frame,sp){
   R(8.6,6.4+y,1.4,1.1,flame);R(8.6,6.4+y,.6,.6,'#ffffff');
   for(const[x,v]of[[2,16],[29,21],[6,22],[25,27.4]])R(x,v-b*1.4,1,1,b?flame:gold);
   q.restore();
-  if(rise){P(ashD,[[3,33],[7,28.4],[12,27.4],[20,27.4],[25,28.4],[29,33]]);P(ash,[[6,32],[10,29],[16,28.4],[22,29],[26,32]],null);q.save();q.globalAlpha=.6;E(16,28.6,6,1.4,'#f08a3a');q.restore()}
+  if(rise){ashPile(16,33,12,5);embers(16,32,5,b);dust(10,0)}
   break;
  }
  case'shackle_doll':{
