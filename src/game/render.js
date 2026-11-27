@@ -3093,26 +3093,40 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'citadel_bier':{
-  // Reference style: saturated hue-shifted ramps, a pure black outline that also splits the locks and folds, a huge flowing hair mass in a swimming pose, flowers as bright clusters.
-  const K='#000',h0='#1c1050',h1='#3a2a9a',h2='#6c5ee0',h3='#b5aef5',w0='#ffffff',w1='#c8d0e6',w2='#8890b8',w3='#4a5080',sk='#f6e6da',sk1='#d9b3a6',r0='#7a1a3a',r1='#d23a5a',r2='#f6789a',gd='#ffd23a';
-  const fl=(x,y)=>{R(x-2,y-3,5,7,K);R(x-3,y-2,7,5,K);R(x-1,y-2,3,5,r1);R(x-2,y-1,5,3,r1);R(x-1,y-1,1,1,r2);R(x+1,y+1,1,1,r0);R(x,y,1,1,gd)};
-  P(h1,[[15,3+b],[9,4+b],[4,9+b],[2,17+b],[3,25+b],[7,30],[11,31],[10,26],[12,20+b],[12,12+b]],K);
-  P(h1,[[19,3+b],[25,4+b],[29,10+b],[30,18+b],[28,25+b],[26,29],[24,24+b],[26,17+b],[24,9+b]],K);
-  P(h0,[[4,18+b],[3,25+b],[7,30],[10,28],[7,22+b]],null);P(h0,[[28,18+b],[28,25+b],[26,29],[25,24+b]],null);
-  P(h2,[[10,6+b],[6,11+b],[5,18+b],[7,24+b],[8,17+b],[10,11+b]],null);P(h3,[[8,8+b],[6,12+b],[6,16+b],[8,12+b]],null);
-  P(h2,[[26,8+b],[28,13+b],[28,19+b],[26,14+b]],null);
-  L(6,10+b,4,20+b,K,1);L(9,14+b,7,26,K,1);L(27,12+b,28,22+b,K,1);
-  P(w1,[[14,15+b],[21,15+b],[23,23+b],[28,31],[21,35],[13,34],[8,31],[12,23+b]],K);
-  P(w0,[[14,16+b],[18,16+b],[16,24+b],[10,31],[12,24+b]],null);P(w2,[[19,16+b],[21,15+b],[23,23+b],[28,31],[23,33],[20,27+b]],null);
-  L(15,25+b,11,32,K,1);L(18,25+b,18,34,K,1);L(21,26+b,24,33,K,1);
-  P(r1,[[15,15+b],[20,15+b],[17,20+b]],K);L(17,20+b,17,24+b,r0,1);
-  P(w1,[[13,17+b],[9,23+b],[12,26+b],[15,21+b]],K);P(w1,[[21,17+b],[26,22+b],[23,26+b],[19,21+b]],K);
-  R(12,25+b,3,2,sk);R(21,25+b,3,2,sk);
-  E(17,9+b,4.5,5,sk);P(sk1,[[19,5+b],[21,9+b],[20,13+b],[18,14+b]],null);
-  P(h1,[[12,8+b],[13,4+b],[21,4+b],[22,8+b],[19,6+b],[17,7+b],[15,6+b]],K);
-  R(14,10+b,2,2,K);R(19,10+b,2,2,K);R(17,13+b,1,1,r1);
-  fl(12,3+b);fl(17,1+b);fl(22,3+b);fl(4,17+b);fl(29,14+b);
-  R(9,33,1,1,r2);R(26,34,1,1,r1);break;
+  // Built on the same frame as the needle seamstress so it stands with the rest of the bestiary: a visible oval face under a swept fringe, a dark hair mass with one highlight, a weighted skirt with separate folds, one sleeve hanging and one arm raised, gold trim. Here the robe is white-lavender and the raised hand holds a camellia branch; a crown of camellias and drifting petals replace the bun and the thread.
+  const hair='#1f1a30',hairHi='#3d3659',silk='#cfcbe0',fold='#8a86ac',silkHi='#f3f0fb',skin='#d4b5bb',skinHi='#efdcda',gold='#c6a16b',rose='#d9707f',roseHi='#f0b0b8',roseLo='#8e3447';
+  const bloom=(x,y)=>{q.fillStyle='#120f12';q.fillRect(x-2,y-1,5,3);q.fillRect(x-1,y-2,3,5);q.fillStyle=rose;q.fillRect(x-1,y-1,3,3);q.fillRect(x,y-2,1,5);q.fillRect(x-2,y,5,1);q.fillStyle=roseHi;q.fillRect(x-1,y-1,1,1);q.fillStyle=roseLo;q.fillRect(x+1,y+1,1,1);q.fillStyle='#ffd23a';q.fillRect(x,y,1,1)};
+  shadow1012(q,16,34,23);
+  pR9(q,hair,[[11,5+b],[15,2+b],[20,4+b],[23,11+b],[22,24],[19,29],[15,26],[9,29],[8,21],[9,10+b]]);
+  pR9(q,hairHi,[[10,8+b],[12,5+b],[13,17+b],[11,26],[9,24]],null);
+  pR9(q,fold,[[11,15+b],[20,14+b],[20,21+b],[24,31],[23,34],[17,35],[9,34],[5,32],[9,24+b]]);
+  pR9(q,silk,[[12,15+b],[19,15+b],[18,21+b],[21,31],[19,34],[12,33],[8,31],[11,24+b]],null);
+  pR9(q,silkHi,[[12,19+b],[14,21+b],[13,29],[15,33],[11,31],[10,29]],null);
+  pR9(q,'#a9a4c8',[[18,20+b],[20,27],[23,32],[20,32],[17,27]],null);
+  lR9(q,7,32,12,33,gold,.7);lR9(q,12,33,19,34,gold,.7);lR9(q,19,34,23,33,gold,.7);
+  lR9(q,15,23+b,15,31,'#b9b4d6',.7);lR9(q,18,25+b,20,31,'#e6e2f4',.6);
+  // Left sleeve hangs and holds a small bouquet; the right arm lifts a camellia branch.
+  pR9(q,fold,[[11,14+b],[8,15+b],[4,18+b],[2,24+b],[5,28+b],[8,25+b],[9,20+b],[12,18+b]]);
+  pR9(q,silkHi,[[8,15+b],[10,16+b],[7,20+b],[5,24+b],[3,23+b],[5,18+b]],null);
+  pR9(q,silk,[[20,14+b],[23,15+b],[25,12+b],[28,14+b],[27,20+b],[29,25+b],[25,27+b],[22,23+b],[22,18+b]]);
+  pR9(q,silkHi,[[23,16+b],[25,14+b],[26,16+b],[25,21+b],[27,25+b],[24,24+b]],null);
+  pR9(q,'#c4a7ab',[[12,13+b],[15,16+b],[20,13+b],[18,17+b],[14,18+b]],null);
+  pR9(q,fold,[[10,14+b],[13,13+b],[17,19+b],[13,19+b]],null);
+  lR9(q,13,14+b,16,18+b,rose,.7);lR9(q,19,14+b,16,18+b,roseHi,.7);
+  q.fillStyle=roseLo;q.fillRect(11,20+b,9,2);q.fillStyle=gold;q.fillRect(12,20+b,7,1);
+  pR9(q,'#b98972',[[17,20+b],[19,21+b],[18,27+b],[16,26+b]],null);q.fillStyle='#e9c995';q.fillRect(16,20+b,2,2);
+  pR9(q,skin,[[12,6+b],[18,5+b],[21,8+b],[20,11+b],[17,14+b],[14,13+b],[11,10+b]]);
+  pR9(q,skinHi,[[15,7+b],[19,7+b],[19,10+b],[17,12+b],[14,11+b]],null);
+  pR9(q,hair,[[10,7+b],[11,3+b],[16,2+b],[21,5+b],[22,9+b],[20,8+b],[17,5+b],[14,7+b],[12,10+b],[11,15+b],[9,20+b]],null);
+  q.fillStyle='#503043';q.fillRect(13,8+b,2,1);q.fillRect(18,8+b,2,1);
+  q.fillStyle='#271e29';q.fillRect(14,9+b,1,1);q.fillRect(19,9+b,1,1);q.fillStyle='#8fe0d0';q.fillRect(15,9+b,1,1);q.fillRect(20,9+b,1,1);q.fillStyle='#92596c';q.fillRect(16,12+b,2,1);
+  pR9(q,hair,[[12,3+b],[12,1+b],[17,0+b],[20,2+b],[19,4+b]],null);
+  // Hands: the raised one with a stem to a camellia, the hanging one with a bouquet.
+  pR9(q,skin,[[24,12+b],[26,11+b],[27,13+b],[25,15+b]],null);lR9(q,26,13+b,28,7+b,'#5f8a4d',.9);bloom(28,5+b);
+  pR9(q,skin,[[5,18+b],[7,18+b],[7,21+b],[5,21+b]],null);bloom(4,24+b);q.fillStyle=roseHi;q.fillRect(6,26+b,2,2);
+  bloom(12,3+b);bloom(17,1+b);bloom(21,3+b);
+  q.fillStyle=roseHi;for(const [x,y]of [[9,29],[10,31],[20,30],[22,32],[26,29]])q.fillRect(x,y,1,1);
+  break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
