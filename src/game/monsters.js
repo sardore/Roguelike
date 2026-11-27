@@ -1052,7 +1052,6 @@ function monsterTurn(){
     if(mon.intent61?.type==='shackleCounter'){shackleCounterTurn(mon,null);continue}
    if(mon.martialActor105)tickMartialActor(mon);if(mon.combatFixture54){tickBossFixture(mon);continue}
     if(prisonContainedTurn(mon))continue;
-    if(mon.fireWallRestTurn105===state.turn&&combatStatusTurns(state.player,'stun')>0)continue;
     if(mountainMimicTurn(mon))continue;
     const observedOpponent=selectEnemyTarget(mon),opponentDetected=observedOpponent&&actorDetectedTarget57(mon,observedOpponent,monsterSenseRadius(mon));let d=entityDistance57(mon,p);
     if(mon.sleeping105){if(mon.doorSleep105)continue;if(mon.hp<mon.maxHp||mon.alerted||(opponentDetected&&entityDistance57(mon,observedOpponent)<=1))branchWake(mon,'접근');else continue;}
@@ -1940,6 +1939,7 @@ tick(opts={}){
   for(const field of state.tempFields||[]){
     if(field.kind!=='rootWall'||field.rootWall105?.element!=='fire'||field.ttl<=0||state.turn<field.raiseTurn)continue;
     raised+=palaceRootWallsRise(field.cells,field.rootWall105,field.detonateTurn);
+    {const owner=state.monsters.find(o=>o.hp>0&&o.combatantId54===field.rootWall105.id);if(owner&&field.rootWall105.stunTurns>1)setMonsterStatus(owner,'stunned',1)}
     field.ttl=0;
   }
   if(raised&&!state.debugBattle57)VisibilityService.compute();
@@ -2315,8 +2315,7 @@ function startSalamanderFireWall(mon){
  if(!cells.some(c=>Math.max(Math.abs(c.x-mon.x),Math.abs(c.y-mon.y))===1))return false;
  const effect=effectSource57(mon),raiseTurn=state.turn+1;
  mon.nextFireWallTurn=state.turn+SALAMANDER_FIRE_WALL.cooldown;
- // Walls rise all at once and go off two turns later, stunning for two turns. The extra stun turn is paid for by the salamander standing still that turn, so it never gets more attacks in than before.
- mon.fireWallRestTurn105=raiseTurn+SALAMANDER_FIRE_WALL.stunTurns;
+ // Walls rise all at once and go off two turns later, stunning for two turns. The extra stun turn is paid for by the salamander stunning itself for a turn as the walls rise (like forgeBurst), so it never gets more attacks in than before.
  const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'fire',
   damage:Math.max(1,Math.floor(mon.atk*SALAMANDER_FIRE_WALL.damageFraction)),stunTurns:SALAMANDER_FIRE_WALL.stunTurns,fireTurns:SALAMANDER_FIRE_WALL.fireTurns};
  addField('rootWall',mon.x,mon.y,4,cells,{rootWall105,raiseTurn,detonateTurn:raiseTurn+SALAMANDER_FIRE_WALL.stunTurns});
