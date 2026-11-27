@@ -3096,9 +3096,9 @@ function drawBranchCreature(q,m,frame,sp){
   // A pale funeral-bier ghost: silhouette first (long hair, bell skirt fraying into mist), then three-tone ramps per material, a two-dot face, camellias drawn as small crosses.
   const ink='#17121f',rose='#d9707f',roseLight='#f0b0b8',roseDark='#9a3f52',gold='#e0b95c';
   const flower=(x,y)=>{R(x-2,y-3,5,7,ink);R(x-3,y-2,7,5,ink);R(x-1,y-2,3,5,rose);R(x-2,y-1,5,3,rose);R(x-1,y-1,1,1,roseLight);R(x+1,y+1,1,1,roseDark);R(x,y,1,1,gold)};
-  P(ink,[[7,4+b],[12,0+b],[20,0+b],[25,4+b],[27,17+b],[28,29],[22,30],[22,18+b],[10,18+b],[10,30],[4,29],[5,17+b]],null);
+  P(ink,[[7,4+b],[12,0+b],[20,0+b],[25,4+b],[27,17+b],[29,30],[22,31],[22,18+b],[10,18+b],[10,31],[3,30],[5,17+b]],null);
   P(ink,[[9,17+b],[23,17+b],[29,32],[23,31],[21,35],[18,32],[16,35],[13,32],[11,35],[9,31],[3,32]],null);
-  P('#2e2840',[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,17+b],[27,28],[23,29],[23,18+b],[9,18+b],[9,29],[5,28],[6,17+b]],null);
+  P('#2e2840',[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,17+b],[28,29],[23,30],[23,18+b],[9,18+b],[9,30],[4,29],[6,17+b]],null);
   P('#463d5e',[[8,6+b],[10,6+b],[9,17+b],[8,26],[6,26],[7,17+b]],null);P('#1f1a2c',[[23,8+b],[25,8+b],[26,17+b],[26,28],[24,28],[24,17+b]],null);
   P('#bdb8d0',[[10,18+b],[22,18+b],[27,31],[22,30],[20,34],[18,31],[16,34],[14,31],[12,34],[10,30],[5,31]],null);
   P('#e4e0ee',[[10,19+b],[16,19+b],[16,32],[13,31],[11,31],[7,30]],null);P('#8f8aab',[[19,19+b],[22,19+b],[27,31],[22,30],[20,33],[19,31]],null);R(16,24,1,8,'#8f8aab');R(13,26,1,5,'#bdb8d0');
@@ -3109,6 +3109,8 @@ function drawBranchCreature(q,m,frame,sp){
   P('#2e2840',[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[19,6+b],[16,7+b],[13,6+b]],null);
   R(13,10+b,2,2,'#2a2234');R(18,10+b,2,2,'#2a2234');R(16,13+b,1,1,'#b4545f');
   flower(11,4+b);flower(16,2+b);flower(21,4+b);
+  const bud=(x,y)=>{R(x-1,y-2,3,5,ink);R(x-2,y-1,5,3,ink);R(x,y-1,1,3,rose);R(x-1,y,3,1,rose);R(x,y,1,1,gold)};
+  bud(6,12+b);bud(26,19+b);bud(6,24);bud(26,27);
   R(6,33,1,1,roseLight);R(26,34,1,1,rose);break;
  }
  case'citadel_undertaker':{
