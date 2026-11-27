@@ -2731,8 +2731,8 @@ const ACTOR_SPEC={
   '월화 궁수':{"a":"branch","c":"#9c442c","h":"#dc844a","ac":"#f4c877","design":"moonfire_archer"},
   '재의 감시자':{"a":"branch","c":"#625752","h":"#a69584","ac":"#e5b583","design":"ash_watcher"},
   '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander"},
-  '삼족오':{a:'branch',c:'#17131d',h:'#625a86',ac:'#e2a53e',design:'three_legged_crow',resolution:2},
-  '불사조':{a:'branch',c:'#b2261c',h:'#e0582a',ac:'#f6bf48',design:'phoenix',resolution:2},
+  '삼족오':{a:'branch',c:'#17131d',h:'#625a86',ac:'#e2a53e',design:'three_legged_crow',resolution:1.3,frames:8,framePeriod:170},
+  '불사조':{a:'branch',c:'#b2261c',h:'#e0582a',ac:'#f6bf48',design:'phoenix',resolution:1.5},
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
   '갈고리 죄수':{"a":"branch","c":"#5f4740","h":"#9c8170","ac":"#cdbf96","design":"hook_prisoner"},
   '어둑시니':{a:'dusk_shade',c:'#201b2e',h:'#4f4968',ac:'#e9e2ff'},
@@ -3266,11 +3266,12 @@ function drawBranchCreature(q,m,frame,sp){
  }
  case'three_legged_crow':{
   // The crow of the sun as the old tomb murals paint it: a black crow striding in profile inside a flaming sun disc, one wing lifted with a scalloped edge, a crest curling forward and three red-gold legs.
-  const y=b*.5,f=b?1:0,ink='#0e0a09',black='#1a1210',warmBlack='#33201a',ember='#c4502a',sunR='#a8261a',sunO='#e8692a',sunY='#ffc45a',sunW='#fff0c4',leg='#d4702c',legD='#7c3518';
-  // a flame ring: tongues curling clockwise around the disc
-  for(let i=0;i<14;i++){const t=i/14*Math.PI*2+(b?.11:0),r0=9.6,x0=16+Math.cos(t)*r0,v0=13+Math.sin(t)*r0,tc=t+.22,te=t+.42,rc=12,re=i%2?12.4:13.4;
-   plume(x0,v0,16+Math.cos(tc)*rc,13+Math.sin(tc)*rc,16+Math.cos(te)*re,13+Math.sin(te)*re,1.5,i%2?sunO:sunY,null)}
-  eR9(q,16,13,10,10,sunR,'#4e1208',.8);eR9(q,16,13,8.6,8.6,sunO,null);eR9(q,16,13,6.8,6.8,sunY,null);eR9(q,12.8,9.6,2.6,2.6,sunW,null);
+  const bb=(frame>>2)&1,y=bb*.5,f=bb,ink='#0e0a09',black='#1a1210',warmBlack='#33201a',ember='#c4502a',sunR='#a8261a',sunO='#e8692a',sunY='#ffc45a',sunW='#fff0c4',leg='#d4702c',legD='#7c3518';
+  // a flame ring that turns clockwise while its colour runs from red through gold to white-hot and back (8 frames, one full loop)
+  const hue=[8,20,32,44,52,44,32,20][frame%8],spin=(frame%8)/8*(Math.PI*2/7),flameA=`hsl(${hue+14} 100% 62%)`,flameB=`hsl(${hue-6} 96% 52%)`,discRim=`hsl(${hue-8} 78% 34%)`,discMid=`hsl(${hue} 92% 52%)`,discCore=`hsl(${hue+16} 100% 66%)`;
+  for(let i=0;i<14;i++){const t=i/14*Math.PI*2+spin,r0=9.6,x0=16+Math.cos(t)*r0,v0=13+Math.sin(t)*r0,tc=t+.22,te=t+.42,rc=12,re=i%2?12.4:13.4;
+   plume(x0,v0,16+Math.cos(tc)*rc,13+Math.sin(tc)*rc,16+Math.cos(te)*re,13+Math.sin(te)*re,1.5,i%2?flameB:flameA,null)}
+  eR9(q,16,13,10,10,discRim,'#4e1208',.8);eR9(q,16,13,8.6,8.6,discMid,null);eR9(q,16,13,6.8,6.8,discCore,null);eR9(q,12.8,9.6,2.6,2.6,sunW,null);
   q.save();q.translate(16,14.6);q.scale(.82,.82);q.translate(-16,-14.6);
   // far wing, lifted behind the head
   P(ink,[[16.4,11.6+y],[15.2,6+y-f],[17.6,1.4+y-f],[19,5.6+y-f],[19.6,10.6+y]]);
@@ -3293,7 +3294,7 @@ function drawBranchCreature(q,m,frame,sp){
   plume(20.4,7.2+y,20,3.6+y,23.6,3.4+y-f*.5,1.1,black,ink);eR9(q,23.8,3.6+y-f*.5,.8,.8,sunY,null);
   P(warmBlack,[[23.8,8.2+y],[28,9.8+y],[23.8,11.2+y]],ink);L(24.2,9.8+y,27,9.8+y,ink,.5);
   eR9(q,22.2,8.8+y,1,1,sunY,null);R(22.3,8.5+y,.6,.7,ink);
-  q.restore();for(const[x,v]of[[27,24],[4,26.4],[26,28]])R(x,v-b,1,1,b?sunY:sunO);break;
+  q.restore();for(const[x,v]of[[27,24],[4,26.4],[26,28]])R(x,v-bb,1,1,discCore);break;
  }
  case'phoenix':{
   // A rising crimson firebird: raised gold wings tipped with flame, a flame crest, a long tail of plumes with burning eyes. Its fall leaves only embers in ash.
@@ -4006,7 +4007,7 @@ function renderSprite(m,c,player=false){const now=FX.frameNow??performance.now()
   if(!dormantMimic){X.fillStyle='rgba(0,0,0,.35)';X.fillRect(px+8,py+28,16,3)}if(m.boss&&!player){X.globalCompositeOperation='screen';const g=X.createRadialGradient(px+16,py+15,4,px+16,py+15,26);g.addColorStop(0,'rgba(226,176,85,.14)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(px-10,py-12,52,55);X.globalCompositeOperation='source-over'}
   const spriteAlpha=X.globalAlpha;if(m.mirrorCopy105)X.globalAlpha*=.42;
   X.imageSmoothingEnabled=false;const sc=player?(bodyPowerActive()?1.20:1):(m.spriteScale||(m.summonOwner105==='player'?1:m.boss?1.18:(fp.length>1?1.10:1))),dw=c.width/(c.actorResolution105||1)*sc,dh=c.height/(c.actorResolution105||1)*sc,box=actorSpriteRect(c,px,py,sc),spriteTop=box.y-(m.flying&&!player?4+Math.sin(now/320)*2:0);if(!player&&aquaticStranded(m)){const phase=(now/115+m.x*1.7+m.y)%10,hop=phase<3?Math.sin(phase*Math.PI/3):0;X.save();X.translate(px+16,py+24-hop*5);X.rotate(.55+Math.sin(phase*3)*.22*(hop>0?1:.15));X.drawImage(c,-dw/2,-dh+8,dw,dh);X.restore()}else X.drawImage(c,box.x+dw*(1-unfold)/2,spriteTop,dw*unfold,dh);X.globalAlpha=spriteAlpha;if(hit&&player){X.globalCompositeOperation='screen';X.fillStyle='rgba(255,78,78,.28)';X.fillRect(px+5,py+2,22,28);X.globalCompositeOperation='source-over'}if(m.boss&&!player){X.strokeStyle='rgba(232,190,103,.60)';X.lineWidth=1.5;X.strokeRect(px+1.5,py-2.5,29,34)}if(m.hp!==undefined&&m.maxHp!==undefined&&m.hp<m.maxHp&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#160706';X.fillRect(px+5,py-3,22,3);X.fillStyle='#a84439';X.fillRect(px+5,py-3,Math.max(1,22*m.hp/m.maxHp),3)}if(m.alerted&&!m.boss&&!player&&!dormantMimic){X.fillStyle='#f08b66';X.font='900 10px system-ui';X.textAlign='center';X.fillText('!',px+16,py-3);X.textAlign='start'}if(!player&&!dormantMimic)drawCombatStatusBadges(m,px+16,Math.min(spriteTop-3,py-15));X.restore();return true}
-function drawWorldCreature(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite(m,c,false)}if(m.duelLook){const c=ACTOR_ART.player(m.duelLook.classId||'wanderer',m.duelLook,dir1012(m,true),(m.attackUntil||0)>performance.now());X.save();if(m.martialStatus105?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,false);X.restore();return r}const c=monsterCanvas(m,((performance.now()/430+m.x*3+m.y)|0)&1);return renderSprite(m,c,false)}
+function drawWorldCreature(m){if(!m||m.hidden&&!m.boss)return false;const player=!!(state&&m.shape==='player'&&m.name==='player'),friend=m.name==='선행 조사관의 인영'||m.name==='실종된 선행 조사관'||m.storyPhase992===1;if(player){const now=performance.now(),c=ACTOR_ART.player(state.player.classId||'wanderer',state.player,dir1012(m,true),(state.playerAttackUntil||0)>now);X.save();if(state.status?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,true);X.restore();return r}if(friend){const c=ACTOR_ART.friend(!!(m.storyPhase992===1||m.boss),m.name==='선행 조사관의 인영',((performance.now()/430)|0)&1);return renderSprite(m,c,false)}if(m.duelLook){const c=ACTOR_ART.player(m.duelLook.classId||'wanderer',m.duelLook,dir1012(m,true),(m.attackUntil||0)>performance.now());X.save();if(m.martialStatus105?.stealth>0)X.globalAlpha*=.22;const r=renderSprite(m,c,false);X.restore();return r}const c=monsterCanvas(m,((performance.now()/(ACTOR_SPEC[m.name]?.framePeriod||430)+m.x*3+m.y)|0)%(ACTOR_SPEC[m.name]?.frames||2));return renderSprite(m,c,false)}
 const rarityCol={common:'#b9aa8d',uncommon:'#91b889',rare:'#7eb4d1',relic:'#c493dc',sealed:'#e7bc55',legendary:'#e8c75d',artifact:'#ef8b45'};
 const tierMetal=['#a99a82','#bdad8c','#c9b889','#d1b36e','#e3c66d'];
 function drawBlade(q,st,m,hi,wood){
