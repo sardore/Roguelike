@@ -554,14 +554,9 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         const requested=RuntimeState.persistence.pending||(action?.committed&&(action.advancesWorld||noTimeCommit));RuntimeState.persistence.pending=false;
         if(action?.persistence)return action.persistence;
         if(!requested||!state||state.dead||state.victory)return{ok:true,committed:false,source:'no-action'};
-        if(reason!=='floor'&&saveCostMs>=20&&performance.now()-saveAtMs<saveCostMs*20){RuntimeState.persistence.pending=true;return{ok:true,committed:false,deferred:true,throttled:true}}
         const result=SaveService.commit(reason);if(!result.ok)toast('기록 저장에 실패했다.');return result;
       },
       clearPending(){RuntimeState.persistence.pending=false},
-      flushPending(){
-        if(!RuntimeState.persistence.pending||runIsEphemeral()||ACTION_AUDIT5.stack.length||globalThis.__MANRU_LIFECYCLE__?.busy?.()||!state||state.dead||state.victory)return null;
-        RuntimeState.persistence.pending=false;return SaveService.commit('background');
-      },
       terminal(kind){
         if(runIsEphemeral())return{ok:true,committed:false,source:'ephemeral-run'};
         RuntimeState.persistence.pending=false;const entries=[];
@@ -587,13 +582,7 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       },
       snapshot(){return structuredClone(RuntimeState.persistence)}
     });
-    // A turn's save writes the whole run. On a huge floor (the black citadel) that costs tens of milliseconds, so the per-turn save is spaced out
-    // by its own measured cost; stairs, manual saves, going to the background and closing the page always save at once.
-    let saveCostMs=0,saveAtMs=-1e9;
     function writeRun(reason='explicit'){
-      const t0=performance.now();try{return writeRunNow(reason)}finally{const t1=performance.now();saveCostMs=t1-t0;saveAtMs=t1}
-    }
-    function writeRunNow(reason){
       if(runIsEphemeral())return{ok:true,committed:false,source:'ephemeral-run'};
       if(!state||state.dead||state.victory)return SaveService.record({ok:false,committed:false,failure:'inactive',source:'active-run',reason});
       let plain,raw,result;
@@ -1089,8 +1078,7 @@ function potionsPostGeneration(){pstate();state.tempFields=[];rewardRooms()}
 function talismanPostGeneration(){ensure74();state.tempTerrain74=[];state.elementFields74=[]}
 function bindCanvasAndKeyListeners(){
   window.addEventListener('blur',clearHeldInput53);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearHeldInput53();globalThis.__MANRU_SAVE_SERVICE__?.flushPending?.()}});
-  addEventListener('pagehide',()=>globalThis.__MANRU_SAVE_SERVICE__?.flushPending?.());
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
   C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});
   InputRouter.noteListener('canvas-target:pointerdown');
   C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});
