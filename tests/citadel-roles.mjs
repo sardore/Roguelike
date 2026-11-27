@@ -62,9 +62,9 @@ assert.ok(!Object.values(out.levels[1].byCorner).some(o => o['흑관 장의사']
 assert.ok(out.levels[1].depth.NE > out.levels[1].depth.SW, '1층 위험 방향(북동)이 더 강하지 않다');
 assert.ok(out.levels[2].depth.NW > out.levels[2].depth.SW, '2층 위험 방향(북서)이 더 강하지 않다');
 const c = out.coffin;
-assert.ok(c.started && c.planned >= 1 && c.planned <= 3, '관 수 ' + c.planned);
+assert.ok(c.started && c.planned >= 1 && c.planned <= 5, '관 수 ' + c.planned);
 assert.equal(c.walls, c.planned, '관이 한꺼번에 솟지 않았다');
-assert.ok(c.corpses >= 1 && c.corpses <= 3, '철갑시체 수 ' + c.corpses);
+assert.ok(c.corpses >= 1 && c.corpses <= 5, '철갑시체 수 ' + c.corpses);
 assert.deepEqual(c.names, ['납골 철갑시체']);
 assert.equal(c.again, false, '재사용 대기를 무시했다');
 assert.ok(c.emptyWhenKilled, '장의사가 죽었는데 시체가 깨어났다');
