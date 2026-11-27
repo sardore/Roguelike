@@ -68,7 +68,7 @@ assert.ok(!Object.values(out.levels[1].byCorner).some(o => o['흑관 장의사']
 assert.ok(out.levels[1].depth.NE > out.levels[1].depth.SW, '1층 위험 방향(북동)이 더 강하지 않다');
 assert.ok(out.levels[2].depth.NW > out.levels[2].depth.SW, '2층 위험 방향(북서)이 더 강하지 않다');
 const c = out.coffin;
-assert.ok(c.started && c.planned >= 1 && c.planned <= 3, '관 수 ' + c.planned);
+assert.ok(c.started && c.planned === 2, '관 수 ' + c.planned);
 assert.ok(c.weakLeft>=90, '약화가 100턴이 아니다 '+c.weakLeft);
 assert.ok(c.midOk, '관이 장의사와 목표 사이에 서지 않는다');
 assert.equal(c.walls, c.planned, '관이 한꺼번에 솟지 않았다');

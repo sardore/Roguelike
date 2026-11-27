@@ -2325,7 +2325,7 @@ function startSalamanderFireWall(mon){
  addLog(mon.name+'의 화염벽 예고.');
  return true;
 }
-const COFFIN_WALL=Object.freeze({range:9,cooldown:12,count:3,maxAlive:3,weakenTurns:100,damageFraction:.5});
+const COFFIN_WALL=Object.freeze({range:9,cooldown:12,count:2,maxAlive:3,weakenTurns:100,damageFraction:.5});
 // The undertaker raises coffins between itself and its target. They go off two turns after they rise in a frost burst and each wakes one weakened armoured corpse;
 // it never keeps more than maxAlive of them, and killing it before the burst leaves the coffins empty.
 function startCoffinWall(mon,target){
