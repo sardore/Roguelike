@@ -2738,6 +2738,8 @@ const ACTOR_SPEC={
   '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
   '흉조 까마귀':{a:'ominous_crow',c:'#1f1e2c',h:'#5a5f82',ac:'#e24a4a'},
+  '삼족오':{a:'sun_crow',c:'#2a2530',h:'#7a5a50',ac:'#ffd36a'},
+  '불사조':{a:'phoenix',c:'#d9602a',h:'#ffb347',ac:'#ffe38a'},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3565,6 +3567,70 @@ break;}
   // roar lines
   for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
   q.restore();break;}
+  case'sun_crow':{shadow1012(q,16,34,26);
+   const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},c=base,h=hi,a=ac,ivory='#e4d7b5';
+  // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
+  q.save();q.translate(1.5,.5);
+  const deep='#1a1620',body='#2b232b',edge='#74503f',sheen='#e8a24a',beak='#e9b457',beakD='#7a4a1c',gape='#7a2a12',tongue='#ffb347',wb=b?-1:0;
+  const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+  const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+   P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+  // the sun: a gold disc with a ring of rays behind the head, embers drifting off it
+  q.save();q.beginPath();q.arc(7,8,5.4,0,Math.PI*2);q.fillStyle='#f0a030';q.fill();q.strokeStyle='#7a3a10';q.lineWidth=.8;q.stroke();q.beginPath();q.arc(7,8,3.5,0,Math.PI*2);q.fillStyle='#ffd36a';q.fill();q.restore();
+  for(let i=0;i<8;i++){const an=i*Math.PI/4+.2;L(7+Math.cos(an)*6.2,8+Math.sin(an)*6.2,7+Math.cos(an)*8.4,8+Math.sin(an)*8.4,'#f6b84a',1)}
+  for(const[x,y,sz]of[[25,27,1.3],[28,23,1.1]]){R(x,y,sz,sz,'#ffb347');R(x+.4,y-1,.7,1,'#ffe08a')}
+  // tail streaming up and back
+  for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
+  // far wing (darker), then body, then near wing
+  for(const[deg,L]of[[62,12],[75,13.5],[88,13],[101,11.5],[114,9.5]])feather(15,11,deg,L,deep,edge,1.4);
+  rot(17,17,9.6,5.4,-.62,deep);rot(17,16.4,9,4.8,-.62,body);
+  rot(15.2,15.2,6,2,-.62,edge);
+  for(const[x,y]of[[10.5,19.5],[13,21],[16,21.6],[19,21]])P(deep,[[x-1.6,y],[x-.4,y+3.2],[x+1.4,y+.2]],null);
+  for(const[deg,L,hi]of[[58,14.5,sheen],[72,16,sheen],[86,15.5,sheen],[100,14,sheen],[114,11.5,sheen]])feather(16.5,12.6+wb*0,deg,L+(wb?-.8:0),body,hi,1.6);
+  P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
+  // three legs reaching forward-down, each ending in a talon fan
+  for(const[x0,y0,x1,y1]of[[12.5,21.5,8,27],[16.2,22,12.2,30],[19.5,21.5,16.8,29.4]]){L(x0,y0,x1,y1,beakD,2);L(x0,y0,x1,y1,beak,.8);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.3)}
+  // neck ruff and head, lower left
+  for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
+  E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
+  P(deep,[[12.5,15],[16,12.8],[14,17.2]],null);P(deep,[[10.2,14.6],[12.4,11],[12.6,15.4]],null);
+  // eye and brow
+  R(7.5,17.4,3,2,a);R(7.5,17.4,1,1,'#ffd9d9');R(9.2,17.9,1,1,'#12101a');L(6.4,16.5,10.8,17.6,deep,1.4);
+  // beak gaping toward the lower left: red throat, hooked upper, lower, tongue
+  P(gape,[[8,21.5],[2.6,26.8],[5.8,29.6],[10.2,24.4]]);R(5.6,26.4,2,2,tongue);
+  P(beak,[[11,18.4],[6.4,20],[.8,27.4],[8.6,23]]);L(8.6,20,3.4,25.8,beakD,.7);P(beakD,[[1.2,26.6],[.8,27.4],[3.4,25.6]],null);
+  P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
+  // roar lines
+  for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#ffd9a0',.8);
+  q.restore();break;}
+  case'phoenix':{shadow1012(q,16,34,24);
+   const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)};
+   // A phoenix climbing to the upper right with its wings swept up and back and a long tail of flame streaming to the lower left; the same slanted frame as the omen crow, flipped.
+   q.save();q.translate(2.2,b?-.5:0);
+   const f0='#6e140e',f1='#c0301c',f2='#f26a22',f3='#ffb02e',f4='#ffe680',f5='#fff6c8',gold='#f4c860',goldD='#8a5a1c';
+   const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+   const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+    P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+   // tail of flame plumes, long and fanned, hot at the roots and red at the tips
+   for(const[deg,len,col,hi]of[[198,11,f0,f1],[211,13.5,f1,f2],[224,15.5,f2,f3],[237,14,f1,f2],[250,11,f0,f1]])feather(12.5,22.5,deg,len,col,hi,1.4);
+   // far wing swept up and back
+   for(const[deg,len]of[[100,12],[114,13.5],[128,13.5],[142,11.5]])feather(17.5,16.5,deg,len,f1,f2,1.5);
+   // body, tilted up to the right, with a white-hot chest
+   rot(16,19,9.4,5.2,-.62,f1);rot(16.2,18.6,8.6,4.4,-.62,f2);rot(17,18,6,2.8,-.62,f3);rot(18,17.4,3.4,1.5,-.62,f4);
+   // near wing: a fan of broad feathers
+   for(const[deg,len]of[[92,13],[106,15],[120,15.5],[134,14],[148,11.5]])feather(16.5,16,deg,len,f2,f3,1.7);
+   for(const[deg,len]of[[98,9],[112,10.5],[126,10.5],[140,9]])feather(16.5,16.4,deg,len,f3,f4,1.2);
+   // neck, head and flame crest
+   P(f2,[[19,15.2],[23,10.4],[26.4,12.6],[22.6,17.4]]);P(f3,[[20.2,15],[23.4,11.4],[25,12.6],[22,16.4]],null);
+   E(24,11.8,3.4,3.2,f2);eR9(q,24.4,12,2.5,2.3,f3,null);eR9(q,23.6,11,1.1,.9,f5,null);
+   for(const[deg,len,col]of[[62,7,f1],[82,8,f2],[102,7,f3]])feather(23.2,9.4,deg,len,col,f4,1.1);
+   R(24.6,10.4,1.8,1.4,'#1a0a08');R(25,10.6,.7,.7,f5);
+   P(gold,[[26.2,11],[31.2,10.2],[27.6,14]]);L(26.6,11.4,30.6,10.4,goldD,.6);
+   // talons trailing
+   for(const[x0,y0,x1,y1]of[[14.5,23,11.5,28.4],[17.5,23.2,15,29]]){L(x0,y0,x1,y1,goldD,1.4);for(const k of[-2,0,2])L(x1,y1,x1-2.2+k*.4,y1+3+k*.7,gold,1)}
+   // embers
+   for(const[x,y,sz]of[[3,17,1.3],[26,22,1.2],[24,30,1.1]]){R(x,y,sz,sz,f3);R(x+.4,y-1,.7,1,f4)}
+   q.restore();break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
   case'censer':{
