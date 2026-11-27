@@ -2420,6 +2420,7 @@ function debugBattleRound57(){
    if(!state.monsters.includes(mon))continue;if(advanceMonsterRevival(mon)||mon.hp<=0)continue;if(mon.combatFixture54){tickBossFixture(mon);continue}
    if(mon.intent61?.type==='shackleCounter'){shackleCounterTurn(mon,null);continue}
    if(mon.stunned>0){mon.stunned--;continue}if(mon.martialActor105)tickMartialActor(mon);
+   if(mon.furyCrow105&&!mon.furyStarted105)crowFuryTick(mon,state.monsters.some(t=>combatTargetValid57(mon,t)&&actorDetectedTarget57(mon,t,80)));
    const schedule=monsterActionSchedule(mon);if(!schedule.act&&mon.name!==SHACKLE_DOLL.name)continue;
    for(let action=0;action<(schedule.actions||1);action++){
    if(mon.hp<=0||mon.stunned>0||!state.monsters.includes(mon))break;
