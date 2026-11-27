@@ -3567,42 +3567,32 @@ break;}
   // roar lines
   for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
   q.restore();break;}
-  case'sun_crow':{shadow1012(q,16,34,26);
-   const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},c=base,h=hi,a=ac,ivory='#e4d7b5';
-  // A raven diving to the lower left, roaring: body slanted like a bird's, wings thrown up and back as fans of primaries, tail streaming behind, talons reaching forward.
-  q.save();q.translate(1.5,.5);
-  const deep='#1a1620',body='#2b232b',edge='#74503f',sheen='#e8a24a',beak='#e9b457',beakD='#7a4a1c',gape='#7a2a12',tongue='#ffb347',wb=b?-1:0;
-  const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
-  const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
-   P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
-  // the sun: a gold disc with a ring of rays behind the head, embers drifting off it
-  q.save();q.beginPath();q.arc(7,8,5.4,0,Math.PI*2);q.fillStyle='#f0a030';q.fill();q.strokeStyle='#7a3a10';q.lineWidth=.8;q.stroke();q.beginPath();q.arc(7,8,3.5,0,Math.PI*2);q.fillStyle='#ffd36a';q.fill();q.restore();
-  for(let i=0;i<8;i++){const an=i*Math.PI/4+.2;L(7+Math.cos(an)*6.2,8+Math.sin(an)*6.2,7+Math.cos(an)*8.4,8+Math.sin(an)*8.4,'#f6b84a',1)}
-  for(const[x,y,sz]of[[25,27,1.3],[28,23,1.1]]){R(x,y,sz,sz,'#ffb347');R(x+.4,y-1,.7,1,'#ffe08a')}
-  // tail streaming up and back
-  for(const[deg,L]of[[18,12],[30,13.5],[42,12.5],[54,10]])feather(23,15,deg,L,deep,edge,1.3);
-  // far wing (darker), then body, then near wing
-  for(const[deg,L]of[[62,12],[75,13.5],[88,13],[101,11.5],[114,9.5]])feather(15,11,deg,L,deep,edge,1.4);
-  rot(17,17,9.6,5.4,-.62,deep);rot(17,16.4,9,4.8,-.62,body);
-  rot(15.2,15.2,6,2,-.62,edge);
-  for(const[x,y]of[[10.5,19.5],[13,21],[16,21.6],[19,21]])P(deep,[[x-1.6,y],[x-.4,y+3.2],[x+1.4,y+.2]],null);
-  for(const[deg,L,hi]of[[58,14.5,sheen],[72,16,sheen],[86,15.5,sheen],[100,14,sheen],[114,11.5,sheen]])feather(16.5,12.6+wb*0,deg,L+(wb?-.8:0),body,hi,1.6);
-  P(edge,[[13,12.5],[19,11],[21,14.5],[16,17]]);P(sheen,[[14,12.6],[18,11.6],[17,13.6],[14.5,14.4]],null);
-  // three legs reaching forward-down, each ending in a talon fan
-  for(const[x0,y0,x1,y1]of[[12.5,21.5,8,27],[16.2,22,12.2,30],[19.5,21.5,16.8,29.4]]){L(x0,y0,x1,y1,beakD,2);L(x0,y0,x1,y1,beak,.8);for(const k of[-2.2,0,2.2])L(x1,y1,x1-2.6+k*.4,y1+3.2+k*.8,beak,1.3)}
-  // neck ruff and head, lower left
-  for(const[x,y]of[[12.5,15.5],[10.5,17],[9,19]])P(body,[[x+2.4,y-1.6],[x-2.2,y+3.2],[x+.6,y+2.4]],null);
-  E(9.5,19.5,5.4,5,body);P(edge,[[7,16.4],[11.4,15.4],[13.2,17.6],[9.6,17.4]],null);P(sheen,[[8.2,16.6],[11,16],[10,17.4]],null);
-  P(deep,[[12.5,15],[16,12.8],[14,17.2]],null);P(deep,[[10.2,14.6],[12.4,11],[12.6,15.4]],null);
-  // eye and brow
-  R(7.5,17.4,3,2,a);R(7.5,17.4,1,1,'#ffd9d9');R(9.2,17.9,1,1,'#12101a');L(6.4,16.5,10.8,17.6,deep,1.4);
-  // beak gaping toward the lower left: red throat, hooked upper, lower, tongue
-  P(gape,[[8,21.5],[2.6,26.8],[5.8,29.6],[10.2,24.4]]);R(5.6,26.4,2,2,tongue);
-  P(beak,[[11,18.4],[6.4,20],[.8,27.4],[8.6,23]]);L(8.6,20,3.4,25.8,beakD,.7);P(beakD,[[1.2,26.6],[.8,27.4],[3.4,25.6]],null);
-  P(beak,[[9.2,24],[11.4,22.2],[7.2,31],[4.4,30.4]]);
-  // roar lines
-  for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#ffd9a0',.8);
-  q.restore();break;}
+  case'sun_crow':{shadow1012(q,16,34,22);
+   const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)};
+   // The three-legged crow of the sun, in the old mural pose: a great sun disc behind a black crow with its wings flung up, gold-edged plumes and three legs hanging in a fan.
+   q.save();q.translate(0,b?-.5:0);
+   const deep='#16121c',body='#2a2230',edge='#e0993f',hot='#ffd36a',sunRim='#a3280f',sun0='#e8561c',sun1='#ff9a2e',sun2='#ffd04a',gold='#f0b24a',goldD='#7a4a1c';
+   const rot=(x,y,rx,ry,a,col)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col);q.restore()};
+   const feather=(ox,oy,deg,len,col,hi,wd=1.5)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),tx=ox+dx*len,ty=oy+dy*len;
+    P(col,[[ox-px*wd*.9,oy-py*wd*.9],[tx-px*wd,ty-py*wd],[tx+dx*1.2,ty+dy*1.2],[tx+px*wd,ty+py*wd],[ox+px*wd*.9,oy+py*wd*.9]]);L(ox,oy,tx,ty,hi,.7)};
+   // the sun: rays, a red rim, three bands of fire
+   for(let i=0;i<12;i++){const an=i*Math.PI/6+.13;L(16+Math.cos(an)*11.6,15.5+Math.sin(an)*11.6,16+Math.cos(an)*14.4,15.5+Math.sin(an)*14.4,sun1,1.2)}
+   E(16,15.5,11.4,11.4,sunRim);eR9(q,16,15.5,10,10,sun0,null);eR9(q,16,15.5,7.4,7.4,sun1,null);eR9(q,16,15.5,4.6,4.6,sun2,null);eR9(q,16,15.5,2.4,2.4,'#fff1a8',null);
+   // tail streamers, three, falling to the lower right
+   for(const[deg,len]of[[308,9.5],[324,10.5]])feather(20.5,19,deg,len,deep,edge,1.6);
+   // far wing up and left, body, near wing up and right
+   for(const[deg,len]of[[124,10.5],[146,10.5],[166,8.5]])feather(14,14.5,deg,len,deep,edge,1.9);
+   rot(16.5,17.6,7.2,4.8,-.18,deep);rot(16.5,17.2,6.6,4.2,-.18,body);rot(15.6,15.4,4.2,1.5,-.18,edge);
+   for(const[deg,len]of[[30,10],[56,12.5],[82,12.5]])feather(18,14.4,deg,len,body,edge,2);
+      // head turned left, crest, long straight beak
+   P(body,[[12.6,14.6],[10.4,10.8],[6.6,10.4],[6.2,14],[10,16.4]]);E(9.2,12.6,4.2,3.6,body);rot(8.8,8.8,2.8,1.1,.5,edge);rot(11.4,9.2,2.4,1,-.3,edge);
+   R(7.2,11.4,2,1.6,hot);R(7.8,11.6,.8,.8,'#1a0a08');
+   P(gold,[[6.2,12.2],[0.6,13.6],[6,15.4]]);L(1.2,13.8,6,13.4,goldD,.6);P(goldD,[[6,13.6],[2.6,14.2],[6,14.8]],null);
+   // three legs hanging in a fan, each with a talon
+   for(const[x0,x1,y1]of[[12.8,10.4,30],[16.4,16.4,31.6],[20,22.4,30]]){L(x0,21,x1,y1,goldD,2.4);L(x0,21,x1,y1,gold,1.1);for(const k of[-2.4,0,2.4])L(x1,y1,x1+k,y1+2.6,gold,1.3)}
+   // sparks
+   for(const[x,y,sz]of[[2,5,1.2],[29,4,1.2],[30,26,1.1]]){R(x,y,sz,sz,sun2)}
+   q.restore();break;}
   case'phoenix':{shadow1012(q,16,34,24);
    const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col),R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)};
    // A phoenix climbing to the upper right with its wings swept up and back and a long tail of flame streaming to the lower left; the same slanted frame as the omen crow, flipped.
