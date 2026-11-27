@@ -3093,25 +3093,26 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'citadel_bier':{
-  // A pale funeral-bier ghost: silhouette first (long hair, bell skirt fraying into mist), then three-tone ramps per material, a two-dot face, camellias drawn as small crosses.
-  const ink='#17121f',rose='#d9707f',roseLight='#f0b0b8',roseDark='#9a3f52',gold='#e0b95c';
-  const flower=(x,y)=>{R(x-2,y-3,5,7,ink);R(x-3,y-2,7,5,ink);R(x-1,y-2,3,5,rose);R(x-2,y-1,5,3,rose);R(x-1,y-1,1,1,roseLight);R(x+1,y+1,1,1,roseDark);R(x,y,1,1,gold)};
-  P(ink,[[7,4+b],[12,0+b],[20,0+b],[25,4+b],[27,17+b],[29,30],[22,31],[22,18+b],[10,18+b],[10,31],[3,30],[5,17+b]],null);
-  P(ink,[[9,17+b],[23,17+b],[29,32],[23,31],[21,35],[18,32],[16,35],[13,32],[11,35],[9,31],[3,32]],null);
-  P('#2e2840',[[8,5+b],[12,1+b],[20,1+b],[24,5+b],[26,17+b],[28,29],[23,30],[23,18+b],[9,18+b],[9,30],[4,29],[6,17+b]],null);
-  P('#463d5e',[[8,6+b],[10,6+b],[9,17+b],[8,26],[6,26],[7,17+b]],null);P('#1f1a2c',[[23,8+b],[25,8+b],[26,17+b],[26,28],[24,28],[24,17+b]],null);
-  P('#bdb8d0',[[10,18+b],[22,18+b],[27,31],[22,30],[20,34],[18,31],[16,34],[14,31],[12,34],[10,30],[5,31]],null);
-  P('#e4e0ee',[[10,19+b],[16,19+b],[16,32],[13,31],[11,31],[7,30]],null);P('#8f8aab',[[19,19+b],[22,19+b],[27,31],[22,30],[20,33],[19,31]],null);R(16,24,1,8,'#8f8aab');R(13,26,1,5,'#bdb8d0');
-  P('#ece9f4',[[10,13+b],[22,13+b],[23,19+b],[9,19+b]],null);P('#cfcade',[[16,13+b],[22,13+b],[23,19+b],[16,19+b]],null);
-  P('#c8606f',[[13,13+b],[19,13+b],[16,18+b]],null);L(13,13+b,16,18+b,roseDark,1);L(19,13+b,16,18+b,roseDark,1);R(15,18+b,2,4,roseDark);
-  P('#ece9f4',[[5,15+b],[10,14+b],[11,23+b],[5,24+b]],null);R(5,22+b,6,2,'#bdb8d0');P('#cfcade',[[22,14+b],[27,15+b],[27,24+b],[21,23+b]],null);R(21,22+b,6,2,'#8f8aab');
-  E(16,9+b,5,5.5,'#eee6ea');P('#d8cdd6',[[18,5+b],[21,8+b],[20,13+b],[17,14+b],[18,10+b]],null);
-  P('#2e2840',[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[19,6+b],[16,7+b],[13,6+b]],null);
-  R(13,10+b,2,2,'#2a2234');R(18,10+b,2,2,'#2a2234');R(16,13+b,1,1,'#b4545f');
-  flower(11,4+b);flower(16,2+b);flower(21,4+b);
-  const bud=(x,y)=>{R(x-1,y-2,3,5,ink);R(x-2,y-1,5,3,ink);R(x,y-1,1,3,rose);R(x-1,y,3,1,rose);R(x,y,1,1,gold)};
-  bud(6,12+b);bud(26,19+b);bud(6,24);bud(26,27);
-  R(6,33,1,1,roseLight);R(26,34,1,1,rose);break;
+  // Reference style: saturated hue-shifted ramps, a pure black outline that also splits the locks and folds, a huge flowing hair mass in a swimming pose, flowers as bright clusters.
+  const K='#000',h0='#1c1050',h1='#3a2a9a',h2='#6c5ee0',h3='#b5aef5',w0='#ffffff',w1='#c8d0e6',w2='#8890b8',w3='#4a5080',sk='#f6e6da',sk1='#d9b3a6',r0='#7a1a3a',r1='#d23a5a',r2='#f6789a',gd='#ffd23a';
+  const fl=(x,y)=>{R(x-2,y-3,5,7,K);R(x-3,y-2,7,5,K);R(x-1,y-2,3,5,r1);R(x-2,y-1,5,3,r1);R(x-1,y-1,1,1,r2);R(x+1,y+1,1,1,r0);R(x,y,1,1,gd)};
+  P(h1,[[15,3+b],[9,4+b],[4,9+b],[2,17+b],[3,25+b],[7,30],[11,31],[10,26],[12,20+b],[12,12+b]],K);
+  P(h1,[[19,3+b],[25,4+b],[29,10+b],[30,18+b],[28,25+b],[26,29],[24,24+b],[26,17+b],[24,9+b]],K);
+  P(h0,[[4,18+b],[3,25+b],[7,30],[10,28],[7,22+b]],null);P(h0,[[28,18+b],[28,25+b],[26,29],[25,24+b]],null);
+  P(h2,[[10,6+b],[6,11+b],[5,18+b],[7,24+b],[8,17+b],[10,11+b]],null);P(h3,[[8,8+b],[6,12+b],[6,16+b],[8,12+b]],null);
+  P(h2,[[26,8+b],[28,13+b],[28,19+b],[26,14+b]],null);
+  L(6,10+b,4,20+b,K,1);L(9,14+b,7,26,K,1);L(27,12+b,28,22+b,K,1);
+  P(w1,[[14,15+b],[21,15+b],[23,23+b],[28,31],[21,35],[13,34],[8,31],[12,23+b]],K);
+  P(w0,[[14,16+b],[18,16+b],[16,24+b],[10,31],[12,24+b]],null);P(w2,[[19,16+b],[21,15+b],[23,23+b],[28,31],[23,33],[20,27+b]],null);
+  L(15,25+b,11,32,K,1);L(18,25+b,18,34,K,1);L(21,26+b,24,33,K,1);
+  P(r1,[[15,15+b],[20,15+b],[17,20+b]],K);L(17,20+b,17,24+b,r0,1);
+  P(w1,[[13,17+b],[9,23+b],[12,26+b],[15,21+b]],K);P(w1,[[21,17+b],[26,22+b],[23,26+b],[19,21+b]],K);
+  R(12,25+b,3,2,sk);R(21,25+b,3,2,sk);
+  E(17,9+b,4.5,5,sk);P(sk1,[[19,5+b],[21,9+b],[20,13+b],[18,14+b]],null);
+  P(h1,[[12,8+b],[13,4+b],[21,4+b],[22,8+b],[19,6+b],[17,7+b],[15,6+b]],K);
+  R(14,10+b,2,2,K);R(19,10+b,2,2,K);R(17,13+b,1,1,r1);
+  fl(12,3+b);fl(17,1+b);fl(22,3+b);fl(4,17+b);fl(29,14+b);
+  R(9,33,1,1,r2);R(26,34,1,1,r1);break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
