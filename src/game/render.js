@@ -2711,7 +2711,6 @@ const ACTOR_SPEC={
   '흑성 노수':{"a":"branch","c":"#4a4a5c","h":"#a39fba","ac":"#d9c88a","design":"citadel_crossbow"},
   '납골 철갑시체':{"a":"branch","c":"#6f7a7d","h":"#a8b6b8","ac":"#7fe0d0","design":"citadel_tomb"},
   '흑요 날개상':{"a":"branch","c":"#5a4f6e","h":"#9586a8","ac":"#d6a8ff","design":"citadel_wing"},
-  '상여 귀신':{"a":"branch","c":"#d8d2bd","h":"#f2eedf","ac":"#7fe0c0","design":"citadel_bier"},
   '흑관 장의사':{"a":"branch","c":"#4a3a52","h":"#8c779a","ac":"#c9b36e","design":"citadel_undertaker"},
   '피뢰 갑병':{"a":"branch","c":"#4f5e68","h":"#a0a9ac","ac":"#c3dcda","design":"lightning_plate"},
   '전도 정령':{"a":"branch","c":"#457f93","h":"#90bcbf","ac":"#d9ecc1","design":"conduction_spirit"},
@@ -3096,51 +3095,6 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'pixel_rows':{drawPixelRows(q,PIXEL_ACTORS105[monsterSpeciesName(m)]);break;}
- case'citadel_bier':{
-  // A wailing bride ghost lunging out of the air toward the lower left: one sleeve flung forward with the hand reaching, the other arm thrown back with a camellia branch,
-  // hair and the rose ribbon streaming up and back, the white skirt trailing off to the lower right as a torn ghost tail. Swirling petals around her.
-  const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col);
-  const rot=(x,y,rx,ry,a,col,stroke=ACTOR_OUTLINE)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col,stroke);q.restore()};
-  const hair='#221c38',hairM='#3f3768',hairS='#9a90d0',w0='#f6f3fb',w1='#d3cfe4',w2='#9a95bb',w3='#615c84',skin='#ecd6d0',skinD='#c9a7a3',rose='#d9566c',roseL='#f29aab',roseD='#7e2238',glow='#8fe8d8';
-  const lock=(ox,oy,deg,len,wd,col,hi)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),mx=ox+dx*len*.55+px*1.2,my=oy+dy*len*.55+py*1.2,tx=ox+dx*len,ty=oy+dy*len;
-   P(col,[[ox-px*wd,oy-py*wd],[mx-px*wd*.7,my-py*wd*.7],[tx,ty],[mx+px*wd*.6,my+py*wd*.6],[ox+px*wd,oy+py*wd]]);L(ox,oy,mx,my,hi,.6)};
-  const bloom=(x,y,r=2.2)=>{for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;rot(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55,r*.5,r*.36,a,i%2?rose:'#e66a7f',null)}eR9(q,x,y,r*.32,r*.32,'#ffd23a',null)};
-  const petal=(x,y,a,sz,col)=>rot(x,y,sz,sz*.5,a,col,null);
-  shadow1012(q,15,34,22);
-  q.save();q.translate(0,b*.6);
-  // ghost tail: the skirt torn into streamers trailing to the lower right
-  P(w2,[[12,19],[18,17],[24,21],[31,29],[27,28.5],[29,34],[24,30.5],[21,35],[19,29.5],[15,30],[16,26],[11,24]]);
-  P(w1,[[13,19.5],[18,18],[23,22],[29,29],[25.5,28],[26.5,32.5],[22.5,29.5],[20,33],[18.5,28],[15.5,28.5],[16.5,25],[12.4,23.4]],null);
-  P(w0,[[13.4,20],[17,18.8],[19,22],[16.6,24.6],[13,23]],null);
-  for(const[x0,y0,cx,cy,x1,y1]of[[16,21,21,24,25,28],[15,23,19,26,21,31],[18,20,24,22,28,27]]){q.strokeStyle=w3;q.lineWidth=.6;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
-  // far arm thrown back and up, holding a camellia branch
-  P(w2,[[14.5,13.5],[19.5,10],[22.5,9.2],[23,11],[18.5,15.5]]);E(23.4,9.6,1.4,1.2,skin);
-  L(23.8,9,26.6,3.6,'#4f7a3f',.9);L(25.4,6,27.6,6.4,'#4f7a3f',.7);bloom(27,3.2,2.4);bloom(28.2,6.6,1.6);
-  // hair streaming up and back from the head
-  for(const[deg,len,wd]of[[28,14,1.8],[40,15,1.9],[52,13,1.7],[16,12,1.6],[64,10,1.5]])lock(11,7,deg,len,wd,hair,hairS);
-  for(const[deg,len]of[[34,11],[46,12]])lock(11.5,7.5,deg,len,1.1,hairM,hairS);
-  // the rose ribbon flying back from the chest
-  P(rose,[[12.5,15.5],[20,12.6],[25.5,13.4],[21,14.6],[24.6,16.6],[18.4,16],[13.2,17.4]]);L(13,16,22,13.4,roseL,.6);
-  // torso, leaning into the lunge
-  rot(13.2,16.4,3.7,5.2,-.55,w1);rot(12.6,15.6,2.2,3.6,-.55,w0,null);
-  P(rose,[[10.6,12.6],[14,12.2],[12.2,15.4]],null);L(10.6,12.6,12.2,15.4,roseD,.6);L(14,12.2,12.2,15.4,roseD,.6);
-  // near sleeve flung forward, the hand reaching to the lower left
-  P(w1,[[12.5,13.2],[7,15.6],[2.8,19.4],[3.4,23.4],[6.4,24.6],[8.6,21.4],[10.4,19.6],[13.6,18]]);
-  P(w0,[[11.6,13.8],[7,16.4],[4,19.6],[6.4,19.8],[10,17.2]],null);L(4.4,23,9.6,19.4,w2,.6);
-  rot(2.6,20.6,1.6,1.2,.5,skin);L(1.8,21.2,.6,22.8,skinD,.7);L(2.8,21.8,1.8,23.6,skinD,.7);L(3.6,22,3.2,23.8,skinD,.7);
-  // head turned toward the reach, mouth open in a wail
-  E(10.2,9.2,4.1,4.7,skin);P(skinD,[[12.6,6.4],[14,9.4],[13,12.6],[11.4,13.4],[12.4,10]],null);
-  P(hair,[[5.8,8.8],[6.6,4.4],[10.4,2.8],[14.6,4.6],[14.4,8.2],[12,6.4],[9,6.6],[7.4,9.6]]);
-  P(hair,[[6,8.4],[4.6,13.6],[5.8,17.6],[7.4,13.6],[7.6,10]]);L(5.6,10,5.4,15.6,hairS,.6);
-  q.fillStyle='#1c1424';q.fillRect(7.4,8.6,2.4,1.8);q.fillRect(11,8.8,1.8,1.6);q.fillStyle=glow;q.fillRect(7.8,8.8,1.2,1);q.fillRect(11.2,9,.9,.9);
-  eR9(q,9.6,12.4,1.1,.9,'#3b1020',null);eR9(q,9.6,12.7,.6,.4,'#a8384f',null);
-  // camellia wreath
-  bloom(7.4,3.4,2.1);bloom(11,2.4,2.4);bloom(14.4,4.2,2);
-  // petals swirling in the wind
-  for(const[x,y,a,sz,col]of[[3.2,28,.6,1.3,roseL],[7,31.5,-.4,1.1,rose],[1.6,13.2,.2,1,roseL],[29.6,19,.9,1.1,roseL],[15.4,33,.3,1,'#fbe3e8'],[26.2,24.4,-.6,.9,rose],[9.6,27.6,1.1,.9,'#fbe3e8']])petal(x,y,a,sz,col);
-  for(const[x0,y0,cx,cy,x1,y1]of[[1,30,5,27,9,29],[24,16,28,15,31,17]]){q.strokeStyle='rgba(238,234,248,.7)';q.lineWidth=.5;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
-  q.restore();break;
- }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
   L(27,4+b,27,34,'#6a5442',2);R(24,2+b,7,7,'#2a2118');R(25,3+b,5,5,'#ffcf6a');R(26,4+b,3,3,'#fff1b0');
@@ -4638,17 +4592,6 @@ function drawPalaceRock(q,rise=1,element='earth',visible=true){
  }
 q.beginPath();q.rect(0,0,32,32);q.clip();q.translate(0,32*(1-rise));q.scale(1,rise);const {poly}=drawKit(q);
  poly(fire?'#36130f':element==='grass'?'#24351d':'#1b2626',[[1,28],[4,23],[27,22],[31,27],[28,31],[4,31]]);
- if(element==='bier'){
-  poly('#241a18',[[3,29],[29,29],[29,32],[3,32]]);
-  poly('#3a2b26',[[6,12],[26,12],[26,29],[6,29]]);poly('#e9e3d2',[[7,13],[25,13],[25,28],[7,28]]);poly('#fffaf0',[[7,13],[11,13],[11,28],[7,28]]);
-  poly('#241a18',[[13,17],[19,17],[19,28],[13,28]]);poly('#cfc8b4',[[14,18],[18,18],[18,27],[14,27]]);
-  q.fillStyle='#b3a98f';for(const x of[7,12,20,24])q.fillRect(x,13,1,15);
-  poly('#5a1f1c',[[1,11],[16,2],[31,11],[27,14],[5,14]]);poly('#a33a33',[[3,11],[16,3],[29,11],[26,13],[6,13]]);poly('#d8a548',[[4,11],[16,4],[28,11]]);
-  poly('#5a1f1c',[[0,10],[3,8],[4,12]]);poly('#5a1f1c',[[32,10],[29,8],[28,12]]);
-  const fl=['#e86a7a','#f4b6c0','#f2d675'];for(let i=0;i<6;i++){q.fillStyle=fl[i%3];q.fillRect(5+i*4,13,3,3)}
-  q.fillStyle='#d8a548';q.fillRect(15,1,2,3);
-  q.restore();return;
- }
  if(element==='coffin'){
   poly('#1a1f26',[[9,2],[23,2],[28,9],[23,30],[9,30],[4,9]]);
   poly('#3b2f2a',[[10,3],[22,3],[26,9],[22,28],[10,28],[6,9]]);
@@ -5049,7 +4992,7 @@ function drawStockadeFallsDeck(q,x,y){
 }
 
 function drawBranchCell(t,px,py,x,y,foreground=null){
- if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.look==='bier'?'bier':record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
+ if(t===TT.PALACE_ROCK){const record=state.tempTerrain74?.find(r=>r.x===x&&r.y===y&&r.rootWall105),old=record?.old??TT.FLOOR,now=FX.frameNow||performance.now();if(!drawBranchCell(old,px,py,x,y)&&!globalThis.__MANRU_LEGEND_TERRAIN47__?.drawCell?.(old,px,py,x,y,now,true)){if(old===TT.WALL)drawWallTexture(px,py,x,y,regionColors());else{drawFloorTexture(px,py,x,y,regionColors(),true);drawSpecialTerrain(old,px,py,x,y,now);}}X.save();X.translate(px,py);drawPalaceRock(X,record?.riseStarted105==null?1:Math.min(1,Math.max(.08,(now-record.riseStarted105)/220)),record?.rootWall105?.element,state.visible.has(k(x,y)));X.restore();return true;}
  if(state.branchContext105?.id==='palace')return drawPalaceCell(t,px,py,x,y,foreground);
  if(!state.branchContext105)return false;
  if(state.branchContext105.id==='mirror')return drawGlassTowerCell(t,px,py,x,y);

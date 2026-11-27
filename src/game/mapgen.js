@@ -2149,14 +2149,15 @@ function reachableCells(opt={}){return (state.floor===21?ReachabilityService.mec
     }
     return{x:state.player.x,y:state.player.y};
   }
-  function placeCore(proto,tag){if(!proto)return false;const p=safeAnchor(),i=clone(proto);Object.assign(i,{x:p.x,y:p.y,count:1,coreDrop982:tag});PlacementService.placeItem(i);return true}
+  // The scheduled talisman must really land: a failed placement tries the next anchors, and only a success counts as spawned.
+  function placeCore(proto,tag){if(!proto)return false;for(let attempt=0;attempt<12;attempt++){const p=safeAnchor(),i=clone(proto);Object.assign(i,{x:p.x,y:p.y,count:1,coreDrop982:tag});if(PlacementService.placeItem(i))return true}return false}
   function replaceForbiddenGround(){if(!state?.items)return 0;let n=0;const items=state.items;state.items=[];for(const item of items){let replacement=item;if(isUpgrade(item)){const generated=nonUpgradeTalisman982();if(generated){replacement={...generated,count:itemQuantity(item),origin56:item.origin56};n++}}PlacementService.placeItem(replacement,{x:item.x,y:item.y})}return n}
   function applyCoreFloor(){
     if(!state)return;const C=core982(),S=schedule982();if(!C||!S)return;
     replaceForbiddenGround();
     const f=state.floor;
-    if(S.upgrades.includes(f)){placeCore(upgradeProto(),'chapter-upgrade');C.spawned.upgrade[f]=true}
-    if(S.heals.includes(f)){placeCore(healProto982(f),'chapter-heal');C.spawned.heal[f]=true}
+    if(S.upgrades.includes(f)&&placeCore(upgradeProto(),'chapter-upgrade'))C.spawned.upgrade[f]=true
+    if(S.heals.includes(f)&&placeCore(healProto982(f),'chapter-heal'))C.spawned.heal[f]=true
     state.coreLootAudit982={floor:f,chapter:chapter982()+1,upgrades:[...S.upgrades],heals:[...S.heals],groundUpgrades:(state.items||[]).filter(i=>i.talismanKind==='upgrade').length,groundHealing:(state.items||[]).filter(i=>i.type==='potion'&&['heal_small','heal_medium'].includes(i.potionKind)).length};
   }
   function riverOkay(a){return !!(a?.valid&&!a.pureWalk&&a.pureRaft&&a.exitWithRaft&&a.exitBlinkFallback)}
