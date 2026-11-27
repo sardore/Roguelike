@@ -23,6 +23,11 @@ const bridge = `globalThis.lb={
   const crow=lb.spawn('삼족오',8,14),foe={name:'시험 대상',x:36,y:14,hp:99999,maxHp:99999,atk:0,def:99,faction57:'player',kind:'human',alerted:true,debugSide57:'A',fixed:true};crow.debugSide57='B';OccupancyService.addMonster(foe);
   const out={before:false,at:null};for(let i=1;i<=40;i++){debugBattleRound57();if(!crow.furyStarted105)continue;out.at=i;break}
   Object.assign(out,{started:!!crow.furyStarted105,power:crow.power61?.turns,kite:!!crow.kite105});return out},
+ // 플레이어 편 동료(alliesTurn)도 같은 공용 행동 함수를 거치므로 20턴 판정이 돌아야 한다.
+ allyCrow:()=>{lb.arena();state.monsters=[];const crow=lb.spawn('삼족오',8,14);setEntityFaction57(crow,'player');
+  const foe={name:'시험 대상',x:18,y:14,hp:99999,maxHp:99999,atk:0,def:99,faction57:'hostile',kind:'human',alerted:true,fixed:true};OccupancyService.addMonster(foe);
+  const out={at:null};for(let i=1;i<=40;i++){state.turn++;state.floorTurn++;alliesTurn();if(!crow.furyStarted105)continue;out.at=i;break}
+  Object.assign(out,{ally:isPlayerAlly57(crow),started:!!crow.furyStarted105,power:crow.power61?.turns,kite:!!crow.kite105});return out},
  dash:()=>{lb.arena();const m=lb.spawn('불사조',10,14),foe={name:'시험 대상',x:14,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);
   const started=startPhoenixDash(m,foe,4),I=m.intent61;const out={started,type:I?.type,cells:I?.cells?.length};state.turn+=1;executeMonsterIntent(m);
   Object.assign(out,{foeHurt:foe.hp<999,moved:m.x>14,fire:(state.tempFields||[]).filter(f=>f.kind==='fire').length,cooling:m.nextPhoenixDashTurn>state.turn});return out}};`;
@@ -33,7 +38,7 @@ await ctx.route('**/scripts/10-runtime.js', r => r.fulfill({ contentType: 'text/
 const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx, seed: 9 });
 const errors = []; s.page.on('pageerror', e => errors.push(e.message));
 await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(300);
-const out = await s.page.evaluate(() => ({ names: lb.names(), crow: lb.crow(), revive: lb.revive(), dash: lb.dash(), debugCrow: lb.debugCrow() }));
+const out = await s.page.evaluate(() => ({ names: lb.names(), crow: lb.crow(), revive: lb.revive(), dash: lb.dash(), debugCrow: lb.debugCrow(), allyCrow: lb.allyCrow() }));
 console.log(JSON.stringify(out));
 assert.ok(out.names.includes('삼족오') && out.names.includes('불사조'), '용암궁 몹 목록에 없다');
 const c = out.crow;
@@ -52,6 +57,8 @@ assert.ok(d.started && d.type === 'phoenixDash' && d.cells >= 4, '돌진 예고�
 assert.ok(d.foeHurt && d.moved && d.fire >= 1 && d.cooling, `관통 돌진 결과 ${JSON.stringify(d)}`);
 const dc = out.debugCrow;
 assert.ok(dc.started && dc.at >= 20 && dc.at <= 22 && dc.power === 99 && !dc.kite, `디버그 전장에서 삼족오 20턴 발동 ${JSON.stringify(dc)}`);
+const ac = out.allyCrow;
+assert.ok(ac.ally && ac.started && ac.at >= 20 && ac.at <= 22 && ac.power === 99 && !ac.kite, `플레이어 편 삼족오 20턴 발동 ${JSON.stringify(ac)}`);
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('lava-birds: ok');
