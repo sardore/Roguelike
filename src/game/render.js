@@ -2738,8 +2738,6 @@ const ACTOR_SPEC={
   '기어 다니는 손':{a:'crawling_hands',c:'#a38d84',h:'#d8c8b6',ac:'#b0343f'},
   '눈알 등롱':{"a":"branch","c":"#7a3d3a","h":"#c9867a","ac":"#f1d56a","design":"eye_lantern"},
   '흉조 까마귀':{a:'ominous_crow',c:'#1f1e2c',h:'#5a5f82',ac:'#e24a4a'},
-  '삼족오':{a:'sun_crow',c:'#2a1c28',h:'#5a4660',ac:'#ffd070'},
-  '불사조':{a:'phoenix',c:'#b81e36',h:'#f0647a',ac:'#ffe08a'},
   '파성 갑병':{"a":"branch","c":"#74654b","h":"#b1a086","ac":"#d9c391","design":"breach_plate"},
   '성벽 포수':{"a":"branch","c":"#515955","h":"#96998a","ac":"#c7af7d","design":"wall_gunner"},
   '수로 잠복꾼':{a:'thief',c:'#3c6561',h:'#8da28b',ac:'#ccbc82'},
@@ -3567,63 +3565,6 @@ break;}
   // roar lines
   for(const[x0,y0,x1,y1]of[[.8,23,-.8,20.5],[2.2,31.5,.4,33.6],[0,29,-1.2,29.6]])L(x0,y0,x1,y1,'#d8d0e6',.8);
   q.restore();break;}
-  case'sun_crow':{shadow1012(q,16,34,24);
-   // 삼족오: a dark bird standing in a red sun, roaring, wings spread unevenly, tail fanned, three gold legs planted.
-   const INK=ACTOR_OUTLINE,wb=b?-1:0;
-   // brush: a smooth tube swept along a curve through the points, radius changing along it; one ink outline, a lit core on the upper left, a shade on the lower right
-   const brush=(pts,rad,col,hi,under)=>{const smp=[],n=pts.length-1,P=i=>pts[Math.max(0,Math.min(n,i))];
-    for(let k=0;k<=28;k++){const t=k/28*n,i=Math.min(n-1,Math.floor(t)),u=t-i,a=P(i-1),c0=P(i),c1=P(i+1),d=P(i+2),u2=u*u,u3=u2*u;
-     const cr=m=>.5*((2*c0[m])+(-a[m]+c1[m])*u+(2*a[m]-5*c0[m]+4*c1[m]-d[m])*u2+(-a[m]+3*c0[m]-3*c1[m]+d[m])*u3);
-     const rt=k/28*(rad.length-1),ri=Math.min(rad.length-2,Math.floor(rt)),ru=rt-ri;smp.push([cr(0),cr(1),rad[ri]+(rad[ri+1]-rad[ri])*ru])}
-    const dots=(dx,dy,sc,pad,c,minR)=>{q.fillStyle=c;for(const[x,y,r]of smp){if(r<minR)continue;q.beginPath();q.arc(x+dx*r,y+dy*r,Math.max(.25,r*sc+pad),0,Math.PI*2);q.fill()}};
-    dots(0,0,1,.9,INK,0);dots(0,0,1,0,col,0);if(under)dots(.28,.4,.45,0,under,1.5);if(hi)dots(-.22,-.3,.5,0,hi,1.1)};
-   const ink0='#2a1c28',ink1='#5a4660',edge='#ff9a3a',gold='#f2b444',horn='#f0e2b0',sunA='#d83a1c',sunB='#ff8a3a';
-   // the sun behind the head and shoulders: two flat tones and a ring of short rays
-   for(let k=0;k<12;k++){const a=k*Math.PI/6+.2;q.fillStyle=INK;q.beginPath();q.moveTo(19+Math.cos(a-.2)*8.6,12+Math.sin(a-.2)*8.6);q.lineTo(19+Math.cos(a)*13.4,12+Math.sin(a)*13.4);q.lineTo(19+Math.cos(a+.2)*8.6,12+Math.sin(a+.2)*8.6);q.fill();q.fillStyle=k%2?'#ee7a2c':'#ffb040';q.beginPath();q.moveTo(19+Math.cos(a-.15)*8.6,12+Math.sin(a-.15)*8.6);q.lineTo(19+Math.cos(a)*12.2,12+Math.sin(a)*12.2);q.lineTo(19+Math.cos(a+.15)*8.6,12+Math.sin(a+.15)*8.6);q.fill()}
-   q.fillStyle=INK;q.beginPath();q.arc(19,12,9.8,0,Math.PI*2);q.fill();q.fillStyle=sunA;q.beginPath();q.arc(19,12,8.9,0,Math.PI*2);q.fill();q.fillStyle=sunB;q.beginPath();q.arc(18,11,5.6,0,Math.PI*2);q.fill();q.fillStyle='#ffd070';q.beginPath();q.arc(17.4,10.4,2.4,0,Math.PI*2);q.fill();
-   // tail fan
-   for(const[tx,ty,bd]of[[5.6,31.4,-1.2],[10.6,33.4,-.6],[16,34,0],[21.4,33.4,.6],[26.4,31.4,1.2]])brush([[16,25],[(16+tx)/2+bd*2,(25+ty)/2],[tx,ty]],[1.9,1.3,.4],ink0,ink1);
-   // three legs and toes
-   for(const[x0,x1,lean]of[[12.6,10.4,-1],[16,16,0],[19.6,21.8,1]]){brush([[x0+1,24.6],[x1,32.4]],[1.2,.9],gold,'#ffe08a');for(const k of[-1,0,1])brush([[x1,32.4],[x1+lean*.6+k*2.2,34.2]],[.6,.4],horn)}
-   // left wing high, right wing lower and wider
-   for(const[tx,ty,bd]of[[3,4.6,-3],[1.2,11.4,-2.4],[3,18.4,-1.6],[7.4,23,-.8]])brush([[12.6,16.6],[(12.6+tx)/2+bd,(16.6+ty)/2+bd*.3],[tx,ty]],[1.6,1.4,.35],ink0,ink1);
-   for(const[tx,ty,bd]of[[30.4,8.4,2.8],[31.6,14.4,2],[29.6,20.4,1.4],[25.4,24,.8]])brush([[19.4,16.6],[(19.4+tx)/2+bd,(16.6+ty)/2+bd*.3],[tx,ty]],[1.6,1.4,.35],ink0,ink1);
-   // flame crest and the body: one swept form from belly through chest and neck to the head
-   for(const[tx,ty,bd]of[[15,.6,-1.6],[18.6,-.6,-.2],[22,1.4,1.4]])brush([[18,6],[(18+tx)/2+bd,3],[tx,ty]],[1.4,1,.3],edge,'#ffd070');
-   brush([[11.4,27.4],[13,21.4],[16,15.6],[19.4,10.8],[21.6,7.4]],[2,4.8,4.4,2.1,2.8],ink0,ink1);
-   // beak wide open
-   q.fillStyle='#a01828';q.beginPath();q.moveTo(22,6.4);q.lineTo(30.6,3.8);q.lineTo(30.2,12.4);q.lineTo(21.6,9.6);q.closePath();q.fill();
-   brush([[21.4,6.2],[26,4.6],[30.8,3]],[1.3,1,.4],horn,'#fff8dc');brush([[21.2,9.8],[25.6,10.6],[30,13]],[1.2,.9,.4],horn,'#fff8dc');
-   q.strokeStyle='#ff8aa0';q.lineWidth=.7;q.beginPath();q.moveTo(23,8.6);q.quadraticCurveTo(26.6,9,28.6,10.6);q.stroke();
-   q.fillStyle='#ffe08a';q.fillRect(21.4,5.4,1.8,1.6);q.fillStyle='#1a0a08';q.fillRect(22,5.7,.9,1);
-   break;}
-  case'phoenix':{shadow1012(q,16,34,24);
-   // 불사조 diving to the lower left, roaring: wings swept up and back, ribbon tail trailing right, talons forward.
-   const INK=ACTOR_OUTLINE,wb=b?-1:0;
-   // brush: a smooth tube swept along a curve through the points, radius changing along it; one ink outline, a lit core on the upper left, a shade on the lower right
-   const brush=(pts,rad,col,hi,under)=>{const smp=[],n=pts.length-1,P=i=>pts[Math.max(0,Math.min(n,i))];
-    for(let k=0;k<=28;k++){const t=k/28*n,i=Math.min(n-1,Math.floor(t)),u=t-i,a=P(i-1),c0=P(i),c1=P(i+1),d=P(i+2),u2=u*u,u3=u2*u;
-     const cr=m=>.5*((2*c0[m])+(-a[m]+c1[m])*u+(2*a[m]-5*c0[m]+4*c1[m]-d[m])*u2+(-a[m]+3*c0[m]-3*c1[m]+d[m])*u3);
-     const rt=k/28*(rad.length-1),ri=Math.min(rad.length-2,Math.floor(rt)),ru=rt-ri;smp.push([cr(0),cr(1),rad[ri]+(rad[ri+1]-rad[ri])*ru])}
-    const dots=(dx,dy,sc,pad,c,minR)=>{q.fillStyle=c;for(const[x,y,r]of smp){if(r<minR)continue;q.beginPath();q.arc(x+dx*r,y+dy*r,Math.max(.25,r*sc+pad),0,Math.PI*2);q.fill()}};
-    dots(0,0,1,.9,INK,0);dots(0,0,1,0,col,0);if(under)dots(.28,.4,.45,0,under,1.5);if(hi)dots(-.22,-.3,.5,0,hi,1.1)};
-   const crim='#b81e36',crimD='#6a1020',crimL='#f0647a',gold='#f4b83c',goldL='#ffe08a',org='#ee7a2c',orgL='#ffc060',red='#c8481e',ivory='#fff0d0',horn='#fff0b0';
-   // ribbon tail trailing right and down, flame orange with gold tips
-   for(const[tx,ty,bd]of[[31,22,-3],[30.6,28,-3.4],[26,32,-3]]){brush([[22,14],[(22+tx)/2+bd*.4,(14+ty)/2+bd],[tx,ty]],[2.2,1.8,.6],org,orgL);q.fillStyle=goldL;q.fillRect(tx-.8,ty-.8,1.6,1.6)}
-   // far wing then near wing swept up and back
-   for(const[tx,ty,bd]of[[24,1.4,-2],[29.4,5.6,-1.4],[31.4,12,-.4]])brush([[17,16],[(17+tx)/2+bd,(16+ty)/2+bd],[tx,ty]],[2.8,2.5,.5],red,org);
-   for(const[tx,ty,bd,c,h]of[[9,1.6,-3,org,orgL],[14.4,-.2,-1.8,gold,goldL],[20,.6,-1,org,orgL],[25.4,4.6,-.2,gold,goldL]])brush([[14,16],[(14+tx)/2+bd,(16+ty)/2+bd],[tx,ty]],[3,2.7,.5],c,h);
-   // legs, talons reaching forward-down
-   for(const[x1,y1]of[[9,28],[13.6,30.6]]){brush([[15,21],[(15+x1)/2-1.6,(21+y1)/2+.6],[x1,y1]],[1.3,.9],gold,goldL);for(const k of[-1.6,0,1.6])brush([[x1,y1],[x1-1.4,y1+1.2+k*.5],[x1-2.6,y1+2+k*.8]],[.6,.5,.3],ivory)}
-   // body: head low-left, neck, chest, belly, tail root up-right
-   brush([[7.4,21],[11,18.8],[15,17.6],[19,16.2],[23,13.6]],[2.7,3,4.8,4.4,2.4],crim,crimL,crimD);
-   for(const[tx,ty,bd]of[[5.6,13,-1.4],[9.4,12,-.4],[12.8,14,1]])brush([[8.2,18.6],[(8.2+tx)/2+bd,(18.6+ty)/2],[tx,ty]],[1.4,1,.3],gold,goldL);
-   // beak wide open to the left
-   q.fillStyle='#7a1020';q.beginPath();q.moveTo(5.4,20.6);q.lineTo(.4,17.6);q.lineTo(.6,26);q.lineTo(5.2,23);q.closePath();q.fill();
-   brush([[5.4,20.4],[3,18.8],[.8,17.2]],[1.2,.9,.4],horn,'#ffffff');brush([[5.2,23],[3,24.6],[.8,26.4]],[1.2,.9,.4],horn,'#ffffff');
-   q.strokeStyle='#ff8aa0';q.lineWidth=.7;q.beginPath();q.moveTo(4.4,21.6);q.quadraticCurveTo(2.6,22,1.6,23);q.stroke();
-   q.fillStyle='#fff6c8';q.fillRect(8.2,18.8,1.8,1.5);q.fillStyle='#1a0a08';q.fillRect(8.4,19.1,.9,1);
-   break;}
   case'widow':{shadow1012(q,16,33,22);pR9(q,base,[[9,14+b],[16,10+b],[23,14+b],[28,31],[19,28],[16,34],[13,28],[4,31]]);pR9(q,'#241526',[[7,8+b],[12,3+b],[22,5+b],[26,11+b],[22,16+b],[10,15+b]],null);eR9(q,16,10+b,4,5,'#c1a0ad');eyePairR9(q,14,18,10+b,ac);for(const [x1,x2]of[[9,1],[23,31]])lR9(q,x1,18+b,x2,31,ac,2);q.globalAlpha=.35;for(const x of[5,27])lR9(q,16,14+b,x,34,hi,1);q.globalAlpha=1;break}
   case'silk':{shadow1012(q,16,33,21);eR9(q,16,9+b,4.5,4.5,'#e2c5ce');pR9(q,'#5a324e',[[9,8+b],[13,3+b],[22,4+b],[24,10+b],[20,12+b],[10,11+b]],null);pR9(q,base,[[11,14+b],[21,14+b],[24,30],[18,28],[16,34],[13,28],[7,31]]);q.strokeStyle=hi;q.lineWidth=3;q.beginPath();q.moveTo(10,17+b);q.bezierCurveTo(1,17,3,30,0,34);q.stroke();q.beginPath();q.moveTo(22,17+b);q.bezierCurveTo(31,17,29,30,32,34);q.stroke();eyePairR9(q,14,18,9+b,'#3e2338');q.fillStyle=ac;q.fillRect(9,18+b,14,2);break}
   case'censer':{
