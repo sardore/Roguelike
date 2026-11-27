@@ -22,6 +22,11 @@ const bridge = `globalThis.cr={state:()=>state,TT,go:l=>{state.branchWorld105={v
   advance();advance();
   const corpses=state.monsters.filter(m=>m.coffinOwner105);
   const out={started,planned,walls,corpses:corpses.length,weak:corpses.every(m=>m.hp<=Math.round(m.maxHp)),names:[...new Set(corpses.map(m=>m.name))],again:startCoffinWall(mon,state.player)};
+  // 플레이어가 아닌 상대(아군 몬스터)와 싸울 때도 쓴다
+  state.monsters=state.monsters.filter(m=>m===mon);state.tempFields=[];state.tempTerrain74=[];mon.nextCoffinTurn=0;
+  const foe={name:'시험 대상',x:18,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);OccupancyService.move(state.player,4,4);
+  out.vsMonster=!!globalThis.__MANRU_AI61__.special(mon,entityDistance57(mon,foe),foe)&&state.tempFields.some(f=>f.rootWall105?.element==='coffin');
+  state.monsters=state.monsters.filter(m=>m===mon);OccupancyService.move(state.player,18,14);
   // 장의사를 먼저 쓰러뜨리면 빈 관이 된다
   state.monsters=state.monsters.filter(m=>!m.coffinOwner105);state.tempFields=[];state.tempTerrain74=[];
   mon.nextCoffinTurn=0;startCoffinWall(mon,state.player);advance();mon.hp=0;state.monsters=state.monsters.filter(m=>m!==mon);advance();advance();
@@ -67,6 +72,7 @@ assert.equal(c.walls, c.planned, '관이 한꺼번에 솟지 않았다');
 assert.ok(c.corpses >= 1 && c.corpses <= 5, '철갑시체 수 ' + c.corpses);
 assert.deepEqual(c.names, ['납골 철갑시체']);
 assert.equal(c.again, false, '재사용 대기를 무시했다');
+assert.ok(c.vsMonster, '상대가 몬스터일 때 장의사가 관을 못 부른다');
 assert.ok(c.emptyWhenKilled, '장의사가 죽었는데 시체가 깨어났다');
 assert.deepEqual(errors, []);
 await browser.close();
