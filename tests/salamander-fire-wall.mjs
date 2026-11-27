@@ -25,7 +25,7 @@ const bridge = `globalThis.checkFireWall = () => {
   };
   const walls=()=>state.tempTerrain74.filter(w=>w.rootWall105?.element==='fire');
   advance();
-  const inner=walls().length,stunned=foe.stunned===1;
+  const inner=walls().length,stunned=foe.stunned===2;
   const canvas=document.createElement('canvas');canvas.width=canvas.height=48;
   const ctx=canvas.getContext('2d');ctx.translate(8,8);
   drawPalaceRock(ctx,1,'fire',false);
@@ -58,7 +58,7 @@ const session=await openSession(browser,new URL('../dist-qa',import.meta.url).pa
 try {
   await startRun(session,'wanderer');
   const result=await session.page.evaluate(()=>checkFireWall());
-  assert.deepEqual(result,{used:true,healed:false,ignited:true,solidExcluded:true,extinguished:true,treeBurned:true,warnings:[8,12],inner:8,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
+  assert.deepEqual(result,{used:true,healed:false,ignited:true,solidExcluded:true,extinguished:true,treeBurned:true,warnings:[20],inner:20,stunned:true,glow:true,outer:20,centerFloor:true,cornerFloor:true,lower:true,hit:true,restored:true,fire:true});
   assert.deepEqual(session.errors,[]);
 } finally {
   await session.close();

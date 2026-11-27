@@ -123,7 +123,7 @@ function martialFx(kind,q=state.player,extra={}){
 }
 function resolveDrive(mon,lv,origin){
  if(mon.hp<=0||mon.fixed)return {moved:0};const actor=origin||state.player,f=actor.facing||{x:Math.sign(mon.x-actor.x),y:Math.sign(mon.y-actor.y)},source={x:mon.x-f.x,y:mon.y-f.y};
- const r=resolveForcedMovement57(mon,source,mon.boss?Math.min(1,lv):lv,{mode:'push',hostile:true,creditPlayer:actor===state.player,reportCollision:true});
+ const r=resolveForcedMovement57(mon,source,lv,{mode:'push',hostile:true,creditPlayer:actor===state.player,reportCollision:true});
  state.lastDrive1005={moved:r.moved,collision:r.collision||null};martialFx('drive',mon);
  if(r.collision&&mon.hp>0){wallCollisionFx1005(mon,r.collision);mon===state.player?applyHostileStatus('stun',Math.max(1,r.moved),1,{stagger:true}):applyMartialControl1005(mon,Math.max(1,r.moved))}return r;
 }
@@ -265,7 +265,7 @@ function expireMartialSmoke(f){
  if(cells.some(c=>c.x===state.player.x&&c.y===state.player.y)){const d=damageEntity(state.player,f.castDamage,f);if(d>0)floatText(state.player.x,state.player.y,'폭연 -'+d,'#ed977e',13);if(state.player.hp<=0)die('폭연')}
  addLog(`폭연 폭발: 설치 피해 ${f.castDamage}.`);return true;
 }
-function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root?.rootWall105.element==='fire')return{name:'화염벽 융기 예고',desc:`${Math.max(1,root.raiseTurn-state.turn)}턴 뒤 이 칸에서 불벽이 솟아 적을 1턴 기절시킨다.`,hint:`벽마다 주변 3×3에 화염 피해 ${root.rootWall105.damage}를 주고 불바닥을 남긴다.`};if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'사선이 연막이나 증기 두 칸을 지나면 차단된다.'}:null}
+function martialWorldInfo(x,y){const root=(state.tempFields||[]).find(f=>f.kind==='rootWall'&&f.ttl>0&&f.cells.some(c=>c.x===x&&c.y===y));if(root?.rootWall105.element==='fire')return{name:'화염벽 융기 예고',desc:`${Math.max(1,root.raiseTurn-state.turn)}턴 뒤 이 칸에서 불벽이 솟아 적을 2턴 기절시킨다.`,hint:`벽마다 주변 3×3에 화염 피해 ${root.rootWall105.damage}를 주고 불바닥을 남긴다.`};if(root)return{name:'목령벽 융기 예고',desc:'다음 행동 뒤 이 칸에 목령벽이 솟아 적을 1턴 기절시킨다. 그다음 행동 뒤 각 벽이 주변 3×3에 폭발한다.',hint:`벽별 목속성 피해 ${root.rootWall105.damage} · 독 ${root.rootWall105.poison}턴 · 취함 ${root.rootWall105.drunk}턴. 자신과 아군은 해치지 않는다.`};if(state.martialEcho?.floor===state.floor&&state.martialEcho.x===x&&state.martialEcho.y===y)return{name:'회음',desc:'호효의 여운이 이곳에 맺혀 있다. 밟으면 기력 소모 없이 한 번 더 울려 퍼지고 사라진다.'};const f=(state.tempFields||[]).find(f=>f.kind==='smoke'&&f.ttl>0&&tempFieldCells57(f).some(c=>c.x===x&&c.y===y));return f?{name:f.smokeForm==='burst'?'폭연':f.smokeForm==='cloud'?'유운':'연막',desc:f.smokeForm==='burst'?`${f.ttl===1?'붉은 연기 속에서 불씨가 끓어오른다. 다음 턴에 폭발한다!':`남은 ${f.ttl}턴.`} 영역 전체 피해 ${f.castDamage}. 플레이어도 피해를 받는다.`:'사선이 연막이나 증기 두 칸을 지나면 차단된다.'}:null}
 let martialOpen = false;
 function bodyPowerHeal(p){
   if(!bodyPowerActive(p)||p.hp<=0)return 0;

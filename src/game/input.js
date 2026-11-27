@@ -301,7 +301,7 @@ const RuntimeState={
       if(!traps){traps=new Map();this.acknowledgedTraps.set(state.map,traps)}
       traps.set(key,signature);
       this.stop('trap',true);
-      toast('함정 앞에서 멈췄다. 다시 이동하면 지나갈 수 있다.');
+      toast(state.map[y][x]===TT.SWITCH?'버튼 앞에서 멈췄다. 다시 이동하면 누른다.':'함정 앞에서 멈췄다. 다시 이동하면 지나갈 수 있다.');
       return true;
     },
     visibleEnemies(){return new Set((state?.monsters||[]).filter(isThreatVisibleToPlayer))},
