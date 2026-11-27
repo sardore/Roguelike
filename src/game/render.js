@@ -3097,41 +3097,49 @@ function drawBranchCreature(q,m,frame,sp){
  }
  case'pixel_rows':{drawPixelRows(q,PIXEL_ACTORS105[monsterSpeciesName(m)]);break;}
  case'citadel_bier':{
-  // A funeral ghost maiden with an unmistakably human body: head, neck, sloped shoulders, upper arms and forearms, hands, a short jacket over a slim waist and a long skirt that frays into mist. Long loose hair over both shoulders, a camellia wreath, one hand low, one raising a flower branch.
-  const hair='#1f1a30',hairHi='#3d3659',w0='#f3f0fb',w1='#cfcbe0',w2='#8a86ac',skin='#e8cfc9',skinHi='#f7e8e2',skinLo='#c9a39f',rose='#d9707f',roseHi='#f0b0b8',roseLo='#8e3447',gold='#c6a16b';
-  const bloom=(x,y)=>{q.fillStyle='#120f12';q.fillRect(x-2,y-1,5,3);q.fillRect(x-1,y-2,3,5);q.fillStyle=rose;q.fillRect(x-1,y-1,3,3);q.fillRect(x,y-2,1,5);q.fillRect(x-2,y,5,1);q.fillStyle=roseHi;q.fillRect(x-1,y-1,1,1);q.fillStyle=roseLo;q.fillRect(x+1,y+1,1,1);q.fillStyle='#ffd23a';q.fillRect(x,y,1,1)};
-  shadow1012(q,16,34,22);
-  // hair behind the body
-  pR9(q,hair,[[11,4+b],[16,2+b],[21,4+b],[23,10+b],[24,20+b],[23,30],[19,31],[19,22+b],[13,22+b],[13,31],[9,30],[8,20+b],[9,10+b]]);
-  pR9(q,hairHi,[[10,7+b],[12,5+b],[11,16+b],[10,26],[9,22+b]],null);
-  // skirt: slim at the waist, flaring to a frayed hem
-  pR9(q,w2,[[11,21+b],[21,21+b],[26,31],[24,34],[19,33],[16,35],[12,33],[7,34],[5,31]]);
-  pR9(q,w1,[[12,22+b],[20,22+b],[24,31],[21,33],[16,34],[11,33],[8,31]],null);
-  pR9(q,w0,[[12,23+b],[15,23+b],[13,32],[9,31]],null);
-  lR9(q,16,24+b,16,33,w2,.7);lR9(q,19,24+b,21,32,w2,.7);
-  lR9(q,8,33,13,34,gold,.7);lR9(q,13,34,19,34,gold,.7);lR9(q,19,34,24,33,gold,.7);
-  // jacket and sash
-  pR9(q,w2,[[10,15+b],[13,13+b],[19,13+b],[22,15+b],[21,22+b],[11,22+b]]);
-  pR9(q,w1,[[11,16+b],[14,14+b],[18,14+b],[21,16+b],[20,21+b],[12,21+b]],null);
-  pR9(q,w0,[[11,16+b],[14,14+b],[15,15+b],[13,21+b],[12,21+b]],null);
-  pR9(q,rose,[[14,13+b],[18,13+b],[16,18+b]],null);lR9(q,14,13+b,16,18+b,roseLo,.7);lR9(q,18,13+b,16,18+b,roseLo,.7);
-  q.fillStyle=roseLo;q.fillRect(11,20+b,10,2);q.fillStyle=gold;q.fillRect(12,20+b,8,1);q.fillStyle=rose;q.fillRect(15,22+b,2,5);q.fillStyle=roseHi;q.fillRect(15,22+b,1,4);
-  // left arm hanging: sleeve, forearm, hand
-  pR9(q,w1,[[10,15+b],[7,17+b],[6,23+b],[9,25+b],[11,19+b]]);pR9(q,w0,[[9,16+b],[7,18+b],[7,22+b]],null);
-  pR9(q,skin,[[6,24+b],[9,25+b],[9,28+b],[6,28+b]]);q.fillStyle=skinLo;q.fillRect(6,27+b,3,1);
-  // right arm raised: upper arm, forearm to the hand, flower branch
-  pR9(q,w1,[[22,15+b],[25,17+b],[27,22+b],[24,23+b],[21,19+b]]);pR9(q,w0,[[23,16+b],[25,18+b],[25,21+b]],null);
-  pR9(q,skin,[[25,17+b],[27,14+b],[29,15+b],[27,21+b]]);pR9(q,skin,[[27,12+b],[29,12+b],[30,14+b],[28,15+b]]);
-  lR9(q,29,12+b,28,7+b,'#5f8a4d',.9);bloom(28,5+b);
-  // neck, face, hair framing it
-  q.fillStyle=skinLo;q.fillRect(15,12+b,2,2);q.fillStyle=skin;q.fillRect(15,12+b,2,1);
-  eR9(q,16,8+b,4.6,5,skin);pR9(q,skinHi,[[13,5+b],[17,5+b],[18,9+b],[15,12+b],[13,9+b]],null);pR9(q,skinLo,[[18,5+b],[20,8+b],[19,12+b],[17,13+b]],null);
-  pR9(q,hair,[[11,8+b],[12,4+b],[20,4+b],[21,8+b],[18,6+b],[16,7+b],[14,6+b]],null);
-  pR9(q,hair,[[10,8+b],[12,12+b],[11,23+b],[8,25+b],[8,14+b]]);pR9(q,hair,[[22,8+b],[20,12+b],[21,23+b],[24,25+b],[24,14+b]]);
-  q.fillStyle='#271e29';q.fillRect(13,9+b,2,2);q.fillRect(18,9+b,2,2);q.fillStyle='#8fe0d0';q.fillRect(13,9+b,1,1);q.fillRect(18,9+b,1,1);q.fillStyle='#b4545f';q.fillRect(16,12+b,2,1);
-  bloom(12,3+b);bloom(17,1+b);bloom(21,3+b);
-  q.fillStyle=roseHi;for(const [x,y]of [[5,31],[26,33],[3,27],[28,29]])q.fillRect(x,y,1,1);
-  break;
+  // A wailing bride ghost lunging out of the air toward the lower left: one sleeve flung forward with the hand reaching, the other arm thrown back with a camellia branch,
+  // hair and the rose ribbon streaming up and back, the white skirt trailing off to the lower right as a torn ghost tail. Swirling petals around her.
+  const P=(col,pts,stroke=ACTOR_OUTLINE)=>pR9(q,col,pts,stroke),L=(x,y,xx,yy,col,w=1)=>lR9(q,x,y,xx,yy,col,w),E=(x,y,rx,ry,col)=>eR9(q,x,y,rx,ry,col);
+  const rot=(x,y,rx,ry,a,col,stroke=ACTOR_OUTLINE)=>{q.save();q.translate(x,y);q.rotate(a);eR9(q,0,0,rx,ry,col,stroke);q.restore()};
+  const hair='#221c38',hairM='#3f3768',hairS='#9a90d0',w0='#f6f3fb',w1='#d3cfe4',w2='#9a95bb',w3='#615c84',skin='#ecd6d0',skinD='#c9a7a3',rose='#d9566c',roseL='#f29aab',roseD='#7e2238',glow='#8fe8d8';
+  const lock=(ox,oy,deg,len,wd,col,hi)=>{const a=deg*Math.PI/180,dx=Math.cos(a),dy=-Math.sin(a),px=Math.sin(a),py=Math.cos(a),mx=ox+dx*len*.55+px*1.2,my=oy+dy*len*.55+py*1.2,tx=ox+dx*len,ty=oy+dy*len;
+   P(col,[[ox-px*wd,oy-py*wd],[mx-px*wd*.7,my-py*wd*.7],[tx,ty],[mx+px*wd*.6,my+py*wd*.6],[ox+px*wd,oy+py*wd]]);L(ox,oy,mx,my,hi,.6)};
+  const bloom=(x,y,r=2.2)=>{for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;rot(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55,r*.5,r*.36,a,i%2?rose:'#e66a7f',null)}eR9(q,x,y,r*.32,r*.32,'#ffd23a',null)};
+  const petal=(x,y,a,sz,col)=>rot(x,y,sz,sz*.5,a,col,null);
+  shadow1012(q,15,34,22);
+  q.save();q.translate(0,b*.6);
+  // ghost tail: the skirt torn into streamers trailing to the lower right
+  P(w2,[[12,19],[18,17],[24,21],[31,29],[27,28.5],[29,34],[24,30.5],[21,35],[19,29.5],[15,30],[16,26],[11,24]]);
+  P(w1,[[13,19.5],[18,18],[23,22],[29,29],[25.5,28],[26.5,32.5],[22.5,29.5],[20,33],[18.5,28],[15.5,28.5],[16.5,25],[12.4,23.4]],null);
+  P(w0,[[13.4,20],[17,18.8],[19,22],[16.6,24.6],[13,23]],null);
+  for(const[x0,y0,cx,cy,x1,y1]of[[16,21,21,24,25,28],[15,23,19,26,21,31],[18,20,24,22,28,27]]){q.strokeStyle=w3;q.lineWidth=.6;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
+  // far arm thrown back and up, holding a camellia branch
+  P(w2,[[14.5,13.5],[19.5,10],[22.5,9.2],[23,11],[18.5,15.5]]);E(23.4,9.6,1.4,1.2,skin);
+  L(23.8,9,26.6,3.6,'#4f7a3f',.9);L(25.4,6,27.6,6.4,'#4f7a3f',.7);bloom(27,3.2,2.4);bloom(28.2,6.6,1.6);
+  // hair streaming up and back from the head
+  for(const[deg,len,wd]of[[28,14,1.8],[40,15,1.9],[52,13,1.7],[16,12,1.6],[64,10,1.5]])lock(11,7,deg,len,wd,hair,hairS);
+  for(const[deg,len]of[[34,11],[46,12]])lock(11.5,7.5,deg,len,1.1,hairM,hairS);
+  // the rose ribbon flying back from the chest
+  P(rose,[[12.5,15.5],[20,12.6],[25.5,13.4],[21,14.6],[24.6,16.6],[18.4,16],[13.2,17.4]]);L(13,16,22,13.4,roseL,.6);
+  // torso, leaning into the lunge
+  rot(13.2,16.4,3.7,5.2,-.55,w1);rot(12.6,15.6,2.2,3.6,-.55,w0,null);
+  P(rose,[[10.6,12.6],[14,12.2],[12.2,15.4]],null);L(10.6,12.6,12.2,15.4,roseD,.6);L(14,12.2,12.2,15.4,roseD,.6);
+  // near sleeve flung forward, the hand reaching to the lower left
+  P(w1,[[12.5,13.2],[7,15.6],[2.8,19.4],[3.4,23.4],[6.4,24.6],[8.6,21.4],[10.4,19.6],[13.6,18]]);
+  P(w0,[[11.6,13.8],[7,16.4],[4,19.6],[6.4,19.8],[10,17.2]],null);L(4.4,23,9.6,19.4,w2,.6);
+  rot(2.6,20.6,1.6,1.2,.5,skin);L(1.8,21.2,.6,22.8,skinD,.7);L(2.8,21.8,1.8,23.6,skinD,.7);L(3.6,22,3.2,23.8,skinD,.7);
+  // head turned toward the reach, mouth open in a wail
+  E(10.2,9.2,4.1,4.7,skin);P(skinD,[[12.6,6.4],[14,9.4],[13,12.6],[11.4,13.4],[12.4,10]],null);
+  P(hair,[[5.8,8.8],[6.6,4.4],[10.4,2.8],[14.6,4.6],[14.4,8.2],[12,6.4],[9,6.6],[7.4,9.6]]);
+  P(hair,[[6,8.4],[4.6,13.6],[5.8,17.6],[7.4,13.6],[7.6,10]]);L(5.6,10,5.4,15.6,hairS,.6);
+  q.fillStyle='#1c1424';q.fillRect(7.4,8.6,2.4,1.8);q.fillRect(11,8.8,1.8,1.6);q.fillStyle=glow;q.fillRect(7.8,8.8,1.2,1);q.fillRect(11.2,9,.9,.9);
+  eR9(q,9.6,12.4,1.1,.9,'#3b1020',null);eR9(q,9.6,12.7,.6,.4,'#a8384f',null);
+  // camellia wreath
+  bloom(7.4,3.4,2.1);bloom(11,2.4,2.4);bloom(14.4,4.2,2);
+  // petals swirling in the wind
+  for(const[x,y,a,sz,col]of[[3.2,28,.6,1.3,roseL],[7,31.5,-.4,1.1,rose],[1.6,13.2,.2,1,roseL],[29.6,19,.9,1.1,roseL],[15.4,33,.3,1,'#fbe3e8'],[26.2,24.4,-.6,.9,rose],[9.6,27.6,1.1,.9,'#fbe3e8']])petal(x,y,a,sz,col);
+  for(const[x0,y0,cx,cy,x1,y1]of[[1,30,5,27,9,29],[24,16,28,15,31,17]]){q.strokeStyle='rgba(238,234,248,.7)';q.lineWidth=.5;q.beginPath();q.moveTo(x0,y0);q.quadraticCurveTo(cx,cy,x1,y1);q.stroke()}
+  q.restore();break;
  }
  case'citadel_undertaker':{
   // A very tall, thin undertaker: stovepipe hat, white mask with a stitched smile, long black funeral robe, a lantern pole in one hand and a small coffin hanging from the belt.
