@@ -2905,7 +2905,10 @@ function drawBranchCreature(q,m,frame,sp){
  facets=(pts)=>{for(const[x,y]of pts){R(x,y+b,2,1,h);R(x+1,y+1+b,1,2,c)}},
  eyes=(x,y,col=a)=>{R(x,y+b,2,1,col);R(x+5,y+b,2,1,col)},
  link=(x,y)=>{R(x,y,3,3,d);R(x,y,2,1,h);R(x+2,y+1,1,2,h);R(x+1,y+2,1,1,a)},
- trim=(pts,col=a)=>{for(let i=1;i<pts.length;i++)L(...pts[i-1],...pts[i],col)};
+ trim=(pts,col=a)=>{for(let i=1;i<pts.length;i++)L(...pts[i-1],...pts[i],col)},
+ // The citadel humanoids share one frame so they stand like the rest of the bestiary: narrow sloped shoulders, a short torso, arms at the sides with hands, boots.
+ torso=(coat,lit,dark,hem=29)=>{P(dark,[[8,14+b],[11,12+b],[21,12+b],[24,14+b],[24,22],[23,hem+1],[16,hem+3],[9,hem+1],[8,22]]);P(coat,[[10,14+b],[12,13+b],[20,13+b],[22,14+b],[22,hem],[16,hem+2],[10,hem]]);P(lit,[[10,15+b],[12,14+b],[13,hem],[10,hem-1]],null)},
+ arms=(sleeve,skin,ly=25,ry=25)=>{P(sleeve,[[6,15+b],[10,14+b],[10,ly],[6,ly+1],[5,20+b]]);R(5,ly,5,3,skin);P(sleeve,[[22,14+b],[26,15+b],[27,20+b],[26,ry+1],[22,ry]]);R(22,ry,5,3,skin)};
  shadow1012(q,16,34,sp.design==='ash_watcher'?18:28);
  switch(sp.design){
  case'mirror_keeper':{
@@ -3044,75 +3047,59 @@ function drawBranchCreature(q,m,frame,sp){
   L(11,21+b,9,26,a);L(9,26,11,30,a);bootR9(q,10,31,5);bootR9(q,19,31,5);break;
  }
  case'citadel_chain':{
-  // Executioner: black hood and pale iron half-mask, brown coat, a chain slung over the shoulder, a hook in the fist.
-  q.save();q.translate(16,0);q.scale(0.78,1);q.translate(-16,0);
-  P('#2a2220',[[7,14+b],[12,11+b],[20,11+b],[25,14+b],[27,22],[28,30],[16,32],[4,30],[5,22]]);
-  P(c,[[9,14+b],[13,12+b],[19,12+b],[23,14+b],[24,28],[16,31],[8,28]]);P(h,[[9,15+b],[13,13+b],[14,28],[8,27]],null);
-  R(8,24+b,16,2,'#3d2f27');R(15,24+b,3,2,a);
-  P('#58534e',[[3,14+b],[9,11+b],[13,13+b],[11,19+b],[4,20+b]]);P('#7d7770',[[4,14+b],[9,12+b],[11,14+b],[5,16+b]],null);
-  link(10,17+b);link(14,20+b);link(18,23+b);
-  P('#241d1c',[[9,10+b],[9,4+b],[16,0+b],[23,4+b],[23,10+b],[20,14+b],[12,14+b]]);
-  P('#a79f92',[[11,9+b],[21,9+b],[20,13+b],[16,15+b],[12,13+b]]);R(12,9+b,3,1,a);R(18,9+b,3,1,a);L(16,10+b,16,14+b,d);
-  P(c,[[22,15+b],[27,17+b],[28,24],[24,25],[22,20+b]]);R(25,24,4,3,'#d2b48c');L(27,26,27,31,'#6a5442',2);
-  P('#cfcab8',[[24,30],[27,28],[30,31],[29,35],[27,34],[28,32],[26,31]]);
-  bootR9(q,8,31,6);bootR9(q,18,31,6);q.restore();break;
+  // Executioner: black cowl, pale iron half-mask, brown leather coat, one chain slung across the chest, a hook on a short haft.
+  L(26,17+b,26,31,'#6a5442',2);P('#cfcab8',[[23,30],[26,27],[29,30],[28,34],[26,33],[27,31],[25,30]]);
+  torso(c,h,'#2a2220');arms(c,'#d2b48c',24,24);
+  R(10,24+b,12,2,'#3d2f27');R(15,24+b,3,2,a);link(10,16+b);link(13,19+b);link(16,22+b);
+  P('#58534e',[[6,14+b],[11,12+b],[12,17+b],[6,19+b]]);
+  P('#241d1c',[[10,10+b],[10,4+b],[16,1+b],[22,4+b],[22,10+b],[19,14+b],[13,14+b]]);
+  P('#a79f92',[[12,9+b],[20,9+b],[19,13+b],[16,15+b],[13,13+b]]);R(13,9+b,2,1,a);R(17,9+b,2,1,a);L(16,10+b,16,14+b,d);
+  bootR9(q,10,31,5);bootR9(q,17,31,5);break;
  }
  case'citadel_crossbow':{
-  // Marksman: round iron helm, quilted blue-grey coat and a heavy crossbow held across the chest.
-  q.save();q.translate(16,0);q.scale(0.78,1);q.translate(-16,0);
-  P('#2c303c',[[8,14+b],[12,12+b],[20,12+b],[24,14+b],[26,22],[27,30],[16,32],[5,30],[6,22]]);
-  P(c,[[10,14+b],[13,13+b],[19,13+b],[22,14+b],[23,28],[16,31],[9,28]]);P(h,[[10,15+b],[13,14+b],[14,28],[9,27]],null);
-  for(const y of[20,24])L(9,y+b,23,y+b,'#323646');R(8,26+b,16,2,'#4a3b2e');
-  E(16,7+b,8,6,'#6a7080');R(8,8+b,16,3,'#6a7080');P('#8e95a6',[[10,3+b],[16,2+b],[16,8+b],[10,8+b]],null);
-  P('#d2b48c',[[11,10+b],[21,10+b],[20,15+b],[12,15+b]]);R(12,11+b,2,1,d);R(18,11+b,2,1,d);R(12,8+b,8,2,'#3a3f4c');
-  L(2,20+b,30,20+b,'#4e3c2d',3);L(2,20+b,6,15+b,'#4e3c2d',2);L(30,20+b,26,15+b,'#4e3c2d',2);L(6,15+b,26,15+b,a);
-  P('#e8e0b8',[[22,19+b],[30,20+b],[22,21+b]],null);P(c,[[6,16+b],[11,16+b],[12,22+b],[7,23+b]]);R(11,19+b,4,3,'#d2b48c');
-  bootR9(q,9,31,5);bootR9(q,18,31,5);q.restore();break;
+  // Marksman: round iron helm over a pale face, quilted blue-grey coat, heavy crossbow braced across the chest.
+  torso(c,h,'#2c303c');arms(c,'#d2b48c',24,22);
+  for(const y of[19,23])L(10,y+b,22,y+b,'#323646');R(10,25+b,12,2,'#4a3b2e');
+  E(16,7+b,6,5.5,'#6a7080');R(10,8+b,12,3,'#6a7080');P('#8e95a6',[[11,3+b],[16,2+b],[16,8+b],[11,8+b]],null);
+  E(16,11+b,4.5,3.5,'#d2b48c');R(13,11+b,2,1,d);R(18,11+b,2,1,d);R(11,8+b,10,2,'#3a3f4c');
+  L(4,19+b,28,19+b,'#4e3c2d',3);L(4,19+b,7,14+b,'#4e3c2d',2);L(28,19+b,25,14+b,'#4e3c2d',2);L(7,14+b,25,14+b,a);P('#e8e0b8',[[21,18+b],[29,19+b],[21,20+b]],null);
+  R(6,20+b,5,3,'#d2b48c');bootR9(q,10,31,5);bootR9(q,17,31,5);break;
  }
  case'citadel_bell':{
-  // Bell warden: a bronze bell hung on a ring, dark mouth and two yellow eyes, a loose clapper below.
-  q.save();q.translate(16,0);q.scale(0.72,1);q.translate(-16,0);
+  // Bell warden: a bronze bell hung on a ring, a dark mouth with two yellow eyes, and a loose clapper beneath.
   L(16,0,16,4+b,'#403626',2);E(16,4+b,3,2,'#6d5a34');
-  P('#3e3220',[[10,6+b],[22,6+b],[26,14+b],[28,26+b],[4,26+b],[6,14+b]]);P(c,[[11,7+b],[21,7+b],[24,14+b],[26,25+b],[6,25+b],[8,14+b]]);P(h,[[11,8+b],[15,8+b],[13,25+b],[7,25+b],[9,14+b]],null);
-  R(7,15+b,18,2,'#6a5630');P(a,[[4,26+b],[28,26+b],[30,29+b],[2,29+b]]);P('#15110c',[[7,26+b],[25,26+b],[26,29+b],[6,29+b]]);
-  R(10,26+b,4,3,'#ffe58a');R(18,26+b,4,3,'#ffe58a');R(11,27+b,1,1,d);R(19,27+b,1,1,d);
-  L(21,8+b,19,14+b,'#1b140c',1);E(16,32+b,2,2,'#5a4a2c');q.restore();break;
+  P('#3e3220',[[11,6+b],[21,6+b],[25,14+b],[27,26+b],[5,26+b],[7,14+b]]);P(c,[[12,7+b],[20,7+b],[23,14+b],[25,25+b],[7,25+b],[9,14+b]]);P(h,[[12,8+b],[15,8+b],[13,25+b],[8,25+b],[10,14+b]],null);
+  R(8,15+b,16,2,'#6a5630');P(a,[[5,26+b],[27,26+b],[29,29+b],[3,29+b]]);P('#15110c',[[8,26+b],[24,26+b],[25,29+b],[7,29+b]]);
+  R(11,26+b,4,3,'#ffe58a');R(18,26+b,4,3,'#ffe58a');R(12,27+b,1,1,d);R(19,27+b,1,1,d);L(20,8+b,18,14+b,'#1b140c',1);E(16,32+b,2,2,'#5a4a2c');break;
  }
  case'citadel_tomb':{
-  // Buried guardian: rust-red plate, split iron helm with teal eyes, heavy arms hanging, a broken sword.
-  q.save();q.translate(16,0);q.scale(0.8,1);q.translate(-16,0);
-  L(28,20+b,28,33,'#6b6a66',3);R(26,32,5,2,'#b9b7ab');
-  P('#2c3233',[[5,15+b],[11,12+b],[21,12+b],[27,15+b],[29,24],[29,30],[16,32],[3,30],[3,24]]);
-  P(c,[[7,15+b],[12,13+b],[20,13+b],[25,15+b],[26,29],[16,31],[6,29]]);P(h,[[7,16+b],[12,14+b],[13,29],[6,28]],null);
-  R(8,22+b,16,2,'#59403a');P('#b9b2a0',[[11,15+b],[21,15+b],[19,20+b],[13,20+b]]);
-  P('#6e3f33',[[2,14+b],[10,11+b],[13,16+b],[11,20+b],[3,21+b]]);P('#6e3f33',[[22,11+b],[30,14+b],[30,21+b],[21,20+b],[19,16+b]]);
-  E(16,7+b,8,7,'#4a5558');P('#6c797c',[[9,4+b],[16,1+b],[16,13+b],[9,12+b]],null);L(16,1+b,16,14+b,d);
+  // Buried guardian: rust-red plate, split iron helm with teal eyes, burial wraps at the neck, a broken sword dragged low.
+  L(27,21+b,27,33,'#6b6a66',3);R(25,32,5,2,'#b9b7ab');
+  torso('#6f7a7d','#a8b6b8','#2c3233',30);arms('#6e3f33','#b9b2a0',26,26);
+  R(10,22+b,12,2,'#59403a');P('#b9b2a0',[[12,14+b],[20,14+b],[19,19+b],[13,19+b]]);
+  E(16,7+b,6.5,6.5,'#4a5558');P('#6c797c',[[10,4+b],[16,1+b],[16,12+b],[10,11+b]],null);L(16,1+b,16,13+b,d);
   R(11,7+b,10,3,'#0b1011');R(12,8+b,3,2,a);R(18,8+b,3,2,a);
-  L(3,21+b,2,30,'#6e3f33',4);bootR9(q,6,31,7);bootR9(q,19,31,7);q.restore();break;
+  P('#6e3f33',[[7,13+b],[12,12+b],[12,17+b],[6,18+b]]);P('#6e3f33',[[20,12+b],[25,13+b],[26,18+b],[20,17+b]]);
+  bootR9(q,9,32,6);bootR9(q,17,32,6);break;
  }
  case'citadel_wing':{
-  // Gargoyle: stone body, horned head, two broad scalloped bat wings spread to the sides.
-  q.save();q.translate(16,0);q.scale(0.8,1);q.translate(-16,0);
-  P('#241d2c',[[0,8+b],[8,13+b],[11,16+b],[11,25+b],[8,22+b],[5,26+b],[3,21+b],[0,24+b]]);P('#4a3d62',[[1,9+b],[8,14+b],[10,17+b],[10,24+b],[8,21+b],[5,25+b],[3,20+b],[1,22+b]],null);
-  L(10,16+b,2,10+b,'#8a78a8',1);L(10,19+b,3,17+b,'#8a78a8',1);L(10,22+b,5,23+b,'#8a78a8',1);
-  P('#241d2c',[[32,8+b],[24,13+b],[21,16+b],[21,25+b],[24,22+b],[27,26+b],[29,21+b],[32,24+b]]);P('#4a3d62',[[31,9+b],[24,14+b],[22,17+b],[22,24+b],[24,21+b],[27,25+b],[29,20+b],[31,22+b]],null);
-  L(22,16+b,30,10+b,'#8a78a8',1);L(22,19+b,29,17+b,'#8a78a8',1);L(22,22+b,27,23+b,'#8a78a8',1);
-  P('#2a2432',[[10,13+b],[14,11+b],[18,11+b],[22,13+b],[24,26],[16,31],[8,26]]);P(c,[[11,14+b],[21,14+b],[22,26],[16,30],[10,26]]);P(h,[[11,15+b],[14,15+b],[13,27],[10,25]],null);
-  E(16,7+b,7,6,'#2a2432');E(16,7+b,5.5,4.8,c);P(h,[[8,0+b],[12,2+b],[12,6+b],[10,5+b]],null);P(h,[[24,0+b],[20,2+b],[20,6+b],[22,5+b]],null);
-  R(11,6+b,3,2,a);R(18,6+b,3,2,a);L(14,10+b,18,10+b,d);
-  P('#2a2432',[[9,29],[14,29],[14,34],[8,34]]);P('#2a2432',[[18,29],[23,29],[24,34],[18,34]]);q.restore();break;
+  // Gargoyle: a stone body with a horned head and two scalloped bat wings spread to the sides.
+  P('#241d2c',[[1,9+b],[9,13+b],[11,17+b],[11,25+b],[8,22+b],[5,26+b],[3,21+b],[1,24+b]]);P('#4a3d62',[[2,10+b],[9,14+b],[10,18+b],[10,24+b],[8,21+b],[5,25+b],[3,20+b],[2,22+b]],null);
+  L(10,17+b,3,11+b,'#8a78a8',1);L(10,20+b,4,18+b,'#8a78a8',1);
+  P('#241d2c',[[31,9+b],[23,13+b],[21,17+b],[21,25+b],[24,22+b],[27,26+b],[29,21+b],[31,24+b]]);P('#4a3d62',[[30,10+b],[23,14+b],[22,18+b],[22,24+b],[24,21+b],[27,25+b],[29,20+b],[30,22+b]],null);
+  L(22,17+b,29,11+b,'#8a78a8',1);L(22,20+b,28,18+b,'#8a78a8',1);
+  torso(c,h,'#2a2432',28);E(16,8+b,6,6,'#2a2432');E(16,8+b,4.8,4.8,c);P(h,[[9,1+b],[12,3+b],[12,7+b],[10,6+b]],null);P(h,[[23,1+b],[20,3+b],[20,7+b],[22,6+b]],null);
+  R(12,7+b,3,2,a);R(18,7+b,3,2,a);L(14,11+b,18,11+b,d);P('#2a2432',[[10,29],[14,29],[14,34],[9,34]]);P('#2a2432',[[18,29],[22,29],[23,34],[18,34]]);break;
  }
  case'citadel_undertaker':{
-  // Undertaker: tall black hat with a violet band, pale face, long dark coat with brass buttons, a coffin board on the back and a hammer.
-  q.save();q.translate(16,0);q.scale(0.78,1);q.translate(-16,0);
-  P('#4a3a2c',[[22,7+b],[28,9+b],[27,28],[21,26]]);L(24,10+b,25,26,'#2b2018',1);
-  P('#201a26',[[8,14+b],[12,12+b],[20,12+b],[24,14+b],[27,22],[28,31],[16,34],[4,31],[6,22]]);
-  P(c,[[10,14+b],[13,13+b],[19,13+b],[22,14+b],[24,30],[16,32],[8,30]]);P(h,[[10,15+b],[13,14+b],[13,30],[8,29]],null);
+  // Undertaker: tall black hat with a violet band, pale narrow face, long dark coat with brass buttons, a hammer in one hand, a coffin board on the back.
+  P('#4a3a2c',[[21,7+b],[27,9+b],[26,28],[20,26]]);L(23,10+b,24,26,'#2b2018',1);
+  torso(c,h,'#201a26',30);arms(c,'#d8cbb4',25,25);
   for(const y of[18,22,26])R(15,y+b,2,2,a);
-  E(16,10+b,5,5,'#d8cbb4');R(12,9+b,2,1,d);R(18,9+b,2,1,d);R(14,12+b,4,1,'#8d6d63');
-  P('#171219',[[5,8+b],[27,8+b],[22,6+b],[10,6+b]]);P('#221b27',[[10,0+b],[22,0+b],[22,6+b],[10,6+b]]);R(10,5+b,12,2,a);
-  P(c,[[3,17+b],[9,16+b],[9,23+b],[3,24+b]]);R(3,23+b,6,3,'#d8cbb4');L(5,8+b,5,24+b,'#6a5442',2);P('#8f8a7d',[[1,5+b],[9,5+b],[9,10+b],[1,10+b]]);
-  bootR9(q,8,32,6);bootR9(q,17,32,6);q.restore();break;
+  E(16,10+b,5,5,'#d8cbb4');R(13,9+b,2,1,d);R(18,9+b,2,1,d);R(14,12+b,4,1,'#8d6d63');
+  P('#171219',[[7,8+b],[25,8+b],[21,6+b],[11,6+b]]);P('#221b27',[[11,0+b],[21,0+b],[21,6+b],[11,6+b]]);R(11,5+b,10,2,a);
+  L(5,8+b,5,25+b,'#6a5442',2);P('#8f8a7d',[[2,5+b],[9,5+b],[9,10+b],[2,10+b]]);
+  bootR9(q,9,32,5);bootR9(q,17,32,5);break;
  }
  case'lightning_plate':{
   // Narrow cage armour and an unmistakable lightning rod instead of a spear or hat.
