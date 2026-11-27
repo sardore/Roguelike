@@ -3093,39 +3093,27 @@ function drawBranchCreature(q,m,frame,sp){
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
  case'citadel_bier':{
-  // Built on the same frame as the needle seamstress so it stands with the rest of the bestiary: a visible oval face under a swept fringe, a dark hair mass with one highlight, a weighted skirt with separate folds, one sleeve hanging and one arm raised, gold trim. Here the robe is white-lavender and the raised hand holds a camellia branch; a crown of camellias and drifting petals replace the bun and the thread.
-  const hair='#1f1a30',hairHi='#3d3659',silk='#cfcbe0',fold='#8a86ac',silkHi='#f3f0fb',skin='#d4b5bb',skinHi='#efdcda',gold='#c6a16b',rose='#d9707f',roseHi='#f0b0b8',roseLo='#8e3447';
-  const bloom=(x,y)=>{q.fillStyle='#120f12';q.fillRect(x-2,y-1,5,3);q.fillRect(x-1,y-2,3,5);q.fillStyle=rose;q.fillRect(x-1,y-1,3,3);q.fillRect(x,y-2,1,5);q.fillRect(x-2,y,5,1);q.fillStyle=roseHi;q.fillRect(x-1,y-1,1,1);q.fillStyle=roseLo;q.fillRect(x+1,y+1,1,1);q.fillStyle='#ffd23a';q.fillRect(x,y,1,1)};
+  // A veiled ghost bride: a white mourning cloak (jangot) drawn over the head, a calm face in the opening with closed eyes, camellias pinned along the veil and hanging down the front, one hand raised with a flower, one holding the cloak, a bell skirt fraying into mist.
+  const c0='#f3f0fb',c1='#cfcbe0',c2='#8a86ac',c3='#5a567c',inner='#2b2740',skin='#e8cfc9',skinHi='#f7e8e2',rose='#d9707f',roseHi='#f0b0b8',roseLo='#8e3447',gold='#c6a16b';
+  const bloom=(x,y,big=true)=>{q.fillStyle='#120f12';if(big){q.fillRect(x-2,y-1,5,3);q.fillRect(x-1,y-2,3,5)}else{q.fillRect(x-1,y-1,3,3)}q.fillStyle=rose;if(big){q.fillRect(x-1,y-1,3,3);q.fillRect(x,y-2,1,5);q.fillRect(x-2,y,5,1)}else{q.fillRect(x-1,y,3,1);q.fillRect(x,y-1,1,3)}q.fillStyle=roseHi;q.fillRect(x-1,y-1,1,1);q.fillStyle='#ffd23a';q.fillRect(x,y,1,1)};
   shadow1012(q,16,34,23);
-  pR9(q,hair,[[11,5+b],[15,2+b],[20,4+b],[23,11+b],[22,24],[19,29],[15,26],[9,29],[8,21],[9,10+b]]);
-  pR9(q,hairHi,[[10,8+b],[12,5+b],[13,17+b],[11,26],[9,24]],null);
-  pR9(q,fold,[[11,15+b],[20,14+b],[20,21+b],[24,31],[23,34],[17,35],[9,34],[5,32],[9,24+b]]);
-  pR9(q,silk,[[12,15+b],[19,15+b],[18,21+b],[21,31],[19,34],[12,33],[8,31],[11,24+b]],null);
-  pR9(q,silkHi,[[12,19+b],[14,21+b],[13,29],[15,33],[11,31],[10,29]],null);
-  pR9(q,'#a9a4c8',[[18,20+b],[20,27],[23,32],[20,32],[17,27]],null);
-  lR9(q,7,32,12,33,gold,.7);lR9(q,12,33,19,34,gold,.7);lR9(q,19,34,23,33,gold,.7);
-  lR9(q,15,23+b,15,31,'#b9b4d6',.7);lR9(q,18,25+b,20,31,'#e6e2f4',.6);
-  // Left sleeve hangs and holds a small bouquet; the right arm lifts a camellia branch.
-  pR9(q,fold,[[11,14+b],[8,15+b],[4,18+b],[2,24+b],[5,28+b],[8,25+b],[9,20+b],[12,18+b]]);
-  pR9(q,silkHi,[[8,15+b],[10,16+b],[7,20+b],[5,24+b],[3,23+b],[5,18+b]],null);
-  pR9(q,silk,[[20,14+b],[23,15+b],[25,12+b],[28,14+b],[27,20+b],[29,25+b],[25,27+b],[22,23+b],[22,18+b]]);
-  pR9(q,silkHi,[[23,16+b],[25,14+b],[26,16+b],[25,21+b],[27,25+b],[24,24+b]],null);
-  pR9(q,'#c4a7ab',[[12,13+b],[15,16+b],[20,13+b],[18,17+b],[14,18+b]],null);
-  pR9(q,fold,[[10,14+b],[13,13+b],[17,19+b],[13,19+b]],null);
-  lR9(q,13,14+b,16,18+b,rose,.7);lR9(q,19,14+b,16,18+b,roseHi,.7);
-  q.fillStyle=roseLo;q.fillRect(11,20+b,9,2);q.fillStyle=gold;q.fillRect(12,20+b,7,1);
-  pR9(q,'#b98972',[[17,20+b],[19,21+b],[18,27+b],[16,26+b]],null);q.fillStyle='#e9c995';q.fillRect(16,20+b,2,2);
-  pR9(q,skin,[[12,6+b],[18,5+b],[21,8+b],[20,11+b],[17,14+b],[14,13+b],[11,10+b]]);
-  pR9(q,skinHi,[[15,7+b],[19,7+b],[19,10+b],[17,12+b],[14,11+b]],null);
-  pR9(q,hair,[[10,7+b],[11,3+b],[16,2+b],[21,5+b],[22,9+b],[20,8+b],[17,5+b],[14,7+b],[12,10+b],[11,15+b],[9,20+b]],null);
-  q.fillStyle='#503043';q.fillRect(13,8+b,2,1);q.fillRect(18,8+b,2,1);
-  q.fillStyle='#271e29';q.fillRect(14,9+b,1,1);q.fillRect(19,9+b,1,1);q.fillStyle='#8fe0d0';q.fillRect(15,9+b,1,1);q.fillRect(20,9+b,1,1);q.fillStyle='#92596c';q.fillRect(16,12+b,2,1);
-  pR9(q,hair,[[12,3+b],[12,1+b],[17,0+b],[20,2+b],[19,4+b]],null);
-  // Hands: the raised one with a stem to a camellia, the hanging one with a bouquet.
-  pR9(q,skin,[[24,12+b],[26,11+b],[27,13+b],[25,15+b]],null);lR9(q,26,13+b,28,7+b,'#5f8a4d',.9);bloom(28,5+b);
-  pR9(q,skin,[[5,18+b],[7,18+b],[7,21+b],[5,21+b]],null);bloom(4,24+b);q.fillStyle=roseHi;q.fillRect(6,26+b,2,2);
-  bloom(12,3+b);bloom(17,1+b);bloom(21,3+b);
-  q.fillStyle=roseHi;for(const [x,y]of [[9,29],[10,31],[20,30],[22,32],[26,29]])q.fillRect(x,y,1,1);
+  pR9(q,c2,[[16,1+b],[22,3+b],[25,9+b],[28,17+b],[29,27],[27,32],[21,31],[16,34],[11,31],[5,32],[3,27],[4,17+b],[7,9+b],[10,3+b]]);
+  pR9(q,c1,[[16,2+b],[21,4+b],[24,10+b],[26,18+b],[27,27],[25,30],[20,29],[16,32],[12,29],[7,30],[5,27],[6,18+b],[8,10+b],[11,4+b]],null);
+  pR9(q,c0,[[11,5+b],[8,11+b],[7,19+b],[7,27],[9,29],[10,22+b],[10,12+b]],null);
+  pR9(q,c3,[[22,12+b],[25,12+b],[26,19+b],[26,27],[24,29],[23,21+b]],null);
+  lR9(q,14,19+b,12,30,c2,.7);lR9(q,19,18+b,22,29,c2,.7);
+  // The opening: shadowed hood, the face, and the white dress with a rose sash showing between the cloak edges.
+  pR9(q,inner,[[12,6+b],[16,4+b],[20,6+b],[21,12+b],[18,18+b],[14,18+b],[11,12+b]],null);
+  pR9(q,'#e6e2f4',[[13,19+b],[19,19+b],[21,29],[16,32],[11,29]],null);pR9(q,c1,[[17,19+b],[19,19+b],[21,29],[17,30]],null);
+  q.fillStyle=roseLo;q.fillRect(13,22+b,7,2);q.fillStyle=gold;q.fillRect(14,22+b,5,1);q.fillStyle=rose;q.fillRect(15,24+b,4,2);q.fillRect(14,26+b,2,3);q.fillRect(18,26+b,2,3);
+  eR9(q,16,10+b,3.8,4.6,skin);pR9(q,skinHi,[[14,7+b],[18,7+b],[19,10+b],[16,13+b],[14,11+b]],null);
+  lR9(q,13,10+b,15,11+b,'#503043',.8);lR9(q,18,11+b,20,10+b,'#503043',.8);q.fillStyle='#8fe0d0';q.fillRect(14,12+b,1,1);q.fillRect(19,12+b,1,1);q.fillStyle='#b4545f';q.fillRect(16,14+b,2,1);
+  // Flowers on the veil edge, down the front, and in the raised hand.
+  bloom(12,4+b);bloom(16,2+b);bloom(20,4+b);
+  bloom(10,19+b,false);bloom(9,24+b,false);bloom(10,29,false);
+  pR9(q,skin,[[21,16+b],[24,15+b],[25,18+b],[22,19+b]],null);lR9(q,24,15+b,26,9+b,'#5f8a4d',.9);bloom(26,7+b);
+  pR9(q,skin,[[7,23+b],[10,22+b],[10,26+b],[7,26+b]],null);
+  q.fillStyle=roseHi;for(const [x,y]of [[6,33],[24,33],[28,30],[3,29]])q.fillRect(x,y,1,1);
   break;
  }
  case'citadel_undertaker':{
