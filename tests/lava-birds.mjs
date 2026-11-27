@@ -35,6 +35,11 @@ const bridge = `globalThis.lb={
   try{spawnDungeon46('lava_bow',rs)}catch(e){return{error:String(e&&e.message||e)}}
   const names=state.monsters.map(q=>q.name.replace(' · 문지기',''));const count=n=>names.filter(x=>x===n).length;
   return{phoenix:count('불사조'),crow:count('삼족오'),salamander:count('용암 살라맨더'),total:names.length,phoenixMini:state.monsters.filter(q=>q.name==='불사조').every(q=>q.miniBoss)}},
+ // 화염 착탄(fire 의도)의 직격은 화염 속성이라 화염 저항이 먹혀야 한다(예고 1턴 뒤 실행).
+ fireShellFire:()=>{lb.arena();const m=lb.spawn('불사조',12,8),mk=(x,resist)=>{const f={name:'시험 대상',x,y:8,hp:9999,maxHp:9999,atk:0,def:0,eva:0,faction57:'player',kind:'human',alerted:true,fixed:true,resist:resist?{fire:2}:{}};OccupancyService.addMonster(f);return f};
+  lb.fp=mk(16,false);lb.fr=mk(17,true);lb.fm=m},
+ fireShellShoot:()=>{lb.fm.intent61=null;setMonsterIntent(lb.fm,'fire',intentCells(16,8,1),'시험',{x:16,y:8});state.turn++;executeMonsterIntent(lb.fm)},
+ fireShellRead:()=>({plain:9999-lb.fp.hp,resist:9999-lb.fr.hp}),
  dash:()=>{lb.arena();const m=lb.spawn('불사조',10,14),foe={name:'시험 대상',x:14,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);
   const started=startPhoenixDash(m,foe,4),I=m.intent61;const out={started,type:I?.type,cells:I?.cells?.length};state.turn+=1;executeMonsterIntent(m);
   Object.assign(out,{foeHurt:foe.hp<999,moved:m.x>14,fire:(state.tempFields||[]).filter(f=>f.kind==='fire').length,cooling:m.nextPhoenixDashTurn>state.turn});return out}};`;
@@ -72,6 +77,10 @@ assert.ok(ps.shell, `불사조가 화염 착탄 예고를 못 한다 ${JSON.stri
 const so = out.spawnOnce;
 assert.ok(!so.error, `용암궁 몹 배치 오류 ${JSON.stringify(so)}`);
 assert.equal(so.phoenix, 1, `불사조는 층에 한 마리 ${JSON.stringify(so)}`); assert.ok(so.phoenixMini && so.crow >= 1 && so.salamander >= 1, `다른 몹은 그대로 나와야 한다 ${JSON.stringify(so)}`);
+await s.page.evaluate(() => lb.fireShellFire());
+for (let i = 0; i < 3; i++) await s.page.evaluate(() => lb.fireShellShoot());
+const fe = await s.page.evaluate(() => lb.fireShellRead());
+assert.ok(fe.plain > 0 && fe.resist <= fe.plain * 0.6, `화염 착탄이 화염 속성이 아니다(화염 저항 2가 피해를 절반으로 줄여야 한다) ${JSON.stringify(fe)}`);
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('lava-birds: ok');
