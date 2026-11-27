@@ -3308,6 +3308,8 @@ function drawBranchCreature(q,m,frame,sp){
   }
   const rise=phase==='reviving';
   q.save();if(rise){q.beginPath();q.rect(0,0,32,28.4);q.clip();q.translate(0,4);q.globalAlpha=.85}
+  // The crest and wing flames reach above the 32x36 frame, so the whole bird is drawn slightly smaller about its middle.
+  q.translate(16,19);q.scale(.92,.92);q.translate(-16,-19);
   // heat glow
   q.save();q.globalAlpha=full?.34:.18;E(18,15,12.6,12.6,warm);q.restore();
   // tail plumes sweeping down, each ending in a burning eye
