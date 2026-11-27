@@ -2921,32 +2921,33 @@ function drawBierGhostVector(g,b){
  shape=(fill,fn)=>{g.beginPath();fn();g.closePath();g.fillStyle=fill;g.fill()},
  stroke=(col,w,fn)=>{g.beginPath();fn();g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.stroke()},
  ell=(x,y,rx,ry,fill,rot=0)=>{g.beginPath();g.ellipse(x,y,rx,ry,rot,0,Math.PI*2);g.fillStyle=fill;g.fill()},
- flower=(x,y,r,outer,inner,rot=0)=>{for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5-Math.PI/2;ell(x+Math.cos(a)*r*.62,y+Math.sin(a)*r*.62,r*.58,r*.4,outer,a)}for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5-Math.PI/2+.31;ell(x+Math.cos(a)*r*.3,y+Math.sin(a)*r*.3,r*.34,r*.24,inner,a)}ell(x,y,r*.24,r*.24,'#f4d675')};
+ camellia=(x,y,r,rot=0)=>{for(let i=0;i<6;i++){const a=rot+i*Math.PI/3;ell(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55,r*.55,r*.45,i%2?'#b84d5f':'#c9606f',a)}ell(x,y,r*.5,r*.5,'#e0a3ab');ell(x,y,r*.22,r*.22,'#d9b45a')};
  g.save();g.translate(0,b*.5-.4);
- // floating celestial ribbons swept up and out from the shoulders
- stroke(grad(2,16,12,6,[[0,'#f7b8c4'],[1,'rgba(247,184,196,.35)']]),2.8,()=>{g.moveTo(12.6,16);g.bezierCurveTo(6,18.4,1.4,14.4,3.2,9.2);g.bezierCurveTo(4.2,6.4,6.6,6,7.6,7.6)});
- stroke(grad(30,16,20,6,[[0,'#cfe9e6'],[1,'rgba(207,233,230,.35)']]),2.8,()=>{g.moveTo(19.4,16);g.bezierCurveTo(26,18.4,30.6,14.4,28.8,9.2);g.bezierCurveTo(27.8,6.4,25.4,6,24.4,7.6)});
- stroke('rgba(255,255,255,.8)',.5,()=>{g.moveTo(12.4,15.4);g.bezierCurveTo(6.4,17.4,2.4,14,3.8,9.6)});stroke('rgba(255,255,255,.8)',.5,()=>{g.moveTo(19.6,15.4);g.bezierCurveTo(25.6,17.4,29.6,14,28.2,9.6)});
- // long indigo hair
- shape(grad(0,3,0,28,[[0,'#2b2442'],[1,'#17122a']]),()=>{g.moveTo(16,1.6);g.bezierCurveTo(9,1.4,7,6,7.4,12);g.bezierCurveTo(7.8,18,9.6,22,8.4,27.5);g.bezierCurveTo(11.4,25.5,12.4,21,12,15.5);g.lineTo(20,15.5);g.bezierCurveTo(19.6,21,20.6,25.5,23.6,27.5);g.bezierCurveTo(22.4,22,24.2,18,24.6,12);g.bezierCurveTo(25,6,23,1.4,16,1.6)});
- stroke('rgba(120,104,170,.55)',.45,()=>{g.moveTo(9.4,7);g.bezierCurveTo(8.4,13,10,20,9.2,25)});stroke('rgba(120,104,170,.55)',.45,()=>{g.moveTo(22.6,7);g.bezierCurveTo(23.6,13,22,20,22.8,25)});
- // gown: slim, pale, dissolving into petals
- shape(grad(0,14,0,33,[[0,'#ffffff'],[.6,'#e3eeee'],[1,'rgba(190,214,216,.0)']]),()=>{g.moveTo(12.6,14.2);g.lineTo(19.4,14.2);g.bezierCurveTo(20.6,19,22.8,24,21.6,29.5);g.bezierCurveTo(19,32.5,13,32.5,10.4,29.5);g.bezierCurveTo(9.2,24,11.4,19,12.6,14.2)});
- shape('#e4a24c',()=>{g.moveTo(11.6,20);g.quadraticCurveTo(16,22.6,20.4,20);g.lineTo(20.2,21.4);g.quadraticCurveTo(16,24,11.8,21.4)});
- shape('#e8566c',()=>{g.moveTo(14.2,14.2);g.lineTo(16,17.4);g.lineTo(17.8,14.2);g.lineTo(17,14.2);g.lineTo(16,16);g.lineTo(15,14.2)});
- // arms folded at the chest around a lotus
- shape('#f2e8dc',()=>{g.ellipse(13.6,19,1.5,1.1,.6,0,Math.PI*2)});shape('#f2e8dc',()=>{g.ellipse(18.4,19,1.5,1.1,-.6,0,Math.PI*2)});
- flower(16,18.6,2.4,'#f7b8c4','#fde2e8');
- // drifting petals where the body ends
- for(const[x,y,c,r,rot]of[[11,31,'#f7b8c4',.9,.4],[17,33.2,'#fde2e8',.95,-.3],[21.4,31.6,'#e8566c',.8,.7],[14,34.6,'#fde2e8',.7,0],[19,35.4,'#f7b8c4',.6,.5],[8.6,33.2,'#fde2e8',.6,.2],[24.6,34,'#f7b8c4',.55,-.4]])ell(x,y,r,r*.6,c,rot);
- // face
- ell(16,8.6,4.9,5.5,'#f4f0ea');shape(grad(0,4,0,14,[[0,'rgba(255,255,255,.5)'],[1,'rgba(190,176,190,.28)']]),()=>{g.ellipse(16,8.6,4.9,5.5,0,0,Math.PI*2)});
- shape('#1b1530',()=>{g.moveTo(11.2,8.6);g.bezierCurveTo(10.6,3.4,21.4,3.4,20.8,8.6);g.bezierCurveTo(19.6,6.4,17.6,6.2,16,7.4);g.bezierCurveTo(14.4,6.2,12.4,6.4,11.2,8.6)});
- stroke('#2a2438',.6,()=>{g.moveTo(12.4,9.8);g.quadraticCurveTo(13.9,11.1,15.4,9.8)});stroke('#2a2438',.6,()=>{g.moveTo(16.6,9.8);g.quadraticCurveTo(18.1,11.1,19.6,9.8)});
- ell(13.9,11.2,.9,.4,'rgba(127,224,192,.7)');ell(18.1,11.2,.9,.4,'rgba(127,224,192,.7)');ell(12.2,12,1,.55,'rgba(240,150,160,.4)');ell(19.8,12,1,.55,'rgba(240,150,160,.4)');ell(16,12.7,.85,.45,'#d0606f');
- // flower crown
- flower(10.2,5.8,2.2,'#f7b8c4','#fde2e8',.3);flower(12.6,2.9,2.4,'#e8566c','#f7b8c4',.9);flower(16,1.6,2.6,'#fff1f3','#f7b8c4');flower(19.4,2.9,2.4,'#e8566c','#f7b8c4',1.4);flower(21.8,5.8,2.2,'#f7b8c4','#fde2e8',.1);
- ell(8.4,9,.9,.55,'#f4d675',.5);ell(23.6,9,.9,.55,'#f4d675',-.5);
+ // long hair, wide at the shoulders and falling past the waist
+ shape(grad(0,2,0,30,[[0,'#2a2434'],[1,'#15111d']]),()=>{g.moveTo(16,1.4);g.bezierCurveTo(8.4,1.4,5,6.4,5.6,13.6);g.bezierCurveTo(6.2,20,5,25,7.4,30.4);g.bezierCurveTo(10.6,28.6,11.4,24,11,18);g.lineTo(21,18);g.bezierCurveTo(20.6,24,21.4,28.6,24.6,30.4);g.bezierCurveTo(27,25,25.8,20,26.4,13.6);g.bezierCurveTo(27,6.4,23.6,1.4,16,1.4)});
+ stroke('rgba(124,110,160,.5)',.5,()=>{g.moveTo(8,8);g.bezierCurveTo(6.6,14,8.4,22,7.8,27)});stroke('rgba(124,110,160,.5)',.5,()=>{g.moveTo(24,8);g.bezierCurveTo(25.4,14,23.6,22,24.2,27)});
+ // skirt: a bell that thins into mist
+ shape(grad(0,18,0,35,[[0,'#e4e1d6'],[.65,'#c3cbcc'],[1,'rgba(150,172,176,.65)']]),()=>{g.moveTo(11.4,18);g.bezierCurveTo(9.6,24,6,29,4.4,34.6);g.bezierCurveTo(9,36.4,12.6,34.8,16,35.8);g.bezierCurveTo(19.4,34.8,23,36.4,27.6,34.6);g.bezierCurveTo(26,29,22.4,24,20.6,18)});
+ stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(13.4,22);g.quadraticCurveTo(11.6,28,10,34)});stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(16,22);g.lineTo(16,35)});stroke('rgba(150,168,172,.7)',.5,()=>{g.moveTo(18.6,22);g.quadraticCurveTo(20.4,28,22,34)});
+ // jeogori with a dusty-red collar and a long ribbon
+ shape('#ece9de',()=>{g.moveTo(10.6,13.4);g.lineTo(21.4,13.4);g.lineTo(22.4,19.2);g.quadraticCurveTo(16,20.6,9.6,19.2)});shape('#ffffff',()=>{g.moveTo(10.8,13.8);g.lineTo(14,13.8);g.lineTo(13,19.2);g.lineTo(9.8,18.8)});
+ shape('#a8404f',()=>{g.moveTo(13.2,13.4);g.lineTo(16,18.4);g.lineTo(18.8,13.4);g.lineTo(17.9,13.4);g.lineTo(16,16.8);g.lineTo(14.1,13.4)});
+ shape('#8e2f3d',()=>{g.moveTo(16,17.6);g.lineTo(14.6,23.6);g.lineTo(15.8,22.8);g.lineTo(16,19);g.lineTo(16.2,22.8);g.lineTo(17.4,23.6)});
+ // sleeves meeting in front
+ shape(grad(5,14,15,23,[[0,'#ffffff'],[1,'#d6d3c8']]),()=>{g.moveTo(10,14.2);g.bezierCurveTo(7,16.2,5.6,20,6.4,23.4);g.bezierCurveTo(9.6,25,13.2,24,15.6,22);g.bezierCurveTo(14.4,19.6,12.6,17,11.6,15.4)});
+ shape(grad(27,14,17,23,[[0,'#f4f1e6'],[1,'#cdcabe']]),()=>{g.moveTo(22,14.2);g.bezierCurveTo(25,16.2,26.4,20,25.6,23.4);g.bezierCurveTo(22.4,25,18.8,24,16.4,22);g.bezierCurveTo(17.6,19.6,19.4,17,20.4,15.4)});
+ stroke('rgba(150,168,172,.8)',.5,()=>{g.moveTo(8,20);g.quadraticCurveTo(11,22.6,14.6,22.4)});stroke('rgba(150,168,172,.8)',.5,()=>{g.moveTo(24,20);g.quadraticCurveTo(21,22.6,17.4,22.4)});
+ // petals drifting off the hem
+ for(const[x,y,c,r,rot]of[[8,32.6,'#e0a3ab',.8,.4],[24.2,32,'#c9606f',.75,-.5],[12,35.4,'#efd6d9',.6,.2],[20.6,35.2,'#e0a3ab',.55,.6]])ell(x,y,r,r*.6,c,rot);
+ // face: pale and calm
+ ell(16,8.4,4.8,5.4,'#efe9e1');shape(grad(0,4,0,14,[[0,'rgba(255,255,255,.4)'],[1,'rgba(168,150,170,.3)']]),()=>{g.ellipse(16,8.4,4.8,5.4,0,0,Math.PI*2)});
+ shape('#18121f',()=>{g.moveTo(11,8.4);g.bezierCurveTo(10.4,3.2,21.6,3.2,21,8.4);g.bezierCurveTo(19.8,6.2,17.8,6,16,7.2);g.bezierCurveTo(14.2,6,12.2,6.2,11,8.4)});
+ shape('#18121f',()=>{g.moveTo(11,8);g.lineTo(12,8);g.lineTo(11.8,13);g.lineTo(10.8,12.2)});shape('#18121f',()=>{g.moveTo(21,8);g.lineTo(20,8);g.lineTo(20.2,13);g.lineTo(21.2,12.2)});
+ ell(13.8,10.2,1.15,.7,'#1c2630');ell(18.2,10.2,1.15,.7,'#1c2630');ell(14,10,.55,.35,'#6fcfc0');ell(18.4,10,.55,.35,'#6fcfc0');
+ ell(16,12.6,.8,.42,'#b4545f');
+ // crown of camellias and a gold hairpin
+ camellia(11.2,4.2,2.3,.2);camellia(16,2.2,2.7,0);camellia(20.8,4.2,2.3,.5);
+ stroke('#d9b45a',.7,()=>{g.moveTo(22.8,7);g.lineTo(26,10.6)});ell(26.2,10.8,.9,.9,'#d9b45a');
  g.restore();
 }
 function drawBranchCreature(q,m,frame,sp){
