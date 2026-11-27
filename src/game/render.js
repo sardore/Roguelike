@@ -3266,13 +3266,13 @@ function drawBranchCreature(q,m,frame,sp){
  }
  case'three_legged_crow':{
   // The crow of the sun as the old tomb murals paint it: a black crow striding in profile inside a flaming sun disc, one wing lifted with a scalloped edge, a crest curling forward and three red-gold legs.
-  const bb=(frame>>2)&1,y=bb*.5,f=bb,ink='#0e0a09',black='#1a1210',warmBlack='#33201a',ember='#c4502a',sunR='#a8261a',sunO='#e8692a',sunY='#ffc45a',sunW='#fff0c4',leg='#d4702c',legD='#7c3518';
+  const bb=(frame>>2)&1,y=bb*.5,f=bb,ink='#0e0a09',black='#1a1210',warmBlack='#5c3326',ember='#c4502a',sunR='#a8261a',sunO='#e8692a',sunY='#ffc45a',sunW='#fff0c4',leg='#d4702c',legD='#7c3518';
   // a flame ring that turns clockwise while its colour runs from red through gold to white-hot and back (8 frames, one full loop)
-  const hue=[8,20,32,44,52,44,32,20][frame%8],spin=(frame%8)/8*(Math.PI*2/7),flameA=`hsl(${hue+14} 100% 62%)`,flameB=`hsl(${hue-6} 96% 52%)`,discRim=`hsl(${hue-8} 78% 34%)`,discMid=`hsl(${hue} 92% 52%)`,discCore=`hsl(${hue+16} 100% 66%)`;
+  const hue=[8,20,32,44,52,44,32,20][frame%8],spin=(frame%8)/8*(Math.PI*2/7),flameA=`hsl(${hue+14} 100% 62%)`,flameB=`hsl(${hue-6} 96% 52%)`,discRim=`hsl(${hue-8} 78% 34%)`,discMid=`hsl(${hue+6} 96% 58%)`,discCore=`hsl(${hue+20} 100% 76%)`;
   for(let i=0;i<14;i++){const t=i/14*Math.PI*2+spin,r0=9.6,x0=16+Math.cos(t)*r0,v0=13+Math.sin(t)*r0,tc=t+.22,te=t+.42,rc=12,re=i%2?12.4:13.4;
    plume(x0,v0,16+Math.cos(tc)*rc,13+Math.sin(tc)*rc,16+Math.cos(te)*re,13+Math.sin(te)*re,1.5,i%2?flameB:flameA,null)}
-  eR9(q,16,13,10,10,discRim,'#4e1208',.8);eR9(q,16,13,8.6,8.6,discMid,null);eR9(q,16,13,6.8,6.8,discCore,null);eR9(q,12.8,9.6,2.6,2.6,sunW,null);
-  q.save();q.translate(16,14.6);q.scale(.82,.82);q.translate(-16,-14.6);
+  eR9(q,16,13,10.6,10.6,discRim,'#4e1208',.8);eR9(q,16,13,9.6,9.6,discMid,null);eR9(q,16,13,8,8,discCore,null);eR9(q,12.4,8.6,3.4,3.2,sunW,null);
+  q.save();q.translate(16,14.2);q.scale(.68,.68);q.translate(-15,-14);
   // far wing, lifted behind the head
   P(ink,[[16.4,11.6+y],[15.2,6+y-f],[17.6,1.4+y-f],[19,5.6+y-f],[19.6,10.6+y]]);
   // tail: three broad blades sweeping back to the left
@@ -3312,7 +3312,6 @@ function drawBranchCreature(q,m,frame,sp){
   // The crest and wing flames reach above the 32x36 frame, so the whole bird is drawn slightly smaller about its middle.
   q.translate(16,19);q.scale(.92,.92);q.translate(-16,-19);
   // heat glow
-  q.save();q.globalAlpha=full?.34:.18;E(18,15,12.6,12.6,warm);q.restore();
   // tail plumes sweeping down, each ending in a burning eye
   for(const[cx,cy,ex,ev,w,col]of[[28,19,31.6,26.6,2.4,body],[19.6,29,17,35.2,2.3,body],[27,25,29.8,33.4,2.8,warm],[23,29,23.4,35.4,2.8,warm]]){
    plume(18,20+y,cx,cy+y,ex,ev,w,col,deep);plume(18,20+y,cx,cy-.2+y,ex,ev-.2,w*.42,gold,null);
@@ -3324,6 +3323,7 @@ function drawBranchCreature(q,m,frame,sp){
   // body leaning into the rise
   q.save();q.translate(15.6,17.6+y);q.rotate(.38);eR9(q,0,0,4.3,6.2,body);eR9(q,-1.4,.6,2,4.4,warm,null);q.restore();
   for(const[x,v]of[[13.4,16],[14.6,19],[16.4,21.2]]){q.beginPath();q.arc(x,v+y,1.3,.3,Math.PI-.3);q.strokeStyle=gold;q.lineWidth=.6;q.stroke()}
+  L(13.2,13.4+y,14.2,19.6+y,flame,.8);L(11.2,10.4+y,12.2,12.6+y,flame,.7);eR9(q,9.4,6.6+y,.9,.8,'#ffffff',null);
   // tucked gold talons
   for(const x of[14.8,17.4]){L(x,22.4+y,x-.6,25+y,goldD,1.3);for(const k of[-1,0,1])L(x-.6,25+y,x-.6+k*1.1,26.4+y,gold,.7)}
   // neck curving up to the head, flame crest, hooked gold beak facing left
