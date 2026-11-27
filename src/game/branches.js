@@ -477,7 +477,7 @@ function citadelRaiseCorpse(root,x,y){
   m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*.75));m.xp=Math.floor((m.xp||0)/3);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
   adoptBossChild57(m,owner);
   if(!PlacementService.monsterCanStand(m,q.x,q.y)||!OccupancyService.addMonster(m))continue;
-  setMonsterWeakened(m,4);playSummonArrival(owner,m);return m;
+  setMonsterWeakened(m,COFFIN_WALL.weakenTurns);playSummonArrival(owner,m);return m;
  }
  return null;
 }
