@@ -2146,6 +2146,7 @@ function resolveMonsterTargetTurn57(actor,target,schedule={act:true,steps:1},opt
   if(actor.stunned>0){actor.stunned--;return true}
   if(shackleCounterTurn(actor,target))return true;
  }
+ if(actor.furyCrow105&&!actor.furyStarted105)crowFuryTick(actor,!!target&&combatTargetValid57(actor,target)&&actorDetectedTarget57(actor,target,monsterSenseRadius(actor)));
  if(!schedule.act)return false;
  if(actor.shellSlime)return shellSlimeTurn(actor,target,opts);
  const range=actor.ranged?(actor.range||6):(actor.reach||1),hostile=combatTargetValid57(actor,target),live=hostile&&!entityConcealed(target);
@@ -2420,7 +2421,6 @@ function debugBattleRound57(){
    if(!state.monsters.includes(mon))continue;if(advanceMonsterRevival(mon)||mon.hp<=0)continue;if(mon.combatFixture54){tickBossFixture(mon);continue}
    if(mon.intent61?.type==='shackleCounter'){shackleCounterTurn(mon,null);continue}
    if(mon.stunned>0){mon.stunned--;continue}if(mon.martialActor105)tickMartialActor(mon);
-   if(mon.furyCrow105&&!mon.furyStarted105)crowFuryTick(mon,state.monsters.some(t=>combatTargetValid57(mon,t)&&actorDetectedTarget57(mon,t,80)));
    const schedule=monsterActionSchedule(mon);if(!schedule.act&&mon.name!==SHACKLE_DOLL.name)continue;
    for(let action=0;action<(schedule.actions||1);action++){
    if(mon.hp<=0||mon.stunned>0||!state.monsters.includes(mon))break;
