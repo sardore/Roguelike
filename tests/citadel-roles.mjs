@@ -9,6 +9,7 @@ import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bridge = `globalThis.cr={state:()=>state,TT,go:l=>{state.branchWorld105={version:1,pages:{}};state.branchContext105={id:'citadel',level:l};buildBranch('citadel',l)},
  corners:t=>citadelCorners(t),
+ specOk:m=>{const d=MONSTERS.find(x=>x.name===m.name)||CITADEL_ENEMIES105.find(x=>x.name===m.name);if(!d)return false;const base=scaledMonster(clone(d),20);return m.maxHp===Math.round(base.hp*.65)&&m.atk===Math.max(2,base.atk-2)},
  coffin:()=>{
   state.debugBattle57=true;state.monsters=[];state.tempFields=[];state.tempTerrain74=[];state.items=[];
   for(let y=4;y<25;y++)for(let x=4;x<35;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);
@@ -22,7 +23,7 @@ const bridge = `globalThis.cr={state:()=>state,TT,go:l=>{state.branchWorld105={v
   advance();const walls=state.tempTerrain74.filter(w=>w.rootWall105?.element==='coffin').length;
   advance();advance();
   const corpses=state.monsters.filter(m=>m.coffinOwner105);const weakLeft=Math.min(...corpses.map(m=>combatStatusTurns(m,'weaken')));
-  const out={started,planned,midOk,weakLeft,walls,corpses:corpses.length,weak:corpses.every(m=>m.hp<=Math.round(m.maxHp)),names:[...new Set(corpses.map(m=>m.name))],again:startCoffinWall(mon,state.player)};
+  const out={started,planned,midOk,weakLeft,specOk:corpses.every(m=>cr.specOk(m)),walls,corpses:corpses.length,weak:corpses.every(m=>m.hp<=Math.round(m.maxHp)),names:[...new Set(corpses.map(m=>m.name))],again:startCoffinWall(mon,state.player)};
   // 플레이어가 아닌 상대(아군 몬스터)와 싸울 때도 쓴다
   state.monsters=state.monsters.filter(m=>m===mon);state.tempFields=[];state.tempTerrain74=[];mon.nextCoffinTurn=0;
   const foe={name:'시험 대상',x:18,y:14,hp:999,maxHp:999,faction57:'player',kind:'human',alerted:true};OccupancyService.addMonster(foe);OccupancyService.move(state.player,4,4);
@@ -69,11 +70,12 @@ assert.ok(out.levels[1].depth.NE > out.levels[1].depth.SW, '1층 위험 방향(�
 assert.ok(out.levels[2].depth.NW > out.levels[2].depth.SW, '2층 위험 방향(북서)이 더 강하지 않다');
 const c = out.coffin;
 assert.ok(c.started && c.planned === 2, '관 수 ' + c.planned);
+assert.ok(c.specOk, '장의사 시체에 공통 소환 규칙(체력 65%, 공격 -2)이 안 걸렸다');
 assert.ok(c.weakLeft>=90, '약화가 100턴이 아니다 '+c.weakLeft);
 assert.ok(c.midOk, '관이 장의사와 목표 사이에 서지 않는다');
 assert.equal(c.walls, c.planned, '관이 한꺼번에 솟지 않았다');
-assert.ok(c.corpses >= 1 && c.corpses <= 3, '철갑시체 수 ' + c.corpses);
-assert.deepEqual(c.names, ['납골 철갑시체']);
+assert.ok(c.corpses >= 1 && c.corpses <= 3, '강시 수 ' + c.corpses);
+assert.deepEqual(c.names, ['강시']);
 assert.equal(c.again, false, '재사용 대기를 무시했다');
 assert.ok(c.vsMonster, '상대가 몬스터일 때 장의사가 관을 못 부른다');
 assert.ok(c.emptyWhenKilled, '장의사가 죽었는데 시체가 깨어났다');

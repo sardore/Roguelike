@@ -785,10 +785,12 @@ function resolveSummonDefinition(name){
   const fallback=typeof floorEnemyDefinitions==='function'?(floorEnemyDefinitions()[0]||null):null;
   return fallback?{def:fallback,requested:name,fallback:true}:null
 }
+// Every summoned creature fights at 65% health and 2 less attack, whichever skill called it.
+function applySummonSpec(m){m.hp=Math.round(m.hp*.65);m.maxHp=m.hp;m.atk=Math.max(2,m.atk-2);return m}
 function summonNear(mon,name,opts={}){
   const resolved=resolveSummonDefinition(name),d=resolved?.def;if(!mon||!d){if(mon)mon.lastSummonFailure57={reason:'missing-definition',name,turn:state?.floorTurn??0};return null}
   const body=entityFootprintCells57(mon),vacated=opts.vacatedOrigin&&!state.monsters.includes(mon),occupied=new Set(vacated?[]:body.map(c=>k(c.x,c.y))),candidates=new Map();if(vacated)for(const c of body)candidates.set(k(c.x,c.y),{x:c.x,y:c.y});for(const c of body)for(const[dx,dy]of DIRS8){const x=c.x+dx,y=c.y+dy,key=k(x,y);if(!occupied.has(key))candidates.set(key,{x,y})}for(let radius=2;radius<=Math.max(1,Math.floor(opts.radius||mon.summonRadius||1));radius++)for(const c of body)for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==radius)continue;const x=c.x+dx,y=c.y+dy,key=k(x,y);if(!occupied.has(key))candidates.set(key,{x,y})}
-  for(const {x,y}of candidates.values()){if(x>0&&y>0&&x<COLS-1&&y<ROWS-1&&!OccupancyService.isOccupied(x,y)){const m=scaledMonster(clone(d),mon.debugFloor57||branchCombatFloor());m.hp=Math.round(m.hp*.65);m.maxHp=m.hp;m.atk=Math.max(2,m.atk-2);m.x=x;m.y=y;m.spawnProvenance57='summon';adoptBossChild57(m,mon);if(resolved.fallback)m.summonFallback57=resolved.requested;if(PlacementService.monsterCanStand(m,x,y)&&OccupancyService.addMonster(m)){delete mon.lastSummonFailure57;playSummonArrival(mon,m);return m}}}
+  for(const {x,y}of candidates.values()){if(x>0&&y>0&&x<COLS-1&&y<ROWS-1&&!OccupancyService.isOccupied(x,y)){const m=scaledMonster(clone(d),mon.debugFloor57||branchCombatFloor());applySummonSpec(m);m.x=x;m.y=y;m.spawnProvenance57='summon';adoptBossChild57(m,mon);if(resolved.fallback)m.summonFallback57=resolved.requested;if(PlacementService.monsterCanStand(m,x,y)&&OccupancyService.addMonster(m)){delete mon.lastSummonFailure57;playSummonArrival(mon,m);return m}}}
   mon.lastSummonFailure57={reason:'no-space',name,turn:state.floorTurn};return null
 }
 // A legion commander calls soldiers to itself (up to its limit, one call every few turns) and walks its patrol route while it has
@@ -1449,7 +1451,7 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     if(mon.lightningRod61)add('lightning-rod','피뢰침','雷','9칸 안 · 예고 1턴 · 3턴 연속 · 재사용 12턴','플레이어의 현재 칸을 겨눈 1×1 벼락을 3턴 연속 내리친다. 번개 속성 피해가 크고, 적중할 때마다 기절 2턴.','ghost');
     if(role==='alarm'||mon.alarmSkill61)add('alarm','경종','♪',`주변 8칸 · 재사용 ${floor>=16?7:8}턴`,`아군을 깨우고 ${floor}턴 동안 괴력을 부여한다. 괴력: ATK +2 · DEF +7 · 매턴 최대 HP 2% 회복 · 행동력 ×1.5. 끝나면 같은 시간 실명·배탈에 빠진다.`,'strong');
     if(mon.targetMark61)add('target-mark','목표 지정','標',`10칸 안 · 재사용 ${mon.targetMark61.cooldown}턴 · 지속 ${mon.targetMark61.turns}턴`,'지속시간 동안 층의 모든 적이 시야와 상관없이 플레이어의 위치를 안다.','ghost');
-    if(role==='coffin')add('coffin-wall','흑관 융기','棺',`${COFFIN_WALL.range}칸 안 · 직선 시야 · 예고 1턴 · 재사용 ${COFFIN_WALL.cooldown}턴`,`자신과 대상 사이에 관 ${COFFIN_WALL.count}개가 가로로 솟아 겹친 적을 1턴 기절시키고, 2턴 뒤 냉기 폭발과 함께 ${COFFIN_WALL.weakenTurns}턴간 약해진 납골 철갑시체를 깨운다. 한 번에 최대 ${COFFIN_WALL.maxAlive}마리까지만 거느린다.`);
+    if(role==='coffin')add('coffin-wall','흑관 융기','棺',`${COFFIN_WALL.range}칸 안 · 직선 시야 · 예고 1턴 · 재사용 ${COFFIN_WALL.cooldown}턴`,`자신과 대상 사이에 관 ${COFFIN_WALL.count}개가 가로로 솟아 겹친 적을 1턴 기절시키고, 2턴 뒤 냉기 폭발과 함께 ${COFFIN_WALL.weakenTurns}턴간 약해진 강시를 깨운다. 한 번에 최대 ${COFFIN_WALL.maxAlive}마리까지만 거느린다.`);
     if(role==='swoop')add('swoop','급강하','翔','3~8칸 · 직선 시야',`${floor>=21?3:2}칸 접근. 붙으면 공격력 +2와 1칸 밀침.`);
     if(role==='asura'){add('domain','아수라장','界',`반경 ${mon.asuraRadius47||3}칸 · 지속 ${mon.asuraDuration47||5}턴`,'1턴 예고 후 영역 밖에서 시작된 직접 공격을 무효화.');add('volley','다완 투척','腕',`영역 밖 · 사거리 ${mon.asuraRange47||9}칸`,'1턴 예고 후 공격력 +4, +1로 연속 투척.');}
     const onHit=[['poison','독','毒','중독 4턴 · 32%'],['bleed','출혈','血','출혈 4턴 · 34%'],['web','포획','網','기절 1턴 · 30%'],['heavyHit57','무거운 일격','重','쇠약 3턴 · 28%'],['blind','실명','暗','실명 4턴 · 45%'],['sealSkill','기 봉인','封','기봉인 5턴 · 42%'],['stomachHit','배탈','腹','배탈 4턴 · 40%'],['slow','둔중한 일격','鈍','쇠약 2턴 · 35%']];
@@ -2326,11 +2328,11 @@ function startSalamanderFireWall(mon){
  return true;
 }
 const COFFIN_WALL=Object.freeze({range:9,cooldown:12,count:2,maxAlive:3,weakenTurns:100,damageFraction:.5});
-// The undertaker raises coffins between itself and its target. They go off two turns after they rise in a frost burst and each wakes one weakened armoured corpse;
+// The undertaker raises coffins between itself and its target. They go off two turns after they rise in a frost burst and each wakes one weakened 강시;
 // it never keeps more than maxAlive of them, and killing it before the burst leaves the coffins empty.
 function startCoffinWall(mon,target){
  if(state.turn<(mon.nextCoffinTurn||0))return false;
- const id=combatantId(mon),alive=state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===id).length,count=Math.min(COFFIN_WALL.count,COFFIN_WALL.maxAlive-alive);
+ const rule=COFFIN_WALL,id=combatantId(mon),alive=state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===id).length,count=Math.min(rule.count,rule.maxAlive-alive);
  if(count<=0)return false;
  // The coffins close the way between the undertaker and its target: one in the middle of the line, the rest beside it across the path.
  const dx=target.x-mon.x,dy=target.y-mon.y,dist=Math.max(Math.abs(dx),Math.abs(dy)),along=dist>=2?{x:Math.round(mon.x+dx/2),y:Math.round(mon.y+dy/2)}:{x:mon.x,y:mon.y},px=Math.abs(dx)>=Math.abs(dy)?0:1,py=1-px,cells=[];
@@ -2338,8 +2340,8 @@ function startCoffinWall(mon,target){
  tryAdd(along);for(let w=1;w<=2;w++){tryAdd({x:along.x+px*w,y:along.y+py*w});tryAdd({x:along.x-px*w,y:along.y-py*w})}
  if(!cells.length)return false;
  const effect=effectSource57(mon),raiseTurn=state.turn+1;
- mon.nextCoffinTurn=state.turn+COFFIN_WALL.cooldown;
- const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'coffin',damage:Math.max(1,Math.floor(mon.atk*COFFIN_WALL.damageFraction)),stunTurns:1,fireTurns:0,summon105:true};
+ mon.nextCoffinTurn=state.turn+rule.cooldown;
+ const rootWall105={id:effect.owner,faction:effect.sourceFaction,credit:effect.credit,element:'coffin',damage:Math.max(1,Math.floor(mon.atk*COFFIN_WALL.damageFraction)),stunTurns:1,fireTurns:0,summon105:{weakenTurns:rule.weakenTurns,maxAlive:rule.maxAlive}};
  addField('rootWall',mon.x,mon.y,4,cells,{rootWall105,raiseTurn,detonateTurn:raiseTurn+2});
  elementBreakFx105(mon.x,mon.y,'ice');
  addLog(mon.name+'이 관을 불러냈다.');

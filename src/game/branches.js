@@ -227,7 +227,7 @@ function branchMigrateMonsters(page,world=page.branchWorld105||state?.branchWorl
   const def=mon.palaceActor105==='king'?PALACE_KING105:mon.palaceLotus105?PALACE_LOTUS105:mon.palaceActor105==='gardener'?PALACE_GARDENER105:mon.legendDungeon47?globalThis.__MANRU_LEGEND47__.enemyDefinitions(mon.legendDungeon47).find(d=>d.name===mon.name):MONSTERS.find(d=>d.name===mon.name);
   if(!def||mon.martialActor105)continue;
   const floor=branchCombatFloor(branch.id==='canal'?{id:'canal',level:1}:branch),fresh=scaledMonster(def,floor,{inventory:false,debugBattle:!!page.debugBattle57}),hp=mon.hp,max=Math.max(1,mon.maxHp||hp);
-  if(mon.palaceLotus105&&mon.spawnProvenance57==='summon'){fresh.hp=fresh.maxHp=Math.round(fresh.maxHp*.65);fresh.atk=Math.max(2,fresh.atk-2);}
+  if(mon.palaceLotus105&&mon.spawnProvenance57==='summon'){applySummonSpec(fresh);}
   Object.assign(mon,{maxHp:fresh.maxHp,hp:hp<=0?hp:Math.max(1,Math.round(hp/max*fresh.maxHp)),atk:fresh.atk,def:fresh.def,combatFloor105:floor,combatScalingRevision105:1});
   if(!def.fixedStats57)delete mon.fixedStats57;
   if(def.equipmentActor105){mon.baseAtk=fresh.baseAtk;mon.baseDef=fresh.baseDef;}
@@ -465,19 +465,20 @@ function palaceRootWallExplode(records){
  for(const wall of walls)if(wall.rootWall105.summon105)citadelRaiseCorpse(wall.rootWall105,wall.x,wall.y);
  if(damaged)addLog(`${walls.some(w=>w.rootWall105.element==='fire')?'화염벽 폭발':walls.some(w=>w.rootWall105.element==='coffin')?'관 폭발':walls.some(w=>w.rootWall105.element==='grass')?'뿌리벽 폭발':'해련 바위벽 붕괴'}: ${damaged}체 피해.`);return damaged;
 }
-// A coffin that has burst wakes one armoured corpse, weakened and worth little. The caster must still be alive and below its limit.
+// A coffin that has burst wakes one 강시 (jiangshi), weakened, through the common summon rule. The caster must still be alive and below its limit.
 function citadelRaiseCorpse(root,x,y){
- const owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner)return null;
- if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=COFFIN_WALL.maxAlive)return null;
- const def=CITADEL_ENEMIES105.find(d=>d.citadelActor105==='tomb');if(!def)return null;
+ const rule=root.summon105,owner=state.monsters.find(o=>o.hp>0&&combatantId(o)===root.id);if(!owner||!rule)return null;
+ if(state.monsters.filter(o=>o.hp>0&&o.coffinOwner105===root.id).length>=(rule.maxAlive||COFFIN_WALL.maxAlive))return null;
+ const def=MONSTERS.find(d=>d.name==='강시');if(!def)return null;
  const spots=[{x,y},...DIRS8.map(([dx,dy])=>({x:x+dx,y:y+dy}))];
  for(const q of spots){
   if(q.x<1||q.y<1||q.x>=COLS-1||q.y>=ROWS-1||OccupancyService.isOccupied(q.x,q.y))continue;
   const m=scaledMonster(clone(def),owner.citadelDepth105||combatDepth(owner));
-  m.hp=m.maxHp=Math.max(1,Math.round(m.maxHp*.75));m.xp=Math.floor((m.xp||0)/3);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
+  applySummonSpec(m);Object.assign(m,{x:q.x,y:q.y,spawnProvenance57:'summon',coffinOwner105:root.id,alerted:true});
   adoptBossChild57(m,owner);
   if(!PlacementService.monsterCanStand(m,q.x,q.y)||!OccupancyService.addMonster(m))continue;
-  setMonsterWeakened(m,COFFIN_WALL.weakenTurns);playSummonArrival(owner,m);return m;
+  if(rule.weakenTurns>0)setMonsterWeakened(m,rule.weakenTurns);
+  playSummonArrival(owner,m);return m;
  }
  return null;
 }
