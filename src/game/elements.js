@@ -108,11 +108,11 @@ function revealEnvironmentalClue105(x,y,elem){
  const r=terrainReactions105();r.clues||={};r.clues[k(x,y)]={x,y,elem};if(state.visible.has(k(x,y)))addLog(elem==='water'?'벽 틈으로 물이 스며들며 가느다란 문 윤곽을 남겼다.':'벽 틈에서 연기와 바람이 새어 나온다.');
 }
 const ELEMENT_FX_COLORS105={fire:'#f18a32',water:'#42bfdb',ice:'#83d7eb',shock:'#edc451',earth:'#bb824c',grass:'#8abc4b',holy:'#e6bd68'};
-function elementAttackFx105(elem,cells,origin=null){
+function elementAttackFx105(elem,cells,origin=null,delay=0){
  if(!ELEMENT_FX_COLORS105[elem]||!state)return;
  // the one place an element attack is drawn: in a duel the other player's page draws the same thing, whatever made it (a talisman, a bomb, a blow)
  if(state.duel)Duel.sendElementFx(elem,elementCells105(0,0,0,cells).slice(0,81),origin);const visible=elementCells105(0,0,0,cells).filter(q=>state.visible.has(k(q.x,q.y)));if(!visible.length)return;
- const events=FX.elementAttacks105||(FX.elementAttacks105=[]);events.push({elem,cells:visible.slice(0,81),origin:origin?{x:origin.x,y:origin.y}:visible[0],start:performance.now(),life:880,map:state.map});if(events.length>24)events.splice(0,events.length-24);
+ const events=FX.elementAttacks105||(FX.elementAttacks105=[]);events.push({elem,cells:visible.slice(0,81),origin:origin?{x:origin.x,y:origin.y}:visible[0],start:performance.now()+delay,life:880,map:state.map});if(events.length>24)events.splice(0,events.length-24);
 }
 function freezeWater105(x,y){
  const prior=state.tempTerrain74?.find(t=>t.x===x&&t.y===y),waterTimer=prior?.tile===TT.WATER?prior:null;
@@ -249,17 +249,17 @@ function entityElementMultiplier57(entity,elem){
   if(entity.duelOpponent)m*=DUEL_ELEMENT_RESIST;return m*resistMultiplier(level);
 }
 function resolveElementDamage57(entity,elem,base,opts={}){
-  if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity));
+  if(state&&entity&&!opts.contactHandled105)elementAttackFx105(elem,entityFootprintCells57(entity),null,opts.delay||0);
   if(state&&entity&&!opts.contactHandled105)emitElementContact105(elem,entityFootprintCells57(entity),opts.effect||{},{baseDamage:base,directTarget:entity});
   if(!state||!entity||entity.hp<=0||!Number.isFinite(base)||base<=0)return{damage:0,guarded:false,adapted:false};
   if(opts.effect&&!effectCanAffect57(opts.effect,entity))return{damage:0,guarded:false,adapted:false};
   if(opts.ground&&entity.flying)return{damage:0,guarded:false,adapted:true};
   if((entityElementResist(entity,elem)>=RESIST_IMMUNE57)){
-    floatText(entity.x,entity.y,'저항',opts.color||'#e5c080',10);return{damage:0,guarded:true,adapted:true};
+    floatText(entity.x,entity.y,'저항',opts.color||'#e5c080',10,null,opts.delay||0);return{damage:0,guarded:true,adapted:true};
   }
   const mult=opts.conduction105?1:entity===state.player?(elem==='shock'&&[TT.SHALLOW_WATER,TT.WATER,TT.MERCURY].includes(state.map[entity.y]?.[entity.x])?1.5:1)*resistMultiplier(entityElementResist(entity,elem)):entityElementMultiplier57(entity,elem),damage=damageEntity(entity,opts.damageParts105?.length?opts.damageParts105.reduce((n,part)=>n+Math.max(1,Math.round(part*mult)),0):Math.max(1,Math.round(base*mult)), opts.effect||(entity===state.player?null:state.player),elem);markCombatActivity57(entity===state.player?'hostile-element':'player-element');entity.hitUntil=performance.now()+120;
   if(damage>0&&entity.martialActor105){dojoRememberHit(entity,['ice','earth'].includes(elem)?'control':elem==='fire'||opts.ground?'area':'ranged');}
-  if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem);if(damage>0&&entity!==state.player&&entityElementResist(entity,elem)<0)floatText(entity.x,entity.y,'취약','#ffd27a',9,null,90);if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3);
+  if(damage>0)floatText(entity.x,entity.y,`-${damage}`,opts.color||'#ff9b55',opts.size||11,elem,opts.delay||0);if(damage>0&&entity!==state.player&&entityElementResist(entity,elem)<0)floatText(entity.x,entity.y,'취약','#ffd27a',9,null,90+(opts.delay||0));if(damage>0&&opts.impact!==false)impact(entity.x,entity.y,opts.color||'#f0823c',3,opts.delay||0);
   if(damage>0&&opts.logDamage57!==false){const source=opts.source||(RESIST_NAMES57[elem]||elem)+' 피해',target=(state.debugBattle57&&entity.debugId57!=null?entity.debugSide57+entity.debugId57+' ':'')+(entity===state.player?'플레이어':entity.name);addLog(`${source} → ${target}: ${damage}`);}
   if(entity.hp<=0){if(entity===state.player)die(opts.source||`${elem} 피해`);else killMonster(entity)}
   return{damage,guarded:false,adapted:mult<1,multiplier:mult};
