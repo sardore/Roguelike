@@ -3129,7 +3129,7 @@ function movePlayer(dx,dy,{automatic=false}={}){
   if(!ReachabilityService.playerStepAllowed(p,x,y)||OccupancyService.isOccupied(x,y))return false;
   p.facing={x:dx,y:dy};if(state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}
   const landing=resolvePlayerLanding57(x,y,{cause:'walk'});if(!landing.ok)return false;
-  VisibilityService.compute();updateAll();globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
+  VisibilityService.compute();updateAll();globalThis.__MANRU_SAVE_SERVICE__?.request?.('floor');return true;
  }
 
   const p0=state?.player,ctx={dx,dy,beforeX:p0?.x,beforeY:p0?.y,targetX:(p0?.x??0)+dx,targetY:(p0?.y??0)+dy,targetTile:state?.map?.[(p0?.y??0)+dy]?.[(p0?.x??0)+dx],result:undefined};
@@ -3367,7 +3367,7 @@ function descend(){
         // Present the new map before releasing the shop-exit input lock.
         syncGameViewport();globalThis.__MANRU_CAMERA_STATE12__?.resume?.(true);updateAll(true);
       }else updateAll();
-      globalThis.__MANRU_SAVE_SERVICE__?.request?.();return true;
+      globalThis.__MANRU_SAVE_SERVICE__?.request?.('floor');return true;
     }finally{setGenerationPresentation8(false)}
   };
   if(leavingShop57||fromFloor===21){

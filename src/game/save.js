@@ -46,7 +46,30 @@ function compactSummonSave(world){
   compactSummonSave(world.artifactReturn46?.outer||world.artifactReturn46);
   compactSummonSave(world.shopIntermission?.outer?.state);
 }
-function projectGameState(source=state){
+// Floor generation output (who owns a cell, tower and palace layouts, wall styles) never changes after the floor is built, yet it is most of a
+// large floor's save: the black citadel writes 1.4 MB every turn and 60% of it is this. Each such subtree is serialized once and its text is spliced
+// into every later save, so a turn only pays for what actually moves.
+const STATIC_SAVE_PATHS105=Object.freeze([
+  ['branchTerrain105','citadel105',['cellOwner105','relicCells105','towers','motifCells','zoneCells105']],
+  ['branchTerrain105','mine105',['cellStyle']],
+  ['branchTerrain105','palace105',['roomCells','facades','generation105','floors','outdoors','permanentWater','routeCells','materials','thresholds','windows','wallLamps105','chambers']]
+]);
+const STATIC_SAVE_JSON105=new WeakMap();
+function spliceStaticSave(selected,tokens){
+  for(const [root,sub,keys] of STATIC_SAVE_PATHS105){
+    const a=selected[root],b=a?.[sub];if(!b||typeof b!=='object')continue;
+    let outer=null,inner=null;
+    for(const key of keys){
+      const v=b[key];if(v==null||typeof v!=='object')continue;
+      let json=STATIC_SAVE_JSON105.get(v);
+      if(json===undefined){json=JSON.stringify(v);STATIC_SAVE_JSON105.set(v,json)}
+      else if(globalThis.__MANRU_STATIC_AUDIT__&&JSON.stringify(v)!==json)throw new Error('Static save data changed: '+root+'.'+sub+'.'+key);
+      outer??=(selected[root]={...a});inner??=(outer[sub]={...b});
+      const token='\u0001static'+tokens.length+'\u0001';inner[key]=token;tokens.push({token:JSON.stringify(token),json});
+    }
+  }
+}
+function projectGameState(source=state,tokens=null){
   if(!source||typeof source!=='object'||Array.isArray(source))return null;
   if(source.debugBattle57)throw new Error('Debug battle state cannot be saved');
   const selected={};for(const key of GAMESTATE_FIELDS)if(Object.hasOwn(source,key))selected[key]=key==='seen'||key==='grassTufts1020'?null:source[key];
@@ -54,6 +77,7 @@ function projectGameState(source=state){
     const terrain=source.branchTerrain105;
     selected.branchTerrain105={...terrain,heights:undefined,surfaces:undefined,ramps:undefined,packed105:terrain.staticPacked105};
   }
+  if(tokens)spliceStaticSave(selected,tokens);
   const plain=structuredClone(selected);
   plain.player=plain.player&&typeof plain.player==='object'?plain.player:null;
   plain.monsters=Array.isArray(plain.monsters)?plain.monsters:[];
@@ -554,7 +578,21 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
         const requested=RuntimeState.persistence.pending||(action?.committed&&(action.advancesWorld||noTimeCommit));RuntimeState.persistence.pending=false;
         if(action?.persistence)return action.persistence;
         if(!requested||!state||state.dead||state.victory)return{ok:true,committed:false,source:'no-action'};
+        // A turn's save is queued and written once the player pauses (or at the latest 1.5 s later), so walking or fighting turn after turn writes the run
+        // once instead of once per turn. Stairs, manual saves, going to the background and closing the page save at once.
+        if(reason!=='floor'){const t=performance.now();SAVE_DEFERRED.since??=t;SAVE_DEFERRED.last=t;return{ok:true,committed:false,deferred:true,debounced:true}}
         const result=SaveService.commit(reason);if(!result.ok)toast('기록 저장에 실패했다.');return result;
+      },
+      flushDeferred(reason='idle'){
+        if(SAVE_DEFERRED.since==null)return null;
+        SAVE_DEFERRED.since=null;
+        if(runIsEphemeral()||ACTION_AUDIT5.stack.length||globalThis.__MANRU_LIFECYCLE__?.busy?.()||!state||state.dead||state.victory)return null;
+        const result=SaveService.commit(reason);if(!result.ok)toast('기록 저장에 실패했다.');return result;
+      },
+      flushIdle(){
+        if(SAVE_DEFERRED.since==null)return null;
+        const t=performance.now();
+        return t-SAVE_DEFERRED.last>=200||t-SAVE_DEFERRED.since>=1500?SaveService.flushDeferred('idle'):null;
       },
       clearPending(){RuntimeState.persistence.pending=false},
       terminal(kind){
@@ -582,11 +620,13 @@ function loadGame(...args){requestGameFullscreen65();return RunLifecycle.runLoad
       },
       snapshot(){return structuredClone(RuntimeState.persistence)}
     });
+    const SAVE_DEFERRED={since:null,last:0};
     function writeRun(reason='explicit'){
+      SAVE_DEFERRED.since=null;
       if(runIsEphemeral())return{ok:true,committed:false,source:'ephemeral-run'};
       if(!state||state.dead||state.victory)return SaveService.record({ok:false,committed:false,failure:'inactive',source:'active-run',reason});
       let plain,raw,result;
-      try{plain=GameState.project(state);plain.saveWrittenAt1004=Date.now();plain.saveSeq1004=(Number(state.saveSeq1004)||0)+1;raw=JSON.stringify(plain)}
+      try{const tokens=[];plain=GameState.project(state,tokens);plain.saveWrittenAt1004=Date.now();plain.saveSeq1004=(Number(state.saveSeq1004)||0)+1;raw=JSON.stringify(plain);for(const t of tokens)raw=raw.replace(t.token,()=>t.json)}
       catch(e){result=SaveService.record({ok:false,committed:false,failure:'serialization',source:'active-run',reason,message:String(e)})}
       if(!result){
         // The two save slots alternate. A completed write leaves the previous
@@ -1078,7 +1118,8 @@ function potionsPostGeneration(){pstate();state.tempFields=[];rewardRooms()}
 function talismanPostGeneration(){ensure74();state.tempTerrain74=[];state.elementFields74=[]}
 function bindCanvasAndKeyListeners(){
   window.addEventListener('blur',clearHeldInput53);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearHeldInput53()});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearHeldInput53();globalThis.__MANRU_SAVE_SERVICE__?.flushDeferred?.('background')}});
+  addEventListener('pagehide',()=>{globalThis.__MANRU_SAVE_SERVICE__?.flushDeferred?.('background')});
   C.addEventListener('pointerdown',InputRouter,{capture:true,passive:false});
   InputRouter.noteListener('canvas-target:pointerdown');
   C.addEventListener('pointerup',InputRouter,{capture:true,passive:false});

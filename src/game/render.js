@@ -6851,6 +6851,7 @@ function visualLoop(now=performance.now()){
         }
         if(now-RC.lastHud>120){updateAttackButton();RC.lastHud=now}
       }
+      globalThis.__MANRU_SAVE_SERVICE__?.flushIdle?.();
     }
     }catch(error){
       if(!RC.renderRecoveryAt||now-RC.renderRecoveryAt>1000){
