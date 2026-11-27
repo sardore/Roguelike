@@ -2897,6 +2897,9 @@ function drawMasterBoss(q,frame,trueForm=false){
 }
 // Regional silhouettes use the same 32×36 frame, outline and shaded polygons as main creatures.
 // Species identity, not floor or faction, selects art; no combat flags are changed here.
+// Sprites made from a picture instead of by hand (tools/pixelize.mjs prints the literal): rows of palette digits, '.' for empty.
+const PIXEL_ACTORS105={};
+function drawPixelRows(q,art){if(!art)return;for(let y=0;y<art.rows.length;y++){const row=art.rows[y];for(let x=0;x<row.length;x++){const c=row[x];if(c==='.')continue;q.fillStyle=art.palette[parseInt(c,36)];q.fillRect(x,y,1,1)}}}
 function drawBranchCreature(q,m,frame,sp){
  const b=frame?1:0,c=sp.c,h=sp.h,a=sp.ac,d=ACTOR_OUTLINE,skin='#b99a78',ivory='#e4d7b5',
  R=(x,y,w,hh,col)=>{q.fillStyle=col;q.fillRect(x,y,w,hh)},
@@ -3092,6 +3095,7 @@ function drawBranchCreature(q,m,frame,sp){
   P('#241c34',[[11,9+b],[21,9+b],[19,14+b],[13,14+b]]);R(12,10+b,8,2,'#17111f');for(const x of[12,14,17,19])P('#f2ecfa',[[x,10+b],[x+1,10+b],[x+1,12+b]],null);
   P('#4a4450',[[2,32],[30,32],[31,35],[1,35]]);L(3,32,29,32,'#7a7482',1);break;
  }
+ case'pixel_rows':{drawPixelRows(q,PIXEL_ACTORS105[monsterSpeciesName(m)]);break;}
  case'citadel_bier':{
   // A funeral ghost maiden with an unmistakably human body: head, neck, sloped shoulders, upper arms and forearms, hands, a short jacket over a slim waist and a long skirt that frays into mist. Long loose hair over both shoulders, a camellia wreath, one hand low, one raising a flower branch.
   const hair='#1f1a30',hairHi='#3d3659',w0='#f3f0fb',w1='#cfcbe0',w2='#8a86ac',skin='#e8cfc9',skinHi='#f7e8e2',skinLo='#c9a39f',rose='#d9707f',roseHi='#f0b0b8',roseLo='#8e3447',gold='#c6a16b';
