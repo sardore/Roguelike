@@ -620,8 +620,10 @@ function masterHallCells(mon,probe){
 }
 // 섬광탄은 천면경 거울·천명탄처럼 보주가 세우는 몹이다. 때리면 그 자리에서 먼저 터지고, 안 건드리면 설치가 끝난 뒤 줄 순서대로 터진다.
 const FLASH_BOMB_NAMES={grass:'풀 섬광탄',earth:'대지 섬광탄',ice:'얼음 섬광탄'};
+// 빛줄기는 벽·기둥 같은 단단한 지형과 시야를 가리는 것만 막는다. 물·용암·허공은 건너뛴다.
+function flashRayStopsAt(tile){return runtimeTerrainSolid57(tile)||tileBlocksSight(tile)}
 function flashBombRays(b,reach,dirs){
- return dirs.map(([dx,dy])=>{const cells=[];for(let i=1;i<=reach;i++){const x=b.x+dx*i,y=b.y+dy*i;if(!cell54(x,y)||tileBlocks(state.map[y][x])||tileBlocksSight(state.map[y][x]))break;cells.push({x,y})}return{dx,dy,cells}}).filter(q=>q.cells.length);
+ return dirs.map(([dx,dy])=>{const cells=[];for(let i=1;i<=reach;i++){const x=b.x+dx*i,y=b.y+dy*i;if(!cell54(x,y)||flashRayStopsAt(state.map[y][x]))break;cells.push({x,y})}return{dx,dy,cells}}).filter(q=>q.cells.length);
 }
 function flashLiveBombs(boss){return state.monsters.filter(m=>m.hp>0&&m.combatFixture54==='flashBomb'&&bossChildOf(m,boss))}
 function flashRefreshCells(boss){const I=boss.intent54;if(!I||I.type!=='flashblast')return;const r=BOSS_ARENA_RULES.master.flash,dirs=flashRayDirs(r.phases[I.data.stage].dirs);I.cells=flashBombRayCells(flashLiveBombs(boss),r.reach,dirs)}
@@ -670,7 +672,7 @@ function flashBombRayCells(bombs,reach,dirs){
  const seen=new Set(),cells=[];
  const add=c=>{const key=k(c.x,c.y);if(!seen.has(key)){seen.add(key);cells.push(c)}};
  for(const b of bombs){add({x:b.x,y:b.y});
-  for(const[dx,dy]of dirs)for(let i=1;i<=reach;i++){const x=b.x+dx*i,y=b.y+dy*i;if(!cell54(x,y)||tileBlocks(state.map[y][x])||tileBlocksSight(state.map[y][x]))break;add({x,y})}}
+  for(const[dx,dy]of dirs)for(let i=1;i<=reach;i++){const x=b.x+dx*i,y=b.y+dy*i;if(!cell54(x,y)||flashRayStopsAt(state.map[y][x]))break;add({x,y})}}
  return cells;
 }
 // 표적이 한 칸씩 걷거나 4칸 점멸(한 번)로 피할 수 있는지 시뮬레이션한다. 폭파는 설치가 끝난 뒤 1·2·3번 순서로 한 턴씩 터진다.
