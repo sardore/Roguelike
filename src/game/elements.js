@@ -231,7 +231,7 @@ function entityElementResist(entity,elem){
   if(!entity)return 0;let n=(entity===state?.player?Math.max(0,entity.resist?.[elem]||0):monsterElementTable(entity)[elem]||0)+gearResistLevel(entity,elem);
   n+=entity.armor?.elementGuard74===elem?1:0;
   if(entity!==state?.player)return clamp(n+(elem==='fire'&&entity.weapon?.artifactId46==='ember_axe'?3:0),-1,RESIST_IMMUNE57);
-  if(elem==='fire'&&((state?.status?.fireResist57||0)>0||globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')))n+=elem==='fire'&&(state?.status?.fireResist57||0)>0?RESIST_IMMUNE57:3;
+  if(elem==='fire')n+=((state?.status?.fireResist57||0)>0?2:0)+(globalThis.__MANRU_LEGEND47__?.possesses?.('ember_axe')?3:0);
   if((elem==='ice'&&(state?.status?.warm57||0)>0)||(state?.elementWard74?.element===elem&&state.elementWard74.ttl>0))n+=RESIST_IMMUNE57;
   return clamp(n,-1,RESIST_IMMUNE57);
 }

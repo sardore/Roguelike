@@ -1370,7 +1370,7 @@ export const scenarios = {
       await reset();
       const resist=await s.page.evaluate(()=>{
         const F=__MANRU_QA_FOOD__,st=__MANRU_QA_UI__.state(),item={...F.prototype('숯불고기'),count:1};st.player.inventory.push(item);
-        F.eat(item,0);const duration=st.status.fireResist57,full=st.player.hunger===60,guarded=F.element(st.player,'fire',10).damage===0;
+        F.eat(item,0);const duration=st.status.fireResist57,full=st.player.hunger===60,guarded=F.element(st.player,'fire',10).damage===5;
         if(!__MANRU_RELEASE__.save().ok||!__MANRU_RELEASE__.load())throw Error('food resistance save failed');
         const restored=__MANRU_QA_UI__.state(),saved=restored.status.fireResist57===duration;
         for(let i=0;i<11;i++)F.tick();const eleventh=F.guard(restored.player,'fire');F.tick();const expired=!F.guard(restored.player,'fire'),hp=restored.player.hp;
