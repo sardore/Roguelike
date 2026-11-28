@@ -58,7 +58,7 @@ try {
     assert.ok(f.log.slice(2).some(l => l[1] > 0), `${key} 폭발이 피해를 주지 못했다`);
     for (const st of Object.keys(statuses)) assert.ok(f.status[st] > 0, `${key} 상태 ${st} ${JSON.stringify(f.status)}`);
   }
-  assert.ok(out.f2.lost >= out.f0.lost, `피해가 단계마다 커져야 한다 ${out.f0.lost}/${out.f1.lost}/${out.f2.lost}`);
+  assert.ok(out.f2.lost > out.f0.lost, `피해가 단계마다 커져야 한다 ${out.f0.lost}/${out.f1.lost}/${out.f2.lost}`);
   assert.ok(out.core.used !== 'flashblast', '사념체 중에 섬광탄을 썼다');
   assert.ok(out.wall.blocked !== false, '벽 너머로 빛이 샜다');
   const w = out.weave; assert.ok(!w.error, JSON.stringify(w));
