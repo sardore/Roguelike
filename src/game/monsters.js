@@ -628,7 +628,7 @@ function flashRefreshCells(boss){const I=boss.intent54;if(!I||I.type!=='flashbla
 function flashPlantWave(boss,wave,ph,stage,index){
  wave.ids=[];
  for(const b of wave.bombs){
-  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:`보주가 던져 세운 섬광탄이다. ${ph.label} 범위로 폭발하며, 부수면 그 자리에서 먼저 터진다.`,hp:4,maxHp:4,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
+  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:'만루보주가 던져 세운 섬광탄이다. 시간이 지나면 사방으로 빛을 뿜으며 터지고, 부수면 그 자리에서 먼저 터진다.',hp:4,maxHp:4,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
   adoptBossChild57(bomb,boss);if(!OccupancyService.addMonster(bomb))continue;wave.ids.push(combatantId(bomb));
   projectileFX(boss.x,boss.y,b.x,b.y,ph.color,{kind:'shell',element:ph.element,life:380});
   burst(b.x,b.y,'#fff6c8',10,.8,380);burst(b.x,b.y,ph.color,10,1,380);impact(b.x,b.y,ph.color,4,380);
@@ -638,13 +638,12 @@ function flashPlantWave(boss,wave,ph,stage,index){
 function beginFlashSequence(boss,target){
  const plan=planFlashSequence(boss,target);if(!plan)return false;const stage=Math.min(2,boss.coreStage54||0),waves=plan.waves.map(w=>({bombs:w.bombs,ids:[]}));
  flashPlantWave(boss,waves[0],plan.phase,stage,0);
- setBossIntent(boss,'flashblast',[],`섬광탄 투척 · ${plan.phase.label} · 폭탄을 부수면 먼저 터진다`,{waves,step:0,stage});flashRefreshCells(boss);return true;
+ setBossIntent(boss,'flashblast',[],'만루보주가 섬광탄을 던진다 · 부수면 먼저 터진다',{waves,step:0,stage});flashRefreshCells(boss);return true;
 }
 function tickFlashBomb(bomb){
  if(bomb.hp<=0||bomb.flashSpent57)return;bomb.hp-=1;bomb.hitUntil=performance.now()+140;
  const owner=bossOwner(bomb,'master');
  if(bomb.hp<=0){flashBombDetonate(bomb,owner);return}
- floatText(bomb.x,bomb.y,String(bomb.hp),BOSS_ARENA_RULES.master.flash.phases[bomb.flashStage57||0].color,12);
 }
 function flashBombDetonate(bomb,boss=null,fromKill=false){
  if(!bomb||bomb.flashSpent57)return;bomb.flashSpent57=true;
@@ -785,8 +784,8 @@ function executeBossIntent(mon){
   // 한 수마다 폭탄을 한 줄씩 더 던져 깐다. 깔린 폭탄은 턴마다 체력이 1씩 줄고 0이 되면 터지므로, 먼저 깐 줄부터 차례로 터진다.
   const d=I.data,r=BOSS_ARENA_RULES.master.flash,ph=r.phases[d.stage],total=d.waves.length;d.step++;
   flashPlantWave(mon,d.waves[d.step],ph,d.stage,d.step);
-  if(d.step>=total-1){addLog(`섬광탄 설치 완료 · ${ph.label} · 턴마다 체력이 줄어 터진다`);clearIntent(mon)}
-  else{I.label=`섬광탄 투척 · ${ph.label} · 폭탄을 부수면 먼저 터진다`;addLog('⚠ '+I.label);I.armedPlayerTurn=state.turn}
+  if(d.step>=total-1){addLog('섬광탄이 모두 깔렸다 · 곧 차례로 터진다');clearIntent(mon)}
+  else{I.label='만루보주가 섬광탄을 던진다 · 부수면 먼저 터진다';addLog('⚠ '+I.label);I.armedPlayerTurn=state.turn}
   globalThis.__MANRU_SFX54__?.play?.('warn');return true;
  }
  if(I.type==='corebolt'){
