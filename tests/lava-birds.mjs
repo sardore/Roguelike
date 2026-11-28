@@ -30,7 +30,7 @@ const bridge = `globalThis.lb={
   Object.assign(out,{ally:isPlayerAlly57(crow),started:!!crow.furyStarted105,power:crow.power61?.turns,kite:!!crow.kite105});return out},
  // 불사조: 살라맨더와 같은 화염 착탄(fireArtillery)을 쓰고, 미니보스라 층에 한 마리만 놓인다.
  phoenixShell:()=>{lb.arena();const m=lb.spawn('불사조',12,8);m.x=12;m.y=8;OccupancyService.move(m,12,8);const period=combatDepth(m)>=16?5:6,phase=(m.x*3+m.y*5)%7;state.floorTurn=phase%period+period*10;m.intent61=null;
-  const out={role:m.role61,mini:!!m.miniBoss,hp:m.maxHp>0,dash:!!m.phoenixDash105};out.shell=!!globalThis.__MANRU_AI61__.artillery(m,state.player)&&m.intent61?.type==='fire';return out},
+  const crow=lb.spawn('삼족오',14,8),out={role:m.role61,mini:!!m.miniBoss,hp:m.maxHp>0,dash:!!m.phoenixDash105,flies:!!m.flying,crowFlies:!!crow.flying};out.shell=!!globalThis.__MANRU_AI61__.artillery(m,state.player)&&m.intent61?.type==='fire';return out},
  spawnOnce:()=>{lb.arena();state.monsters=[];const rs=[];for(let k=0;k<6;k++){const x=5+k*5;rs.push({x,y:9,w:5,h:9,cx:x+2,cy:13})}
   try{spawnDungeon46('lava_bow',rs)}catch(e){return{error:String(e&&e.message||e)}}
   const names=state.monsters.map(q=>q.name.replace(' · 문지기',''));const count=n=>names.filter(x=>x===n).length;
@@ -73,6 +73,8 @@ const ac = out.allyCrow;
 assert.ok(ac.ally && ac.started && ac.at >= 20 && ac.at <= 22 && ac.power === 99 && !ac.kite, `플레이어 편 삼족오 20턴 발동 ${JSON.stringify(ac)}`);
 const ps = out.phoenixShell;
 assert.ok(ps.role === 'fireArtillery' && ps.mini && ps.dash, `불사조 역할/미니보스 ${JSON.stringify(ps)}`);
+// 불사조는 땅에 서 있는 새다: 날아다니는 몹처럼 떠서 그려지지 않고(재 상태도 마찬가지), 삼족오는 그대로 난다.
+assert.ok(!ps.flies && ps.crowFlies, `불사조가 떠 있다 ${JSON.stringify(ps)}`);
 assert.ok(ps.shell, `불사조가 화염 착탄 예고를 못 한다 ${JSON.stringify(ps)}`);
 const so = out.spawnOnce;
 assert.ok(!so.error, `용암궁 몹 배치 오류 ${JSON.stringify(so)}`);
