@@ -148,7 +148,8 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
   const r=rnd();
   if(c.d===1){if(open4(c.x,c.y-1)||r>.35||!tryTree(1,.5+rnd()*.14,.3))low()}
   else if(c.d===2){if(r>.5||!tryTree(1,.75+rnd()*.3,.4))low()}
-  else{if(r<.3?!tryTree(2,.8+rnd()*.25,.4):r<.6?!tryTree(1,.9+rnd()*.25,.4):true)low()}
+  else{ // deep rows: great trees (rare), tall trees (common), then mid trees; whatever cannot grow its crown falls back to the next smaller size
+   const ok=r<.07?tryTree(3,.8+rnd()*.25,.5)||tryTree(2,.8+rnd()*.25,.4)||tryTree(1,.9+rnd()*.25,.4):r<.55?tryTree(2,.8+rnd()*.25,.4)||tryTree(1,.9+rnd()*.25,.4):r<.85?tryTree(1,.9+rnd()*.25,.4):false;if(!ok)low()}
  }
  T.forest.sort((a,b)=>a.y-b.y||a.x-b.x);
  // ---- portals and arrival
