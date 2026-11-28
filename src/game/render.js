@@ -1972,7 +1972,27 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     if(VIEW.w!==cw||VIEW.h!==ch||Math.abs(VIEW.dpr-dpr)>.01){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false;RENDER_PERF_STATE.dirty=true;RENDER_PERF_STATE.miniDirty=true}
     return true;
   }
-  function drawFlashBlasts(){
+  function drawFlashBombs(){
+ if(!state?.monsters)return;const bombs=state.monsters.filter(m=>m.hp>0&&m.combatFixture54==='flashBomb'&&state.visible.has(k(m.x,m.y)));if(!bombs.length)return;
+ const now=performance.now(),cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=TILE*cam.zoom,rule=BOSS_ARENA_RULES.master.flash;
+ X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
+ for(const m of bombs){
+  const rgb=rule.phases[m.flashStage57||0].rgb.join(','),hp=Math.max(1,Math.min(4,m.hp)),period=[0,150,270,430,620][hp],phase=((now+m.x*97+m.y*53)%period)/period,flash=Math.pow(Math.max(0,Math.sin(phase*Math.PI*2)),2),
+   x0=cam.x+m.x*TILE*cam.zoom,y0=cam.y+m.y*TILE*cam.zoom,cx=x0+z/2,cy=y0+z*.6,damage=4-hp;
+  X.globalCompositeOperation='lighter';
+  // pulsing aura: the less health it has left, the faster and brighter it blinks
+  const radius=z*(.62+.3*flash+.08*damage),g=X.createRadialGradient(cx,cy,0,cx,cy,radius);g.addColorStop(0,`rgba(255,255,255,${.15+.6*flash})`);g.addColorStop(.4,`rgba(${rgb},${.22+.45*flash})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.beginPath();X.arc(cx,cy,radius,0,Math.PI*2);X.fill();
+  // a turning rune ring on the ground
+  X.strokeStyle=`rgba(${rgb},${.4+.4*flash})`;X.lineWidth=Math.max(1,z*.05);X.setLineDash([z*.12,z*.1]);X.lineDashOffset=-now/45;X.beginPath();X.ellipse(cx,y0+z*.9,z*.5,z*.16,0,0,Math.PI*2);X.stroke();X.setLineDash([]);
+  // cracks leak light as it takes damage
+  X.strokeStyle=`rgba(255,250,225,${.55+.4*flash})`;X.lineWidth=Math.max(1,z*.045);
+  for(let i=0;i<damage;i++){const a=i*2.1+.6;X.beginPath();X.moveTo(cx,cy);X.lineTo(cx+Math.cos(a)*z*.2,cy+Math.sin(a)*z*.2);X.lineTo(cx+Math.cos(a+.35)*z*.36,cy+Math.sin(a+.35)*z*.36);X.stroke()}
+  // sparks orbiting the casing
+  for(let n=0;n<3;n++){const a=now/(520-damage*70)+n*2.094,sx=cx+Math.cos(a)*z*.52,sy=cy+Math.sin(a)*z*.2-Math.abs(Math.sin(a*.5))*z*.08,sz=z*(.05+.04*flash);X.fillStyle=`rgba(255,255,255,${.7+.3*flash})`;X.fillRect(sx-sz,sy-sz*.3,sz*2,sz*.6);X.fillRect(sx-sz*.3,sy-sz,sz*.6,sz*2)}
+ }
+ X.restore();
+}
+function drawFlashBlasts(){
  const rays=FX.flashRays,blasts=FX.flashBlasts;if(!state||(!rays?.length&&!blasts?.length))return;
  const now=performance.now(),cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=TILE*cam.zoom,STEP=34,LIFE=560,BLAST=520,
   at=(x,y)=>({x:cam.x+x*TILE*cam.zoom+z/2,y:cam.y+y*TILE*cam.zoom+z/2}),
@@ -2020,14 +2040,7 @@ function drawBossIntent(){
  for(const mon of [...(state.monsters||[]),...(state.spectator?state.spectateWarnings||[]:[])]){const I=mon.intent54;if(!I)continue;const silkIntent=I.type==='weave'||I.type==='sew';
   if(I.type==='corebolt'){drawCoreSealWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
   if(I.type==='palaceSweep105'){drawPalaceSweepWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
-  if(I.type==='flashblast'){
-   // every live bomb shows exactly the cells it will burst over; the rows about to go off next glow brighter
-   const d=I.data||{},rule=BOSS_ARENA_RULES.master.flash,ph=rule.phases[d.stage||0],rgb=ph.rgb,dirs=flashRayDirs(ph.dirs),total=(d.waves||[]).length,next=d.step>=total-1?d.step-total+1:-1,zz=TILE*cam.zoom;
-   for(const bomb of flashLiveBombs(mon)){const strong=bomb.flashWave57===next;
-    for(const c of[{x:bomb.x,y:bomb.y},...flashBombRays(bomb,rule.reach,dirs).flatMap(q=>q.cells)]){if(!state.visible.has(k(c.x,c.y)))continue;const x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom;
-     X.fillStyle=`rgba(${rgb.join(',')},${(strong?.22:.09)+(strong?.14:.05)*pulse})`;X.fillRect(x+1,y+1,zz-2,zz-2);X.strokeStyle=`rgba(${rgb.join(',')},${strong?.85:.4})`;X.lineWidth=Math.max(1,(strong?2:1)*cam.zoom);X.strokeRect(x+1.5,y+1.5,zz-3,zz-3)}}
-   continue;
-  }
+  if(I.type==='flashblast')continue;
   for(const c of I.cells){
    if(!state.visible.has(k(c.x,c.y)))continue;const rgb=colors[I.type]||[220,130,72],x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom,z=TILE*cam.zoom;
    X.save();X.beginPath();X.rect(x,y,z,z);X.clip();X.fillStyle=`rgba(${rgb.join(',')},${.10+.13*pulse})`;X.fillRect(x+1,y+1,z-2,z-2);if(silkIntent){X.restore();continue}X.strokeStyle=`rgba(${rgb.join(',')},${.65+.3*pulse})`;X.lineWidth=Math.max(1,1.5*cam.zoom);
@@ -3029,13 +3042,22 @@ function drawBranchCreature(q,m,frame,sp){
   q.restore();break;
  }
  case'flash_bomb':{
-  // a charged shell: element-coloured core in a dark casing, a spitting fuse, and four notches marking the directions it will burst along
-  const y=17-b;
-  glowR9(q,16,y,15,'rgba(255,246,210,.55)');
-  E(16,y+9,7,2,'rgba(0,0,0,.3)');
-  E(16,y,9,9,d);E(16,y,8,8,c);E(16,y+.6,6,6,h);E(14.6,y-1.4,3,3,a);E(14,y-2,1.3,1.3,'#ffffff');
-  for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]])R(16+dx*9.5-.5,y+dy*9.5-.5,1.5,1.5,a);
-  L(16,y-8,18,y-11,'#6b5a3c',1.2);R(17.5,y-13.5+b,2,2,'#fff4c8');R(19.5,y-12.5-b,1,1,a);R(16.5,y-13,1,1,h);
+  // a floating charged gem: faceted casing, a hot core, an orbiting ring and ornaments of its element (leaves, rock plates, ice spikes)
+  const kind=m?.name?.startsWith('풀')?'grass':m?.name?.startsWith('대지')?'earth':'ice',y=15-b*1.2,
+   rot=(pts,ang,ox,oy)=>pts.map(([px,py])=>[ox+px*Math.cos(ang)-py*Math.sin(ang),oy+px*Math.sin(ang)+py*Math.cos(ang)]);
+  glowR9(q,16,y,16,'rgba(255,246,210,.34)');glowR9(q,16,y,11,'rgba(255,255,255,.28)');
+  E(16,31,8,2,'rgba(0,0,0,.28)');
+  if(kind==='grass')for(const ang of[-.55,.55,2.6,3.7,1.57,-1.57])P(ang>0&&ang<1?h:c,rot([[0,-5],[2.4,-1.6],[0,3.2],[-2.4,-1.6]],ang,16+Math.cos(ang-1.57)*10.5,y+Math.sin(ang-1.57)*10.5),d,.8);
+  else if(kind==='earth')for(let i=0;i<5;i++){const ang=i*1.2566+(b?.1:-.1);P(i%2?c:h,rot([[0,-3.6],[3,0],[1.6,3.6],[-2.6,2.6],[-3,-1.2]],ang,16+Math.cos(ang)*10.8,y+Math.sin(ang)*10.8),d,.8)}
+  else for(let i=0;i<8;i++){const ang=i*Math.PI/4+.2;P(i%2?h:a,rot([[8.6,-1.5],[14.6,0],[8.6,1.5]],ang,16,y),d,.7)}
+  P(d,rot([[8.8,0],[6.2,6.2],[0,8.8],[-6.2,6.2],[-8.8,0],[-6.2,-6.2],[0,-8.8],[6.2,-6.2]],0,16,y),null);
+  P(c,rot([[7.8,0],[5.5,5.5],[0,7.8],[-5.5,5.5],[-7.8,0],[-5.5,-5.5],[0,-7.8],[5.5,-5.5]],0,16,y),null);
+  P(h,[[16,y-7.8],[21.5,y-5.5],[16,y-1.5],[10.5,y-5.5]],null);P(a,[[16,y-7.8],[21.5,y-5.5],[19,y-4.6]],null);P(shade49(c,-22),[[16,y+7.8],[10.5,y+5.5],[16,y+1.5],[21.5,y+5.5]],null);
+  E(16,y+.4,4.6,4.6,h);E(16,y,3,3,a);E(16,y,1.5,1.5,'#ffffff');
+  E(12.6,y-4.4,1.7,1,'#ffffff');
+  q.strokeStyle=a;q.lineWidth=.7;q.beginPath();q.ellipse(16,y,13,4,frame?.5:-.5,0,Math.PI*2);q.stroke();
+  for(const t of[.4,2.5,4.4]){const ang=t+(frame?.9:0);R(16+Math.cos(ang)*13*Math.cos(frame?.5:-.5)-1,y+Math.sin(ang)*4-1,2,2,'#ffffff')}
+  R(15.5,y-14.5-b,1,5,a);R(13.5,y-12.5-b,5,1,a);R(15.8,y-12.8-b,.4,.4,'#ffffff');
   break}
  case'mirror_orb':{
   const y=15-b;
@@ -7155,5 +7177,5 @@ function updatePanels(){
   }
 window.__manruZoomActive=false;
 window.__manruZoomSuppressUntil=0;
-globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'flash-blast',draw:drawFlashBlasts},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
+globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'flash-bomb',draw:drawFlashBombs},{id:'flash-blast',draw:drawFlashBlasts},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
 const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};

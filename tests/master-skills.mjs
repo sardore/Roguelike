@@ -8,16 +8,16 @@ import { launch, openSession, startRun, dismissModals } from './harness.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bridge = `globalThis.mb={
- arena:()=>{state.debugBattle57=true;state.monsters=[];state.tempFields=[];state.tempTerrain74=[];state.items=[];for(let y=4;y<27;y++)for(let x=4;x<40;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);state.player.hp=state.player.maxHp=900000;state.status={}},
+ arena:()=>{state.debugBattle57=true;state.monsters=[];state.tempFields=[];state.tempTerrain74=[];state.items=[];state.rumorSpaces1030=[];for(let y=4;y<27;y++)for(let x=4;x<40;x++)setTerrainTile58(state.map,x,y,TT.FLOOR);state.player.hp=state.player.maxHp=900000;state.status={}},
  boss:(x,y,stage)=>{const m={...clone(BOSSES[25]),boss:true,x,y,alerted:true,hp:240,maxHp:240,coreStage54:stage};OccupancyService.addMonster(m);return m},
  flash:(stage)=>{mb.arena();const m=mb.boss(21,15,stage);OccupancyService.move(state.player,14,15);
   const dirOk={0:(dx,dy)=>dx&&dy&&Math.abs(dx)===Math.abs(dy),1:(dx,dy)=>!dx||!dy,2:(dx,dy)=>!dx||!dy||Math.abs(dx)===Math.abs(dy)}[stage];
   const out={},max=state.player.maxHp;FX.flashRays=[];FX.flashBlasts=[];
   out.began=beginFlashSequence(m,state.player);const I=m.intent54;if(!out.began||!I)return{noPlan:true};
   const bombsNow=()=>state.monsters.filter(q=>q.combatFixture54==='flashBomb'&&q.hp>0);
-  out.name=bombsNow()[0]?.name;out.first=bombsNow().length;out.isMonster=bombsNow().every(q=>q.fixed&&q.hp===1&&!q.boss);
+  out.name=bombsNow()[0]?.name;out.first=bombsNow().length;out.isMonster=bombsNow().every(q=>q.fixed&&q.hp===4&&!q.boss);
   out.counts=[out.first];let lost=0;const log=[];let execs=0;
-  while(m.intent54&&execs<8){state.turn+=1;const before=state.player.hp;executeBossIntent(m);execs++;const dmg=before-state.player.hp;lost+=dmg;log.push([execs,dmg,!!m.intent54,bombsNow().length]);state.player.hp=max}
+  while(execs<10&&(execs<2||bombsNow().length)){state.turn+=1;state.floorTurn+=1;const live=bombsNow(),before=state.player.hp;if(m.intent54)executeBossIntent(m);for(const b of live)if(state.monsters.includes(b))tickBossFixture(b);execs++;const dmg=before-state.player.hp;lost+=dmg;log.push([execs,dmg,!!m.intent54,bombsNow().length,live.map(q=>q.hp).sort().join('')]);state.player.hp=max}
   out.execs=execs;out.lost=lost;out.cleared=!m.intent54;out.log=log;out.leftover=bombsNow().length;
   out.shape=null;out.rays=FX.flashRays.length;out.blasts=FX.flashBlasts.length;
   out.rayShape=FX.flashRays.every(q=>dirOk(q.dx,q.dy)&&q.len>=1&&q.len<=8);
@@ -41,6 +41,8 @@ const bridge = `globalThis.mb={
   setBossIntent(m,'wallweave',plan.cells,'t',{tiles:plan.tiles});state.turn+=1;executeBossIntent(m);
   out.walls=plan.cells.filter(c=>state.map[c.y][c.x]!==TT.FLOOR).length;out.temp=(state.tempTerrain74||[]).filter(t=>t.kind==='bossWeave').length;
   out.reachable=!masterWallBlocked(m,state.player,[]);out.ttl=(state.tempTerrain74||[]).find(t=>t.kind==='bossWeave')?.ttl;return out},
+ visualSetup:()=>{mb.arena();const m=mb.boss(26,15,2);OccupancyService.move(state.player,15,15);state.visible=new Set();for(let y=4;y<27;y++)for(let x=4;x<40;x++)state.visible.add(k(x,y));state.seen=new Set(state.visible);beginFlashSequence(m,state.player);for(let n=0;n<2;n++){state.turn++;executeBossIntent(m)}mb.m=m},
+ visualBoom:()=>{const bomb=state.monsters.find(q=>q.combatFixture54==='flashBomb');bomb.hp=1;tickBossFixture(bomb)},
  rules:()=>BOSS_ARENA_RULES.master.cores.map(c=>[c.interval,c.batch,c.cap])};`;
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER, fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -59,12 +61,12 @@ try {
     assert.equal(f.name, name, `${key} 폭탄 이름`);
     assert.ok(f.isMonster, `${key} 폭탄이 몹이 아니다`);
     assert.equal(f.first, per, `${key} 첫 줄 폭탄 수 ${f.first}`);
-    assert.equal(f.execs, 5, `${key} 설치 2번 + 폭발 3번이어야 한다 ${f.execs}`);
+    assert.equal(f.execs, 6, `${key} 4턴 만에 첫 줄, 이후 한 줄씩 터져 6턴에 끝나야 한다 ${f.execs}`);
     assert.ok(f.cleared && f.leftover === 0, `${key} 끝난 뒤에도 폭탄/예고가 남았다`);
-    assert.deepEqual(f.log.map(l => l[3] > 0), [true, true, true, true, false], `${key} 폭탄 수 변화 ${JSON.stringify(f.log)}`);
-    assert.deepEqual(f.log.map(l => l[3]), [per * 2, per * 3, per * 2, per, 0], `${key} 줄 순서대로 터지지 않았다 ${JSON.stringify(f.log)}`);
-    assert.ok(f.log[0][1] === 0 && f.log[1][1] === 0, `${key} 설치 중에 피해가 들어갔다`);
-    assert.ok(f.log.slice(2).some(l => l[1] > 0), `${key} 폭발이 피해를 주지 못했다`);
+    assert.deepEqual(f.log.map(l => l[3]), [per * 2, per * 3, per * 3, per * 2, per, 0], `${key} 턴마다 줄어 먼저 깐 줄부터 터져야 한다 ${JSON.stringify(f.log)}`);
+    assert.ok(f.log.slice(0, 3).every(l => l[1] === 0), `${key} 터지기 전에 피해가 들어갔다`);
+    assert.ok(f.log.slice(3).some(l => l[1] > 0), `${key} 폭발이 피해를 주지 못했다`);
+    assert.ok(f.log[0][4] === '3'.repeat(per) && f.log[1][4].includes('2') && f.log[1][4].includes('3') && f.log[2][4].includes('1'), `${key} 턴마다 체력이 1씩 줄지 않았다 ${JSON.stringify(f.log.map(l => l[4]))}`);
     assert.ok(f.rays >= per * 3 * 2 && f.blasts === per * 3, `${key} 폭발 연출이 없다 rays ${f.rays} blasts ${f.blasts}`);
     assert.ok(f.rayShape, `${key} 폭발 방향/거리가 단계 규칙을 벗어났다`);
     for (const st of Object.keys(statuses)) assert.ok(f.status[st] > 0, `${key} 상태 ${st} ${JSON.stringify(f.status)}`);
@@ -77,6 +79,11 @@ try {
   const w = out.weave; assert.ok(!w.error, JSON.stringify(w));
   assert.ok(w.planned && w.n > 0 && w.walls > 0 && w.temp > 0, '벽·지형이 세워지지 않았다');
   assert.ok(w.reachable, '구조 재편이 길을 완전히 막았다');
+  // 폭탄·폭발 그리기가 프레임마다 예외 없이 도는지 본다.
+  await s.page.evaluate(() => mb.visualSetup());
+  await s.page.waitForTimeout(500);
+  await s.page.evaluate(() => mb.visualBoom());
+  await s.page.waitForTimeout(600);
   assert.equal(errors.length, 0, errors.join('|'));
   console.log('master-skills: ok');
 } finally { await browser.close(); }
