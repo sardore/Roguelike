@@ -2052,6 +2052,8 @@ mutate(x,y,tile,opts={}){
   if(old===tile&&!opts.touch)return{ok:true,changed:false,old,tile,version57:state.terrainMutationVersion57?.[k(x,y)]||0};
   const occupants=runtimeTerrainOccupants57(x,y);if(tile===TT.LAVA&&opts.source==='element74'&&occupants.some(e=>e.boss||e.duelOpponent||(state.duel&&e===state.player)))return{ok:false,reason:'boss-occupied-lava',old,tile};if(occupants.length&&runtimeTerrainSolid57(tile)&&!opts.overlapSolid)return{ok:false,reason:'occupied-solid',old,tile,occupants:occupants.length};
   const written=setTerrainTile58(state.map,x,y,tile,opts.placement58||{});if(written!==tile)return{ok:false,reason:'rejected-placement',old,tile};
+  // A paper bridge or crumbling floor that is replaced (lava, a stone path...) is no longer fragile: its pending collapse warning goes with it.
+  if(old!==tile&&(old===TT.PAPER_BRIDGE||old===TT.CRUMBLE))delete hz().armed[k(x,y)];
   state.terrainMutationSeq57=(state.terrainMutationSeq57||0)+1;state.terrainMutationVersion57=state.terrainMutationVersion57||{};const version57=state.terrainMutationSeq57;state.terrainMutationVersion57[k(x,y)]=version57;
   // Terrain owns ground-item safety too. Preserve quantities in the floor-local
   // pending queue when no reachable safe destination exists.
