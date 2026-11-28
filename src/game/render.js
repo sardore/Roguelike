@@ -2736,7 +2736,7 @@ const ACTOR_SPEC={
   '혼백 사냥꾼':{"a":"branch","c":"#454651","h":"#8f9a9c","ac":"#c5b493","design":"soul_hunter"},
   '월화 궁수':{"a":"branch","c":"#9c442c","h":"#dc844a","ac":"#f4c877","design":"moonfire_archer"},
   '재의 감시자':{"a":"branch","c":"#625752","h":"#a69584","ac":"#e5b583","design":"ash_watcher"},
-  '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander"},
+  '용암 살라맨더':{"a":"branch","c":"#793e2c","h":"#bc6c43","ac":"#eec37b","design":"lava_salamander","resolution":1.7},
   '삼족오':{a:'branch',c:'#17131d',h:'#625a86',ac:'#e2a53e',design:'three_legged_crow',resolution:1.3,frames:8,framePeriod:170},
   '불사조':{a:'branch',c:'#b2261c',h:'#e0582a',ac:'#f6bf48',design:'phoenix',resolution:1.5},
   '족쇄 인형':{"a":"branch","c":"#4d5457","h":"#929a93","ac":"#c9b587","design":"shackle_doll"},
@@ -3261,14 +3261,38 @@ function drawBranchCreature(q,m,frame,sp){
   P(h,[[11,22+b],[9,28],[4,32],[10,31],[15,25+b]],null);P(c,[[20,23+b],[25,29],[22,34],[28,31],[26,26+b]],null);R(5,5-b,2,2,h);R(28,19+b,2,2,c);R(13,33-b,1,1,a);break;
  }
  case'lava_salamander':{
-  // A tall frilled head, black lava scales and a curled tail with exposed molten seams.
-  P('#372521',[[1,30],[5,21+b],[12,17+b],[18,20+b],[20,14+b],[26,10+b],[31,15+b],[30,24+b],[24,29],[13,32],[5,33]]);
-  P(c,[[3,29],[8,23+b],[13,21+b],[19,24+b],[23,19+b],[28,15+b],[29,22+b],[23,27],[12,29],[6,30]],null);
-  for(const pts of[[[19,15+b],[17,8+b],[22,11+b]],[[22,12+b],[24,4+b],[26,11+b]],[[27,12+b],[31,7+b],[30,16+b]],[[11,20+b],[9,13+b],[15,17+b]]])P(h,pts);
-  P('#452c29',[[22,15+b],[27,13+b],[30,18+b],[27,23+b],[22,22+b]]);R(26,16+b,2,1,ivory);L(25,21+b,30,20+b,a);
-  for(const pts of[[[6,26],[10,25],[12,28]],[[14,22+b],[16,25],[21,24]],[[23,15+b],[24,18+b],[28,18+b]]])trim(pts,a);
-  for(const[x,y]of[[9,28],[22,26]]){P(h,[[x,y],[x+4,y],[x+6,32],[x-1,33]]);L(x,32,x+4,32,ivory)}
-  P(a,[[3,25+b],[1,21-b],[4,22+b],[5,17+b],[7,24+b]],null);R(13,11-b,1,2,a);break;
+  // A big newt-like lizard in side view facing right, chest and head reared up with the jaws open on a molten throat: a long body on four splayed legs, a tail that tapers and curls
+  // up behind, charcoal skin with glowing lava blotches joined by a cracked, glowing flank.
+  const sway=b?1:0,lift=b?1:0,jaw=b?.9:0,skin='#5e3a2c',skinM='#82513a',skinH='#b8693f',belly='#d9824a',far='#3b2520',glow='#ff9a3c',hot='#ffe08a',deep='#1a0f0c',throat='#7a1f10';
+  // far legs, then the tail (a tapering curve with a glowing vein) behind the body
+  P(far,[[13,28],[15.4,29],[15.6,32],[16.4,33.6],[12,33.6],[12.4,31]]);P(far,[[19,28],[21.4,29],[21.6,32-lift],[22.4,33.6-lift],[18,33.6-lift],[18.4,31]]);
+  plume(11,27.4,3.6,30,1.2,17.4-sway,4.4,skin,d);plume(11,27.4,3.6,30,1.2,17.4-sway,.9,'#c9622c',null);
+  // body, and the neck that carries the head up
+  P(skin,[[9,26.4],[11,21.6],[16,20],[21,20.4],[24,22],[25,26],[22.6,30.6],[15,31.6],[10,30]],d);
+  P(skin,[[20,22.4],[23,17.8],[27.6,17.2],[28.4,21.8],[26,27.4],[22.6,29.4]],d);
+  P(skinM,[[11,22.2],[16,21],[21,21.4],[23.4,23],[18,23.6],[12,24.8]],null);
+  P(skinM,[[22.4,19],[25.4,18],[27.4,19.4],[25,21.4],[22.6,22]],null);
+  P(belly,[[10,29.8],[15,31.2],[22,30.2],[23.6,28.6],[18,29.6],[12,29]],null);
+  for(const x of[12,15,18,21])R(x,20.6,1.8,1,skinH);
+  // lava blotches on the back and flank, and the crack that joins them
+  L(12.6,26.4,16.6,25.8,hot,1);L(16.6,25.8,21,27,hot,1);L(11,22,23,21.8,glow,.8);
+  for(const[x,y,rx,ry]of[[12.6,24.2,2.2,1.2],[17.2,23.4,2.8,1.4],[21.4,24.2,2.2,1.2],[15,28.2,1.7,.9],[19.6,28.2,1.8,.9]]){E(x,y,rx,ry,glow);E(x-.3,y-.1,rx*.5,ry*.5,hot)}
+  // near legs (one pair steps up on the second frame), each ending in a splayed foot with claws
+  P(skin,[[10,27.6],[13.4,28.8],[14,32],[14.6,33.6],[8.4,33.6],[9.2,31],[7.8,29.4]],d);for(const x of[8.8,11.2,13.6])R(x,33,1.1,1.6,hot);
+  P(skin,[[21,27.2],[24.6,28.4],[26.4,31-lift],[27.2,33.6-lift],[21.2,33.6-lift],[22.4,31],[19.8,29.2]],d);for(const x of[21.8,24.2,26.6])R(x,33-lift,1.1,1.6,hot);
+  // head, jaws open: the upper jaw with the eye, the throat glowing, teeth, the lower jaw dropping on the second frame
+  P(throat,[[23.6,19.2],[28,18.2],[31.6,18],[30.8,21.6+jaw],[27,22.4+jaw],[24,22.6+jaw]],null);
+  P(glow,[[25,20],[28.4,19.2],[30.6,19.4],[29.6,21.2+jaw*.6],[26,21.8+jaw*.6]],null);
+  P(skin,[[22.4,16.4],[26,12.8],[31,14.2],[32,17.6],[28,18.6],[23.8,19.6]],d);
+  P(skinM,[[23.6,16],[26.4,13.8],[30,15],[26,16.2],[24,17.4]],null);
+  P(skin,[[23,22.6+jaw],[27,21.8+jaw],[31.6,21.6+jaw],[30.2,25+jaw],[25.6,25.8+jaw],[23.2,25+jaw]],d);
+  P(belly,[[24.6,24.6+jaw],[29.8,24+jaw],[28.6,25.6+jaw],[25.4,25.6+jaw]],null);
+  for(const x of[26,28,30])P('#efe4c6',[[x,18.4],[x+1,18.4],[x+.5,20.2]],null);
+  for(const x of[26.6,28.6,30.4])P('#efe4c6',[[x,21.8+jaw],[x+1,21.8+jaw],[x+.5,20.2+jaw]],null);
+  E(25.6,15.2,2,1.9,skinM);E(26,15.2,1.3,1.3,hot);R(26.3,14.3,.9,1.8,deep);L(23.4,14,27.8,13.4,deep,1.1);
+  R(30.8,15.2,.8,.8,deep);E(24,18.2,1.1,1,glow);
+  // embers lifting off the open mouth and the back
+  for(const[x,y]of[[8,14],[29,9],[24,7],[16,10]])R(x,y-b*1.6,1,1,b?hot:glow);break;
  }
  case'three_legged_crow':{
   // The crow of the sun as the old tomb murals paint it: a black crow striding in profile inside a flaming sun disc, one wing lifted with a scalloped edge, a crest curling forward and three red-gold legs.
@@ -3303,7 +3327,7 @@ function drawBranchCreature(q,m,frame,sp){
  }
  case'phoenix':{
   // A rising crimson firebird: raised gold wings tipped with flame, a flame crest, a long tail of plumes with burning eyes. Its fall leaves only embers in ash.
-  const phase=m?.revivePhase57||'normal',full=phase==='full',y=b*.6,f=b?1.2:0,
+  const phase=m?.revivePhase57||'normal',full=phase==='full',y=b*.6+3,f=b?1.2:0,
    deep=full?'#7a1410':'#5c1410',body=full?'#d43420':'#b2261c',warm=full?'#f47a32':'#e0582a',gold=full?'#ffe27a':'#f6bf48',goldD='#a8661c',flame=full?'#fff0b0':'#ffd36a',ash='#5a524e',ashD='#3a3432',ashL='#8c827a';
   // Ash is drawn grain by grain (a fixed hash picks each grain's shade) so it reads as loose powder with embers in it, not as a smooth dome.
   const grain=(i,j)=>{const t=Math.sin(i*127.1+j*311.7)*43758.5453;return t-Math.floor(t)},

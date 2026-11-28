@@ -16,8 +16,8 @@ const bridge = `globalThis.lb={
   m.x=12;m.y=8;OccupancyService.move(m,12,8);const period=combatDepth(m)>=16?5:6,phase=(m.x*3+m.y*5)%7;state.floorTurn=phase%period+period*10;m.intent61=null;out.shell=!!globalThis.__MANRU_AI61__.artillery(m,state.player)&&m.intent61?.type==='fire';m.intent61=null;
   Object.assign(out,{started:!!m.furyStarted105,power:m.power61?.turns,track:m.trackUntil105-state.turn,kiteAfter:!!m.kite105,rangedAfter:m.ranged,quake:m.legendSkill47,role:m.role61});return out},
  revive:()=>{lb.arena();const m=lb.spawn('불사조',20,14);const out={lives:m.livesRemaining57,baseAtk:m.atk,baseDef:m.def};
-  m.hp=0;out.began=beginMonsterRevival(m);out.phase=m.revivePhase57;state.floorTurn=1000;for(let i=0;i<6;i++){state.floorTurn+=3;advanceMonsterRevival(m)}
-  Object.assign(out,{phaseAfter:m.revivePhase57,atkAfter:m.atk,defAfter:m.def,hp:m.hp,max:m.maxHp,livesAfter:m.livesRemaining57,again:beginMonsterRevival(m)});return out},
+  m.hp=0;out.began=beginMonsterRevival(m);out.phase=m.revivePhase57;out.corpseFlies=!!m.flying;state.floorTurn=1000;for(let i=0;i<6;i++){state.floorTurn+=3;advanceMonsterRevival(m)}
+  Object.assign(out,{reviveFlies:!!m.flying,phaseAfter:m.revivePhase57,atkAfter:m.atk,defAfter:m.def,hp:m.hp,max:m.maxHp,livesAfter:m.livesRemaining57,again:beginMonsterRevival(m)});return out},
  // 디버그 전장(debugBattleRound57)은 자기 라운드 루프를 쓰므로 삼족오의 20턴 판정도 그 루프에서 돌아야 한다.
  debugCrow:()=>{lb.arena();DEBUG_BATTLE57.open=true;DEBUG_BATTLE57.winner=null;DEBUG_BATTLE57.round=0;state.monsters=[];
   const crow=lb.spawn('삼족오',8,14),foe={name:'시험 대상',x:36,y:14,hp:99999,maxHp:99999,atk:0,def:99,faction57:'player',kind:'human',alerted:true,debugSide57:'A',fixed:true};crow.debugSide57='B';OccupancyService.addMonster(foe);
@@ -30,7 +30,7 @@ const bridge = `globalThis.lb={
   Object.assign(out,{ally:isPlayerAlly57(crow),started:!!crow.furyStarted105,power:crow.power61?.turns,kite:!!crow.kite105});return out},
  // 불사조: 살라맨더와 같은 화염 착탄(fireArtillery)을 쓰고, 미니보스라 층에 한 마리만 놓인다.
  phoenixShell:()=>{lb.arena();const m=lb.spawn('불사조',12,8);m.x=12;m.y=8;OccupancyService.move(m,12,8);const period=combatDepth(m)>=16?5:6,phase=(m.x*3+m.y*5)%7;state.floorTurn=phase%period+period*10;m.intent61=null;
-  const out={role:m.role61,mini:!!m.miniBoss,hp:m.maxHp>0,dash:!!m.phoenixDash105};out.shell=!!globalThis.__MANRU_AI61__.artillery(m,state.player)&&m.intent61?.type==='fire';return out},
+  const crow=lb.spawn('삼족오',14,8),out={role:m.role61,mini:!!m.miniBoss,hp:m.maxHp>0,dash:!!m.phoenixDash105,flies:!!m.flying,crowFlies:!!crow.flying};out.shell=!!globalThis.__MANRU_AI61__.artillery(m,state.player)&&m.intent61?.type==='fire';return out},
  spawnOnce:()=>{lb.arena();state.monsters=[];const rs=[];for(let k=0;k<6;k++){const x=5+k*5;rs.push({x,y:9,w:5,h:9,cx:x+2,cy:13})}
   try{spawnDungeon46('lava_bow',rs)}catch(e){return{error:String(e&&e.message||e)}}
   const names=state.monsters.map(q=>q.name.replace(' · 문지기',''));const count=n=>names.filter(x=>x===n).length;
@@ -63,7 +63,7 @@ assert.equal(c.quake, 'earthQuake'); assert.equal(c.role, 'fireArtillery');
 const r = out.revive;
 assert.equal(r.lives, 2); assert.ok(r.began && r.phase === 'corpse', '쓰러져도 시체로 안 남는다');
 assert.equal(r.phaseAfter, 'full'); assert.ok(r.atkAfter > r.baseAtk && r.defAfter > r.baseDef, '부활 뒤 스펙이 안 오른다');
-assert.equal(r.livesAfter, 1); assert.equal(r.again, false, '두 번 부활한다');
+assert.equal(r.livesAfter, 1); assert.ok(!r.corpseFlies, `재(시체) 상태가 떠 있다 ${JSON.stringify(r)}`); assert.ok(r.reviveFlies, `되살아난 불사조가 다시 날지 않는다 ${JSON.stringify(r)}`); assert.equal(r.again, false, '두 번 부활한다');
 const d = out.dash;
 assert.ok(d.started && d.type === 'phoenixDash' && d.cells >= 4, '돌진 예고가 안 선다');
 assert.ok(d.foeHurt && d.moved && d.fire >= 1 && d.cooling, `관통 돌진 결과 ${JSON.stringify(d)}`);
@@ -73,6 +73,8 @@ const ac = out.allyCrow;
 assert.ok(ac.ally && ac.started && ac.at >= 20 && ac.at <= 22 && ac.power === 99 && !ac.kite, `플레이어 편 삼족오 20턴 발동 ${JSON.stringify(ac)}`);
 const ps = out.phoenixShell;
 assert.ok(ps.role === 'fireArtillery' && ps.mini && ps.dash, `불사조 역할/미니보스 ${JSON.stringify(ps)}`);
+// 날아다니는 몹은 살아 있을 때 난다. 시체(재)는 땅에 있으므로 떠 있는 판정이 꺼지고, 되살아나면 돌아온다(아래 revive).
+assert.ok(ps.flies && ps.crowFlies, `불사조와 삼족오는 난다 ${JSON.stringify(ps)}`);
 assert.ok(ps.shell, `불사조가 화염 착탄 예고를 못 한다 ${JSON.stringify(ps)}`);
 const so = out.spawnOnce;
 assert.ok(!so.error, `용암궁 몹 배치 오류 ${JSON.stringify(so)}`);
