@@ -4399,6 +4399,35 @@ function drawFood(q,it){
   }
   for(const [x,y]of[[12,37],[37,37],[9,31]]){itemArtDot(q,x,y,'#777981');itemArtDot(q,x+2,y+1,'#34363d')}
  }
+ else if(n==='숯불고기'){
+  // Glazed beef slabs with grill marks on an iron grate over glowing charcoal, a few sparks rising.
+  for(const [x,y,angle]of[[12,38,-.2],[24,40,.08],[36,38,.22]]){
+   q.save();q.translate(x,y);q.rotate(angle);outlineRect(q,-8,-3,16,7,'#17191c');rect(q,-6,-2,11,2,'#3d3f46');q.restore();
+   itemArtDot(q,x-4,y+2,'#e0622a');itemArtDot(q,x+3,y+3,'#f08a3a');itemArtDot(q,x+1,y+1,'#ffc062');
+  }
+  line(q,5,34,43,34,'#17191c',3);line(q,5,33,43,33,'#5a5b62',1);for(const x of[11,20,29,38])line(q,x,31,x,37,'#34353b',1);
+  poly(q,'#2a140f',[[7,27],[12,16],[28,12],[40,17],[42,28],[28,34],[12,33]]);
+  poly(q,'#8c4a2f',[[9,27],[14,18],[28,14],[38,18],[40,27],[28,32],[13,31]]);
+  poly(q,'#b8693a',[[13,20],[28,16],[36,19],[30,23],[17,25]]);
+  poly(q,'#6f3822',[[13,28],[28,30],[39,26],[28,32],[14,31]]);
+  for(const x of[15,21,27,33])line(q,x,19,x-4,30,'#2a1710',2);
+  rect(q,24,21,6,2,'#6f9d4d');rect(q,17,23,5,2,'#8fb35e');for(const [x,y]of[[20,19],[31,22],[26,26]])itemArtDot(q,x,y,'#eadfbf');
+  itemArtDot(q,18,21,'#f2c08a');itemArtDot(q,34,21,'#f2c08a');itemArtDot(q,24,18,'#e8a368');
+  for(const [x,y,c]of[[11,9,'#f08a3a'],[24,6,'#ffc062'],[37,8,'#e0622a'],[18,11,'#ffd98a']])itemArtDot(q,x,y,c);
+ }
+ else if(n==='중병탄'){
+  // A lumpy ball of charcoal, seaweed and mountain berries bound with twine; a sickly violet haze seeps from it.
+  q.save();q.globalAlpha=.45;ell(q,'#b96bc9',14,13,6,4);ell(q,'#b96bc9',33,10,7,4);ell(q,'#d79be0',24,6,5,3);ell(q,'#9a52ab',40,18,4,3);q.restore();
+  ell(q,'#1a1418',24,30,15,15);ell(q,'#3b3138',24,29,13,13);ell(q,'#4d424a',20,24,6,5);
+  poly(q,'#255744',[[11,25],[21,16],[28,17],[17,29]]);poly(q,'#417d5c',[[13,24],[21,18],[25,19],[16,27]]);
+  poly(q,'#255744',[[24,43],[35,34],[38,28],[30,30],[20,40]]);poly(q,'#417d5c',[[25,41],[34,34],[35,31],[29,32],[22,39]]);
+  line(q,15,24,22,19,'#8db781',1);line(q,27,37,34,32,'#8db781',1);
+  for(const [x,y,r]of[[31,22,4],[18,35,4],[34,36,3]]){ell(q,'#271e2d',x+1,y+1,r+1,r+1);ell(q,'#623446',x,y,r,r);itemArtDot(q,x-1,y-1,'#c58a95')}
+  for(const [x,y]of[[22,27],[27,31],[14,31],[31,27]]){rect(q,x,y,3,2,'#0d0f13');itemArtDot(q,x+1,y,'#686971')}
+  line(q,11,29,24,33,'#c9ab6a',1);line(q,24,33,37,28,'#c9ab6a',1);
+  line(q,24,16,24,10,'#8f7440',2);ell(q,'#d4b574',24,9,3,2);line(q,22,9,19,7,'#c9ab6a',1);line(q,26,9,29,7,'#c9ab6a',1);
+  for(const [x,y]of[[9,20],[38,24],[11,38]])itemArtDot(q,x,y,'#c99bd6');
+ }
  else if(n==='깨끗한 물'||n==='빙결액'){outlineRect(q,15,9,18,30,'#7a8a89');rect(q,17,15,14,20,n==='빙결액'?'#a9d6df':'#77b7c3');rect(q,20,7,8,6,'#76563c');rect(q,19,17,3,14,'rgba(255,255,255,.35)');if(n==='빙결액')poly(q,'#e5f7f3',[[24,16],[28,23],[24,30],[20,23]])}
  else {outlineRect(q,10,16,28,20,'#6d4e35');rect(q,13,13,22,8,'#d5b47a');rect(q,16,22,16,8,'#709b4d')}
 }
