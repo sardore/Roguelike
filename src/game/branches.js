@@ -2482,7 +2482,7 @@ function buildCitadel(level){
  for(const tower of data.towers){const cells=[];for(let y=tower.y-tower.r;y<=tower.y+tower.r;y++)for(let x=tower.x-tower.r;x<=tower.x+tower.r;x++)if(citadelInside(tower,x,y,1)&&m[y][x]===TT.STONE_PATH&&!reserved({x,y}))cells.push({x,y});
   if(['siege','forge','gatehouse'].includes(tower.concept105)){const lanes=[];for(const q of cells){let n=0;while(n<12&&m[q.y]?.[q.x+n]===TT.STONE_PATH&&!reserved({x:q.x+n,y:q.y}))n++;if(n>=6)lanes.push({...q,n});}lanes.sort((a,b)=>b.n-a.n);const q=lanes[0];if(q){const id=`boulder-${tower.id}`,home={id,x:q.x,y:q.y,nextAt:25,structureKind105:'boulder',material105:'stone'},button={id:id+':release',x:q.x+q.n-1,y:q.y,gateOnly:true};mine.sources.push(home);mine.carts.push({...home,home:home.id,alive:true});put(button.x,button.y,TT.SWITCH);mine.buttons.push(button);}}
   if(level===1&&tower.id===12)continue;
-  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).map(g=>g.role),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles],corners=citadelCorners(tower),danger=citadelDangerDelta(level,corners);const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
+  const kinds={prison:['chain','lancer','tomb'],watch:['crossbow','wing','lancer'],observatory:['bell','wing'],ritual:['bell','tomb','wing'],chapel:['bell','tomb'],ossuary:['tomb','bell'],tomb:['tomb','chain'],forge:['lancer','wing','chain'],siege:['crossbow','lancer'],central:['bell','tomb','chain','wing']},guestRoles=CITADEL_GUESTS105.filter(g=>g.levels.includes(level)&&g.concepts.includes(tower.concept105)).flatMap(g=>Array(g.weight||1).fill(g.role)),roles=[...(kinds[tower.concept105]||['lancer','crossbow','chain']),...guestRoles],corners=citadelCorners(tower),danger=citadelDangerDelta(level,corners);const influence=tower.relicInfluence105,legend=influence?influence.id:tower.concept105==='prison'?'chain_sickle':['tomb','ossuary','central'].includes(tower.concept105)?'curse_spear':['fortress','command'].includes(tower.concept105)?'ward_hammer':'curse_blade',defs=globalThis.__MANRU_LEGEND47__.enemyDefinitions(legend),baseCount=Math.max(4,Math.min(10,Math.floor(cells.length/70)+3))+(influence?.stage||0);
   const rooms=data.rooms.filter(r=>r.citadelTower105===tower.id&&r.theme105!=='stair').sort((a,b)=>Number(!!b.function105)-Number(!!a.function105)||Math.abs(b.cx-tower.x)+Math.abs(b.cy-tower.y)-Math.abs(a.cx-tower.x)-Math.abs(a.cy-tower.y));
   const captiveRooms=rooms.filter(r=>r.prison105?.captive105),formation=[...captiveRooms,...(tower.enemyPlan105||[]).map(index=>rooms.find(r=>r.authoredIndex105===index)).filter(r=>r&&!r.prison105?.captive105)],count=Math.max(baseCount,formation.length);
    for(let n=0;n<count;n++){
@@ -2638,10 +2638,25 @@ const DOJO_STYLE_WEIGHTS105=Object.freeze([
 // Authored multi-height tower graph; no repair pass or encounter-clear gates.
 // Guests from the main dungeon, posted by floor in the towers whose purpose suits them: omen crows haunt the graves, shrines and the star
 // tower on floor 2; lightning-rod troops stand in the forges, siege halls and armouries on floors 2-3; the orb's last guard holds the treasure and command keeps on floor 4.
+// The fourth theme's own monsters (floors 16-20) garrison the rest: guard soldiers and watch dolls hold the barracks, gates and keeps, the dead walk the graves and
+// shrines, hungry things settle in the kitchens and granaries, slimes and fire-lizards take the cisterns and foundries. Fixed turrets, ambushers and water monsters stay out.
+// A guest's weight (default 1) is how many times its role is listed for the towers whose concept matches, so the garrison guests outnumber the citadel's own roles there.
 const CITADEL_GUESTS105=Object.freeze([
  Object.freeze({role:'crow',name:'흉조 까마귀',levels:[2],concepts:['ossuary','tomb','chapel','observatory']}),
  Object.freeze({role:'rod',name:'피뢰 갑병',legend:'thunder_spear',levels:[2,3],concepts:['forge','siege','armory','command']}),
- Object.freeze({role:'keeper',name:'보주의 파수꾼',levels:[4],concepts:['treasury','central','command','fortress']})
+ Object.freeze({role:'keeper',name:'보주의 파수꾼',levels:[4],concepts:['treasury','central','command','fortress']}),
+ Object.freeze({role:'guardsman',name:'수비병',weight:4,levels:[1,2,3,4],concepts:['barracks','gatehouse','watch','fortress','command','armory']}),
+ Object.freeze({role:'dollSpear',name:'경비 인형 - 보병',weight:3,levels:[1,2,3],concepts:['barracks','gatehouse','watch','fortress','siege','treasury']}),
+ Object.freeze({role:'dollGun',name:'경비 인형 - 포병',weight:3,levels:[2,3,4],concepts:['watch','siege','fortress','gatehouse','armory','treasury']}),
+ Object.freeze({role:'ironling',name:'강철이',weight:3,levels:[3,4],concepts:['armory','siege','gatehouse','fortress','command']}),
+ Object.freeze({role:'watcher',name:'성채 비행 감시자',weight:3,levels:[1,2,3],concepts:['watch','observatory','bell','gatehouse','fortress','archive','treasury']}),
+ Object.freeze({role:'jiangshi',name:'강시',weight:3,levels:[1,2,3],concepts:['ossuary','tomb','chapel','central']}),
+ Object.freeze({role:'ghoul',name:'식귀',weight:3,levels:[1,2,3],concepts:['kitchen','store','infirmary','ossuary']}),
+ Object.freeze({role:'rat',name:'굶주린 창고 쥐',weight:3,levels:[1,2],concepts:['store','kitchen','cistern','barracks']}),
+ Object.freeze({role:'acidSlime',name:'산성 슬라임',weight:3,levels:[2,3],concepts:['cistern','store','infirmary','forge']}),
+ Object.freeze({role:'shellSlime',name:'껍질슬라임',weight:3,levels:[2,3,4],concepts:['cistern','store','treasury']}),
+ Object.freeze({role:'meltSlime',name:'녹아내린 슬라임',weight:3,levels:[2,3],concepts:['forge','siege','kitchen']}),
+ Object.freeze({role:'salamander',name:'살라맨더',weight:3,levels:[3,4],concepts:['forge','kitchen','siege','armory']})
 ]);
 function citadelGuestDef(role){const g=CITADEL_GUESTS105.find(x=>x.role===role);return g?(g.legend?globalThis.__MANRU_LEGEND47__.enemyDefinitions(g.legend).find(d=>d.name===g.name):MONSTERS.find(d=>d.name===g.name))||null:null}
 const CITADEL_ENEMIES105=Object.freeze([
