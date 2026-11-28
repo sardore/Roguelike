@@ -451,7 +451,7 @@ function moveMonsterStep(mon,x,y,opts={}){
  if(mon.lavaTrail57&&terrainSurface58(state.map[oy][ox]))RuntimeTerrainOwner.temporary(ox,oy,TT.LAVA,3,'lava-trail',{allowedOld:[state.map[oy][ox]],source:'molten-slime'});
  if(mon.hp>0&&state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}return true;
 }
-const BOSS_ARENA_RULES={containment:{patterns:['needle','keeper'],radius:15,damageFraction:.10,minDamage:5,poisonTurns:6},silk:{weaveCooldown:7,repairCooldown:4,mirrorCap:24,mirrorSpacing:3,lineCap:3,gasDuration:24,blackThreshold:.70,blackChance:.50,blackCap:4,waveIntervals:[8,6,4,2],waveBatch:2,mirrorSummonCap:6,bossSummonCap:12,roster:['비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','윈도','향기요정','분홍거미']},keeper:{bindTurns:2,boundDef:2,chainCooldown:4,lavaThresholds:[.67,.33],lavaWarning:10,bridgeWidths:[5,7]},master:{maskAtk:14,shotCooldown:[5,4,3],shieldShotCooldown:6,thresholds:[.66,.33],range:4,shieldRange:3,sealAngle:90,cores:[{name:'제1사념 · 만루의 잔향',hp:45,def:3,interval:2,batch:3,cap:8,roster:['금령','금령','공허 가오리','공허 가오리','만루의 수호상']},{name:'제2사념 · 천실핵의 집념',hp:60,def:5,interval:3,batch:2,cap:6,roster:['신전 사제 망령','차원 포식자','보주의 파수꾼','천수 아수라']}]}};
+const BOSS_ARENA_RULES={containment:{patterns:['needle','keeper'],radius:15,damageFraction:.10,minDamage:5,poisonTurns:6},silk:{weaveCooldown:7,repairCooldown:4,mirrorCap:24,mirrorSpacing:3,lineCap:3,gasDuration:24,blackThreshold:.70,blackChance:.50,blackCap:4,waveIntervals:[8,6,4,2],waveBatch:2,mirrorSummonCap:6,bossSummonCap:12,roster:['비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','윈도','향기요정','분홍거미']},keeper:{bindTurns:2,boundDef:2,chainCooldown:4,lavaThresholds:[.67,.33],lavaWarning:10,bridgeWidths:[5,7]},master:{maskAtk:14,shotCooldown:[5,4,3],shieldShotCooldown:6,thresholds:[.66,.33],range:4,shieldRange:3,sealAngle:90,flash:{reach:8,waves:3,cooldown:[10,9,8],blink:4,aimMin:2,aimMax:5,scatter:6,attempts:16,tighten:60,tightEnough:10,phases:[{element:'grass',dirs:'diag',label:'풀 · 대각선 4방향',color:'#8abc4b',rgb:[138,188,75],damageFraction:.38,perWave:5,status:[['poison',6]]},{element:'earth',dirs:'orth',label:'대지 · 가로세로 4방향',color:'#bb824c',rgb:[187,130,76],damageFraction:.52,perWave:5,status:[['weaken',3],['skillSeal',3]]},{element:'ice',dirs:'all',label:'얼음 · 8방향',color:'#83d7eb',rgb:[131,215,235],damageFraction:.68,perWave:4,status:[['bleed',4],['skillSeal',3],['blind',2]]}]},weave:{cooldown:[7,6,5],clusters:[2,3,4],ttl:9,tiles:['wall','wall','pillar','statue','crystal']},cores:[{name:'제1사념 · 만루의 잔향',hp:45,def:3,interval:4,batch:2,cap:4,roster:['금령','금령','공허 가오리','공허 가오리','만루의 수호상']},{name:'제2사념 · 천실핵의 집념',hp:60,def:5,interval:5,batch:1,cap:3,roster:['신전 사제 망령','차원 포식자','보주의 파수꾼','천수 아수라']}]}};
 const AIM_GLYPHS={
     '0':[31,17,17,17,17,17,31],'1':[4,12,4,4,4,4,4],
     '2':[31,1,1,31,16,16,31],'5':[31,16,16,31,1,1,31],
@@ -607,6 +607,104 @@ function coreSealSector(mon,target,range){
  }
  return{cells,origin57:{x:origin.x,y:origin.y},direction57,range,halfAngle,shape57:'sector'};
 }
+// 만루보주의 섬광탄과 구조 재편이 쓰는 공용 도우미. 홀(방 kind 'master')이 없으면(디버그 전장) 보주 둘레 상자를 쓴다.
+function masterHallBounds(mon){
+ const hall=(state.rooms||[]).find(r=>r.kind==='master');
+ if(hall)return{x1:hall.x,y1:hall.y,x2:hall.x+hall.w-1,y2:hall.y+hall.h-1};
+ return{x1:Math.max(1,mon.x-9),y1:Math.max(1,mon.y-9),x2:Math.min(COLS-2,mon.x+9),y2:Math.min(ROWS-2,mon.y+9)};
+}
+function masterHallCells(mon,probe){
+ const b=masterHallBounds(mon),out=[];
+ for(let y=b.y1;y<=b.y2;y++)for(let x=b.x1;x<=b.x2;x++){if(monCovers(mon,x,y))continue;if(PlacementService.monsterCanStand(probe,x,y))out.push({x,y})}
+ return out;
+}
+// 연출: 보주가 섬광탄을 던져 깔고(번호가 뜬다), 터질 때는 폭탄마다 속성 광선이 8방향으로 번지며 화면이 번쩍이고 흔들린다.
+function flashThrowBombs(mon,bombs,ph,index){
+ bombs.forEach((b,i)=>{const delay=i*70;projectileFX(mon.x,mon.y,b.x,b.y,ph.color,{kind:'shell',element:ph.element,life:420});
+  burst(b.x,b.y,'#fff6c8',10,.7,420+delay);burst(b.x,b.y,ph.color,8,.9,420+delay);floatText(b.x,b.y,String(index+1),'#fff0a8',14,null,420+delay)});
+ FX.shakePower=Math.max(FX.shakePower,2);FX.shakeUntil=performance.now()+160;
+}
+function flashDetonateFx(mon,wave,ph,index){
+ const reach=BOSS_ARENA_RULES.master.flash.reach,dirs=flashRayDirs(ph.dirs);
+ for(const b of wave.bombs){
+  elementAttackFx105(ph.element,flashBombRayCells([b],reach,dirs),b,0);
+  burst(b.x,b.y,'#fffbe0',28,1.6);burst(b.x,b.y,ph.color,22,1.2);impact(b.x,b.y,ph.color,8);
+  for(const c of flashBombRayCells([b],reach,dirs)){const dist=Math.max(Math.abs(c.x-b.x),Math.abs(c.y-b.y));if(dist)burst(c.x,c.y,dist%2?ph.color:'#fff4c8',4,.6,dist*38)}
+ }
+ floatText(mon.x,mon.y,`${index+1}번 폭발`,ph.color,16);
+ FX.flashUntil=performance.now()+220;FX.flashColor=ph.color;FX.shakePower=Math.max(FX.shakePower,7+index);FX.shakeUntil=performance.now()+300+index*60;vfVibrate(HAPTIC_PATTERN57.boss);globalThis.__MANRU_SFX54__?.play?.('boss');
+}
+function flashPhaseRule(mon){return BOSS_ARENA_RULES.master.flash.phases[Math.min(2,mon.coreStage54||0)]}
+function flashRayDirs(kind){return kind==='diag'?DIRS8.filter(([dx,dy])=>dx&&dy):kind==='orth'?DIRS8.filter(([dx,dy])=>!dx||!dy):DIRS8}
+function flashBombRayCells(bombs,reach,dirs){
+ const seen=new Set(),cells=[];
+ const add=c=>{const key=k(c.x,c.y);if(!seen.has(key)){seen.add(key);cells.push(c)}};
+ for(const b of bombs){add({x:b.x,y:b.y});
+  for(const[dx,dy]of dirs)for(let i=1;i<=reach;i++){const x=b.x+dx*i,y=b.y+dy*i;if(!cell54(x,y)||tileBlocks(state.map[y][x])||tileBlocksSight(state.map[y][x]))break;add({x,y})}}
+ return cells;
+}
+// 표적이 한 칸씩 걷거나 4칸 점멸(한 번)로 피할 수 있는지 시뮬레이션한다. 폭파는 설치가 끝난 뒤 1·2·3번 순서로 한 턴씩 터진다.
+// 표적의 행동은 설치 직후부터 5번(걷기 또는 점멸), 첫 폭파는 세 번째 행동 뒤, 둘째는 네 번째, 셋째는 다섯 번째 행동 뒤에 맞는다.
+function flashSurvivorCount(start,waveSets,ground,blink){
+ const key=(x,y,b)=>x+','+y+','+b;let cur=new Map([[key(start.x,start.y,0),{x:start.x,y:start.y,b:0}]]);
+ for(let step=1;step<=waveSets.length+2;step++){
+  const next=new Map(),hit=step>=3?waveSets[step-3]:null;
+  for(const s of cur.values()){
+   const dests=[[s.x,s.y,s.b]];for(const[dx,dy]of DIRS8)dests.push([s.x+dx,s.y+dy,s.b]);
+   if(!s.b)for(let dy=-blink;dy<=blink;dy++)for(let dx=-blink;dx<=blink;dx++)if(dx||dy)dests.push([s.x+dx,s.y+dy,1]);
+   for(const[x,y,b]of dests){const kk=k(x,y);if(!ground.has(kk)||hit&&hit.has(kk))continue;const id=key(x,y,b);if(!next.has(id))next.set(id,{x,y,b})}
+  }
+  cur=next;if(!cur.size)return 0;
+ }
+ return cur.size;
+}
+function planFlashSequence(mon,target){
+ const r=BOSS_ARENA_RULES.master.flash,ph=flashPhaseRule(mon),dirs=flashRayDirs(ph.dirs),probe={hp:1,kind:'construct',fixed:true,footprint:'one'},free=masterHallCells(mon,probe);
+ if(!free.length)return null;
+ const near=free.filter(c=>Math.max(Math.abs(c.x-target.x),Math.abs(c.y-target.y))<=r.scatter),freeKeys=new Set(free.map(c=>k(c.x,c.y))),ground=new Set(free.filter(c=>Math.max(Math.abs(c.x-target.x),Math.abs(c.y-target.y))<=r.blink*2).map(c=>k(c.x,c.y)));ground.add(k(target.x,target.y));
+ if(near.length<ph.perWave*r.waves)return null;
+ const aimed=[];for(const[dx,dy]of dirs)for(let i=r.aimMin;i<=r.aimMax;i++){const c={x:target.x+dx*i,y:target.y+dy*i};if(freeKeys.has(k(c.x,c.y)))aimed.push(c)}
+ const build=waveBombs=>{const waves=waveBombs.map(bombs=>({bombs,cells:flashBombRayCells(bombs,r.reach,dirs)})),sets=waves.map(w=>new Set(w.cells.map(c=>k(c.x,c.y))));
+  // 가만히 서 있으면 반드시 맞아야 하고, 피할 길은 있되 좁을수록 좋다.
+  if(!sets.some(q=>q.has(k(target.x,target.y))))return null;const left=flashSurvivorCount(target,sets,ground,r.blink);return left?{left,waves,bombs:waveBombs}:null};
+ let best=null;
+ for(let attempt=0;attempt<r.attempts;attempt++){
+  const used=new Set(),waveBombs=[];
+  for(let w=0;w<r.waves;w++){
+   const bombs=[];const pick=pool=>{for(let t=0;t<12;t++){const c=choice(pool);if(!used.has(k(c.x,c.y))){used.add(k(c.x,c.y));bombs.push({x:c.x,y:c.y});return}}};
+   if(w===0&&aimed.length)pick(aimed);
+   while(bombs.length<ph.perWave){const before=bombs.length;pick(near);if(bombs.length===before)break}
+   waveBombs.push(bombs);
+  }
+  const plan=build(waveBombs);if(plan&&(!best||plan.left<best.left))best=plan;
+ }
+ // 가장 좁은 배치에서 폭탄을 하나씩 옮겨 보며 피할 길을 더 조인다(점멸 4칸 기준).
+ for(let n=0;best&&n<r.tighten&&best.left>r.tightEnough;n++){
+  const bombs=best.bombs.map(w=>w.map(b=>({...b}))),w=rand(0,bombs.length-1);if(!bombs[w].length)continue;const i=rand(0,bombs[w].length-1),c=choice(near);
+  if(bombs.some(q=>q.some(b=>b.x===c.x&&b.y===c.y)))continue;bombs[w][i]={x:c.x,y:c.y};
+  const plan=build(bombs);if(plan&&plan.left<best.left)best=plan;
+ }
+ return best?{waves:best.waves,left:best.left,phase:ph}:null;
+}
+function masterWallBlocked(mon,target,extra){
+ // 보주와 표적 사이에 걸어서 닿는 길이 남는지 본다(새로 세울 칸 extra를 막힌 칸으로 친다).
+ const b=masterHallBounds(mon),blocked=new Set(extra.map(c=>k(c.x,c.y))),goal=entityClosestCellTo57(mon,target)||mon;
+ const start={x:target.x,y:target.y},seen=new Set([k(start.x,start.y)]),queue=[start];
+ for(let i=0;i<queue.length;i++){const c=queue[i];if(Math.max(Math.abs(c.x-mon.x),Math.abs(c.y-mon.y))<=1)return false;
+  for(const[dx,dy]of DIRS4){const x=c.x+dx,y=c.y+dy,key=k(x,y);if(seen.has(key)||blocked.has(key)||x<b.x1||x>b.x2||y<b.y1||y>b.y2||!cell54(x,y)||tileBlocks(state.map[y][x]))continue;seen.add(key);queue.push({x,y})}}
+ return true;
+}
+function planWallWeave(mon,target){
+ const r=BOSS_ARENA_RULES.master.weave,ph=(mon.coreStage54||0)+1,clusters=r.clusters[ph-1],probe={hp:1,kind:'construct',fixed:true,footprint:'one'},free=masterHallCells(mon,probe).filter(c=>{const d=Math.max(Math.abs(c.x-target.x),Math.abs(c.y-target.y));return d>=2&&d<=6&&!(c.x===target.x&&c.y===target.y)});
+ if(!free.length)return null;const cells=[],tiles={},tileOf={wall:TT.WALL,pillar:TT.STONE_PILLAR,statue:TT.STATUE,crystal:TT.CRYSTAL};
+ for(let n=0;n<clusters;n++){
+  const start=choice(free),tile=tileOf[choice(r.tiles)],horizontal=globalThis.__MANRU_RANDOM57__()<.5,len=tile===TT.WALL?rand(3,5):rand(1,2),batch=[];
+  for(let i=0;i<len;i++){const c={x:start.x+(horizontal?i:0),y:start.y+(horizontal?0:i)},key=k(c.x,c.y);if(!free.some(q=>q.x===c.x&&q.y===c.y)||tiles[key]!==undefined)continue;batch.push(c)}
+  if(!batch.length||masterWallBlocked(mon,target,[...cells,...batch]))continue;
+  for(const c of batch){cells.push(c);tiles[k(c.x,c.y)]=tile}
+ }
+ return cells.length?{cells,tiles}:null;
+}
 function lineToward(mon,target,steps=4){const out=[];let x=mon.x,y=mon.y;for(let i=0;i<steps;i++){const dx=Math.sign(target.x-x),dy=Math.sign(target.y-y);if(Math.abs(target.x-x)>=Math.abs(target.y-y))x+=dx;else y+=dy;if(!cell54(x,y))break;out.push({x,y})}return out}
 function bossChargeLane(mon,target){
  // Where the hound boss's charge goes and what it strikes: up to four steps toward the aimed cell (terrain only; units are met while
@@ -642,7 +740,35 @@ function executeBossIntent(mon){
   clearIntent(mon);return true;
  }
  if(I.type==='ink')for(const c of I.cells.slice(0,3))if(state.map[c.y]?.[c.x]===TT.FLOOR)RuntimeTerrainOwner.mutate(c.x,c.y,TT.BAMBOO,{source:'boss-ink54'});
+ if(I.type==='wallweave'){
+  const r=BOSS_ARENA_RULES.master.weave,placed=[],opponent=selectCombatOpponent(mon);
+  for(const c of I.cells){
+   if(opponent&&masterWallBlocked(mon,opponent,[...placed,c]))continue;
+   const tile=I.data.tiles[k(c.x,c.y)];if(tile===undefined)continue;
+   if(RuntimeTerrainOwner.temporary(c.x,c.y,tile,r.ttl,'bossWeave',{source:'master-weave'})){placed.push(c);burst(c.x,c.y,'#e8d39a',8,.6)}
+  }
+  if(placed.length){floatText(mon.x,mon.y,'구조 재편','#f2dc9b',15);addLog(`만루보주가 벽과 지형을 세웠다. ${r.ttl}턴 뒤 사라진다.`);globalThis.__MANRU_SFX54__?.play?.('door');OccupancyService.endShared()}
+  clearIntent(mon);return true;
+ }
  let targets=bossAreaTargets(mon,I.cells);
+ if(I.type==='flashblast'){
+  const d=I.data,r=BOSS_ARENA_RULES.master.flash,ph=r.phases[d.stage],total=d.waves.length;d.step++;
+  if(d.step<total){
+   // 한 수마다 폭탄을 한 줄씩 더 깐다. 세 번째까지 깔린 뒤에야 폭발이 시작된다.
+   const w=d.waves[d.step],seen=new Set(I.cells.map(c=>k(c.x,c.y)));for(const c of w.cells)if(!seen.has(k(c.x,c.y)))I.cells.push(c);
+   flashThrowBombs(mon,w.bombs,ph,d.step);
+   I.label=`섬광탄 설치 ${d.step+1}/${total} · ${ph.label} · 차례로 폭발한다`;if(d.step===total-1)I.label=`섬광탄 설치 완료 · ${ph.label} · 1번부터 폭발`;addLog('⚠ '+I.label);globalThis.__MANRU_SFX54__?.play?.('warn');
+   I.armedPlayerTurn=state.turn;return true;
+  }
+  const idx=d.step-total,w=d.waves[idx];
+  flashDetonateFx(mon,w,ph,idx);
+  for(const target of bossAreaTargets(mon,w.cells)){if(!combatTargetValid57(mon,target))continue;
+   resolveElementDamage57(target,ph.element,Math.max(Math.ceil(target.maxHp*ph.damageFraction),mon.atk*3),{effect:effectSource57(mon),source:`섬광탄 폭발(${idx+1}번)`,color:ph.color});
+   if(target.hp>0)for(const[kind,turns]of ph.status)combatStatus(mon,target,kind,turns)}
+  const remain=d.waves.slice(idx+1),seen=new Set();I.cells=[];for(const q of remain)for(const c of q.cells)if(!seen.has(k(c.x,c.y))){seen.add(k(c.x,c.y));I.cells.push(c)}
+  if(idx>=total-1)clearIntent(mon);else I.armedPlayerTurn=state.turn;
+  return true;
+ }
  if(I.type==='corebolt'){
   const origin=I.data.origin57||mon;
   for(const c of I.cells)burst(c.x,c.y,'#eed080',2,.38);
@@ -858,6 +984,13 @@ function handleBossPattern(mon,d,target=state.player){
       mon.nextAction54=turn+(core?2:1);
       if(p===state.player&&playerConcealed58())return true;
       if(d<=1&&monsterAttackLineR(mon,1,{target:p}).ok){attackMonster(mon,core?-2:0,{target:p,delivery:'melee',range:1});return true}
+      const rr=BOSS_ARENA_RULES.master;
+      if(mon.nextFlash54===undefined)mon.nextFlash54=turn+4;if(mon.nextWeave54===undefined)mon.nextWeave54=turn+2;
+      if(!core&&turn>=mon.nextFlash54&&d<=12){const stage=Math.min(2,mon.coreStage54||0),plan=planFlashSequence(mon,p);mon.nextFlash54=turn+rr.flash.cooldown[stage];
+       if(plan){const first=plan.waves[0];flashThrowBombs(mon,first.bombs,plan.phase,0);
+        return setBossIntent(mon,'flashblast',first.cells,`섬광탄 설치 1/3 · ${plan.phase.label} · 차례로 폭발한다`,{waves:plan.waves,step:0,element:plan.phase.element,color:plan.phase.color,rgb:plan.phase.rgb,stage})}}
+      if(turn>=mon.nextWeave54&&d>=2&&d<=12){const plan=planWallWeave(mon,p);mon.nextWeave54=turn+rr.weave.cooldown[ph-1];
+       if(plan)return setBossIntent(mon,'wallweave',plan.cells,'구조 재편 · 보주가 벽과 기둥을 세운다',{tiles:plan.tiles})}
       const seal=turn>=(mon.nextShot54||0)&&d<=range?coreSealSector(mon,p,range):null;
       if(seal?.cells.some(c=>monCovers(p,c.x,c.y))){
         mon.nextShot54=turn+(core?BOSS_ARENA_RULES.master.shieldShotCooldown:BOSS_ARENA_RULES.master.shotCooldown[ph-1]);
@@ -1414,6 +1547,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     }else if(mon.bossPattern==='master'){
       const r=BOSS_ARENA_RULES.master;
       add('seal','천실 인장','印',`${r.sealAngle}° 부채꼴 · 예고 1턴`,`범위 ${r.range}칸(핵 보호 중 ${r.shieldRange}칸). 범위 안의 대상에게 ATK로 물리 공격(핵 보호 중 ATK −2). 핵이 없으면 단계별 재사용 ${r.shotCooldown.join('/')}턴, 보호 중 ${r.shieldShotCooldown}턴.`);
+      add('flash','섬광탄 폭발','閃',`3줄 설치 후 차례 폭발 · ${r.flash.reach}칸 · 재사용 ${r.flash.cooldown.join('/')}턴 · 사념체 중 사용 안 함`,`한 수마다 섬광탄을 한 줄씩 세 번 깔고, 다 깔면 1번부터 한 턴씩 터진다. 폭탄에서 뻗는 ${r.flash.reach}칸이 불타며 벽이 빛을 막는다. 1사념체 전: 풀 · 대각선 4방향 · 독. 1사념체 후: 대지 · 가로세로 4방향 · 약화와 기봉인. 2사념체 후: 얼음 · 8방향 · 출혈·기봉인·실명. 피해는 최대 HP의 ${r.flash.phases.map(q=>Math.round(q.damageFraction*100)+'%').join('/')}(또는 ATK×3 중 큰 값). 한 번의 점멸(4칸)과 이동으로 피할 길이 반드시 남는다.`);
+      add('weave','구조 재편','構',`예고 1턴 · 재사용 ${r.weave.cooldown.join('/')}턴 · 지속 ${r.weave.ttl}턴`,'홀 안에 벽·기둥·석상·수정을 세워 시야와 길을 가른다. 보주에게 닿는 길은 끊지 않으며, 세운 지형은 시간이 지나면 사라진다.');
       add('master-pursuit','만루의 추격','追','마지막 단계 · 주기 4턴','두 번째 핵이 사라진 뒤 4턴마다 이동을 한 번 더 한다.','ghost','조건');
       add('core','천실핵의 사념','核',`HP ${r.thresholds.map(n=>Math.round(n*100)+'%').join('·')}`,'체력 문턱마다 사념체를 세운다. 살아 있는 동안 보주는 무적. 사념체가 증원을 부르며, 파괴하면 그 단계의 증원도 사라진다.','constitution','조건');
     }else if(mon.bossPattern==='friendmask'||mon.storyPhase992===1){

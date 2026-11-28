@@ -1974,11 +1974,18 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   }
   function drawBossIntent(){
  if(!state)return;drawBossArena();
- const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72],mirrorOrb:[154,157,255],mirrorSanctuary:[247,221,139]};
+ const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72],mirrorOrb:[154,157,255],mirrorSanctuary:[247,221,139],wallweave:[214,190,128]};
  X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
  for(const mon of [...(state.monsters||[]),...(state.spectator?state.spectateWarnings||[]:[])]){const I=mon.intent54;if(!I)continue;const silkIntent=I.type==='weave'||I.type==='sew';
   if(I.type==='corebolt'){drawCoreSealWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
   if(I.type==='palaceSweep105'){drawPalaceSweepWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
+  if(I.type==='flashblast'){
+   const d=I.data||{},waves=d.waves||[],zz=TILE*cam.zoom,rgb=d.rgb||[255,244,170],first=d.step>=waves.length?d.step-waves.length+1:0,last=Math.min(d.step,waves.length-1),armed=d.step>=waves.length-1;
+   for(let wi=last;wi>=first;wi--){const w=waves[wi],next=armed&&wi===first;
+    for(const c of w.cells){if(!state.visible.has(k(c.x,c.y)))continue;const x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom;X.fillStyle=`rgba(${rgb.join(',')},${(next?.26:.12)+(next?.14:.05)*pulse})`;X.fillRect(x+1,y+1,zz-2,zz-2);X.strokeStyle=`rgba(${rgb.join(',')},${next?.9:.5})`;X.lineWidth=Math.max(1,(next?2:1)*cam.zoom);X.strokeRect(x+1.5,y+1.5,zz-3,zz-3)}
+    for(const b of w.bombs){if(!state.visible.has(k(b.x,b.y)))continue;const bx=cam.x+b.x*TILE*cam.zoom,by=cam.y+b.y*TILE*cam.zoom;X.fillStyle=`rgba(255,252,225,${.6+.35*pulse})`;X.beginPath();X.arc(bx+zz/2,by+zz/2,zz*.3,0,Math.PI*2);X.fill();X.strokeStyle=`rgb(${rgb.join(',')})`;X.lineWidth=Math.max(1,2*cam.zoom);X.stroke();X.fillStyle='#2a2216';X.font=`bold ${Math.round(zz*.4)}px sans-serif`;X.textAlign='center';X.textBaseline='middle';X.fillText(String(wi+1),bx+zz/2,by+zz/2+1)}}
+   continue;
+  }
   for(const c of I.cells){
    if(!state.visible.has(k(c.x,c.y)))continue;const rgb=colors[I.type]||[220,130,72],x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom,z=TILE*cam.zoom;
    X.save();X.beginPath();X.rect(x,y,z,z);X.clip();X.fillStyle=`rgba(${rgb.join(',')},${.10+.13*pulse})`;X.fillRect(x+1,y+1,z-2,z-2);if(silkIntent){X.restore();continue}X.strokeStyle=`rgba(${rgb.join(',')},${.65+.3*pulse})`;X.lineWidth=Math.max(1,1.5*cam.zoom);
