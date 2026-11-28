@@ -1695,24 +1695,21 @@ function drawTransition(now){
   X.restore();
 }
 const MINIMAP_COLORS=new Map([[TT.WALL,'#3d342d'],[TT.STAIR,'#e0d0a0'],[TT.WATER,'#426c73'],[TT.PAPER_BRIDGE,'#c8b990'],[TT.MIRROR,'#a3789e'],[TT.JAR,'#7b543d'],[TT.LAVA,'#a4412c'],[TT.DRAWBRIDGE_DOWN,'#9e7547'],[TT.DRAWBRIDGE_UP,'#55402f'],[TT.VOID,'#08050d'],[TT.GOLD,'#c8a543'],[TT.MERCURY,'#9eaaaa'],[TT.SWITCH,'#d09855'],[TT.BAMBOO,'#476346'],[TT.TABLE,'#735039'],[TT.SCREEN,'#7d3533'],[TT.GRASS,'#243b27'],[TT.HEDGE,'#315136'],[TT.RAFT,'#9b754a'],[TT.FAKE_DOOR,'#704b63'],[TT.LOCKED_GATE,'#7b756c'],[TT.KEY_TILE,'#e3bf6e'],[TT.STAMINA_PAD,'#6daac0'],[TT.PEACH_TREE,'#b06f78'],[TT.SECRET_DOOR,'#8d7444'],[TT.PAVILION,'#a47452']]);
-const minimapLayers={base:null,marks:[],key:[]};
-function drawMinimap(force=false){
-  if(!state)return false;
-  const now=performance.now();
-  if(!force&&!RENDER_PERF_STATE.miniDirty&&now-RENDER_PERF_STATE.lastMini<320)return false;
-  RENDER_PERF_STATE.miniDirty=false;
-  RENDER_PERF_STATE.lastMini=now;
-  const width=MC.width,height=MC.height,sx=width/COLS,sy=height/ROWS;
+const minimapLayers={base:null,marks:[],key:[]},largeMinimapLayers={base:null,marks:[],key:[]};
+// Paints the explored map onto ctx (width x height), for the small panel and for the large map window alike. The terrain layer is drawn on whole-pixel cells at about
+// twice the target size and then scaled down with smoothing, so cell edges stay clean at any floor size; markers are drawn at the target size (markScale 1 = the panel).
+function paintMinimap(ctx,layers,width,height,markScale=1){
+  const sx=width/COLS,sy=height/ROWS;
   const mine=mineState();
   const key=[state.map,TERRAIN_RENDER_REV.get(state.map),state.seen,state.seen.size,
     state.portalLinks981,state.branchContext105,state.artifactDungeon46,width,height];
-  if(mine||!minimapLayers.base||key.some((value,index)=>value!==minimapLayers.key[index])){
-    minimapLayers.key=mine?[]:key;
-    minimapLayers.base??=document.createElement('canvas');
-    const {base}=minimapLayers;
-    base.width=width;base.height=height;
+  if(mine||!layers.base||key.some((value,index)=>value!==layers.key[index])){
+    layers.key=mine?[]:key;
+    layers.base??=document.createElement('canvas');
+    const {base}=layers,cx=Math.max(2,Math.ceil(2*sx)),cy=Math.max(2,Math.ceil(2*sy));
+    base.width=COLS*cx;base.height=ROWS*cy;
     const terrain=base.getContext('2d'),doors=[],architecture=[],portals=[];
-    terrain.fillStyle='#070a0e';terrain.fillRect(0,0,width,height);
+    terrain.fillStyle='#070a0e';terrain.fillRect(0,0,base.width,base.height);
     const palette=state.branchContext105?.id==='palace'?palaceMiniColor:
       state.artifactDungeon46?globalThis.__MANRU_LEGEND_TERRAIN47__?.miniColor:null;
     const cw=Math.ceil(sx),ch=Math.ceil(sy),mw=Math.max(2,sx),mh=Math.max(2,sy);
@@ -1721,7 +1718,7 @@ function drawMinimap(force=false){
       if(!seen&&!(mine&&mineScenerySeen(x,y)))continue;
       const tile=state.map[y][x],display=mine&&mineHidden(x,y)?TT.VOID:tile;
       terrain.fillStyle=palette?.(display,x,y)||MINIMAP_COLORS.get(display)||'#15130f';
-      terrain.fillRect(x*sx,y*sy,cw,ch);
+      terrain.fillRect(x*cx,y*cy,cx,cy);
       if(!seen)continue;
       if((tile===TT.DOOR||tile===TT.OPEN_DOOR)&&x>0&&y>0&&x<COLS-1&&y<ROWS-1){
         doors.push([tile===TT.DOOR?'#d09a58':'#7d6040',x*sx,y*sy,mw,mh]);
@@ -1732,28 +1729,37 @@ function drawMinimap(force=false){
     for(const id of Object.keys(state.portalLinks981||{}))if(state.seen.has(id)){
       const [x,y]=id.split(',').map(Number);portals.push(['#c58be9',x*sx,y*sy,mw,mh]);
     }
-    minimapLayers.marks=[...doors,...architecture,...portals];
+    layers.marks=[...doors,...architecture,...portals];
   }
-  MX.drawImage(minimapLayers.base,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(layers.base,0,0,width,height);
+  const big=3*markScale,small=2*markScale;
   for(const m of state.monsters)if(isThreatVisibleToPlayer(m)){
-    MX.fillStyle=m.boss?'#f1c35f':'#c45d62';MX.fillRect(m.x*sx,m.y*sy,3,3);
+    ctx.fillStyle=m.boss?'#f1c35f':'#c45d62';ctx.fillRect(m.x*sx,m.y*sy,big,big);
   }
   for(const it of state.items)if(state.seen.has(k(it.x,it.y))){
-    MX.fillStyle=rarityColor(it.rarity);MX.fillRect(it.x*sx,it.y*sy,2,2);
+    ctx.fillStyle=rarityColor(it.rarity);ctx.fillRect(it.x*sx,it.y*sy,small,small);
   }
-  MX.fillStyle='#91d39a';MX.fillRect(state.player.x*sx,state.player.y*sy,3,3);
-  MX.strokeStyle='#506174';MX.strokeRect(.5,.5,width-1,height-1);
-  for(const [color,x,y,w,h] of minimapLayers.marks){MX.fillStyle=color;MX.fillRect(x,y,w,h);}
+  ctx.fillStyle='#91d39a';ctx.fillRect(state.player.x*sx,state.player.y*sy,big,big);
+  ctx.strokeStyle='#506174';ctx.strokeRect(.5,.5,width-1,height-1);
+  for(const [color,x,y,w,h] of layers.marks){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+}
+function drawMinimap(force=false){
+  if(!state)return false;
+  const now=performance.now();
+  if(!force&&!RENDER_PERF_STATE.miniDirty&&now-RENDER_PERF_STATE.lastMini<320)return false;
+  RENDER_PERF_STATE.miniDirty=false;
+  RENDER_PERF_STATE.lastMini=now;
+  paintMinimap(MX,minimapLayers,MC.width,MC.height);
   return true;
 }
 let renderUpdatePending=false, cameraRenderPending=false;
+// The large map window paints the same map directly at its own resolution (up to 640 x 448, the floor's aspect ratio) instead of enlarging the small panel.
 function syncLargeMinimap(){
   const big = document.getElementById("mobileMiniLarge");
-  if(!big) return;
-  const bx = big.getContext("2d");
-  bx.imageSmoothingEnabled = false;
-  bx.clearRect(0,0,big.width,big.height);
-  bx.drawImage(MC,0,0,big.width,big.height);
+  if(!big||!state) return;
+  big.width=Math.max(1,Math.min(640,Math.round(448*COLS/ROWS)));big.height=Math.max(1,Math.round(big.width*ROWS/COLS));
+  paintMinimap(big.getContext("2d"),largeMinimapLayers,big.width,big.height,big.width/MC.width);
 }
 function drawDepthOcclusion(now,bounds=null){
   // Project the visual actor through this frame's actual transform, including shake.
@@ -6076,7 +6082,7 @@ const P47={lastDraw:0,lastMini:0,lastHud:0,lastViewport:0,lastLoop:0,lastTune:0,
       BRANCH_TILE_CACHE.clear();
       MINE_CANVAS.clear();
       C.width=C.width;MC.width=MC.width;
-      minimapLayers.key=[];substrateCache.pages.clear();
+      minimapLayers.key=[];largeMinimapLayers.key=[];substrateCache.pages.clear();
       FX.transition=null;FX.flashUntil=0;FX.shakeUntil=0;FX.frameNow=performance.now();
       for(const key of ['floats','particles','slashes','rings','projectiles','doors'])if(Array.isArray(FX[key]))FX[key].length=0;
       Object.assign(ACTION_PRESENTATION58,{run:null,until:0,start:0,inputUntil:0,pending:false,kind:null});
