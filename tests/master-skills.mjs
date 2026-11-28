@@ -43,6 +43,8 @@ const bridge = `globalThis.mb={
   out.reachable=!masterWallBlocked(m,state.player,[]);out.ttl=(state.tempTerrain74||[]).find(t=>t.kind==='bossWeave')?.ttl;return out},
  visualSetup:()=>{mb.arena();const m=mb.boss(26,15,2);OccupancyService.move(state.player,15,15);state.visible=new Set();for(let y=4;y<27;y++)for(let x=4;x<40;x++)state.visible.add(k(x,y));state.seen=new Set(state.visible);beginFlashSequence(m,state.player);for(let n=0;n<2;n++){state.turn++;executeBossIntent(m)}mb.m=m},
  visualBoom:()=>{const bomb=state.monsters.find(q=>q.combatFixture54==='flashBomb');bomb.hp=1;tickBossFixture(bomb)},
+ water:()=>{mb.arena();const m=mb.boss(30,15,0);for(let y=8;y<=22;y++){setTerrainTile58(state.map,16,y,TT.WATER);setTerrainTile58(state.map,17,y,TT.LAVA);setTerrainTile58(state.map,18,y,TT.VOID)}setTerrainTile58(state.map,22,15,TT.STONE_PILLAR);
+  const rays=flashBombRays({x:12,y:15},8,flashRayDirs('orth')),east=rays.find(q=>q.dx===1&&q.dy===0);return{eastLen:east?east.cells.length:0,reachesPastWater:!!east&&east.cells.some(c=>c.x===19),stopsAtPillar:!!east&&east.cells.every(c=>c.x<22)}},
  rules:()=>BOSS_ARENA_RULES.master.cores.map(c=>[c.interval,c.batch,c.cap])};`;
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER, fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -52,7 +54,7 @@ try {
   const s = await openSession(browser, path.join(repo, 'dist-qa'), { context: ctx, seed: 9 });
   const errors = []; s.page.on('pageerror', e => errors.push(e.message));
   await startRun(s, 'swordsman'); await dismissModals(s); await s.tick(300);
-  const out = await s.page.evaluate(() => { const o = { rules: mb.rules() }; for (const [n, f] of [['f0', () => mb.flash(0)], ['f1', () => mb.flash(1)], ['f2', () => mb.flash(2)], ['early', () => mb.early()], ['disarm', () => mb.disarm()], ['core', () => mb.core()], ['wall', () => mb.wall()], ['weave', () => mb.weave()]]) { try { o[n] = f(); } catch (e) { o[n] = { error: String(e && e.stack || e).slice(0, 500) }; } } return o; });
+  const out = await s.page.evaluate(() => { const o = { rules: mb.rules() }; for (const [n, f] of [['f0', () => mb.flash(0)], ['f1', () => mb.flash(1)], ['f2', () => mb.flash(2)], ['early', () => mb.early()], ['disarm', () => mb.disarm()], ['core', () => mb.core()], ['wall', () => mb.wall()], ['weave', () => mb.weave()], ['water', () => mb.water()]]) { try { o[n] = f(); } catch (e) { o[n] = { error: String(e && e.stack || e).slice(0, 500) }; } } return o; });
   console.log(JSON.stringify(out));
   assert.deepEqual(out.rules, [[4, 2, 4], [5, 1, 3]], '소환 증원이 약해지지 않았다');
   const expect = [['f0', '풀 섬광탄', 5, { poison: 1 }], ['f1', '대지 섬광탄', 5, { weaken: 1, skillSeal: 1 }], ['f2', '얼음 섬광탄', 4, { bleed: 1, skillSeal: 1, blind: 1 }]];
@@ -76,6 +78,7 @@ try {
   assert.ok(out.disarm.n > 0 && out.disarm.after === 0, `예고가 끊겨도 폭탄이 남았다 ${JSON.stringify(out.disarm)}`);
   assert.ok(out.core.used !== 'flashblast', '사념체 중에 섬광탄을 썼다');
   assert.ok(out.wall.blocked !== false, '벽 너머로 빛이 샜다');
+  assert.ok(out.water.reachesPastWater && out.water.stopsAtPillar, `빛줄기가 물·용암·허공에 막혔거나 기둥을 뚫었다 ${JSON.stringify(out.water)}`);
   const w = out.weave; assert.ok(!w.error, JSON.stringify(w));
   assert.ok(w.planned && w.n > 0 && w.walls > 0 && w.temp > 0, '벽·지형이 세워지지 않았다');
   assert.ok(w.reachable, '구조 재편이 길을 완전히 막았다');
