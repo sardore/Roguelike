@@ -23,17 +23,31 @@ function thornRootStroke(q,x0,y0,x1,y1,w,dark,light){const mx=(x0+x1)/2+(y1-y0)*
 function thornStone(q,x,y,rx,ry,base,hi){thornBlob(q,x+.6,y+.8,rx,ry,'rgba(0,0,0,.45)');thornBlob(q,x,y,rx,ry,base);q.fillStyle=hi;q.beginPath();q.ellipse(x-rx*.25,y-ry*.35,rx*.55,ry*.4,-.3,0,Math.PI*2);q.fill()}
 function thornFern(q,x,y,len,ang,col,hi){q.strokeStyle=col;q.lineWidth=1;q.lineCap='round';q.beginPath();q.moveTo(x,y);const ex=x+Math.cos(ang)*len,ey=y+Math.sin(ang)*len;q.quadraticCurveTo(x+Math.cos(ang)*len*.5,y+Math.sin(ang)*len*.5-len*.18,ex,ey);q.stroke();for(let i=1;i<=6;i++){const t=i/7,px=x+(ex-x)*t,py=y+(ey-y)*t-Math.sin(t*3.14)*len*.1,l=len*.32*(1-t*.6);for(const sd of[-1,1]){q.strokeStyle=i%2?col:hi;q.beginPath();q.moveTo(px,py);q.lineTo(px+Math.cos(ang+sd*1.1)*l,py+Math.sin(ang+sd*1.1)*l);q.stroke()}}}
 // ---- ground
-function thornFringe(q,x,y,nb){
- // where the trail meets the forest: only a soft shadow, so the trail reads as a clean strip against the dark forest
- for(const[i,dx,dy]of[[0,1,0],[1,-1,0],[2,0,1],[3,0,-1]]){if(nb[i]!=='w')continue;
-  const g=dx?q.createLinearGradient(dx>0?31:0,0,dx>0?19:12,0):q.createLinearGradient(0,dy>0?31:0,0,dy>0?19:12);g.addColorStop(0,'rgba(2,1,5,.55)');g.addColorStop(1,'rgba(2,1,5,0)');q.fillStyle=g;q.fillRect(0,0,32,32)}
+function thornFringe(q,x,y,nb,zone){
+ // where the trail meets the forest: one continuous outline so the wall reads as a wall. A dark band whose width wanders with world-space
+ // noise (so it runs on across tiles), a thin lit rim on its inner edge, short thorn teeth that bite into the trail, and a soft shadow.
+ const Z=THORN_ZONES[zone||0],sides=[[0,1,0],[1,-1,0],[2,0,1],[3,0,-1]],rim=Z.accent;
+ const band=(dx,dy,t,wx,wy)=>2.6+thornNoise(wx,wy,6,19)*2.6+(hash2(wx,wy,23)>.82?1:0);
+ for(const[i,dx,dy]of sides){if(nb[i]!=='w')continue;
+  const g=dx?q.createLinearGradient(dx>0?31:0,0,dx>0?17:14,0):q.createLinearGradient(0,dy>0?31:0,0,dy>0?17:14);g.addColorStop(0,'rgba(2,1,5,.5)');g.addColorStop(1,'rgba(2,1,5,0)');q.fillStyle=g;q.fillRect(0,0,32,32);
+  for(let t=0;t<32;t++){const wx=dx?x*32+(dx>0?31:0):x*32+t,wy=dy?y*32+(dy>0?31:0):y*32+t,w=band(dx,dy,t,wx,wy),h=Math.floor(w);
+   const px=dx>0?32-h:dx<0?0:t,py=dy>0?32-h:dy<0?0:t,sw=dx?h:1,sh=dy?h:1;
+   q.fillStyle='#07040b';q.fillRect(px,py,sw,sh);
+   // the lit rim
+   q.fillStyle=rim+'55';if(dx)q.fillRect(dx>0?32-h-1:h,t,1,1);else q.fillRect(t,dy>0?32-h-1:h,1,1);
+   // a thorn tooth now and then, always pointing out of the forest
+   if(hash2(Math.floor(wx/3),Math.floor(wy/3),29)>.8&&t%3===1){const len=3+hash2(wx,wy,31)*3;q.fillStyle='#07040b';q.beginPath();if(dx){const bx=dx>0?32-h:h;q.moveTo(bx,t-1);q.lineTo(bx-dx*len,t+.5);q.lineTo(bx,t+2)}else{const by=dy>0?32-h:h;q.moveTo(t-1,by);q.lineTo(t+.5,by-dy*len);q.lineTo(t+2,by)}q.closePath();q.fill()}
+  }
+ }
+ // convex corners: where the forest only touches diagonally, close the outline with a small rounded cap
+ for(const[i,dx,dy,cx,cy]of[[4,1,1,32,32],[5,1,-1,32,0],[6,-1,1,0,32],[7,-1,-1,0,0]]){if(nb[i]!=='w'||nb[dx>0?0:1]==='w'||nb[dy>0?2:3]==='w')continue;q.fillStyle='#07040b';q.beginPath();q.arc(cx,cy,4.4,0,6.28);q.fill();q.strokeStyle=rim+'66';q.lineWidth=1;q.beginPath();q.arc(cx,cy,5.2,dx>0?(dy>0?3.14:3.14+1.57):(dy>0?1.57:0),dx>0?(dy>0?4.71:6.28):(dy>0?3.14:1.57));q.stroke()}
 }
 function thornGround(q,x,y,s,nb,zone,bridge){
  const Z=THORN_ZONES[zone];
  if(s==='thornMoss'){
   thornField(q,x,y,[[.34,'#10241a'],[.5,'#163020'],[.64,'#1d3b29'],[.78,'#254a32'],[1,'#2f5b3d']],22,9,3);
   for(let i=0;i<4;i++)thornLeaf(q,hash2(x*5+i,y,14)*30+1,hash2(x,y*5+i,15)*30+1,2.4+hash2(x+i,y,16)*2,hash2(x,y+i,17)*6.28,i%2?'#3f7a4a':Z.accent+'88');
-  thornFringe(q,x,y,nb);return;
+  thornFringe(q,x,y,nb,zone);return;
  }
  thornField(q,x,y,Z.ground,26,10,5+zone*9);
  // rare, unique details only: a stone, a few leaves, a puddle, a twig
@@ -44,7 +58,7 @@ function thornGround(q,x,y,s,nb,zone,bridge){
  else if(r<.20&&zone===4){q.strokeStyle='rgba(8,2,4,.8)';q.lineWidth=1;let cx=hash2(x,y,45)*20+6,cy=hash2(x,y,46)*20+6;q.beginPath();q.moveTo(cx,cy);for(let n=0;n<4;n++){cx+=(hash2(x,y+n,47)-.5)*9;cy+=(hash2(x+n,y,48)-.3)*7;q.lineTo(cx,cy)}q.stroke();q.strokeStyle='rgba(255,90,120,.22)';q.beginPath();q.moveTo(cx,cy);q.lineTo(cx-2,cy+3);q.stroke()}
  else if(r<.20&&zone===3){const sx=hash2(x,y,42)*14+8,sy=hash2(x,y,43)*14+8;q.strokeStyle='rgba(225,225,240,.35)';q.lineWidth=1;for(let n=0;n<5;n++){q.beginPath();q.moveTo(sx,sy);q.lineTo(sx+Math.cos(n*.9)*9,sy+Math.sin(n*.9)*9);q.stroke()}for(const rr of[4,8]){q.beginPath();q.arc(sx,sy,rr,0,6.28);q.stroke()}}
  else if(r<.20&&zone===2){for(let i=0;i<4;i++){const sx=hash2(x*3+i,y,39)*28+2,sy=hash2(x,y*3+i,40)*28+2;q.fillStyle='rgba(127,214,255,.8)';q.fillRect(sx,sy,1,1);q.fillStyle='rgba(127,214,255,.22)';q.fillRect(sx-1,sy,3,1);q.fillRect(sx,sy-1,1,3)}}
- thornFringe(q,x,y,nb);
+ thornFringe(q,x,y,nb,zone);
 }
 function thornForestFloor(q,x,y,zone){
  // the forest floor under the trees: dark and quiet, so the trees and the trail stand out
@@ -64,11 +78,10 @@ function thornPlanks(q,x,y,vertical){
   // the gap between boards: dark, with moss creeping out of it and now and then a toadstool
   q.fillStyle='#0c0907';q.fillRect(0,by+7+warp,32,1);if(R(b,20)>.5){q.fillStyle='rgba(70,120,70,.55)';for(let i=0;i<6;i++)q.fillRect(R(b,21+i)*30,by+6+warp,2+(i%3),1)}
   // joint, knot, nails, crack
-  const jx=Math.round(R(b,30)*22)+5;q.fillStyle='#0c0907';q.fillRect(jx,by+warp,1,7);q.fillStyle='rgba(255,230,190,.1)';q.fillRect(jx+1,by+warp,1,7);
-  for(const nx of[jx+3,jx-4]){q.fillStyle='#0c0907';q.fillRect(nx,by+warp+3,2,2);q.fillStyle='#9a8c78';q.fillRect(nx,by+warp+3,1,1)}
+  const jx=Math.round(R(b,30)*22)+5;q.strokeStyle='rgba(14,9,6,.7)';q.lineWidth=1;q.beginPath();q.moveTo(jx,by+warp+.5);q.lineTo(jx+1,by+warp+3);q.lineTo(jx,by+warp+6.5);q.stroke();q.strokeStyle='rgba(255,230,190,.12)';q.beginPath();q.moveTo(jx+1.5,by+warp+.5);q.lineTo(jx+2.5,by+warp+3);q.lineTo(jx+1.5,by+warp+6.5);q.stroke();
+  for(const nx of[jx+4,jx-4]){q.fillStyle='rgba(20,13,9,.7)';q.beginPath();q.arc(nx+.5,by+warp+3.5,1.4,0,6.28);q.fill();q.fillStyle='#a89a84';q.fillRect(nx,by+warp+3,1,1)}
   if(R(b,31)>.55){const kx=R(b,32)*20+6;q.strokeStyle='rgba(20,14,10,.8)';q.lineWidth=1;q.beginPath();q.ellipse(kx,by+warp+3.5,2.4,1.6,0,0,6.28);q.stroke();q.beginPath();q.ellipse(kx,by+warp+3.5,1,.6,0,0,6.28);q.stroke()}
   if(R(b,33)>.62){q.strokeStyle='rgba(8,5,4,.85)';q.lineWidth=1;const cx=R(b,34)*22+4;q.beginPath();q.moveTo(cx,by+warp+1);q.lineTo(cx+3,by+warp+3);q.lineTo(cx+1,by+warp+5);q.lineTo(cx+4,by+warp+7);q.stroke()}
-  if(R(b,35)>.8){q.fillStyle='#07050a';q.fillRect(R(b,36)*14+3,by+warp,12,7);q.fillStyle='rgba(60,100,60,.5)';q.fillRect(R(b,36)*14+3,by+warp+6,12,1)}
  }
  for(let i=0;i<3;i++){const wx=R(i,40)*28,wy=R(i,41)*28;thornBlob(q,wx,wy,4+R(i,42)*4,2+R(i,43)*2,'rgba(8,6,10,.28)',R(i,44)*3)}
  for(let i=0;i<2;i++)if(R(i,45)>.5){const mx=R(i,46)*26+2,my=R(i,47)*26+2;thornBlob(q,mx,my,3.4,2,'rgba(80,130,80,.5)');for(let s=0;s<5;s++){q.strokeStyle='rgba(120,180,110,.55)';q.lineWidth=.8;q.beginPath();q.moveTo(mx-3+s*1.5,my+1);q.lineTo(mx-3+s*1.5,my-1-(s%2))}}
@@ -77,7 +90,7 @@ function thornPlanks(q,x,y,vertical){
 // ---- cabin walls: stacked logs with round ends and bark, moss on top, a sagging shingle roof edge on the north side
 function thornCabinWall(q,x,y,cw){
  const R=(i,n)=>hash2(x*19+i,y*11+n,733),north=!cw(0,-1),south=!cw(0,1),west=!cw(-1,0),east=!cw(1,0);
- q.fillStyle='#16110d';q.fillRect(0,0,32,32);
+ q.fillStyle='#2b2219';q.fillRect(0,0,32,32);
  for(let r=0;r<4;r++){
   const ry=r*8,g=q.createLinearGradient(0,ry,0,ry+8);g.addColorStop(0,'#6b5a44');g.addColorStop(.35,'#4d3f2f');g.addColorStop(.8,'#352a1f');g.addColorStop(1,'#1c150f');q.fillStyle=g;
   q.beginPath();q.moveTo(west?2:0,ry+1);q.lineTo(east?30:32,ry+1);q.quadraticCurveTo(east?32:32,ry+4,east?30:32,ry+7.5);q.lineTo(west?2:0,ry+7.5);q.quadraticCurveTo(west?0:0,ry+4,west?2:0,ry+1);q.fill();
@@ -89,11 +102,11 @@ function thornCabinWall(q,x,y,cw){
   q.fillStyle='rgba(0,0,0,.45)';q.fillRect(0,ry+7,32,1);
  }
  // rot: dark wet streaks run down from the top, moss and drip stains
- for(let i=0;i<3;i++){const sx=R(i,20)*28+2;q.fillStyle='rgba(5,8,6,.38)';q.fillRect(sx,0,2+(i%2),10+R(i,21)*18);thornBlob(q,sx+1,12+R(i,22)*14,2,3,'rgba(60,100,60,.3)')}
+ for(let i=0;i<3;i++){const sx=R(i,20)*28+2,len=10+R(i,21)*18,sg=q.createLinearGradient(0,0,0,len);sg.addColorStop(0,'rgba(8,12,8,.34)');sg.addColorStop(1,'rgba(8,12,8,0)');q.fillStyle=sg;q.beginPath();q.moveTo(sx,0);q.lineTo(sx+2.4,0);q.quadraticCurveTo(sx+3,len*.6,sx+1.2,len);q.quadraticCurveTo(sx-.6,len*.6,sx,0);q.fill();thornBlob(q,sx+1,12+R(i,22)*14,2,3,'rgba(60,100,60,.3)')}
  if(north){ // the roof eave: overlapping shingles, a few gone, moss along the edge
-  q.fillStyle='#0f0b0a';q.fillRect(0,0,32,13);
+  q.fillStyle='#2c2724';q.fillRect(0,0,32,13);
   for(let r=0;r<3;r++)for(let c=-1;c<6;c++){const sx=c*7+(r%2)*3.5-1,sy=r*4;if(R(c+3,r+30)>.88)continue;const sg=q.createLinearGradient(0,sy,0,sy+5);sg.addColorStop(0,R(c,r+40)>.5?'#4a4a42':'#3e3e38');sg.addColorStop(1,'#1d1d1a');q.fillStyle=sg;q.beginPath();q.moveTo(sx,sy);q.lineTo(sx+7,sy);q.lineTo(sx+7,sy+3.5);q.quadraticCurveTo(sx+3.5,sy+6,sx,sy+3.5);q.fill();q.fillStyle='rgba(255,255,255,.07)';q.fillRect(sx,sy,7,1);if(R(c,r+50)>.7)thornBlob(q,sx+3,sy+4,3,1.2,'rgba(80,130,80,.55)')}
-  q.fillStyle='rgba(0,0,0,.5)';q.fillRect(0,12,32,2);for(let i=0;i<5;i++){const mx=R(i,60)*30;q.fillStyle='rgba(95,150,90,.6)';q.fillRect(mx,11,2,2+(i%3))}
+  {const eg=q.createLinearGradient(0,11,0,16);eg.addColorStop(0,'rgba(0,0,0,.5)');eg.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=eg;q.fillRect(0,11,32,5)}for(let i=0;i<5;i++){const mx=R(i,60)*30;q.fillStyle='rgba(95,150,90,.6)';q.fillRect(mx,11,2,2+(i%3))}
  }
  if(south){const g=q.createLinearGradient(0,24,0,32);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');q.fillStyle=g;q.fillRect(0,24,32,8)}
 }

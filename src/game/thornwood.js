@@ -144,7 +144,7 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
  for(const c of cellsOrder){if(m[c.y][c.x]!==TT.GARDEN_TREE)continue;
   // one sprite per tree tile: low things next to the trail, young and mid trees behind, tall trees deepest, and plenty of low things mixed in
   // everywhere so no row is the same tree repeated; a tree only grows where its crown falls on forest, never on a trail, cabin or lantern
-  const low=()=>reg(mk(c.x,c.y,0,ri(0,9),.85+rnd()*.35,.3)),tryTree=(cls,sc,jit)=>{const t=mk(c.x,c.y,cls,ri(0,7),sc,jit),[tw,th]=TREE_BOX[cls];if(!crownClear(t.x,t.y,tw*.9*t.s,th*.72*t.s))return false;reg(t);return true};
+  const low=()=>{if(rnd()<.16)reg(mk(c.x,c.y,0,ri(0,9),.85+rnd()*.35,.3))},tryTree=(cls,sc,jit)=>{const t=mk(c.x,c.y,cls,ri(0,7),sc,jit),[tw,th]=TREE_BOX[cls];if(!crownClear(t.x,t.y,tw*.9*t.s,th*.72*t.s))return false;reg(t);return true};
   const r=rnd();
   if(c.d===1){if(open4(c.x,c.y-1)||r>.35||!tryTree(1,.5+rnd()*.14,.3))low()}
   else if(c.d===2){if(r>.5||!tryTree(1,.75+rnd()*.3,.4))low()}
