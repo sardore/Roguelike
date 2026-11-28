@@ -13,6 +13,8 @@ const THORN_ROSTER=Object.freeze([['객잔 쥐',7],['독꽃',4],['독거미',4]]
 function thornZoneAt(x,y,T){
  if(T.up&&Math.hypot(x-T.up.x,y-T.up.y)<26)return 0;
  const a=thornNoise(x,y,40,T.zoneSeed),b=thornNoise(x,y,54,T.zoneSeed+11);
+ // floor 1 uses only thorn, rot and blood (fungus and web are kept for floor 2): three broad regions
+ if(T.threeZones)return a<.38?1:a>.64?4:0;
  if(a<.30)return 1;if(a<.45&&b>.5)return 3;if(a>.76)return 4;if(b<.32)return 2;return 0;
 }
 function buildThornwood(level){
@@ -20,7 +22,7 @@ function buildThornwood(level){
  if(W!==THORN_W||H!==THORN_H)throw Error('Thornwood map size');
  state.keyPlan96=null;state.floor2Choice63=null;state.generationInProgress57=true;state.rafts=[];
  const rnd=()=>globalThis.__MANRU_RANDOM57__(),ri=(a,b)=>Math.floor(rnd()*(b-a+1))+a,pick=list=>list[ri(0,list.length-1)],clampi=(v,a,b)=>Math.max(a,Math.min(b,v));
- const T=ter.thorn105={version:2,zoneSeed:ri(1,9999),up:null,bushes:{},bridges:{},cabins:[],clearings:[],plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
+ const T=ter.thorn105={version:2,zoneSeed:ri(1,9999),threeZones:level===1,up:null,bushes:{},bridges:{},cabins:[],clearings:[],plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
  // a tree, a bush or a piece of furniture is an overlay that needs ground under it, like the mountain builder does
  const put=(x,y,tile,s)=>{if(x<1||y<1||x>=W-1||y>=H-1)return false;if(terrainLayerCatalog58().overlays.has(tile)&&!terrainSurface58(terrainBaseTile58(x,y)))setTerrainTile58(m,x,y,TT.FLOOR);setTerrainTile58(m,x,y,tile);ter.surfaces[k(x,y)]=s;delete ter.props[k(x,y)];return true};
  const isWall=(x,y)=>m[y]?.[x]===TT.WALL;
@@ -37,27 +39,37 @@ function buildThornwood(level){
  const trail=(a,b,o={})=>{const len=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),n=Math.max(3,Math.round(len/4)),px=-(b.y-a.y)/len,py=(b.x-a.x)/len,ph=rnd()*6,amp=o.amp??3,kk=o.k??1.5,pts=[];
   for(let i=0;i<=n;i++){const t=i/n,env=Math.sin(t*Math.PI),off=(Math.sin(t*Math.PI*kk*2+ph)*amp+(rnd()-.5)*1.4)*env;pts.push({x:clampi(Math.round(a.x+(b.x-a.x)*t+px*off),3,W-4),y:clampi(Math.round(a.y+(b.y-a.y)*t+py*off),3,H-4)})}
   for(let i=1;i<pts.length;i++)line4(pts[i-1],pts[i],o.r??0,o.s??'thornTrail',o.core!==false);return pts};
- // ---- the maze: a randomized depth-first maze on a coarse grid (long winding corridors, many dead ends), then a few extra openings
- //      that make loops; the exit is the cell farthest from the entrance, so the way on is long and never a straight line
- const CS=16,cols=7,rows=7,gx=i=>10+i*CS,gy=j=>12+j*CS,cid=(i,j)=>j*cols+i,center=id=>({x:gx(id%cols),y:gy((id/cols)|0)});
- const tree=[],visited=new Set([cid(0,rows-1)]),stack=[[0,rows-1]],adj=Array.from({length:cols*rows},()=>[]),DIR4=[[1,0],[-1,0],[0,1],[0,-1]];
- while(stack.length){const[ci,cj]=stack[stack.length-1],nbs=DIR4.map(([dx,dy])=>[ci+dx,cj+dy]).filter(([a,b])=>a>=0&&b>=0&&a<cols&&b<rows&&!visited.has(cid(a,b)));
-  if(!nbs.length){stack.pop();continue}const[a,b]=pick(nbs);visited.add(cid(a,b));tree.push([cid(ci,cj),cid(a,b)]);adj[cid(ci,cj)].push(cid(a,b));adj[cid(a,b)].push(cid(ci,cj));stack.push([a,b])}
+ // ---- the maze: a growing-tree maze (it extends the newest cell most of the time and a random older one otherwise, which gives corridors
+ //      of very different lengths and branching), on a coarse grid with a few cells left out and every junction displaced, so no two
+ //      stretches repeat. The exit is the cell farthest from the entrance, so the way on is long and never a straight line.
+ const zoneAt=(x,y)=>thornZoneAt(x,y,T);
+ const CS=16,cols=7,rows=7,gx=i=>10+i*CS,gy=j=>12+j*CS,cid=(i,j)=>j*cols+i,startId=cid(0,rows-1);
+ const jit=Array.from({length:cols*rows},(_,id)=>id===startId?{x:0,y:0}:{x:ri(-4,4),y:ri(-4,4)});
+ const center=id=>({x:gx(id%cols)+jit[id].x,y:gy((id/cols)|0)+jit[id].y});
+ T.up={...center(startId)};
+ const hole=new Set();for(let n=0;n<ri(5,8);n++){const id=ri(0,cols*rows-1);if(id!==startId&&id!==cid(1,rows-1)&&id!==cid(0,rows-2))hole.add(id)}
+ const tree=[],visited=new Set([startId]),active=[startId],adj=Array.from({length:cols*rows},()=>[]),DIR4=[[1,0],[-1,0],[0,1],[0,-1]];
+ while(active.length){const idx=rnd()<.62?active.length-1:ri(0,active.length-1),id=active[idx],ci=id%cols,cj=(id/cols)|0,
+   nbs=DIR4.map(([dx,dy])=>[ci+dx,cj+dy]).filter(([a,b])=>a>=0&&b>=0&&a<cols&&b<rows&&!visited.has(cid(a,b))&&!hole.has(cid(a,b)));
+  if(!nbs.length){active.splice(idx,1);continue}const[a,b]=pick(nbs),nid=cid(a,b);visited.add(nid);tree.push([id,nid]);adj[id].push(nid);adj[nid].push(id);active.push(nid)}
  const inTree=new Set(tree.map(([a,b])=>a<b?a+'-'+b:b+'-'+a)),extras=[];
- for(let j=0;j<rows;j++)for(let i=0;i<cols;i++)for(const[dx,dy]of[[1,0],[0,1]]){const a=cid(i,j),bi=i+dx,bj=j+dy;if(bi>=cols||bj>=rows)continue;const b=cid(bi,bj),key=a<b?a+'-'+b:b+'-'+a;if(!inTree.has(key))extras.push([a,b])}
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++)for(const[dx,dy]of[[1,0],[0,1]]){const a=cid(i,j),bi=i+dx,bj=j+dy;if(bi>=cols||bj>=rows)continue;const b=cid(bi,bj),key=a<b?a+'-'+b:b+'-'+a;if(!visited.has(a)||!visited.has(b)||inTree.has(key))continue;extras.push([a,b])}
  for(let i=extras.length-1;i>0;i--){const j2=ri(0,i);[extras[i],extras[j2]]=[extras[j2],extras[i]]}
- const loops=extras.slice(0,Math.max(6,Math.round(extras.length*.3)));
- const startId=cid(0,rows-1),dist=new Map([[startId,0]]),bq=[startId];for(let q=0;q<bq.length;q++)for(const n of adj[bq[q]])if(!dist.has(n)){dist.set(n,dist.get(bq[q])+1);bq.push(n)}
+ const loops=extras.slice(0,Math.max(4,Math.round(extras.length*.28)));
+ const dist=new Map([[startId,0]]),bq=[startId];for(let q=0;q<bq.length;q++)for(const n of adj[bq[q]])if(!dist.has(n)){dist.set(n,dist.get(bq[q])+1);bq.push(n)}
  let exitId=startId,far=-1;for(const[id,d]of dist)if(d>far||d===far&&rnd()<.5){far=d;exitId=id}
- const up=center(startId),down=center(exitId);T.up={...up};
+ const up=center(startId),down=center(exitId);
+ // each kind of country is laid out differently: thorn is a tight tangle of narrow twisty trails, rot is wide meandering paths with wide
+ // plazas, blood is straighter passages with big caverns
+ const style=(x,y)=>{const z=zoneAt(x,y);return z===1?{r:()=>ri(1,2),amp:4.4,plaza:()=>ri(2,3),moss:.55}:z===4?{r:()=>1,amp:1.6,plaza:()=>ri(2,4),moss:0}:{r:()=>ri(0,1),amp:3,plaza:()=>ri(1,2),moss:.25}};
  // junction plazas, then the passages between cells (each one winding, some narrow and some wide)
- for(let id=0;id<cols*rows;id++){const c=center(id);disc(c.x,c.y,ri(1,2),rnd()<.3?'thornMoss':'thornTrail',true)}
+ for(const id of visited){const c=center(id),st=style(c.x,c.y);disc(c.x,c.y,st.plaza(),rnd()<st.moss?'thornMoss':'thornTrail',true)}
  disc(up.x,up.y,2,'thornMoss',true);disc(down.x,down.y,2,'thornMoss',true);
- for(const[a,b]of tree)trail(center(a),center(b),{amp:2.4,k:1,r:ri(0,1)});
+ for(const[a,b]of tree){const ca=center(a),cb=center(b),st=style((ca.x+cb.x)/2,(ca.y+cb.y)/2);trail(ca,cb,{amp:st.amp,k:ri(1,2),r:st.r()})}
  const mainFloor=new Set(floor);
  const nearestFloor=(p,minD=0,avoid=null)=>{let best=null,bd=1e9;for(const key of floor){const[x,y]=key.split(',').map(Number),d=Math.hypot(x-p.x,y-p.y);if(d<minD||d>=bd)continue;if(avoid&&Math.hypot(x-avoid.x,y-avoid.y)<10)continue;if(reserved.has(key)||m[y][x]!==TT.FLOOR||T.bridges[key])continue;bd=d;best={x,y}}return best};
  // extra openings: loops, most of them plugged with thorn bushes (green ones are cut down, red ones stab)
- for(const[a,b]of loops){const pts=trail(center(a),center(b),{amp:2.4,k:1,r:0});if(rnd()<.35)continue;
+ for(const[a,b]of loops){const pts=trail(center(a),center(b),{amp:2.4,k:1,r:0});if(rnd()<.3)continue;
   const mid=Math.floor(pts.length/2),red=rnd()<.42,cells=[];
   for(let q=mid-1;q<=mid+1;q++){const p=pts[clampi(q,0,pts.length-1)];if(m[p.y][p.x]===TT.FLOOR&&!T.bridges[k(p.x,p.y)]&&!cells.some(z=>z.x===p.x&&z.y===p.y))cells.push(p)}
   for(const p of cells){put(p.x,p.y,TT.HEDGE,'thornTrail');T.bushes[k(p.x,p.y)]=red?'red':'green';floor.delete(k(p.x,p.y))}
@@ -82,18 +94,23 @@ function buildThornwood(level){
    put(sd>0?x0+w-1:x0,sy0+1,TT.FLOOR,'rotPlank');loot.push({x:sd>0?sx0+2:sx0+sw-3,y:sy0+1})}
   const room={x:x0,y:y0,w,h,cx,cy:y0+(h>>1)};state.rooms.push(room);T.cabins.push({...room,door:{x:doorX,y:doorY}});roomsOut.push(room);
   loot.push({x:room.cx-1,y:room.cy},{x:room.cx+2,y:room.cy+(rnd()<.5?-1:1)});return true};
- const buildClearing=(cx,cy)=>{if(!freeBox(cx-3,cy-3,7,7,2))return false;const target=nearestFloor({x:cx,y:cy});if(!target)return false;
-  disc(cx,cy,3,'thornMoss',true);for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++)reserved.add(k(cx+dx,cy+dy));
-  trail({x:cx,y:cy},target,{amp:3,k:1,r:ri(0,1)});T.clearings.push({x:cx,y:cy});state.rooms.push({x:cx-3,y:cy-3,w:7,h:7,cx,cy});loot.push({x:cx,y:cy});nodes.push({x:cx,y:cy});return true};
+ const buildClearing=(cx,cy,rad=3)=>{if(!freeBox(cx-rad,cy-rad,rad*2+1,rad*2+1,2))return false;const target=nearestFloor({x:cx,y:cy});if(!target)return false;
+  disc(cx,cy,rad,zoneAt(cx,cy)===4?'thornTrail':'thornMoss',true);for(let dy=-rad;dy<=rad;dy++)for(let dx=-rad;dx<=rad;dx++)reserved.add(k(cx+dx,cy+dy));
+  trail({x:cx,y:cy},target,{amp:3,k:1,r:ri(0,1)});T.clearings.push({x:cx,y:cy});state.rooms.push({x:cx-rad,y:cy-rad,w:rad*2+1,h:rad*2+1,cx,cy});loot.push({x:cx,y:cy});nodes.push({x:cx,y:cy});return true};
+ // a bog right beside a trail: an irregular pool the trail skirts (water is not walkable, so it never blocks the way)
+ const buildPond=()=>{const keys=[...floor].filter(key=>{const[x,y]=key.split(',').map(Number);return zoneAt(x,y)===1&&!T.bridges[key]&&!reserved.has(key)});if(!keys.length)return false;const[fx,fy]=pick(keys).split(',').map(Number),d=pick(DIR4),rx=ri(3,5),ry=ri(2,4),cx=fx+d[0]*(rx+2),cy=fy+d[1]*(ry+2);if(!freeBox(cx-rx,cy-ry,rx*2+1,ry*2+1,0))return false;
+  for(let yy=-ry;yy<=ry;yy++)for(let xx=-rx;xx<=rx;xx++){const e=(xx/rx)**2+(yy/ry)**2;if(e<=1-(hash2(cx+xx,cy+yy,61)*.25)){put(cx+xx,cy+yy,TT.WATER,'stream');reserved.add(k(cx+xx,cy+yy))}}return true};
  // dead ends: a bigger mossy plaza with something to find at the end of the corridor
- for(let id=0;id<cols*rows;id++){if(id===startId||id===exitId||adj[id].length!==1)continue;const c=center(id);if(nearStream(c.x,c.y))continue;disc(c.x,c.y,2,'thornMoss',true);T.clearings.push({x:c.x,y:c.y,deadEnd:true});loot.push({x:c.x,y:c.y})}
+ for(const id of visited){if(id===startId||id===exitId||adj[id].length!==1)continue;const c=center(id);if(nearStream(c.x,c.y))continue;disc(c.x,c.y,2,'thornMoss',true);T.clearings.push({x:c.x,y:c.y,deadEnd:true});loot.push({x:c.x,y:c.y})}
  // cabins and clearings sit in the walls between corridors, each tied to the maze by a short winding side trail
- for(let j=0;j<rows-1;j++)for(let i=0;i<cols-1;i++){const x=gx(i)+CS/2+ri(-1,1),y=gy(j)+CS/2+ri(-1,1);if(nearStream(x,y))continue;const r=rnd();if(r<.16)buildCabin(x,y);else if(r<.5)buildClearing(x,y)}
+ for(let j=0;j<rows-1;j++)for(let i=0;i<cols-1;i++){const x=gx(i)+CS/2+ri(-1,1),y=gy(j)+CS/2+ri(-1,1);if(nearStream(x,y))continue;const z=zoneAt(x,y),r=rnd();
+  if(z===1){if(r<.24)buildCabin(x,y);else if(r<.5)buildClearing(x,y,ri(3,4))}else if(z===4){if(r<.06)buildCabin(x,y);else if(r<.42)buildClearing(x,y,ri(4,5))}else{if(r<.12)buildCabin(x,y);else if(r<.45)buildClearing(x,y,ri(2,3))}}
+ for(let n=0;n<14;n++)buildPond();
  for(let tries=0;tries<60&&T.cabins.length<4;tries++){const i=ri(0,cols-2),j=ri(0,rows-2),x=gx(i)+CS/2,y=gy(j)+CS/2;if(!nearStream(x,y))buildCabin(x,y)}
  // loops between neighbouring clearings
  for(let i=0;i<nodes.length;i++)for(let j2=i+1;j2<nodes.length;j2++){const a=nodes[i],b=nodes[j2];if(Math.hypot(a.x-b.x,a.y-b.y)<24&&rnd()<.2)trail(a,b,{amp:3,k:1,r:0})}
  // ---- zone-aware dressing: thorn bushes along the trails (never on the lane that carries the way on), the red ones likelier in the blood zone
- const zoneAt=(x,y)=>thornZoneAt(x,y,T),near4=(x,y,t)=>DIRS4.some(([dx,dy])=>m[y+dy]?.[x+dx]===t);
+ const near4=(x,y,t)=>DIRS4.some(([dx,dy])=>m[y+dy]?.[x+dx]===t);
  for(const key of floor){if(route.has(key))continue;const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||!near4(x,y,TT.WALL)||ter.surfaces[key]==='rotPlank')continue;
   const z=zoneAt(x,y),r=rnd(),redP=z===4?.05:.014,greenP=.045;if(r<greenP){put(x,y,TT.HEDGE,ter.surfaces[key]);T.bushes[key]='green'}else if(r<greenP+redP){put(x,y,TT.HEDGE,ter.surfaces[key]);T.bushes[key]='red'}}
  // ---- furniture, lanterns and clutter: blocking pieces are TT.STONE_PILLAR cells named in T.props, soft clutter lives in T.deco
