@@ -333,10 +333,10 @@ function buildBranchAttempt(id,level,attempt){
  const def=BRANCH_DEFS105[id];if(!def||level<1||level>def.count)throw Error('Invalid branch depth');
  const carry=branchCarry(),world=state.branchWorld105;state={...carry,branchWorld105:world,floor:def.parent};GameState.initialize(state);
  if(id==='canal')state.branchWorld105.canalRevision105=1;
- [COLS,ROWS]=id==='palace'?[level===1?123:131,level===1?123:131]:id==='citadel'?[241,241]:id==='dojo'?(level===2?[155,137]:[213,65]):id==='mine'?[91,95]:id==='canal'?[103,69]:id==='granary'?[73,level===2?126:101]:id==='stockade'?[111,85]:id==='mirror'?MIRROR_TOWER_SIZE:[105,87];const outdoor=['stockade','black','mine','citadel','mirror'].includes(id);
+ [COLS,ROWS]=id==='palace'?[level===1?123:131,level===1?123:131]:id==='citadel'?[241,241]:id==='dojo'?(level===2?[155,137]:[213,65]):id==='mine'?[91,95]:id==='canal'?[103,69]:id==='granary'?[73,level===2?126:101]:id==='stockade'?[111,85]:id==='mirror'?MIRROR_TOWER_SIZE:id==='thorn'?THORN_SIZE:[105,87];const outdoor=['stockade','black','mine','citadel','mirror'].includes(id);
  Object.assign(state,{terrainReactions105:newTerrainReactions105(),branchContext105:{id,level},branchPortals105:[],branchTerrain105:{heights:Array.from({length:ROWS},()=>Array(COLS).fill(0)),ramps:{},surfaces:{},props:{},landmarks:[]},map:Array.from({length:ROWS},()=>Array(COLS).fill(outdoor?TT.VOID:TT.WALL)),rooms:[],monsters:[],items:[],decals:[],decor:[],featureRooms:[],vaults:[],switches:[],rafts:[],routeTags:[],neutralInteractables58:[],seen:new Set(),visible:new Set(),grassTufts1020:new Set(),terrainUnderlay58:{},terrainAttachment58:{},stairs:{x:0,y:0},floorKeys:0,floorKeysRequired:0,floorTurn:0,layoutName:`${def.name} ${level}층 · ${def.titles[level-1]}`,specialFloor:true,generatedBuild:'10.0.6-branches-v2',visionPenalty:0,tempFields:[],tempTerrain74:[],elementFields74:[],legendDecor47:[],legendFireFields47:[],legendTerrain47:[],legendSkyAxes47:[],artifactFields46:[],gazeBursts57:[],jarGasFields57:[],silkTraps57:{},hiddenGroups60:[],hiddenLookup60:{},hiddenBase60:{},hiddenReplacement60:{},portalLinks981:{},portalEdges981:{},portalRooms981:[],discoveredPortals981:{},rumorSpaces1030:[],crumbleBase60:{},hazard1005:{armed:{},collapsed:{},lastWarn:{}},naturalPopulation57:{initial:0},martialEcho:null,pendingGroundItems57:[]});
  const ter=state.branchTerrain105,m=state.map;
- const result=id==='palace'?buildPalace(level):id==='citadel'?buildCitadel(level):id==='dojo'?buildDojo(level,attempt):id==='mine'?buildMine(level,attempt):id==='canal'||id==='granary'?buildIndoorBranch(id,level):id==='mirror'?buildMirrorTower(level):buildMountainBranch(id,level);
+ const result=id==='palace'?buildPalace(level):id==='citadel'?buildCitadel(level):id==='dojo'?buildDojo(level,attempt):id==='mine'?buildMine(level,attempt):id==='canal'||id==='granary'?buildIndoorBranch(id,level):id==='mirror'?buildMirrorTower(level):id==='thorn'?buildThornwood(level):buildMountainBranch(id,level);
  produceWallMaterials105(state,true);
  // Geometry and surface labels are fixed after generation; hazards change the map and dynamic branch state.
  const geometry={heights:ter.heights,surfaces:ter.surfaces,ramps:ter.ramps};branchTerrainPack(geometry);
@@ -802,6 +802,7 @@ function branchWarningDoor(x,y){const d=state?.branchTerrain105?.warningDoors?.f
 function branchRevealReward(r){BRANCH_TILE_CACHE.clear();if(!r.reward||r.rewardGranted)return;r.rewardGranted=true;PlacementService.placeItem({...clone(BRANCH_REWARDS.canal)},r.reward);addLog('솟아오른 미로의 끝에 수문지기의 행낭이 드러났다.')}
 function branchTerrainInfo(t,x,y){const palace=palaceInspect(t,x,y);if(palace)return palace;
  const mirror=mirrorTowerInfo(t,x,y);if(mirror)return mirror;
+ const thorn=thornTerrainInfo(t,x,y);if(thorn)return thorn;
  const dojoInfo=dojoTerrainInfo(t,x,y);if(dojoInfo)return dojoInfo;
  if(!state?.branchContext105)return null;const ter=state.branchTerrain105,sw=state.switches?.find(s=>s.x===x&&s.y===y&&s.kind==='branch-reveal');
  if(sw){const r=ter.reveals.find(r=>r.switchId===sw.id),remaining=(r.cells||[]).filter(c=>branchLeafAt(c.x,c.y)&&state.map[c.y]?.[c.x]===TT.PAPER_BRIDGE).length;return{name:r.reward?'잎막이 수문 스위치':'침수 구획 인양 스위치',desc:sw.used?'물 아래의 지형을 모두 인양했다. 다시 작동하지 않는다.':'물 아래의 바닥·벽·가구가 솟아오르고 잠겨 있던 적들이 나타난다. 구조물 위에 사람이 있으면 작동하지 않는다.',hint:sw.used?'인양 완료. 처음 들어온 문을 통해 돌아갈 수 있다.':r.reward?`잎사귀가 인양 장치를 막고 있다. 남은 잎 ${remaining}칸. 모두 없앤 뒤 뭍으로 돌아와 작동하자.`:'스위치는 뭍에서 작동한다. 침수 구역에 먼저 들어갈 필요가 없다.'}}
@@ -2860,7 +2861,8 @@ const BRANCH_DEFS105=Object.freeze({
  stockade:{name:'산채',count:2,parent:7,titles:['겹비탈 숲길','상봉 산성'],color:'#a6b482'},
  mine:{name:'광산',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['등롱 갱도','꺼져 가는 심부'],color:'#d3a46b'},
  black:{name:'흑산채',count:2,parent:7,parentBranch:'stockade',parentLevel:2,titles:['고목 능선','흑기 정상성'],color:'#ac8eae'},
- mirror:{name:'천면경탑',count:3,parent:14,climbs105:true,titles:['반영 회랑','어긋난 난간','파경대'],color:'#b4c1c7'}
+ mirror:{name:'천면경탑',count:3,parent:14,climbs105:true,titles:['반영 회랑','어긋난 난간','파경대'],color:'#b4c1c7'},
+ thorn:{name:'가시숲',count:3,parent:9,titles:['굽이치는 가시길','가시 미궁','둥지 대굴'],color:'#9b7fc4'}
 });
 function produceWallMaterials105(world=state,reset=false){
  if(!world?.map?.length)return;

@@ -1043,7 +1043,7 @@ function carryWallEdges(px,py,x,y){
 // Skip the extra edge pass for dojo timber walls, stockade walls, palace facades and citadel gates.
 function wallKeepsOwnArt(x,y){
   const b=state.branchContext105,ter=state.branchTerrain105,key=k(x,y);
-  if(['dojo','stockade','black','mirror'].includes(b?.id))return true;
+  if(['dojo','stockade','black','mirror','thorn'].includes(b?.id))return true;
   if(b?.id==='palace'){const d=ter.palace105;return !!(d.facades?.[key]||d.windows?.[key])||DIRS8.some(([dx,dy])=>d.outdoors?.[k(x+dx,y+dy)])}
   if(b?.id==='citadel')return !!ter.mine105?.walls.some(w=>w.cells.some(c=>c.x===x&&c.y===y));
   return false;
@@ -1570,6 +1570,7 @@ function worldLightSources(){
  const palace=state.branchContext105?.id==='palace'?state.branchTerrain105?.palace105:null;if(palace){for(const l of palace.lights||[]){if(l.wall){if(state.map[l.y]?.[l.x]!==TT.PALACE_WALL_LAMP||terrainUnlit105(l.x,l.y))continue;add(l.x+l.dx,l.y+l.dy,l.color||'#ecc17d',3.7,.22,'palace-wall-lamp');}else add(l.x,l.y,l.color||'#ecc17d',3.4,.21,'palace-lamp');}for(const key of Object.keys(palace.windows||{})){const[x,y]=key.split(',').map(Number);if(state.map[y]?.[x]===TT.WALL)add(x,y,'#78bfc5',3.2,.10,'palace-window');}}
  for(const l of dojo?.lanterns||[])add(l.x,l.y,WORLD_LIGHT_ART.lantern,3.2,.19,'dojo');
  for(const l of state.branchTerrain105?.mirror105?.lights||[])add(l.x,l.y,l.color,l.r,l.power,'mirror');
+ for(const l of state.branchTerrain105?.thorn105?.lights||[])add(l.x,l.y,l.color,l.r,l.power,'lamp');
  for(const r of state.branchContext105?.id==='mirror'?state.rafts||[]:[])for(const o of r.objects||[])if(o.kind==='lamp')add(r.x+o.dx,r.y+o.dy,'#d9c8ff',3.2,.22,'mirror');
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const t=state.map[y][x];if(t===TT.BRAZIER||t===TT.COOKPOT)add(x,y,WORLD_LIGHT_ART.fire,3.2,.24);else if(t===TT.LANTERN_POST){
   const storm=state.branchTerrain105?.layoutVersion===12;
@@ -2269,6 +2270,8 @@ function drawSubstrate(px,py,x,y,colors,visible){
     drawTerrainReactions(now,b);
     drawWorldLights(now,b);
     drawSceneryFog(b,colors.fog||'#080503');
+    // trees are objects: once their base is in view the whole tree is, so they are drawn after the tile fog and never cut by it
+    drawThornForest(b);
     drawGlassTowerBodies(b,now);
     drawCityBodies(b,now);
 
@@ -5254,6 +5257,7 @@ function drawBranchCell(t,px,py,x,y,foreground=null){
  if(state.branchContext105.id==='dojo')return drawDojoCell(t,px,py,x,y);
  if(state.branchContext105.id==='citadel')return drawCitadelCell(t,px,py,x,y,foreground);
  if(state.branchContext105.id==='mine')return drawMineCell(t,px,py,x,y,foreground);
+ if(state.branchContext105.id==='thorn')return drawThornCell(t,px,py,x,y,foreground);
  if(BRANCH_RENDER_MAP!==state.map){BRANCH_RENDER_MAP=state.map;BRANCH_TILE_CACHE.clear()}
  const indoor=['canal','granary'].includes(state.branchContext105.id),actual=t;t=terrainBaseTile58(x,y,t);if(!indoor&&[TT.GARDEN_TREE,TT.STONE_PILLAR,TT.CRATE,TT.JAR,TT.RACK].includes(actual)&&state.branchTerrain105.props[k(x,y)])t=actual;
  if(isWaterTile105(t)||indoor&&[TT.VOID,TT.LAVA,TT.MERCURY].includes(t)){

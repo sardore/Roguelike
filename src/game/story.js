@@ -306,7 +306,8 @@ const BRANCH_LORE=Object.freeze({
  granary:'적재실과 지하 숙성고로 이어지는 창고. 보급품 사이에 식귀가 숨어 있다.',
  stockade:'가파른 산길과 정상 성채. 길 밖의 낭떠러지와 시야를 가리는 절벽을 조심하라.',
  black:'검은 능선과 산성. 좁은 길과 매복에 대비하라.',
- mine:'불빛이 닿지 않는 갱도와 광차가 오가는 심부. 다리 밖은 낭떠러지다.'
+ mine:'불빛이 닿지 않는 갱도와 광차가 오가는 심부. 다리 밖은 낭떠러지다.',
+ thorn:'보랏빛 가시덤불이 빽빽한 숲. 굽이치는 길을 따라 벌레와 독초를 피해 가라. 붉은 가시덤불은 가까이만 가도 찌른다.'
 });
   function tip70(id,text,sub='',options={}){
     if(state?.duel)return; // a duel has no tutorial: a tip would stop the input in the middle of a timed turn
