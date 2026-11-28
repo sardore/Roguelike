@@ -28,12 +28,14 @@ try {
       if (hit) r.clipped.push(`${t}/${c}/${v}:${hit}`);
     }
     const st = th.state(); st.tutorialEntry60 = { completed: true }; st.branchWorld105 = { version: 1, pages: {} }; st.runId984 = 'thorn';
-    for (let n = 0; n < 9; n++) {
+    r.pieces = { hall: 0, spiral: 0, raft: 0, shaped: 0 };
+    for (let n = 0; n < 18; n++) {
       try {
         th.build('thorn', 1 + (n % 3)); r.builds++;
         const S = th.state(), T = S.branchTerrain105.thorn105;
         for (const tr of T.forest) if (S.map[Math.floor(tr.y - .5)]?.[Math.floor(tr.x)] !== th.TT.GARDEN_TREE) r.offTile++;
         let tiles = 0; for (const row of S.map) for (const v of row) if (v === th.TT.GARDEN_TREE) tiles++; r.treeTiles = tiles;
+        r.pieces.hall += T.halls.length; r.pieces.spiral += T.spirals.length; r.pieces.raft += T.rafts.length; r.pieces.shaped += T.cabins.filter(c => c.shape).length;
         r.last = { cabins: T.cabins.length, clearings: T.clearings.length, plugs: T.plugs.length, trees: T.forest.length, bushes: Object.keys(T.bushes).length, bridges: Object.keys(T.bridges).length, lights: T.lights.length, backPaths: T.backPaths.length, mons: S.monsters.length };
       } catch (e) { r.fail.push(String(e && e.message || e).slice(0, 90)); }
     }
@@ -45,6 +47,7 @@ try {
   assert.equal(out.offTile, 0, `나무 타일이 아닌 곳에 선 나무 ${out.offTile}`);
   const l = out.last;
   assert.ok(l.cabins >= 2 && l.clearings >= 4 && l.trees >= 800 && l.bushes >= 10 && l.bridges >= 4 && l.lights >= 10 && l.mons >= 8, `구성 부족 ${JSON.stringify(l)}`);
+  assert.ok(out.pieces.hall && out.pieces.spiral && out.pieces.raft && out.pieces.shaped, `특수 구조가 18번 중 한 번도 안 나온 종류 ${JSON.stringify(out.pieces)}`);
   assert.equal(errors.length, 0, errors.join('|'));
   console.log('thornwood: ok');
 } finally { await browser.close(); }

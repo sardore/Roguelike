@@ -322,7 +322,7 @@ function branchTransition(portal){
 }
 /* Every floor has an authored topology. Corridors are physical, not drawn lines. */
 function buildBranch(id,level){
- const transaction=captureGenerationSnapshot(),attempts=['mine','canal','granary','mirror'].includes(id)?16:1;let error;
+ const transaction=captureGenerationSnapshot(),attempts=['mine','canal','granary','mirror','thorn'].includes(id)?16:1;let error;
  for(let attempt=0;attempt<attempts;attempt++){
   if(attempt)restoreGenerationSnapshot(transaction);
   try{return buildBranchAttempt(id,level,attempt)}catch(e){error=e;}

@@ -13,6 +13,7 @@ const THORN_ROSTER=Object.freeze([['객잔 쥐',7],['독꽃',4],['독거미',4]]
 function thornZoneAt(x,y,T){
  if(T.up&&Math.hypot(x-T.up.x,y-T.up.y)<26)return 0;
  const a=thornNoise(x,y,40,T.zoneSeed),b=thornNoise(x,y,54,T.zoneSeed+11);
+ if(T.threeZones)return a<.38?1:a>.64?4:0;
  if(a<.30)return 1;if(a<.45&&b>.5)return 3;if(a>.76)return 4;if(b<.32)return 2;return 0;
 }
 function buildThornwood(level){
@@ -20,7 +21,7 @@ function buildThornwood(level){
  if(W!==THORN_W||H!==THORN_H)throw Error('Thornwood map size');
  state.keyPlan96=null;state.floor2Choice63=null;state.generationInProgress57=true;state.rafts=[];
  const rnd=()=>globalThis.__MANRU_RANDOM57__(),ri=(a,b)=>Math.floor(rnd()*(b-a+1))+a,pick=list=>list[ri(0,list.length-1)],clampi=(v,a,b)=>Math.max(a,Math.min(b,v));
- const T=ter.thorn105={version:2,zoneSeed:ri(1,9999),up:null,bushes:{},bridges:{},cabins:[],clearings:[],plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
+ const T=ter.thorn105={version:2,threeZones:level===1,zoneSeed:ri(1,9999),up:null,bushes:{},bridges:{},cabins:[],clearings:[],plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
  // a tree, a bush or a piece of furniture is an overlay that needs ground under it, like the mountain builder does
  const put=(x,y,tile,s)=>{if(x<1||y<1||x>=W-1||y>=H-1)return false;if(terrainLayerCatalog58().overlays.has(tile)&&!terrainSurface58(terrainBaseTile58(x,y)))setTerrainTile58(m,x,y,TT.FLOOR);setTerrainTile58(m,x,y,tile);ter.surfaces[k(x,y)]=s;delete ter.props[k(x,y)];return true};
  const isWall=(x,y)=>m[y]?.[x]===TT.WALL;
@@ -87,6 +88,76 @@ function buildThornwood(level){
   trail({x:cx,y:cy},target,{amp:3,k:1,r:ri(0,1)});T.clearings.push({x:cx,y:cy});state.rooms.push({x:cx-3,y:cy-3,w:7,h:7,cx,cy});loot.push({x:cx,y:cy});nodes.push({x:cx,y:cy});return true};
  // dead ends: a bigger mossy plaza with something to find at the end of the corridor
  for(let id=0;id<cols*rows;id++){if(id===startId||id===exitId||adj[id].length!==1)continue;const c=center(id);if(nearStream(c.x,c.y))continue;disc(c.x,c.y,2,'thornMoss',true);T.clearings.push({x:c.x,y:c.y,deadEnd:true});loot.push({x:c.x,y:c.y})}
+ // ---- set pieces: random extras that break the rectangle habit. None is guaranteed on a map; each rolls on its own.
+ const halls=T.halls=[],spirals=T.spirals=[],raftsOut=T.rafts=[],bonus=[],islandLoot=[];
+ const bbox=cells=>{let a=1e9,b=1e9,c=-1,d=-1;for(const[x,y]of cells){a=Math.min(a,x);b=Math.min(b,y);c=Math.max(c,x);d=Math.max(d,y)}return{x0:a,y0:b,x1:c,y1:d}};
+ // stamp an interior shape surrounded by log wall; returns its wall set, or null when there is no room
+ const stamp=(cells,floorSurf,wallSurf)=>{const bb=bbox(cells);if(!freeBox(bb.x0-1,bb.y0-1,bb.x1-bb.x0+3,bb.y1-bb.y0+3,1))return null;
+  const set=new Set(cells.map(([x,y])=>k(x,y))),walls=new Set();
+  for(const[x,y]of cells)for(const[dx,dy]of DIRS8){const nk=k(x+dx,y+dy);if(!set.has(nk))walls.add(nk)}
+  for(const key of walls){const[x,y]=key.split(',').map(Number);put(x,y,TT.WALL,wallSurf);reserved.add(key)}
+  for(const[x,y]of cells){put(x,y,TT.FLOOR,floorSurf);reserved.add(k(x,y));floor.add(k(x,y))}return{set,walls}};
+ // a wall cell with interior on one side and rock on the other can become a door; pick the one nearest/farthest from a point
+ const doorSpots=(set,walls)=>{const r=[];for(const key of walls){const[x,y]=key.split(',').map(Number);for(const[dx,dy]of DIRS4)if(set.has(k(x+dx,y+dy))&&isWall(x-dx,y-dy)&&!walls.has(k(x-dx,y-dy))&&!reserved.has(k(x-dx,y-dy)))r.push({x,y,ox:-dx,oy:-dy})}return r};
+ const apron=(d,surf,n=2)=>{for(let s=1;s<=n;s++)for(let q=-1;q<=1;q++){const x=d.x+d.ox*s+(d.oy?q:0),y=d.y+d.oy*s+(d.ox?q:0);put(x,y,TT.FLOOR,surf);floor.add(k(x,y));route.add(k(x,y))}};
+ const buildShapedCabin=(cx,cy)=>{
+  const kind=pick(['L','T','round']),fx=rnd()<.5?-1:1,fy=rnd()<.5?-1:1,cells=[],seen=new Set(),add=(x,y)=>{if(!seen.has(k(x,y))){seen.add(k(x,y));cells.push([x,y])}};
+  if(kind==='round'){for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++)if(dx*dx+dy*dy<=10)add(cx+dx,cy+dy)}
+  else if(kind==='L'){for(let y=0;y<3;y++)for(let x=0;x<8;x++)add(cx+fx*(x-3),cy+fy*(y-3));for(let y=3;y<7;y++)for(let x=0;x<3;x++)add(cx+fx*(x-3),cy+fy*(y-3))}
+  else{for(let y=0;y<3;y++)for(let x=-4;x<=4;x++)add(cx+x,cy+fy*(y-2));for(let y=3;y<7;y++)for(let x=-1;x<=1;x++)add(cx+x,cy+fy*(y-2))}
+  const target=nearestFloor({x:cx,y:cy});if(!target)return false;
+  const st=stamp(cells,'rotPlank','rotWall');if(!st)return false;
+  const spots=doorSpots(st.set,st.walls);if(spots.length<4)return false;
+  spots.sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y));
+  const front=spots[0],back=spots.slice().sort((a,b)=>Math.hypot(b.x-front.x,b.y-front.y)-Math.hypot(a.x-front.x,a.y-front.y))[0];
+  put(front.x,front.y,TT.DOOR,'rotPlank');apron(front,'rotPlank');trail({x:front.x+front.ox*3,y:front.y+front.oy*3},target,{amp:2,k:1,r:0});
+  put(back.x,back.y,TT.DOOR,'rotPlank');
+  const t2=nearestFloor({x:back.x+back.ox*5,y:back.y+back.oy*5},6,target);
+  if(t2&&Math.hypot(t2.x-back.x,t2.y-back.y)<26){trail({x:back.x+back.ox,y:back.y+back.oy},t2,{amp:2,k:1,r:0});T.backPaths.push({x:back.x,y:back.y,loop:true})}
+  else{trail({x:back.x+back.ox,y:back.y+back.oy},{x:back.x+back.ox*5,y:back.y+back.oy*5},{amp:1,k:1,r:0});loot.push({x:back.x+back.ox*5,y:back.y+back.oy*5});T.backPaths.push({x:back.x,y:back.y,loop:false})}
+  const bb=bbox(cells);let mid=cells[0],bd=1e9;for(const c of cells){const d=Math.hypot(c[0]-(bb.x0+bb.x1)/2,c[1]-(bb.y0+bb.y1)/2);if(d<bd){bd=d;mid=c}}
+  const room={x:bb.x0,y:bb.y0,w:bb.x1-bb.x0+1,h:bb.y1-bb.y0+1,cx:mid[0],cy:mid[1]};state.rooms.push(room);
+  T.cabins.push({...room,door:{x:front.x,y:front.y},cells,shape:kind});roomsOut.push(room);loot.push({x:mid[0]-1,y:mid[1]},{x:mid[0]+1,y:mid[1]+1});return true};
+ // the round hall: a ring of log wall with two gates, a well in the middle, benches of stumps and lanterns round the rim
+ const buildRoundHall=(cx,cy)=>{const R=4,cells=[];for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++)if(dx*dx+dy*dy<=R*R+2)cells.push([cx+dx,cy+dy]);
+  const t1=nearestFloor({x:cx,y:cy});if(!t1)return false;const st=stamp(cells,'thornMoss','rotWall');if(!st)return false;
+  const spots=doorSpots(st.set,st.walls);if(spots.length<4)return false;
+  spots.sort((a,b)=>Math.hypot(a.x-t1.x,a.y-t1.y)-Math.hypot(b.x-t1.x,b.y-t1.y));const g1=spots[0];
+  const t2=nearestFloor({x:cx+(cx-t1.x),y:cy+(cy-t1.y)},8,t1),g2=spots.slice().sort((a,b)=>Math.hypot(b.x-g1.x,b.y-g1.y)-Math.hypot(a.x-g1.x,a.y-g1.y))[0];
+  for(const[g,t]of[[g1,t1],[g2,t2]]){if(!t)continue;put(g.x,g.y,TT.FLOOR,'thornMoss');floor.add(k(g.x,g.y));route.add(k(g.x,g.y));apron(g,'thornMoss');trail({x:g.x+g.ox*3,y:g.y+g.oy*3},t,{amp:2,k:1,r:0})}
+  const room={x:cx-R,y:cy-R,w:2*R+1,h:2*R+1,cx,cy:cy+2};state.rooms.push(room);roomsOut.push(room);halls.push({x:cx,y:cy,r:R,gates:[g1,g2]});
+  loot.push({x:cx-2,y:cy+1},{x:cx+2,y:cy-1},{x:cx+1,y:cy+3},{x:cx-1,y:cy-3});return true};
+ // the spiral: one corridor winding in to a prize at the middle; it is long, dark and has company
+ const buildSpiral=(cx,cy)=>{const N=11,x0=cx-5,y0=cy-5,lens=[10,10,8,8,6,6,4,4,2],dirs=[[1,0],[0,1],[-1,0],[0,-1]],base=[[0,0]];
+  let px=0,py=0;lens.forEach((n,i)=>{const[dx,dy]=dirs[i%4];for(let s=0;s<n;s++){px+=dx;py+=dy;base.push([px,py])}});
+  const target=nearestFloor({x:cx,y:cy});if(!target||!freeBox(x0,y0,N,N,1))return false;
+  let best=null;for(let t=0;t<8;t++){const pts=base.map(([x,y])=>{let a=x,b=y;if(t&1)a=N-1-a;if(t&2)b=N-1-b;if(t&4)[a,b]=[b,a];return[x0+a,y0+b]});const d=Math.hypot(pts[0][0]-target.x,pts[0][1]-target.y);if(!best||d<best.d)best={d,pts}}
+  const pts=best.pts;for(const[x,y]of pts){put(x,y,TT.FLOOR,'thornMoss');floor.add(k(x,y));route.add(k(x,y))}
+  for(let yy=y0;yy<y0+N;yy++)for(let xx=x0;xx<x0+N;xx++)reserved.add(k(xx,yy));
+  const s=pts[0],ox=Math.sign(s[0]-cx)||1,oy=Math.sign(s[1]-cy)||1;
+  for(let q=1;q<=3;q++){put(s[0]+ox*q,s[1]+oy*q,TT.FLOOR,'thornTrail');floor.add(k(s[0]+ox*q,s[1]+oy*q));route.add(k(s[0]+ox*q,s[1]+oy*q));put(s[0]+ox*q,s[1]+oy*(q-1),TT.FLOOR,'thornTrail');floor.add(k(s[0]+ox*q,s[1]+oy*(q-1)))}
+  trail({x:s[0]+ox*3,y:s[1]+oy*3},target,{amp:1.5,k:1,r:0});
+  const end=pts[pts.length-1];spirals.push({x:end[0],y:end[1],path:pts.map(([x,y])=>({x,y}))});
+  for(const q of[1,2,3])bonus.push({x:pts[pts.length-q][0],y:pts[pts.length-q][1]});state.rooms.push({x:x0,y:y0,w:N,h:N,cx:end[0],cy:end[1]});return true};
+ // the raft crossing: a five-wide channel with a raft that ferries between two plank docks; the far dock is a shortcut or a treasure island
+ const buildRaftCrossing=(cx,cy)=>{const len=ri(9,13),min=cy-(len>>1),max=min+len-1,x=cx;
+  if(!freeBox(x-3,min-3,7,len+6,1))return false;
+  const south=nearestFloor({x,y:max+4}),north=nearestFloor({x,y:min-4},6,south);if(!south)return false;
+  for(let y=min;y<=max;y++)for(let dx=-2;dx<=2;dx++){put(x+dx,y,TT.WATER,'stream');reserved.add(k(x+dx,y))}
+  for(const y of[min-1,max+1])for(let dx=-2;dx<=2;dx++){put(x+dx,y,TT.FLOOR,'rotPlank');floor.add(k(x+dx,y));reserved.add(k(x+dx,y));route.add(k(x+dx,y))}
+  for(let dx=-3;dx<=3;dx++)for(const y of[min-2,max+2])reserved.add(k(x+dx,y));
+  trail({x,y:max+2},south,{amp:2,k:1,r:0});
+  let linked=false;if(north&&Math.hypot(north.x-x,north.y-min)<26&&rnd()<.5){trail({x,y:min-2},north,{amp:2,k:1,r:0});linked=true}
+  for(let y=min;y<=max;y++)for(let dx=-2;dx<=2;dx++)put(x+dx,y,TT.WATER,'stream');
+  const ry=min+ri(0,len-1);put(x,ry,TT.RAFT,'stream');state.rafts.push({x,y:ry,min,max,dir:rnd()<.5?1:-1});
+  raftsOut.push({x,min,max,linked});
+  if(!linked){islandLoot.push({x:x-1,y:min-1},{x:x+1,y:min-1},{x,y:min-1})}else loot.push({x:x-1,y:min-1});
+  state.rooms.push({x:x-3,y:min-1,w:7,h:len+2,cx:x,cy:min-1});return true};
+ {const plan=[['hall',buildRoundHall,.55],['spiral',buildSpiral,.55],['raft',buildRaftCrossing,.55]],gaps=[];
+  for(let j=0;j<rows-1;j++)for(let i=0;i<cols-1;i++)gaps.push([gx(i)+CS/2,gy(j)+CS/2]);
+  for(let a=gaps.length-1;a>0;a--){const b=ri(0,a);[gaps[a],gaps[b]]=[gaps[b],gaps[a]]}
+  for(const[,fn,p]of plan){if(rnd()>=p)continue;for(const[gx0,gy0]of gaps){const x=gx0+ri(-1,1),y=gy0+ri(-1,1);if(nearStream(x,y))continue;if(fn(x,y))break}}
+  for(let n=ri(0,2);n>0;n--)for(const[gx0,gy0]of gaps){const x=gx0+ri(-1,1),y=gy0+ri(-1,1);if(!nearStream(x,y)&&buildShapedCabin(x,y))break}}
  // cabins and clearings sit in the walls between corridors, each tied to the maze by a short winding side trail
  for(let j=0;j<rows-1;j++)for(let i=0;i<cols-1;i++){const x=gx(i)+CS/2+ri(-1,1),y=gy(j)+CS/2+ri(-1,1);if(nearStream(x,y))continue;const r=rnd();if(r<.16)buildCabin(x,y);else if(r<.5)buildClearing(x,y)}
  for(let tries=0;tries<60&&T.cabins.length<4;tries++){const i=ri(0,cols-2),j=ri(0,rows-2),x=gx(i)+CS/2,y=gy(j)+CS/2;if(!nearStream(x,y))buildCabin(x,y)}
@@ -117,9 +188,12 @@ function buildThornwood(level){
  }
  for(const c of T.cabins){
   const out=c.door.y>c.cy?1:-1,rowNext=c.door.y-out,pieces=['bed','table','shelf','cauldron'].sort(()=>rnd()-.5),spots=[];
+  if(c.cells){for(const[xx,yy]of c.cells){if(Math.abs(xx-c.door.x)+Math.abs(yy-c.door.y)<=3||(xx===c.cx&&yy===c.cy))continue;if(near4(xx,yy,TT.WALL))spots.push({x:xx,y:yy})}}else
   for(let yy=c.y+1;yy<c.y+c.h-1;yy++)for(let xx=c.x+1;xx<c.x+c.w-1;xx++){if(Math.abs(xx-c.door.x)<=1&&(yy===rowNext||Math.abs(yy-c.door.y)<=2))continue;if(xx===c.door.x)continue;if(near4(xx,yy,TT.WALL))spots.push({x:xx,y:yy})}
   spots.sort(()=>rnd()-.5);for(const kind of pieces){const sp=spots.find(q=>placed.every(o=>Math.abs(o.x-q.x)+Math.abs(o.y-q.y)>1));if(!sp)break;const ok=kind==='shelf'?furniture(sp.x,sp.y,TT.RACK,true):prop(sp.x,sp.y,kind,null,true);if(ok){placed.push(sp);if(kind==='cauldron')T.lights.push({x:sp.x,y:sp.y,color:'#86e07a',r:3,power:.2})}}
  }
+ for(const h of T.halls){prop(h.x,h.y,'well',null,true);for(const[dx,dy]of[[3,3],[-3,-3],[3,-3],[-3,3]])lampAt(h.x+dx,h.y+dy,false);
+  for(let i=0;i<8;i++){const a=i*.785+.4;if(rnd()<.65)prop(h.x+Math.round(Math.cos(a)*2.6),h.y+Math.round(Math.sin(a)*2.6),rnd()<.7?'stump':'log',null)}}
 const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mushrooms',3],['bones',2],['ferns',3]],2:[['mushrooms',9],['ferns',3]],3:[['web',6],['bones',3],['mushrooms',2]],4:[['bones',4],['flowers',3],['puddle',2],['web',1]]};
  // clutter comes in patches, not sprinkled on every cell: a patch noise decides where, a low base chance keeps a few strays
  for(const key of floor){const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||T.deco[key]||ter.surfaces[key]==='rotPlank')continue;
@@ -164,8 +238,11 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
  // ---- loot and the first floor's gentle population
  const portalNear=p=>Math.hypot(p.x-up.x,p.y-up.y)<8||Math.hypot(p.x-down.x,p.y-down.y)<5;
  for(const p of loot){if(!reach.has(k(p.x,p.y))||m[p.y][p.x]!==TT.FLOOR)continue;if(rnd()<.55)dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:ri(1,2)},p,{requireReachable:false})}
+ for(const p of bonus){if(reach.has(k(p.x,p.y))&&m[p.y][p.x]===TT.FLOOR)dropFloorLoot(p)}
+ for(const p of islandLoot)if(m[p.y][p.x]===TT.FLOOR){if(rnd()<.7)dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:ri(1,2)},p,{requireReachable:false})}
  const open=[...floor].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(p=>m[p.y][p.x]===TT.FLOOR&&!T.bridges[k(p.x,p.y)]&&reach.has(k(p.x,p.y))&&!portalNear(p));
  const spawn=(name,p)=>{const mon=spawnNamed(name,p,{placementMode:'exact',provenance:'subbranch-random-v3'});if(mon)mon.branch105='thorn';return mon};
  for(const[name,count]of THORN_ROSTER)for(let n=0;n<count&&open.length;n++)spawn(name,open.splice(ri(0,open.length-1),1)[0]);
+ for(const sp of T.spirals)for(const f of[.3,.55,.8]){const c=sp.path[Math.floor(sp.path.length*f)];if(c&&m[c.y][c.x]===TT.FLOOR)spawn(f===.55?'독거미':'객잔 쥐',c)}
  state.generationInProgress57=false;
 }
