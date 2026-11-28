@@ -358,12 +358,13 @@ function duelOpponentDown(){
 // Elo-like step: beating a stronger ghost gives more, losing to a weaker one costs more. Both sides compute the same numbers from what they exchange.
 const DUEL_SCORE={STEP:4,SPAN:10,GAIN:.7};
 function duelDeathOf(peak){peak=Math.max(1,Math.floor(Number(peak)||1));return Math.max(1,Math.min(peak-1,Math.floor(peak*peak/50+peak/6)))}
-function duelScoreStart(floor){const s=Math.max(3,Math.floor(Number(floor)||1)+2);return{s,peak:s,d:duelDeathOf(s)}}
+function duelScoreStart(floor){const s=Math.max(3,Math.floor(Number(floor)||1)+2);return{s,peak:s,d:duelDeathOf(s),w:0,l:0}}
 function duelScoreClean(raw,floor){
   const base=duelScoreStart(floor);if(!raw||typeof raw!=='object')return base;
   const s=Math.floor(Number(raw.s)),peak=Math.floor(Number(raw.peak));
   if(!(s>0)||!(peak>=s))return base;
-  return{s,peak,d:duelDeathOf(peak)};
+  const count=value=>Math.max(0,Math.min(9999,Math.floor(Number(value))||0));
+  return{s,peak,d:duelDeathOf(peak),w:count(raw.w),l:count(raw.l)};
 }
 function duelExpected(mine,theirs){return 1/(1+Math.pow(10,((Number(theirs)||0)-(Number(mine)||0))/DUEL_SCORE.SPAN))}
 // A win pays less than the same stake costs, and a loss is never smaller than the winner's gain + 1: the two sides' changes always add up below zero, more so
@@ -376,7 +377,8 @@ function duelDanger(score){const loss=duelScoreLoss(score.s,score.s),gap=score.s
 function duelDiesOnLoss(me,foe){return me.s-duelScoreLoss(me.s,foe.s)<=me.d}
 function duelScoreAfter(me,foe,won){
   const s=Math.max(0,won?me.s+duelScoreWin(me.s,foe.s):me.s-duelScoreLoss(me.s,foe.s)),peak=Math.max(me.peak||me.s,s);
-  return{s,peak,d:duelDeathOf(peak)};
+  // the record (w wins, l losses) counts every match this ghost fought to a result, whether or not a ghost was put out
+  return{s,peak,d:duelDeathOf(peak),w:(me.w||0)+(won?1:0),l:(me.l||0)+(won?0:1)};
 }
 // ---- time presses: the clock (action time spent, both sides' as far as known) brings a poison cloud in from the edge of the arena, and shortens the turns ---------------
 const DUEL_CLOUD={START:24,STEP:8,TURN_MS:20000,MIN_MS:6000};

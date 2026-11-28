@@ -87,7 +87,7 @@ const PlayStats={
  // The stakes calls (server/stats.gs): who we are is always the player ID with the secret.
  ghostLock(ghost,duel){return this.post({ghostLock:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
  ghostRelease(ghost,duel){return this.post({ghostRelease:{owner:this.deviceTag(),key:this.secret(),ghost,duel}})},
- ghostScore(ghost,score,peak){return this.post({ghostScore:{owner:this.deviceTag(),key:this.secret(),ghost,score,peak}})},
+ ghostScore(ghost,score,peak,wins,losses){return this.post({ghostScore:{owner:this.deviceTag(),key:this.secret(),ghost,score,peak,wins,losses}})},
  ghostSettle(ghost,duel,won){return this.post({ghostSettle:{owner:this.deviceTag(),key:this.secret(),ghost,duel,won}})},
  lootClaim(){return this.post({lootClaim:{owner:this.deviceTag(),key:this.secret()}})},
  // The nickname the player chose (once, on the ranking board): Hangul, letters and digits, two to eight characters. The board then shows it instead of the player ID.

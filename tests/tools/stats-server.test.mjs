@@ -153,6 +153,7 @@ const dead = (s, owner, key, run, items = [], extra = {}) => {
 };
 const lock = (s, owner, key, ghost, duel) => s.post({ ghostLock: { owner, key, ghost, duel } });
 const settle = (s, owner, key, ghost, duel, won) => s.post({ ghostSettle: { owner, key, ghost, duel, won } });
+const score = (s, owner, key, ghost, current, peak, wins, losses) => s.post({ ghostScore: { owner, key, ghost, score: current, peak, wins, losses } });
 const statusOf = (s, id) => s.ghosts().find((row) => row[1] === id)[8];
 
 test('the secret of a device owns its player ID: the others get nothing', () => {
@@ -264,9 +265,30 @@ test('the ranking has a board of the ghosts that still stand, and a taken ghost 
   settle(s, 'ABCD12', KEY_A, a, 'd', true); settle(s, 'WXYZ34', KEY_B, b, 'd', false);
   board = s.get('ranking').boards.ghost;
   assert.deepEqual(board.map((g) => g.tag), ['ABCD12'], 'the taken ghost is gone at once (the cached board is dropped)');
-  assert.deepEqual([board[0].wins, board[0].losses], [1, 0], 'the winner has one win on the board');
+  assert.deepEqual([board[0].wins, board[0].losses], [0, 0], 'a settlement does not count a win: the devices count every match themselves');
   const loser = s.ghosts().find((row) => row[1] === b);
-  assert.deepEqual([Number(loser[14]) || 0, loser[15]], [0, 1], 'the loser has one loss (and no win)');
+  assert.deepEqual([Number(loser[14]) || 0, Number(loser[15]) || 0], [0, 0], 'a settlement does not count a loss either');
+});
+
+test('the record of a ghost is what its device counted at the end of each match, put out or not', () => {
+  const s = server();
+  const a = dead(s, 'ABCD12', KEY_A, 'r1');
+  const row = () => s.ghosts().find((r) => r[1] === a);
+  assert.deepEqual(score(s, 'ABCD12', KEY_A, a, 27, 27, 1, 0), { ok: true });
+  assert.deepEqual([Number(row()[12]), Number(row()[13]), Number(row()[14]), Number(row()[15])], [27, 27, 1, 0], 'score, best score, wins and losses are written together');
+  assert.deepEqual(score(s, 'ABCD12', KEY_A, a, 25, 27, 1, 1), { ok: true });
+  assert.deepEqual([Number(row()[14]), Number(row()[15])], [1, 1], 'a loss that did not end the ghost is a loss too');
+  // a draw that turns a match back: the device sends the values from before the match, and they stand
+  assert.deepEqual(score(s, 'ABCD12', KEY_A, a, 27, 27, 1, 0), { ok: true });
+  assert.deepEqual([Number(row()[14]), Number(row()[15])], [1, 0], 'the same numbers again change nothing more (the device sends totals, not steps)');
+  // an older device sends no record: the record stays as it is
+  assert.deepEqual(score(s, 'ABCD12', KEY_A, a, 28, 28), { ok: true });
+  assert.deepEqual([Number(row()[12]), Number(row()[14]), Number(row()[15])], [28, 1, 0]);
+  assert.equal(score(s, 'ABCD12', KEY_A, a, 28, 28, -1, 0).error, 'fields', 'a negative record is refused');
+  assert.equal(score(s, 'ABCD12', KEY_A, a, 28, 28, 10000, 0).error, 'fields', 'a record past the limit is refused');
+  assert.equal(score(s, 'ABCD12', KEY_B, a, 29, 29, 5, 5).error, 'auth', 'only the owner writes it');
+  assert.deepEqual([Number(row()[14]), Number(row()[15])], [1, 0], 'a refused call changed nothing');
+  assert.deepEqual([s.get('ranking').boards.ghost[0].wins, s.get('ranking').boards.ghost[0].losses], [1, 0], 'the board shows the record');
 });
 
 test('the ghost board is ordered by the score a win gives (the floor they died on plus one)', () => {
