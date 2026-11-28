@@ -2,7 +2,7 @@
    The relay only matches two players and carries what they send; the game itself (arena, rules) is built on top of `send` and `inbox`.
    The socket is the one Spectate owns (one connection per page): Spectate hands every packet that is not about spectating to `receive` here. */
 const Duel={
- MODE:'MANRU_DUEL',SEND_GAP_MS:120,cloudClock:0,cloudRing:0,
+ MODE:'MANRU_DUEL',SEND_GAP_MS:120,STALL_MS:8000,heardAt:0,cloudClock:0,cloudRing:0,
  stage:'idle',queueEntryId:'',matchId:'',token:'',role:'',remote:'',sent:0,inbox:[],note:'',play:false,environment:0,mineFloor:1,mineGhostId:'',mineScore:null,theirScore:null,theirFloor:0,CARRY_KEY:'manru.duelCarry',LEVELS_KEY:'manru.duelLevels',PENDING_KEY:'manru.duelPending',resumed:false,lastStand:null,fellTurn:-1,carried:false,helloScore:null,before:null,after:null,dies:false,locked:false,stakes:false,helloBody:null,helloFloor:0,hudSig:'',hudFoe:null,theirClock:0,settledText:'',pending:null,settling:null,shown:0,turn:'host',turnEnds:0,turnSeen:0,theirs:null,mineBody:'',outcome:'',reported:false,applying:false,arena:-1,seq:0,lastSig:'',lastSend:0,keysBound:false,
  // idle -> connecting -> queued -> offered -> matched (the relay committed the session) -> idle again on leave or when the relay drops it
  setStage(stage,note=''){this.stage=stage;this.note=note;PlayStats.logAdd({a:'DUEL',stage,note,role:this.role,match:this.matchId});this.renderPicker()},
@@ -58,7 +58,7 @@ const Duel={
  SCORE_KEY:'manru.duelScores',
  scoreMap(){try{const map=JSON.parse(lsGet(this.SCORE_KEY)||'{}');return map&&typeof map==='object'&&!Array.isArray(map)?map:{}}catch(error){ignoreError('duel scores unreadable',error);return{}}},
  scoreOf(id,floor){return duelScoreClean(id?this.scoreMap()[id]:null,floor)},
- saveScore(id,score){if(!id)return;const map=this.scoreMap();if(score)map[id]={s:score.s,peak:score.peak};else delete map[id];lsSet(this.SCORE_KEY,JSON.stringify(map))},
+ saveScore(id,score){if(!id)return;const map=this.scoreMap();if(score)map[id]={s:score.s,peak:score.peak,w:score.w||0,l:score.l||0};else delete map[id];lsSet(this.SCORE_KEY,JSON.stringify(map))},
  // A ghost whose current score is at or under its death score is gone, whether or not the server has settled it yet (a row with a score and a best score).
  isGone(row){const s=Number(row?.score)||0,peak=Number(row?.peak)||0;return s>0&&peak>=s&&s<=duelDeathOf(peak)},
  // death score (purple-grey, with a red pulsing glow that grows as the current score nears it) / current score
@@ -136,7 +136,7 @@ const Duel={
   try{
    const data=await PlayStats.fetchView(url,'ghosts&'+PlayStats.ownerQuery());
    this.ghosts=Array.isArray(data?.list)?data.list.filter(g=>(g.status==='alive'||g.status==='locked')&&!this.isGone(g)):null;
-   for(const g of this.ghosts||[])if(g.score>0&&!this.scoreMap()[g.id])this.saveScore(g.id,{s:g.score,peak:g.peak}); // a cleared browser gets its scores back from the server
+   for(const g of this.ghosts||[])if(g.score>0&&!this.scoreMap()[g.id])this.saveScore(g.id,{s:g.score,peak:g.peak,w:g.wins,l:g.losses}); // a cleared browser gets its scores and its record back from the server
    this.pickNote=this.ghosts?'':'망령을 불러오지 못했다.'; // the rules strip and the empty-state card already say the rest
   }catch(error){ignoreError('duel ghosts load failed',error);this.ghosts=null;this.pickNote='망령을 불러오지 못했다.'}
   this.renderPicker();
@@ -234,7 +234,7 @@ const Duel={
  // terrain) do not cross yet. One side acts at a time, twenty seconds each, the host first; nothing is calculated by the relay.
  begin(arena,theirsBody,theirFloor=0,theirScore=null){
   if(this.stage!=='matched'||!DUEL_ARENAS[arena]||this.fighting)return false;
-  this.fighting=true;this.cloudClock=0;this.cloudRing=0;this.carried=false;this.lastStand=null;this.fellTurn=-1;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
+  this.fighting=true;this.cloudClock=0;this.cloudRing=0;this.carried=false;this.lastStand=null;this.fellTurn=-1;this.theirFloor=theirFloor;this.theirScore=duelScoreClean(theirScore,theirFloor);this.before=this.after=null;this.dies=false;this.theirClock=0;this.heardAt=Date.now();this.arena=arena;this.lastSig='';this.reported=false;this.outcome='';this.settledText='';this.hudFoe=null;this.hudSig='';
   this.theirs=theirsBody?JSON.parse(theirsBody):null;
   try{newGame(CLASSES[0],{arena,role:this.role,ghost:this.mineBody?JSON.parse(this.mineBody):null,opponent:this.theirs,baseFloor:this.mineFloor,opponentFloor:theirFloor})}
   catch(error){ignoreError('duel arena could not be opened',error);this.pickNote='전장을 열지 못했다.';this.leave('전장을 열지 못했다');return false}
@@ -274,8 +274,15 @@ const Duel={
  other(){return this.role==='host'?'guest':'host'},
  // The stand-in follows the other player.
  applySync(sync){
+  // The other side's clock decides whose turn it is, so it is taken first and whatever happens further down (the stand-in's move, a summon's picture, a stand-in that is gone)
+  // cannot leave this side waiting for a clock that never comes: a side that waits on a stale clock while the other waits on this one's would wait for ever.
+  this.heardAt=Date.now();
+  if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   const stand=this.opponent();
   if(!stand||this.reported)return;
+  try{this.applySyncBody(stand,sync)}catch(error){ignoreError('duel sync could not be applied',error)}
+ },
+ applySyncBody(stand,sync){
   if(Number.isFinite(sync.x)&&Number.isFinite(sync.y)&&(stand.x!==sync.x||stand.y!==sync.y)){stand.x=sync.x;stand.y=sync.y;OccupancyService.move(stand,sync.x,sync.y)}
   this.lastStand={x:stand.x,y:stand.y};
   if(Number.isFinite(sync.hp))stand.hp=Math.max(0,sync.hp);
@@ -286,7 +293,6 @@ const Duel={
   // the other player's stealth (귀영): the stand-in is concealed here as any concealed creature is (not seen, not picked as a target by what hunts), and drawn faint
   if(sync.stealth!==undefined)(stand.martialStatus105||(stand.martialStatus105={})).stealth=sync.stealth>0?sync.stealth:0;
   for(const key of ['atk','def','eva','will'])if(Number.isFinite(sync.stats?.[key]))stand[key]=sync.stats[key];
-  if(Number.isFinite(sync.clock))this.theirClock=sync.clock;
   VisibilityService.compute();updateAll();
  },
  // The summons of the other player are on its page only. Here each is a picture of it: a hostile monster of the same kind that takes no turn, stands where the
@@ -449,8 +455,9 @@ const Duel={
   updateAll();
  },
  // The fight is over for this side. With the ghost at stake, the server is told how it ended (and asked again until the other side has said its part too).
- // The score moves on both sides by the same numbers. The loser's ghost is gone only when its new current score is at or under its death score: only then
- // does the server hear of it (settle); any other result frees the lock again and nothing is lost or won on the server.
+ // The score moves on both sides by the same numbers, and the record of the ghost (wins, losses) moves with it: every match with a winner is one win or one loss, whether
+ // or not a ghost is put out, and the server hears of it with the score. The loser's ghost is gone only when its new current score is at or under its death score: only then
+ // does the server hear of it (settle); any other result frees the lock again and nothing else is lost or won on the server.
  // `outcome` is 'win', 'lose' or 'draw' (both went down in the same moment, or the two sides' words contradict: nobody wins, nothing is lost, the score stays).
  // The server is told nothing for five seconds, so that a contradicting word from the other side can still turn this into a draw first.
  conclude(outcome){
@@ -459,7 +466,7 @@ const Duel={
   this.dies=draw?false:win?duelDiesOnLoss(foe,me):duelDiesOnLoss(me,foe);
   this.before=me;this.after=draw?me:duelScoreAfter(me,foe,win);
   if(!draw&&this.mineGhostId)this.saveScore(this.mineGhostId,win||!this.dies?this.after:null);
-  if(!draw&&this.mineGhostId&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak).catch(error=>ignoreError('duel score not sent',error));
+  if(!draw&&this.mineGhostId&&PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.after.s,this.after.peak,this.after.w,this.after.l).catch(error=>ignoreError('duel score not sent',error));
   if(win&&this.dies){this.dropLoot();lsSet(this.LEVELS_KEY,String((Number(lsGet(this.LEVELS_KEY))||0)+1))} // a ghost put out is a level for the next run
   if(!(this.stakes&&this.mineGhostId))return;
   const hold=performance.now()+5000;
@@ -471,7 +478,7 @@ const Duel={
  turnDraw(){
   if(!state?.duel||this.outcome==='draw')return;
   if(this.reported){
-   if(this.mineGhostId&&this.before){this.saveScore(this.mineGhostId,this.before);if(PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.before.s,this.before.peak).catch(error=>ignoreError('duel score not sent',error))}
+   if(this.mineGhostId&&this.before){this.saveScore(this.mineGhostId,this.before);if(PlayStats.endpoint())PlayStats.ghostScore(this.mineGhostId,this.before.s,this.before.peak,this.before.w,this.before.l).catch(error=>ignoreError('duel score not sent',error))}
    this.discardLoot();
    this.outcome='draw';this.dies=false;this.after=this.before;
    if(this.stakes&&this.mineGhostId)this.setJob({won:true,match:this.matchId,ghost:this.mineGhostId,next:performance.now()+1500,until:Date.now()+13*60*1000,busy:false});
@@ -611,11 +618,21 @@ const Duel={
   const radius=Math.max(0,full-ring); // in the end only the middle cell is outside of it
   if(radius<stand.arena54.radius){stand.arena54.radius=radius;this.cloudRing=ring;addLog('독안개가 가장자리에서 한 칸 더 밀려온다.');toast('독안개가 좁혀 온다')}
  },
+ // Safety net. While the other side lives, a sync comes about once a second. A side that is waiting for the other, whose turn time has run out, and has heard nothing for
+ // STALL_MS takes that turn as spent (a spent turn costs one, as it does on the other side when its time runs out); the next sync from the other sets the clock right again.
+ stallBreak(){
+  const now=Date.now();
+  if(this.turn!==this.other()||now<this.turnEnds||now-this.heardAt<this.STALL_MS)return;
+  this.theirClock+=1;addLog('상대의 소식이 끊겨 상대 차례를 넘겼다.');
+  const side=this.holdsTurn()?this.role:this.other();
+  if(side!==this.turn)this.giveTurn(side);else{this.turnEnds=now+duelTurnMs();state.duel.turnEnds=this.turnEnds}
+ },
  tickTurn(){
   if(!state?.duel||state.duel.finished||state.dead)return;
   const side=this.holdsTurn()?this.role:this.other();
   if(side!==this.turn)this.giveTurn(side);
   else if(state.turn!==this.turnSeen){this.turnSeen=state.turn;this.turnEnds=Date.now()+duelTurnMs();state.duel.turnEnds=this.turnEnds;this.lastSig=''} // acted and still has the turn
+  this.stallBreak();
   if(this.turn!==this.role||Date.now()<this.turnEnds)return;
   addLog('시간이 다 되어 이번 차례를 넘겼다.');
   globalThis.__MANRU_TURN_ENGINE__.advance({handled:true,committed:true,timeCost:1,reason:'duel-timeout'});

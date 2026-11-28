@@ -41,7 +41,7 @@ test('compact summon saves retain book state, custom portraits and legacy aliase
  const catalog=fs.readFileSync(new URL('../../src/game/catalog.js',import.meta.url),'utf8');
  const pick=(s,name)=>parse(s,{ecmaVersion:'latest'}).body.find(n=>n.id?.name===name||n.declarations?.some(d=>d.id.name===name));
  const fn=pick(save,'compactSummonSave');
- const defs=['SHACKLE_DOLL','MONSTERS'].map(name=>pick(catalog,name)).map(node=>catalog.slice(node.start,node.end)).join('\n');
+ const defs=['SHACKLE_DOLL','MIRROR_DUELIST','LIGHTNING_PLATE','BREACH_PLATE','MONSTERS'].map(name=>pick(catalog,name)).filter(Boolean).map(node=>catalog.slice(node.start,node.end)).join('\n');
  const scope=vm.createContext();
  vm.runInContext(defs+'\nfunction summonDefinitions(){return MONSTERS}\n'+save.slice(fn.start,fn.end)+'\nglobalThis.compact=compactSummonSave;globalThis.defs=MONSTERS;',scope);
  const monster=plain(scope.defs.find(def=>def.name==='이무기'));

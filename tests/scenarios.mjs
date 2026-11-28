@@ -2662,6 +2662,9 @@ export const scenarios = {
       const scoreCalls = calls.filter((c) => c.post?.ghostScore).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostScore.score, c.post.ghostScore.peak]);
       out['duelstakes.scoreSent'] = JSON.stringify(scoreCalls);
       if (!scoreCalls.some((x) => x[0] === 'guest' && x[1] <= 23 && x[1] >= 0)) throw Error('duelstakes: the loser did not say its score ' + JSON.stringify(scoreCalls));
+      // every match with a result is one win or one loss, sent with the score, also the one that put a ghost out
+      const recordCalls = calls.filter((c) => c.post?.ghostScore).map((c) => [c.by === (host === a ? 'a' : 'b') ? 'host' : 'guest', c.post.ghostScore.wins, c.post.ghostScore.losses]);
+      if (!recordCalls.some((x) => x[0] === 'host' && x[1] === 1 && x[2] === 0) || !recordCalls.some((x) => x[0] === 'guest' && x[1] === 0 && x[2] === 1)) throw Error('duelstakes: the record was not sent with the score ' + JSON.stringify(recordCalls));
       out['duelstakes.errors'] = JSON.stringify([a.errors, b.errors]);
 
       // what the win brought (this device took nothing from a drop, so it is what the server holds) is in the start chest of the next new run, once; the upgrade talisman is not among it
@@ -2706,6 +2709,10 @@ export const scenarios = {
       const reported = calls.filter((c) => c.post?.ghostScore).map((c) => c.post.ghostScore);
       out['duelstakes.reported'] = JSON.stringify(reported.map((r) => [r.ghost, r.score, r.peak]).sort());
       if (reported.length < 2 || reported.some((r) => !(r.peak >= r.score))) throw Error('duelstakes: score not reported ' + JSON.stringify(reported));
+      // an ordinary match (nobody is put out) counts too: one win for the side that won, one loss for the other, and the same record is kept on the device
+      if (reported.filter((r) => r.wins === 1 && r.losses === 0).length !== 1 || reported.filter((r) => r.wins === 0 && r.losses === 1).length !== 1) throw Error('duelstakes: an ordinary match did not count one win and one loss ' + JSON.stringify(reported));
+      const kept = Object.assign({}, ...scoresAfter);
+      if (['C-ghost', 'D-ghost'].some((id) => !(kept[id] && Number.isFinite(kept[id].w) && Number.isFinite(kept[id].l) && kept[id].w + kept[id].l === 1))) throw Error('duelstakes: the record was not kept on the device ' + JSON.stringify(scoresAfter));
       if (settled || freed < 2) throw Error('duelstakes: ordinary match ' + JSON.stringify({ freed, settled, calls: calls.filter((c) => c.post?.ghostRelease || c.post?.ghostSettle || c.post?.ghostScore).map((c) => [c.by, Object.keys(c.post)[0], c.post.ghostRelease?.ghost || c.post.ghostSettle?.ghost || c.post.ghostScore?.ghost]) }));
       await a.close(); await b.close();
     } finally { relay.kill(); }
@@ -2814,6 +2821,16 @@ export const scenarios = {
       });
       out['duelrules.draw'] = JSON.stringify(rule);
       if (!(rule.savedWin?.s > 12) || !(rule.keptLoss?.s < 12) || rule.consistentWin !== 'win' || rule.consistentLoss !== 'lose' || rule.bothWon.outcome !== 'draw' || rule.bothWon.dies || rule.bothWon.dropsAfter || !rule.bothWon.lootBefore || rule.bothWon.card !== '무승부' || rule.bothLost.outcome !== 'draw' || rule.bothLost.dies || !rule.bothLost.score) throw Error('duelrules: draw ' + JSON.stringify(rule));
+      // the record of the ghost (wins, losses) moves with every match that has a result, and a match turned into a draw gives it back
+      const rec = await s.page.evaluate(() => {
+        const Q = globalThis.__MANRU_QA_DUEL__, D = Q.api, kept = (id) => JSON.parse(localStorage.getItem('manru.duelScores') || '{}')[id], fresh = (id, foe) => { Q.stageVs(2, 'archer'); D.theirs = JSON.parse(Q.ghostOf('swordsman', 1)); D.role = 'host'; D.mineScore = { s: 12, peak: 12, d: 3 }; D.theirScore = foe; D.mineGhostId = id; D.stakes = false; D.lastStand = { x: 20, y: 8 }; D.reported = false; D.outcome = ''; localStorage.setItem('manru.duelScores', '{}'); };
+        const out = {};
+        fresh('R-a', { s: 3, peak: 30, d: 23 }); D.conclude('win'); out.win = kept('R-a');
+        fresh('R-b', { s: 30, peak: 30, d: 23 }); D.conclude('lose'); out.loss = kept('R-b');
+        fresh('R-c', { s: 3, peak: 30, d: 23 }); D.conclude('win'); D.applyResult({ winner: 'guest' }); out.draw = kept('R-c');
+        return out;
+      });
+      if (rec.win?.w !== 1 || rec.win?.l !== 0 || rec.loss?.w !== 0 || rec.loss?.l !== 1 || rec.draw?.w !== 0 || rec.draw?.l !== 0) throw Error('duelrules: record ' + JSON.stringify(rec));
       // the blink is there in a duel from the start, two cells at least (a ghost that never beat the gatekeeper has none in its body), and a ghost that learned more keeps it
       const blink = await s.page.evaluate(() => { const Q = globalThis.__MANRU_QA_DUEL__, out = {}; for (const level of [0, 2, 3]) out[level] = Q.blinkOfGhost(level); return out; });
       out['duelrules.blink'] = JSON.stringify(blink);

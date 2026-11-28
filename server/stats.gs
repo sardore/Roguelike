@@ -8,7 +8,8 @@
 // Everything about ghosts needs owner + key: GET ?view=ghosts|ghost take &key=...; a `ghost` on a death record is kept only with a right `key`.
 // POST {ghostLock:{owner,key,ghost,duel}} -> {ok:true} when the ghost was alive (or its lock ran out), else {ok:false,error:'busy'|'none'|'auth'|'duel'}; both ghosts of a duel lock with the same duel id.
 // POST {ghostRelease:{owner,key,ghost,duel}} -> {ok:true}: the duel never began (nobody has spoken in it), so the ghost is free again and the duel is void.
-// POST {ghostScore:{owner,key,ghost,score,peak}} -> {ok:true}: the owner's current and best score of a ghost, shown on the ghost board (and in `list` of the owner's ghosts).
+// POST {ghostScore:{owner,key,ghost,score,peak,wins?,losses?}} -> {ok:true}: the owner's current and best score of a ghost, shown on the ghost board (and in `list` of the owner's ghosts), and the record of the ghost
+//   (wins, losses: every match fought to a result, counted by the device at the end of each match, not by the settling of a ghost that was put out; a call without them leaves the record as it is).
 // POST {ghostSettle:{owner,key,ghost,duel,won}} -> {ok:true,state:'pending'|'won'|'lost'|'void'}: the result stands when the two sides say opposite things (the loser's ghost is taken, its things become a row of the winner on the `loot` sheet),
 //   the same thing from both voids the duel (both ghosts alive again), and when only one side has spoken for SETTLE_MS its word stands. Asking again gives the same answer.
 // POST {lootClaim:{owner,key}} -> {ok:true,items:[...]} at most LOOT_PER_CLAIM things of the pending loot of that player ID, each handed out once.
@@ -221,9 +222,7 @@ function resolve_(duels, row) {
   }
   const loser = winner === ghostA ? ghostB : ghostA, winnerOwner = winner === ghostA ? ownerA : ownerB;
   const loserRow = loser === ghostA ? rowA : rowB, winnerRow = winner === ghostA ? rowA : rowB;
-  // the record of a ghost: a settled duel is one win for the winner and one loss for the loser (a void duel counts for neither)
-  const count = (r, name) => { if (r) { const cell = ghosts.getRange(r, GHOST_HEADER.indexOf(name) + 1); cell.setValue((Number(cell.getValue()) || 0) + 1); } };
-  count(winnerRow, 'wins'); count(loserRow, 'losses');
+  // the record of a ghost (wins, losses) is not kept here: every match is counted by the device that fought it and sent with its score (ghostScore), put out or not
   if (loserRow) {
     const items = lootOf_(readJsonCells_(ghosts.getRange(loserRow, 1, 1, GHOST_HEADER.length).getValues()[0], BODY_COL, GHOST_PART_COL));
     setGhost_(ghosts, loserRow, 'taken');
@@ -313,14 +312,17 @@ function ghostRelease_(req) {
 function ghostScore_(req) {
   const owner = String(req.owner || ''), ghost = String(req.ghost || '').slice(0, 64);
   const score = Math.floor(Number(req.score)), peak = Math.floor(Number(req.peak));
+  const record = req.wins != null || req.losses != null, wins = Math.floor(Number(req.wins)), losses = Math.floor(Number(req.losses));
   if (!ghost || !(score >= 0 && score <= 9999) || !(peak >= score && peak <= 9999)) return reply_({ ok: false, error: 'fields' });
+  if (record && !(wins >= 0 && wins <= 9999 && losses >= 0 && losses <= 9999)) return reply_({ ok: false, error: 'fields' });
   if (!authed_(owner, String(req.key || ''))) return reply_({ ok: false, error: 'auth' });
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const ghosts = ghosts_(), grow = ghostRow_(ghosts, ghost);
     if (!grow || String(ghosts.getRange(grow, 3).getValue()) !== owner) return reply_({ ok: false, error: 'none' });
-    ghosts.getRange(grow, GHOST_HEADER.indexOf('score') + 1, 1, 2).setValues([[score, peak]]);
+    // score, peak, wins and losses are neighbouring columns: the record is written with the score when the device sent it
+    ghosts.getRange(grow, GHOST_HEADER.indexOf('score') + 1, 1, record ? 4 : 2).setValues([record ? [score, peak, wins, losses] : [score, peak]]);
   } finally { lock.releaseLock(); }
   return reply_({ ok: true });
 }
