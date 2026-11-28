@@ -539,7 +539,7 @@ function updateAll(flushFrame=false){if(state?.debugBattle57)return;summonUpdate
     if(target&&state){
       const ground=itemOverride||(state.items||[]).find(v=>v.x===target.x&&v.y===target.y);
       if(ground&&unidentifiedItem(ground)){
-        if((ground.type==='potion'||ground.type==='talisman')&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(ground,'inspect984Icon');box.dataset.redacted='physical-only';return}
+        if((ground.type==='potion'||ground.bottle105||ground.type==='talisman')&&typeof vfIconHtml==='function'){box.innerHTML=vfIconHtml(ground,'inspect984Icon');box.dataset.redacted='physical-only';return}
         const r=document.createElement('span');r.className='inspect984Rune';r.textContent='?';box.appendChild(r);box.dataset.redacted='unidentified';return;
       }
       const cv=document.createElement('canvas');cv.width=cv.height=96;box.appendChild(cv);const cx=cv.getContext('2d');cx.imageSmoothingEnabled=false;

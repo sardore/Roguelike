@@ -4481,11 +4481,11 @@ function sprite(it){
  CACHE.set(key,c);return c;
 }
 function iconHtml(it,cls=''){
- if(it?.type==='potion'&&legacyPotionIcon)return legacyPotionIcon(it,cls);
+ if((it?.type==='potion'||it?.bottle105)&&legacyPotionIcon)return legacyPotionIcon(it,cls);
  return`<img class="vfHiIcon ${cls} r7CanonicalItem" src="${data(it)}" alt="">`
 }
 function worldDraw(it){
- if(it?.type==='potion'&&legacyPotionDraw)return legacyPotionDraw(it);
+ if((it?.type==='potion'||it?.bottle105)&&legacyPotionDraw)return legacyPotionDraw(it);
  if(!it||!state)return;
  const now=performance.now(),px=it.x*TILE,py=it.y*TILE+Math.sin(now/300+it.x*.7+it.y*.4)*.25,col=rarityColor?.(it.rarity||'common')||'#c4ad7b',sz=(it.tier||1)>=4?32:30,dx=px+16-sz/2,dy=py+15-sz/2;
  X.save();X.imageSmoothingEnabled=false;X.fillStyle='rgba(0,0,0,.38)';X.beginPath();X.ellipse(px+16,py+27,9,3,0,0,Math.PI*2);X.fill();
