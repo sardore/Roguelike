@@ -1972,7 +1972,48 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
     if(VIEW.w!==cw||VIEW.h!==ch||Math.abs(VIEW.dpr-dpr)>.01){VIEW.w=cw;VIEW.h=ch;VIEW.dpr=dpr;C.style.width=cw+'px';C.style.height=ch+'px';C.width=Math.max(1,Math.round(cw*dpr));C.height=Math.max(1,Math.round(ch*dpr));VIS.camInit=false;RENDER_PERF_STATE.dirty=true;RENDER_PERF_STATE.miniDirty=true}
     return true;
   }
-  function drawBossIntent(){
+  function drawFlashBlasts(){
+ const rays=FX.flashRays,blasts=FX.flashBlasts;if(!state||(!rays?.length&&!blasts?.length))return;
+ const now=performance.now(),cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),z=TILE*cam.zoom,STEP=34,LIFE=560,BLAST=520,
+  at=(x,y)=>({x:cam.x+x*TILE*cam.zoom+z/2,y:cam.y+y*TILE*cam.zoom+z/2}),
+  rnd=(a,b,c)=>{const t=Math.sin(a*127.1+b*311.7+c*74.7)*43758.5453;return t-Math.floor(t)},
+  shard=(elem,x,y,rot,size,alpha)=>{X.save();X.translate(x,y);X.rotate(rot);X.globalAlpha=Math.max(0,Math.min(1,alpha));
+   if(elem==='grass'){X.fillStyle='#9fdc55';X.beginPath();X.ellipse(0,0,size*1.15,size*.5,0,0,Math.PI*2);X.fill();X.strokeStyle='#4e7d2a';X.lineWidth=Math.max(1,size*.2);X.beginPath();X.moveTo(-size,0);X.lineTo(size,0);X.stroke()}
+   else if(elem==='earth'){X.fillStyle='#b9824c';X.fillRect(-size,-size,size*2,size*1.7);X.fillStyle='#6e4726';X.fillRect(-size,size*.1,size*2,size*.6)}
+   else{X.fillStyle='#d6f6ff';X.beginPath();X.moveTo(0,-size*1.5);X.lineTo(size*.7,0);X.lineTo(0,size*1.5);X.lineTo(-size*.7,0);X.closePath();X.fill();X.strokeStyle='#7fcbe0';X.lineWidth=Math.max(1,size*.2);X.stroke()}
+   X.restore()};
+ X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
+ for(const q of rays||[]){
+  for(let i=1;i<=q.len;i++){
+   const t=now-q.start-i*STEP;if(t<0)break;const a=1-t/LIFE;if(a<=0)continue;
+   const cx=q.x+q.dx*i,cy=q.y+q.dy*i;if(!state.visible.has(k(cx,cy)))continue;
+   const c=at(cx,cy),p=at(cx-q.dx,cy-q.dy),rgb=q.rgb.join(',');
+   // the beam: a wide element glow under a hot white core, brightest at the travelling head
+   X.globalCompositeOperation='lighter';X.lineCap='round';
+   X.strokeStyle=`rgba(${rgb},${a*.5})`;X.lineWidth=z*(.35+.65*a);X.beginPath();X.moveTo(p.x,p.y);X.lineTo(c.x,c.y);X.stroke();
+   X.strokeStyle=`rgba(255,255,255,${a*.9})`;X.lineWidth=Math.max(1,z*.34*a);X.beginPath();X.moveTo(p.x,p.y);X.lineTo(c.x,c.y);X.stroke();
+   if(t<120){const hf=1-t/120,g=X.createRadialGradient(c.x,c.y,0,c.x,c.y,z*.85);g.addColorStop(0,`rgba(255,255,255,${hf})`);g.addColorStop(.5,`rgba(${rgb},${hf*.6})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.beginPath();X.arc(c.x,c.y,z*.85,0,Math.PI*2);X.fill()}
+   X.globalCompositeOperation='source-over';
+   // debris that matches the element, thrown to the sides of the beam and falling or drifting as it fades
+   for(let n=0;n<3;n++){const s=rnd(q.x*7+i,q.y*13+q.dx*3+q.dy*5,n+1),side=(s-.5)*z*1.1,prog=t/LIFE,
+     px=c.x+(-q.dy)*side+(q.dx)*prog*z*.6,py=c.y+(q.dx)*side+(q.dy)*prog*z*.6+(q.elem==='earth'?(prog*prog*z*1.1-prog*z*.9*(.4+s)):-prog*z*.9*(.3+s));
+    shard(q.elem,px,py,s*6+t/150,Math.max(2,z*(.09+.06*s)),a*1.1)}
+  }
+ }
+ for(const b of blasts||[]){
+  const t=now-b.start;if(t<0||t>BLAST)continue;const a=1-t/BLAST,c=at(b.x,b.y),rgb=b.rgb.join(',');
+  X.globalCompositeOperation='lighter';
+  if(t<190){const f=1-t/190,g=X.createRadialGradient(c.x,c.y,0,c.x,c.y,z*1.7);g.addColorStop(0,`rgba(255,255,255,${f})`);g.addColorStop(.45,`rgba(${rgb},${f*.8})`);g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.beginPath();X.arc(c.x,c.y,z*1.7,0,Math.PI*2);X.fill()}
+  X.strokeStyle=`rgba(${rgb},${a*.85})`;X.lineWidth=Math.max(1,z*.26*a+1);X.beginPath();X.arc(c.x,c.y,z*(.3+(1-a)*3.6),0,Math.PI*2);X.stroke();
+  X.strokeStyle=`rgba(255,255,255,${a*.7})`;X.lineWidth=Math.max(1,z*.1*a);X.beginPath();X.arc(c.x,c.y,z*(.2+(1-a)*2.6),0,Math.PI*2);X.stroke();
+  X.globalCompositeOperation='source-over';
+  for(let n=0;n<12;n++){const ang=n*Math.PI/6+rnd(b.x,b.y,n)*.4,dist=z*(.4+(1-a)*(1.6+rnd(n,b.y,b.x)*1.6)),lift=b.elem==='earth'?(1-a)*(1-a)*z*.8:-(1-a)*z*.5;
+   shard(b.elem,c.x+Math.cos(ang)*dist,c.y+Math.sin(ang)*dist+lift,ang+t/120,Math.max(2,z*.12),a*1.2)}
+ }
+ X.restore();
+ FX.flashRays=(rays||[]).filter(q=>now-q.start<q.len*STEP+LIFE);FX.flashBlasts=(blasts||[]).filter(b=>now-b.start<BLAST);
+}
+function drawBossIntent(){
  if(!state)return;drawBossArena();
  const cam=globalThis.__MANRU_CAMERA_PROJECTION12__.current(),now=performance.now(),pulse=.55+.35*Math.sin(now/140),colors={blackFrost105:[139,210,236],charge:[218,65,45],maul:[196,86,58],ink:[119,138,110],inkbeam:[103,137,111],weave:[207,92,142],sew:[199,104,150],chain:[171,127,89],blade:[225,102,72],mirrorOrb:[154,157,255],mirrorSanctuary:[247,221,139],wallweave:[214,190,128]};
  X.save();X.setTransform(VIEW.dpr,0,0,VIEW.dpr,0,0);
@@ -1980,10 +2021,11 @@ const VIEW_ZOOM={desktop:1,mobile:1,min:.72,max:1.38,step:.08};
   if(I.type==='corebolt'){drawCoreSealWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
   if(I.type==='palaceSweep105'){drawPalaceSweepWarning(X,I,c=>({x:cam.x+c.x*TILE*cam.zoom,y:cam.y+c.y*TILE*cam.zoom,size:TILE*cam.zoom}),now,c=>state.visible.has(k(c.x,c.y)));continue}
   if(I.type==='flashblast'){
-   const d=I.data||{},waves=d.waves||[],zz=TILE*cam.zoom,rgb=d.rgb||[255,244,170],first=d.step>=waves.length?d.step-waves.length+1:0,last=Math.min(d.step,waves.length-1),armed=d.step>=waves.length-1;
-   for(let wi=last;wi>=first;wi--){const w=waves[wi],next=armed&&wi===first;
-    for(const c of w.cells){if(!state.visible.has(k(c.x,c.y)))continue;const x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom;X.fillStyle=`rgba(${rgb.join(',')},${(next?.26:.12)+(next?.14:.05)*pulse})`;X.fillRect(x+1,y+1,zz-2,zz-2);X.strokeStyle=`rgba(${rgb.join(',')},${next?.9:.5})`;X.lineWidth=Math.max(1,(next?2:1)*cam.zoom);X.strokeRect(x+1.5,y+1.5,zz-3,zz-3)}
-    for(const b of w.bombs){if(!state.visible.has(k(b.x,b.y)))continue;const bx=cam.x+b.x*TILE*cam.zoom,by=cam.y+b.y*TILE*cam.zoom;X.fillStyle=`rgba(255,252,225,${.6+.35*pulse})`;X.beginPath();X.arc(bx+zz/2,by+zz/2,zz*.3,0,Math.PI*2);X.fill();X.strokeStyle=`rgb(${rgb.join(',')})`;X.lineWidth=Math.max(1,2*cam.zoom);X.stroke();X.fillStyle='#2a2216';X.font=`bold ${Math.round(zz*.4)}px sans-serif`;X.textAlign='center';X.textBaseline='middle';X.fillText(String(wi+1),bx+zz/2,by+zz/2+1)}}
+   // every live bomb shows exactly the cells it will burst over; the rows about to go off next glow brighter
+   const d=I.data||{},rule=BOSS_ARENA_RULES.master.flash,ph=rule.phases[d.stage||0],rgb=ph.rgb,dirs=flashRayDirs(ph.dirs),total=(d.waves||[]).length,next=d.step>=total-1?d.step-total+1:-1,zz=TILE*cam.zoom;
+   for(const bomb of flashLiveBombs(mon)){const strong=bomb.flashWave57===next;
+    for(const c of[{x:bomb.x,y:bomb.y},...flashBombRays(bomb,rule.reach,dirs).flatMap(q=>q.cells)]){if(!state.visible.has(k(c.x,c.y)))continue;const x=cam.x+c.x*TILE*cam.zoom,y=cam.y+c.y*TILE*cam.zoom;
+     X.fillStyle=`rgba(${rgb.join(',')},${(strong?.22:.09)+(strong?.14:.05)*pulse})`;X.fillRect(x+1,y+1,zz-2,zz-2);X.strokeStyle=`rgba(${rgb.join(',')},${strong?.85:.4})`;X.lineWidth=Math.max(1,(strong?2:1)*cam.zoom);X.strokeRect(x+1.5,y+1.5,zz-3,zz-3)}}
    continue;
   }
   for(const c of I.cells){
@@ -2735,6 +2777,9 @@ const ACTOR_SPEC={
   '토맥 괴수':{"a":"branch","c":"#605647","h":"#978b6b","ac":"#c9b588","design":"earth_beast"},
   '거울지기':{a:'branch',c:'#635b99',h:'#c6ccea',ac:'#f2e4ff',design:'mirror_keeper',resolution:2},
   '천명탄':{a:'branch',c:'#6555a6',h:'#a1d7ff',ac:'#f5f4ff',design:'mirror_orb',resolution:2},
+  '풀 섬광탄':{a:'branch',c:'#3d5a22',h:'#8abc4b',ac:'#e7ffb8',design:'flash_bomb',resolution:1.5},
+  '대지 섬광탄':{a:'branch',c:'#5a3b1f',h:'#bb824c',ac:'#ffd9a3',design:'flash_bomb',resolution:1.5},
+  '얼음 섬광탄':{a:'branch',c:'#2d5f78',h:'#83d7eb',ac:'#eaffff',design:'flash_bomb',resolution:1.5},
   '반영 검객':{"a":"branch","c":"#577384","h":"#a4b4ba","ac":"#d7d3b7","design":"reflection_duelist"},
   '거울 시녀':{"a":"branch","c":"#80637b","h":"#b9a2b0","ac":"#d5b87f","design":"mirror_handmaid"},
   '파편 망령':{"a":"branch","c":"#607f8f","h":"#adc4ca","ac":"#dbcda8","design":"shard_wraith"},
@@ -2983,6 +3028,15 @@ function drawBranchCreature(q,m,frame,sp){
   R(27.35,5.35+y,.8,.65,ice);R(23.2,13.2+y,.75,.75,teal);R(7.1,11.1+y,.85,.85,violet);
   q.restore();break;
  }
+ case'flash_bomb':{
+  // a charged shell: element-coloured core in a dark casing, a spitting fuse, and four notches marking the directions it will burst along
+  const y=17-b;
+  glowR9(q,16,y,15,'rgba(255,246,210,.55)');
+  E(16,y+9,7,2,'rgba(0,0,0,.3)');
+  E(16,y,9,9,d);E(16,y,8,8,c);E(16,y+.6,6,6,h);E(14.6,y-1.4,3,3,a);E(14,y-2,1.3,1.3,'#ffffff');
+  for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]])R(16+dx*9.5-.5,y+dy*9.5-.5,1.5,1.5,a);
+  L(16,y-8,18,y-11,'#6b5a3c',1.2);R(17.5,y-13.5+b,2,2,'#fff4c8');R(19.5,y-12.5-b,1,1,a);R(16.5,y-13,1,1,h);
+  break}
  case'mirror_orb':{
   const y=15-b;
   glowR9(q,16,y,13,'rgba(164,150,255,.48)');
@@ -7101,5 +7155,5 @@ function updatePanels(){
   }
 window.__manruZoomActive=false;
 window.__manruZoomSuppressUntil=0;
-globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
+globalThis.__MANRU_DRAW_HOOKS_R19__={world:[{id:'role61',draw:drawRoleOverlay},{id:'legendary47',draw:drawLegendWorld}],post:[{id:'boss-intent54',draw:drawBossIntent},{id:'flash-blast',draw:drawFlashBlasts},{id:'feeling62',draw:drawFeelingOverlay},{id:'element74',draw:drawElementOverlay},{id:'martial965',draw:drawMartialOverlay},{id:'hazard1005',draw:drawHazardOverlay},{id:'legion-ping',draw:drawLegionPing},{id:'oddity',draw:drawOddityFx}]};
 const VF_IMG={creature:new Image(),tile:new Image(),decor:new Image(),item:new Image()};
