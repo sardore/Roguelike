@@ -451,7 +451,7 @@ function moveMonsterStep(mon,x,y,opts={}){
  if(mon.lavaTrail57&&terrainSurface58(state.map[oy][ox]))RuntimeTerrainOwner.temporary(ox,oy,TT.LAVA,3,'lava-trail',{allowedOld:[state.map[oy][ox]],source:'molten-slime'});
  if(mon.hp>0&&state.map[y][x]===TT.DOOR){setTerrainTile58(state.map,x,y,TT.OPEN_DOOR);doorFX(x,y)}return true;
 }
-const BOSS_ARENA_RULES={containment:{patterns:['needle','keeper'],radius:15,damageFraction:.10,minDamage:5,poisonTurns:6},silk:{weaveCooldown:7,repairCooldown:4,mirrorCap:24,mirrorSpacing:3,lineCap:3,gasDuration:24,blackThreshold:.70,blackChance:.50,blackCap:4,waveIntervals:[8,6,4,2],waveBatch:2,mirrorSummonCap:6,bossSummonCap:12,roster:['비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','윈도','향기요정','분홍거미']},keeper:{bindTurns:2,boundDef:2,chainCooldown:4,lavaThresholds:[.67,.33],lavaWarning:10,bridgeWidths:[5,7]},master:{maskAtk:14,shotCooldown:[5,4,3],shieldShotCooldown:6,thresholds:[.66,.33],range:4,shieldRange:3,sealAngle:90,flash:{reach:8,waves:3,cooldown:[10,9,8],blink:4,aimMin:2,aimMax:5,scatter:6,attempts:16,tighten:60,tightEnough:10,phases:[{element:'grass',dirs:'diag',label:'풀 · 대각선 4방향',color:'#8abc4b',rgb:[138,188,75],damage:55,perWave:5,status:[['poison',6]]},{element:'earth',dirs:'orth',label:'대지 · 가로세로 4방향',color:'#bb824c',rgb:[187,130,76],damage:75,perWave:5,status:[['weaken',3],['skillSeal',3]]},{element:'ice',dirs:'all',label:'얼음 · 8방향',color:'#83d7eb',rgb:[131,215,235],damage:100,perWave:4,status:[['bleed',4],['skillSeal',3],['blind',2]]}]},weave:{cooldown:[7,6,5],clusters:[2,3,4],ttl:9,tiles:['wall','wall','pillar','statue','crystal']},cores:[{name:'제1사념 · 만루의 잔향',hp:45,def:3,interval:4,batch:2,cap:4,roster:['금령','금령','공허 가오리','공허 가오리','만루의 수호상']},{name:'제2사념 · 천실핵의 집념',hp:60,def:5,interval:5,batch:1,cap:3,roster:['신전 사제 망령','차원 포식자','보주의 파수꾼','천수 아수라']}]}};
+const BOSS_ARENA_RULES={containment:{patterns:['needle','keeper'],radius:15,damageFraction:.10,minDamage:5,poisonTurns:6},silk:{weaveCooldown:7,repairCooldown:4,mirrorCap:24,mirrorSpacing:3,lineCap:3,gasDuration:24,blackThreshold:.70,blackChance:.50,blackCap:4,waveIntervals:[8,6,4,2],waveBatch:2,mirrorSummonCap:6,bossSummonCap:12,roster:['비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','비단 술래','윈도','향기요정','분홍거미']},keeper:{bindTurns:2,boundDef:2,chainCooldown:4,lavaThresholds:[.67,.33],lavaWarning:10,bridgeWidths:[5,7]},master:{maskAtk:14,shotCooldown:[5,4,3],shieldShotCooldown:6,thresholds:[.66,.33],range:4,shieldRange:3,sealAngle:90,flash:{reach:8,waves:3,cooldown:[10,9,8],blink:4,aimMin:2,aimMax:5,scatter:6,attempts:16,tighten:60,tightEnough:10,phases:[{element:'grass',dirText:'대각선 네 방향',dirs:'diag',label:'풀 · 대각선 4방향',color:'#8abc4b',rgb:[138,188,75],damage:55,perWave:5,status:[['poison',6]]},{element:'earth',dirText:'가로세로 네 방향',dirs:'orth',label:'대지 · 가로세로 4방향',color:'#bb824c',rgb:[187,130,76],damage:75,perWave:5,status:[['weaken',3],['skillSeal',3]]},{element:'ice',dirText:'여덟 방향',dirs:'all',label:'얼음 · 8방향',color:'#83d7eb',rgb:[131,215,235],damage:100,perWave:4,status:[['bleed',4],['skillSeal',3],['blind',2]]}]},weave:{cooldown:[7,6,5],clusters:[2,3,4],ttl:9,tiles:['wall','wall','pillar','statue','crystal']},cores:[{name:'제1사념 · 만루의 잔향',hp:45,def:3,interval:4,batch:2,cap:4,roster:['금령','금령','공허 가오리','공허 가오리','만루의 수호상']},{name:'제2사념 · 천실핵의 집념',hp:60,def:5,interval:5,batch:1,cap:3,roster:['신전 사제 망령','차원 포식자','보주의 파수꾼','천수 아수라']}]}};
 const AIM_GLYPHS={
     '0':[31,17,17,17,17,17,31],'1':[4,12,4,4,4,4,4],
     '2':[31,1,1,31,16,16,31],'5':[31,16,16,31,1,1,31],
@@ -628,7 +628,7 @@ function flashRefreshCells(boss){const I=boss.intent54;if(!I||I.type!=='flashbla
 function flashPlantWave(boss,wave,ph,stage,index){
  wave.ids=[];
  for(const b of wave.bombs){
-  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:`보주가 던져 세운 섬광탄이다. ${ph.label} 범위로 폭발하며, 부수면 그 자리에서 먼저 터진다.`,hp:4,maxHp:4,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
+  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:`만루보주가 던져 세운 섬광탄이다. ${ph.dirText}으로 빛줄기를 뿜으며 터지고, 부수면 그 자리에서 먼저 터진다.`,hp:4,maxHp:4,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
   adoptBossChild57(bomb,boss);if(!OccupancyService.addMonster(bomb))continue;wave.ids.push(combatantId(bomb));
   projectileFX(boss.x,boss.y,b.x,b.y,ph.color,{kind:'shell',element:ph.element,life:380});
   burst(b.x,b.y,'#fff6c8',10,.8,380);burst(b.x,b.y,ph.color,10,1,380);impact(b.x,b.y,ph.color,4,380);
@@ -638,7 +638,7 @@ function flashPlantWave(boss,wave,ph,stage,index){
 function beginFlashSequence(boss,target){
  const plan=planFlashSequence(boss,target);if(!plan)return false;const stage=Math.min(2,boss.coreStage54||0),waves=plan.waves.map(w=>({bombs:w.bombs,ids:[]}));
  flashPlantWave(boss,waves[0],plan.phase,stage,0);
- setBossIntent(boss,'flashblast',[],`섬광탄 투척 · ${plan.phase.label} · 폭탄을 부수면 먼저 터진다`,{waves,step:0,stage});flashRefreshCells(boss);return true;
+ setBossIntent(boss,'flashblast',[],'만루보주가 섬광탄을 던진다 · 부수면 먼저 터진다',{waves,step:0,stage});flashRefreshCells(boss);return true;
 }
 function tickFlashBomb(bomb){
  if(bomb.hp<=0||bomb.flashSpent57)return;bomb.hp-=1;bomb.hitUntil=performance.now()+140;
@@ -785,8 +785,8 @@ function executeBossIntent(mon){
   // 한 수마다 폭탄을 한 줄씩 더 던져 깐다. 깔린 폭탄은 턴마다 체력이 1씩 줄고 0이 되면 터지므로, 먼저 깐 줄부터 차례로 터진다.
   const d=I.data,r=BOSS_ARENA_RULES.master.flash,ph=r.phases[d.stage],total=d.waves.length;d.step++;
   flashPlantWave(mon,d.waves[d.step],ph,d.stage,d.step);
-  if(d.step>=total-1){addLog(`섬광탄 설치 완료 · ${ph.label} · 턴마다 체력이 줄어 터진다`);clearIntent(mon)}
-  else{I.label=`섬광탄 투척 · ${ph.label} · 폭탄을 부수면 먼저 터진다`;addLog('⚠ '+I.label);I.armedPlayerTurn=state.turn}
+  if(d.step>=total-1){addLog('섬광탄이 모두 깔렸다 · 곧 차례로 터진다');clearIntent(mon)}
+  else{I.label='만루보주가 섬광탄을 던진다 · 부수면 먼저 터진다';addLog('⚠ '+I.label);I.armedPlayerTurn=state.turn}
   globalThis.__MANRU_SFX54__?.play?.('warn');return true;
  }
  if(I.type==='corebolt'){
@@ -1565,8 +1565,8 @@ function retreatMonster(mon,target=state.player){const p=target,opts=DIRS4.map((
     }else if(mon.bossPattern==='master'){
       const r=BOSS_ARENA_RULES.master;
       add('seal','천실 인장','印',`${r.sealAngle}° 부채꼴 · 예고 1턴`,`범위 ${r.range}칸(핵 보호 중 ${r.shieldRange}칸). 범위 안의 대상에게 ATK로 물리 공격(핵 보호 중 ATK −2). 핵이 없으면 단계별 재사용 ${r.shotCooldown.join('/')}턴, 보호 중 ${r.shieldShotCooldown}턴.`);
-      add('flash','섬광탄 폭발','閃',`3줄 설치 후 차례 폭발 · ${r.flash.reach}칸 · 재사용 ${r.flash.cooldown.join('/')}턴 · 사념체 중 사용 안 함`,`한 수마다 섬광탄(몹, 체력 4)을 한 줄씩 세 번 던져 깐다. 섬광탄은 턴마다 체력이 1씩 줄어 0이 되면 터지므로 먼저 깐 줄부터 차례로 터진다. 때려서 부수면 그 자리에서 먼저 터진다. 폭탄에서 뻗는 ${r.flash.reach}칸이 불타며 벽이 빛을 막는다. 1사념체 전: 풀 · 대각선 4방향 · 독. 1사념체 후: 대지 · 가로세로 4방향 · 약화와 기봉인. 2사념체 후: 얼음 · 8방향 · 출혈·기봉인·실명. 피해는 단계별 ${r.flash.phases.map(q=>q.damage).join('/')}(속성 저항 적용). 한 번의 점멸(4칸)과 이동으로 피할 길이 반드시 남는다.`);
-      add('weave','구조 재편','構',`예고 1턴 · 재사용 ${r.weave.cooldown.join('/')}턴 · 지속 ${r.weave.ttl}턴`,'홀 안에 벽·기둥·석상·수정을 세워 시야와 길을 가른다. 보주에게 닿는 길은 끊지 않으며, 세운 지형은 시간이 지나면 사라진다.');
+      add('flash','섬광탄 폭발','閃',`세 줄 투척 · ${r.flash.reach}칸 · 재사용 ${r.flash.cooldown.join('/')}턴`,`한 수마다 섬광탄을 한 줄씩 세 번 던져 깐다. 섬광탄은 시간이 지나 먼저 깐 줄부터 차례로 터지며, 부수면 그 자리에서 먼저 터진다. 폭발은 폭탄에서 뻗는 빛줄기를 따라 ${r.flash.reach}칸까지 퍼지고 벽에 막힌다. 1사념체 전에는 풀 속성 대각선 네 방향으로 중독, 1사념체 후에는 대지 속성 가로세로 네 방향으로 쇠약과 기봉인, 2사념체 후에는 얼음 속성 여덟 방향으로 출혈·기봉인·실명을 건다. 피해는 ${r.flash.phases.map(q=>q.damage).join('/')}. 사념체가 지키는 동안은 쓰지 않는다.`);
+      add('weave','구조 재편','構',`예고 1턴 · 재사용 ${r.weave.cooldown.join('/')}턴 · 지속 ${r.weave.ttl}턴`,'홀 안에 벽·기둥·석상·수정을 세워 시야와 길을 가른다. 세운 지형은 시간이 지나면 사라진다.');
       add('master-pursuit','만루의 추격','追','마지막 단계 · 주기 4턴','두 번째 핵이 사라진 뒤 4턴마다 이동을 한 번 더 한다.','ghost','조건');
       add('core','천실핵의 사념','核',`HP ${r.thresholds.map(n=>Math.round(n*100)+'%').join('·')}`,'체력 문턱마다 사념체를 세운다. 살아 있는 동안 보주는 무적. 사념체가 증원을 부르며, 파괴하면 그 단계의 증원도 사라진다.','constitution','조건');
     }else if(mon.bossPattern==='friendmask'||mon.storyPhase992===1){
