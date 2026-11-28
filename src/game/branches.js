@@ -278,7 +278,7 @@ function branchSnapshot(){const raw=GameState.project({...state,branchWorld105:u
 function branchCarry(){return carryRunState57()}
 function branchEntrance({required=true}={}){
  if(!state||state.branchContext105)return false;state.branchPortals105=state.branchPortals105||[];
- const id={2:'canal',3:'granary',7:'stockade',9:'palace',12:'dojo',14:'mirror',16:'citadel'}[state.floor];if(!id||state.artifactDungeon46||state.shopIntermission?.active)return false;if(state.branchPortals105.some(p=>p.id===id)){branchEntrancePending(id,false);return true;}
+ let id={2:'canal',3:'granary',7:'stockade',9:'palace',12:'dojo',14:'mirror',16:'citadel'}[state.floor];if(id==='palace'){const w=state.branchWorld105||(state.branchWorld105={version:1,pages:{}});if(w.thornNine105===undefined){let h=0;for(const ch of String(state.runId984||state.runId||''))h=(h*31+ch.charCodeAt(0))>>>0;w.thornNine105=h%100<35}if(w.thornNine105)id='thorn'}if(!id||state.artifactDungeon46||state.shopIntermission?.active)return false;if(state.branchPortals105.some(p=>p.id===id)){branchEntrancePending(id,false);return true;}
  const cells=ReachabilityService.playerSearch(state.player,{unlock:true,openBoss:true}).cells,candidates=[],waterCells=[];if(id==='canal')for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(terrainBaseTile58(x,y)===TT.WATER)waterCells.push({x,y});
  for(const key of cells){const[x,y]=key.split(',').map(Number);if((!terrainSurface58(state.map[y][x])||[TT.WATER,TT.VOID,TT.LAVA,TT.MERCURY].includes(state.map[y][x]))||OccupancyService.isOccupied(x,y)||state.items.some(i=>i.x===x&&i.y===y)||Math.max(Math.abs(x-state.stairs.x),Math.abs(y-state.stairs.y))<4)continue;
  const waterDist=id==='canal'?Math.min(...waterCells.map(q=>Math.max(Math.abs(q.x-x),Math.abs(q.y-y)))):0,walls=DIRS4.filter(([dx,dy])=>tileBlocksSight(state.map[y+dy]?.[x+dx])).length;
@@ -303,7 +303,7 @@ function branchTransition(portal){
  const [targetId,targetLv]=portal.to.split(':');if(state.branchContext105?.id==='palace'&&targetId!=='palace')palaceAdvance(1);
  if(targetId==='stockade'&&+targetLv>2&&!world.pages[portal.to]){world.blackReturn105={to:oldKey,arrival:portal.id};portal={...portal,to:'black:1',arrival:'up'};}
  if(targetId==='black'&&+targetLv>2&&!world.pages[portal.to]){toast('흑산채는 이제 2층까지다. 돌아가는 문을 이용하자.');return false;}
- world.pages[oldKey]=branchSnapshot();const [id,lv]=portal.to.split(':'),level=Number(lv);
+ world.pages[oldKey]=branchSnapshot();const [id,lv]=portal.to.split(':'),level=Number(lv);const thornDirBefore=id==='thorn'&&level===2?thornRun().dir:null;if(thornDirBefore)thornRun().dir=portal.arrival==='down'?'up':'down';
  if(world.pages[portal.to]){state={...branchUnpackPage(structuredClone(world.pages[portal.to])),...carry,branchWorld105:world};state.seen=new Set(state.seen||[]);state.visible=new Set();state.grassTufts1020=new Set(state.grassTufts1020||[]);COLS=state.map[0].length;ROWS=state.map.length;}
  else{if(id==='main')throw Error('Missing return map');state={...carry,branchWorld105:world,floor:BRANCH_DEFS105[id].parent};GameState.initialize(state);buildBranch(id,level);}
  if(state.branchContext105?.id==='mirror'){
@@ -314,7 +314,7 @@ function branchTransition(portal){
  const anchor=state.branchPortals105.find(p=>p.id===portal.arrival);if(!anchor)throw Error('Missing arrival anchor '+portal.arrival);
  const cells=[...DIRS4,...DIRS8].map(([dx,dy])=>({x:anchor.x+dx,y:anchor.y+dy})).filter(q=>ReachabilityService.playerTerrainPassable(q.x,q.y)&&!OccupancyService.isOccupied(q.x,q.y));
  if(!cells.length)throw Error('Arrival blocked');Object.assign(state.player,cells[0]);state.player.smokeInside1005=false;summonPlaceFollowers105(followers);if(mineState()?.palaceControls105)mineTick();
- state.hazard1005={...(state.hazard1005||{armed:{},collapsed:{},lastWarn:{}}),...ward};
+ state.hazard1005={...(state.hazard1005||{armed:{},collapsed:{},lastWarn:{}}),...ward};if(thornDirBefore&&thornDirBefore!==thornRun().dir)thornRecenter(true);
  if(state.branchContext105?.id==='palace')globalThis.__MANRU_HAZARD_CORE__?.revalidateAll('palace-arrival');WorldTransition57.complete();cancelAutoWalk();clearHeldInput53();normalizeRunState57();normalizeItemContainers57();resetVisualState();resetTurnState();VisibilityService.compute();BRANCH_TILE_CACHE.clear();updateAll();
  addLog(`${hudLocation58().full}에 들어섰다. 돌아가는 문은 항상 열려 있다.`);if(id==='stockade'&&level===1&&!world.elevationHint){world.elevationHint=true;addLog('절벽벽과 나무 사이의 산길을 따라 오른다. 절벽벽은 이동과 시야를 막고, 검은 낭떠러지는 추락 위험이다. 보급품은 초소와 정상 건물에 모여 있다.');}
  globalThis.__MANRU_SAVE_SERVICE__?.request?.('floor');return true;

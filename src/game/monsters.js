@@ -3029,7 +3029,7 @@ function silkThreadAt54(x,y){
         }
       }
     }
-    turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();
+    turnResult.stageOrder.push('core:mine');mineTick();if(state.floorTurn%8===0)retryPendingBranchEntrance105();thornRecenter();
     turnResult.stageOrder.push('core:fov-render-request');VisibilityService.compute();updateAll();
   }
   function itemCellInRoom62(r){const a=[];for(let y=r.y+1;y<r.y+r.h-1;y++)for(let x=r.x+1;x<r.x+r.w-1;x++)if(state.map[y]?.[x]===TT.FLOOR&&!OccupancyService.isOccupied(x,y)&&!state.items.some(i=>i.x===x&&i.y===y)&&(x!==state.player.x||y!==state.player.y))a.push({x,y});return a.length?choice(a):null}

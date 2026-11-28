@@ -22,6 +22,11 @@ const MONSTERS=[
 
   // 2구역 수묵원 · PDF 앞쪽 초안 순서
   {min:6,max:10,name:'정원사 망령',hp:20,atk:6,def:2,eva:3,xp:8,color:'#72816f',shape:'human',kind:'undead',ambush:true,grassHide57:true,reach:2,concept57:'낫과 전지가위를 움켜쥔 망령이다.'},
+  {min:99,max:99,name:'검은소금쟁이',nativeBranch105:{id:'thorn',level:2},hp:11,atk:4,def:0,eva:8,xp:5,color:'#2b3340',shape:'beast',kind:'beast',aquatic:true,waterOnly57:true,fast:true,attackElement105:'water',concept57:'물 위를 미끄러지며 물기운 섞인 침으로 찌르는 검은 소금쟁이다.'},
+  {min:99,max:99,name:'가루나방',nativeBranch105:{id:'thorn',level:2},sealSkill:true,alarmSkill61:true,flying:true,hp:16,atk:5,def:1,eva:7,xp:8,color:'#b8b2a0',shape:'angel',kind:'beast',concept57:'날개의 가루로 봉인진을 깔고 날갯짓으로 경종을 울리는 나방이다.'},
+  {min:99,max:99,name:'벌레덤불',nativeBranch105:{id:'thorn',level:2},hp:18,atk:5,def:2,eva:0,xp:7,color:'#4a5a3a',shape:'tree',kind:'plant',fixed:true,ambush:true,reach:2,concept57:'덤불인 척 웅크리고 있다가 다가오면 튀어나오는 벌레 뭉치다.'},
+  {min:99,max:99,name:'무당벌레 떼',nativeBranch105:{id:'thorn',level:2},hp:9,atk:3,def:0,eva:6,xp:4,color:'#b8453a',shape:'swarm',kind:'beast',fast:true,concept57:'붉은 등딱지를 맞대고 몰려다니는 작은 벌레 떼다.'},
+  {min:99,max:99,name:'장수풍뎅이',nativeBranch105:{id:'thorn',level:2},hp:30,atk:8,def:4,eva:2,xp:11,color:'#2f2a34',shape:'brute',kind:'beast',charge:true,concept57:'뿔을 낮추고 일직선으로 들이받는 거대한 풍뎅이다.'},
   {min:6,max:10,name:'독꽃',hp:14,atk:5,def:1,eva:0,xp:7,color:'#7c8f58',shape:'mage',kind:'plant',fixed:true,ranged:true,range:3,poison:true,concept57:'수묵원의 그늘에서 자라는 독을 품은 꽃이다.'},
   {min:6,max:10,name:'검은 뱀',hp:15,atk:6,def:1,eva:7,xp:8,color:'#3f4b43',shape:'beast',kind:'beast',fast:true,poison:true,concept57:'빠르게 달라붙어 독니를 박는 검은 뱀이다.'},
   {min:6,max:10,name:'먹물 정령',resist:{water:-1},hp:17,atk:5,def:2,eva:4,xp:8,color:'#46515a',shape:'void',kind:'spirit',split:true,concept57:'살아 움직이는 먹이 사람의 윤곽을 이룬 정령이다.'},
@@ -152,6 +157,9 @@ const CLOAKS=[
 ];
 const RELICS=[
   {type:'relic',name:'장독 속 무언가',rarity:'relic',def:1,vision:-1,jarOnly57:true,jarOnMartial57:true,desc:'장독 바닥에서 건져 올린 오래된 반지. DEF +1, VIS -1. 무술을 사용할 때마다 주변의 안전하고 넓은 빈 바닥에 장독 하나를 설치한다. 놓을 자리가 없으면 설치하지 않는다.'},
+  {type:'relic',name:'핏빛 가시 표식',rarity:'relic',vaultOnly:true,thornTheme105:'blood',atk:1,vision:1,desc:'가시숲이 내어 준 표식. ATK +1, VIS +1. 끼고 있는 동안 가시숲 2층에 핏빛 숲이 더 자주 나타난다. 진액을 바르면 다른 표식으로 바뀐다.'},
+  {type:'relic',name:'균사 가시 표식',rarity:'relic',vaultOnly:true,thornTheme105:'fungus',will:2,vision:1,desc:'균사가 감긴 표식. WILL +2, VIS +1. 끼고 있는 동안 가시숲 2층에 균사 숲이 더 자주 나타난다. 진액을 바르면 다른 표식으로 바뀐다.'},
+  {type:'relic',name:'거미 가시 표식',rarity:'relic',vaultOnly:true,thornTheme105:'web',eva:3,vision:1,desc:'거미줄로 엮은 표식. EVA +3, VIS +1. 끼고 있는 동안 가시숲 2층에 거미줄 숲이 더 자주 나타난다. 진액을 바르면 다른 표식으로 바뀐다.'},
   {type:'relic',name:'붉은 등롱 심지',rarity:'relic',vision:1,focus:2,desc:'시야 +1, 기력 +2'},
   {type:'relic',name:'먹빛 벼루 조각',rarity:'relic',will:2,focus:2,desc:'WILL +2, 기력 +2. 적의 상태이상에 더 잘 저항합니다.'},
   {type:'relic',name:'깨진 천면경',rarity:'relic',eva:3,desc:'EVA +3'},

@@ -11,17 +11,69 @@ const THORN_W=121,THORN_H=129,THORN_SIZE=Object.freeze([THORN_W,THORN_H]);
 const THORN_ROSTER=Object.freeze([['객잔 쥐',7],['독꽃',4],['독거미',4]]);
 // 0 thorn, 1 rot, 2 fungus, 3 web, 4 blood: big soft regions; the start is always the thorn zone
 function thornZoneAt(x,y,T){
+ if(T.zoneMap)return T.zoneMap.charCodeAt(y*THORN_W+x)-48;
+ if(T.down&&Math.hypot(x-T.down.x,y-T.down.y)<20)return 4;
  if(T.up&&Math.hypot(x-T.up.x,y-T.up.y)<26)return 0;
  const a=thornNoise(x,y,40,T.zoneSeed),b=thornNoise(x,y,54,T.zoneSeed+11);
  if(T.threeZones)return a<.38?1:a>.64?4:0;
  if(a<.30)return 1;if(a<.45&&b>.5)return 3;if(a>.76)return 4;if(b<.32)return 2;return 0;
+}
+// ---- floor 2: an endless-looking forest. Far from the middle the world is silently rebuilt around the player: the patch of forest in view
+//      is copied to the centre of a freshly generated map, so nothing visible changes while everything beyond it does.
+const THORN_ZONE_OF_THEME={blood:4,fungus:2,web:3};
+function thornRun(){const w=state.branchWorld105||(state.branchWorld105={version:1,pages:{}});return w.thornRun||(w.thornRun={n:0,bigs:0,miss:0,dir:'down',theme:''})}
+function thornKey(key,dx,dy){const[x,y]=key.split(',').map(Number);return(x+dx)+','+(y+dy)}
+function thornShiftObj(o,dx,dy,keys){const r={...o};for(const f of keys)if(Number.isFinite(r[f]))r[f]+=f[0]==='y'||f==='cy'?dy:dx;return r}
+function thornCapturePatch(){
+ const T=state.branchTerrain105.thorn105,ter=state.branchTerrain105,m=state.map,p=state.player;
+ let x0=Math.max(3,p.x-14),y0=Math.max(3,p.y-14),x1=Math.min(THORN_W-4,p.x+14),y1=Math.min(THORN_H-4,p.y+14);
+ const boxes=[...T.cabins.map(c=>({x:c.x,y:c.y,w:c.w,h:c.h})),...T.bigs.map(c=>({x:c.x,y:c.y,w:c.w,h:c.h})),...T.halls.map(h=>({x:h.x-h.r-1,y:h.y-h.r-1,w:2*h.r+3,h:2*h.r+3})),...T.rafts.map(r=>({x:r.x-3,y:r.min-2,w:7,h:r.max-r.min+5})),...T.spirals.map(s=>({x:s.path.reduce((a,q)=>Math.min(a,q.x),999)-1,y:s.path.reduce((a,q)=>Math.min(a,q.y),999)-1,w:13,h:13}))];
+ for(let pass=0;pass<3;pass++)for(const b of boxes)if(b.x<=x1&&b.x+b.w-1>=x0&&b.y<=y1&&b.y+b.h-1>=y0){x0=Math.max(3,Math.min(x0,b.x));y0=Math.max(3,Math.min(y0,b.y));x1=Math.min(THORN_W-4,Math.max(x1,b.x+b.w-1));y1=Math.min(THORN_H-4,Math.max(y1,b.y+b.h-1))}
+ x0=Math.max(x0,p.x-30);x1=Math.min(x1,p.x+30);y0=Math.max(y0,p.y-30);y1=Math.min(y1,p.y+30);
+ const inb=(x,y)=>x>=x0&&x<=x1&&y>=y0&&y<=y1,cells=[];
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const key=x+','+y;cells.push({x,y,t:m[y][x],s:ter.surfaces[key],z:thornZoneAt(x,y,T),p:T.props[key]||null,b:T.bushes[key]||null,br:T.bridges[key]?1:0,d:T.deco[key]||null})}
+ const rec=(list,test)=>list.filter(test).map(r=>structuredClone(r));
+ const inRec=r=>inb(r.x,r.y)||inb(r.cx??r.x,r.cy??r.y);
+ const seen=[];for(const key of state.seen){const[x,y]=key.split(',').map(Number);if(inb(x,y))seen.push(key)}
+ return{box:{x0,y0,x1,y1},shift:{dx:(THORN_W>>1)-p.x,dy:(THORN_H>>1)-p.y},cells,
+  cabins:rec(T.cabins,inRec),clearings:rec(T.clearings,inRec),halls:rec(T.halls,inRec),spirals:rec(T.spirals,s=>inb(s.x,s.y)),rafts:rec(T.rafts,r=>inb(r.x,r.min)),bigs:rec(T.bigs,inRec),backPaths:rec(T.backPaths,inRec),plugs:rec(T.plugs,inRec),
+  lights:T.lights.filter(l=>inb(l.x,l.y)).map(l=>({...l})),forest:T.forest.filter(t=>inb(Math.floor(t.x),Math.floor(t.y-.5))).map(t=>({...t})),
+  rafts2:state.rafts.filter(r=>inb(r.x,r.min)).map(r=>({...r})),portals:state.branchPortals105.filter(q=>inb(q.x,q.y)).map(q=>({...q})),rooms:state.rooms.filter(r=>inb(r.cx,r.cy)).map(r=>({...r})),
+  monsters:state.monsters.filter(mon=>mon.hp>0&&inb(mon.x,mon.y)),items:state.items.filter(it=>inb(it.x,it.y)),seen};
+}
+function thornRestorePatch(patch){
+ const{dx,dy}=patch.shift;for(const mon of patch.monsters){mon.x+=dx;mon.y+=dy;if(Number.isFinite(mon.homeX))mon.homeX+=dx;if(Number.isFinite(mon.homeY))mon.homeY+=dy;OccupancyService.addMonster(mon)}
+ for(const it of patch.items){it.x+=dx;it.y+=dy;if(it.thornRewardFor105&&!(state.branchTerrain105.thorn105.bigs.some(b=>b.id===it.thornRewardFor105&&b.dirGiven===thornRun().dir)))continue;state.items.push(it)}
+ for(const key of patch.seen)state.seen.add(thornKey(key,dx,dy));
+}
+function thornRecenter(force=false){
+ const b=state?.branchContext105;if(!b||b.id!=='thorn'||b.level!==2||state.dead||state.victory||state.generationInProgress57)return false;
+ const T=state.branchTerrain105?.thorn105,p=state.player;if(!T)return false;
+ const far=Math.max(Math.abs(p.x-(THORN_W>>1)),Math.abs(p.y-(THORN_H>>1)))>=34;
+ if(!force&&(!far||state.floorTurn-(T.lastRecenter||-99)<12))return false;
+ const patch=thornCapturePatch(),transaction=captureGenerationSnapshot();
+ try{globalThis.__THORN_PATCH105__=patch;buildBranch('thorn',2);thornRestorePatch(patch);
+  state.branchTerrain105.thorn105.lastRecenter=state.floorTurn;
+  resetVisualState();VisibilityService.compute();BRANCH_TILE_CACHE.clear();updateAll();
+ }catch(e){restoreGenerationSnapshot(transaction);console.error('thorn recenter rollback',e);T.lastRecenter=state.floorTurn;return false}
+ finally{globalThis.__THORN_PATCH105__=null}
+ return true;
+}
+function thornPotionThrow(item,tx,ty){
+ const p=state.player,theme=item.thornPotion105,col={blood:'#a8283a',fungus:'#3fb8a0',web:'#c8c4d8'}[theme];
+ if(tx===p.x&&ty===p.y){const def=RELICS.find(r=>r.thornTheme105===theme);state.player.relic={...clone(def),count:1,identified:true};thornRun().theme=theme;thornRun().n=0;burst(p.x,p.y,col,24,1.1);floatText(p.x,p.y,def.name,col,12);addLog(`${item.name}을 표식에 발랐다. ${def.name}으로 바뀌었다. 가시숲 2층의 숲이 새 기운에 끌린다.`);globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(state.player.relic);return}
+ for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const m=findMonsterAt(tx+dx,ty+dy);if(!m||m.hp<=0||!isHostileTarget57(m))continue;
+  const dealt=damageEntity(m,theme==='blood'?6:theme==='fungus'?4:3,state.player,theme==='blood'?'fire':theme==='fungus'?'grass':'earth');if(dealt>0)floatText(m.x,m.y,'-'+dealt,col,12);
+  if(m.hp>0){if(theme==='blood')applyCombatStatus(m,'bleed',4,1,{source:state.player});else if(theme==='fungus')applyCombatStatus(m,'poison',5,1,{source:state.player});else{applyCombatStatus(m,'weaken',3,1,{source:state.player});applyCombatStatus(m,'stun',1,1,{source:state.player})}}
+  if(m.hp<=0)killMonster(m)}
+ identifyItem(item,'사용 효과 관찰');addLog(`${item.name}: 3×3에 ${theme==='blood'?'출혈':theme==='fungus'?'중독':'약화와 경직'}.`);
 }
 function buildThornwood(level){
  const ter=state.branchTerrain105,m=state.map,def=BRANCH_DEFS105.thorn,W=COLS,H=ROWS;
  if(W!==THORN_W||H!==THORN_H)throw Error('Thornwood map size');
  state.keyPlan96=null;state.floor2Choice63=null;state.generationInProgress57=true;state.rafts=[];
  const rnd=()=>globalThis.__MANRU_RANDOM57__(),ri=(a,b)=>Math.floor(rnd()*(b-a+1))+a,pick=list=>list[ri(0,list.length-1)],clampi=(v,a,b)=>Math.max(a,Math.min(b,v));
- const T=ter.thorn105={version:2,threeZones:level===1,zoneSeed:ri(1,9999),up:null,bushes:{},bridges:{},cabins:[],clearings:[],plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
+ const T=ter.thorn105={version:2,threeZones:level===1,zoneSeed:ri(1,9999),up:null,bushes:{},bridges:{},cabins:[],clearings:[],halls:[],spirals:[],rafts:[],bigs:[],start:null,plugs:[],backPaths:[],forest:[],props:{},deco:{},lights:[],shortcuts:[]};
  // a tree, a bush or a piece of furniture is an overlay that needs ground under it, like the mountain builder does
  const put=(x,y,tile,s)=>{if(x<1||y<1||x>=W-1||y>=H-1)return false;if(terrainLayerCatalog58().overlays.has(tile)&&!terrainSurface58(terrainBaseTile58(x,y)))setTerrainTile58(m,x,y,TT.FLOOR);setTerrainTile58(m,x,y,tile);ter.surfaces[k(x,y)]=s;delete ter.props[k(x,y)];return true};
  const isWall=(x,y)=>m[y]?.[x]===TT.WALL;
@@ -32,6 +84,37 @@ function buildThornwood(level){
  const nearStream=(x,y)=>Math.abs(x-streamX(y))<=6;
  // ---- carving: discs of floor; where a trail crosses the stream the floor becomes a rotten plank bridge
  const route=new Set(),floor=new Set(),reserved=new Set();
+
+ const L2=level===2,PATCH=L2?globalThis.__THORN_PATCH105__:null,CX=W>>1,CY=H>>1,run=L2?thornRun():null;
+ let fz=null;const openings=[],inFz=(x,y)=>!!fz&&x>=fz.x0&&x<=fz.x1&&y>=fz.y0&&y<=fz.y1;
+ if(L2){const rt=state.player.relic?.thornTheme105||'';if(run.theme!==rt){run.theme=rt;run.n=0}else run.n++}
+ // which theme this stretch of forest leans to: the worn mark pulls its own theme in, more strongly every time the forest is rebuilt
+ const regionZone=(()=>{if(!L2)return 0;if(!PATCH)return run.dir==='up'?3:4;const z=THORN_ZONE_OF_THEME[run.theme]??4;if(run.n>=5)return z;const w=[[0,5],[z,Math.min(14,3+2*run.n)]];let r=rnd()*(5+w[1][1]);for(const[zz,ww]of w){if((r-=ww)<0)return zz}return 0})();
+ const ovl=terrainLayerCatalog58().overlays;
+ const pasteTile=(x,y,t,sf)=>{if(t===TT.RAFT)setTerrainTile58(m,x,y,TT.WATER);else if(ovl.has(t)&&!terrainSurface58(terrainBaseTile58(x,y)))setTerrainTile58(m,x,y,TT.FLOOR);setTerrainTile58(m,x,y,t);ter.surfaces[k(x,y)]=sf};
+ if(L2&&PATCH){const{dx,dy}=PATCH.shift,bx=PATCH.box,sh=(r,keys)=>thornShiftObj(r,dx,dy,keys);fz={x0:bx.x0+dx,y0:bx.y0+dy,x1:bx.x1+dx,y1:bx.y1+dy};
+  for(const c of PATCH.cells){const x=c.x+dx,y=c.y+dy,key=k(x,y);pasteTile(x,y,c.t,c.s);reserved.add(key);if(c.p)T.props[key]=c.p;if(c.b)T.bushes[key]=c.b;if(c.br)T.bridges[key]=true;if(c.d)T.deco[key]=c.d;
+   if((x===fz.x0||x===fz.x1||y===fz.y0||y===fz.y1)&&(c.t===TT.FLOOR||c.t===TT.DOOR))openings.push({x,y})}
+  for(const c of PATCH.cabins)T.cabins.push({...sh(c,['x','y','cx','cy']),door:sh(c.door,['x','y']),...(c.cells?{cells:c.cells.map(([x,y])=>[x+dx,y+dy])}:{}),old:true});
+  for(const c of PATCH.clearings)T.clearings.push({...sh(c,['x','y']),old:true});
+  for(const h of PATCH.halls)T.halls.push({...sh(h,['x','y']),gates:h.gates.map(g=>sh(g,['x','y'])),old:true});
+  for(const sp of PATCH.spirals)T.spirals.push({...sh(sp,['x','y']),path:sp.path.map(q=>sh(q,['x','y'])),old:true});
+  for(const r of PATCH.rafts)T.rafts.push({...r,x:r.x+dx,min:r.min+dy,max:r.max+dy});
+  for(const r of PATCH.rafts2)state.rafts.push({...r,x:r.x+dx,y:r.y+dy,min:r.min+dy,max:r.max+dy});
+  for(const b of PATCH.bigs)T.bigs.push({...sh(b,['x','y']),door:sh(b.door,['x','y']),reward:sh(b.reward,['x','y']),old:true});
+  for(const q of PATCH.backPaths)T.backPaths.push(sh(q,['x','y']));for(const q of PATCH.plugs)T.plugs.push(sh(q,['x','y']));
+  for(const l of PATCH.lights)T.lights.push(sh(l,['x','y']));for(const t of PATCH.forest)T.forest.push(sh(t,['x','y']));
+  for(const q of PATCH.portals)state.branchPortals105.push(sh(q,['x','y']));for(const r of PATCH.rooms)state.rooms.push(sh(r,['x','y','cx','cy']));
+ }else if(L2){
+  // arrival: a blood-red hall with the way back and the mark of the wood set where nobody can miss it
+  fz={x0:CX-9,y0:CY-7,x1:CX+9,y1:CY+9};
+  for(let y=fz.y0;y<=fz.y1;y++)for(let x=fz.x0;x<=fz.x1;x++){pasteTile(x,y,TT.WALL,'thicket');reserved.add(k(x,y))}
+  const ix0=CX-5,iy0=CY-3,iw=11,ih=7;
+  for(let y=iy0-1;y<=iy0+ih;y++)for(let x=ix0-1;x<=ix0+iw;x++){const e=x===ix0-1||y===iy0-1||x===ix0+iw||y===iy0+ih;pasteTile(x,y,e?TT.WALL:TT.FLOOR,e?'rotWall':'rotPlank')}
+  pasteTile(CX,iy0+ih,TT.DOOR,'rotPlank');for(let sy=1;sy<=fz.y1-(iy0+ih);sy++)for(let q=-1;q<=1;q++)pasteTile(CX+q,iy0+ih+sy,TT.FLOOR,'rotPlank');
+  for(let q=-1;q<=1;q++)openings.push({x:CX+q,y:fz.y1});
+  T.start={x:CX,y:CY,theme:run.dir==='up'?3:4};state.rooms.push({x:ix0,y:iy0,w:iw,h:ih,cx:CX,cy:CY});
+ }
  const disc=(cx,cy,r,s,core=false)=>{for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(dx*dx+dy*dy>r*r+r*.7)continue;const x=cx+dx,y=cy+dy;if(x<2||y<2||x>=W-2||y>=H-2)continue;const key=k(x,y);if(reserved.has(key))continue;const bridge=water.has(key);if(!put(x,y,TT.FLOOR,bridge?'rotPlank':s))continue;if(bridge)T.bridges[key]=true;floor.add(key);if(core&&dx*dx+dy*dy<=2)route.add(key)}};
  const line4=(a,b,r,s,core)=>{let x=a.x,y=a.y;disc(x,y,r,s,core);while(x!==b.x||y!==b.y){if(Math.abs(b.x-x)>=Math.abs(b.y-y)&&x!==b.x)x+=Math.sign(b.x-x);else if(y!==b.y)y+=Math.sign(b.y-y);else x+=Math.sign(b.x-x);disc(x,y,r,s,core)}};
  // a winding trail: samples along a->b pushed sideways by a sine and some noise, joined 4-connected so it can always be walked
@@ -50,7 +133,7 @@ function buildThornwood(level){
  const loops=extras.slice(0,Math.max(6,Math.round(extras.length*.3)));
  const startId=cid(0,rows-1),dist=new Map([[startId,0]]),bq=[startId];for(let q=0;q<bq.length;q++)for(const n of adj[bq[q]])if(!dist.has(n)){dist.set(n,dist.get(bq[q])+1);bq.push(n)}
  let exitId=startId,far=-1;for(const[id,d]of dist)if(d>far||d===far&&rnd()<.5){far=d;exitId=id}
- const up=center(startId),down=center(exitId);T.up={...up};
+ const up=L2?{x:CX,y:CY}:center(startId),down=center(exitId);T.up={...up};if(level===1)T.down={...down};
  // junction plazas, then the passages between cells (each one winding, some narrow and some wide)
  for(let id=0;id<cols*rows;id++){const c=center(id);disc(c.x,c.y,ri(1,2),rnd()<.3?'thornMoss':'thornTrail',true)}
  disc(up.x,up.y,2,'thornMoss',true);disc(down.x,down.y,2,'thornMoss',true);
@@ -60,9 +143,11 @@ function buildThornwood(level){
  // extra openings: loops, most of them plugged with thorn bushes (green ones are cut down, red ones stab)
  for(const[a,b]of loops){const pts=trail(center(a),center(b),{amp:2.4,k:1,r:0});if(rnd()<.35)continue;
   const mid=Math.floor(pts.length/2),red=rnd()<.42,cells=[];
-  for(let q=mid-1;q<=mid+1;q++){const p=pts[clampi(q,0,pts.length-1)];if(m[p.y][p.x]===TT.FLOOR&&!T.bridges[k(p.x,p.y)]&&!cells.some(z=>z.x===p.x&&z.y===p.y))cells.push(p)}
+  for(let q=mid-1;q<=mid+1;q++){const p=pts[clampi(q,0,pts.length-1)];if(m[p.y][p.x]===TT.FLOOR&&!reserved.has(k(p.x,p.y))&&!T.bridges[k(p.x,p.y)]&&!cells.some(z=>z.x===p.x&&z.y===p.y))cells.push(p)}
   for(const p of cells){put(p.x,p.y,TT.HEDGE,'thornTrail');T.bushes[k(p.x,p.y)]=red?'red':'green';floor.delete(k(p.x,p.y))}
   if(cells.length){T.plugs.push({x:cells[0].x,y:cells[0].y,red});T.shortcuts.push({x:cells[0].x,y:cells[0].y,red})}}
+ if(L2){const done=[];for(const o of openings){if(done.some(q=>Math.abs(q.x-o.x)+Math.abs(q.y-o.y)<5))continue;done.push(o);const t=nearestFloor(o,2);if(t)trail(o,t,{amp:2,k:1,r:0})}
+  for(let y=fz.y0;y<=fz.y1;y++)for(let x=fz.x0;x<=fz.x1;x++)if(m[y][x]===TT.FLOOR)floor.add(k(x,y))}
  const loot=[],roomsOut=[],nodes=[];
  const freeBox=(x0,y0,w,h,mg=2)=>{for(let y=y0-mg;y<y0+h+mg;y++)for(let x=x0-mg;x<x0+w+mg;x++)if(x<3||y<3||x>=W-3||y>=H-3||!isWall(x,y)||reserved.has(k(x,y)))return false;return true};
  const buildCabin=(cx,cy)=>{
@@ -89,7 +174,7 @@ function buildThornwood(level){
  // dead ends: a bigger mossy plaza with something to find at the end of the corridor
  for(let id=0;id<cols*rows;id++){if(id===startId||id===exitId||adj[id].length!==1)continue;const c=center(id);if(nearStream(c.x,c.y))continue;disc(c.x,c.y,2,'thornMoss',true);T.clearings.push({x:c.x,y:c.y,deadEnd:true});loot.push({x:c.x,y:c.y})}
  // ---- set pieces: random extras that break the rectangle habit. None is guaranteed on a map; each rolls on its own.
- const halls=T.halls=[],spirals=T.spirals=[],raftsOut=T.rafts=[],bonus=[],islandLoot=[];
+ const halls=T.halls,spirals=T.spirals,raftsOut=T.rafts,bonus=[],islandLoot=[];
  const bbox=cells=>{let a=1e9,b=1e9,c=-1,d=-1;for(const[x,y]of cells){a=Math.min(a,x);b=Math.min(b,y);c=Math.max(c,x);d=Math.max(d,y)}return{x0:a,y0:b,x1:c,y1:d}};
  // stamp an interior shape surrounded by log wall; returns its wall set, or null when there is no room
  const stamp=(cells,floorSurf,wallSurf)=>{const bb=bbox(cells);if(!freeBox(bb.x0-1,bb.y0-1,bb.x1-bb.x0+3,bb.y1-bb.y0+3,1))return null;
@@ -153,6 +238,33 @@ function buildThornwood(level){
   raftsOut.push({x,min,max,linked});
   if(!linked){islandLoot.push({x:x-1,y:min-1},{x:x+1,y:min-1},{x,y:min-1})}else loot.push({x:x-1,y:min-1});
   state.rooms.push({x:x-3,y:min-1,w:7,h:len+2,cx:x,cy:min-1});return true};
+ // ---- great halls (floor 2): a walled compound in three chambers; what it gives depends on the theme and on which way the player is travelling
+ const BIG_GUARDS={4:[['지네',2],['독꽃',1]],2:[['독꽃',3],['가루나방',1]],3:[['어미거미',1],['독거미',2]],0:[['객잔 쥐',3],['독꽃',1]]};
+ const buildBig=(cx,cy,theme,grand)=>{
+  const iw=grand?23:15,ih=grand?13:9,x0=cx-(iw>>1),y0=cy-(ih>>1),bx0=x0-1,by0=y0-1,bw=iw+2,bh=ih+2;
+  if(bx0<6||by0<6||bx0+bw>W-6||by0+bh>H-6)return false;
+  for(let y=by0-2;y<by0+bh+2;y++)for(let x=bx0-2;x<bx0+bw+2;x++)if(reserved.has(k(x,y))||water.has(k(x,y)))return false;
+  for(let y=by0-2;y<by0+bh+2;y++)for(let x=bx0-2;x<bx0+bw+2;x++){const key=k(x,y);if(m[y][x]!==TT.WALL){put(x,y,TT.WALL,'thicket');floor.delete(key);route.delete(key);delete T.bridges[key];delete T.bushes[key]}}
+  const inBox=q=>q.x>=bx0-2&&q.x<bx0+bw+2&&q.y>=by0-2&&q.y<by0+bh+2;T.plugs=T.plugs.filter(q=>!inBox(q));T.shortcuts=T.shortcuts.filter(q=>!inBox(q));
+  const cells=[];for(let y=y0;y<y0+ih;y++)for(let x=x0;x<x0+iw;x++)cells.push([x,y]);
+  const target=nearestFloor({x:cx,y:by0+bh+4});if(!target)return false;
+  const st=stamp(cells,'rotPlank','rotWall');if(!st)return false;
+  const lx=x0+(grand?6:4),rx=x0+iw-1-(grand?6:4);
+  for(let y=y0;y<y0+ih;y++)for(const x of[lx,rx]){const gap=y===y0+2||y===y0+ih-3;put(x,y,gap?TT.FLOOR:TT.WALL,gap?'rotPlank':'rotWall');if(!gap)floor.delete(k(x,y))}
+  if(grand)for(let x=lx+1;x<rx;x++)if(Math.abs(x-cx)>1){put(x,y0+4,TT.WALL,'rotWall');floor.delete(k(x,y0+4))}
+  const spots=doorSpots(st.set,st.walls),front=spots.filter(q=>q.oy===1&&Math.abs(q.x-cx)<=1).sort((a,b)=>Math.abs(a.x-cx)-Math.abs(b.x-cx))[0];if(!front)return false;
+  put(front.x,front.y,TT.DOOR,'rotPlank');apron(front,'rotPlank');trail({x:front.x,y:front.y+3},target,{amp:2,k:1,r:0});
+  const back=spots.filter(q=>q.oy===-1&&Math.abs(q.x-cx)<=1)[0],t2=back&&nearestFloor({x:cx,y:by0-4},6,target);
+  if(back&&t2&&Math.hypot(t2.x-back.x,t2.y-back.y)<30){put(back.x,back.y,TT.DOOR,'rotPlank');trail({x:back.x,y:back.y-1},t2,{amp:2,k:1,r:0})}
+  const id='b'+(run.bigs++),reward={x:cx,y:y0+1};
+  T.bigs.push({id,x:bx0,y:by0,w:bw,h:bh,cx,cy,theme,grand,door:{x:front.x,y:front.y},reward,dirGiven:null,guards:BIG_GUARDS[theme]||BIG_GUARDS[0]});
+  state.rooms.push({x:x0,y:y0,w:iw,h:ih,cx,cy:y0+ih-2});
+  loot.push({x:cx-3,y:y0+1},{x:cx+3,y:y0+1},{x:cx,y:y0+ih-2});if(grand)loot.push({x:cx-8,y:y0+2},{x:cx+8,y:y0+2},{x:cx-8,y:y0+ih-3},{x:cx+8,y:y0+ih-3});
+  return true};
+ if(L2){const want=!PATCH?true:rnd()<Math.min(.92,.4+.22*run.miss);let placed=false;
+  if(want){const grand=run.bigs%3===2,th=!PATCH?(run.dir==='up'?3:4):run.theme?(rnd()<.75?THORN_ZONE_OF_THEME[run.theme]:0):(rnd()<.75?4:0);
+   for(let tries=0;tries<90&&!placed;tries++){const d=PATCH?ri(30,44):ri(26,38),a=rnd()*6.283;placed=buildBig(Math.round(CX+Math.cos(a)*d),Math.round(CY+Math.sin(a)*d),th,grand)}}
+  run.miss=placed?0:run.miss+1}
  {const plan=[['hall',buildRoundHall,.55],['spiral',buildSpiral,.55],['raft',buildRaftCrossing,.55]],gaps=[];
   for(let j=0;j<rows-1;j++)for(let i=0;i<cols-1;i++)gaps.push([gx(i)+CS/2,gy(j)+CS/2]);
   for(let a=gaps.length-1;a>0;a--){const b=ri(0,a);[gaps[a],gaps[b]]=[gaps[b],gaps[a]]}
@@ -163,40 +275,67 @@ function buildThornwood(level){
  for(let tries=0;tries<60&&T.cabins.length<4;tries++){const i=ri(0,cols-2),j=ri(0,rows-2),x=gx(i)+CS/2,y=gy(j)+CS/2;if(!nearStream(x,y))buildCabin(x,y)}
  // loops between neighbouring clearings
  for(let i=0;i<nodes.length;i++)for(let j2=i+1;j2<nodes.length;j2++){const a=nodes[i],b=nodes[j2];if(Math.hypot(a.x-b.x,a.y-b.y)<24&&rnd()<.2)trail(a,b,{amp:3,k:1,r:0})}
+ if(L2){
+  const passable=(x,y)=>{const t=m[y]?.[x];return t===TT.FLOOR||t===TT.DOOR||t===TT.PORTAL};
+  for(let pass=0;pass<3;pass++){
+   const comp=new Int32Array(W*H).fill(-1),comps=[];
+   for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){if(comp[y*W+x]!==-1||!passable(x,y))continue;const id=comps.length,list=[],stack=[[x,y]];comp[y*W+x]=id;while(stack.length){const[qx,qy]=stack.pop();list.push([qx,qy]);for(const[ddx,ddy]of DIRS4){const nx=qx+ddx,ny=qy+ddy;if(nx<1||ny<1||nx>=W-1||ny>=H-1||comp[ny*W+nx]!==-1||!passable(nx,ny))continue;comp[ny*W+nx]=id;stack.push([nx,ny])}}comps.push(list)}
+   if(comps.length<2)break;
+   let main=0;for(let i=1;i<comps.length;i++)if(comps[i].length>comps[main].length)main=i;
+   const mainCells=comps[main].filter(([x,y])=>!reserved.has(k(x,y))&&m[y][x]===TT.FLOOR&&!T.bridges[k(x,y)]);let linked=0;
+   for(let i=0;i<comps.length;i++){if(i===main)continue;const cs=comps[i].filter(([x,y])=>!reserved.has(k(x,y))&&m[y][x]===TT.FLOOR);if(!cs.length)continue;const a=cs[0];let best=null,bd=1e9;for(const q of mainCells){const d=Math.hypot(q[0]-a[0],q[1]-a[1]);if(d<bd){bd=d;best=q}}if(best){trail({x:a[0],y:a[1]},{x:best[0],y:best[1]},{amp:2,k:1,r:0});linked++}}
+   if(!linked)break}
+  // the colour map: patch cells keep what they had, the start hall is blood, great halls carry their own theme, the rest leans to this stretch's theme
+  const zm=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++)zm[y*W+x]=regionZone&&thornNoise(x,y,34,T.zoneSeed)<.66?regionZone:0;
+  if(PATCH)for(const c of PATCH.cells)zm[(c.y+PATCH.shift.dy)*W+c.x+PATCH.shift.dx]=c.z;
+  else for(let y=fz.y0;y<=fz.y1;y++)for(let x=fz.x0;x<=fz.x1;x++)zm[y*W+x]=T.start.theme;
+  for(const b of T.bigs)if(!b.old)for(let y=b.y-2;y<b.y+b.h+2;y++)for(let x=b.x-2;x<b.x+b.w+2;x++)if(y>0&&x>0&&y<H&&x<W)zm[y*W+x]=b.theme;
+  let zs='';for(let i=0;i<zm.length;i+=8192)zs+=String.fromCharCode(...Array.from(zm.subarray(i,i+8192),v=>v+48));T.zoneMap=zs;
+  // what each great hall holds right now: stairs or two vials, set by theme and direction of travel
+  const POT=window.MANRU_POTIONS||[];
+  for(const b of T.bigs){if(b.dirGiven===run.dir)continue;b.dirGiven=run.dir;const r=b.reward;
+   state.branchPortals105=state.branchPortals105.filter(q=>q.bigId!==b.id);if(m[r.y][r.x]===TT.PORTAL)setTerrainTile58(m,r.x,r.y,TT.FLOOR);
+   const stairs=run.dir==='down'&&b.theme===3?'down':run.dir==='up'&&b.theme===4?'bloodUp':null;
+   if(stairs){setTerrainTile58(m,r.x,r.y,TT.PORTAL);ter.surfaces[k(r.x,r.y)]='rotPlank';state.branchPortals105.push(stairs==='down'?{id:'down',kind:'branch',x:r.x,y:r.y,to:'thorn:3',arrival:'up',label:`${def.name} 3층`,bigId:b.id}:{id:'bloodUp',kind:'branch',x:r.x,y:r.y,to:'thorn:1',arrival:'down',label:`${def.name} 1층으로`,bigId:b.id})}
+   else{const give=run.dir==='down'?(b.theme===4?'fungus':b.theme===2?'web':null):(b.theme===3?'fungus':b.theme===2?'blood':null),def2=give&&POT.find(q=>q.thornPotion105===give);
+    if(def2)PlacementService.placeItem({...clone(def2),count:2,thornRewardFor105:b.id},{x:r.x,y:r.y},{requireReachable:false})}}
+ }
  // ---- zone-aware dressing: thorn bushes along the trails (never on the lane that carries the way on), the red ones likelier in the blood zone
  const zoneAt=(x,y)=>thornZoneAt(x,y,T),near4=(x,y,t)=>DIRS4.some(([dx,dy])=>m[y+dy]?.[x+dx]===t);
- for(const key of floor){if(route.has(key))continue;const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||!near4(x,y,TT.WALL)||ter.surfaces[key]==='rotPlank')continue;
+ for(const key of floor){if(route.has(key))continue;const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||inFz(x,y)||!near4(x,y,TT.WALL)||ter.surfaces[key]==='rotPlank')continue;
   const z=zoneAt(x,y),r=rnd(),redP=z===4?.05:.014,greenP=.045;if(r<greenP){put(x,y,TT.HEDGE,ter.surfaces[key]);T.bushes[key]='green'}else if(r<greenP+redP){put(x,y,TT.HEDGE,ter.surfaces[key]);T.bushes[key]='red'}}
  // ---- furniture, lanterns and clutter: blocking pieces are TT.STONE_PILLAR cells named in T.props, soft clutter lives in T.deco
  const LAMPS={paper:{c:'#c9a0ff',r:4,p:.26},firefly:{c:'#9be07a',r:3.4,p:.22},skull:{c:'#ffb15a',r:3.6,p:.24},iron:{c:'#ff8a4a',r:4,p:.26}};
  const prop=(x,y,kind,lamp,force=false)=>{const key=k(x,y);if(m[y]?.[x]!==TT.FLOOR||T.bridges[key]||T.props[key]||T.bushes[key]||(!force&&route.has(key)))return false;put(x,y,TT.STONE_PILLAR,ter.surfaces[key]);T.props[key]=kind;if(lamp)T.lights.push({x,y,color:LAMPS[lamp].c,r:LAMPS[lamp].r,power:LAMPS[lamp].p});return true};
  const furniture=(x,y,tile,force=false)=>{const key=k(x,y);if(m[y]?.[x]!==TT.FLOOR||T.bridges[key]||T.props[key]||T.bushes[key]||(!force&&route.has(key)))return false;put(x,y,tile,ter.surfaces[key]);return true};
  const lampKind=()=>{const r=rnd();return r<.35?['lanternPaper','paper']:r<.60?['lanternFirefly','firefly']:r<.75?['lanternSkull','skull']:['lanternIron','iron']};
- const edge=[...floor].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(p=>m[p.y][p.x]===TT.FLOOR&&!route.has(k(p.x,p.y))&&!T.bridges[k(p.x,p.y)]&&near4(p.x,p.y,TT.WALL)&&ter.surfaces[k(p.x,p.y)]!=='rotPlank');
+ const edge=[...floor].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(p=>m[p.y][p.x]===TT.FLOOR&&!inFz(p.x,p.y)&&!route.has(k(p.x,p.y))&&!T.bridges[k(p.x,p.y)]&&near4(p.x,p.y,TT.WALL)&&ter.surfaces[k(p.x,p.y)]!=='rotPlank');
  for(let i=edge.length-1;i>0;i--){const j=ri(0,i);[edge[i],edge[j]]=[edge[j],edge[i]]}
  const placed=[],spaced=(p,d)=>!placed.some(q=>Math.max(Math.abs(q.x-p.x),Math.abs(q.y-p.y))<d);
  const lampAt=(x,y,force)=>{const[kind,lamp]=lampKind();if(prop(x,y,kind,lamp,force)){placed.push({x,y,lamp:true});return true}return false};
- for(const q of [up,down])for(const d of[[2,-2],[2,2],[-2,-2],[-2,2],[3,-1],[3,1]]){if(lampAt(q.x+d[0],q.y+d[1],false))break}
- for(const c of T.cabins){const out=c.door.y>c.cy?1:-1;for(const sx of[-1,1])lampAt(c.door.x+sx,c.door.y+out,true)}
+ for(const q of L2?[]:[up,down])for(const d of[[2,-2],[2,2],[-2,-2],[-2,2],[3,-1],[3,1]]){if(lampAt(q.x+d[0],q.y+d[1],false))break}
+ for(const c of T.cabins){if(c.old)continue;const out=c.door.y>c.cy?1:-1;for(const sx of[-1,1])lampAt(c.door.x+sx,c.door.y+out,true)}
+ for(const b of T.bigs){if(b.old)continue;for(const dx of[-2,2])lampAt(b.reward.x+dx,b.reward.y,true);for(const dx of[-1,1])lampAt(b.door.x+dx,b.door.y-1,true)}
+ if(T.start&&!PATCH){for(const[dx,dy]of[[-3,-2],[3,-2],[-3,2],[3,2],[-1,-2],[1,-2]])lampAt(CX+dx,CY+dy,true);T.deco[k(CX,CY-1)]='firepit'}
  for(const key of Object.keys(T.bridges)){const[x,y]=key.split(',').map(Number);if(rnd()<.35){const c=edge.find(e=>Math.abs(e.x-x)<=3&&Math.abs(e.y-y)<=4&&spaced(e,7));if(c)lampAt(c.x,c.y,false)}}
  let lamps=0;for(const p of edge){if(lamps>46)break;if(spaced(p,10)&&lampAt(p.x,p.y,false))lamps++}
  const CLUTTER={0:[['stump',4],['log',3],['signpost',2],['grave',3],['scarecrow',1],['cage',2]],1:[['stump',5],['log',5],['barrel',3],['cart',2],['grave',3],['cage',1]],2:[['stump',5],['log',3],['barrel',2]],3:[['cocoon',6],['hive',4],['stump',2],['cage',2],['grave',2]],4:[['grave',4],['cage',3],['scarecrow',2],['cocoon',2],['stump',2],['log',2]]};
  for(const p of edge){if(placed.length>120)break;if(m[p.y][p.x]!==TT.FLOOR||!spaced(p,4)||rnd()>.22)continue;const bag=(CLUTTER[zoneAt(p.x,p.y)]||CLUTTER[0]).flatMap(([n,w])=>Array(w).fill(n));if(prop(p.x,p.y,pick(bag)))placed.push(p)}
- for(const c of T.clearings){
+ for(const c of T.clearings){if(c.old)continue;
   if(rnd()<.5)prop(c.x+2,c.y-2,'well',null);else T.deco[k(c.x-2,c.y+1)]='firepit';
   for(const d of[[-2,-2],[3,1],[-3,0],[2,2]])if(rnd()<.6)prop(c.x+d[0],c.y+d[1],rnd()<.7?'stump':'log',null);
  }
- for(const c of T.cabins){
+ for(const c of T.cabins){if(c.old)continue;
   const out=c.door.y>c.cy?1:-1,rowNext=c.door.y-out,pieces=['bed','table','shelf','cauldron'].sort(()=>rnd()-.5),spots=[];
   if(c.cells){for(const[xx,yy]of c.cells){if(Math.abs(xx-c.door.x)+Math.abs(yy-c.door.y)<=3||(xx===c.cx&&yy===c.cy))continue;if(near4(xx,yy,TT.WALL))spots.push({x:xx,y:yy})}}else
   for(let yy=c.y+1;yy<c.y+c.h-1;yy++)for(let xx=c.x+1;xx<c.x+c.w-1;xx++){if(Math.abs(xx-c.door.x)<=1&&(yy===rowNext||Math.abs(yy-c.door.y)<=2))continue;if(xx===c.door.x)continue;if(near4(xx,yy,TT.WALL))spots.push({x:xx,y:yy})}
   spots.sort(()=>rnd()-.5);for(const kind of pieces){const sp=spots.find(q=>placed.every(o=>Math.abs(o.x-q.x)+Math.abs(o.y-q.y)>1));if(!sp)break;const ok=kind==='shelf'?furniture(sp.x,sp.y,TT.RACK,true):prop(sp.x,sp.y,kind,null,true);if(ok){placed.push(sp);if(kind==='cauldron')T.lights.push({x:sp.x,y:sp.y,color:'#86e07a',r:3,power:.2})}}
  }
- for(const h of T.halls){prop(h.x,h.y,'well',null,true);for(const[dx,dy]of[[3,3],[-3,-3],[3,-3],[-3,3]])lampAt(h.x+dx,h.y+dy,false);
+ for(const h of T.halls){if(h.old)continue;prop(h.x,h.y,'well',null,true);for(const[dx,dy]of[[3,3],[-3,-3],[3,-3],[-3,3]])lampAt(h.x+dx,h.y+dy,false);
   for(let i=0;i<8;i++){const a=i*.785+.4;if(rnd()<.65)prop(h.x+Math.round(Math.cos(a)*2.6),h.y+Math.round(Math.sin(a)*2.6),rnd()<.7?'stump':'log',null)}}
 const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mushrooms',3],['bones',2],['ferns',3]],2:[['mushrooms',9],['ferns',3]],3:[['web',6],['bones',3],['mushrooms',2]],4:[['bones',4],['flowers',3],['puddle',2],['web',1]]};
  // clutter comes in patches, not sprinkled on every cell: a patch noise decides where, a low base chance keeps a few strays
- for(const key of floor){const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||T.deco[key]||ter.surfaces[key]==='rotPlank')continue;
+ for(const key of floor){const[x,y]=key.split(',').map(Number);if(m[y][x]!==TT.FLOOR||T.bridges[key]||T.deco[key]||inFz(x,y)||ter.surfaces[key]==='rotPlank')continue;
   const patch=thornNoise(x*1.0,y*1.0,9,T.zoneSeed+5)>.74;if(rnd()>(patch?.3:.012))continue;
   const kind=pick((DECO[zoneAt(x,y)]||DECO[0]).flatMap(([n,w])=>Array(w).fill(n)));if(kind==='web'&&!near4(x,y,TT.WALL))continue;T.deco[key]=kind;if(kind==='mushrooms'&&T.lights.length<110&&rnd()<.3)T.lights.push({x,y,color:'#7fd6ff',r:2.6,power:.14})}
 // ---- the forest: tall trees stand only where their crown (the rectangle above the trunk) covers nothing but forest, so a trail, a
@@ -207,7 +346,7 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
  const plain=(x,y)=>x>0&&y>0&&x<W-1&&y<H-1&&(m[y][x]===TT.WALL||m[y][x]===TT.GARDEN_TREE)&&ter.surfaces[k(x,y)]!=='rotWall';
  const TREE_BOX=[[1,1.2],[2,3],[2.75,4.1],[4,6]];
  const crownClear=(tx,ty,tw,ch)=>{for(let yy=Math.floor(ty-ch);yy<=Math.floor(ty-.15);yy++)for(let xx=Math.floor(tx-tw/2);xx<=Math.floor(tx+tw/2);xx++)if(!plain(xx,yy))return false;return true};
- const cellsOrder=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(m[y][x]===TT.WALL&&ter.surfaces[k(x,y)]!=='rotWall'&&depth[y*W+x]>=1&&depth[y*W+x]<=7)cellsOrder.push({x,y,d:depth[y*W+x]});
+ const cellsOrder=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(m[y][x]===TT.WALL&&ter.surfaces[k(x,y)]!=='rotWall'&&!inFz(x,y)&&depth[y*W+x]>=1&&depth[y*W+x]<=7)cellsOrder.push({x,y,d:depth[y*W+x]});
  for(let i=cellsOrder.length-1;i>0;i--){const j=ri(0,i);[cellsOrder[i],cellsOrder[j]]=[cellsOrder[j],cellsOrder[i]]}
  // the first four rows of forest beside every trail are real tree tiles (movement blocked, sight passes between them), like the pines
  // of 산채 2층; only the forest further in is dense wall that stops the view
@@ -228,13 +367,15 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
  T.forest.sort((a,b)=>a.y-b.y||a.x-b.x);
  // ---- portals and arrival
  const portal=(id,p,to,arrival,label)=>{setTerrainTile58(m,p.x,p.y,TT.PORTAL);ter.surfaces[k(p.x,p.y)]='thornMoss';state.branchPortals105.push({id,kind:'branch',...p,to,arrival,label})};
- portal('up',up,level===1?`main:${def.parent}`:`thorn:${level-1}`,level===1?'thorn':'down',level===1?`만루 ${def.parent}층으로`:`${def.name} ${level-1}층으로`);
- if(level<def.count)portal('down',down,`thorn:${level+1}`,'up',`${def.name} ${level+1}층`);
- Object.assign(state.player,up);state.fixedStart={...up};state.fixedExit={...down};state.stairs={...down};
+ if(!L2){portal('up',up,level===1?`main:${def.parent}`:`thorn:${level-1}`,level===1?'thorn':'down',level===1?`만루 ${def.parent}층으로`:`${def.name} ${level-1}층으로`);
+  if(level<def.count)portal('down',down,`thorn:${level+1}`,'up',`${def.name} ${level+1}층`)}
+ else if(T.start&&!PATCH)portal('up',{x:CX,y:CY-3},'thorn:1','down',`${def.name} 1층으로`);
+ Object.assign(state.player,up);state.fixedStart={...up};const way=L2?up:down;state.fixedExit={...way};state.stairs={...way};
  // ---- the way on must be walkable without cutting a single bush, and every cabin must be reachable
  const reach=ReachabilityService.playerSearch(up,{}).cells;
- if(!reach.has(k(down.x,down.y)))throw Error('Thornwood: the way on is cut');
- for(const r of roomsOut)if(!reach.has(k(r.cx,r.cy)))throw Error('Thornwood: a cabin is sealed');
+ if(!L2&&!reach.has(k(down.x,down.y)))throw Error('Thornwood: the way on is cut');
+ for(const r of roomsOut)if(!L2&&!reach.has(k(r.cx,r.cy)))throw Error('Thornwood: a cabin is sealed');
+ for(const b of T.bigs)if(!b.old&&!reach.has(k(b.door.x,b.door.y)))throw Error('Thornwood: a great hall is sealed');
  // ---- loot and the first floor's gentle population
  const portalNear=p=>Math.hypot(p.x-up.x,p.y-up.y)<8||Math.hypot(p.x-down.x,p.y-down.y)<5;
  for(const p of loot){if(!reach.has(k(p.x,p.y))||m[p.y][p.x]!==TT.FLOOR)continue;if(rnd()<.55)dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:ri(1,2)},p,{requireReachable:false})}
@@ -242,7 +383,15 @@ const DECO={0:[['flowers',5],['ferns',4],['mushrooms',2]],1:[['puddle',4],['mush
  for(const p of islandLoot)if(m[p.y][p.x]===TT.FLOOR){if(rnd()<.7)dropFloorLoot(p);else PlacementService.placeItem({...clone(naturalFoodPick()),count:ri(1,2)},p,{requireReachable:false})}
  const open=[...floor].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(p=>m[p.y][p.x]===TT.FLOOR&&!T.bridges[k(p.x,p.y)]&&reach.has(k(p.x,p.y))&&!portalNear(p));
  const spawn=(name,p)=>{const mon=spawnNamed(name,p,{placementMode:'exact',provenance:'subbranch-random-v3'});if(mon)mon.branch105='thorn';return mon};
- for(const[name,count]of THORN_ROSTER)for(let n=0;n<count&&open.length;n++)spawn(name,open.splice(ri(0,open.length-1),1)[0]);
+ if(!L2)for(const[name,count]of THORN_ROSTER)for(let n=0;n<count&&open.length;n++)spawn(name,open.splice(ri(0,open.length-1),1)[0]);
+ else{
+  const NAMES=['객잔 쥐','독꽃','독거미','지네','벌레덤불','가루나방','무당벌레 떼','장수풍뎅이'],WT={0:[3,3,2,3,3,1,3,1],4:[3,3,2,3,3,1,3,1],2:[2,6,3,3,4,3,1,1],3:[1,2,6,3,2,3,1,2]};
+  const farOpen=open.filter(p=>!inFz(p.x,p.y)&&Math.hypot(p.x-CX,p.y-CY)>12);
+  for(let n=0;n<26&&farOpen.length;n++){const p=farOpen.splice(ri(0,farOpen.length-1),1)[0],w=WT[zoneAt(p.x,p.y)]||WT[0],tot=w.reduce((a,v)=>a+v,0);let r=rnd()*tot,i=0;for(;i<w.length-1;i++){if((r-=w[i])<0)break}spawn(NAMES[i],p)}
+  const wc=[...water].map(key=>{const[x,y]=key.split(',').map(Number);return{x,y}}).filter(q=>!inFz(q.x,q.y));for(let n=0;n<3&&wc.length;n++)spawn('검은소금쟁이',wc.splice(ri(0,wc.length-1),1)[0]);
+  for(const b of T.bigs){if(b.old||b.guarded)continue;b.guarded=true;const cs=open.filter(p=>p.x>b.x&&p.y>b.y&&p.x<b.x+b.w-1&&p.y<b.y+b.h-1&&Math.hypot(p.x-b.door.x,p.y-b.door.y)>4);for(const[name,count]of b.guards)for(let n=0;n<count*(b.grand?2:1)&&cs.length;n++)spawn(name,cs.splice(ri(0,cs.length-1),1)[0])}
+ }
+ if(L2&&!PATCH&&!([...state.player.inventory,state.player.relic].some(i=>i?.thornTheme105))){const def2=RELICS.find(r=>r.thornTheme105===(run.dir==='up'?'web':'blood')),it={...clone(def2),count:1,identified:true};globalThis.__MANRU_ITEM_IDENTITY991__?.markGear?.(it);PlacementService.placeItem(it,{x:CX,y:CY-1},{requireReachable:false})}
  for(const sp of T.spirals)for(const f of[.3,.55,.8]){const c=sp.path[Math.floor(sp.path.length*f)];if(c&&m[c.y][c.x]===TT.FLOOR)spawn(f===.55?'독거미':'객잔 쥐',c)}
  state.generationInProgress57=false;
 }
