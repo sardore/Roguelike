@@ -15,7 +15,7 @@ const bridge = `globalThis.mb={
   const out={},max=state.player.maxHp;FX.flashRays=[];FX.flashBlasts=[];
   out.began=beginFlashSequence(m,state.player);const I=m.intent54;if(!out.began||!I)return{noPlan:true};
   const bombsNow=()=>state.monsters.filter(q=>q.combatFixture54==='flashBomb'&&q.hp>0);
-  out.name=bombsNow()[0]?.name;out.first=bombsNow().length;out.isMonster=bombsNow().every(q=>q.fixed&&q.hp===1&&!q.boss);
+  out.name=bombsNow()[0]?.name;out.first=bombsNow().length;out.isMonster=bombsNow().every(q=>q.fixed&&q.hp===4&&!q.boss);
   out.counts=[out.first];let lost=0;const log=[];let execs=0;
   while(m.intent54&&execs<8){state.turn+=1;const before=state.player.hp;executeBossIntent(m);execs++;const dmg=before-state.player.hp;lost+=dmg;log.push([execs,dmg,!!m.intent54,bombsNow().length]);state.player.hp=max}
   out.execs=execs;out.lost=lost;out.cleared=!m.intent54;out.log=log;out.leftover=bombsNow().length;
@@ -41,6 +41,8 @@ const bridge = `globalThis.mb={
   setBossIntent(m,'wallweave',plan.cells,'t',{tiles:plan.tiles});state.turn+=1;executeBossIntent(m);
   out.walls=plan.cells.filter(c=>state.map[c.y][c.x]!==TT.FLOOR).length;out.temp=(state.tempTerrain74||[]).filter(t=>t.kind==='bossWeave').length;
   out.reachable=!masterWallBlocked(m,state.player,[]);out.ttl=(state.tempTerrain74||[]).find(t=>t.kind==='bossWeave')?.ttl;return out},
+ visualSetup:()=>{mb.arena();const m=mb.boss(26,15,2);OccupancyService.move(state.player,15,15);state.visible=new Set();for(let y=4;y<27;y++)for(let x=4;x<40;x++)state.visible.add(k(x,y));state.seen=new Set(state.visible);beginFlashSequence(m,state.player);for(let n=0;n<2;n++){state.turn++;executeBossIntent(m)}mb.m=m},
+ visualBoom:()=>{const bomb=state.monsters.find(q=>q.combatFixture54==='flashBomb');bomb.hp=1;state.turn++;executeBossIntent(mb.m)},
  rules:()=>BOSS_ARENA_RULES.master.cores.map(c=>[c.interval,c.batch,c.cap])};`;
 const runtime = assembleGame(path.join(repo, 'src')).text.replace(QA_MARKER, fs.readFileSync(path.join(repo, 'src/qa/qa.js'), 'utf8') + '\n' + bridge);
 const browser = await launch();
@@ -77,6 +79,11 @@ try {
   const w = out.weave; assert.ok(!w.error, JSON.stringify(w));
   assert.ok(w.planned && w.n > 0 && w.walls > 0 && w.temp > 0, '벽·지형이 세워지지 않았다');
   assert.ok(w.reachable, '구조 재편이 길을 완전히 막았다');
+  // 폭탄·폭발 그리기가 프레임마다 예외 없이 도는지 본다.
+  await s.page.evaluate(() => mb.visualSetup());
+  await s.page.waitForTimeout(500);
+  await s.page.evaluate(() => mb.visualBoom());
+  await s.page.waitForTimeout(600);
   assert.equal(errors.length, 0, errors.join('|'));
   console.log('master-skills: ok');
 } finally { await browser.close(); }

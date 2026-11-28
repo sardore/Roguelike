@@ -628,7 +628,7 @@ function flashRefreshCells(boss){const I=boss.intent54;if(!I||I.type!=='flashbla
 function flashPlantWave(boss,wave,ph,stage,index){
  wave.ids=[];
  for(const b of wave.bombs){
-  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:`보주가 던져 세운 섬광탄이다. ${ph.label} 범위로 폭발하며, 부수면 그 자리에서 먼저 터진다.`,hp:1,maxHp:1,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
+  const bomb={x:b.x,y:b.y,name:FLASH_BOMB_NAMES[ph.element],concept57:`보주가 던져 세운 섬광탄이다. ${ph.label} 범위로 폭발하며, 부수면 그 자리에서 먼저 터진다.`,hp:4,maxHp:4,atk:0,def:0,eva:0,xp:0,color:ph.color,kind:'construct',shape:'orb',fixed:true,statusImmune:true,displacementImmune57:true,combatFixture54:'flashBomb',flashStage57:stage,flashWave57:index,alerted:false,spawnProvenance57:'boss-fixture',rewardPolicy57:{xp:false,drops:false,kills:false}};
   adoptBossChild57(bomb,boss);if(!OccupancyService.addMonster(bomb))continue;wave.ids.push(combatantId(bomb));
   projectileFX(boss.x,boss.y,b.x,b.y,ph.color,{kind:'shell',element:ph.element,life:380});
   burst(b.x,b.y,'#fff6c8',10,.8,380);burst(b.x,b.y,ph.color,10,1,380);impact(b.x,b.y,ph.color,4,380);
