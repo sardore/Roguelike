@@ -3327,7 +3327,7 @@ function drawBranchCreature(q,m,frame,sp){
  }
  case'phoenix':{
   // A rising crimson firebird: raised gold wings tipped with flame, a flame crest, a long tail of plumes with burning eyes. Its fall leaves only embers in ash.
-  const phase=m?.revivePhase57||'normal',full=phase==='full',y=b*.6,f=b?1.2:0,
+  const phase=m?.revivePhase57||'normal',full=phase==='full',y=b*.6+3,f=b?1.2:0,
    deep=full?'#7a1410':'#5c1410',body=full?'#d43420':'#b2261c',warm=full?'#f47a32':'#e0582a',gold=full?'#ffe27a':'#f6bf48',goldD='#a8661c',flame=full?'#fff0b0':'#ffd36a',ash='#5a524e',ashD='#3a3432',ashL='#8c827a';
   // Ash is drawn grain by grain (a fixed hash picks each grain's shade) so it reads as loose powder with embers in it, not as a smooth dome.
   const grain=(i,j)=>{const t=Math.sin(i*127.1+j*311.7)*43758.5453;return t-Math.floor(t)},
@@ -3359,7 +3359,7 @@ function drawBranchCreature(q,m,frame,sp){
   for(const[x,v]of[[13.4,16],[14.6,19],[16.4,21.2]]){q.beginPath();q.arc(x,v+y,1.3,.3,Math.PI-.3);q.strokeStyle=gold;q.lineWidth=.6;q.stroke()}
   L(13.2,13.4+y,14.2,19.6+y,flame,.8);L(11.2,10.4+y,12.2,12.6+y,flame,.7);eR9(q,9.4,6.6+y,.9,.8,'#ffffff',null);
   // tucked gold talons
-  for(const x of[14.8,17.6]){L(x,22.4+y,x-.8,27+y,goldD,1.5);L(x-.8,27+y,x-.2,31.2+y,goldD,1.4);L(x,22.8+y,x-.7,27+y,gold,.5);for(const k of[-1,0,1])L(x-.2,31.2+y,x-.2+k*1.5,32.8+y,gold,.9)}
+  for(const x of[14.8,17.4]){L(x,22.4+y,x-.6,25+y,goldD,1.3);for(const k of[-1,0,1])L(x-.6,25+y,x-.6+k*1.1,26.4+y,gold,.7)}
   // neck curving up to the head, flame crest, hooked gold beak facing left
   P(body,[[13.4,15+y],[10.6,11.4+y],[9.2,8+y],[11.4,7.2+y],[12.6,10.4+y],[16,12.8+y]]);L(11.2,10.8+y,13.6,13.8+y,warm,.7);
   for(const[cx,cv,ex,ev]of[[12.6,3,16.6,1],[13.6,5.4,18.6,4.4],[11,1.6,12.4,-.4]])plume(10.8,6.4+y,cx,cv+y,ex,ev+y-f*.5,1.1,warm,deep);
